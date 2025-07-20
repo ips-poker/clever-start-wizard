@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Trophy, Users, Calendar, Star, TrendingUp, Shield, Award, Play } from "lucide-react";
-import pokerTournamentHero from "@/assets/poker-tournament-hero.jpg";
+import luxuryPokerHero from "@/assets/luxury-poker-hero.jpg";
 import pokerChipsBg from "@/assets/poker-chips-bg.jpg";
 
 export function Hero() {
@@ -11,7 +11,7 @@ export function Hero() {
       {/* Background Image with Overlay */}
       <div 
         className="absolute inset-0 bg-cover bg-center bg-no-repeat blur-sm"
-        style={{ backgroundImage: `url(${pokerTournamentHero})`, filter: 'blur(3px)' }}
+        style={{ backgroundImage: `url(${luxuryPokerHero})`, filter: 'blur(3px)' }}
       >
         <div className="absolute inset-0 bg-gradient-overlay"></div>
         <div className="absolute inset-0 bg-slate-900/60"></div>
