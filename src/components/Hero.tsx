@@ -11,7 +11,7 @@ export function Hero() {
       {/* Background Image with Overlay */}
       <div 
         className="absolute inset-0 bg-cover bg-center bg-no-repeat blur-sm"
-        style={{ backgroundImage: `url(${luxuryPokerHero})`, filter: 'blur(3px)' }}
+        style={{ backgroundImage: `url(${luxuryPokerHero})`, filter: 'blur(8px)' }}
       >
         <div className="absolute inset-0 bg-gradient-overlay"></div>
         <div className="absolute inset-0 bg-slate-900/30"></div>
