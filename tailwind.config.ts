@@ -63,27 +63,34 @@ export default {
 					ring: 'hsl(var(--sidebar-ring))'
 				},
 				poker: {
-					green: 'hsl(var(--poker-green))',
+					emerald: 'hsl(var(--poker-emerald))',
 					gold: 'hsl(var(--poker-gold))',
-					red: 'hsl(var(--poker-red))',
-					blue: 'hsl(var(--poker-blue))',
-					royal: 'hsl(var(--poker-royal))'
+					crimson: 'hsl(var(--poker-crimson))',
+					sapphire: 'hsl(var(--poker-sapphire))',
+					amethyst: 'hsl(var(--poker-amethyst))',
+					platinum: 'hsl(var(--poker-platinum))'
 				}
 			},
 			backgroundImage: {
 				'gradient-primary': 'var(--gradient-primary)',
-				'gradient-accent': 'var(--gradient-accent)',
 				'gradient-hero': 'var(--gradient-hero)',
-				'gradient-royal': 'var(--gradient-royal)',
+				'gradient-emerald': 'var(--gradient-emerald)',
 				'gradient-gold': 'var(--gradient-gold)',
-				'gradient-card': 'var(--gradient-card)'
+				'gradient-crimson': 'var(--gradient-crimson)',
+				'gradient-sapphire': 'var(--gradient-sapphire)',
+				'gradient-amethyst': 'var(--gradient-amethyst)',
+				'gradient-glass': 'var(--gradient-glass)',
+				'gradient-mesh': 'var(--gradient-mesh)'
+			},
+			backdropFilter: {
+				'modern': 'var(--backdrop-blur)',
 			},
 			boxShadow: {
-				'card': 'var(--shadow-card)',
-				'elegant': 'var(--shadow-elegant)',
-				'glow': 'var(--shadow-glow)',
-				'royal': 'var(--shadow-royal)',
-				'gold': 'var(--shadow-gold)'
+				'glass': 'var(--shadow-glass)',
+				'float': 'var(--shadow-float)',
+				'glow-emerald': 'var(--shadow-glow-emerald)',
+				'glow-gold': 'var(--shadow-glow-gold)',
+				'glow-amethyst': 'var(--shadow-glow-amethyst)'
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
@@ -106,11 +113,20 @@ export default {
 					to: {
 						height: '0'
 					}
+				},
+				'float': {
+					'0%, 100%': {
+						transform: 'translateY(0px) rotate(0deg)',
+					},
+					'50%': {
+						transform: 'translateY(-20px) rotate(180deg)',
+					}
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out'
+				'accordion-up': 'accordion-up 0.2s ease-out',
+				'float': 'float 6s ease-in-out infinite'
 			}
 		}
 	},
