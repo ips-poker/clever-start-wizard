@@ -14,6 +14,7 @@ export function Hero() {
         style={{ backgroundImage: `url(${pokerTableHero})` }}
       >
         <div className="absolute inset-0 bg-gradient-overlay"></div>
+        <div className="absolute inset-0 bg-slate-900/60"></div>
       </div>
       {/* Floating Poker Suits with Animation */}
       <div className="absolute inset-0 opacity-10">
