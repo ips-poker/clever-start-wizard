@@ -32,7 +32,7 @@ export function Header() {
               </div>
             </div>
             <div className="flex flex-col">
-              <span className="text-2xl font-black text-poker-charcoal tracking-tight">
+              <span className="text-2xl font-black text-poker-gold tracking-tight">
                 IPS
               </span>
               <span className="text-xs text-muted-foreground -mt-1 font-medium tracking-wide">
