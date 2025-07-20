@@ -13,8 +13,8 @@ export function Hero() {
         className="absolute inset-0 bg-cover bg-center bg-no-repeat blur-sm"
         style={{ backgroundImage: `url(${luxuryPokerHero})`, filter: 'blur(8px)' }}
       >
-        <div className="absolute inset-0 bg-slate-900/80"></div>
-        <div className="absolute inset-0 bg-black/50"></div>
+        <div className="absolute inset-0 bg-slate-900/60"></div>
+        <div className="absolute inset-0 bg-black/30"></div>
       </div>
       {/* Floating Poker Suits with Advanced Animation */}
       <div className="absolute inset-0 opacity-20 overflow-hidden">
@@ -64,7 +64,7 @@ export function Hero() {
           {/* Left Column - Content */}
           <div className="text-white space-y-8 animate-fade-in">
             <div className="space-y-6">
-              <Badge className="bg-white/10 border border-poker-gold/30 text-white font-medium px-4 py-2 rounded-full shadow-subtle backdrop-blur-md relative overflow-hidden text-sm">
+              <Badge className="bg-white/20 border border-poker-gold/50 text-white font-semibold px-5 py-2 rounded-full shadow-elegant backdrop-blur-md relative overflow-hidden text-sm">
                 <span className="relative z-10">Премиальный покерный клуб</span>
                 <div className="absolute inset-0 bg-gradient-shine opacity-0 hover:opacity-100 transition-opacity duration-500"></div>
               </Badge>
@@ -81,30 +81,30 @@ export function Hero() {
                 </span>
               </h1>
                
-               <p className="text-lg text-white/80 max-w-lg leading-relaxed font-normal bg-black/20 p-3 rounded-lg backdrop-blur-sm">
+               <p className="text-lg text-white max-w-lg leading-relaxed font-medium bg-white/10 p-4 rounded-xl backdrop-blur-md border border-white/20">
                  Премиальный покерный клуб с рейтинговой системой ELO. 
                  Развивайте навыки в роскошной атмосфере среди элитных игроков.
                </p>
 
                {/* Brand Key Benefits */}
                <div className="grid grid-cols-2 gap-4">
-                  <div className="flex items-center space-x-3 text-sm bg-white/10 px-3 py-2 rounded-lg backdrop-blur-md border border-poker-gold/20 animate-slide-up text-white font-medium shadow-subtle relative overflow-hidden group">
-                    <Shield className="w-4 h-4 text-poker-gold" />
+                  <div className="flex items-center space-x-3 text-sm bg-white/20 px-4 py-3 rounded-xl backdrop-blur-md border border-poker-gold/40 animate-slide-up text-white font-semibold shadow-elegant relative overflow-hidden group">
+                    <Shield className="w-5 h-5 text-poker-gold" />
                     <span className="relative z-10">Честная игра</span>
                     <div className="absolute inset-0 bg-gradient-shine opacity-0 group-hover:opacity-20 transition-opacity duration-500"></div>
                   </div>
-                  <div className="flex items-center space-x-3 text-sm bg-white/10 px-3 py-2 rounded-lg backdrop-blur-md border border-poker-gold/20 animate-slide-up text-white font-medium shadow-subtle relative overflow-hidden group" style={{animationDelay: '0.2s'}}>
-                    <TrendingUp className="w-4 h-4 text-poker-gold" />
+                  <div className="flex items-center space-x-3 text-sm bg-white/20 px-4 py-3 rounded-xl backdrop-blur-md border border-poker-gold/40 animate-slide-up text-white font-semibold shadow-elegant relative overflow-hidden group" style={{animationDelay: '0.2s'}}>
+                    <TrendingUp className="w-5 h-5 text-poker-gold" />
                     <span className="relative z-10">Рост навыков</span>
                     <div className="absolute inset-0 bg-gradient-shine opacity-0 group-hover:opacity-20 transition-opacity duration-500"></div>
                   </div>
-                  <div className="flex items-center space-x-3 text-sm bg-white/10 px-3 py-2 rounded-lg backdrop-blur-md border border-poker-gold/20 animate-slide-up text-white font-medium shadow-subtle relative overflow-hidden group" style={{animationDelay: '0.4s'}}>
-                    <Award className="w-4 h-4 text-poker-gold" />
+                  <div className="flex items-center space-x-3 text-sm bg-white/20 px-4 py-3 rounded-xl backdrop-blur-md border border-poker-gold/40 animate-slide-up text-white font-semibold shadow-elegant relative overflow-hidden group" style={{animationDelay: '0.4s'}}>
+                    <Award className="w-5 h-5 text-poker-gold" />
                     <span className="relative z-10">Рейтинг ELO</span>
                     <div className="absolute inset-0 bg-gradient-shine opacity-0 group-hover:opacity-20 transition-opacity duration-500"></div>
                   </div>
-                  <div className="flex items-center space-x-3 text-sm bg-white/10 px-3 py-2 rounded-lg backdrop-blur-md border border-poker-gold/20 animate-slide-up text-white font-medium shadow-subtle relative overflow-hidden group" style={{animationDelay: '0.6s'}}>
-                    <Users className="w-4 h-4 text-poker-gold" />
+                  <div className="flex items-center space-x-3 text-sm bg-white/20 px-4 py-3 rounded-xl backdrop-blur-md border border-poker-gold/40 animate-slide-up text-white font-semibold shadow-elegant relative overflow-hidden group" style={{animationDelay: '0.6s'}}>
+                    <Users className="w-5 h-5 text-poker-gold" />
                     <span className="relative z-10">Сообщество</span>
                     <div className="absolute inset-0 bg-gradient-shine opacity-0 group-hover:opacity-20 transition-opacity duration-500"></div>
                   </div>
@@ -112,32 +112,32 @@ export function Hero() {
              </div>
 
              <div className="flex flex-col sm:flex-row gap-4 animate-scale-in" style={{animationDelay: '1s'}}>
-                <Button size="lg" className="bg-poker-gold/90 text-poker-charcoal hover:bg-poker-gold hover:shadow-elegant transition-all duration-300 font-semibold px-6 py-3 text-base rounded-lg shadow-subtle border border-poker-gold/50 relative overflow-hidden group">
-                  <Play className="w-5 h-5 mr-2" />
-                  <span className="relative z-10">Начать играть</span>
+                <Button size="lg" className="bg-poker-gold text-poker-charcoal hover:bg-poker-gold/90 hover:shadow-floating transition-all duration-300 font-bold px-8 py-4 text-lg rounded-xl shadow-elegant border border-poker-gold relative overflow-hidden group">
+                  <Play className="w-6 h-6 mr-3" />
+                  <span className="relative z-10 font-bold">Начать играть</span>
                   <div className="absolute inset-0 bg-gradient-shine opacity-0 group-hover:opacity-30 transition-opacity duration-500"></div>
                 </Button>
-                <Button size="lg" variant="outline" className="border border-white/50 text-white bg-white/5 hover:bg-white/10 hover:text-white transition-all duration-300 font-medium px-6 py-3 text-base rounded-lg backdrop-blur-md shadow-subtle relative overflow-hidden group">
-                  <span className="relative z-10">Рейтинг игроков</span>
+                <Button size="lg" variant="outline" className="border-2 border-white/70 text-white bg-white/15 hover:bg-white/25 hover:text-white transition-all duration-300 font-semibold px-8 py-4 text-lg rounded-xl backdrop-blur-md shadow-elegant relative overflow-hidden group">
+                  <span className="relative z-10 font-bold">Рейтинг игроков</span>
                   <div className="absolute inset-0 bg-gradient-shine opacity-0 group-hover:opacity-20 transition-opacity duration-500"></div>
                 </Button>
              </div>
 
              {/* Brand Stats */}
              <div className="grid grid-cols-3 gap-6 pt-8">
-                <div className="text-center p-4 bg-white/5 backdrop-blur-xl rounded-lg border border-poker-gold/20 shadow-subtle hover:shadow-elegant transition-all duration-300 animate-slide-up hover:scale-105 relative overflow-hidden group" style={{animationDelay: '0.8s'}}>
-                  <div className="text-3xl font-bold text-poker-gold mb-2">500+</div>
-                  <div className="text-sm text-white/80 font-medium relative z-10">Игроков</div>
+                <div className="text-center p-5 bg-white/15 backdrop-blur-xl rounded-xl border border-poker-gold/40 shadow-elegant hover:shadow-floating transition-all duration-300 animate-slide-up hover:scale-105 relative overflow-hidden group" style={{animationDelay: '0.8s'}}>
+                  <div className="text-4xl font-bold text-poker-gold mb-3">500+</div>
+                  <div className="text-sm text-white font-semibold relative z-10">Игроков</div>
                   <div className="absolute inset-0 bg-gradient-shine opacity-0 group-hover:opacity-15 transition-opacity duration-500"></div>
                 </div>
-                <div className="text-center p-4 bg-white/5 backdrop-blur-xl rounded-lg border border-poker-gold/20 shadow-subtle hover:shadow-elegant transition-all duration-300 animate-slide-up hover:scale-105 relative overflow-hidden group" style={{animationDelay: '1s'}}>
-                  <div className="text-3xl font-bold text-poker-gold mb-2">150+</div>
-                  <div className="text-sm text-white/80 font-medium relative z-10">Турниров</div>
+                <div className="text-center p-5 bg-white/15 backdrop-blur-xl rounded-xl border border-poker-gold/40 shadow-elegant hover:shadow-floating transition-all duration-300 animate-slide-up hover:scale-105 relative overflow-hidden group" style={{animationDelay: '1s'}}>
+                  <div className="text-4xl font-bold text-poker-gold mb-3">150+</div>
+                  <div className="text-sm text-white font-semibold relative z-10">Турниров</div>
                   <div className="absolute inset-0 bg-gradient-shine opacity-0 group-hover:opacity-15 transition-opacity duration-500"></div>
                 </div>
-                <div className="text-center p-4 bg-white/5 backdrop-blur-xl rounded-lg border border-poker-gold/20 shadow-subtle hover:shadow-elegant transition-all duration-300 animate-slide-up hover:scale-105 relative overflow-hidden group" style={{animationDelay: '1.2s'}}>
-                  <div className="text-3xl font-bold text-poker-gold mb-2">4.9</div>
-                  <div className="text-sm text-white/80 font-medium relative z-10">Рейтинг</div>
+                <div className="text-center p-5 bg-white/15 backdrop-blur-xl rounded-xl border border-poker-gold/40 shadow-elegant hover:shadow-floating transition-all duration-300 animate-slide-up hover:scale-105 relative overflow-hidden group" style={{animationDelay: '1.2s'}}>
+                  <div className="text-4xl font-bold text-poker-gold mb-3">4.9</div>
+                  <div className="text-sm text-white font-semibold relative z-10">Рейтинг</div>
                   <div className="absolute inset-0 bg-gradient-shine opacity-0 group-hover:opacity-15 transition-opacity duration-500"></div>
                 </div>
              </div>
@@ -146,52 +146,52 @@ export function Hero() {
            {/* Right Column - Cards with Poker Background */}
            <div className="space-y-6 animate-slide-right" style={{animationDelay: '0.6s'}}>
               {/* Premium Main Feature Card */}
-              <Card className="p-6 bg-white/5 backdrop-blur-xl border border-poker-gold/30 shadow-elegant relative overflow-hidden group">
-                <div className="relative z-10 text-center space-y-4">
-                  <div className="w-16 h-16 bg-poker-gold/90 rounded-xl flex items-center justify-center mx-auto shadow-subtle text-white">
-                    <Trophy className="w-8 h-8" />
+              <Card className="p-8 bg-white/15 backdrop-blur-xl border border-poker-gold/50 shadow-floating relative overflow-hidden group">
+                <div className="relative z-10 text-center space-y-6">
+                  <div className="w-20 h-20 bg-poker-gold rounded-2xl flex items-center justify-center mx-auto shadow-elegant text-white">
+                    <Trophy className="w-10 h-10" />
                   </div>
-                  <h3 className="text-2xl font-bold text-white">Рейтинговая система ELO</h3>
-                  <p className="text-white/80 text-base font-normal">Профессиональная система оценки навыков покерных игроков</p>
-                  <Badge className="bg-poker-gold/90 text-white px-4 py-2 font-medium text-sm shadow-subtle border border-poker-gold/50">
+                  <h3 className="text-3xl font-bold text-white">Рейтинговая система ELO</h3>
+                  <p className="text-white text-lg font-medium">Профессиональная система оценки навыков покерных игроков</p>
+                  <Badge className="bg-poker-gold text-white px-6 py-3 font-bold text-base shadow-elegant border border-poker-gold">
                     Главная особенность
                   </Badge>
                 </div>
               </Card>
 
              <div className="grid gap-6">
-              <Card className="p-4 bg-white/5 backdrop-blur-xl border border-poker-gold/20 hover:border-poker-gold/40 transition-all duration-300 group shadow-subtle relative overflow-hidden hover:scale-105 animate-fade-in" style={{animationDelay: '1.2s'}}>
-                <div className="relative z-10 flex items-center space-x-3">
-                  <div className="p-3 bg-poker-gold/90 rounded-lg shadow-subtle">
-                    <Users className="w-5 h-5 text-white" />
+              <Card className="p-6 bg-white/15 backdrop-blur-xl border border-poker-gold/40 hover:border-poker-gold/60 transition-all duration-300 group shadow-elegant relative overflow-hidden hover:scale-105 animate-fade-in" style={{animationDelay: '1.2s'}}>
+                <div className="relative z-10 flex items-center space-x-4">
+                  <div className="p-4 bg-poker-gold rounded-xl shadow-elegant">
+                    <Users className="w-6 h-6 text-white" />
                   </div>
                   <div className="text-white">
-                    <h3 className="font-semibold text-base">Элитное сообщество</h3>
-                    <p className="text-sm text-white/70 font-normal">Игра с опытными покеристами</p>
+                    <h3 className="font-bold text-lg">Элитное сообщество</h3>
+                    <p className="text-base text-white/80 font-medium">Игра с опытными покеристами</p>
                   </div>
                 </div>
               </Card>
 
-              <Card className="p-4 bg-white/5 backdrop-blur-xl border border-poker-gold/20 hover:border-poker-gold/40 transition-all duration-300 group shadow-subtle relative overflow-hidden hover:scale-105 animate-fade-in" style={{animationDelay: '1.4s'}}>
-                <div className="relative z-10 flex items-center space-x-3">
-                  <div className="p-3 bg-poker-gold/90 rounded-lg shadow-subtle">
-                    <Calendar className="w-5 h-5 text-white" />
+              <Card className="p-6 bg-white/15 backdrop-blur-xl border border-poker-gold/40 hover:border-poker-gold/60 transition-all duration-300 group shadow-elegant relative overflow-hidden hover:scale-105 animate-fade-in" style={{animationDelay: '1.4s'}}>
+                <div className="relative z-10 flex items-center space-x-4">
+                  <div className="p-4 bg-poker-gold rounded-xl shadow-elegant">
+                    <Calendar className="w-6 h-6 text-white" />
                   </div>
                   <div className="text-white">
-                    <h3 className="font-semibold text-base">Регулярные турниры</h3>
-                    <p className="text-sm text-white/70 font-normal">Еженедельные соревнования</p>
+                    <h3 className="font-bold text-lg">Регулярные турниры</h3>
+                    <p className="text-base text-white/80 font-medium">Еженедельные соревнования</p>
                   </div>
                 </div>
               </Card>
 
-              <Card className="p-4 bg-white/5 backdrop-blur-xl border border-poker-gold/20 hover:border-poker-gold/40 transition-all duration-300 group shadow-subtle relative overflow-hidden hover:scale-105 animate-fade-in" style={{animationDelay: '1.6s'}}>
-                <div className="relative z-10 flex items-center space-x-3">
-                  <div className="p-3 bg-poker-gold/90 rounded-lg shadow-subtle">
-                    <Star className="w-5 h-5 text-white" />
+              <Card className="p-6 bg-white/15 backdrop-blur-xl border border-poker-gold/40 hover:border-poker-gold/60 transition-all duration-300 group shadow-elegant relative overflow-hidden hover:scale-105 animate-fade-in" style={{animationDelay: '1.6s'}}>
+                <div className="relative z-10 flex items-center space-x-4">
+                  <div className="p-4 bg-poker-gold rounded-xl shadow-elegant">
+                    <Star className="w-6 h-6 text-white" />
                   </div>
                   <div className="text-white">
-                    <h3 className="font-semibold text-base">Награды и достижения</h3>
-                    <p className="text-sm text-white/70 font-normal">Система признания успехов</p>
+                    <h3 className="font-bold text-lg">Награды и достижения</h3>
+                    <p className="text-base text-white/80 font-medium">Система признания успехов</p>
                   </div>
                 </div>
               </Card>
