@@ -63,31 +63,34 @@ export default {
 					ring: 'hsl(var(--sidebar-ring))'
 				},
 				poker: {
-					crimson: 'hsl(var(--poker-crimson))',
-					burgundy: 'hsl(var(--poker-burgundy))',
-					wine: 'hsl(var(--poker-wine))',
+					emerald: 'hsl(var(--poker-emerald))',
+					forest: 'hsl(var(--poker-forest))',
+					jade: 'hsl(var(--poker-jade))',
+					mint: 'hsl(var(--poker-mint))',
+					midnight: 'hsl(var(--poker-midnight))',
+					platinum: 'hsl(var(--poker-platinum))',
 					gold: 'hsl(var(--poker-gold))',
-					pearl: 'hsl(var(--poker-pearl))',
-					silver: 'hsl(var(--poker-silver))',
-					charcoal: 'hsl(var(--poker-charcoal))'
+					ivory: 'hsl(var(--poker-ivory))'
 				}
 			},
 			backgroundImage: {
 				'gradient-primary': 'var(--gradient-primary)',
 				'gradient-hero': 'var(--gradient-hero)',
-				'gradient-crimson': 'var(--gradient-crimson)',
-				'gradient-burgundy': 'var(--gradient-burgundy)',
+				'gradient-emerald': 'var(--gradient-emerald)',
+				'gradient-forest': 'var(--gradient-forest)',
 				'gradient-gold': 'var(--gradient-gold)',
 				'gradient-luxury': 'var(--gradient-luxury)',
-				'gradient-card': 'var(--gradient-card)'
+				'gradient-card': 'var(--gradient-card)',
+				'gradient-midnight': 'var(--gradient-midnight)'
 			},
 			boxShadow: {
 				'subtle': 'var(--shadow-subtle)',
 				'card': 'var(--shadow-card)',
 				'elegant': 'var(--shadow-elegant)',
-				'crimson': 'var(--shadow-crimson)',
+				'emerald': 'var(--shadow-emerald)',
 				'gold': 'var(--shadow-gold)',
-				'glow': 'var(--shadow-glow)'
+				'glow': 'var(--shadow-glow)',
+				'midnight': 'var(--shadow-midnight)'
 			},
 			fontWeight: {
 				'light': 'var(--font-weight-light)',
