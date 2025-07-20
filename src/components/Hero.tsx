@@ -16,12 +16,17 @@ export function Hero() {
         <div className="absolute inset-0 bg-gradient-overlay"></div>
         <div className="absolute inset-0 bg-slate-900/30"></div>
       </div>
-      {/* Floating Poker Suits with Animation */}
-      <div className="absolute inset-0 opacity-10">
+      {/* Floating Poker Suits with Advanced Animation */}
+      <div className="absolute inset-0 opacity-20 overflow-hidden">
         <div className="absolute top-20 left-10 text-4xl text-poker-gold animate-float">♠</div>
         <div className="absolute top-40 right-20 text-3xl text-poker-gold animate-glow" style={{animationDelay: '1s'}}>♥</div>
         <div className="absolute bottom-40 left-20 text-4xl text-poker-gold animate-float" style={{animationDelay: '2s'}}>♦</div>
         <div className="absolute bottom-20 right-10 text-3xl text-poker-gold animate-glow" style={{animationDelay: '3s'}}>♣</div>
+        
+        {/* Additional floating elements */}
+        <div className="absolute top-1/3 left-1/4 w-2 h-2 bg-poker-gold rounded-full animate-pulse" style={{animationDelay: '0.5s'}}></div>
+        <div className="absolute top-2/3 right-1/3 w-1 h-1 bg-poker-gold rounded-full animate-pulse" style={{animationDelay: '1.5s'}}></div>
+        <div className="absolute bottom-1/3 left-1/3 w-1.5 h-1.5 bg-poker-gold rounded-full animate-pulse" style={{animationDelay: '2.5s'}}></div>
       </div>
 
       <div className="container mx-auto px-4 relative z-10">
@@ -29,13 +34,17 @@ export function Hero() {
           {/* Left Column - Content */}
           <div className="text-white space-y-8 animate-fade-in">
             <div className="space-y-6">
-              <Badge className="bg-white/90 border border-poker-gold/50 text-poker-charcoal font-semibold px-6 py-2 rounded-full shadow-gold animate-glow backdrop-blur-sm">
-                Премиальный покерный клуб
+              <Badge className="bg-gradient-glass border border-poker-gold/50 text-poker-charcoal font-semibold px-6 py-2 rounded-full shadow-glass animate-glass-morph backdrop-blur-md relative overflow-hidden">
+                <span className="relative z-10">Премиальный покерный клуб</span>
+                <div className="absolute inset-0 bg-gradient-shine opacity-0 hover:opacity-100 transition-opacity duration-500"></div>
               </Badge>
               
-              <h1 className="text-6xl lg:text-7xl font-black leading-tight tracking-tight drop-shadow-2xl">
-                <span className="bg-gradient-to-r from-white via-white to-poker-pearl bg-clip-text text-transparent text-shadow-lg">IPS</span>
-                <span className="block text-poker-gold text-4xl lg:text-5xl mt-2 font-bold drop-shadow-xl">
+              <h1 className="text-6xl lg:text-7xl font-black leading-tight tracking-tight drop-shadow-2xl relative">
+                <span className="bg-gradient-to-r from-white via-white to-poker-pearl bg-clip-text text-transparent text-shadow-lg relative">
+                  IPS
+                  <div className="absolute inset-0 bg-gradient-shine opacity-0 hover:opacity-30 transition-opacity duration-1000 animate-shimmer"></div>
+                </span>
+                <span className="block text-poker-gold text-4xl lg:text-5xl mt-2 font-bold drop-shadow-xl animate-glow">
                   International
                 </span>
                 <span className="block text-3xl lg:text-4xl font-light text-white tracking-wide drop-shadow-lg">
@@ -50,48 +59,57 @@ export function Hero() {
 
                {/* Brand Key Benefits */}
                <div className="grid grid-cols-2 gap-4">
-                 <div className="flex items-center space-x-3 text-sm bg-white/90 px-4 py-3 rounded-lg backdrop-blur-sm border border-poker-gold/30 animate-slide-up text-poker-charcoal font-medium shadow-lg">
-                   <Shield className="w-4 h-4 text-poker-gold" />
-                   <span>Честная игра</span>
+                 <div className="flex items-center space-x-3 text-sm bg-gradient-glass px-4 py-3 rounded-lg backdrop-blur-md border border-poker-gold/30 animate-slide-up text-poker-charcoal font-medium shadow-glass relative overflow-hidden group">
+                   <Shield className="w-4 h-4 text-poker-gold animate-pulse" />
+                   <span className="relative z-10">Честная игра</span>
+                   <div className="absolute inset-0 bg-gradient-shine opacity-0 group-hover:opacity-20 transition-opacity duration-500"></div>
                  </div>
-                 <div className="flex items-center space-x-3 text-sm bg-white/90 px-4 py-3 rounded-lg backdrop-blur-sm border border-poker-gold/30 animate-slide-up text-poker-charcoal font-medium shadow-lg" style={{animationDelay: '0.2s'}}>
-                   <TrendingUp className="w-4 h-4 text-poker-gold" />
-                   <span>Рост навыков</span>
+                 <div className="flex items-center space-x-3 text-sm bg-gradient-glass px-4 py-3 rounded-lg backdrop-blur-md border border-poker-gold/30 animate-slide-up text-poker-charcoal font-medium shadow-glass relative overflow-hidden group" style={{animationDelay: '0.2s'}}>
+                   <TrendingUp className="w-4 h-4 text-poker-gold animate-pulse" style={{animationDelay: '0.5s'}} />
+                   <span className="relative z-10">Рост навыков</span>
+                   <div className="absolute inset-0 bg-gradient-shine opacity-0 group-hover:opacity-20 transition-opacity duration-500"></div>
                  </div>
-                 <div className="flex items-center space-x-3 text-sm bg-white/90 px-4 py-3 rounded-lg backdrop-blur-sm border border-poker-gold/30 animate-slide-up text-poker-charcoal font-medium shadow-lg" style={{animationDelay: '0.4s'}}>
-                   <Award className="w-4 h-4 text-poker-gold" />
-                   <span>Рейтинг ELO</span>
+                 <div className="flex items-center space-x-3 text-sm bg-gradient-glass px-4 py-3 rounded-lg backdrop-blur-md border border-poker-gold/30 animate-slide-up text-poker-charcoal font-medium shadow-glass relative overflow-hidden group" style={{animationDelay: '0.4s'}}>
+                   <Award className="w-4 h-4 text-poker-gold animate-pulse" style={{animationDelay: '1s'}} />
+                   <span className="relative z-10">Рейтинг ELO</span>
+                   <div className="absolute inset-0 bg-gradient-shine opacity-0 group-hover:opacity-20 transition-opacity duration-500"></div>
                  </div>
-                 <div className="flex items-center space-x-3 text-sm bg-white/90 px-4 py-3 rounded-lg backdrop-blur-sm border border-poker-gold/30 animate-slide-up text-poker-charcoal font-medium shadow-lg" style={{animationDelay: '0.6s'}}>
-                   <Users className="w-4 h-4 text-poker-gold" />
-                   <span>Сообщество</span>
+                 <div className="flex items-center space-x-3 text-sm bg-gradient-glass px-4 py-3 rounded-lg backdrop-blur-md border border-poker-gold/30 animate-slide-up text-poker-charcoal font-medium shadow-glass relative overflow-hidden group" style={{animationDelay: '0.6s'}}>
+                   <Users className="w-4 h-4 text-poker-gold animate-pulse" style={{animationDelay: '1.5s'}} />
+                   <span className="relative z-10">Сообщество</span>
+                   <div className="absolute inset-0 bg-gradient-shine opacity-0 group-hover:opacity-20 transition-opacity duration-500"></div>
                  </div>
                </div>
              </div>
 
              <div className="flex flex-col sm:flex-row gap-4 animate-scale-in" style={{animationDelay: '1s'}}>
-               <Button size="lg" className="bg-poker-gold text-poker-charcoal hover:bg-poker-gold/90 hover:shadow-gold hover:scale-105 transition-all duration-300 font-bold px-8 py-4 text-lg rounded-xl shadow-xl border border-poker-gold/50 animate-pulse-glow">
-                 <Play className="w-5 h-5 mr-2" />
-                 Начать играть
+               <Button size="lg" className="bg-poker-gold text-poker-charcoal hover:bg-poker-gold/90 hover:shadow-floating hover:scale-110 transition-all duration-500 font-bold px-8 py-4 text-lg rounded-xl shadow-xl border border-poker-gold/50 animate-pulse-glow relative overflow-hidden group">
+                 <Play className="w-5 h-5 mr-2 animate-bounce-subtle" />
+                 <span className="relative z-10">Начать играть</span>
+                 <div className="absolute inset-0 bg-gradient-shine opacity-0 group-hover:opacity-30 transition-opacity duration-500"></div>
                </Button>
-               <Button size="lg" variant="outline" className="border-2 border-white text-white bg-white/10 hover:bg-white hover:text-poker-charcoal transition-all duration-300 font-semibold px-8 py-4 text-lg rounded-xl backdrop-blur-sm hover:scale-105 shadow-xl">
-                 Рейтинг игроков
+               <Button size="lg" variant="outline" className="border-2 border-white text-white bg-gradient-glass hover:bg-white hover:text-poker-charcoal transition-all duration-500 font-semibold px-8 py-4 text-lg rounded-xl backdrop-blur-md hover:scale-110 shadow-glass relative overflow-hidden group">
+                 <span className="relative z-10">Рейтинг игроков</span>
+                 <div className="absolute inset-0 bg-gradient-shine opacity-0 group-hover:opacity-20 transition-opacity duration-500"></div>
                </Button>
              </div>
 
              {/* Brand Stats */}
              <div className="grid grid-cols-3 gap-6 pt-8">
-               <div className="text-center p-6 bg-white/95 backdrop-blur-xl rounded-xl border border-poker-gold/30 shadow-elegant hover:shadow-gold transition-all duration-300 animate-slide-up text-poker-charcoal" style={{animationDelay: '0.8s'}}>
-                 <div className="text-4xl font-black text-poker-gold mb-2">500+</div>
-                 <div className="text-sm text-poker-charcoal font-medium">Игроков</div>
+               <div className="text-center p-6 bg-gradient-glass backdrop-blur-xl rounded-xl border border-poker-gold/30 shadow-floating hover:shadow-glass transition-all duration-500 animate-slide-up text-poker-charcoal hover:scale-105 relative overflow-hidden group" style={{animationDelay: '0.8s'}}>
+                 <div className="text-4xl font-black text-poker-gold mb-2 animate-glow">500+</div>
+                 <div className="text-sm text-poker-charcoal font-medium relative z-10">Игроков</div>
+                 <div className="absolute inset-0 bg-gradient-shine opacity-0 group-hover:opacity-15 transition-opacity duration-500"></div>
                </div>
-               <div className="text-center p-6 bg-white/95 backdrop-blur-xl rounded-xl border border-poker-gold/30 shadow-elegant hover:shadow-gold transition-all duration-300 animate-slide-up text-poker-charcoal" style={{animationDelay: '1s'}}>
-                 <div className="text-4xl font-black text-poker-gold mb-2">150+</div>
-                 <div className="text-sm text-poker-charcoal font-medium">Турниров</div>
+               <div className="text-center p-6 bg-gradient-glass backdrop-blur-xl rounded-xl border border-poker-gold/30 shadow-floating hover:shadow-glass transition-all duration-500 animate-slide-up text-poker-charcoal hover:scale-105 relative overflow-hidden group" style={{animationDelay: '1s'}}>
+                 <div className="text-4xl font-black text-poker-gold mb-2 animate-glow" style={{animationDelay: '0.5s'}}>150+</div>
+                 <div className="text-sm text-poker-charcoal font-medium relative z-10">Турниров</div>
+                 <div className="absolute inset-0 bg-gradient-shine opacity-0 group-hover:opacity-15 transition-opacity duration-500"></div>
                </div>
-               <div className="text-center p-6 bg-white/95 backdrop-blur-xl rounded-xl border border-poker-gold/30 shadow-elegant hover:shadow-gold transition-all duration-300 animate-slide-up text-poker-charcoal" style={{animationDelay: '1.2s'}}>
-                 <div className="text-4xl font-black text-poker-gold mb-2">4.9</div>
-                 <div className="text-sm text-poker-charcoal font-medium">Рейтинг</div>
+               <div className="text-center p-6 bg-gradient-glass backdrop-blur-xl rounded-xl border border-poker-gold/30 shadow-floating hover:shadow-glass transition-all duration-500 animate-slide-up text-poker-charcoal hover:scale-105 relative overflow-hidden group" style={{animationDelay: '1.2s'}}>
+                 <div className="text-4xl font-black text-poker-gold mb-2 animate-glow" style={{animationDelay: '1s'}}>4.9</div>
+                 <div className="text-sm text-poker-charcoal font-medium relative z-10">Рейтинг</div>
+                 <div className="absolute inset-0 bg-gradient-shine opacity-0 group-hover:opacity-15 transition-opacity duration-500"></div>
                </div>
              </div>
            </div>
