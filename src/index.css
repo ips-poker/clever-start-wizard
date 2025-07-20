@@ -36,27 +36,27 @@
 
     --radius: 0.75rem;
 
-    /* Elegant Modern Design Tokens - Sophisticated Light Palette */
-    --poker-charcoal: 220 15% 25%;
-    --poker-slate: 220 12% 40%;
-    --poker-steel: 220 10% 55%;
-    --poker-silver: 220 8% 70%;
-    --poker-platinum: 220 6% 85%;
-    --poker-pearl: 220 4% 95%;
-    --poker-accent: 260 25% 45%;
-    --poker-accent-light: 260 20% 65%;
+    /* Elegant Modern Design Tokens - Sophisticated Darker Palette */
+    --poker-charcoal: 220 20% 15%;
+    --poker-slate: 220 15% 28%;
+    --poker-steel: 220 12% 38%;
+    --poker-silver: 220 10% 48%;
+    --poker-platinum: 220 8% 58%;
+    --poker-pearl: 220 6% 68%;
+    --poker-accent: 260 30% 32%;
+    --poker-accent-light: 260 25% 45%;
     
-    /* Modern Subtle Gradients - Lighter */
-    --gradient-primary: linear-gradient(135deg, hsl(220 15% 25%) 0%, hsl(220 12% 40%) 50%, hsl(220 10% 55%) 100%);
-    --gradient-hero: linear-gradient(135deg, hsl(220 15% 25% / 0.6) 0%, hsl(220 12% 35% / 0.5) 50%, hsl(220 10% 45% / 0.4) 100%);
-    --gradient-charcoal: linear-gradient(135deg, hsl(220 15% 25%) 0%, hsl(220 12% 35%) 100%);
-    --gradient-steel: linear-gradient(135deg, hsl(220 10% 55%) 0%, hsl(220 8% 60%) 100%);
-    --gradient-accent: linear-gradient(135deg, hsl(260 25% 45%) 0%, hsl(260 20% 50%) 100%);
-    --gradient-modern: linear-gradient(135deg, hsl(220 5% 100% / 0.15) 0%, hsl(220 5% 100% / 0.08) 100%);
-    --gradient-card: linear-gradient(135deg, hsl(220 12% 30% / 0.4) 0%, hsl(220 10% 40% / 0.3) 100%);
-    --gradient-overlay: linear-gradient(135deg, hsl(220 15% 25% / 0.5) 0%, hsl(220 12% 35% / 0.3) 100%);
-    --gradient-glass: linear-gradient(135deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.06) 100%);
-    --gradient-subtle: linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.15) 50%, transparent 70%);
+    /* Modern Subtle Gradients - Darker */
+    --gradient-primary: linear-gradient(135deg, hsl(220 20% 15%) 0%, hsl(220 15% 28%) 50%, hsl(220 12% 38%) 100%);
+    --gradient-hero: linear-gradient(135deg, hsl(220 20% 15% / 0.75) 0%, hsl(220 15% 25% / 0.65) 50%, hsl(220 12% 32% / 0.55) 100%);
+    --gradient-charcoal: linear-gradient(135deg, hsl(220 20% 15%) 0%, hsl(220 15% 25%) 100%);
+    --gradient-steel: linear-gradient(135deg, hsl(220 12% 38%) 0%, hsl(220 10% 42%) 100%);
+    --gradient-accent: linear-gradient(135deg, hsl(260 30% 32%) 0%, hsl(260 25% 35%) 100%);
+    --gradient-modern: linear-gradient(135deg, hsl(220 5% 100% / 0.10) 0%, hsl(220 5% 100% / 0.05) 100%);
+    --gradient-card: linear-gradient(135deg, hsl(220 15% 20% / 0.6) 0%, hsl(220 12% 28% / 0.5) 100%);
+    --gradient-overlay: linear-gradient(135deg, hsl(220 20% 15% / 0.7) 0%, hsl(220 15% 25% / 0.5) 100%);
+    --gradient-glass: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.04) 100%);
+    --gradient-subtle: linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.10) 50%, transparent 70%);
     
     /* Modern Refined Shadows */
     --shadow-subtle: 0 2px 12px hsl(220 25% 8% / 0.08);

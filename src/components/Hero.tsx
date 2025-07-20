@@ -13,7 +13,7 @@ export function Hero() {
         className="absolute inset-0 bg-cover bg-center bg-no-repeat"
         style={{ backgroundImage: `url(${luxuryPokerHero})` }}
       >
-        <div className="absolute inset-0 bg-poker-charcoal/40"></div>
+        <div className="absolute inset-0 bg-poker-charcoal/60"></div>
         <div className="absolute inset-0 bg-gradient-overlay"></div>
       </div>
       {/* Subtle Floating Elements */}
