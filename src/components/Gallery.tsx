@@ -8,6 +8,17 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 
+// Import gallery images
+import mainPokerRoom from "@/assets/gallery/main-poker-room.jpg";
+import vipZone from "@/assets/gallery/vip-zone.jpg";
+import tournamentTable from "@/assets/gallery/tournament-table.jpg";
+import loungeArea from "@/assets/gallery/lounge-area.jpg";
+import awardsCeremony from "@/assets/gallery/awards-ceremony.jpg";
+import teamTournament from "@/assets/gallery/team-tournament.jpg";
+import masterclass from "@/assets/gallery/masterclass.jpg";
+import pokerChips from "@/assets/gallery/poker-chips.jpg";
+import registration from "@/assets/gallery/registration.jpg";
+
 export function Gallery() {
   const [selectedImage, setSelectedImage] = useState<number | null>(null);
 
@@ -16,55 +27,64 @@ export function Gallery() {
       id: 1,
       title: "Главный игровой зал",
       description: "Основной зал с профессиональными покерными столами",
-      category: "Интерьер"
+      category: "Интерьер",
+      image: mainPokerRoom
     },
     {
       id: 2,
       title: "VIP зона",
       description: "Приватная зона для турниров высокого уровня",
-      category: "VIP"
+      category: "VIP",
+      image: vipZone
     },
     {
       id: 3,
       title: "Турнирный стол",
       description: "Профессиональный стол для официальных турниров",
-      category: "Оборудование"
+      category: "Оборудование",
+      image: tournamentTable
     },
     {
       id: 4,
       title: "Лаунж зона",
       description: "Зона отдыха для игроков между турами",
-      category: "Интерьер"
+      category: "Интерьер",
+      image: loungeArea
     },
     {
       id: 5,
       title: "Церемония награждения",
       description: "Награждение победителей турнира IPS Championship",
-      category: "События"
+      category: "События",
+      image: awardsCeremony
     },
     {
       id: 6,
       title: "Командный турнир",
       description: "Командные соревнования среди корпоративных клиентов",
-      category: "События"
+      category: "События",
+      image: teamTournament
     },
     {
       id: 7,
       title: "Мастер-класс",
       description: "Обучающий семинар с профессиональным игроком",
-      category: "Обучение"
+      category: "Обучение",
+      image: masterclass
     },
     {
       id: 8,
       title: "Покерные фишки",
       description: "Сертифицированные турнирные фишки клуба",
-      category: "Оборудование"
+      category: "Оборудование",
+      image: pokerChips
     },
     {
       id: 9,
       title: "Регистрация турнира",
       description: "Зона регистрации участников турнира",
-      category: "Сервис"
+      category: "Сервис",
+      image: registration
     }
   ];
 
@@ -121,13 +141,11 @@ export function Gallery() {
               onClick={() => setSelectedImage(index)}
             >
               <div className="relative overflow-hidden bg-poker-accent/5 h-64">
-                {/* Placeholder for actual image */}
-                <div className="w-full h-full bg-gradient-subtle flex items-center justify-center">
-                  <div className="text-center text-poker-silver">
-                    <Eye className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                    <div className="text-sm font-medium opacity-75">Изображение {image.id}</div>
-                  </div>
-                </div>
+                <img 
+                  src={image.image} 
+                  alt={image.title}
+                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                />
                 
                 {/* Overlay */}
                 <div className="absolute inset-0 bg-poker-charcoal/0 group-hover:bg-poker-charcoal/20 transition-all duration-300 flex items-center justify-center">
@@ -167,10 +185,14 @@ export function Gallery() {
                 <X className="w-6 h-6" />
               </button>
               
-              <div className="h-96 bg-gradient-subtle flex items-center justify-center">
-                <div className="text-center text-poker-silver">
-                  <Eye className="w-16 h-16 mx-auto mb-4 opacity-50" />
-                  <h3 className="text-xl font-bold mb-2">{filteredImages[selectedImage].title}</h3>
+              <div className="relative">
+                <img 
+                  src={filteredImages[selectedImage].image} 
+                  alt={filteredImages[selectedImage].title}
+                  className="w-full h-auto max-h-[70vh] object-contain"
+                />
+                <div className="p-6">
+                  <h3 className="text-xl font-bold mb-2 text-poker-charcoal">{filteredImages[selectedImage].title}</h3>
                   <p className="text-muted-foreground">{filteredImages[selectedImage].description}</p>
                 </div>
               </div>
