@@ -2,68 +2,67 @@
 @tailwind components;
 @tailwind utilities;
 
-/* IPS Poker Club Design System - Midnight Emerald Theme */
+/* IPS Poker Club Design System - Elegant Dark Theme */
 
 @layer base {
   :root {
-    --background: 210 20% 98%;
-    --foreground: 210 20% 8%;
+    --background: 220 15% 97%;
+    --foreground: 220 15% 8%;
 
-    --card: 210 20% 100%;
-    --card-foreground: 210 20% 8%;
+    --card: 220 15% 100%;
+    --card-foreground: 220 15% 8%;
 
-    --popover: 210 20% 100%;
-    --popover-foreground: 210 20% 8%;
+    --popover: 220 15% 100%;
+    --popover-foreground: 220 15% 8%;
 
-    --primary: 210 40% 12%;
-    --primary-foreground: 210 20% 98%;
+    --primary: 220 20% 15%;
+    --primary-foreground: 220 15% 98%;
 
-    --secondary: 210 15% 94%;
-    --secondary-foreground: 210 40% 12%;
+    --secondary: 220 10% 94%;
+    --secondary-foreground: 220 20% 15%;
 
-    --muted: 210 15% 96%;
-    --muted-foreground: 210 15% 45%;
+    --muted: 220 10% 96%;
+    --muted-foreground: 220 10% 45%;
 
-    --accent: 210 20% 90%;
-    --accent-foreground: 210 40% 12%;
+    --accent: 220 15% 90%;
+    --accent-foreground: 220 20% 15%;
 
     --destructive: 0 84% 60%;
-    --destructive-foreground: 210 20% 98%;
+    --destructive-foreground: 220 15% 98%;
 
-    --border: 210 15% 88%;
-    --input: 210 15% 88%;
-    --ring: 210 40% 12%;
+    --border: 220 10% 88%;
+    --input: 220 10% 88%;
+    --ring: 220 20% 15%;
 
     --radius: 0.75rem;
 
-    /* Premium Poker Design Tokens - Emerald Luxury Theme */
-    --poker-emerald: 158 64% 52%;
-    --poker-forest: 158 100% 35%;
-    --poker-jade: 158 84% 42%;
-    --poker-mint: 158 40% 88%;
-    --poker-midnight: 210 50% 8%;
-    --poker-platinum: 210 8% 85%;
-    --poker-gold: 48 100% 67%;
-    --poker-ivory: 48 20% 97%;
+    /* Elegant Poker Design Tokens - Neutral Luxury Theme */
+    --poker-charcoal: 220 20% 15%;
+    --poker-slate: 220 15% 25%;
+    --poker-steel: 220 10% 45%;
+    --poker-silver: 220 8% 70%;
+    --poker-platinum: 220 5% 85%;
+    --poker-pearl: 220 3% 95%;
+    --poker-gold: 45 90% 55%;
+    --poker-bronze: 30 65% 45%;
     
-    /* Luxury Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(158 64% 52%) 0%, hsl(158 100% 35%) 50%, hsl(210 50% 8%) 100%);
-    --gradient-hero: linear-gradient(135deg, hsl(210 50% 8% / 0.95) 0%, hsl(158 100% 35% / 0.9) 50%, hsl(158 64% 52% / 0.85) 100%);
-    --gradient-emerald: linear-gradient(135deg, hsl(158 64% 52%) 0%, hsl(158 84% 42%) 100%);
-    --gradient-forest: linear-gradient(135deg, hsl(158 100% 35%) 0%, hsl(210 50% 8%) 100%);
-    --gradient-gold: linear-gradient(135deg, hsl(48 100% 67%) 0%, hsl(48 100% 60%) 100%);
-    --gradient-luxury: linear-gradient(135deg, hsl(158 64% 52% / 0.08) 0%, hsl(158 64% 52% / 0.03) 100%);
-    --gradient-card: linear-gradient(135deg, hsl(210 20% 100% / 0.8) 0%, hsl(210 20% 100% / 0.4) 100%);
-    --gradient-midnight: linear-gradient(135deg, hsl(210 50% 8%) 0%, hsl(210 50% 12%) 100%);
+    /* Subtle Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(220 20% 15%) 0%, hsl(220 15% 25%) 50%, hsl(220 10% 45%) 100%);
+    --gradient-hero: linear-gradient(135deg, hsl(220 20% 8% / 0.95) 0%, hsl(220 15% 15% / 0.9) 50%, hsl(220 10% 25% / 0.85) 100%);
+    --gradient-charcoal: linear-gradient(135deg, hsl(220 20% 15%) 0%, hsl(220 15% 20%) 100%);
+    --gradient-steel: linear-gradient(135deg, hsl(220 10% 45%) 0%, hsl(220 8% 50%) 100%);
+    --gradient-gold: linear-gradient(135deg, hsl(45 90% 55%) 0%, hsl(45 85% 50%) 100%);
+    --gradient-luxury: linear-gradient(135deg, hsl(220 5% 95% / 0.08) 0%, hsl(220 5% 95% / 0.03) 100%);
+    --gradient-card: linear-gradient(135deg, hsl(220 5% 100% / 0.9) 0%, hsl(220 5% 100% / 0.7) 100%);
+    --gradient-overlay: linear-gradient(135deg, hsl(220 20% 8% / 0.8) 0%, hsl(220 15% 15% / 0.6) 100%);
     
-    /* Premium Shadows */
-    --shadow-subtle: 0 2px 12px hsl(158 64% 52% / 0.15);
-    --shadow-card: 0 8px 24px hsl(158 64% 52% / 0.2);
-    --shadow-elegant: 0 16px 48px hsl(158 64% 52% / 0.25);
-    --shadow-emerald: 0 8px 32px hsl(158 64% 52% / 0.3);
-    --shadow-gold: 0 4px 20px hsl(48 100% 67% / 0.3);
-    --shadow-glow: 0 0 40px hsl(158 64% 52% / 0.2);
-    --shadow-midnight: 0 8px 24px hsl(210 50% 8% / 0.4);
+    /* Elegant Shadows */
+    --shadow-subtle: 0 2px 12px hsl(220 20% 15% / 0.1);
+    --shadow-card: 0 8px 24px hsl(220 20% 15% / 0.15);
+    --shadow-elegant: 0 16px 48px hsl(220 20% 15% / 0.2);
+    --shadow-charcoal: 0 8px 32px hsl(220 20% 15% / 0.25);
+    --shadow-gold: 0 4px 20px hsl(45 90% 55% / 0.3);
+    --shadow-glow: 0 0 40px hsl(220 20% 15% / 0.15);
     
     /* Typography Weights */
     --font-weight-light: 300;

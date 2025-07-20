@@ -23,7 +23,7 @@ export function Header() {
           <Link to="/" className="flex items-center space-x-3 group">
             <div className="relative">
               {/* Custom logo with brand colors */}
-              <div className="w-12 h-12 bg-white rounded-lg flex items-center justify-center shadow-elegant group-hover:shadow-emerald transition-all duration-500 border border-poker-platinum/20 group-hover:border-poker-emerald/40">
+              <div className="w-12 h-12 bg-white rounded-lg flex items-center justify-center shadow-elegant group-hover:shadow-gold transition-all duration-500 border border-poker-platinum/20 group-hover:border-poker-gold/40">
                 <img 
                   src="/lovable-uploads/c77304bf-5309-4bdc-afcc-a81c8d3ff6c2.png" 
                   alt="IPS Logo" 
@@ -32,7 +32,7 @@ export function Header() {
               </div>
             </div>
             <div className="flex flex-col">
-              <span className="text-2xl font-black text-poker-emerald tracking-tight">
+              <span className="text-2xl font-black text-poker-charcoal tracking-tight">
                 IPS
               </span>
               <span className="text-xs text-muted-foreground -mt-1 font-medium tracking-wide">
@@ -47,20 +47,20 @@ export function Header() {
               <Link
                 key={item.name}
                 to={item.href}
-                className="text-sm font-medium text-foreground hover:text-poker-emerald transition-colors duration-300 relative group py-2"
+                className="text-sm font-medium text-foreground hover:text-poker-steel transition-colors duration-300 relative group py-2"
               >
                 {item.name}
-                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-gradient-emerald transition-all duration-300 group-hover:w-full rounded-full"></span>
+                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-gradient-steel transition-all duration-300 group-hover:w-full rounded-full"></span>
               </Link>
             ))}
           </nav>
 
           {/* Brand Auth Buttons */}
           <div className="hidden md:flex items-center space-x-3">
-            <Button variant="ghost" size="sm" className="hover:bg-poker-emerald/10 hover:text-poker-emerald transition-all duration-300 font-medium">
+            <Button variant="ghost" size="sm" className="hover:bg-poker-steel/10 hover:text-poker-steel transition-all duration-300 font-medium">
               Войти
             </Button>
-            <Button size="sm" className="bg-gradient-emerald text-white hover:shadow-emerald transition-all duration-300 font-semibold">
+            <Button size="sm" className="bg-gradient-charcoal text-white hover:shadow-charcoal transition-all duration-300 font-semibold">
               Регистрация
             </Button>
           </div>
