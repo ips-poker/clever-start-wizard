@@ -7,37 +7,37 @@
 @layer base {
   :root {
     --background: 220 15% 97%;
-    --foreground: 220 15% 8%;
+    --foreground: 220 15% 25%;
 
     --card: 220 15% 100%;
-    --card-foreground: 220 15% 8%;
+    --card-foreground: 220 15% 25%;
 
     --popover: 220 15% 100%;
-    --popover-foreground: 220 15% 8%;
+    --popover-foreground: 220 15% 25%;
 
-    --primary: 220 20% 15%;
+    --primary: 220 20% 32%;
     --primary-foreground: 220 15% 98%;
 
     --secondary: 220 10% 94%;
-    --secondary-foreground: 220 20% 15%;
+    --secondary-foreground: 220 20% 32%;
 
     --muted: 220 10% 96%;
     --muted-foreground: 220 10% 45%;
 
     --accent: 220 15% 90%;
-    --accent-foreground: 220 20% 15%;
+    --accent-foreground: 220 20% 32%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 220 15% 98%;
 
     --border: 220 10% 88%;
     --input: 220 10% 88%;
-    --ring: 220 20% 15%;
+    --ring: 220 20% 32%;
 
     --radius: 0.75rem;
 
     /* Elegant Modern Design Tokens - Sophisticated Darker Palette */
-    --poker-charcoal: 220 20% 15%;
+    --poker-charcoal: 220 20% 32%;
     --poker-slate: 220 15% 28%;
     --poker-steel: 220 12% 38%;
     --poker-silver: 220 10% 48%;
