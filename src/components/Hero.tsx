@@ -29,40 +29,40 @@ export function Hero() {
           {/* Left Column - Content */}
           <div className="text-white space-y-8 animate-fade-in">
             <div className="space-y-6">
-              <Badge className="bg-gradient-luxury border border-poker-gold/30 text-poker-charcoal font-semibold px-6 py-2 rounded-full shadow-gold animate-glow">
+              <Badge className="bg-white/90 border border-poker-gold/50 text-poker-charcoal font-semibold px-6 py-2 rounded-full shadow-gold animate-glow backdrop-blur-sm">
                 Премиальный покерный клуб
               </Badge>
               
-              <h1 className="text-6xl lg:text-7xl font-black leading-tight tracking-tight">
-                <span className="bg-gradient-to-r from-white via-poker-pearl to-white bg-clip-text text-transparent">IPS</span>
-                <span className="block text-poker-gold text-4xl lg:text-5xl mt-2 font-bold">
+              <h1 className="text-6xl lg:text-7xl font-black leading-tight tracking-tight drop-shadow-2xl">
+                <span className="bg-gradient-to-r from-white via-white to-poker-pearl bg-clip-text text-transparent text-shadow-lg">IPS</span>
+                <span className="block text-poker-gold text-4xl lg:text-5xl mt-2 font-bold drop-shadow-xl">
                   International
                 </span>
-                <span className="block text-3xl lg:text-4xl font-light text-poker-silver tracking-wide">
+                <span className="block text-3xl lg:text-4xl font-light text-white tracking-wide drop-shadow-lg">
                   Poker Style
                 </span>
               </h1>
                
-               <p className="text-xl text-poker-pearl max-w-lg leading-relaxed">
+               <p className="text-xl text-white max-w-lg leading-relaxed drop-shadow-lg font-medium">
                  Премиальный покерный клуб с рейтинговой системой ELO. 
                  Развивайте навыки в роскошной атмосфере среди элитных игроков.
                </p>
 
                {/* Brand Key Benefits */}
                <div className="grid grid-cols-2 gap-4">
-                 <div className="flex items-center space-x-3 text-sm bg-gradient-luxury/50 px-4 py-3 rounded-lg backdrop-blur-sm border border-poker-gold/20 animate-slide-up">
+                 <div className="flex items-center space-x-3 text-sm bg-white/90 px-4 py-3 rounded-lg backdrop-blur-sm border border-poker-gold/30 animate-slide-up text-poker-charcoal font-medium shadow-lg">
                    <Shield className="w-4 h-4 text-poker-gold" />
                    <span>Честная игра</span>
                  </div>
-                 <div className="flex items-center space-x-3 text-sm bg-gradient-luxury/50 px-4 py-3 rounded-lg backdrop-blur-sm border border-poker-gold/20 animate-slide-up" style={{animationDelay: '0.2s'}}>
+                 <div className="flex items-center space-x-3 text-sm bg-white/90 px-4 py-3 rounded-lg backdrop-blur-sm border border-poker-gold/30 animate-slide-up text-poker-charcoal font-medium shadow-lg" style={{animationDelay: '0.2s'}}>
                    <TrendingUp className="w-4 h-4 text-poker-gold" />
                    <span>Рост навыков</span>
                  </div>
-                 <div className="flex items-center space-x-3 text-sm bg-gradient-luxury/50 px-4 py-3 rounded-lg backdrop-blur-sm border border-poker-gold/20 animate-slide-up" style={{animationDelay: '0.4s'}}>
+                 <div className="flex items-center space-x-3 text-sm bg-white/90 px-4 py-3 rounded-lg backdrop-blur-sm border border-poker-gold/30 animate-slide-up text-poker-charcoal font-medium shadow-lg" style={{animationDelay: '0.4s'}}>
                    <Award className="w-4 h-4 text-poker-gold" />
                    <span>Рейтинг ELO</span>
                  </div>
-                 <div className="flex items-center space-x-3 text-sm bg-gradient-luxury/50 px-4 py-3 rounded-lg backdrop-blur-sm border border-poker-gold/20 animate-slide-up" style={{animationDelay: '0.6s'}}>
+                 <div className="flex items-center space-x-3 text-sm bg-white/90 px-4 py-3 rounded-lg backdrop-blur-sm border border-poker-gold/30 animate-slide-up text-poker-charcoal font-medium shadow-lg" style={{animationDelay: '0.6s'}}>
                    <Users className="w-4 h-4 text-poker-gold" />
                    <span>Сообщество</span>
                  </div>
@@ -70,28 +70,28 @@ export function Hero() {
              </div>
 
              <div className="flex flex-col sm:flex-row gap-4 animate-scale-in" style={{animationDelay: '1s'}}>
-               <Button size="lg" className="bg-gradient-gold text-poker-charcoal hover:shadow-gold hover:scale-105 transition-all duration-300 font-bold px-8 py-4 text-lg rounded-xl shadow-lg border-2 border-poker-gold/30 animate-pulse-glow">
+               <Button size="lg" className="bg-poker-gold text-poker-charcoal hover:bg-poker-gold/90 hover:shadow-gold hover:scale-105 transition-all duration-300 font-bold px-8 py-4 text-lg rounded-xl shadow-xl border border-poker-gold/50 animate-pulse-glow">
                  <Play className="w-5 h-5 mr-2" />
                  Начать играть
                </Button>
-               <Button size="lg" variant="outline" className="border-2 border-white/60 text-white bg-white/10 hover:bg-white hover:text-poker-charcoal transition-all duration-300 font-semibold px-8 py-4 text-lg rounded-xl backdrop-blur-sm hover:scale-105 shadow-lg">
+               <Button size="lg" variant="outline" className="border-2 border-white text-white bg-white/10 hover:bg-white hover:text-poker-charcoal transition-all duration-300 font-semibold px-8 py-4 text-lg rounded-xl backdrop-blur-sm hover:scale-105 shadow-xl">
                  Рейтинг игроков
                </Button>
              </div>
 
              {/* Brand Stats */}
              <div className="grid grid-cols-3 gap-6 pt-8">
-               <div className="text-center p-6 bg-gradient-card backdrop-blur-xl rounded-xl border border-poker-silver/20 shadow-elegant hover:shadow-gold transition-all duration-300 animate-slide-up" style={{animationDelay: '0.8s'}}>
+               <div className="text-center p-6 bg-white/95 backdrop-blur-xl rounded-xl border border-poker-gold/30 shadow-elegant hover:shadow-gold transition-all duration-300 animate-slide-up text-poker-charcoal" style={{animationDelay: '0.8s'}}>
                  <div className="text-4xl font-black text-poker-gold mb-2">500+</div>
-                 <div className="text-sm text-poker-silver font-medium">Игроков</div>
+                 <div className="text-sm text-poker-charcoal font-medium">Игроков</div>
                </div>
-               <div className="text-center p-6 bg-gradient-card backdrop-blur-xl rounded-xl border border-poker-silver/20 shadow-elegant hover:shadow-gold transition-all duration-300 animate-slide-up" style={{animationDelay: '1s'}}>
+               <div className="text-center p-6 bg-white/95 backdrop-blur-xl rounded-xl border border-poker-gold/30 shadow-elegant hover:shadow-gold transition-all duration-300 animate-slide-up text-poker-charcoal" style={{animationDelay: '1s'}}>
                  <div className="text-4xl font-black text-poker-gold mb-2">150+</div>
-                 <div className="text-sm text-poker-silver font-medium">Турниров</div>
+                 <div className="text-sm text-poker-charcoal font-medium">Турниров</div>
                </div>
-               <div className="text-center p-6 bg-gradient-card backdrop-blur-xl rounded-xl border border-poker-silver/20 shadow-elegant hover:shadow-gold transition-all duration-300 animate-slide-up" style={{animationDelay: '1.2s'}}>
+               <div className="text-center p-6 bg-white/95 backdrop-blur-xl rounded-xl border border-poker-gold/30 shadow-elegant hover:shadow-gold transition-all duration-300 animate-slide-up text-poker-charcoal" style={{animationDelay: '1.2s'}}>
                  <div className="text-4xl font-black text-poker-gold mb-2">4.9</div>
-                 <div className="text-sm text-poker-silver font-medium">Рейтинг</div>
+                 <div className="text-sm text-poker-charcoal font-medium">Рейтинг</div>
                </div>
              </div>
            </div>
@@ -109,9 +109,9 @@ export function Hero() {
                  <div className="w-20 h-20 bg-gradient-gold rounded-2xl flex items-center justify-center mx-auto shadow-gold text-poker-charcoal animate-glow group-hover:scale-110 transition-transform duration-300">
                    <Trophy className="w-10 h-10" />
                  </div>
-                 <h3 className="text-3xl font-bold text-poker-silver group-hover:text-white transition-colors duration-300">Рейтинговая система ELO</h3>
-                 <p className="text-poker-silver/80 text-lg group-hover:text-poker-silver transition-colors duration-300">Профессиональная система оценки навыков покерных игроков</p>
-                 <Badge className="bg-gradient-luxury border border-poker-gold/30 text-poker-charcoal px-4 py-2 font-semibold animate-pulse-glow">
+                 <h3 className="text-3xl font-bold text-white group-hover:text-poker-gold transition-colors duration-300 drop-shadow-lg">Рейтинговая система ELO</h3>
+                 <p className="text-white/90 text-lg group-hover:text-white transition-colors duration-300 drop-shadow-md">Профессиональная система оценки навыков покерных игроков</p>
+                 <Badge className="bg-white/95 border border-poker-gold/50 text-poker-charcoal px-4 py-2 font-semibold animate-pulse-glow shadow-lg">
                    Главная особенность
                  </Badge>
                </div>
