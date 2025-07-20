@@ -14,7 +14,7 @@ export function Hero() {
         style={{ backgroundImage: `url(${luxuryPokerHero})`, filter: 'blur(3px)' }}
       >
         <div className="absolute inset-0 bg-gradient-overlay"></div>
-        <div className="absolute inset-0 bg-slate-900/60"></div>
+        <div className="absolute inset-0 bg-slate-900/30"></div>
       </div>
       {/* Floating Poker Suits with Animation */}
       <div className="absolute inset-0 opacity-10">
