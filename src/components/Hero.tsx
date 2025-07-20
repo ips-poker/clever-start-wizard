@@ -69,12 +69,12 @@ export function Hero() {
                </div>
              </div>
 
-             <div className="flex flex-col sm:flex-row gap-4">
-               <Button size="lg" className="bg-gradient-gold text-poker-charcoal hover:shadow-gold transition-all duration-300 font-bold px-8 py-4 text-lg rounded-xl">
+             <div className="flex flex-col sm:flex-row gap-4 animate-scale-in" style={{animationDelay: '1s'}}>
+               <Button size="lg" className="bg-gradient-gold text-poker-charcoal hover:shadow-gold hover:scale-105 transition-all duration-300 font-bold px-8 py-4 text-lg rounded-xl shadow-lg border-2 border-poker-gold/30 animate-pulse-glow">
                  <Play className="w-5 h-5 mr-2" />
                  Начать играть
                </Button>
-               <Button size="lg" variant="outline" className="border-2 border-poker-silver/30 text-white hover:bg-poker-silver hover:text-poker-charcoal transition-all duration-300 font-semibold px-8 py-4 text-lg rounded-xl backdrop-blur-sm">
+               <Button size="lg" variant="outline" className="border-2 border-white/60 text-white bg-white/10 hover:bg-white hover:text-poker-charcoal transition-all duration-300 font-semibold px-8 py-4 text-lg rounded-xl backdrop-blur-sm hover:scale-105 shadow-lg">
                  Рейтинг игроков
                </Button>
              </div>
@@ -97,62 +97,62 @@ export function Hero() {
            </div>
 
            {/* Right Column - Cards with Poker Background */}
-           <div className="space-y-6 animate-slide-up" style={{animationDelay: '0.4s'}}>
+           <div className="space-y-6 animate-slide-right" style={{animationDelay: '0.6s'}}>
              {/* Premium Main Feature Card */}
-             <Card className="p-8 bg-gradient-card backdrop-blur-xl border border-poker-silver/20 hover:border-poker-gold/40 transition-all duration-500 shadow-elegant hover:shadow-gold relative overflow-hidden">
+             <Card className="p-8 bg-gradient-card backdrop-blur-xl border border-poker-silver/20 hover:border-poker-gold/40 transition-all duration-500 shadow-elegant hover:shadow-gold relative overflow-hidden group animate-bounce-subtle">
                {/* Background Pattern */}
                <div 
-                 className="absolute inset-0 opacity-5 bg-cover bg-center"
+                 className="absolute inset-0 opacity-5 bg-cover bg-center group-hover:opacity-10 transition-opacity duration-500"
                  style={{ backgroundImage: `url(${pokerChipsBg})` }}
                ></div>
                <div className="relative z-10 text-center text-white space-y-6">
-                 <div className="w-20 h-20 bg-gradient-gold rounded-2xl flex items-center justify-center mx-auto shadow-gold text-poker-charcoal">
+                 <div className="w-20 h-20 bg-gradient-gold rounded-2xl flex items-center justify-center mx-auto shadow-gold text-poker-charcoal animate-glow group-hover:scale-110 transition-transform duration-300">
                    <Trophy className="w-10 h-10" />
                  </div>
-                 <h3 className="text-3xl font-bold text-poker-silver">Рейтинговая система ELO</h3>
-                 <p className="text-poker-silver/80 text-lg">Профессиональная система оценки навыков покерных игроков</p>
-                 <Badge className="bg-gradient-luxury border border-poker-gold/30 text-poker-charcoal px-4 py-2 font-semibold">
+                 <h3 className="text-3xl font-bold text-poker-silver group-hover:text-white transition-colors duration-300">Рейтинговая система ELO</h3>
+                 <p className="text-poker-silver/80 text-lg group-hover:text-poker-silver transition-colors duration-300">Профессиональная система оценки навыков покерных игроков</p>
+                 <Badge className="bg-gradient-luxury border border-poker-gold/30 text-poker-charcoal px-4 py-2 font-semibold animate-pulse-glow">
                    Главная особенность
                  </Badge>
                </div>
              </Card>
 
              <div className="grid gap-6">
-               <Card className="p-6 bg-gradient-card backdrop-blur-xl border border-poker-silver/20 hover:border-poker-gold/30 transition-all duration-300 group shadow-elegant relative overflow-hidden">
-                 <div className="absolute inset-0 opacity-5 bg-cover bg-center" style={{ backgroundImage: `url(${pokerChipsBg})` }}></div>
+               <Card className="p-6 bg-gradient-card backdrop-blur-xl border border-poker-silver/20 hover:border-poker-gold/30 transition-all duration-300 group shadow-elegant relative overflow-hidden hover:scale-105 animate-fade-in" style={{animationDelay: '1.2s'}}>
+                 <div className="absolute inset-0 opacity-5 bg-cover bg-center group-hover:opacity-10 transition-opacity duration-500" style={{ backgroundImage: `url(${pokerChipsBg})` }}></div>
                  <div className="relative z-10 flex items-center space-x-4">
-                   <div className="p-4 bg-gradient-charcoal rounded-xl group-hover:bg-gradient-steel transition-colors shadow-subtle">
-                     <Users className="w-6 h-6 text-poker-gold" />
+                   <div className="p-4 bg-gradient-charcoal rounded-xl group-hover:bg-gradient-steel transition-colors shadow-subtle group-hover:animate-bounce-subtle">
+                     <Users className="w-6 h-6 text-poker-gold group-hover:scale-110 transition-transform duration-300" />
                    </div>
                    <div className="text-white">
-                     <h3 className="font-bold text-lg">Элитное сообщество</h3>
-                     <p className="text-sm text-poker-silver/80">Игра с опытными покеристами</p>
+                     <h3 className="font-bold text-lg group-hover:text-poker-gold transition-colors duration-300">Элитное сообщество</h3>
+                     <p className="text-sm text-poker-silver/80 group-hover:text-poker-silver transition-colors duration-300">Игра с опытными покеристами</p>
                    </div>
                  </div>
                </Card>
 
-               <Card className="p-6 bg-gradient-card backdrop-blur-xl border border-poker-silver/20 hover:border-poker-gold/30 transition-all duration-300 group shadow-elegant relative overflow-hidden">
-                 <div className="absolute inset-0 opacity-5 bg-cover bg-center" style={{ backgroundImage: `url(${pokerChipsBg})` }}></div>
+               <Card className="p-6 bg-gradient-card backdrop-blur-xl border border-poker-silver/20 hover:border-poker-gold/30 transition-all duration-300 group shadow-elegant relative overflow-hidden hover:scale-105 animate-fade-in" style={{animationDelay: '1.4s'}}>
+                 <div className="absolute inset-0 opacity-5 bg-cover bg-center group-hover:opacity-10 transition-opacity duration-500" style={{ backgroundImage: `url(${pokerChipsBg})` }}></div>
                  <div className="relative z-10 flex items-center space-x-4">
-                   <div className="p-4 bg-gradient-charcoal rounded-xl group-hover:bg-gradient-steel transition-colors shadow-subtle">
-                     <Calendar className="w-6 h-6 text-poker-gold" />
+                   <div className="p-4 bg-gradient-charcoal rounded-xl group-hover:bg-gradient-steel transition-colors shadow-subtle group-hover:animate-bounce-subtle">
+                     <Calendar className="w-6 h-6 text-poker-gold group-hover:scale-110 transition-transform duration-300" />
                    </div>
                    <div className="text-white">
-                     <h3 className="font-bold text-lg">Регулярные турниры</h3>
-                     <p className="text-sm text-poker-silver/80">Еженедельные соревнования</p>
+                     <h3 className="font-bold text-lg group-hover:text-poker-gold transition-colors duration-300">Регулярные турниры</h3>
+                     <p className="text-sm text-poker-silver/80 group-hover:text-poker-silver transition-colors duration-300">Еженедельные соревнования</p>
                    </div>
                  </div>
                </Card>
 
-               <Card className="p-6 bg-gradient-card backdrop-blur-xl border border-poker-silver/20 hover:border-poker-gold/30 transition-all duration-300 group shadow-elegant relative overflow-hidden">
-                 <div className="absolute inset-0 opacity-5 bg-cover bg-center" style={{ backgroundImage: `url(${pokerChipsBg})` }}></div>
+               <Card className="p-6 bg-gradient-card backdrop-blur-xl border border-poker-silver/20 hover:border-poker-gold/30 transition-all duration-300 group shadow-elegant relative overflow-hidden hover:scale-105 animate-fade-in" style={{animationDelay: '1.6s'}}>
+                 <div className="absolute inset-0 opacity-5 bg-cover bg-center group-hover:opacity-10 transition-opacity duration-500" style={{ backgroundImage: `url(${pokerChipsBg})` }}></div>
                  <div className="relative z-10 flex items-center space-x-4">
-                   <div className="p-4 bg-gradient-charcoal rounded-xl group-hover:bg-gradient-steel transition-colors shadow-subtle">
-                     <Star className="w-6 h-6 text-poker-gold" />
+                   <div className="p-4 bg-gradient-charcoal rounded-xl group-hover:bg-gradient-steel transition-colors shadow-subtle group-hover:animate-bounce-subtle">
+                     <Star className="w-6 h-6 text-poker-gold group-hover:scale-110 transition-transform duration-300" />
                    </div>
                    <div className="text-white">
-                     <h3 className="font-bold text-lg">Награды и достижения</h3>
-                     <p className="text-sm text-poker-silver/80">Система признания успехов</p>
+                     <h3 className="font-bold text-lg group-hover:text-poker-gold transition-colors duration-300">Награды и достижения</h3>
+                     <p className="text-sm text-poker-silver/80 group-hover:text-poker-silver transition-colors duration-300">Система признания успехов</p>
                    </div>
                  </div>
                </Card>
