@@ -45,28 +45,39 @@
     --poker-pearl: 220 3% 95%;
     --poker-gold: 14 100% 60%;
     --poker-bronze: 14 60% 75%;
+    --poker-accent: 220 100% 85%;
+    --poker-emerald: 160 80% 50%;
     
-    /* Subtle Gradients */
+    /* Sophisticated Gradients */
     --gradient-primary: linear-gradient(135deg, hsl(220 20% 15%) 0%, hsl(220 15% 25%) 50%, hsl(220 10% 45%) 100%);
-    --gradient-hero: linear-gradient(135deg, hsl(220 20% 8% / 0.95) 0%, hsl(220 15% 15% / 0.9) 50%, hsl(220 10% 25% / 0.85) 100%);
+    --gradient-hero: linear-gradient(135deg, hsl(220 20% 8% / 0.9) 0%, hsl(220 15% 15% / 0.8) 50%, hsl(220 10% 25% / 0.7) 100%);
     --gradient-charcoal: linear-gradient(135deg, hsl(220 20% 15%) 0%, hsl(220 15% 20%) 100%);
     --gradient-steel: linear-gradient(135deg, hsl(220 10% 45%) 0%, hsl(220 8% 50%) 100%);
-    --gradient-gold: linear-gradient(135deg, hsl(14 75% 85%) 0%, hsl(14 70% 80%) 100%);
-    --gradient-luxury: linear-gradient(135deg, hsl(14 30% 92% / 0.15) 0%, hsl(14 20% 95% / 0.08) 100%);
-    --gradient-card: linear-gradient(135deg, hsl(220 5% 100% / 0.95) 0%, hsl(220 5% 100% / 0.85) 100%);
-    --gradient-overlay: linear-gradient(135deg, hsl(220 20% 8% / 0.85) 0%, hsl(220 15% 15% / 0.7) 100%);
-    --gradient-glass: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
-    --gradient-shine: linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.2) 50%, transparent 70%);
+    --gradient-gold: linear-gradient(135deg, hsl(14 90% 70%) 0%, hsl(14 80% 65%) 100%);
+    --gradient-emerald: linear-gradient(135deg, hsl(160 70% 55%) 0%, hsl(160 60% 50%) 100%);
+    --gradient-luxury: linear-gradient(135deg, hsl(14 40% 96% / 0.15) 0%, hsl(14 30% 98% / 0.08) 100%);
+    --gradient-card: linear-gradient(135deg, hsl(220 5% 100% / 0.12) 0%, hsl(220 5% 100% / 0.08) 100%);
+    --gradient-overlay: linear-gradient(135deg, hsl(220 20% 8% / 0.7) 0%, hsl(220 15% 15% / 0.5) 100%);
+    --gradient-glass: linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.08) 100%);
+    --gradient-shine: linear-gradient(45deg, transparent 20%, rgba(255, 255, 255, 0.3) 50%, transparent 80%);
+    --gradient-glow: radial-gradient(circle at center, hsl(14 100% 60% / 0.3) 0%, transparent 70%);
+    --gradient-mesh: 
+      radial-gradient(at 40% 20%, hsl(14 100% 60% / 0.2) 0%, transparent 50%),
+      radial-gradient(at 80% 0%, hsl(220 100% 85% / 0.15) 0%, transparent 50%),
+      radial-gradient(at 0% 50%, hsl(160 80% 50% / 0.1) 0%, transparent 50%),
+      radial-gradient(at 80% 50%, hsl(14 60% 75% / 0.1) 0%, transparent 50%);
     
-    /* Elegant Shadows */
-    --shadow-subtle: 0 2px 12px hsl(220 20% 15% / 0.1);
-    --shadow-card: 0 8px 24px hsl(220 20% 15% / 0.15);
-    --shadow-elegant: 0 16px 48px hsl(220 20% 15% / 0.2);
-    --shadow-charcoal: 0 8px 32px hsl(220 20% 15% / 0.25);
-    --shadow-gold: 0 4px 20px hsl(14 75% 85% / 0.35);
-    --shadow-glow: 0 0 40px hsl(220 20% 15% / 0.15);
-    --shadow-floating: 0 25px 50px -12px hsl(220 20% 15% / 0.25);
-    --shadow-glass: 0 8px 32px rgba(31, 38, 135, 0.37);
+    /* Premium Shadows */
+    --shadow-subtle: 0 2px 12px hsl(220 20% 15% / 0.08);
+    --shadow-card: 0 8px 32px hsl(220 20% 15% / 0.12);
+    --shadow-elegant: 0 20px 60px hsl(220 20% 15% / 0.15);
+    --shadow-charcoal: 0 8px 32px hsl(220 20% 15% / 0.2);
+    --shadow-gold: 0 8px 32px hsl(14 80% 60% / 0.25);
+    --shadow-emerald: 0 8px 32px hsl(160 70% 50% / 0.2);
+    --shadow-glow: 0 0 60px hsl(14 100% 60% / 0.2);
+    --shadow-floating: 0 32px 80px -16px hsl(220 20% 15% / 0.25);
+    --shadow-glass: 0 16px 40px rgba(31, 38, 135, 0.2);
+    --shadow-neon: 0 0 40px hsl(14 100% 60% / 0.4), 0 0 80px hsl(14 100% 60% / 0.2);
     
     /* Typography Weights */
     --font-weight-light: 300;

@@ -7,14 +7,14 @@ import pokerChipsBg from "@/assets/poker-chips-bg.jpg";
 
 export function Hero() {
   return (
-    <section className="relative min-h-screen flex items-center overflow-hidden">
-      {/* Background Image with Overlay */}
+    <section className="relative min-h-screen flex items-center overflow-hidden bg-gradient-mesh">
+      {/* Advanced Background with Mesh Gradient */}
       <div 
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat blur-sm"
-        style={{ backgroundImage: `url(${luxuryPokerHero})`, filter: 'blur(8px)' }}
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+        style={{ backgroundImage: `url(${luxuryPokerHero})`, filter: 'blur(6px) brightness(0.7)' }}
       >
-        <div className="absolute inset-0 bg-slate-900/60"></div>
-        <div className="absolute inset-0 bg-black/30"></div>
+        <div className="absolute inset-0 bg-gradient-overlay"></div>
+        <div className="absolute inset-0 bg-gradient-mesh animate-mesh-gradient"></div>
       </div>
       {/* Floating Poker Suits with Advanced Animation */}
       <div className="absolute inset-0 opacity-20 overflow-hidden">
@@ -64,24 +64,24 @@ export function Hero() {
           {/* Left Column - Content */}
           <div className="text-white space-y-8 animate-fade-in">
             <div className="space-y-6">
-              <Badge className="bg-white/20 border border-poker-gold/50 text-white font-semibold px-5 py-2 rounded-full shadow-elegant backdrop-blur-md relative overflow-hidden text-sm">
-                <span className="relative z-10">Премиальный покерный клуб</span>
-                <div className="absolute inset-0 bg-gradient-shine opacity-0 hover:opacity-100 transition-opacity duration-500"></div>
+              <Badge className="bg-gradient-glass border border-poker-gold/60 text-white font-semibold px-6 py-3 rounded-full shadow-glass backdrop-blur-xl relative overflow-hidden text-sm animate-glass-morph">
+                <span className="relative z-10 font-serif">Премиальный покерный клуб</span>
+                <div className="absolute inset-0 bg-gradient-shine opacity-0 hover:opacity-100 transition-opacity duration-700"></div>
               </Badge>
               
               <h1 className="text-5xl lg:text-6xl font-bold leading-tight tracking-tight relative">
-                <span className="text-white text-shadow-lg relative drop-shadow-lg">
+                <span className="text-white text-shadow-lg relative drop-shadow-lg font-serif">
                   IPS
                 </span>
-                <span className="block text-poker-gold text-3xl lg:text-4xl mt-2 font-semibold drop-shadow-lg">
+                <span className="block text-poker-gold text-3xl lg:text-4xl mt-2 font-semibold drop-shadow-lg animate-neon-pulse">
                   International
                 </span>
-                <span className="block text-2xl lg:text-3xl font-medium text-white/90 tracking-wide drop-shadow-md">
+                <span className="block text-2xl lg:text-3xl font-medium text-white/90 tracking-wide drop-shadow-md font-serif">
                   Poker Style
                 </span>
               </h1>
                
-               <p className="text-lg text-white max-w-lg leading-relaxed font-medium bg-white/10 p-4 rounded-xl backdrop-blur-md border border-white/20">
+               <p className="text-lg text-white max-w-lg leading-relaxed font-medium bg-gradient-glass p-5 rounded-2xl backdrop-blur-xl border border-white/30 shadow-glass">
                  Премиальный покерный клуб с рейтинговой системой ELO. 
                  Развивайте навыки в роскошной атмосфере среди элитных игроков.
                </p>
@@ -112,14 +112,14 @@ export function Hero() {
              </div>
 
              <div className="flex flex-col sm:flex-row gap-4 animate-scale-in" style={{animationDelay: '1s'}}>
-                <Button size="lg" className="bg-poker-gold text-poker-charcoal hover:bg-poker-gold/90 hover:shadow-floating transition-all duration-300 font-bold px-8 py-4 text-lg rounded-xl shadow-elegant border border-poker-gold relative overflow-hidden group">
-                  <Play className="w-6 h-6 mr-3" />
-                  <span className="relative z-10 font-bold">Начать играть</span>
-                  <div className="absolute inset-0 bg-gradient-shine opacity-0 group-hover:opacity-30 transition-opacity duration-500"></div>
+                <Button size="lg" className="bg-gradient-gold text-white hover:shadow-neon transition-all duration-500 font-bold px-10 py-5 text-lg rounded-2xl shadow-gold border border-poker-gold relative overflow-hidden group">
+                  <Play className="w-6 h-6 mr-3 animate-pulse" />
+                  <span className="relative z-10 font-serif font-bold">Начать играть</span>
+                  <div className="absolute inset-0 bg-gradient-shine opacity-0 group-hover:opacity-50 transition-opacity duration-700"></div>
                 </Button>
-                <Button size="lg" variant="outline" className="border-2 border-white/70 text-white bg-white/15 hover:bg-white/25 hover:text-white transition-all duration-300 font-semibold px-8 py-4 text-lg rounded-xl backdrop-blur-md shadow-elegant relative overflow-hidden group">
-                  <span className="relative z-10 font-bold">Рейтинг игроков</span>
-                  <div className="absolute inset-0 bg-gradient-shine opacity-0 group-hover:opacity-20 transition-opacity duration-500"></div>
+                <Button size="lg" variant="outline" className="border-2 border-white/70 text-white bg-gradient-glass hover:bg-white/20 hover:shadow-glass transition-all duration-500 font-semibold px-10 py-5 text-lg rounded-2xl backdrop-blur-xl relative overflow-hidden group">
+                  <span className="relative z-10 font-serif font-bold">Рейтинг игроков</span>
+                  <div className="absolute inset-0 bg-gradient-shine opacity-0 group-hover:opacity-30 transition-opacity duration-700"></div>
                 </Button>
              </div>
 
@@ -146,17 +146,18 @@ export function Hero() {
            {/* Right Column - Cards with Poker Background */}
            <div className="space-y-6 animate-slide-right" style={{animationDelay: '0.6s'}}>
               {/* Premium Main Feature Card */}
-              <Card className="p-8 bg-white/15 backdrop-blur-xl border border-poker-gold/50 shadow-floating relative overflow-hidden group">
-                <div className="relative z-10 text-center space-y-6">
-                  <div className="w-20 h-20 bg-poker-gold rounded-2xl flex items-center justify-center mx-auto shadow-elegant text-white">
-                    <Trophy className="w-10 h-10" />
+              <Card className="p-10 bg-gradient-glass backdrop-blur-xl border border-poker-gold/60 shadow-floating hover:shadow-neon transition-all duration-700 relative overflow-hidden group animate-glass-morph">
+                <div className="relative z-10 text-center space-y-8">
+                  <div className="w-24 h-24 bg-gradient-gold rounded-3xl flex items-center justify-center mx-auto shadow-gold text-white animate-glow">
+                    <Trophy className="w-12 h-12" />
                   </div>
-                  <h3 className="text-3xl font-bold text-white">Рейтинговая система ELO</h3>
-                  <p className="text-white text-lg font-medium">Профессиональная система оценки навыков покерных игроков</p>
-                  <Badge className="bg-poker-gold text-white px-6 py-3 font-bold text-base shadow-elegant border border-poker-gold">
+                  <h3 className="text-4xl font-bold text-white font-serif">Рейтинговая система ELO</h3>
+                  <p className="text-white/90 text-xl font-medium leading-relaxed">Профессиональная система оценки навыков покерных игроков</p>
+                  <Badge className="bg-gradient-emerald text-white px-8 py-4 font-bold text-lg shadow-emerald border border-emerald-500/50 rounded-full">
                     Главная особенность
                   </Badge>
                 </div>
+                <div className="absolute inset-0 bg-gradient-glow opacity-0 group-hover:opacity-20 transition-opacity duration-700"></div>
               </Card>
 
              <div className="grid gap-6">
