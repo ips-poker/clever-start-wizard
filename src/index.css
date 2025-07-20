@@ -2,41 +2,57 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
+/* IPS Poker Club Design System - Slate Theme */
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --background: 215 25% 97%;
+    --foreground: 215 25% 8%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 215 25% 8%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 215 25% 8%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 215 25% 15%;
+    --primary-foreground: 210 20% 98%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 215 16% 92%;
+    --secondary-foreground: 215 25% 15%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 215 16% 94%;
+    --muted-foreground: 215 13% 45%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 215 20% 88%;
+    --accent-foreground: 215 25% 15%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 20% 98%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --border: 215 16% 88%;
+    --input: 215 16% 88%;
+    --ring: 215 25% 15%;
 
-    --radius: 0.5rem;
+    --radius: 0.75rem;
+
+    /* Poker-specific design tokens */
+    --poker-green: 142 76% 36%;
+    --poker-gold: 45 93% 58%;
+    --poker-red: 0 72% 51%;
+    --poker-blue: 217 91% 60%;
+    
+    /* Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(215 25% 15%), hsl(215 20% 25%));
+    --gradient-accent: linear-gradient(135deg, hsl(215 20% 88%), hsl(215 16% 94%));
+    --gradient-hero: linear-gradient(135deg, hsl(215 25% 8% / 0.9), hsl(215 20% 15% / 0.8));
+    
+    /* Shadows */
+    --shadow-card: 0 4px 16px hsl(215 25% 15% / 0.1);
+    --shadow-elegant: 0 8px 32px hsl(215 25% 15% / 0.15);
+    --shadow-glow: 0 0 24px hsl(215 20% 88% / 0.4);
+
+    --radius: 0.75rem;
 
     --sidebar-background: 0 0% 98%;
 
