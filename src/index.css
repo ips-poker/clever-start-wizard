@@ -41,16 +41,22 @@
     --poker-gold: 45 93% 58%;
     --poker-red: 0 72% 51%;
     --poker-blue: 217 91% 60%;
+    --poker-royal: 271 81% 56%;
     
     /* Gradients */
     --gradient-primary: linear-gradient(135deg, hsl(215 25% 15%), hsl(215 20% 25%));
     --gradient-accent: linear-gradient(135deg, hsl(215 20% 88%), hsl(215 16% 94%));
-    --gradient-hero: linear-gradient(135deg, hsl(215 25% 8% / 0.9), hsl(215 20% 15% / 0.8));
+    --gradient-hero: linear-gradient(135deg, hsl(215 25% 8% / 0.95), hsl(215 20% 15% / 0.9));
+    --gradient-royal: linear-gradient(135deg, hsl(271 81% 56%), hsl(217 91% 60%));
+    --gradient-gold: linear-gradient(135deg, hsl(45 93% 58%), hsl(38 92% 50%));
+    --gradient-card: linear-gradient(145deg, hsl(0 0% 100% / 0.1), hsl(0 0% 100% / 0.05));
     
     /* Shadows */
     --shadow-card: 0 4px 16px hsl(215 25% 15% / 0.1);
     --shadow-elegant: 0 8px 32px hsl(215 25% 15% / 0.15);
     --shadow-glow: 0 0 24px hsl(215 20% 88% / 0.4);
+    --shadow-royal: 0 0 40px hsl(271 81% 56% / 0.3);
+    --shadow-gold: 0 0 30px hsl(45 93% 58% / 0.4);
 
     --radius: 0.75rem;
 

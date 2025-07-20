@@ -20,14 +20,17 @@ export function Header() {
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link to="/" className="flex items-center space-x-2">
+          <Link to="/" className="flex items-center space-x-3 group">
             <div className="relative">
-              <Spade className="w-8 h-8 text-primary" />
-              <div className="absolute -top-1 -right-1 w-3 h-3 bg-poker-gold rounded-full"></div>
+              {/* Poker chip design */}
+              <div className="w-12 h-12 bg-gradient-royal rounded-full flex items-center justify-center shadow-royal border-2 border-poker-gold group-hover:scale-110 transition-transform duration-300">
+                <Spade className="w-6 h-6 text-white" />
+              </div>
+              <div className="absolute -top-1 -right-1 w-4 h-4 bg-gradient-gold rounded-full border border-white shadow-gold"></div>
             </div>
             <div className="flex flex-col">
-              <span className="text-lg font-bold text-primary">IPS</span>
-              <span className="text-xs text-muted-foreground -mt-1">International Poker Style</span>
+              <span className="text-2xl font-bold bg-gradient-royal bg-clip-text text-transparent">IPS</span>
+              <span className="text-xs text-muted-foreground -mt-1 font-medium">International Poker Style</span>
             </div>
           </Link>
 

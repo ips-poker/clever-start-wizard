@@ -66,18 +66,24 @@ export default {
 					green: 'hsl(var(--poker-green))',
 					gold: 'hsl(var(--poker-gold))',
 					red: 'hsl(var(--poker-red))',
-					blue: 'hsl(var(--poker-blue))'
+					blue: 'hsl(var(--poker-blue))',
+					royal: 'hsl(var(--poker-royal))'
 				}
 			},
 			backgroundImage: {
 				'gradient-primary': 'var(--gradient-primary)',
 				'gradient-accent': 'var(--gradient-accent)',
-				'gradient-hero': 'var(--gradient-hero)'
+				'gradient-hero': 'var(--gradient-hero)',
+				'gradient-royal': 'var(--gradient-royal)',
+				'gradient-gold': 'var(--gradient-gold)',
+				'gradient-card': 'var(--gradient-card)'
 			},
 			boxShadow: {
 				'card': 'var(--shadow-card)',
 				'elegant': 'var(--shadow-elegant)',
-				'glow': 'var(--shadow-glow)'
+				'glow': 'var(--shadow-glow)',
+				'royal': 'var(--shadow-royal)',
+				'gold': 'var(--shadow-gold)'
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
