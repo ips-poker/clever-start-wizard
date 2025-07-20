@@ -70,7 +70,7 @@ export function Hero() {
                    <div className="absolute inset-0 bg-gradient-shine opacity-0 group-hover:opacity-20 transition-opacity duration-500"></div>
                  </div>
                  <div className="flex items-center space-x-3 text-sm bg-gradient-glass px-4 py-3 rounded-lg backdrop-blur-md border border-poker-gold/30 animate-slide-up text-poker-charcoal font-medium shadow-glass relative overflow-hidden group" style={{animationDelay: '0.4s'}}>
-                   <Award className="w-4 h-4 text-poker-gold animate-pulse" style={{animationDelay: '1s'}} />
+                   <Award className="w-4 h-4 text-white" />
                    <span className="relative z-10">Рейтинг ELO</span>
                    <div className="absolute inset-0 bg-gradient-shine opacity-0 group-hover:opacity-20 transition-opacity duration-500"></div>
                  </div>
