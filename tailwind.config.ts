@@ -63,21 +63,21 @@ export default {
 					ring: 'hsl(var(--sidebar-ring))'
 				},
 				poker: {
-					navy: 'hsl(var(--poker-navy))',
-					midnight: 'hsl(var(--poker-midnight))',
-					'rose-gold': 'hsl(var(--poker-rose-gold))',
-					platinum: 'hsl(var(--poker-platinum))',
+					crimson: 'hsl(var(--poker-crimson))',
+					burgundy: 'hsl(var(--poker-burgundy))',
+					wine: 'hsl(var(--poker-wine))',
+					gold: 'hsl(var(--poker-gold))',
 					pearl: 'hsl(var(--poker-pearl))',
-					copper: 'hsl(var(--poker-copper))',
-					accent: 'hsl(var(--poker-accent))'
+					silver: 'hsl(var(--poker-silver))',
+					charcoal: 'hsl(var(--poker-charcoal))'
 				}
 			},
 			backgroundImage: {
 				'gradient-primary': 'var(--gradient-primary)',
 				'gradient-hero': 'var(--gradient-hero)',
-				'gradient-rose-gold': 'var(--gradient-rose-gold)',
-				'gradient-copper': 'var(--gradient-copper)',
-				'gradient-platinum': 'var(--gradient-platinum)',
+				'gradient-crimson': 'var(--gradient-crimson)',
+				'gradient-burgundy': 'var(--gradient-burgundy)',
+				'gradient-gold': 'var(--gradient-gold)',
 				'gradient-luxury': 'var(--gradient-luxury)',
 				'gradient-card': 'var(--gradient-card)'
 			},
@@ -85,8 +85,8 @@ export default {
 				'subtle': 'var(--shadow-subtle)',
 				'card': 'var(--shadow-card)',
 				'elegant': 'var(--shadow-elegant)',
-				'rose-gold': 'var(--shadow-rose-gold)',
-				'platinum': 'var(--shadow-platinum)',
+				'crimson': 'var(--shadow-crimson)',
+				'gold': 'var(--shadow-gold)',
 				'glow': 'var(--shadow-glow)'
 			},
 			fontWeight: {

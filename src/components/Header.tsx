@@ -19,18 +19,20 @@ export function Header() {
     <header className="fixed top-0 w-full z-50 bg-background/95 backdrop-blur-sm border-b border-border/50">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
-          {/* Premium Logo */}
+          {/* Custom Logo */}
           <Link to="/" className="flex items-center space-x-3 group">
             <div className="relative">
-              {/* Luxury poker chip design */}
-              <div className="w-12 h-12 bg-gradient-primary rounded-xl flex items-center justify-center shadow-elegant group-hover:shadow-rose-gold transition-all duration-500 border border-poker-platinum/20 group-hover:border-poker-rose-gold/40">
-                <Spade className="w-6 h-6 text-poker-rose-gold group-hover:scale-110 transition-transform duration-300" />
+              {/* Custom logo with brand colors */}
+              <div className="w-12 h-12 bg-white rounded-lg flex items-center justify-center shadow-elegant group-hover:shadow-crimson transition-all duration-500 border border-poker-silver/20 group-hover:border-poker-crimson/40">
+                <img 
+                  src="/lovable-uploads/c77304bf-5309-4bdc-afcc-a81c8d3ff6c2.png" 
+                  alt="IPS Logo" 
+                  className="w-8 h-8 object-contain group-hover:scale-110 transition-transform duration-300"
+                />
               </div>
-              {/* Premium accent */}
-              <div className="absolute -top-1 -right-1 w-4 h-4 bg-gradient-rose-gold rounded-full border border-poker-pearl shadow-rose-gold"></div>
             </div>
             <div className="flex flex-col">
-              <span className="text-2xl font-black text-poker-navy tracking-tight">
+              <span className="text-2xl font-black text-poker-crimson tracking-tight">
                 IPS
               </span>
               <span className="text-xs text-muted-foreground -mt-1 font-medium tracking-wide">
@@ -45,20 +47,20 @@ export function Header() {
               <Link
                 key={item.name}
                 to={item.href}
-                className="text-sm font-medium text-foreground hover:text-poker-navy transition-colors duration-300 relative group py-2"
+                className="text-sm font-medium text-foreground hover:text-poker-crimson transition-colors duration-300 relative group py-2"
               >
                 {item.name}
-                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-gradient-rose-gold transition-all duration-300 group-hover:w-full rounded-full"></span>
+                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-gradient-crimson transition-all duration-300 group-hover:w-full rounded-full"></span>
               </Link>
             ))}
           </nav>
 
-          {/* Premium Auth Buttons */}
+          {/* Brand Auth Buttons */}
           <div className="hidden md:flex items-center space-x-3">
-            <Button variant="ghost" size="sm" className="hover:bg-poker-accent/10 hover:text-poker-navy transition-all duration-300 font-medium">
+            <Button variant="ghost" size="sm" className="hover:bg-poker-crimson/10 hover:text-poker-crimson transition-all duration-300 font-medium">
               Войти
             </Button>
-            <Button size="sm" className="bg-gradient-rose-gold text-white hover:shadow-rose-gold transition-all duration-300 font-semibold">
+            <Button size="sm" className="bg-gradient-crimson text-white hover:shadow-crimson transition-all duration-300 font-semibold">
               Регистрация
             </Button>
           </div>

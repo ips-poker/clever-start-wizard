@@ -36,31 +36,31 @@
 
     --radius: 0.75rem;
 
-    /* Premium Poker Design Tokens */
-    --poker-navy: 220 45% 9%;
-    --poker-midnight: 220 35% 12%;
-    --poker-rose-gold: 15 78% 68%;
-    --poker-platinum: 210 15% 85%;
-    --poker-pearl: 45 25% 95%;
-    --poker-copper: 25 75% 58%;
-    --poker-accent: 220 35% 18%;
+    /* Premium Poker Design Tokens - Red Theme */
+    --poker-crimson: 345 75% 45%;
+    --poker-burgundy: 345 65% 35%;
+    --poker-wine: 345 55% 25%;
+    --poker-gold: 45 95% 65%;
+    --poker-pearl: 45 15% 95%;
+    --poker-silver: 210 15% 75%;
+    --poker-charcoal: 220 15% 15%;
     
     /* Luxury Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(220 45% 9%) 0%, hsl(220 35% 12%) 50%, hsl(220 35% 18%) 100%);
-    --gradient-hero: linear-gradient(135deg, hsl(220 45% 5% / 0.98) 0%, hsl(220 35% 12% / 0.95) 50%, hsl(220 45% 9% / 0.9) 100%);
-    --gradient-rose-gold: linear-gradient(135deg, hsl(15 78% 68%) 0%, hsl(15 78% 58%) 100%);
-    --gradient-copper: linear-gradient(135deg, hsl(25 75% 58%) 0%, hsl(25 75% 48%) 100%);
-    --gradient-platinum: linear-gradient(135deg, hsl(210 15% 85%) 0%, hsl(210 15% 75%) 100%);
-    --gradient-luxury: linear-gradient(135deg, rgba(244, 206, 176, 0.1) 0%, rgba(244, 206, 176, 0.05) 100%);
+    --gradient-primary: linear-gradient(135deg, hsl(345 75% 45%) 0%, hsl(345 65% 35%) 50%, hsl(345 55% 25%) 100%);
+    --gradient-hero: linear-gradient(135deg, hsl(345 55% 15% / 0.98) 0%, hsl(345 65% 25% / 0.95) 50%, hsl(345 75% 35% / 0.9) 100%);
+    --gradient-crimson: linear-gradient(135deg, hsl(345 75% 45%) 0%, hsl(345 75% 35%) 100%);
+    --gradient-burgundy: linear-gradient(135deg, hsl(345 65% 35%) 0%, hsl(345 65% 25%) 100%);
+    --gradient-gold: linear-gradient(135deg, hsl(45 95% 65%) 0%, hsl(45 95% 55%) 100%);
+    --gradient-luxury: linear-gradient(135deg, rgba(220, 38, 38, 0.1) 0%, rgba(220, 38, 38, 0.05) 100%);
     --gradient-card: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.03) 100%);
     
     /* Premium Shadows */
-    --shadow-subtle: 0 2px 12px rgba(0, 0, 0, 0.15);
-    --shadow-card: 0 8px 24px rgba(0, 0, 0, 0.2);
-    --shadow-elegant: 0 16px 48px rgba(0, 0, 0, 0.25);
-    --shadow-rose-gold: 0 8px 32px hsl(15 78% 68% / 0.25);
-    --shadow-platinum: 0 4px 20px hsl(210 15% 85% / 0.3);
-    --shadow-glow: 0 0 40px hsl(15 78% 68% / 0.15);
+    --shadow-subtle: 0 2px 12px rgba(220, 38, 38, 0.15);
+    --shadow-card: 0 8px 24px rgba(220, 38, 38, 0.2);
+    --shadow-elegant: 0 16px 48px rgba(220, 38, 38, 0.25);
+    --shadow-crimson: 0 8px 32px hsl(345 75% 45% / 0.3);
+    --shadow-gold: 0 4px 20px hsl(45 95% 65% / 0.3);
+    --shadow-glow: 0 0 40px hsl(345 75% 45% / 0.2);
     
     /* Typography Weights */
     --font-weight-light: 300;
