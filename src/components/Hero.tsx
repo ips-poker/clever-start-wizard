@@ -18,15 +18,45 @@ export function Hero() {
       </div>
       {/* Floating Poker Suits with Advanced Animation */}
       <div className="absolute inset-0 opacity-20 overflow-hidden">
+        {/* Main suits - larger */}
         <div className="absolute top-20 left-10 text-4xl text-poker-gold animate-float">♠</div>
         <div className="absolute top-40 right-20 text-3xl text-poker-gold animate-glow" style={{animationDelay: '1s'}}>♥</div>
         <div className="absolute bottom-40 left-20 text-4xl text-poker-gold animate-float" style={{animationDelay: '2s'}}>♦</div>
         <div className="absolute bottom-20 right-10 text-3xl text-poker-gold animate-glow" style={{animationDelay: '3s'}}>♣</div>
         
+        {/* Medium suits - middle layer */}
+        <div className="absolute top-32 left-1/3 text-2xl text-poker-gold animate-pulse" style={{animationDelay: '0.5s'}}>♠</div>
+        <div className="absolute top-60 right-1/4 text-2xl text-poker-gold animate-float" style={{animationDelay: '1.5s'}}>♥</div>
+        <div className="absolute bottom-60 left-1/2 text-2xl text-poker-gold animate-glow" style={{animationDelay: '2.5s'}}>♦</div>
+        <div className="absolute bottom-32 right-1/3 text-2xl text-poker-gold animate-pulse" style={{animationDelay: '3.5s'}}>♣</div>
+        
+        {/* Small suits - background layer */}
+        <div className="absolute top-16 left-1/4 text-xl text-poker-gold/70 animate-float" style={{animationDelay: '4s'}}>♠</div>
+        <div className="absolute top-24 right-1/3 text-xl text-poker-gold/70 animate-glow" style={{animationDelay: '4.5s'}}>♥</div>
+        <div className="absolute top-48 left-2/3 text-xl text-poker-gold/70 animate-pulse" style={{animationDelay: '5s'}}>♦</div>
+        <div className="absolute top-72 right-2/3 text-xl text-poker-gold/70 animate-float" style={{animationDelay: '5.5s'}}>♣</div>
+        
+        <div className="absolute bottom-16 left-1/3 text-xl text-poker-gold/70 animate-glow" style={{animationDelay: '6s'}}>♠</div>
+        <div className="absolute bottom-24 right-1/4 text-xl text-poker-gold/70 animate-pulse" style={{animationDelay: '6.5s'}}>♥</div>
+        <div className="absolute bottom-48 left-3/4 text-xl text-poker-gold/70 animate-float" style={{animationDelay: '7s'}}>♦</div>
+        <div className="absolute bottom-72 right-3/4 text-xl text-poker-gold/70 animate-glow" style={{animationDelay: '7.5s'}}>♣</div>
+        
+        {/* Extra small suits - scattered */}
+        <div className="absolute top-28 left-1/5 text-lg text-poker-gold/50 animate-pulse" style={{animationDelay: '8s'}}>♠</div>
+        <div className="absolute top-52 right-1/5 text-lg text-poker-gold/50 animate-float" style={{animationDelay: '8.5s'}}>♥</div>
+        <div className="absolute top-80 left-4/5 text-lg text-poker-gold/50 animate-glow" style={{animationDelay: '9s'}}>♦</div>
+        <div className="absolute bottom-80 right-4/5 text-lg text-poker-gold/50 animate-pulse" style={{animationDelay: '9.5s'}}>♣</div>
+        
+        <div className="absolute bottom-28 left-2/5 text-lg text-poker-gold/50 animate-float" style={{animationDelay: '10s'}}>♠</div>
+        <div className="absolute bottom-52 right-2/5 text-lg text-poker-gold/50 animate-glow" style={{animationDelay: '10.5s'}}>♥</div>
+        
         {/* Additional floating elements */}
         <div className="absolute top-1/3 left-1/4 w-2 h-2 bg-poker-gold rounded-full animate-pulse" style={{animationDelay: '0.5s'}}></div>
         <div className="absolute top-2/3 right-1/3 w-1 h-1 bg-poker-gold rounded-full animate-pulse" style={{animationDelay: '1.5s'}}></div>
         <div className="absolute bottom-1/3 left-1/3 w-1.5 h-1.5 bg-poker-gold rounded-full animate-pulse" style={{animationDelay: '2.5s'}}></div>
+        <div className="absolute top-1/4 right-1/4 w-1 h-1 bg-poker-gold rounded-full animate-glow" style={{animationDelay: '3.5s'}}></div>
+        <div className="absolute bottom-1/4 left-3/4 w-2 h-2 bg-poker-gold rounded-full animate-float" style={{animationDelay: '4.5s'}}></div>
+        <div className="absolute top-3/4 right-3/4 w-1.5 h-1.5 bg-poker-gold rounded-full animate-pulse" style={{animationDelay: '5.5s'}}></div>
       </div>
 
       <div className="container mx-auto px-4 relative z-10">
