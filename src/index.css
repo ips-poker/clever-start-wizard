@@ -36,40 +36,34 @@
 
     --radius: 0.75rem;
 
-    /* Modern Poker Design Tokens */
-    --poker-emerald: 158 64% 52%;
-    --poker-gold: 43 96% 56%;
-    --poker-crimson: 348 83% 47%;
-    --poker-sapphire: 217 91% 60%;
-    --poker-amethyst: 271 81% 56%;
-    --poker-platinum: 210 20% 85%;
+    /* Elegant Poker Design Tokens */
+    --poker-charcoal: 220 13% 18%;
+    --poker-gold: 45 100% 70%;
+    --poker-silver: 210 11% 71%;
+    --poker-cream: 45 37% 92%;
+    --poker-accent: 220 13% 28%;
     
-    /* Modern Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(215 25% 15%) 0%, hsl(215 20% 25%) 50%, hsl(215 15% 35%) 100%);
-    --gradient-hero: linear-gradient(135deg, hsl(215 25% 8% / 0.98) 0%, hsl(215 20% 15% / 0.95) 50%, hsl(271 81% 20% / 0.9) 100%);
-    --gradient-emerald: linear-gradient(135deg, hsl(158 64% 52%) 0%, hsl(158 64% 42%) 100%);
-    --gradient-gold: linear-gradient(135deg, hsl(43 96% 56%) 0%, hsl(38 92% 50%) 100%);
-    --gradient-crimson: linear-gradient(135deg, hsl(348 83% 47%) 0%, hsl(348 83% 37%) 100%);
-    --gradient-sapphire: linear-gradient(135deg, hsl(217 91% 60%) 0%, hsl(217 91% 50%) 100%);
-    --gradient-amethyst: linear-gradient(135deg, hsl(271 81% 56%) 0%, hsl(271 81% 46%) 100%);
-    --gradient-glass: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
-    --gradient-mesh: radial-gradient(circle at 20% 80%, hsl(271 81% 56% / 0.3) 0%, transparent 50%), 
-                     radial-gradient(circle at 80% 20%, hsl(217 91% 60% / 0.3) 0%, transparent 50%),
-                     radial-gradient(circle at 40% 40%, hsl(43 96% 56% / 0.2) 0%, transparent 50%);
+    /* Elegant Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(220 13% 18%) 0%, hsl(220 13% 28%) 100%);
+    --gradient-hero: linear-gradient(135deg, hsl(220 13% 8% / 0.95) 0%, hsl(220 13% 18% / 0.9) 100%);
+    --gradient-gold: linear-gradient(135deg, hsl(45 100% 70%) 0%, hsl(45 100% 60%) 100%);
+    --gradient-subtle: linear-gradient(135deg, hsl(210 11% 71% / 0.05) 0%, hsl(210 11% 71% / 0.02) 100%);
+    --gradient-card: linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%);
     
-    /* Modern Shadows & Effects */
-    --shadow-glass: 0 8px 32px rgba(0, 0, 0, 0.1), 
-                    0 1px 0 rgba(255, 255, 255, 0.1) inset;
-    --shadow-float: 0 20px 40px rgba(0, 0, 0, 0.1), 
-                    0 8px 16px rgba(0, 0, 0, 0.06);
-    --shadow-glow-emerald: 0 0 30px hsl(158 64% 52% / 0.4);
-    --shadow-glow-gold: 0 0 30px hsl(43 96% 56% / 0.4);
-    --shadow-glow-amethyst: 0 0 30px hsl(271 81% 56% / 0.4);
+    /* Elegant Shadows */
+    --shadow-subtle: 0 2px 8px rgba(0, 0, 0, 0.04);
+    --shadow-card: 0 4px 16px rgba(0, 0, 0, 0.08);
+    --shadow-elegant: 0 8px 32px rgba(0, 0, 0, 0.12);
+    --shadow-gold: 0 4px 20px hsl(45 100% 70% / 0.15);
     
-    /* Backdrop Effects */
-    --backdrop-blur: blur(20px) saturate(180%);
+    /* Typography */
+    --font-weight-light: 300;
+    --font-weight-normal: 400;
+    --font-weight-medium: 500;
+    --font-weight-semibold: 600;
+    --font-weight-bold: 700;
 
-    --radius: 1rem;
+    --radius: 0.5rem;
 
     --sidebar-background: 0 0% 98%;
 
