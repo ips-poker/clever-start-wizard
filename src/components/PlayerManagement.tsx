@@ -34,6 +34,7 @@ interface Tournament {
   addon_cost: number;
   rebuy_chips: number;
   addon_chips: number;
+  starting_chips: number;
   tournament_format: string;
 }
 
@@ -67,11 +68,16 @@ interface PlayerManagementProps {
 const PlayerManagement = ({ tournament, players, registrations, onRegistrationUpdate }: PlayerManagementProps) => {
   const [selectedPlayerId, setSelectedPlayerId] = useState("");
   const [seatNumber, setSeatNumber] = useState("");
-  const [startingChips, setStartingChips] = useState(1000);
+  const [startingChips, setStartingChips] = useState(tournament.starting_chips || 10000);
   const [bulkPlayersList, setBulkPlayersList] = useState("");
   const [isFinishDialogOpen, setIsFinishDialogOpen] = useState(false);
   const [eliminationOrder, setEliminationOrder] = useState<{[key: string]: number}>({});
   const { toast } = useToast();
+
+  useEffect(() => {
+    // Set starting chips from tournament
+    setStartingChips(tournament.starting_chips || 10000);
+  }, [tournament.starting_chips]);
 
   useEffect(() => {
     // Initialize elimination order for eliminated players
