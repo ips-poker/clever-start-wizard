@@ -49,7 +49,9 @@ interface FullscreenTimerProps {
   onPrevLevel: () => void;
   onStopTournament: () => void;
   onClose: () => void;
+  onTimerAdjust: (seconds: number) => void;
   slogan?: string;
+  onSloganChange?: (slogan: string) => void;
 }
 
 const FullscreenTimer = ({
@@ -63,11 +65,15 @@ const FullscreenTimer = ({
   onPrevLevel,
   onStopTournament,
   onClose,
-  slogan = "Престижные турниры. Высокие стандарты."
+  onTimerAdjust,
+  slogan = "Престижные турниры. Высокие стандарты.",
+  onSloganChange
 }: FullscreenTimerProps) => {
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [twoMinuteWarning, setTwoMinuteWarning] = useState(false);
   const [fiveSecondWarning, setFiveSecondWarning] = useState(false);
+  const [editingSlogan, setEditingSlogan] = useState(false);
+  const [tempSlogan, setTempSlogan] = useState(slogan);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -143,11 +149,11 @@ const FullscreenTimer = ({
       <div className="flex justify-between items-center p-4 border-b border-gray-200">
         {/* Left - Logo and Company */}
         <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-md border border-gray-200">
+          <div className="w-20 h-20 bg-white rounded-lg flex items-center justify-center shadow-md border border-gray-200">
             <img 
               src={ipsLogo} 
               alt="IPS Logo" 
-              className="w-6 h-6 object-contain"
+              className="w-12 h-12 object-contain"
             />
           </div>
           <div className="flex flex-col">
@@ -157,21 +163,45 @@ const FullscreenTimer = ({
         </div>
 
         {/* Center - Tournament Name and Slogan */}
-        <div className="text-center">
-          <h1 className="text-xl font-bold text-gray-800">{tournament.name}</h1>
-          <p className="text-sm text-gray-500 italic">{slogan}</p>
+        <div className="text-center flex-1 mx-8">
+          <h1 className="text-xl font-bold text-gray-800 mb-1">{tournament.name}</h1>
+          {editingSlogan ? (
+            <div className="flex items-center justify-center space-x-2">
+              <input 
+                type="text"
+                value={tempSlogan}
+                onChange={(e) => setTempSlogan(e.target.value)}
+                className="text-sm text-gray-500 italic bg-transparent border-b border-gray-300 text-center min-w-0 flex-1 max-w-xs"
+                autoFocus
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter') {
+                    onSloganChange?.(tempSlogan);
+                    setEditingSlogan(false);
+                  }
+                }}
+                onBlur={() => {
+                  onSloganChange?.(tempSlogan);
+                  setEditingSlogan(false);
+                }}
+              />
+            </div>
+          ) : (
+            <p 
+              className="text-sm text-gray-500 italic cursor-pointer hover:text-gray-700 transition-colors"
+              onClick={() => onSloganChange && setEditingSlogan(true)}
+            >
+              {slogan}
+            </p>
+          )}
         </div>
 
         {/* Right - QR Code and Close */}
         <div className="flex items-center space-x-3">
-          <div className="text-center">
-            <img 
-              src={telegramQr} 
-              alt="Telegram QR" 
-              className="w-12 h-12 border border-gray-200 rounded"
-            />
-            <p className="text-xs text-gray-500 mt-1">Telegram</p>
-          </div>
+          <img 
+            src={telegramQr} 
+            alt="Telegram QR" 
+            className="w-24 h-24 border border-gray-200 rounded"
+          />
           <Button 
             variant="ghost"
             size="sm" 
@@ -318,6 +348,27 @@ const FullscreenTimer = ({
           >
             След.
             <ChevronRight className="w-4 h-4 ml-1" />
+          </Button>
+
+          <div className="h-6 w-px bg-gray-300 mx-2" />
+
+          {/* Timer adjustment controls */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onTimerAdjust(-60)}
+            className="h-10 px-3 text-xs"
+          >
+            -1м
+          </Button>
+          
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onTimerAdjust(60)}
+            className="h-10 px-3 text-xs"
+          >
+            +1м
           </Button>
 
           <div className="h-6 w-px bg-gray-300 mx-2" />

@@ -194,6 +194,10 @@ const TournamentOverview = ({
           onPrevLevel={onPrevLevel}
           onStopTournament={onStopTournament}
           onClose={closeFullscreenTimer}
+          onTimerAdjust={(seconds) => {
+            // Implement timer adjustment logic here
+            console.log('Timer adjust:', seconds);
+          }}
         />
       )}
       
