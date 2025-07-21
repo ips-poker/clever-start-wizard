@@ -192,6 +192,8 @@ export type Database = {
       }
       tournaments: {
         Row: {
+          addon_chips: number | null
+          addon_cost: number | null
           buy_in: number
           created_at: string
           current_big_blind: number | null
@@ -201,13 +203,18 @@ export type Database = {
           id: string
           max_players: number
           name: string
+          rebuy_chips: number | null
+          rebuy_cost: number | null
           start_time: string
           status: string
           timer_duration: number | null
           timer_remaining: number | null
+          tournament_format: string | null
           updated_at: string
         }
         Insert: {
+          addon_chips?: number | null
+          addon_cost?: number | null
           buy_in?: number
           created_at?: string
           current_big_blind?: number | null
@@ -217,13 +224,18 @@ export type Database = {
           id?: string
           max_players?: number
           name: string
+          rebuy_chips?: number | null
+          rebuy_cost?: number | null
           start_time: string
           status?: string
           timer_duration?: number | null
           timer_remaining?: number | null
+          tournament_format?: string | null
           updated_at?: string
         }
         Update: {
+          addon_chips?: number | null
+          addon_cost?: number | null
           buy_in?: number
           created_at?: string
           current_big_blind?: number | null
@@ -233,10 +245,13 @@ export type Database = {
           id?: string
           max_players?: number
           name?: string
+          rebuy_chips?: number | null
+          rebuy_cost?: number | null
           start_time?: string
           status?: string
           timer_duration?: number | null
           timer_remaining?: number | null
+          tournament_format?: string | null
           updated_at?: string
         }
         Relationships: []

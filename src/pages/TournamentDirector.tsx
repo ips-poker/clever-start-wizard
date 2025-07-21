@@ -30,6 +30,11 @@ interface Tournament {
   current_big_blind: number;
   timer_duration: number;
   timer_remaining: number;
+  rebuy_cost?: number;
+  addon_cost?: number;
+  rebuy_chips?: number;
+  addon_chips?: number;
+  tournament_format?: string;
 }
 
 interface Player {
@@ -72,7 +77,12 @@ const TournamentDirector = () => {
     description: "",
     buy_in: 0,
     max_players: 9,
-    start_time: ""
+    start_time: "",
+    rebuy_cost: 0,
+    addon_cost: 0,
+    rebuy_chips: 0,
+    addon_chips: 0,
+    tournament_format: "freezeout"
   });
 
   // New player form state
@@ -209,7 +219,18 @@ const TournamentDirector = () => {
       toast({ title: "Ошибка", description: "Не удалось создать турнир", variant: "destructive" });
     } else {
       toast({ title: "Успех", description: "Турнир создан" });
-      setNewTournament({ name: "", description: "", buy_in: 0, max_players: 9, start_time: "" });
+      setNewTournament({ 
+        name: "", 
+        description: "", 
+        buy_in: 0, 
+        max_players: 9, 
+        start_time: "",
+        rebuy_cost: 0,
+        addon_cost: 0,
+        rebuy_chips: 0,
+        addon_chips: 0,
+        tournament_format: "freezeout"
+      });
       loadTournaments();
       
       // Create default blind levels
@@ -616,6 +637,76 @@ const TournamentDirector = () => {
                     />
                   </div>
                 </div>
+                
+                {/* Tournament Format and Rebuy/Addon Configuration */}
+                <div className="space-y-4 border-t border-gray-200/30 pt-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="tournament_format" className="text-gray-700 font-normal text-sm">Формат турнира</Label>
+                    <Select 
+                      value={newTournament.tournament_format} 
+                      onValueChange={(value) => setNewTournament({ ...newTournament, tournament_format: value })}
+                    >
+                      <SelectTrigger className="bg-white/50 border-gray-200/50 focus:border-gray-400 focus:ring-1 focus:ring-gray-400/20 h-10">
+                        <SelectValue placeholder="Выберите формат" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="freezeout">Фризаут</SelectItem>
+                        <SelectItem value="rebuy">Ребайник</SelectItem>
+                        <SelectItem value="reentry">Риэнтри</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  {(newTournament.tournament_format === "rebuy" || newTournament.tournament_format === "reentry") && (
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="rebuy_cost" className="text-gray-700 font-normal text-sm">Стоимость ребая (EP2016)</Label>
+                        <Input
+                          id="rebuy_cost"
+                          type="number"
+                          value={newTournament.rebuy_cost}
+                          onChange={(e) => setNewTournament({ ...newTournament, rebuy_cost: parseInt(e.target.value) })}
+                          className="bg-white/50 border-gray-200/50 focus:border-gray-400 focus:ring-1 focus:ring-gray-400/20 transition-all duration-200 rounded-lg h-10"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="rebuy_chips" className="text-gray-700 font-normal text-sm">Фишки за ребай</Label>
+                        <Input
+                          id="rebuy_chips"
+                          type="number"
+                          value={newTournament.rebuy_chips}
+                          onChange={(e) => setNewTournament({ ...newTournament, rebuy_chips: parseInt(e.target.value) })}
+                          className="bg-white/50 border-gray-200/50 focus:border-gray-400 focus:ring-1 focus:ring-gray-400/20 transition-all duration-200 rounded-lg h-10"
+                        />
+                      </div>
+                    </div>
+                  )}
+                  
+                  {newTournament.tournament_format === "rebuy" && (
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="addon_cost" className="text-gray-700 font-normal text-sm">Стоимость адона (EP2016)</Label>
+                        <Input
+                          id="addon_cost"
+                          type="number"
+                          value={newTournament.addon_cost}
+                          onChange={(e) => setNewTournament({ ...newTournament, addon_cost: parseInt(e.target.value) })}
+                          className="bg-white/50 border-gray-200/50 focus:border-gray-400 focus:ring-1 focus:ring-gray-400/20 transition-all duration-200 rounded-lg h-10"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="addon_chips" className="text-gray-700 font-normal text-sm">Фишки за адон</Label>
+                        <Input
+                          id="addon_chips"
+                          type="number"
+                          value={newTournament.addon_chips}
+                          onChange={(e) => setNewTournament({ ...newTournament, addon_chips: parseInt(e.target.value) })}
+                          className="bg-white/50 border-gray-200/50 focus:border-gray-400 focus:ring-1 focus:ring-gray-400/20 transition-all duration-200 rounded-lg h-10"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
                 <Button 
                   onClick={createTournament} 
                   className="w-full h-12 bg-gray-800 hover:bg-gray-700 text-white rounded-lg font-normal text-sm transition-all duration-300 border-0"
@@ -922,6 +1013,108 @@ const TournamentDirector = () => {
           <TabsContent value="control" className="space-y-8 animate-fade-in">
             {selectedTournament ? (
               <div className="space-y-8">
+                {/* Tournament Format and Rebuy/Addon Settings */}
+                <Card className="bg-white/50 backdrop-blur-sm border border-gray-200/30 shadow-minimal">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-gray-700 font-light">
+                      <DollarSign className="w-4 h-4" />
+                      Настройки турнира
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-4">
+                        <div>
+                          <Label className="text-sm font-medium text-gray-700">Формат турнира</Label>
+                          <div className="mt-1 p-3 bg-gray-50 rounded-lg">
+                            <span className="text-sm font-medium">
+                              {selectedTournament.tournament_format === 'freezeout' ? 'Фризаут' : 
+                               selectedTournament.tournament_format === 'rebuy' ? 'Ребайник' : 
+                               selectedTournament.tournament_format === 'reentry' ? 'Риэнтри' : 'Не указан'}
+                            </span>
+                          </div>
+                        </div>
+                        
+                        <div>
+                          <Label className="text-sm font-medium text-gray-700">Buy-in</Label>
+                          <div className="mt-1 p-3 bg-gray-50 rounded-lg">
+                            <span className="text-sm font-medium">{selectedTournament.buy_in} EP2016</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {(selectedTournament.tournament_format === 'rebuy' || selectedTournament.tournament_format === 'reentry') && (
+                        <div className="space-y-4">
+                          <div>
+                            <Label className="text-sm font-medium text-gray-700">Стоимость ребая</Label>
+                            <div className="mt-1 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                              <span className="text-sm font-medium text-blue-800">
+                                {selectedTournament.rebuy_cost || 0} EP2016
+                              </span>
+                            </div>
+                          </div>
+                          <div>
+                            <Label className="text-sm font-medium text-gray-700">Фишки за ребай</Label>
+                            <div className="mt-1 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                              <span className="text-sm font-medium text-blue-800">
+                                {selectedTournament.rebuy_chips || 0} фишек
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {selectedTournament.tournament_format === 'rebuy' && (
+                        <div className="md:col-span-2 grid grid-cols-2 gap-4">
+                          <div>
+                            <Label className="text-sm font-medium text-gray-700">Стоимость адона</Label>
+                            <div className="mt-1 p-3 bg-green-50 rounded-lg border border-green-200">
+                              <span className="text-sm font-medium text-green-800">
+                                {selectedTournament.addon_cost || 0} EP2016
+                              </span>
+                            </div>
+                          </div>
+                          <div>
+                            <Label className="text-sm font-medium text-gray-700">Фишки за адон</Label>
+                            <div className="mt-1 p-3 bg-green-50 rounded-lg border border-green-200">
+                              <span className="text-sm font-medium text-green-800">
+                                {selectedTournament.addon_chips || 0} фишек
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="border-t border-gray-200/50 pt-4">
+                      <h4 className="text-sm font-medium text-gray-700 mb-3">Статистика ребаев и адонов</h4>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="text-center p-3 bg-gray-50 rounded-lg">
+                          <div className="text-lg font-semibold text-gray-800">
+                            {registrations.reduce((sum, reg) => sum + (reg.rebuys || 0), 0)}
+                          </div>
+                          <div className="text-xs text-gray-600">Всего ребаев</div>
+                        </div>
+                        <div className="text-center p-3 bg-gray-50 rounded-lg">
+                          <div className="text-lg font-semibold text-gray-800">
+                            {registrations.reduce((sum, reg) => sum + (reg.addons || 0), 0)}
+                          </div>
+                          <div className="text-xs text-gray-600">Всего адонов</div>
+                        </div>
+                        <div className="text-center p-3 bg-gray-50 rounded-lg">
+                          <div className="text-lg font-semibold text-gray-800">
+                            {registrations.reduce((sum, reg) => 
+                              sum + ((reg.rebuys || 0) * (selectedTournament.rebuy_cost || 0)) + 
+                                    ((reg.addons || 0) * (selectedTournament.addon_cost || 0)), 0
+                            )}
+                          </div>
+                          <div className="text-xs text-gray-600">Доп. призовой фонд</div>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
                 {/* Blind Structure Management */}
                 <Card className="bg-white/50 backdrop-blur-sm border border-gray-200/30 shadow-minimal">
                   <CardHeader>
