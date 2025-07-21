@@ -44,6 +44,7 @@ interface Tournament {
   addon_chips: number;
   starting_chips: number;
   tournament_format: string;
+  addon_level: number;
 }
 
 interface Player {

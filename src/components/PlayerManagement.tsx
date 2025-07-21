@@ -36,6 +36,8 @@ interface Tournament {
   addon_chips: number;
   starting_chips: number;
   tournament_format: string;
+  current_level: number;
+  addon_level: number;
 }
 
 interface Player {
@@ -546,13 +548,25 @@ const PlayerManagement = ({ tournament, players, registrations, onRegistrationUp
                             >
                               <RotateCcw className="w-3 h-3" />
                             </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => updateAddons(registration.id, 1)}
-                            >
-                              <Plus className="w-3 h-3" />
-                            </Button>
+                            {tournament.current_level >= tournament.addon_level && (
+                              <>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => updateAddons(registration.id, -1)}
+                                  disabled={registration.addons <= 0}
+                                >
+                                  <Minus className="w-3 h-3" />
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => updateAddons(registration.id, 1)}
+                                >
+                                  <Plus className="w-3 h-3" />
+                                </Button>
+                              </>
+                            )}
                           </>
                         )}
                         <Button
