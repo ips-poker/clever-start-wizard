@@ -112,16 +112,7 @@ export function SocialProof() {
         </div>
 
         {/* Call to Action */}
-        <div className="relative overflow-hidden rounded-2xl">
-          <div 
-            className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-            style={{ 
-              backgroundImage: `url(/src/assets/poker-table-hero.jpg)`,
-              filter: 'blur(6px)'
-            }}
-          ></div>
-          <div className="absolute inset-0 bg-slate-900/50"></div>
-          <div className="relative text-center p-12 text-white">
+        <div className="text-center bg-gradient-primary rounded-2xl p-12 text-primary-foreground">
           <h3 className="text-3xl font-bold mb-4">
             Готовы начать свой путь к покерному мастерству?
           </h3>
@@ -154,7 +145,6 @@ export function SocialProof() {
               <Star className="w-4 h-4" />
               <span>Без скрытых платежей</span>
             </div>
-          </div>
           </div>
         </div>
       </div>
