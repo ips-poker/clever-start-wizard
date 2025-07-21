@@ -584,13 +584,24 @@ const TournamentDirector = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100/50">
       <div className="container mx-auto py-8 px-4">
-        <div className="mb-12 text-center">
-          <h1 className="text-5xl font-light mb-4 text-gray-800 tracking-wide">
-            Турнирный Директор
-          </h1>
-          <p className="text-gray-600 text-lg font-light max-w-2xl mx-auto leading-relaxed">
-            Профессиональная система управления покерными турнирами с расширенной аналитикой
-          </p>
+        <div className="mb-12 flex items-center gap-6">
+          <div className="flex items-center gap-4">
+            <div className="w-16 h-16 bg-white rounded-xl flex items-center justify-center shadow-elegant border border-gray-200/30">
+              <img 
+                src="/lovable-uploads/c77304bf-5309-4bdc-afcc-a81c8d3ff6c2.png" 
+                alt="IPS Logo" 
+                className="w-12 h-12 object-contain"
+              />
+            </div>
+            <div className="text-left">
+              <h1 className="text-4xl font-light mb-2 text-gray-800 tracking-wide">
+                IPS Tournament Manager
+              </h1>
+              <p className="text-gray-600 text-base font-light leading-relaxed">
+                Профессиональная система управления покерными турнирами с расширенной аналитикой
+              </p>
+            </div>
+          </div>
           {selectedTournament && (
             <div className="mt-8 inline-flex items-center gap-4 px-6 py-3 bg-white/60 backdrop-blur-sm rounded-xl border border-gray-200/50 shadow-minimal">
               <Trophy className="w-5 h-5 text-gray-600" />
