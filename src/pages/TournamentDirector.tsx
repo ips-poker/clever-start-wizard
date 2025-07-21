@@ -439,19 +439,19 @@ const TournamentDirector = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-primary">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100/50">
       <div className="container mx-auto py-8 px-4">
         <div className="mb-12 text-center">
-          <h1 className="text-6xl font-bold mb-6 bg-gradient-button bg-clip-text text-transparent animate-fade-in tracking-tight">
+          <h1 className="text-5xl font-light mb-4 text-gray-800 tracking-wide">
             Турнирный Директор
           </h1>
-          <p className="text-poker-text-secondary text-xl font-medium animate-slide-up max-w-2xl mx-auto">
+          <p className="text-gray-600 text-lg font-light max-w-2xl mx-auto leading-relaxed">
             Профессиональная система управления покерными турнирами с расширенной аналитикой
           </p>
           {selectedTournament && (
-            <div className="mt-8 inline-flex items-center gap-4 px-8 py-4 bg-gradient-card backdrop-blur-sm rounded-2xl border border-poker-border shadow-card">
-              <Trophy className="w-6 h-6 text-poker-accent" />
-              <span className="font-semibold text-poker-text-primary text-lg">{selectedTournament.name}</span>
+            <div className="mt-8 inline-flex items-center gap-4 px-6 py-3 bg-white/60 backdrop-blur-sm rounded-xl border border-gray-200/50 shadow-minimal">
+              <Trophy className="w-5 h-5 text-gray-600" />
+              <span className="font-medium text-gray-800 text-base">{selectedTournament.name}</span>
               {getStatusBadge(selectedTournament.status)}
             </div>
           )}
