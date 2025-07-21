@@ -38,31 +38,33 @@ export function Hero() {
               </Badge>
               
               {/* Logo and Title Section */}
-              <div className="flex items-center space-x-6 animate-slide-right [animation-delay:0.6s]">
-                <div className="w-24 h-24 bg-white/10 backdrop-blur-xl rounded-2xl border border-white/30 shadow-elegant flex items-center justify-center p-3 animate-scale-in [animation-delay:0.3s]">
+              <div className="flex items-start space-x-6 animate-slide-right [animation-delay:0.6s]">
+                <div className="w-20 h-20 bg-white/10 backdrop-blur-xl rounded-2xl border border-white/30 shadow-elegant flex items-center justify-center p-3 animate-scale-in [animation-delay:0.3s] flex-shrink-0 mt-2">
                   <img 
                     src={ipsLogo} 
                     alt="IPS Logo" 
                     className="w-full h-full object-contain filter drop-shadow-xl"
                   />
                 </div>
-                <h1 className="text-5xl lg:text-6xl font-bold leading-tight tracking-tight">
-                  <span className="text-white block">
-                    IPS
-                  </span>
-                  <span className="block text-poker-accent-light text-3xl lg:text-4xl mt-2 font-semibold">
-                    International
-                  </span>
-                  <span className="block text-2xl lg:text-3xl font-medium text-white/90 tracking-wide">
-                    Poker Style
-                  </span>
-                </h1>
+                <div className="flex-1">
+                  <h1 className="text-5xl lg:text-6xl font-bold leading-tight tracking-tight">
+                    <span className="text-white block">
+                      IPS
+                    </span>
+                    <span className="block text-poker-accent-light text-3xl lg:text-4xl mt-2 font-semibold">
+                      International
+                    </span>
+                    <span className="block text-2xl lg:text-3xl font-medium text-white/90 tracking-wide">
+                      Poker Style
+                    </span>
+                  </h1>
+                </div>
               </div>
                
-               <p className="text-lg text-white/90 max-w-lg leading-relaxed font-medium animate-fade-in [animation-delay:0.8s]">
-                 Премиальный покерный клуб с рейтинговой системой ELO. 
-                 Развивайте навыки в элегантной атмосфере среди профессиональных игроков.
-               </p>
+              <p className="text-lg text-white/90 max-w-lg leading-relaxed font-medium animate-fade-in [animation-delay:0.8s]">
+                Премиальный покерный клуб с рейтинговой системой ELO. 
+                Развивайте навыки в элегантной атмосфере среди профессиональных игроков.
+              </p>
 
                {/* Key Benefits */}
                <div className="grid grid-cols-2 gap-4 animate-slide-up [animation-delay:1s]">
