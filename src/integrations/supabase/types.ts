@@ -202,7 +202,10 @@ export type Database = {
           current_level: number | null
           current_small_blind: number | null
           description: string | null
+          finished_at: string | null
           id: string
+          is_archived: boolean | null
+          is_published: boolean | null
           max_players: number
           name: string
           rebuy_chips: number | null
@@ -227,7 +230,10 @@ export type Database = {
           current_level?: number | null
           current_small_blind?: number | null
           description?: string | null
+          finished_at?: string | null
           id?: string
+          is_archived?: boolean | null
+          is_published?: boolean | null
           max_players?: number
           name: string
           rebuy_chips?: number | null
@@ -252,7 +258,10 @@ export type Database = {
           current_level?: number | null
           current_small_blind?: number | null
           description?: string | null
+          finished_at?: string | null
           id?: string
+          is_archived?: boolean | null
+          is_published?: boolean | null
           max_players?: number
           name?: string
           rebuy_chips?: number | null
@@ -273,7 +282,22 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      archive_tournament: {
+        Args: { tournament_id_param: string }
+        Returns: boolean
+      }
+      publish_tournament: {
+        Args: { tournament_id_param: string }
+        Returns: boolean
+      }
+      update_tournament_timer: {
+        Args: {
+          tournament_id_param: string
+          new_timer_remaining: number
+          new_timer_active?: boolean
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never

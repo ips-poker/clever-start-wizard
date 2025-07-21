@@ -36,7 +36,9 @@ export function TournamentList() {
           *,
           tournament_registrations(count)
         `)
-        .in('status', ['scheduled', 'registration'])
+        .eq('is_published', true)
+        .in('status', ['registration', 'running'])
+        .eq('is_archived', false)
         .order('start_time', { ascending: true })
         .limit(6);
 

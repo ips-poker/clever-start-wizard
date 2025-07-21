@@ -17,6 +17,7 @@ import PlayerRegistration from "@/components/PlayerRegistration";
 import TournamentOverview from "@/components/TournamentOverview";
 import BlindStructure from "@/components/BlindStructure";
 import PayoutStructure from "@/components/PayoutStructure";
+import TournamentSyncManager from "@/components/TournamentSyncManager";
 
 interface Tournament {
   id: string;
@@ -40,6 +41,9 @@ interface Tournament {
   addon_level: number;
   break_start_level: number;
   tournament_format: string;
+  is_published: boolean;
+  is_archived: boolean;
+  finished_at?: string;
 }
 
 interface Player {
@@ -135,12 +139,18 @@ const TournamentDirector = () => {
     }
   }, [selectedTournament]);
 
-  // Timer effect
+  // Timer effect with database sync
   useEffect(() => {
-    if (timerActive && currentTime > 0) {
+    if (timerActive && currentTime > 0 && selectedTournament) {
       timerRef.current = setInterval(() => {
         setCurrentTime(prev => {
           const newTime = prev - 1;
+          
+          // Sync with database every 5 seconds
+          if (newTime % 5 === 0) {
+            syncTimerWithDatabase(selectedTournament.id, newTime);
+          }
+          
           if (newTime <= 0) {
             setTimerActive(false);
             toast({
@@ -166,7 +176,7 @@ const TournamentDirector = () => {
         timerRef.current = null;
       }
     };
-  }, [timerActive, currentTime]);
+  }, [timerActive, currentTime, selectedTournament]);
 
   const loadTournaments = async () => {
     const { data, error } = await supabase
@@ -459,11 +469,25 @@ const TournamentDirector = () => {
     }
   };
 
-  const adjustTimer = (seconds: number) => {
+  const syncTimerWithDatabase = async (tournamentId: string, timeRemaining: number) => {
+    try {
+      await supabase.rpc('update_tournament_timer', {
+        tournament_id_param: tournamentId,
+        new_timer_remaining: timeRemaining
+      });
+    } catch (error) {
+      console.error('Error syncing timer:', error);
+    }
+  };
+
+  const adjustTimer = async (seconds: number) => {
     if (!selectedTournament) return;
     
     const newTime = Math.max(0, currentTime + seconds);
     setCurrentTime(newTime);
+    
+    // Immediately sync with database
+    await syncTimerWithDatabase(selectedTournament.id, newTime);
     
     toast({ 
       title: "Таймер изменен", 
@@ -558,7 +582,7 @@ const TournamentDirector = () => {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-10">
-          <TabsList className="grid w-full grid-cols-5 bg-poker-surface-elevated border border-poker-border shadow-card rounded-2xl p-2 h-16">
+          <TabsList className="grid w-full grid-cols-6 bg-poker-surface-elevated border border-poker-border shadow-card rounded-2xl p-2 h-16">
             <TabsTrigger 
               value="overview" 
               className="data-[state=active]:bg-gradient-button data-[state=active]:text-white data-[state=active]:shadow-accent transition-all duration-300 rounded-xl font-medium"
@@ -586,6 +610,13 @@ const TournamentDirector = () => {
             >
               <Users className="w-5 h-5 mr-2" />
               Игроки
+            </TabsTrigger>
+            <TabsTrigger 
+              value="sync" 
+              className="data-[state=active]:bg-gradient-button data-[state=active]:text-white data-[state=active]:shadow-accent transition-all duration-300 rounded-xl font-medium"
+            >
+              <Settings className="w-5 h-5 mr-2" />
+              Синхронизация
             </TabsTrigger>
             <TabsTrigger 
               value="ratings" 
@@ -1413,6 +1444,14 @@ const TournamentDirector = () => {
                 </Table>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* Sync Tab */}
+          <TabsContent value="sync">
+            <TournamentSyncManager 
+              tournaments={tournaments}
+              onRefresh={loadTournaments}
+            />
           </TabsContent>
         </Tabs>
       </div>
