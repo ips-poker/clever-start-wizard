@@ -69,8 +69,13 @@ export default {
 					silver: 'hsl(var(--poker-silver))',
 					platinum: 'hsl(var(--poker-platinum))',
 					pearl: 'hsl(var(--poker-pearl))',
+					cream: 'hsl(var(--poker-cream))',
 					gold: 'hsl(var(--poker-gold))',
-					bronze: 'hsl(var(--poker-bronze))'
+					blue: 'hsl(var(--poker-blue))',
+					green: 'hsl(var(--poker-green))',
+					red: 'hsl(var(--poker-red))',
+					accent: 'hsl(var(--poker-accent))',
+					'accent-light': 'hsl(var(--poker-accent-light))'
 				}
 			},
 			backgroundImage: {
@@ -78,12 +83,12 @@ export default {
 				'gradient-hero': 'var(--gradient-hero)',
 				'gradient-charcoal': 'var(--gradient-charcoal)',
 				'gradient-steel': 'var(--gradient-steel)',
-				'gradient-gold': 'var(--gradient-gold)',
-				'gradient-luxury': 'var(--gradient-luxury)',
+				'gradient-accent': 'var(--gradient-accent)',
+				'gradient-modern': 'var(--gradient-modern)',
 				'gradient-card': 'var(--gradient-card)',
 				'gradient-overlay': 'var(--gradient-overlay)',
 				'gradient-glass': 'var(--gradient-glass)',
-				'gradient-shine': 'var(--gradient-shine)'
+				'gradient-subtle': 'var(--gradient-subtle)'
 			},
 			boxShadow: {
 				'subtle': 'var(--shadow-subtle)',

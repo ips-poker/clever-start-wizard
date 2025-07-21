@@ -149,7 +149,7 @@ export function Gallery() {
                 
                 {/* Overlay */}
                 <div className="absolute inset-0 bg-poker-charcoal/0 group-hover:bg-poker-charcoal/20 transition-all duration-300 flex items-center justify-center">
-                  <ZoomIn className="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-all duration-300" />
+                  <ZoomIn className="w-8 h-8 text-primary-foreground opacity-0 group-hover:opacity-100 transition-all duration-300" />
                 </div>
 
                 {/* Category Badge */}
@@ -176,11 +176,11 @@ export function Gallery() {
 
         {/* Modal for full-size image */}
         {selectedImage !== null && (
-          <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-50 bg-poker-charcoal/80 backdrop-blur-sm flex items-center justify-center p-4">
             <div className="relative max-w-4xl max-h-[90vh] bg-background rounded-lg overflow-hidden">
               <button
                 onClick={() => setSelectedImage(null)}
-                className="absolute top-4 right-4 z-10 bg-poker-charcoal/80 text-white p-2 rounded-full hover:bg-poker-charcoal transition-colors"
+                className="absolute top-4 right-4 z-10 bg-poker-charcoal/80 text-primary-foreground p-2 rounded-full hover:bg-poker-charcoal transition-colors"
               >
                 <X className="w-6 h-6" />
               </button>
