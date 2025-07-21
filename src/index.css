@@ -2,111 +2,84 @@
 @tailwind components;
 @tailwind utilities;
 
-/* IPS Poker Club Design System - Sophisticated Dark Professional Theme */
+/* IPS Poker Club Design System - Elegant Dark Theme */
 
 @layer base {
   :root {
-    /* Light theme - Professional elegant */
     --background: 220 15% 97%;
-    --foreground: 220 26% 12%;
+    --foreground: 220 15% 25%;
 
     --card: 220 15% 100%;
-    --card-foreground: 220 26% 12%;
+    --card-foreground: 220 15% 25%;
 
     --popover: 220 15% 100%;
-    --popover-foreground: 220 26% 12%;
+    --popover-foreground: 220 15% 25%;
 
-    --primary: 220 26% 14%;
+    --primary: 220 20% 32%;
     --primary-foreground: 220 15% 98%;
 
     --secondary: 220 10% 94%;
-    --secondary-foreground: 220 26% 14%;
+    --secondary-foreground: 220 20% 32%;
 
     --muted: 220 10% 96%;
     --muted-foreground: 220 10% 45%;
 
-    --accent: 260 100% 65%;
-    --accent-foreground: 220 15% 98%;
+    --accent: 220 15% 90%;
+    --accent-foreground: 220 20% 32%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 220 15% 98%;
 
     --border: 220 10% 88%;
     --input: 220 10% 88%;
-    --ring: 220 26% 14%;
+    --ring: 220 20% 32%;
 
     --radius: 0.75rem;
 
-    /* Premium Monochrome Color Palette - Ultra elegant */
-    --poker-primary: 220 15% 15%;           /* Deep charcoal */
-    --poker-primary-light: 220 15% 25%;     /* Lighter charcoal */
-    --poker-primary-dark: 220 15% 8%;       /* Almost black */
-    --poker-secondary: 220 10% 96%;         /* Clean light gray */
-    --poker-accent: 220 5% 35%;             /* Muted dark gray */
-    --poker-accent-light: 220 5% 45%;       /* Medium gray */
-    --poker-accent-dark: 220 5% 25%;        /* Darker gray */
-    --poker-gold: 40 8% 45%;                /* Very muted bronze */
-    --poker-gold-light: 40 8% 55%;          /* Light muted bronze */
-    --poker-gold-dark: 40 8% 35%;           /* Deep muted bronze */
-    --poker-success: 120 8% 40%;            /* Muted dark green */
-    --poker-warning: 35 8% 45%;             /* Muted brown */
-    --poker-error: 0 8% 45%;                /* Muted red */
-    --poker-surface: 0 0% 100%;             /* Pure white */
-    --poker-surface-elevated: 220 10% 98%;  /* Off white */
-    --poker-surface-subtle: 220 10% 96%;    /* Light gray */
-    --poker-border: 220 10% 90%;            /* Very light border */
-    --poker-border-light: 220 10% 94%;      /* Ultra light border */
-    --poker-text-primary: 220 15% 15%;      /* Dark charcoal */
-    --poker-text-secondary: 220 10% 45%;    /* Medium gray */
-    --poker-text-muted: 220 8% 65%;         /* Light gray */
-    --poker-text-inverse: 0 0% 100%;        /* Pure white */
-    --poker-text-inverse: 220 15% 98%;      /* Inverse text */
+    /* Professional Light Theme Design Tokens */
+    --poker-primary: 220 26% 14%;           /* Deep navy for main elements */
+    --poker-primary-light: 220 26% 18%;     /* Slightly lighter navy */
+    --poker-secondary: 220 14% 96%;         /* Very light gray-blue */
+    --poker-accent: 260 100% 65%;           /* Vibrant purple accent */
+    --poker-accent-light: 260 100% 70%;     /* Lighter purple */
+    --poker-success: 142 71% 45%;           /* Professional green */
+    --poker-warning: 38 100% 50%;           /* Warm orange */
+    --poker-error: 0 84% 60%;               /* Professional red */
+    --poker-surface: 220 14% 99%;           /* Almost white surface */
+    --poker-surface-elevated: 220 20% 98%;  /* Slightly elevated surface */
+    --poker-border: 220 14% 91%;            /* Subtle border */
+    --poker-text-primary: 220 26% 14%;      /* Main text color */
+    --poker-text-secondary: 220 16% 46%;    /* Secondary text */
+    --poker-text-muted: 220 14% 71%;        /* Muted text */
     
-    /* Sophisticated Dark Theme - for overlays */
-    --poker-dark-primary: 220 15% 8%;       /* Ultra dark charcoal */
-    --poker-dark-secondary: 220 10% 12%;    /* Dark surface */
-    --poker-dark-elevated: 220 8% 16%;      /* Elevated dark surface */
-    --poker-dark-text: 220 10% 95%;         /* Light text on dark */
-    --poker-dark-text-muted: 220 5% 70%;    /* Muted text on dark */
+    /* Professional Gradients - Light Theme */
+    --gradient-primary: linear-gradient(135deg, hsl(220 14% 99%) 0%, hsl(220 20% 96%) 50%, hsl(220 14% 93%) 100%);
+    --gradient-hero: linear-gradient(135deg, hsl(220 14% 99% / 0.95) 0%, hsl(220 20% 96% / 0.90) 50%, hsl(220 14% 93% / 0.85) 100%);
+    --gradient-card: linear-gradient(135deg, hsl(220 20% 98% / 0.8) 0%, hsl(220 14% 96% / 0.9) 100%);
+    --gradient-accent: linear-gradient(135deg, hsl(260 100% 65%) 0%, hsl(260 100% 70%) 100%);
+    --gradient-success: linear-gradient(135deg, hsl(142 71% 45%) 0%, hsl(142 71% 50%) 100%);
+    --gradient-glass: linear-gradient(135deg, rgba(255, 255, 255, 0.25) 0%, rgba(255, 255, 255, 0.10) 100%);
+    --gradient-border: linear-gradient(135deg, hsl(220 14% 91%) 0%, hsl(220 20% 88%) 100%);
+    --gradient-button: linear-gradient(135deg, hsl(220 26% 14%) 0%, hsl(220 26% 18%) 100%);
+    --gradient-surface: linear-gradient(135deg, hsl(220 14% 99%) 0%, hsl(220 20% 97%) 100%);
     
-    /* Premium Gradients - Subtle and elegant */
-    --gradient-primary: linear-gradient(135deg, hsl(220 10% 98%) 0%, hsl(220 15% 96%) 100%);
-    --gradient-hero: linear-gradient(135deg, hsl(220 15% 8% / 0.95) 0%, hsl(220 10% 5% / 0.90) 100%);
-    --gradient-card: linear-gradient(135deg, hsl(0 0% 100%) 0%, hsl(220 10% 98%) 100%);
-    --gradient-accent: linear-gradient(135deg, hsl(220 5% 35%) 0%, hsl(220 5% 45%) 100%);
-    --gradient-gold: linear-gradient(135deg, hsl(40 8% 45%) 0%, hsl(40 8% 55%) 100%);
-    --gradient-success: linear-gradient(135deg, hsl(120 8% 40%) 0%, hsl(120 8% 50%) 100%);
-    --gradient-glass: linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.05) 100%);
-    --gradient-glass-dark: linear-gradient(135deg, rgba(34, 34, 34, 0.85) 0%, rgba(20, 20, 20, 0.75) 100%);
-    --gradient-border: linear-gradient(135deg, hsl(220 10% 90%) 0%, hsl(220 10% 88%) 100%);
-    --gradient-button: linear-gradient(135deg, hsl(220 15% 15%) 0%, hsl(220 15% 20%) 100%);
-    --gradient-button-hover: linear-gradient(135deg, hsl(220 15% 20%) 0%, hsl(220 15% 25%) 100%);
-    --gradient-surface: linear-gradient(135deg, hsl(0 0% 100%) 0%, hsl(220 10% 99%) 100%);
-    --gradient-elegant: linear-gradient(135deg, hsl(220 26% 14%) 0%, hsl(260 100% 65%) 50%, hsl(45 100% 65%) 100%);
+    /* Professional Shadows - Light Theme */
+    --shadow-minimal: 0 1px 3px hsl(220 26% 14% / 0.05);
+    --shadow-subtle: 0 2px 8px hsl(220 26% 14% / 0.08);
+    --shadow-card: 0 4px 16px hsl(220 26% 14% / 0.10);
+    --shadow-elevated: 0 8px 24px hsl(220 26% 14% / 0.12);
+    --shadow-floating: 0 12px 32px hsl(220 26% 14% / 0.15);
+    --shadow-dramatic: 0 16px 48px hsl(220 26% 14% / 0.18);
+    --shadow-accent: 0 4px 16px hsl(260 100% 65% / 0.25);
+    --shadow-success: 0 4px 16px hsl(142 71% 45% / 0.25);
+    --shadow-inset: inset 0 1px 3px hsl(220 26% 14% / 0.06);
     
-    /* Premium Shadows - Very subtle */
-    --shadow-minimal: 0 1px 3px hsl(220 15% 15% / 0.03);
-    --shadow-subtle: 0 2px 8px hsl(220 15% 15% / 0.06);
-    --shadow-card: 0 4px 16px hsl(220 15% 15% / 0.08);
-    --shadow-elevated: 0 8px 24px hsl(220 15% 15% / 0.10);
-    --shadow-floating: 0 12px 32px hsl(220 15% 15% / 0.12);
-    --shadow-dramatic: 0 16px 48px hsl(220 15% 15% / 0.15);
-    --shadow-accent: 0 4px 20px hsl(220 5% 35% / 0.15);
-    --shadow-gold: 0 4px 20px hsl(40 8% 45% / 0.15);
-    --shadow-success: 0 4px 16px hsl(120 8% 40% / 0.15);
-    --shadow-inset: inset 0 1px 3px hsl(220 15% 15% / 0.04);
-    --shadow-glow: 0 0 20px hsl(220 5% 35% / 0.15);
-    --shadow-gold-glow: 0 0 20px hsl(40 8% 45% / 0.15);
-    
-    /* Typography Refinements */
-    --font-weight-thin: 100;
-    --font-weight-extralight: 200;
+    /* Typography Enhancements */
     --font-weight-light: 300;
     --font-weight-normal: 400;
     --font-weight-medium: 500;
     --font-weight-semibold: 600;
     --font-weight-bold: 700;
-    --font-weight-extrabold: 800;
     --font-weight-black: 900;
     
     /* Spacing and Sizing */
@@ -116,63 +89,62 @@
     --space-lg: 1.5rem;
     --space-xl: 2rem;
     --space-2xl: 3rem;
-    --space-3xl: 4rem;
 
-    --radius-sm: 0.5rem;
     --radius: 0.75rem;
-    --radius-lg: 1rem;
-    --radius-xl: 1.25rem;
 
-    /* Sidebar styling */
-    --sidebar-background: 220 26% 14%;
-    --sidebar-foreground: 220 15% 95%;
-    --sidebar-primary: 260 100% 65%;
-    --sidebar-primary-foreground: 220 15% 98%;
-    --sidebar-accent: 220 20% 18%;
-    --sidebar-accent-foreground: 220 15% 95%;
-    --sidebar-border: 220 20% 20%;
-    --sidebar-ring: 260 100% 65%;
+    --sidebar-background: 0 0% 98%;
+
+    --sidebar-foreground: 240 5.3% 26.1%;
+
+    --sidebar-primary: 240 5.9% 10%;
+
+    --sidebar-primary-foreground: 0 0% 98%;
+
+    --sidebar-accent: 240 4.8% 95.9%;
+
+    --sidebar-accent-foreground: 240 5.9% 10%;
+
+    --sidebar-border: 220 13% 91%;
+
+    --sidebar-ring: 217.2 91.2% 59.8%;
   }
 
   .dark {
-    /* Dark theme maintains the sophisticated approach */
-    --background: 220 26% 8%;
-    --foreground: 220 15% 95%;
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
 
-    --card: 220 20% 12%;
-    --card-foreground: 220 15% 95%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
 
-    --popover: 220 20% 12%;
-    --popover-foreground: 220 15% 95%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
 
-    --primary: 260 100% 65%;
-    --primary-foreground: 220 26% 8%;
+    --primary: 210 40% 98%;
+    --primary-foreground: 222.2 47.4% 11.2%;
 
-    --secondary: 220 20% 16%;
-    --secondary-foreground: 220 15% 95%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
 
-    --muted: 220 20% 16%;
-    --muted-foreground: 220 10% 70%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
 
-    --accent: 220 20% 18%;
-    --accent-foreground: 220 15% 95%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
 
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 220 15% 95%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
 
-    --border: 220 20% 20%;
-    --input: 220 20% 18%;
-    --ring: 260 100% 65%;
-    
-    /* Dark theme sidebar */
-    --sidebar-background: 220 26% 8%;
-    --sidebar-foreground: 220 15% 95%;
-    --sidebar-primary: 260 100% 65%;
-    --sidebar-primary-foreground: 220 26% 8%;
-    --sidebar-accent: 220 20% 12%;
-    --sidebar-accent-foreground: 220 15% 95%;
-    --sidebar-border: 220 20% 16%;
-    --sidebar-ring: 260 100% 65%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 212.7 26.8% 83.9%;
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
   }
 }
 
@@ -182,30 +154,6 @@
   }
 
   body {
-    @apply bg-background text-foreground font-medium antialiased;
-    font-feature-settings: 'cv11', 'ss01';
-    font-variation-settings: 'opsz' 32;
-  }
-
-  /* Professional typography improvements */
-  h1, h2, h3, h4, h5, h6 {
-    @apply font-semibold tracking-tight;
-  }
-
-  /* Elegant scrollbars */
-  ::-webkit-scrollbar {
-    width: 8px;
-  }
-
-  ::-webkit-scrollbar-track {
-    @apply bg-poker-surface;
-  }
-
-  ::-webkit-scrollbar-thumb {
-    @apply bg-poker-border rounded-full;
-  }
-
-  ::-webkit-scrollbar-thumb:hover {
-    @apply bg-poker-text-muted;
+    @apply bg-background text-foreground;
   }
 }
