@@ -538,6 +538,8 @@ const TournamentDirector = () => {
     }
 
     try {
+      console.log('Начинаем завершение турнира:', selectedTournament.id);
+      
       // Prepare results for ELO calculation with rebuys/addons
       const results = Object.entries(tournamentResults).map(([playerId, position]) => {
         const registration = registrations.find(reg => reg.player_id === playerId);
@@ -548,6 +550,8 @@ const TournamentDirector = () => {
           addons: registration?.addons || 0
         };
       });
+      
+      console.log('Подготовленные результаты для ELO:', results);
 
       // Call ELO calculation function
       const { data, error } = await supabase.functions.invoke('calculate-elo', {
@@ -557,7 +561,10 @@ const TournamentDirector = () => {
         }
       });
 
+      console.log('Ответ от calculate-elo:', { data, error });
+
       if (error) {
+        console.error('Ошибка при расчете ELO:', error);
         throw error;
       }
 
@@ -1031,10 +1038,14 @@ const TournamentDirector = () => {
                           <Button 
                             size="sm" 
                             variant="outline"
-                            className="border-green-200 bg-green-50 text-green-600 text-xs"
+                            onClick={() => {
+                              setSelectedTournament(tournament);
+                              setActiveTab("results");
+                            }}
+                            className="border-green-200 bg-green-50 text-green-600 hover:bg-green-100 text-xs"
                           >
                             <CheckCircle className="w-3 h-3 mr-1" />
-                            Завершен
+                            Посмотреть результаты
                           </Button>
                         )}
                       </div>
@@ -1492,6 +1503,53 @@ const TournamentDirector = () => {
 
           {/* Results Tab */}
           <TabsContent value="results" className="space-y-6 animate-fade-in">
+            <Card className="bg-gradient-card border-poker-border shadow-elevated">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-poker-text-primary">
+                  <Trophy className="h-5 w-5 text-poker-warning" />
+                  Выбор турнира для просмотра результатов
+                </CardTitle>
+                <CardDescription className="text-poker-text-secondary">
+                  Выберите завершенный турнир для просмотра результатов и статистики
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+                  {tournaments.filter(t => t.status === 'completed').map(tournament => (
+                    <Card 
+                      key={tournament.id} 
+                      className={`cursor-pointer transition-all border-2 ${
+                        selectedTournament?.id === tournament.id 
+                          ? 'border-poker-primary bg-poker-primary/10' 
+                          : 'border-poker-border hover:border-poker-primary/50'
+                      }`}
+                      onClick={() => setSelectedTournament(tournament)}
+                    >
+                      <CardContent className="p-4">
+                        <h3 className="font-semibold text-poker-text-primary mb-2">{tournament.name}</h3>
+                        <div className="space-y-1 text-sm text-poker-text-muted">
+                          <p>Бай-ин: {tournament.buy_in}₽</p>
+                          <p>Завершен: {tournament.finished_at ? new Date(tournament.finished_at).toLocaleDateString('ru-RU') : 'Дата неизвестна'}</p>
+                        </div>
+                        <Badge 
+                          variant="outline" 
+                          className="mt-2 border-green-200 bg-green-50 text-green-600"
+                        >
+                          Завершен
+                        </Badge>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+                {tournaments.filter(t => t.status === 'completed').length === 0 && (
+                  <div className="text-center py-8 text-poker-text-muted">
+                    <Trophy className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>Нет завершенных турниров для отображения</p>
+                    <p className="text-sm mt-2">Завершите турнир через раздел "Управление", чтобы увидеть результаты здесь</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
             <TournamentResults selectedTournament={selectedTournament} />
           </TabsContent>
 
