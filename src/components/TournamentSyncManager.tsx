@@ -173,8 +173,14 @@ const TournamentSyncManager = ({ tournaments, onRefresh }: TournamentSyncManager
       a.download = `poker-club-export-${new Date().toISOString().split('T')[0]}.json`;
       document.body.appendChild(a);
       a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      
+      // Safely remove element after click with timeout
+      setTimeout(() => {
+        if (a.parentNode) {
+          document.body.removeChild(a);
+        }
+        URL.revokeObjectURL(url);
+      }, 100);
 
       toast({
         title: 'Экспорт завершен',

@@ -151,6 +151,12 @@ const TournamentDirector = () => {
 
   // Timer effect with database sync
   useEffect(() => {
+    // Clear any existing timer first
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+
     if (timerActive && currentTime > 0 && selectedTournament) {
       timerRef.current = setInterval(() => {
         setCurrentTime(prev => {
@@ -173,11 +179,6 @@ const TournamentDirector = () => {
           return newTime;
         });
       }, 1000);
-    } else {
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-        timerRef.current = null;
-      }
     }
 
     return () => {
@@ -186,7 +187,7 @@ const TournamentDirector = () => {
         timerRef.current = null;
       }
     };
-  }, [timerActive, currentTime, selectedTournament]);
+  }, [timerActive, selectedTournament]); // Removed currentTime from deps to prevent timer restart
 
   const loadTournaments = async () => {
     const { data, error } = await supabase
