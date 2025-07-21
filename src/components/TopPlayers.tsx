@@ -21,11 +21,29 @@ export function TopPlayers() {
     
     // Set up real-time subscription for player updates
     const playersChannel = supabase
-      .channel('players-changes')
+      .channel('top-players-realtime')
       .on('postgres_changes', 
         { event: '*', schema: 'public', table: 'players' }, 
-        () => {
-          loadTopPlayers();
+        (payload) => {
+          console.log('Player rating updated:', payload);
+          loadTopPlayers(); // Reload when any player data changes
+        }
+      )
+      .on('postgres_changes',
+        { event: '*', schema: 'public', table: 'game_results' },
+        (payload) => {
+          console.log('Game result added:', payload);
+          loadTopPlayers(); // Reload when game results are added
+        }
+      )
+      .on('postgres_changes',
+        { event: '*', schema: 'public', table: 'tournaments' },
+        (payload) => {
+          console.log('Tournament status changed:', payload);
+          // Only reload if tournament status changed to completed
+          if (payload.new && (payload.new as any).status === 'completed') {
+            setTimeout(() => loadTopPlayers(), 2000); // Small delay for rating calculation
+          }
         }
       )
       .subscribe();
@@ -61,7 +79,7 @@ export function TopPlayers() {
       case 3:
         return <Award className="w-6 h-6 text-amber-600" />;
       default:
-        return <TrendingUp className="w-5 h-5 text-poker-steel" />;
+        return <TrendingUp className="w-5 h-5 text-poker-primary" />;
     }
   };
 
@@ -79,7 +97,7 @@ export function TopPlayers() {
       );
     }
     return (
-      <Badge variant="outline" className="border-poker-steel text-poker-steel">
+      <Badge variant="outline" className="border-poker-primary/20 text-poker-primary">
         #{position}
       </Badge>
     );
@@ -106,7 +124,7 @@ export function TopPlayers() {
     <section id="rating" className="py-20">
       <div className="container mx-auto px-4">
         <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold mb-4 bg-gradient-to-r from-poker-gold to-poker-steel bg-clip-text text-transparent">
+          <h2 className="text-3xl font-bold mb-4 bg-gradient-to-r from-poker-accent to-poker-primary bg-clip-text text-transparent">
             Рейтинг лучших игроков
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
