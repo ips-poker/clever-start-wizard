@@ -145,24 +145,25 @@ export function SocialProof() {
           ))}
         </div>
 
-        {/* Call to Action - Fixed readability */}
-        <div className="relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-poker-primary via-poker-accent to-poker-primary opacity-90"></div>
-          <div className="relative text-center rounded-2xl p-12 text-white">
-            <h3 className="text-4xl font-bold mb-6 text-white drop-shadow-lg">
+        {/* Call to Action - Enhanced readability */}
+        <div className="relative overflow-hidden rounded-2xl">
+          <div className="absolute inset-0 bg-gradient-surface opacity-95"></div>
+          <div className="absolute inset-0 bg-gradient-to-br from-poker-primary/20 via-poker-accent/20 to-poker-primary/20"></div>
+          <div className="relative text-center p-12 bg-card/50 backdrop-blur-sm border border-border/50">
+            <h3 className="text-4xl font-bold mb-6 text-poker-text-primary">
               Готовы начать свой путь к покерному мастерству?
             </h3>
-            <p className="text-xl mb-8 text-white/95 max-w-2xl mx-auto leading-relaxed drop-shadow">
+            <p className="text-xl mb-8 text-poker-text-secondary max-w-2xl mx-auto leading-relaxed">
               Присоединяйтесь к IPS сегодня и получите доступ к профессиональной рейтинговой системе, 
               регулярным турнирам и дружелюбному сообществу.
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-8">
-              <Button size="lg" className="bg-white text-poker-primary hover:bg-white/90 font-bold shadow-xl">
+              <Button size="lg" className="bg-poker-accent hover:bg-poker-accent/90 text-primary font-bold shadow-elegant hover-scale">
                 <UserCheck className="w-5 h-5 mr-2" />
                 Присоединиться бесплатно
               </Button>
-              <Button size="lg" variant="outline" className="border-2 border-white text-white hover:bg-white hover:text-poker-primary font-semibold">
+              <Button size="lg" variant="outline" className="border-2 border-poker-primary text-poker-primary hover:bg-poker-primary hover:text-primary-foreground font-semibold hover-scale">
                 Подробнее о клубе
                 <ArrowRight className="w-5 h-5 ml-2" />
               </Button>

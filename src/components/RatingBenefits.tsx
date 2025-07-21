@@ -131,33 +131,33 @@ export function RatingBenefits() {
           </div>
 
           <div className="relative">
-            {/* Rating Display Mock */}
-            <Card className="p-8 bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-elegant">
+            {/* Rating Display - Enhanced Design */}
+            <Card className="p-8 bg-gradient-surface border-2 border-poker-accent/20 shadow-elegant hover-scale transition-all duration-300">
               <div className="text-center space-y-6">
                 <div className="space-y-2">
-                  <h4 className="text-2xl font-bold">Ваш текущий рейтинг</h4>
-                  <div className="text-6xl font-bold text-poker-gold">1847</div>
-                  <Badge className="bg-poker-gold text-primary">Продвинутый игрок</Badge>
+                  <h4 className="text-2xl font-bold text-poker-text-primary">Ваш текущий рейтинг</h4>
+                  <div className="text-6xl font-bold bg-gradient-primary bg-clip-text text-transparent drop-shadow-lg">1847</div>
+                  <Badge className="bg-poker-accent text-primary font-semibold px-4 py-1 shadow-md">Продвинутый игрок</Badge>
                 </div>
                 
-                <div className="grid grid-cols-3 gap-4 pt-4 border-t border-primary-foreground/20">
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-poker-gold">23</div>
-                    <div className="text-sm opacity-80">Турниров</div>
+                <div className="grid grid-cols-3 gap-4 pt-4 border-t border-border">
+                  <div className="text-center p-3 rounded-lg bg-card/50">
+                    <div className="text-2xl font-bold text-poker-accent">23</div>
+                    <div className="text-sm text-poker-text-secondary">Турниров</div>
                   </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-poker-gold">+127</div>
-                    <div className="text-sm opacity-80">За месяц</div>
+                  <div className="text-center p-3 rounded-lg bg-card/50">
+                    <div className="text-2xl font-bold text-poker-accent">+127</div>
+                    <div className="text-sm text-poker-text-secondary">За месяц</div>
                   </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-poker-gold">TOP 15</div>
-                    <div className="text-sm opacity-80">Позиция</div>
+                  <div className="text-center p-3 rounded-lg bg-card/50">
+                    <div className="text-2xl font-bold text-poker-accent">TOP 15</div>
+                    <div className="text-sm text-poker-text-secondary">Позиция</div>
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between pt-4 border-t border-primary-foreground/20">
-                  <span className="text-sm">До Elite осталось:</span>
-                  <span className="font-semibold text-poker-gold">153 очка</span>
+                <div className="flex items-center justify-between pt-4 border-t border-border px-2">
+                  <span className="text-sm text-poker-text-secondary">До Elite осталось:</span>
+                  <span className="font-semibold text-poker-accent bg-poker-accent/10 px-3 py-1 rounded-full">153 очка</span>
                 </div>
               </div>
             </Card>

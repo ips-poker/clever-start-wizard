@@ -106,12 +106,13 @@ export function TopPlayers() {
     <section id="rating" className="py-20">
       <div className="container mx-auto px-4">
         <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold mb-4 bg-gradient-primary bg-clip-text text-transparent">
+          <h2 className="text-4xl font-bold mb-6 bg-gradient-primary bg-clip-text text-transparent">
             Рейтинг лучших игроков
           </h2>
-          <p className="text-lg text-poker-text-secondary max-w-2xl mx-auto">
+          <p className="text-xl text-poker-text-secondary max-w-3xl mx-auto leading-relaxed">
             Топ игроков по системе ELO рейтинга. Участвуйте в турнирах и поднимайтесь в рейтинге!
           </p>
+          <div className="w-24 h-1 bg-gradient-primary mx-auto mt-6 rounded-full"></div>
         </div>
 
         {topPlayers.length === 0 ? (
