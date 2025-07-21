@@ -90,20 +90,37 @@ const BlindStructure = ({ tournamentId }: BlindStructureProps) => {
   };
 
   const addLevel = async () => {
-    const nextLevel = Math.max(...blindLevels.map(l => l.level), 0) + 1;
+    // Определяем позицию для вставки нового уровня
+    const maxLevel = Math.max(...blindLevels.map(l => l.level), 0);
+    const insertLevel = maxLevel + 1;
+    
+    // Если добавляем перерыв, вставляем его между игровыми уровнями
+    if (newLevel.is_break) {
+      // Сдвигаем все уровни после позиции вставки
+      const levelsToUpdate = blindLevels.filter(l => l.level >= insertLevel);
+      for (const level of levelsToUpdate) {
+        await supabase
+          .from('blind_levels')
+          .update({ level: level.level + 1 })
+          .eq('id', level.id);
+      }
+    }
     
     const { error } = await supabase
       .from('blind_levels')
       .insert([{
         tournament_id: tournamentId,
-        level: nextLevel,
+        level: insertLevel,
         ...newLevel
       }]);
 
     if (error) {
       toast({ title: "Ошибка", description: "Не удалось добавить уровень", variant: "destructive" });
     } else {
-      toast({ title: "Успех", description: "Уровень добавлен" });
+      toast({ 
+        title: "Успех", 
+        description: newLevel.is_break ? "Перерыв добавлен" : "Уровень добавлен" 
+      });
       setNewLevel({ small_blind: 100, big_blind: 200, ante: 200, duration: 1200, is_break: false });
       setIsDialogOpen(false);
       loadBlindLevels();
@@ -171,7 +188,26 @@ const BlindStructure = ({ tournamentId }: BlindStructureProps) => {
 
   const openAddDialog = () => {
     setEditingLevel(null);
-    setNewLevel({ small_blind: 100, big_blind: 200, ante: 200, duration: 1200, is_break: false });
+    // Определяем следующий логический уровень для игровых блайндов
+    const gamelevels = blindLevels.filter(l => !l.is_break);
+    const lastGameLevel = gamelevels.length > 0 ? gamelevels[gamelevels.length - 1] : null;
+    
+    let nextBlinds = { small_blind: 100, big_blind: 200 };
+    if (lastGameLevel) {
+      // Предлагаем следующие логичные блайнды
+      const factor = lastGameLevel.big_blind >= 1000 ? 1.5 : 2;
+      nextBlinds = {
+        small_blind: Math.round(lastGameLevel.small_blind * factor),
+        big_blind: Math.round(lastGameLevel.big_blind * factor)
+      };
+    }
+    
+    setNewLevel({ 
+      ...nextBlinds, 
+      ante: nextBlinds.big_blind, 
+      duration: 1200, 
+      is_break: false 
+    });
     setIsDialogOpen(true);
   };
 
@@ -294,7 +330,7 @@ const BlindStructure = ({ tournamentId }: BlindStructureProps) => {
       </div>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="bg-white/95 backdrop-blur-sm border border-gray-200 rounded-xl">
+        <DialogContent className="bg-white/95 backdrop-blur-sm border border-gray-200 rounded-xl max-w-md">
           <DialogHeader>
             <DialogTitle>
               {editingLevel ? 'Редактировать уровень' : 'Добавить уровень'}
@@ -305,21 +341,28 @@ const BlindStructure = ({ tournamentId }: BlindStructureProps) => {
           </DialogHeader>
           
           <div className="space-y-4">
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-3 p-3 bg-blue-50/50 rounded-lg border border-blue-200/50">
               <input
                 type="checkbox"
                 id="is_break"
                 checked={newLevel.is_break}
-                onChange={(e) => setNewLevel(prev => ({ ...prev, is_break: e.target.checked }))}
-                className="rounded border-gray-300"
+                onChange={(e) => setNewLevel(prev => ({ 
+                  ...prev, 
+                  is_break: e.target.checked,
+                  // При переключении на перерыв устанавливаем длительность 15 минут
+                  duration: e.target.checked ? 900 : 1200
+                }))}
+                className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
               />
-              <Label htmlFor="is_break">Это перерыв</Label>
+              <Label htmlFor="is_break" className="text-blue-800 font-medium">
+                {newLevel.is_break ? '☕ Перерыв' : '🎮 Игровой уровень'}
+              </Label>
             </div>
 
             {!newLevel.is_break && (
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-3 gap-3">
                 <div>
-                  <Label htmlFor="small_blind">Малый блайнд</Label>
+                  <Label htmlFor="small_blind" className="text-sm font-medium text-gray-700">Малый блайнд</Label>
                   <Input
                     id="small_blind"
                     type="number"
@@ -328,23 +371,28 @@ const BlindStructure = ({ tournamentId }: BlindStructureProps) => {
                       ...prev, 
                       small_blind: parseInt(e.target.value) || 0 
                     }))}
+                    className="mt-1"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="big_blind">Большой блайнд</Label>
+                  <Label htmlFor="big_blind" className="text-sm font-medium text-gray-700">Большой блайнд</Label>
                   <Input
                     id="big_blind"
                     type="number"
                     value={newLevel.big_blind}
-                    onChange={(e) => setNewLevel(prev => ({ 
-                      ...prev, 
-                      big_blind: parseInt(e.target.value) || 0,
-                      ante: parseInt(e.target.value) || 0 // Анте равно большому блайнду
-                    }))}
+                    onChange={(e) => {
+                      const value = parseInt(e.target.value) || 0;
+                      setNewLevel(prev => ({ 
+                        ...prev, 
+                        big_blind: value,
+                        ante: value // Анте равно большому блайнду
+                      }));
+                    }}
+                    className="mt-1"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="ante">Анте</Label>
+                  <Label htmlFor="ante" className="text-sm font-medium text-gray-700">Анте</Label>
                   <Input
                     id="ante"
                     type="number"
@@ -353,25 +401,36 @@ const BlindStructure = ({ tournamentId }: BlindStructureProps) => {
                       ...prev, 
                       ante: parseInt(e.target.value) || 0 
                     }))}
+                    className="mt-1"
                   />
                 </div>
               </div>
             )}
 
             <div>
-              <Label htmlFor="duration">Длительность (секунды)</Label>
-              <Input
-                id="duration"
-                type="number"
-                value={newLevel.duration}
-                onChange={(e) => setNewLevel(prev => ({ 
-                  ...prev, 
-                  duration: parseInt(e.target.value) || 1200 
-                }))}
-              />
+              <Label htmlFor="duration" className="text-sm font-medium text-gray-700">
+                Длительность ({newLevel.is_break ? 'перерыва' : 'уровня'})
+              </Label>
+              <div className="flex items-center gap-2 mt-1">
+                <Input
+                  id="duration"
+                  type="number"
+                  value={Math.floor(newLevel.duration / 60)}
+                  onChange={(e) => setNewLevel(prev => ({ 
+                    ...prev, 
+                    duration: (parseInt(e.target.value) || 20) * 60 
+                  }))}
+                  className="flex-1"
+                  placeholder="20"
+                />
+                <span className="text-sm text-gray-500">минут</span>
+              </div>
+              <div className="text-xs text-gray-500 mt-1">
+                Рекомендуется: {newLevel.is_break ? '15' : '20'} минут
+              </div>
             </div>
 
-            <div className="flex justify-end space-x-2">
+            <div className="flex justify-end space-x-2 pt-4">
               <Button
                 variant="outline"
                 onClick={() => setIsDialogOpen(false)}
@@ -383,7 +442,7 @@ const BlindStructure = ({ tournamentId }: BlindStructureProps) => {
                 onClick={editingLevel ? updateLevel : addLevel}
                 className="bg-gradient-button text-white"
               >
-                {editingLevel ? 'Обновить' : 'Добавить'}
+                {editingLevel ? 'Обновить' : (newLevel.is_break ? 'Добавить перерыв' : 'Добавить уровень')}
               </Button>
             </div>
           </div>
