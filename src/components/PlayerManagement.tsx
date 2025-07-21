@@ -67,6 +67,7 @@ interface PlayerManagementProps {
 
 const PlayerManagement = ({ tournament, players, registrations, onRegistrationUpdate }: PlayerManagementProps) => {
   const [selectedPlayerId, setSelectedPlayerId] = useState("");
+  const [playerName, setPlayerName] = useState("");
   const [seatNumber, setSeatNumber] = useState("");
   const [startingChips, setStartingChips] = useState(tournament.starting_chips || 10000);
   const [bulkPlayersList, setBulkPlayersList] = useState("");
@@ -92,14 +93,8 @@ const PlayerManagement = ({ tournament, players, registrations, onRegistrationUp
   }, [registrations]);
 
   const registerPlayer = async () => {
-    if (!selectedPlayerId) {
-      toast({ title: "Ошибка", description: "Выберите игрока", variant: "destructive" });
-      return;
-    }
-
-    const existingRegistration = registrations.find(reg => reg.player.id === selectedPlayerId);
-    if (existingRegistration) {
-      toast({ title: "Ошибка", description: "Игрок уже зарегистрирован", variant: "destructive" });
+    if (!playerName.trim()) {
+      toast({ title: "Ошибка", description: "Введите имя игрока", variant: "destructive" });
       return;
     }
 
@@ -108,23 +103,67 @@ const PlayerManagement = ({ tournament, players, registrations, onRegistrationUp
       return;
     }
 
-    const { error } = await supabase
-      .from('tournament_registrations')
-      .insert([{
-        tournament_id: tournament.id,
-        player_id: selectedPlayerId,
-        seat_number: seatNumber ? parseInt(seatNumber) : null,
-        chips: startingChips,
-        status: 'registered'
-      }]);
+    try {
+      // Проверяем, есть ли игрок с таким именем
+      let { data: existingPlayer, error: playerSearchError } = await supabase
+        .from('players')
+        .select('*')
+        .eq('name', playerName.trim())
+        .single();
 
-    if (error) {
-      toast({ title: "Ошибка", description: "Не удалось зарегистрировать игрока", variant: "destructive" });
-    } else {
-      toast({ title: "Успех", description: "Игрок зарегистрирован на турнир" });
-      setSelectedPlayerId("");
-      setSeatNumber("");
-      onRegistrationUpdate();
+      let playerId;
+
+      if (playerSearchError && playerSearchError.code === 'PGRST116') {
+        // Игрок не найден, создаем нового
+        const { data: newPlayer, error: createError } = await supabase
+          .from('players')
+          .insert([{
+            name: playerName.trim(),
+            email: `${playerName.trim().toLowerCase().replace(/\s+/g, '.')}@placeholder.com`,
+            elo_rating: 1200
+          }])
+          .select()
+          .single();
+
+        if (createError) {
+          toast({ title: "Ошибка", description: "Не удалось создать игрока", variant: "destructive" });
+          return;
+        }
+        playerId = newPlayer.id;
+      } else if (existingPlayer) {
+        // Проверяем, не зарегистрирован ли уже игрок
+        const existingRegistration = registrations.find(reg => reg.player.id === existingPlayer.id);
+        if (existingRegistration) {
+          toast({ title: "Ошибка", description: "Игрок уже зарегистрирован", variant: "destructive" });
+          return;
+        }
+        playerId = existingPlayer.id;
+      } else {
+        toast({ title: "Ошибка", description: "Ошибка при поиске игрока", variant: "destructive" });
+        return;
+      }
+
+      // Регистрируем игрока на турнир
+      const { error: registrationError } = await supabase
+        .from('tournament_registrations')
+        .insert([{
+          tournament_id: tournament.id,
+          player_id: playerId,
+          seat_number: seatNumber ? parseInt(seatNumber) : null,
+          chips: startingChips,
+          status: 'registered'
+        }]);
+
+      if (registrationError) {
+        toast({ title: "Ошибка", description: "Не удалось зарегистрировать игрока", variant: "destructive" });
+      } else {
+        toast({ title: "Успех", description: "Игрок зарегистрирован на турнир" });
+        setPlayerName("");
+        setSeatNumber("");
+        onRegistrationUpdate();
+      }
+    } catch (error) {
+      toast({ title: "Ошибка", description: "Произошла ошибка при регистрации", variant: "destructive" });
     }
   };
 
@@ -351,19 +390,12 @@ const PlayerManagement = ({ tournament, players, registrations, onRegistrationUp
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label>Игрок</Label>
-                    <Select value={selectedPlayerId} onValueChange={setSelectedPlayerId}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Выберите игрока" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {availablePlayers.map((player) => (
-                          <SelectItem key={player.id} value={player.id}>
-                            {player.name} (ELO: {player.elo_rating})
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <Label>Имя игрока</Label>
+                    <Input
+                      value={playerName}
+                      onChange={(e) => setPlayerName(e.target.value)}
+                      placeholder="Введите имя игрока"
+                    />
                   </div>
                   <div>
                     <Label>Место</Label>
@@ -389,7 +421,7 @@ const PlayerManagement = ({ tournament, players, registrations, onRegistrationUp
                 <Button 
                   onClick={registerPlayer} 
                   className="w-full"
-                  disabled={!selectedPlayerId || registrations.length >= tournament.max_players}
+                  disabled={!playerName.trim() || registrations.length >= tournament.max_players}
                 >
                   <UserPlus className="w-4 h-4 mr-2" />
                   Зарегистрировать
