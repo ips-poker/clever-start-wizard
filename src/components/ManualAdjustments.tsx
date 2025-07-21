@@ -473,15 +473,15 @@ const ManualAdjustments = ({ tournaments, selectedTournament, onRefresh }: Manua
                                   <p>
                                     Вы собираетесь <strong>полностью удалить</strong> игрока {player.name} из рейтинговой системы.
                                   </p>
-                                  <p className="text-destructive font-medium">
-                                    Это действие удалит:
-                                  </p>
-                                  <ul className="list-disc list-inside space-y-1 text-sm">
-                                    <li>Профиль игрока</li>
-                                    <li>Все результаты турниров</li>
-                                    <li>Всю историю изменений рейтинга</li>
-                                    <li>Все регистрации на турниры</li>
-                                  </ul>
+                                  <div className="text-destructive font-medium">
+                                    <p>Это действие удалит:</p>
+                                    <ul className="list-disc list-inside space-y-1 text-sm mt-2">
+                                      <li>Профиль игрока</li>
+                                      <li>Все результаты турниров</li>
+                                      <li>Всю историю изменений рейтинга</li>
+                                      <li>Все регистрации на турниры</li>
+                                    </ul>
+                                  </div>
                                   <p className="text-destructive font-medium">
                                     Это действие <strong>необратимо</strong>!
                                   </p>

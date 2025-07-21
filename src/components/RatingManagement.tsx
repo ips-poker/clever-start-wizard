@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import ManualAdjustments from './ManualAdjustments';
+import SystemCheck from './SystemCheck';
 
 interface Tournament {
   id: string;
@@ -251,9 +252,10 @@ const RatingManagement = ({ tournaments, selectedTournament, onRefresh }: Rating
   return (
     <div className="space-y-6">
       <Tabs defaultValue="automation" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="automation">Автоматизация</TabsTrigger>
           <TabsTrigger value="manual">Ручные корректировки</TabsTrigger>
+          <TabsTrigger value="system">Проверка системы</TabsTrigger>
         </TabsList>
 
         <TabsContent value="automation" className="space-y-6">
@@ -490,6 +492,10 @@ const RatingManagement = ({ tournaments, selectedTournament, onRefresh }: Rating
               />
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="system" className="space-y-6">
+          <SystemCheck onRefresh={onRefresh} />
         </TabsContent>
       </Tabs>
     </div>
