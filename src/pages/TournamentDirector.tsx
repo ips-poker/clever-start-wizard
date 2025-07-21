@@ -10,8 +10,9 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Trophy, Users, Clock, Settings, Plus, Play, Pause, Square, RotateCcw, CheckCircle } from "lucide-react";
+import { Trophy, Users, Clock, Settings, Plus, Play, Pause, Square, RotateCcw, CheckCircle, UserPlus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import PlayerRegistration from "@/components/PlayerRegistration";
 
 interface Tournament {
   id: string;
@@ -80,6 +81,28 @@ const TournamentDirector = () => {
   useEffect(() => {
     loadTournaments();
     loadPlayers();
+    
+    // Set up real-time subscriptions
+    const tournamentsChannel = supabase
+      .channel('tournaments-changes')
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'tournaments' },
+        () => { loadTournaments(); }
+      )
+      .subscribe();
+
+    const playersChannel = supabase
+      .channel('players-changes')
+      .on('postgres_changes',
+        { event: '*', schema: 'public', table: 'players' },
+        () => { loadPlayers(); }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(tournamentsChannel);
+      supabase.removeChannel(playersChannel);
+    };
   }, []);
 
   useEffect(() => {
@@ -357,27 +380,53 @@ const TournamentDirector = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gradient-primary">
       <div className="container mx-auto py-8">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-2">Турнирный Директор</h1>
-          <p className="text-muted-foreground">Профессиональная система управления покерными турнирами</p>
+        <div className="mb-8 text-center">
+          <h1 className="text-5xl font-bold mb-4 bg-gradient-charcoal bg-clip-text text-transparent animate-fade-in">
+            Турнирный Директор
+          </h1>
+          <p className="text-poker-silver text-lg animate-slide-up">
+            Профессиональная система управления покерными турнирами
+          </p>
+          {selectedTournament && (
+            <div className="mt-6 inline-flex items-center gap-4 px-6 py-3 bg-gradient-glass backdrop-blur-sm rounded-xl border border-white/10 shadow-glass">
+              <Trophy className="w-5 h-5 text-poker-charcoal" />
+              <span className="font-semibold text-poker-charcoal">{selectedTournament.name}</span>
+              {getStatusBadge(selectedTournament.status)}
+            </div>
+          )}
         </div>
 
-        <Tabs defaultValue="tournaments" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="tournaments">Турниры</TabsTrigger>
-            <TabsTrigger value="control">Управление</TabsTrigger>
-            <TabsTrigger value="players">Игроки</TabsTrigger>
-            <TabsTrigger value="ratings">Рейтинг</TabsTrigger>
+        <Tabs defaultValue="tournaments" className="space-y-8">
+          <TabsList className="grid w-full grid-cols-4 bg-gradient-glass backdrop-blur-sm border border-white/10 shadow-card">
+            <TabsTrigger value="tournaments" className="data-[state=active]:bg-poker-charcoal data-[state=active]:text-white transition-all duration-300">
+              <Trophy className="w-4 h-4 mr-2" />
+              Турниры
+            </TabsTrigger>
+            <TabsTrigger value="control" className="data-[state=active]:bg-poker-charcoal data-[state=active]:text-white transition-all duration-300">
+              <Settings className="w-4 h-4 mr-2" />
+              Управление
+            </TabsTrigger>
+            <TabsTrigger value="players" className="data-[state=active]:bg-poker-charcoal data-[state=active]:text-white transition-all duration-300">
+              <Users className="w-4 h-4 mr-2" />
+              Игроки
+            </TabsTrigger>
+            <TabsTrigger value="ratings" className="data-[state=active]:bg-poker-charcoal data-[state=active]:text-white transition-all duration-300">
+              <CheckCircle className="w-4 h-4 mr-2" />
+              Рейтинг
+            </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="tournaments" className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Card>
+          <TabsContent value="tournaments" className="space-y-8 animate-fade-in">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <Card className="bg-gradient-glass backdrop-blur-sm border border-white/10 shadow-elegant hover:shadow-floating transition-all duration-300">
                 <CardHeader>
-                  <CardTitle>Создать новый турнир</CardTitle>
-                  <CardDescription>Настройте параметры нового турнира</CardDescription>
+                  <CardTitle className="flex items-center gap-2 text-poker-charcoal">
+                    <Plus className="w-5 h-5" />
+                    Создать новый турнир
+                  </CardTitle>
+                  <CardDescription className="text-poker-silver">Настройте параметры нового турнира</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div>
@@ -425,17 +474,24 @@ const TournamentDirector = () => {
                 </CardContent>
               </Card>
 
-              <Card>
+              <Card className="bg-gradient-glass backdrop-blur-sm border border-white/10 shadow-elegant hover:shadow-floating transition-all duration-300">
                 <CardHeader>
-                  <CardTitle>Список турниров</CardTitle>
-                  <CardDescription>Все созданные турниры</CardDescription>
+                  <CardTitle className="flex items-center gap-2 text-poker-charcoal">
+                    <Trophy className="w-5 h-5" />
+                    Список турниров
+                  </CardTitle>
+                  <CardDescription className="text-poker-silver">Все созданные турниры</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
                     {tournaments.map((tournament) => (
                       <div
                         key={tournament.id}
-                        className="flex items-center justify-between p-4 border rounded-lg cursor-pointer hover:bg-muted/50"
+                        className={`group flex items-center justify-between p-4 border border-white/10 rounded-xl cursor-pointer transition-all duration-300 ${
+                          selectedTournament?.id === tournament.id 
+                            ? 'bg-poker-charcoal text-white shadow-charcoal' 
+                            : 'hover:bg-gradient-glass backdrop-blur-sm hover:shadow-card'
+                        }`}
                         onClick={() => setSelectedTournament(tournament)}
                       >
                         <div>
@@ -460,28 +516,42 @@ const TournamentDirector = () => {
             </div>
           </TabsContent>
 
-          <TabsContent value="control" className="space-y-6">
+          <TabsContent value="control" className="space-y-8 animate-fade-in">
             {selectedTournament ? (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <Card>
+              <div className="space-y-8">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                  <Card className="bg-gradient-glass backdrop-blur-sm border border-white/10 shadow-elegant">
                   <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
+                    <CardTitle className="flex items-center gap-2 text-poker-charcoal">
                       <Clock className="w-5 h-5" />
                       Таймер уровня
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-4">
+                  <CardContent className="space-y-6">
                     <div className="text-center">
-                      <div className={`text-6xl font-mono font-bold transition-colors ${
-                        currentTime <= 60 ? 'text-red-500' : currentTime <= 300 ? 'text-yellow-500' : 'text-green-500'
+                      <div className={`text-7xl font-mono font-bold transition-all duration-500 ${
+                        currentTime <= 60 ? 'text-red-500 animate-pulse' : 
+                        currentTime <= 300 ? 'text-yellow-500' : 
+                        'text-poker-charcoal'
                       }`}>
                         {formatTime(currentTime)}
                       </div>
-                      <p className="text-muted-foreground">Уровень {selectedTournament.current_level}</p>
+                      <div className="mt-2 space-y-1">
+                        <p className="text-lg font-semibold text-poker-charcoal">Уровень {selectedTournament.current_level}</p>
+                        <div className="flex items-center justify-center gap-4 text-sm text-poker-silver">
+                          <span>SB: {selectedTournament.current_small_blind}</span>
+                          <span>BB: {selectedTournament.current_big_blind}</span>
+                        </div>
+                      </div>
                     </div>
-                    <div className="flex gap-2">
-                      <Button variant="outline" onClick={toggleTimer}>
-                        {timerActive ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+                    <div className="flex gap-3">
+                      <Button 
+                        variant="outline" 
+                        onClick={toggleTimer}
+                        className={`flex-1 h-12 ${timerActive ? 'bg-red-500 hover:bg-red-600 text-white' : 'bg-green-500 hover:bg-green-600 text-white'} border-0 transition-all duration-300 shadow-card`}
+                      >
+                        {timerActive ? <Pause className="w-5 h-5 mr-2" /> : <Play className="w-5 h-5 mr-2" />}
+                        {timerActive ? 'Пауза' : 'Старт'}
                       </Button>
                       <Button variant="outline" onClick={resetTimer}>
                         <RotateCcw className="w-4 h-4" />
@@ -541,81 +611,94 @@ const TournamentDirector = () => {
                   </CardContent>
                 </Card>
 
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Settings className="w-5 h-5" />
-                      Текущие блайнды
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="text-center p-4 border rounded">
-                          <p className="text-sm text-muted-foreground">Малый блайнд</p>
-                          <p className="text-2xl font-bold">{selectedTournament.current_small_blind}</p>
-                        </div>
-                        <div className="text-center p-4 border rounded">
-                          <p className="text-sm text-muted-foreground">Большой блайнд</p>
-                          <p className="text-2xl font-bold">{selectedTournament.current_big_blind}</p>
+                  <Card className="bg-gradient-glass backdrop-blur-sm border border-white/10 shadow-elegant">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-poker-charcoal">
+                        <Settings className="w-5 h-5" />
+                        Текущие блайнды
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="text-center p-6 border border-white/10 rounded-xl bg-gradient-glass backdrop-blur-sm">
+                            <p className="text-sm text-poker-silver">Малый блайнд</p>
+                            <p className="text-3xl font-bold text-poker-charcoal">{selectedTournament.current_small_blind}</p>
+                          </div>
+                          <div className="text-center p-6 border border-white/10 rounded-xl bg-gradient-glass backdrop-blur-sm">
+                            <p className="text-sm text-poker-silver">Большой блайнд</p>
+                            <p className="text-3xl font-bold text-poker-charcoal">{selectedTournament.current_big_blind}</p>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                    </CardContent>
+                  </Card>
+                </div>
 
-                <Card className="lg:col-span-2">
+                {/* Player Registration Section */}
+                <PlayerRegistration
+                  tournament={selectedTournament}
+                  players={players}
+                  registrations={registrations}
+                  onRegistrationUpdate={() => loadRegistrations(selectedTournament.id)}
+                />
+
+                <Card className="bg-gradient-glass backdrop-blur-sm border border-white/10 shadow-elegant">
                   <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
+                    <CardTitle className="flex items-center gap-2 text-poker-charcoal">
                       <Users className="w-5 h-5" />
                       Участники турнира
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Игрок</TableHead>
-                          <TableHead>Место</TableHead>
-                          <TableHead>Фишки</TableHead>
-                          <TableHead>Статус</TableHead>
-                          <TableHead>Ребаи</TableHead>
-                          <TableHead>Аддоны</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {registrations.map((reg) => (
-                          <TableRow key={reg.id}>
-                            <TableCell>{reg.player.name}</TableCell>
-                            <TableCell>{reg.seat_number || '-'}</TableCell>
-                            <TableCell>{reg.chips}</TableCell>
-                            <TableCell>{getStatusBadge(reg.status)}</TableCell>
-                            <TableCell>{reg.rebuys}</TableCell>
-                            <TableCell>{reg.addons}</TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
+                    <div className="overflow-x-auto">
+                      <table className="w-full">
+                        <thead>
+                          <tr className="border-b border-white/10">
+                            <th className="text-left py-3 px-4 text-poker-charcoal">Игрок</th>
+                            <th className="text-left py-3 px-4 text-poker-charcoal">Место</th>
+                            <th className="text-left py-3 px-4 text-poker-charcoal">Фишки</th>
+                            <th className="text-left py-3 px-4 text-poker-charcoal">Статус</th>
+                            <th className="text-left py-3 px-4 text-poker-charcoal">ELO</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {registrations.map((reg, index) => (
+                            <tr key={reg.id} className={`border-b border-white/10 ${index % 2 === 0 ? 'bg-white/5' : ''}`}>
+                              <td className="py-3 px-4 font-medium text-poker-charcoal">{reg.player.name}</td>
+                              <td className="py-3 px-4 text-poker-silver">{reg.seat_number || '-'}</td>
+                              <td className="py-3 px-4 text-poker-silver">{reg.chips.toLocaleString()}</td>
+                              <td className="py-3 px-4">{getStatusBadge(reg.status)}</td>
+                              <td className="py-3 px-4 font-semibold text-poker-charcoal">{reg.player.elo_rating}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
                   </CardContent>
                 </Card>
+
               </div>
             ) : (
-              <Card>
-                <CardContent className="text-center py-12">
-                  <Trophy className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-                  <h3 className="text-lg font-semibold mb-2">Выберите турнир</h3>
-                  <p className="text-muted-foreground">Выберите турнир на вкладке "Турниры" для управления</p>
+              <Card className="bg-gradient-glass backdrop-blur-sm border border-white/10 shadow-elegant">
+                <CardContent className="text-center py-16">
+                  <Trophy className="w-16 h-16 mx-auto mb-6 text-poker-silver opacity-50" />
+                  <h3 className="text-2xl font-semibold mb-3 text-poker-charcoal">Выберите турнир</h3>
+                  <p className="text-poker-silver">Выберите турнир на вкладке "Турниры" для управления</p>
                 </CardContent>
               </Card>
             )}
           </TabsContent>
 
-          <TabsContent value="players" className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Card>
+          <TabsContent value="players" className="space-y-8 animate-fade-in">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <Card className="bg-gradient-glass backdrop-blur-sm border border-white/10 shadow-elegant hover:shadow-floating transition-all duration-300">
                 <CardHeader>
-                  <CardTitle>Добавить игрока</CardTitle>
-                  <CardDescription>Зарегистрировать нового игрока в системе</CardDescription>
+                  <CardTitle className="flex items-center gap-2 text-poker-charcoal">
+                    <UserPlus className="w-5 h-5" />
+                    Добавить игрока
+                  </CardTitle>
+                  <CardDescription className="text-poker-silver">Зарегистрировать нового игрока в системе</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div>
@@ -644,23 +727,26 @@ const TournamentDirector = () => {
                 </CardContent>
               </Card>
 
-              <Card>
+              <Card className="bg-gradient-glass backdrop-blur-sm border border-white/10 shadow-elegant hover:shadow-floating transition-all duration-300">
                 <CardHeader>
-                  <CardTitle>Статистика игроков</CardTitle>
-                  <CardDescription>Общая информация о зарегистрированных игроках</CardDescription>
+                  <CardTitle className="flex items-center gap-2 text-poker-charcoal">
+                    <Trophy className="w-5 h-5" />
+                    Статистика игроков
+                  </CardTitle>
+                  <CardDescription className="text-poker-silver">Общая информация о зарегистрированных игроках</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">
-                      <div className="text-center p-4 border rounded">
-                        <p className="text-2xl font-bold">{players.length}</p>
-                        <p className="text-sm text-muted-foreground">Всего игроков</p>
+                      <div className="text-center p-6 border border-white/10 rounded-xl bg-gradient-glass backdrop-blur-sm">
+                        <p className="text-3xl font-bold text-poker-charcoal">{players.length}</p>
+                        <p className="text-sm text-poker-silver">Всего игроков</p>
                       </div>
-                      <div className="text-center p-4 border rounded">
-                        <p className="text-2xl font-bold">
+                      <div className="text-center p-6 border border-white/10 rounded-xl bg-gradient-glass backdrop-blur-sm">
+                        <p className="text-3xl font-bold text-poker-charcoal">
                           {players.length > 0 ? Math.round(players.reduce((sum, p) => sum + p.elo_rating, 0) / players.length) : 0}
                         </p>
-                        <p className="text-sm text-muted-foreground">Средний рейтинг</p>
+                        <p className="text-sm text-poker-silver">Средний рейтинг</p>
                       </div>
                     </div>
                   </div>
@@ -669,14 +755,14 @@ const TournamentDirector = () => {
             </div>
           </TabsContent>
 
-          <TabsContent value="ratings" className="space-y-6">
-            <Card>
+          <TabsContent value="ratings" className="space-y-8 animate-fade-in">
+            <Card className="bg-gradient-glass backdrop-blur-sm border border-white/10 shadow-elegant">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2 text-poker-charcoal">
                   <Trophy className="w-5 h-5" />
                   Рейтинг игроков (ELO)
                 </CardTitle>
-                <CardDescription>Текущий рейтинг всех игроков</CardDescription>
+                <CardDescription className="text-poker-silver">Текущий рейтинг всех игроков</CardDescription>
               </CardHeader>
               <CardContent>
                 <Table>
