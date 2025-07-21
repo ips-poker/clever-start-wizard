@@ -220,6 +220,7 @@ export function TournamentList() {
         tournament={selectedTournament}
         open={modalOpen}
         onOpenChange={setModalOpen}
+        onTournamentUpdate={loadTournaments}
       />
     </section>
   );

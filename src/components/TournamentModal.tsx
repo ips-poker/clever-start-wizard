@@ -3,6 +3,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { 
   Calendar, 
   Clock, 
@@ -15,9 +19,13 @@ import {
   Plus,
   Timer,
   Target,
-  AlertCircle
+  AlertCircle,
+  Edit,
+  Save,
+  X
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 interface BlindLevel {
   level: number;
@@ -54,15 +62,50 @@ interface TournamentModalProps {
   tournament: Tournament | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onTournamentUpdate?: () => void;
 }
 
-export function TournamentModal({ tournament, open, onOpenChange }: TournamentModalProps) {
+export function TournamentModal({ tournament, open, onOpenChange, onTournamentUpdate }: TournamentModalProps) {
   const [blindStructure, setBlindStructure] = useState<BlindLevel[]>([]);
   const [loading, setLoading] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editForm, setEditForm] = useState({
+    name: '',
+    description: '',
+    buy_in: 0,
+    rebuy_cost: 0,
+    addon_cost: 0,
+    rebuy_chips: 0,
+    addon_chips: 0,
+    starting_chips: 0,
+    max_players: 0,
+    start_time: '',
+    tournament_format: '',
+    rebuy_end_level: 0,
+    addon_level: 0,
+    break_start_level: 0
+  });
+  const { toast } = useToast();
 
   useEffect(() => {
     if (tournament && open) {
       loadBlindStructure();
+      setEditForm({
+        name: tournament.name,
+        description: tournament.description || '',
+        buy_in: tournament.buy_in,
+        rebuy_cost: tournament.rebuy_cost,
+        addon_cost: tournament.addon_cost,
+        rebuy_chips: tournament.rebuy_chips,
+        addon_chips: tournament.addon_chips,
+        starting_chips: tournament.starting_chips,
+        max_players: tournament.max_players,
+        start_time: tournament.start_time.slice(0, 16), // Format for datetime-local input
+        tournament_format: tournament.tournament_format,
+        rebuy_end_level: tournament.rebuy_end_level,
+        addon_level: tournament.addon_level,
+        break_start_level: tournament.break_start_level
+      });
     }
   }, [tournament, open]);
 
@@ -124,6 +167,58 @@ export function TournamentModal({ tournament, open, onOpenChange }: TournamentMo
     }
   };
 
+  const saveTournamentChanges = async () => {
+    if (!tournament) return;
+
+    setLoading(true);
+    try {
+      const { error } = await supabase
+        .from('tournaments')
+        .update({
+          name: editForm.name,
+          description: editForm.description,
+          buy_in: editForm.buy_in,
+          rebuy_cost: editForm.rebuy_cost,
+          addon_cost: editForm.addon_cost,
+          rebuy_chips: editForm.rebuy_chips,
+          addon_chips: editForm.addon_chips,
+          starting_chips: editForm.starting_chips,
+          max_players: editForm.max_players,
+          start_time: editForm.start_time,
+          tournament_format: editForm.tournament_format,
+          rebuy_end_level: editForm.rebuy_end_level,
+          addon_level: editForm.addon_level,
+          break_start_level: editForm.break_start_level
+        })
+        .eq('id', tournament.id);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Турнир обновлен',
+        description: 'Изменения успешно сохранены',
+      });
+
+      setIsEditing(false);
+      onTournamentUpdate?.();
+    } catch (error: any) {
+      toast({
+        title: 'Ошибка сохранения',
+        description: error.message,
+        variant: 'destructive'
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEditFormChange = (field: string, value: any) => {
+    setEditForm(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
   if (!tournament) return null;
 
   const lateRegDeadline = calculateLateRegistrationDeadline();
@@ -133,15 +228,52 @@ export function TournamentModal({ tournament, open, onOpenChange }: TournamentMo
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <div className="flex items-start justify-between">
-            <div>
-              <DialogTitle className="text-2xl font-bold text-poker-primary mb-2">
-                {tournament.name}
-              </DialogTitle>
-              <p className="text-muted-foreground">{tournament.description}</p>
+            <div className="flex-1">
+              {isEditing ? (
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="tournament-name">Название турнира</Label>
+                    <Input
+                      id="tournament-name"
+                      value={editForm.name}
+                      onChange={(e) => handleEditFormChange('name', e.target.value)}
+                      className="text-xl font-bold"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="tournament-description">Описание</Label>
+                    <Textarea
+                      id="tournament-description"
+                      value={editForm.description}
+                      onChange={(e) => handleEditFormChange('description', e.target.value)}
+                      rows={2}
+                    />
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <DialogTitle className="text-2xl font-bold text-poker-primary mb-2">
+                    {tournament.name}
+                  </DialogTitle>
+                  <p className="text-muted-foreground">{tournament.description}</p>
+                </div>
+              )}
             </div>
-            <Badge variant={getStatusColor(tournament.status)} className="ml-4">
-              {getStatusLabel(tournament.status)}
-            </Badge>
+            <div className="flex items-center gap-2 ml-4">
+              <Badge variant={getStatusColor(tournament.status)}>
+                {getStatusLabel(tournament.status)}
+              </Badge>
+              {tournament.status === 'scheduled' && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsEditing(!isEditing)}
+                  disabled={loading}
+                >
+                  {isEditing ? <X className="w-4 h-4" /> : <Edit className="w-4 h-4" />}
+                </Button>
+              )}
+            </div>
           </div>
         </DialogHeader>
 
@@ -154,63 +286,153 @@ export function TournamentModal({ tournament, open, onOpenChange }: TournamentMo
                 Основная информация
               </h3>
               
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="flex items-center text-sm text-muted-foreground">
-                    <Calendar className="w-4 h-4 mr-2" />
-                    Дата и время
-                  </span>
-                  <span className="font-medium">
-                    {new Date(tournament.start_time).toLocaleString('ru-RU')}
-                  </span>
-                </div>
+              {isEditing ? (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="start-time">Дата и время</Label>
+                      <Input
+                        id="start-time"
+                        type="datetime-local"
+                        value={editForm.start_time}
+                        onChange={(e) => handleEditFormChange('start_time', e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="max-players">Макс. игроков</Label>
+                      <Input
+                        id="max-players"
+                        type="number"
+                        value={editForm.max_players}
+                        onChange={(e) => handleEditFormChange('max_players', parseInt(e.target.value) || 0)}
+                        min="2"
+                        max="500"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="tournament-format">Формат</Label>
+                      <Select value={editForm.tournament_format} onValueChange={(value) => handleEditFormChange('tournament_format', value)}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="freezeout">Freezeout</SelectItem>
+                          <SelectItem value="rebuy">Rebuy</SelectItem>
+                          <SelectItem value="bounty">Bounty</SelectItem>
+                          <SelectItem value="turbo">Turbo</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor="starting-chips">Стартовый стек</Label>
+                      <Input
+                        id="starting-chips"
+                        type="number"
+                        value={editForm.starting_chips}
+                        onChange={(e) => handleEditFormChange('starting_chips', parseInt(e.target.value) || 0)}
+                        min="1000"
+                      />
+                    </div>
+                  </div>
 
-                <div className="flex items-center justify-between">
-                  <span className="flex items-center text-sm text-muted-foreground">
-                    <Users className="w-4 h-4 mr-2" />
-                    Игроки
-                  </span>
-                  <span className="font-medium">
-                    {tournament._count?.tournament_registrations || 0} / {tournament.max_players}
-                  </span>
+                  <div className="grid grid-cols-3 gap-4">
+                    <div>
+                      <Label htmlFor="rebuy-end-level">Ребай до уровня</Label>
+                      <Input
+                        id="rebuy-end-level"
+                        type="number"
+                        value={editForm.rebuy_end_level}
+                        onChange={(e) => handleEditFormChange('rebuy_end_level', parseInt(e.target.value) || 0)}
+                        min="0"
+                        max="20"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="addon-level">Аддон на уровне</Label>
+                      <Input
+                        id="addon-level"
+                        type="number"
+                        value={editForm.addon_level}
+                        onChange={(e) => handleEditFormChange('addon_level', parseInt(e.target.value) || 0)}
+                        min="0"
+                        max="20"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="break-start-level">Перерыв с уровня</Label>
+                      <Input
+                        id="break-start-level"
+                        type="number"
+                        value={editForm.break_start_level}
+                        onChange={(e) => handleEditFormChange('break_start_level', parseInt(e.target.value) || 0)}
+                        min="0"
+                        max="20"
+                      />
+                    </div>
+                  </div>
                 </div>
-
-                <div className="flex items-center justify-between">
-                  <span className="flex items-center text-sm text-muted-foreground">
-                    <PlayCircle className="w-4 h-4 mr-2" />
-                    Формат
-                  </span>
-                  <Badge variant="outline">
-                    {tournament.tournament_format === 'freezeout' ? 'Freezeout' : tournament.tournament_format}
-                  </Badge>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <span className="flex items-center text-sm text-muted-foreground">
-                    <Target className="w-4 h-4 mr-2" />
-                    Стартовый стек
-                  </span>
-                  <span className="font-medium">
-                    {tournament.starting_chips.toLocaleString()} фишек
-                  </span>
-                </div>
-
-                {lateRegDeadline && (
-                  <div className="flex items-start justify-between">
+              ) : (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
                     <span className="flex items-center text-sm text-muted-foreground">
-                      <Timer className="w-4 h-4 mr-2" />
-                      Поздняя регистрация до
+                      <Calendar className="w-4 h-4 mr-2" />
+                      Дата и время
                     </span>
-                    <span className="font-medium text-right">
-                      {lateRegDeadline.toLocaleString('ru-RU')}
-                      <br />
-                      <span className="text-xs text-muted-foreground">
-                        (до {tournament.rebuy_end_level} уровня)
-                      </span>
+                    <span className="font-medium">
+                      {new Date(tournament.start_time).toLocaleString('ru-RU')}
                     </span>
                   </div>
-                )}
-              </div>
+
+                  <div className="flex items-center justify-between">
+                    <span className="flex items-center text-sm text-muted-foreground">
+                      <Users className="w-4 h-4 mr-2" />
+                      Игроки
+                    </span>
+                    <span className="font-medium">
+                      {tournament._count?.tournament_registrations || 0} / {tournament.max_players}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <span className="flex items-center text-sm text-muted-foreground">
+                      <PlayCircle className="w-4 h-4 mr-2" />
+                      Формат
+                    </span>
+                    <Badge variant="outline">
+                      {tournament.tournament_format === 'freezeout' ? 'Freezeout' : tournament.tournament_format}
+                    </Badge>
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <span className="flex items-center text-sm text-muted-foreground">
+                      <Target className="w-4 h-4 mr-2" />
+                      Стартовый стек
+                    </span>
+                    <span className="font-medium">
+                      {tournament.starting_chips.toLocaleString()} фишек
+                    </span>
+                  </div>
+
+                  {lateRegDeadline && (
+                    <div className="flex items-start justify-between">
+                      <span className="flex items-center text-sm text-muted-foreground">
+                        <Timer className="w-4 h-4 mr-2" />
+                        Поздняя регистрация до
+                      </span>
+                      <span className="font-medium text-right">
+                        {lateRegDeadline.toLocaleString('ru-RU')}
+                        <br />
+                        <span className="text-xs text-muted-foreground">
+                          (до {tournament.rebuy_end_level} уровня)
+                        </span>
+                      </span>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Стоимость участия */}
@@ -220,61 +442,122 @@ export function TournamentModal({ tournament, open, onOpenChange }: TournamentMo
                 Стоимость участия
               </h3>
               
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="flex items-center text-sm text-muted-foreground">
-                    <UserPlus className="w-4 h-4 mr-2" />
-                    Бай-ин
-                  </span>
-                  <span className="font-bold text-lg text-poker-accent">
-                    {formatCurrency(tournament.buy_in)}
-                  </span>
-                </div>
-
-                {tournament.rebuy_cost > 0 && (
-                  <div className="flex items-center justify-between">
-                    <span className="flex items-center text-sm text-muted-foreground">
-                      <Repeat className="w-4 h-4 mr-2" />
-                      Ребай
-                    </span>
-                    <span className="font-medium">
-                      {formatCurrency(tournament.rebuy_cost)}
-                      <span className="text-xs text-muted-foreground ml-1">
-                        ({tournament.rebuy_chips.toLocaleString()} фишек)
-                      </span>
-                    </span>
+              {isEditing ? (
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="buy-in">Бай-ин (₽)</Label>
+                    <Input
+                      id="buy-in"
+                      type="number"
+                      value={editForm.buy_in}
+                      onChange={(e) => handleEditFormChange('buy_in', parseInt(e.target.value) || 0)}
+                      min="0"
+                    />
                   </div>
-                )}
-
-                {tournament.addon_cost > 0 && (
-                  <div className="flex items-center justify-between">
-                    <span className="flex items-center text-sm text-muted-foreground">
-                      <Plus className="w-4 h-4 mr-2" />
-                      Аддон
-                    </span>
-                    <span className="font-medium">
-                      {formatCurrency(tournament.addon_cost)}
-                      <span className="text-xs text-muted-foreground ml-1">
-                        ({tournament.addon_chips.toLocaleString()} фишек)
-                      </span>
-                    </span>
-                  </div>
-                )}
-
-                {tournament.rebuy_cost > 0 && (
-                  <div className="bg-poker-warning/10 border border-poker-warning/20 rounded-lg p-3">
-                    <div className="flex items-start space-x-2">
-                      <AlertCircle className="w-4 h-4 text-poker-warning mt-0.5" />
-                      <div className="text-xs text-poker-warning">
-                        <p>Ребаи доступны до {tournament.rebuy_end_level} уровня</p>
-                        {tournament.addon_cost > 0 && (
-                          <p>Аддон доступен на {tournament.addon_level} уровне</p>
-                        )}
-                      </div>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="rebuy-cost">Ребай (₽)</Label>
+                      <Input
+                        id="rebuy-cost"
+                        type="number"
+                        value={editForm.rebuy_cost}
+                        onChange={(e) => handleEditFormChange('rebuy_cost', parseInt(e.target.value) || 0)}
+                        min="0"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="rebuy-chips">Фишки за ребай</Label>
+                      <Input
+                        id="rebuy-chips"
+                        type="number"
+                        value={editForm.rebuy_chips}
+                        onChange={(e) => handleEditFormChange('rebuy_chips', parseInt(e.target.value) || 0)}
+                        min="0"
+                      />
                     </div>
                   </div>
-                )}
-              </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="addon-cost">Аддон (₽)</Label>
+                      <Input
+                        id="addon-cost"
+                        type="number"
+                        value={editForm.addon_cost}
+                        onChange={(e) => handleEditFormChange('addon_cost', parseInt(e.target.value) || 0)}
+                        min="0"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="addon-chips">Фишки за аддон</Label>
+                      <Input
+                        id="addon-chips"
+                        type="number"
+                        value={editForm.addon_chips}
+                        onChange={(e) => handleEditFormChange('addon_chips', parseInt(e.target.value) || 0)}
+                        min="0"
+                      />
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="flex items-center text-sm text-muted-foreground">
+                      <UserPlus className="w-4 h-4 mr-2" />
+                      Бай-ин
+                    </span>
+                    <span className="font-bold text-lg text-poker-accent">
+                      {formatCurrency(tournament.buy_in)}
+                    </span>
+                  </div>
+
+                  {tournament.rebuy_cost > 0 && (
+                    <div className="flex items-center justify-between">
+                      <span className="flex items-center text-sm text-muted-foreground">
+                        <Repeat className="w-4 h-4 mr-2" />
+                        Ребай
+                      </span>
+                      <span className="font-medium">
+                        {formatCurrency(tournament.rebuy_cost)}
+                        <span className="text-xs text-muted-foreground ml-1">
+                          ({tournament.rebuy_chips.toLocaleString()} фишек)
+                        </span>
+                      </span>
+                    </div>
+                  )}
+
+                  {tournament.addon_cost > 0 && (
+                    <div className="flex items-center justify-between">
+                      <span className="flex items-center text-sm text-muted-foreground">
+                        <Plus className="w-4 h-4 mr-2" />
+                        Аддон
+                      </span>
+                      <span className="font-medium">
+                        {formatCurrency(tournament.addon_cost)}
+                        <span className="text-xs text-muted-foreground ml-1">
+                          ({tournament.addon_chips.toLocaleString()} фишек)
+                        </span>
+                      </span>
+                    </div>
+                  )}
+
+                  {tournament.rebuy_cost > 0 && (
+                    <div className="bg-poker-warning/10 border border-poker-warning/20 rounded-lg p-3">
+                      <div className="flex items-start space-x-2">
+                        <AlertCircle className="w-4 h-4 text-poker-warning mt-0.5" />
+                        <div className="text-xs text-poker-warning">
+                          <p>Ребаи доступны до {tournament.rebuy_end_level} уровня</p>
+                          {tournament.addon_cost > 0 && (
+                            <p>Аддон доступен на {tournament.addon_level} уровне</p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
 
@@ -360,7 +643,17 @@ export function TournamentModal({ tournament, open, onOpenChange }: TournamentMo
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Закрыть
           </Button>
-          {tournament.status === 'registration' && (
+          {isEditing && (
+            <Button 
+              onClick={saveTournamentChanges}
+              disabled={loading}
+              className="bg-gradient-button hover:shadow-elevated transition-all duration-300"
+            >
+              <Save className="w-4 h-4 mr-2" />
+              Сохранить изменения
+            </Button>
+          )}
+          {tournament.status === 'registration' && !isEditing && (
             <Button className="bg-gradient-button hover:shadow-elevated transition-all duration-300">
               <UserPlus className="w-4 h-4 mr-2" />
               Зарегистрироваться
