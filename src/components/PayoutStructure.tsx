@@ -7,10 +7,17 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Plus, Minus, Trophy, Calculator } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface PayoutStructureProps {
   tournamentId: string;
   registeredPlayers: number;
+}
+
+interface TournamentRegistration {
+  player_id: string;
+  rebuys: number;
+  addons: number;
 }
 
 interface PayoutPlace {
@@ -23,14 +30,50 @@ const PayoutStructure = ({ tournamentId, registeredPlayers }: PayoutStructurePro
   const [payoutPlaces, setPayoutPlaces] = useState<PayoutPlace[]>([]);
   const [totalPrizePool, setTotalPrizePool] = useState(0);
   const [baseRP, setBaseRP] = useState(1000);
+  const [tournament, setTournament] = useState<any>(null);
+  const [registrations, setRegistrations] = useState<TournamentRegistration[]>([]);
   const { toast } = useToast();
 
   useEffect(() => {
+    fetchTournamentData();
+  }, [tournamentId]);
+
+  useEffect(() => {
     calculateAutomaticPayouts();
-  }, [registeredPlayers]);
+  }, [registeredPlayers, tournament, registrations]);
+
+  const fetchTournamentData = async () => {
+    try {
+      // Получаем данные турнира
+      const { data: tournamentData, error: tournamentError } = await supabase
+        .from('tournaments')
+        .select('*')
+        .eq('id', tournamentId)
+        .single();
+
+      if (tournamentError) throw tournamentError;
+      setTournament(tournamentData);
+
+      // Получаем регистрации с данными о ребаях и адонах
+      const { data: registrationsData, error: registrationsError } = await supabase
+        .from('tournament_registrations')
+        .select('player_id, rebuys, addons')
+        .eq('tournament_id', tournamentId);
+
+      if (registrationsError) throw registrationsError;
+      setRegistrations(registrationsData || []);
+    } catch (error) {
+      console.error('Error fetching tournament data:', error);
+      toast({
+        title: "Ошибка",
+        description: "Не удалось загрузить данные турнира",
+        variant: "destructive",
+      });
+    }
+  };
 
   const calculateAutomaticPayouts = () => {
-    if (registeredPlayers === 0) {
+    if (registeredPlayers === 0 || !tournament) {
       setPayoutPlaces([]);
       setTotalPrizePool(0);
       return;
@@ -68,15 +111,19 @@ const PayoutStructure = ({ tournamentId, registeredPlayers }: PayoutStructurePro
       }
     }
 
-    // Базовый призовой фонд (базовый RP * количество игроков)
-    const basePrizePool = baseRP * registeredPlayers;
-    setTotalPrizePool(basePrizePool);
+    // Расчет призового фонда с учетом ребаев и адонов
+    const buyInTotal = tournament.buy_in * registeredPlayers;
+    const rebuyTotal = registrations.reduce((sum, reg) => sum + (reg.rebuys * (tournament.rebuy_cost || 0)), 0);
+    const addonTotal = registrations.reduce((sum, reg) => sum + (reg.addons * (tournament.addon_cost || 0)), 0);
+    
+    const totalPrizePool = buyInTotal + rebuyTotal + addonTotal;
+    setTotalPrizePool(totalPrizePool);
 
     // Создаем структуру выплат
     const payouts = percentages.map((percentage, index) => ({
       place: index + 1,
       percentage,
-      rp: Math.round((basePrizePool * percentage) / 100)
+      rp: Math.round((totalPrizePool * percentage) / 100)
     }));
 
     setPayoutPlaces(payouts);
@@ -176,27 +223,18 @@ const PayoutStructure = ({ tournamentId, registeredPlayers }: PayoutStructurePro
               />
             </div>
             <div>
-              <Label htmlFor="base_rp">Базовый RP на игрока</Label>
-              <Input
-                id="base_rp"
-                type="number"
-                value={baseRP}
-                onChange={(e) => {
-                  const newRP = parseInt(e.target.value) || 1000;
-                  setBaseRP(newRP);
-                  setTotalPrizePool(newRP * registeredPlayers);
-                }}
-              />
+              <Label htmlFor="rebuy_addon_info">Ребаи и Адоны</Label>
+              <div className="text-sm text-gray-600 space-y-1">
+                <div>Ребаев: {registrations.reduce((sum, reg) => sum + reg.rebuys, 0)} × {tournament?.rebuy_cost || 0} = {registrations.reduce((sum, reg) => sum + (reg.rebuys * (tournament?.rebuy_cost || 0)), 0)}</div>
+                <div>Адонов: {registrations.reduce((sum, reg) => sum + reg.addons, 0)} × {tournament?.addon_cost || 0} = {registrations.reduce((sum, reg) => sum + (reg.addons * (tournament?.addon_cost || 0)), 0)}</div>
+              </div>
             </div>
             <div>
-              <Label htmlFor="total_prize">Общий призовой фонд (RP)</Label>
-              <Input
-                id="total_prize"
-                type="number"
-                value={totalPrizePool}
-                disabled
-                className="bg-gray-50 font-medium"
-              />
+              <Label htmlFor="total_prize">Общий призовой фонд</Label>
+              <div className="text-sm space-y-1">
+                <div>Бай-ин: {tournament?.buy_in || 0} × {registeredPlayers} = {(tournament?.buy_in || 0) * registeredPlayers}</div>
+                <div className="font-medium text-lg">Итого: {totalPrizePool}</div>
+              </div>
             </div>
           </div>
         </CardContent>

@@ -39,6 +39,23 @@ serve(async (req) => {
 
     console.log(`Calculating ELO for tournament ${tournament_id} with ${results.length} players`)
 
+    // Get tournament data to check rebuy/addon costs
+    const { data: tournament, error: tournamentError } = await supabaseClient
+      .from('tournaments')
+      .select('*')
+      .eq('id', tournament_id)
+      .single()
+
+    if (tournamentError) throw tournamentError
+
+    // Get registrations with rebuy/addon data
+    const { data: registrations, error: registrationsError } = await supabaseClient
+      .from('tournament_registrations')
+      .select('player_id, rebuys, addons')
+      .eq('tournament_id', tournament_id)
+
+    if (registrationsError) throw registrationsError
+
     // Get all players involved in the tournament
     const playerIds = results.map((r: TournamentResult) => r.player_id)
     const { data: players, error: playersError } = await supabaseClient
@@ -48,8 +65,17 @@ serve(async (req) => {
 
     if (playersError) throw playersError
 
-    // Calculate new ELO ratings
-    const eloChanges = calculateEloChanges(players, results)
+    // Calculate total buy-in for each player (including rebuys and addons)
+    const playerBuyIns = new Map()
+    registrations.forEach(reg => {
+      const totalBuyIn = tournament.buy_in + 
+        (reg.rebuys * (tournament.rebuy_cost || 0)) + 
+        (reg.addons * (tournament.addon_cost || 0))
+      playerBuyIns.set(reg.player_id, totalBuyIn)
+    })
+
+    // Calculate new ELO ratings with buy-in consideration
+    const eloChanges = calculateEloChanges(players, results, playerBuyIns)
 
     // Update players and create game results
     for (const change of eloChanges) {
@@ -131,17 +157,26 @@ serve(async (req) => {
   }
 })
 
-function calculateEloChanges(players: Player[], results: TournamentResult[]) {
-  const K = 32 // ELO K-factor
+function calculateEloChanges(players: Player[], results: TournamentResult[], playerBuyIns: Map<string, number>) {
+  const BASE_K = 32 // Base ELO K-factor
   const changes = []
 
   // Sort results by position
   results.sort((a, b) => a.position - b.position)
 
+  // Calculate average buy-in for scaling
+  const totalBuyIns = Array.from(playerBuyIns.values())
+  const avgBuyIn = totalBuyIns.reduce((sum, buyIn) => sum + buyIn, 0) / totalBuyIns.length
+
   for (let i = 0; i < results.length; i++) {
     const playerResult = results[i]
     const player = players.find(p => p.id === playerResult.player_id)
     if (!player) continue
+
+    // Scale K-factor based on player's total investment
+    const playerBuyIn = playerBuyIns.get(player.id) || avgBuyIn
+    const buyInMultiplier = Math.max(0.5, Math.min(2.0, playerBuyIn / avgBuyIn))
+    const K = BASE_K * buyInMultiplier
 
     let totalEloChange = 0
     let opponentCount = 0
