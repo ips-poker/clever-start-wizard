@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Calculator, 
   TrendingUp, 
@@ -19,9 +20,11 @@ import {
   Play,
   CheckCircle,
   XCircle,
-  Activity
+  Activity,
+  Edit
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import ManualAdjustments from './ManualAdjustments';
 
 interface Tournament {
   id: string;
@@ -247,218 +250,248 @@ const RatingManagement = ({ tournaments, selectedTournament, onRefresh }: Rating
 
   return (
     <div className="space-y-6">
-      {/* Stats Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center space-x-2">
-              <Users className="h-4 w-4 text-muted-foreground" />
-              <div>
-                <p className="text-2xl font-bold">{stats.total_players}</p>
-                <p className="text-xs text-muted-foreground">Всего игроков</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center space-x-2">
-              <Calculator className="h-4 w-4 text-muted-foreground" />
-              <div>
-                <p className="text-2xl font-bold">{stats.pending_calculations}</p>
-                <p className="text-xs text-muted-foreground">Ожидают расчета</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center space-x-2">
-              <Activity className="h-4 w-4 text-muted-foreground" />
-              <div>
-                <p className="text-2xl font-bold">ELO</p>
-                <p className="text-xs text-muted-foreground">Система рейтинга</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      <Tabs defaultValue="automation" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="automation">Автоматизация</TabsTrigger>
+          <TabsTrigger value="manual">Ручные корректировки</TabsTrigger>
+        </TabsList>
 
-      {/* Automation Settings */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Settings className="h-5 w-5" />
-            Автоматизация рейтингов
-          </CardTitle>
-          <CardDescription>
-            Настройте автоматические процессы для обработки турниров
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center justify-between">
-            <Label htmlFor="auto-calculate">Автоматический расчет при завершении</Label>
-            <Switch 
-              id="auto-calculate"
-              checked={settings.auto_calculate}
-              onCheckedChange={(checked) => saveSettings({...settings, auto_calculate: checked})}
-            />
-          </div>
-          
-          <div className="flex items-center justify-between">
-            <Label htmlFor="auto-publish">Автопубликация на сайт</Label>
-            <Switch 
-              id="auto-publish"
-              checked={settings.auto_publish}
-              onCheckedChange={(checked) => saveSettings({...settings, auto_publish: checked})}
-            />
-          </div>
-          
-          <div className="flex items-center justify-between">
-            <Label htmlFor="auto-leaderboard">Автообновление лидерборда</Label>
-            <Switch 
-              id="auto-leaderboard"
-              checked={settings.auto_update_leaderboard}
-              onCheckedChange={(checked) => saveSettings({...settings, auto_update_leaderboard: checked})}
-            />
-          </div>
-          
-          <div className="flex items-center justify-between">
-            <Label htmlFor="notifications">Уведомления об изменениях</Label>
-            <Switch 
-              id="notifications"
-              checked={settings.send_notifications}
-              onCheckedChange={(checked) => saveSettings({...settings, send_notifications: checked})}
-            />
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Manual Controls */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Play className="h-5 w-5" />
-            Ручное управление
-          </CardTitle>
-          <CardDescription>
-            Полная обработка турнира и управление рейтингами
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {selectedTournament && selectedTournament.status === 'completed' && (
-            <Alert>
-              <Trophy className="h-4 w-4" />
-              <AlertDescription>
-                Турнир "{selectedTournament.name}" готов к обработке рейтингов
-              </AlertDescription>
-            </Alert>
-          )}
-
-          <div className="flex flex-wrap gap-2">
-            <Button
-              variant="default"
-              size="sm"
-              onClick={() => selectedTournament && calculateRatings(selectedTournament.id)}
-              disabled={!selectedTournament || selectedTournament.status !== 'completed' || isCalculating}
-            >
-              <Calculator className="w-4 h-4 mr-1" />
-              {isCalculating ? 'Расчет...' : 'Расчет рейтингов'}
-            </Button>
-
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={updateLeaderboard}
-              disabled={isUpdatingLeaderboard}
-            >
-              <RefreshCw className="w-4 h-4 mr-1" />
-              {isUpdatingLeaderboard ? 'Обновление...' : 'Обновить лидерборд'}
-            </Button>
-
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => selectedTournament && publishResults(selectedTournament.id)}
-              disabled={!selectedTournament || isPublishing}
-            >
-              <TrendingUp className="w-4 h-4 mr-1" />
-              {isPublishing ? 'Публикация...' : 'Опубликовать'}
-            </Button>
-
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => selectedTournament && processFullTournament(selectedTournament.id)}
-              disabled={!selectedTournament || selectedTournament.status !== 'completed' || isCalculating || isPublishing}
-            >
-              <CheckCircle className="w-4 h-4 mr-1" />
-              Полная обработка
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Pending Tournaments */}
-      {pendingTournaments.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Bell className="h-5 w-5" />
-              Ожидают обработки ({pendingTournaments.length})
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {pendingTournaments.map((tournament) => (
-                <div key={tournament.id} className="flex items-center justify-between p-3 border rounded-lg">
+        <TabsContent value="automation" className="space-y-6">
+          {/* Stats Overview */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex items-center space-x-2">
+                  <Users className="h-4 w-4 text-muted-foreground" />
                   <div>
-                    <h4 className="font-medium">{tournament.name}</h4>
-                    <Badge variant="outline">Завершен</Badge>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      size="sm"
-                      onClick={() => calculateRatings(tournament.id)}
-                      disabled={isCalculating}
-                    >
-                      <Calculator className="w-4 h-4 mr-1" />
-                      Обработать
-                    </Button>
+                    <p className="text-2xl font-bold">{stats.total_players}</p>
+                    <p className="text-xs text-muted-foreground">Всего игроков</p>
                   </div>
                 </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex items-center space-x-2">
+                  <Calculator className="h-4 w-4 text-muted-foreground" />
+                  <div>
+                    <p className="text-2xl font-bold">{stats.pending_calculations}</p>
+                    <p className="text-xs text-muted-foreground">Ожидают расчета</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex items-center space-x-2">
+                  <Activity className="h-4 w-4 text-muted-foreground" />
+                  <div>
+                    <p className="text-2xl font-bold">ELO</p>
+                    <p className="text-xs text-muted-foreground">Система рейтинга</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
 
-      {/* Rating System Info */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Как работает рейтинговая система</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="flex items-start gap-2">
-            <CheckCircle className="h-4 w-4 text-green-500 mt-0.5" />
-            <p className="text-sm">Рейтинги рассчитываются по модифицированной системе Эло</p>
-          </div>
-          <div className="flex items-start gap-2">
-            <CheckCircle className="h-4 w-4 text-green-500 mt-0.5" />
-            <p className="text-sm">Учитывается позиция в турнире и средний рейтинг соперников</p>
-          </div>
-          <div className="flex items-start gap-2">
-            <CheckCircle className="h-4 w-4 text-green-500 mt-0.5" />
-            <p className="text-sm">Дополнительные очки начисляются за высокие места</p>
-          </div>
-          <div className="flex items-start gap-2">
-            <CheckCircle className="h-4 w-4 text-green-500 mt-0.5" />
-            <p className="text-sm">Рейтинги ограничены диапазоном {settings.min_rating}-{settings.max_rating}</p>
-          </div>
-        </CardContent>
-      </Card>
+          {/* Automation Settings */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Settings className="h-5 w-5" />
+                Автоматизация рейтингов
+              </CardTitle>
+              <CardDescription>
+                Настройте автоматические процессы для обработки турниров
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="auto-calculate">Автоматический расчет при завершении</Label>
+                <Switch 
+                  id="auto-calculate"
+                  checked={settings.auto_calculate}
+                  onCheckedChange={(checked) => saveSettings({...settings, auto_calculate: checked})}
+                />
+              </div>
+              
+              <div className="flex items-center justify-between">
+                <Label htmlFor="auto-publish">Автопубликация на сайт</Label>
+                <Switch 
+                  id="auto-publish"
+                  checked={settings.auto_publish}
+                  onCheckedChange={(checked) => saveSettings({...settings, auto_publish: checked})}
+                />
+              </div>
+              
+              <div className="flex items-center justify-between">
+                <Label htmlFor="auto-leaderboard">Автообновление лидерборда</Label>
+                <Switch 
+                  id="auto-leaderboard"
+                  checked={settings.auto_update_leaderboard}
+                  onCheckedChange={(checked) => saveSettings({...settings, auto_update_leaderboard: checked})}
+                />
+              </div>
+              
+              <div className="flex items-center justify-between">
+                <Label htmlFor="notifications">Уведомления об изменениях</Label>
+                <Switch 
+                  id="notifications"
+                  checked={settings.send_notifications}
+                  onCheckedChange={(checked) => saveSettings({...settings, send_notifications: checked})}
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Manual Controls */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Play className="h-5 w-5" />
+                Ручное управление
+              </CardTitle>
+              <CardDescription>
+                Полная обработка турнира и управление рейтингами
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {selectedTournament && selectedTournament.status === 'completed' && (
+                <Alert>
+                  <Trophy className="h-4 w-4" />
+                  <AlertDescription>
+                    Турнир "{selectedTournament.name}" готов к обработке рейтингов
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  variant="default"
+                  size="sm"
+                  onClick={() => selectedTournament && calculateRatings(selectedTournament.id)}
+                  disabled={!selectedTournament || selectedTournament.status !== 'completed' || isCalculating}
+                >
+                  <Calculator className="w-4 h-4 mr-1" />
+                  {isCalculating ? 'Расчет...' : 'Расчет рейтингов'}
+                </Button>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={updateLeaderboard}
+                  disabled={isUpdatingLeaderboard}
+                >
+                  <RefreshCw className="w-4 h-4 mr-1" />
+                  {isUpdatingLeaderboard ? 'Обновление...' : 'Обновить лидерборд'}
+                </Button>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => selectedTournament && publishResults(selectedTournament.id)}
+                  disabled={!selectedTournament || isPublishing}
+                >
+                  <TrendingUp className="w-4 h-4 mr-1" />
+                  {isPublishing ? 'Публикация...' : 'Опубликовать'}
+                </Button>
+
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => selectedTournament && processFullTournament(selectedTournament.id)}
+                  disabled={!selectedTournament || selectedTournament.status !== 'completed' || isCalculating || isPublishing}
+                >
+                  <CheckCircle className="w-4 h-4 mr-1" />
+                  Полная обработка
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Pending Tournaments */}
+          {pendingTournaments.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Bell className="h-5 w-5" />
+                  Ожидают обработки ({pendingTournaments.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {pendingTournaments.map((tournament) => (
+                    <div key={tournament.id} className="flex items-center justify-between p-3 border rounded-lg">
+                      <div>
+                        <h4 className="font-medium">{tournament.name}</h4>
+                        <Badge variant="outline">Завершен</Badge>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          onClick={() => calculateRatings(tournament.id)}
+                          disabled={isCalculating}
+                        >
+                          <Calculator className="w-4 h-4 mr-1" />
+                          Обработать
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Rating System Info */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Как работает рейтинговая система</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="flex items-start gap-2">
+                <CheckCircle className="h-4 w-4 text-green-500 mt-0.5" />
+                <p className="text-sm">Рейтинги рассчитываются по модифицированной системе Эло</p>
+              </div>
+              <div className="flex items-start gap-2">
+                <CheckCircle className="h-4 w-4 text-green-500 mt-0.5" />
+                <p className="text-sm">Учитывается позиция в турнире и средний рейтинг соперников</p>
+              </div>
+              <div className="flex items-start gap-2">
+                <CheckCircle className="h-4 w-4 text-green-500 mt-0.5" />
+                <p className="text-sm">Дополнительные очки начисляются за высокие места</p>
+              </div>
+              <div className="flex items-start gap-2">
+                <CheckCircle className="h-4 w-4 text-green-500 mt-0.5" />
+                <p className="text-sm">Рейтинги ограничены диапазоном {settings.min_rating}-{settings.max_rating}</p>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="manual" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Edit className="h-5 w-5" />
+                Ручные корректировки
+              </CardTitle>
+              <CardDescription>
+                Индивидуальная корректировка рейтингов и результатов турниров
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ManualAdjustments 
+                tournaments={tournaments}
+                selectedTournament={selectedTournament}
+                onRefresh={onRefresh}
+              />
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
