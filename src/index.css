@@ -37,28 +37,28 @@
 
     --radius: 0.75rem;
 
-    /* Professional Elegant Color Palette */
-    --poker-primary: 220 26% 14%;           /* Deep sophisticated navy */
-    --poker-primary-light: 220 26% 18%;     /* Lighter navy variant */
-    --poker-primary-dark: 220 26% 10%;      /* Darker navy for emphasis */
+    /* Professional Elegant Color Palette - Calmer tones */
+    --poker-primary: 220 26% 20%;           /* Softer deep navy */
+    --poker-primary-light: 220 26% 25%;     /* Lighter navy variant */
+    --poker-primary-dark: 220 26% 15%;      /* Darker navy for emphasis */
     --poker-secondary: 220 14% 96%;         /* Sophisticated light gray */
-    --poker-accent: 260 100% 65%;           /* Premium purple accent */
-    --poker-accent-light: 260 100% 70%;     /* Lighter purple */
-    --poker-accent-dark: 260 100% 55%;      /* Darker purple */
-    --poker-gold: 45 100% 65%;              /* Elegant gold accent */
-    --poker-gold-light: 45 100% 70%;        /* Light gold */
-    --poker-gold-dark: 45 100% 55%;         /* Deep gold */
-    --poker-success: 142 71% 45%;           /* Professional green */
-    --poker-warning: 38 100% 50%;           /* Sophisticated orange */
-    --poker-error: 0 84% 60%;               /* Professional red */
+    --poker-accent: 220 35% 55%;            /* Calm blue accent */
+    --poker-accent-light: 220 35% 65%;      /* Lighter blue */
+    --poker-accent-dark: 220 35% 45%;       /* Darker blue */
+    --poker-gold: 35 25% 45%;               /* Muted gold accent */
+    --poker-gold-light: 35 25% 55%;         /* Light muted gold */
+    --poker-gold-dark: 35 25% 35%;          /* Deep muted gold */
+    --poker-success: 142 35% 45%;           /* Calm green */
+    --poker-warning: 38 45% 50%;            /* Softer orange */
+    --poker-error: 0 45% 55%;               /* Softer red */
     --poker-surface: 220 14% 99%;           /* Premium white surface */
     --poker-surface-elevated: 220 20% 98%;  /* Elevated surface */
     --poker-surface-subtle: 220 14% 97%;    /* Subtle surface variant */
-    --poker-border: 220 14% 91%;            /* Refined border */
-    --poker-border-light: 220 14% 94%;      /* Light border */
-    --poker-text-primary: 220 26% 14%;      /* Primary text */
-    --poker-text-secondary: 220 16% 46%;    /* Secondary text */
-    --poker-text-muted: 220 14% 71%;        /* Muted text */
+    --poker-border: 220 14% 88%;            /* Softer border */
+    --poker-border-light: 220 14% 92%;      /* Light border */
+    --poker-text-primary: 220 26% 20%;      /* Primary text */
+    --poker-text-secondary: 220 16% 50%;    /* Secondary text */
+    --poker-text-muted: 220 14% 65%;        /* Muted text */
     --poker-text-inverse: 220 15% 98%;      /* Inverse text */
     
     /* Sophisticated Dark Theme - for overlays and sections */
