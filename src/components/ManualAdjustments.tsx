@@ -23,7 +23,8 @@ import {
   User,
   Trophy,
   Calculator,
-  RotateCcw
+  RotateCcw,
+  UserMinus
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -246,6 +247,48 @@ const ManualAdjustments = ({ tournaments, selectedTournament, onRefresh }: Manua
     }
   };
 
+  const deletePlayer = async (playerId: string, playerName: string) => {
+    try {
+      // First, delete all game results for this player
+      const { error: resultsError } = await supabase
+        .from('game_results')
+        .delete()
+        .eq('player_id', playerId);
+
+      if (resultsError) throw resultsError;
+
+      // Delete all tournament registrations for this player
+      const { error: registrationsError } = await supabase
+        .from('tournament_registrations')
+        .delete()
+        .eq('player_id', playerId);
+
+      if (registrationsError) throw registrationsError;
+
+      // Finally, delete the player
+      const { error: playerError } = await supabase
+        .from('players')
+        .delete()
+        .eq('id', playerId);
+
+      if (playerError) throw playerError;
+
+      toast({
+        title: 'Игрок удален',
+        description: `Игрок ${playerName} и вся связанная с ним информация удалены из системы`,
+      });
+
+      loadPlayers();
+      onRefresh();
+    } catch (error: any) {
+      toast({
+        title: 'Ошибка удаления',
+        description: error.message,
+        variant: 'destructive'
+      });
+    }
+  };
+
   const resetPlayerStats = async (playerId: string) => {
     try {
       const { error } = await supabase
@@ -301,7 +344,8 @@ const ManualAdjustments = ({ tournaments, selectedTournament, onRefresh }: Manua
                     <TableHead>Игрок</TableHead>
                     <TableHead>Текущий рейтинг</TableHead>
                     <TableHead>Игр сыграно</TableHead>
-                    <TableHead>Побед</TableHead>
+                      <TableHead>Побед</TableHead>
+                      <TableHead>Винрейт</TableHead>
                     <TableHead>Действия</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -321,6 +365,14 @@ const ManualAdjustments = ({ tournaments, selectedTournament, onRefresh }: Manua
                       </TableCell>
                       <TableCell>{player.games_played}</TableCell>
                       <TableCell>{player.wins}</TableCell>
+                      <TableCell>
+                        <Badge variant={player.games_played > 0 && (player.wins / player.games_played) > 0.5 ? "default" : "secondary"}>
+                          {player.games_played > 0 ? 
+                            `${Math.round((player.wins / player.games_played) * 100)}%` : 
+                            '0%'
+                          }
+                        </Badge>
+                      </TableCell>
                       <TableCell>
                         <div className="flex gap-2">
                           <Dialog>
@@ -381,7 +433,7 @@ const ManualAdjustments = ({ tournaments, selectedTournament, onRefresh }: Manua
 
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
-                              <Button size="sm" variant="destructive">
+                              <Button size="sm" variant="outline">
                                 <RotateCcw className="w-4 h-4" />
                               </Button>
                             </AlertDialogTrigger>
@@ -400,6 +452,49 @@ const ManualAdjustments = ({ tournaments, selectedTournament, onRefresh }: Manua
                                   className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                                 >
                                   Сбросить
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button size="sm" variant="destructive">
+                                <UserMinus className="w-4 h-4" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle className="flex items-center gap-2">
+                                  <AlertTriangle className="h-5 w-5 text-destructive" />
+                                  Удалить игрока
+                                </AlertDialogTitle>
+                                <AlertDialogDescription className="space-y-2">
+                                  <p>
+                                    Вы собираетесь <strong>полностью удалить</strong> игрока {player.name} из рейтинговой системы.
+                                  </p>
+                                  <p className="text-destructive font-medium">
+                                    Это действие удалит:
+                                  </p>
+                                  <ul className="list-disc list-inside space-y-1 text-sm">
+                                    <li>Профиль игрока</li>
+                                    <li>Все результаты турниров</li>
+                                    <li>Всю историю изменений рейтинга</li>
+                                    <li>Все регистрации на турниры</li>
+                                  </ul>
+                                  <p className="text-destructive font-medium">
+                                    Это действие <strong>необратимо</strong>!
+                                  </p>
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Отмена</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => deletePlayer(player.id, player.name)}
+                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                >
+                                  <Trash2 className="w-4 h-4 mr-2" />
+                                  Удалить навсегда
                                 </AlertDialogAction>
                               </AlertDialogFooter>
                             </AlertDialogContent>
