@@ -184,29 +184,37 @@ const FullscreenTimer = ({
           </div>
         </div>
 
-        {/* Blinds and Next Level */}
-        <div className="grid grid-cols-4 gap-4 max-w-4xl w-full">
-          <div className="text-center p-4 border border-gray-200 rounded-lg bg-gray-50">
-            <p className="text-xs text-gray-500 font-medium mb-1">Малый блайнд</p>
-            <p className="text-2xl font-light text-gray-800">{tournament.current_small_blind}</p>
+        {/* Current and Next Blinds */}
+        <div className="grid grid-cols-2 gap-6 max-w-2xl w-full">
+          {/* Current Blinds - Emphasized */}
+          <div className="text-center p-6 border-2 border-gray-800 rounded-lg bg-white shadow-lg">
+            <p className="text-sm text-gray-800 font-bold mb-2">ТЕКУЩИЙ УРОВЕНЬ</p>
+            <div className="space-y-1">
+              <p className="text-4xl font-bold text-gray-900">{tournament.current_small_blind}</p>
+              <p className="text-xs text-gray-600">МАЛЫЙ БЛАЙНД</p>
+            </div>
+            <div className="border-t border-gray-200 my-3"></div>
+            <div className="space-y-1">
+              <p className="text-4xl font-bold text-gray-900">{tournament.current_big_blind}</p>
+              <p className="text-xs text-gray-600">БОЛЬШОЙ БЛАЙНД</p>
+            </div>
           </div>
-          <div className="text-center p-4 border border-gray-200 rounded-lg bg-gray-50">
-            <p className="text-xs text-gray-500 font-medium mb-1">Большой блайнд</p>
-            <p className="text-2xl font-light text-gray-800">{tournament.current_big_blind}</p>
-          </div>
-          <div className="text-center p-4 border border-gray-200 rounded-lg bg-blue-50">
-            <p className="text-xs text-blue-600 font-medium mb-1 flex items-center justify-center">
-              <ChevronUp className="w-3 h-3 mr-1" />
-              След. малый
+
+          {/* Next Blinds - Subtle */}
+          <div className="text-center p-6 border border-gray-300 rounded-lg bg-gray-50">
+            <p className="text-sm text-gray-500 font-medium mb-2 flex items-center justify-center">
+              <ChevronUp className="w-4 h-4 mr-1" />
+              СЛЕДУЮЩИЙ УРОВЕНЬ
             </p>
-            <p className="text-2xl font-light text-blue-800">{nextSmallBlind}</p>
-          </div>
-          <div className="text-center p-4 border border-gray-200 rounded-lg bg-blue-50">
-            <p className="text-xs text-blue-600 font-medium mb-1 flex items-center justify-center">
-              <ChevronUp className="w-3 h-3 mr-1" />
-              След. большой
-            </p>
-            <p className="text-2xl font-light text-blue-800">{nextBigBlind}</p>
+            <div className="space-y-1">
+              <p className="text-2xl font-medium text-gray-700">{nextSmallBlind}</p>
+              <p className="text-xs text-gray-500">МАЛЫЙ БЛАЙНД</p>
+            </div>
+            <div className="border-t border-gray-300 my-3"></div>
+            <div className="space-y-1">
+              <p className="text-2xl font-medium text-gray-700">{nextBigBlind}</p>
+              <p className="text-xs text-gray-500">БОЛЬШОЙ БЛАЙНД</p>
+            </div>
           </div>
         </div>
 
