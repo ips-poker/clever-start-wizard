@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Trophy, Users, Calendar, Star, TrendingUp, Shield, Award, Play } from "lucide-react";
 import luxuryPokerHero from "@/assets/luxury-poker-hero.jpg";
 import pokerChipsBg from "@/assets/poker-chips-bg.jpg";
-import ipsLogo from "@/assets/ips-logo.png";
+import ipsLogo from "/lovable-uploads/c77304bf-5309-4bdc-afcc-a81c8d3ff6c2.png";
 
 export function Hero() {
   return (
