@@ -34,7 +34,7 @@ export function Hero() {
           <div className="text-white space-y-8 animate-fade-in">
             <div className="space-y-6 animate-slide-up [animation-delay:0.2s]">
               {/* Logo Section */}
-              <div className="flex items-center space-x-4 mb-6 animate-fade-in [animation-delay:0.2s]">
+              <div className="flex justify-start animate-fade-in [animation-delay:0.2s]">
                 <div className="w-20 h-20 bg-white/10 backdrop-blur-xl rounded-2xl border border-white/30 shadow-elegant flex items-center justify-center p-3 animate-scale-in [animation-delay:0.3s]">
                   <img 
                     src={ipsLogo} 
@@ -44,12 +44,12 @@ export function Hero() {
                 </div>
               </div>
 
-              <Badge className="bg-white/10 border border-white/30 text-white font-semibold px-5 py-2 rounded-full shadow-subtle backdrop-blur-md animate-scale-in [animation-delay:0.4s]">
+              <Badge className="bg-white/10 border border-white/30 text-white font-semibold px-5 py-2 rounded-full shadow-subtle backdrop-blur-md animate-scale-in [animation-delay:0.4s] inline-block">
                 Премиальный покерный клуб
               </Badge>
               
-               <h1 className="text-5xl lg:text-6xl font-bold leading-tight tracking-tight relative animate-slide-right [animation-delay:0.6s]">
-                <span className="text-white relative">
+              <h1 className="text-5xl lg:text-6xl font-bold leading-tight tracking-tight animate-slide-right [animation-delay:0.6s]">
+                <span className="text-white block">
                   IPS
                 </span>
                 <span className="block text-poker-accent-light text-3xl lg:text-4xl mt-2 font-semibold">
