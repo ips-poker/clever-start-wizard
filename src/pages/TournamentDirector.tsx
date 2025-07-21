@@ -440,43 +440,58 @@ const TournamentDirector = () => {
 
   return (
     <div className="min-h-screen bg-gradient-primary">
-      <div className="container mx-auto py-8">
-        <div className="mb-8 text-center">
-          <h1 className="text-5xl font-bold mb-4 bg-gradient-charcoal bg-clip-text text-transparent animate-fade-in">
+      <div className="container mx-auto py-8 px-4">
+        <div className="mb-12 text-center">
+          <h1 className="text-6xl font-bold mb-6 bg-gradient-button bg-clip-text text-transparent animate-fade-in tracking-tight">
             Турнирный Директор
           </h1>
-          <p className="text-poker-silver text-lg animate-slide-up">
-            Профессиональная система управления покерными турнирами
+          <p className="text-poker-text-secondary text-xl font-medium animate-slide-up max-w-2xl mx-auto">
+            Профессиональная система управления покерными турнирами с расширенной аналитикой
           </p>
           {selectedTournament && (
-            <div className="mt-6 inline-flex items-center gap-4 px-6 py-3 bg-gradient-glass backdrop-blur-sm rounded-xl border border-white/10 shadow-glass">
-              <Trophy className="w-5 h-5 text-poker-charcoal" />
-              <span className="font-semibold text-poker-charcoal">{selectedTournament.name}</span>
+            <div className="mt-8 inline-flex items-center gap-4 px-8 py-4 bg-gradient-card backdrop-blur-sm rounded-2xl border border-poker-border shadow-card">
+              <Trophy className="w-6 h-6 text-poker-accent" />
+              <span className="font-semibold text-poker-text-primary text-lg">{selectedTournament.name}</span>
               {getStatusBadge(selectedTournament.status)}
             </div>
           )}
         </div>
 
-        <Tabs defaultValue="overview" className="space-y-8">
-          <TabsList className="grid w-full grid-cols-5 bg-gradient-glass backdrop-blur-sm border border-white/10 shadow-card">
-            <TabsTrigger value="overview" className="data-[state=active]:bg-poker-charcoal data-[state=active]:text-white transition-all duration-300">
-              <Activity className="w-4 h-4 mr-2" />
+        <Tabs defaultValue="overview" className="space-y-10">
+          <TabsList className="grid w-full grid-cols-5 bg-poker-surface-elevated border border-poker-border shadow-card rounded-2xl p-2 h-16">
+            <TabsTrigger 
+              value="overview" 
+              className="data-[state=active]:bg-gradient-button data-[state=active]:text-white data-[state=active]:shadow-accent transition-all duration-300 rounded-xl font-medium"
+            >
+              <Activity className="w-5 h-5 mr-2" />
               Обзор
             </TabsTrigger>
-            <TabsTrigger value="tournaments" className="data-[state=active]:bg-poker-charcoal data-[state=active]:text-white transition-all duration-300">
-              <Trophy className="w-4 h-4 mr-2" />
+            <TabsTrigger 
+              value="tournaments" 
+              className="data-[state=active]:bg-gradient-button data-[state=active]:text-white data-[state=active]:shadow-accent transition-all duration-300 rounded-xl font-medium"
+            >
+              <Trophy className="w-5 h-5 mr-2" />
               Турниры
             </TabsTrigger>
-            <TabsTrigger value="control" className="data-[state=active]:bg-poker-charcoal data-[state=active]:text-white transition-all duration-300">
-              <Settings className="w-4 h-4 mr-2" />
+            <TabsTrigger 
+              value="control" 
+              className="data-[state=active]:bg-gradient-button data-[state=active]:text-white data-[state=active]:shadow-accent transition-all duration-300 rounded-xl font-medium"
+            >
+              <Settings className="w-5 h-5 mr-2" />
               Управление
             </TabsTrigger>
-            <TabsTrigger value="players" className="data-[state=active]:bg-poker-charcoal data-[state=active]:text-white transition-all duration-300">
-              <Users className="w-4 h-4 mr-2" />
+            <TabsTrigger 
+              value="players" 
+              className="data-[state=active]:bg-gradient-button data-[state=active]:text-white data-[state=active]:shadow-accent transition-all duration-300 rounded-xl font-medium"
+            >
+              <Users className="w-5 h-5 mr-2" />
               Игроки
             </TabsTrigger>
-            <TabsTrigger value="ratings" className="data-[state=active]:bg-poker-charcoal data-[state=active]:text-white transition-all duration-300">
-              <CheckCircle className="w-4 h-4 mr-2" />
+            <TabsTrigger 
+              value="ratings" 
+              className="data-[state=active]:bg-gradient-button data-[state=active]:text-white data-[state=active]:shadow-accent transition-all duration-300 rounded-xl font-medium"
+            >
+              <CheckCircle className="w-5 h-5 mr-2" />
               Рейтинг
             </TabsTrigger>
           </TabsList>
@@ -501,67 +516,76 @@ const TournamentDirector = () => {
                 }}
               />
             ) : (
-              <Card className="bg-gradient-glass backdrop-blur-sm border border-white/10 shadow-elegant">
-                <CardContent className="text-center py-16">
-                  <Trophy className="w-16 h-16 mx-auto mb-6 text-poker-silver opacity-50" />
-                  <h3 className="text-2xl font-semibold mb-3 text-poker-charcoal">Выберите турнир для мониторинга</h3>
-                  <p className="text-poker-silver">Выберите активный турнир на вкладке "Турниры" для отображения обзора</p>
+              <Card className="bg-gradient-card border border-poker-border shadow-elevated rounded-2xl">
+                <CardContent className="text-center py-20">
+                  <Trophy className="w-20 h-20 mx-auto mb-8 text-poker-text-muted" />
+                  <h3 className="text-3xl font-bold mb-4 text-poker-text-primary">Выберите турнир для мониторинга</h3>
+                  <p className="text-poker-text-secondary text-lg">Выберите активный турнир на вкладке "Турниры" для отображения обзора</p>
                 </CardContent>
               </Card>
             )}
           </TabsContent>
 
-          <TabsContent value="tournaments" className="space-y-8 animate-fade-in">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              <Card className="bg-gradient-glass backdrop-blur-sm border border-white/10 shadow-elegant hover:shadow-floating transition-all duration-300">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-poker-charcoal">
-                    <Plus className="w-5 h-5" />
+          <TabsContent value="tournaments" className="space-y-10 animate-fade-in">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+              <Card className="bg-gradient-card border border-poker-border shadow-elevated hover:shadow-dramatic transition-all duration-500 rounded-2xl group">
+                <CardHeader className="pb-6">
+                  <CardTitle className="flex items-center gap-3 text-poker-text-primary text-xl">
+                    <div className="p-2 bg-gradient-accent rounded-xl">
+                      <Plus className="w-6 h-6 text-white" />
+                    </div>
                     Создать новый турнир
                   </CardTitle>
-                  <CardDescription className="text-poker-silver">Настройте параметры нового турнира</CardDescription>
+                  <CardDescription className="text-poker-text-secondary text-base">Настройте параметры нового турнира с профессиональными настройками</CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <Label htmlFor="name">Название турнира</Label>
+                <CardContent className="space-y-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="name" className="text-poker-text-primary font-medium">Название турнира</Label>
                     <Input
                       id="name"
                       value={newTournament.name}
                       onChange={(e) => setNewTournament({ ...newTournament, name: e.target.value })}
                       placeholder="Еженедельный турнир"
+                      className="bg-poker-surface border-poker-border focus:border-poker-accent focus:ring-2 focus:ring-poker-accent/20 transition-all duration-200 rounded-xl h-12"
                     />
                   </div>
-                  <div>
-                    <Label htmlFor="description">Описание</Label>
+                  <div className="space-y-2">
+                    <Label htmlFor="description" className="text-poker-text-primary font-medium">Описание</Label>
                     <Textarea
                       id="description"
                       value={newTournament.description}
                       onChange={(e) => setNewTournament({ ...newTournament, description: e.target.value })}
                       placeholder="Описание турнира..."
+                      className="bg-poker-surface border-poker-border focus:border-poker-accent focus:ring-2 focus:ring-poker-accent/20 transition-all duration-200 rounded-xl min-h-[100px]"
                     />
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="max_players">Макс. игроков</Label>
+                  <div className="grid grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <Label htmlFor="max_players" className="text-poker-text-primary font-medium">Макс. игроков</Label>
                       <Input
                         id="max_players"
                         type="number"
                         value={newTournament.max_players}
                         onChange={(e) => setNewTournament({ ...newTournament, max_players: parseInt(e.target.value) })}
+                        className="bg-poker-surface border-poker-border focus:border-poker-accent focus:ring-2 focus:ring-poker-accent/20 transition-all duration-200 rounded-xl h-12"
                       />
                     </div>
-                    <div>
-                      <Label htmlFor="start_time">Время начала</Label>
+                    <div className="space-y-2">
+                      <Label htmlFor="start_time" className="text-poker-text-primary font-medium">Время начала</Label>
                       <Input
                         id="start_time"
                         type="datetime-local"
                         value={newTournament.start_time}
                         onChange={(e) => setNewTournament({ ...newTournament, start_time: e.target.value })}
+                        className="bg-poker-surface border-poker-border focus:border-poker-accent focus:ring-2 focus:ring-poker-accent/20 transition-all duration-200 rounded-xl h-12"
                       />
                     </div>
                   </div>
-                  <Button onClick={createTournament} className="w-full">
-                    <Plus className="w-4 h-4 mr-2" />
+                  <Button 
+                    onClick={createTournament} 
+                    className="w-full h-14 bg-gradient-button hover:shadow-accent text-white rounded-xl font-semibold text-base transition-all duration-300 transform hover:scale-[1.02]"
+                  >
+                    <Plus className="w-5 h-5 mr-2" />
                     Создать турнир
                   </Button>
                 </CardContent>

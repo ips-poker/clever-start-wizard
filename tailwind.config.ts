@@ -63,37 +63,43 @@ export default {
 					ring: 'hsl(var(--sidebar-ring))'
 				},
 				poker: {
-					charcoal: 'hsl(var(--poker-charcoal))',
-					slate: 'hsl(var(--poker-slate))',
-					steel: 'hsl(var(--poker-steel))',
-					silver: 'hsl(var(--poker-silver))',
-					platinum: 'hsl(var(--poker-platinum))',
-					pearl: 'hsl(var(--poker-pearl))',
-					gold: 'hsl(var(--poker-gold))',
-					bronze: 'hsl(var(--poker-bronze))'
+					primary: 'hsl(var(--poker-primary))',
+					'primary-light': 'hsl(var(--poker-primary-light))',
+					secondary: 'hsl(var(--poker-secondary))',
+					accent: 'hsl(var(--poker-accent))',
+					'accent-light': 'hsl(var(--poker-accent-light))',
+					success: 'hsl(var(--poker-success))',
+					warning: 'hsl(var(--poker-warning))',
+					error: 'hsl(var(--poker-error))',
+					surface: 'hsl(var(--poker-surface))',
+					'surface-elevated': 'hsl(var(--poker-surface-elevated))',
+					border: 'hsl(var(--poker-border))',
+					'text-primary': 'hsl(var(--poker-text-primary))',
+					'text-secondary': 'hsl(var(--poker-text-secondary))',
+					'text-muted': 'hsl(var(--poker-text-muted))'
 				}
 			},
 			backgroundImage: {
 				'gradient-primary': 'var(--gradient-primary)',
 				'gradient-hero': 'var(--gradient-hero)',
-				'gradient-charcoal': 'var(--gradient-charcoal)',
-				'gradient-steel': 'var(--gradient-steel)',
-				'gradient-gold': 'var(--gradient-gold)',
-				'gradient-luxury': 'var(--gradient-luxury)',
 				'gradient-card': 'var(--gradient-card)',
-				'gradient-overlay': 'var(--gradient-overlay)',
+				'gradient-accent': 'var(--gradient-accent)',
+				'gradient-success': 'var(--gradient-success)',
 				'gradient-glass': 'var(--gradient-glass)',
-				'gradient-shine': 'var(--gradient-shine)'
+				'gradient-border': 'var(--gradient-border)',
+				'gradient-button': 'var(--gradient-button)',
+				'gradient-surface': 'var(--gradient-surface)'
 			},
 			boxShadow: {
+				'minimal': 'var(--shadow-minimal)',
 				'subtle': 'var(--shadow-subtle)',
 				'card': 'var(--shadow-card)',
-				'elegant': 'var(--shadow-elegant)',
-				'charcoal': 'var(--shadow-charcoal)',
-				'gold': 'var(--shadow-gold)',
-				'glow': 'var(--shadow-glow)',
+				'elevated': 'var(--shadow-elevated)',
 				'floating': 'var(--shadow-floating)',
-				'glass': 'var(--shadow-glass)'
+				'dramatic': 'var(--shadow-dramatic)',
+				'accent': 'var(--shadow-accent)',
+				'success': 'var(--shadow-success)',
+				'inset': 'var(--shadow-inset)'
 			},
 			fontWeight: {
 				'light': 'var(--font-weight-light)',

@@ -158,35 +158,40 @@ const TournamentOverview = ({
   const timerProgress = ((tournament.timer_duration - currentTime) / tournament.timer_duration) * 100;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-10">
       {/* Timer and Level Display */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <Card className="bg-gradient-glass backdrop-blur-sm border border-white/10 shadow-elegant">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-poker-charcoal">
-              <Clock className="w-5 h-5" />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+        <Card className="bg-gradient-card border border-poker-border shadow-elevated rounded-2xl overflow-hidden">
+          <CardHeader className="bg-gradient-surface border-b border-poker-border">
+            <CardTitle className="flex items-center gap-3 text-poker-text-primary text-xl">
+              <div className="p-2 bg-gradient-accent rounded-xl">
+                <Clock className="w-6 h-6 text-white" />
+              </div>
               Текущий уровень {tournament.current_level}
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-6">
+          <CardContent className="space-y-8 p-8">
             <div className="text-center">
               <div className={`text-8xl font-mono font-bold transition-all duration-500 ${
-                currentTime <= 60 ? 'text-red-500 animate-pulse' : 
-                currentTime <= 300 ? 'text-yellow-500' : 
-                'text-poker-charcoal'
+                currentTime <= 60 ? 'text-poker-error animate-pulse' : 
+                currentTime <= 300 ? 'text-poker-warning' : 
+                'text-poker-text-primary'
               }`}>
                 {formatTime(currentTime)}
               </div>
-              <Progress value={timerProgress} className="mt-4 h-3" />
+              <Progress 
+                value={timerProgress} 
+                className="mt-6 h-4 bg-poker-secondary rounded-full overflow-hidden"
+              />
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="text-center p-4 border border-white/10 rounded-xl bg-gradient-glass backdrop-blur-sm">
-                <p className="text-sm text-poker-silver">Малый блайнд</p>
-                <p className="text-3xl font-bold text-poker-charcoal">{tournament.current_small_blind}</p>
+            <div className="grid grid-cols-2 gap-6">
+              <div className="text-center p-6 border border-poker-border rounded-2xl bg-gradient-surface shadow-card">
+                <p className="text-sm text-poker-text-secondary font-medium mb-2">Малый блайнд</p>
+                <p className="text-4xl font-bold text-poker-text-primary">{tournament.current_small_blind}</p>
               </div>
-              <div className="text-center p-4 border border-white/10 rounded-xl bg-gradient-glass backdrop-blur-sm">
-                <p className="text-sm text-poker-silver">Большой блайнд</p>
-                <p className="text-3xl font-bold text-poker-charcoal">{tournament.current_big_blind}</p>
+              <div className="text-center p-6 border border-poker-border rounded-2xl bg-gradient-surface shadow-card">
+                <p className="text-sm text-poker-text-secondary font-medium mb-2">Большой блайнд</p>
+                <p className="text-4xl font-bold text-poker-text-primary">{tournament.current_big_blind}</p>
               </div>
             </div>
           </CardContent>
