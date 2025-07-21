@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Trophy, Users, Clock, Settings, Plus, Play, Pause, Square, RotateCcw, CheckCircle, UserPlus, Volume2, Maximize, StopCircle, ChevronLeft, ChevronRight, Activity, TrendingUp, AlertCircle, DollarSign, Target, BarChart3, Edit } from "lucide-react";
+import { Trophy, Users, Clock, Settings, Plus, Play, Pause, Square, RotateCcw, CheckCircle, UserPlus, Volume2, Maximize, StopCircle, ChevronLeft, ChevronRight, Activity, TrendingUp, AlertCircle, DollarSign, Target, BarChart3, Edit, Calculator } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import PlayerRegistration from "@/components/PlayerRegistration";
 
@@ -20,6 +20,7 @@ import PayoutStructure from "@/components/PayoutStructure";
 import TournamentSyncManager from "@/components/TournamentSyncManager";
 import RatingManagement from "@/components/RatingManagement";
 import TournamentResults from "@/components/TournamentResults";
+import RatingSystemTest from "@/components/RatingSystemTest";
 
 interface Tournament {
   id: string;
@@ -690,6 +691,13 @@ const TournamentDirector = () => {
             >
               <Trophy className="w-5 h-5 mr-2" />
               Результаты
+            </TabsTrigger>
+            <TabsTrigger 
+              value="rating-test" 
+              className="data-[state=active]:bg-gradient-button data-[state=active]:text-white data-[state=active]:shadow-accent transition-all duration-300 rounded-xl font-medium"
+            >
+              <Calculator className="w-5 h-5 mr-2" />
+              Тест
             </TabsTrigger>
           </TabsList>
 
@@ -1559,6 +1567,11 @@ const TournamentDirector = () => {
               tournaments={tournaments}
               onRefresh={loadTournaments}
             />
+          </TabsContent>
+
+          {/* Rating Test Tab */}
+          <TabsContent value="rating-test" className="space-y-6 animate-fade-in">
+            <RatingSystemTest />
           </TabsContent>
         </Tabs>
       </div>
