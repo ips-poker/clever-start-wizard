@@ -90,41 +90,67 @@ const BlindStructure = ({ tournamentId }: BlindStructureProps) => {
   };
 
   const addLevel = async () => {
-    // Определяем позицию для вставки нового уровня
-    const maxLevel = Math.max(...blindLevels.map(l => l.level), 0);
-    const insertLevel = maxLevel + 1;
-    
-    // Если добавляем перерыв, вставляем его между игровыми уровнями
+    // Если добавляем перерыв, нужно пересчитать все уровни
     if (newLevel.is_break) {
-      // Сдвигаем все уровни после позиции вставки
-      const levelsToUpdate = blindLevels.filter(l => l.level >= insertLevel);
+      // Находим все игровые уровни для определения места вставки
+      const gameLevels = blindLevels.filter(l => !l.is_break).sort((a, b) => a.level - b.level);
+      
+      if (gameLevels.length === 0) {
+        toast({ title: "Ошибка", description: "Нельзя добавить перерыв без игровых уровней", variant: "destructive" });
+        return;
+      }
+      
+      // Вставляем перерыв после последнего игрового уровня
+      const lastGameLevel = gameLevels[gameLevels.length - 1];
+      const insertPosition = lastGameLevel.level + 1;
+      
+      // Сдвигаем все уровни после позиции вставки на 1
+      const levelsToUpdate = blindLevels.filter(l => l.level >= insertPosition);
       for (const level of levelsToUpdate) {
         await supabase
           .from('blind_levels')
           .update({ level: level.level + 1 })
           .eq('id', level.id);
       }
-    }
-    
-    const { error } = await supabase
-      .from('blind_levels')
-      .insert([{
-        tournament_id: tournamentId,
-        level: insertLevel,
-        ...newLevel
-      }]);
+      
+      // Добавляем перерыв
+      const { error } = await supabase
+        .from('blind_levels')
+        .insert([{
+          tournament_id: tournamentId,
+          level: insertPosition,
+          ...newLevel
+        }]);
 
-    if (error) {
-      toast({ title: "Ошибка", description: "Не удалось добавить уровень", variant: "destructive" });
+      if (error) {
+        toast({ title: "Ошибка", description: "Не удалось добавить перерыв", variant: "destructive" });
+        return;
+      }
     } else {
-      toast({ 
-        title: "Успех", 
-        description: newLevel.is_break ? "Перерыв добавлен" : "Уровень добавлен" 
-      });
-      setNewLevel({ small_blind: 100, big_blind: 200, ante: 200, duration: 1200, is_break: false });
-      setIsDialogOpen(false);
-      loadBlindLevels();
+      // Для игрового уровня добавляем в конец
+      const maxLevel = Math.max(...blindLevels.map(l => l.level), 0);
+      
+      const { error } = await supabase
+        .from('blind_levels')
+        .insert([{
+          tournament_id: tournamentId,
+          level: maxLevel + 1,
+          ...newLevel
+        }]);
+
+      if (error) {
+        toast({ title: "Ошибка", description: "Не удалось добавить уровень", variant: "destructive" });
+        return;
+      }
     }
+
+    toast({ 
+      title: "Успех", 
+      description: newLevel.is_break ? "Перерыв добавлен" : "Уровень добавлен" 
+    });
+    setNewLevel({ small_blind: 100, big_blind: 200, ante: 200, duration: 1200, is_break: false });
+    setIsDialogOpen(false);
+    loadBlindLevels();
   };
 
   const updateLevel = async () => {
