@@ -153,140 +153,161 @@ const FullscreenTimer = ({
             </div>
           </div>
 
-          {/* Game Info */}
-          <div className="grid grid-cols-4 gap-6 max-w-4xl">
-            <div className="text-center p-4 border border-gray-200/20 rounded-lg bg-white/30 shadow-minimal">
-              <Users className="w-6 h-6 mx-auto mb-2 text-blue-600" />
-              <p className="text-2xl font-light text-gray-800">{activePlayers.length}</p>
-              <p className="text-xs text-gray-500 font-medium">Игроков</p>
-            </div>
-            <div className="text-center p-4 border border-gray-200/20 rounded-lg bg-white/30 shadow-minimal">
-              <DollarSign className="w-6 h-6 mx-auto mb-2 text-green-600" />
-              <p className="text-2xl font-light text-gray-800">{(prizePool / 1000).toFixed(0)}K</p>
-              <p className="text-xs text-gray-500 font-medium">Призовой (₽)</p>
-            </div>
-            <div className="text-center p-4 border border-gray-200/20 rounded-lg bg-white/30 shadow-minimal">
-              <Coffee className="w-6 h-6 mx-auto mb-2 text-amber-600" />
-              <p className="text-2xl font-light text-gray-800">{isBreakLevel ? "СЕЙЧАС" : levelsUntilBreak}</p>
-              <p className="text-xs text-gray-500 font-medium">До перерыва</p>
-            </div>
-            <div className="text-center p-4 border border-gray-200/20 rounded-lg bg-white/30 shadow-minimal">
-              <Clock className="w-6 h-6 mx-auto mb-2 text-purple-600" />
-              <p className="text-2xl font-light text-gray-800">{tournament.current_level + 1}</p>
-              <p className="text-xs text-gray-500 font-medium">Следующий</p>
+          {/* Game Statistics - Combined */}
+          <div className="bg-white/70 backdrop-blur-sm border border-gray-200/50 rounded-xl p-6 shadow-subtle max-w-4xl">
+            <div className="grid grid-cols-3 gap-8">
+              <div className="text-center">
+                <div className="flex items-center justify-center mb-2">
+                  <div className="p-2 bg-blue-100/80 rounded-lg mr-3">
+                    <Users className="w-5 h-5 text-blue-600" />
+                  </div>
+                  <div className="text-left">
+                    <p className="text-2xl font-light text-gray-800">{activePlayers.length}</p>
+                    <p className="text-xs text-gray-500 font-medium">Активных игроков</p>
+                  </div>
+                </div>
+              </div>
+              <div className="text-center border-l border-gray-200/30">
+                <div className="flex items-center justify-center mb-2">
+                  <div className="p-2 bg-green-100/80 rounded-lg mr-3">
+                    <DollarSign className="w-5 h-5 text-green-600" />
+                  </div>
+                  <div className="text-left">
+                    <p className="text-2xl font-light text-gray-800">{prizePool.toLocaleString()}</p>
+                    <p className="text-xs text-gray-500 font-medium">Призовой фонд (₽)</p>
+                  </div>
+                </div>
+              </div>
+              <div className="text-center border-l border-gray-200/30">
+                <div className="flex items-center justify-center mb-2">
+                  <div className="p-2 bg-amber-100/80 rounded-lg mr-3">
+                    <Coffee className="w-5 h-5 text-amber-600" />
+                  </div>
+                  <div className="text-left">
+                    <p className="text-2xl font-light text-gray-800">{isBreakLevel ? "СЕЙЧАС" : levelsUntilBreak}</p>
+                    <p className="text-xs text-gray-500 font-medium">До перерыва</p>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
         {/* Control Panel */}
-        <div className="p-6 border-t border-gray-200/50 bg-white/60 backdrop-blur-sm">
-          <div className="flex justify-center items-center space-x-4 max-w-6xl mx-auto">
-            {/* Time Adjustments */}
-            <div className="flex space-x-2">
+        <div className="bg-white/70 backdrop-blur-sm border-t border-gray-200/50 p-6">
+          <div className="max-w-5xl mx-auto">
+            {/* Main Timer Controls */}
+            <div className="flex justify-center items-center gap-4 mb-4">
               <Button
                 variant="outline"
-                size="sm"
-                onClick={() => adjustTime(-5)}
-                className="h-12 border-gray-200/50 hover:shadow-subtle"
-              >
-                -5м
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => adjustTime(-1)}
-                className="h-12 border-gray-200/50 hover:shadow-subtle"
-              >
-                -1м
-              </Button>
-            </div>
-
-            {/* Main Controls */}
-            <div className="flex space-x-2">
-              <Button
-                variant="outline"
-                size="sm"
+                size="lg"
                 onClick={onPrevLevel}
-                className="h-12 border-gray-200/50 hover:shadow-subtle"
+                className="h-14 px-6 border-gray-200/50 hover:shadow-subtle transition-all bg-white/50"
               >
-                <ChevronLeft className="w-4 h-4" />
+                <ChevronLeft className="w-5 h-5 mr-2" />
+                <span className="font-medium">Предыдущий</span>
               </Button>
               
               <Button
                 variant="outline"
-                size="sm"
+                size="lg"
                 onClick={onToggleTimer}
-                className={`h-12 border-gray-200/50 hover:shadow-subtle ${
+                className={`h-14 px-8 border-gray-200/50 hover:shadow-subtle transition-all font-medium ${
                   timerActive 
-                    ? 'bg-red-50 text-red-600 hover:bg-red-100' 
-                    : 'bg-green-50 text-green-600 hover:bg-green-100'
+                    ? 'bg-red-50/80 text-red-600 border-red-200/50 hover:bg-red-100/80' 
+                    : 'bg-green-50/80 text-green-600 border-green-200/50 hover:bg-green-100/80'
                 }`}
               >
-                {timerActive ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+                {timerActive ? <Pause className="w-5 h-5 mr-2" /> : <Play className="w-5 h-5 mr-2" />}
+                {timerActive ? 'Пауза' : 'Старт'}
               </Button>
               
               <Button
                 variant="outline"
-                size="sm"
-                onClick={onResetTimer}
-                className="h-12 border-gray-200/50 hover:shadow-subtle"
-              >
-                <RotateCcw className="w-4 h-4" />
-              </Button>
-              
-              <Button
-                variant="outline"
-                size="sm"
+                size="lg"
                 onClick={onNextLevel}
-                className="h-12 border-gray-200/50 hover:shadow-subtle"
+                className="h-14 px-6 border-gray-200/50 hover:shadow-subtle transition-all bg-white/50"
               >
-                <ChevronRight className="w-4 h-4" />
+                <span className="font-medium">Следующий</span>
+                <ChevronRight className="w-5 h-5 ml-2" />
               </Button>
             </div>
 
-            {/* Time Adjustments */}
-            <div className="flex space-x-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => adjustTime(1)}
-                className="h-12 border-gray-200/50 hover:shadow-subtle"
-              >
-                +1м
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => adjustTime(5)}
-                className="h-12 border-gray-200/50 hover:shadow-subtle"
-              >
-                +5м
-              </Button>
-            </div>
+            
+            {/* Secondary Controls */}
+            <div className="flex justify-center items-center gap-6">
+              {/* Time Adjustments */}
+              <div className="flex items-center gap-2 bg-white/50 rounded-xl p-2 border border-gray-200/30">
+                <span className="text-sm text-gray-600 font-medium px-2">Время:</span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => adjustTime(-5)}
+                  className="h-10 px-3 border-gray-200/50 hover:bg-gray-100/50 text-gray-600"
+                >
+                  -5м
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => adjustTime(-1)}
+                  className="h-10 px-3 border-gray-200/50 hover:bg-gray-100/50 text-gray-600"
+                >
+                  -1м
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => adjustTime(1)}
+                  className="h-10 px-3 border-gray-200/50 hover:bg-gray-100/50 text-gray-600"
+                >
+                  +1м
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => adjustTime(5)}
+                  className="h-10 px-3 border-gray-200/50 hover:bg-gray-100/50 text-gray-600"
+                >
+                  +5м
+                </Button>
+              </div>
 
-            {/* Additional Controls */}
-            <div className="flex space-x-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setSoundEnabled(!soundEnabled)}
-                className={`h-12 border-gray-200/50 hover:shadow-subtle ${
-                  soundEnabled 
-                    ? 'bg-blue-50 text-blue-600 hover:bg-blue-100' 
-                    : 'text-gray-500'
-                }`}
-              >
-                {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
-              </Button>
               
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={onStopTournament}
-                className="h-12 text-red-500 border-red-200/50 hover:bg-red-50 hover:shadow-subtle"
-              >
-                <StopCircle className="w-4 h-4" />
-              </Button>
+              {/* Action Controls */}
+              <div className="flex items-center gap-2 bg-white/50 rounded-xl p-2 border border-gray-200/30">
+                <span className="text-sm text-gray-600 font-medium px-2">Действия:</span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={onResetTimer}
+                  className="h-10 px-4 border-gray-200/50 hover:bg-gray-100/50 text-gray-600"
+                >
+                  <RotateCcw className="w-4 h-4 mr-2" />
+                  Сброс
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setSoundEnabled(!soundEnabled)}
+                  className={`h-10 px-4 border-gray-200/50 hover:bg-gray-100/50 ${
+                    soundEnabled 
+                      ? 'bg-blue-50/80 text-blue-600 border-blue-200/50' 
+                      : 'text-gray-500'
+                  }`}
+                >
+                  {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={onStopTournament}
+                  className="h-10 px-4 text-red-600 border-red-200/50 hover:bg-red-50/80"
+                >
+                  <StopCircle className="w-4 h-4 mr-2" />
+                  Стоп
+                </Button>
+              </div>
             </div>
           </div>
         </div>
