@@ -63,32 +63,34 @@ export default {
 					ring: 'hsl(var(--sidebar-ring))'
 				},
 				poker: {
-					primary: 'hsl(var(--poker-primary))',
-					'primary-light': 'hsl(var(--poker-primary-light))',
-					secondary: 'hsl(var(--poker-secondary))',
-					accent: 'hsl(var(--poker-accent))',
-					'accent-light': 'hsl(var(--poker-accent-light))',
-					success: 'hsl(var(--poker-success))',
-					warning: 'hsl(var(--poker-warning))',
-					error: 'hsl(var(--poker-error))',
-					surface: 'hsl(var(--poker-surface))',
-					'surface-elevated': 'hsl(var(--poker-surface-elevated))',
-					border: 'hsl(var(--poker-border))',
-					'text-primary': 'hsl(var(--poker-text-primary))',
-					'text-secondary': 'hsl(var(--poker-text-secondary))',
-					'text-muted': 'hsl(var(--poker-text-muted))'
+					charcoal: 'hsl(var(--poker-charcoal))',
+					'charcoal-light': 'hsl(var(--poker-charcoal-light))',
+					steel: 'hsl(var(--poker-steel))',
+					'steel-light': 'hsl(var(--poker-steel-light))',
+					platinum: 'hsl(var(--poker-platinum))',
+					'platinum-light': 'hsl(var(--poker-platinum-light))',
+					cream: 'hsl(var(--poker-cream))',
+					white: 'hsl(var(--poker-white))',
+					gold: 'hsl(var(--poker-gold))',
+					'gold-light': 'hsl(var(--poker-gold-light))',
+					blue: 'hsl(var(--poker-blue))',
+					green: 'hsl(var(--poker-green))',
+					red: 'hsl(var(--poker-red))'
 				}
 			},
 			backgroundImage: {
-				'gradient-primary': 'var(--gradient-primary)',
-				'gradient-hero': 'var(--gradient-hero)',
-				'gradient-card': 'var(--gradient-card)',
-				'gradient-accent': 'var(--gradient-accent)',
-				'gradient-success': 'var(--gradient-success)',
-				'gradient-glass': 'var(--gradient-glass)',
-				'gradient-border': 'var(--gradient-border)',
-				'gradient-button': 'var(--gradient-button)',
-				'gradient-surface': 'var(--gradient-surface)'
+				'gradient-charcoal': 'var(--gradient-charcoal)',
+				'gradient-steel': 'var(--gradient-steel)',
+				'gradient-platinum': 'var(--gradient-platinum)',
+				'gradient-gold': 'var(--gradient-gold)',
+				'gradient-surface': 'var(--gradient-surface)',
+				'gradient-overlay': 'var(--gradient-overlay)'
+			},
+			fontFamily: {
+				'sans': ['var(--font-family-sans)', 'system-ui', 'sans-serif'],
+				'display': ['var(--font-family-display)', 'serif'],
+				'inter': ['Inter', 'sans-serif'],
+				'playfair': ['Playfair Display', 'serif']
 			},
 			boxShadow: {
 				'minimal': 'var(--shadow-minimal)',
@@ -97,8 +99,9 @@ export default {
 				'elevated': 'var(--shadow-elevated)',
 				'floating': 'var(--shadow-floating)',
 				'dramatic': 'var(--shadow-dramatic)',
-				'accent': 'var(--shadow-accent)',
-				'success': 'var(--shadow-success)',
+				'elegant': 'var(--shadow-elegant)',
+				'gold': 'var(--shadow-gold)',
+				'charcoal': 'var(--shadow-charcoal)',
 				'inset': 'var(--shadow-inset)'
 			},
 			fontWeight: {
