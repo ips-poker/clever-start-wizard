@@ -318,6 +318,48 @@ const ManualAdjustments = ({ tournaments, selectedTournament, onRefresh }: Manua
     }
   };
 
+  const clearAllPlayers = async () => {
+    try {
+      // Delete all game results first
+      const { error: resultsError } = await supabase
+        .from('game_results')
+        .delete()
+        .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all records
+
+      if (resultsError) throw resultsError;
+
+      // Delete all tournament registrations
+      const { error: registrationsError } = await supabase
+        .from('tournament_registrations')
+        .delete()
+        .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all records
+
+      if (registrationsError) throw registrationsError;
+
+      // Finally, delete all players
+      const { error: playersError } = await supabase
+        .from('players')
+        .delete()
+        .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all records
+
+      if (playersError) throw playersError;
+
+      toast({
+        title: 'Список очищен',
+        description: 'Все игроки и связанные данные удалены из системы',
+      });
+
+      loadPlayers();
+      onRefresh();
+    } catch (error: any) {
+      toast({
+        title: 'Ошибка очистки',
+        description: error.message,
+        variant: 'destructive'
+      });
+    }
+  };
+
   return (
     <div className="space-y-6">
       <Tabs defaultValue="ratings" className="w-full">
@@ -329,13 +371,60 @@ const ManualAdjustments = ({ tournaments, selectedTournament, onRefresh }: Manua
         <TabsContent value="ratings" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <User className="h-5 w-5" />
-                Ручная корректировка рейтингов игроков
-              </CardTitle>
-              <CardDescription>
-                Изменение рейтингов игроков с указанием причины корректировки
-              </CardDescription>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <User className="h-5 w-5" />
+                    Ручная корректировка рейтингов игроков
+                  </CardTitle>
+                  <CardDescription>
+                    Изменение рейтингов игроков с указанием причины корректировки
+                  </CardDescription>
+                </div>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="destructive" className="flex items-center gap-2">
+                      <Trash2 className="h-4 w-4" />
+                      Очистить весь список
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle className="flex items-center gap-2">
+                        <AlertTriangle className="h-5 w-5 text-destructive" />
+                        Очистить весь список игроков
+                      </AlertDialogTitle>
+                      <AlertDialogDescription className="space-y-2">
+                        <p>
+                          Вы собираетесь <strong>полностью удалить всех игроков</strong> из рейтинговой системы.
+                        </p>
+                        <div className="text-destructive font-medium">
+                          <p>Это действие удалит:</p>
+                          <ul className="list-disc list-inside space-y-1 text-sm mt-2">
+                            <li>Всех игроков</li>
+                            <li>Все результаты турниров</li>
+                            <li>Всю историю изменений рейтинга</li>
+                            <li>Все регистрации на турниры</li>
+                          </ul>
+                        </div>
+                        <p className="text-destructive font-medium">
+                          Это действие <strong>необратимо</strong>!
+                        </p>
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Отмена</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={clearAllPlayers}
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      >
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        Очистить всё
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
             </CardHeader>
             <CardContent>
               <Table>
