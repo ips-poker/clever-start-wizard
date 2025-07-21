@@ -161,61 +161,61 @@ const TournamentOverview = ({
     <div className="space-y-10">
       {/* Timer and Level Display */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-        <Card className="bg-gradient-card border border-poker-border shadow-elevated rounded-2xl overflow-hidden">
-          <CardHeader className="bg-gradient-surface border-b border-poker-border">
-            <CardTitle className="flex items-center gap-3 text-poker-text-primary text-xl">
-              <div className="p-2 bg-gradient-accent rounded-xl">
-                <Clock className="w-6 h-6 text-white" />
+        <Card className="bg-white/70 backdrop-blur-sm border border-gray-200/50 shadow-subtle rounded-xl overflow-hidden">
+          <CardHeader className="bg-white/50 border-b border-gray-200/30">
+            <CardTitle className="flex items-center gap-3 text-gray-800 text-xl font-light">
+              <div className="p-2 bg-gray-100/80 rounded-lg">
+                <Clock className="w-5 h-5 text-gray-600" />
               </div>
-              Текущий уровень {tournament.current_level}
+              Уровень {tournament.current_level}
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-8 p-8">
+          <CardContent className="space-y-6 p-6">
             <div className="text-center">
-              <div className={`text-8xl font-mono font-bold transition-all duration-500 ${
-                currentTime <= 60 ? 'text-poker-error animate-pulse' : 
-                currentTime <= 300 ? 'text-poker-warning' : 
-                'text-poker-text-primary'
+              <div className={`text-6xl font-mono font-light transition-all duration-300 ${
+                currentTime <= 60 ? 'text-red-500' : 
+                currentTime <= 300 ? 'text-amber-500' : 
+                'text-gray-800'
               }`}>
                 {formatTime(currentTime)}
               </div>
               <Progress 
                 value={timerProgress} 
-                className="mt-6 h-4 bg-poker-secondary rounded-full overflow-hidden"
+                className="mt-4 h-2 bg-gray-100/50"
               />
             </div>
-            <div className="grid grid-cols-2 gap-6">
-              <div className="text-center p-6 border border-poker-border rounded-2xl bg-gradient-surface shadow-card">
-                <p className="text-sm text-poker-text-secondary font-medium mb-2">Малый блайнд</p>
-                <p className="text-4xl font-bold text-poker-text-primary">{tournament.current_small_blind}</p>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="text-center p-4 border border-gray-200/30 rounded-lg bg-white/50">
+                <p className="text-xs text-gray-500 font-medium mb-1">Малый блайнд</p>
+                <p className="text-2xl font-light text-gray-800">{tournament.current_small_blind}</p>
               </div>
-              <div className="text-center p-6 border border-poker-border rounded-2xl bg-gradient-surface shadow-card">
-                <p className="text-sm text-poker-text-secondary font-medium mb-2">Большой блайнд</p>
-                <p className="text-4xl font-bold text-poker-text-primary">{tournament.current_big_blind}</p>
+              <div className="text-center p-4 border border-gray-200/30 rounded-lg bg-white/50">
+                <p className="text-xs text-gray-500 font-medium mb-1">Большой блайнд</p>
+                <p className="text-2xl font-light text-gray-800">{tournament.current_big_blind}</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-glass backdrop-blur-sm border border-white/10 shadow-elegant">
+        <Card className="bg-white/50 backdrop-blur-sm border border-gray-200/30 shadow-minimal">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-poker-charcoal">
-              <ChevronRight className="w-5 h-5" />
+            <CardTitle className="flex items-center gap-2 text-gray-700 font-light">
+              <ChevronRight className="w-4 h-4" />
               Следующий уровень {nextLevel}
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-6">
+          <CardContent className="space-y-4">
             <div className="text-center">
-              <p className="text-2xl font-semibold text-poker-silver mb-4">Через {formatTime(currentTime)}</p>
+              <p className="text-lg font-light text-gray-600 mb-3">Через {formatTime(currentTime)}</p>
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="text-center p-4 border border-white/10 rounded-xl bg-gradient-glass backdrop-blur-sm">
-                <p className="text-sm text-poker-silver">Малый блайнд</p>
-                <p className="text-3xl font-bold text-poker-charcoal">{Math.round(nextSmallBlind)}</p>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="text-center p-3 border border-gray-200/20 rounded-lg bg-white/30">
+                <p className="text-xs text-gray-500">Малый блайнд</p>
+                <p className="text-xl font-light text-gray-700">{Math.round(nextSmallBlind)}</p>
               </div>
-              <div className="text-center p-4 border border-white/10 rounded-xl bg-gradient-glass backdrop-blur-sm">
-                <p className="text-sm text-poker-silver">Большой блайнд</p>
-                <p className="text-3xl font-bold text-poker-charcoal">{Math.round(nextBigBlind)}</p>
+              <div className="text-center p-3 border border-gray-200/20 rounded-lg bg-white/30">
+                <p className="text-xs text-gray-500">Большой блайнд</p>
+                <p className="text-xl font-light text-gray-700">{Math.round(nextBigBlind)}</p>
               </div>
             </div>
           </CardContent>
@@ -223,119 +223,121 @@ const TournamentOverview = ({
       </div>
 
       {/* Quick Control Buttons */}
-      <Card className="bg-gradient-glass backdrop-blur-sm border border-white/10 shadow-elegant">
+      <Card className="bg-white/60 backdrop-blur-sm border border-gray-200/40 shadow-minimal">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-poker-charcoal">
-            <Target className="w-5 h-5" />
-            Быстрое управление
+          <CardTitle className="flex items-center gap-2 text-gray-700 font-light">
+            <Target className="w-4 h-4" />
+            Управление
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-4 md:grid-cols-8 gap-3">
+          <div className="grid grid-cols-4 md:grid-cols-8 gap-2">
             <Button
               variant="outline"
-              size="lg"
+              size="sm"
               onClick={onToggleTimer}
-              className={`h-16 ${timerActive ? 'bg-red-500 hover:bg-red-600 text-white' : 'bg-green-500 hover:bg-green-600 text-white'} border-0`}
+              className={`h-12 border-gray-200/50 hover:shadow-subtle transition-all ${
+                timerActive ? 'bg-red-50 text-red-600 hover:bg-red-100' : 'bg-green-50 text-green-600 hover:bg-green-100'
+              }`}
             >
-              {timerActive ? <Pause className="w-6 h-6" /> : <Play className="w-6 h-6" />}
+              {timerActive ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
             </Button>
             
-            <Button variant="outline" size="lg" onClick={onResetTimer} className="h-16">
-              <RotateCcw className="w-6 h-6" />
+            <Button variant="outline" size="sm" onClick={onResetTimer} className="h-12 border-gray-200/50 hover:shadow-subtle">
+              <RotateCcw className="w-4 h-4" />
             </Button>
             
-            <Button variant="outline" size="lg" onClick={onPrevLevel} className="h-16">
-              <ChevronLeft className="w-6 h-6" />
+            <Button variant="outline" size="sm" onClick={onPrevLevel} className="h-12 border-gray-200/50 hover:shadow-subtle">
+              <ChevronLeft className="w-4 h-4" />
             </Button>
             
-            <Button variant="outline" size="lg" onClick={onNextLevel} className="h-16">
-              <ChevronRight className="w-6 h-6" />
+            <Button variant="outline" size="sm" onClick={onNextLevel} className="h-12 border-gray-200/50 hover:shadow-subtle">
+              <ChevronRight className="w-4 h-4" />
             </Button>
             
             <Button 
               variant="outline" 
-              size="lg" 
+              size="sm" 
               onClick={() => setSoundEnabled(!soundEnabled)}
-              className={`h-16 ${soundEnabled ? 'bg-green-100' : 'bg-red-100'}`}
+              className={`h-12 border-gray-200/50 hover:shadow-subtle ${soundEnabled ? 'bg-blue-50 text-blue-600' : 'bg-gray-50 text-gray-500'}`}
             >
-              <Volume2 className="w-6 h-6" />
+              <Volume2 className="w-4 h-4" />
             </Button>
             
-            <Button variant="outline" size="lg" onClick={toggleFullscreen} className="h-16">
-              <Maximize className="w-6 h-6" />
+            <Button variant="outline" size="sm" onClick={toggleFullscreen} className="h-12 border-gray-200/50 hover:shadow-subtle">
+              <Maximize className="w-4 h-4" />
             </Button>
             
-            <Button variant="outline" size="lg" onClick={onStopTournament} className="h-16 text-red-500 hover:bg-red-50">
-              <StopCircle className="w-6 h-6" />
+            <Button variant="outline" size="sm" onClick={onStopTournament} className="h-12 text-red-500 border-red-200/50 hover:bg-red-50 hover:shadow-subtle">
+              <StopCircle className="w-4 h-4" />
             </Button>
             
-            <Button variant="outline" size="lg" onClick={onRefresh} className="h-16">
-              <Activity className="w-6 h-6" />
+            <Button variant="outline" size="sm" onClick={onRefresh} className="h-12 border-gray-200/50 hover:shadow-subtle">
+              <Activity className="w-4 h-4" />
             </Button>
           </div>
         </CardContent>
       </Card>
 
       {/* Tournament Statistics */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <Card className="bg-gradient-glass backdrop-blur-sm border border-white/10 shadow-elegant">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card className="bg-white/50 backdrop-blur-sm border border-gray-200/30 shadow-minimal">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-poker-charcoal">
-              <Users className="w-5 h-5" />
+            <CardTitle className="flex items-center gap-2 text-gray-700 font-light">
+              <Users className="w-4 h-4" />
               Статистика турнира
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="text-center p-4 border border-white/10 rounded-xl bg-gradient-glass backdrop-blur-sm">
-                <Users className="w-8 h-8 mx-auto mb-2 text-poker-charcoal" />
-                <p className="text-3xl font-bold text-poker-charcoal">{registrations.length}</p>
-                <p className="text-sm text-poker-silver">Всего игроков</p>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="text-center p-3 border border-gray-200/20 rounded-lg bg-white/30">
+                <Users className="w-5 h-5 mx-auto mb-1 text-gray-600" />
+                <p className="text-xl font-light text-gray-800">{registrations.length}</p>
+                <p className="text-xs text-gray-500">Всего игроков</p>
               </div>
-              <div className="text-center p-4 border border-white/10 rounded-xl bg-gradient-glass backdrop-blur-sm">
-                <Activity className="w-8 h-8 mx-auto mb-2 text-green-600" />
-                <p className="text-3xl font-bold text-green-600">{activePlayers.length}</p>
-                <p className="text-sm text-poker-silver">Активных</p>
+              <div className="text-center p-3 border border-gray-200/20 rounded-lg bg-white/30">
+                <Activity className="w-5 h-5 mx-auto mb-1 text-green-600" />
+                <p className="text-xl font-light text-green-600">{activePlayers.length}</p>
+                <p className="text-xs text-gray-500">Активных</p>
               </div>
-              <div className="text-center p-4 border border-white/10 rounded-xl bg-gradient-glass backdrop-blur-sm">
-                <UserX className="w-8 h-8 mx-auto mb-2 text-red-500" />
-                <p className="text-3xl font-bold text-red-500">{eliminatedPlayers.length}</p>
-                <p className="text-sm text-poker-silver">Выбыло</p>
+              <div className="text-center p-3 border border-gray-200/20 rounded-lg bg-white/30">
+                <UserX className="w-5 h-5 mx-auto mb-1 text-red-500" />
+                <p className="text-xl font-light text-red-500">{eliminatedPlayers.length}</p>
+                <p className="text-xs text-gray-500">Выбыло</p>
               </div>
-              <div className="text-center p-4 border border-white/10 rounded-xl bg-gradient-glass backdrop-blur-sm">
-                <RotateCcw className="w-8 h-8 mx-auto mb-2 text-blue-500" />
-                <p className="text-3xl font-bold text-blue-500">{totalRebuys}</p>
-                <p className="text-sm text-poker-silver">Ребаев</p>
+              <div className="text-center p-3 border border-gray-200/20 rounded-lg bg-white/30">
+                <RotateCcw className="w-5 h-5 mx-auto mb-1 text-blue-600" />
+                <p className="text-xl font-light text-blue-600">{totalRebuys}</p>
+                <p className="text-xs text-gray-500">Ребаев</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-glass backdrop-blur-sm border border-white/10 shadow-elegant">
+        <Card className="bg-white/50 backdrop-blur-sm border border-gray-200/30 shadow-minimal">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-poker-charcoal">
-              <DollarSign className="w-5 h-5" />
+            <CardTitle className="flex items-center gap-2 text-gray-700 font-light">
+              <DollarSign className="w-4 h-4" />
               Призовой фонд
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-center">
-              <div className="text-5xl font-bold text-poker-charcoal mb-4">
+              <div className="text-3xl font-light text-gray-800 mb-3">
                 {prizePool.toLocaleString()} ₽
               </div>
-              <div className="grid grid-cols-3 gap-4 text-sm">
-                <div>
-                  <p className="text-poker-silver">Бай-ины</p>
-                  <p className="font-semibold">{(registrations.length * tournament.buy_in).toLocaleString()} ₽</p>
+              <div className="grid grid-cols-3 gap-3 text-xs">
+                <div className="p-2 bg-white/30 rounded-lg border border-gray-200/20">
+                  <p className="text-gray-500">Бай-ины</p>
+                  <p className="font-medium text-gray-700">{(registrations.length * tournament.buy_in).toLocaleString()} ₽</p>
                 </div>
-                <div>
-                  <p className="text-poker-silver">Ребаи</p>
-                  <p className="font-semibold">{(totalRebuys * tournament.buy_in).toLocaleString()} ₽</p>
+                <div className="p-2 bg-white/30 rounded-lg border border-gray-200/20">
+                  <p className="text-gray-500">Ребаи</p>
+                  <p className="font-medium text-gray-700">{(totalRebuys * tournament.buy_in).toLocaleString()} ₽</p>
                 </div>
-                <div>
-                  <p className="text-poker-silver">Аддоны</p>
-                  <p className="font-semibold">{(totalAddons * tournament.buy_in).toLocaleString()} ₽</p>
+                <div className="p-2 bg-white/30 rounded-lg border border-gray-200/20">
+                  <p className="text-gray-500">Аддоны</p>
+                  <p className="font-medium text-gray-700">{(totalAddons * tournament.buy_in).toLocaleString()} ₽</p>
                 </div>
               </div>
             </div>
@@ -344,78 +346,78 @@ const TournamentOverview = ({
       </div>
 
       {/* System Analytics */}
-      <Card className="bg-gradient-glass backdrop-blur-sm border border-white/10 shadow-elegant">
+      <Card className="bg-white/40 backdrop-blur-sm border border-gray-200/20 shadow-minimal">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-poker-charcoal">
-            <BarChart3 className="w-5 h-5" />
-            Аналитика системы в реальном времени
+          <CardTitle className="flex items-center gap-2 text-gray-700 font-light">
+            <BarChart3 className="w-4 h-4" />
+            Аналитика системы
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="text-center p-4 border border-white/10 rounded-xl bg-gradient-glass backdrop-blur-sm">
-              <Trophy className="w-8 h-8 mx-auto mb-2 text-poker-charcoal" />
-              <p className="text-2xl font-bold text-poker-charcoal">{systemStats.activeTournaments}</p>
-              <p className="text-sm text-poker-silver">Активные турниры</p>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="text-center p-3 border border-gray-200/15 rounded-lg bg-white/20">
+              <Trophy className="w-5 h-5 mx-auto mb-1 text-gray-600" />
+              <p className="text-lg font-light text-gray-800">{systemStats.activeTournaments}</p>
+              <p className="text-xs text-gray-500">Активные турниры</p>
             </div>
-            <div className="text-center p-4 border border-white/10 rounded-xl bg-gradient-glass backdrop-blur-sm">
-              <Users className="w-8 h-8 mx-auto mb-2 text-poker-charcoal" />
-              <p className="text-2xl font-bold text-poker-charcoal">{systemStats.totalPlayersInClub}</p>
-              <p className="text-sm text-poker-silver">Игроков в клубе</p>
+            <div className="text-center p-3 border border-gray-200/15 rounded-lg bg-white/20">
+              <Users className="w-5 h-5 mx-auto mb-1 text-gray-600" />
+              <p className="text-lg font-light text-gray-800">{systemStats.totalPlayersInClub}</p>
+              <p className="text-xs text-gray-500">Игроков в клубе</p>
             </div>
-            <div className="text-center p-4 border border-white/10 rounded-xl bg-gradient-glass backdrop-blur-sm">
-              <TrendingUp className="w-8 h-8 mx-auto mb-2 text-green-500" />
-              <p className="text-2xl font-bold text-green-500">{systemStats.weeklyGames}</p>
-              <p className="text-sm text-poker-silver">Игр за неделю</p>
+            <div className="text-center p-3 border border-gray-200/15 rounded-lg bg-white/20">
+              <TrendingUp className="w-5 h-5 mx-auto mb-1 text-green-600" />
+              <p className="text-lg font-light text-green-600">{systemStats.weeklyGames}</p>
+              <p className="text-xs text-gray-500">Игр за неделю</p>
             </div>
-            <div className="text-center p-4 border border-white/10 rounded-xl bg-gradient-glass backdrop-blur-sm">
-              <Target className="w-8 h-8 mx-auto mb-2 text-blue-500" />
-              <p className="text-2xl font-bold text-blue-500">{systemStats.averageRating}</p>
-              <p className="text-sm text-poker-silver">Средний рейтинг</p>
+            <div className="text-center p-3 border border-gray-200/15 rounded-lg bg-white/20">
+              <Target className="w-5 h-5 mx-auto mb-1 text-blue-600" />
+              <p className="text-lg font-light text-blue-600">{systemStats.averageRating}</p>
+              <p className="text-xs text-gray-500">Средний рейтинг</p>
             </div>
           </div>
         </CardContent>
       </Card>
 
       {/* System Health */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <Card className="bg-gradient-glass backdrop-blur-sm border border-white/10 shadow-elegant">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card className="bg-white/40 backdrop-blur-sm border border-gray-200/20 shadow-minimal">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-poker-charcoal">
-              <AlertCircle className="w-5 h-5" />
-              Здоровье системы
+            <CardTitle className="flex items-center gap-2 text-gray-700 font-light">
+              <AlertCircle className="w-4 h-4" />
+              Состояние системы
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
-              <span className="text-poker-silver">База данных</span>
-              <Badge variant="default" className="bg-green-500 text-white">Работает</Badge>
+          <CardContent className="space-y-3">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-gray-600">База данных</span>
+              <Badge variant="secondary" className="bg-green-50 text-green-700 border-green-200">Работает</Badge>
             </div>
-            <div className="flex items-center justify-between">
-              <span className="text-poker-silver">Real-time обновления</span>
-              <Badge variant="default" className="bg-green-500 text-white">Активно</Badge>
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-gray-600">Real-time обновления</span>
+              <Badge variant="secondary" className="bg-green-50 text-green-700 border-green-200">Активно</Badge>
             </div>
-            <div className="flex items-center justify-between">
-              <span className="text-poker-silver">ELO расчеты</span>
-              <Badge variant="default" className="bg-green-500 text-white">Готово</Badge>
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-gray-600">ELO расчеты</span>
+              <Badge variant="secondary" className="bg-green-50 text-green-700 border-green-200">Готово</Badge>
             </div>
-            <div className="flex items-center justify-between">
-              <span className="text-poker-silver">Производительность</span>
-              <Badge variant="default" className="bg-yellow-500 text-white">Хорошо</Badge>
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-gray-600">Производительность</span>
+              <Badge variant="secondary" className="bg-amber-50 text-amber-700 border-amber-200">Хорошо</Badge>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-glass backdrop-blur-sm border border-white/10 shadow-elegant">
+        <Card className="bg-white/40 backdrop-blur-sm border border-gray-200/20 shadow-minimal">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-poker-charcoal">
-              <BarChart3 className="w-5 h-5" />
+            <CardTitle className="flex items-center gap-2 text-gray-700 font-light">
+              <BarChart3 className="w-4 h-4" />
               Рейтинговые показатели
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
-              <span className="text-poker-silver">Качество игры</span>
+          <CardContent className="space-y-3">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-gray-600">Качество игры</span>
               <div className="flex items-center gap-2">
                 <Progress value={85} className="w-20 h-2" />
                 <span className="text-sm font-semibold">85%</span>
