@@ -141,12 +141,21 @@ const TournamentDirector = () => {
   }, []);
 
   useEffect(() => {
+    let isMounted = true;
+    
     if (selectedTournament) {
-      loadRegistrations(selectedTournament.id);
-      setCurrentTime(selectedTournament.timer_remaining);
-      // Save selected tournament to localStorage
-      localStorage.setItem('selectedTournamentId', selectedTournament.id);
+      loadRegistrations(selectedTournament.id).then(() => {
+        if (isMounted && selectedTournament.timer_remaining !== undefined) {
+          setCurrentTime(selectedTournament.timer_remaining);
+          // Save selected tournament to localStorage
+          localStorage.setItem('selectedTournamentId', selectedTournament.id);
+        }
+      });
     }
+    
+    return () => {
+      isMounted = false;
+    };
   }, [selectedTournament]);
 
   // Timer effect with database sync
@@ -190,24 +199,30 @@ const TournamentDirector = () => {
   }, [timerActive, selectedTournament]); // Removed currentTime from deps to prevent timer restart
 
   const loadTournaments = async () => {
-    const { data, error } = await supabase
-      .from('tournaments')
-      .select('*')
-      .order('start_time', { ascending: false });
+    try {
+      const { data, error } = await supabase
+        .from('tournaments')
+        .select('*')
+        .order('start_time', { ascending: false });
 
-    if (error) {
-      toast({ title: "Ошибка", description: "Не удалось загрузить турниры", variant: "destructive" });
-    } else {
-      setTournaments(data || []);
-      
-      // Restore selected tournament after loading
-      const savedTournamentId = localStorage.getItem('selectedTournamentId');
-      if (savedTournamentId && data) {
-        const savedTournament = data.find(t => t.id === savedTournamentId);
-        if (savedTournament) {
-          setSelectedTournament(savedTournament);
+      if (error) {
+        console.error('Tournament loading error:', error);
+        toast({ title: "Ошибка", description: "Не удалось загрузить турниры", variant: "destructive" });
+      } else {
+        setTournaments(data || []);
+        
+        // Restore selected tournament after loading
+        const savedTournamentId = localStorage.getItem('selectedTournamentId');
+        if (savedTournamentId && data) {
+          const savedTournament = data.find(t => t.id === savedTournamentId);
+          if (savedTournament) {
+            setSelectedTournament(savedTournament);
+          }
         }
       }
+    } catch (err) {
+      console.error('Unexpected error loading tournaments:', err);
+      toast({ title: "Ошибка", description: "Неожиданная ошибка при загрузке турниров", variant: "destructive" });
     }
   };
 
