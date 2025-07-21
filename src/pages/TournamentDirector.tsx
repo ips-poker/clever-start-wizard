@@ -219,14 +219,25 @@ const TournamentDirector = () => {
 
   const createDefaultBlindLevels = async (tournamentId: string) => {
     const blindLevels = [
-      { level: 1, small_blind: 10, big_blind: 20, ante: 0 },
-      { level: 2, small_blind: 20, big_blind: 40, ante: 0 },
-      { level: 3, small_blind: 30, big_blind: 60, ante: 0 },
-      { level: 4, small_blind: 50, big_blind: 100, ante: 10 },
-      { level: 5, small_blind: 75, big_blind: 150, ante: 15 },
-      { level: 6, small_blind: 100, big_blind: 200, ante: 20 },
-      { level: 7, small_blind: 150, big_blind: 300, ante: 30 },
-      { level: 8, small_blind: 200, big_blind: 400, ante: 40 }
+      { level: 1, small_blind: 100, big_blind: 200, ante: 200 },
+      { level: 2, small_blind: 200, big_blind: 400, ante: 400 },
+      { level: 3, small_blind: 300, big_blind: 600, ante: 600 },
+      { level: 4, small_blind: 400, big_blind: 800, ante: 800 },
+      { level: 5, small_blind: 500, big_blind: 1000, ante: 1000 },
+      { level: 6, small_blind: 600, big_blind: 1200, ante: 1200 },
+      { level: 7, small_blind: 700, big_blind: 1500, ante: 1500 },
+      { level: 8, small_blind: 1000, big_blind: 2000, ante: 2000 },
+      { level: 9, small_blind: 1500, big_blind: 3000, ante: 3000 },
+      { level: 10, small_blind: 2000, big_blind: 4000, ante: 4000 },
+      { level: 11, small_blind: 3000, big_blind: 6000, ante: 6000 },
+      { level: 12, small_blind: 4000, big_blind: 8000, ante: 8000 },
+      { level: 13, small_blind: 5000, big_blind: 10000, ante: 10000 },
+      { level: 14, small_blind: 6000, big_blind: 12000, ante: 12000 },
+      { level: 15, small_blind: 7000, big_blind: 14000, ante: 14000 },
+      { level: 16, small_blind: 8000, big_blind: 16000, ante: 16000 },
+      { level: 17, small_blind: 10000, big_blind: 20000, ante: 20000 },
+      { level: 18, small_blind: 15000, big_blind: 30000, ante: 30000 },
+      { level: 19, small_blind: 20000, big_blind: 40000, ante: 40000 }
     ];
 
     for (const level of blindLevels) {
