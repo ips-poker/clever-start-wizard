@@ -15,25 +15,31 @@ import {
 export function SocialProof() {
   const testimonials = [
     {
-      name: "Алексей М.",
+      name: "Алексей Морозов",
+      username: "@alex_poker",
       rating: 1987,
       status: "Elite Player",
-      text: "Благодаря рейтинговой системе IPS я понял свои слабые места и значительно улучшил игру.",
-      avatar: "A"
+      text: "Благодаря рейтинговой системе IPS я понял свои слабые места и значительно улучшил игру. Теперь регулярно в топ-3! 🔥",
+      avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=400&fit=crop&crop=face",
+      time: "2 часа назад"
     },
     {
-      name: "Мария К.",
+      name: "Мария Колесникова", 
+      username: "@maria_cards",
       rating: 1756,
       status: "Advanced",
-      text: "Отличная организация турниров и справедливая система оценки. Рекомендую всем!",
-      avatar: "M"
+      text: "Отличная организация турниров и справедливая система оценки. Атмосфера просто невероятная! Рекомендую всем 👌",
+      avatar: "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=400&h=400&fit=crop&crop=face",
+      time: "5 часов назад"
     },
     {
-      name: "Дмитрий В.",
+      name: "Дмитрий Волков",
+      username: "@dmitry_pro",
       rating: 2134,
       status: "Master",
-      text: "Лучший покерный клуб в городе. Профессиональный уровень и дружелюбная атмосфера.",
-      avatar: "Д"
+      text: "Лучший покерный клуб в городе. Профессиональный уровень и дружелюбная атмосфера. Здесь действительно можно расти как игрок! 🚀",
+      avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face",
+      time: "1 день назад"
     }
   ];
 
@@ -45,7 +51,7 @@ export function SocialProof() {
   ];
 
   return (
-    <section className="py-20 bg-accent/30">
+    <section className="py-20 bg-poker-surface">
       <div className="container mx-auto px-4">
         {/* Stats Section */}
         <div className="grid md:grid-cols-4 gap-6 mb-16">
@@ -80,31 +86,44 @@ export function SocialProof() {
 
         <div className="grid md:grid-cols-3 gap-8 mb-16">
           {testimonials.map((testimonial, index) => (
-            <Card key={index} className="group hover:shadow-elegant transition-all duration-300 hover:-translate-y-1 border-border/50">
-              <CardHeader>
-                <div className="flex items-center space-x-4">
-                  <div className="w-12 h-12 bg-gradient-royal rounded-full flex items-center justify-center text-white font-bold">
-                    {testimonial.avatar}
-                  </div>
-                  <div>
-                    <CardTitle className="text-lg">{testimonial.name}</CardTitle>
-                    <div className="flex items-center space-x-2">
-                      <Badge className="bg-poker-gold/10 text-poker-gold border-poker-gold/20">
-                        {testimonial.rating} ELO
-                      </Badge>
-                      <Badge variant="outline" className="text-xs">
-                        {testimonial.status}
-                      </Badge>
+            <Card key={index} className="group hover:shadow-card transition-all duration-300 hover:-translate-y-1 border-poker-border bg-white">
+              <CardContent className="p-0">
+                {/* Telegram-style header */}
+                <div className="p-4 border-b border-poker-border/50">
+                  <div className="flex items-center space-x-3">
+                    <img 
+                      src={testimonial.avatar} 
+                      alt={testimonial.name}
+                      className="w-10 h-10 rounded-full object-cover"
+                    />
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-2">
+                        <h4 className="font-semibold text-poker-text-primary">{testimonial.name}</h4>
+                        <span className="text-poker-text-muted text-sm">{testimonial.username}</span>
+                      </div>
+                      <div className="flex items-center space-x-2 mt-1">
+                        <Badge className="bg-poker-accent/10 text-poker-accent border-poker-accent/20 text-xs">
+                          {testimonial.rating} ELO
+                        </Badge>
+                        <span className="text-xs text-poker-text-muted">{testimonial.time}</span>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground italic">"{testimonial.text}"</p>
-                <div className="flex mt-4">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="w-4 h-4 text-poker-gold fill-current" />
-                  ))}
+                
+                {/* Message content */}
+                <div className="p-4">
+                  <p className="text-poker-text-secondary leading-relaxed">{testimonial.text}</p>
+                  <div className="flex items-center justify-between mt-4">
+                    <div className="flex space-x-1">
+                      {[...Array(5)].map((_, i) => (
+                        <Star key={i} className="w-4 h-4 text-poker-accent fill-current" />
+                      ))}
+                    </div>
+                    <Badge variant="outline" className="text-xs bg-poker-surface">
+                      {testimonial.status}
+                    </Badge>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -112,7 +131,7 @@ export function SocialProof() {
         </div>
 
         {/* Call to Action */}
-        <div className="text-center bg-gradient-primary rounded-2xl p-12 text-primary-foreground">
+        <div className="text-center bg-poker-primary rounded-2xl p-12 text-poker-text-inverse">
           <h3 className="text-3xl font-bold mb-4">
             Готовы начать свой путь к покерному мастерству?
           </h3>
@@ -122,11 +141,11 @@ export function SocialProof() {
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <Button size="lg" className="bg-poker-gold text-primary hover:bg-poker-gold/90 font-semibold">
+            <Button size="lg" className="bg-poker-accent text-white hover:bg-poker-accent-dark font-semibold">
               <UserCheck className="w-5 h-5 mr-2" />
               Присоединиться бесплатно
             </Button>
-            <Button size="lg" variant="outline" className="border-primary-foreground text-primary-foreground hover:bg-primary-foreground hover:text-primary">
+            <Button size="lg" variant="outline" className="border-white text-white hover:bg-white hover:text-poker-primary">
               Подробнее о клубе
               <ArrowRight className="w-5 h-5 ml-2" />
             </Button>

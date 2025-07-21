@@ -88,109 +88,122 @@ export function TopPlayers() {
   }
 
   return (
-    <section id="rating" className="py-20">
+    <section id="rating" className="py-20 bg-poker-surface-subtle">
       <div className="container mx-auto px-4">
         <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold mb-4 bg-gradient-to-r from-poker-gold to-poker-steel bg-clip-text text-transparent">
-            Рейтинг лучших игроков
+          <Badge variant="outline" className="mb-4 border-poker-accent text-poker-accent">
+            Рейтинг ELO
+          </Badge>
+          <h2 className="text-4xl font-bold mb-4 text-poker-text-primary">
+            Лучшие игроки клуба
           </h2>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-lg text-poker-text-secondary max-w-2xl mx-auto">
             Топ игроков по системе ELO рейтинга. Участвуйте в турнирах и поднимайтесь в рейтинге!
           </p>
         </div>
 
         {topPlayers.length === 0 ? (
           <div className="text-center py-12">
-            <Trophy className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
+            <Trophy className="w-16 h-16 mx-auto mb-4 text-poker-text-muted" />
             <h3 className="text-xl font-semibold mb-2">Рейтинг пока пуст</h3>
-            <p className="text-muted-foreground">Станьте первым игроком в нашем рейтинге!</p>
+            <p className="text-poker-text-muted">Станьте первым игроком в нашем рейтинге!</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* Top 3 Players - Featured */}
-            <div className="lg:col-span-2">
-              <h3 className="text-xl font-semibold mb-6 text-center">Подиум лидеров</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {topPlayers.slice(0, 3).map((player, index) => {
-                  const position = index + 1;
-                  return (
-                    <Card 
-                      key={player.id} 
-                      className={`text-center overflow-hidden ${
-                        position === 1 
-                          ? 'ring-2 ring-yellow-400 shadow-lg' 
-                          : position === 2 
-                          ? 'ring-2 ring-gray-400' 
-                          : 'ring-2 ring-amber-400'
-                      }`}
-                    >
-                      <CardHeader className="pb-3">
-                        <div className="flex justify-center mb-3">
+          <div className="max-w-4xl mx-auto">
+            {/* Modern Top 3 Cards */}
+            <div className="grid md:grid-cols-3 gap-6 mb-12">
+              {topPlayers.slice(0, 3).map((player, index) => {
+                const position = index + 1;
+                const isFirst = position === 1;
+                return (
+                  <Card 
+                    key={player.id} 
+                    className={`relative overflow-hidden transition-all duration-300 hover:scale-105 ${
+                      isFirst 
+                        ? 'bg-gradient-to-br from-poker-accent/5 to-poker-accent/10 border-poker-accent shadow-card' 
+                        : 'bg-white border-poker-border hover:shadow-card'
+                    }`}
+                  >
+                    {/* Position indicator */}
+                    <div className={`absolute top-0 right-0 w-16 h-16 ${
+                      isFirst ? 'bg-poker-accent' : 'bg-poker-primary'
+                    } transform rotate-45 translate-x-6 -translate-y-6`}>
+                      <div className="absolute bottom-2 left-2 transform -rotate-45 text-white font-bold text-sm">
+                        #{position}
+                      </div>
+                    </div>
+                    
+                    <CardContent className="p-6 text-center">
+                      <div className="mb-4">
+                        <div className={`w-16 h-16 mx-auto rounded-full flex items-center justify-center ${
+                          isFirst ? 'bg-poker-accent text-white' : 'bg-poker-surface-elevated text-poker-text-primary'
+                        }`}>
                           {getRankIcon(position)}
                         </div>
-                        <div className="flex justify-center mb-2">
-                          {getRankBadge(position)}
+                      </div>
+                      
+                      <h3 className="font-bold text-lg mb-2 text-poker-text-primary">{player.name}</h3>
+                      
+                      <div className="space-y-3">
+                        <div>
+                          <p className={`text-3xl font-bold ${isFirst ? 'text-poker-accent' : 'text-poker-primary'}`}>
+                            {player.elo_rating}
+                          </p>
+                          <p className="text-sm text-poker-text-muted">ELO рейтинг</p>
                         </div>
-                        <CardTitle className="text-lg">{player.name}</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-3">
+                        
+                        <div className="grid grid-cols-2 gap-4 pt-3 border-t border-poker-border/50">
                           <div>
-                            <p className="text-3xl font-bold text-poker-gold">{player.elo_rating}</p>
-                            <p className="text-sm text-muted-foreground">ELO рейтинг</p>
+                            <p className="font-semibold text-poker-text-primary">{player.games_played}</p>
+                            <p className="text-xs text-poker-text-muted">Игр</p>
                           </div>
-                          <div className="grid grid-cols-2 gap-4 text-sm">
-                            <div>
-                              <p className="font-semibold">{player.games_played}</p>
-                              <p className="text-muted-foreground">Игр</p>
-                            </div>
-                            <div>
-                              <p className="font-semibold">{getWinRate(player.wins, player.games_played)}%</p>
-                              <p className="text-muted-foreground">Винрейт</p>
-                            </div>
+                          <div>
+                            <p className="font-semibold text-poker-text-primary">{getWinRate(player.wins, player.games_played)}%</p>
+                            <p className="text-xs text-poker-text-muted">Винрейт</p>
                           </div>
                         </div>
-                      </CardContent>
-                    </Card>
-                  );
-                })}
-              </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
             </div>
 
-            {/* Remaining Players - List Format */}
+            {/* Remaining Players - Modern List */}
             {topPlayers.length > 3 && (
-              <div className="lg:col-span-2">
-                <h3 className="text-xl font-semibold mb-6">Топ 10 игроков</h3>
-                <Card>
-                  <CardContent className="p-0">
-                    <div className="divide-y divide-border">
-                      {topPlayers.slice(3).map((player, index) => {
-                        const position = index + 4;
-                        return (
-                          <div key={player.id} className="flex items-center justify-between p-4 hover:bg-muted/50 transition-colors">
-                            <div className="flex items-center gap-4">
-                              <div className="flex items-center gap-2">
-                                {getRankIcon(position)}
-                                {getRankBadge(position)}
-                              </div>
+              <Card className="bg-white border-poker-border">
+                <CardHeader>
+                  <CardTitle className="text-xl text-poker-text-primary">Остальные игроки</CardTitle>
+                </CardHeader>
+                <CardContent className="p-0">
+                  <div className="divide-y divide-poker-border">
+                    {topPlayers.slice(3).map((player, index) => {
+                      const position = index + 4;
+                      return (
+                        <div key={player.id} className="flex items-center justify-between p-4 hover:bg-poker-surface-subtle transition-colors">
+                          <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-3">
+                              <span className="w-8 h-8 rounded-full bg-poker-surface-elevated flex items-center justify-center text-sm font-semibold text-poker-text-primary">
+                                {position}
+                              </span>
                               <div>
-                                <h4 className="font-semibold">{player.name}</h4>
-                                <p className="text-sm text-muted-foreground">
-                                  {player.games_played} игр, {getWinRate(player.wins, player.games_played)}% побед
+                                <h4 className="font-semibold text-poker-text-primary">{player.name}</h4>
+                                <p className="text-sm text-poker-text-muted">
+                                  {player.games_played} игр • {getWinRate(player.wins, player.games_played)}% побед
                                 </p>
                               </div>
                             </div>
-                            <div className="text-right">
-                              <p className="text-xl font-bold text-poker-gold">{player.elo_rating}</p>
-                              <p className="text-sm text-muted-foreground">ELO</p>
-                            </div>
                           </div>
-                        );
-                      })}
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
+                          <div className="text-right">
+                            <p className="text-xl font-bold text-poker-accent">{player.elo_rating}</p>
+                            <p className="text-sm text-poker-text-muted">ELO</p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
             )}
           </div>
         )}
