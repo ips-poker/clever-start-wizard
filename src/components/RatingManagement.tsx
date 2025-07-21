@@ -120,10 +120,10 @@ const RatingManagement = ({ tournaments, selectedTournament, onRefresh }: Rating
   const calculateRatings = async (tournamentId: string) => {
     setIsCalculating(true);
     try {
-      // Get tournament registrations to create results array
+      // Get tournament registrations to create results array, including rebuys/addons data
       const { data: registrations, error: regError } = await supabase
         .from('tournament_registrations')
-        .select('player_id, position')
+        .select('player_id, position, rebuys, addons')
         .eq('tournament_id', tournamentId)
         .not('position', 'is', null)
         .order('position');
@@ -134,7 +134,12 @@ const RatingManagement = ({ tournaments, selectedTournament, onRefresh }: Rating
         throw new Error('Нет результатов для расчета рейтингов');
       }
 
-      // Call the calculate-elo edge function
+      console.log('Отправка данных для расчета рейтингов:', {
+        tournament_id: tournamentId,
+        results: registrations
+      });
+
+      // Call the calculate-elo edge function with complete data
       const { data, error } = await supabase.functions.invoke('calculate-elo', {
         body: {
           tournament_id: tournamentId,
@@ -145,7 +150,10 @@ const RatingManagement = ({ tournaments, selectedTournament, onRefresh }: Rating
         }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Ошибка вызова функции расчета ELO:', error);
+        throw error;
+      }
 
       toast({
         title: 'Рейтинги рассчитаны',

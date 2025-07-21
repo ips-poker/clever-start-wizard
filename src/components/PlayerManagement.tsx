@@ -333,19 +333,33 @@ const PlayerManagement = ({ tournament, players, registrations, onRegistrationUp
 
   const finishTournament = async () => {
     try {
-      // Update tournament status
+      // Update tournament status to completed first
       const { error: tournamentError } = await supabase
         .from('tournaments')
-        .update({ status: 'finished' })
+        .update({ status: 'completed' })
         .eq('id', tournament.id);
 
       if (tournamentError) throw tournamentError;
 
-      // Prepare results for ELO calculation
+      // Ensure all active players get position 1 (winner/tie)
+      const activePlayerUpdates = registrations
+        .filter(r => r.status !== 'eliminated')
+        .map(async (reg) => {
+          return supabase
+            .from('tournament_registrations')
+            .update({ position: 1 })
+            .eq('id', reg.id);
+        });
+
+      await Promise.all(activePlayerUpdates);
+
+      // Prepare results for ELO calculation - make sure all players have positions
       const results = registrations.map((reg) => ({
         player_id: reg.player.id,
-        position: reg.position || (reg.status === 'eliminated' ? registrations.length : 1)
+        position: reg.position || 1 // Active players get 1st place
       }));
+
+      console.log('Завершение турнира - отправка результатов:', results);
 
       // Call ELO calculation function
       const { error: eloError } = await supabase.functions.invoke('calculate-elo', {
@@ -355,7 +369,10 @@ const PlayerManagement = ({ tournament, players, registrations, onRegistrationUp
         }
       });
 
-      if (eloError) throw eloError;
+      if (eloError) {
+        console.error('Ошибка расчета ELO:', eloError);
+        throw eloError;
+      }
 
       toast({ 
         title: "Турнир завершен", 
@@ -572,7 +589,7 @@ const PlayerManagement = ({ tournament, players, registrations, onRegistrationUp
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => eliminatePlayer(registration.id, eliminatedPlayers.length + 1)}
+                          onClick={() => eliminatePlayer(registration.id, registrations.length - eliminatedPlayers.length)}
                           className="text-red-500 hover:text-red-700 hover:bg-red-50"
                         >
                           <Trash2 className="w-4 h-4" />
