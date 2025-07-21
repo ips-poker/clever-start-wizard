@@ -81,6 +81,7 @@ interface TournamentOverviewProps {
   onPrevLevel: () => void;
   onStopTournament: () => void;
   onRefresh: () => void;
+  onTimerAdjust?: (seconds: number) => void;
 }
 
 const TournamentOverview = ({
@@ -94,7 +95,8 @@ const TournamentOverview = ({
   onNextLevel,
   onPrevLevel,
   onStopTournament,
-  onRefresh
+  onRefresh,
+  onTimerAdjust
 }: TournamentOverviewProps) => {
   const [systemStats, setSystemStats] = useState({
     activeTournaments: 0,
@@ -195,8 +197,7 @@ const TournamentOverview = ({
           onStopTournament={onStopTournament}
           onClose={closeFullscreenTimer}
           onTimerAdjust={(seconds) => {
-            // Implement timer adjustment logic here
-            console.log('Timer adjust:', seconds);
+            onTimerAdjust?.(seconds);
           }}
         />
       )}

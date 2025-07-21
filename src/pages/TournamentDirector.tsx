@@ -419,6 +419,18 @@ const TournamentDirector = () => {
     }
   };
 
+  const adjustTimer = (seconds: number) => {
+    if (!selectedTournament) return;
+    
+    const newTime = Math.max(0, currentTime + seconds);
+    setCurrentTime(newTime);
+    
+    toast({ 
+      title: "Таймер изменен", 
+      description: `${seconds > 0 ? 'Добавлено' : 'Убрано'} ${Math.abs(seconds)} секунд`
+    });
+  };
+
   const finishTournament = async () => {
     if (!selectedTournament || Object.keys(tournamentResults).length === 0) {
       toast({ title: "Ошибка", description: "Укажите места игроков", variant: "destructive" });
@@ -558,6 +570,7 @@ const TournamentDirector = () => {
                   onNextLevel={nextBlindLevel}
                   onPrevLevel={prevBlindLevel}
                   onStopTournament={stopTournament}
+                  onTimerAdjust={adjustTimer}
                   onRefresh={() => {
                     loadTournaments();
                     loadPlayers();
