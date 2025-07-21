@@ -20,6 +20,7 @@ export type Database = {
           big_blind: number
           duration: number
           id: string
+          is_break: boolean | null
           level: number
           small_blind: number
           tournament_id: string
@@ -29,6 +30,7 @@ export type Database = {
           big_blind: number
           duration?: number
           id?: string
+          is_break?: boolean | null
           level: number
           small_blind: number
           tournament_id: string
@@ -38,6 +40,7 @@ export type Database = {
           big_blind?: number
           duration?: number
           id?: string
+          is_break?: boolean | null
           level?: number
           small_blind?: number
           tournament_id?: string
