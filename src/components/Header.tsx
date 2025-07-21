@@ -12,7 +12,8 @@ export function Header() {
     { name: "Рейтинг", href: "/ratings" },
     { name: "Галерея", href: "/gallery" },
     { name: "Блог", href: "/blog" },
-    { name: "О нас", href: "/about" }
+    { name: "О нас", href: "/about" },
+    { name: "Турнирный директор", href: "/director" }
   ];
 
   return (

@@ -14,7 +14,230 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      blind_levels: {
+        Row: {
+          ante: number | null
+          big_blind: number
+          duration: number
+          id: string
+          level: number
+          small_blind: number
+          tournament_id: string
+        }
+        Insert: {
+          ante?: number | null
+          big_blind: number
+          duration?: number
+          id?: string
+          level: number
+          small_blind: number
+          tournament_id: string
+        }
+        Update: {
+          ante?: number | null
+          big_blind?: number
+          duration?: number
+          id?: string
+          level?: number
+          small_blind?: number
+          tournament_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "blind_levels_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: false
+            referencedRelation: "tournaments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      game_results: {
+        Row: {
+          created_at: string
+          elo_after: number
+          elo_before: number
+          elo_change: number
+          id: string
+          player_id: string
+          position: number
+          tournament_id: string
+        }
+        Insert: {
+          created_at?: string
+          elo_after: number
+          elo_before: number
+          elo_change: number
+          id?: string
+          player_id: string
+          position: number
+          tournament_id: string
+        }
+        Update: {
+          created_at?: string
+          elo_after?: number
+          elo_before?: number
+          elo_change?: number
+          id?: string
+          player_id?: string
+          position?: number
+          tournament_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "game_results_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "game_results_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: false
+            referencedRelation: "tournaments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      players: {
+        Row: {
+          created_at: string
+          elo_rating: number
+          email: string | null
+          games_played: number
+          id: string
+          name: string
+          updated_at: string
+          wins: number
+        }
+        Insert: {
+          created_at?: string
+          elo_rating?: number
+          email?: string | null
+          games_played?: number
+          id?: string
+          name: string
+          updated_at?: string
+          wins?: number
+        }
+        Update: {
+          created_at?: string
+          elo_rating?: number
+          email?: string | null
+          games_played?: number
+          id?: string
+          name?: string
+          updated_at?: string
+          wins?: number
+        }
+        Relationships: []
+      }
+      tournament_registrations: {
+        Row: {
+          addons: number | null
+          chips: number | null
+          created_at: string
+          id: string
+          player_id: string
+          position: number | null
+          rebuys: number | null
+          seat_number: number | null
+          status: string
+          tournament_id: string
+        }
+        Insert: {
+          addons?: number | null
+          chips?: number | null
+          created_at?: string
+          id?: string
+          player_id: string
+          position?: number | null
+          rebuys?: number | null
+          seat_number?: number | null
+          status?: string
+          tournament_id: string
+        }
+        Update: {
+          addons?: number | null
+          chips?: number | null
+          created_at?: string
+          id?: string
+          player_id?: string
+          position?: number | null
+          rebuys?: number | null
+          seat_number?: number | null
+          status?: string
+          tournament_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tournament_registrations_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tournament_registrations_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: false
+            referencedRelation: "tournaments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tournaments: {
+        Row: {
+          buy_in: number
+          created_at: string
+          current_big_blind: number | null
+          current_level: number | null
+          current_small_blind: number | null
+          description: string | null
+          id: string
+          max_players: number
+          name: string
+          start_time: string
+          status: string
+          timer_duration: number | null
+          timer_remaining: number | null
+          updated_at: string
+        }
+        Insert: {
+          buy_in?: number
+          created_at?: string
+          current_big_blind?: number | null
+          current_level?: number | null
+          current_small_blind?: number | null
+          description?: string | null
+          id?: string
+          max_players?: number
+          name: string
+          start_time: string
+          status?: string
+          timer_duration?: number | null
+          timer_remaining?: number | null
+          updated_at?: string
+        }
+        Update: {
+          buy_in?: number
+          created_at?: string
+          current_big_blind?: number | null
+          current_level?: number | null
+          current_small_blind?: number | null
+          description?: string | null
+          id?: string
+          max_players?: number
+          name?: string
+          start_time?: string
+          status?: string
+          timer_duration?: number | null
+          timer_remaining?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
