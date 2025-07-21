@@ -594,7 +594,7 @@ const TournamentDirector = () => {
               />
             </div>
             <div className="text-left">
-              <h1 className="text-4xl font-light mb-2 text-gray-800 tracking-wide">
+              <h1 className="text-3xl font-light mb-2 text-gray-800 tracking-wide">
                 IPS Tournament Manager
               </h1>
               <p className="text-gray-600 text-base font-light leading-relaxed">
