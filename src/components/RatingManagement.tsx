@@ -176,13 +176,15 @@ const RatingManagement = ({ tournaments, selectedTournament, onRefresh }: Rating
         results: registrations
       });
 
-      // Call the calculate-elo edge function with complete data
+      // Call the calculate-elo edge function with complete data including rebuys/addons
       const { data, error } = await supabase.functions.invoke('calculate-elo', {
         body: {
           tournament_id: tournamentId,
           results: registrations.map(reg => ({
             player_id: reg.player_id,
-            position: reg.position
+            position: reg.position,
+            rebuys: reg.rebuys || 0,
+            addons: reg.addons || 0
           }))
         }
       });

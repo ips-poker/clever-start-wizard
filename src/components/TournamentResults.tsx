@@ -121,7 +121,7 @@ const TournamentResults = ({ selectedTournament }: TournamentResultsProps) => {
 
   const loadTopPlayers = async () => {
     try {
-      const { data, error } = await supabase
+      const { data: players, error } = await supabase
         .from('players')
         .select('*')
         .order('elo_rating', { ascending: false })
@@ -129,13 +129,30 @@ const TournamentResults = ({ selectedTournament }: TournamentResultsProps) => {
 
       if (error) throw error;
 
-      // Calculate additional stats
-      const playersWithStats = data?.map(player => ({
-        ...player,
-        win_rate: player.games_played > 0 ? (player.wins / player.games_played) * 100 : 0,
-        avg_position: 0, // Would need additional calculation
-        total_winnings: 0, // Would need additional calculation
-      })) || [];
+      // Calculate additional stats for each player
+      const playersWithStats = await Promise.all(
+        (players || []).map(async (player) => {
+          // Get average position from game results
+          const { data: gameResults } = await supabase
+            .from('game_results')
+            .select('position')
+            .eq('player_id', player.id);
+
+          const avgPosition = gameResults && gameResults.length > 0 
+            ? gameResults.reduce((sum, game) => sum + game.position, 0) / gameResults.length 
+            : 0;
+
+          // Calculate total winnings (tournaments won * average buy-in estimate)
+          const totalWinnings = player.wins * 5000; // Simplified calculation
+
+          return {
+            ...player,
+            win_rate: player.games_played > 0 ? (player.wins / player.games_played) * 100 : 0,
+            avg_position: Math.round(avgPosition * 10) / 10,
+            total_winnings: totalWinnings,
+          };
+        })
+      );
 
       setTopPlayers(playersWithStats);
     } catch (error) {

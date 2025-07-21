@@ -17,6 +17,8 @@ interface Player {
 interface TournamentResult {
   player_id: string;
   position: number;
+  rebuys?: number;
+  addons?: number;
 }
 
 serve(async (req) => {
@@ -48,14 +50,6 @@ serve(async (req) => {
 
     if (tournamentError) throw tournamentError
 
-    // Get registrations with rebuy/addon data
-    const { data: registrations, error: registrationsError } = await supabaseClient
-      .from('tournament_registrations')
-      .select('player_id, rebuys, addons')
-      .eq('tournament_id', tournament_id)
-
-    if (registrationsError) throw registrationsError
-
     // Get all players involved in the tournament
     const playerIds = results.map((r: TournamentResult) => r.player_id)
     const { data: players, error: playersError } = await supabaseClient
@@ -65,13 +59,16 @@ serve(async (req) => {
 
     if (playersError) throw playersError
 
-    // Calculate total buy-in for each player (including rebuys and addons)
+    // Calculate total buy-in for each player (including rebuys and addons from results data)
     const playerBuyIns = new Map()
-    registrations.forEach(reg => {
+    results.forEach(result => {
+      const rebuys = result.rebuys || 0
+      const addons = result.addons || 0
       const totalBuyIn = tournament.buy_in + 
-        (reg.rebuys * (tournament.rebuy_cost || 0)) + 
-        (reg.addons * (tournament.addon_cost || 0))
-      playerBuyIns.set(reg.player_id, totalBuyIn)
+        (rebuys * (tournament.rebuy_cost || 0)) + 
+        (addons * (tournament.addon_cost || 0))
+      playerBuyIns.set(result.player_id, totalBuyIn)
+      console.log(`Player ${result.player_id}: buy_in=${tournament.buy_in}, rebuys=${rebuys}*${tournament.rebuy_cost || 0}, addons=${addons}*${tournament.addon_cost || 0}, total=${totalBuyIn}`)
     })
 
     // Calculate new ELO ratings with buy-in consideration
