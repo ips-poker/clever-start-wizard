@@ -9,7 +9,9 @@ import {
   MapPin,
   Star,
   ArrowRight,
-  UserCheck
+  UserCheck,
+  CheckCircle,
+  MessageCircle
 } from "lucide-react";
 
 export function SocialProof() {
@@ -18,22 +20,28 @@ export function SocialProof() {
       name: "Алексей М.",
       rating: 1987,
       status: "Elite Player",
-      text: "Благодаря рейтинговой системе IPS я понял свои слабые места и значительно улучшил игру.",
-      avatar: "A"
+      text: "Благодаря рейтинговой системе IPS я понял свои слабые места и значительно улучшил игру. 💪",
+      avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80&h=80&fit=crop&crop=face",
+      time: "2 часа назад",
+      verified: true
     },
     {
       name: "Мария К.",
       rating: 1756,
       status: "Advanced",
-      text: "Отличная организация турниров и справедливая система оценки. Рекомендую всем!",
-      avatar: "M"
+      text: "Отличная организация турниров и справедливая система оценки. Рекомендую всем! ⭐",
+      avatar: "https://images.unsplash.com/photo-1494790108755-2616b612b0e0?w=80&h=80&fit=crop&crop=face",
+      time: "5 часов назад",
+      verified: true
     },
     {
       name: "Дмитрий В.",
       rating: 2134,
       status: "Master",
-      text: "Лучший покерный клуб в городе. Профессиональный уровень и дружелюбная атмосфера.",
-      avatar: "Д"
+      text: "Лучший покерный клуб в городе. Профессиональный уровень и дружелюбная атмосфера. 🔥",
+      avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&h=80&fit=crop&crop=face",
+      time: "1 день назад",
+      verified: true
     }
   ];
 
@@ -78,72 +86,101 @@ export function SocialProof() {
           </p>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-8 mb-16">
+        <div className="grid md:grid-cols-3 gap-6 mb-16">
           {testimonials.map((testimonial, index) => (
-            <Card key={index} className="group hover:shadow-elegant transition-all duration-300 hover:-translate-y-1 border-border/50">
-              <CardHeader>
-                <div className="flex items-center space-x-4">
-                  <div className="w-12 h-12 bg-gradient-royal rounded-full flex items-center justify-center text-white font-bold">
-                    {testimonial.avatar}
-                  </div>
-                  <div>
-                    <CardTitle className="text-lg">{testimonial.name}</CardTitle>
-                    <div className="flex items-center space-x-2">
-                      <Badge className="bg-poker-gold/10 text-poker-gold border-poker-gold/20">
-                        {testimonial.rating} ELO
-                      </Badge>
-                      <Badge variant="outline" className="text-xs">
-                        {testimonial.status}
-                      </Badge>
+            <Card key={index} className="group hover:shadow-floating transition-all duration-500 hover:-translate-y-2 border border-border/50 bg-gradient-surface overflow-hidden">
+              {/* Telegram-style header */}
+              <CardHeader className="pb-3 bg-gradient-to-r from-poker-accent/5 to-poker-primary/5">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div className="relative">
+                      <img 
+                        src={testimonial.avatar} 
+                        alt={testimonial.name}
+                        className="w-12 h-12 rounded-full border-2 border-poker-accent/20"
+                      />
+                      {testimonial.verified && (
+                        <CheckCircle className="w-4 h-4 text-poker-success absolute -bottom-1 -right-1 bg-background rounded-full" />
+                      )}
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <CardTitle className="text-base font-bold text-poker-primary">{testimonial.name}</CardTitle>
+                        {testimonial.verified && (
+                          <CheckCircle className="w-4 h-4 text-poker-success" />
+                        )}
+                      </div>
+                      <div className="flex items-center space-x-2 mt-1">
+                        <Badge className="bg-poker-accent/10 text-poker-accent border-poker-accent/20 text-xs">
+                          {testimonial.rating} ELO
+                        </Badge>
+                        <span className="text-xs text-muted-foreground">{testimonial.time}</span>
+                      </div>
                     </div>
                   </div>
+                  <MessageCircle className="w-4 h-4 text-poker-accent/50" />
                 </div>
               </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground italic">"{testimonial.text}"</p>
-                <div className="flex mt-4">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="w-4 h-4 text-poker-gold fill-current" />
-                  ))}
+
+              {/* Telegram-style message */}
+              <CardContent className="pt-0">
+                <div className="bg-poker-accent/5 rounded-2xl rounded-tl-sm p-4 mb-4 border-l-4 border-poker-accent/30">
+                  <p className="text-poker-primary leading-relaxed">
+                    {testimonial.text}
+                  </p>
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <Badge variant="outline" className="text-xs border-poker-primary/20 text-poker-primary">
+                    {testimonial.status}
+                  </Badge>
+                  <div className="flex space-x-1">
+                    {[...Array(5)].map((_, i) => (
+                      <Star key={i} className="w-3 h-3 text-poker-accent fill-current" />
+                    ))}
+                  </div>
                 </div>
               </CardContent>
             </Card>
           ))}
         </div>
 
-        {/* Call to Action */}
-        <div className="text-center bg-gradient-primary rounded-2xl p-12 text-primary-foreground">
-          <h3 className="text-3xl font-bold mb-4">
-            Готовы начать свой путь к покерному мастерству?
-          </h3>
-          <p className="text-xl mb-8 opacity-90 max-w-2xl mx-auto">
-            Присоединяйтесь к IPS сегодня и получите доступ к профессиональной рейтинговой системе, 
-            регулярным турнирам и дружелюбному сообществу.
-          </p>
-          
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <Button size="lg" className="bg-poker-gold text-primary hover:bg-poker-gold/90 font-semibold">
-              <UserCheck className="w-5 h-5 mr-2" />
-              Присоединиться бесплатно
-            </Button>
-            <Button size="lg" variant="outline" className="border-primary-foreground text-primary-foreground hover:bg-primary-foreground hover:text-primary">
-              Подробнее о клубе
-              <ArrowRight className="w-5 h-5 ml-2" />
-            </Button>
-          </div>
+        {/* Call to Action - Fixed readability */}
+        <div className="relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-poker-primary via-poker-accent to-poker-primary opacity-90"></div>
+          <div className="relative text-center rounded-2xl p-12 text-white">
+            <h3 className="text-4xl font-bold mb-6 text-white drop-shadow-lg">
+              Готовы начать свой путь к покерному мастерству?
+            </h3>
+            <p className="text-xl mb-8 text-white/95 max-w-2xl mx-auto leading-relaxed drop-shadow">
+              Присоединяйтесь к IPS сегодня и получите доступ к профессиональной рейтинговой системе, 
+              регулярным турнирам и дружелюбному сообществу.
+            </p>
+            
+            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-8">
+              <Button size="lg" className="bg-white text-poker-primary hover:bg-white/90 font-bold shadow-xl">
+                <UserCheck className="w-5 h-5 mr-2" />
+                Присоединиться бесплатно
+              </Button>
+              <Button size="lg" variant="outline" className="border-2 border-white text-white hover:bg-white hover:text-poker-primary font-semibold">
+                Подробнее о клубе
+                <ArrowRight className="w-5 h-5 ml-2" />
+              </Button>
+            </div>
 
-          <div className="flex items-center justify-center mt-8 space-x-6 text-sm opacity-80">
-            <div className="flex items-center space-x-2">
-              <Clock className="w-4 h-4" />
-              <span>Регистрация 2 минуты</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <MapPin className="w-4 h-4" />
-              <span>Москва, центр города</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Star className="w-4 h-4" />
-              <span>Без скрытых платежей</span>
+            <div className="flex flex-wrap items-center justify-center gap-6 text-sm text-white/90">
+              <div className="flex items-center space-x-2 bg-white/10 rounded-full px-4 py-2 backdrop-blur">
+                <Clock className="w-4 h-4" />
+                <span>Регистрация 2 минуты</span>
+              </div>
+              <div className="flex items-center space-x-2 bg-white/10 rounded-full px-4 py-2 backdrop-blur">
+                <MapPin className="w-4 h-4" />
+                <span>Москва, центр города</span>
+              </div>
+              <div className="flex items-center space-x-2 bg-white/10 rounded-full px-4 py-2 backdrop-blur">
+                <Star className="w-4 h-4" />
+                <span>Без скрытых платежей</span>
+              </div>
             </div>
           </div>
         </div>
