@@ -109,6 +109,12 @@ const TournamentDirector = () => {
     loadTournaments();
     loadPlayers();
     
+    // Restore selected tournament from localStorage
+    const savedTournamentId = localStorage.getItem('selectedTournamentId');
+    if (savedTournamentId) {
+      // Will be set after tournaments are loaded
+    }
+    
     // Set up real-time subscriptions
     const tournamentsChannel = supabase
       .channel('tournaments-changes')
@@ -136,6 +142,8 @@ const TournamentDirector = () => {
     if (selectedTournament) {
       loadRegistrations(selectedTournament.id);
       setCurrentTime(selectedTournament.timer_remaining);
+      // Save selected tournament to localStorage
+      localStorage.setItem('selectedTournamentId', selectedTournament.id);
     }
   }, [selectedTournament]);
 
@@ -188,6 +196,15 @@ const TournamentDirector = () => {
       toast({ title: "Ошибка", description: "Не удалось загрузить турниры", variant: "destructive" });
     } else {
       setTournaments(data || []);
+      
+      // Restore selected tournament after loading
+      const savedTournamentId = localStorage.getItem('selectedTournamentId');
+      if (savedTournamentId && data) {
+        const savedTournament = data.find(t => t.id === savedTournamentId);
+        if (savedTournament) {
+          setSelectedTournament(savedTournament);
+        }
+      }
     }
   };
 

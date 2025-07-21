@@ -295,7 +295,7 @@ const TournamentSyncManager = ({ tournaments, onRefresh }: TournamentSyncManager
                         <Button
                           size="sm"
                           onClick={() => publishTournament(tournament.id)}
-                          disabled={tournament.status !== 'scheduled'}
+                          disabled={tournament.status === 'running' || tournament.status === 'completed' || tournament.status === 'cancelled'}
                         >
                           <Eye className="w-4 h-4 mr-1" />
                           Опубликовать
