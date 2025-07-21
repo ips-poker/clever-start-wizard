@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Trophy, Users, Clock, Settings, Plus, Play, Pause, Square, RotateCcw, CheckCircle, UserPlus, Volume2, Maximize, StopCircle, ChevronLeft, ChevronRight, Activity, TrendingUp, AlertCircle, DollarSign, Target, BarChart3 } from "lucide-react";
+import { Trophy, Users, Clock, Settings, Plus, Play, Pause, Square, RotateCcw, CheckCircle, UserPlus, Volume2, Maximize, StopCircle, ChevronLeft, ChevronRight, Activity, TrendingUp, AlertCircle, DollarSign, Target, BarChart3, Edit } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import PlayerRegistration from "@/components/PlayerRegistration";
 
@@ -80,6 +80,7 @@ const TournamentDirector = () => {
   const [isFinishDialogOpen, setIsFinishDialogOpen] = useState(false);
   const [tournamentResults, setTournamentResults] = useState<{[key: string]: number}>({});
   const [activeTab, setActiveTab] = useState("overview");
+  const [editingTournament, setEditingTournament] = useState<Tournament | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const { toast } = useToast();
 
@@ -978,7 +979,16 @@ const TournamentDirector = () => {
                     
                     {/* Action Buttons */}
                     <div className="flex flex-col gap-2 pt-2 border-t border-gray-200/50">
-                      <div className="grid grid-cols-2 gap-2">
+                      <div className="grid grid-cols-3 gap-2">
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => setEditingTournament(tournament)}
+                          className="border-gray-200/50 hover:shadow-minimal text-xs"
+                        >
+                          <Edit className="w-3 h-3 mr-1" />
+                          Изменить
+                        </Button>
                         <Button 
                           size="sm" 
                           variant="outline"
@@ -1009,7 +1019,17 @@ const TournamentDirector = () => {
                             className="border-blue-200 bg-blue-50 text-blue-600 hover:bg-blue-100 text-xs"
                           >
                             <Activity className="w-3 h-3 mr-1" />
-                            Управление
+                            Активный
+                          </Button>
+                        )}
+                        {tournament.status === 'completed' && (
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            className="border-green-200 bg-green-50 text-green-600 text-xs"
+                          >
+                            <CheckCircle className="w-3 h-3 mr-1" />
+                            Завершен
                           </Button>
                         )}
                       </div>
@@ -1479,6 +1499,202 @@ const TournamentDirector = () => {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Tournament Edit Dialog */}
+      <Dialog open={!!editingTournament} onOpenChange={() => setEditingTournament(null)}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Edit className="w-5 h-5" />
+              Редактирование турнира
+            </DialogTitle>
+            <DialogDescription>
+              Внесите необходимые изменения в параметры турнира
+            </DialogDescription>
+          </DialogHeader>
+          
+          {editingTournament && (
+            <div className="space-y-6">
+              {/* Basic Info */}
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="edit-name">Название турнира</Label>
+                  <Input
+                    id="edit-name"
+                    value={editingTournament.name}
+                    onChange={(e) => setEditingTournament({
+                      ...editingTournament,
+                      name: e.target.value
+                    })}
+                    className="bg-white/50 border-gray-200/50"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="edit-description">Описание</Label>
+                  <Textarea
+                    id="edit-description"
+                    value={editingTournament.description || ''}
+                    onChange={(e) => setEditingTournament({
+                      ...editingTournament,
+                      description: e.target.value
+                    })}
+                    className="bg-white/50 border-gray-200/50"
+                  />
+                </div>
+              </div>
+
+              {/* Time and Players */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="edit-start-time">Дата и время начала</Label>
+                  <Input
+                    id="edit-start-time"
+                    type="datetime-local"
+                    value={editingTournament.start_time ? new Date(editingTournament.start_time).toISOString().slice(0, 16) : ''}
+                    onChange={(e) => setEditingTournament({
+                      ...editingTournament,
+                      start_time: e.target.value
+                    })}
+                    className="bg-white/50 border-gray-200/50"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="edit-max-players">Максимум игроков</Label>
+                  <Input
+                    id="edit-max-players"
+                    type="number"
+                    min="2"
+                    max="500"
+                    value={editingTournament.max_players}
+                    onChange={(e) => setEditingTournament({
+                      ...editingTournament,
+                      max_players: parseInt(e.target.value) || 0
+                    })}
+                    className="bg-white/50 border-gray-200/50"
+                  />
+                </div>
+              </div>
+
+              {/* Buy-in and Chips */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="edit-buy-in">Бай-ин (EP2016)</Label>
+                  <Input
+                    id="edit-buy-in"
+                    type="number"
+                    min="0"
+                    value={editingTournament.buy_in}
+                    onChange={(e) => setEditingTournament({
+                      ...editingTournament,
+                      buy_in: parseInt(e.target.value) || 0
+                    })}
+                    className="bg-white/50 border-gray-200/50"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="edit-starting-chips">Стартовый стек</Label>
+                  <Input
+                    id="edit-starting-chips"
+                    type="number"
+                    min="1000"
+                    value={editingTournament.starting_chips}
+                    onChange={(e) => setEditingTournament({
+                      ...editingTournament,
+                      starting_chips: parseInt(e.target.value) || 0
+                    })}
+                    className="bg-white/50 border-gray-200/50"
+                  />
+                </div>
+              </div>
+
+              {/* Rebuy and Addon */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="edit-rebuy-cost">Стоимость ребая</Label>
+                  <Input
+                    id="edit-rebuy-cost"
+                    type="number"
+                    min="0"
+                    value={editingTournament.rebuy_cost}
+                    onChange={(e) => setEditingTournament({
+                      ...editingTournament,
+                      rebuy_cost: parseInt(e.target.value) || 0
+                    })}
+                    className="bg-white/50 border-gray-200/50"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="edit-addon-cost">Стоимость аддона</Label>
+                  <Input
+                    id="edit-addon-cost"
+                    type="number"
+                    min="0"
+                    value={editingTournament.addon_cost}
+                    onChange={(e) => setEditingTournament({
+                      ...editingTournament,
+                      addon_cost: parseInt(e.target.value) || 0
+                    })}
+                    className="bg-white/50 border-gray-200/50"
+                  />
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex justify-end gap-3 pt-4 border-t border-gray-200/50">
+                <Button
+                  variant="outline"
+                  onClick={() => setEditingTournament(null)}
+                >
+                  Отмена
+                </Button>
+                <Button
+                  onClick={async () => {
+                    try {
+                      const { error } = await supabase
+                        .from('tournaments')
+                        .update({
+                          name: editingTournament.name,
+                          description: editingTournament.description,
+                          start_time: editingTournament.start_time,
+                          max_players: editingTournament.max_players,
+                          buy_in: editingTournament.buy_in,
+                          starting_chips: editingTournament.starting_chips,
+                          rebuy_cost: editingTournament.rebuy_cost,
+                          addon_cost: editingTournament.addon_cost
+                        })
+                        .eq('id', editingTournament.id);
+
+                      if (error) throw error;
+
+                      toast({
+                        title: "Турнир обновлен",
+                        description: "Изменения успешно сохранены",
+                      });
+
+                      setEditingTournament(null);
+                      loadTournaments();
+                    } catch (error: any) {
+                      toast({
+                        title: "Ошибка",
+                        description: error.message,
+                        variant: "destructive"
+                      });
+                    }
+                  }}
+                  className="bg-gray-800 hover:bg-gray-700 text-white"
+                >
+                  <CheckCircle className="w-4 h-4 mr-2" />
+                  Сохранить изменения
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
