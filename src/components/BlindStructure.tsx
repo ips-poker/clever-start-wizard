@@ -185,19 +185,20 @@ const BlindStructure = ({ tournamentId }: BlindStructureProps) => {
 
     if (error) {
       toast({ title: "Ошибка", description: "Не удалось удалить уровень", variant: "destructive" });
-    } else {
-      // Reorder levels after deletion
-      const levelsToUpdate = blindLevels.filter(l => l.level > levelNumber);
-      for (const level of levelsToUpdate) {
-        await supabase
-          .from('blind_levels')
-          .update({ level: level.level - 1 })
-          .eq('id', level.id);
-      }
-      
-      toast({ title: "Успех", description: "Уровень удален" });
-      loadBlindLevels();
+      return;
     }
+
+    // Пересчитываем все уровни после удаленного
+    const levelsToUpdate = blindLevels.filter(l => l.level > levelNumber);
+    for (const level of levelsToUpdate) {
+      await supabase
+        .from('blind_levels')
+        .update({ level: level.level - 1 })
+        .eq('id', level.id);
+    }
+    
+    toast({ title: "Успех", description: "Уровень удален" });
+    loadBlindLevels();
   };
 
   const openEditDialog = (level: BlindLevel) => {
