@@ -17,7 +17,7 @@ export function Hero() {
           filter: 'blur(6px)'
         }}
       >
-        <div className="absolute inset-0 bg-poker-charcoal/60"></div>
+        <div className="absolute inset-0 bg-slate-900/50"></div>
         <div className="absolute inset-0 bg-gradient-overlay"></div>
       </div>
       {/* Subtle Floating Elements */}
