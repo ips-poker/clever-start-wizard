@@ -33,7 +33,7 @@ export function Hero() {
             <div className="space-y-8 animate-slide-up [animation-delay:0.2s]">
               <div className="flex justify-center lg:justify-start">
                 <Badge className="bg-slate-700/80 border border-slate-600/50 text-slate-100 font-semibold px-6 py-3 rounded-full shadow-lg backdrop-blur-xl animate-scale-in [animation-delay:0.4s]">
-                  Система управления турнирами
+                  Покерный клуб IPS
                 </Badge>
               </div>
               
@@ -49,50 +49,47 @@ export function Hero() {
                 <div className="flex-1">
                   <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight tracking-tight">
                     <span className="text-white block leading-none">
-                      IPS
+                      Покерный клуб
                     </span>
                     <span className="block text-slate-300 text-2xl sm:text-3xl lg:text-4xl mt-2 font-semibold leading-tight">
-                      Tournament
-                    </span>
-                    <span className="block text-xl sm:text-2xl lg:text-3xl font-medium text-slate-400 tracking-wide leading-tight mt-1">
-                      Director
+                      IPS
                     </span>
                   </h1>
                 </div>
               </div>
                
-               <div className="text-center lg:text-left">
-                 <p className="text-lg text-slate-300 max-w-2xl mx-auto lg:mx-0 leading-relaxed font-medium animate-fade-in [animation-delay:0.8s]">
-                   Профессиональная система управления покерными турнирами с интегрированным таймером, 
-                   рейтингом ELO и полным контролем всех аспектов игры.
-                 </p>
-               </div>
+                <div className="text-center lg:text-left">
+                  <p className="text-lg text-slate-300 max-w-2xl mx-auto lg:mx-0 leading-relaxed font-medium animate-fade-in [animation-delay:0.8s]">
+                    Элитный покерный клуб с турнирами, рейтинговой системой и профессиональным сервисом.
+                    Присоединяйтесь к сообществу лучших игроков в покер.
+                  </p>
+                </div>
 
-                 {/* Key Benefits */}
-                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 animate-slide-up [animation-delay:1s] max-w-2xl mx-auto lg:mx-0">
-                    <div className="flex items-center justify-center lg:justify-start space-x-3 text-sm bg-slate-800/60 px-4 py-3 rounded-xl backdrop-blur-xl border border-slate-600/50 text-slate-200 font-medium shadow-lg">
-                      <Timer className="w-5 h-5 text-slate-400 flex-shrink-0" />
-                      <span>Контроль времени</span>
-                    </div>
-                    <div className="flex items-center justify-center lg:justify-start space-x-3 text-sm bg-slate-800/60 px-4 py-3 rounded-xl backdrop-blur-xl border border-slate-600/50 text-slate-200 font-medium shadow-lg">
-                      <Settings className="w-5 h-5 text-slate-400 flex-shrink-0" />
-                      <span>Настройки блайндов</span>
-                    </div>
-                    <div className="flex items-center justify-center lg:justify-start space-x-3 text-sm bg-slate-800/60 px-4 py-3 rounded-xl backdrop-blur-xl border border-slate-600/50 text-slate-200 font-medium shadow-lg">
-                      <Award className="w-5 h-5 text-slate-400 flex-shrink-0" />
-                      <span>Рейтинг ELO</span>
-                    </div>
-                    <div className="flex items-center justify-center lg:justify-start space-x-3 text-sm bg-slate-800/60 px-4 py-3 rounded-xl backdrop-blur-xl border border-slate-600/50 text-slate-200 font-medium shadow-lg">
-                      <Users className="w-5 h-5 text-slate-400 flex-shrink-0" />
-                      <span>Управление игроками</span>
-                    </div>
-                 </div>
+                  {/* Key Benefits */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 animate-slide-up [animation-delay:1s] max-w-2xl mx-auto lg:mx-0">
+                     <div className="flex items-center justify-center lg:justify-start space-x-3 text-sm bg-slate-800/60 px-4 py-3 rounded-xl backdrop-blur-xl border border-slate-600/50 text-slate-200 font-medium shadow-lg">
+                       <Trophy className="w-5 h-5 text-slate-400 flex-shrink-0" />
+                       <span>Регулярные турниры</span>
+                     </div>
+                     <div className="flex items-center justify-center lg:justify-start space-x-3 text-sm bg-slate-800/60 px-4 py-3 rounded-xl backdrop-blur-xl border border-slate-600/50 text-slate-200 font-medium shadow-lg">
+                       <Star className="w-5 h-5 text-slate-400 flex-shrink-0" />
+                       <span>Система рейтингов</span>
+                     </div>
+                     <div className="flex items-center justify-center lg:justify-start space-x-3 text-sm bg-slate-800/60 px-4 py-3 rounded-xl backdrop-blur-xl border border-slate-600/50 text-slate-200 font-medium shadow-lg">
+                       <Users className="w-5 h-5 text-slate-400 flex-shrink-0" />
+                       <span>Сообщество игроков</span>
+                     </div>
+                     <div className="flex items-center justify-center lg:justify-start space-x-3 text-sm bg-slate-800/60 px-4 py-3 rounded-xl backdrop-blur-xl border border-slate-600/50 text-slate-200 font-medium shadow-lg">
+                       <Shield className="w-5 h-5 text-slate-400 flex-shrink-0" />
+                       <span>Честная игра</span>
+                     </div>
+                  </div>
              </div>
 
               <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start animate-scale-in [animation-delay:1.2s] max-w-lg mx-auto lg:mx-0">
                  <Button size="lg" className="bg-slate-700 text-white hover:bg-slate-600 transition-all duration-300 font-semibold px-8 py-4 text-lg rounded-xl shadow-lg hover:scale-105 hover:shadow-xl">
-                   <Settings className="w-6 h-6 mr-3" />
-                   Панель директора
+                   <Play className="w-6 h-6 mr-3" />
+                   Начать игру
                  </Button>
                  <Button size="lg" variant="outline" className="border-2 border-slate-400/50 text-slate-200 bg-slate-800/40 hover:bg-slate-700/60 hover:text-white transition-all duration-300 font-semibold px-8 py-4 text-lg rounded-xl backdrop-blur-xl shadow-lg hover:scale-105 hover:border-slate-400/70">
                    Рейтинг игроков
