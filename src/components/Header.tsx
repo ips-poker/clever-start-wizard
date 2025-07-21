@@ -1,19 +1,19 @@
 import { Button } from "@/components/ui/button";
 import { Spade, Menu, X } from "lucide-react";
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 
 export function Header() {
+  const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const navItems = [
-    { name: "Главная", href: "/" },
-    { name: "Турниры", href: "/tournaments" },
-    { name: "Рейтинг", href: "/ratings" },
-    { name: "Галерея", href: "/gallery" },
-    { name: "Блог", href: "/blog" },
-    { name: "О нас", href: "/about" },
-    { name: "IPS Tournament Manager", href: "/director" }
+    { href: "/", label: "Главная" },
+    { href: "/tournaments", label: "Турниры" },
+    { href: "/rating", label: "Рейтинг" },
+    { href: "/gallery", label: "Галерея" },
+    { href: "/blog", label: "Блог" },
+    { href: "/about", label: "О нас" },
   ];
 
   return (
@@ -46,12 +46,13 @@ export function Header() {
           <nav className="hidden md:flex items-center space-x-8">
             {navItems.map((item) => (
               <Link
-                key={item.name}
+                key={item.href}
                 to={item.href}
-                className="text-sm font-medium text-foreground hover:text-poker-steel transition-colors duration-300 relative group py-2"
+                className={`transition-colors hover:text-poker-accent ${
+                  location.pathname === item.href ? 'text-poker-accent font-medium' : 'text-foreground'
+                }`}
               >
-                {item.name}
-                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-gradient-steel transition-all duration-300 group-hover:w-full rounded-full"></span>
+                {item.label}
               </Link>
             ))}
           </nav>
@@ -85,12 +86,14 @@ export function Header() {
             <nav className="flex flex-col p-6 space-y-4">
               {navItems.map((item) => (
                 <Link
-                  key={item.name}
+                  key={item.href}
                   to={item.href}
-                  className="text-sm font-medium text-foreground hover:text-poker-charcoal transition-colors duration-300 py-3 border-b border-border/30 last:border-b-0"
+                  className={`block px-3 py-2 text-base font-medium transition-colors hover:text-poker-accent ${
+                    location.pathname === item.href ? 'text-poker-accent' : 'text-foreground'
+                  }`}
                   onClick={() => setIsMenuOpen(false)}
                 >
-                  {item.name}
+                  {item.label}
                 </Link>
               ))}
               <div className="pt-4 space-y-3">
