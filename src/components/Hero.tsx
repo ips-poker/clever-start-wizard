@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Trophy, Users, Calendar, Star, TrendingUp, Shield, Award, Play } from "lucide-react";
 import luxuryPokerHero from "@/assets/luxury-poker-hero.jpg";
 import pokerChipsBg from "@/assets/poker-chips-bg.jpg";
+import ipsLogo from "@/assets/ips-logo.png";
 
 export function Hero() {
   return (
@@ -32,6 +33,21 @@ export function Hero() {
           {/* Left Column - Content */}
           <div className="text-white space-y-8 animate-fade-in">
             <div className="space-y-6 animate-slide-up [animation-delay:0.2s]">
+              {/* Logo Section */}
+              <div className="flex items-center space-x-4 mb-6 animate-fade-in [animation-delay:0.2s]">
+                <div className="w-20 h-20 bg-white/10 backdrop-blur-xl rounded-2xl border border-white/30 shadow-elegant flex items-center justify-center p-3 animate-scale-in [animation-delay:0.3s]">
+                  <img 
+                    src={ipsLogo} 
+                    alt="IPS Logo" 
+                    className="w-full h-full object-contain filter drop-shadow-xl"
+                  />
+                </div>
+                <div className="animate-slide-right [animation-delay:0.4s]">
+                  <h2 className="text-2xl font-bold text-poker-accent-light">IPS Club</h2>
+                  <p className="text-white/80 text-sm font-medium">International Poker Style</p>
+                </div>
+              </div>
+
               <Badge className="bg-white/10 border border-white/30 text-white font-semibold px-5 py-2 rounded-full shadow-subtle backdrop-blur-md animate-scale-in [animation-delay:0.4s]">
                 Премиальный покерный клуб
               </Badge>
