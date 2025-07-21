@@ -16,6 +16,8 @@ import {
   VolumeX,
   ChevronUp
 } from "lucide-react";
+import ipsLogo from "/lovable-uploads/c77304bf-5309-4bdc-afcc-a81c8d3ff6c2.png";
+import telegramQr from "@/assets/telegram-qr.png";
 
 interface Tournament {
   id: string;
@@ -47,6 +49,7 @@ interface FullscreenTimerProps {
   onPrevLevel: () => void;
   onStopTournament: () => void;
   onClose: () => void;
+  slogan?: string;
 }
 
 const FullscreenTimer = ({
@@ -59,7 +62,8 @@ const FullscreenTimer = ({
   onNextLevel,
   onPrevLevel,
   onStopTournament,
-  onClose
+  onClose,
+  slogan = "Престижные турниры. Высокие стандарты."
 }: FullscreenTimerProps) => {
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [twoMinuteWarning, setTwoMinuteWarning] = useState(false);
@@ -137,15 +141,46 @@ const FullscreenTimer = ({
     <div className="fixed inset-0 bg-white text-gray-800 z-50 flex flex-col">
       {/* Header */}
       <div className="flex justify-between items-center p-4 border-b border-gray-200">
-        <h1 className="text-xl font-medium text-gray-800">{tournament.name}</h1>
-        <Button 
-          variant="ghost"
-          size="sm" 
-          onClick={onClose}
-          className="text-gray-600 hover:bg-gray-100"
-        >
-          <X className="w-4 h-4" />
-        </Button>
+        {/* Left - Logo and Company */}
+        <div className="flex items-center space-x-3">
+          <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-md border border-gray-200">
+            <img 
+              src={ipsLogo} 
+              alt="IPS Logo" 
+              className="w-6 h-6 object-contain"
+            />
+          </div>
+          <div className="flex flex-col">
+            <span className="text-lg font-bold text-gray-800">IPS</span>
+            <span className="text-xs text-gray-500">International Poker Series</span>
+          </div>
+        </div>
+
+        {/* Center - Tournament Name and Slogan */}
+        <div className="text-center">
+          <h1 className="text-xl font-bold text-gray-800">{tournament.name}</h1>
+          <p className="text-sm text-gray-500 italic">{slogan}</p>
+        </div>
+
+        {/* Right - QR Code and Close */}
+        <div className="flex items-center space-x-3">
+          <div className="text-center">
+            <img 
+              src={telegramQr} 
+              alt="Telegram QR" 
+              className="w-12 h-12 border border-gray-200 rounded"
+            />
+            <p className="text-xs text-gray-500 mt-1">Telegram</p>
+          </div>
+          <Button 
+            variant="ghost"
+            size="sm" 
+            onClick={onClose}
+            className="text-gray-600 hover:bg-gray-100"
+          >
+            <X className="w-4 h-4" />
+          </Button>
+        </div>
       </div>
 
       {/* Main Timer Display */}
