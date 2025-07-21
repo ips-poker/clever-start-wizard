@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import PlayerManagement from "./PlayerManagement";
+import FullscreenTimer from "./FullscreenTimer";
 
 interface Tournament {
   id: string;
@@ -45,6 +46,7 @@ interface Tournament {
   starting_chips: number;
   tournament_format: string;
   addon_level: number;
+  break_start_level: number;
 }
 
 interface Player {
@@ -102,6 +104,7 @@ const TournamentOverview = ({
   });
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [showFullscreenTimer, setShowFullscreenTimer] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -157,6 +160,14 @@ const TournamentOverview = ({
     }
   };
 
+  const openFullscreenTimer = () => {
+    setShowFullscreenTimer(true);
+  };
+
+  const closeFullscreenTimer = () => {
+    setShowFullscreenTimer(false);
+  };
+
   const activePlayers = registrations.filter(r => r.status === 'registered' || r.status === 'playing');
   const eliminatedPlayers = registrations.filter(r => r.status === 'eliminated');
   const totalRebuys = registrations.reduce((sum, r) => sum + r.rebuys, 0);
@@ -170,7 +181,23 @@ const TournamentOverview = ({
   const timerProgress = ((tournament.timer_duration - currentTime) / tournament.timer_duration) * 100;
 
   return (
-    <div className="space-y-10">
+    <>
+      {showFullscreenTimer && (
+        <FullscreenTimer
+          tournament={tournament}
+          registrations={registrations}
+          currentTime={currentTime}
+          timerActive={timerActive}
+          onToggleTimer={onToggleTimer}
+          onResetTimer={onResetTimer}
+          onNextLevel={onNextLevel}
+          onPrevLevel={onPrevLevel}
+          onStopTournament={onStopTournament}
+          onClose={closeFullscreenTimer}
+        />
+      )}
+      
+      <div className="space-y-10">
       {/* Timer and Level Display */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
         <Card className="bg-white/70 backdrop-blur-sm border border-gray-200/50 shadow-subtle rounded-xl overflow-hidden">
@@ -276,7 +303,7 @@ const TournamentOverview = ({
               <Volume2 className="w-4 h-4" />
             </Button>
             
-            <Button variant="outline" size="sm" onClick={toggleFullscreen} className="h-12 border-gray-200/50 hover:shadow-subtle">
+            <Button variant="outline" size="sm" onClick={openFullscreenTimer} className="h-12 border-gray-200/50 hover:shadow-subtle">
               <Maximize className="w-4 h-4" />
             </Button>
             
@@ -468,6 +495,7 @@ const TournamentOverview = ({
         </Card>
       </div>
     </div>
+    </>
   );
 };
 
