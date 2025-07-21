@@ -33,14 +33,14 @@ export function Hero() {
           <div className="text-poker-dark-text space-y-10 animate-fade-in order-2 lg:order-1">
             <div className="space-y-8 animate-slide-up [animation-delay:0.2s]">
               <div className="flex justify-center lg:justify-start">
-                <Badge className="bg-gradient-glass-dark border border-poker-accent/30 text-poker-dark-text font-semibold px-6 py-3 rounded-full shadow-accent backdrop-blur-xl animate-scale-in [animation-delay:0.4s]">
+                <Badge className="bg-gradient-glass-dark border border-poker-accent/40 text-poker-dark-text font-semibold px-6 py-3 rounded-full shadow-subtle backdrop-blur-xl animate-scale-in [animation-delay:0.4s]">
                   Покерный клуб IPS
                 </Badge>
               </div>
               
               {/* Logo and Title Section */}
               <div className="flex flex-col lg:flex-row items-center lg:items-start text-center lg:text-left space-y-6 lg:space-y-0 lg:space-x-8 animate-slide-right [animation-delay:0.6s]">
-                <div className="w-24 h-24 bg-gradient-glass-dark backdrop-blur-xl rounded-2xl border border-poker-accent/30 shadow-glow flex items-center justify-center p-4 animate-scale-in [animation-delay:0.3s] flex-shrink-0">
+                <div className="w-24 h-24 bg-gradient-glass-dark backdrop-blur-xl rounded-2xl border border-poker-accent/40 shadow-subtle flex items-center justify-center p-4 animate-scale-in [animation-delay:0.3s] flex-shrink-0">
                   <img 
                     src={ipsLogo} 
                     alt="IPS Logo" 
@@ -52,7 +52,7 @@ export function Hero() {
                     <span className="text-poker-dark-text block leading-none">
                       Покерный клуб
                     </span>
-                    <span className="block bg-gradient-elegant bg-clip-text text-transparent text-2xl sm:text-3xl lg:text-4xl mt-2 font-semibold leading-tight">
+                    <span className="block text-poker-accent bg-clip-text text-2xl sm:text-3xl lg:text-4xl mt-2 font-semibold leading-tight">
                       IPS
                     </span>
                   </h1>

@@ -18,9 +18,9 @@ const buttonVariants = cva(
           "bg-poker-surface-elevated text-poker-text-primary hover:bg-poker-secondary shadow-minimal hover:shadow-subtle",
         ghost: "hover:bg-poker-surface-elevated hover:text-poker-text-primary",
         link: "text-poker-accent underline-offset-4 hover:underline font-medium",
-        premium: "bg-gradient-elegant text-poker-text-inverse shadow-gold hover:shadow-gold-glow hover:scale-[1.02] active:scale-[0.98] font-bold",
-        accent: "bg-gradient-accent text-poker-text-inverse shadow-accent hover:shadow-glow hover:scale-[1.02] active:scale-[0.98]",
-        success: "bg-gradient-success text-poker-text-inverse shadow-success hover:shadow-elevated hover:scale-[1.02] active:scale-[0.98]",
+        premium: "bg-poker-accent text-poker-text-inverse shadow-subtle hover:shadow-card hover:scale-[1.02] active:scale-[0.98] font-bold hover:bg-poker-accent-dark",
+        accent: "bg-poker-accent text-poker-text-inverse shadow-subtle hover:shadow-card hover:scale-[1.02] active:scale-[0.98] hover:bg-poker-accent-dark",
+        success: "bg-poker-success text-poker-text-inverse shadow-subtle hover:shadow-card hover:scale-[1.02] active:scale-[0.98] hover:bg-poker-success/90",
         elegant: "bg-poker-surface border border-poker-border text-poker-text-primary hover:bg-poker-surface-elevated hover:border-poker-accent shadow-card hover:shadow-elevated backdrop-blur-xl",
       },
       size: {
