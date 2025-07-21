@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { 
@@ -11,7 +11,10 @@ import {
   Clock,
   Users,
   Trophy,
-  Coffee
+  Coffee,
+  Volume2,
+  VolumeX,
+  ChevronUp
 } from "lucide-react";
 
 interface Tournament {
@@ -58,12 +61,64 @@ const FullscreenTimer = ({
   onStopTournament,
   onClose
 }: FullscreenTimerProps) => {
+  const [soundEnabled, setSoundEnabled] = useState(true);
+  const [twoMinuteWarning, setTwoMinuteWarning] = useState(false);
+  const [fiveSecondWarning, setFiveSecondWarning] = useState(false);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
+
+  // Sound generation functions
+  const playBeep = (frequency: number, duration: number) => {
+    if (!soundEnabled) return;
+    
+    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+    
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+    
+    oscillator.frequency.value = frequency;
+    oscillator.type = 'sine';
+    
+    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
+    
+    oscillator.start(audioContext.currentTime);
+    oscillator.stop(audioContext.currentTime + duration);
+  };
+
+  const playTwoMinuteWarning = () => {
+    playBeep(800, 1);
+  };
+
+  const playFiveSecondWarning = () => {
+    setTimeout(() => playBeep(1200, 0.2), 0);
+    setTimeout(() => playBeep(1200, 0.2), 300);
+    setTimeout(() => playBeep(1200, 0.2), 600);
+  };
+
+  // Sound warning effects
+  useEffect(() => {
+    if (currentTime === 120 && !twoMinuteWarning) {
+      playTwoMinuteWarning();
+      setTwoMinuteWarning(true);
+    }
+    if (currentTime === 5 && !fiveSecondWarning) {
+      playFiveSecondWarning();
+      setFiveSecondWarning(true);
+    }
+    if (currentTime > 120) {
+      setTwoMinuteWarning(false);
+    }
+    if (currentTime > 5) {
+      setFiveSecondWarning(false);
+    }
+  }, [currentTime, twoMinuteWarning, fiveSecondWarning]);
 
   const activePlayers = registrations.filter(r => r.status === 'registered' || r.status === 'playing');
   const totalRebuys = registrations.reduce((sum, r) => sum + r.rebuys, 0);
@@ -74,169 +129,174 @@ const FullscreenTimer = ({
   const isBreakLevel = tournament.current_level % tournament.break_start_level === 0;
   const levelsUntilBreak = tournament.break_start_level - (tournament.current_level % tournament.break_start_level);
 
+  // Calculate next level blinds
+  const nextSmallBlind = tournament.current_small_blind * 2;
+  const nextBigBlind = tournament.current_big_blind * 2;
 
   return (
-    <div className="fixed inset-0 bg-gradient-to-br from-gray-50 via-white to-gray-100 text-gray-800 z-50 flex flex-col">
-      {/* Content */}
-      <div className="flex flex-col h-full">
-        {/* Header */}
-        <div className="flex justify-between items-center p-6 border-b border-gray-200/50 bg-white/70 backdrop-blur-sm">
-          <h1 className="text-2xl font-light text-gray-800">{tournament.name}</h1>
-          <Button 
+    <div className="fixed inset-0 bg-white text-gray-800 z-50 flex flex-col">
+      {/* Header */}
+      <div className="flex justify-between items-center p-4 border-b border-gray-200">
+        <h1 className="text-xl font-medium text-gray-800">{tournament.name}</h1>
+        <Button 
+          variant="ghost"
+          size="sm" 
+          onClick={onClose}
+          className="text-gray-600 hover:bg-gray-100"
+        >
+          <X className="w-4 h-4" />
+        </Button>
+      </div>
+
+      {/* Main Timer Display */}
+      <div className="flex-1 flex flex-col justify-center items-center space-y-6 p-6">
+        {/* Current Level */}
+        <div className="text-center">
+          <div className="inline-flex items-center gap-2 bg-gray-100 rounded-lg px-4 py-2 mb-4">
+            {isBreakLevel ? (
+              <>
+                <Coffee className="w-4 h-4 text-amber-600" />
+                <span className="text-lg font-medium text-gray-800">ПЕРЕРЫВ</span>
+              </>
+            ) : (
+              <>
+                <Clock className="w-4 h-4 text-gray-600" />
+                <span className="text-lg font-medium text-gray-800">Уровень {tournament.current_level}</span>
+              </>
+            )}
+          </div>
+          
+          {/* Timer Display - увеличен в 2 раза */}
+          <div className={`text-[12rem] md:text-[16rem] font-mono font-light transition-all duration-300 leading-none ${
+            currentTime <= 60 ? 'text-red-500' : 
+            currentTime <= 300 ? 'text-amber-500' : 
+            'text-gray-800'
+          }`}>
+            {formatTime(currentTime)}
+          </div>
+          
+          {/* Progress Bar */}
+          <div className="w-80 max-w-full mt-4">
+            <Progress 
+              value={timerProgress} 
+              className="h-2 bg-gray-200"
+            />
+          </div>
+        </div>
+
+        {/* Blinds and Next Level */}
+        <div className="grid grid-cols-4 gap-4 max-w-4xl w-full">
+          <div className="text-center p-4 border border-gray-200 rounded-lg bg-gray-50">
+            <p className="text-xs text-gray-500 font-medium mb-1">Малый блайнд</p>
+            <p className="text-2xl font-light text-gray-800">{tournament.current_small_blind}</p>
+          </div>
+          <div className="text-center p-4 border border-gray-200 rounded-lg bg-gray-50">
+            <p className="text-xs text-gray-500 font-medium mb-1">Большой блайнд</p>
+            <p className="text-2xl font-light text-gray-800">{tournament.current_big_blind}</p>
+          </div>
+          <div className="text-center p-4 border border-gray-200 rounded-lg bg-blue-50">
+            <p className="text-xs text-blue-600 font-medium mb-1 flex items-center justify-center">
+              <ChevronUp className="w-3 h-3 mr-1" />
+              След. малый
+            </p>
+            <p className="text-2xl font-light text-blue-800">{nextSmallBlind}</p>
+          </div>
+          <div className="text-center p-4 border border-gray-200 rounded-lg bg-blue-50">
+            <p className="text-xs text-blue-600 font-medium mb-1 flex items-center justify-center">
+              <ChevronUp className="w-3 h-3 mr-1" />
+              След. большой
+            </p>
+            <p className="text-2xl font-light text-blue-800">{nextBigBlind}</p>
+          </div>
+        </div>
+
+        {/* Statistics */}
+        <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 max-w-4xl w-full">
+          <div className="grid grid-cols-4 gap-6 text-center">
+            <div>
+              <div className="flex items-center justify-center mb-1">
+                <Users className="w-4 h-4 text-gray-600 mr-2" />
+                <span className="text-sm text-gray-600">Игроки</span>
+              </div>
+              <p className="text-xl font-medium text-gray-800">{activePlayers.length}</p>
+            </div>
+            <div>
+              <div className="flex items-center justify-center mb-1">
+                <Trophy className="w-4 h-4 text-amber-600 mr-2" />
+                <span className="text-sm text-gray-600">Призовой (RP)</span>
+              </div>
+              <p className="text-xl font-medium text-gray-800">{prizePool.toLocaleString()}</p>
+            </div>
+            <div>
+              <div className="flex items-center justify-center mb-1">
+                <span className="text-sm text-gray-600">Ребаи / Адоны</span>
+              </div>
+              <p className="text-xl font-medium text-gray-800">{totalRebuys} / {totalAddons}</p>
+            </div>
+            <div>
+              <div className="flex items-center justify-center mb-1">
+                <Coffee className="w-4 h-4 text-amber-600 mr-2" />
+                <span className="text-sm text-gray-600">До перерыва</span>
+              </div>
+              <p className="text-xl font-medium text-gray-800">{isBreakLevel ? "СЕЙЧАС" : levelsUntilBreak}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Control Panel - компактная единая панель */}
+      <div className="bg-gray-50 border-t border-gray-200 p-4">
+        <div className="flex justify-center items-center gap-2">
+          <Button
             variant="outline"
-            size="lg" 
-            onClick={onClose}
-            className="border-gray-200/50 text-gray-600 hover:bg-gray-100/50"
+            size="sm"
+            onClick={onPrevLevel}
+            className="h-10 px-4"
           >
-            <X className="w-5 h-5" />
+            <ChevronLeft className="w-4 h-4 mr-1" />
+            Пред.
           </Button>
-        </div>
+          
+          <Button
+            variant={timerActive ? "destructive" : "default"}
+            size="sm"
+            onClick={onToggleTimer}
+            className="h-10 px-6 font-medium"
+          >
+            {timerActive ? <Pause className="w-4 h-4 mr-1" /> : <Play className="w-4 h-4 mr-1" />}
+            {timerActive ? 'Пауза' : 'Старт'}
+          </Button>
+          
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onNextLevel}
+            className="h-10 px-4"
+          >
+            След.
+            <ChevronRight className="w-4 h-4 ml-1" />
+          </Button>
 
-        {/* Main Timer Display */}
-        <div className="flex-1 flex flex-col justify-center items-center space-y-8 p-8">
-          {/* Current Level Badge */}
-          <div className="text-center">
-            <div className="inline-flex items-center gap-3 bg-white/70 backdrop-blur-sm border border-gray-200/50 rounded-xl px-6 py-3 shadow-subtle mb-6">
-              {isBreakLevel ? (
-                <>
-                  <div className="p-2 bg-amber-100/80 rounded-lg">
-                    <Coffee className="w-5 h-5 text-amber-600" />
-                  </div>
-                  <span className="text-xl font-light text-gray-800">ПЕРЕРЫВ</span>
-                </>
-              ) : (
-                <>
-                  <div className="p-2 bg-gray-100/80 rounded-lg">
-                    <Clock className="w-5 h-5 text-gray-600" />
-                  </div>
-                  <span className="text-xl font-light text-gray-800">Уровень {tournament.current_level}</span>
-                </>
-              )}
-            </div>
-            {/* Timer Display */}
-            <div className={`text-8xl md:text-9xl font-mono font-light transition-all duration-300 ${
-              currentTime <= 60 ? 'text-red-500' : 
-              currentTime <= 300 ? 'text-amber-500' : 
-              'text-gray-800'
-            }`}>
-              {formatTime(currentTime)}
-            </div>
-            
-            {/* Progress Bar */}
-            <div className="w-96 max-w-full">
-              <Progress 
-                value={timerProgress} 
-                className="h-3 bg-gray-100/50"
-              />
-            </div>
-          </div>
+          <div className="h-6 w-px bg-gray-300 mx-2" />
 
-          {/* Blinds Display */}
-          <div className="grid grid-cols-2 gap-8">
-            <div className="text-center p-6 border border-gray-200/30 rounded-lg bg-white/50 shadow-minimal">
-              <p className="text-sm text-gray-500 font-medium mb-2">Малый блайнд</p>
-              <p className="text-4xl font-light text-gray-800">{tournament.current_small_blind}</p>
-            </div>
-            <div className="text-center p-6 border border-gray-200/30 rounded-lg bg-white/50 shadow-minimal">
-              <p className="text-sm text-gray-500 font-medium mb-2">Большой блайнд</p>
-              <p className="text-4xl font-light text-gray-800">{tournament.current_big_blind}</p>
-            </div>
-          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onResetTimer}
+            className="h-10 px-4"
+          >
+            <RotateCcw className="w-4 h-4 mr-1" />
+            Сброс
+          </Button>
 
-          {/* Game Statistics - Combined */}
-          <div className="bg-white/70 backdrop-blur-sm border border-gray-200/50 rounded-xl p-6 shadow-subtle max-w-4xl">
-            <div className="grid grid-cols-3 gap-8">
-              <div className="text-center">
-                <div className="flex items-center justify-center mb-2">
-                  <div className="p-2 bg-blue-100/80 rounded-lg mr-3">
-                    <Users className="w-5 h-5 text-blue-600" />
-                  </div>
-                  <div className="text-left">
-                    <p className="text-2xl font-light text-gray-800">{activePlayers.length}</p>
-                    <p className="text-xs text-gray-500 font-medium">Активных игроков</p>
-                  </div>
-                </div>
-              </div>
-              <div className="text-center border-l border-gray-200/30">
-                <div className="flex items-center justify-center mb-2">
-                  <div className="p-2 bg-amber-100/80 rounded-lg mr-3">
-                    <Trophy className="w-5 h-5 text-amber-600" />
-                  </div>
-                  <div className="text-left">
-                    <p className="text-2xl font-light text-gray-800">{prizePool.toLocaleString()}</p>
-                    <p className="text-xs text-gray-500 font-medium">Призовой фонд (RP)</p>
-                  </div>
-                </div>
-              </div>
-              <div className="text-center border-l border-gray-200/30">
-                <div className="flex items-center justify-center mb-2">
-                  <div className="p-2 bg-amber-100/80 rounded-lg mr-3">
-                    <Coffee className="w-5 h-5 text-amber-600" />
-                  </div>
-                  <div className="text-left">
-                    <p className="text-2xl font-light text-gray-800">{isBreakLevel ? "СЕЙЧАС" : levelsUntilBreak}</p>
-                    <p className="text-xs text-gray-500 font-medium">До перерыва</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Control Panel */}
-        <div className="bg-white/70 backdrop-blur-sm border-t border-gray-200/50 p-6">
-          <div className="max-w-5xl mx-auto">
-            {/* Main Timer Controls */}
-            <div className="flex justify-center items-center gap-4 mb-4">
-              <Button
-                variant="outline"
-                size="lg"
-                onClick={onPrevLevel}
-                className="h-14 px-6 border-gray-200/50 hover:shadow-subtle transition-all bg-white/50"
-              >
-                <ChevronLeft className="w-5 h-5 mr-2" />
-                <span className="font-medium">Предыдущий</span>
-              </Button>
-              
-              <Button
-                variant="outline"
-                size="lg"
-                onClick={onToggleTimer}
-                className={`h-14 px-8 border-gray-200/50 hover:shadow-subtle transition-all font-medium ${
-                  timerActive 
-                    ? 'bg-red-50/80 text-red-600 border-red-200/50 hover:bg-red-100/80' 
-                    : 'bg-green-50/80 text-green-600 border-green-200/50 hover:bg-green-100/80'
-                }`}
-              >
-                {timerActive ? <Pause className="w-5 h-5 mr-2" /> : <Play className="w-5 h-5 mr-2" />}
-                {timerActive ? 'Пауза' : 'Старт'}
-              </Button>
-              
-              <Button
-                variant="outline"
-                size="lg"
-                onClick={onNextLevel}
-                className="h-14 px-6 border-gray-200/50 hover:shadow-subtle transition-all bg-white/50"
-              >
-                <span className="font-medium">Следующий</span>
-                <ChevronRight className="w-5 h-5 ml-2" />
-              </Button>
-            </div>
-
-            
-            {/* Secondary Controls */}
-            <div className="flex justify-center items-center">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={onResetTimer}
-                className="h-12 px-6 border-gray-200/50 hover:bg-gray-100/50 text-gray-600 bg-white/50 rounded-xl"
-              >
-                <RotateCcw className="w-4 h-4 mr-2" />
-                Сброс уровня
-              </Button>
-            </div>
-          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setSoundEnabled(!soundEnabled)}
+            className={`h-10 px-3 ${soundEnabled ? 'bg-blue-50 text-blue-600' : 'text-gray-500'}`}
+          >
+            {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
+          </Button>
         </div>
       </div>
     </div>
