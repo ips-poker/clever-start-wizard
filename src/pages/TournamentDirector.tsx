@@ -14,6 +14,8 @@ import { Trophy, Users, Clock, Settings, Plus, Play, Pause, Square, RotateCcw, C
 import { useToast } from "@/hooks/use-toast";
 import PlayerRegistration from "@/components/PlayerRegistration";
 import TournamentOverview from "@/components/TournamentOverview";
+import BlindStructure from "@/components/BlindStructure";
+import PayoutStructure from "@/components/PayoutStructure";
 
 interface Tournament {
   id: string;
