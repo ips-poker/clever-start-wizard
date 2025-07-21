@@ -18,6 +18,8 @@ import TournamentOverview from "@/components/TournamentOverview";
 import BlindStructure from "@/components/BlindStructure";
 import PayoutStructure from "@/components/PayoutStructure";
 import TournamentSyncManager from "@/components/TournamentSyncManager";
+import RatingManagement from "@/components/RatingManagement";
+import TournamentResults from "@/components/TournamentResults";
 
 interface Tournament {
   id: string;
@@ -599,7 +601,7 @@ const TournamentDirector = () => {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-10">
-          <TabsList className="grid w-full grid-cols-6 bg-poker-surface-elevated border border-poker-border shadow-card rounded-2xl p-2 h-16">
+          <TabsList className="grid w-full grid-cols-8 bg-poker-surface-elevated border border-poker-border shadow-card rounded-2xl p-2 h-16">
             <TabsTrigger 
               value="overview" 
               className="data-[state=active]:bg-gradient-button data-[state=active]:text-white data-[state=active]:shadow-accent transition-all duration-300 rounded-xl font-medium"
@@ -639,8 +641,15 @@ const TournamentDirector = () => {
               value="ratings" 
               className="data-[state=active]:bg-gradient-button data-[state=active]:text-white data-[state=active]:shadow-accent transition-all duration-300 rounded-xl font-medium"
             >
-              <CheckCircle className="w-5 h-5 mr-2" />
-              Рейтинг
+              <BarChart3 className="w-5 h-5 mr-2" />
+              Рейтинги
+            </TabsTrigger>
+            <TabsTrigger 
+              value="results" 
+              className="data-[state=active]:bg-gradient-button data-[state=active]:text-white data-[state=active]:shadow-accent transition-all duration-300 rounded-xl font-medium"
+            >
+              <Trophy className="w-5 h-5 mr-2" />
+              Результаты
             </TabsTrigger>
           </TabsList>
 
@@ -1463,8 +1472,22 @@ const TournamentDirector = () => {
             </Card>
           </TabsContent>
 
+          {/* Ratings Tab */}
+          <TabsContent value="ratings" className="space-y-6 animate-fade-in">
+            <RatingManagement 
+              tournaments={tournaments} 
+              selectedTournament={selectedTournament}
+              onRefresh={loadTournaments} 
+            />
+          </TabsContent>
+
+          {/* Results Tab */}
+          <TabsContent value="results" className="space-y-6 animate-fade-in">
+            <TournamentResults selectedTournament={selectedTournament} />
+          </TabsContent>
+
           {/* Sync Tab */}
-          <TabsContent value="sync">
+          <TabsContent value="sync" className="space-y-6 animate-fade-in">
             <TournamentSyncManager 
               tournaments={tournaments}
               onRefresh={loadTournaments}

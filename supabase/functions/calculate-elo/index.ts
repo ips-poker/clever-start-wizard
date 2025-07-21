@@ -118,14 +118,17 @@ serve(async (req) => {
       }
     }
 
-    // Mark tournament as finished
-    const { error: tournamentError } = await supabaseClient
+    // Mark tournament as finished with timestamp
+    const { error: tournamentUpdateError } = await supabaseClient
       .from('tournaments')
-      .update({ status: 'finished' })
+      .update({ 
+        status: 'completed',
+        finished_at: new Date().toISOString()
+      })
       .eq('id', tournament_id)
 
-    if (tournamentError) {
-      console.error('Error updating tournament status:', tournamentError)
+    if (tournamentUpdateError) {
+      console.error('Error updating tournament status:', tournamentUpdateError)
     }
 
     console.log('ELO calculation completed successfully')

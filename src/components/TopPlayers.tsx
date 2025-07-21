@@ -18,6 +18,21 @@ export function TopPlayers() {
 
   useEffect(() => {
     loadTopPlayers();
+    
+    // Set up real-time subscription for player updates
+    const playersChannel = supabase
+      .channel('players-changes')
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'players' }, 
+        () => {
+          loadTopPlayers();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(playersChannel);
+    };
   }, []);
 
   const loadTopPlayers = async () => {
