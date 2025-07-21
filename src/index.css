@@ -37,17 +37,12 @@
     --radius: 0.75rem;
 
     /* Elegant Modern Design Tokens - Sophisticated Darker Palette */
-    --poker-charcoal: 220 20% 15%;
-    --poker-slate: 220 15% 20%;
-    --poker-steel: 220 12% 25%;
-    --poker-silver: 220 10% 35%;
-    --poker-platinum: 220 8% 45%;
-    --poker-pearl: 220 6% 55%;
-    --poker-cream: 40 15% 95%;
-    --poker-gold: 45 90% 60%;
-    --poker-blue: 220 70% 50%;
-    --poker-green: 140 60% 45%;
-    --poker-red: 0 70% 55%;
+    --poker-charcoal: 220 20% 32%;
+    --poker-slate: 220 15% 28%;
+    --poker-steel: 220 12% 38%;
+    --poker-silver: 220 10% 48%;
+    --poker-platinum: 220 8% 58%;
+    --poker-pearl: 220 6% 68%;
     --poker-accent: 260 30% 32%;
     --poker-accent-light: 260 25% 45%;
     

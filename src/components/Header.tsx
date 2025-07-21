@@ -23,7 +23,7 @@ export function Header() {
           <Link to="/" className="flex items-center space-x-3 group">
             <div className="relative">
               {/* Custom logo with brand colors */}
-              <div className="w-12 h-12 bg-card rounded-lg flex items-center justify-center shadow-elegant transition-all duration-500 border border-poker-platinum/20 group-hover:border-poker-gold/40">
+              <div className="w-12 h-12 bg-white rounded-lg flex items-center justify-center shadow-elegant group-hover:shadow-gold transition-all duration-500 border border-poker-platinum/20 group-hover:border-poker-gold/40">
                 <img 
                   src="/lovable-uploads/c77304bf-5309-4bdc-afcc-a81c8d3ff6c2.png" 
                   alt="IPS Logo" 
@@ -60,7 +60,7 @@ export function Header() {
             <Button variant="ghost" size="sm" className="hover:bg-poker-steel/10 hover:text-poker-steel transition-all duration-300 font-medium">
               Войти
             </Button>
-            <Button size="sm" className="bg-gradient-charcoal text-primary-foreground hover:shadow-charcoal transition-all duration-300 font-semibold">
+            <Button size="sm" className="bg-gradient-charcoal text-white hover:shadow-charcoal transition-all duration-300 font-semibold">
               Регистрация
             </Button>
           </div>
