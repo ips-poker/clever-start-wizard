@@ -206,6 +206,7 @@ export type Database = {
           rebuy_chips: number | null
           rebuy_cost: number | null
           start_time: string
+          starting_chips: number
           status: string
           timer_duration: number | null
           timer_remaining: number | null
@@ -227,6 +228,7 @@ export type Database = {
           rebuy_chips?: number | null
           rebuy_cost?: number | null
           start_time: string
+          starting_chips?: number
           status?: string
           timer_duration?: number | null
           timer_remaining?: number | null
@@ -248,6 +250,7 @@ export type Database = {
           rebuy_chips?: number | null
           rebuy_cost?: number | null
           start_time?: string
+          starting_chips?: number
           status?: string
           timer_duration?: number | null
           timer_remaining?: number | null

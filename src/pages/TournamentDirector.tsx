@@ -83,6 +83,7 @@ const TournamentDirector = () => {
     addon_cost: 0,
     rebuy_chips: 0,
     addon_chips: 0,
+    starting_chips: 10000,
     tournament_format: "freezeout"
   });
 
@@ -230,6 +231,7 @@ const TournamentDirector = () => {
         addon_cost: 0,
         rebuy_chips: 0,
         addon_chips: 0,
+        starting_chips: 10000,
         tournament_format: "freezeout"
       });
       loadTournaments();
@@ -606,7 +608,7 @@ const TournamentDirector = () => {
                     />
                   </div>
                 </div>
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-4 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="buy_in" className="text-gray-700 font-normal text-sm">Buy-in (EP2016)</Label>
                     <Input
@@ -614,6 +616,16 @@ const TournamentDirector = () => {
                       type="number"
                       value={newTournament.buy_in}
                       onChange={(e) => setNewTournament({ ...newTournament, buy_in: parseInt(e.target.value) })}
+                      className="bg-white/50 border-gray-200/50 focus:border-gray-400 focus:ring-1 focus:ring-gray-400/20 transition-all duration-200 rounded-lg h-10"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="starting_chips" className="text-gray-700 font-normal text-sm">Стартовые фишки</Label>
+                    <Input
+                      id="starting_chips"
+                      type="number"
+                      value={newTournament.starting_chips}
+                      onChange={(e) => setNewTournament({ ...newTournament, starting_chips: parseInt(e.target.value) })}
                       className="bg-white/50 border-gray-200/50 focus:border-gray-400 focus:ring-1 focus:ring-gray-400/20 transition-all duration-200 rounded-lg h-10"
                     />
                   </div>
