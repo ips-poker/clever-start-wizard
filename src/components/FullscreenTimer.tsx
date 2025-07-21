@@ -86,211 +86,206 @@ const FullscreenTimer = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-gradient-to-br from-poker-primary via-poker-primary-light to-poker-primary text-poker-surface z-50 flex flex-col">
-      {/* Glassmorphism overlay */}
-      <div className="absolute inset-0 bg-gradient-glass backdrop-blur-sm"></div>
-      
+    <div className="fixed inset-0 bg-gradient-to-br from-gray-50 via-white to-gray-100 text-gray-800 z-50 flex flex-col">
       {/* Content */}
-      <div className="relative z-10 flex flex-col h-full">
+      <div className="flex flex-col h-full">
         {/* Header */}
-        <div className="flex justify-between items-center p-8 border-b border-poker-surface/20 backdrop-blur-lg bg-poker-surface/10">
-          <h1 className="text-3xl font-light text-poker-surface">{tournament.name}</h1>
+        <div className="flex justify-between items-center p-6 border-b border-gray-200/50 bg-white/70 backdrop-blur-sm">
+          <h1 className="text-2xl font-light text-gray-800">{tournament.name}</h1>
           <Button 
-            variant="ghost" 
+            variant="outline"
             size="lg" 
             onClick={onClose}
-            className="text-poker-surface/80 hover:text-poker-surface hover:bg-poker-surface/10 border border-poker-surface/20"
+            className="border-gray-200/50 text-gray-600 hover:bg-gray-100/50"
           >
-            <X className="w-6 h-6" />
+            <X className="w-5 h-5" />
           </Button>
         </div>
 
         {/* Main Timer Display */}
-        <div className="flex-1 flex flex-col justify-center items-center space-y-12 p-8">
-          {/* Current Level and Timer */}
-          <div className="text-center space-y-8">
-            <div className="flex items-center justify-center gap-6">
-              <div className="bg-gradient-card backdrop-blur-lg border border-poker-surface/20 rounded-2xl px-8 py-4 shadow-elevated">
-                {isBreakLevel ? (
-                  <div className="flex items-center text-poker-warning">
-                    <Coffee className="w-8 h-8 mr-3" />
-                    <span className="text-3xl font-light">ПЕРЕРЫВ</span>
+        <div className="flex-1 flex flex-col justify-center items-center space-y-8 p-8">
+          {/* Current Level Badge */}
+          <div className="text-center">
+            <div className="inline-flex items-center gap-3 bg-white/70 backdrop-blur-sm border border-gray-200/50 rounded-xl px-6 py-3 shadow-subtle mb-6">
+              {isBreakLevel ? (
+                <>
+                  <div className="p-2 bg-amber-100/80 rounded-lg">
+                    <Coffee className="w-5 h-5 text-amber-600" />
                   </div>
-                ) : (
-                  <div className="flex items-center text-poker-surface">
-                    <Clock className="w-8 h-8 mr-3" />
-                    <span className="text-3xl font-light">УРОВЕНЬ {tournament.current_level}</span>
+                  <span className="text-xl font-light text-gray-800">ПЕРЕРЫВ</span>
+                </>
+              ) : (
+                <>
+                  <div className="p-2 bg-gray-100/80 rounded-lg">
+                    <Clock className="w-5 h-5 text-gray-600" />
                   </div>
-                )}
-              </div>
+                  <span className="text-xl font-light text-gray-800">Уровень {tournament.current_level}</span>
+                </>
+              )}
             </div>
-            
-            <div className={`text-9xl md:text-[12rem] font-mono font-light transition-all duration-500 ${
-              currentTime <= 60 ? 'text-poker-error drop-shadow-lg' : 
-              currentTime <= 300 ? 'text-poker-warning drop-shadow-lg' : 
-              'text-poker-success drop-shadow-lg'
+            {/* Timer Display */}
+            <div className={`text-8xl md:text-9xl font-mono font-light transition-all duration-300 ${
+              currentTime <= 60 ? 'text-red-500' : 
+              currentTime <= 300 ? 'text-amber-500' : 
+              'text-gray-800'
             }`}>
               {formatTime(currentTime)}
             </div>
             
-            <div className="w-[500px] max-w-full">
+            {/* Progress Bar */}
+            <div className="w-96 max-w-full">
               <Progress 
                 value={timerProgress} 
-                className="h-4 bg-poker-surface/20 backdrop-blur-sm border border-poker-surface/30 rounded-full overflow-hidden"
+                className="h-3 bg-gray-100/50"
               />
             </div>
           </div>
 
           {/* Blinds Display */}
-          <div className="grid grid-cols-2 gap-12">
-            <div className="text-center p-8 border border-poker-surface/30 rounded-2xl bg-gradient-card backdrop-blur-lg shadow-elevated">
-              <p className="text-2xl text-poker-surface/80 mb-3 font-medium">Малый блайнд</p>
-              <p className="text-6xl font-light text-poker-surface">{tournament.current_small_blind}</p>
+          <div className="grid grid-cols-2 gap-8">
+            <div className="text-center p-6 border border-gray-200/30 rounded-lg bg-white/50 shadow-minimal">
+              <p className="text-sm text-gray-500 font-medium mb-2">Малый блайнд</p>
+              <p className="text-4xl font-light text-gray-800">{tournament.current_small_blind}</p>
             </div>
-            <div className="text-center p-8 border border-poker-surface/30 rounded-2xl bg-gradient-card backdrop-blur-lg shadow-elevated">
-              <p className="text-2xl text-poker-surface/80 mb-3 font-medium">Большой блайнд</p>
-              <p className="text-6xl font-light text-poker-surface">{tournament.current_big_blind}</p>
+            <div className="text-center p-6 border border-gray-200/30 rounded-lg bg-white/50 shadow-minimal">
+              <p className="text-sm text-gray-500 font-medium mb-2">Большой блайнд</p>
+              <p className="text-4xl font-light text-gray-800">{tournament.current_big_blind}</p>
             </div>
           </div>
 
           {/* Game Info */}
-          <div className="grid grid-cols-4 gap-8 max-w-5xl">
-            <div className="text-center p-6 border border-poker-surface/20 rounded-xl bg-gradient-card backdrop-blur-lg shadow-card">
-              <Users className="w-10 h-10 mx-auto mb-3 text-poker-accent" />
-              <p className="text-3xl font-light text-poker-surface">{activePlayers.length}</p>
-              <p className="text-sm text-poker-surface/70 font-medium">Игроков</p>
+          <div className="grid grid-cols-4 gap-6 max-w-4xl">
+            <div className="text-center p-4 border border-gray-200/20 rounded-lg bg-white/30 shadow-minimal">
+              <Users className="w-6 h-6 mx-auto mb-2 text-blue-600" />
+              <p className="text-2xl font-light text-gray-800">{activePlayers.length}</p>
+              <p className="text-xs text-gray-500 font-medium">Игроков</p>
             </div>
-            <div className="text-center p-6 border border-poker-surface/20 rounded-xl bg-gradient-card backdrop-blur-lg shadow-card">
-              <DollarSign className="w-10 h-10 mx-auto mb-3 text-poker-success" />
-              <p className="text-3xl font-light text-poker-surface">{(prizePool / 1000).toFixed(0)}K</p>
-              <p className="text-sm text-poker-surface/70 font-medium">Призовой (₽)</p>
+            <div className="text-center p-4 border border-gray-200/20 rounded-lg bg-white/30 shadow-minimal">
+              <DollarSign className="w-6 h-6 mx-auto mb-2 text-green-600" />
+              <p className="text-2xl font-light text-gray-800">{(prizePool / 1000).toFixed(0)}K</p>
+              <p className="text-xs text-gray-500 font-medium">Призовой (₽)</p>
             </div>
-            <div className="text-center p-6 border border-poker-surface/20 rounded-xl bg-gradient-card backdrop-blur-lg shadow-card">
-              <Coffee className="w-10 h-10 mx-auto mb-3 text-poker-warning" />
-              <p className="text-3xl font-light text-poker-surface">{isBreakLevel ? "СЕЙЧАС" : levelsUntilBreak}</p>
-              <p className="text-sm text-poker-surface/70 font-medium">До перерыва</p>
+            <div className="text-center p-4 border border-gray-200/20 rounded-lg bg-white/30 shadow-minimal">
+              <Coffee className="w-6 h-6 mx-auto mb-2 text-amber-600" />
+              <p className="text-2xl font-light text-gray-800">{isBreakLevel ? "СЕЙЧАС" : levelsUntilBreak}</p>
+              <p className="text-xs text-gray-500 font-medium">До перерыва</p>
             </div>
-            <div className="text-center p-6 border border-poker-surface/20 rounded-xl bg-gradient-card backdrop-blur-lg shadow-card">
-              <Clock className="w-10 h-10 mx-auto mb-3 text-poker-accent-light" />
-              <p className="text-3xl font-light text-poker-surface">{tournament.current_level + 1}</p>
-              <p className="text-sm text-poker-surface/70 font-medium">Следующий</p>
+            <div className="text-center p-4 border border-gray-200/20 rounded-lg bg-white/30 shadow-minimal">
+              <Clock className="w-6 h-6 mx-auto mb-2 text-purple-600" />
+              <p className="text-2xl font-light text-gray-800">{tournament.current_level + 1}</p>
+              <p className="text-xs text-gray-500 font-medium">Следующий</p>
             </div>
           </div>
         </div>
 
         {/* Control Panel */}
-        <div className="p-8 border-t border-poker-surface/20 backdrop-blur-lg bg-poker-surface/5">
-          <div className="flex justify-center items-center space-x-6 max-w-7xl mx-auto">
+        <div className="p-6 border-t border-gray-200/50 bg-white/60 backdrop-blur-sm">
+          <div className="flex justify-center items-center space-x-4 max-w-6xl mx-auto">
             {/* Time Adjustments */}
-            <div className="flex space-x-3">
+            <div className="flex space-x-2">
               <Button
                 variant="outline"
-                size="lg"
+                size="sm"
                 onClick={() => adjustTime(-5)}
-                className="border-poker-surface/30 text-poker-surface hover:bg-poker-surface/10 backdrop-blur-sm h-14 px-6"
+                className="h-12 border-gray-200/50 hover:shadow-subtle"
               >
                 -5м
               </Button>
               <Button
                 variant="outline"
-                size="lg"
+                size="sm"
                 onClick={() => adjustTime(-1)}
-                className="border-poker-surface/30 text-poker-surface hover:bg-poker-surface/10 backdrop-blur-sm h-14 px-6"
+                className="h-12 border-gray-200/50 hover:shadow-subtle"
               >
                 -1м
               </Button>
             </div>
 
             {/* Main Controls */}
-            <div className="flex space-x-6">
+            <div className="flex space-x-2">
               <Button
                 variant="outline"
-                size="lg"
+                size="sm"
                 onClick={onPrevLevel}
-                className="border-poker-surface/30 text-poker-surface hover:bg-poker-surface/10 backdrop-blur-sm h-14 px-8"
+                className="h-12 border-gray-200/50 hover:shadow-subtle"
               >
-                <ChevronLeft className="w-6 h-6 mr-2" />
-                Пред. уровень
+                <ChevronLeft className="w-4 h-4" />
               </Button>
               
               <Button
                 variant="outline"
-                size="lg"
+                size="sm"
                 onClick={onToggleTimer}
-                className={`border-poker-surface/30 backdrop-blur-sm h-14 px-8 ${
+                className={`h-12 border-gray-200/50 hover:shadow-subtle ${
                   timerActive 
-                    ? 'text-poker-error hover:bg-poker-error/10 border-poker-error/50' 
-                    : 'text-poker-success hover:bg-poker-success/10 border-poker-success/50'
+                    ? 'bg-red-50 text-red-600 hover:bg-red-100' 
+                    : 'bg-green-50 text-green-600 hover:bg-green-100'
                 }`}
               >
-                {timerActive ? <Pause className="w-6 h-6 mr-2" /> : <Play className="w-6 h-6 mr-2" />}
-                {timerActive ? 'Пауза' : 'Старт'}
+                {timerActive ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
               </Button>
               
               <Button
                 variant="outline"
-                size="lg"
+                size="sm"
                 onClick={onResetTimer}
-                className="border-poker-surface/30 text-poker-surface hover:bg-poker-surface/10 backdrop-blur-sm h-14 px-8"
+                className="h-12 border-gray-200/50 hover:shadow-subtle"
               >
-                <RotateCcw className="w-6 h-6 mr-2" />
-                Сброс
+                <RotateCcw className="w-4 h-4" />
               </Button>
               
               <Button
                 variant="outline"
-                size="lg"
+                size="sm"
                 onClick={onNextLevel}
-                className="border-poker-surface/30 text-poker-surface hover:bg-poker-surface/10 backdrop-blur-sm h-14 px-8"
+                className="h-12 border-gray-200/50 hover:shadow-subtle"
               >
-                След. уровень
-                <ChevronRight className="w-6 h-6 ml-2" />
+                <ChevronRight className="w-4 h-4" />
               </Button>
             </div>
 
             {/* Time Adjustments */}
-            <div className="flex space-x-3">
+            <div className="flex space-x-2">
               <Button
                 variant="outline"
-                size="lg"
+                size="sm"
                 onClick={() => adjustTime(1)}
-                className="border-poker-surface/30 text-poker-surface hover:bg-poker-surface/10 backdrop-blur-sm h-14 px-6"
+                className="h-12 border-gray-200/50 hover:shadow-subtle"
               >
                 +1м
               </Button>
               <Button
                 variant="outline"
-                size="lg"
+                size="sm"
                 onClick={() => adjustTime(5)}
-                className="border-poker-surface/30 text-poker-surface hover:bg-poker-surface/10 backdrop-blur-sm h-14 px-6"
+                className="h-12 border-gray-200/50 hover:shadow-subtle"
               >
                 +5м
               </Button>
             </div>
 
             {/* Additional Controls */}
-            <div className="flex space-x-4">
+            <div className="flex space-x-2">
               <Button
                 variant="outline"
-                size="lg"
+                size="sm"
                 onClick={() => setSoundEnabled(!soundEnabled)}
-                className={`border-poker-surface/30 backdrop-blur-sm h-14 px-6 ${
+                className={`h-12 border-gray-200/50 hover:shadow-subtle ${
                   soundEnabled 
-                    ? 'text-poker-accent hover:bg-poker-accent/10 border-poker-accent/50' 
-                    : 'text-poker-surface/50 hover:bg-poker-surface/5'
+                    ? 'bg-blue-50 text-blue-600 hover:bg-blue-100' 
+                    : 'text-gray-500'
                 }`}
               >
-                {soundEnabled ? <Volume2 className="w-6 h-6" /> : <VolumeX className="w-6 h-6" />}
+                {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
               </Button>
               
               <Button
                 variant="outline"
-                size="lg"
+                size="sm"
                 onClick={onStopTournament}
-                className="border-poker-error/50 text-poker-error hover:bg-poker-error/10 backdrop-blur-sm h-14 px-8"
+                className="h-12 text-red-500 border-red-200/50 hover:bg-red-50 hover:shadow-subtle"
               >
-                <StopCircle className="w-6 h-6 mr-2" />
-                Стоп
+                <StopCircle className="w-4 h-4" />
               </Button>
             </div>
           </div>
