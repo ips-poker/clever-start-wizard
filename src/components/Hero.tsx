@@ -42,10 +42,6 @@ export function Hero() {
                     className="w-full h-full object-contain filter drop-shadow-xl"
                   />
                 </div>
-                <div className="animate-slide-right [animation-delay:0.4s]">
-                  <h2 className="text-2xl font-bold text-poker-accent-light">IPS Club</h2>
-                  <p className="text-white/80 text-sm font-medium">International Poker Style</p>
-                </div>
               </div>
 
               <Badge className="bg-white/10 border border-white/30 text-white font-semibold px-5 py-2 rounded-full shadow-subtle backdrop-blur-md animate-scale-in [animation-delay:0.4s]">
