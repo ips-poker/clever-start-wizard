@@ -55,13 +55,13 @@ export function TopPlayers() {
   const getRankIcon = (position: number) => {
     switch (position) {
       case 1:
-        return <Trophy className="w-6 h-6 text-yellow-500" />;
+        return <Trophy className="w-6 h-6 text-poker-warning" />;
       case 2:
-        return <Medal className="w-6 h-6 text-gray-400" />;
+        return <Medal className="w-6 h-6 text-poker-text-muted" />;
       case 3:
-        return <Award className="w-6 h-6 text-amber-600" />;
+        return <Award className="w-6 h-6 text-poker-accent" />;
       default:
-        return <TrendingUp className="w-5 h-5 text-poker-steel" />;
+        return <TrendingUp className="w-5 h-5 text-poker-text-secondary" />;
     }
   };
 
@@ -109,16 +109,16 @@ export function TopPlayers() {
           <h2 className="text-3xl font-bold mb-4 bg-gradient-to-r from-poker-gold to-poker-steel bg-clip-text text-transparent">
             Рейтинг лучших игроков
           </h2>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-lg text-poker-text-secondary max-w-2xl mx-auto">
             Топ игроков по системе ELO рейтинга. Участвуйте в турнирах и поднимайтесь в рейтинге!
           </p>
         </div>
 
         {topPlayers.length === 0 ? (
           <div className="text-center py-12">
-            <Trophy className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
-            <h3 className="text-xl font-semibold mb-2">Рейтинг пока пуст</h3>
-            <p className="text-muted-foreground">Станьте первым игроком в нашем рейтинге!</p>
+            <Trophy className="w-16 h-16 mx-auto mb-4 text-poker-text-muted" />
+            <h3 className="text-xl font-semibold mb-2 text-poker-text-primary">Рейтинг пока пуст</h3>
+            <p className="text-poker-text-muted">Станьте первым игроком в нашем рейтинге!</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -214,12 +214,12 @@ export function TopPlayers() {
                   <div key={player.id} className="bg-gradient-surface rounded-xl p-4 border border-border/50">
                     <div className="grid grid-cols-2 gap-4 text-sm">
                       <div className="text-center">
-                        <p className="text-2xl font-bold text-poker-primary">{player.games_played}</p>
-                        <p className="text-muted-foreground">Игр сыграно</p>
+                        <p className="text-2xl font-bold text-poker-text-primary">{player.games_played}</p>
+                        <p className="text-poker-text-muted">Игр сыграно</p>
                       </div>
                       <div className="text-center">
                         <p className="text-2xl font-bold text-poker-success">{getWinRate(player.wins, player.games_played)}%</p>
-                        <p className="text-muted-foreground">Винрейт</p>
+                        <p className="text-poker-text-muted">Винрейт</p>
                       </div>
                     </div>
                   </div>
@@ -254,7 +254,7 @@ export function TopPlayers() {
                                 <h4 className="font-bold text-lg text-poker-primary group-hover:text-poker-accent transition-colors">
                                   {player.name}
                                 </h4>
-                                <div className="flex items-center gap-4 text-sm text-muted-foreground mt-1">
+                                <div className="flex items-center gap-4 text-sm text-poker-text-muted mt-1">
                                   <span className="flex items-center gap-1">
                                     <TrendingUp className="w-3 h-3" />
                                     {player.games_played} игр
@@ -270,7 +270,7 @@ export function TopPlayers() {
                               <div className="text-2xl font-black text-poker-accent mb-1">
                                 {player.elo_rating}
                               </div>
-                              <div className="text-xs text-muted-foreground uppercase tracking-wider">
+                              <div className="text-xs text-poker-text-muted uppercase tracking-wider">
                                 ELO рейтинг
                               </div>
                             </div>
