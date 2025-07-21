@@ -263,14 +263,25 @@ export function TournamentModal({ tournament, open, onOpenChange, onTournamentUp
               <Badge variant={getStatusColor(tournament.status)}>
                 {getStatusLabel(tournament.status)}
               </Badge>
-              {tournament.status === 'scheduled' && (
+              {tournament.status !== 'completed' && (
                 <Button
-                  variant="outline"
+                  variant={isEditing ? "default" : "outline"}
                   size="sm"
                   onClick={() => setIsEditing(!isEditing)}
                   disabled={loading}
+                  className="flex items-center gap-2"
                 >
-                  {isEditing ? <X className="w-4 h-4" /> : <Edit className="w-4 h-4" />}
+                  {isEditing ? (
+                    <>
+                      <X className="w-4 h-4" />
+                      Отмена
+                    </>
+                  ) : (
+                    <>
+                      <Edit className="w-4 h-4" />
+                      Редактировать
+                    </>
+                  )}
                 </Button>
               )}
             </div>
