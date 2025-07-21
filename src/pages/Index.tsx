@@ -5,6 +5,8 @@ import { Features } from "@/components/Features";
 import { Gallery } from "@/components/Gallery";
 import { SocialProof } from "@/components/SocialProof";
 import { Footer } from "@/components/Footer";
+import { TournamentList } from "@/components/TournamentList";
+import { TopPlayers } from "@/components/TopPlayers";
 
 const Index = () => {
   return (
@@ -12,6 +14,8 @@ const Index = () => {
       <Header />
       <main>
         <Hero />
+        <TournamentList />
+        <TopPlayers />
         <RatingBenefits />
         <Features />
         <Gallery />
