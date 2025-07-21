@@ -38,8 +38,8 @@ export function Hero() {
               </Badge>
               
               {/* Logo and Title Section */}
-              <div className="flex items-start space-x-6 animate-slide-right [animation-delay:0.6s]">
-                <div className="w-20 h-20 bg-white/10 backdrop-blur-xl rounded-2xl border border-white/30 shadow-elegant flex items-center justify-center p-3 animate-scale-in [animation-delay:0.3s] flex-shrink-0 mt-2">
+              <div className="flex items-center space-x-8 animate-slide-right [animation-delay:0.6s]">
+                <div className="w-24 h-24 bg-white/10 backdrop-blur-xl rounded-2xl border border-white/30 shadow-elegant flex items-center justify-center p-4 animate-scale-in [animation-delay:0.3s] flex-shrink-0">
                   <img 
                     src={ipsLogo} 
                     alt="IPS Logo" 
@@ -48,13 +48,13 @@ export function Hero() {
                 </div>
                 <div className="flex-1">
                   <h1 className="text-5xl lg:text-6xl font-bold leading-tight tracking-tight">
-                    <span className="text-white block">
+                    <span className="text-white block leading-none">
                       IPS
                     </span>
-                    <span className="block text-poker-accent-light text-3xl lg:text-4xl mt-2 font-semibold">
+                    <span className="block text-poker-accent-light text-3xl lg:text-4xl mt-1 font-semibold leading-tight">
                       International
                     </span>
-                    <span className="block text-2xl lg:text-3xl font-medium text-white/90 tracking-wide">
+                    <span className="block text-2xl lg:text-3xl font-medium text-white/90 tracking-wide leading-tight">
                       Poker Style
                     </span>
                   </h1>
