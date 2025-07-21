@@ -177,37 +177,71 @@ const PlayerManagement = ({ tournament, players, registrations, onRegistrationUp
     let registered = 0;
     let failed = 0;
 
-    for (const playerName of playerNames) {
-      const name = playerName.trim();
-      const player = players.find(p => p.name.toLowerCase() === name.toLowerCase());
+    for (const playerNameInput of playerNames) {
+      const name = playerNameInput.trim();
       
-      if (!player) {
-        failed++;
-        continue;
-      }
+      if (!name) continue;
 
-      const existingRegistration = registrations.find(reg => reg.player.id === player.id);
-      if (existingRegistration) {
-        failed++;
-        continue;
-      }
+      try {
+        // Проверяем, есть ли игрок с таким именем
+        let { data: existingPlayer, error: playerSearchError } = await supabase
+          .from('players')
+          .select('*')
+          .eq('name', name)
+          .single();
 
-      if (registrations.length + registered >= tournament.max_players) {
-        break;
-      }
+        let playerId;
 
-      const { error } = await supabase
-        .from('tournament_registrations')
-        .insert([{
-          tournament_id: tournament.id,
-          player_id: player.id,
-          chips: startingChips,
-          status: 'registered'
-        }]);
+        if (playerSearchError && playerSearchError.code === 'PGRST116') {
+          // Игрок не найден, создаем нового
+          const { data: newPlayer, error: createError } = await supabase
+            .from('players')
+            .insert([{
+              name: name,
+              email: `${name.toLowerCase().replace(/\s+/g, '.')}@placeholder.com`,
+              elo_rating: 1200
+            }])
+            .select()
+            .single();
 
-      if (!error) {
-        registered++;
-      } else {
+          if (createError) {
+            failed++;
+            continue;
+          }
+          playerId = newPlayer.id;
+        } else if (existingPlayer) {
+          // Проверяем, не зарегистрирован ли уже игрок
+          const existingRegistration = registrations.find(reg => reg.player.id === existingPlayer.id);
+          if (existingRegistration) {
+            failed++;
+            continue;
+          }
+          playerId = existingPlayer.id;
+        } else {
+          failed++;
+          continue;
+        }
+
+        if (registrations.length + registered >= tournament.max_players) {
+          break;
+        }
+
+        // Регистрируем игрока на турнир
+        const { error: registrationError } = await supabase
+          .from('tournament_registrations')
+          .insert([{
+            tournament_id: tournament.id,
+            player_id: playerId,
+            chips: startingChips,
+            status: 'registered'
+          }]);
+
+        if (!registrationError) {
+          registered++;
+        } else {
+          failed++;
+        }
+      } catch (error) {
         failed++;
       }
     }
