@@ -2,77 +2,86 @@
 @tailwind components;
 @tailwind utilities;
 
-/* IPS Poker Club Design System - Elegant Dark Theme */
+/* IPS Poker Club - Luxury Casino Design System */
 
 @layer base {
   :root {
-    --background: 220 15% 97%;
-    --foreground: 220 15% 25%;
+    --background: 216 19% 12%;
+    --foreground: 45 25% 85%;
 
-    --card: 220 15% 100%;
-    --card-foreground: 220 15% 25%;
+    --card: 216 19% 15%;
+    --card-foreground: 45 25% 85%;
 
-    --popover: 220 15% 100%;
-    --popover-foreground: 220 15% 25%;
+    --popover: 216 19% 15%;
+    --popover-foreground: 45 25% 85%;
 
-    --primary: 220 20% 32%;
-    --primary-foreground: 220 15% 98%;
+    --primary: 45 93% 47%;
+    --primary-foreground: 216 19% 12%;
 
-    --secondary: 220 10% 94%;
-    --secondary-foreground: 220 20% 32%;
+    --secondary: 216 19% 18%;
+    --secondary-foreground: 45 25% 85%;
 
-    --muted: 220 10% 96%;
-    --muted-foreground: 220 10% 45%;
+    --muted: 216 19% 18%;
+    --muted-foreground: 45 15% 65%;
 
-    --accent: 220 15% 90%;
-    --accent-foreground: 220 20% 32%;
+    --accent: 45 93% 47%;
+    --accent-foreground: 216 19% 12%;
 
     --destructive: 0 84% 60%;
-    --destructive-foreground: 220 15% 98%;
+    --destructive-foreground: 45 25% 85%;
 
-    --border: 220 10% 88%;
-    --input: 220 10% 88%;
-    --ring: 220 20% 32%;
+    --border: 216 19% 20%;
+    --input: 216 19% 20%;
+    --ring: 45 93% 47%;
 
     --radius: 0.75rem;
 
-    /* Professional Light Theme Design Tokens */
-    --poker-primary: 220 26% 14%;           /* Deep navy for main elements */
-    --poker-primary-light: 220 26% 18%;     /* Slightly lighter navy */
-    --poker-secondary: 220 14% 96%;         /* Very light gray-blue */
-    --poker-accent: 260 100% 65%;           /* Vibrant purple accent */
-    --poker-accent-light: 260 100% 70%;     /* Lighter purple */
-    --poker-success: 142 71% 45%;           /* Professional green */
-    --poker-warning: 38 100% 50%;           /* Warm orange */
-    --poker-error: 0 84% 60%;               /* Professional red */
-    --poker-surface: 220 14% 99%;           /* Almost white surface */
-    --poker-surface-elevated: 220 20% 98%;  /* Slightly elevated surface */
-    --poker-border: 220 14% 91%;            /* Subtle border */
-    --poker-text-primary: 220 26% 14%;      /* Main text color */
-    --poker-text-secondary: 220 16% 46%;    /* Secondary text */
-    --poker-text-muted: 220 14% 71%;        /* Muted text */
+    /* Luxury Casino Design Tokens */
+    --poker-gold: 45 93% 47%;               /* Rich gold */
+    --poker-gold-light: 45 93% 55%;         /* Lighter gold */
+    --poker-gold-dark: 45 93% 40%;          /* Darker gold */
+    --poker-charcoal: 216 19% 12%;          /* Deep charcoal */
+    --poker-charcoal-light: 216 19% 15%;    /* Lighter charcoal */
+    --poker-steel: 216 12% 25%;             /* Steel gray */
+    --poker-steel-light: 216 12% 35%;       /* Lighter steel */
+    --poker-platinum: 220 10% 85%;          /* Platinum silver */
+    --poker-cream: 45 25% 95%;              /* Cream white */
+    --poker-emerald: 158 64% 52%;           /* Casino green */
+    --poker-ruby: 0 84% 60%;                /* Ruby red */
+    --poker-sapphire: 221 83% 53%;          /* Sapphire blue */
+    --poker-surface: 216 19% 15%;           /* Card surface */
+    --poker-surface-elevated: 216 19% 18%;  /* Elevated surface */
+    --poker-border: 216 19% 22%;            /* Subtle border */
+    --poker-border-gold: 45 93% 47%;        /* Gold border */
+    --poker-text-primary: 45 25% 95%;       /* Primary text */
+    --poker-text-secondary: 45 15% 75%;     /* Secondary text */
+    --poker-text-muted: 45 10% 55%;         /* Muted text */
     
-    /* Professional Gradients - Light Theme */
-    --gradient-primary: linear-gradient(135deg, hsl(220 14% 99%) 0%, hsl(220 20% 96%) 50%, hsl(220 14% 93%) 100%);
-    --gradient-hero: linear-gradient(135deg, hsl(220 14% 99% / 0.95) 0%, hsl(220 20% 96% / 0.90) 50%, hsl(220 14% 93% / 0.85) 100%);
-    --gradient-card: linear-gradient(135deg, hsl(220 20% 98% / 0.8) 0%, hsl(220 14% 96% / 0.9) 100%);
-    --gradient-accent: linear-gradient(135deg, hsl(260 100% 65%) 0%, hsl(260 100% 70%) 100%);
-    --gradient-success: linear-gradient(135deg, hsl(142 71% 45%) 0%, hsl(142 71% 50%) 100%);
-    --gradient-glass: linear-gradient(135deg, rgba(255, 255, 255, 0.25) 0%, rgba(255, 255, 255, 0.10) 100%);
-    --gradient-border: linear-gradient(135deg, hsl(220 14% 91%) 0%, hsl(220 20% 88%) 100%);
-    --gradient-button: linear-gradient(135deg, hsl(220 26% 14%) 0%, hsl(220 26% 18%) 100%);
-    --gradient-surface: linear-gradient(135deg, hsl(220 14% 99%) 0%, hsl(220 20% 97%) 100%);
+    /* Luxury Gradients */
+    --gradient-gold: linear-gradient(135deg, hsl(45 93% 47%) 0%, hsl(45 93% 55%) 50%, hsl(45 93% 40%) 100%);
+    --gradient-charcoal: linear-gradient(135deg, hsl(216 19% 12%) 0%, hsl(216 19% 15%) 50%, hsl(216 19% 18%) 100%);
+    --gradient-steel: linear-gradient(135deg, hsl(216 12% 25%) 0%, hsl(216 12% 30%) 50%, hsl(216 12% 35%) 100%);
+    --gradient-royal: linear-gradient(135deg, hsl(45 93% 47%) 0%, hsl(221 83% 53%) 50%, hsl(45 93% 47%) 100%);
+    --gradient-emerald: linear-gradient(135deg, hsl(158 64% 52%) 0%, hsl(158 64% 60%) 100%);
+    --gradient-hero: linear-gradient(135deg, hsl(216 19% 12% / 0.95) 0%, hsl(216 19% 15% / 0.90) 50%, hsl(216 19% 18% / 0.85) 100%);
+    --gradient-card: linear-gradient(135deg, hsl(216 19% 15% / 0.8) 0%, hsl(216 19% 18% / 0.9) 100%);
+    --gradient-glass: linear-gradient(135deg, hsl(45 93% 47% / 0.15) 0%, hsl(45 93% 47% / 0.05) 100%);
+    --gradient-border: linear-gradient(135deg, hsl(45 93% 47%) 0%, hsl(45 93% 55%) 100%);
+    --gradient-accent: linear-gradient(135deg, hsl(45 93% 47%) 0%, hsl(45 93% 55%) 100%);
+    --gradient-surface: linear-gradient(135deg, hsl(216 19% 15%) 0%, hsl(216 19% 18%) 100%);
     
-    /* Professional Shadows - Light Theme */
-    --shadow-minimal: 0 1px 3px hsl(220 26% 14% / 0.05);
-    --shadow-subtle: 0 2px 8px hsl(220 26% 14% / 0.08);
-    --shadow-card: 0 4px 16px hsl(220 26% 14% / 0.10);
-    --shadow-elevated: 0 8px 24px hsl(220 26% 14% / 0.12);
-    --shadow-floating: 0 12px 32px hsl(220 26% 14% / 0.15);
-    --shadow-dramatic: 0 16px 48px hsl(220 26% 14% / 0.18);
-    --shadow-accent: 0 4px 16px hsl(260 100% 65% / 0.25);
-    --shadow-success: 0 4px 16px hsl(142 71% 45% / 0.25);
-    --shadow-inset: inset 0 1px 3px hsl(220 26% 14% / 0.06);
+    /* Luxury Shadows */
+    --shadow-minimal: 0 1px 3px hsl(216 19% 8% / 0.3);
+    --shadow-subtle: 0 2px 8px hsl(216 19% 8% / 0.4);
+    --shadow-card: 0 4px 16px hsl(216 19% 8% / 0.5);
+    --shadow-elevated: 0 8px 24px hsl(216 19% 8% / 0.6);
+    --shadow-floating: 0 12px 32px hsl(216 19% 8% / 0.7);
+    --shadow-dramatic: 0 16px 48px hsl(216 19% 8% / 0.8);
+    --shadow-gold: 0 4px 20px hsl(45 93% 47% / 0.3);
+    --shadow-gold-intense: 0 8px 32px hsl(45 93% 47% / 0.4);
+    --shadow-emerald: 0 4px 16px hsl(158 64% 52% / 0.3);
+    --shadow-elegant: 0 10px 40px hsl(216 19% 8% / 0.6);
+    --shadow-inset: inset 0 1px 3px hsl(216 19% 8% / 0.4);
     
     /* Typography Enhancements */
     --font-weight-light: 300;
