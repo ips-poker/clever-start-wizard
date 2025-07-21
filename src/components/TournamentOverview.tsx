@@ -25,7 +25,6 @@ import {
   Pause
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import PlayerManagement from "./PlayerManagement";
 
 interface Tournament {
   id: string;
@@ -388,14 +387,6 @@ const TournamentOverview = ({
           </div>
         </CardContent>
       </Card>
-
-      {/* Player Management */}
-      <PlayerManagement 
-        tournament={tournament}
-        players={players}
-        registrations={registrations}
-        onRegistrationUpdate={onRefresh}
-      />
 
       {/* System Health */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

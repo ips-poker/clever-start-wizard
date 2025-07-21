@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Trophy, Users, Clock, Settings, Plus, Play, Pause, Square, RotateCcw, CheckCircle, UserPlus, Volume2, Maximize, StopCircle, ChevronLeft, ChevronRight, Activity, TrendingUp, AlertCircle, DollarSign, Target, BarChart3 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import PlayerRegistration from "@/components/PlayerRegistration";
+import PlayerManagement from "@/components/PlayerManagement";
 import TournamentOverview from "@/components/TournamentOverview";
 import BlindStructure from "@/components/BlindStructure";
 import PayoutStructure from "@/components/PayoutStructure";
@@ -1013,6 +1014,17 @@ const TournamentDirector = () => {
           <TabsContent value="control" className="space-y-8 animate-fade-in">
             {selectedTournament ? (
               <div className="space-y-8">
+                {/* Player Management */}
+                <PlayerManagement 
+                  tournament={selectedTournament}
+                  players={players}
+                  registrations={registrations}
+                  onRegistrationUpdate={() => {
+                    loadRegistrations(selectedTournament.id);
+                    loadTournaments();
+                  }}
+                />
+                
                 {/* Tournament Format and Rebuy/Addon Settings */}
                 <Card className="bg-white/50 backdrop-blur-sm border border-gray-200/30 shadow-minimal">
                   <CardHeader>
