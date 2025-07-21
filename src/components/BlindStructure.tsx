@@ -62,19 +62,19 @@ const BlindStructure = ({ tournamentId }: BlindStructureProps) => {
       { level: 3, small_blind: 300, big_blind: 600, ante: 600, duration: 1200 },
       { level: 4, small_blind: 400, big_blind: 800, ante: 800, duration: 1200 },
       { level: 5, small_blind: 500, big_blind: 1000, ante: 1000, duration: 1200 },
-      { level: 6, small_blind: 600, big_blind: 1200, ante: 1200, duration: 900, is_break: true },
+      { level: 6, small_blind: 600, big_blind: 1200, ante: 1200, duration: 1200 },
       { level: 7, small_blind: 700, big_blind: 1500, ante: 1500, duration: 1200 },
       { level: 8, small_blind: 1000, big_blind: 2000, ante: 2000, duration: 1200 },
       { level: 9, small_blind: 1500, big_blind: 3000, ante: 3000, duration: 1200 },
       { level: 10, small_blind: 2000, big_blind: 4000, ante: 4000, duration: 1200 },
       { level: 11, small_blind: 3000, big_blind: 6000, ante: 6000, duration: 1200 },
-      { level: 12, small_blind: 4000, big_blind: 8000, ante: 8000, duration: 900, is_break: true },
+      { level: 12, small_blind: 4000, big_blind: 8000, ante: 8000, duration: 1200 },
       { level: 13, small_blind: 5000, big_blind: 10000, ante: 10000, duration: 1200 },
       { level: 14, small_blind: 6000, big_blind: 12000, ante: 12000, duration: 1200 },
       { level: 15, small_blind: 7000, big_blind: 14000, ante: 14000, duration: 1200 },
       { level: 16, small_blind: 8000, big_blind: 16000, ante: 16000, duration: 1200 },
       { level: 17, small_blind: 10000, big_blind: 20000, ante: 20000, duration: 1200 },
-      { level: 18, small_blind: 15000, big_blind: 30000, ante: 30000, duration: 900, is_break: true },
+      { level: 18, small_blind: 15000, big_blind: 30000, ante: 30000, duration: 1200 },
       { level: 19, small_blind: 20000, big_blind: 40000, ante: 40000, duration: 1200 }
     ];
 
@@ -201,8 +201,15 @@ const BlindStructure = ({ tournamentId }: BlindStructureProps) => {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <div className="text-sm text-gray-600">
-          Всего уровней: {blindLevels.length}
+        <div className="flex items-center gap-4">
+          <div className="text-sm text-gray-600">
+            Всего уровней: <span className="font-semibold text-gray-800">{blindLevels.length}</span>
+          </div>
+          <div className="text-sm text-gray-600">
+            Общее время: <span className="font-semibold text-gray-800">
+              {Math.floor(blindLevels.reduce((acc, level) => acc + level.duration, 0) / 60)} мин
+            </span>
+          </div>
         </div>
         <Button onClick={openAddDialog} size="sm" className="bg-gradient-button text-white">
           <Plus className="w-4 h-4 mr-2" />
@@ -211,73 +218,79 @@ const BlindStructure = ({ tournamentId }: BlindStructureProps) => {
       </div>
 
       <div className="bg-white/50 rounded-lg border border-gray-200/50 overflow-hidden">
-        <Table>
-          <TableHeader>
-            <TableRow className="border-gray-200/50">
-              <TableHead className="text-gray-600 font-medium">Уровень</TableHead>
-              <TableHead className="text-gray-600 font-medium">Малый блайнд</TableHead>
-              <TableHead className="text-gray-600 font-medium">Большой блайнд</TableHead>
-              <TableHead className="text-gray-600 font-medium">Анте</TableHead>
-              <TableHead className="text-gray-600 font-medium">Длительность</TableHead>
-              <TableHead className="text-gray-600 font-medium">Тип</TableHead>
-              <TableHead className="text-gray-600 font-medium">Действия</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {blindLevels.map((level) => (
-              <TableRow key={level.id} className="border-gray-200/50 hover:bg-gray-50/50">
-                <TableCell className="font-medium text-gray-800">
-                  {level.level}
-                </TableCell>
-                <TableCell className="text-gray-600">
-                  {level.is_break ? '-' : level.small_blind.toLocaleString()}
-                </TableCell>
-                <TableCell className="text-gray-600">
-                  {level.is_break ? '-' : level.big_blind.toLocaleString()}
-                </TableCell>
-                <TableCell className="text-gray-600">
-                  {level.is_break ? '-' : level.ante.toLocaleString()}
-                </TableCell>
-                <TableCell className="text-gray-600">
-                  {formatTime(level.duration)}
-                </TableCell>
-                <TableCell>
-                  {level.is_break ? (
-                    <Badge variant="secondary" className="bg-blue-100 text-blue-800">
-                      <Coffee className="w-3 h-3 mr-1" />
-                      Перерыв
-                    </Badge>
-                  ) : (
-                    <Badge variant="outline" className="bg-green-100 text-green-800">
-                      <Clock className="w-3 h-3 mr-1" />
-                      Игра
-                    </Badge>
-                  )}
-                </TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      onClick={() => openEditDialog(level)}
-                      size="sm"
-                      variant="ghost"
-                      className="h-8 w-8 p-0 hover:bg-gray-100"
-                    >
-                      <Edit className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      onClick={() => deleteLevel(level.id, level.level)}
-                      size="sm"
-                      variant="ghost"
-                      className="h-8 w-8 p-0 hover:bg-red-100 text-red-600"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </TableCell>
+        <div className="max-h-96 overflow-y-auto">
+          <Table>
+            <TableHeader className="sticky top-0 bg-white/90 backdrop-blur-sm">
+              <TableRow className="border-gray-200/50">
+                <TableHead className="text-gray-600 font-medium w-20">Уровень</TableHead>
+                <TableHead className="text-gray-600 font-medium">Малый блайнд</TableHead>
+                <TableHead className="text-gray-600 font-medium">Большой блайнд</TableHead>
+                <TableHead className="text-gray-600 font-medium">Анте</TableHead>
+                <TableHead className="text-gray-600 font-medium">Длительность</TableHead>
+                <TableHead className="text-gray-600 font-medium w-24">Тип</TableHead>
+                <TableHead className="text-gray-600 font-medium w-24">Действия</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {blindLevels.map((level, index) => (
+                <TableRow key={level.id} className={`border-gray-200/50 hover:bg-gray-50/50 transition-colors ${index % 2 === 0 ? 'bg-gray-50/20' : 'bg-white/40'}`}>
+                  <TableCell className="font-semibold text-gray-800 text-center">
+                    <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                      {level.level}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-gray-700 font-medium">
+                    {level.is_break ? '-' : level.small_blind.toLocaleString('ru-RU')}
+                  </TableCell>
+                  <TableCell className="text-gray-700 font-medium">
+                    {level.is_break ? '-' : level.big_blind.toLocaleString('ru-RU')}
+                  </TableCell>
+                  <TableCell className="text-gray-700 font-medium">
+                    {level.is_break ? '-' : level.ante.toLocaleString('ru-RU')}
+                  </TableCell>
+                  <TableCell className="text-gray-600">
+                    {formatTime(level.duration)}
+                  </TableCell>
+                  <TableCell>
+                    {level.is_break ? (
+                      <Badge variant="secondary" className="bg-orange-100 text-orange-800 border-orange-200">
+                        <Coffee className="w-3 h-3 mr-1" />
+                        Перерыв
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="bg-green-100 text-green-800 border-green-200">
+                        <Clock className="w-3 h-3 mr-1" />
+                        Игра
+                      </Badge>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        onClick={() => openEditDialog(level)}
+                        size="sm"
+                        variant="ghost"
+                        className="h-8 w-8 p-0 hover:bg-blue-100 text-blue-600"
+                        title="Редактировать"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        onClick={() => deleteLevel(level.id, level.level)}
+                        size="sm"
+                        variant="ghost"
+                        className="h-8 w-8 p-0 hover:bg-red-100 text-red-600"
+                        title="Удалить"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
       </div>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
