@@ -30,11 +30,11 @@ interface Tournament {
   current_big_blind: number;
   timer_duration: number;
   timer_remaining: number;
-  rebuy_cost?: number;
-  addon_cost?: number;
-  rebuy_chips?: number;
-  addon_chips?: number;
-  tournament_format?: string;
+  rebuy_cost: number;
+  addon_cost: number;
+  rebuy_chips: number;
+  addon_chips: number;
+  tournament_format: string;
 }
 
 interface Player {

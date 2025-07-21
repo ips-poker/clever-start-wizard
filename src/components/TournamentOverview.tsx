@@ -25,6 +25,7 @@ import {
   Pause
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import PlayerManagement from "./PlayerManagement";
 
 interface Tournament {
   id: string;
@@ -36,11 +37,18 @@ interface Tournament {
   timer_duration: number;
   timer_remaining: number;
   buy_in: number;
+  max_players: number;
+  rebuy_cost: number;
+  addon_cost: number;
+  rebuy_chips: number;
+  addon_chips: number;
+  tournament_format: string;
 }
 
 interface Player {
   id: string;
   name: string;
+  email: string;
   elo_rating: number;
   games_played: number;
   wins: number;
@@ -53,6 +61,8 @@ interface Registration {
   status: string;
   rebuys: number;
   addons: number;
+  seat_number: number;
+  position?: number;
 }
 
 interface TournamentOverviewProps {
@@ -378,6 +388,14 @@ const TournamentOverview = ({
           </div>
         </CardContent>
       </Card>
+
+      {/* Player Management */}
+      <PlayerManagement 
+        tournament={tournament}
+        players={players}
+        registrations={registrations}
+        onRegistrationUpdate={onRefresh}
+      />
 
       {/* System Health */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
