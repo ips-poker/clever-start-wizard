@@ -71,6 +71,28 @@ const TournamentResults = ({ selectedTournament }: TournamentResultsProps) => {
     loadResults();
     loadTopPlayers();
     loadRecentGames();
+    
+    // Настройка реального времени для результатов турниров
+    const resultsChannel = supabase
+      .channel('tournament-results-realtime')
+      .on('postgres_changes',
+        { event: '*', schema: 'public', table: 'game_results' },
+        () => {
+          loadResults();
+          loadRecentGames();
+        }
+      )
+      .on('postgres_changes',
+        { event: '*', schema: 'public', table: 'players' },
+        () => {
+          loadTopPlayers();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(resultsChannel);
+    };
   }, [selectedTournament]);
 
   const loadResults = async () => {
@@ -143,27 +165,27 @@ const TournamentResults = ({ selectedTournament }: TournamentResultsProps) => {
   const getRankIcon = (position: number) => {
     switch (position) {
       case 1:
-        return <Trophy className="h-5 w-5 text-yellow-500" />;
+        return <Trophy className="h-5 w-5 text-poker-warning" />;
       case 2:
-        return <Medal className="h-5 w-5 text-gray-400" />;
+        return <Medal className="h-5 w-5 text-poker-text-muted" />;
       case 3:
-        return <Award className="h-5 w-5 text-amber-600" />;
+        return <Award className="h-5 w-5 text-poker-accent" />;
       default:
-        return <span className="text-muted-foreground">#{position}</span>;
+        return <span className="text-poker-text-muted">#{position}</span>;
     }
   };
 
   const getEloChangeIcon = (change: number) => {
-    if (change > 0) return <TrendingUp className="h-4 w-4 text-green-500" />;
-    if (change < 0) return <TrendingDown className="h-4 w-4 text-red-500" />;
-    return <Minus className="h-4 w-4 text-muted-foreground" />;
+    if (change > 0) return <TrendingUp className="h-4 w-4 text-poker-success" />;
+    if (change < 0) return <TrendingDown className="h-4 w-4 text-poker-error" />;
+    return <Minus className="h-4 w-4 text-poker-text-muted" />;
   };
 
   const getPositionColor = (position: number) => {
-    if (position === 1) return 'bg-yellow-500';
-    if (position === 2) return 'bg-gray-400';
-    if (position === 3) return 'bg-amber-600';
-    return 'bg-muted';
+    if (position === 1) return 'bg-poker-warning';
+    if (position === 2) return 'bg-poker-text-muted';
+    if (position === 3) return 'bg-poker-accent';
+    return 'bg-poker-surface';
   };
 
   return (
@@ -177,14 +199,14 @@ const TournamentResults = ({ selectedTournament }: TournamentResultsProps) => {
         </TabsList>
 
         <TabsContent value="tournament" className="space-y-4">
-          <Card>
+          <Card className="bg-gradient-card border-poker-border shadow-elevated">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Trophy className="h-5 w-5" />
+              <CardTitle className="flex items-center gap-2 text-poker-text-primary">
+                <Trophy className="h-5 w-5 text-poker-warning" />
                 {selectedTournament ? `Результаты: ${selectedTournament.name}` : 'Выберите турнир'}
               </CardTitle>
               {selectedTournament && (
-                <CardDescription>
+                <CardDescription className="text-poker-text-secondary">
                   Бай-ин: {selectedTournament.buy_in}₽ • {results.length} участников
                 </CardDescription>
               )}
@@ -229,9 +251,9 @@ const TournamentResults = ({ selectedTournament }: TournamentResultsProps) => {
                           <div className="flex items-center gap-1">
                             {getEloChangeIcon(result.elo_change)}
                             <span className={`font-medium ${
-                              result.elo_change > 0 ? 'text-green-500' : 
-                              result.elo_change < 0 ? 'text-red-500' : 
-                              'text-muted-foreground'
+                              result.elo_change > 0 ? 'text-poker-success' : 
+                              result.elo_change < 0 ? 'text-poker-error' : 
+                              'text-poker-text-muted'
                             }`}>
                               {result.elo_change > 0 ? '+' : ''}{result.elo_change}
                             </span>
@@ -242,7 +264,7 @@ const TournamentResults = ({ selectedTournament }: TournamentResultsProps) => {
                   </TableBody>
                 </Table>
               ) : (
-                <div className="text-center py-8 text-muted-foreground">
+                <div className="text-center py-8 text-poker-text-muted">
                   {selectedTournament ? 'Нет результатов для отображения' : 'Выберите турнир для просмотра результатов'}
                 </div>
               )}
@@ -251,17 +273,17 @@ const TournamentResults = ({ selectedTournament }: TournamentResultsProps) => {
         </TabsContent>
 
         <TabsContent value="leaderboard" className="space-y-4">
-          <Card>
+          <Card className="bg-gradient-card border-poker-border shadow-elevated">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <BarChart3 className="h-5 w-5" />
+              <CardTitle className="flex items-center gap-2 text-poker-text-primary">
+                <BarChart3 className="h-5 w-5 text-poker-accent" />
                 Топ игроков по рейтингу
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 {topPlayers.map((player, index) => (
-                  <div key={player.id} className="flex items-center justify-between p-4 border rounded-lg">
+                  <div key={player.id} className="flex items-center justify-between p-4 border border-poker-border rounded-lg bg-poker-surface">
                     <div className="flex items-center gap-3">
                       <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold ${getPositionColor(index + 1)}`}>
                         {index + 1}
@@ -270,15 +292,15 @@ const TournamentResults = ({ selectedTournament }: TournamentResultsProps) => {
                         <AvatarFallback>{player.name.charAt(0)}</AvatarFallback>
                       </Avatar>
                       <div>
-                        <h4 className="font-medium">{player.name}</h4>
-                        <p className="text-sm text-muted-foreground">
+                        <h4 className="font-medium text-poker-text-primary">{player.name}</h4>
+                        <p className="text-sm text-poker-text-secondary">
                           {player.games_played} игр • {player.win_rate.toFixed(1)}% побед
                         </p>
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className="text-2xl font-bold">{player.elo_rating}</div>
-                      <div className="text-sm text-muted-foreground">рейтинг</div>
+                      <div className="text-2xl font-bold text-poker-text-primary">{player.elo_rating}</div>
+                      <div className="text-sm text-poker-text-muted">рейтинг</div>
                     </div>
                   </div>
                 ))}
@@ -288,10 +310,10 @@ const TournamentResults = ({ selectedTournament }: TournamentResultsProps) => {
         </TabsContent>
 
         <TabsContent value="recent" className="space-y-4">
-          <Card>
+          <Card className="bg-gradient-card border-poker-border shadow-elevated">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Target className="h-5 w-5" />
+              <CardTitle className="flex items-center gap-2 text-poker-text-primary">
+                <Target className="h-5 w-5 text-poker-accent" />
                 Недавние игры
               </CardTitle>
             </CardHeader>
@@ -322,7 +344,7 @@ const TournamentResults = ({ selectedTournament }: TournamentResultsProps) => {
                       <TableCell>
                         <div>
                           <div className="font-medium">{game.tournaments.name}</div>
-                          <div className="text-sm text-muted-foreground">{game.tournaments.buy_in}₽</div>
+                          <div className="text-sm text-poker-text-muted">{game.tournaments.buy_in}₽</div>
                         </div>
                       </TableCell>
                       <TableCell>{getRankIcon(game.position)}</TableCell>
@@ -330,15 +352,15 @@ const TournamentResults = ({ selectedTournament }: TournamentResultsProps) => {
                         <div className="flex items-center gap-1">
                           {getEloChangeIcon(game.elo_change)}
                           <span className={`font-medium ${
-                            game.elo_change > 0 ? 'text-green-500' : 
-                            game.elo_change < 0 ? 'text-red-500' : 
-                            'text-muted-foreground'
+                            game.elo_change > 0 ? 'text-poker-success' : 
+                            game.elo_change < 0 ? 'text-poker-error' : 
+                            'text-poker-text-muted'
                           }`}>
                             {game.elo_change > 0 ? '+' : ''}{game.elo_change}
                           </span>
                         </div>
                       </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
+                      <TableCell className="text-sm text-poker-text-muted">
                         {new Date(game.created_at).toLocaleDateString('ru-RU')}
                       </TableCell>
                     </TableRow>
@@ -351,39 +373,39 @@ const TournamentResults = ({ selectedTournament }: TournamentResultsProps) => {
 
         <TabsContent value="stats" className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <Card>
+            <Card className="bg-gradient-card border-poker-border shadow-card">
               <CardContent className="pt-6">
                 <div className="flex items-center space-x-2">
-                  <Users className="h-4 w-4 text-muted-foreground" />
+                  <Users className="h-4 w-4 text-poker-text-secondary" />
                   <div>
-                    <p className="text-2xl font-bold">{topPlayers.length}</p>
-                    <p className="text-xs text-muted-foreground">Активных игроков</p>
+                    <p className="text-2xl font-bold text-poker-text-primary">{topPlayers.length}</p>
+                    <p className="text-xs text-poker-text-muted">Активных игроков</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
             
-            <Card>
+            <Card className="bg-gradient-card border-poker-border shadow-card">
               <CardContent className="pt-6">
                 <div className="flex items-center space-x-2">
-                  <Trophy className="h-4 w-4 text-muted-foreground" />
+                  <Trophy className="h-4 w-4 text-poker-warning" />
                   <div>
-                    <p className="text-2xl font-bold">{recentGames.length}</p>
-                    <p className="text-xs text-muted-foreground">Сыгранных игр</p>
+                    <p className="text-2xl font-bold text-poker-text-primary">{recentGames.length}</p>
+                    <p className="text-xs text-poker-text-muted">Сыгранных игр</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
             
-            <Card>
+            <Card className="bg-gradient-card border-poker-border shadow-card">
               <CardContent className="pt-6">
                 <div className="flex items-center space-x-2">
-                  <BarChart3 className="h-4 w-4 text-muted-foreground" />
+                  <BarChart3 className="h-4 w-4 text-poker-accent" />
                   <div>
-                    <p className="text-2xl font-bold">
+                    <p className="text-2xl font-bold text-poker-text-primary">
                       {topPlayers.length > 0 ? Math.round(topPlayers.reduce((sum, p) => sum + p.elo_rating, 0) / topPlayers.length) : 0}
                     </p>
-                    <p className="text-xs text-muted-foreground">Средний рейтинг</p>
+                    <p className="text-xs text-poker-text-muted">Средний рейтинг</p>
                   </div>
                 </div>
               </CardContent>

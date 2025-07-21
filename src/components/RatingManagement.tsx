@@ -26,6 +26,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import ManualAdjustments from './ManualAdjustments';
 import SystemCheck from './SystemCheck';
+import RealtimeRatingSync from './RealtimeRatingSync';
 
 interface Tournament {
   id: string;
@@ -73,6 +74,42 @@ const RatingManagement = ({ tournaments, selectedTournament, onRefresh }: Rating
   useEffect(() => {
     loadStats();
     loadSettings();
+    
+    // Настройка реального времени для синхронизации рейтингов
+    const ratingsChannel = supabase
+      .channel('ratings-realtime')
+      .on('postgres_changes',
+        { event: '*', schema: 'public', table: 'players' },
+        () => {
+          loadStats();
+          toast({
+            title: 'Рейтинги обновлены',
+            description: 'Данные синхронизированы в реальном времени',
+          });
+        }
+      )
+      .on('postgres_changes',
+        { event: '*', schema: 'public', table: 'game_results' },
+        () => {
+          loadStats();
+          toast({
+            title: 'Результаты обновлены',
+            description: 'Новые результаты добавлены в систему',
+          });
+        }
+      )
+      .on('postgres_changes',
+        { event: '*', schema: 'public', table: 'tournaments' },
+        () => {
+          loadStats();
+          onRefresh();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(ratingsChannel);
+    };
   }, []);
 
   const loadStats = async () => {
@@ -267,39 +304,42 @@ const RatingManagement = ({ tournaments, selectedTournament, onRefresh }: Rating
         </TabsList>
 
         <TabsContent value="automation" className="space-y-6">
+          {/* Realtime Sync Component */}
+          <RealtimeRatingSync onUpdate={() => { loadStats(); onRefresh(); }} />
+          
           {/* Stats Overview */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Card>
+            <Card className="bg-gradient-card border-poker-border shadow-card">
               <CardContent className="pt-6">
                 <div className="flex items-center space-x-2">
-                  <Users className="h-4 w-4 text-muted-foreground" />
+                  <Users className="h-4 w-4 text-poker-text-secondary" />
                   <div>
-                    <p className="text-2xl font-bold">{stats.total_players}</p>
-                    <p className="text-xs text-muted-foreground">Всего игроков</p>
+                    <p className="text-2xl font-bold text-poker-text-primary">{stats.total_players}</p>
+                    <p className="text-xs text-poker-text-muted">Всего игроков</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
             
-            <Card>
+            <Card className="bg-gradient-card border-poker-border shadow-card">
               <CardContent className="pt-6">
                 <div className="flex items-center space-x-2">
-                  <Calculator className="h-4 w-4 text-muted-foreground" />
+                  <Calculator className="h-4 w-4 text-poker-accent" />
                   <div>
-                    <p className="text-2xl font-bold">{stats.pending_calculations}</p>
-                    <p className="text-xs text-muted-foreground">Ожидают расчета</p>
+                    <p className="text-2xl font-bold text-poker-text-primary">{stats.pending_calculations}</p>
+                    <p className="text-xs text-poker-text-muted">Ожидают расчета</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
             
-            <Card>
+            <Card className="bg-gradient-card border-poker-border shadow-card">
               <CardContent className="pt-6">
                 <div className="flex items-center space-x-2">
-                  <Activity className="h-4 w-4 text-muted-foreground" />
+                  <Activity className="h-4 w-4 text-poker-success" />
                   <div>
-                    <p className="text-2xl font-bold">ELO</p>
-                    <p className="text-xs text-muted-foreground">Система рейтинга</p>
+                    <p className="text-2xl font-bold text-poker-text-primary">ELO</p>
+                    <p className="text-xs text-poker-text-muted">Система рейтинга</p>
                   </div>
                 </div>
               </CardContent>
@@ -307,13 +347,13 @@ const RatingManagement = ({ tournaments, selectedTournament, onRefresh }: Rating
           </div>
 
           {/* Automation Settings */}
-          <Card>
+          <Card className="bg-gradient-card border-poker-border shadow-elevated">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Settings className="h-5 w-5" />
+              <CardTitle className="flex items-center gap-2 text-poker-text-primary">
+                <Settings className="h-5 w-5 text-poker-accent" />
                 Автоматизация рейтингов
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="text-poker-text-secondary">
                 Настройте автоматические процессы для обработки турниров
               </CardDescription>
             </CardHeader>
@@ -357,13 +397,13 @@ const RatingManagement = ({ tournaments, selectedTournament, onRefresh }: Rating
           </Card>
 
           {/* Manual Controls */}
-          <Card>
+          <Card className="bg-gradient-card border-poker-border shadow-elevated">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Play className="h-5 w-5" />
+              <CardTitle className="flex items-center gap-2 text-poker-text-primary">
+                <Play className="h-5 w-5 text-poker-success" />
                 Ручное управление
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="text-poker-text-secondary">
                 Полная обработка турнира и управление рейтингами
               </CardDescription>
             </CardHeader>
