@@ -194,6 +194,8 @@ export type Database = {
         Row: {
           addon_chips: number | null
           addon_cost: number | null
+          addon_level: number | null
+          break_start_level: number | null
           buy_in: number
           created_at: string
           current_big_blind: number | null
@@ -205,6 +207,7 @@ export type Database = {
           name: string
           rebuy_chips: number | null
           rebuy_cost: number | null
+          rebuy_end_level: number | null
           start_time: string
           starting_chips: number
           status: string
@@ -216,6 +219,8 @@ export type Database = {
         Insert: {
           addon_chips?: number | null
           addon_cost?: number | null
+          addon_level?: number | null
+          break_start_level?: number | null
           buy_in?: number
           created_at?: string
           current_big_blind?: number | null
@@ -227,6 +232,7 @@ export type Database = {
           name: string
           rebuy_chips?: number | null
           rebuy_cost?: number | null
+          rebuy_end_level?: number | null
           start_time: string
           starting_chips?: number
           status?: string
@@ -238,6 +244,8 @@ export type Database = {
         Update: {
           addon_chips?: number | null
           addon_cost?: number | null
+          addon_level?: number | null
+          break_start_level?: number | null
           buy_in?: number
           created_at?: string
           current_big_blind?: number | null
@@ -249,6 +257,7 @@ export type Database = {
           name?: string
           rebuy_chips?: number | null
           rebuy_cost?: number | null
+          rebuy_end_level?: number | null
           start_time?: string
           starting_chips?: number
           status?: string

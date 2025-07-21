@@ -35,6 +35,10 @@ interface Tournament {
   addon_cost: number;
   rebuy_chips: number;
   addon_chips: number;
+  starting_chips: number;
+  rebuy_end_level: number;
+  addon_level: number;
+  break_start_level: number;
   tournament_format: string;
 }
 
@@ -85,6 +89,9 @@ const TournamentDirector = () => {
     rebuy_chips: 0,
     addon_chips: 0,
     starting_chips: 10000,
+    rebuy_end_level: 6,
+    addon_level: 7,
+    break_start_level: 4,
     tournament_format: "freezeout"
   });
 
@@ -233,6 +240,9 @@ const TournamentDirector = () => {
         rebuy_chips: 0,
         addon_chips: 0,
         starting_chips: 10000,
+        rebuy_end_level: 6,
+        addon_level: 7,
+        break_start_level: 4,
         tournament_format: "freezeout"
       });
       loadTournaments();
@@ -720,6 +730,43 @@ const TournamentDirector = () => {
                       </div>
                     </div>
                   )}
+                  
+                  {/* Level Settings */}
+                  <div className="space-y-4 border-t border-gray-200/30 pt-4">
+                    <h4 className="text-gray-700 font-medium text-sm">Настройки уровней</h4>
+                    <div className="grid grid-cols-3 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="rebuy_end_level" className="text-gray-700 font-normal text-sm">Ребаи до уровня</Label>
+                        <Input
+                          id="rebuy_end_level"
+                          type="number"
+                          value={newTournament.rebuy_end_level}
+                          onChange={(e) => setNewTournament({ ...newTournament, rebuy_end_level: parseInt(e.target.value) })}
+                          className="bg-white/50 border-gray-200/50 focus:border-gray-400 focus:ring-1 focus:ring-gray-400/20 transition-all duration-200 rounded-lg h-10"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="addon_level" className="text-gray-700 font-normal text-sm">Адон на уровне</Label>
+                        <Input
+                          id="addon_level"
+                          type="number"
+                          value={newTournament.addon_level}
+                          onChange={(e) => setNewTournament({ ...newTournament, addon_level: parseInt(e.target.value) })}
+                          className="bg-white/50 border-gray-200/50 focus:border-gray-400 focus:ring-1 focus:ring-gray-400/20 transition-all duration-200 rounded-lg h-10"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="break_start_level" className="text-gray-700 font-normal text-sm">Перерывы с уровня</Label>
+                        <Input
+                          id="break_start_level"
+                          type="number"
+                          value={newTournament.break_start_level}
+                          onChange={(e) => setNewTournament({ ...newTournament, break_start_level: parseInt(e.target.value) })}
+                          className="bg-white/50 border-gray-200/50 focus:border-gray-400 focus:ring-1 focus:ring-gray-400/20 transition-all duration-200 rounded-lg h-10"
+                        />
+                      </div>
+                    </div>
+                  </div>
                 </div>
                 <Button 
                   onClick={createTournament} 
@@ -1101,9 +1148,40 @@ const TournamentDirector = () => {
                           </div>
                         </div>
                       )}
-                    </div>
+                     </div>
 
-                    <div className="border-t border-gray-200/50 pt-4">
+                     {/* Level Settings */}
+                     <div className="border-t border-gray-200/50 pt-4">
+                       <h4 className="text-sm font-medium text-gray-700 mb-3">Настройки уровней</h4>
+                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                         <div>
+                           <Label className="text-sm font-medium text-gray-700">Ребаи до уровня</Label>
+                           <div className="mt-1 p-3 bg-orange-50 rounded-lg border border-orange-200">
+                             <span className="text-sm font-medium text-orange-800">
+                               Уровень {selectedTournament.rebuy_end_level || 6}
+                             </span>
+                           </div>
+                         </div>
+                         <div>
+                           <Label className="text-sm font-medium text-gray-700">Адон на уровне</Label>
+                           <div className="mt-1 p-3 bg-purple-50 rounded-lg border border-purple-200">
+                             <span className="text-sm font-medium text-purple-800">
+                               Уровень {selectedTournament.addon_level || 7}
+                             </span>
+                           </div>
+                         </div>
+                         <div>
+                           <Label className="text-sm font-medium text-gray-700">Перерывы с уровня</Label>
+                           <div className="mt-1 p-3 bg-cyan-50 rounded-lg border border-cyan-200">
+                             <span className="text-sm font-medium text-cyan-800">
+                               Уровень {selectedTournament.break_start_level || 4}
+                             </span>
+                           </div>
+                         </div>
+                       </div>
+                     </div>
+
+                     <div className="border-t border-gray-200/50 pt-4">
                       <h4 className="text-sm font-medium text-gray-700 mb-3">Статистика ребаев и адонов</h4>
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div className="text-center p-3 bg-gray-50 rounded-lg">
