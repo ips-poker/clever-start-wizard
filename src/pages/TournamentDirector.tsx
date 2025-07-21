@@ -69,6 +69,7 @@ const TournamentDirector = () => {
   const [currentTime, setCurrentTime] = useState(0);
   const [isFinishDialogOpen, setIsFinishDialogOpen] = useState(false);
   const [tournamentResults, setTournamentResults] = useState<{[key: string]: number}>({});
+  const [activeTab, setActiveTab] = useState("overview");
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const { toast } = useToast();
 
@@ -494,7 +495,7 @@ const TournamentDirector = () => {
           )}
         </div>
 
-        <Tabs defaultValue="overview" className="space-y-10">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-10">
           <TabsList className="grid w-full grid-cols-5 bg-poker-surface-elevated border border-poker-border shadow-card rounded-2xl p-2 h-16">
             <TabsTrigger 
               value="overview" 
@@ -797,11 +798,14 @@ const TournamentDirector = () => {
                         <Button 
                           size="sm" 
                           variant="outline"
-                          onClick={() => setSelectedTournament(tournament)}
+                          onClick={() => {
+                            setSelectedTournament(tournament);
+                            setActiveTab("control");
+                          }}
                           className="border-gray-200/50 hover:shadow-minimal text-xs"
                         >
                           <Settings className="w-3 h-3 mr-1" />
-                          Выбрать
+                          Управление
                         </Button>
                         {tournament.status === 'scheduled' && (
                           <Button 
