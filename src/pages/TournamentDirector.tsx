@@ -319,10 +319,29 @@ const TournamentDirector = () => {
   const nextBlindLevel = async () => {
     if (!selectedTournament) return;
 
-    const newLevel = selectedTournament.current_level + 1;
-    const newTimerTime = selectedTournament.timer_duration;
-    const newSmallBlind = Math.round(selectedTournament.current_small_blind * 1.5);
-    const newBigBlind = Math.round(selectedTournament.current_big_blind * 1.5);
+    // Получить следующий уровень из структуры блайндов
+    const { data: nextLevel, error: fetchError } = await supabase
+      .from('blind_levels')
+      .select('*')
+      .eq('tournament_id', selectedTournament.id)
+      .eq('level', selectedTournament.current_level + 1)
+      .maybeSingle();
+
+    let newLevel, newSmallBlind, newBigBlind, newTimerTime;
+
+    if (fetchError || !nextLevel) {
+      // Fallback на простое умножение, если структура не найдена
+      newLevel = selectedTournament.current_level + 1;
+      newSmallBlind = Math.round(selectedTournament.current_small_blind * 1.5);
+      newBigBlind = Math.round(selectedTournament.current_big_blind * 1.5);
+      newTimerTime = selectedTournament.timer_duration;
+    } else {
+      // Использовать данные из структуры блайндов
+      newLevel = nextLevel.level;
+      newSmallBlind = nextLevel.small_blind;
+      newBigBlind = nextLevel.big_blind;
+      newTimerTime = nextLevel.duration;
+    }
 
     const { error } = await supabase
       .from('tournaments')
@@ -337,7 +356,8 @@ const TournamentDirector = () => {
     if (error) {
       toast({ title: "Ошибка", description: "Не удалось повысить уровень блайндов", variant: "destructive" });
     } else {
-      toast({ title: "Успех", description: `Уровень блайндов повышен до ${newLevel}` });
+      const levelType = nextLevel?.is_break ? "перерыв" : "уровень";
+      toast({ title: "Успех", description: `${levelType.charAt(0).toUpperCase() + levelType.slice(1)} ${newLevel} начат` });
       setCurrentTime(newTimerTime);
       setSelectedTournament({
         ...selectedTournament,
@@ -353,10 +373,29 @@ const TournamentDirector = () => {
   const prevBlindLevel = async () => {
     if (!selectedTournament || selectedTournament.current_level <= 1) return;
 
-    const newLevel = selectedTournament.current_level - 1;
-    const newTimerTime = selectedTournament.timer_duration;
-    const newSmallBlind = Math.round(selectedTournament.current_small_blind / 1.5);
-    const newBigBlind = Math.round(selectedTournament.current_big_blind / 1.5);
+    // Получить предыдущий уровень из структуры блайндов
+    const { data: prevLevel, error: fetchError } = await supabase
+      .from('blind_levels')
+      .select('*')
+      .eq('tournament_id', selectedTournament.id)
+      .eq('level', selectedTournament.current_level - 1)
+      .maybeSingle();
+
+    let newLevel, newSmallBlind, newBigBlind, newTimerTime;
+
+    if (fetchError || !prevLevel) {
+      // Fallback на простое деление, если структура не найдена
+      newLevel = selectedTournament.current_level - 1;
+      newSmallBlind = Math.round(selectedTournament.current_small_blind / 1.5);
+      newBigBlind = Math.round(selectedTournament.current_big_blind / 1.5);
+      newTimerTime = selectedTournament.timer_duration;
+    } else {
+      // Использовать данные из структуры блайндов
+      newLevel = prevLevel.level;
+      newSmallBlind = prevLevel.small_blind;
+      newBigBlind = prevLevel.big_blind;
+      newTimerTime = prevLevel.duration;
+    }
 
     const { error } = await supabase
       .from('tournaments')
@@ -371,7 +410,8 @@ const TournamentDirector = () => {
     if (error) {
       toast({ title: "Ошибка", description: "Не удалось понизить уровень блайндов", variant: "destructive" });
     } else {
-      toast({ title: "Успех", description: `Уровень блайндов понижен до ${newLevel}` });
+      const levelType = prevLevel?.is_break ? "перерыв" : "уровень";
+      toast({ title: "Успех", description: `Возврат к ${levelType} ${newLevel}` });
       setCurrentTime(newTimerTime);
       setSelectedTournament({
         ...selectedTournament,

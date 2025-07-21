@@ -22,7 +22,8 @@ import {
   Trophy,
   Clock,
   Play,
-  Pause
+  Pause,
+  Coffee
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import PlayerManagement from "./PlayerManagement";
@@ -98,6 +99,7 @@ const TournamentOverview = ({
   onRefresh,
   onTimerAdjust
 }: TournamentOverviewProps) => {
+  const [blindLevels, setBlindLevels] = useState<any[]>([]);
   const [systemStats, setSystemStats] = useState({
     activeTournaments: 0,
     totalPlayersInClub: 0,
@@ -111,7 +113,28 @@ const TournamentOverview = ({
 
   useEffect(() => {
     loadSystemStats();
+    loadBlindLevels();
   }, []);
+
+  useEffect(() => {
+    if (tournament?.id) {
+      loadBlindLevels();
+    }
+  }, [tournament?.id]);
+
+  const loadBlindLevels = async () => {
+    if (!tournament?.id) return;
+    
+    const { data, error } = await supabase
+      .from('blind_levels')
+      .select('*')
+      .eq('tournament_id', tournament.id)
+      .order('level', { ascending: true });
+
+    if (!error && data) {
+      setBlindLevels(data);
+    }
+  };
 
   const loadSystemStats = async () => {
     try {
@@ -176,9 +199,14 @@ const TournamentOverview = ({
   const totalAddons = registrations.reduce((sum, r) => sum + r.addons, 0);
   const prizePool = (registrations.length * tournament.buy_in) + (totalRebuys * tournament.buy_in) + (totalAddons * tournament.buy_in);
 
-  const nextLevel = tournament.current_level + 1;
-  const nextSmallBlind = tournament.current_small_blind * 1.5;
-  const nextBigBlind = tournament.current_big_blind * 1.5;
+  // Найти следующий уровень из структуры блайндов
+  const currentBlindLevel = blindLevels.find(level => level.level === tournament.current_level);
+  const nextBlindLevel = blindLevels.find(level => level.level === tournament.current_level + 1);
+  
+  // Fallback на простое умножение, если структура не загружена
+  const nextSmallBlind = nextBlindLevel ? nextBlindLevel.small_blind : Math.round(tournament.current_small_blind * 1.5);
+  const nextBigBlind = nextBlindLevel ? nextBlindLevel.big_blind : Math.round(tournament.current_big_blind * 1.5);
+  const isNextLevelBreak = nextBlindLevel?.is_break || false;
 
   const timerProgress = ((tournament.timer_duration - currentTime) / tournament.timer_duration) * 100;
 
@@ -241,27 +269,35 @@ const TournamentOverview = ({
           </CardContent>
         </Card>
 
-        <Card className="bg-white/50 backdrop-blur-sm border border-gray-200/30 shadow-minimal">
-          <CardHeader>
+        <Card className="bg-white/40 backdrop-blur-sm border border-gray-200/30 shadow-minimal rounded-xl overflow-hidden">
+          <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-gray-700 font-light">
               <ChevronRight className="w-4 h-4" />
-              Следующий уровень {nextLevel}
+              {isNextLevelBreak ? 'Следующий: Перерыв' : `Следующий уровень ${tournament.current_level + 1}`}
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="pt-0">
             <div className="text-center">
               <p className="text-lg font-light text-gray-600 mb-3">Через {formatTime(currentTime)}</p>
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="text-center p-3 border border-gray-200/20 rounded-lg bg-white/30">
-                <p className="text-xs text-gray-500">Малый блайнд</p>
-                <p className="text-xl font-light text-gray-700">{Math.round(nextSmallBlind)}</p>
+            {isNextLevelBreak ? (
+              <div className="text-center p-6 space-y-2">
+                <Coffee className="w-8 h-8 text-amber-600 mx-auto" />
+                <p className="text-lg font-medium text-amber-800">Перерыв</p>
+                <p className="text-sm text-gray-600">{nextBlindLevel ? Math.floor(nextBlindLevel.duration / 60) : 15} минут</p>
               </div>
-              <div className="text-center p-3 border border-gray-200/20 rounded-lg bg-white/30">
-                <p className="text-xs text-gray-500">Большой блайнд</p>
-                <p className="text-xl font-light text-gray-700">{Math.round(nextBigBlind)}</p>
+            ) : (
+              <div className="grid grid-cols-2 gap-3">
+                <div className="text-center p-3 border border-gray-200/20 rounded-lg bg-white/30">
+                  <p className="text-xs text-gray-500">Малый блайнд</p>
+                  <p className="text-xl font-light text-gray-700">{Math.round(nextSmallBlind)}</p>
+                </div>
+                <div className="text-center p-3 border border-gray-200/20 rounded-lg bg-white/30">
+                  <p className="text-xs text-gray-500">Большой блайнд</p>
+                  <p className="text-xl font-light text-gray-700">{Math.round(nextBigBlind)}</p>
+                </div>
               </div>
-            </div>
+            )}
           </CardContent>
         </Card>
       </div>
