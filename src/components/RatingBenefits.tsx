@@ -132,7 +132,16 @@ export function RatingBenefits() {
 
           <div className="relative">
             {/* Rating Display Mock */}
-            <Card className="p-8 bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-elegant">
+            <div className="relative overflow-hidden rounded-2xl">
+              <div 
+                className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+                style={{ 
+                  backgroundImage: `url(/src/assets/poker-chips-bg.jpg)`,
+                  filter: 'blur(6px)'
+                }}
+              ></div>
+              <div className="absolute inset-0 bg-slate-900/50"></div>
+              <Card className="relative p-8 bg-transparent border-none text-white shadow-elegant">
               <div className="text-center space-y-6">
                 <div className="space-y-2">
                   <h4 className="text-2xl font-bold">Ваш текущий рейтинг</h4>
@@ -160,7 +169,8 @@ export function RatingBenefits() {
                   <span className="font-semibold text-poker-gold">153 очка</span>
                 </div>
               </div>
-            </Card>
+              </Card>
+            </div>
 
             {/* Floating Achievement */}
             <div className="absolute -top-4 -right-4 bg-poker-gold text-primary p-3 rounded-full shadow-gold animate-pulse">
