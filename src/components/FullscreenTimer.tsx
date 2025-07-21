@@ -5,16 +5,13 @@ import { Progress } from "@/components/ui/progress";
 import { 
   Play, 
   Pause, 
-  StopCircle, 
   ChevronLeft, 
   ChevronRight, 
   RotateCcw,
   X,
-  Volume2,
-  VolumeX,
   Clock,
   Users,
-  DollarSign,
+  Trophy,
   Coffee
 } from "lucide-react";
 
@@ -62,7 +59,6 @@ const FullscreenTimer = ({
   onStopTournament,
   onClose
 }: FullscreenTimerProps) => {
-  const [soundEnabled, setSoundEnabled] = useState(true);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -79,11 +75,6 @@ const FullscreenTimer = ({
   const isBreakLevel = tournament.current_level % tournament.break_start_level === 0;
   const levelsUntilBreak = tournament.break_start_level - (tournament.current_level % tournament.break_start_level);
 
-  // Time adjustment functions
-  const adjustTime = (minutes: number) => {
-    // This would need to be implemented to adjust the timer
-    console.log(`Adjusting time by ${minutes} minutes`);
-  };
 
   return (
     <div className="fixed inset-0 bg-gradient-to-br from-gray-50 via-white to-gray-100 text-gray-800 z-50 flex flex-col">
@@ -169,12 +160,12 @@ const FullscreenTimer = ({
               </div>
               <div className="text-center border-l border-gray-200/30">
                 <div className="flex items-center justify-center mb-2">
-                  <div className="p-2 bg-green-100/80 rounded-lg mr-3">
-                    <DollarSign className="w-5 h-5 text-green-600" />
+                  <div className="p-2 bg-amber-100/80 rounded-lg mr-3">
+                    <Trophy className="w-5 h-5 text-amber-600" />
                   </div>
                   <div className="text-left">
                     <p className="text-2xl font-light text-gray-800">{prizePool.toLocaleString()}</p>
-                    <p className="text-xs text-gray-500 font-medium">Призовой фонд (₽)</p>
+                    <p className="text-xs text-gray-500 font-medium">Призовой фонд (RP)</p>
                   </div>
                 </div>
               </div>
@@ -235,79 +226,16 @@ const FullscreenTimer = ({
 
             
             {/* Secondary Controls */}
-            <div className="flex justify-center items-center gap-6">
-              {/* Time Adjustments */}
-              <div className="flex items-center gap-2 bg-white/50 rounded-xl p-2 border border-gray-200/30">
-                <span className="text-sm text-gray-600 font-medium px-2">Время:</span>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => adjustTime(-5)}
-                  className="h-10 px-3 border-gray-200/50 hover:bg-gray-100/50 text-gray-600"
-                >
-                  -5м
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => adjustTime(-1)}
-                  className="h-10 px-3 border-gray-200/50 hover:bg-gray-100/50 text-gray-600"
-                >
-                  -1м
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => adjustTime(1)}
-                  className="h-10 px-3 border-gray-200/50 hover:bg-gray-100/50 text-gray-600"
-                >
-                  +1м
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => adjustTime(5)}
-                  className="h-10 px-3 border-gray-200/50 hover:bg-gray-100/50 text-gray-600"
-                >
-                  +5м
-                </Button>
-              </div>
-
-              
-              {/* Action Controls */}
-              <div className="flex items-center gap-2 bg-white/50 rounded-xl p-2 border border-gray-200/30">
-                <span className="text-sm text-gray-600 font-medium px-2">Действия:</span>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={onResetTimer}
-                  className="h-10 px-4 border-gray-200/50 hover:bg-gray-100/50 text-gray-600"
-                >
-                  <RotateCcw className="w-4 h-4 mr-2" />
-                  Сброс
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setSoundEnabled(!soundEnabled)}
-                  className={`h-10 px-4 border-gray-200/50 hover:bg-gray-100/50 ${
-                    soundEnabled 
-                      ? 'bg-blue-50/80 text-blue-600 border-blue-200/50' 
-                      : 'text-gray-500'
-                  }`}
-                >
-                  {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={onStopTournament}
-                  className="h-10 px-4 text-red-600 border-red-200/50 hover:bg-red-50/80"
-                >
-                  <StopCircle className="w-4 h-4 mr-2" />
-                  Стоп
-                </Button>
-              </div>
+            <div className="flex justify-center items-center">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onResetTimer}
+                className="h-12 px-6 border-gray-200/50 hover:bg-gray-100/50 text-gray-600 bg-white/50 rounded-xl"
+              >
+                <RotateCcw className="w-4 h-4 mr-2" />
+                Сброс уровня
+              </Button>
             </div>
           </div>
         </div>
