@@ -1429,49 +1429,6 @@ const TournamentDirector = () => {
             </div>
           </TabsContent>
 
-          <TabsContent value="ratings" className="space-y-8 animate-fade-in">
-            <Card className="bg-white/50 backdrop-blur-sm border border-gray-200/30 shadow-minimal">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-gray-700 font-light">
-                  <Trophy className="w-4 h-4" />
-                  Рейтинг игроков (ELO)
-                </CardTitle>
-                <CardDescription className="text-gray-600">Текущий рейтинг всех игроков</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="text-gray-700 font-normal text-sm">Место</TableHead>
-                      <TableHead className="text-gray-700 font-normal text-sm">Игрок</TableHead>
-                      <TableHead className="text-gray-700 font-normal text-sm">Рейтинг ELO</TableHead>
-                      <TableHead className="text-gray-700 font-normal text-sm">Игр сыграно</TableHead>
-                      <TableHead className="text-gray-700 font-normal text-sm">Побед</TableHead>
-                      <TableHead className="text-gray-700 font-normal text-sm">Винрейт</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {players.map((player, index) => (
-                      <TableRow key={player.id}>
-                        <TableCell className="font-medium text-gray-800 text-sm">{index + 1}</TableCell>
-                        <TableCell className="text-gray-800 text-sm">{player.name}</TableCell>
-                        <TableCell className="font-medium text-gray-800 text-sm">{player.elo_rating}</TableCell>
-                        <TableCell className="text-gray-600 text-sm">{player.games_played}</TableCell>
-                        <TableCell className="text-gray-600 text-sm">{player.wins}</TableCell>
-                        <TableCell className="text-gray-600 text-sm">
-                          {player.games_played > 0 ? 
-                            `${Math.round((player.wins / player.games_played) * 100)}%` : 
-                            '0%'
-                          }
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
           {/* Ratings Tab */}
           <TabsContent value="ratings" className="space-y-6 animate-fade-in">
             <RatingManagement 
