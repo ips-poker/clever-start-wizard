@@ -356,7 +356,9 @@ const PlayerManagement = ({ tournament, players, registrations, onRegistrationUp
       // Prepare results for ELO calculation - make sure all players have positions
       const results = registrations.map((reg) => ({
         player_id: reg.player.id,
-        position: reg.position || 1 // Active players get 1st place
+        position: reg.position || 1, // Active players get 1st place
+        rebuys: reg.rebuys || 0,
+        addons: reg.addons || 0
       }));
 
       console.log('Завершение турнира - отправка результатов:', results);

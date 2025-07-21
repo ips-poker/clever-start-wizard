@@ -538,11 +538,16 @@ const TournamentDirector = () => {
     }
 
     try {
-      // Prepare results for ELO calculation
-      const results = Object.entries(tournamentResults).map(([playerId, position]) => ({
-        player_id: playerId,
-        position: position
-      }));
+      // Prepare results for ELO calculation with rebuys/addons
+      const results = Object.entries(tournamentResults).map(([playerId, position]) => {
+        const registration = registrations.find(reg => reg.player_id === playerId);
+        return {
+          player_id: playerId,
+          position: position,
+          rebuys: registration?.rebuys || 0,
+          addons: registration?.addons || 0
+        };
+      });
 
       // Call ELO calculation function
       const { data, error } = await supabase.functions.invoke('calculate-elo', {
