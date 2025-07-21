@@ -33,7 +33,7 @@ export function Hero() {
           <div className="text-poker-dark-text space-y-10 animate-fade-in order-2 lg:order-1">
             <div className="space-y-8 animate-slide-up [animation-delay:0.2s]">
               <div className="flex justify-center lg:justify-start">
-                <Badge className="bg-gradient-glass-dark border border-poker-accent/40 text-poker-dark-text font-semibold px-6 py-3 rounded-full shadow-subtle backdrop-blur-xl animate-scale-in [animation-delay:0.4s]">
+                <Badge className="bg-gradient-glass-dark border border-poker-accent/20 text-poker-dark-text font-medium px-6 py-3 rounded-full shadow-minimal backdrop-blur-xl animate-scale-in [animation-delay:0.4s]">
                   Покерный клуб IPS
                 </Badge>
               </div>
@@ -52,7 +52,7 @@ export function Hero() {
                     <span className="text-poker-dark-text block leading-none">
                       Покерный клуб
                     </span>
-                    <span className="block text-poker-accent bg-clip-text text-2xl sm:text-3xl lg:text-4xl mt-2 font-semibold leading-tight">
+                    <span className="block text-poker-gold-light text-2xl sm:text-3xl lg:text-4xl mt-2 font-medium leading-tight">
                       IPS
                     </span>
                   </h1>
@@ -68,19 +68,19 @@ export function Hero() {
 
                   {/* Key Benefits */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 animate-slide-up [animation-delay:1s] max-w-2xl mx-auto lg:mx-0">
-                     <div className="flex items-center justify-center lg:justify-start space-x-3 text-sm bg-gradient-glass-dark px-4 py-3 rounded-xl backdrop-blur-xl border border-poker-accent/30 text-poker-dark-text font-medium shadow-card">
-                       <Trophy className="w-5 h-5 text-poker-gold flex-shrink-0" />
+                     <div className="flex items-center justify-center lg:justify-start space-x-3 text-sm bg-gradient-glass-dark px-4 py-3 rounded-xl backdrop-blur-xl border border-poker-accent/20 text-poker-dark-text font-normal shadow-minimal">
+                       <Trophy className="w-5 h-5 text-poker-gold-light flex-shrink-0" />
                        <span>Регулярные турниры</span>
                      </div>
-                     <div className="flex items-center justify-center lg:justify-start space-x-3 text-sm bg-gradient-glass-dark px-4 py-3 rounded-xl backdrop-blur-xl border border-poker-accent/30 text-poker-dark-text font-medium shadow-card">
-                       <Star className="w-5 h-5 text-poker-accent flex-shrink-0" />
+                     <div className="flex items-center justify-center lg:justify-start space-x-3 text-sm bg-gradient-glass-dark px-4 py-3 rounded-xl backdrop-blur-xl border border-poker-accent/20 text-poker-dark-text font-normal shadow-minimal">
+                       <Star className="w-5 h-5 text-poker-accent-light flex-shrink-0" />
                        <span>Система рейтингов</span>
                      </div>
-                     <div className="flex items-center justify-center lg:justify-start space-x-3 text-sm bg-gradient-glass-dark px-4 py-3 rounded-xl backdrop-blur-xl border border-poker-accent/30 text-poker-dark-text font-medium shadow-card">
+                     <div className="flex items-center justify-center lg:justify-start space-x-3 text-sm bg-gradient-glass-dark px-4 py-3 rounded-xl backdrop-blur-xl border border-poker-accent/20 text-poker-dark-text font-normal shadow-minimal">
                        <Users className="w-5 h-5 text-poker-accent-light flex-shrink-0" />
                        <span>Сообщество игроков</span>
                      </div>
-                     <div className="flex items-center justify-center lg:justify-start space-x-3 text-sm bg-gradient-glass-dark px-4 py-3 rounded-xl backdrop-blur-xl border border-poker-accent/30 text-poker-dark-text font-medium shadow-card">
+                     <div className="flex items-center justify-center lg:justify-start space-x-3 text-sm bg-gradient-glass-dark px-4 py-3 rounded-xl backdrop-blur-xl border border-poker-accent/20 text-poker-dark-text font-normal shadow-minimal">
                        <Shield className="w-5 h-5 text-poker-success flex-shrink-0" />
                        <span>Честная игра</span>
                      </div>
