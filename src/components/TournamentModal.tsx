@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -231,6 +231,12 @@ export function TournamentModal({ tournament, open, onOpenChange, onTournamentUp
             <div className="flex-1">
               {isEditing ? (
                 <div className="space-y-4">
+                  <DialogTitle className="text-xl font-bold">
+                    Редактирование турнира
+                  </DialogTitle>
+                  <DialogDescription>
+                    Изменение параметров и настроек турнира
+                  </DialogDescription>
                   <div>
                     <Label htmlFor="tournament-name">Название турнира</Label>
                     <Input
@@ -255,7 +261,9 @@ export function TournamentModal({ tournament, open, onOpenChange, onTournamentUp
                   <DialogTitle className="text-2xl font-bold text-poker-primary mb-2">
                     {tournament.name}
                   </DialogTitle>
-                  <p className="text-muted-foreground">{tournament.description}</p>
+                  <DialogDescription>
+                    {tournament.description || "Подробная информация о турнире"}
+                  </DialogDescription>
                 </div>
               )}
             </div>

@@ -5,7 +5,7 @@ import { Footer } from "@/components/Footer";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Trophy, Medal, Award, TrendingUp, Users, Clock, Star, ChevronDown, Crown } from "lucide-react";
 import { RecalculateRatings } from "@/components/RecalculateRatings";
 
@@ -347,6 +347,9 @@ export default function Rating() {
                               <Trophy className="w-5 h-5 text-poker-accent" />
                               Полный рейтинг игроков
                             </DialogTitle>
+                            <DialogDescription>
+                              Подробный рейтинг всех игроков в системе
+                            </DialogDescription>
                           </DialogHeader>
                           <div className="space-y-2">
                             {allPlayers.map((player, index) => (
