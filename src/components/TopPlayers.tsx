@@ -3,7 +3,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Trophy, Medal, Award, TrendingUp, Users, ChevronRight, Crown } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Trophy, Medal, Award, TrendingUp, Users, ChevronRight, Crown, Search, Filter } from "lucide-react";
 import { Link } from "react-router-dom";
 
 interface Player {
@@ -24,10 +26,16 @@ const getPokerAvatar = (name: string, isChampion = false) => {
 
 export function TopPlayers() {
   const [topPlayers, setTopPlayers] = useState<Player[]>([]);
+  const [allPlayers, setAllPlayers] = useState<Player[]>([]);
+  const [filteredPlayers, setFilteredPlayers] = useState<Player[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [showAll, setShowAll] = useState(false);
+  const [showFirstPlaceOnly, setShowFirstPlaceOnly] = useState(false);
 
   useEffect(() => {
     loadTopPlayers();
+    loadAllPlayers();
     
     // Set up real-time subscription for player updates
     const playersChannel = supabase
@@ -36,6 +44,7 @@ export function TopPlayers() {
         { event: '*', schema: 'public', table: 'players' }, 
         () => {
           loadTopPlayers();
+          loadAllPlayers();
         }
       )
       .subscribe();
@@ -61,6 +70,38 @@ export function TopPlayers() {
       setLoading(false);
     }
   };
+
+  const loadAllPlayers = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('players')
+        .select('*')
+        .order('elo_rating', { ascending: false });
+
+      if (error) throw error;
+      setAllPlayers(data || []);
+      setFilteredPlayers(data || []);
+    } catch (error) {
+      console.error('Error loading all players:', error);
+    }
+  };
+
+  // Filter players based on search and first place filter
+  useEffect(() => {
+    let filtered = allPlayers;
+
+    if (searchTerm) {
+      filtered = filtered.filter(player => 
+        player.name.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    if (showFirstPlaceOnly) {
+      filtered = filtered.filter(player => player.wins > 0);
+    }
+
+    setFilteredPlayers(filtered);
+  }, [allPlayers, searchTerm, showFirstPlaceOnly]);
 
   const getWinRate = (wins: number, games: number) => {
     if (games === 0) return 0;
@@ -260,15 +301,139 @@ export function TopPlayers() {
               })}
             </div>
 
-            {/* View All Button */}
-            <div className="text-center mb-16">
-              <Button asChild variant="outline" className="group">
-                <Link to="/rating">
-                  <span>Посмотреть полный рейтинг</span>
-                  <ChevronRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
-                </Link>
-              </Button>
+            {/* View All Button and Filters */}
+            <div className="text-center mb-8">
+              <div className="flex flex-col items-center gap-4">
+                <Button 
+                  variant="outline" 
+                  onClick={() => setShowAll(!showAll)}
+                  className="group"
+                >
+                  <span>{showAll ? 'Скрыть полный рейтинг' : 'Посмотреть полный рейтинг'}</span>
+                  <ChevronRight className={`w-4 h-4 ml-2 transition-transform ${showAll ? 'rotate-90' : 'group-hover:translate-x-1'}`} />
+                </Button>
+
+                {showAll && (
+                  <div className="flex flex-col sm:flex-row gap-3 w-full max-w-md">
+                    <div className="relative flex-1">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-poker-text-muted w-4 h-4" />
+                      <Input
+                        placeholder="Поиск игрока..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="pl-10"
+                      />
+                    </div>
+                    <Button
+                      variant={showFirstPlaceOnly ? "default" : "outline"}
+                      onClick={() => setShowFirstPlaceOnly(!showFirstPlaceOnly)}
+                      className="flex items-center gap-2"
+                    >
+                      <Filter className="w-4 h-4" />
+                      <span className="hidden sm:inline">Только победители</span>
+                      <span className="sm:hidden">Фильтр</span>
+                    </Button>
+                  </div>
+                )}
+              </div>
             </div>
+
+            {/* Full Rating List */}
+            {showAll && (
+              <div className="mb-16">
+                <ScrollArea className="h-96 w-full rounded-2xl border border-poker-border/30 bg-white/40 backdrop-blur-sm">
+                  <div className="p-4 space-y-2">
+                    {filteredPlayers.map((player, index) => {
+                      const position = allPlayers.findIndex(p => p.id === player.id) + 1;
+                      const isTopThree = position <= 3;
+                      
+                      return (
+                        <div key={player.id} className="group">
+                          <div className={`
+                            bg-white/60 backdrop-blur-sm border border-poker-border/50 rounded-xl p-4 
+                            hover:bg-white/80 hover:shadow-md hover:border-poker-border 
+                            transition-all duration-300 relative overflow-hidden
+                            ${isTopThree ? 'bg-gradient-to-r from-poker-surface via-white to-poker-surface-elevated border-poker-accent/20' : ''}
+                          `}>
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                {/* Position */}
+                                <div className="flex items-center justify-center w-8 h-8">
+                                  {position === 1 && (
+                                    <div className="w-6 h-6 bg-gradient-to-br from-poker-warning to-yellow-500 rounded-md flex items-center justify-center">
+                                      <Crown className="w-4 h-4 text-white" />
+                                    </div>
+                                  )}
+                                  {position === 2 && (
+                                    <div className="w-6 h-6 bg-gradient-to-br from-gray-300 to-gray-500 rounded-md flex items-center justify-center">
+                                      <Medal className="w-4 h-4 text-white" />
+                                    </div>
+                                  )}
+                                  {position === 3 && (
+                                    <div className="w-6 h-6 bg-gradient-to-br from-amber-400 to-amber-600 rounded-md flex items-center justify-center">
+                                      <Award className="w-4 h-4 text-white" />
+                                    </div>
+                                  )}
+                                  {position > 3 && (
+                                    <div className="w-6 h-6 bg-poker-surface rounded-md flex items-center justify-center border border-poker-border/30">
+                                      <span className="text-poker-text-muted font-medium text-xs">
+                                        {position}
+                                      </span>
+                                    </div>
+                                  )}
+                                </div>
+
+                                {/* Player avatar */}
+                                <div className={`
+                                  w-8 h-8 rounded-lg flex items-center justify-center text-sm
+                                  ${isTopThree 
+                                    ? 'bg-gradient-to-br from-poker-accent/20 to-poker-primary/20 border border-poker-accent/30' 
+                                    : 'bg-poker-surface border border-poker-border/30'
+                                  }
+                                `}>
+                                  {getPokerAvatar(player.name, position === 1)}
+                                </div>
+
+                                {/* Player info */}
+                                <div>
+                                  <h4 className="text-sm font-medium text-poker-text-primary">
+                                    {player.name}
+                                  </h4>
+                                  <div className="flex items-center gap-3 text-xs text-poker-text-muted">
+                                    <span>{player.games_played} игр</span>
+                                    <span>{getWinRate(player.wins, player.games_played)}% побед</span>
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* ELO Rating */}
+                              <div className="text-right">
+                                <div className={`text-lg font-light ${isTopThree ? 'text-poker-accent' : 'text-poker-text-primary'}`}>
+                                  {player.elo_rating}
+                                </div>
+                                <div className="text-xs text-poker-text-muted uppercase tracking-wide">
+                                  ELO
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                    {filteredPlayers.length === 0 && (
+                      <div className="text-center py-8 text-poker-text-muted">
+                        {showFirstPlaceOnly 
+                          ? "Нет игроков с победами" 
+                          : searchTerm 
+                            ? "Игроки не найдены" 
+                            : "Нет данных"
+                        }
+                      </div>
+                    )}
+                  </div>
+                </ScrollArea>
+              </div>
+            )}
 
             {/* Statistics Summary */}
             <div className="mt-16 grid grid-cols-3 gap-6 max-w-2xl mx-auto">

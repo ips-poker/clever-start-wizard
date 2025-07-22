@@ -61,16 +61,22 @@ interface TournamentResultsProps {
   selectedTournament: Tournament | null;
 }
 
+interface CompletedTournament extends Tournament {
+  participants_count?: number;
+}
+
 const TournamentResults = ({ selectedTournament }: TournamentResultsProps) => {
   const [results, setResults] = useState<GameResult[]>([]);
   const [topPlayers, setTopPlayers] = useState<PlayerStats[]>([]);
   const [recentGames, setRecentGames] = useState<GameResult[]>([]);
+  const [completedTournaments, setCompletedTournaments] = useState<CompletedTournament[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     loadResults();
     loadTopPlayers();
     loadRecentGames();
+    loadCompletedTournaments();
     
     // Настройка реального времени для результатов турниров
     const resultsChannel = supabase
@@ -80,6 +86,7 @@ const TournamentResults = ({ selectedTournament }: TournamentResultsProps) => {
         () => {
           loadResults();
           loadRecentGames();
+          loadCompletedTournaments();
         }
       )
       .on('postgres_changes',
@@ -206,6 +213,30 @@ const TournamentResults = ({ selectedTournament }: TournamentResultsProps) => {
     }
   };
 
+  const loadCompletedTournaments = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('tournaments')
+        .select(`
+          *,
+          tournament_registrations(count)
+        `)
+        .eq('status', 'completed')
+        .order('finished_at', { ascending: false });
+
+      if (error) throw error;
+      
+      const tournamentsWithCount = (data || []).map(tournament => ({
+        ...tournament,
+        participants_count: tournament.tournament_registrations?.length || 0
+      }));
+      
+      setCompletedTournaments(tournamentsWithCount);
+    } catch (error) {
+      console.error('Error loading completed tournaments:', error);
+    }
+  };
+
   const getRankIcon = (position: number) => {
     switch (position) {
       case 1:
@@ -235,12 +266,68 @@ const TournamentResults = ({ selectedTournament }: TournamentResultsProps) => {
   return (
     <div className="space-y-6">
       <Tabs defaultValue="tournament" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
+          <TabsTrigger value="tournaments">Завершенные турниры</TabsTrigger>
           <TabsTrigger value="tournament">Результаты турнира</TabsTrigger>
           <TabsTrigger value="leaderboard">Лидерборд</TabsTrigger>
           <TabsTrigger value="recent">Недавние игры</TabsTrigger>
           <TabsTrigger value="stats">Статистика</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="tournaments" className="space-y-4">
+          <Card className="bg-gradient-card border-poker-border shadow-elevated">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-poker-text-primary">
+                <Trophy className="h-5 w-5 text-poker-warning" />
+                Завершенные турниры
+              </CardTitle>
+              <CardDescription className="text-poker-text-secondary">
+                Список завершенных турниров с результатами
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {loading ? (
+                <div className="text-center py-8">Загрузка турниров...</div>
+              ) : completedTournaments.length > 0 ? (
+                <div className="space-y-3">
+                  {completedTournaments.map((tournament) => (
+                    <div
+                      key={tournament.id}
+                      className="p-4 border border-poker-border rounded-lg bg-poker-surface hover:bg-poker-surface-elevated transition-colors cursor-pointer"
+                      onClick={() => {
+                        // This will be handled by parent component if needed
+                        console.log('Selected tournament:', tournament);
+                      }}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h4 className="font-medium text-poker-text-primary">{tournament.name}</h4>
+                          <div className="flex items-center gap-4 text-sm text-poker-text-secondary mt-1">
+                            <span>Бай-ин: {tournament.buy_in}₽</span>
+                            <span>Участников: {tournament.participants_count}</span>
+                            <span>
+                              Завершен: {tournament.finished_at ? 
+                                new Date(tournament.finished_at).toLocaleDateString('ru-RU') : 
+                                'Не указано'
+                              }
+                            </span>
+                          </div>
+                        </div>
+                        <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                          Завершен
+                        </Badge>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-poker-text-muted">
+                  Нет завершенных турниров
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
 
         <TabsContent value="tournament" className="space-y-4">
           <Card className="bg-gradient-card border-poker-border shadow-elevated">

@@ -716,6 +716,7 @@ const TournamentDirector = () => {
                   onPrevLevel={prevBlindLevel}
                   onStopTournament={stopTournament}
                   onTimerAdjust={adjustTimer}
+                  onFinishTournament={() => setIsFinishDialogOpen(true)}
                   onRefresh={() => {
                     loadTournaments();
                     loadPlayers();

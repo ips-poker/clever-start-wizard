@@ -7,9 +7,10 @@ import { Progress } from "@/components/ui/progress";
 import { 
   Volume2, 
   Maximize, 
-  StopCircle, 
-  ChevronLeft, 
-  ChevronRight, 
+  StopCircle,
+  ChevronLeft,
+  ChevronRight,
+  CheckCircle,
   Activity, 
   TrendingUp, 
   AlertCircle, 
@@ -83,6 +84,7 @@ interface TournamentOverviewProps {
   onStopTournament: () => void;
   onRefresh: () => void;
   onTimerAdjust?: (seconds: number) => void;
+  onFinishTournament?: () => void;
 }
 
 const TournamentOverview = ({
@@ -97,7 +99,8 @@ const TournamentOverview = ({
   onPrevLevel,
   onStopTournament,
   onRefresh,
-  onTimerAdjust
+  onTimerAdjust,
+  onFinishTournament
 }: TournamentOverviewProps) => {
   const [blindLevels, setBlindLevels] = useState<any[]>([]);
   const [systemStats, setSystemStats] = useState({
@@ -311,7 +314,7 @@ const TournamentOverview = ({
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-4 md:grid-cols-8 gap-2">
+          <div className="grid grid-cols-4 md:grid-cols-9 gap-2">
             <Button
               variant="outline"
               size="sm"
@@ -355,6 +358,17 @@ const TournamentOverview = ({
             <Button variant="outline" size="sm" onClick={onRefresh} className="h-12 border-gray-200/50 hover:shadow-subtle">
               <Activity className="w-4 h-4" />
             </Button>
+
+            {tournament.status === 'running' && onFinishTournament && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={onFinishTournament} 
+                className="h-12 text-green-600 border-green-200/50 hover:bg-green-50 hover:shadow-subtle"
+              >
+                <CheckCircle className="w-4 h-4" />
+              </Button>
+            )}
           </div>
         </CardContent>
       </Card>
