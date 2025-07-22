@@ -221,7 +221,7 @@ const TournamentResults = ({ selectedTournament }: TournamentResultsProps) => {
           *,
           tournament_registrations(count)
         `)
-        .eq('status', 'completed')
+        .eq('status', 'finished')
         .order('finished_at', { ascending: false });
 
       if (error) throw error;

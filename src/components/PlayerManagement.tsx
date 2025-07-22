@@ -333,10 +333,10 @@ const PlayerManagement = ({ tournament, players, registrations, onRegistrationUp
 
   const finishTournament = async () => {
     try {
-      // Update tournament status to completed first
+      // Update tournament status to finished first
       const { error: tournamentError } = await supabase
         .from('tournaments')
-        .update({ status: 'completed' })
+        .update({ status: 'finished' })
         .eq('id', tournament.id);
 
       if (tournamentError) throw tournamentError;
