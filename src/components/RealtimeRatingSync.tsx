@@ -132,10 +132,44 @@ export default function RealtimeRatingSync() {
   const manualSync = async () => {
     setSyncing(true);
     try {
-      // Call the function to update player wins
-      const { error } = await supabase.rpc('update_player_wins');
+      // Update games_played and wins for all players based on game_results
+      const { data: players, error: playersError } = await supabase
+        .from('players')
+        .select('id');
+        
+      if (playersError) throw playersError;
       
-      if (error) throw error;
+      // Update each player individually
+      for (const player of players || []) {
+        // Count games played
+        const { data: gamesData, error: gamesError } = await supabase
+          .from('game_results')
+          .select('tournament_id')
+          .eq('player_id', player.id);
+          
+        // Count unique tournaments (games played)
+        const gamesPlayed = gamesData ? 
+          new Set(gamesData.map(g => g.tournament_id)).size : 0;
+          
+        // Count wins (position 1)
+        const { count: wins, error: winsError } = await supabase
+          .from('game_results')
+          .select('*', { count: 'exact', head: true })
+          .eq('player_id', player.id)
+          .eq('position', 1);
+          
+        if (gamesError || winsError) continue;
+        
+        // Update player stats
+        await supabase
+          .from('players')
+          .update({
+            games_played: gamesPlayed,
+            wins: wins || 0,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', player.id);
+      }
 
       await loadSyncData();
       
