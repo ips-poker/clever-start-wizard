@@ -31,6 +31,15 @@ interface Tournament {
   break_start_level: number;
 }
 
+interface BlindLevel {
+  level: number;
+  small_blind: number;
+  big_blind: number;
+  ante: number;
+  duration: number;
+  is_break: boolean;
+}
+
 interface Registration {
   id: string;
   status: string;
@@ -52,6 +61,7 @@ interface FullscreenTimerProps {
   onTimerAdjust: (seconds: number) => void;
   slogan?: string;
   onSloganChange?: (slogan: string) => void;
+  blindLevels?: BlindLevel[];
 }
 
 const FullscreenTimer = ({
@@ -67,7 +77,8 @@ const FullscreenTimer = ({
   onClose,
   onTimerAdjust,
   slogan = "Престижные турниры. Высокие стандарты.",
-  onSloganChange
+  onSloganChange,
+  blindLevels = []
 }: FullscreenTimerProps) => {
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [twoMinuteWarning, setTwoMinuteWarning] = useState(false);
@@ -136,12 +147,23 @@ const FullscreenTimer = ({
   const prizePool = (registrations.length * tournament.buy_in) + (totalRebuys * tournament.buy_in) + (totalAddons * tournament.buy_in);
 
   const timerProgress = ((tournament.timer_duration - currentTime) / tournament.timer_duration) * 100;
-  const isBreakLevel = tournament.current_level % tournament.break_start_level === 0;
-  const levelsUntilBreak = tournament.break_start_level - (tournament.current_level % tournament.break_start_level);
+  
+  // Определяем текущий уровень из слепых структур
+  const currentLevel = blindLevels.find(l => l.level === tournament.current_level);
+  const isBreakLevel = currentLevel?.is_break || false;
+  
+  // Находим следующий перерыв
+  const nextBreakLevel = blindLevels.find(l => l.is_break && l.level > tournament.current_level);
+  const levelsUntilBreak = nextBreakLevel ? nextBreakLevel.level - tournament.current_level : '∞';
 
   // Calculate next level blinds
-  const nextSmallBlind = tournament.current_small_blind * 2;
-  const nextBigBlind = tournament.current_big_blind * 2;
+  const nextLevel = blindLevels.find(l => l.level === tournament.current_level + 1);
+  const nextSmallBlind = nextLevel?.small_blind || tournament.current_small_blind * 2;
+  const nextBigBlind = nextLevel?.big_blind || tournament.current_big_blind * 2;
+  const nextAnte = nextLevel?.ante || nextBigBlind;
+
+  // Текущий анте
+  const currentAnte = currentLevel?.ante || tournament.current_big_blind;
 
   return (
     <div className="fixed inset-0 bg-white text-gray-800 z-50 flex flex-col">
@@ -254,14 +276,19 @@ const FullscreenTimer = ({
           {/* Current Blinds - Emphasized */}
           <div className="text-center p-6 border-2 border-gray-800 rounded-lg bg-white shadow-lg">
             <p className="text-sm text-gray-800 font-bold mb-2">ТЕКУЩИЙ УРОВЕНЬ</p>
-            <div className="space-y-1">
-              <p className="text-4xl font-bold text-gray-900">{tournament.current_small_blind}</p>
-              <p className="text-xs text-gray-600">МАЛЫЙ БЛАЙНД</p>
-            </div>
-            <div className="border-t border-gray-200 my-3"></div>
-            <div className="space-y-1">
-              <p className="text-4xl font-bold text-gray-900">{tournament.current_big_blind}</p>
-              <p className="text-xs text-gray-600">БОЛЬШОЙ БЛАЙНД</p>
+            <div className="grid grid-cols-3 gap-2">
+              <div className="space-y-1">
+                <p className="text-3xl font-bold text-gray-900">{tournament.current_small_blind}</p>
+                <p className="text-xs text-gray-600">МАЛЫЙ БЛАЙНД</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-3xl font-bold text-gray-900">{tournament.current_big_blind}</p>
+                <p className="text-xs text-gray-600">БОЛЬШОЙ БЛАЙНД</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-3xl font-bold text-amber-600">{currentAnte}</p>
+                <p className="text-xs text-gray-600">АНТЕ</p>
+              </div>
             </div>
           </div>
 
@@ -271,14 +298,19 @@ const FullscreenTimer = ({
               <ChevronUp className="w-4 h-4 mr-1" />
               СЛЕДУЮЩИЙ УРОВЕНЬ
             </p>
-            <div className="space-y-1">
-              <p className="text-2xl font-medium text-gray-700">{nextSmallBlind}</p>
-              <p className="text-xs text-gray-500">МАЛЫЙ БЛАЙНД</p>
-            </div>
-            <div className="border-t border-gray-300 my-3"></div>
-            <div className="space-y-1">
-              <p className="text-2xl font-medium text-gray-700">{nextBigBlind}</p>
-              <p className="text-xs text-gray-500">БОЛЬШОЙ БЛАЙНД</p>
+            <div className="grid grid-cols-3 gap-2">
+              <div className="space-y-1">
+                <p className="text-xl font-medium text-gray-700">{nextSmallBlind}</p>
+                <p className="text-xs text-gray-500">МАЛЫЙ БЛАЙНД</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-xl font-medium text-gray-700">{nextBigBlind}</p>
+                <p className="text-xs text-gray-500">БОЛЬШОЙ БЛАЙНД</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-xl font-medium text-amber-500">{nextAnte}</p>
+                <p className="text-xs text-gray-500">АНТЕ</p>
+              </div>
             </div>
           </div>
         </div>

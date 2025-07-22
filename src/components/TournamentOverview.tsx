@@ -230,6 +230,7 @@ const TournamentOverview = ({
           onTimerAdjust={(seconds) => {
             onTimerAdjust?.(seconds);
           }}
+          blindLevels={blindLevels}
         />
       )}
       

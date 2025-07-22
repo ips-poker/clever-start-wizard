@@ -85,6 +85,7 @@ export function TournamentModal({ tournament, open, onOpenChange, onTournamentUp
     addon_level: 0,
     break_start_level: 0
   });
+  const [breakLevels, setBreakLevels] = useState<number[]>([]);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -106,6 +107,8 @@ export function TournamentModal({ tournament, open, onOpenChange, onTournamentUp
         addon_level: tournament.addon_level,
         break_start_level: tournament.break_start_level
       });
+      // Загружаем существующие перерывы
+      loadBreakLevels();
     }
   }, [tournament, open]);
 
@@ -127,6 +130,41 @@ export function TournamentModal({ tournament, open, onOpenChange, onTournamentUp
     } finally {
       setLoading(false);
     }
+  };
+
+  const loadBreakLevels = async () => {
+    if (!tournament) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('blind_levels')
+        .select('level')
+        .eq('tournament_id', tournament.id)
+        .eq('is_break', true)
+        .order('level');
+
+      if (error) throw error;
+      setBreakLevels(data?.map(b => b.level) || []);
+    } catch (error) {
+      console.error('Error loading break levels:', error);
+    }
+  };
+
+  const addBreakLevel = () => {
+    const nextLevel = Math.max(...breakLevels, 0) + 4; // Предлагаем следующий четный уровень
+    setBreakLevels(prev => [...prev, nextLevel].sort((a, b) => a - b));
+  };
+
+  const removeBreakLevel = (level: number) => {
+    setBreakLevels(prev => prev.filter(l => l !== level));
+  };
+
+  const updateBreakLevel = (index: number, newLevel: number) => {
+    setBreakLevels(prev => {
+      const updated = [...prev];
+      updated[index] = newLevel;
+      return updated.sort((a, b) => a - b);
+    });
   };
 
   const calculateLateRegistrationDeadline = () => {
@@ -194,6 +232,9 @@ export function TournamentModal({ tournament, open, onOpenChange, onTournamentUp
 
       if (error) throw error;
 
+      // Обновляем перерывы в структуре блайндов
+      await updateBreakStructure();
+
       toast({
         title: 'Турнир обновлен',
         description: 'Изменения успешно сохранены',
@@ -209,6 +250,36 @@ export function TournamentModal({ tournament, open, onOpenChange, onTournamentUp
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const updateBreakStructure = async () => {
+    if (!tournament) return;
+
+    try {
+      // Удаляем все существующие перерывы
+      await supabase
+        .from('blind_levels')
+        .delete()
+        .eq('tournament_id', tournament.id)
+        .eq('is_break', true);
+
+      // Добавляем новые перерывы
+      for (const level of breakLevels) {
+        await supabase
+          .from('blind_levels')
+          .insert({
+            tournament_id: tournament.id,
+            level: level,
+            small_blind: 0,
+            big_blind: 0,
+            ante: 0,
+            duration: 900, // 15 минут
+            is_break: true
+          });
+      }
+    } catch (error) {
+      console.error('Error updating break structure:', error);
     }
   };
 
@@ -390,6 +461,45 @@ export function TournamentModal({ tournament, open, onOpenChange, onTournamentUp
                         min="0"
                         max="20"
                       />
+                    </div>
+                  </div>
+
+                  {/* Настройка перерывов */}
+                  <div className="space-y-4">
+                    <Label className="text-base font-medium">Настройка перерывов</Label>
+                    <div className="space-y-2">
+                      {breakLevels.map((level, index) => (
+                        <div key={index} className="flex items-center gap-2">
+                          <Label className="text-sm min-w-[120px]">Перерыв после уровня:</Label>
+                          <Input
+                            type="number"
+                            value={level}
+                            onChange={(e) => updateBreakLevel(index, parseInt(e.target.value) || 0)}
+                            min="1"
+                            max="50"
+                            className="w-20"
+                          />
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => removeBreakLevel(level)}
+                            className="text-red-600 hover:bg-red-50"
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      ))}
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={addBreakLevel}
+                        className="text-blue-600 hover:bg-blue-50"
+                      >
+                        <Plus className="w-4 h-4 mr-1" />
+                        Добавить перерыв
+                      </Button>
                     </div>
                   </div>
                 </div>
