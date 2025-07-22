@@ -14,8 +14,8 @@ export function RecalculateRatings() {
       // Найти последний турнир с результатами
       const { data: tournaments, error: tournamentsError } = await supabase
         .from('tournaments')
-        .select('id, name')
-        .eq('status', 'cancelled') // используем cancelled турнир с результатами
+        .select('id, name, status')
+        .or('status.eq.completed,status.eq.cancelled')
         .order('created_at', { ascending: false })
         .limit(1);
 
@@ -41,6 +41,38 @@ export function RecalculateRatings() {
         toast.error('Нет результатов для пересчета');
         return;
       }
+
+      // Удалить существующие результаты перед пересчетом
+      const { error: deleteError } = await supabase
+        .from('game_results')
+        .delete()
+        .eq('tournament_id', tournament.id);
+
+      if (deleteError) {
+        console.error('Ошибка при удалении результатов:', deleteError);
+        toast.error('Ошибка при очистке старых результатов');
+        return;
+      }
+
+      // Сбросить статистику игроков (будет пересчитана триггером)
+      const playerIds = registrations.map(r => r.player_id);
+      const { error: resetError } = await supabase
+        .from('players')
+        .update({ 
+          games_played: 0,
+          wins: 0
+        })
+        .in('id', playerIds);
+
+      if (resetError) {
+        console.error('Ошибка при сбросе статистики:', resetError);
+      }
+
+      // Сбросить статус турнира
+      await supabase
+        .from('tournaments')
+        .update({ status: 'registration' })
+        .eq('id', tournament.id);
 
       // Вызвать функцию пересчета
       const { data, error } = await supabase.functions.invoke('calculate-elo', {

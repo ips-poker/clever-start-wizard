@@ -121,48 +121,69 @@ const TournamentResults = ({ selectedTournament }: TournamentResultsProps) => {
 
   const loadTopPlayers = async () => {
     try {
-      const { data: players, error } = await supabase
+      // Получить всех игроков с их результатами за один запрос
+      const { data: playersWithResults, error } = await supabase
         .from('players')
-        .select('*')
+        .select(`
+          *,
+          game_results!inner(position, tournament_id)
+        `)
         .order('elo_rating', { ascending: false })
         .limit(10);
 
       if (error) throw error;
 
-      // Calculate additional stats for each player
-      const playersWithStats = await Promise.all(
-        (players || []).map(async (player) => {
-          // Get unique tournament results for this player (no duplicates)
-          const { data: gameResults } = await supabase
-            .from('game_results')
-            .select('position, tournament_id')
-            .eq('player_id', player.id);
+      // Обработать данные и вычислить статистику
+      const playersWithStats = (playersWithResults || []).map((player) => {
+        // Убрать дублирующиеся результаты по турнирам
+        const uniqueResults = player.game_results.filter((result, index, arr) => 
+          arr.findIndex(r => r.tournament_id === result.tournament_id) === index
+        );
 
-          // Remove any potential duplicates by tournament
-          const uniqueResults = gameResults ? 
-            gameResults.filter((result, index, arr) => 
-              arr.findIndex(r => r.tournament_id === result.tournament_id) === index
-            ) : [];
+        const avgPosition = uniqueResults.length > 0 
+          ? uniqueResults.reduce((sum, game) => sum + game.position, 0) / uniqueResults.length 
+          : 0;
 
-          const avgPosition = uniqueResults.length > 0 
-            ? uniqueResults.reduce((sum, game) => sum + game.position, 0) / uniqueResults.length 
-            : 0;
+        // Calculate total winnings (tournaments won * average buy-in estimate)
+        const totalWinnings = player.wins * 5000; // Simplified calculation
 
-          // Calculate total winnings (tournaments won * average buy-in estimate)
-          const totalWinnings = player.wins * 5000; // Simplified calculation
-
-          return {
-            ...player,
-            win_rate: player.games_played > 0 ? (player.wins / player.games_played) * 100 : 0,
-            avg_position: Math.round(avgPosition * 10) / 10,
-            total_winnings: totalWinnings,
-          };
-        })
-      );
+        return {
+          id: player.id,
+          name: player.name,
+          elo_rating: player.elo_rating,
+          games_played: player.games_played,
+          wins: player.wins,
+          win_rate: player.games_played > 0 ? (player.wins / player.games_played) * 100 : 0,
+          avg_position: Math.round(avgPosition * 10) / 10,
+          total_winnings: totalWinnings,
+        };
+      });
 
       setTopPlayers(playersWithStats);
     } catch (error) {
       console.error('Error loading top players:', error);
+      
+      // Fallback to simple query if the join fails
+      try {
+        const { data: players, error: simpleError } = await supabase
+          .from('players')
+          .select('*')
+          .order('elo_rating', { ascending: false })
+          .limit(10);
+
+        if (simpleError) throw simpleError;
+
+        const playersWithStats = (players || []).map((player) => ({
+          ...player,
+          win_rate: player.games_played > 0 ? (player.wins / player.games_played) * 100 : 0,
+          avg_position: 0,
+          total_winnings: player.wins * 5000,
+        }));
+
+        setTopPlayers(playersWithStats);
+      } catch (fallbackError) {
+        console.error('Error in fallback query:', fallbackError);
+      }
     }
   };
 
