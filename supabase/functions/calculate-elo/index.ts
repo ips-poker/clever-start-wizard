@@ -71,6 +71,25 @@ serve(async (req) => {
       console.log(`Player ${result.player_id}: buy_in=${tournament.buy_in}, rebuys=${rebuys}*${tournament.rebuy_cost || 0}, addons=${addons}*${tournament.addon_cost || 0}, total=${totalBuyIn}`)
     })
 
+    // Check if results already exist for this tournament
+    const { data: existingResults } = await supabaseClient
+      .from('game_results')
+      .select('player_id')
+      .eq('tournament_id', tournament_id)
+
+    if (existingResults && existingResults.length > 0) {
+      return new Response(
+        JSON.stringify({ 
+          error: 'Результаты для этого турнира уже существуют',
+          success: false 
+        }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400
+        }
+      )
+    }
+
     // Calculate new ELO ratings with buy-in consideration
     const eloChanges = calculateEloChanges(players, results, playerBuyIns)
 

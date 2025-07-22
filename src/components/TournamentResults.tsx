@@ -132,14 +132,20 @@ const TournamentResults = ({ selectedTournament }: TournamentResultsProps) => {
       // Calculate additional stats for each player
       const playersWithStats = await Promise.all(
         (players || []).map(async (player) => {
-          // Get average position from game results
+          // Get unique tournament results for this player (no duplicates)
           const { data: gameResults } = await supabase
             .from('game_results')
-            .select('position')
+            .select('position, tournament_id')
             .eq('player_id', player.id);
 
-          const avgPosition = gameResults && gameResults.length > 0 
-            ? gameResults.reduce((sum, game) => sum + game.position, 0) / gameResults.length 
+          // Remove any potential duplicates by tournament
+          const uniqueResults = gameResults ? 
+            gameResults.filter((result, index, arr) => 
+              arr.findIndex(r => r.tournament_id === result.tournament_id) === index
+            ) : [];
+
+          const avgPosition = uniqueResults.length > 0 
+            ? uniqueResults.reduce((sum, game) => sum + game.position, 0) / uniqueResults.length 
             : 0;
 
           // Calculate total winnings (tournaments won * average buy-in estimate)
