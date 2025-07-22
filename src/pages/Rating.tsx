@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Trophy, Medal, Award, TrendingUp, Users, Clock, Star, ChevronDown, Crown } from "lucide-react";
+import { RecalculateRatings } from "@/components/RecalculateRatings";
 
 interface Player {
   id: string;
@@ -177,9 +178,12 @@ export default function Rating() {
                   Рейтинг <span className="bg-gradient-to-r from-poker-accent to-poker-primary bg-clip-text text-transparent font-medium">элиты</span>
                 </h1>
               </div>
-              <p className="text-xl text-poker-text-muted max-w-2xl mx-auto font-light">
+              <p className="text-xl text-poker-text-muted max-w-2xl mx-auto font-light mb-6">
                 Живой рейтинг лучших игроков по системе ELO. Следите за турнирами в реальном времени
               </p>
+              <div className="flex justify-center">
+                <RecalculateRatings />
+              </div>
             </div>
 
             {/* Top 5 Players */}
