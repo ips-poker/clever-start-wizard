@@ -2,7 +2,9 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Trophy, Medal, Award, TrendingUp, Users } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Trophy, Medal, Award, TrendingUp, Users, ChevronRight, Crown } from "lucide-react";
+import { Link } from "react-router-dom";
 
 interface Player {
   id: string;
@@ -11,6 +13,14 @@ interface Player {
   games_played: number;
   wins: number;
 }
+
+const getPokerAvatar = (name: string, isChampion = false) => {
+  const avatars = [
+    "♠️", "♥️", "♦️", "♣️", "🃏", "🎯", "🎲", "💎", "⭐", "🔥"
+  ];
+  const index = name.charCodeAt(0) % avatars.length;
+  return isChampion ? "👑" : avatars[index];
+};
 
 export function TopPlayers() {
   const [topPlayers, setTopPlayers] = useState<Player[]>([]);
@@ -41,7 +51,7 @@ export function TopPlayers() {
         .from('players')
         .select('*')
         .order('elo_rating', { ascending: false })
-        .limit(15);
+        .limit(5);
 
       if (error) throw error;
       setTopPlayers(data || []);
@@ -125,10 +135,10 @@ export function TopPlayers() {
                     <div className="flex-shrink-0">
                       <div className="relative">
                         <div className="w-16 h-16 bg-gradient-to-br from-poker-accent to-poker-primary rounded-2xl flex items-center justify-center shadow-lg">
-                          <Trophy className="w-8 h-8 text-white" />
+                          <span className="text-2xl">{getPokerAvatar(topPlayers[0].name, true)}</span>
                         </div>
                         <div className="absolute -top-2 -right-2 w-6 h-6 bg-poker-warning rounded-full flex items-center justify-center">
-                          <span className="text-white text-xs font-bold">1</span>
+                          <Crown className="w-3 h-3 text-white" />
                         </div>
                       </div>
                     </div>
@@ -164,8 +174,8 @@ export function TopPlayers() {
             )}
 
             {/* Players List */}
-            <div className="space-y-3">
-              {topPlayers.slice(1, 15).map((player, index) => {
+            <div className="space-y-3 mb-8">
+              {topPlayers.slice(1).map((player, index) => {
                 const position = index + 2;
                 const isTopThree = position <= 3;
                 
@@ -207,15 +217,13 @@ export function TopPlayers() {
 
                           {/* Player avatar */}
                           <div className={`
-                            w-12 h-12 rounded-xl flex items-center justify-center shadow-sm
+                            w-12 h-12 rounded-xl flex items-center justify-center shadow-sm text-lg
                             ${isTopThree 
                               ? 'bg-gradient-to-br from-poker-accent/20 to-poker-primary/20 border border-poker-accent/30' 
                               : 'bg-poker-surface border border-poker-border/30'
                             }
                           `}>
-                            <span className={`font-medium ${isTopThree ? 'text-poker-accent' : 'text-poker-text-primary'}`}>
-                              {player.name.charAt(0)}
-                            </span>
+                            {getPokerAvatar(player.name)}
                           </div>
 
                           {/* Player info */}
@@ -250,6 +258,16 @@ export function TopPlayers() {
                   </div>
                 );
               })}
+            </div>
+
+            {/* View All Button */}
+            <div className="text-center mb-16">
+              <Button asChild variant="outline" className="group">
+                <Link to="/rating">
+                  <span>Посмотреть полный рейтинг</span>
+                  <ChevronRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
+                </Link>
+              </Button>
             </div>
 
             {/* Statistics Summary */}
