@@ -290,6 +290,10 @@ export type Database = {
         Args: { tournament_id_param: string }
         Returns: boolean
       }
+      update_player_wins: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       update_tournament_timer: {
         Args: {
           tournament_id_param: string

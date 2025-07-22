@@ -307,7 +307,7 @@ const RatingManagement = ({ tournaments, selectedTournament, onRefresh }: Rating
 
         <TabsContent value="automation" className="space-y-6">
           {/* Realtime Sync Component */}
-          <RealtimeRatingSync onUpdate={() => { loadStats(); onRefresh(); }} />
+          <RealtimeRatingSync />
           
           {/* Stats Overview */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

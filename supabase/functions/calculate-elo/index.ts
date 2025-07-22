@@ -81,15 +81,13 @@ serve(async (req) => {
 
       const newRating = player.elo_rating + change.elo_change
       const newGamesPlayed = player.games_played + 1
-      const newWins = change.position === 1 ? player.wins + 1 : player.wins
 
-      // Update player stats
+      // Update player stats (wins will be updated automatically by trigger)
       const { error: updateError } = await supabaseClient
         .from('players')
         .update({
           elo_rating: newRating,
-          games_played: newGamesPlayed,
-          wins: newWins
+          games_played: newGamesPlayed
         })
         .eq('id', player.id)
 
