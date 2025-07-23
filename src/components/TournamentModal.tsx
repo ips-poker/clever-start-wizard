@@ -467,29 +467,29 @@ export function TournamentModal({ tournament, open, onOpenChange, onTournamentUp
                   {/* Настройка перерывов */}
                   <div className="space-y-4">
                     <Label className="text-base font-medium">Настройка перерывов</Label>
-                    <div className="space-y-2">
-                      {breakLevels.map((level, index) => (
-                        <div key={index} className="flex items-center gap-2">
-                          <Label className="text-sm min-w-[120px]">Перерыв после уровня:</Label>
-                          <Input
-                            type="number"
-                            value={level}
-                            onChange={(e) => updateBreakLevel(index, parseInt(e.target.value) || 0)}
-                            min="1"
-                            max="50"
-                            className="w-20"
-                          />
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => removeBreakLevel(level)}
-                            className="text-red-600 hover:bg-red-50"
-                          >
-                            <X className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      ))}
+                     <div className="space-y-2">
+                       {breakLevels.map((level, index) => (
+                         <div key={`break-${level}-${index}`} className="flex items-center gap-2">
+                           <Label className="text-sm min-w-[120px]">Перерыв после уровня:</Label>
+                           <Input
+                             type="number"
+                             value={level}
+                             onChange={(e) => updateBreakLevel(index, parseInt(e.target.value) || 0)}
+                             min="1"
+                             max="50"
+                             className="w-20"
+                           />
+                           <Button
+                             type="button"
+                             variant="outline"
+                             size="sm"
+                             onClick={() => removeBreakLevel(level)}
+                             className="text-red-600 hover:bg-red-50"
+                           >
+                             <X className="w-4 h-4" />
+                           </Button>
+                         </div>
+                       ))}
                       <Button
                         type="button"
                         variant="outline"
