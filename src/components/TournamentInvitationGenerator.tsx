@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -6,7 +6,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { CalendarDays, MapPin, Clock, DollarSign, Trophy, Users, Download, Eye, Star, Shield, Award, TrendingUp } from "lucide-react";
+import { CalendarDays, MapPin, Clock, DollarSign, Trophy, Users, Download, Eye, Star, Shield, Award, TrendingUp, RefreshCw, Calendar, Zap } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { format } from "date-fns";
+import { ru } from "date-fns/locale";
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import ipsLogo from "/lovable-uploads/c77304bf-5309-4bdc-afcc-a81c8d3ff6c2.png";
@@ -31,7 +35,31 @@ interface TournamentData {
   blindIncrease: string;
 }
 
+interface Tournament {
+  id: string;
+  name: string;
+  description: string;
+  buy_in: number;
+  max_players: number;
+  start_time: string;
+  status: string;
+  rebuy_cost: number;
+  addon_cost: number;
+  rebuy_chips: number;
+  addon_chips: number;
+  starting_chips: number;
+  rebuy_end_level: number;
+  addon_level: number;
+  tournament_format: string;
+  timer_duration: number;
+}
+
 export function TournamentInvitationGenerator() {
+  const [tournaments, setTournaments] = useState<Tournament[]>([]);
+  const [selectedTournamentId, setSelectedTournamentId] = useState<string>("");
+  const [isLoadingTournaments, setIsLoadingTournaments] = useState(false);
+  const { toast } = useToast();
+  
   const [tournamentData, setTournamentData] = useState<TournamentData>({
     title: "Рейтинговый турнир по покеру",
     date: "30.07.2025",
@@ -53,6 +81,98 @@ export function TournamentInvitationGenerator() {
   });
 
   const [showPreview, setShowPreview] = useState(false);
+
+  useEffect(() => {
+    loadTournaments();
+  }, []);
+
+  const loadTournaments = async () => {
+    setIsLoadingTournaments(true);
+    try {
+      const { data, error } = await supabase
+        .from('tournaments')
+        .select('*')
+        .order('start_time', { ascending: true });
+
+      if (error) {
+        toast({
+          title: "Ошибка",
+          description: "Не удалось загрузить турниры",
+          variant: "destructive"
+        });
+      } else {
+        setTournaments(data || []);
+      }
+    } catch (err) {
+      console.error('Error loading tournaments:', err);
+      toast({
+        title: "Ошибка",
+        description: "Неожиданная ошибка при загрузке турниров",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoadingTournaments(false);
+    }
+  };
+
+  const loadTournamentData = async (tournamentId: string) => {
+    const tournament = tournaments.find(t => t.id === tournamentId);
+    if (!tournament) return;
+
+    const formatTournamentType = (format: string) => {
+      switch (format) {
+        case 'rebuy': return 'Турнир с ребаями';
+        case 'freezeout': return 'Фризаут';
+        case 'turbo': return 'Турбо';
+        default: return format;
+      }
+    };
+
+    const formatDate = (dateString: string) => {
+      try {
+        return format(new Date(dateString), 'dd.MM.yyyy', { locale: ru });
+      } catch {
+        return dateString;
+      }
+    };
+
+    const formatTime = (dateString: string) => {
+      try {
+        return format(new Date(dateString), 'HH:mm', { locale: ru });
+      } catch {
+        return dateString;
+      }
+    };
+
+    const rebuyInfo = tournament.tournament_format === 'rebuy' 
+      ? `Возможность ребая до ${tournament.rebuy_end_level}-го уровня`
+      : 'Фризаут (без ребаев)';
+
+    setTournamentData({
+      title: tournament.name,
+      date: formatDate(tournament.start_time),
+      time: formatTime(tournament.start_time),
+      location: "TNG Lounge",
+      address: "г. Москва, Фридриха Энгельса, 64 стр 1",
+      buyIn: `${tournament.buy_in.toLocaleString()} руб`,
+      format: formatTournamentType(tournament.tournament_format),
+      description: tournament.description || "Эксклюзивный рейтинговый турнир для ценителей профессионального покера",
+      rebuyInfo,
+      contactInfo: "Телеграм: @ips_poker",
+      prizePool: `${(tournament.buy_in * tournament.max_players * 0.9).toLocaleString()} руб`,
+      maxPlayers: tournament.max_players.toString(),
+      startingChips: tournament.starting_chips.toLocaleString(),
+      rebuyAmount: `${tournament.rebuy_cost.toLocaleString()} руб`,
+      addonAmount: `${tournament.addon_cost.toLocaleString()} руб`,
+      levels: `${tournament.timer_duration / 60} минут`,
+      blindIncrease: "Прогрессивное увеличение"
+    });
+
+    toast({
+      title: "Данные загружены",
+      description: `Информация о турнире "${tournament.name}" загружена в приглашение`
+    });
+  };
 
   const updateField = (field: keyof TournamentData, value: string) => {
     setTournamentData(prev => ({
@@ -105,8 +225,94 @@ export function TournamentInvitationGenerator() {
 
   return (
     <div className="space-y-6">
+      {/* Tournament Selection Section */}
+      <Card className="bg-gradient-to-r from-white via-gray-50/30 to-white border border-gray-200/50 shadow-floating">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-2xl font-light text-gray-800 flex items-center gap-3">
+                <div className="p-2 bg-gradient-primary rounded-lg">
+                  <Calendar className="w-6 h-6 text-white" />
+                </div>
+                Интеграция с турнирными карточками
+              </CardTitle>
+              <CardDescription className="font-light text-gray-600 mt-2">
+                Выберите турнир и автоматически загрузите данные в приглашение
+              </CardDescription>
+            </div>
+            <Button
+              onClick={loadTournaments}
+              disabled={isLoadingTournaments}
+              variant="outline"
+              size="sm"
+              className="bg-white/80 hover:bg-gray-50/80 border-gray-200/50 transition-all duration-300 hover:scale-105"
+            >
+              {isLoadingTournaments ? (
+                <RefreshCw className="w-4 h-4 animate-spin" />
+              ) : (
+                <RefreshCw className="w-4 h-4" />
+              )}
+              Обновить
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="grid md:grid-cols-2 gap-6">
+            <div className="space-y-3">
+              <Label htmlFor="tournament-select" className="text-sm font-medium text-gray-700">
+                Выберите турнир
+              </Label>
+              <Select 
+                value={selectedTournamentId} 
+                onValueChange={(value) => {
+                  setSelectedTournamentId(value);
+                  loadTournamentData(value);
+                }}
+              >
+                <SelectTrigger className="bg-white/80 border-gray-200/50 hover:bg-gray-50/80 transition-colors">
+                  <SelectValue placeholder="Выберите турнир из списка..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {tournaments.map((tournament) => (
+                    <SelectItem key={tournament.id} value={tournament.id}>
+                      <div className="flex items-center justify-between w-full">
+                        <span className="font-medium">{tournament.name}</span>
+                        <div className="flex items-center gap-2 ml-4">
+                          <Badge variant="outline" className="text-xs">
+                            {tournament.status === 'scheduled' && '📅 Запланирован'}
+                            {tournament.status === 'registration' && '✅ Регистрация'}
+                            {tournament.status === 'running' && '▶️ Идёт'}
+                            {tournament.status === 'finished' && '🏁 Завершён'}
+                          </Badge>
+                          <span className="text-xs text-gray-500">
+                            {format(new Date(tournament.start_time), 'dd.MM HH:mm', { locale: ru })}
+                          </span>
+                        </div>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            {selectedTournamentId && (
+              <div className="p-4 bg-white/60 backdrop-blur-sm rounded-lg border border-gray-200/30">
+                <div className="flex items-center gap-3 mb-3">
+                  <Zap className="w-5 h-5 text-primary" />
+                  <span className="text-sm font-medium text-gray-700">Автозаполнение активно</span>
+                </div>
+                <p className="text-sm text-gray-600 leading-relaxed">
+                  Данные из выбранного турнира автоматически загружены в форму приглашения. 
+                  Вы можете дополнительно редактировать поля ниже.
+                </p>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Form Section */}
-      <div className="grid md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="title">Название турнира</Label>
@@ -278,25 +484,25 @@ export function TournamentInvitationGenerator() {
       </div>
 
       {/* Action Buttons */}
-      <div className="flex gap-4">
+      <div className="flex flex-col sm:flex-row gap-4">
         <Button
           onClick={() => setShowPreview(!showPreview)}
           variant="outline"
-          className="flex items-center gap-2 bg-white/80 backdrop-blur-sm border-gray-200/50 hover:bg-gray-50/80 hover:shadow-subtle hover:scale-105 transition-all duration-300 group"
+          className="flex items-center justify-center gap-3 bg-gradient-to-r from-white via-purple-50/30 to-white border-purple-200/50 hover:from-purple-50 hover:via-purple-100/50 hover:to-purple-50 hover:border-purple-300/60 hover:shadow-[0_8px_30px_rgb(139,69,244,0.12)] hover:scale-105 transition-all duration-300 group backdrop-blur-sm text-base py-3 px-6"
         >
-          <Eye size={16} className="group-hover:animate-bounce transition-transform duration-300" />
-          <span className="group-hover:translate-x-1 transition-transform duration-300">
-            {showPreview ? 'Скрыть превью' : 'Показать превью'}
+          <Eye size={18} className="group-hover:animate-bounce transition-transform duration-300 text-purple-600" />
+          <span className="group-hover:translate-x-1 transition-transform duration-300 font-medium">
+            {showPreview ? '🙈 Скрыть превью' : '👀 Показать превью'}
           </span>
         </Button>
         <Button
           onClick={generatePDF}
-          className="flex items-center gap-2 bg-gradient-button text-white hover:shadow-elevated hover:scale-105 transition-all duration-300 group relative overflow-hidden"
+          className="flex items-center justify-center gap-3 bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 text-white hover:from-emerald-600 hover:via-teal-600 hover:to-cyan-600 hover:shadow-[0_8px_30px_rgba(20,184,166,0.4)] hover:scale-105 transition-all duration-300 group relative overflow-hidden text-base py-3 px-6"
         >
-          <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
-          <Download size={16} className="group-hover:animate-bounce transition-transform duration-300 relative z-10" />
-          <span className="group-hover:translate-x-1 transition-transform duration-300 relative z-10">
-            Скачать PDF
+          <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/25 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
+          <Download size={18} className="group-hover:animate-bounce transition-transform duration-300 relative z-10" />
+          <span className="group-hover:translate-x-1 transition-transform duration-300 relative z-10 font-medium">
+            📋 Скачать PDF
           </span>
         </Button>
       </div>
@@ -308,7 +514,7 @@ export function TournamentInvitationGenerator() {
             <CardTitle>Превью приглашения</CardTitle>
           </CardHeader>
           <CardContent>
-            <div id="invitation-preview" className="max-w-4xl mx-auto bg-white/95 backdrop-blur-sm border border-gray-200/50 shadow-floating rounded-xl overflow-hidden relative">
+            <div id="invitation-preview" className="max-w-4xl mx-auto bg-white/95 backdrop-blur-sm border border-gray-200/50 shadow-floating rounded-xl overflow-hidden relative text-sm sm:text-base">
               {/* Elegant Background Pattern */}
               <div className="absolute inset-0 opacity-3">
                 <div className="absolute top-16 left-16 text-6xl text-gray-300/40 animate-float [animation-delay:0s]">♠</div>
@@ -318,10 +524,10 @@ export function TournamentInvitationGenerator() {
               </div>
 
               {/* Refined Header */}
-              <div className="relative bg-white/90 backdrop-blur-sm border-b border-gray-200/30 p-8">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-6">
-                    <div className="w-20 h-20 bg-white/80 backdrop-blur-xl rounded-2xl border border-gray-200/50 flex items-center justify-center p-4 shadow-subtle">
+              <div className="relative bg-white/90 backdrop-blur-sm border-b border-gray-200/30 p-4 sm:p-8">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                  <div className="flex items-center space-x-4 sm:space-x-6">
+                    <div className="w-16 h-16 sm:w-20 sm:h-20 bg-white/80 backdrop-blur-xl rounded-2xl border border-gray-200/50 flex items-center justify-center p-3 sm:p-4 shadow-subtle">
                       <img 
                         src={ipsLogo} 
                         alt="IPS Logo" 
@@ -329,40 +535,40 @@ export function TournamentInvitationGenerator() {
                       />
                     </div>
                     <div>
-                      <h1 className="text-4xl font-light text-gray-800 leading-none tracking-tight">IPS</h1>
-                      <p className="text-xl text-gray-600 font-light">International Poker Style</p>
-                      <p className="text-sm text-gray-500 font-light">Премиальный покерный клуб</p>
+                      <h1 className="text-2xl sm:text-4xl font-light text-gray-800 leading-none tracking-tight">IPS</h1>
+                      <p className="text-lg sm:text-xl text-gray-600 font-light">International Poker Style</p>
+                      <p className="text-xs sm:text-sm text-gray-500 font-light">Премиальный покерный клуб</p>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <Badge className="bg-gray-100/80 text-gray-700 border-gray-200/50 px-6 py-3 text-lg font-light backdrop-blur-sm">
-                      ЭКСКЛЮЗИВНО
+                  <div className="text-center sm:text-right">
+                    <Badge className="bg-gradient-to-r from-orange-100 to-amber-100 text-orange-700 border-orange-200/70 px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-lg font-medium backdrop-blur-sm shadow-sm">
+                      ⭐ ЭКСКЛЮЗИВНО
                     </Badge>
                   </div>
                 </div>
               </div>
 
               {/* Tournament Title Section */}
-              <div className="p-8 text-center bg-white/60 backdrop-blur-sm">
-                <h2 className="text-5xl font-light mb-4 text-gray-800 tracking-tight">
+              <div className="p-4 sm:p-8 text-center bg-white/60 backdrop-blur-sm">
+                <h2 className="text-3xl sm:text-5xl font-light mb-4 text-gray-800 tracking-tight leading-tight">
                   {tournamentData.title}
                 </h2>
-                <p className="text-xl text-gray-600 mb-6 font-light max-w-2xl mx-auto leading-relaxed">
+                <p className="text-lg sm:text-xl text-gray-600 mb-6 font-light max-w-2xl mx-auto leading-relaxed">
                   {tournamentData.description}
                 </p>
-                <div className="flex justify-center items-center gap-4">
-                  <Badge className="bg-gray-100/80 text-gray-700 px-4 py-2 font-light border border-gray-200/50">
-                    РЕЙТИНГОВЫЙ ТУРНИР
+                <div className="flex flex-col sm:flex-row justify-center items-center gap-3 sm:gap-4">
+                  <Badge className="bg-gradient-to-r from-blue-100 to-indigo-100 text-blue-700 px-4 py-2 font-medium border border-blue-200/70 shadow-sm">
+                    🏅 РЕЙТИНГОВЫЙ ТУРНИР
                   </Badge>
-                  <Badge className="bg-gray-100/80 text-gray-700 px-4 py-2 font-light border border-gray-200/50">
-                    ELO СИСТЕМА
+                  <Badge className="bg-gradient-to-r from-emerald-100 to-teal-100 text-emerald-700 px-4 py-2 font-medium border border-emerald-200/70 shadow-sm">
+                    ⚡ ELO СИСТЕМА
                   </Badge>
                 </div>
               </div>
 
               {/* Main Information Grid */}
-              <div className="px-8 pb-8 bg-white/40 backdrop-blur-sm">
-                <div className="grid md:grid-cols-2 gap-8 mb-8">
+              <div className="px-4 sm:px-8 pb-6 sm:pb-8 bg-white/40 backdrop-blur-sm">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 mb-6 sm:mb-8">
                   {/* Left Column - Event Details */}
                   <div className="space-y-6">
                     <Card className="bg-white/70 backdrop-blur-sm border border-gray-200/50 shadow-subtle rounded-xl overflow-hidden">
