@@ -79,7 +79,7 @@ export function RatingBenefits() {
             const IconComponent = benefit.icon;
             return (
               <Card 
-                key={index} 
+                key={`benefit-${index}-${benefit.title}`} 
                 className="group hover:shadow-elegant transition-all duration-300 hover:-translate-y-2 border-border/50 relative overflow-hidden"
               >
                 <div className={`absolute inset-0 bg-gradient-to-br from-${benefit.color}/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300`}></div>
@@ -117,7 +117,7 @@ export function RatingBenefits() {
             
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {features.map((feature, index) => (
-                <div key={index} className="flex items-center space-x-3">
+                <div key={`feature-${index}-${feature}`} className="flex items-center space-x-3">
                   <CheckCircle className="w-5 h-5 text-poker-green flex-shrink-0" />
                   <span className="text-foreground">{feature}</span>
                 </div>

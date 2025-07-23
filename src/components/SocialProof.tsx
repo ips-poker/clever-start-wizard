@@ -60,7 +60,7 @@ export function SocialProof() {
           {stats.map((stat, index) => {
             const IconComponent = stat.icon;
             return (
-              <Card key={index} className="text-center p-6 hover:shadow-elegant transition-all duration-300 border-border/50">
+              <Card key={`stat-${index}-${stat.value}`} className="text-center p-6 hover:shadow-elegant transition-all duration-300 border-border/50">
                 <div className="flex justify-center mb-4">
                   <div className="w-12 h-12 bg-poker-gold/10 rounded-full flex items-center justify-center">
                     <IconComponent className="w-6 h-6 text-poker-gold" />
@@ -88,7 +88,7 @@ export function SocialProof() {
 
         <div className="grid md:grid-cols-3 gap-6 mb-16">
           {testimonials.map((testimonial, index) => (
-            <Card key={index} className="group hover:shadow-floating transition-all duration-500 hover:-translate-y-2 border border-border/50 bg-gradient-surface overflow-hidden">
+            <Card key={`testimonial-${index}-${testimonial.name}`} className="group hover:shadow-floating transition-all duration-500 hover:-translate-y-2 border border-border/50 bg-gradient-surface overflow-hidden">
               {/* Telegram-style header */}
               <CardHeader className="pb-3 bg-gradient-to-r from-poker-accent/5 to-poker-primary/5">
                 <div className="flex items-start justify-between">

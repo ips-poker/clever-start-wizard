@@ -706,8 +706,8 @@ export function TournamentModal({ tournament, open, onOpenChange, onTournamentUp
               ) : blindStructure.length > 0 ? (
                 <div className="max-h-96 overflow-y-auto">
                   <div className="space-y-2">
-                    {blindStructure.map((level, index) => (
-                      <div key={index} className={`
+                     {blindStructure.map((level, index) => (
+                       <div key={`blind-level-${level.level}-${index}`} className={`
                         flex items-center justify-between p-3 rounded-lg text-sm
                         ${level.is_break 
                           ? 'bg-poker-warning/10 border border-poker-warning/20' 

@@ -114,7 +114,7 @@ export default function About() {
               {achievements.map((achievement, index) => {
                 const IconComponent = achievement.icon;
                 return (
-                  <Card key={index} className="text-center border border-border/50 hover:shadow-card transition-all duration-300">
+                  <Card key={`achievement-${index}-${achievement.title}`} className="text-center border border-border/50 hover:shadow-card transition-all duration-300">
                     <CardContent className="p-8">
                       <div className="w-16 h-16 bg-gradient-to-br from-poker-accent/10 to-poker-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
                         <IconComponent className="w-8 h-8 text-poker-accent" />
@@ -198,7 +198,7 @@ export default function About() {
               {values.map((value, index) => {
                 const IconComponent = value.icon;
                 return (
-                  <Card key={index} className="border border-border/50 hover:shadow-card hover:-translate-y-1 transition-all duration-300">
+                  <Card key={`value-${index}-${value.title}`} className="border border-border/50 hover:shadow-card hover:-translate-y-1 transition-all duration-300">
                     <CardHeader>
                       <div className="w-12 h-12 bg-gradient-to-br from-poker-accent/10 to-poker-primary/10 rounded-lg flex items-center justify-center mb-4">
                         <IconComponent className="w-6 h-6 text-poker-accent" />
@@ -232,7 +232,7 @@ export default function About() {
 
             <div className="grid md:grid-cols-3 gap-8">
               {team.map((member, index) => (
-                <Card key={index} className="border border-border/50 hover:shadow-floating hover:-translate-y-2 transition-all duration-500 overflow-hidden">
+                <Card key={`member-${index}-${member.name}`} className="border border-border/50 hover:shadow-floating hover:-translate-y-2 transition-all duration-500 overflow-hidden">
                   <div className="relative">
                     <img 
                       src={member.image}

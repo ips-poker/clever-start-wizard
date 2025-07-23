@@ -8,17 +8,6 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 
-// Import gallery images
-import mainPokerRoom from "@/assets/gallery/main-poker-room.jpg";
-import vipZone from "@/assets/gallery/vip-zone.jpg";
-import tournamentTable from "@/assets/gallery/tournament-table.jpg";
-import loungeArea from "@/assets/gallery/lounge-area.jpg";
-import awardsCeremony from "@/assets/gallery/awards-ceremony.jpg";
-import teamTournament from "@/assets/gallery/team-tournament.jpg";
-import masterclass from "@/assets/gallery/masterclass.jpg";
-import pokerChips from "@/assets/gallery/poker-chips.jpg";
-import registration from "@/assets/gallery/registration.jpg";
-
 export function Gallery() {
   const [selectedImage, setSelectedImage] = useState<number | null>(null);
 
@@ -28,63 +17,63 @@ export function Gallery() {
       title: "Главный игровой зал",
       description: "Основной зал с профессиональными покерными столами",
       category: "Интерьер",
-      image: mainPokerRoom
+      image: "https://images.unsplash.com/photo-1605810230434-7631ac76ec81"
     },
     {
       id: 2,
       title: "VIP зона",
       description: "Приватная зона для турниров высокого уровня",
       category: "VIP",
-      image: vipZone
+      image: "https://images.unsplash.com/photo-1487058792275-0ad4aaf24ca7"
     },
     {
       id: 3,
       title: "Турнирный стол",
       description: "Профессиональный стол для официальных турниров",
       category: "Оборудование",
-      image: tournamentTable
+      image: "https://images.unsplash.com/photo-1519389950473-47ba0277781c"
     },
     {
       id: 4,
       title: "Лаунж зона",
       description: "Зона отдыха для игроков между турами",
       category: "Интерьер",
-      image: loungeArea
+      image: "https://images.unsplash.com/photo-1473091534298-04dcbce3278c"
     },
     {
       id: 5,
       title: "Церемония награждения",
       description: "Награждение победителей турнира IPS Championship",
       category: "События",
-      image: awardsCeremony
+      image: "https://images.unsplash.com/photo-1461749280684-dccba630e2f6"
     },
     {
       id: 6,
       title: "Командный турнир",
       description: "Командные соревнования среди корпоративных клиентов",
       category: "События",
-      image: teamTournament
+      image: "https://images.unsplash.com/photo-1498050108023-c5249f4df085"
     },
     {
       id: 7,
       title: "Мастер-класс",
       description: "Обучающий семинар с профессиональным игроком",
       category: "Обучение",
-      image: masterclass
+      image: "https://images.unsplash.com/photo-1483058712412-4245e9b90334"
     },
     {
       id: 8,
       title: "Покерные фишки",
       description: "Сертифицированные турнирные фишки клуба",
       category: "Оборудование",
-      image: pokerChips
+      image: "https://images.unsplash.com/photo-1605810230434-7631ac76ec81"
     },
     {
       id: 9,
       title: "Регистрация турнира",
       description: "Зона регистрации участников турнира",
       category: "Сервис",
-      image: registration
+      image: "https://images.unsplash.com/photo-1487058792275-0ad4aaf24ca7"
     }
   ];
 
@@ -136,7 +125,7 @@ export function Gallery() {
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
           {filteredImages.map((image, index) => (
             <Card 
-              key={image.id} 
+              key={`gallery-${image.id}-${image.title}`} 
               className="group hover:shadow-elegant transition-all duration-300 hover:-translate-y-1 border-border/50 overflow-hidden cursor-pointer"
               onClick={() => setSelectedImage(index)}
             >

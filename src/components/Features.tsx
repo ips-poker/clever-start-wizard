@@ -100,7 +100,7 @@ export function Features() {
             const IconComponent = feature.icon;
             return (
               <Card 
-                key={index} 
+                key={`feature-${index}-${feature.title}`} 
                 className="group hover:shadow-elegant transition-all duration-300 hover:-translate-y-1 border-border/50"
               >
                 <CardHeader className="pb-4">

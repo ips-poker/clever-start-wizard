@@ -4,12 +4,12 @@ import { Badge } from "@/components/ui/badge";
 
 export default function Gallery() {
   const images = [
-    { src: "/src/assets/gallery/main-poker-room.jpg", title: "Главный покерный зал", category: "Интерьер" },
-    { src: "/src/assets/gallery/tournament-table.jpg", title: "Турнирный стол", category: "Турниры" },
-    { src: "/src/assets/gallery/awards-ceremony.jpg", title: "Церемония награждения", category: "События" },
-    { src: "/src/assets/gallery/vip-zone.jpg", title: "VIP зона", category: "Интерьер" },
-    { src: "/src/assets/gallery/team-tournament.jpg", title: "Командный турнир", category: "Турниры" },
-    { src: "/src/assets/gallery/masterclass.jpg", title: "Мастер-класс", category: "Обучение" }
+    { src: "https://images.unsplash.com/photo-1605810230434-7631ac76ec81", title: "Главный покерный зал", category: "Интерьер" },
+    { src: "https://images.unsplash.com/photo-1519389950473-47ba0277781c", title: "Турнирный стол", category: "Турниры" },
+    { src: "https://images.unsplash.com/photo-1461749280684-dccba630e2f6", title: "Церемония награждения", category: "События" },
+    { src: "https://images.unsplash.com/photo-1487058792275-0ad4aaf24ca7", title: "VIP зона", category: "Интерьер" },
+    { src: "https://images.unsplash.com/photo-1473091534298-04dcbce3278c", title: "Командный турнир", category: "Турниры" },
+    { src: "https://images.unsplash.com/photo-1498050108023-c5249f4df085", title: "Мастер-класс", category: "Обучение" }
   ];
 
   return (
@@ -25,7 +25,7 @@ export default function Gallery() {
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {images.map((image, index) => (
-              <div key={index} className="group relative overflow-hidden rounded-2xl shadow-card hover:shadow-floating transition-all duration-500">
+              <div key={`gallery-${index}-${image.title}`} className="group relative overflow-hidden rounded-2xl shadow-card hover:shadow-floating transition-all duration-500">
                 <img src={image.src} alt={image.title} className="w-full h-64 object-cover group-hover:scale-110 transition-transform duration-500" />
                 <div className="absolute inset-0 bg-gradient-to-t from-poker-primary/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                   <div className="absolute bottom-4 left-4 text-white">
