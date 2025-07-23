@@ -6,9 +6,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { CalendarDays, MapPin, Clock, DollarSign, Trophy, Users, Download, Eye } from "lucide-react";
+import { CalendarDays, MapPin, Clock, DollarSign, Trophy, Users, Download, Eye, Star, Shield, Award, TrendingUp } from "lucide-react";
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import ipsLogo from "/lovable-uploads/c77304bf-5309-4bdc-afcc-a81c8d3ff6c2.png";
 
 interface TournamentData {
   title: string;
@@ -21,6 +22,13 @@ interface TournamentData {
   description: string;
   rebuyInfo: string;
   contactInfo: string;
+  prizePool: string;
+  maxPlayers: string;
+  startingChips: string;
+  rebuyAmount: string;
+  addonAmount: string;
+  levels: string;
+  blindIncrease: string;
 }
 
 export function TournamentInvitationGenerator() {
@@ -32,9 +40,16 @@ export function TournamentInvitationGenerator() {
     address: "г. Москва, Фридриха Энгельса, 64 стр 1",
     buyIn: "2000 руб",
     format: "Турнир с ребаями",
-    description: "Присоединяйтесь к элитному покерному турниру с рейтинговой системой",
+    description: "Эксклюзивный рейтинговый турнир для ценителей профессионального покера",
     rebuyInfo: "Возможность ребая до 6-го уровня",
-    contactInfo: "Телеграм: @ips_poker"
+    contactInfo: "Телеграм: @ips_poker",
+    prizePool: "100 000 руб",
+    maxPlayers: "50",
+    startingChips: "10 000",
+    rebuyAmount: "2000 руб",
+    addonAmount: "3000 руб", 
+    levels: "20 минут",
+    blindIncrease: "Прогрессивное увеличение"
   });
 
   const [showPreview, setShowPreview] = useState(false);
@@ -91,7 +106,7 @@ export function TournamentInvitationGenerator() {
   return (
     <div className="space-y-6">
       {/* Form Section */}
-      <div className="grid md:grid-cols-2 gap-6">
+      <div className="grid md:grid-cols-3 gap-6">
         <div className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="title">Название турнира</Label>
@@ -138,6 +153,15 @@ export function TournamentInvitationGenerator() {
               onChange={(e) => updateField('address', e.target.value)}
             />
           </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="contactInfo">Контактная информация</Label>
+            <Input
+              id="contactInfo"
+              value={tournamentData.contactInfo}
+              onChange={(e) => updateField('contactInfo', e.target.value)}
+            />
+          </div>
         </div>
 
         <div className="space-y-4">
@@ -150,6 +174,44 @@ export function TournamentInvitationGenerator() {
             />
           </div>
 
+          <div className="space-y-2">
+            <Label htmlFor="prizePool">Призовой фонд</Label>
+            <Input
+              id="prizePool"
+              value={tournamentData.prizePool}
+              onChange={(e) => updateField('prizePool', e.target.value)}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="maxPlayers">Максимум игроков</Label>
+            <Input
+              id="maxPlayers"
+              value={tournamentData.maxPlayers}
+              onChange={(e) => updateField('maxPlayers', e.target.value)}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="startingChips">Стартовые фишки</Label>
+            <Input
+              id="startingChips"
+              value={tournamentData.startingChips}
+              onChange={(e) => updateField('startingChips', e.target.value)}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="levels">Продолжительность уровня</Label>
+            <Input
+              id="levels"
+              value={tournamentData.levels}
+              onChange={(e) => updateField('levels', e.target.value)}
+            />
+          </div>
+        </div>
+
+        <div className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="format">Формат турнира</Label>
             <Select value={tournamentData.format} onValueChange={(value) => updateField('format', value)}>
@@ -165,6 +227,24 @@ export function TournamentInvitationGenerator() {
           </div>
 
           <div className="space-y-2">
+            <Label htmlFor="rebuyAmount">Стоимость ребая</Label>
+            <Input
+              id="rebuyAmount"
+              value={tournamentData.rebuyAmount}
+              onChange={(e) => updateField('rebuyAmount', e.target.value)}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="addonAmount">Стоимость аддона</Label>
+            <Input
+              id="addonAmount"
+              value={tournamentData.addonAmount}
+              onChange={(e) => updateField('addonAmount', e.target.value)}
+            />
+          </div>
+
+          <div className="space-y-2">
             <Label htmlFor="rebuyInfo">Информация о ребаях</Label>
             <Input
               id="rebuyInfo"
@@ -174,23 +254,26 @@ export function TournamentInvitationGenerator() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="description">Описание</Label>
-            <Textarea
-              id="description"
-              value={tournamentData.description}
-              onChange={(e) => updateField('description', e.target.value)}
-              rows={3}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="contactInfo">Контактная информация</Label>
+            <Label htmlFor="blindIncrease">Увеличение блайндов</Label>
             <Input
-              id="contactInfo"
-              value={tournamentData.contactInfo}
-              onChange={(e) => updateField('contactInfo', e.target.value)}
+              id="blindIncrease"
+              value={tournamentData.blindIncrease}
+              onChange={(e) => updateField('blindIncrease', e.target.value)}
             />
           </div>
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="description">Описание и продающий текст</Label>
+          <Textarea
+            id="description"
+            value={tournamentData.description}
+            onChange={(e) => updateField('description', e.target.value)}
+            rows={4}
+            placeholder="Напишите привлекательное описание турнира, которое заинтересует игроков..."
+          />
         </div>
       </div>
 
@@ -220,88 +303,204 @@ export function TournamentInvitationGenerator() {
             <CardTitle>Превью приглашения</CardTitle>
           </CardHeader>
           <CardContent>
-            <div id="invitation-preview" className="max-w-2xl mx-auto bg-white p-8 rounded-lg shadow-lg">
-              {/* Header */}
-              <div className="text-center mb-8">
-                <div className="flex items-center justify-center mb-4">
-                  <div className="w-16 h-16 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-lg flex items-center justify-center shadow-lg">
-                    <Trophy className="w-8 h-8 text-white" />
+            <div id="invitation-preview" className="max-w-4xl mx-auto bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white overflow-hidden relative">
+              {/* Background Pattern */}
+              <div className="absolute inset-0 opacity-10">
+                <div className="absolute top-10 left-10 text-4xl opacity-30">♠</div>
+                <div className="absolute top-20 right-20 text-3xl opacity-20">♥</div>
+                <div className="absolute bottom-20 left-20 text-4xl opacity-30">♦</div>
+                <div className="absolute bottom-10 right-10 text-3xl opacity-20">♣</div>
+              </div>
+
+              {/* Header with Logo */}
+              <div className="relative bg-gradient-to-r from-yellow-600 via-yellow-500 to-yellow-600 p-8">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-6">
+                    <div className="w-20 h-20 bg-white/10 backdrop-blur-xl rounded-2xl border border-white/30 flex items-center justify-center p-4">
+                      <img 
+                        src={ipsLogo} 
+                        alt="IPS Logo" 
+                        className="w-full h-full object-contain"
+                      />
+                    </div>
+                    <div>
+                      <h1 className="text-4xl font-bold text-white leading-none">IPS</h1>
+                      <p className="text-xl text-white/90 font-semibold">International Poker Style</p>
+                      <p className="text-sm text-white/80">Премиальный покерный клуб</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <Badge className="bg-white/20 text-white border-white/30 px-4 py-2 text-lg font-semibold">
+                      ЭКСКЛЮЗИВНО
+                    </Badge>
                   </div>
                 </div>
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">
+              </div>
+
+              {/* Tournament Title */}
+              <div className="p-8 text-center">
+                <h2 className="text-5xl font-bold mb-4 bg-gradient-to-r from-yellow-400 to-yellow-600 bg-clip-text text-transparent">
                   {tournamentData.title}
-                </h1>
-                <p className="text-lg text-gray-600">
-                  International Poker Style
-                </p>
-              </div>
-
-              {/* Main Info */}
-              <div className="bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg p-6 mb-6">
-                <div className="grid md:grid-cols-2 gap-6">
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-3">
-                      <CalendarDays className="w-5 h-5 text-yellow-600" />
-                      <div>
-                        <p className="font-semibold text-gray-900">Дата и время</p>
-                        <p className="text-gray-700">{tournamentData.date} в {tournamentData.time}</p>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center gap-3">
-                      <MapPin className="w-5 h-5 text-yellow-600" />
-                      <div>
-                        <p className="font-semibold text-gray-900">{tournamentData.location}</p>
-                        <p className="text-gray-700 text-sm">{tournamentData.address}</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-3">
-                      <DollarSign className="w-5 h-5 text-yellow-600" />
-                      <div>
-                        <p className="font-semibold text-gray-900">Бай-ин</p>
-                        <p className="text-gray-700 text-xl font-bold">{tournamentData.buyIn}</p>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center gap-3">
-                      <Users className="w-5 h-5 text-yellow-600" />
-                      <div>
-                        <p className="font-semibold text-gray-900">Формат</p>
-                        <Badge variant="secondary">{tournamentData.format}</Badge>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Description */}
-              <div className="mb-6">
-                <h2 className="text-xl font-bold text-gray-900 mb-3">О турнире</h2>
-                <p className="text-gray-700 leading-relaxed">
+                </h2>
+                <p className="text-xl text-gray-300 mb-6">
                   {tournamentData.description}
                 </p>
               </div>
 
-              {/* Additional Info */}
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
-                <h3 className="font-semibold text-gray-900 mb-2">Важная информация</h3>
-                <ul className="space-y-1 text-sm text-gray-700">
-                  <li>• {tournamentData.rebuyInfo}</li>
-                  <li>• Рейтинговый турнир - влияет на общий рейтинг игроков</li>
-                  <li>• Призовой фонд распределяется согласно структуре выплат</li>
-                  <li>• Регистрация на месте или онлайн</li>
-                </ul>
-              </div>
+              {/* Main Information Grid */}
+              <div className="px-8 pb-8">
+                <div className="grid md:grid-cols-2 gap-8 mb-8">
+                  {/* Left Column - Event Details */}
+                  <div className="space-y-6">
+                    <div className="bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-white/10">
+                      <h3 className="text-2xl font-bold mb-4 flex items-center gap-3">
+                        <CalendarDays className="w-6 h-6 text-yellow-500" />
+                        Детали события
+                      </h3>
+                      <div className="space-y-4">
+                        <div className="flex justify-between">
+                          <span className="text-gray-300">Дата:</span>
+                          <span className="font-semibold text-yellow-400">{tournamentData.date}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-300">Время:</span>
+                          <span className="font-semibold text-yellow-400">{tournamentData.time}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-300">Место:</span>
+                          <span className="font-semibold">{tournamentData.location}</span>
+                        </div>
+                        <div className="text-sm text-gray-400">
+                          <MapPin className="w-4 h-4 inline mr-2" />
+                          {tournamentData.address}
+                        </div>
+                      </div>
+                    </div>
 
-              {/* Contact Info */}
-              <div className="text-center border-t border-gray-200 pt-6">
-                <p className="text-sm text-gray-600 mb-2">Для регистрации и вопросов:</p>
-                <p className="font-semibold text-gray-900">{tournamentData.contactInfo}</p>
-                <div className="mt-4 text-xs text-gray-500">
-                  Генерировано: {new Date().toLocaleDateString('ru-RU')}
+                    <div className="bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-white/10">
+                      <h3 className="text-2xl font-bold mb-4 flex items-center gap-3">
+                        <DollarSign className="w-6 h-6 text-green-500" />
+                        Финансовые условия
+                      </h3>
+                      <div className="space-y-4">
+                        <div className="flex justify-between">
+                          <span className="text-gray-300">Бай-ин:</span>
+                          <span className="font-bold text-2xl text-green-400">{tournamentData.buyIn}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-300">Призовой фонд:</span>
+                          <span className="font-semibold text-green-400">{tournamentData.prizePool}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-300">Ребай:</span>
+                          <span className="font-semibold">{tournamentData.rebuyAmount}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-300">Аддон:</span>
+                          <span className="font-semibold">{tournamentData.addonAmount}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Right Column - Tournament Structure */}
+                  <div className="space-y-6">
+                    <div className="bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-white/10">
+                      <h3 className="text-2xl font-bold mb-4 flex items-center gap-3">
+                        <Trophy className="w-6 h-6 text-yellow-500" />
+                        Структура турнира
+                      </h3>
+                      <div className="space-y-4">
+                        <div className="flex justify-between">
+                          <span className="text-gray-300">Формат:</span>
+                          <Badge variant="secondary" className="bg-yellow-600 text-white">{tournamentData.format}</Badge>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-300">Максимум игроков:</span>
+                          <span className="font-semibold">{tournamentData.maxPlayers}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-300">Стартовые фишки:</span>
+                          <span className="font-semibold">{tournamentData.startingChips}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-300">Уровень:</span>
+                          <span className="font-semibold">{tournamentData.levels}</span>
+                        </div>
+                        <div className="text-sm text-gray-400 mt-4">
+                          {tournamentData.rebuyInfo}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-white/10">
+                      <h3 className="text-2xl font-bold mb-4 flex items-center gap-3">
+                        <Star className="w-6 h-6 text-yellow-500" />
+                        Преимущества участия
+                      </h3>
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-3">
+                          <Shield className="w-5 h-5 text-blue-400" />
+                          <span className="text-sm">Рейтинговый турнир ELO</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <Award className="w-5 h-5 text-purple-400" />
+                          <span className="text-sm">Профессиональная организация</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <TrendingUp className="w-5 h-5 text-green-400" />
+                          <span className="text-sm">Рост в рейтинге игроков</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <Users className="w-5 h-5 text-yellow-400" />
+                          <span className="text-sm">Элитное сообщество</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Sales Text Section */}
+                <div className="bg-gradient-to-r from-yellow-600/20 to-yellow-500/20 rounded-xl p-8 border border-yellow-500/30 mb-8">
+                  <h3 className="text-3xl font-bold text-center mb-6 text-yellow-400">
+                    🎯 Почему стоит участвовать?
+                  </h3>
+                  <div className="grid md:grid-cols-3 gap-6 text-center">
+                    <div>
+                      <h4 className="font-bold text-lg mb-2 text-yellow-300">💰 Крупный призовой фонд</h4>
+                      <p className="text-sm text-gray-300">Гарантированные выплаты победителям и призерам</p>
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-lg mb-2 text-yellow-300">🏆 Престиж и статус</h4>
+                      <p className="text-sm text-gray-300">Победа в турнире IPS повышает ваш статус в покерном сообществе</p>
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-lg mb-2 text-yellow-300">🎓 Развитие навыков</h4>
+                      <p className="text-sm text-gray-300">Игра с профессионалами улучшит ваше мастерство</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Contact and Registration */}
+                <div className="bg-gradient-to-r from-slate-800 to-slate-700 rounded-xl p-8 border border-slate-600">
+                  <div className="text-center">
+                    <h3 className="text-2xl font-bold mb-4 text-yellow-400">Регистрация и контакты</h3>
+                    <p className="text-lg mb-4 text-gray-300">Для участия в турнире свяжитесь с нами:</p>
+                    <div className="text-xl font-semibold text-white mb-6">{tournamentData.contactInfo}</div>
+                    
+                    <div className="flex justify-center items-center gap-4 mb-6">
+                      <Badge className="bg-red-600 text-white px-4 py-2 text-sm font-semibold animate-pulse">
+                        ОГРАНИЧЕННЫЕ МЕСТА!
+                      </Badge>
+                      <Badge className="bg-green-600 text-white px-4 py-2 text-sm font-semibold">
+                        РЕГИСТРАЦИЯ ОТКРЫТА
+                      </Badge>
+                    </div>
+                    
+                    <p className="text-sm text-gray-400">
+                      Генерировано системой IPS Tournament Manager • {new Date().toLocaleDateString('ru-RU')}
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
