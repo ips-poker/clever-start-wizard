@@ -303,34 +303,34 @@ export function TournamentInvitationGenerator() {
             <CardTitle>Превью приглашения</CardTitle>
           </CardHeader>
           <CardContent>
-            <div id="invitation-preview" className="max-w-4xl mx-auto bg-gradient-primary border border-poker-border overflow-hidden relative shadow-dramatic rounded-lg">
+            <div id="invitation-preview" className="max-w-4xl mx-auto bg-white/95 backdrop-blur-sm border border-gray-200/50 shadow-floating rounded-xl overflow-hidden relative">
               {/* Elegant Background Pattern */}
-              <div className="absolute inset-0 opacity-5">
-                <div className="absolute top-16 left-16 text-6xl text-poker-accent animate-float [animation-delay:0s]">♠</div>
-                <div className="absolute top-32 right-24 text-5xl text-poker-accent animate-float [animation-delay:1s]">♥</div>
-                <div className="absolute bottom-32 left-24 text-6xl text-poker-accent animate-float [animation-delay:2s]">♦</div>
-                <div className="absolute bottom-16 right-16 text-5xl text-poker-accent animate-float [animation-delay:3s]">♣</div>
+              <div className="absolute inset-0 opacity-3">
+                <div className="absolute top-16 left-16 text-6xl text-gray-300/40 animate-float [animation-delay:0s]">♠</div>
+                <div className="absolute top-32 right-24 text-5xl text-gray-300/30 animate-float [animation-delay:1s]">♥</div>
+                <div className="absolute bottom-32 left-24 text-6xl text-gray-300/40 animate-float [animation-delay:2s]">♦</div>
+                <div className="absolute bottom-16 right-16 text-5xl text-gray-300/30 animate-float [animation-delay:3s]">♣</div>
               </div>
 
-              {/* Premium Header */}
-              <div className="relative bg-gradient-accent text-white p-8 shadow-elevated">
+              {/* Refined Header */}
+              <div className="relative bg-white/90 backdrop-blur-sm border-b border-gray-200/30 p-8">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-6">
-                    <div className="w-20 h-20 bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 flex items-center justify-center p-4 shadow-floating">
+                    <div className="w-20 h-20 bg-white/80 backdrop-blur-xl rounded-2xl border border-gray-200/50 flex items-center justify-center p-4 shadow-subtle">
                       <img 
                         src={ipsLogo} 
                         alt="IPS Logo" 
-                        className="w-full h-full object-contain drop-shadow-lg"
+                        className="w-full h-full object-contain drop-shadow-sm"
                       />
                     </div>
                     <div>
-                      <h1 className="text-4xl font-black text-white leading-none tracking-tight">IPS</h1>
-                      <p className="text-xl text-white/95 font-semibold">International Poker Style</p>
-                      <p className="text-sm text-white/80 font-medium">Премиальный покерный клуб</p>
+                      <h1 className="text-4xl font-light text-gray-800 leading-none tracking-tight">IPS</h1>
+                      <p className="text-xl text-gray-600 font-light">International Poker Style</p>
+                      <p className="text-sm text-gray-500 font-light">Премиальный покерный клуб</p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <Badge className="bg-white/20 text-white border-white/30 px-6 py-3 text-lg font-bold backdrop-blur-sm shadow-subtle">
+                    <Badge className="bg-gray-100/80 text-gray-700 border-gray-200/50 px-6 py-3 text-lg font-light backdrop-blur-sm">
                       ЭКСКЛЮЗИВНО
                     </Badge>
                   </div>
@@ -338,183 +338,205 @@ export function TournamentInvitationGenerator() {
               </div>
 
               {/* Tournament Title Section */}
-              <div className="p-8 text-center bg-gradient-hero">
-                <h2 className="text-5xl font-black mb-4 text-poker-text-primary tracking-tight">
+              <div className="p-8 text-center bg-white/60 backdrop-blur-sm">
+                <h2 className="text-5xl font-light mb-4 text-gray-800 tracking-tight">
                   {tournamentData.title}
                 </h2>
-                <p className="text-xl text-poker-text-secondary mb-6 font-medium max-w-2xl mx-auto leading-relaxed">
+                <p className="text-xl text-gray-600 mb-6 font-light max-w-2xl mx-auto leading-relaxed">
                   {tournamentData.description}
                 </p>
                 <div className="flex justify-center items-center gap-4">
-                  <Badge className="bg-poker-accent text-white px-4 py-2 font-semibold shadow-accent">
+                  <Badge className="bg-gray-100/80 text-gray-700 px-4 py-2 font-light border border-gray-200/50">
                     РЕЙТИНГОВЫЙ ТУРНИР
                   </Badge>
-                  <Badge className="bg-poker-success text-white px-4 py-2 font-semibold shadow-success">
+                  <Badge className="bg-gray-100/80 text-gray-700 px-4 py-2 font-light border border-gray-200/50">
                     ELO СИСТЕМА
                   </Badge>
                 </div>
               </div>
 
               {/* Main Information Grid */}
-              <div className="px-8 pb-8 bg-gradient-surface">
+              <div className="px-8 pb-8 bg-white/40 backdrop-blur-sm">
                 <div className="grid md:grid-cols-2 gap-8 mb-8">
                   {/* Left Column - Event Details */}
                   <div className="space-y-6">
-                    <div className="bg-gradient-card backdrop-blur-sm rounded-xl p-6 border border-poker-border shadow-card">
-                      <h3 className="text-2xl font-bold mb-6 flex items-center gap-3 text-poker-text-primary">
-                        <CalendarDays className="w-6 h-6 text-poker-accent" />
-                        Детали события
-                      </h3>
-                      <div className="space-y-4">
+                    <Card className="bg-white/70 backdrop-blur-sm border border-gray-200/50 shadow-subtle rounded-xl overflow-hidden">
+                      <CardHeader className="bg-white/50 border-b border-gray-200/30">
+                        <CardTitle className="text-xl font-light text-gray-800 flex items-center gap-3">
+                          <div className="p-2 bg-gray-100/80 rounded-lg">
+                            <CalendarDays className="w-5 h-5 text-gray-600" />
+                          </div>
+                          Детали события
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4 p-6">
                         <div className="flex justify-between items-center">
-                          <span className="text-poker-text-secondary font-medium">Дата:</span>
-                          <span className="font-bold text-poker-accent text-lg">{tournamentData.date}</span>
+                          <span className="text-gray-500 font-light">Дата:</span>
+                          <span className="font-light text-lg text-gray-800">{tournamentData.date}</span>
                         </div>
                         <div className="flex justify-between items-center">
-                          <span className="text-poker-text-secondary font-medium">Время:</span>
-                          <span className="font-bold text-poker-accent text-lg">{tournamentData.time}</span>
+                          <span className="text-gray-500 font-light">Время:</span>
+                          <span className="font-light text-lg text-gray-800">{tournamentData.time}</span>
                         </div>
                         <div className="flex justify-between items-center">
-                          <span className="text-poker-text-secondary font-medium">Место:</span>
-                          <span className="font-semibold text-poker-text-primary">{tournamentData.location}</span>
+                          <span className="text-gray-500 font-light">Место:</span>
+                          <span className="font-light text-gray-800">{tournamentData.location}</span>
                         </div>
-                        <div className="text-sm text-poker-text-muted bg-poker-surface p-3 rounded-lg border border-poker-border">
-                          <MapPin className="w-4 h-4 inline mr-2 text-poker-accent" />
+                        <div className="text-sm text-gray-500 bg-white/50 p-3 rounded-lg border border-gray-200/30">
+                          <MapPin className="w-4 h-4 inline mr-2 text-gray-400" />
                           {tournamentData.address}
                         </div>
-                      </div>
-                    </div>
+                      </CardContent>
+                    </Card>
 
-                    <div className="bg-gradient-card backdrop-blur-sm rounded-xl p-6 border border-poker-border shadow-card">
-                      <h3 className="text-2xl font-bold mb-6 flex items-center gap-3 text-poker-text-primary">
-                        <DollarSign className="w-6 h-6 text-poker-success" />
-                        Финансовые условия
-                      </h3>
-                      <div className="space-y-4">
+                    <Card className="bg-white/70 backdrop-blur-sm border border-gray-200/50 shadow-subtle rounded-xl overflow-hidden">
+                      <CardHeader className="bg-white/50 border-b border-gray-200/30">
+                        <CardTitle className="text-xl font-light text-gray-800 flex items-center gap-3">
+                          <div className="p-2 bg-gray-100/80 rounded-lg">
+                            <DollarSign className="w-5 h-5 text-gray-600" />
+                          </div>
+                          Финансовые условия
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4 p-6">
                         <div className="flex justify-between items-center">
-                          <span className="text-poker-text-secondary font-medium">Бай-ин:</span>
-                          <span className="font-black text-3xl text-poker-success">{tournamentData.buyIn}</span>
+                          <span className="text-gray-500 font-light">Бай-ин:</span>
+                          <span className="font-light text-3xl text-gray-800">{tournamentData.buyIn}</span>
                         </div>
                         <div className="flex justify-between items-center">
-                          <span className="text-poker-text-secondary font-medium">Призовой фонд:</span>
-                          <span className="font-bold text-xl text-poker-success">{tournamentData.prizePool}</span>
+                          <span className="text-gray-500 font-light">Призовой фонд:</span>
+                          <span className="font-light text-xl text-gray-700">{tournamentData.prizePool}</span>
                         </div>
                         <div className="grid grid-cols-2 gap-4 pt-2">
-                          <div className="text-center p-3 bg-poker-surface rounded-lg border border-poker-border">
-                            <div className="text-sm text-poker-text-muted">Ребай</div>
-                            <div className="font-semibold text-poker-text-primary">{tournamentData.rebuyAmount}</div>
+                          <div className="text-center p-3 bg-white/50 rounded-lg border border-gray-200/30">
+                            <div className="text-sm text-gray-500 font-light">Ребай</div>
+                            <div className="font-light text-gray-800">{tournamentData.rebuyAmount}</div>
                           </div>
-                          <div className="text-center p-3 bg-poker-surface rounded-lg border border-poker-border">
-                            <div className="text-sm text-poker-text-muted">Аддон</div>
-                            <div className="font-semibold text-poker-text-primary">{tournamentData.addonAmount}</div>
+                          <div className="text-center p-3 bg-white/50 rounded-lg border border-gray-200/30">
+                            <div className="text-sm text-gray-500 font-light">Аддон</div>
+                            <div className="font-light text-gray-800">{tournamentData.addonAmount}</div>
                           </div>
                         </div>
-                      </div>
-                    </div>
+                      </CardContent>
+                    </Card>
                   </div>
 
                   {/* Right Column - Tournament Structure */}
                   <div className="space-y-6">
-                    <div className="bg-gradient-card backdrop-blur-sm rounded-xl p-6 border border-poker-border shadow-card">
-                      <h3 className="text-2xl font-bold mb-6 flex items-center gap-3 text-poker-text-primary">
-                        <Trophy className="w-6 h-6 text-poker-accent" />
-                        Структура турнира
-                      </h3>
-                      <div className="space-y-4">
+                    <Card className="bg-white/70 backdrop-blur-sm border border-gray-200/50 shadow-subtle rounded-xl overflow-hidden">
+                      <CardHeader className="bg-white/50 border-b border-gray-200/30">
+                        <CardTitle className="text-xl font-light text-gray-800 flex items-center gap-3">
+                          <div className="p-2 bg-gray-100/80 rounded-lg">
+                            <Trophy className="w-5 h-5 text-gray-600" />
+                          </div>
+                          Структура турнира
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4 p-6">
                         <div className="flex justify-between items-center">
-                          <span className="text-poker-text-secondary font-medium">Формат:</span>
-                          <Badge variant="secondary" className="bg-poker-accent text-white font-semibold">{tournamentData.format}</Badge>
+                          <span className="text-gray-500 font-light">Формат:</span>
+                          <Badge className="bg-gray-100/80 text-gray-700 font-light border border-gray-200/50">{tournamentData.format}</Badge>
                         </div>
                         <div className="flex justify-between items-center">
-                          <span className="text-poker-text-secondary font-medium">Максимум игроков:</span>
-                          <span className="font-bold text-poker-text-primary">{tournamentData.maxPlayers}</span>
+                          <span className="text-gray-500 font-light">Максимум игроков:</span>
+                          <span className="font-light text-gray-800">{tournamentData.maxPlayers}</span>
                         </div>
                         <div className="flex justify-between items-center">
-                          <span className="text-poker-text-secondary font-medium">Стартовые фишки:</span>
-                          <span className="font-bold text-poker-text-primary">{tournamentData.startingChips}</span>
+                          <span className="text-gray-500 font-light">Стартовые фишки:</span>
+                          <span className="font-light text-gray-800">{tournamentData.startingChips}</span>
                         </div>
                         <div className="flex justify-between items-center">
-                          <span className="text-poker-text-secondary font-medium">Уровень:</span>
-                          <span className="font-bold text-poker-text-primary">{tournamentData.levels}</span>
+                          <span className="text-gray-500 font-light">Уровень:</span>
+                          <span className="font-light text-gray-800">{tournamentData.levels}</span>
                         </div>
-                        <div className="text-sm text-poker-text-muted bg-poker-surface p-3 rounded-lg border border-poker-border mt-4">
-                          <Clock className="w-4 h-4 inline mr-2 text-poker-accent" />
+                        <div className="text-sm text-gray-500 bg-white/50 p-3 rounded-lg border border-gray-200/30 mt-4">
+                          <Clock className="w-4 h-4 inline mr-2 text-gray-400" />
                           {tournamentData.rebuyInfo}
                         </div>
-                      </div>
-                    </div>
+                      </CardContent>
+                    </Card>
 
-                    <div className="bg-gradient-card backdrop-blur-sm rounded-xl p-6 border border-poker-border shadow-card">
-                      <h3 className="text-2xl font-bold mb-6 flex items-center gap-3 text-poker-text-primary">
-                        <Star className="w-6 h-6 text-poker-accent" />
-                        Преимущества участия
-                      </h3>
-                      <div className="space-y-4">
-                        <div className="flex items-center gap-3 p-3 bg-poker-surface rounded-lg border border-poker-border">
-                          <Shield className="w-5 h-5 text-poker-accent flex-shrink-0" />
-                          <span className="text-sm font-medium text-poker-text-primary">Рейтинговый турнир ELO</span>
+                    <Card className="bg-white/70 backdrop-blur-sm border border-gray-200/50 shadow-subtle rounded-xl overflow-hidden">
+                      <CardHeader className="bg-white/50 border-b border-gray-200/30">
+                        <CardTitle className="text-xl font-light text-gray-800 flex items-center gap-3">
+                          <div className="p-2 bg-gray-100/80 rounded-lg">
+                            <Star className="w-5 h-5 text-gray-600" />
+                          </div>
+                          Преимущества участия
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4 p-6">
+                        <div className="flex items-center gap-3 p-3 bg-white/50 rounded-lg border border-gray-200/30">
+                          <Shield className="w-5 h-5 text-gray-600 flex-shrink-0" />
+                          <span className="text-sm font-light text-gray-700">Рейтинговый турнир ELO</span>
                         </div>
-                        <div className="flex items-center gap-3 p-3 bg-poker-surface rounded-lg border border-poker-border">
-                          <Award className="w-5 h-5 text-poker-success flex-shrink-0" />
-                          <span className="text-sm font-medium text-poker-text-primary">Профессиональная организация</span>
+                        <div className="flex items-center gap-3 p-3 bg-white/50 rounded-lg border border-gray-200/30">
+                          <Award className="w-5 h-5 text-gray-600 flex-shrink-0" />
+                          <span className="text-sm font-light text-gray-700">Профессиональная организация</span>
                         </div>
-                        <div className="flex items-center gap-3 p-3 bg-poker-surface rounded-lg border border-poker-border">
-                          <TrendingUp className="w-5 h-5 text-poker-accent flex-shrink-0" />
-                          <span className="text-sm font-medium text-poker-text-primary">Рост в рейтинге игроков</span>
+                        <div className="flex items-center gap-3 p-3 bg-white/50 rounded-lg border border-gray-200/30">
+                          <TrendingUp className="w-5 h-5 text-gray-600 flex-shrink-0" />
+                          <span className="text-sm font-light text-gray-700">Рост в рейтинге игроков</span>
                         </div>
-                        <div className="flex items-center gap-3 p-3 bg-poker-surface rounded-lg border border-poker-border">
-                          <Users className="w-5 h-5 text-poker-success flex-shrink-0" />
-                          <span className="text-sm font-medium text-poker-text-primary">Элитное сообщество</span>
+                        <div className="flex items-center gap-3 p-3 bg-white/50 rounded-lg border border-gray-200/30">
+                          <Users className="w-5 h-5 text-gray-600 flex-shrink-0" />
+                          <span className="text-sm font-light text-gray-700">Элитное сообщество</span>
                         </div>
-                      </div>
-                    </div>
+                      </CardContent>
+                    </Card>
                   </div>
                 </div>
 
                 {/* Sales Text Section */}
-                <div className="bg-gradient-accent rounded-xl p-8 border border-poker-accent/30 mb-8 text-white shadow-accent">
-                  <h3 className="text-3xl font-black text-center mb-8">
-                    🎯 Почему стоит участвовать?
-                  </h3>
-                  <div className="grid md:grid-cols-3 gap-6 text-center">
-                    <div className="p-6 bg-white/10 rounded-xl backdrop-blur-sm border border-white/20">
-                      <h4 className="font-bold text-xl mb-3">💰 Крупный призовой фонд</h4>
-                      <p className="text-sm text-white/90 leading-relaxed">Гарантированные выплаты победителям и призерам турнира</p>
+                <Card className="bg-white/80 backdrop-blur-sm border border-gray-200/50 shadow-card rounded-xl overflow-hidden mb-8">
+                  <CardHeader className="bg-white/60 border-b border-gray-200/30 text-center">
+                    <CardTitle className="text-3xl font-light text-gray-800">
+                      🎯 Почему стоит участвовать?
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-8">
+                    <div className="grid md:grid-cols-3 gap-6 text-center">
+                      <div className="p-6 bg-white/60 rounded-xl border border-gray-200/40">
+                        <h4 className="font-light text-xl mb-3 text-gray-800">💰 Крупный призовой фонд</h4>
+                        <p className="text-sm text-gray-600 leading-relaxed font-light">Гарантированные выплаты победителям и призерам турнира</p>
+                      </div>
+                      <div className="p-6 bg-white/60 rounded-xl border border-gray-200/40">
+                        <h4 className="font-light text-xl mb-3 text-gray-800">🏆 Престиж и статус</h4>
+                        <p className="text-sm text-gray-600 leading-relaxed font-light">Победа в турнире IPS повышает ваш статус в покерном сообществе</p>
+                      </div>
+                      <div className="p-6 bg-white/60 rounded-xl border border-gray-200/40">
+                        <h4 className="font-light text-xl mb-3 text-gray-800">🎓 Развитие навыков</h4>
+                        <p className="text-sm text-gray-600 leading-relaxed font-light">Игра с профессионалами значительно улучшит ваше мастерство</p>
+                      </div>
                     </div>
-                    <div className="p-6 bg-white/10 rounded-xl backdrop-blur-sm border border-white/20">
-                      <h4 className="font-bold text-xl mb-3">🏆 Престиж и статус</h4>
-                      <p className="text-sm text-white/90 leading-relaxed">Победа в турнире IPS повышает ваш статус в покерном сообществе</p>
-                    </div>
-                    <div className="p-6 bg-white/10 rounded-xl backdrop-blur-sm border border-white/20">
-                      <h4 className="font-bold text-xl mb-3">🎓 Развитие навыков</h4>
-                      <p className="text-sm text-white/90 leading-relaxed">Игра с профессионалами значительно улучшит ваше мастерство</p>
-                    </div>
-                  </div>
-                </div>
+                  </CardContent>
+                </Card>
 
                 {/* Contact and Registration */}
-                <div className="bg-gradient-card rounded-xl p-8 border border-poker-border shadow-elevated">
-                  <div className="text-center">
-                    <h3 className="text-3xl font-black mb-6 text-poker-text-primary">Регистрация и контакты</h3>
-                    <p className="text-lg mb-6 text-poker-text-secondary font-medium">Для участия в турнире свяжитесь с нами:</p>
-                    <div className="text-2xl font-bold text-poker-accent mb-8">{tournamentData.contactInfo}</div>
+                <Card className="bg-white/80 backdrop-blur-sm border border-gray-200/50 shadow-card rounded-xl overflow-hidden">
+                  <CardHeader className="bg-white/60 border-b border-gray-200/30 text-center">
+                    <CardTitle className="text-3xl font-light text-gray-800">Регистрация и контакты</CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-8 text-center">
+                    <p className="text-lg mb-6 text-gray-600 font-light">Для участия в турнире свяжитесь с нами:</p>
+                    <div className="text-2xl font-light text-gray-800 mb-8">{tournamentData.contactInfo}</div>
                     
                     <div className="flex justify-center items-center gap-6 mb-8">
-                      <Badge className="bg-poker-error text-white px-6 py-3 text-sm font-bold animate-pulse shadow-floating">
+                      <Badge className="bg-red-50 text-red-600 border-red-200 px-6 py-3 text-sm font-light animate-pulse">
                         ОГРАНИЧЕННЫЕ МЕСТА!
                       </Badge>
-                      <Badge className="bg-poker-success text-white px-6 py-3 text-sm font-bold shadow-success">
+                      <Badge className="bg-green-50 text-green-600 border-green-200 px-6 py-3 text-sm font-light">
                         РЕГИСТРАЦИЯ ОТКРЫТА
                       </Badge>
                     </div>
                     
-                    <div className="border-t border-poker-border pt-6">
-                      <p className="text-sm text-poker-text-muted font-medium">
+                    <div className="border-t border-gray-200/50 pt-6">
+                      <p className="text-sm text-gray-400 font-light">
                         Генерировано системой IPS Tournament Manager • {new Date().toLocaleDateString('ru-RU')}
                       </p>
                     </div>
-                  </div>
-                </div>
+                  </CardContent>
+                </Card>
               </div>
             </div>
           </CardContent>
