@@ -1,0 +1,117 @@
+import { useState } from "react";
+import { Header } from "@/components/Header";
+import { Footer } from "@/components/Footer";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { TournamentInvitationGenerator } from "@/components/TournamentInvitationGenerator";
+import { Settings, FileText, Users, Calendar, Trophy } from "lucide-react";
+
+export default function Admin() {
+  const [activeTab, setActiveTab] = useState("invitations");
+
+  const adminTabs = [
+    { id: "invitations", name: "Приглашения", icon: FileText },
+    { id: "tournaments", name: "Турниры", icon: Trophy },
+    { id: "players", name: "Игроки", icon: Users },
+    { id: "settings", name: "Настройки", icon: Settings },
+  ];
+
+  return (
+    <div className="min-h-screen bg-background">
+      <Header />
+      
+      <main className="pt-24 pb-16">
+        <div className="container mx-auto px-4">
+          <div className="max-w-7xl mx-auto">
+            {/* Admin Header */}
+            <div className="mb-8">
+              <h1 className="text-4xl font-bold text-foreground mb-2">
+                Административная панель
+              </h1>
+              <p className="text-muted-foreground text-lg">
+                Управление турнирами и генерация приглашений
+              </p>
+            </div>
+
+            {/* Navigation Tabs */}
+            <div className="flex flex-wrap gap-2 mb-8">
+              {adminTabs.map((tab) => {
+                const Icon = tab.icon;
+                return (
+                  <Button
+                    key={tab.id}
+                    variant={activeTab === tab.id ? "default" : "outline"}
+                    onClick={() => setActiveTab(tab.id)}
+                    className="flex items-center gap-2"
+                  >
+                    <Icon size={16} />
+                    {tab.name}
+                  </Button>
+                );
+              })}
+            </div>
+
+            {/* Content Area */}
+            <div className="space-y-6">
+              {activeTab === "invitations" && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <FileText className="w-5 h-5" />
+                      Генератор приглашений на турнир
+                    </CardTitle>
+                    <CardDescription>
+                      Создайте продающее приглашение для турнира с автоматической генерацией PDF
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <TournamentInvitationGenerator />
+                  </CardContent>
+                </Card>
+              )}
+
+              {activeTab === "tournaments" && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Управление турнирами</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-muted-foreground">Функционал управления турнирами будет добавлен позже</p>
+                  </CardContent>
+                </Card>
+              )}
+
+              {activeTab === "players" && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Управление игроками</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-muted-foreground">Функционал управления игроками будет добавлен позже</p>
+                  </CardContent>
+                </Card>
+              )}
+
+              {activeTab === "settings" && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Настройки системы</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-muted-foreground">Настройки системы будут добавлены позже</p>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          </div>
+        </div>
+      </main>
+
+      <Footer />
+    </div>
+  );
+}

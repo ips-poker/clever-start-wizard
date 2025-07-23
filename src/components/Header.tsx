@@ -13,7 +13,8 @@ export function Header() {
     { name: "Галерея", href: "/gallery" },
     { name: "Блог", href: "/blog" },
     { name: "О нас", href: "/about" },
-    { name: "IPS Tournament Manager", href: "/director" }
+    { name: "IPS Tournament Manager", href: "/director" },
+    { name: "Админ панель", href: "/admin" }
   ];
 
   return (
