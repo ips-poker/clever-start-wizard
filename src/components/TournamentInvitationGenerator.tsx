@@ -282,17 +282,22 @@ export function TournamentInvitationGenerator() {
         <Button
           onClick={() => setShowPreview(!showPreview)}
           variant="outline"
-          className="flex items-center gap-2"
+          className="flex items-center gap-2 bg-white/80 backdrop-blur-sm border-gray-200/50 hover:bg-gray-50/80 hover:shadow-subtle hover:scale-105 transition-all duration-300 group"
         >
-          <Eye size={16} />
-          {showPreview ? 'Скрыть превью' : 'Показать превью'}
+          <Eye size={16} className="group-hover:animate-bounce transition-transform duration-300" />
+          <span className="group-hover:translate-x-1 transition-transform duration-300">
+            {showPreview ? 'Скрыть превью' : 'Показать превью'}
+          </span>
         </Button>
         <Button
           onClick={generatePDF}
-          className="flex items-center gap-2"
+          className="flex items-center gap-2 bg-gradient-button text-white hover:shadow-elevated hover:scale-105 transition-all duration-300 group relative overflow-hidden"
         >
-          <Download size={16} />
-          Скачать PDF
+          <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
+          <Download size={16} className="group-hover:animate-bounce transition-transform duration-300 relative z-10" />
+          <span className="group-hover:translate-x-1 transition-transform duration-300 relative z-10">
+            Скачать PDF
+          </span>
         </Button>
       </div>
 
