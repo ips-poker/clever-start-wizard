@@ -5,9 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { TournamentInvitationGenerator } from "@/components/TournamentInvitationGenerator";
 import { ContentManager } from "@/components/cms/ContentManager";
-import { GalleryManager } from "@/components/cms/GalleryManager";
-import { SEOManager } from "@/components/cms/SEOManager";
-import { SettingsManager } from "@/components/cms/SettingsManager";
 import { Settings, FileText, Users, Trophy, Image, Search, Globe, Palette } from "lucide-react";
 
 export default function Admin() {
@@ -16,11 +13,9 @@ export default function Admin() {
   const adminTabs = [
     { id: "invitations", name: "Приглашения", icon: FileText },
     { id: "content", name: "Контент", icon: FileText },
-    { id: "gallery", name: "Галерея", icon: Image },
-    { id: "seo", name: "SEO", icon: Search },
-    { id: "settings", name: "Настройки", icon: Settings },
     { id: "tournaments", name: "Турниры", icon: Trophy },
     { id: "players", name: "Игроки", icon: Users },
+    { id: "settings", name: "Настройки", icon: Settings },
   ];
 
   return (
@@ -79,11 +74,17 @@ export default function Admin() {
 
               {activeTab === "content" && <ContentManager />}
 
-              {activeTab === "gallery" && <GalleryManager />}
+              {activeTab === "settings" && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Настройки системы</CardTitle>
+                  </CardHeader>
 
-              {activeTab === "seo" && <SEOManager />}
-
-              {activeTab === "settings" && <SettingsManager />}
+                  <CardContent>
+                    <p className="text-muted-foreground">Настройки системы будут добавлены позже</p>
+                  </CardContent>
+                </Card>
+              )}
 
               {activeTab === "tournaments" && (
                 <Card>

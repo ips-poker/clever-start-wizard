@@ -68,7 +68,7 @@ export function ContentManager() {
 
   const fetchContent = async () => {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('cms_content')
         .select('*')
         .order('page_slug', { ascending: true })
@@ -92,7 +92,7 @@ export function ContentManager() {
     try {
       if (id) {
         // Update existing
-        const { error } = await supabase
+        const { error } = await (supabase as any)
           .from('cms_content')
           .update({
             page_slug: formData.page_slug,
@@ -107,7 +107,7 @@ export function ContentManager() {
         setEditingId(null);
       } else {
         // Create new
-        const { error } = await supabase
+        const { error } = await (supabase as any)
           .from('cms_content')
           .insert([formData]);
 
@@ -135,7 +135,7 @@ export function ContentManager() {
     if (!confirm('Вы уверены, что хотите удалить этот контент?')) return;
 
     try {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('cms_content')
         .delete()
         .eq('id', id);
