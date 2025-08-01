@@ -8,6 +8,8 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
+import { ImageUploader } from "./ImageUploader";
+import { IconSelector } from "./IconSelector";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { 
@@ -23,7 +25,8 @@ import {
   Zap,
   Globe,
   Award,
-  Loader2
+  Loader2,
+  Image as ImageIcon
 } from "lucide-react";
 
 interface AboutContent {
@@ -182,15 +185,13 @@ export function AboutPageEditor() {
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="hero_image">URL изображения</Label>
-                <Input
-                  id="hero_image"
-                  value={content.hero_image || ''}
-                  onChange={(e) => updateContent('hero_image', e.target.value)}
-                  placeholder="https://example.com/image.jpg"
-                />
-              </div>
+              <ImageUploader
+                label="Главное изображение"
+                currentImageUrl={content.hero_image || ''}
+                onImageChange={(url) => updateContent('hero_image', url)}
+                folder="about/hero"
+                placeholder="Загрузите главное изображение страницы"
+              />
             </CardContent>
           </Card>
 
@@ -218,14 +219,12 @@ export function AboutPageEditor() {
                       placeholder="Проведено за 3 года работы"
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label>Иконка {num}</Label>
-                    <Input
-                      value={content[`achievement_${num}_icon`] || ''}
-                      onChange={(e) => updateContent(`achievement_${num}_icon`, e.target.value)}
-                      placeholder="Trophy"
-                    />
-                  </div>
+                  <IconSelector
+                    label={`Иконка ${num}`}
+                    currentIcon={content[`achievement_${num}_icon`] || ''}
+                    onIconChange={(iconName) => updateContent(`achievement_${num}_icon`, iconName)}
+                    placeholder="Выберите иконку достижения"
+                  />
                 </div>
               ))}
             </CardContent>
@@ -289,15 +288,13 @@ export function AboutPageEditor() {
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="story_image">URL изображения</Label>
-                <Input
-                  id="story_image"
-                  value={content.story_image || ''}
-                  onChange={(e) => updateContent('story_image', e.target.value)}
-                  placeholder="https://example.com/story-image.jpg"
-                />
-              </div>
+              <ImageUploader
+                label="Изображение истории"
+                currentImageUrl={content.story_image || ''}
+                onImageChange={(url) => updateContent('story_image', url)}
+                folder="about/story"
+                placeholder="Загрузите изображение для секции истории"
+              />
             </CardContent>
           </Card>
         </TabsContent>
@@ -357,14 +354,12 @@ export function AboutPageEditor() {
                       rows={2}
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label>Ценность {num} - Иконка</Label>
-                    <Input
-                      value={content[`value_${num}_icon`] || ''}
-                      onChange={(e) => updateContent(`value_${num}_icon`, e.target.value)}
-                      placeholder="Target"
-                    />
-                  </div>
+                  <IconSelector
+                    label={`Иконка ценности ${num}`}
+                    currentIcon={content[`value_${num}_icon`] || ''}
+                    onIconChange={(iconName) => updateContent(`value_${num}_icon`, iconName)}
+                    placeholder="Выберите иконку ценности"
+                  />
                 </div>
               ))}
             </CardContent>
@@ -436,14 +431,13 @@ export function AboutPageEditor() {
                         placeholder="15+ лет в покере"
                       />
                     </div>
-                    <div className="space-y-2">
-                      <Label>Фото URL</Label>
-                      <Input
-                        value={content[`team_${num}_image`] || ''}
-                        onChange={(e) => updateContent(`team_${num}_image`, e.target.value)}
-                        placeholder="https://example.com/photo.jpg"
-                      />
-                    </div>
+                    <ImageUploader
+                      label={`Фото ${num}`}
+                      currentImageUrl={content[`team_${num}_image`] || ''}
+                      onImageChange={(url) => updateContent(`team_${num}_image`, url)}
+                      folder={`about/team/member-${num}`}
+                      placeholder="Загрузите фото члена команды"
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label>Достижения (через запятую)</Label>
