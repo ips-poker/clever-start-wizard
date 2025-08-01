@@ -515,8 +515,7 @@ export default function Profile() {
             <TabsContent value="tournaments" className="space-y-6">
               <TournamentRegistration 
                 tournaments={tournaments} 
-                playerId={player?.id} 
-                onRegistrationUpdate={loadTournaments}
+                playerId={player?.id}
               />
             </TabsContent>
 
