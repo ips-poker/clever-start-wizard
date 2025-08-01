@@ -4,222 +4,182 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, Save, Plus, Trash2, Edit, Star, User } from "lucide-react";
-
-interface Testimonial {
-  id: string;
-  name: string;
-  rating: number;
-  status: string;
-  text: string;
-  avatar: string;
-  time: string;
-  verified: boolean;
-  display_order: number;
-  is_active: boolean;
-}
-
-interface TestimonialsContent {
-  hero_title: string;
-  hero_subtitle: string;
-  hero_description: string;
-}
+import { Loader2, Save, Plus, Trash2, Edit, Star } from "lucide-react";
 
 export function TestimonialsEditor() {
   const { toast } = useToast();
+  const [testimonials, setTestimonials] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [editingTestimonial, setEditingTestimonial] = useState<string | null>(null);
-  
-  const [content, setContent] = useState<TestimonialsContent>({
-    hero_title: "Что говорят наши игроки?",
-    hero_subtitle: "Отзывы игроков",
-    hero_description: "Присоединяйтесь к сообществу довольных игроков, которые улучшили свои навыки с IPS"
-  });
-
-  const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
-  const [newTestimonial, setNewTestimonial] = useState<Partial<Testimonial>>({
-    name: "",
-    rating: 1200,
-    status: "Player",
-    text: "",
-    avatar: "",
-    time: "сегодня",
-    verified: false,
-    display_order: 0,
-    is_active: true
+  const [editingTestimonial, setEditingTestimonial] = useState<any>(null);
+  const [newTestimonial, setNewTestimonial] = useState({
+    name: '',
+    text: '',
+    image: '',
+    rating: 5,
+    position: 1
   });
 
   useEffect(() => {
-    fetchContent();
+    fetchTestimonials();
   }, []);
 
-  const fetchContent = async () => {
+  const fetchTestimonials = async () => {
     try {
-      const { data: pageData, error: pageError } = await supabase
+      const { data, error } = await supabase
         .from('cms_content')
         .select('*')
         .eq('page_slug', 'testimonials')
-        .eq('is_active', true);
+        .eq('is_active', true)
+        .order('content_key');
 
-      if (pageError) throw pageError;
+      if (error) throw error;
 
-      if (pageData && pageData.length > 0) {
-        const contentObj: any = {};
-        pageData.forEach(item => {
-          if (item.content_type === 'json') {
-            contentObj[item.content_key] = JSON.parse(item.content_value || '[]');
-          } else {
-            contentObj[item.content_key] = item.content_value || '';
-          }
-        });
-
-        if (contentObj.hero_title) {
-          setContent(prev => ({ ...prev, ...contentObj }));
+      // Group testimonials by position from content_key
+      const groupedTestimonials = data.reduce((acc: any, item: any) => {
+        const match = item.content_key.match(/testimonial_(\d+)_/);
+        if (!match) return acc;
+        
+        const position = parseInt(match[1]);
+        if (!acc[position]) {
+          acc[position] = { position, id: `testimonial_${position}` };
         }
-
-        if (contentObj.testimonials) {
-          setTestimonials(contentObj.testimonials);
+        
+        if (item.content_key.includes('_name')) {
+          acc[position].name = item.content_value;
+        } else if (item.content_key.includes('_text')) {
+          acc[position].text = item.content_value;
+        } else if (item.content_key.includes('_image')) {
+          acc[position].image = item.content_value;
         }
-      }
+        
+        acc[position].rating = item.meta_data?.rating || 5;
+        
+        return acc;
+      }, {});
+
+      setTestimonials(Object.values(groupedTestimonials).sort((a: any, b: any) => a.position - b.position));
     } catch (error) {
-      console.error('Error fetching testimonials content:', error);
+      console.error('Error fetching testimonials:', error);
       toast({
         title: "Ошибка",
         description: "Не удалось загрузить отзывы",
-        variant: "destructive"
+        variant: "destructive",
       });
     } finally {
       setLoading(false);
     }
   };
 
-  const saveContent = async () => {
-    setSaving(true);
+  const handleSave = async () => {
     try {
-      const contentItems = [
-        ...Object.entries(content).map(([key, value]) => ({
-          page_slug: 'testimonials',
-          content_key: key,
-          content_value: value,
-          content_type: 'text'
-        })),
+      const testimonialData = editingTestimonial || newTestimonial;
+      const position = editingTestimonial ? editingTestimonial.position : (Math.max(...testimonials.map(t => t.position), 0) + 1);
+
+      // Save name, text, and image as separate records
+      const records = [
         {
           page_slug: 'testimonials',
-          content_key: 'testimonials',
-          content_value: JSON.stringify(testimonials),
-          content_type: 'json'
+          content_key: `testimonial_${position}_name`,
+          content_value: testimonialData.name,
+          content_type: 'text',
+          is_active: true,
+          meta_data: { rating: testimonialData.rating, position }
+        },
+        {
+          page_slug: 'testimonials',
+          content_key: `testimonial_${position}_text`,
+          content_value: testimonialData.text,
+          content_type: 'text',
+          is_active: true,
+          meta_data: { rating: testimonialData.rating, position }
+        },
+        {
+          page_slug: 'testimonials',
+          content_key: `testimonial_${position}_image`,
+          content_value: testimonialData.image,
+          content_type: 'image',
+          is_active: true,
+          meta_data: { rating: testimonialData.rating, position }
         }
       ];
 
-      await supabase
-        .from('cms_content')
-        .delete()
-        .eq('page_slug', 'testimonials');
+      if (editingTestimonial) {
+        // Update existing testimonial - delete old records first
+        await supabase
+          .from('cms_content')
+          .delete()
+          .eq('page_slug', 'testimonials')
+          .like('content_key', `testimonial_${position}_%`);
+      }
 
+      // Insert new records
       const { error } = await supabase
         .from('cms_content')
-        .insert(contentItems);
+        .insert(records);
+      
+      if (error) throw error;
+
+      toast({
+        title: "Успешно",
+        description: editingTestimonial ? "Отзыв обновлен" : "Отзыв создан",
+      });
+
+      setEditingTestimonial(null);
+      setNewTestimonial({ name: '', text: '', image: '', rating: 5, position: 1 });
+      fetchTestimonials();
+    } catch (error) {
+      console.error('Error saving testimonial:', error);
+      toast({
+        title: "Ошибка",
+        description: "Не удалось сохранить отзыв",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDelete = async (testimonial: any) => {
+    try {
+      // Delete all records for this testimonial
+      const { error } = await supabase
+        .from('cms_content')
+        .delete()
+        .eq('page_slug', 'testimonials')
+        .like('content_key', `testimonial_${testimonial.position}_%`);
 
       if (error) throw error;
 
       toast({
         title: "Успешно",
-        description: "Отзывы сохранены"
+        description: "Отзыв удален",
       });
+
+      fetchTestimonials();
     } catch (error) {
-      console.error('Error saving testimonials:', error);
+      console.error('Error deleting testimonial:', error);
       toast({
         title: "Ошибка",
-        description: "Не удалось сохранить отзывы",
-        variant: "destructive"
+        description: "Не удалось удалить отзыв",
+        variant: "destructive",
       });
-    } finally {
-      setSaving(false);
     }
   };
 
-  const addTestimonial = () => {
-    const testimonial: Testimonial = {
-      id: Date.now().toString(),
-      name: newTestimonial.name || "",
-      rating: newTestimonial.rating || 1200,
-      status: newTestimonial.status || "Player",
-      text: newTestimonial.text || "",
-      avatar: newTestimonial.avatar || "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80&h=80&fit=crop&crop=face",
-      time: newTestimonial.time || "сегодня",
-      verified: newTestimonial.verified || false,
-      display_order: testimonials.length,
-      is_active: newTestimonial.is_active || true
-    };
-
-    setTestimonials([...testimonials, testimonial]);
+  const handleEdit = (testimonial: any) => {
+    setEditingTestimonial(testimonial);
     setNewTestimonial({
-      name: "",
-      rating: 1200,
-      status: "Player",
-      text: "",
-      avatar: "",
-      time: "сегодня",
-      verified: false,
-      display_order: 0,
-      is_active: true
+      name: testimonial.name || '',
+      text: testimonial.text || '',
+      image: testimonial.image || '',
+      rating: testimonial.rating || 5,
+      position: testimonial.position
     });
+  };
+
+  const handleCancel = () => {
     setEditingTestimonial(null);
-  };
-
-  const removeTestimonial = (id: string) => {
-    setTestimonials(testimonials.filter(testimonial => testimonial.id !== id));
-  };
-
-  const updateTestimonial = (id: string, field: keyof Testimonial, value: any) => {
-    setTestimonials(testimonials.map(testimonial => 
-      testimonial.id === id ? { ...testimonial, [field]: value } : testimonial
-    ));
-  };
-
-  const startEditTestimonial = (testimonial: Testimonial) => {
-    setNewTestimonial(testimonial);
-    setEditingTestimonial(testimonial.id);
-  };
-
-  const saveEditTestimonial = () => {
-    if (editingTestimonial && newTestimonial) {
-      Object.keys(newTestimonial).forEach(key => {
-        updateTestimonial(editingTestimonial, key as keyof Testimonial, (newTestimonial as any)[key]);
-      });
-      
-      setNewTestimonial({
-        name: "",
-        rating: 1200,
-        status: "Player",
-        text: "",
-        avatar: "",
-        time: "сегодня",
-        verified: false,
-        display_order: 0,
-        is_active: true
-      });
-      setEditingTestimonial(null);
-    }
-  };
-
-  const cancelEdit = () => {
-    setNewTestimonial({
-      name: "",
-      rating: 1200,
-      status: "Player",
-      text: "",
-      avatar: "",
-      time: "сегодня",
-      verified: false,
-      display_order: 0,
-      is_active: true
-    });
-    setEditingTestimonial(null);
+    setNewTestimonial({ name: '', text: '', image: '', rating: 5, position: 1 });
   };
 
   if (loading) {
@@ -239,45 +199,7 @@ export function TestimonialsEditor() {
             Управление отзывами игроков на сайте
           </p>
         </div>
-        <Button onClick={saveContent} disabled={saving} className="bg-gradient-button">
-          {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
-          Сохранить
-        </Button>
       </div>
-
-      {/* Hero Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Заголовок секции отзывов</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div>
-            <label className="text-sm font-medium">Заголовок</label>
-            <Input
-              value={content.hero_title}
-              onChange={(e) => setContent(prev => ({ ...prev, hero_title: e.target.value }))}
-              placeholder="Что говорят наши игроки?"
-            />
-          </div>
-          <div>
-            <label className="text-sm font-medium">Подзаголовок</label>
-            <Input
-              value={content.hero_subtitle}
-              onChange={(e) => setContent(prev => ({ ...prev, hero_subtitle: e.target.value }))}
-              placeholder="Отзывы игроков"
-            />
-          </div>
-          <div>
-            <label className="text-sm font-medium">Описание</label>
-            <Textarea
-              value={content.hero_description}
-              onChange={(e) => setContent(prev => ({ ...prev, hero_description: e.target.value }))}
-              rows={2}
-              placeholder="Описание секции отзывов..."
-            />
-          </div>
-        </CardContent>
-      </Card>
 
       {/* Add/Edit Testimonial Form */}
       <Card>
@@ -297,31 +219,14 @@ export function TestimonialsEditor() {
               />
             </div>
             <div>
-              <label className="text-sm font-medium">Рейтинг ELO</label>
+              <label className="text-sm font-medium">Рейтинг (1-5)</label>
               <Input
                 type="number"
+                min="1"
+                max="5"
                 value={newTestimonial.rating}
-                onChange={(e) => setNewTestimonial(prev => ({ ...prev, rating: parseInt(e.target.value) || 1200 }))}
-                placeholder="1200"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="text-sm font-medium">Статус игрока</label>
-              <Input
-                value={newTestimonial.status}
-                onChange={(e) => setNewTestimonial(prev => ({ ...prev, status: e.target.value }))}
-                placeholder="Player, Advanced, Elite Player, Master"
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium">Время</label>
-              <Input
-                value={newTestimonial.time}
-                onChange={(e) => setNewTestimonial(prev => ({ ...prev, time: e.target.value }))}
-                placeholder="2 часа назад"
+                onChange={(e) => setNewTestimonial(prev => ({ ...prev, rating: parseInt(e.target.value) || 5 }))}
+                placeholder="5"
               />
             </div>
           </div>
@@ -337,46 +242,22 @@ export function TestimonialsEditor() {
           </div>
 
           <div>
-            <label className="text-sm font-medium">Аватар (URL)</label>
+            <label className="text-sm font-medium">Изображение (URL)</label>
             <Input
-              value={newTestimonial.avatar}
-              onChange={(e) => setNewTestimonial(prev => ({ ...prev, avatar: e.target.value }))}
-              placeholder="https://example.com/avatar.jpg"
+              value={newTestimonial.image}
+              onChange={(e) => setNewTestimonial(prev => ({ ...prev, image: e.target.value }))}
+              placeholder="/src/assets/gallery/poker-chips.jpg"
             />
           </div>
 
-          <div className="flex items-center gap-6">
-            <div className="flex items-center gap-2">
-              <Switch
-                checked={newTestimonial.verified}
-                onCheckedChange={(checked) => setNewTestimonial(prev => ({ ...prev, verified: checked }))}
-              />
-              <label className="text-sm font-medium">Верифицированный</label>
-            </div>
-            <div className="flex items-center gap-2">
-              <Switch
-                checked={newTestimonial.is_active}
-                onCheckedChange={(checked) => setNewTestimonial(prev => ({ ...prev, is_active: checked }))}
-              />
-              <label className="text-sm font-medium">Активный</label>
-            </div>
-          </div>
-
           <div className="flex gap-2">
-            {editingTestimonial ? (
-              <>
-                <Button onClick={saveEditTestimonial} className="bg-gradient-button">
-                  <Save className="w-4 h-4 mr-2" />
-                  Сохранить изменения
-                </Button>
-                <Button onClick={cancelEdit} variant="outline">
-                  Отмена
-                </Button>
-              </>
-            ) : (
-              <Button onClick={addTestimonial} className="bg-gradient-button">
-                <Plus className="w-4 h-4 mr-2" />
-                Добавить отзыв
+            <Button onClick={handleSave} className="bg-gradient-button">
+              <Save className="w-4 h-4 mr-2" />
+              {editingTestimonial ? "Сохранить изменения" : "Добавить отзыв"}
+            </Button>
+            {editingTestimonial && (
+              <Button onClick={handleCancel} variant="outline">
+                Отмена
               </Button>
             )}
           </div>
@@ -400,54 +281,39 @@ export function TestimonialsEditor() {
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-2">
-                        <div className="flex items-center gap-2">
-                          <img 
-                            src={testimonial.avatar} 
-                            alt={testimonial.name}
-                            className="w-8 h-8 rounded-full"
-                            onError={(e) => {
-                              const target = e.target as HTMLImageElement;
-                              target.src = 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80&h=80&fit=crop&crop=face';
-                            }}
-                          />
-                          <h3 className="font-semibold">{testimonial.name}</h3>
+                        <h3 className="font-semibold">{testimonial.name}</h3>
+                        <div className="flex">
+                          {[...Array(testimonial.rating)].map((_, i) => (
+                            <Star key={i} className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                          ))}
                         </div>
-                        
-                        <Badge className="bg-poker-accent/10 text-poker-accent">
-                          {testimonial.rating} ELO
-                        </Badge>
-                        
-                        {testimonial.verified && (
-                          <Badge className="bg-poker-accent text-white">Верифицирован</Badge>
-                        )}
-                        {!testimonial.is_active && (
-                          <Badge variant="outline">Скрыт</Badge>
-                        )}
                       </div>
                       <p className="text-sm text-muted-foreground mb-2">
-                        {testimonial.text}
+                        "{testimonial.text}"
                       </p>
-                      <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                        <span>Статус: {testimonial.status}</span>
-                        <span>Время: {testimonial.time}</span>
-                        <div className="flex items-center gap-1">
-                          <Star className="w-3 h-3 fill-current text-poker-accent" />
-                          5.0
+                      {testimonial.image && (
+                        <div className="mb-2">
+                          <img 
+                            src={testimonial.image} 
+                            alt={testimonial.name}
+                            className="w-16 h-16 rounded object-cover"
+                          />
                         </div>
-                      </div>
+                      )}
+                      <Badge variant="outline">Позиция: {testimonial.position}</Badge>
                     </div>
                     <div className="flex gap-2 ml-4">
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => startEditTestimonial(testimonial)}
+                        onClick={() => handleEdit(testimonial)}
                       >
                         <Edit className="w-4 h-4" />
                       </Button>
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => removeTestimonial(testimonial.id)}
+                        onClick={() => handleDelete(testimonial)}
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>

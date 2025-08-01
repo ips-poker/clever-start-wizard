@@ -40,15 +40,45 @@ export function SocialProof() {
         .from('cms_content')
         .select('*')
         .eq('page_slug', 'testimonials')
-        .eq('content_key', 'testimonials')
-        .eq('is_active', true);
+        .eq('is_active', true)
+        .order('content_key');
 
       if (error) throw error;
 
-      if (data && data.length > 0) {
-        const testimonialsData = JSON.parse(data[0].content_value || '[]');
-        const activeTestimonials = testimonialsData.filter((t: any) => t.is_active);
-        setTestimonials(activeTestimonials);
+      // Group testimonials by position from content_key
+      const groupedTestimonials = data.reduce((acc: any, item: any) => {
+        const match = item.content_key.match(/testimonial_(\d+)_/);
+        if (!match) return acc;
+        
+        const position = parseInt(match[1]);
+        if (!acc[position]) {
+          acc[position] = { 
+            position,
+            rating: 1200,
+            status: "Player",
+            avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80&h=80&fit=crop&crop=face",
+            time: "недавно",
+            verified: true
+          };
+        }
+        
+        if (item.content_key.includes('_name')) {
+          acc[position].name = item.content_value;
+        } else if (item.content_key.includes('_text')) {
+          acc[position].text = item.content_value;
+        } else if (item.content_key.includes('_image')) {
+          acc[position].avatar = item.content_value;
+        }
+        
+        return acc;
+      }, {});
+
+      const testimonialsArray = Object.values(groupedTestimonials).sort((a: any, b: any) => a.position - b.position);
+      
+      if (testimonialsArray.length > 0) {
+        // Filter and validate testimonials
+        const validTestimonials = testimonialsArray.filter((t: any) => t.name && t.text) as Testimonial[];
+        setTestimonials(validTestimonials);
       } else {
         // Fallback testimonials
         setTestimonials([
