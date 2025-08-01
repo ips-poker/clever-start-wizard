@@ -81,50 +81,71 @@ export default function Blog() {
       if (error) throw error;
 
       if (data && data.length > 0) {
-        const postsData: any = {};
+        // Ищем поле "posts" с JSON данными
+        const postsField = data.find(item => item.content_key === 'posts');
         
-        data.forEach(item => {
-          if (item.content_key.startsWith('post_')) {
-            const match = item.content_key.match(/post_(\d+)_(.+)/);
-            if (match) {
-              const postNumber = match[1];
-              const fieldName = match[2];
-              
-              if (!postsData[postNumber]) {
-                postsData[postNumber] = { id: `post_${postNumber}` };
-              }
-              
-              postsData[postNumber][fieldName] = item.content_value;
-            }
+        if (postsField && postsField.content_value) {
+          try {
+            // Парсим JSON данные постов
+            const postsData = JSON.parse(postsField.content_value);
+            setPosts(postsData);
+          } catch (parseError) {
+            console.error('Error parsing posts JSON:', parseError);
+            // Fallback на старый формат
+            parseOldFormat(data);
           }
-        });
-
-        // Преобразуем данные постов в нужный формат
-        const formattedPosts = Object.keys(postsData).map(postNumber => ({
-          id: `post_${postNumber}`,
-          title: postsData[postNumber].title || '',
-          excerpt: postsData[postNumber].content ? postsData[postNumber].content.substring(0, 200) + '...' : '',
-          content: postsData[postNumber].content || '',
-          author: "IPS Team",
-          author_role: "Эксперт по покеру",
-          author_avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80&h=80&fit=crop&crop=face",
-          published_at: new Date().toISOString().split('T')[0],
-          read_time: "5 мин",
-          views: Math.floor(Math.random() * 1000) + 500,
-          likes: Math.floor(Math.random() * 100) + 20,
-          image: postsData[postNumber].image || 'https://images.unsplash.com/photo-1606092195730-5d7b9af1efc5?w=400&h=200&fit=crop',
-          tags: ["Стратегия", "Покер"],
-          is_featured: postNumber === '1', // Первый пост как featured
-          is_published: true
-        }));
-
-        setPosts(formattedPosts);
+        } else {
+          // Fallback на старый формат
+          parseOldFormat(data);
+        }
       }
     } catch (error) {
       console.error('Error fetching blog posts:', error);
     } finally {
       setLoading(false);
     }
+  };
+
+  // Функция для парсинга старого формата данных
+  const parseOldFormat = (data: any[]) => {
+    const postsData: any = {};
+    
+    data.forEach(item => {
+      if (item.content_key.startsWith('post_')) {
+        const match = item.content_key.match(/post_(\d+)_(.+)/);
+        if (match) {
+          const postNumber = match[1];
+          const fieldName = match[2];
+          
+          if (!postsData[postNumber]) {
+            postsData[postNumber] = { id: `post_${postNumber}` };
+          }
+          
+          postsData[postNumber][fieldName] = item.content_value;
+        }
+      }
+    });
+
+    // Преобразуем данные постов в нужный формат
+    const formattedPosts = Object.keys(postsData).map(postNumber => ({
+      id: `post_${postNumber}`,
+      title: postsData[postNumber].title || '',
+      excerpt: postsData[postNumber].content ? postsData[postNumber].content.substring(0, 200) + '...' : '',
+      content: postsData[postNumber].content || '',
+      author: "IPS Team",
+      author_role: "Эксперт по покеру",
+      author_avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80&h=80&fit=crop&crop=face",
+      published_at: new Date().toISOString().split('T')[0],
+      read_time: "5 мин",
+      views: Math.floor(Math.random() * 1000) + 500,
+      likes: Math.floor(Math.random() * 100) + 20,
+      image: postsData[postNumber].image || 'https://images.unsplash.com/photo-1606092195730-5d7b9af1efc5?w=400&h=200&fit=crop',
+      tags: ["Стратегия", "Покер"],
+      is_featured: postNumber === '1', // Первый пост как featured
+      is_published: true
+    }));
+
+    setPosts(formattedPosts);
   };
 
   // Fallback данные если нет в CMS
