@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -30,15 +30,9 @@ export function TournamentRegistration({ tournaments, playerId, onRegistrationUp
   const [registeredTournaments, setRegisteredTournaments] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState<string>("");
   const [tournamentCounts, setTournamentCounts] = useState<Record<string, number>>({});
+  const [isInitialLoading, setIsInitialLoading] = useState(false);
 
-  useEffect(() => {
-    if (playerId && tournaments.length > 0) {
-      loadRegistrations();
-      loadTournamentCounts();
-    }
-  }, [playerId, tournaments.length]);
-
-  const loadRegistrations = async () => {
+  const loadRegistrations = useCallback(async () => {
     if (!playerId) return;
 
     try {
@@ -54,29 +48,48 @@ export function TournamentRegistration({ tournaments, playerId, onRegistrationUp
     } catch (error) {
       console.error('Error loading registrations:', error);
     }
-  };
+  }, [playerId]);
 
-  const loadTournamentCounts = async () => {
+  const loadTournamentCounts = useCallback(async () => {
     if (tournaments.length === 0) return;
 
     try {
-      // Загружаем счетчики для всех турниров одним запросом
-      const counts: Record<string, number> = {};
+      // Загружаем счетчики пакетно для оптимизации
+      const tournamentIds = tournaments.map(t => t.id);
       
-      for (const tournament of tournaments) {
-        const { count } = await supabase
-          .from('tournament_registrations')
-          .select('*', { count: 'exact', head: true })
-          .eq('tournament_id', tournament.id);
-        
-        counts[tournament.id] = count || 0;
-      }
+      const { data, error } = await supabase
+        .from('tournament_registrations')
+        .select('tournament_id')
+        .in('tournament_id', tournamentIds);
+
+      if (error) throw error;
+
+      // Подсчитываем регистрации для каждого турнира
+      const counts: Record<string, number> = {};
+      tournamentIds.forEach(id => {
+        counts[id] = data?.filter(reg => reg.tournament_id === id).length || 0;
+      });
       
       setTournamentCounts(counts);
     } catch (error) {
       console.error('Error loading tournament counts:', error);
     }
-  };
+  }, [tournaments]);
+
+  useEffect(() => {
+    const loadData = async () => {
+      if (playerId && tournaments.length > 0) {
+        setIsInitialLoading(true);
+        try {
+          await Promise.all([loadRegistrations(), loadTournamentCounts()]);
+        } finally {
+          setIsInitialLoading(false);
+        }
+      }
+    };
+    
+    loadData();
+  }, [playerId, tournaments.length]);
 
   const handleRegister = async (tournamentId: string) => {
     if (!playerId) {
@@ -195,6 +208,9 @@ export function TournamentRegistration({ tournaments, playerId, onRegistrationUp
       <div className="flex items-center gap-2 mb-6">
         <Trophy className="h-6 w-6 text-primary" />
         <h2 className="text-2xl font-bold text-foreground">Доступные турниры</h2>
+        {isInitialLoading && (
+          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary"></div>
+        )}
       </div>
 
       <div className="grid gap-6">
