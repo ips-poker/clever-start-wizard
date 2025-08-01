@@ -44,6 +44,8 @@ const adminSections = [
     label: "Контент",
     items: [
       { title: "Главная страница", id: "home-editor", icon: Home },
+      { title: "О нас", id: "about-editor", icon: Users },
+      { title: "Блог", id: "blog-editor", icon: FileText },
       { title: "Контакты и футер", id: "contact-footer", icon: FileText },
       { title: "Галерея", id: "gallery", icon: Image },
       { title: "Медиабиблиотека", id: "media", icon: Image },
