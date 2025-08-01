@@ -71,25 +71,67 @@ export function BlogPageEditor() {
         .from('cms_content')
         .select('*')
         .eq('page_slug', 'blog')
-        .eq('is_active', true);
+        .eq('is_active', true)
+        .order('content_key');
 
       if (pageError) throw pageError;
 
       if (pageData && pageData.length > 0) {
         const contentObj: any = {};
+        const postsData: any = {};
+        
         pageData.forEach(item => {
           if (item.content_type === 'json') {
             contentObj[item.content_key] = JSON.parse(item.content_value || '[]');
+          } else if (item.content_key.startsWith('post_')) {
+            // Парсим отдельные записи постов
+            const match = item.content_key.match(/post_(\d+)_(.+)/);
+            if (match) {
+              const postNumber = match[1];
+              const fieldName = match[2];
+              
+              if (!postsData[postNumber]) {
+                postsData[postNumber] = { id: `post_${postNumber}` };
+              }
+              
+              postsData[postNumber][fieldName] = item.content_value;
+            }
           } else {
             contentObj[item.content_key] = item.content_value || '';
           }
         });
 
-        if (contentObj.hero_title) {
-          setContent(prev => ({ ...prev, ...contentObj }));
+        // Обновляем заголовки только если они есть в базе
+        if (contentObj.hero_title || contentObj.hero_subtitle || contentObj.hero_description) {
+          setContent(prev => ({ 
+            ...prev, 
+            hero_title: contentObj.hero_title || prev.hero_title,
+            hero_subtitle: contentObj.hero_subtitle || prev.hero_subtitle,
+            hero_description: contentObj.hero_description || prev.hero_description
+          }));
         }
 
-        if (contentObj.posts) {
+        // Преобразуем данные постов в нужный формат
+        if (Object.keys(postsData).length > 0) {
+          const formattedPosts = Object.keys(postsData).map(postNumber => ({
+            id: `post_${postNumber}`,
+            title: postsData[postNumber].title || '',
+            excerpt: postsData[postNumber].content ? postsData[postNumber].content.substring(0, 150) + '...' : '',
+            content: postsData[postNumber].content || '',
+            author: "IPS Team",
+            author_role: "Эксперт по покеру",
+            author_avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80&h=80&fit=crop&crop=face",
+            published_at: new Date().toISOString().split('T')[0],
+            read_time: "5 мин",
+            views: Math.floor(Math.random() * 1000),
+            likes: Math.floor(Math.random() * 100),
+            image: postsData[postNumber].image || '',
+            tags: ["Стратегия", "Покер"],
+            is_featured: false,
+            is_published: true
+          }));
+          setPosts(formattedPosts);
+        } else if (contentObj.posts) {
           setPosts(contentObj.posts);
         }
       }
