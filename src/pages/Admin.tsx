@@ -7,6 +7,7 @@ import { AdminSidebar } from "@/components/cms/AdminSidebar";
 import { AdminDashboard } from "@/components/cms/AdminDashboard";
 import { HomePageEditor } from "@/components/cms/HomePageEditor";
 import { ContactFooterEditor } from "@/components/cms/ContactFooterEditor";
+import { PageEditor } from "@/components/cms/PageEditor";
 import { ContentManager } from "@/components/cms/ContentManager";
 import { GalleryManager } from "@/components/cms/GalleryManager";
 import { SEOManager } from "@/components/cms/SEOManager";
@@ -34,6 +35,8 @@ export default function Admin() {
         return <HomePageEditor />;
       case "contact-footer":
         return <ContactFooterEditor />;
+      case "page-editor":
+        return <PageEditor />;
       case "content":
         return <ContentManager />;
       case "gallery":
