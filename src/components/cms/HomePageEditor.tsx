@@ -1,405 +1,586 @@
 import { useState, useEffect } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Home, Save, RefreshCw, Eye, EyeOff } from "lucide-react";
+import { Loader2, Save, Home } from "lucide-react";
+import { ImageUploader } from "./ImageUploader";
 
-interface ContentItem {
-  id: string;
-  page_slug: string;
-  content_key: string;
-  content_value: string | null;
-  content_type: string;
-  is_active: boolean;
+interface HomeContent {
+  // Hero Section
+  hero_badge: string;
+  hero_title: string;
+  hero_subtitle: string;
+  hero_description: string;
+  hero_cta_text: string;
+  hero_background_image: string;
+  
+  // About Section
+  about_title: string;
+  about_description: string;
+  about_image: string;
+  
+  // Features
+  features_title: string;
+  features_subtitle: string;
+  feature_1_title: string;
+  feature_1_description: string;
+  feature_1_image: string;
+  feature_2_title: string;
+  feature_2_description: string;
+  feature_2_image: string;
+  feature_3_title: string;
+  feature_3_description: string;
+  feature_3_image: string;
+  
+  // Gallery Section
+  gallery_title: string;
+  gallery_subtitle: string;
+  
+  // Social Proof
+  social_title: string;
+  social_subtitle: string;
+  
+  // Contact Footer
+  contact_title: string;
+  contact_subtitle: string;
+  contact_telegram: string;
+  contact_phone: string;
+  contact_email: string;
+  contact_address: string;
 }
 
 export function HomePageEditor() {
-  const [content, setContent] = useState<Record<string, ContentItem>>({});
+  const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const { toast } = useToast();
-
-  const homePageFields = [
-    {
-      key: 'hero_title',
-      label: 'Главный заголовок',
-      description: 'Основной заголовок героя (например: IPS)',
-      type: 'text'
-    },
-    {
-      key: 'hero_subtitle',
-      label: 'Подзаголовок 1',
-      description: 'Первый подзаголовок (например: International)',
-      type: 'text'
-    },
-    {
-      key: 'hero_subtitle_2',
-      label: 'Подзаголовок 2',
-      description: 'Второй подзаголовок (например: Poker Style)',
-      type: 'text'
-    },
-    {
-      key: 'hero_badge',
-      label: 'Бейдж героя',
-      description: 'Текст в бейдже над заголовком',
-      type: 'text'
-    },
-    {
-      key: 'hero_description',
-      label: 'Описание героя',
-      description: 'Основное описание под заголовком',
-      type: 'textarea'
-    },
-    {
-      key: 'feature_1',
-      label: 'Особенность 1',
-      description: 'Первая особенность в блоках',
-      type: 'text'
-    },
-    {
-      key: 'feature_2',
-      label: 'Особенность 2',
-      description: 'Вторая особенность в блоках',
-      type: 'text'
-    },
-    {
-      key: 'feature_3',
-      label: 'Особенность 3',
-      description: 'Третья особенность в блоках',
-      type: 'text'
-    },
-    {
-      key: 'feature_4',
-      label: 'Особенность 4',
-      description: 'Четвертая особенность в блоках',
-      type: 'text'
-    },
-    {
-      key: 'cta_primary',
-      label: 'Основная кнопка',
-      description: 'Текст основной кнопки действия',
-      type: 'text'
-    },
-    {
-      key: 'cta_secondary',
-      label: 'Вторичная кнопка',
-      description: 'Текст вторичной кнопки',
-      type: 'text'
-    },
-    {
-      key: 'main_feature_title',
-      label: 'Заголовок главной функции',
-      description: 'Заголовок в карточке справа',
-      type: 'text'
-    },
-    {
-      key: 'main_feature_description',
-      label: 'Описание главной функции',
-      description: 'Описание в карточке справа',
-      type: 'textarea'
-    }
-  ];
+  
+  const [content, setContent] = useState<HomeContent>({
+    // Hero Section
+    hero_badge: "IPS",
+    hero_title: "International Poker Style",
+    hero_subtitle: "Премиальный покерный клуб",
+    hero_description: "Элитные турниры и профессиональный покер в Санкт-Петербурге с рейтинговой системой ELO",
+    hero_cta_text: "Записаться на турнир",
+    hero_background_image: "",
+    
+    // About Section
+    about_title: "О International Poker Series",
+    about_description: "Мы создаем незабываемые покерные турниры высочайшего уровня, объединяя профессионалов и любителей игры в атмосфере настоящего спорта и азарта.",
+    about_image: "",
+    
+    // Features
+    features_title: "Преимущества IPS",
+    features_subtitle: "Почему игроки выбирают наши турниры",
+    feature_1_title: "Профессиональная организация",
+    feature_1_description: "Турниры проводятся по международным стандартам с опытными дилерами",
+    feature_1_image: "",
+    feature_2_title: "ELO рейтинговая система", 
+    feature_2_description: "Уникальная система рейтинга для отслеживания прогресса игроков",
+    feature_2_image: "",
+    feature_3_title: "Элитная атмосфера",
+    feature_3_description: "Престижные локации и высокий уровень сервиса",
+    feature_3_image: "",
+    
+    // Gallery Section
+    gallery_title: "Галерея турниров",
+    gallery_subtitle: "Моменты наших незабываемых игр",
+    
+    // Social Proof
+    social_title: "Что говорят о нас игроки",
+    social_subtitle: "Отзывы участников турниров IPS",
+    
+    // Contact Footer
+    contact_title: "Присоединяйтесь к турнирам IPS",
+    contact_subtitle: "Свяжитесь с нами для участия в турнирах",
+    contact_telegram: "@IPSPoker",
+    contact_phone: "+7 (921) 000-00-00",
+    contact_email: "info@ipspoker.ru",
+    contact_address: "Санкт-Петербург, Россия",
+  });
 
   useEffect(() => {
-    fetchHomeContent();
+    fetchContent();
   }, []);
 
-  const fetchHomeContent = async () => {
+  const fetchContent = async () => {
     try {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from('cms_content')
         .select('*')
-        .eq('page_slug', 'home');
+        .eq('page_slug', 'home')
+        .eq('is_active', true)
+        .order('content_key');
 
       if (error) throw error;
 
-      // Convert array to object for easier access
-      const contentObj = (data || []).reduce((acc: Record<string, ContentItem>, item: ContentItem) => {
-        acc[item.content_key] = item;
-        return acc;
-      }, {});
+      if (data && data.length > 0) {
+        const contentObj: Record<string, string> = {};
+        
+        data.forEach(item => {
+          contentObj[item.content_key] = item.content_value || '';
+        });
 
-      setContent(contentObj);
+        setContent(prev => ({ ...prev, ...contentObj }));
+      }
     } catch (error) {
-      console.error('Error fetching content:', error);
+      console.error('Error fetching home content:', error);
       toast({
         title: "Ошибка",
-        description: "Не удалось загрузить контент",
-        variant: "destructive",
+        description: "Не удалось загрузить контент главной страницы",
+        variant: "destructive"
       });
     } finally {
       setLoading(false);
     }
   };
 
-  const createMissingContent = async () => {
-    const defaultValues: Record<string, string> = {
-      hero_title: 'IPS',
-      hero_subtitle: 'International',
-      hero_subtitle_2: 'Poker Style',
-      hero_badge: 'Премиальный покерный клуб',
-      hero_description: 'Премиальный покерный клуб с рейтинговой системой ELO. Развивайте навыки в элегантной атмосфере среди профессиональных игроков.',
-      feature_1: 'Честная игра',
-      feature_2: 'Рост навыков',
-      feature_3: 'Рейтинг ELO',
-      feature_4: 'Сообщество',
-      cta_primary: 'Начать играть',
-      cta_secondary: 'Рейтинг игроков',
-      main_feature_title: 'Рейтинговая система ELO',
-      main_feature_description: 'Профессиональная система оценки навыков покерных игроков'
-    };
-
-    const missingContent = homePageFields
-      .filter(field => !content[field.key])
-      .map(field => ({
+  const saveContent = async () => {
+    setSaving(true);
+    try {
+      const contentItems = Object.entries(content).map(([key, value]) => ({
         page_slug: 'home',
-        content_key: field.key,
-        content_value: defaultValues[field.key] || '',
-        content_type: field.type === 'textarea' ? 'text' : 'text',
+        content_key: key,
+        content_value: value,
+        content_type: 'text',
         is_active: true
       }));
 
-    if (missingContent.length > 0) {
-      try {
-        const { error } = await (supabase as any)
-          .from('cms_content')
-          .insert(missingContent);
-
-        if (error) throw error;
-
-        await fetchHomeContent();
-        toast({
-          title: "Успешно",
-          description: `Создано ${missingContent.length} элементов контента`,
-        });
-      } catch (error) {
-        console.error('Error creating content:', error);
-        toast({
-          title: "Ошибка",
-          description: "Не удалось создать контент",
-          variant: "destructive",
-        });
-      }
-    }
-  };
-
-  const updateContentValue = (key: string, value: string) => {
-    setContent(prev => ({
-      ...prev,
-      [key]: {
-        ...prev[key],
-        content_value: value
-      }
-    }));
-  };
-
-  const toggleContentActive = async (key: string) => {
-    const item = content[key];
-    if (!item) return;
-
-    try {
-      const { error } = await (supabase as any)
+      // Удаляем существующий контент для главной страницы
+      await supabase
         .from('cms_content')
-        .update({ is_active: !item.is_active })
-        .eq('id', item.id);
+        .delete()
+        .eq('page_slug', 'home');
+
+      // Вставляем новый контент
+      const { error } = await supabase
+        .from('cms_content')
+        .insert(contentItems);
 
       if (error) throw error;
 
-      setContent(prev => ({
-        ...prev,
-        [key]: {
-          ...prev[key],
-          is_active: !prev[key].is_active
-        }
-      }));
-
       toast({
         title: "Успешно",
-        description: `Элемент ${!item.is_active ? 'активирован' : 'деактивирован'}`,
+        description: "Контент главной страницы сохранен"
       });
     } catch (error) {
-      console.error('Error toggling content:', error);
+      console.error('Error saving home content:', error);
       toast({
         title: "Ошибка",
-        description: "Не удалось изменить состояние",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const saveAllContent = async () => {
-    setSaving(true);
-    try {
-      const updates = Object.entries(content)
-        .filter(([key, item]) => item.id)
-        .map(([key, item]) => (supabase as any)
-          .from('cms_content')
-          .update({ 
-            content_value: item.content_value,
-            is_active: item.is_active 
-          })
-          .eq('id', item.id)
-        );
-
-      await Promise.all(updates);
-
-      toast({
-        title: "Успешно",
-        description: "Все изменения сохранены",
-      });
-    } catch (error) {
-      console.error('Error saving content:', error);
-      toast({
-        title: "Ошибка",
-        description: "Не удалось сохранить изменения",
-        variant: "destructive",
+        description: "Не удалось сохранить контент",
+        variant: "destructive"
       });
     } finally {
       setSaving(false);
     }
   };
 
-  if (loading) {
-    return <div className="flex items-center justify-center p-8">Загрузка...</div>;
-  }
+  const updateContent = (key: keyof HomeContent, value: string) => {
+    setContent(prev => ({ ...prev, [key]: value }));
+  };
 
-  const missingFieldsCount = homePageFields.filter(field => !content[field.key]).length;
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="w-8 h-8 animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
+          <h1 className="text-3xl font-bold flex items-center gap-2">
             <Home className="w-6 h-6" />
-            Редактор главной страницы
-          </h2>
-          <p className="text-muted-foreground">Удобное редактирование всех элементов главной страницы</p>
+            Главная страница
+          </h1>
+          <p className="text-muted-foreground">Управление контентом и изображениями главной страницы</p>
         </div>
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            onClick={fetchHomeContent}
-            className="flex items-center gap-2"
-          >
-            <RefreshCw className="w-4 h-4" />
-            Обновить
-          </Button>
-          <Button
-            onClick={saveAllContent}
-            disabled={saving}
-            className="flex items-center gap-2"
-          >
-            <Save className="w-4 h-4" />
-            {saving ? 'Сохранение...' : 'Сохранить все'}
-          </Button>
-        </div>
+        <Button onClick={saveContent} disabled={saving} className="gap-2">
+          {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+          Сохранить изменения
+        </Button>
       </div>
 
-      {missingFieldsCount > 0 && (
-        <Card className="border-orange-200 bg-orange-50">
-          <CardContent className="p-4">
-            <div className="flex justify-between items-center">
-              <div>
-                <h3 className="font-semibold text-orange-800">Не хватает контента</h3>
-                <p className="text-orange-700">Обнаружено {missingFieldsCount} отсутствующих элементов контента</p>
-              </div>
-              <Button onClick={createMissingContent} variant="outline">
-                Создать недостающий контент
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      <Tabs defaultValue="hero" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-5">
+          <TabsTrigger value="hero">Герой</TabsTrigger>
+          <TabsTrigger value="about">О нас</TabsTrigger>
+          <TabsTrigger value="features">Особенности</TabsTrigger>
+          <TabsTrigger value="gallery">Галерея</TabsTrigger>
+          <TabsTrigger value="contact">Контакты</TabsTrigger>
+        </TabsList>
 
-      <div className="grid gap-6">
-        {homePageFields.map((field) => {
-          const item = content[field.key];
-          return (
-            <Card key={field.key} className={!item ? "border-dashed border-orange-300" : ""}>
-              <CardHeader className="pb-3">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <CardTitle className="text-lg flex items-center gap-2">
-                      {field.label}
-                      {!item && <Badge variant="outline" className="text-orange-600">Отсутствует</Badge>}
-                      {item && (
-                        <Badge variant={item.is_active ? "default" : "secondary"}>
-                          {item.is_active ? "Активен" : "Скрыт"}
-                        </Badge>
-                      )}
-                    </CardTitle>
-                    <CardDescription>{field.description}</CardDescription>
-                  </div>
-                  {item && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => toggleContentActive(field.key)}
-                      className="flex items-center gap-1"
-                    >
-                      {item.is_active ? (
-                        <>
-                          <Eye className="w-4 h-4" />
-                          Скрыть
-                        </>
-                      ) : (
-                        <>
-                          <EyeOff className="w-4 h-4" />
-                          Показать
-                        </>
-                      )}
-                    </Button>
-                  )}
+        {/* Hero Section */}
+        <TabsContent value="hero" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Главная секция (Hero)</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="hero_badge">Значок/Бейдж</Label>
+                <Input
+                  id="hero_badge"
+                  value={content.hero_badge}
+                  onChange={(e) => updateContent('hero_badge', e.target.value)}
+                  placeholder="IPS"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="hero_title">Главный заголовок</Label>
+                <Input
+                  id="hero_title"
+                  value={content.hero_title}
+                  onChange={(e) => updateContent('hero_title', e.target.value)}
+                  placeholder="International Poker Style"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="hero_subtitle">Подзаголовок</Label>
+                <Input
+                  id="hero_subtitle"
+                  value={content.hero_subtitle}
+                  onChange={(e) => updateContent('hero_subtitle', e.target.value)}
+                  placeholder="Премиальный покерный клуб"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="hero_description">Описание</Label>
+                <Textarea
+                  id="hero_description"
+                  value={content.hero_description}
+                  onChange={(e) => updateContent('hero_description', e.target.value)}
+                  rows={3}
+                  placeholder="Элитные турниры и профессиональный покер..."
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="hero_cta_text">Текст кнопки</Label>
+                <Input
+                  id="hero_cta_text"
+                  value={content.hero_cta_text}
+                  onChange={(e) => updateContent('hero_cta_text', e.target.value)}
+                  placeholder="Записаться на турнир"
+                />
+              </div>
+              
+              <ImageUploader
+                label="Фоновое изображение"
+                currentImageUrl={content.hero_background_image}
+                onImageChange={(url) => updateContent('hero_background_image', url)}
+                folder="home/hero"
+                placeholder="Фоновое изображение для главной секции"
+              />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* About Section */}
+        <TabsContent value="about" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Секция "О нас"</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="about_title">Заголовок</Label>
+                <Input
+                  id="about_title"
+                  value={content.about_title}
+                  onChange={(e) => updateContent('about_title', e.target.value)}
+                  placeholder="О International Poker Series"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="about_description">Описание</Label>
+                <Textarea
+                  id="about_description"
+                  value={content.about_description}
+                  onChange={(e) => updateContent('about_description', e.target.value)}
+                  rows={4}
+                  placeholder="Описание организации..."
+                />
+              </div>
+              
+              <ImageUploader
+                label="Изображение секции"
+                currentImageUrl={content.about_image}
+                onImageChange={(url) => updateContent('about_image', url)}
+                folder="home/about"
+                placeholder="Изображение для секции О нас"
+              />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Features Section */}
+        <TabsContent value="features" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Секция преимуществ</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="features_title">Заголовок секции</Label>
+                  <Input
+                    id="features_title"
+                    value={content.features_title}
+                    onChange={(e) => updateContent('features_title', e.target.value)}
+                    placeholder="Преимущества IPS"
+                  />
                 </div>
-              </CardHeader>
-              <CardContent>
-                {!item ? (
-                  <div className="text-center py-4 text-muted-foreground">
-                    <p>Элемент отсутствует. Нажмите "Создать недостающий контент" выше.</p>
-                  </div>
-                ) : (
+                <div className="space-y-2">
+                  <Label htmlFor="features_subtitle">Подзаголовок</Label>
+                  <Input
+                    id="features_subtitle"
+                    value={content.features_subtitle}
+                    onChange={(e) => updateContent('features_subtitle', e.target.value)}
+                    placeholder="Почему игроки выбирают наши турниры"
+                  />
+                </div>
+              </div>
+
+              {/* Feature 1 */}
+              <Card className="border-dashed">
+                <CardHeader>
+                  <CardTitle className="text-lg">Преимущество 1</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor={field.key}>Содержимое</Label>
-                    {field.type === 'textarea' ? (
-                      <Textarea
-                        id={field.key}
-                        value={item.content_value || ''}
-                        onChange={(e) => updateContentValue(field.key, e.target.value)}
-                        rows={3}
-                        className="min-h-[80px]"
-                      />
-                    ) : (
+                    <Label htmlFor="feature_1_title">Заголовок</Label>
+                    <Input
+                      id="feature_1_title"
+                      value={content.feature_1_title}
+                      onChange={(e) => updateContent('feature_1_title', e.target.value)}
+                      placeholder="Профессиональная организация"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="feature_1_description">Описание</Label>
+                    <Textarea
+                      id="feature_1_description"
+                      value={content.feature_1_description}
+                      onChange={(e) => updateContent('feature_1_description', e.target.value)}
+                      rows={2}
+                      placeholder="Описание преимущества..."
+                    />
+                  </div>
+                  <ImageUploader
+                    label="Изображение"
+                    currentImageUrl={content.feature_1_image}
+                    onImageChange={(url) => updateContent('feature_1_image', url)}
+                    folder="home/features"
+                    placeholder="Изображение для преимущества 1"
+                  />
+                </CardContent>
+              </Card>
+
+              {/* Feature 2 */}
+              <Card className="border-dashed">
+                <CardHeader>
+                  <CardTitle className="text-lg">Преимущество 2</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="feature_2_title">Заголовок</Label>
+                    <Input
+                      id="feature_2_title"
+                      value={content.feature_2_title}
+                      onChange={(e) => updateContent('feature_2_title', e.target.value)}
+                      placeholder="ELO рейтинговая система"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="feature_2_description">Описание</Label>
+                    <Textarea
+                      id="feature_2_description"
+                      value={content.feature_2_description}
+                      onChange={(e) => updateContent('feature_2_description', e.target.value)}
+                      rows={2}
+                      placeholder="Описание преимущества..."
+                    />
+                  </div>
+                  <ImageUploader
+                    label="Изображение"
+                    currentImageUrl={content.feature_2_image}
+                    onImageChange={(url) => updateContent('feature_2_image', url)}
+                    folder="home/features"
+                    placeholder="Изображение для преимущества 2"
+                  />
+                </CardContent>
+              </Card>
+
+              {/* Feature 3 */}
+              <Card className="border-dashed">
+                <CardHeader>
+                  <CardTitle className="text-lg">Преимущество 3</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="feature_3_title">Заголовок</Label>
+                    <Input
+                      id="feature_3_title"
+                      value={content.feature_3_title}
+                      onChange={(e) => updateContent('feature_3_title', e.target.value)}
+                      placeholder="Элитная атмосфера"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="feature_3_description">Описание</Label>
+                    <Textarea
+                      id="feature_3_description"
+                      value={content.feature_3_description}
+                      onChange={(e) => updateContent('feature_3_description', e.target.value)}
+                      rows={2}
+                      placeholder="Описание преимущества..."
+                    />
+                  </div>
+                  <ImageUploader
+                    label="Изображение"
+                    currentImageUrl={content.feature_3_image}
+                    onImageChange={(url) => updateContent('feature_3_image', url)}
+                    folder="home/features"
+                    placeholder="Изображение для преимущества 3"
+                  />
+                </CardContent>
+              </Card>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Gallery Section */}
+        <TabsContent value="gallery" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Секция галереи</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="gallery_title">Заголовок</Label>
+                <Input
+                  id="gallery_title"
+                  value={content.gallery_title}
+                  onChange={(e) => updateContent('gallery_title', e.target.value)}
+                  placeholder="Галерея турниров"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="gallery_subtitle">Подзаголовок</Label>
+                <Input
+                  id="gallery_subtitle"
+                  value={content.gallery_subtitle}
+                  onChange={(e) => updateContent('gallery_subtitle', e.target.value)}
+                  placeholder="Моменты наших незабываемых игр"
+                />
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Contact Section */}
+        <TabsContent value="contact" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Секция контактов</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="contact_title">Заголовок</Label>
+                  <Input
+                    id="contact_title"
+                    value={content.contact_title}
+                    onChange={(e) => updateContent('contact_title', e.target.value)}
+                    placeholder="Присоединяйтесь к турнирам IPS"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="contact_subtitle">Подзаголовок</Label>
+                  <Input
+                    id="contact_subtitle"
+                    value={content.contact_subtitle}
+                    onChange={(e) => updateContent('contact_subtitle', e.target.value)}
+                    placeholder="Свяжитесь с нами для участия в турнирах"
+                  />
+                </div>
+              </div>
+
+              <Card className="border-dashed">
+                <CardHeader>
+                  <CardTitle className="text-lg">Контактная информация</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="contact_telegram">Telegram</Label>
                       <Input
-                        id={field.key}
-                        value={item.content_value || ''}
-                        onChange={(e) => updateContentValue(field.key, e.target.value)}
+                        id="contact_telegram"
+                        value={content.contact_telegram}
+                        onChange={(e) => updateContent('contact_telegram', e.target.value)}
+                        placeholder="@IPSPoker"
                       />
-                    )}
-                    <div className="text-xs text-muted-foreground">
-                      Ключ: <code className="bg-muted px-1 rounded">{field.key}</code>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="contact_phone">Телефон</Label>
+                      <Input
+                        id="contact_phone"
+                        value={content.contact_phone}
+                        onChange={(e) => updateContent('contact_phone', e.target.value)}
+                        placeholder="+7 (921) 000-00-00"
+                      />
                     </div>
                   </div>
-                )}
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="contact_email">Email</Label>
+                      <Input
+                        id="contact_email"
+                        value={content.contact_email}
+                        onChange={(e) => updateContent('contact_email', e.target.value)}
+                        placeholder="info@ipspoker.ru"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="contact_address">Адрес</Label>
+                      <Input
+                        id="contact_address"
+                        value={content.contact_address}
+                        onChange={(e) => updateContent('contact_address', e.target.value)}
+                        placeholder="Санкт-Петербург, Россия"
+                      />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
 
-      <div className="flex justify-center">
-        <Button
-          onClick={saveAllContent}
-          disabled={saving}
+      {/* Save Button */}
+      <div className="flex justify-center pt-6">
+        <Button 
+          onClick={saveContent} 
+          disabled={saving} 
           size="lg"
-          className="flex items-center gap-2"
+          className="gap-2"
         >
-          <Save className="w-5 h-5" />
-          {saving ? 'Сохранение всех изменений...' : 'Сохранить все изменения'}
+          {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+          Сохранить все изменения
         </Button>
       </div>
     </div>
