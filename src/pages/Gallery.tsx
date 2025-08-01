@@ -54,8 +54,7 @@ export default function Gallery() {
       // Фильтруем изображения с корректными URL
       const validImages = (data || []).filter((item: GalleryItem) => 
         item.image_url && 
-        !item.image_url.startsWith('/src/') && 
-        item.title.trim() !== ''
+        item.image_url.trim() !== ''
       );
       
       setGallery(validImages);
