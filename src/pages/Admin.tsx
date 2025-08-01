@@ -12,13 +12,17 @@ import { FileManager } from "@/components/cms/FileManager";
 import { IntegrationsManager } from "@/components/cms/IntegrationsManager";
 import { BackupManager } from "@/components/cms/BackupManager";
 import { SitePreview } from "@/components/cms/SitePreview";
-import { Settings, FileText, Users, Trophy, Image, Search, Globe, Palette, Upload, Zap, HardDrive, Eye } from "lucide-react";
+import { HomePageEditor } from "@/components/cms/HomePageEditor";
+import { ContactFooterEditor } from "@/components/cms/ContactFooterEditor";
+import { Settings, FileText, Users, Trophy, Image, Search, Globe, Palette, Upload, Zap, HardDrive, Eye, Home, Phone } from "lucide-react";
 
 export default function Admin() {
-  const [activeTab, setActiveTab] = useState("invitations");
+  const [activeTab, setActiveTab] = useState("home-editor");
 
   const adminTabs = [
-    { id: "content", name: "Контент", icon: FileText },
+    { id: "home-editor", name: "Главная страница", icon: Home },
+    { id: "contact-footer", name: "Контакты и футер", icon: Phone },
+    { id: "content", name: "Весь контент", icon: FileText },
     { id: "preview", name: "Превью сайта", icon: Eye },
     { id: "gallery", name: "Галерея", icon: Image },
     { id: "seo", name: "SEO", icon: Search },
@@ -68,9 +72,15 @@ export default function Admin() {
 
             {/* Content Area */}
             <div className="space-y-6">
+              {activeTab === "home-editor" && <HomePageEditor />}
+
+              {activeTab === "contact-footer" && <ContactFooterEditor />}
+
               {activeTab === "content" && <ContentManager />}
 
               {activeTab === "preview" && <SitePreview />}
+
+              {activeTab === "gallery" && <GalleryManager />}
 
               {activeTab === "invitations" && (
                 <Card>
@@ -88,9 +98,6 @@ export default function Admin() {
                   </CardContent>
                 </Card>
               )}
-
-
-              {activeTab === "gallery" && <GalleryManager />}
 
               {activeTab === "files" && <FileManager />}
 
