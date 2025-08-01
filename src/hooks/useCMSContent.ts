@@ -17,6 +17,28 @@ export function useCMSContent(pageSlug: string) {
 
   useEffect(() => {
     fetchContent();
+    
+    // Подписываемся на изменения в реальном времени
+    const channel = supabase
+      .channel(`cms_content_${pageSlug}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'cms_content',
+          filter: `page_slug=eq.${pageSlug}`
+        },
+        () => {
+          // Перезагружаем контент при изменениях
+          fetchContent();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [pageSlug]);
 
   const fetchContent = async () => {
