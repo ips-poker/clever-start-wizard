@@ -2,6 +2,7 @@ import { useState } from "react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
+import { AuthGuard } from "@/components/auth/AuthGuard";
 import { AdminSidebar } from "@/components/cms/AdminSidebar";
 import { AdminDashboard } from "@/components/cms/AdminDashboard";
 import { HomePageEditor } from "@/components/cms/HomePageEditor";
@@ -81,8 +82,9 @@ export default function Admin() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
+    <AuthGuard requireAdmin={true}>
+      <div className="min-h-screen bg-background">
+        <Header />
       
       <SidebarProvider>
         <div className="flex min-h-screen w-full">
@@ -103,7 +105,8 @@ export default function Admin() {
         </div>
       </SidebarProvider>
 
-      <Footer />
-    </div>
+        <Footer />
+      </div>
+    </AuthGuard>
   );
 }
