@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Trophy, Users, Clock, Settings, Plus, Play, Pause, Square, RotateCcw, CheckCircle, UserPlus, Volume2, Maximize, StopCircle, ChevronLeft, ChevronRight, Activity, TrendingUp, AlertCircle, DollarSign, Target, BarChart3, Edit, Calculator } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { AuthGuard } from "@/components/auth/AuthGuard";
 import PlayerRegistration from "@/components/PlayerRegistration";
 
 import TournamentOverview from "@/components/TournamentOverview";
@@ -612,8 +613,9 @@ const TournamentDirector = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100/50">
-      <div className="container mx-auto py-8 px-4">
+    <AuthGuard requireAdmin={true}>
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100/50">
+        <div className="container mx-auto py-8 px-4">
         <div className="mb-12 flex items-center gap-6">
           <div className="flex items-center gap-4">
             <div className="w-16 h-16 bg-white rounded-xl flex items-center justify-center shadow-elegant border border-gray-200/30">
@@ -1773,6 +1775,7 @@ const TournamentDirector = () => {
         </DialogContent>
       </Dialog>
     </div>
+    </AuthGuard>
   );
 };
 

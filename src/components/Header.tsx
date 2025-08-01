@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Menu, X, Spade, LogIn, Settings, LogOut, User } from "lucide-react";
+import { Menu, X, Spade, LogIn, Settings, LogOut, User, Trophy } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import {
   DropdownMenu,
@@ -22,8 +22,7 @@ export function Header() {
     { name: "Рейтинг", href: "/ratings" },
     { name: "Галерея", href: "/gallery" },
     { name: "Блог", href: "/blog" },
-    { name: "О нас", href: "/about" },
-    { name: "IPS Tournament Manager", href: "/director" }
+    { name: "О нас", href: "/about" }
   ];
 
   const handleSignOut = async () => {
@@ -76,16 +75,28 @@ export function Header() {
             {isAuthenticated ? (
               <>
                 {isAdmin && (
-                  <Link to="/admin">
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="hover:bg-primary/10 hover:text-primary transition-all duration-300 font-medium"
-                    >
-                      <Settings className="w-4 h-4 mr-2" />
-                      Админ панель
-                    </Button>
-                  </Link>
+                  <>
+                    <Link to="/director">
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="hover:bg-primary/10 hover:text-primary transition-all duration-300 font-medium"
+                      >
+                        <Trophy className="w-4 h-4 mr-2" />
+                        Турнирный директор
+                      </Button>
+                    </Link>
+                    <Link to="/admin">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="hover:bg-primary/10 hover:text-primary transition-all duration-300 font-medium"
+                      >
+                        <Settings className="w-4 h-4 mr-2" />
+                        Админ панель
+                      </Button>
+                    </Link>
+                  </>
                 )}
                 
                 <DropdownMenu>
@@ -154,14 +165,24 @@ export function Header() {
               ))}
               
               {isAuthenticated && isAdmin && (
-                <Link
-                  to="/admin"
-                  className="text-sm font-medium text-foreground hover:text-poker-charcoal transition-colors duration-300 py-3 border-b border-border/30"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  <Settings className="w-4 h-4 mr-2 inline" />
-                  Админ панель
-                </Link>
+                <>
+                  <Link
+                    to="/director"
+                    className="text-sm font-medium text-foreground hover:text-poker-charcoal transition-colors duration-300 py-3 border-b border-border/30"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    <Trophy className="w-4 h-4 mr-2 inline" />
+                    Турнирный директор
+                  </Link>
+                  <Link
+                    to="/admin"
+                    className="text-sm font-medium text-foreground hover:text-poker-charcoal transition-colors duration-300 py-3 border-b border-border/30"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    <Settings className="w-4 h-4 mr-2 inline" />
+                    Админ панель
+                  </Link>
+                </>
               )}
               
               <div className="pt-4 space-y-3">
