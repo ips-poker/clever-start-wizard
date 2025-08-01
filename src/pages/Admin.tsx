@@ -11,20 +11,22 @@ import { SettingsManager } from "@/components/cms/SettingsManager";
 import { FileManager } from "@/components/cms/FileManager";
 import { IntegrationsManager } from "@/components/cms/IntegrationsManager";
 import { BackupManager } from "@/components/cms/BackupManager";
-import { Settings, FileText, Users, Trophy, Image, Search, Globe, Palette, Upload, Zap, HardDrive } from "lucide-react";
+import { SitePreview } from "@/components/cms/SitePreview";
+import { Settings, FileText, Users, Trophy, Image, Search, Globe, Palette, Upload, Zap, HardDrive, Eye } from "lucide-react";
 
 export default function Admin() {
   const [activeTab, setActiveTab] = useState("invitations");
 
   const adminTabs = [
-    { id: "invitations", name: "Приглашения", icon: FileText },
     { id: "content", name: "Контент", icon: FileText },
+    { id: "preview", name: "Превью сайта", icon: Eye },
     { id: "gallery", name: "Галерея", icon: Image },
-    { id: "files", name: "Файлы", icon: Upload },
     { id: "seo", name: "SEO", icon: Search },
+    { id: "settings", name: "Настройки", icon: Settings },
+    { id: "files", name: "Файлы", icon: Upload },
     { id: "integrations", name: "Интеграции", icon: Zap },
     { id: "backup", name: "Резервные копии", icon: HardDrive },
-    { id: "settings", name: "Настройки", icon: Settings },
+    { id: "invitations", name: "Приглашения", icon: FileText },
     { id: "tournaments", name: "Турниры", icon: Trophy },
     { id: "players", name: "Игроки", icon: Users },
   ];
@@ -66,6 +68,10 @@ export default function Admin() {
 
             {/* Content Area */}
             <div className="space-y-6">
+              {activeTab === "content" && <ContentManager />}
+
+              {activeTab === "preview" && <SitePreview />}
+
               {activeTab === "invitations" && (
                 <Card>
                   <CardHeader>
@@ -83,7 +89,6 @@ export default function Admin() {
                 </Card>
               )}
 
-              {activeTab === "content" && <ContentManager />}
 
               {activeTab === "gallery" && <GalleryManager />}
 

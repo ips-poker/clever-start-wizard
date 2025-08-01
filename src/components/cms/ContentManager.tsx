@@ -10,6 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { FileText, Plus, Edit, Trash2, Save, X } from "lucide-react";
+import { QuickSetup } from "./QuickSetup";
 
 interface CMSContent {
   id: string;
@@ -53,6 +54,9 @@ export function ContentManager() {
     { value: 'rating', label: 'Рейтинг' },
     { value: 'gallery', label: 'Галерея' },
     { value: 'contact', label: 'Контакты' },
+    { value: 'footer', label: 'Футер' },
+    { value: 'services', label: 'Услуги' },
+    { value: 'header', label: 'Шапка сайта' },
   ];
 
   const contentTypes = [
@@ -294,6 +298,11 @@ export function ContentManager() {
         </Card>
       )}
 
+      {/* Quick Setup */}
+      {content.length === 0 && (
+        <QuickSetup />
+      )}
+
       {/* Content List */}
       <div className="space-y-4">
         {content.length === 0 ? (
@@ -301,10 +310,10 @@ export function ContentManager() {
             <CardContent className="p-8 text-center">
               <FileText className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-semibold mb-2">Нет контента</h3>
-              <p className="text-muted-foreground mb-4">Начните добавлять контент для управления сайтом</p>
+              <p className="text-muted-foreground mb-4">Используйте быстрою настройку выше или добавьте контент вручную</p>
               <Button onClick={() => setShowAddForm(true)}>
                 <Plus size={16} className="mr-2" />
-                Добавить первый контент
+                Добавить контент вручную
               </Button>
             </CardContent>
           </Card>
