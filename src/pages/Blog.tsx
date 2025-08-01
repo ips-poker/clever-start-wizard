@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogClose } from "@/components/ui/dialog";
 import { useCMSContent } from "@/hooks/useCMSContent";
 import { supabase } from "@/integrations/supabase/client";
 import { 
@@ -51,6 +52,18 @@ export default function Blog() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("Все");
+  const [selectedPost, setSelectedPost] = useState<BlogPost | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const openPostModal = (post: BlogPost) => {
+    setSelectedPost(post);
+    setIsModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setSelectedPost(null);
+  };
 
   useEffect(() => {
     fetchBlogPosts();
@@ -258,7 +271,10 @@ export default function Blog() {
                         </Button>
                       </div>
                       
-                      <Button className="bg-gradient-button">
+                      <Button 
+                        className="bg-gradient-button"
+                        onClick={() => openPostModal(featuredPost)}
+                      >
                         Читать полностью
                         <ChevronRight className="w-4 h-4 ml-2" />
                       </Button>
@@ -353,7 +369,11 @@ export default function Blog() {
                             </div>
                           </div>
                           
-                          <Button variant="ghost" className="w-full group-hover:bg-poker-accent/10 transition-colors">
+                          <Button 
+                            variant="ghost" 
+                            className="w-full group-hover:bg-poker-accent/10 transition-colors"
+                            onClick={() => openPostModal(post)}
+                          >
                             Читать далее
                             <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
                           </Button>
@@ -484,6 +504,97 @@ export default function Blog() {
           </div>
         </div>
       </main>
+      
+      {/* Article Modal */}
+      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          {selectedPost && (
+            <>
+              <DialogHeader>
+                <div className="flex items-center gap-2 mb-2">
+                  {selectedPost.tags.map((tag) => (
+                    <Badge key={tag} variant="outline" className="text-xs">
+                      {tag}
+                    </Badge>
+                  ))}
+                </div>
+                <DialogTitle className="text-2xl font-bold text-poker-primary">
+                  {selectedPost.title}
+                </DialogTitle>
+                <DialogDescription className="text-lg text-muted-foreground">
+                  {selectedPost.excerpt.replace('...', '')}
+                </DialogDescription>
+              </DialogHeader>
+              
+              <div className="space-y-6">
+                {/* Author and Meta Info */}
+                <div className="flex items-center justify-between border-b border-border pb-4">
+                  <div className="flex items-center gap-4">
+                    <img 
+                      src={selectedPost.author_avatar}
+                      alt={selectedPost.author}
+                      className="w-12 h-12 rounded-full"
+                    />
+                    <div>
+                      <p className="font-medium text-poker-primary">{selectedPost.author}</p>
+                      <p className="text-sm text-muted-foreground">{selectedPost.author_role}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                    <div className="flex items-center gap-1">
+                      <Calendar className="w-4 h-4" />
+                      {new Date(selectedPost.published_at).toLocaleDateString('ru-RU')}
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Clock className="w-4 h-4" />
+                      {selectedPost.read_time}
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Eye className="w-4 h-4" />
+                      {selectedPost.views}
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Article Image */}
+                <div className="relative rounded-lg overflow-hidden">
+                  <img 
+                    src={selectedPost.image}
+                    alt={selectedPost.title}
+                    className="w-full h-64 object-cover"
+                  />
+                </div>
+                
+                {/* Article Content */}
+                <div className="prose prose-lg max-w-none text-foreground">
+                  <div dangerouslySetInnerHTML={{ __html: selectedPost.content }} />
+                </div>
+                
+                {/* Actions */}
+                <div className="flex items-center justify-between pt-6 border-t border-border">
+                  <div className="flex items-center gap-4">
+                    <Button variant="outline" size="sm">
+                      <Heart className="w-4 h-4 mr-2" />
+                      {selectedPost.likes}
+                    </Button>
+                    <Button variant="outline" size="sm">
+                      <Share2 className="w-4 h-4 mr-2" />
+                      Поделиться
+                    </Button>
+                  </div>
+                  
+                  <DialogClose asChild>
+                    <Button variant="ghost">
+                      Закрыть
+                    </Button>
+                  </DialogClose>
+                </div>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
       
       <Footer />
     </div>
