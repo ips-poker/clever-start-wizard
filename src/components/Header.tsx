@@ -1,10 +1,20 @@
-import { Button } from "@/components/ui/button";
-import { Spade, Menu, X } from "lucide-react";
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Menu, X, Spade, LogIn, Settings, LogOut, User } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { user, userProfile, signOut, isAuthenticated, isAdmin } = useAuth();
+  const location = useLocation();
 
   const navItems = [
     { name: "Главная", href: "/" },
@@ -13,9 +23,13 @@ export function Header() {
     { name: "Галерея", href: "/gallery" },
     { name: "Блог", href: "/blog" },
     { name: "О нас", href: "/about" },
-    { name: "IPS Tournament Manager", href: "/director" },
-    { name: "Админ панель", href: "/admin" }
+    { name: "IPS Tournament Manager", href: "/director" }
   ];
+
+  const handleSignOut = async () => {
+    await signOut();
+    setIsMenuOpen(false);
+  };
 
   return (
     <header className="fixed top-0 w-full z-50 bg-background/95 backdrop-blur-sm border-b border-border/50">
@@ -57,14 +71,58 @@ export function Header() {
             ))}
           </nav>
 
-          {/* Brand Auth Buttons */}
+          {/* Auth Section */}
           <div className="hidden md:flex items-center space-x-3">
-            <Button variant="ghost" size="sm" className="hover:bg-poker-steel/10 hover:text-poker-steel transition-all duration-300 font-medium">
-              Войти
-            </Button>
-            <Button size="sm" className="bg-gradient-charcoal text-white hover:shadow-charcoal transition-all duration-300 font-semibold">
-              Регистрация
-            </Button>
+            {isAuthenticated ? (
+              <>
+                {isAdmin && (
+                  <Link to="/admin">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="hover:bg-primary/10 hover:text-primary transition-all duration-300 font-medium"
+                    >
+                      <Settings className="w-4 h-4 mr-2" />
+                      Админ панель
+                    </Button>
+                  </Link>
+                )}
+                
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="sm" className="flex items-center gap-2">
+                      <User className="w-4 h-4" />
+                      {userProfile?.full_name || user?.email?.split('@')[0] || 'Пользователь'}
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56">
+                    <DropdownMenuItem disabled>
+                      <User className="w-4 h-4 mr-2" />
+                      {user?.email}
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={handleSignOut}>
+                      <LogOut className="w-4 h-4 mr-2" />
+                      Выйти
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </>
+            ) : (
+              <>
+                <Link to="/auth">
+                  <Button variant="ghost" size="sm" className="hover:bg-poker-steel/10 hover:text-poker-steel transition-all duration-300 font-medium">
+                    <LogIn className="w-4 h-4 mr-2" />
+                    Войти
+                  </Button>
+                </Link>
+                <Link to="/auth">
+                  <Button size="sm" className="bg-gradient-charcoal text-white hover:shadow-charcoal transition-all duration-300 font-semibold">
+                    Регистрация
+                  </Button>
+                </Link>
+              </>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -94,13 +152,49 @@ export function Header() {
                   {item.name}
                 </Link>
               ))}
+              
+              {isAuthenticated && isAdmin && (
+                <Link
+                  to="/admin"
+                  className="text-sm font-medium text-foreground hover:text-poker-charcoal transition-colors duration-300 py-3 border-b border-border/30"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  <Settings className="w-4 h-4 mr-2 inline" />
+                  Админ панель
+                </Link>
+              )}
+              
               <div className="pt-4 space-y-3">
-                <Button variant="ghost" size="sm" className="w-full justify-start hover:bg-poker-accent/10">
-                  Войти
-                </Button>
-                <Button size="sm" className="w-full bg-poker-charcoal text-poker-cream">
-                  Регистрация
-                </Button>
+                {isAuthenticated ? (
+                  <>
+                    <div className="text-sm text-muted-foreground mb-2">
+                      {user?.email}
+                    </div>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="w-full justify-start"
+                      onClick={handleSignOut}
+                    >
+                      <LogOut className="w-4 h-4 mr-2" />
+                      Выйти
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Link to="/auth" onClick={() => setIsMenuOpen(false)}>
+                      <Button variant="ghost" size="sm" className="w-full justify-start hover:bg-poker-accent/10">
+                        <LogIn className="w-4 h-4 mr-2" />
+                        Войти
+                      </Button>
+                    </Link>
+                    <Link to="/auth" onClick={() => setIsMenuOpen(false)}>
+                      <Button size="sm" className="w-full bg-poker-charcoal text-poker-cream">
+                        Регистрация
+                      </Button>
+                    </Link>
+                  </>
+                )}
               </div>
             </nav>
           </div>

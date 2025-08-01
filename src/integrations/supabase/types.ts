@@ -334,6 +334,42 @@ export type Database = {
         }
         Relationships: []
       }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          email: string | null
+          full_name: string | null
+          id: string
+          role: string | null
+          updated_at: string
+          user_id: string
+          user_role: Database["public"]["Enums"]["user_role"] | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          role?: string | null
+          updated_at?: string
+          user_id: string
+          user_role?: Database["public"]["Enums"]["user_role"] | null
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          role?: string | null
+          updated_at?: string
+          user_id?: string
+          user_role?: Database["public"]["Enums"]["user_role"] | null
+        }
+        Relationships: []
+      }
       tournament_registrations: {
         Row: {
           addons: number | null
@@ -484,6 +520,18 @@ export type Database = {
         Args: { tournament_id_param: string }
         Returns: boolean
       }
+      create_first_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      get_user_role: {
+        Args: { user_uuid: string }
+        Returns: Database["public"]["Enums"]["user_role"]
+      }
+      is_admin: {
+        Args: { user_uuid: string }
+        Returns: boolean
+      }
       publish_tournament: {
         Args: { tournament_id_param: string }
         Returns: boolean
@@ -502,7 +550,7 @@ export type Database = {
       }
     }
     Enums: {
-      [_ in never]: never
+      user_role: "admin" | "editor" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -629,6 +677,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      user_role: ["admin", "editor", "user"],
+    },
   },
 } as const
