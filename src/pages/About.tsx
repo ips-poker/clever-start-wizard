@@ -120,25 +120,35 @@ export default function About() {
         <section className="py-20 bg-gradient-surface relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-br from-poker-accent/5 to-poker-primary/5"></div>
           <div className="container mx-auto px-4 relative">
-            <div className="max-w-4xl mx-auto text-center">
-              <Badge variant="outline" className="mb-6 border-poker-accent text-poker-accent">
-                {getContent('hero_badge', 'О компании')}
-              </Badge>
-              <h1 className="text-5xl font-bold mb-6 bg-gradient-to-r from-poker-primary to-poker-accent bg-clip-text text-transparent">
-                {getContent('hero_title', 'International Poker Style')}
-              </h1>
-              <p className="text-xl text-muted-foreground leading-relaxed mb-8">
-                {getContent('hero_description', 'Мы создали уникальное пространство для любителей покера, где каждый может развивать свои навыки, участвовать в честных турнирах и расти в профессиональной рейтинговой системе.')}
-              </p>
-              <div className="flex flex-wrap justify-center gap-4">
-                <Button size="lg" className="bg-gradient-button hover:shadow-elevated">
-                  <Users className="w-5 h-5 mr-2" />
-                  Присоединиться
-                </Button>
-                <Button size="lg" variant="outline">
-                  <Trophy className="w-5 h-5 mr-2" />
-                  Наши турниры
-                </Button>
+            <div className="grid lg:grid-cols-2 gap-12 items-center">
+              <div className="max-w-2xl">
+                <Badge variant="outline" className="mb-6 border-poker-accent text-poker-accent">
+                  {getContent('hero_badge', 'О компании')}
+                </Badge>
+                <h1 className="text-5xl font-bold mb-6 bg-gradient-to-r from-poker-primary to-poker-accent bg-clip-text text-transparent">
+                  {getContent('hero_title', 'International Poker Style')}
+                </h1>
+                <p className="text-xl text-muted-foreground leading-relaxed mb-8">
+                  {getContent('hero_description', 'Мы создали уникальное пространство для любителей покера, где каждый может развивать свои навыки, участвовать в честных турнирах и расти в профессиональной рейтинговой системе.')}
+                </p>
+                <div className="flex flex-wrap gap-4">
+                  <Button size="lg" className="bg-gradient-button hover:shadow-elevated">
+                    <Users className="w-5 h-5 mr-2" />
+                    Присоединиться
+                  </Button>
+                  <Button size="lg" variant="outline">
+                    <Trophy className="w-5 h-5 mr-2" />
+                    Наши турниры
+                  </Button>
+                </div>
+              </div>
+              <div className="relative">
+                <img 
+                  src={getContent('hero_image', 'https://images.unsplash.com/photo-1606092195730-5d7b9af1efc5?w=600&h=600&fit=crop')}
+                  alt="IPS Poker Club"
+                  className="rounded-2xl shadow-floating w-full"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-poker-primary/20 to-transparent rounded-2xl"></div>
               </div>
             </div>
           </div>
