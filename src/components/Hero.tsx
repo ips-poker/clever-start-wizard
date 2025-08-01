@@ -5,8 +5,10 @@ import { Trophy, Users, Calendar, Star, TrendingUp, Shield, Award, Play } from "
 import luxuryPokerHero from "@/assets/luxury-poker-hero.jpg";
 import pokerChipsBg from "@/assets/poker-chips-bg.jpg";
 import ipsLogo from "/lovable-uploads/c77304bf-5309-4bdc-afcc-a81c8d3ff6c2.png";
+import { useCMSContent } from "@/hooks/useCMSContent";
 
 export function Hero() {
+  const { getContent, loading } = useCMSContent('home');
   return (
     <section className="relative min-h-screen flex items-center overflow-hidden">
       {/* Background Image with Overlay */}
@@ -38,7 +40,7 @@ export function Hero() {
             <div className="space-y-8 animate-slide-up [animation-delay:0.2s]">
               <div className="flex justify-center lg:justify-start">
                 <Badge className="bg-white/10 border border-white/30 text-white font-semibold px-6 py-3 rounded-full shadow-subtle backdrop-blur-md animate-scale-in [animation-delay:0.4s]">
-                  Премиальный покерный клуб
+                  {getContent('hero_badge', 'Премиальный покерный клуб')}
                 </Badge>
               </div>
               
@@ -54,13 +56,13 @@ export function Hero() {
                 <div className="flex-1">
                   <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight tracking-tight">
                     <span className="text-white block leading-none">
-                      IPS
+                      {getContent('hero_title', 'IPS')}
                     </span>
                     <span className="block text-poker-accent-light text-2xl sm:text-3xl lg:text-4xl mt-2 font-semibold leading-tight">
-                      International
+                      {getContent('hero_subtitle', 'International')}
                     </span>
                     <span className="block text-xl sm:text-2xl lg:text-3xl font-medium text-white/90 tracking-wide leading-tight mt-1">
-                      Poker Style
+                      {getContent('hero_subtitle_2', 'Poker Style')}
                     </span>
                   </h1>
                 </div>
@@ -68,8 +70,7 @@ export function Hero() {
                
                <div className="text-center lg:text-left">
                  <p className="text-lg text-white/90 max-w-2xl mx-auto lg:mx-0 leading-relaxed font-medium animate-fade-in [animation-delay:0.8s]">
-                   Премиальный покерный клуб с рейтинговой системой ELO. 
-                   Развивайте навыки в элегантной атмосфере среди профессиональных игроков.
+                   {getContent('hero_description', 'Премиальный покерный клуб с рейтинговой системой ELO. Развивайте навыки в элегантной атмосфере среди профессиональных игроков.')}
                  </p>
                </div>
 
@@ -77,19 +78,19 @@ export function Hero() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 animate-slide-up [animation-delay:1s] max-w-2xl mx-auto lg:mx-0">
                    <div className="flex items-center justify-center lg:justify-start space-x-3 text-sm bg-white/8 px-4 py-3 rounded-xl backdrop-blur-md border border-white/20 text-white font-medium shadow-subtle">
                      <Shield className="w-5 h-5 text-poker-accent-light flex-shrink-0" />
-                     <span>Честная игра</span>
+                     <span>{getContent('feature_1', 'Честная игра')}</span>
                    </div>
                    <div className="flex items-center justify-center lg:justify-start space-x-3 text-sm bg-white/8 px-4 py-3 rounded-xl backdrop-blur-md border border-white/20 text-white font-medium shadow-subtle">
                      <TrendingUp className="w-5 h-5 text-poker-accent-light flex-shrink-0" />
-                     <span>Рост навыков</span>
+                     <span>{getContent('feature_2', 'Рост навыков')}</span>
                    </div>
                    <div className="flex items-center justify-center lg:justify-start space-x-3 text-sm bg-white/8 px-4 py-3 rounded-xl backdrop-blur-md border border-white/20 text-white font-medium shadow-subtle">
                      <Award className="w-5 h-5 text-poker-accent-light flex-shrink-0" />
-                     <span>Рейтинг ELO</span>
+                     <span>{getContent('feature_3', 'Рейтинг ELO')}</span>
                    </div>
                    <div className="flex items-center justify-center lg:justify-start space-x-3 text-sm bg-white/8 px-4 py-3 rounded-xl backdrop-blur-md border border-white/20 text-white font-medium shadow-subtle">
                      <Users className="w-5 h-5 text-poker-accent-light flex-shrink-0" />
-                     <span>Сообщество</span>
+                     <span>{getContent('feature_4', 'Сообщество')}</span>
                    </div>
                 </div>
              </div>
@@ -97,10 +98,10 @@ export function Hero() {
              <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start animate-scale-in [animation-delay:1.2s] max-w-lg mx-auto lg:mx-0">
                 <Button size="lg" className="bg-poker-accent text-white hover:bg-poker-accent/90 transition-all duration-300 font-semibold px-8 py-4 text-lg rounded-xl shadow-card hover:scale-105 hover:shadow-elegant">
                   <Play className="w-6 h-6 mr-3" />
-                  Начать играть
+                  {getContent('cta_primary', 'Начать играть')}
                 </Button>
                 <Button size="lg" variant="outline" className="border-2 border-white/50 text-white bg-white/10 hover:bg-white/20 hover:text-white transition-all duration-300 font-semibold px-8 py-4 text-lg rounded-xl backdrop-blur-md shadow-card hover:scale-105 hover:border-white/70">
-                  Рейтинг игроков
+                  {getContent('cta_secondary', 'Рейтинг игроков')}
                 </Button>
              </div>
 
@@ -129,8 +130,8 @@ export function Hero() {
                   <div className="w-20 h-20 bg-poker-accent rounded-2xl flex items-center justify-center mx-auto shadow-card text-white">
                     <Trophy className="w-10 h-10" />
                   </div>
-                  <h3 className="text-2xl lg:text-3xl font-bold text-white">Рейтинговая система ELO</h3>
-                  <p className="text-white/90 text-base lg:text-lg font-medium">Профессиональная система оценки навыков покерных игроков</p>
+                  <h3 className="text-2xl lg:text-3xl font-bold text-white">{getContent('main_feature_title', 'Рейтинговая система ELO')}</h3>
+                  <p className="text-white/90 text-base lg:text-lg font-medium">{getContent('main_feature_description', 'Профессиональная система оценки навыков покерных игроков')}</p>
                   <Badge className="bg-poker-accent-light text-white px-6 py-3 font-semibold text-sm lg:text-base shadow-card">
                     Главная особенность
                   </Badge>
