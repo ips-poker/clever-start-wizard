@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, Save, Plus, Trash2, Edit, Eye } from "lucide-react";
+import { Loader2, Save, Plus, Trash2, Edit, Eye, Upload, Heart, Calendar, Clock, User } from "lucide-react";
 
 interface BlogPost {
   id: string;
@@ -38,6 +38,7 @@ export function BlogPageEditor() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [editingPost, setEditingPost] = useState<string | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
   
   const [content, setContent] = useState<BlogContent>({
     hero_title: "Покерная мудрость и аналитика",
@@ -53,7 +54,7 @@ export function BlogPageEditor() {
     author: "",
     author_role: "",
     author_avatar: "",
-    read_time: "",
+    read_time: "5 мин",
     image: "",
     tags: [],
     is_featured: false,
@@ -125,7 +126,7 @@ export function BlogPageEditor() {
             read_time: "5 мин",
             views: Math.floor(Math.random() * 1000),
             likes: Math.floor(Math.random() * 100),
-            image: postsData[postNumber].image || '',
+            image: postsData[postNumber].image || 'https://images.unsplash.com/photo-1606092195730-5d7b9af1efc5?w=400&h=200&fit=crop',
             tags: ["Стратегия", "Покер"],
             is_featured: false,
             is_published: true
@@ -144,6 +145,40 @@ export function BlogPageEditor() {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleImageUpload = async (file: File) => {
+    setUploadingImage(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`;
+      const filePath = `blog/${fileName}`;
+
+      const { error: uploadError, data } = await supabase.storage
+        .from('gallery')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('gallery')
+        .getPublicUrl(filePath);
+
+      setNewPost(prev => ({ ...prev, image: publicUrl }));
+      toast({
+        title: "Изображение загружено",
+        description: "Изображение успешно загружено в галерею",
+      });
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      toast({
+        title: "Ошибка загрузки",
+        description: "Не удалось загрузить изображение",
+        variant: "destructive",
+      });
+    } finally {
+      setUploadingImage(false);
     }
   };
 
@@ -200,20 +235,24 @@ export function BlogPageEditor() {
       title: newPost.title || "",
       excerpt: newPost.excerpt || "",
       content: newPost.content || "",
-      author: newPost.author || "",
-      author_role: newPost.author_role || "",
-      author_avatar: newPost.author_avatar || "",
+      author: newPost.author || "IPS Team",
+      author_role: newPost.author_role || "Эксперт по покеру",
+      author_avatar: newPost.author_avatar || "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80&h=80&fit=crop&crop=face",
       published_at: new Date().toISOString().split('T')[0],
       read_time: newPost.read_time || "5 мин",
-      views: 0,
-      likes: 0,
-      image: newPost.image || "",
-      tags: newPost.tags || [],
+      views: Math.floor(Math.random() * 1000),
+      likes: Math.floor(Math.random() * 100),
+      image: newPost.image || "https://images.unsplash.com/photo-1606092195730-5d7b9af1efc5?w=400&h=200&fit=crop",
+      tags: newPost.tags || ["Стратегия", "Покер"],
       is_featured: newPost.is_featured || false,
       is_published: newPost.is_published || true
     };
 
     setPosts([...posts, post]);
+    resetNewPost();
+  };
+
+  const resetNewPost = () => {
     setNewPost({
       title: "",
       excerpt: "",
@@ -221,7 +260,7 @@ export function BlogPageEditor() {
       author: "",
       author_role: "",
       author_avatar: "",
-      read_time: "",
+      read_time: "5 мин",
       image: "",
       tags: [],
       is_featured: false,
@@ -234,12 +273,6 @@ export function BlogPageEditor() {
     setPosts(posts.filter(post => post.id !== id));
   };
 
-  const updatePost = (id: string, field: keyof BlogPost, value: any) => {
-    setPosts(posts.map(post => 
-      post.id === id ? { ...post, [field]: value } : post
-    ));
-  };
-
   const startEditPost = (post: BlogPost) => {
     setNewPost(post);
     setEditingPost(post.id);
@@ -247,50 +280,11 @@ export function BlogPageEditor() {
 
   const saveEditPost = () => {
     if (editingPost && newPost) {
-      updatePost(editingPost, 'title', newPost.title);
-      updatePost(editingPost, 'excerpt', newPost.excerpt);
-      updatePost(editingPost, 'content', newPost.content);
-      updatePost(editingPost, 'author', newPost.author);
-      updatePost(editingPost, 'author_role', newPost.author_role);
-      updatePost(editingPost, 'author_avatar', newPost.author_avatar);
-      updatePost(editingPost, 'read_time', newPost.read_time);
-      updatePost(editingPost, 'image', newPost.image);
-      updatePost(editingPost, 'tags', newPost.tags);
-      updatePost(editingPost, 'is_featured', newPost.is_featured);
-      updatePost(editingPost, 'is_published', newPost.is_published);
-      
-      setNewPost({
-        title: "",
-        excerpt: "",
-        content: "",
-        author: "",
-        author_role: "",
-        author_avatar: "",
-        read_time: "",
-        image: "",
-        tags: [],
-        is_featured: false,
-        is_published: true
-      });
-      setEditingPost(null);
+      setPosts(posts.map(post => 
+        post.id === editingPost ? { ...post, ...newPost } as BlogPost : post
+      ));
+      resetNewPost();
     }
-  };
-
-  const cancelEdit = () => {
-    setNewPost({
-      title: "",
-      excerpt: "",
-      content: "",
-      author: "",
-      author_role: "",
-      author_avatar: "",
-      read_time: "",
-      image: "",
-      tags: [],
-      is_featured: false,
-      is_published: true
-    });
-    setEditingPost(null);
   };
 
   if (loading) {
@@ -305,37 +299,37 @@ export function BlogPageEditor() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold">Редактор блога</h2>
+          <h2 className="text-2xl font-bold text-poker-primary">Редактор блога</h2>
           <p className="text-muted-foreground">
-            Управление статьями и контентом блога
+            Управление статьями и контентом блога как на главной странице
           </p>
         </div>
         <Button onClick={saveContent} disabled={saving} className="bg-gradient-button">
           {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
-          Сохранить
+          Сохранить все
         </Button>
       </div>
 
       {/* Hero Section */}
-      <Card>
+      <Card className="border border-border/50">
         <CardHeader>
-          <CardTitle>Главная секция</CardTitle>
+          <CardTitle className="text-poker-primary">Главная секция блога</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <label className="text-sm font-medium">Заголовок</label>
-            <Input
-              value={content.hero_title}
-              onChange={(e) => setContent(prev => ({ ...prev, hero_title: e.target.value }))}
-              placeholder="Покерная мудрость и аналитика"
-            />
-          </div>
-          <div>
-            <label className="text-sm font-medium">Подзаголовок</label>
+            <label className="text-sm font-medium">Подзаголовок (бейдж)</label>
             <Input
               value={content.hero_subtitle}
               onChange={(e) => setContent(prev => ({ ...prev, hero_subtitle: e.target.value }))}
               placeholder="Блог IPS"
+            />
+          </div>
+          <div>
+            <label className="text-sm font-medium">Главный заголовок</label>
+            <Input
+              value={content.hero_title}
+              onChange={(e) => setContent(prev => ({ ...prev, hero_title: e.target.value }))}
+              placeholder="Покерная мудрость и аналитика"
             />
           </div>
           <div>
@@ -344,21 +338,22 @@ export function BlogPageEditor() {
               value={content.hero_description}
               onChange={(e) => setContent(prev => ({ ...prev, hero_description: e.target.value }))}
               rows={2}
-              placeholder="Описание блога..."
+              placeholder="Экспертные статьи, анализ раздач, стратегии и инсайты..."
             />
           </div>
         </CardContent>
       </Card>
 
       {/* Add/Edit Post Form */}
-      <Card>
+      <Card className="border border-border/50">
         <CardHeader>
-          <CardTitle>
-            {editingPost ? "Редактировать статью" : "Добавить статью"}
+          <CardTitle className="text-poker-primary">
+            {editingPost ? "Редактировать статью" : "Добавить новую статью"}
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+        <CardContent className="space-y-6">
+          {/* Basic Info */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="text-sm font-medium">Заголовок</label>
               <Input
@@ -377,27 +372,71 @@ export function BlogPageEditor() {
             </div>
           </div>
 
+          {/* Image Upload */}
+          <div>
+            <label className="text-sm font-medium">Изображение статьи</label>
+            <div className="space-y-3">
+              <Input
+                value={newPost.image}
+                onChange={(e) => setNewPost(prev => ({ ...prev, image: e.target.value }))}
+                placeholder="https://example.com/image.jpg"
+              />
+              <div className="flex items-center gap-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={uploadingImage}
+                  onClick={() => {
+                    const input = document.createElement('input');
+                    input.type = 'file';
+                    input.accept = 'image/*';
+                    input.onchange = (e) => {
+                      const file = (e.target as HTMLInputElement).files?.[0];
+                      if (file) handleImageUpload(file);
+                    };
+                    input.click();
+                  }}
+                >
+                  <Upload className="w-4 h-4 mr-2" />
+                  {uploadingImage ? "Загрузка..." : "Загрузить изображение"}
+                </Button>
+                {newPost.image && (
+                  <div className="relative">
+                    <img
+                      src={newPost.image}
+                      alt="Preview"
+                      className="w-20 h-12 object-cover rounded border"
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Content */}
           <div>
             <label className="text-sm font-medium">Краткое описание</label>
             <Textarea
               value={newPost.excerpt}
               onChange={(e) => setNewPost(prev => ({ ...prev, excerpt: e.target.value }))}
               rows={3}
-              placeholder="Краткое описание статьи..."
+              placeholder="Краткое описание статьи для карточки..."
             />
           </div>
 
           <div>
-            <label className="text-sm font-medium">Содержание</label>
+            <label className="text-sm font-medium">Полное содержание</label>
             <Textarea
               value={newPost.content}
               onChange={(e) => setNewPost(prev => ({ ...prev, content: e.target.value }))}
-              rows={8}
+              rows={10}
               placeholder="Полный текст статьи..."
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          {/* Author Info */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label className="text-sm font-medium">Автор</label>
               <Input
@@ -407,16 +446,13 @@ export function BlogPageEditor() {
               />
             </div>
             <div>
-              <label className="text-sm font-medium">Должность автора</label>
+              <label className="text-sm font-medium">Должность</label>
               <Input
                 value={newPost.author_role}
                 onChange={(e) => setNewPost(prev => ({ ...prev, author_role: e.target.value }))}
-                placeholder="Должность"
+                placeholder="Должность автора"
               />
             </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="text-sm font-medium">Аватар автора (URL)</label>
               <Input
@@ -425,16 +461,9 @@ export function BlogPageEditor() {
                 placeholder="https://example.com/avatar.jpg"
               />
             </div>
-            <div>
-              <label className="text-sm font-medium">Изображение статьи (URL)</label>
-              <Input
-                value={newPost.image}
-                onChange={(e) => setNewPost(prev => ({ ...prev, image: e.target.value }))}
-                placeholder="https://example.com/image.jpg"
-              />
-            </div>
           </div>
 
+          {/* Tags */}
           <div>
             <label className="text-sm font-medium">Теги (через запятую)</label>
             <Input
@@ -443,17 +472,18 @@ export function BlogPageEditor() {
                 ...prev, 
                 tags: e.target.value.split(',').map(tag => tag.trim()).filter(Boolean) 
               }))}
-              placeholder="Стратегия, Покер, Анализ"
+              placeholder="Стратегия, Покер, Анализ, ELO"
             />
           </div>
 
+          {/* Settings */}
           <div className="flex items-center gap-6">
             <div className="flex items-center gap-2">
               <Switch
                 checked={newPost.is_featured}
                 onCheckedChange={(checked) => setNewPost(prev => ({ ...prev, is_featured: checked }))}
               />
-              <label className="text-sm font-medium">Рекомендуемая</label>
+              <label className="text-sm font-medium">Рекомендуемая статья</label>
             </div>
             <div className="flex items-center gap-2">
               <Switch
@@ -464,19 +494,19 @@ export function BlogPageEditor() {
             </div>
           </div>
 
-          <div className="flex gap-2">
+          <div className="flex gap-2 pt-4">
             {editingPost ? (
               <>
                 <Button onClick={saveEditPost} className="bg-gradient-button">
                   <Save className="w-4 h-4 mr-2" />
                   Сохранить изменения
                 </Button>
-                <Button onClick={cancelEdit} variant="outline">
+                <Button onClick={resetNewPost} variant="outline">
                   Отмена
                 </Button>
               </>
             ) : (
-              <Button onClick={addPost} className="bg-gradient-button">
+              <Button onClick={addPost} className="bg-gradient-button" disabled={!newPost.title}>
                 <Plus className="w-4 h-4 mr-2" />
                 Добавить статью
               </Button>
@@ -486,66 +516,111 @@ export function BlogPageEditor() {
       </Card>
 
       {/* Posts List */}
-      <Card>
+      <Card className="border border-border/50">
         <CardHeader>
-          <CardTitle>Статьи ({posts.length})</CardTitle>
+          <CardTitle className="text-poker-primary">Статьи блога ({posts.length})</CardTitle>
         </CardHeader>
         <CardContent>
           {posts.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              Пока нет статей. Добавьте первую статью выше.
+            <div className="text-center py-12">
+              <div className="text-muted-foreground mb-4">
+                Пока нет статей в блоге
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Добавьте первую статью, используя форму выше
+              </p>
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-6">
               {posts.map((post) => (
-                <div key={post.id} className="border rounded-lg p-4">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <h3 className="font-semibold">{post.title}</h3>
-                        {post.is_featured && (
-                          <Badge className="bg-poker-accent text-white">Рекомендуемая</Badge>
-                        )}
-                        {!post.is_published && (
-                          <Badge variant="outline">Черновик</Badge>
-                        )}
-                      </div>
-                      <p className="text-sm text-muted-foreground mb-2">
-                        {post.excerpt}
-                      </p>
-                      <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                        <span>Автор: {post.author}</span>
-                        <span>Время чтения: {post.read_time}</span>
-                        <div className="flex items-center gap-1">
-                          <Eye className="w-3 h-3" />
-                          {post.views}
-                        </div>
-                      </div>
-                      {post.tags && post.tags.length > 0 && (
-                        <div className="flex gap-1 mt-2">
-                          {post.tags.map((tag, index) => (
-                            <Badge key={index} variant="outline" className="text-xs">
-                              {tag}
-                            </Badge>
-                          ))}
+                <div key={post.id} className="border border-border/50 rounded-lg overflow-hidden bg-gradient-card">
+                  <div className="flex">
+                    {/* Image */}
+                    <div className="w-48 h-32 flex-shrink-0 relative">
+                      {post.image ? (
+                        <img
+                          src={post.image}
+                          alt={post.title}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-muted flex items-center justify-center">
+                          <span className="text-xs text-muted-foreground">Нет изображения</span>
                         </div>
                       )}
+                      {post.is_featured && (
+                        <Badge className="absolute top-2 left-2 bg-poker-accent text-white border-0">
+                          Рекомендуем
+                        </Badge>
+                      )}
                     </div>
-                    <div className="flex gap-2 ml-4">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => startEditPost(post)}
-                      >
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => removePost(post.id)}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
+                    
+                    {/* Content */}
+                    <div className="flex-1 p-6">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <h3 className="text-lg font-bold text-poker-primary line-clamp-1">
+                              {post.title}
+                            </h3>
+                            <Badge variant={post.is_published ? 'default' : 'secondary'}>
+                              {post.is_published ? 'Опубликовано' : 'Черновик'}
+                            </Badge>
+                          </div>
+                          
+                          <p className="text-muted-foreground text-sm mb-3 line-clamp-2">
+                            {post.excerpt}
+                          </p>
+                          
+                          <div className="flex items-center gap-4 text-xs text-muted-foreground mb-3">
+                            <div className="flex items-center gap-1">
+                              <User className="w-3 h-3" />
+                              {post.author} • {post.author_role}
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <Calendar className="w-3 h-3" />
+                              {new Date(post.published_at).toLocaleDateString('ru-RU')}
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <Clock className="w-3 h-3" />
+                              {post.read_time}
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <Eye className="w-3 h-3" />
+                              {post.views}
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <Heart className="w-3 h-3" />
+                              {post.likes}
+                            </div>
+                          </div>
+                          
+                          <div className="flex flex-wrap gap-1">
+                            {post.tags.map((tag) => (
+                              <Badge key={tag} variant="outline" className="text-xs">
+                                {tag}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                        
+                        <div className="flex gap-2 ml-4">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => startEditPost(post)}
+                          >
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => removePost(post.id)}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
