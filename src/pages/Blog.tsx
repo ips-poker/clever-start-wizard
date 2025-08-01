@@ -4,6 +4,7 @@ import { Footer } from "@/components/Footer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { useCMSContent } from "@/hooks/useCMSContent";
 import { supabase } from "@/integrations/supabase/client";
 import { 
@@ -20,7 +21,10 @@ import {
   Users,
   Lightbulb,
   ChevronRight,
-  Loader2
+  Loader2,
+  Search,
+  Filter,
+  ArrowRight
 } from "lucide-react";
 
 interface BlogPost {
@@ -45,6 +49,8 @@ export default function Blog() {
   const { content: cmsContent, loading: cmsLoading } = useCMSContent('blog');
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("Все");
 
   useEffect(() => {
     fetchBlogPosts();
@@ -114,15 +120,24 @@ export default function Blog() {
   const heroDescription = cmsContent['hero_description'] || 'Экспертные статьи, анализ раздач, стратегии и инсайты от профессионалов IPS';
 
   const featuredPost = posts.find(post => post.is_featured) || posts[0];
-  const regularPosts = posts.filter(post => !post.is_featured);
+  
+  // Фильтрация постов
+  const filteredPosts = posts.filter(post => {
+    const matchesSearch = post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         post.excerpt.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCategory = selectedCategory === "Все" || post.tags.includes(selectedCategory);
+    return matchesSearch && matchesCategory && !post.is_featured;
+  });
 
   const categories = [
-    { name: "Стратегия", count: 15, icon: Target },
-    { name: "Психология", count: 8, icon: Users },
-    { name: "Рейтинг", count: 5, icon: TrendingUp },
-    { name: "Турниры", count: 12, icon: Trophy },
-    { name: "Новичкам", count: 10, icon: Lightbulb }
+    { name: "Все", count: posts.length, icon: BookOpen },
+    { name: "Стратегия", count: posts.filter(p => p.tags.includes("Стратегия")).length, icon: Target },
+    { name: "Психология", count: posts.filter(p => p.tags.includes("Психология")).length, icon: Users },
+    { name: "Рейтинг", count: posts.filter(p => p.tags.includes("Рейтинг")).length, icon: TrendingUp },
+    { name: "Турниры", count: posts.filter(p => p.tags.includes("Турниры")).length, icon: Trophy },
+    { name: "Покер", count: posts.filter(p => p.tags.includes("Покер")).length, icon: Lightbulb }
   ];
+
 
 
   if (loading || cmsLoading) {
@@ -252,54 +267,117 @@ export default function Blog() {
                 </article>
               )}
 
+              {/* Search and Filter */}
+              <div className="bg-gradient-card rounded-2xl p-6 border border-border/50 mb-8">
+                <div className="flex flex-col md:flex-row gap-4">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                    <Input
+                      placeholder="Поиск статей..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10 border-border/50"
+                    />
+                  </div>
+                  <div className="flex gap-2 overflow-x-auto">
+                    {categories.map((category) => (
+                      <Button
+                        key={category.name}
+                        variant={selectedCategory === category.name ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setSelectedCategory(category.name)}
+                        className="whitespace-nowrap"
+                      >
+                        <category.icon className="w-4 h-4 mr-2" />
+                        {category.name} ({category.count})
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
               {/* Other Articles */}
-              {regularPosts.length > 0 && (
+              {filteredPosts.length > 0 ? (
                 <div className="space-y-8">
-                  <h3 className="text-2xl font-bold text-poker-primary">Последние статьи</h3>
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-2xl font-bold text-poker-primary">
+                      {selectedCategory === "Все" ? "Все статьи" : `Категория: ${selectedCategory}`}
+                    </h3>
+                    <Badge variant="outline" className="text-sm">
+                      {filteredPosts.length} {filteredPosts.length === 1 ? 'статья' : 'статей'}
+                    </Badge>
+                  </div>
                   
-                  <div className="grid md:grid-cols-2 gap-6">
-                    {regularPosts.map((post) => (
-                      <Card key={post.id} className="group hover:shadow-card hover:-translate-y-1 transition-all duration-300 border border-border/50">
+                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {filteredPosts.map((post) => (
+                      <Card key={post.id} className="group hover:shadow-elegant hover:-translate-y-2 transition-all duration-500 border border-border/50 overflow-hidden bg-gradient-card">
                         <div className="relative overflow-hidden">
                           <img 
                             src={post.image}
                             alt={post.title}
-                            className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+                            className="w-full h-48 object-cover group-hover:scale-110 transition-transform duration-700"
                           />
-                          <div className="absolute inset-0 bg-gradient-to-t from-poker-primary/40 to-transparent"></div>
-                        </div>
-                        
-                        <CardContent className="p-6">
-                          <div className="flex flex-wrap gap-1 mb-3">
-                            {post.tags.map((tag) => (
-                              <Badge key={tag} variant="outline" className="text-xs">
+                          <div className="absolute inset-0 bg-gradient-to-t from-poker-primary/60 via-transparent to-transparent"></div>
+                          <div className="absolute top-3 left-3">
+                            {post.tags.slice(0, 2).map((tag) => (
+                              <Badge key={tag} className="bg-poker-accent/90 text-white border-0 mb-1 mr-1 text-xs">
                                 {tag}
                               </Badge>
                             ))}
                           </div>
-                          
-                          <h4 className="text-lg font-bold mb-3 text-poker-primary group-hover:text-poker-accent transition-colors">
+                        </div>
+                        
+                        <CardContent className="p-6">
+                          <h4 className="text-lg font-bold mb-3 text-poker-primary group-hover:text-poker-accent transition-colors line-clamp-2">
                             {post.title}
                           </h4>
                           
-                          <p className="text-muted-foreground mb-4 text-sm leading-relaxed">
+                          <p className="text-muted-foreground mb-4 text-sm leading-relaxed line-clamp-3">
                             {post.excerpt}
                           </p>
                           
-                          <div className="flex items-center justify-between text-xs text-muted-foreground">
-                            <span>{post.author}</span>
+                          <div className="flex items-center justify-between text-xs text-muted-foreground mb-4">
+                            <div className="flex items-center gap-2">
+                              <User className="w-3 h-3" />
+                              <span>{post.author}</span>
+                            </div>
                             <div className="flex items-center gap-3">
-                              <span>{post.read_time}</span>
+                              <div className="flex items-center gap-1">
+                                <Clock className="w-3 h-3" />
+                                {post.read_time}
+                              </div>
                               <div className="flex items-center gap-1">
                                 <Eye className="w-3 h-3" />
                                 {post.views}
                               </div>
                             </div>
                           </div>
+                          
+                          <Button variant="ghost" className="w-full group-hover:bg-poker-accent/10 transition-colors">
+                            Читать далее
+                            <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
+                          </Button>
                         </CardContent>
                       </Card>
                     ))}
                   </div>
+                </div>
+              ) : (
+                <div className="text-center py-12 bg-gradient-card rounded-2xl border border-border/50">
+                  <div className="text-muted-foreground mb-4">
+                    {searchTerm || selectedCategory !== "Все" 
+                      ? "По вашему запросу ничего не найдено"
+                      : "Скоро здесь появятся статьи"
+                    }
+                  </div>
+                  {(searchTerm || selectedCategory !== "Все") && (
+                    <Button 
+                      variant="outline" 
+                      onClick={() => { setSearchTerm(""); setSelectedCategory("Все"); }}
+                    >
+                      Сбросить фильтры
+                    </Button>
+                  )}
                 </div>
               )}
 
@@ -319,7 +397,7 @@ export default function Blog() {
             {/* Sidebar */}
             <div className="space-y-6">
               {/* Categories */}
-              <Card className="border border-border/50">
+              <Card className="border border-border/50 bg-gradient-card">
                 <CardHeader>
                   <CardTitle className="flex items-center text-poker-primary">
                     <BookOpen className="w-5 h-5 mr-2" />
@@ -332,11 +410,22 @@ export default function Blog() {
                     return (
                       <button
                         key={category.name}
-                        className="w-full flex items-center justify-between p-3 rounded-lg hover:bg-gradient-surface transition-colors text-left"
+                        onClick={() => setSelectedCategory(category.name)}
+                        className={`w-full flex items-center justify-between p-3 rounded-lg transition-all text-left ${
+                          selectedCategory === category.name 
+                            ? 'bg-poker-accent/10 border border-poker-accent/20' 
+                            : 'hover:bg-gradient-surface'
+                        }`}
                       >
                         <div className="flex items-center gap-3">
-                          <IconComponent className="w-4 h-4 text-poker-accent" />
-                          <span className="font-medium">{category.name}</span>
+                          <IconComponent className={`w-4 h-4 ${
+                            selectedCategory === category.name ? 'text-poker-accent' : 'text-muted-foreground'
+                          }`} />
+                          <span className={`font-medium ${
+                            selectedCategory === category.name ? 'text-poker-accent' : ''
+                          }`}>
+                            {category.name}
+                          </span>
                         </div>
                         <Badge variant="outline" className="text-xs">
                           {category.count}
@@ -363,7 +452,7 @@ export default function Blog() {
               </Card>
 
               {/* Popular Articles */}
-              <Card className="border border-border/50">
+              <Card className="border border-border/50 bg-gradient-card">
                 <CardHeader>
                   <CardTitle className="flex items-center text-poker-primary">
                     <TrendingUp className="w-5 h-5 mr-2" />
@@ -372,17 +461,19 @@ export default function Blog() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {posts.slice(0, 3).map((post, index) => (
-                    <div key={post.id} className="flex gap-3 group cursor-pointer">
-                      <div className="w-8 h-8 bg-poker-accent/10 rounded-full flex items-center justify-center text-sm font-bold text-poker-accent">
+                    <div key={post.id} className="flex gap-3 group cursor-pointer hover:bg-gradient-surface/50 p-2 rounded-lg transition-colors">
+                      <div className="w-8 h-8 bg-gradient-to-br from-poker-accent to-poker-primary rounded-full flex items-center justify-center text-sm font-bold text-white shadow-md">
                         {index + 1}
                       </div>
                       <div className="flex-1">
-                        <h5 className="font-medium text-sm group-hover:text-poker-accent transition-colors leading-tight">
+                        <h5 className="font-medium text-sm group-hover:text-poker-accent transition-colors leading-tight line-clamp-2">
                           {post.title}
                         </h5>
                         <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
                           <Eye className="w-3 h-3" />
                           {post.views}
+                          <Heart className="w-3 h-3" />
+                          {post.likes}
                         </div>
                       </div>
                     </div>
