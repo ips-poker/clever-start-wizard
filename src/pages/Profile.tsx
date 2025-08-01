@@ -14,7 +14,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { toast } from "sonner";
 import { PlayerStats } from "@/components/PlayerStats";
 import { AvatarSelector } from "@/components/AvatarSelector";
-import { TournamentRegistration } from "@/components/TournamentRegistration";
+import { ProfileTournaments } from "@/components/ProfileTournaments";
 
 interface Player {
   id: string;
@@ -59,7 +59,6 @@ interface StatCard {
 export default function Profile() {
   const { user, userProfile } = useAuth();
   const [player, setPlayer] = useState<Player | null>(null);
-  const [tournaments, setTournaments] = useState<ProfileTournament[]>([]);
   const [gameResults, setGameResults] = useState<GameResult[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAvatarSelector, setShowAvatarSelector] = useState(false);
@@ -67,7 +66,6 @@ export default function Profile() {
   useEffect(() => {
     if (user) {
       loadPlayerData();
-      loadTournaments();
     }
   }, [user]);
 
@@ -119,36 +117,6 @@ export default function Profile() {
     }
   };
 
-  const loadTournaments = useCallback(async () => {
-    try {
-      const { data, error } = await supabase
-        .from('tournaments')
-        .select(`
-          *
-        `)
-        .in('status', ['registration', 'active'])
-        .order('start_time', { ascending: true });
-
-      if (error) throw error;
-
-      // Get registration counts separately
-      const tournamentsWithCount = await Promise.all((data || []).map(async (tournament) => {
-        const { count } = await supabase
-          .from('tournament_registrations')
-          .select('*', { count: 'exact', head: true })
-          .eq('tournament_id', tournament.id);
-
-        return {
-          ...tournament,
-          registered_count: count || 0
-        };
-      }));
-
-      setTournaments(tournamentsWithCount);
-    } catch (error) {
-      console.error('Error loading tournaments:', error);
-    }
-  }, []);
 
   const loadGameResults = async () => {
     if (!player?.id) return;
@@ -513,10 +481,7 @@ export default function Profile() {
             </TabsContent>
 
             <TabsContent value="tournaments" className="space-y-6">
-              <TournamentRegistration 
-                tournaments={tournaments} 
-                playerId={player?.id}
-              />
+              <ProfileTournaments playerId={player?.id} />
             </TabsContent>
 
             <TabsContent value="leaderboard" className="space-y-6">
