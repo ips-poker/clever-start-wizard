@@ -10,7 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
-import { Eye, EyeOff, LogIn, UserPlus, Spade } from "lucide-react";
+import { Eye, EyeOff, LogIn, UserPlus, Spade, AlertCircle } from "lucide-react";
 
 export default function Auth() {
   const [email, setEmail] = useState("");
@@ -110,6 +110,30 @@ export default function Auth() {
     }
   };
 
+  const testConnection = async () => {
+    try {
+      console.log("Testing Supabase connection...");
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('email')
+        .limit(1);
+      
+      if (error) {
+        console.error("Connection test failed:", error);
+        setError(`Ошибка подключения к базе данных: ${error.message}`);
+      } else {
+        console.log("Connection test successful");
+        toast({
+          title: "Подключение работает",
+          description: "База данных доступна",
+        });
+      }
+    } catch (error: any) {
+      console.error("Connection test error:", error);
+      setError(`Ошибка сети: ${error.message}`);
+    }
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted p-4">
       <div className="w-full max-w-md">
@@ -138,9 +162,25 @@ export default function Auth() {
 
               {error && (
                 <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
                   <AlertDescription>{error}</AlertDescription>
                 </Alert>
               )}
+
+              {/* Диагностическая информация */}
+              <Alert>
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  <div className="space-y-2">
+                    <p><strong>Диагностика:</strong></p>
+                    <p>URL: https://mokhssmnorrhohrowxvu.supabase.co</p>
+                    <p>Используйте данные: casinofix@ya.ru / Tsukanov34rus#</p>
+                    <Button size="sm" onClick={testConnection}>
+                      Тест подключения к БД
+                    </Button>
+                  </div>
+                </AlertDescription>
+              </Alert>
 
               <TabsContent value="signin">
                 <form onSubmit={handleSignIn} className="space-y-4">
@@ -149,7 +189,7 @@ export default function Auth() {
                     <Input
                       id="signin-email"
                       type="email"
-                      placeholder="your@email.com"
+                      placeholder="casinofix@ya.ru"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       required
