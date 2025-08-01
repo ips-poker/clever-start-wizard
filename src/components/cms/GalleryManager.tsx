@@ -151,6 +151,62 @@ export function GalleryManager() {
     resetForm();
   };
 
+  const addSampleImages = async () => {
+    const sampleImages = [
+      {
+        title: 'Главный турнирный зал',
+        description: 'Основной зал для покерных турниров с профессиональными столами',
+        image_url: '/src/assets/gallery/main-poker-room.jpg',
+        alt_text: 'Покерный зал с турнирными столами',
+        category: 'club',
+        display_order: 1,
+        is_featured: true,
+        is_active: true
+      },
+      {
+        title: 'VIP зона',
+        description: 'Эксклюзивная зона для VIP игроков',
+        image_url: '/src/assets/gallery/vip-zone.jpg',
+        alt_text: 'VIP зона покерного клуба',
+        category: 'club',
+        display_order: 2,
+        is_featured: false,
+        is_active: true
+      },
+      {
+        title: 'Турнирный стол',
+        description: 'Профессиональный турнирный стол',
+        image_url: '/src/assets/gallery/tournament-table.jpg',
+        alt_text: 'Турнирный покерный стол',
+        category: 'tournaments',
+        display_order: 3,
+        is_featured: false,
+        is_active: true
+      }
+    ];
+
+    try {
+      const { error } = await (supabase as any)
+        .from('cms_gallery')
+        .insert(sampleImages);
+
+      if (error) throw error;
+      
+      await fetchGallery();
+      toast({
+        title: "Успешно",
+        description: "Добавлены образцы изображений для галереи",
+      });
+    } catch (error) {
+      console.error('Error adding sample images:', error);
+      toast({
+        title: "Ошибка",
+        description: "Не удалось добавить образцы изображений",
+        variant: "destructive",
+      });
+    }
+  };
+
   if (loading) return <div className="flex items-center justify-center p-8">Загрузка...</div>;
 
   return (
@@ -160,10 +216,22 @@ export function GalleryManager() {
           <h2 className="text-2xl font-bold">Управление галереей</h2>
           <p className="text-muted-foreground">Добавление и редактирование изображений</p>
         </div>
-        <Button onClick={() => setShowAddForm(true)} className="flex items-center gap-2">
-          <Plus size={16} />
-          Добавить изображение
-        </Button>
+        <div className="flex gap-2">
+          {gallery.length === 0 && (
+            <Button
+              variant="outline"
+              onClick={addSampleImages}
+              className="flex items-center gap-2"
+            >
+              <ImageIcon size={16} />
+              Добавить образцы
+            </Button>
+          )}
+          <Button onClick={() => setShowAddForm(true)} className="flex items-center gap-2">
+            <Plus size={16} />
+            Добавить изображение
+          </Button>
+        </div>
       </div>
 
       {showAddForm && (
@@ -240,7 +308,17 @@ export function GalleryManager() {
               <CardContent className="p-8 text-center">
                 <ImageIcon className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
                 <h3 className="text-lg font-semibold mb-2">Нет изображений</h3>
-                <Button onClick={() => setShowAddForm(true)}>Добавить первое изображение</Button>
+                <p className="text-muted-foreground mb-4">Добавьте изображения для отображения в галерее сайта</p>
+                <div className="flex gap-2 justify-center">
+                  <Button onClick={addSampleImages} variant="outline">
+                    <ImageIcon size={16} className="mr-2" />
+                    Добавить образцы
+                  </Button>
+                  <Button onClick={() => setShowAddForm(true)}>
+                    <Plus size={16} className="mr-2" />
+                    Добавить изображение
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           </div>

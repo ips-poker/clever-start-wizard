@@ -12,34 +12,44 @@ export function QuickSetup() {
 
   const sampleContent = [
     // Главная страница
-    { page_slug: 'home', content_key: 'hero_title', content_type: 'text', content_value: 'IPS International Poker Series' },
-    { page_slug: 'home', content_key: 'hero_subtitle', content_type: 'text', content_value: 'Элитный покерный клуб с рейтинговой системой' },
-    { page_slug: 'home', content_key: 'hero_description', content_type: 'text', content_value: 'Присоединяйтесь к лучшим игрокам и участвуйте в профессиональных турнирах с призовыми фондами.' },
+    { page_slug: 'home', content_key: 'hero_title', content_type: 'text', content_value: 'IPS', is_active: true },
+    { page_slug: 'home', content_key: 'hero_subtitle', content_type: 'text', content_value: 'International', is_active: true },
+    { page_slug: 'home', content_key: 'hero_subtitle_2', content_type: 'text', content_value: 'Poker Style', is_active: true },
+    { page_slug: 'home', content_key: 'hero_badge', content_type: 'text', content_value: 'Премиальный покерный клуб', is_active: true },
+    { page_slug: 'home', content_key: 'hero_description', content_type: 'text', content_value: 'Премиальный покерный клуб с рейтинговой системой ELO. Развивайте навыки в элегантной атмосфере среди профессиональных игроков.', is_active: true },
+    { page_slug: 'home', content_key: 'feature_1', content_type: 'text', content_value: 'Честная игра', is_active: true },
+    { page_slug: 'home', content_key: 'feature_2', content_type: 'text', content_value: 'Рост навыков', is_active: true },
+    { page_slug: 'home', content_key: 'feature_3', content_type: 'text', content_value: 'Рейтинг ELO', is_active: true },
+    { page_slug: 'home', content_key: 'feature_4', content_type: 'text', content_value: 'Сообщество', is_active: true },
+    { page_slug: 'home', content_key: 'cta_primary', content_type: 'text', content_value: 'Начать играть', is_active: true },
+    { page_slug: 'home', content_key: 'cta_secondary', content_type: 'text', content_value: 'Рейтинг игроков', is_active: true },
+    { page_slug: 'home', content_key: 'main_feature_title', content_type: 'text', content_value: 'Рейтинговая система ELO', is_active: true },
+    { page_slug: 'home', content_key: 'main_feature_description', content_type: 'text', content_value: 'Профессиональная система оценки навыков покерных игроков', is_active: true },
     
     // О нас
-    { page_slug: 'about', content_key: 'title', content_type: 'text', content_value: 'О клубе IPS' },
-    { page_slug: 'about', content_key: 'description', content_type: 'text', content_value: 'IPS - это современный покерный клуб, где профессионализм встречается со страстью к игре.' },
+    { page_slug: 'about', content_key: 'title', content_type: 'text', content_value: 'О клубе IPS', is_active: true },
+    { page_slug: 'about', content_key: 'description', content_type: 'text', content_value: 'IPS - это современный покерный клуб, где профессионализм встречается со страстью к игре.', is_active: true },
     
-    // Контакты и футер
-    { page_slug: 'contact', content_key: 'address', content_type: 'text', content_value: 'Москва, ул. Примерная, 123' },
-    { page_slug: 'contact', content_key: 'phone', content_type: 'text', content_value: '+7 (495) 123-45-67' },
-    { page_slug: 'contact', content_key: 'email', content_type: 'text', content_value: 'info@ipspoker.ru' },
-    { page_slug: 'contact', content_key: 'telegram', content_type: 'text', content_value: '@ips_poker' },
+    // Контакты
+    { page_slug: 'contact', content_key: 'address', content_type: 'text', content_value: 'Москва, ул. Примерная, 123', is_active: true },
+    { page_slug: 'contact', content_key: 'phone', content_type: 'text', content_value: '+7 (495) 123-45-67', is_active: true },
+    { page_slug: 'contact', content_key: 'email', content_type: 'text', content_value: 'info@ipspoker.ru', is_active: true },
+    { page_slug: 'contact', content_key: 'telegram', content_type: 'text', content_value: '@ips_poker', is_active: true },
     
     // Футер
-    { page_slug: 'footer', content_key: 'brand_name', content_type: 'text', content_value: 'IPS' },
-    { page_slug: 'footer', content_key: 'brand_subtitle', content_type: 'text', content_value: 'International Poker Style' },
-    { page_slug: 'footer', content_key: 'brand_description', content_type: 'text', content_value: 'Элитный покерный клуб с рейтинговой системой. Профессиональные турниры и высокий уровень игры.' },
-    { page_slug: 'footer', content_key: 'copyright', content_type: 'text', content_value: '© 2024 IPS International Poker Style. Все права защищены.' },
-    { page_slug: 'footer', content_key: 'legal_notice', content_type: 'text', content_value: 'Игра проходит в рамках действующего законодательства без денежных призов.' },
+    { page_slug: 'footer', content_key: 'brand_name', content_type: 'text', content_value: 'IPS', is_active: true },
+    { page_slug: 'footer', content_key: 'brand_subtitle', content_type: 'text', content_value: 'International Poker Style', is_active: true },
+    { page_slug: 'footer', content_key: 'brand_description', content_type: 'text', content_value: 'Элитный покерный клуб с рейтинговой системой. Профессиональные турниры и высокий уровень игры.', is_active: true },
+    { page_slug: 'footer', content_key: 'copyright', content_type: 'text', content_value: '© 2024 IPS International Poker Style. Все права защищены.', is_active: true },
+    { page_slug: 'footer', content_key: 'legal_notice', content_type: 'text', content_value: 'Игра проходит в рамках действующего законодательства без денежных призов.', is_active: true },
     
     // Сервисы
-    { page_slug: 'services', content_key: 'service_1', content_type: 'text', content_value: 'Турниры Texas Hold\'em' },
-    { page_slug: 'services', content_key: 'service_2', content_type: 'text', content_value: 'Омаха турниры' },
-    { page_slug: 'services', content_key: 'service_3', content_type: 'text', content_value: 'Sit & Go' },
-    { page_slug: 'services', content_key: 'service_4', content_type: 'text', content_value: 'Кэш игры' },
-    { page_slug: 'services', content_key: 'service_5', content_type: 'text', content_value: 'Обучение' },
-    { page_slug: 'services', content_key: 'service_6', content_type: 'text', content_value: 'Корпоративные турниры' },
+    { page_slug: 'services', content_key: 'service_1', content_type: 'text', content_value: 'Турниры Texas Hold\'em', is_active: true },
+    { page_slug: 'services', content_key: 'service_2', content_type: 'text', content_value: 'Омаха турниры', is_active: true },
+    { page_slug: 'services', content_key: 'service_3', content_type: 'text', content_value: 'Sit & Go', is_active: true },
+    { page_slug: 'services', content_key: 'service_4', content_type: 'text', content_value: 'Кэш игры', is_active: true },
+    { page_slug: 'services', content_key: 'service_5', content_type: 'text', content_value: 'Обучение', is_active: true },
+    { page_slug: 'services', content_key: 'service_6', content_type: 'text', content_value: 'Корпоративные турниры', is_active: true },
   ];
 
   const handleQuickSetup = async () => {
