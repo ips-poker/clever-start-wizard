@@ -27,6 +27,7 @@ import { SecurityDashboard } from "@/components/cms/SecurityDashboard";
 import { AdvancedContentManager } from "@/components/cms/AdvancedContentManager";
 import { SmartBackupSystem } from "@/components/cms/SmartBackupSystem";
 import { EnhancedPerformanceMonitor } from "@/components/cms/EnhancedPerformanceMonitor";
+import { OrangeDataIntegration } from "@/components/cms/OrangeDataIntegration";
 
 export default function Admin() {
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -77,6 +78,8 @@ export default function Admin() {
         return <SmartBackupSystem />;
       case "enhanced-performance":
         return <EnhancedPerformanceMonitor />;
+      case "orange-data":
+        return <OrangeDataIntegration />;
       case "invitations":
         return <TournamentInvitationGenerator />;
       case "tournaments":
