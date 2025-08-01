@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -56,14 +56,18 @@ export function TournamentRegistration({ tournaments, playerId, onRegistrationUp
     loadRegistrations();
   }, [playerId, dataLoaded]);
 
+  // Мемоизированный список ID турниров для стабильных зависимостей
+  const tournamentIds = useMemo(() => 
+    tournaments.map(t => t.id).sort(), 
+    [tournaments]
+  );
+
   // Загружаем счетчики турниров только когда турниры меняются
   useEffect(() => {
-    if (tournaments.length === 0) return;
+    if (tournamentIds.length === 0) return;
 
     const loadTournamentCounts = async () => {
       try {
-        const tournamentIds = tournaments.map(t => t.id);
-        
         const { data, error } = await supabase
           .from('tournament_registrations')
           .select('tournament_id')
@@ -83,9 +87,9 @@ export function TournamentRegistration({ tournaments, playerId, onRegistrationUp
     };
 
     loadTournamentCounts();
-  }, [tournaments.map(t => t.id).sort().join(',')]); // Используем стабильную строку
+  }, [tournamentIds]);
 
-  const handleRegister = async (tournamentId: string) => {
+  const handleRegister = useCallback(async (tournamentId: string) => {
     if (!playerId) {
       toast("Ошибка: игрок не найден");
       return;
@@ -116,7 +120,6 @@ export function TournamentRegistration({ tournaments, playerId, onRegistrationUp
         ...prev,
         [tournamentId]: (prev[tournamentId] || 0) + 1
       }));
-      onRegistrationUpdate();
       toast("Успешно зарегистрированы на турнир!");
     } catch (error) {
       console.error('Error registering for tournament:', error);
@@ -124,9 +127,9 @@ export function TournamentRegistration({ tournaments, playerId, onRegistrationUp
     } finally {
       setLoading("");
     }
-  };
+  }, [playerId]);
 
-  const handleUnregister = async (tournamentId: string) => {
+  const handleUnregister = useCallback(async (tournamentId: string) => {
     if (!playerId) return;
 
     setLoading(tournamentId);
@@ -149,7 +152,6 @@ export function TournamentRegistration({ tournaments, playerId, onRegistrationUp
         ...prev,
         [tournamentId]: Math.max(0, (prev[tournamentId] || 0) - 1)
       }));
-      onRegistrationUpdate();
       toast("Регистрация отменена");
     } catch (error) {
       console.error('Error unregistering from tournament:', error);
@@ -157,7 +159,7 @@ export function TournamentRegistration({ tournaments, playerId, onRegistrationUp
     } finally {
       setLoading("");
     }
-  };
+  }, [playerId]);
 
   const getStatusBadge = (status: string) => {
     switch (status) {
