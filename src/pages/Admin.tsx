@@ -8,7 +8,10 @@ import { ContentManager } from "@/components/cms/ContentManager";
 import { GalleryManager } from "@/components/cms/GalleryManager";
 import { SEOManager } from "@/components/cms/SEOManager";
 import { SettingsManager } from "@/components/cms/SettingsManager";
-import { Settings, FileText, Users, Trophy, Image, Search, Globe, Palette } from "lucide-react";
+import { FileManager } from "@/components/cms/FileManager";
+import { IntegrationsManager } from "@/components/cms/IntegrationsManager";
+import { BackupManager } from "@/components/cms/BackupManager";
+import { Settings, FileText, Users, Trophy, Image, Search, Globe, Palette, Upload, Zap, HardDrive } from "lucide-react";
 
 export default function Admin() {
   const [activeTab, setActiveTab] = useState("invitations");
@@ -17,7 +20,10 @@ export default function Admin() {
     { id: "invitations", name: "Приглашения", icon: FileText },
     { id: "content", name: "Контент", icon: FileText },
     { id: "gallery", name: "Галерея", icon: Image },
+    { id: "files", name: "Файлы", icon: Upload },
     { id: "seo", name: "SEO", icon: Search },
+    { id: "integrations", name: "Интеграции", icon: Zap },
+    { id: "backup", name: "Резервные копии", icon: HardDrive },
     { id: "settings", name: "Настройки", icon: Settings },
     { id: "tournaments", name: "Турниры", icon: Trophy },
     { id: "players", name: "Игроки", icon: Users },
@@ -81,7 +87,13 @@ export default function Admin() {
 
               {activeTab === "gallery" && <GalleryManager />}
 
+              {activeTab === "files" && <FileManager />}
+
               {activeTab === "seo" && <SEOManager />}
+
+              {activeTab === "integrations" && <IntegrationsManager />}
+
+              {activeTab === "backup" && <BackupManager />}
 
               {activeTab === "settings" && <SettingsManager />}
 
