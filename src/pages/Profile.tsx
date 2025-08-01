@@ -26,13 +26,15 @@ interface Player {
   avatar_url?: string;
 }
 
-interface Tournament {
+interface ProfileTournament {
   id: string;
   name: string;
+  description?: string;
   start_time: string;
   buy_in: number;
   max_players: number;
   status: string;
+  starting_chips: number;
   registered_count?: number;
 }
 
@@ -57,7 +59,7 @@ interface StatCard {
 export default function Profile() {
   const { user, userProfile } = useAuth();
   const [player, setPlayer] = useState<Player | null>(null);
-  const [tournaments, setTournaments] = useState<Tournament[]>([]);
+  const [tournaments, setTournaments] = useState<ProfileTournament[]>([]);
   const [gameResults, setGameResults] = useState<GameResult[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAvatarSelector, setShowAvatarSelector] = useState(false);
