@@ -11,7 +11,7 @@ import { Loader2, Save, Home, Plus, Edit, Trash2, X } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { ImageUploader } from "./ImageUploader";
+// import { ImageUploader } from "./ImageUploader";
 
 interface HomeContent {
   // Hero Section
@@ -427,13 +427,15 @@ export function HomePageEditor() {
                 />
               </div>
               
-              <ImageUploader
-                label="Фоновое изображение"
-                currentImageUrl={content.hero_background_image}
-                onImageChange={(url) => updateContent('hero_background_image', url)}
-                folder="home/hero"
-                placeholder="Фоновое изображение для главной секции"
-              />
+              <div className="space-y-2">
+                <Label htmlFor="hero_background_image">Фоновое изображение URL</Label>
+                <Input
+                  id="hero_background_image"
+                  value={content.hero_background_image}
+                  onChange={(e) => updateContent('hero_background_image', e.target.value)}
+                  placeholder="https://example.com/image.jpg"
+                />
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
@@ -466,13 +468,15 @@ export function HomePageEditor() {
                 />
               </div>
               
-              <ImageUploader
-                label="Изображение секции"
-                currentImageUrl={content.about_image}
-                onImageChange={(url) => updateContent('about_image', url)}
-                folder="home/about"
-                placeholder="Изображение для секции О нас"
-              />
+              <div className="space-y-2">
+                <Label htmlFor="about_image">Изображение секции URL</Label>
+                <Input
+                  id="about_image"
+                  value={content.about_image}
+                  onChange={(e) => updateContent('about_image', e.target.value)}
+                  placeholder="https://example.com/image.jpg"
+                />
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
@@ -530,13 +534,15 @@ export function HomePageEditor() {
                       placeholder="Описание преимущества..."
                     />
                   </div>
-                  <ImageUploader
-                    label="Изображение"
-                    currentImageUrl={content.feature_1_image}
-                    onImageChange={(url) => updateContent('feature_1_image', url)}
-                    folder="home/features"
-                    placeholder="Изображение для преимущества 1"
-                  />
+                  <div className="space-y-2">
+                    <Label htmlFor="feature_1_image">Изображение URL</Label>
+                    <Input
+                      id="feature_1_image"
+                      value={content.feature_1_image}
+                      onChange={(e) => updateContent('feature_1_image', e.target.value)}
+                      placeholder="https://example.com/image.jpg"
+                    />
+                  </div>
                 </CardContent>
               </Card>
 
@@ -565,13 +571,15 @@ export function HomePageEditor() {
                       placeholder="Описание преимущества..."
                     />
                   </div>
-                  <ImageUploader
-                    label="Изображение"
-                    currentImageUrl={content.feature_2_image}
-                    onImageChange={(url) => updateContent('feature_2_image', url)}
-                    folder="home/features"
-                    placeholder="Изображение для преимущества 2"
-                  />
+                  <div className="space-y-2">
+                    <Label htmlFor="feature_2_image">Изображение URL</Label>
+                    <Input
+                      id="feature_2_image"
+                      value={content.feature_2_image}
+                      onChange={(e) => updateContent('feature_2_image', e.target.value)}
+                      placeholder="https://example.com/image.jpg"
+                    />
+                  </div>
                 </CardContent>
               </Card>
 
@@ -600,13 +608,15 @@ export function HomePageEditor() {
                       placeholder="Описание преимущества..."
                     />
                   </div>
-                  <ImageUploader
-                    label="Изображение"
-                    currentImageUrl={content.feature_3_image}
-                    onImageChange={(url) => updateContent('feature_3_image', url)}
-                    folder="home/features"
-                    placeholder="Изображение для преимущества 3"
-                  />
+                  <div className="space-y-2">
+                    <Label htmlFor="feature_3_image">Изображение URL</Label>
+                    <Input
+                      id="feature_3_image"
+                      value={content.feature_3_image}
+                      onChange={(e) => updateContent('feature_3_image', e.target.value)}
+                      placeholder="https://example.com/image.jpg"
+                    />
+                  </div>
                 </CardContent>
               </Card>
             </CardContent>
