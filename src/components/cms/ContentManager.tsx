@@ -1,16 +1,15 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { FileText, Plus, Edit, Trash2, Save, X } from "lucide-react";
-import { QuickSetup } from "./QuickSetup";
+import { FileText, Save, Plus, Edit, Trash2, X, Loader2, Eye, EyeOff } from "lucide-react";
 
 interface CMSContent {
   id: string;
@@ -18,52 +17,44 @@ interface CMSContent {
   content_key: string;
   content_type: string;
   content_value: string | null;
-  meta_data: any;
   is_active: boolean;
   created_at: string;
   updated_at: string;
 }
 
-interface ContentForm {
-  page_slug: string;
-  content_key: string;
-  content_type: string;
-  content_value: string;
-  is_active: boolean;
+interface PageContent {
+  [key: string]: CMSContent;
 }
 
 export function ContentManager() {
-  const [content, setContent] = useState<CMSContent[]>([]);
   const [loading, setLoading] = useState(true);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [showAddForm, setShowAddForm] = useState(false);
-  const [formData, setFormData] = useState<ContentForm>({
-    page_slug: '',
-    content_key: '',
-    content_type: 'text',
-    content_value: '',
-    is_active: true
-  });
+  const [saving, setSaving] = useState(false);
+  const [activeTab, setActiveTab] = useState("home");
+  const [contentByPage, setContentByPage] = useState<Record<string, PageContent>>({});
+  const [editingKeys, setEditingKeys] = useState<Set<string>>(new Set());
+  const [newContentKey, setNewContentKey] = useState("");
+  const [newContentValue, setNewContentValue] = useState("");
+  const [newContentType, setNewContentType] = useState("text");
+  const [showAddForm, setShowAddForm] = useState<string | null>(null);
 
   const { toast } = useToast();
 
-  const pageOptions = [
-    { value: 'home', label: 'Главная страница' },
-    { value: 'about', label: 'О нас' },
-    { value: 'tournaments', label: 'Турниры' },
-    { value: 'rating', label: 'Рейтинг' },
-    { value: 'gallery', label: 'Галерея' },
-    { value: 'contact', label: 'Контакты' },
-    { value: 'footer', label: 'Футер' },
-    { value: 'services', label: 'Услуги' },
-    { value: 'header', label: 'Шапка сайта' },
+  const pages = [
+    { value: 'home', label: 'Главная страница', icon: '🏠' },
+    { value: 'about', label: 'О нас', icon: '🏢' },
+    { value: 'tournaments', label: 'Турниры', icon: '🏆' },
+    { value: 'rating', label: 'Рейтинг', icon: '⭐' },
+    { value: 'gallery', label: 'Галерея', icon: '🖼️' },
+    { value: 'blog', label: 'Блог', icon: '📝' },
+    { value: 'contact', label: 'Контакты', icon: '📞' },
+    { value: 'footer', label: 'Футер', icon: '🔗' },
   ];
 
   const contentTypes = [
-    { value: 'text', label: 'Текст' },
-    { value: 'html', label: 'HTML' },
-    { value: 'image', label: 'Изображение' },
-    { value: 'json', label: 'JSON' },
+    { value: 'text', label: 'Текст', icon: '📝' },
+    { value: 'html', label: 'HTML', icon: '🌐' },
+    { value: 'image', label: 'Изображение', icon: '🖼️' },
+    { value: 'json', label: 'JSON', icon: '⚙️' },
   ];
 
   useEffect(() => {
@@ -72,14 +63,24 @@ export function ContentManager() {
 
   const fetchContent = async () => {
     try {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from('cms_content')
         .select('*')
-        .order('page_slug', { ascending: true })
-        .order('content_key', { ascending: true });
+        .order('page_slug')
+        .order('content_key');
 
       if (error) throw error;
-      setContent(data || []);
+
+      // Группируем контент по страницам
+      const grouped = (data || []).reduce((acc: Record<string, PageContent>, item: CMSContent) => {
+        if (!acc[item.page_slug]) {
+          acc[item.page_slug] = {};
+        }
+        acc[item.page_slug][item.content_key] = item;
+        return acc;
+      }, {});
+
+      setContentByPage(grouped);
     } catch (error) {
       console.error('Error fetching content:', error);
       toast({
@@ -92,38 +93,25 @@ export function ContentManager() {
     }
   };
 
-  const handleSave = async (id?: string) => {
+  const savePageContent = async (pageSlug: string) => {
+    setSaving(true);
     try {
-      if (id) {
-        // Update existing
-        const { error } = await (supabase as any)
+      const pageContent = contentByPage[pageSlug] || {};
+      const updates = Object.values(pageContent).map(item => 
+        supabase
           .from('cms_content')
-          .update({
-            page_slug: formData.page_slug,
-            content_key: formData.content_key,
-            content_type: formData.content_type,
-            content_value: formData.content_value,
-            is_active: formData.is_active,
+          .update({ 
+            content_value: item.content_value,
+            is_active: item.is_active 
           })
-          .eq('id', id);
+          .eq('id', item.id)
+      );
 
-        if (error) throw error;
-        setEditingId(null);
-      } else {
-        // Create new
-        const { error } = await (supabase as any)
-          .from('cms_content')
-          .insert([formData]);
+      await Promise.all(updates);
 
-        if (error) throw error;
-        setShowAddForm(false);
-      }
-
-      await fetchContent();
-      resetForm();
       toast({
         title: "Успешно",
-        description: id ? "Контент обновлен" : "Контент создан",
+        description: `Контент страницы "${pages.find(p => p.value === pageSlug)?.label}" сохранен`,
       });
     } catch (error) {
       console.error('Error saving content:', error);
@@ -132,23 +120,89 @@ export function ContentManager() {
         description: "Не удалось сохранить контент",
         variant: "destructive",
       });
+    } finally {
+      setSaving(false);
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Вы уверены, что хотите удалить этот контент?')) return;
+  const addNewContent = async () => {
+    if (!newContentKey || !newContentValue) {
+      toast({
+        title: "Ошибка",
+        description: "Заполните все поля",
+        variant: "destructive",
+      });
+      return;
+    }
 
     try {
-      const { error } = await (supabase as any)
+      const { data, error } = await supabase
+        .from('cms_content')
+        .insert([{
+          page_slug: showAddForm,
+          content_key: newContentKey,
+          content_value: newContentValue,
+          content_type: newContentType,
+          is_active: true
+        }])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // Обновляем локальное состояние
+      setContentByPage(prev => ({
+        ...prev,
+        [showAddForm!]: {
+          ...prev[showAddForm!],
+          [newContentKey]: data
+        }
+      }));
+
+      // Сбрасываем форму
+      setNewContentKey("");
+      setNewContentValue("");
+      setNewContentType("text");
+      setShowAddForm(null);
+
+      toast({
+        title: "Успешно",
+        description: "Новый элемент контента добавлен",
+      });
+    } catch (error) {
+      console.error('Error adding content:', error);
+      toast({
+        title: "Ошибка",
+        description: "Не удалось добавить контент",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const deleteContent = async (pageSlug: string, contentKey: string, id: string) => {
+    if (!confirm('Вы уверены, что хотите удалить этот элемент?')) return;
+
+    try {
+      const { error } = await supabase
         .from('cms_content')
         .delete()
         .eq('id', id);
 
       if (error) throw error;
-      await fetchContent();
+
+      // Удаляем из локального состояния
+      setContentByPage(prev => {
+        const newState = { ...prev };
+        if (newState[pageSlug]) {
+          const { [contentKey]: removed, ...rest } = newState[pageSlug];
+          newState[pageSlug] = rest;
+        }
+        return newState;
+      });
+
       toast({
         title: "Успешно",
-        description: "Контент удален",
+        description: "Элемент контента удален",
       });
     } catch (error) {
       console.error('Error deleting content:', error);
@@ -160,290 +214,316 @@ export function ContentManager() {
     }
   };
 
-  const startEdit = (item: CMSContent) => {
-    setFormData({
-      page_slug: item.page_slug,
-      content_key: item.content_key,
-      content_type: item.content_type,
-      content_value: item.content_value || '',
-      is_active: item.is_active,
-    });
-    setEditingId(item.id);
+  const updateContentValue = (pageSlug: string, contentKey: string, value: string) => {
+    setContentByPage(prev => ({
+      ...prev,
+      [pageSlug]: {
+        ...prev[pageSlug],
+        [contentKey]: {
+          ...prev[pageSlug][contentKey],
+          content_value: value
+        }
+      }
+    }));
   };
 
-  const resetForm = () => {
-    setFormData({
-      page_slug: '',
-      content_key: '',
-      content_type: 'text',
-      content_value: '',
-      is_active: true
+  const toggleContentActive = (pageSlug: string, contentKey: string) => {
+    setContentByPage(prev => ({
+      ...prev,
+      [pageSlug]: {
+        ...prev[pageSlug],
+        [contentKey]: {
+          ...prev[pageSlug][contentKey],
+          is_active: !prev[pageSlug][contentKey].is_active
+        }
+      }
+    }));
+  };
+
+  const startEditing = (key: string) => {
+    setEditingKeys(prev => new Set([...prev, key]));
+  };
+
+  const stopEditing = (key: string) => {
+    setEditingKeys(prev => {
+      const newSet = new Set(prev);
+      newSet.delete(key);
+      return newSet;
     });
   };
 
-  const cancelEdit = () => {
-    setEditingId(null);
-    setShowAddForm(false);
-    resetForm();
+  const getContentStats = (pageSlug: string) => {
+    const pageContent = contentByPage[pageSlug] || {};
+    const total = Object.keys(pageContent).length;
+    const active = Object.values(pageContent).filter(item => item.is_active).length;
+    return { total, active };
   };
 
   if (loading) {
-    return <div className="flex items-center justify-center p-8">Загрузка...</div>;
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="w-8 h-8 animate-spin" />
+      </div>
+    );
   }
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-foreground">Управление контентом</h2>
-          <p className="text-muted-foreground">Редактирование текстов и содержимого страниц</p>
+          <h1 className="text-3xl font-bold flex items-center gap-2">
+            <FileText className="w-6 h-6" />
+            Управление контентом
+          </h1>
+          <p className="text-muted-foreground">Редактирование контента по страницам сайта</p>
         </div>
-        <Button
-          onClick={() => setShowAddForm(true)}
-          className="flex items-center gap-2"
-        >
-          <Plus size={16} />
-          Добавить контент
-        </Button>
       </div>
 
-      {/* Add Form */}
-      {showAddForm && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Новый контент</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="page_slug">Страница</Label>
-                <Select
-                  value={formData.page_slug}
-                  onValueChange={(value) => setFormData({ ...formData, page_slug: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Выберите страницу" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {pageOptions.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <TabsList className="grid w-full grid-cols-4 lg:grid-cols-8">
+          {pages.map((page) => {
+            const stats = getContentStats(page.value);
+            return (
+              <TabsTrigger key={page.value} value={page.value} className="relative">
+                <div className="flex flex-col items-center gap-1">
+                  <span className="text-lg">{page.icon}</span>
+                  <span className="text-xs">{page.label}</span>
+                  {stats.total > 0 && (
+                    <Badge variant="outline" className="text-xs px-1 py-0">
+                      {stats.active}/{stats.total}
+                    </Badge>
+                  )}
+                </div>
+              </TabsTrigger>
+            );
+          })}
+        </TabsList>
 
-              <div>
-                <Label htmlFor="content_key">Ключ контента</Label>
-                <Input
-                  id="content_key"
-                  value={formData.content_key}
-                  onChange={(e) => setFormData({ ...formData, content_key: e.target.value })}
-                  placeholder="hero_title, description, etc."
-                />
-              </div>
+        {pages.map((page) => {
+          const pageContent = contentByPage[page.value] || {};
+          const contentItems = Object.entries(pageContent);
+          const stats = getContentStats(page.value);
 
-              <div>
-                <Label htmlFor="content_type">Тип контента</Label>
-                <Select
-                  value={formData.content_type}
-                  onValueChange={(value) => setFormData({ ...formData, content_type: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {contentTypes.map((type) => (
-                      <SelectItem key={type.value} value={type.value}>
-                        {type.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="is_active"
-                  checked={formData.is_active}
-                  onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
-                />
-                <Label htmlFor="is_active">Активен</Label>
-              </div>
-            </div>
-
-            <div>
-              <Label htmlFor="content_value">Содержимое</Label>
-              <Textarea
-                id="content_value"
-                value={formData.content_value}
-                onChange={(e) => setFormData({ ...formData, content_value: e.target.value })}
-                rows={6}
-                placeholder="Введите содержимое..."
-              />
-            </div>
-
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={cancelEdit}>
-                <X size={16} className="mr-2" />
-                Отмена
-              </Button>
-              <Button onClick={() => handleSave()}>
-                <Save size={16} className="mr-2" />
-                Сохранить
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Quick Setup */}
-      {content.length === 0 && (
-        <QuickSetup />
-      )}
-
-      {/* Content List */}
-      <div className="space-y-4">
-        {content.length === 0 ? (
-          <Card>
-            <CardContent className="p-8 text-center">
-              <FileText className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-semibold mb-2">Нет контента</h3>
-              <p className="text-muted-foreground mb-4">Используйте быстрою настройку выше или добавьте контент вручную</p>
-              <Button onClick={() => setShowAddForm(true)}>
-                <Plus size={16} className="mr-2" />
-                Добавить контент вручную
-              </Button>
-            </CardContent>
-          </Card>
-        ) : (
-          content.map((item) => (
-            <Card key={item.id}>
-              <CardContent className="p-6">
-                {editingId === item.id ? (
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <Label>Страница</Label>
-                        <Select
-                          value={formData.page_slug}
-                          onValueChange={(value) => setFormData({ ...formData, page_slug: value })}
-                        >
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {pageOptions.map((option) => (
-                              <SelectItem key={option.value} value={option.value}>
-                                {option.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      <div>
-                        <Label>Ключ контента</Label>
-                        <Input
-                          value={formData.content_key}
-                          onChange={(e) => setFormData({ ...formData, content_key: e.target.value })}
-                        />
-                      </div>
-
-                      <div>
-                        <Label>Тип контента</Label>
-                        <Select
-                          value={formData.content_type}
-                          onValueChange={(value) => setFormData({ ...formData, content_type: value })}
-                        >
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {contentTypes.map((type) => (
-                              <SelectItem key={type.value} value={type.value}>
-                                {type.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      <div className="flex items-center space-x-2">
-                        <Switch
-                          checked={formData.is_active}
-                          onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
-                        />
-                        <Label>Активен</Label>
-                      </div>
-                    </div>
-
+          return (
+            <TabsContent key={page.value} value={page.value} className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <div className="flex justify-between items-center">
                     <div>
-                      <Label>Содержимое</Label>
-                      <Textarea
-                        value={formData.content_value}
-                        onChange={(e) => setFormData({ ...formData, content_value: e.target.value })}
-                        rows={6}
-                      />
-                    </div>
-
-                    <div className="flex justify-end gap-2">
-                      <Button variant="outline" onClick={cancelEdit}>
-                        <X size={16} className="mr-2" />
-                        Отмена
-                      </Button>
-                      <Button onClick={() => handleSave(item.id)}>
-                        <Save size={16} className="mr-2" />
-                        Сохранить
-                      </Button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    <div className="flex justify-between items-start">
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2">
-                          <Badge variant="outline">{item.page_slug}</Badge>
-                          <Badge variant="secondary">{item.content_key}</Badge>
-                          <Badge variant={item.is_active ? "default" : "destructive"}>
-                            {item.is_active ? "Активен" : "Неактивен"}
-                          </Badge>
-                        </div>
-                        <p className="text-sm text-muted-foreground">
-                          Тип: {contentTypes.find(t => t.value === item.content_type)?.label}
-                        </p>
-                      </div>
-                      <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => startEdit(item)}
-                        >
-                          <Edit size={14} />
-                        </Button>
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => handleDelete(item.id)}
-                        >
-                          <Trash2 size={14} />
-                        </Button>
-                      </div>
-                    </div>
-
-                    <div className="bg-muted/50 rounded-lg p-4">
-                      <p className="text-sm font-mono whitespace-pre-wrap break-words">
-                        {item.content_value || <span className="text-muted-foreground">Нет содержимого</span>}
+                      <CardTitle className="flex items-center gap-2">
+                        <span className="text-2xl">{page.icon}</span>
+                        {page.label}
+                      </CardTitle>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        {stats.total === 0 
+                          ? "Нет элементов контента" 
+                          : `${stats.active} активных из ${stats.total} элементов`}
                       </p>
                     </div>
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={() => setShowAddForm(page.value)}
+                        size="sm"
+                        variant="outline"
+                        className="gap-2"
+                      >
+                        <Plus className="w-4 h-4" />
+                        Добавить элемент
+                      </Button>
+                      {stats.total > 0 && (
+                        <Button
+                          onClick={() => savePageContent(page.value)}
+                          disabled={saving}
+                          size="sm"
+                          className="gap-2"
+                        >
+                          {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                          Сохранить все
+                        </Button>
+                      )}
+                    </div>
                   </div>
-                )}
-              </CardContent>
-            </Card>
-          ))
-        )}
-      </div>
+                </CardHeader>
+                <CardContent>
+                  {/* Add Form */}
+                  {showAddForm === page.value && (
+                    <Card className="mb-6 border-dashed border-primary/50 bg-primary/5">
+                      <CardContent className="pt-6 space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="new_content_key">Ключ элемента</Label>
+                            <Input
+                              id="new_content_key"
+                              value={newContentKey}
+                              onChange={(e) => setNewContentKey(e.target.value)}
+                              placeholder="hero_title, description..."
+                            />
+                          </div>
+                          
+                          <div className="space-y-2">
+                            <Label htmlFor="new_content_type">Тип контента</Label>
+                            <div className="grid grid-cols-2 gap-2">
+                              {contentTypes.map((type) => (
+                                <Button
+                                  key={type.value}
+                                  type="button"
+                                  variant={newContentType === type.value ? "default" : "outline"}
+                                  size="sm"
+                                  onClick={() => setNewContentType(type.value)}
+                                  className="gap-2"
+                                >
+                                  <span>{type.icon}</span>
+                                  {type.label}
+                                </Button>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="new_content_value">Содержимое</Label>
+                          <Textarea
+                            id="new_content_value"
+                            value={newContentValue}
+                            onChange={(e) => setNewContentValue(e.target.value)}
+                            rows={3}
+                            placeholder="Введите содержимое элемента..."
+                          />
+                        </div>
+
+                        <div className="flex justify-end gap-2">
+                          <Button 
+                            variant="outline" 
+                            onClick={() => {
+                              setShowAddForm(null);
+                              setNewContentKey("");
+                              setNewContentValue("");
+                              setNewContentType("text");
+                            }}
+                          >
+                            <X className="w-4 h-4 mr-2" />
+                            Отмена
+                          </Button>
+                          <Button onClick={addNewContent}>
+                            <Save className="w-4 h-4 mr-2" />
+                            Добавить
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {/* Content Items */}
+                  <div className="space-y-4">
+                    {contentItems.length === 0 ? (
+                      <div className="text-center py-12 text-muted-foreground">
+                        <FileText className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                        <h3 className="text-lg font-semibold mb-2">Нет контента</h3>
+                        <p className="mb-4">На этой странице пока нет элементов контента</p>
+                        <Button 
+                          onClick={() => setShowAddForm(page.value)}
+                          variant="outline"
+                          className="gap-2"
+                        >
+                          <Plus className="w-4 h-4" />
+                          Добавить первый элемент
+                        </Button>
+                      </div>
+                    ) : (
+                      contentItems.map(([contentKey, item]) => {
+                        const isEditing = editingKeys.has(`${page.value}-${contentKey}`);
+                        const editKey = `${page.value}-${contentKey}`;
+
+                        return (
+                          <Card 
+                            key={contentKey} 
+                            className={`transition-all duration-200 ${
+                              item.is_active ? 'border-primary/20' : 'border-muted opacity-60'
+                            }`}
+                          >
+                            <CardContent className="p-4">
+                              <div className="space-y-4">
+                                <div className="flex justify-between items-start">
+                                  <div className="space-y-2">
+                                    <div className="flex items-center gap-2">
+                                      <Badge variant="secondary" className="font-mono text-xs">
+                                        {contentKey}
+                                      </Badge>
+                                      <Badge variant="outline" className="gap-1">
+                                        {contentTypes.find(t => t.value === item.content_type)?.icon}
+                                        {contentTypes.find(t => t.value === item.content_type)?.label}
+                                      </Badge>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => toggleContentActive(page.value, contentKey)}
+                                        className="gap-1"
+                                      >
+                                        {item.is_active ? (
+                                          <>
+                                            <Eye className="w-4 h-4" />
+                                            <Badge variant="default" className="text-xs">Активен</Badge>
+                                          </>
+                                        ) : (
+                                          <>
+                                            <EyeOff className="w-4 h-4" />
+                                            <Badge variant="destructive" className="text-xs">Скрыт</Badge>
+                                          </>
+                                        )}
+                                      </Button>
+                                    </div>
+                                  </div>
+                                  <div className="flex gap-2">
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => isEditing ? stopEditing(editKey) : startEditing(editKey)}
+                                    >
+                                      {isEditing ? <X className="w-4 h-4" /> : <Edit className="w-4 h-4" />}
+                                    </Button>
+                                    <Button
+                                      variant="destructive"
+                                      size="sm"
+                                      onClick={() => deleteContent(page.value, contentKey, item.id)}
+                                    >
+                                      <Trash2 className="w-4 h-4" />
+                                    </Button>
+                                  </div>
+                                </div>
+
+                                {isEditing ? (
+                                  <div className="space-y-3">
+                                    <Label htmlFor={`content-${contentKey}`}>Содержимое</Label>
+                                    <Textarea
+                                      id={`content-${contentKey}`}
+                                      value={item.content_value || ''}
+                                      onChange={(e) => updateContentValue(page.value, contentKey, e.target.value)}
+                                      rows={item.content_type === 'text' ? 3 : 6}
+                                      className="font-mono text-sm"
+                                    />
+                                  </div>
+                                ) : (
+                                  <div className="bg-muted/50 rounded-lg p-4">
+                                    <div className="text-sm font-mono whitespace-pre-wrap break-words max-h-32 overflow-y-auto">
+                                      {item.content_value || (
+                                        <span className="text-muted-foreground italic">Нет содержимого</span>
+                                      )}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            </CardContent>
+                          </Card>
+                        );
+                      })
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          );
+        })}
+      </Tabs>
     </div>
   );
 }
