@@ -3,21 +3,24 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { TournamentInvitationGenerator } from "@/components/TournamentInvitationGenerator";
-import { Settings, FileText, Users, Calendar, Trophy } from "lucide-react";
+import { ContentManager } from "@/components/cms/ContentManager";
+import { GalleryManager } from "@/components/cms/GalleryManager";
+import { SEOManager } from "@/components/cms/SEOManager";
+import { SettingsManager } from "@/components/cms/SettingsManager";
+import { Settings, FileText, Users, Trophy, Image, Search, Globe, Palette } from "lucide-react";
 
 export default function Admin() {
   const [activeTab, setActiveTab] = useState("invitations");
 
   const adminTabs = [
     { id: "invitations", name: "Приглашения", icon: FileText },
+    { id: "content", name: "Контент", icon: FileText },
+    { id: "gallery", name: "Галерея", icon: Image },
+    { id: "seo", name: "SEO", icon: Search },
+    { id: "settings", name: "Настройки", icon: Settings },
     { id: "tournaments", name: "Турниры", icon: Trophy },
     { id: "players", name: "Игроки", icon: Users },
-    { id: "settings", name: "Настройки", icon: Settings },
   ];
 
   return (
@@ -74,6 +77,14 @@ export default function Admin() {
                 </Card>
               )}
 
+              {activeTab === "content" && <ContentManager />}
+
+              {activeTab === "gallery" && <GalleryManager />}
+
+              {activeTab === "seo" && <SEOManager />}
+
+              {activeTab === "settings" && <SettingsManager />}
+
               {activeTab === "tournaments" && (
                 <Card>
                   <CardHeader>
@@ -92,17 +103,6 @@ export default function Admin() {
                   </CardHeader>
                   <CardContent>
                     <p className="text-muted-foreground">Функционал управления игроками будет добавлен позже</p>
-                  </CardContent>
-                </Card>
-              )}
-
-              {activeTab === "settings" && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Настройки системы</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-muted-foreground">Настройки системы будут добавлены позже</p>
                   </CardContent>
                 </Card>
               )}
