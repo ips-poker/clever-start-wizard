@@ -55,6 +55,204 @@ export type Database = {
           },
         ]
       }
+      cms_content: {
+        Row: {
+          content_key: string
+          content_type: string
+          content_value: string | null
+          created_at: string
+          id: string
+          is_active: boolean
+          meta_data: Json | null
+          page_slug: string
+          updated_at: string
+        }
+        Insert: {
+          content_key: string
+          content_type?: string
+          content_value?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          meta_data?: Json | null
+          page_slug: string
+          updated_at?: string
+        }
+        Update: {
+          content_key?: string
+          content_type?: string
+          content_value?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          meta_data?: Json | null
+          page_slug?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      cms_gallery: {
+        Row: {
+          alt_text: string | null
+          category: string | null
+          created_at: string
+          description: string | null
+          display_order: number | null
+          id: string
+          image_url: string
+          is_active: boolean
+          is_featured: boolean | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          alt_text?: string | null
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          display_order?: number | null
+          id?: string
+          image_url: string
+          is_active?: boolean
+          is_featured?: boolean | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          alt_text?: string | null
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          display_order?: number | null
+          id?: string
+          image_url?: string
+          is_active?: boolean
+          is_featured?: boolean | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      cms_integrations: {
+        Row: {
+          api_keys: Json | null
+          config: Json
+          created_at: string
+          id: string
+          integration_name: string
+          integration_type: string
+          is_active: boolean | null
+          last_sync: string | null
+          updated_at: string
+        }
+        Insert: {
+          api_keys?: Json | null
+          config?: Json
+          created_at?: string
+          id?: string
+          integration_name: string
+          integration_type: string
+          is_active?: boolean | null
+          last_sync?: string | null
+          updated_at?: string
+        }
+        Update: {
+          api_keys?: Json | null
+          config?: Json
+          created_at?: string
+          id?: string
+          integration_name?: string
+          integration_type?: string
+          is_active?: boolean | null
+          last_sync?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      cms_seo: {
+        Row: {
+          canonical_url: string | null
+          created_at: string
+          id: string
+          meta_description: string | null
+          meta_keywords: string | null
+          meta_title: string | null
+          og_description: string | null
+          og_image: string | null
+          og_title: string | null
+          page_slug: string
+          robots_meta: string | null
+          schema_markup: Json | null
+          updated_at: string
+        }
+        Insert: {
+          canonical_url?: string | null
+          created_at?: string
+          id?: string
+          meta_description?: string | null
+          meta_keywords?: string | null
+          meta_title?: string | null
+          og_description?: string | null
+          og_image?: string | null
+          og_title?: string | null
+          page_slug: string
+          robots_meta?: string | null
+          schema_markup?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          canonical_url?: string | null
+          created_at?: string
+          id?: string
+          meta_description?: string | null
+          meta_keywords?: string | null
+          meta_title?: string | null
+          og_description?: string | null
+          og_image?: string | null
+          og_title?: string | null
+          page_slug?: string
+          robots_meta?: string | null
+          schema_markup?: Json | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      cms_settings: {
+        Row: {
+          category: string | null
+          created_at: string
+          description: string | null
+          id: string
+          is_public: boolean | null
+          setting_key: string
+          setting_type: string
+          setting_value: string | null
+          updated_at: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_public?: boolean | null
+          setting_key: string
+          setting_type?: string
+          setting_value?: string | null
+          updated_at?: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_public?: boolean | null
+          setting_key?: string
+          setting_type?: string
+          setting_value?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       game_results: {
         Row: {
           created_at: string
