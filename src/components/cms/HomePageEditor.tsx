@@ -7,7 +7,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, Save, Home } from "lucide-react";
+import { Loader2, Save, Home, Plus, Edit, Trash2, X } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 import { ImageUploader } from "./ImageUploader";
 
 interface HomeContent {
@@ -54,10 +57,41 @@ interface HomeContent {
   contact_address: string;
 }
 
+interface CMSContentItem {
+  id: string;
+  page_slug: string;
+  content_key: string;
+  content_type: string;
+  content_value: string | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+interface ContentForm {
+  page_slug: string;
+  content_key: string;
+  content_type: string;
+  content_value: string;
+  is_active: boolean;
+}
+
 export function HomePageEditor() {
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  
+  // Content management state
+  const [cmsContent, setCmsContent] = useState<CMSContentItem[]>([]);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [formData, setFormData] = useState<ContentForm>({
+    page_slug: 'home',
+    content_key: '',
+    content_type: 'text',
+    content_value: '',
+    is_active: true
+  });
   
   const [content, setContent] = useState<HomeContent>({
     // Hero Section
@@ -103,8 +137,16 @@ export function HomePageEditor() {
     contact_address: "Санкт-Петербург, Россия",
   });
 
+  const contentTypes = [
+    { value: 'text', label: 'Текст' },
+    { value: 'html', label: 'HTML' },
+    { value: 'image', label: 'Изображение' },
+    { value: 'json', label: 'JSON' },
+  ];
+
   useEffect(() => {
     fetchContent();
+    fetchCmsContent();
   }, []);
 
   const fetchContent = async () => {
@@ -137,6 +179,116 @@ export function HomePageEditor() {
     } finally {
       setLoading(false);
     }
+  };
+
+  // CMS Content Management functions
+  const fetchCmsContent = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('cms_content')
+        .select('*')
+        .eq('page_slug', 'home')
+        .order('content_key');
+
+      if (error) throw error;
+      setCmsContent(data || []);
+    } catch (error) {
+      console.error('Error fetching CMS content:', error);
+    }
+  };
+
+  const handleContentSave = async (id?: string) => {
+    try {
+      if (id) {
+        // Update existing
+        const { error } = await supabase
+          .from('cms_content')
+          .update({
+            content_key: formData.content_key,
+            content_type: formData.content_type,
+            content_value: formData.content_value,
+            is_active: formData.is_active,
+          })
+          .eq('id', id);
+
+        if (error) throw error;
+        setEditingId(null);
+      } else {
+        // Create new
+        const { error } = await supabase
+          .from('cms_content')
+          .insert([{ ...formData, page_slug: 'home' }]);
+
+        if (error) throw error;
+        setShowAddForm(false);
+      }
+
+      await fetchCmsContent();
+      resetContentForm();
+      toast({
+        title: "Успешно",
+        description: id ? "Контент обновлен" : "Контент создан",
+      });
+    } catch (error) {
+      console.error('Error saving content:', error);
+      toast({
+        title: "Ошибка",
+        description: "Не удалось сохранить контент",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleContentDelete = async (id: string) => {
+    if (!confirm('Вы уверены, что хотите удалить этот контент?')) return;
+
+    try {
+      const { error } = await supabase
+        .from('cms_content')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      await fetchCmsContent();
+      toast({
+        title: "Успешно",
+        description: "Контент удален",
+      });
+    } catch (error) {
+      console.error('Error deleting content:', error);
+      toast({
+        title: "Ошибка",
+        description: "Не удалось удалить контент",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const startContentEdit = (item: CMSContentItem) => {
+    setFormData({
+      page_slug: item.page_slug,
+      content_key: item.content_key,
+      content_type: item.content_type,
+      content_value: item.content_value || '',
+      is_active: item.is_active,
+    });
+    setEditingId(item.id);
+  };
+
+  const resetContentForm = () => {
+    setFormData({
+      page_slug: 'home',
+      content_key: '',
+      content_type: 'text',
+      content_value: '',
+      is_active: true
+    });
+  };
+
+  const cancelContentEdit = () => {
+    setEditingId(null);
+    setShowAddForm(false);
+    resetContentForm();
   };
 
   const saveContent = async () => {
@@ -208,12 +360,13 @@ export function HomePageEditor() {
       </div>
 
       <Tabs defaultValue="hero" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="hero">Герой</TabsTrigger>
           <TabsTrigger value="about">О нас</TabsTrigger>
           <TabsTrigger value="features">Особенности</TabsTrigger>
           <TabsTrigger value="gallery">Галерея</TabsTrigger>
           <TabsTrigger value="contact">Контакты</TabsTrigger>
+          <TabsTrigger value="content">Контент</TabsTrigger>
         </TabsList>
 
         {/* Hero Section */}
@@ -566,6 +719,213 @@ export function HomePageEditor() {
                   </div>
                 </CardContent>
               </Card>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Content Management Section */}
+        <TabsContent value="content" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <div className="flex justify-between items-center">
+                <div>
+                  <CardTitle>Управление контентом главной страницы</CardTitle>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Добавление и редактирование элементов контента
+                  </p>
+                </div>
+                <Button
+                  onClick={() => setShowAddForm(true)}
+                  size="sm"
+                  className="gap-2"
+                >
+                  <Plus className="w-4 h-4" />
+                  Добавить элемент
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {/* Add Form */}
+              {showAddForm && (
+                <Card className="mb-6 border-dashed">
+                  <CardContent className="pt-6 space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="content_key">Ключ контента</Label>
+                        <Input
+                          id="content_key"
+                          value={formData.content_key}
+                          onChange={(e) => setFormData({ ...formData, content_key: e.target.value })}
+                          placeholder="hero_new_element"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="content_type">Тип контента</Label>
+                        <Select
+                          value={formData.content_type}
+                          onValueChange={(value) => setFormData({ ...formData, content_type: value })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {contentTypes.map((type) => (
+                              <SelectItem key={type.value} value={type.value}>
+                                {type.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="flex items-center space-x-2">
+                        <Switch
+                          id="is_active"
+                          checked={formData.is_active}
+                          onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
+                        />
+                        <Label htmlFor="is_active">Активен</Label>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="content_value">Содержимое</Label>
+                      <Textarea
+                        id="content_value"
+                        value={formData.content_value}
+                        onChange={(e) => setFormData({ ...formData, content_value: e.target.value })}
+                        rows={4}
+                        placeholder="Введите содержимое..."
+                      />
+                    </div>
+
+                    <div className="flex justify-end gap-2">
+                      <Button variant="outline" onClick={cancelContentEdit}>
+                        <X className="w-4 h-4 mr-2" />
+                        Отмена
+                      </Button>
+                      <Button onClick={() => handleContentSave()}>
+                        <Save className="w-4 h-4 mr-2" />
+                        Сохранить
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Content List */}
+              <div className="space-y-4">
+                {cmsContent.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <p>Нет дополнительных элементов контента</p>
+                    <p className="text-sm">Используйте кнопку "Добавить элемент" выше</p>
+                  </div>
+                ) : (
+                  cmsContent.map((item) => (
+                    <Card key={item.id}>
+                      <CardContent className="p-4">
+                        {editingId === item.id ? (
+                          <div className="space-y-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <div className="space-y-2">
+                                <Label>Ключ контента</Label>
+                                <Input
+                                  value={formData.content_key}
+                                  onChange={(e) => setFormData({ ...formData, content_key: e.target.value })}
+                                />
+                              </div>
+
+                              <div className="space-y-2">
+                                <Label>Тип контента</Label>
+                                <Select
+                                  value={formData.content_type}
+                                  onValueChange={(value) => setFormData({ ...formData, content_type: value })}
+                                >
+                                  <SelectTrigger>
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {contentTypes.map((type) => (
+                                      <SelectItem key={type.value} value={type.value}>
+                                        {type.label}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+
+                              <div className="flex items-center space-x-2">
+                                <Switch
+                                  checked={formData.is_active}
+                                  onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
+                                />
+                                <Label>Активен</Label>
+                              </div>
+                            </div>
+
+                            <div className="space-y-2">
+                              <Label>Содержимое</Label>
+                              <Textarea
+                                value={formData.content_value}
+                                onChange={(e) => setFormData({ ...formData, content_value: e.target.value })}
+                                rows={4}
+                              />
+                            </div>
+
+                            <div className="flex justify-end gap-2">
+                              <Button variant="outline" onClick={cancelContentEdit}>
+                                <X className="w-4 h-4 mr-2" />
+                                Отмена
+                              </Button>
+                              <Button onClick={() => handleContentSave(item.id)}>
+                                <Save className="w-4 h-4 mr-2" />
+                                Сохранить
+                              </Button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="space-y-3">
+                            <div className="flex justify-between items-start">
+                              <div className="space-y-2">
+                                <div className="flex items-center gap-2">
+                                  <Badge variant="secondary">{item.content_key}</Badge>
+                                  <Badge variant="outline">{item.content_type}</Badge>
+                                  <Badge variant={item.is_active ? "default" : "destructive"}>
+                                    {item.is_active ? "Активен" : "Неактивен"}
+                                  </Badge>
+                                </div>
+                              </div>
+                              <div className="flex gap-2">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => startContentEdit(item)}
+                                >
+                                  <Edit className="w-4 h-4" />
+                                </Button>
+                                <Button
+                                  variant="destructive"
+                                  size="sm"
+                                  onClick={() => handleContentDelete(item.id)}
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            </div>
+
+                            <div className="bg-muted/50 rounded-lg p-3">
+                              <p className="text-sm font-mono whitespace-pre-wrap break-words">
+                                {item.content_value || <span className="text-muted-foreground">Нет содержимого</span>}
+                              </p>
+                            </div>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  ))
+                )}
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
