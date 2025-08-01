@@ -13,37 +13,82 @@ import {
   CheckCircle,
   MessageCircle
 } from "lucide-react";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+
+interface Testimonial {
+  name: string;
+  rating: number;
+  status: string;
+  text: string;
+  avatar: string;
+  time: string;
+  verified: boolean;
+}
 
 export function SocialProof() {
-  const testimonials = [
-    {
-      name: "Алексей М.",
-      rating: 1987,
-      status: "Elite Player",
-      text: "Благодаря рейтинговой системе IPS я понял свои слабые места и значительно улучшил игру. 💪",
-      avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80&h=80&fit=crop&crop=face",
-      time: "2 часа назад",
-      verified: true
-    },
-    {
-      name: "Мария К.",
-      rating: 1756,
-      status: "Advanced",
-      text: "Отличная организация турниров и справедливая система оценки. Рекомендую всем! ⭐",
-      avatar: "https://images.unsplash.com/photo-1494790108755-2616b612b0e0?w=80&h=80&fit=crop&crop=face",
-      time: "5 часов назад",
-      verified: true
-    },
-    {
-      name: "Дмитрий В.",
-      rating: 2134,
-      status: "Master",
-      text: "Лучший покерный клуб в городе. Профессиональный уровень и дружелюбная атмосфера. 🔥",
-      avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&h=80&fit=crop&crop=face",
-      time: "1 день назад",
-      verified: true
+  const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchTestimonials();
+  }, []);
+
+  const fetchTestimonials = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('cms_content')
+        .select('*')
+        .eq('page_slug', 'testimonials')
+        .eq('content_key', 'testimonials')
+        .eq('is_active', true);
+
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        const testimonialsData = JSON.parse(data[0].content_value || '[]');
+        const activeTestimonials = testimonialsData.filter((t: any) => t.is_active);
+        setTestimonials(activeTestimonials);
+      } else {
+        // Fallback testimonials
+        setTestimonials([
+          {
+            name: "Алексей М.",
+            rating: 1987,
+            status: "Elite Player",
+            text: "Благодаря рейтинговой системе IPS я понял свои слабые места и значительно улучшил игру. 💪",
+            avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80&h=80&fit=crop&crop=face",
+            time: "2 часа назад",
+            verified: true
+          },
+          {
+            name: "Мария К.",
+            rating: 1756,
+            status: "Advanced",
+            text: "Отличная организация турниров и справедливая система оценки. Рекомендую всем! ⭐",
+            avatar: "https://images.unsplash.com/photo-1494790108755-2616b612b0e0?w=80&h=80&fit=crop&crop=face",
+            time: "5 часов назад",
+            verified: true
+          },
+          {
+            name: "Дмитрий В.",
+            rating: 2134,
+            status: "Master",
+            text: "Лучший покерный клуб в городе. Профессиональный уровень и дружелюбная атмосфера. 🔥",
+            avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&h=80&fit=crop&crop=face",
+            time: "1 день назад",
+            verified: true
+          }
+        ]);
+      }
+    } catch (error) {
+      console.error('Error fetching testimonials:', error);
+      // Use fallback testimonials on error
+      setTestimonials([]);
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
 
   const stats = [
     { value: "500+", label: "Активных игроков", icon: Users },
@@ -87,7 +132,16 @@ export function SocialProof() {
         </div>
 
         <div className="grid md:grid-cols-3 gap-6 mb-16">
-          {testimonials.map((testimonial, index) => (
+          {loading ? (
+            <div className="col-span-3 text-center py-8">
+              <div className="text-lg">Загрузка отзывов...</div>
+            </div>
+          ) : testimonials.length === 0 ? (
+            <div className="col-span-3 text-center py-8 text-muted-foreground">
+              Пока нет отзывов для отображения.
+            </div>
+          ) : (
+            testimonials.map((testimonial, index) => (
             <Card key={`testimonial-${index}-${testimonial.name}`} className="group hover:shadow-floating transition-all duration-500 hover:-translate-y-2 border border-border/50 bg-gradient-surface overflow-hidden">
               {/* Telegram-style header */}
               <CardHeader className="pb-3 bg-gradient-to-r from-poker-accent/5 to-poker-primary/5">
@@ -142,7 +196,8 @@ export function SocialProof() {
                 </div>
               </CardContent>
             </Card>
-          ))}
+            ))
+          )}
         </div>
 
         {/* Call to Action - Enhanced readability */}

@@ -8,6 +8,7 @@ import { AdminDashboard } from "@/components/cms/AdminDashboard";
 import { HomePageEditor } from "@/components/cms/HomePageEditor";
 import { AboutPageEditor } from "@/components/cms/AboutPageEditor";
 import { BlogPageEditor } from "@/components/cms/BlogPageEditor";
+import { TestimonialsEditor } from "@/components/cms/TestimonialsEditor";
 import { ContactFooterEditor } from "@/components/cms/ContactFooterEditor";
 import { ContentManager } from "@/components/cms/ContentManager";
 import { GalleryManager } from "@/components/cms/GalleryManager";
@@ -38,6 +39,8 @@ export default function Admin() {
         return <AboutPageEditor />;
       case "blog-editor":
         return <BlogPageEditor />;
+      case "testimonials":
+        return <TestimonialsEditor />;
       case "contact-footer":
         return <ContactFooterEditor />;
       case "content":

@@ -6,83 +6,121 @@ import {
   ZoomIn,
   X
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+
+interface GalleryImage {
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+  image_url: string;
+  is_active: boolean;
+  is_featured: boolean;
+}
 
 export function Gallery() {
   const [selectedImage, setSelectedImage] = useState<number | null>(null);
+  const [galleryImages, setGalleryImages] = useState<GalleryImage[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const galleryImages = [
-    {
-      id: 1,
-      title: "Главный игровой зал",
-      description: "Основной зал с профессиональными покерными столами",
-      category: "Интерьер",
-      image: "https://images.unsplash.com/photo-1605810230434-7631ac76ec81"
-    },
-    {
-      id: 2,
-      title: "VIP зона",
-      description: "Приватная зона для турниров высокого уровня",
-      category: "VIP",
-      image: "https://images.unsplash.com/photo-1487058792275-0ad4aaf24ca7"
-    },
-    {
-      id: 3,
-      title: "Турнирный стол",
-      description: "Профессиональный стол для официальных турниров",
-      category: "Оборудование",
-      image: "https://images.unsplash.com/photo-1519389950473-47ba0277781c"
-    },
-    {
-      id: 4,
-      title: "Лаунж зона",
-      description: "Зона отдыха для игроков между турами",
-      category: "Интерьер",
-      image: "https://images.unsplash.com/photo-1473091534298-04dcbce3278c"
-    },
-    {
-      id: 5,
-      title: "Церемония награждения",
-      description: "Награждение победителей турнира IPS Championship",
-      category: "События",
-      image: "https://images.unsplash.com/photo-1461749280684-dccba630e2f6"
-    },
-    {
-      id: 6,
-      title: "Командный турнир",
-      description: "Командные соревнования среди корпоративных клиентов",
-      category: "События",
-      image: "https://images.unsplash.com/photo-1498050108023-c5249f4df085"
-    },
-    {
-      id: 7,
-      title: "Мастер-класс",
-      description: "Обучающий семинар с профессиональным игроком",
-      category: "Обучение",
-      image: "https://images.unsplash.com/photo-1483058712412-4245e9b90334"
-    },
-    {
-      id: 8,
-      title: "Покерные фишки",
-      description: "Сертифицированные турнирные фишки клуба",
-      category: "Оборудование",
-      image: "https://images.unsplash.com/photo-1605810230434-7631ac76ec81"
-    },
-    {
-      id: 9,
-      title: "Регистрация турнира",
-      description: "Зона регистрации участников турнира",
-      category: "Сервис",
-      image: "https://images.unsplash.com/photo-1487058792275-0ad4aaf24ca7"
+  useEffect(() => {
+    fetchGalleryImages();
+  }, []);
+
+  const fetchGalleryImages = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('cms_gallery')
+        .select('*')
+        .eq('is_active', true)
+        .order('display_order', { ascending: true });
+
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        const mappedImages = data.map(item => ({
+          id: item.id,
+          title: item.title,
+          description: item.description || "",
+          category: getCategoryLabel(item.category),
+          image_url: item.image_url,
+          is_active: item.is_active,
+          is_featured: item.is_featured
+        }));
+        setGalleryImages(mappedImages);
+      } else {
+        // Fallback to static images if no database images
+        setGalleryImages([
+          {
+            id: "1",
+            title: "Главный игровой зал",
+            description: "Основной зал с профессиональными покерными столами",
+            category: "Интерьер",
+            image_url: "https://images.unsplash.com/photo-1605810230434-7631ac76ec81",
+            is_active: true,
+            is_featured: false
+          },
+          {
+            id: "2",
+            title: "VIP зона",
+            description: "Приватная зона для турниров высокого уровня",
+            category: "VIP",
+            image_url: "https://images.unsplash.com/photo-1487058792275-0ad4aaf24ca7",
+            is_active: true,
+            is_featured: false
+          },
+          {
+            id: "3",
+            title: "Турнирный стол",
+            description: "Профессиональный стол для официальных турниров",
+            category: "Оборудование",
+            image_url: "https://images.unsplash.com/photo-1519389950473-47ba0277781c",
+            is_active: true,
+            is_featured: false
+          }
+        ]);
+      }
+    } catch (error) {
+      console.error('Error fetching gallery images:', error);
+      // Use fallback images on error
+      setGalleryImages([]);
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
 
-  const categories = ["Все", "Интерьер", "VIP", "Оборудование", "События", "Обучение", "Сервис"];
+  const getCategoryLabel = (category: string) => {
+    const categoryMap: { [key: string]: string } = {
+      'general': 'Общие',
+      'tournaments': 'Турниры',
+      'players': 'Игроки',
+      'club': 'Клуб',
+      'events': 'События'
+    };
+    return categoryMap[category] || category;
+  };
+
   const [selectedCategory, setSelectedCategory] = useState("Все");
+  
+  // Get unique categories from database images
+  const categories = ["Все", ...Array.from(new Set(galleryImages.map(img => img.category)))];
 
   const filteredImages = selectedCategory === "Все" 
     ? galleryImages 
     : galleryImages.filter(img => img.category === selectedCategory);
+
+  if (loading) {
+    return (
+      <section className="py-20 bg-background">
+        <div className="container mx-auto px-4">
+          <div className="text-center">
+            <div className="text-lg">Загрузка галереи...</div>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="py-20 bg-background">
@@ -131,9 +169,13 @@ export function Gallery() {
             >
               <div className="relative overflow-hidden bg-poker-accent/5 h-64">
                 <img 
-                  src={image.image} 
+                  src={image.image_url} 
                   alt={image.title}
                   className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    target.src = 'https://via.placeholder.com/400x300?text=Image+Not+Found';
+                  }}
                 />
                 
                 {/* Overlay */}
@@ -176,7 +218,7 @@ export function Gallery() {
               
               <div className="relative">
                 <img 
-                  src={filteredImages[selectedImage].image} 
+                  src={filteredImages[selectedImage].image_url} 
                   alt={filteredImages[selectedImage].title}
                   className="w-full h-auto max-h-[70vh] object-contain"
                 />
