@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, Edit, Trash2, Save, X, Star, Image as ImageIcon } from "lucide-react";
+import { Plus, Edit, Trash2, Save, X, Star, Image as ImageIcon, Upload, Loader2 } from "lucide-react";
 
 interface GalleryItem {
   id: string;
@@ -28,8 +28,10 @@ interface GalleryItem {
 export function GalleryManager() {
   const [gallery, setGallery] = useState<GalleryItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -45,9 +47,9 @@ export function GalleryManager() {
 
   const categories = [
     { value: 'general', label: 'Общие' },
-    { value: 'tournaments', label: 'Турниры' },
-    { value: 'players', label: 'Игроки' },
-    { value: 'club', label: 'Клуб' },
+    { value: 'tournament', label: 'Турниры' },
+    { value: 'vip', label: 'VIP' },
+    { value: 'lounge', label: 'Лаунж' },
     { value: 'events', label: 'События' },
   ];
 
@@ -73,6 +75,65 @@ export function GalleryManager() {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: "Ошибка",
+        description: "Выберите файл изображения",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate file size (max 50MB)
+    if (file.size > 50 * 1024 * 1024) {
+      toast({
+        title: "Ошибка",
+        description: "Размер файла не должен превышать 50MB",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setUploading(true);
+    
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}.${fileExt}`;
+      const filePath = `gallery/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('gallery')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data } = supabase.storage
+        .from('gallery')
+        .getPublicUrl(filePath);
+
+      setFormData({ ...formData, image_url: data.publicUrl });
+      
+      toast({
+        title: "Успешно",
+        description: "Изображение загружено",
+      });
+    } catch (error) {
+      console.error('Error uploading file:', error);
+      toast({
+        title: "Ошибка",
+        description: "Не удалось загрузить изображение",
+        variant: "destructive",
+      });
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -154,32 +215,52 @@ export function GalleryManager() {
   const addSampleImages = async () => {
     const sampleImages = [
       {
-        title: 'Главный турнирный зал',
-        description: 'Основной зал для покерных турниров с профессиональными столами',
+        title: 'Главный покерный зал',
+        description: 'Просторный зал с профессиональными столами',
         image_url: '/src/assets/gallery/main-poker-room.jpg',
-        alt_text: 'Покерный зал с турнирными столами',
-        category: 'club',
+        alt_text: 'Главный покерный зал IPS',
+        category: 'tournament',
         display_order: 1,
         is_featured: true,
-        is_active: true
-      },
-      {
-        title: 'VIP зона',
-        description: 'Эксклюзивная зона для VIP игроков',
-        image_url: '/src/assets/gallery/vip-zone.jpg',
-        alt_text: 'VIP зона покерного клуба',
-        category: 'club',
-        display_order: 2,
-        is_featured: false,
         is_active: true
       },
       {
         title: 'Турнирный стол',
         description: 'Профессиональный турнирный стол',
         image_url: '/src/assets/gallery/tournament-table.jpg',
-        alt_text: 'Турнирный покерный стол',
-        category: 'tournaments',
+        alt_text: 'Турнирный стол',
+        category: 'tournament',
+        display_order: 2,
+        is_featured: false,
+        is_active: true
+      },
+      {
+        title: 'VIP зона',
+        description: 'Эксклюзивная VIP зона для привилегированных игроков',
+        image_url: '/src/assets/gallery/vip-zone.jpg',
+        alt_text: 'VIP зона',
+        category: 'vip',
         display_order: 3,
+        is_featured: true,
+        is_active: true
+      },
+      {
+        title: 'Зона отдыха',
+        description: 'Комфортная зона отдыха',
+        image_url: '/src/assets/gallery/lounge-area.jpg',
+        alt_text: 'Зона отдыха',
+        category: 'lounge',
+        display_order: 4,
+        is_featured: false,
+        is_active: true
+      },
+      {
+        title: 'Церемония награждения',
+        description: 'Торжественная церемония награждения победителей',
+        image_url: '/src/assets/gallery/awards-ceremony.jpg',
+        alt_text: 'Церемония награждения',
+        category: 'events',
+        display_order: 5,
         is_featured: false,
         is_active: true
       }
@@ -259,12 +340,44 @@ export function GalleryManager() {
             </div>
             
             <div>
-              <Label>URL изображения</Label>
-              <Input
-                value={formData.image_url}
-                onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
-                placeholder="https://example.com/image.jpg"
-              />
+              <Label>Изображение</Label>
+              <div className="space-y-2">
+                <div className="flex gap-2">
+                  <Input
+                    value={formData.image_url}
+                    onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
+                    placeholder="URL изображения или загрузите файл"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploading}
+                  >
+                    {uploading ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Upload className="w-4 h-4" />
+                    )}
+                  </Button>
+                </div>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileUpload}
+                  className="hidden"
+                />
+                {formData.image_url && (
+                  <div className="mt-2">
+                    <img
+                      src={formData.image_url}
+                      alt="Предпросмотр"
+                      className="w-32 h-24 object-cover rounded border"
+                    />
+                  </div>
+                )}
+              </div>
             </div>
 
             <div>
