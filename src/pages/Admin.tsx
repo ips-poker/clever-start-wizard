@@ -15,6 +15,10 @@ import { BackupManager } from "@/components/cms/BackupManager";
 import { SettingsManager } from "@/components/cms/SettingsManager";
 import { QuickSetup } from "@/components/cms/QuickSetup";
 import { TournamentInvitationGenerator } from "@/components/TournamentInvitationGenerator";
+import { AnalyticsOverview } from "@/components/cms/analytics/AnalyticsOverview";
+import { MediaLibrary } from "@/components/cms/media/MediaLibrary";
+import { WorkflowAutomation } from "@/components/cms/workflows/WorkflowAutomation";
+import { PerformanceMonitor } from "@/components/cms/performance/PerformanceMonitor";
 
 export default function Admin() {
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -43,6 +47,14 @@ export default function Admin() {
         return <BackupManager />;
       case "settings":
         return <SettingsManager />;
+      case "analytics":
+        return <AnalyticsOverview />;
+      case "performance":
+        return <PerformanceMonitor />;
+      case "media":
+        return <MediaLibrary />;
+      case "workflows":
+        return <WorkflowAutomation />;
       case "invitations":
         return <TournamentInvitationGenerator />;
       case "tournaments":

@@ -12,7 +12,9 @@ import {
   Database,
   Shield,
   Download,
-  Zap
+  Zap,
+  TrendingUp,
+  Activity
 } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import {
@@ -33,6 +35,8 @@ const adminSections = [
     label: "Обзор",
     items: [
       { title: "Дашборд", id: "dashboard", icon: BarChart3 },
+      { title: "Аналитика", id: "analytics", icon: TrendingUp },
+      { title: "Производительность", id: "performance", icon: Activity },
       { title: "Быстрая настройка", id: "quick-setup", icon: Zap },
     ]
   },
@@ -42,6 +46,7 @@ const adminSections = [
       { title: "Главная страница", id: "home-editor", icon: Home },
       { title: "Контакты и футер", id: "contact-footer", icon: FileText },
       { title: "Галерея", id: "gallery", icon: Image },
+      { title: "Медиабиблиотека", id: "media", icon: Image },
       { title: "Управление контентом", id: "content", icon: Database },
     ]
   },
@@ -54,11 +59,17 @@ const adminSections = [
     ]
   },
   {
+    label: "Автоматизация",
+    items: [
+      { title: "Воркфлоу", id: "workflows", icon: Zap },
+      { title: "Интеграции", id: "integrations", icon: Globe },
+    ]
+  },
+  {
     label: "Настройки",
     items: [
       { title: "SEO", id: "seo", icon: Search },
       { title: "Настройки сайта", id: "settings", icon: Settings },
-      { title: "Интеграции", id: "integrations", icon: Globe },
       { title: "Файлы", id: "files", icon: Database },
       { title: "Бэкап", id: "backup", icon: Download },
     ]
