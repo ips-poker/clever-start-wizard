@@ -211,9 +211,10 @@ export default function About() {
               </div>
               <div className="relative">
                 <img 
-                  src={getContent('story_image', 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=600&h=400&fit=crop')}
+                  src={getContent('story_image', 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=600&h=400&fit=crop') + (getContent('story_image') !== 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=600&h=400&fit=crop' ? `?v=${Date.now()}` : '')}
                   alt="Покерный турнир в IPS"
-                  className="rounded-2xl shadow-floating"
+                  className="rounded-2xl shadow-floating w-full"
+                  key={getContent('story_image', 'default')}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-poker-primary/20 to-transparent rounded-2xl"></div>
               </div>
