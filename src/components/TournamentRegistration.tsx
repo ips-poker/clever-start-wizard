@@ -123,11 +123,11 @@ export function TournamentRegistration({ tournaments, playerId, onRegistrationUp
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'registration':
-        return <Badge className="bg-gradient-to-r from-green-500 to-green-600 text-white border-0 animate-pulse">🔴 Регистрация</Badge>;
+        return <Badge className="bg-green-100 text-green-800">Регистрация</Badge>;
       case 'active':
-        return <Badge className="bg-gradient-to-r from-blue-500 to-blue-600 text-white border-0">🎮 Идет турнир</Badge>;
+        return <Badge className="bg-blue-100 text-blue-800">Идет</Badge>;
       case 'completed':
-        return <Badge className="bg-gradient-to-r from-gray-400 to-gray-500 text-white border-0">🏁 Завершен</Badge>;
+        return <Badge className="bg-gray-100 text-gray-800">Завершен</Badge>;
       default:
         return <Badge variant="secondary">{status}</Badge>;
     }
@@ -168,16 +168,15 @@ export function TournamentRegistration({ tournaments, playerId, onRegistrationUp
           const isRegistered = registeredTournaments.has(tournament.id);
           const isLoading = loading === tournament.id;
           const timeInfo = formatTime(tournament.start_time);
-          const canRegister = tournament.status === 'registration' && playerId;
+          const canRegister = tournament.status === 'registration' && !playerId;
           const canUnregister = isRegistered && tournament.status === 'registration';
 
           return (
-            <Card key={tournament.id} className="group border-border/50 hover:shadow-xl hover:shadow-primary/5 transition-all duration-300 hover:border-primary/20 bg-gradient-to-br from-card via-card to-card/80 overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-              <CardHeader className="relative z-10">
+            <Card key={tournament.id} className="border-border/50 hover:shadow-lg transition-all">
+              <CardHeader>
                 <div className="flex items-start justify-between">
                   <div className="space-y-2">
-                    <CardTitle className="text-xl text-foreground group-hover:text-primary transition-colors">{tournament.name}</CardTitle>
+                    <CardTitle className="text-xl text-foreground">{tournament.name}</CardTitle>
                     {tournament.description && (
                       <p className="text-muted-foreground text-sm">{tournament.description}</p>
                     )}
@@ -185,7 +184,7 @@ export function TournamentRegistration({ tournaments, playerId, onRegistrationUp
                   <div className="flex flex-col items-end gap-2">
                     {getStatusBadge(tournament.status)}
                     {isRegistered && (
-                      <Badge className="bg-gradient-to-r from-emerald-500 to-emerald-600 text-white border-0 shadow-lg">
+                      <Badge className="bg-green-100 text-green-800">
                         <UserCheck className="h-3 w-3 mr-1" />
                         Зарегистрирован
                       </Badge>
