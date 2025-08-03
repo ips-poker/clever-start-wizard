@@ -13,25 +13,25 @@ interface VoiceControlProps {
 export function VoiceControl({ selectedTournament }: VoiceControlProps) {
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6 p-2 md:p-0">
       {/* Профессиональные вкладки */}
       <Tabs defaultValue="control" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="control">
-            <Mic className="h-4 w-4 mr-2" />
-            Управление
+        <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 h-auto">
+          <TabsTrigger value="control" className="flex flex-col md:flex-row items-center gap-1 md:gap-2 p-2 md:p-3">
+            <Mic className="h-4 w-4" />
+            <span className="text-xs md:text-sm">Управление</span>
           </TabsTrigger>
-          <TabsTrigger value="analytics">
-            <BarChart3 className="h-4 w-4 mr-2" />
-            Аналитика
+          <TabsTrigger value="analytics" className="flex flex-col md:flex-row items-center gap-1 md:gap-2 p-2 md:p-3">
+            <BarChart3 className="h-4 w-4" />
+            <span className="text-xs md:text-sm">Аналитика</span>
           </TabsTrigger>
-          <TabsTrigger value="notifications">
-            <Bell className="h-4 w-4 mr-2" />
-            Уведомления
+          <TabsTrigger value="notifications" className="flex flex-col md:flex-row items-center gap-1 md:gap-2 p-2 md:p-3">
+            <Bell className="h-4 w-4" />
+            <span className="text-xs md:text-sm">Уведомления</span>
           </TabsTrigger>
-          <TabsTrigger value="settings">
-            <Settings className="h-4 w-4 mr-2" />
-            Настройки
+          <TabsTrigger value="settings" className="flex flex-col md:flex-row items-center gap-1 md:gap-2 p-2 md:p-3">
+            <Settings className="h-4 w-4" />
+            <span className="text-xs md:text-sm">Настройки</span>
           </TabsTrigger>
         </TabsList>
 

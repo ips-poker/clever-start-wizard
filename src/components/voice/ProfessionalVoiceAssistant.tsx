@@ -222,54 +222,58 @@ export function ProfessionalVoiceAssistant({ selectedTournament, onStatusChange 
   }, []);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       {/* Главная панель управления */}
       <Card className="border-primary/20">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-primary">
-            <Zap className="h-5 w-5" />
+        <CardHeader className="pb-3 md:pb-6">
+          <CardTitle className="flex items-center gap-2 text-primary text-sm md:text-base">
+            <Zap className="h-4 w-4 md:h-5 md:w-5" />
             Профессиональный голосовой ассистент
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-3 md:space-y-4">
           {/* Статус */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Badge variant={selectedTournament ? "default" : "secondary"}>
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+            <div className="flex items-center gap-2 flex-wrap">
+              <Badge variant={selectedTournament ? "default" : "secondary"} className="text-xs">
                 {selectedTournament ? "Активен" : "Ожидание"}
               </Badge>
               {isListening && (
-                <Badge variant="outline" className="animate-pulse">
+                <Badge variant="outline" className="animate-pulse text-xs">
                   <Mic className="h-3 w-3 mr-1" />
                   Слушаю
                 </Badge>
               )}
               {isSpeaking && (
-                <Badge variant="outline" className="animate-pulse">
+                <Badge variant="outline" className="animate-pulse text-xs">
                   <Volume2 className="h-3 w-3 mr-1" />
                   Говорю
                 </Badge>
               )}
             </div>
             
-            <div className="flex gap-2">
+            <div className="flex gap-2 w-full md:w-auto">
               {!isListening ? (
                 <Button 
                   onClick={startListening} 
-                  className="gap-2"
+                  className="gap-2 flex-1 md:flex-initial"
                   disabled={!selectedTournament}
+                  size="sm"
                 >
                   <Mic className="h-4 w-4" />
-                  Дать команду
+                  <span className="hidden sm:inline">Дать команду</span>
+                  <span className="sm:hidden">Команда</span>
                 </Button>
               ) : (
                 <Button 
                   onClick={stopListening} 
                   variant="outline" 
-                  className="gap-2"
+                  className="gap-2 flex-1 md:flex-initial"
+                  size="sm"
                 >
                   <MicOff className="h-4 w-4" />
-                  Остановить
+                  <span className="hidden sm:inline">Остановить</span>
+                  <span className="sm:hidden">Стоп</span>
                 </Button>
               )}
             </div>
@@ -277,15 +281,15 @@ export function ProfessionalVoiceAssistant({ selectedTournament, onStatusChange 
 
           {/* Выбор голоса */}
           <div className="space-y-2">
-            <p className="text-sm font-medium">Голос ассистента:</p>
-            <div className="grid grid-cols-2 gap-2">
+            <p className="text-xs md:text-sm font-medium">Голос ассистента:</p>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
               {voices.map((voice) => (
                 <Button
                   key={voice.id}
                   variant={selectedVoice === voice.id ? "default" : "outline"}
                   size="sm"
                   onClick={() => setSelectedVoice(voice.id)}
-                  className="justify-start"
+                  className="justify-start text-xs p-2"
                 >
                   {voice.name}
                 </Button>
@@ -296,8 +300,8 @@ export function ProfessionalVoiceAssistant({ selectedTournament, onStatusChange 
           {/* Турнир */}
           {selectedTournament && (
             <div className="p-3 bg-muted rounded-lg">
-              <p className="text-sm text-muted-foreground">Активный турнир:</p>
-              <p className="font-medium">{selectedTournament.name}</p>
+              <p className="text-xs text-muted-foreground">Активный турнир:</p>
+              <p className="font-medium text-sm md:text-base">{selectedTournament.name}</p>
             </div>
           )}
         </CardContent>
@@ -305,19 +309,20 @@ export function ProfessionalVoiceAssistant({ selectedTournament, onStatusChange 
 
       {/* Быстрые команды */}
       <Card>
-        <CardHeader>
-          <CardTitle>Управление турниром</CardTitle>
+        <CardHeader className="pb-3 md:pb-6">
+          <CardTitle className="text-sm md:text-base">Управление турниром</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-3 md:space-y-4">
           {/* Основные команды */}
           <div className="space-y-2">
-            <p className="text-sm font-medium text-muted-foreground">Основные команды</p>
-            <div className="grid grid-cols-3 gap-2">
+            <p className="text-xs md:text-sm font-medium text-muted-foreground">Основные команды</p>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
               <Button 
                 variant="outline" 
                 size="sm"
                 onClick={() => quickCommand("показать статистику турнира")}
                 disabled={!selectedTournament}
+                className="text-xs p-2"
               >
                 Статистика
               </Button>
@@ -326,6 +331,7 @@ export function ProfessionalVoiceAssistant({ selectedTournament, onStatusChange 
                 size="sm"
                 onClick={() => quickCommand("поставить турнир на паузу")}
                 disabled={!selectedTournament}
+                className="text-xs p-2"
               >
                 Пауза
               </Button>
@@ -334,6 +340,7 @@ export function ProfessionalVoiceAssistant({ selectedTournament, onStatusChange 
                 size="sm"
                 onClick={() => quickCommand("возобновить турнир")}
                 disabled={!selectedTournament}
+                className="text-xs p-2"
               >
                 Продолжить
               </Button>
@@ -342,29 +349,32 @@ export function ProfessionalVoiceAssistant({ selectedTournament, onStatusChange 
 
           {/* Блайнды */}
           <div className="space-y-2">
-            <p className="text-sm font-medium text-muted-foreground">Блайнды</p>
-            <div className="grid grid-cols-3 gap-2">
+            <p className="text-xs md:text-sm font-medium text-muted-foreground">Блайнды</p>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
               <Button 
                 variant="outline" 
                 size="sm"
                 onClick={() => quickCommand("следующий уровень блайндов")}
                 disabled={!selectedTournament}
+                className="text-xs p-2"
               >
-                Следующий уровень
+                След. уровень
               </Button>
               <Button 
                 variant="outline" 
                 size="sm"
                 onClick={() => quickCommand("предыдущий уровень блайндов")}
                 disabled={!selectedTournament}
+                className="text-xs p-2"
               >
-                Предыдущий уровень
+                Пред. уровень
               </Button>
               <Button 
                 variant="outline" 
                 size="sm"
                 onClick={() => quickCommand("установить уровень 5")}
                 disabled={!selectedTournament}
+                className="text-xs p-2"
               >
                 Уровень 5
               </Button>
@@ -373,13 +383,14 @@ export function ProfessionalVoiceAssistant({ selectedTournament, onStatusChange 
 
           {/* Таймер */}
           <div className="space-y-2">
-            <p className="text-sm font-medium text-muted-foreground">Таймер</p>
-            <div className="grid grid-cols-4 gap-2">
+            <p className="text-xs md:text-sm font-medium text-muted-foreground">Таймер</p>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
               <Button 
                 variant="outline" 
                 size="sm"
                 onClick={() => quickCommand("таймер 20 минут")}
                 disabled={!selectedTournament}
+                className="text-xs p-2"
               >
                 20 мин
               </Button>
@@ -388,6 +399,7 @@ export function ProfessionalVoiceAssistant({ selectedTournament, onStatusChange 
                 size="sm"
                 onClick={() => quickCommand("добавить время 5 минут")}
                 disabled={!selectedTournament}
+                className="text-xs p-2"
               >
                 +5 мин
               </Button>
@@ -396,6 +408,7 @@ export function ProfessionalVoiceAssistant({ selectedTournament, onStatusChange 
                 size="sm"
                 onClick={() => quickCommand("остановить таймер")}
                 disabled={!selectedTournament}
+                className="text-xs p-2"
               >
                 Стоп
               </Button>
@@ -404,6 +417,7 @@ export function ProfessionalVoiceAssistant({ selectedTournament, onStatusChange 
                 size="sm"
                 onClick={() => quickCommand("запустить таймер")}
                 disabled={!selectedTournament}
+                className="text-xs p-2"
               >
                 Старт
               </Button>
@@ -412,29 +426,32 @@ export function ProfessionalVoiceAssistant({ selectedTournament, onStatusChange 
 
           {/* Перерывы */}
           <div className="space-y-2">
-            <p className="text-sm font-medium text-muted-foreground">Перерывы</p>
-            <div className="grid grid-cols-3 gap-2">
+            <p className="text-xs md:text-sm font-medium text-muted-foreground">Перерывы</p>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
               <Button 
                 variant="outline" 
                 size="sm"
                 onClick={() => quickCommand("перерыв на 15 минут")}
                 disabled={!selectedTournament}
+                className="text-xs p-2"
               >
-                Перерыв 15 мин
+                Перерыв 15м
               </Button>
               <Button 
                 variant="outline" 
                 size="sm"
                 onClick={() => quickCommand("перерыв на 30 минут")}
                 disabled={!selectedTournament}
+                className="text-xs p-2"
               >
-                Перерыв 30 мин
+                Перерыв 30м
               </Button>
               <Button 
                 variant="outline" 
                 size="sm"
                 onClick={() => quickCommand("закончить перерыв")}
                 disabled={!selectedTournament}
+                className="text-xs p-2"
               >
                 Конец перерыва
               </Button>
@@ -443,29 +460,32 @@ export function ProfessionalVoiceAssistant({ selectedTournament, onStatusChange 
 
           {/* Игроки и столы */}
           <div className="space-y-2">
-            <p className="text-sm font-medium text-muted-foreground">Игроки и столы</p>
-            <div className="grid grid-cols-3 gap-2">
+            <p className="text-xs md:text-sm font-medium text-muted-foreground">Игроки и столы</p>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
               <Button 
                 variant="outline" 
                 size="sm"
                 onClick={() => quickCommand("список игроков")}
                 disabled={!selectedTournament}
+                className="text-xs p-2"
               >
-                Список игроков
+                Игроки
               </Button>
               <Button 
                 variant="outline" 
                 size="sm"
                 onClick={() => quickCommand("перебалансировать столы")}
                 disabled={!selectedTournament}
+                className="text-xs p-2"
               >
-                Перебалансировка
+                Балансировка
               </Button>
               <Button 
                 variant="outline" 
                 size="sm"
                 onClick={() => quickCommand("лидеры чипов")}
                 disabled={!selectedTournament}
+                className="text-xs p-2"
               >
                 Чип-лидеры
               </Button>
@@ -474,13 +494,14 @@ export function ProfessionalVoiceAssistant({ selectedTournament, onStatusChange 
 
           {/* Объявления */}
           <div className="space-y-2">
-            <p className="text-sm font-medium text-muted-foreground">Объявления</p>
-            <div className="grid grid-cols-3 gap-2">
+            <p className="text-xs md:text-sm font-medium text-muted-foreground">Объявления</p>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
               <Button 
                 variant="outline" 
                 size="sm"
                 onClick={() => quickCommand("тишина")}
                 disabled={!selectedTournament}
+                className="text-xs p-2"
               >
                 Тишина
               </Button>
@@ -489,6 +510,7 @@ export function ProfessionalVoiceAssistant({ selectedTournament, onStatusChange 
                 size="sm"
                 onClick={() => quickCommand("последняя рука")}
                 disabled={!selectedTournament}
+                className="text-xs p-2"
               >
                 Последняя рука
               </Button>
@@ -497,21 +519,23 @@ export function ProfessionalVoiceAssistant({ selectedTournament, onStatusChange 
                 size="sm"
                 onClick={() => quickCommand("финальный стол")}
                 disabled={!selectedTournament}
+                className="text-xs p-2"
               >
-                Финальный стол
+                Финал
               </Button>
             </div>
           </div>
 
           {/* Завершение */}
           <div className="space-y-2">
-            <p className="text-sm font-medium text-muted-foreground">Завершение</p>
-            <div className="grid grid-cols-3 gap-2">
+            <p className="text-xs md:text-sm font-medium text-muted-foreground">Завершение</p>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
               <Button 
                 variant="outline" 
                 size="sm"
                 onClick={() => quickCommand("выплаты")}
                 disabled={!selectedTournament}
+                className="text-xs p-2"
               >
                 Выплаты
               </Button>
@@ -520,6 +544,7 @@ export function ProfessionalVoiceAssistant({ selectedTournament, onStatusChange 
                 size="sm"
                 onClick={() => quickCommand("награждение")}
                 disabled={!selectedTournament}
+                className="text-xs p-2"
               >
                 Награждение
               </Button>
@@ -528,8 +553,9 @@ export function ProfessionalVoiceAssistant({ selectedTournament, onStatusChange 
                 size="sm"
                 onClick={() => quickCommand("завершить турнир")}
                 disabled={!selectedTournament}
+                className="text-xs p-2"
               >
-                Завершить турнир
+                Завершить
               </Button>
             </div>
           </div>
@@ -538,13 +564,13 @@ export function ProfessionalVoiceAssistant({ selectedTournament, onStatusChange 
 
       {/* Подсказки по командам */}
       <Card>
-        <CardHeader>
-          <CardTitle>Голосовые команды</CardTitle>
+        <CardHeader className="pb-3 md:pb-6">
+          <CardTitle className="text-sm md:text-base">Голосовые команды</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 text-xs md:text-sm">
             <div className="space-y-2">
-              <h4 className="font-medium">Управление турниром:</h4>
+              <h4 className="font-medium text-sm md:text-base">Управление турниром:</h4>
               <ul className="space-y-1 text-muted-foreground">
                 <li>• "Запустить турнир"</li>
                 <li>• "Поставить на паузу"</li>
@@ -554,7 +580,7 @@ export function ProfessionalVoiceAssistant({ selectedTournament, onStatusChange 
               </ul>
             </div>
             <div className="space-y-2">
-              <h4 className="font-medium">Блайнды и таймер:</h4>
+              <h4 className="font-medium text-sm md:text-base">Блайнды и таймер:</h4>
               <ul className="space-y-1 text-muted-foreground">
                 <li>• "Следующий уровень"</li>
                 <li>• "Установить уровень 5"</li>
@@ -564,7 +590,7 @@ export function ProfessionalVoiceAssistant({ selectedTournament, onStatusChange 
               </ul>
             </div>
             <div className="space-y-2">
-              <h4 className="font-medium">Игроки:</h4>
+              <h4 className="font-medium text-sm md:text-base">Игроки:</h4>
               <ul className="space-y-1 text-muted-foreground">
                 <li>• "Список игроков"</li>
                 <li>• "Исключить игрока Иван"</li>
@@ -574,7 +600,7 @@ export function ProfessionalVoiceAssistant({ selectedTournament, onStatusChange 
               </ul>
             </div>
             <div className="space-y-2">
-              <h4 className="font-medium">Объявления:</h4>
+              <h4 className="font-medium text-sm md:text-base">Объявления:</h4>
               <ul className="space-y-1 text-muted-foreground">
                 <li>• "Тишина"</li>
                 <li>• "Последняя рука"</li>
@@ -584,8 +610,8 @@ export function ProfessionalVoiceAssistant({ selectedTournament, onStatusChange 
               </ul>
             </div>
           </div>
-          <div className="mt-4 p-3 bg-muted rounded-lg">
-            <p className="text-sm text-muted-foreground">
+          <div className="mt-3 md:mt-4 p-2 md:p-3 bg-muted rounded-lg">
+            <p className="text-xs md:text-sm text-muted-foreground">
               💡 <strong>Совет:</strong> Говорите четко и естественно. Ассистент понимает команды на русском языке 
               и может выполнять сложные действия, такие как "Пересадить игрока Петров на стол номер 5".
             </p>
