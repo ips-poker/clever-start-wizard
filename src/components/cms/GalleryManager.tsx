@@ -197,6 +197,7 @@ export function GalleryManager() {
       is_active: item.is_active,
     });
     setEditingId(item.id);
+    setShowAddForm(false); // Закрываем форму добавления если открыта
   };
 
   const resetForm = () => {
@@ -315,9 +316,13 @@ export function GalleryManager() {
         </div>
       </div>
 
-      {showAddForm && (
+      {(showAddForm || editingId) && (
         <Card>
-          <CardHeader><CardTitle>Новое изображение</CardTitle></CardHeader>
+          <CardHeader>
+            <CardTitle>
+              {editingId ? "Редактирование изображения" : "Новое изображение"}
+            </CardTitle>
+          </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
@@ -408,7 +413,10 @@ export function GalleryManager() {
 
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={cancelEdit}><X size={16} className="mr-2" />Отмена</Button>
-              <Button onClick={() => handleSave()}><Save size={16} className="mr-2" />Сохранить</Button>
+              <Button onClick={() => handleSave(editingId || undefined)}>
+                <Save size={16} className="mr-2" />
+                {editingId ? "Обновить" : "Сохранить"}
+              </Button>
             </div>
           </CardContent>
         </Card>
