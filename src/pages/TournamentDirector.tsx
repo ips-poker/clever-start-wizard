@@ -689,10 +689,20 @@ const TournamentDirector = () => {
         </div>
 
         <Tabs 
+          key={`tabs-${activeTab}`}
           value={activeTab} 
           onValueChange={(value) => {
-            console.log('Tab change:', value);
+            console.log('Tab change start:', activeTab, '->', value);
+            
+            // Остановим таймер при переключении
+            if (timerRef.current) {
+              clearInterval(timerRef.current);
+              timerRef.current = null;
+              setTimerActive(false);
+            }
+            
             setActiveTab(value);
+            console.log('Tab change complete:', value);
           }} 
           className="space-y-10"
         >
@@ -755,7 +765,7 @@ const TournamentDirector = () => {
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="overview" className="space-y-8 animate-fade-in">
+          <TabsContent value="overview" className="space-y-8">{/* removed animate-fade-in */}
             {selectedTournament ? (
               <div className="space-y-8">
                 <TournamentOverview
@@ -803,7 +813,7 @@ const TournamentDirector = () => {
             )}
           </TabsContent>
 
-          <TabsContent value="tournaments" className="space-y-10 animate-fade-in">
+          <TabsContent value="tournaments" className="space-y-10">{/* removed animate-fade-in */}
             {/* Create Tournament Section */}
             <Card className="bg-white/60 backdrop-blur-sm border border-gray-200/40 shadow-minimal hover:shadow-subtle transition-all duration-300 rounded-xl group">
               <CardHeader className="pb-4">
@@ -1316,7 +1326,7 @@ const TournamentDirector = () => {
             </Card>
           </TabsContent>
 
-          <TabsContent value="control" className="space-y-8 animate-fade-in">
+          <TabsContent value="control" className="space-y-8">{/* removed animate-fade-in */}
             {selectedTournament ? (
               <div className="space-y-8">
                 {/* Tournament Format and Rebuy/Addon Settings */}
@@ -1500,7 +1510,7 @@ const TournamentDirector = () => {
             )}
           </TabsContent>
 
-          <TabsContent value="players" className="space-y-8 animate-fade-in">
+          <TabsContent value="players" className="space-y-8">{/* removed animate-fade-in */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               <Card className="bg-white/50 backdrop-blur-sm border border-gray-200/30 shadow-minimal hover:shadow-subtle transition-all duration-300">
                 <CardHeader>
@@ -1568,7 +1578,7 @@ const TournamentDirector = () => {
           </TabsContent>
 
           {/* Ratings Tab */}
-          <TabsContent value="ratings" className="space-y-6 animate-fade-in">
+          <TabsContent value="ratings" className="space-y-6">{/* removed animate-fade-in */}
             <RatingManagement 
               tournaments={tournaments} 
               selectedTournament={selectedTournament}
@@ -1577,7 +1587,7 @@ const TournamentDirector = () => {
           </TabsContent>
 
           {/* Results Tab */}
-          <TabsContent value="results" className="space-y-6 animate-fade-in">
+          <TabsContent value="results" className="space-y-6">{/* removed animate-fade-in */}
             <Card className="bg-gradient-card border-poker-border shadow-elevated">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-poker-text-primary">
@@ -1629,7 +1639,7 @@ const TournamentDirector = () => {
           </TabsContent>
 
           {/* Sync Tab */}
-          <TabsContent value="sync" className="space-y-6 animate-fade-in">
+          <TabsContent value="sync" className="space-y-6">{/* removed animate-fade-in */}
             <TournamentSyncManager 
               tournaments={tournaments}
               onRefresh={loadTournaments}
@@ -1637,7 +1647,7 @@ const TournamentDirector = () => {
           </TabsContent>
 
           {/* Rating Test Tab */}
-          <TabsContent value="rating-test" className="space-y-6 animate-fade-in">
+          <TabsContent value="rating-test" className="space-y-6">{/* removed animate-fade-in */}
             <RatingSystemTest />
           </TabsContent>
         </Tabs>
