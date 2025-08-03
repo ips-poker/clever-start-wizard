@@ -357,6 +357,7 @@ export type Database = {
       }
       players: {
         Row: {
+          avatar_url: string | null
           created_at: string
           elo_rating: number
           email: string | null
@@ -367,6 +368,7 @@ export type Database = {
           wins: number
         }
         Insert: {
+          avatar_url?: string | null
           created_at?: string
           elo_rating?: number
           email?: string | null
@@ -377,6 +379,7 @@ export type Database = {
           wins?: number
         }
         Update: {
+          avatar_url?: string | null
           created_at?: string
           elo_rating?: number
           email?: string | null
