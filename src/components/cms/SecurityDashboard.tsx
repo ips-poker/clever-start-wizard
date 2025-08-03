@@ -63,12 +63,27 @@ export function SecurityDashboard() {
   const { toast } = useToast();
 
   useEffect(() => {
-    fetchSecurityData();
+    let isMounted = true;
+    
+    const loadData = async () => {
+      if (isMounted) {
+        await fetchSecurityData();
+      }
+    };
+    
+    loadData();
     
     // Real-time security monitoring
-    const interval = setInterval(fetchSecurityData, 30000); // Update every 30 seconds
+    const interval = setInterval(() => {
+      if (isMounted) {
+        fetchSecurityData();
+      }
+    }, 30000); // Update every 30 seconds
     
-    return () => clearInterval(interval);
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
   }, []);
 
   const fetchSecurityData = async () => {

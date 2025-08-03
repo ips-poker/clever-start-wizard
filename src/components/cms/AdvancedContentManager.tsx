@@ -96,8 +96,20 @@ export function AdvancedContentManager() {
   ];
 
   useEffect(() => {
-    fetchContents();
-    fetchWorkflowRules();
+    let isMounted = true;
+    
+    const loadData = async () => {
+      if (isMounted) {
+        await fetchContents();
+        await fetchWorkflowRules();
+      }
+    };
+    
+    loadData();
+    
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const fetchContents = async () => {

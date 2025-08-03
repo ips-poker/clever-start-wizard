@@ -105,8 +105,20 @@ export function OrangeDataIntegration() {
   ];
 
   useEffect(() => {
-    fetchConfig();
-    fetchReceipts();
+    let isMounted = true;
+    
+    const loadData = async () => {
+      if (isMounted) {
+        await fetchConfig();
+        await fetchReceipts();
+      }
+    };
+    
+    loadData();
+    
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const fetchConfig = async () => {
