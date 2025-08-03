@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Header } from "@/components/Header";
@@ -119,7 +119,7 @@ export default function Profile() {
     }
   };
 
-  const loadTournaments = async () => {
+  const loadTournaments = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from('tournaments')
@@ -148,7 +148,7 @@ export default function Profile() {
     } catch (error) {
       console.error('Error loading tournaments:', error);
     }
-  };
+  }, []);
 
   const loadGameResults = async () => {
     if (!player?.id) return;
