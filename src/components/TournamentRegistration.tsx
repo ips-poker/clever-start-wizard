@@ -1,12 +1,31 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Users, DollarSign, Clock, Trophy, UserCheck, UserPlus } from "lucide-react";
-import { toast } from "sonner";
-import { formatDistanceToNow } from "date-fns";
-import { ru } from "date-fns/locale";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { 
+  Users, 
+  UserCheck, 
+  UserPlus, 
+  Trophy, 
+  Calendar,
+  DollarSign,
+  RefreshCw,
+  CheckCircle,
+  AlertCircle
+} from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+
+interface Player {
+  id: string;
+  name: string;
+  email: string;
+  elo_rating: number;
+  games_played: number;
+  wins: number;
+}
 
 interface Tournament {
   id: string;
@@ -16,309 +35,430 @@ interface Tournament {
   buy_in: number;
   max_players: number;
   status: string;
-  registered_count?: number;
   starting_chips: number;
+  is_published: boolean;
 }
 
-interface TournamentRegistrationProps {
-  tournaments: Tournament[];
-  playerId?: string;
+interface Registration {
+  id: string;
+  player_id: string;
+  tournament_id: string;
+  status: string;
+  created_at: string;
+  player: Player;
 }
 
-export function TournamentRegistration({ tournaments, playerId }: TournamentRegistrationProps) {
-  const [registeredTournaments, setRegisteredTournaments] = useState<Set<string>>(new Set());
-  const [loading, setLoading] = useState<string>("");
-  const [tournamentCounts, setTournamentCounts] = useState<Record<string, number>>({});
-  const [dataLoaded, setDataLoaded] = useState(false);
+export function TournamentRegistration() {
+  const [tournaments, setTournaments] = useState<Tournament[]>([]);
+  const [players, setPlayers] = useState<Player[]>([]);
+  const [registrations, setRegistrations] = useState<Registration[]>([]);
+  const [selectedTournament, setSelectedTournament] = useState<string>("");
+  const [selectedPlayer, setSelectedPlayer] = useState<string>("");
+  const [loading, setLoading] = useState(false);
+  const [newPlayerName, setNewPlayerName] = useState("");
+  const [newPlayerEmail, setNewPlayerEmail] = useState("");
+  const { toast } = useToast();
 
-  // Загружаем регистрации пользователя только один раз
   useEffect(() => {
-    if (!playerId || dataLoaded) return;
+    loadData();
+  }, []);
 
-    const loadRegistrations = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('tournament_registrations')
-          .select('tournament_id')
-          .eq('player_id', playerId);
+  const loadData = async () => {
+    setLoading(true);
+    try {
+      await Promise.all([
+        loadTournaments(),
+        loadPlayers(),
+        loadRegistrations()
+      ]);
+    } catch (error) {
+      console.error('Error loading data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-        if (error) throw error;
+  const loadTournaments = async () => {
+    const { data, error } = await supabase
+      .from('tournaments')
+      .select('*')
+      .eq('is_published', true)
+      .not('is_archived', 'eq', true)
+      .in('status', ['scheduled', 'registration', 'running'])
+      .order('start_time', { ascending: true });
 
-        const registeredIds = new Set(data?.map(reg => reg.tournament_id) || []);
-        setRegisteredTournaments(registeredIds);
-        setDataLoaded(true);
-      } catch (error) {
-        console.error('Error loading registrations:', error);
-      }
-    };
+    if (!error && data) {
+      setTournaments(data);
+    }
+  };
 
-    loadRegistrations();
-  }, [playerId, dataLoaded]);
+  const loadPlayers = async () => {
+    const { data, error } = await supabase
+      .from('players')
+      .select('*')
+      .order('name');
 
-  // Мемоизированный список ID турниров для стабильных зависимостей
-  const tournamentIds = useMemo(() => 
-    tournaments.map(t => t.id).sort(), 
-    [tournaments]
-  );
+    if (!error && data) {
+      setPlayers(data);
+    }
+  };
 
-  // Загружаем счетчики турниров только когда турниры меняются
-  useEffect(() => {
-    if (tournamentIds.length === 0) return;
+  const loadRegistrations = async () => {
+    const { data, error } = await supabase
+      .from('tournament_registrations')
+      .select(`
+        *,
+        player:players(*)
+      `)
+      .order('created_at', { ascending: false });
 
-    const loadTournamentCounts = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('tournament_registrations')
-          .select('tournament_id')
-          .in('tournament_id', tournamentIds);
+    if (!error && data) {
+      setRegistrations(data);
+    }
+  };
 
-        if (error) throw error;
-
-        const counts: Record<string, number> = {};
-        tournamentIds.forEach(id => {
-          counts[id] = data?.filter(reg => reg.tournament_id === id).length || 0;
-        });
-        
-        setTournamentCounts(counts);
-      } catch (error) {
-        console.error('Error loading tournament counts:', error);
-      }
-    };
-
-    loadTournamentCounts();
-  }, [tournamentIds]);
-
-  const handleRegister = useCallback(async (tournamentId: string) => {
-    if (!playerId) {
-      toast("Ошибка: игрок не найден");
+  const createPlayer = async () => {
+    if (!newPlayerName.trim() || !newPlayerEmail.trim()) {
+      toast({
+        title: "Ошибка",
+        description: "Заполните имя и email игрока",
+        variant: "destructive"
+      });
       return;
     }
 
-    setLoading(tournamentId);
-
+    setLoading(true);
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
+        .from('players')
+        .insert([{
+          name: newPlayerName.trim(),
+          email: newPlayerEmail.trim(),
+          elo_rating: 1200
+        }])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setPlayers(prev => [...prev, data]);
+      setNewPlayerName("");
+      setNewPlayerEmail("");
+      toast({
+        title: "Игрок создан",
+        description: `Игрок ${data.name} успешно создан`
+      });
+    } catch (error: any) {
+      toast({
+        title: "Ошибка создания игрока",
+        description: error.message,
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const registerPlayer = async () => {
+    if (!selectedTournament || !selectedPlayer) {
+      toast({
+        title: "Ошибка",
+        description: "Выберите турнир и игрока",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
         .from('tournament_registrations')
         .insert([{
-          tournament_id: tournamentId,
-          player_id: playerId,
+          tournament_id: selectedTournament,
+          player_id: selectedPlayer,
           status: 'registered'
-        }]);
+        }])
+        .select(`
+          *,
+          player:players(*)
+        `)
+        .single();
 
       if (error) {
         if (error.code === '23505') {
-          toast("Вы уже зарегистрированы на этот турнир");
+          toast({
+            title: "Уже зарегистрирован",
+            description: "Этот игрок уже зарегистрирован на данный турнир",
+            variant: "destructive"
+          });
         } else {
           throw error;
         }
         return;
       }
 
-      setRegisteredTournaments(prev => new Set([...prev, tournamentId]));
-      setTournamentCounts(prev => ({
-        ...prev,
-        [tournamentId]: (prev[tournamentId] || 0) + 1
-      }));
-      toast("Успешно зарегистрированы на турнир!");
-    } catch (error) {
-      console.error('Error registering for tournament:', error);
-      toast("Ошибка при регистрации на турнир");
+      setRegistrations(prev => [data, ...prev]);
+      toast({
+        title: "Регистрация успешна",
+        description: "Игрок зарегистрирован на турнир"
+      });
+    } catch (error: any) {
+      toast({
+        title: "Ошибка регистрации",
+        description: error.message,
+        variant: "destructive"
+      });
     } finally {
-      setLoading("");
+      setLoading(false);
     }
-  }, [playerId]);
+  };
 
-  const handleUnregister = useCallback(async (tournamentId: string) => {
-    if (!playerId) return;
-
-    setLoading(tournamentId);
-
+  const unregisterPlayer = async (registrationId: string) => {
+    setLoading(true);
     try {
       const { error } = await supabase
         .from('tournament_registrations')
         .delete()
-        .eq('tournament_id', tournamentId)
-        .eq('player_id', playerId);
+        .eq('id', registrationId);
 
       if (error) throw error;
 
-      setRegisteredTournaments(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(tournamentId);
-        return newSet;
+      setRegistrations(prev => prev.filter(reg => reg.id !== registrationId));
+      toast({
+        title: "Регистрация отменена",
+        description: "Игрок отписан от турнира"
       });
-      setTournamentCounts(prev => ({
-        ...prev,
-        [tournamentId]: Math.max(0, (prev[tournamentId] || 0) - 1)
-      }));
-      toast("Регистрация отменена");
-    } catch (error) {
-      console.error('Error unregistering from tournament:', error);
-      toast("Ошибка при отмене регистрации");
+    } catch (error: any) {
+      toast({
+        title: "Ошибка отмены регистрации",
+        description: error.message,
+        variant: "destructive"
+      });
     } finally {
-      setLoading("");
+      setLoading(false);
     }
-  }, [playerId]);
+  };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
+      case 'scheduled':
+        return <Badge className="bg-blue-500 text-white">Запланирован</Badge>;
       case 'registration':
-        return <Badge className="bg-gradient-to-r from-green-500 to-green-600 text-white border-0 animate-pulse">🔴 Регистрация</Badge>;
-      case 'active':
-        return <Badge className="bg-gradient-to-r from-blue-500 to-blue-600 text-white border-0">🎮 Идет турнир</Badge>;
+        return <Badge className="bg-green-500 text-white">Регистрация</Badge>;
+      case 'running':
+        return <Badge className="bg-red-500 text-white">Идет</Badge>;
+      case 'paused':
+        return <Badge className="bg-yellow-500 text-white">Пауза</Badge>;
       case 'completed':
-        return <Badge className="bg-gradient-to-r from-gray-400 to-gray-500 text-white border-0">🏁 Завершен</Badge>;
+        return <Badge className="bg-gray-500 text-white">Завершен</Badge>;
       default:
         return <Badge variant="secondary">{status}</Badge>;
     }
   };
 
-  const formatTime = (dateString: string) => {
-    const date = new Date(dateString);
-    return {
-      date: date.toLocaleDateString('ru-RU'),
-      time: date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }),
-      relative: formatDistanceToNow(date, { addSuffix: true, locale: ru })
-    };
+  const getTournamentRegistrations = (tournamentId: string) => {
+    return registrations.filter(reg => reg.tournament_id === tournamentId);
   };
 
-  if (tournaments.length === 0) {
-    return (
-      <Card className="border-border/50">
-        <CardContent className="p-8 text-center">
-          <Calendar className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
-          <h3 className="text-lg font-medium text-foreground mb-2">Нет доступных турниров</h3>
-          <p className="text-muted-foreground">
-            В данный момент нет турниров, доступных для регистрации
-          </p>
-        </CardContent>
-      </Card>
-    );
-  }
+  const isPlayerRegistered = (tournamentId: string, playerId: string) => {
+    return registrations.some(reg => reg.tournament_id === tournamentId && reg.player_id === playerId);
+  };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-2 mb-6">
-        <Trophy className="h-6 w-6 text-primary" />
-        <h2 className="text-2xl font-bold text-foreground">Доступные турниры</h2>
+    <div className="space-y-8">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Trophy className="w-6 h-6 text-primary" />
+          <h2 className="text-2xl font-bold">Тестирование регистрации турниров</h2>
+        </div>
+        <Button onClick={loadData} variant="outline" disabled={loading}>
+          <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+          Обновить
+        </Button>
       </div>
 
-      <div className="grid gap-6">
-        {tournaments.map((tournament) => {
-          const isRegistered = registeredTournaments.has(tournament.id);
-          const isLoading = loading === tournament.id;
-          const timeInfo = formatTime(tournament.start_time);
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Create Player */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <UserPlus className="w-5 h-5" />
+              Создать игрока
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="player-name">Имя игрока</Label>
+              <Input
+                id="player-name"
+                value={newPlayerName}
+                onChange={(e) => setNewPlayerName(e.target.value)}
+                placeholder="Введите имя игрока"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="player-email">Email игрока</Label>
+              <Input
+                id="player-email"
+                type="email"
+                value={newPlayerEmail}
+                onChange={(e) => setNewPlayerEmail(e.target.value)}
+                placeholder="player@example.com"
+              />
+            </div>
+            <Button onClick={createPlayer} disabled={loading} className="w-full">
+              Создать игрока
+            </Button>
+          </CardContent>
+        </Card>
 
-          return (
-            <Card key={tournament.id} className="group border-border/50 hover:shadow-xl hover:shadow-primary/5 transition-all duration-300 hover:border-primary/20 bg-gradient-to-br from-card via-card to-card/80 overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-              <CardHeader className="relative z-10">
-                <div className="flex items-start justify-between">
-                  <div className="space-y-2">
-                    <CardTitle className="text-xl text-foreground group-hover:text-primary transition-colors">{tournament.name}</CardTitle>
-                    {tournament.description && (
-                      <p className="text-muted-foreground text-sm">{tournament.description}</p>
-                    )}
-                  </div>
-                  <div className="flex flex-col items-end gap-2">
-                    {getStatusBadge(tournament.status)}
-                    {isRegistered && (
-                      <Badge className="bg-gradient-to-r from-emerald-500 to-emerald-600 text-white border-0 shadow-lg">
-                        <UserCheck className="h-3 w-3 mr-1" />
-                        Зарегистрирован
-                      </Badge>
-                    )}
-                  </div>
-                </div>
-              </CardHeader>
+        {/* Register Player */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <UserCheck className="w-5 h-5" />
+              Зарегистрировать игрока
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="select-tournament">Турнир</Label>
+              <select
+                id="select-tournament"
+                value={selectedTournament}
+                onChange={(e) => setSelectedTournament(e.target.value)}
+                className="w-full p-2 border rounded-md"
+              >
+                <option value="">Выберите турнир</option>
+                {tournaments.map(tournament => (
+                  <option key={tournament.id} value={tournament.id}>
+                    {tournament.name} - {tournament.status}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="select-player">Игрок</Label>
+              <select
+                id="select-player"
+                value={selectedPlayer}
+                onChange={(e) => setSelectedPlayer(e.target.value)}
+                className="w-full p-2 border rounded-md"
+              >
+                <option value="">Выберите игрока</option>
+                {players.map(player => (
+                  <option key={player.id} value={player.id}>
+                    {player.name} (ELO: {player.elo_rating})
+                  </option>
+                ))}
+              </select>
+            </div>
+            <Button 
+              onClick={registerPlayer} 
+              disabled={loading || !selectedTournament || !selectedPlayer} 
+              className="w-full"
+            >
+              Зарегистрировать
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
 
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="flex items-center gap-2 text-sm">
-                    <Calendar className="h-4 w-4 text-muted-foreground" />
-                    <div>
-                      <p className="font-medium text-foreground">{timeInfo.date}</p>
-                      <p className="text-muted-foreground">{timeInfo.time}</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2 text-sm">
-                    <Clock className="h-4 w-4 text-muted-foreground" />
-                    <div>
-                      <p className="font-medium text-foreground">Начало</p>
-                      <p className="text-muted-foreground">{timeInfo.relative}</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2 text-sm">
-                    <DollarSign className="h-4 w-4 text-muted-foreground" />
-                    <div>
-                      <p className="font-medium text-foreground">Бай-ин</p>
-                      <p className="text-muted-foreground">{tournament.buy_in}₽</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2 text-sm">
-                    <Users className="h-4 w-4 text-muted-foreground" />
-                    <div>
-                      <p className="font-medium text-foreground">Игроки</p>
-                       <p className="text-muted-foreground">
-                         {tournamentCounts[tournament.id] || tournament.registered_count || 0}/{tournament.max_players}
-                       </p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between pt-4 border-t border-border/50">
-                  <div className="text-sm text-muted-foreground">
-                    Стартовые фишки: <span className="font-medium text-foreground">{tournament.starting_chips.toLocaleString()}</span>
-                  </div>
-
-                  <div className="flex gap-2">
-                    {!playerId ? (
-                      <div className="text-sm text-muted-foreground">
-                        Войдите в аккаунт для регистрации
+      {/* Active Tournaments */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Calendar className="w-5 h-5" />
+            Активные турниры ({tournaments.length})
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {tournaments.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <AlertCircle className="w-8 h-8 mx-auto mb-2" />
+              <p>Нет опубликованных турниров</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {tournaments.map(tournament => {
+                const tournamentRegs = getTournamentRegistrations(tournament.id);
+                return (
+                  <div key={tournament.id} className="border rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-3">
+                        <h3 className="font-semibold">{tournament.name}</h3>
+                        {getStatusBadge(tournament.status)}
                       </div>
-                    ) : tournament.status === 'registration' ? (
-                      isRegistered ? (
-                        <Button
-                          variant="outline"
-                          onClick={() => handleUnregister(tournament.id)}
-                          disabled={isLoading}
-                          className="gap-2"
-                        >
-                          {isLoading ? (
-                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
-                          ) : (
-                            <UserCheck className="h-4 w-4" />
-                          )}
-                          Отменить регистрацию
-                        </Button>
+                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                        <span className="flex items-center gap-1">
+                          <Users className="w-4 h-4" />
+                          {tournamentRegs.length}/{tournament.max_players}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <DollarSign className="w-4 h-4" />
+                          {tournament.buy_in}₽
+                        </span>
+                      </div>
+                    </div>
+                    <div className="text-sm text-muted-foreground mb-3">
+                      Начало: {new Date(tournament.start_time).toLocaleString('ru-RU')}
+                    </div>
+                    <div className="space-y-2">
+                      <p className="text-sm font-medium">Зарегистрированные игроки:</p>
+                      {tournamentRegs.length === 0 ? (
+                        <p className="text-sm text-muted-foreground italic">Пока никто не зарегистрирован</p>
                       ) : (
-                        <Button
-                          onClick={() => handleRegister(tournament.id)}
-                          disabled={isLoading || (tournamentCounts[tournament.id] || tournament.registered_count || 0) >= tournament.max_players}
-                          className="gap-2"
-                        >
-                          {isLoading ? (
-                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-foreground"></div>
-                          ) : (
-                            <UserPlus className="h-4 w-4" />
-                          )}
-                          {(tournamentCounts[tournament.id] || tournament.registered_count || 0) >= tournament.max_players ? 'Нет мест' : 'Зарегистрироваться'}
-                        </Button>
-                      )
-                    ) : tournament.status === 'active' ? (
-                      <Badge className="bg-blue-100 text-blue-800">Турнир идет</Badge>
-                    ) : (
-                      <Badge variant="secondary">Регистрация закрыта</Badge>
-                    )}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                          {tournamentRegs.map(reg => (
+                            <div key={reg.id} className="flex items-center justify-between bg-muted/30 rounded px-3 py-2">
+                              <span className="text-sm">
+                                {reg.player.name} (ELO: {reg.player.elo_rating})
+                              </span>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => unregisterPlayer(reg.id)}
+                                disabled={loading}
+                                className="text-red-600 hover:bg-red-50"
+                              >
+                                Отменить
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
+                );
+              })}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Summary */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card>
+          <CardContent className="p-6 text-center">
+            <Trophy className="w-8 h-8 mx-auto mb-2 text-primary" />
+            <p className="text-2xl font-bold">{tournaments.length}</p>
+            <p className="text-sm text-muted-foreground">Активных турниров</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-6 text-center">
+            <Users className="w-8 h-8 mx-auto mb-2 text-green-600" />
+            <p className="text-2xl font-bold">{players.length}</p>
+            <p className="text-sm text-muted-foreground">Всего игроков</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-6 text-center">
+            <CheckCircle className="w-8 h-8 mx-auto mb-2 text-blue-600" />
+            <p className="text-2xl font-bold">{registrations.length}</p>
+            <p className="text-sm text-muted-foreground">Всего регистраций</p>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

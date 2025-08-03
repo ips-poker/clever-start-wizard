@@ -54,9 +54,9 @@ export function ProfileTournaments({ playerId }: ProfileTournamentsProps) {
       const { data, error } = await supabase
         .from('tournaments')
         .select('*')
-        .in('status', ['registration', 'active'])
+        .in('status', ['scheduled', 'registration', 'running'])
         .eq('is_published', true)
-        .eq('is_archived', false)
+        .not('is_archived', 'eq', true)
         .order('start_time', { ascending: true });
 
       if (error) throw error;
@@ -179,10 +179,14 @@ export function ProfileTournaments({ playerId }: ProfileTournamentsProps) {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
+      case 'scheduled':
+        return <Badge className="bg-gradient-to-r from-blue-400 to-blue-500 text-white border-0">📅 Запланирован</Badge>;
       case 'registration':
-        return <Badge className="bg-gradient-to-r from-green-500 to-green-600 text-white border-0">🔴 Регистрация</Badge>;
-      case 'active':
-        return <Badge className="bg-gradient-to-r from-blue-500 to-blue-600 text-white border-0">🎮 Идет турнир</Badge>;
+        return <Badge className="bg-gradient-to-r from-green-500 to-green-600 text-white border-0">📝 Регистрация</Badge>;
+      case 'running':
+        return <Badge className="bg-gradient-to-r from-red-500 to-red-600 text-white border-0">🔴 Идет турнир</Badge>;
+      case 'paused':
+        return <Badge className="bg-gradient-to-r from-yellow-500 to-yellow-600 text-white border-0">⏸️ Пауза</Badge>;
       case 'completed':
         return <Badge className="bg-gradient-to-r from-gray-400 to-gray-500 text-white border-0">🏁 Завершен</Badge>;
       default:
@@ -339,8 +343,10 @@ export function ProfileTournaments({ playerId }: ProfileTournamentsProps) {
                           {registeredCount >= tournament.max_players ? 'Нет мест' : 'Зарегистрироваться'}
                         </Button>
                       )
-                    ) : tournament.status === 'active' ? (
-                      <Badge className="bg-blue-100 text-blue-800">Турнир идет</Badge>
+                    ) : tournament.status === 'running' || tournament.status === 'paused' ? (
+                      <Badge className="bg-red-100 text-red-800">Турнир идет</Badge>
+                    ) : tournament.status === 'scheduled' ? (
+                      <Badge className="bg-blue-100 text-blue-800">Скоро начнется</Badge>
                     ) : (
                       <Badge variant="secondary">Регистрация закрыта</Badge>
                     )}
