@@ -497,6 +497,7 @@ export type Database = {
           id: string
           is_archived: boolean | null
           is_published: boolean | null
+          last_voice_command: string | null
           max_players: number
           name: string
           rebuy_chips: number | null
@@ -509,6 +510,8 @@ export type Database = {
           timer_remaining: number | null
           tournament_format: string | null
           updated_at: string
+          voice_control_enabled: boolean | null
+          voice_session_id: string | null
         }
         Insert: {
           addon_chips?: number | null
@@ -525,6 +528,7 @@ export type Database = {
           id?: string
           is_archived?: boolean | null
           is_published?: boolean | null
+          last_voice_command?: string | null
           max_players?: number
           name: string
           rebuy_chips?: number | null
@@ -537,6 +541,8 @@ export type Database = {
           timer_remaining?: number | null
           tournament_format?: string | null
           updated_at?: string
+          voice_control_enabled?: boolean | null
+          voice_session_id?: string | null
         }
         Update: {
           addon_chips?: number | null
@@ -553,6 +559,7 @@ export type Database = {
           id?: string
           is_archived?: boolean | null
           is_published?: boolean | null
+          last_voice_command?: string | null
           max_players?: number
           name?: string
           rebuy_chips?: number | null
@@ -565,6 +572,141 @@ export type Database = {
           timer_remaining?: number | null
           tournament_format?: string | null
           updated_at?: string
+          voice_control_enabled?: boolean | null
+          voice_session_id?: string | null
+        }
+        Relationships: []
+      }
+      voice_announcements: {
+        Row: {
+          announcement_type: string | null
+          auto_generated: boolean | null
+          created_at: string
+          created_by: string | null
+          delivered_at: string | null
+          id: string
+          message: string
+          scheduled_at: string | null
+          tournament_id: string | null
+        }
+        Insert: {
+          announcement_type?: string | null
+          auto_generated?: boolean | null
+          created_at?: string
+          created_by?: string | null
+          delivered_at?: string | null
+          id?: string
+          message: string
+          scheduled_at?: string | null
+          tournament_id?: string | null
+        }
+        Update: {
+          announcement_type?: string | null
+          auto_generated?: boolean | null
+          created_at?: string
+          created_by?: string | null
+          delivered_at?: string | null
+          id?: string
+          message?: string
+          scheduled_at?: string | null
+          tournament_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "voice_announcements_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: false
+            referencedRelation: "tournaments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      voice_commands_log: {
+        Row: {
+          command: string
+          confidence_score: number | null
+          created_at: string
+          error_message: string | null
+          execution_time_ms: number | null
+          id: string
+          parameters: Json | null
+          result: Json | null
+          success: boolean | null
+          tournament_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          command: string
+          confidence_score?: number | null
+          created_at?: string
+          error_message?: string | null
+          execution_time_ms?: number | null
+          id?: string
+          parameters?: Json | null
+          result?: Json | null
+          success?: boolean | null
+          tournament_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          command?: string
+          confidence_score?: number | null
+          created_at?: string
+          error_message?: string | null
+          execution_time_ms?: number | null
+          id?: string
+          parameters?: Json | null
+          result?: Json | null
+          success?: boolean | null
+          tournament_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "voice_commands_log_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: false
+            referencedRelation: "tournaments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      voice_settings: {
+        Row: {
+          auto_confirm_critical: boolean | null
+          confidence_threshold: number | null
+          created_at: string
+          id: string
+          updated_at: string
+          user_id: string | null
+          voice_enabled: boolean | null
+          voice_language: string | null
+          voice_speed: number | null
+          volume_level: number | null
+        }
+        Insert: {
+          auto_confirm_critical?: boolean | null
+          confidence_threshold?: number | null
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id?: string | null
+          voice_enabled?: boolean | null
+          voice_language?: string | null
+          voice_speed?: number | null
+          volume_level?: number | null
+        }
+        Update: {
+          auto_confirm_critical?: boolean | null
+          confidence_threshold?: number | null
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id?: string | null
+          voice_enabled?: boolean | null
+          voice_language?: string | null
+          voice_speed?: number | null
+          volume_level?: number | null
         }
         Relationships: []
       }
@@ -585,9 +727,21 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      get_tournament_voice_stats: {
+        Args: { tournament_id_param: string }
+        Returns: Json
+      }
       get_user_role: {
         Args: { user_uuid: string }
         Returns: Database["public"]["Enums"]["user_role"]
+      }
+      handle_voice_tournament_action: {
+        Args: {
+          tournament_id_param: string
+          action_type: string
+          parameters?: Json
+        }
+        Returns: Json
       }
       is_admin: {
         Args: { user_uuid: string }

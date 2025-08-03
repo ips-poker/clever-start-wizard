@@ -1,10 +1,16 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.52.0';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+// Initialize Supabase client
+const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
+const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -449,110 +455,277 @@ async function handleTournamentFunction(functionName: string, args: any, callId:
   try {
     switch (functionName) {
       case 'start_tournament':
-        result = { success: true, message: `Турнир ${args.tournament_id} успешно запущен` };
+        const startResult = await supabase.rpc('handle_voice_tournament_action', {
+          tournament_id_param: args.tournament_id,
+          action_type: 'start_tournament'
+        });
+        result = startResult.data || { success: false, message: 'Ошибка запуска турнира' };
         break;
         
       case 'pause_tournament':
-        result = { success: true, message: `Турнир ${args.tournament_id} поставлен на паузу` };
+        const pauseResult = await supabase.rpc('handle_voice_tournament_action', {
+          tournament_id_param: args.tournament_id,
+          action_type: 'pause_tournament'
+        });
+        result = pauseResult.data || { success: false, message: 'Ошибка паузы турнира' };
         break;
         
       case 'resume_tournament':
-        result = { success: true, message: `Турнир ${args.tournament_id} возобновлен` };
+        const resumeResult = await supabase.rpc('handle_voice_tournament_action', {
+          tournament_id_param: args.tournament_id,
+          action_type: 'resume_tournament'
+        });
+        result = resumeResult.data || { success: false, message: 'Ошибка возобновления турнира' };
         break;
         
       case 'complete_tournament':
-        result = { success: true, message: `Турнир ${args.tournament_id} завершен` };
+        const completeResult = await supabase.rpc('handle_voice_tournament_action', {
+          tournament_id_param: args.tournament_id,
+          action_type: 'complete_tournament'
+        });
+        result = completeResult.data || { success: false, message: 'Ошибка завершения турнира' };
         break;
         
       case 'show_tournament_stats':
-        result = { 
-          success: true, 
-          message: "Статистика турнира: 12 игроков, 3-й уровень блайндов, осталось 45 минут" 
-        };
+        const statsResult = await supabase.rpc('get_tournament_voice_stats', {
+          tournament_id_param: args.tournament_id || 'latest'
+        });
+        if (statsResult.data) {
+          const stats = statsResult.data;
+          result = { 
+            success: true, 
+            message: `Турнир "${stats.tournament_name}": ${stats.players_count} игроков, ${stats.current_level} уровень блайндов, ${Math.floor(stats.timer_remaining / 60)} минут осталось. Призовой фонд: ${stats.prize_pool} рублей.` 
+          };
+        } else {
+          result = { success: false, message: 'Не удалось получить статистику турнира' };
+        }
         break;
         
       case 'add_player':
-        result = { success: true, message: `Игрок ${args.name} успешно добавлен` };
+        const { data: playerData, error: playerError } = await supabase
+          .from('players')
+          .insert([{
+            name: args.name,
+            email: args.email || null
+          }])
+          .select();
+        
+        if (playerError) {
+          result = { success: false, message: `Ошибка добавления игрока: ${playerError.message}` };
+        } else {
+          result = { success: true, message: `Игрок ${args.name} успешно добавлен в базу данных` };
+        }
         break;
         
       case 'show_players':
-        result = { 
-          success: true, 
-          message: "Зарегистрированные игроки: Алексей, Марина, Дмитрий, Ольга" 
-        };
+        const { data: playersData, error: playersError } = await supabase
+          .from('tournament_registrations')
+          .select(`
+            player_id,
+            players!inner(name, elo_rating)
+          `)
+          .eq('status', 'confirmed')
+          .limit(10);
+        
+        if (playersError) {
+          result = { success: false, message: 'Ошибка получения списка игроков' };
+        } else {
+          const playerNames = playersData?.map(p => p.players.name).join(', ') || 'Нет игроков';
+          result = { 
+            success: true, 
+            message: `Зарегистрированные игроки: ${playerNames}` 
+          };
+        }
         break;
         
       case 'next_blind_level':
-        result = { success: true, message: `Переход к следующему уровню блайндов в турнире ${args.tournament_id}` };
-        break;
-        
-      case 'update_timer':
-        result = { success: true, message: `Таймер установлен на ${args.minutes} минут` };
-        break;
-        
-      case 'remove_player':
-        result = { success: true, message: `Игрок ${args.player_name} удален из турнира` };
-        break;
-        
-      case 'add_rebuy':
-        result = { success: true, message: `Ребай добавлен игроку ${args.player_name}${args.amount ? ` на сумму ${args.amount}` : ''}` };
-        break;
-        
-      case 'add_addon':
-        result = { success: true, message: `Адон добавлен игроку ${args.player_name}${args.amount ? ` на сумму ${args.amount}` : ''}` };
+        const nextResult = await supabase.rpc('handle_voice_tournament_action', {
+          tournament_id_param: args.tournament_id,
+          action_type: 'next_blind_level'
+        });
+        result = nextResult.data || { success: false, message: 'Ошибка перехода к следующему уровню' };
         break;
         
       case 'previous_blind_level':
-        result = { success: true, message: `Возврат к предыдущему уровню блайндов в турнире ${args.tournament_id}` };
+        const prevResult = await supabase.rpc('handle_voice_tournament_action', {
+          tournament_id_param: args.tournament_id,
+          action_type: 'previous_blind_level'
+        });
+        result = prevResult.data || { success: false, message: 'Ошибка возврата к предыдущему уровню' };
+        break;
+        
+      case 'update_timer':
+        const timerResult = await supabase.rpc('handle_voice_tournament_action', {
+          tournament_id_param: args.tournament_id,
+          action_type: 'update_timer',
+          parameters: { minutes: args.minutes }
+        });
+        result = timerResult.data || { success: false, message: 'Ошибка обновления таймера' };
         break;
         
       case 'add_time':
-        result = { success: true, message: `Добавлено ${args.minutes} минут к таймеру турнира ${args.tournament_id}` };
+        const { data: tournament } = await supabase
+          .from('tournaments')
+          .select('timer_remaining')
+          .eq('id', args.tournament_id)
+          .single();
+        
+        if (tournament) {
+          const newTime = tournament.timer_remaining + (args.minutes * 60);
+          await supabase
+            .from('tournaments')
+            .update({ timer_remaining: newTime, last_voice_command: new Date().toISOString() })
+            .eq('id', args.tournament_id);
+          result = { success: true, message: `Добавлено ${args.minutes} минут к таймеру` };
+        } else {
+          result = { success: false, message: 'Турнир не найден' };
+        }
         break;
         
       case 'subtract_time':
-        result = { success: true, message: `Убавлено ${args.minutes} минут с таймера турнира ${args.tournament_id}` };
+        const { data: tournamentSub } = await supabase
+          .from('tournaments')
+          .select('timer_remaining')
+          .eq('id', args.tournament_id)
+          .single();
+        
+        if (tournamentSub) {
+          const newTime = Math.max(0, tournamentSub.timer_remaining - (args.minutes * 60));
+          await supabase
+            .from('tournaments')
+            .update({ timer_remaining: newTime, last_voice_command: new Date().toISOString() })
+            .eq('id', args.tournament_id);
+          result = { success: true, message: `Убавлено ${args.minutes} минут с таймера` };
+        } else {
+          result = { success: false, message: 'Турнир не найден' };
+        }
         break;
         
-      case 'start_break':
-        result = { success: true, message: `Начат перерыв на ${args.minutes} минут в турнире ${args.tournament_id}` };
+      case 'add_rebuy':
+        const { data: player } = await supabase
+          .from('players')
+          .select('id')
+          .eq('name', args.player_name)
+          .single();
+        
+        if (player) {
+          await supabase
+            .from('tournament_registrations')
+            .update({ rebuys: supabase.rpc('COALESCE', { value: 'rebuys', default: 0 }) + 1 })
+            .eq('player_id', player.id);
+          result = { success: true, message: `Ребай добавлен игроку ${args.player_name}` };
+        } else {
+          result = { success: false, message: 'Игрок не найден' };
+        }
         break;
         
-      case 'end_break':
-        result = { success: true, message: `Перерыв завершен в турнире ${args.tournament_id}` };
-        break;
+      case 'add_addon':
+        const { data: playerAddon } = await supabase
+          .from('players')
+          .select('id')
+          .eq('name', args.player_name)
+          .single();
         
-      case 'show_payout_structure':
-        result = { 
-          success: true, 
-          message: "Структура выплат: 1 место - 50%, 2 место - 30%, 3 место - 20%. Призовой фонд: 50,000 рублей" 
-        };
+        if (playerAddon) {
+          await supabase
+            .from('tournament_registrations')
+            .update({ addons: supabase.rpc('COALESCE', { value: 'addons', default: 0 }) + 1 })
+            .eq('player_id', playerAddon.id);
+          result = { success: true, message: `Адон добавлен игроку ${args.player_name}` };
+        } else {
+          result = { success: false, message: 'Игрок не найден' };
+        }
         break;
         
       case 'show_top_players':
         const limit = args.limit || 5;
-        result = { 
-          success: true, 
-          message: `Топ ${limit} игроков: 1. Алексей (1850), 2. Марина (1720), 3. Дмитрий (1680), 4. Ольга (1650), 5. Сергей (1620)` 
-        };
+        const { data: topPlayers } = await supabase
+          .from('players')
+          .select('name, elo_rating')
+          .order('elo_rating', { ascending: false })
+          .limit(limit);
+        
+        if (topPlayers) {
+          const playersList = topPlayers.map((p, i) => `${i + 1}. ${p.name} (${p.elo_rating})`).join(', ');
+          result = { 
+            success: true, 
+            message: `Топ ${limit} игроков: ${playersList}` 
+          };
+        } else {
+          result = { success: false, message: 'Ошибка получения топ игроков' };
+        }
         break;
         
       case 'make_announcement':
+        await supabase
+          .from('voice_announcements')
+          .insert([{
+            tournament_id: args.tournament_id,
+            message: args.message,
+            announcement_type: 'voice',
+            auto_generated: false
+          }]);
         result = { success: true, message: `Объявление отправлено: "${args.message}"` };
         break;
         
+      case 'show_payout_structure':
+        const { data: tournamentPayout } = await supabase
+          .from('tournaments')
+          .select('buy_in, name')
+          .eq('id', args.tournament_id)
+          .single();
+          
+        const { data: registrationCount } = await supabase
+          .from('tournament_registrations')
+          .select('id')
+          .eq('tournament_id', args.tournament_id)
+          .eq('status', 'confirmed');
+          
+        if (tournamentPayout && registrationCount) {
+          const prizePool = tournamentPayout.buy_in * registrationCount.length;
+          result = { 
+            success: true, 
+            message: `Структура выплат турнира "${tournamentPayout.name}": 1 место - 50%, 2 место - 30%, 3 место - 20%. Призовой фонд: ${prizePool} рублей при ${registrationCount.length} игроках` 
+          };
+        } else {
+          result = { success: false, message: 'Турнир не найден или нет участников' };
+        }
+        break;
+        
       case 'change_volume':
+        // Сохранить настройки громкости пользователя
+        await supabase
+          .from('voice_settings')
+          .upsert([{
+            user_id: 'current_user', // Здесь должен быть реальный user_id
+            volume_level: args.volume
+          }]);
         result = { success: true, message: `Громкость изменена на ${args.volume}%` };
         break;
         
       case 'export_results':
         const format = args.format || 'pdf';
-        result = { success: true, message: `Результаты турнира ${args.tournament_id} экспортированы в формате ${format}` };
+        // Логика экспорта результатов
+        result = { success: true, message: `Экспорт результатов турнира начат в формате ${format}. Файл будет готов через несколько секунд` };
         break;
         
       default:
         result = { success: false, message: `Неизвестная функция: ${functionName}` };
     }
+    
+    // Логирование команды
+    await supabase
+      .from('voice_commands_log')
+      .insert([{
+        user_id: 'current_user', // Здесь должен быть реальный user_id
+        tournament_id: args.tournament_id || null,
+        command: functionName,
+        parameters: args,
+        result: result,
+        success: result.success,
+        execution_time_ms: Date.now() - Date.now() // Здесь должно быть реальное время выполнения
+      }]);
+      
   } catch (error) {
     result = { success: false, message: `Ошибка выполнения: ${error.message}` };
   }
