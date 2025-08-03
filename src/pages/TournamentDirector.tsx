@@ -9,6 +9,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
+import { SidebarProvider } from "@/components/ui/sidebar";
+import { TournamentDirectorSidebar } from '@/components/TournamentDirectorSidebar';
 import { 
   Trophy, 
   Users, 
@@ -446,8 +448,14 @@ const TournamentDirector = () => {
 
   return (
     <AuthGuard>
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100">
-        <div className="container mx-auto px-4 py-8 max-w-7xl">
+      <SidebarProvider>
+        <div className="min-h-screen flex w-full bg-gradient-to-br from-gray-50 via-white to-gray-100">
+          <TournamentDirectorSidebar 
+            activeTab={activeTab} 
+            onTabChange={setActiveTab} 
+          />
+          <main className="flex-1">
+            <div className="container mx-auto px-4 py-8 max-w-7xl">
           {/* Header */}
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 mb-12">
             <div>
@@ -916,8 +924,10 @@ const TournamentDirector = () => {
               setEditingTournament(null);
             }}
           />
+            </div>
+          </main>
         </div>
-      </div>
+      </SidebarProvider>
     </AuthGuard>
   );
 };
