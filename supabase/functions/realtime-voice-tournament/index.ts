@@ -396,10 +396,12 @@ serve(async (req) => {
 
         // Handle function calls
         if (data.type === 'response.function_call_arguments.done') {
-          console.log("Function call:", data.name, data.arguments);
+          console.log("Function call received:", data);
           
           // Execute the function and send result back
-          handleTournamentFunction(data.name, JSON.parse(data.arguments), data.call_id, openaiSocket!);
+          if (data.name && data.arguments) {
+            handleTournamentFunction(data.name, JSON.parse(data.arguments), data.call_id, openaiSocket!);
+          }
         }
 
         // Forward all other messages to client
