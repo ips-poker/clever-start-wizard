@@ -478,85 +478,221 @@ const TournamentDirector = () => {
                     className="bg-blue-600 hover:bg-blue-700 text-white shadow-subtle hover:shadow-lg transition-all duration-200"
                   >
                     <Plus className="w-4 h-4 mr-2" />
-                    Новый турнир
+                    Создать новый турнир
                   </Button>
                 </CardContent>
               </Card>
 
-              {/* Tournaments List */}
-              <Card className="bg-white/50 backdrop-blur-sm border border-gray-200/30 shadow-minimal">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-gray-700 font-light">
-                    <Trophy className="w-5 h-5" />
-                    Все турниры
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {tournaments.map(tournament => (
-                      <Card 
-                        key={tournament.id} 
-                        className={`cursor-pointer transition-all border-2 hover:shadow-subtle ${
-                          selectedTournament?.id === tournament.id 
-                            ? 'border-blue-300 bg-blue-50' 
-                            : 'border-gray-200/50 hover:border-blue-200/70'
-                        }`}
-                        onClick={() => handleTournamentSelect(tournament)}
-                      >
-                        <CardContent className="p-4">
-                          <div className="flex justify-between items-start mb-3">
-                            <h3 className="font-semibold text-gray-800 mb-2">{tournament.name}</h3>
-                            <div className="flex gap-1">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setEditingTournament(tournament);
-                                }}
-                                className="h-8 w-8 p-0 hover:bg-blue-100"
-                              >
-                                <Edit className="h-4 w-4 text-blue-600" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  deleteTournament(tournament.id);
-                                }}
-                                className="h-8 w-8 p-0 hover:bg-red-100"
-                              >
-                                <Trash2 className="h-4 w-4 text-red-600" />
-                              </Button>
-                            </div>
-                          </div>
-                          <div className="space-y-1 text-sm text-gray-600">
-                            <p>Бай-ин: {tournament.buy_in}₽</p>
-                            <p>Максимум: {tournament.max_players} игроков</p>
-                            <p>Уровень: {tournament.current_level}</p>
-                          </div>
-                          <Badge 
-                            variant={tournament.status === 'running' ? 'default' : 
-                                    tournament.status === 'pending' ? 'secondary' : 'outline'}
-                            className="mt-3"
+              {/* Tournaments Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {tournaments.map((tournament) => (
+                  <Card 
+                    key={tournament.id} 
+                    className="bg-white/60 backdrop-blur-sm border border-gray-200/40 shadow-minimal hover:shadow-dramatic transition-all duration-500 rounded-xl group hover:-translate-y-2"
+                  >
+                    <CardHeader className="pb-4">
+                      <div className="flex items-start justify-between mb-3">
+                        <CardTitle className="text-lg font-medium text-gray-800 group-hover:text-blue-600 transition-colors">
+                          {tournament.name}
+                        </CardTitle>
+                        <Badge 
+                          variant={tournament.status === 'running' ? 'destructive' : 
+                                  tournament.status === 'scheduled' ? 'default' : 'secondary'}
+                          className="text-xs"
+                        >
+                          {tournament.status === 'running' ? 'Активен' : 
+                           tournament.status === 'scheduled' ? 'Запланирован' : 
+                           tournament.status === 'completed' ? 'Завершен' : tournament.status}
+                        </Badge>
+                      </div>
+                      <CardDescription className="text-gray-600 text-sm">
+                        {tournament.description || "Рейтинговый турнир"}
+                      </CardDescription>
+                    </CardHeader>
+                    
+                    <CardContent className="space-y-4">
+                      {/* Tournament Info */}
+                      <div className="space-y-2 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-gray-500">Время начала:</span>
+                          <span className="font-medium">{new Date(tournament.start_time).toLocaleString('ru-RU')}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-500">Бай-ин:</span>
+                          <span className="font-medium text-green-600">{tournament.buy_in.toLocaleString()} ₽</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-500">Макс. игроков:</span>
+                          <span className="font-medium">{tournament.max_players}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-500">Стартовые фишки:</span>
+                          <span className="font-medium">{tournament.starting_chips.toLocaleString()}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-500">Текущий уровень:</span>
+                          <span className="font-medium">{tournament.current_level}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-500">Блайнды:</span>
+                          <span className="font-medium">{tournament.current_small_blind}/{tournament.current_big_blind}</span>
+                        </div>
+                      </div>
+
+                      {/* Action Buttons */}
+                      <div className="space-y-2 pt-4 border-t border-gray-200/50">
+                        <div className="grid grid-cols-2 gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleTournamentSelect(tournament)}
+                            className="text-blue-600 border-blue-200 hover:bg-blue-50 transition-colors"
                           >
-                            {tournament.status === 'running' ? 'Активен' : 
-                             tournament.status === 'pending' ? 'Ожидание' : 'Завершен'}
-                          </Badge>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                  {tournaments.length === 0 && (
-                    <div className="text-center py-8 text-gray-500">
-                      <Trophy className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                      <p>Турниры не найдены</p>
-                      <p className="text-sm mt-2">Создайте первый турнир</p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+                            <Trophy className="w-4 h-4 mr-1" />
+                            Выбрать
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setEditingTournament(tournament);
+                              setIsModalOpen(true);
+                            }}
+                            className="text-orange-600 border-orange-200 hover:bg-orange-50 transition-colors"
+                          >
+                            <Edit className="w-4 h-4 mr-1" />
+                            Редактировать
+                          </Button>
+                        </div>
+                        
+                        <div className="grid grid-cols-2 gap-2">
+                          {tournament.status === 'scheduled' && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={async () => {
+                                const { error } = await supabase
+                                  .from('tournaments')
+                                  .update({ status: 'running' })
+                                  .eq('id', tournament.id);
+                                
+                                if (!error) {
+                                  loadTournaments();
+                                  toast({ title: "Турнир запущен" });
+                                }
+                              }}
+                              className="text-green-600 border-green-200 hover:bg-green-50 transition-colors"
+                            >
+                              <Play className="w-4 h-4 mr-1" />
+                              Запустить
+                            </Button>
+                          )}
+                          
+                          {tournament.status === 'running' && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={async () => {
+                                const { error } = await supabase
+                                  .from('tournaments')
+                                  .update({ status: 'paused' })
+                                  .eq('id', tournament.id);
+                                
+                                if (!error) {
+                                  loadTournaments();
+                                  toast({ title: "Турнир приостановлен" });
+                                }
+                              }}
+                              className="text-yellow-600 border-yellow-200 hover:bg-yellow-50 transition-colors"
+                            >
+                              <Pause className="w-4 h-4 mr-1" />
+                              Пауза
+                            </Button>
+                          )}
+                          
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              if (confirm('Вы уверены, что хотите удалить этот турнир?')) {
+                                deleteTournament(tournament.id);
+                              }
+                            }}
+                            className="text-red-600 border-red-200 hover:bg-red-50 transition-colors"
+                          >
+                            <Trash2 className="w-4 h-4 mr-1" />
+                            Удалить
+                          </Button>
+                        </div>
+
+                        {/* Additional Quick Actions */}
+                        <div className="grid grid-cols-3 gap-1 pt-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              handleTournamentSelect(tournament);
+                              setActiveTab('control');
+                            }}
+                            className="text-xs text-gray-500 hover:text-blue-600"
+                          >
+                            <Timer className="w-3 h-3 mr-1" />
+                            Таймер
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              handleTournamentSelect(tournament);
+                              setActiveTab('players');
+                            }}
+                            className="text-xs text-gray-500 hover:text-blue-600"
+                          >
+                            <Users className="w-3 h-3 mr-1" />
+                            Игроки
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              handleTournamentSelect(tournament);
+                              setActiveTab('results');
+                            }}
+                            className="text-xs text-gray-500 hover:text-blue-600"
+                          >
+                            <Trophy className="w-3 h-3 mr-1" />
+                            Результаты
+                          </Button>
+                        </div>
+                      </div>
+
+                      {/* Status Indicator */}
+                      {selectedTournament?.id === tournament.id && (
+                        <div className="absolute -top-2 -right-2">
+                          <div className="w-4 h-4 bg-blue-500 rounded-full border-2 border-white shadow-lg animate-pulse"></div>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+
+              {tournaments.length === 0 && (
+                <Card className="bg-white/50 backdrop-blur-sm border border-gray-200/30 shadow-minimal">
+                  <CardContent className="text-center py-16">
+                    <Trophy className="h-16 w-16 mx-auto mb-4 text-gray-400" />
+                    <h3 className="text-lg font-medium text-gray-700 mb-2">Нет созданных турниров</h3>
+                    <p className="text-gray-500 mb-6">Создайте первый турнир для начала работы</p>
+                    <Button
+                      onClick={() => setIsModalOpen(true)}
+                      className="bg-blue-600 hover:bg-blue-700 text-white"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Новый турнир
+                    </Button>
+                  </CardContent>
+                </Card>
+              )}
             </TabsContent>
 
             <TabsContent value="control" className="space-y-8 animate-fade-in">
@@ -621,39 +757,14 @@ const TournamentDirector = () => {
           {/* Tournament Modal */}
           <TournamentModal
             open={isModalOpen}
-            onOpenChange={() => setIsModalOpen(false)}
-            tournament={null}
+            onOpenChange={setIsModalOpen}
+            tournament={editingTournament}
             onTournamentUpdate={() => {
               loadTournaments();
               setIsModalOpen(false);
+              setEditingTournament(null);
             }}
           />
-
-          {/* Tournament Edit Dialog */}
-          <Dialog open={!!editingTournament} onOpenChange={() => setEditingTournament(null)}>
-            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle className="flex items-center gap-2">
-                  <Edit className="w-5 h-5" />
-                  Редактирование турнира
-                </DialogTitle>
-                <DialogDescription>
-                  Внесите изменения в настройки турнира
-                </DialogDescription>
-              </DialogHeader>
-              {editingTournament && (
-                <TournamentModal
-                  open={true}
-                  onOpenChange={() => setEditingTournament(null)}
-                  tournament={editingTournament}
-                  onTournamentUpdate={() => {
-                    loadTournaments();
-                    setEditingTournament(null);
-                  }}
-                />
-              )}
-            </DialogContent>
-          </Dialog>
         </div>
       </div>
     </AuthGuard>
