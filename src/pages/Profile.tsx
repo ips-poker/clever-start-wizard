@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Header } from "@/components/Header";
@@ -14,7 +14,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { toast } from "sonner";
 import { PlayerStats } from "@/components/PlayerStats";
 import { AvatarSelector } from "@/components/AvatarSelector";
-import { ProfileTournaments } from "@/components/ProfileTournaments";
+import { TournamentRegistration } from "@/components/TournamentRegistration";
 
 interface Player {
   id: string;
@@ -59,6 +59,7 @@ interface StatCard {
 export default function Profile() {
   const { user, userProfile } = useAuth();
   const [player, setPlayer] = useState<Player | null>(null);
+  const [tournaments, setTournaments] = useState<ProfileTournament[]>([]);
   const [gameResults, setGameResults] = useState<GameResult[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAvatarSelector, setShowAvatarSelector] = useState(false);
@@ -66,6 +67,7 @@ export default function Profile() {
   useEffect(() => {
     if (user) {
       loadPlayerData();
+      loadTournaments();
     }
   }, [user]);
 
@@ -87,13 +89,10 @@ export default function Profile() {
 
       if (error && error.code === 'PGRST116') {
         // Player doesn't exist, create one
-        const playerName = userProfile?.full_name || user.email?.split('@')[0] || 'Player';
-        const uniqueName = `${playerName}_${Date.now()}`; // Make name unique
-        
         const { data: newPlayer, error: createError } = await supabase
           .from('players')
           .insert([{ 
-            name: uniqueName,
+            name: userProfile?.full_name || user.email?.split('@')[0] || 'Player',
             email: user.email,
             elo_rating: 1200
           }])
@@ -117,6 +116,36 @@ export default function Profile() {
     }
   };
 
+  const loadTournaments = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('tournaments')
+        .select(`
+          *
+        `)
+        .in('status', ['registration', 'active'])
+        .order('start_time', { ascending: true });
+
+      if (error) throw error;
+
+      // Get registration counts separately
+      const tournamentsWithCount = await Promise.all((data || []).map(async (tournament) => {
+        const { count } = await supabase
+          .from('tournament_registrations')
+          .select('*', { count: 'exact', head: true })
+          .eq('tournament_id', tournament.id);
+
+        return {
+          ...tournament,
+          registered_count: count || 0
+        };
+      }));
+
+      setTournaments(tournamentsWithCount);
+    } catch (error) {
+      console.error('Error loading tournaments:', error);
+    }
+  };
 
   const loadGameResults = async () => {
     if (!player?.id) return;
@@ -481,7 +510,11 @@ export default function Profile() {
             </TabsContent>
 
             <TabsContent value="tournaments" className="space-y-6">
-              <ProfileTournaments playerId={player?.id} />
+              <TournamentRegistration 
+                tournaments={tournaments} 
+                playerId={player?.id} 
+                onRegistrationUpdate={loadTournaments}
+              />
             </TabsContent>
 
             <TabsContent value="leaderboard" className="space-y-6">

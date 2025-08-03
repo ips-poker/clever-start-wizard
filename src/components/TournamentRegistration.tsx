@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -23,72 +23,38 @@ interface Tournament {
 interface TournamentRegistrationProps {
   tournaments: Tournament[];
   playerId?: string;
+  onRegistrationUpdate: () => void;
 }
 
-export function TournamentRegistration({ tournaments, playerId }: TournamentRegistrationProps) {
+export function TournamentRegistration({ tournaments, playerId, onRegistrationUpdate }: TournamentRegistrationProps) {
   const [registeredTournaments, setRegisteredTournaments] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState<string>("");
-  const [tournamentCounts, setTournamentCounts] = useState<Record<string, number>>({});
-  const [dataLoaded, setDataLoaded] = useState(false);
 
-  // Загружаем регистрации пользователя только один раз
   useEffect(() => {
-    if (!playerId || dataLoaded) return;
+    if (playerId) {
+      loadRegistrations();
+    }
+  }, [playerId]);
 
-    const loadRegistrations = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('tournament_registrations')
-          .select('tournament_id')
-          .eq('player_id', playerId);
+  const loadRegistrations = async () => {
+    if (!playerId) return;
 
-        if (error) throw error;
+    try {
+      const { data, error } = await supabase
+        .from('tournament_registrations')
+        .select('tournament_id')
+        .eq('player_id', playerId);
 
-        const registeredIds = new Set(data?.map(reg => reg.tournament_id) || []);
-        setRegisteredTournaments(registeredIds);
-        setDataLoaded(true);
-      } catch (error) {
-        console.error('Error loading registrations:', error);
-      }
-    };
+      if (error) throw error;
 
-    loadRegistrations();
-  }, [playerId, dataLoaded]);
+      const registeredIds = new Set(data?.map(reg => reg.tournament_id) || []);
+      setRegisteredTournaments(registeredIds);
+    } catch (error) {
+      console.error('Error loading registrations:', error);
+    }
+  };
 
-  // Мемоизированный список ID турниров для стабильных зависимостей
-  const tournamentIds = useMemo(() => 
-    tournaments.map(t => t.id).sort(), 
-    [tournaments]
-  );
-
-  // Загружаем счетчики турниров только когда турниры меняются
-  useEffect(() => {
-    if (tournamentIds.length === 0) return;
-
-    const loadTournamentCounts = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('tournament_registrations')
-          .select('tournament_id')
-          .in('tournament_id', tournamentIds);
-
-        if (error) throw error;
-
-        const counts: Record<string, number> = {};
-        tournamentIds.forEach(id => {
-          counts[id] = data?.filter(reg => reg.tournament_id === id).length || 0;
-        });
-        
-        setTournamentCounts(counts);
-      } catch (error) {
-        console.error('Error loading tournament counts:', error);
-      }
-    };
-
-    loadTournamentCounts();
-  }, [tournamentIds]);
-
-  const handleRegister = useCallback(async (tournamentId: string) => {
+  const handleRegister = async (tournamentId: string) => {
     if (!playerId) {
       toast("Ошибка: игрок не найден");
       return;
@@ -115,10 +81,7 @@ export function TournamentRegistration({ tournaments, playerId }: TournamentRegi
       }
 
       setRegisteredTournaments(prev => new Set([...prev, tournamentId]));
-      setTournamentCounts(prev => ({
-        ...prev,
-        [tournamentId]: (prev[tournamentId] || 0) + 1
-      }));
+      onRegistrationUpdate();
       toast("Успешно зарегистрированы на турнир!");
     } catch (error) {
       console.error('Error registering for tournament:', error);
@@ -126,9 +89,9 @@ export function TournamentRegistration({ tournaments, playerId }: TournamentRegi
     } finally {
       setLoading("");
     }
-  }, [playerId]);
+  };
 
-  const handleUnregister = useCallback(async (tournamentId: string) => {
+  const handleUnregister = async (tournamentId: string) => {
     if (!playerId) return;
 
     setLoading(tournamentId);
@@ -147,10 +110,7 @@ export function TournamentRegistration({ tournaments, playerId }: TournamentRegi
         newSet.delete(tournamentId);
         return newSet;
       });
-      setTournamentCounts(prev => ({
-        ...prev,
-        [tournamentId]: Math.max(0, (prev[tournamentId] || 0) - 1)
-      }));
+      onRegistrationUpdate();
       toast("Регистрация отменена");
     } catch (error) {
       console.error('Error unregistering from tournament:', error);
@@ -158,7 +118,7 @@ export function TournamentRegistration({ tournaments, playerId }: TournamentRegi
     } finally {
       setLoading("");
     }
-  }, [playerId]);
+  };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -208,6 +168,8 @@ export function TournamentRegistration({ tournaments, playerId }: TournamentRegi
           const isRegistered = registeredTournaments.has(tournament.id);
           const isLoading = loading === tournament.id;
           const timeInfo = formatTime(tournament.start_time);
+          const canRegister = tournament.status === 'registration' && playerId;
+          const canUnregister = isRegistered && tournament.status === 'registration';
 
           return (
             <Card key={tournament.id} className="group border-border/50 hover:shadow-xl hover:shadow-primary/5 transition-all duration-300 hover:border-primary/20 bg-gradient-to-br from-card via-card to-card/80 overflow-hidden">
@@ -262,9 +224,9 @@ export function TournamentRegistration({ tournaments, playerId }: TournamentRegi
                     <Users className="h-4 w-4 text-muted-foreground" />
                     <div>
                       <p className="font-medium text-foreground">Игроки</p>
-                       <p className="text-muted-foreground">
-                         {tournamentCounts[tournament.id] || tournament.registered_count || 0}/{tournament.max_players}
-                       </p>
+                      <p className="text-muted-foreground">
+                        {tournament.registered_count || 0}/{tournament.max_players}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -297,7 +259,7 @@ export function TournamentRegistration({ tournaments, playerId }: TournamentRegi
                       ) : (
                         <Button
                           onClick={() => handleRegister(tournament.id)}
-                          disabled={isLoading || (tournamentCounts[tournament.id] || tournament.registered_count || 0) >= tournament.max_players}
+                          disabled={isLoading || (tournament.registered_count || 0) >= tournament.max_players}
                           className="gap-2"
                         >
                           {isLoading ? (
@@ -305,7 +267,7 @@ export function TournamentRegistration({ tournaments, playerId }: TournamentRegi
                           ) : (
                             <UserPlus className="h-4 w-4" />
                           )}
-                          {(tournamentCounts[tournament.id] || tournament.registered_count || 0) >= tournament.max_players ? 'Нет мест' : 'Зарегистрироваться'}
+                          {(tournament.registered_count || 0) >= tournament.max_players ? 'Нет мест' : 'Зарегистрироваться'}
                         </Button>
                       )
                     ) : tournament.status === 'active' ? (

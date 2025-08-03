@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -110,8 +110,98 @@ const TournamentDirector = () => {
     email: ""
   });
 
-  // Мемоизированные функции загрузки данных
-  const loadTournaments = useCallback(async () => {
+  useEffect(() => {
+    loadTournaments();
+    loadPlayers();
+    
+    // Restore selected tournament from localStorage
+    const savedTournamentId = localStorage.getItem('selectedTournamentId');
+    if (savedTournamentId) {
+      // Will be set after tournaments are loaded
+    }
+    
+    // Set up real-time subscriptions
+    const tournamentsChannel = supabase
+      .channel('tournaments-changes')
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'tournaments' },
+        () => { loadTournaments(); }
+      )
+      .subscribe();
+
+    const playersChannel = supabase
+      .channel('players-changes')
+      .on('postgres_changes',
+        { event: '*', schema: 'public', table: 'players' },
+        () => { loadPlayers(); }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(tournamentsChannel);
+      supabase.removeChannel(playersChannel);
+    };
+  }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+    
+    if (selectedTournament) {
+      loadRegistrations(selectedTournament.id).then(() => {
+        if (isMounted && selectedTournament.timer_remaining !== undefined) {
+          setCurrentTime(selectedTournament.timer_remaining);
+          // Save selected tournament to localStorage
+          localStorage.setItem('selectedTournamentId', selectedTournament.id);
+        }
+      });
+    }
+    
+    return () => {
+      isMounted = false;
+    };
+  }, [selectedTournament]);
+
+  // Timer effect with database sync
+  useEffect(() => {
+    // Clear any existing timer first
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+
+    if (timerActive && currentTime > 0 && selectedTournament) {
+      timerRef.current = setInterval(() => {
+        setCurrentTime(prev => {
+          const newTime = prev - 1;
+          
+          // Sync with database every 5 seconds
+          if (newTime % 5 === 0) {
+            syncTimerWithDatabase(selectedTournament.id, newTime);
+          }
+          
+          if (newTime <= 0) {
+            setTimerActive(false);
+            toast({
+              title: "Время истекло!",
+              description: "Уровень блайндов автоматически повышен",
+            });
+            nextBlindLevel();
+            return 0;
+          }
+          return newTime;
+        });
+      }, 1000);
+    }
+
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+    };
+  }, [timerActive, selectedTournament]); // Removed currentTime from deps to prevent timer restart
+
+  const loadTournaments = async () => {
     try {
       const { data, error } = await supabase
         .from('tournaments')
@@ -137,101 +227,36 @@ const TournamentDirector = () => {
       console.error('Unexpected error loading tournaments:', err);
       toast({ title: "Ошибка", description: "Неожиданная ошибка при загрузке турниров", variant: "destructive" });
     }
-  }, [toast]);
+  };
 
-  const loadPlayers = useCallback(async () => {
-    try {
-      const { data, error } = await supabase
-        .from('players')
-        .select('*')
-        .order('elo_rating', { ascending: false });
+  const loadPlayers = async () => {
+    const { data, error } = await supabase
+      .from('players')
+      .select('*')
+      .order('elo_rating', { ascending: false });
 
-      if (error) {
-        toast({ title: "Ошибка", description: "Не удалось загрузить игроков", variant: "destructive" });
-      } else {
-        setPlayers(data || []);
-      }
-    } catch (error) {
-      console.error('Unexpected error loading players:', error);
+    if (error) {
+      toast({ title: "Ошибка", description: "Не удалось загрузить игроков", variant: "destructive" });
+    } else {
+      setPlayers(data || []);
     }
-  }, [toast]);
+  };
 
-  const loadRegistrations = useCallback(async (tournamentId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('tournament_registrations')
-        .select(`
-          *,
-          player:players(*)
-        `)
-        .eq('tournament_id', tournamentId);
+  const loadRegistrations = async (tournamentId: string) => {
+    const { data, error } = await supabase
+      .from('tournament_registrations')
+      .select(`
+        *,
+        player:players(*)
+      `)
+      .eq('tournament_id', tournamentId);
 
-      if (error) {
-        console.error('Registration loading error:', error);
-        toast({ title: "Ошибка", description: "Не удалось загрузить регистрации", variant: "destructive" });
-      } else {
-        setRegistrations(data || []);
-      }
-    } catch (error) {
-      console.error('Unexpected error loading registrations:', error);
-      toast({ title: "Ошибка", description: "Неожиданная ошибка при загрузке регистраций", variant: "destructive" });
+    if (error) {
+      toast({ title: "Ошибка", description: "Не удалось загрузить регистрации", variant: "destructive" });
+    } else {
+      setRegistrations(data || []);
     }
-  }, [toast]);
-
-  // Простая загрузка данных без real-time подписок
-  useEffect(() => {
-    const initData = async () => {
-      try {
-        await loadTournaments();
-        await loadPlayers();
-      } catch (error) {
-        console.warn('Error loading initial data:', error);
-      }
-    };
-    
-    initData();
-  }, []);
-
-  // Загрузка данных турнира при выборе
-  useEffect(() => {
-    if (selectedTournament?.id) {
-      loadRegistrations(selectedTournament.id);
-      setCurrentTime(selectedTournament.timer_remaining || 0);
-      localStorage.setItem('selectedTournamentId', selectedTournament.id);
-    }
-  }, [selectedTournament?.id]);
-
-  // Упрощенный таймер без автоматических обновлений базы
-  useEffect(() => {
-    if (timerRef.current) {
-      clearInterval(timerRef.current);
-      timerRef.current = null;
-    }
-
-    if (timerActive && currentTime > 0) {
-      timerRef.current = setInterval(() => {
-        setCurrentTime(prev => {
-          const newTime = prev - 1;
-          if (newTime <= 0) {
-            setTimerActive(false);
-            toast({
-              title: "Время истекло!",
-              description: "Уровень блайндов нужно повысить вручную",
-            });
-            return 0;
-          }
-          return newTime;
-        });
-      }, 1000);
-    }
-
-    return () => {
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-        timerRef.current = null;
-      }
-    };
-  }, [timerActive]);
+  };
 
   const createTournament = async () => {
     if (!newTournament.name || !newTournament.start_time) {
@@ -268,10 +293,7 @@ const TournamentDirector = () => {
         break_start_level: 4,
         tournament_format: "freezeout"
       });
-      // Перезагружаем данные вручную
-      setTimeout(() => {
-        loadTournaments();
-      }, 500);
+      loadTournaments();
       
       // Create default blind levels
       await createDefaultBlindLevels(data.id);
@@ -324,10 +346,7 @@ const TournamentDirector = () => {
     } else {
       toast({ title: "Успех", description: "Игрок добавлен" });
       setNewPlayer({ name: "", email: "" });
-      // Перезагружаем данные вручную
-      setTimeout(() => {
-        loadPlayers();
-      }, 500);
+      loadPlayers();
     }
   };
 
@@ -341,10 +360,7 @@ const TournamentDirector = () => {
       toast({ title: "Ошибка", description: "Не удалось запустить турнир", variant: "destructive" });
     } else {
       toast({ title: "Успех", description: "Турнир запущен" });
-      // Перезагружаем данные вручную
-      setTimeout(() => {
-        loadTournaments();
-      }, 500);
+      loadTournaments();
     }
   };
 
@@ -398,10 +414,7 @@ const TournamentDirector = () => {
         current_big_blind: newBigBlind,
         timer_remaining: newTimerTime
       });
-      // Перезагружаем данные вручную
-      setTimeout(() => {
-        loadTournaments();
-      }, 500);
+      loadTournaments();
     }
   };
 
@@ -455,10 +468,7 @@ const TournamentDirector = () => {
         current_big_blind: newBigBlind,
         timer_remaining: newTimerTime
       });
-      // Перезагружаем данные вручную
-      setTimeout(() => {
-        loadTournaments();
-      }, 500);
+      loadTournaments();
     }
   };
 
@@ -475,10 +485,7 @@ const TournamentDirector = () => {
     } else {
       toast({ title: "Турнир остановлен", description: "Турнир был принудительно остановлен" });
       setTimerActive(false);
-      // Перезагружаем данные вручную
-      setTimeout(() => {
-        loadTournaments();
-      }, 500);
+      loadTournaments();
     }
   };
 
@@ -570,11 +577,8 @@ const TournamentDirector = () => {
 
       setIsFinishDialogOpen(false);
       setTournamentResults({});
-      // Перезагружаем данные вручную
-      setTimeout(() => {
-        loadTournaments();
-        loadPlayers();
-      }, 500);
+      loadTournaments();
+      loadPlayers();
 
     } catch (error) {
       console.error('Error finishing tournament:', error);
@@ -646,7 +650,7 @@ const TournamentDirector = () => {
               className="data-[state=active]:bg-gradient-button data-[state=active]:text-white data-[state=active]:shadow-accent transition-all duration-300 rounded-xl font-medium"
             >
               <Activity className="w-5 h-5 mr-2" />
-              Управление
+              Обзор
             </TabsTrigger>
             <TabsTrigger 
               value="tournaments" 
@@ -660,7 +664,7 @@ const TournamentDirector = () => {
               className="data-[state=active]:bg-gradient-button data-[state=active]:text-white data-[state=active]:shadow-accent transition-all duration-300 rounded-xl font-medium"
             >
               <Settings className="w-5 h-5 mr-2" />
-              Структура
+              Управление
             </TabsTrigger>
             <TabsTrigger 
               value="players" 
@@ -716,13 +720,9 @@ const TournamentDirector = () => {
                   onTimerAdjust={adjustTimer}
                   onFinishTournament={() => setIsFinishDialogOpen(true)}
                   onRefresh={() => {
-                    setTimeout(() => {
-                      loadTournaments();
-                      loadPlayers();
-                      if (selectedTournament?.id) {
-                        loadRegistrations(selectedTournament.id);
-                      }
-                    }, 300);
+                    loadTournaments();
+                    loadPlayers();
+                    loadRegistrations(selectedTournament.id);
                   }}
                 />
                 
@@ -939,11 +939,9 @@ const TournamentDirector = () => {
               </CardContent>
             </Card>
 
-            {/* Tournament Cards Grid - Мемоизированный рендер */}
+            {/* Tournament Cards Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-              {tournaments.map((tournament) => {
-                const tournamentRegistrations = registrations.filter(r => r.tournament_id === tournament.id);
-                return (
+              {tournaments.map((tournament) => (
                 <Card key={tournament.id} className="bg-white/60 backdrop-blur-sm border border-gray-200/40 shadow-minimal hover:shadow-subtle transition-all duration-300 rounded-xl group">
                   <CardHeader className="pb-3">
                     <div className="flex items-start justify-between">
@@ -972,7 +970,7 @@ const TournamentDirector = () => {
                           <div>
                             <p className="text-xs text-gray-500">Игроки</p>
                             <p className="font-medium text-gray-800">
-                              {tournamentRegistrations.length}/{tournament.max_players}
+                              {registrations.filter(r => r.tournament_id === tournament.id).length}/{tournament.max_players}
                             </p>
                           </div>
                         </div>
@@ -995,7 +993,7 @@ const TournamentDirector = () => {
                           <div>
                             <p className="text-xs text-gray-500">Призовой фонд</p>
                             <p className="font-medium text-gray-800">
-                              {(tournament.buy_in * tournamentRegistrations.length)} EP2016
+                              {(tournament.buy_in * registrations.filter(r => r.tournament_id === tournament.id).length)} EP2016
                             </p>
                           </div>
                         </div>
@@ -1019,11 +1017,11 @@ const TournamentDirector = () => {
                           variant="outline"
                           onClick={() => {
                             setSelectedTournament(tournament);
-                            setActiveTab("overview");
+                            setActiveTab("control");
                           }}
                           className="border-gray-200/50 hover:shadow-minimal text-xs"
                         >
-                          <Activity className="w-3 h-3 mr-1" />
+                          <Settings className="w-3 h-3 mr-1" />
                           Управление
                         </Button>
                         {tournament.status === 'scheduled' && (
@@ -1062,19 +1060,7 @@ const TournamentDirector = () => {
                           </Button>
                         )}
                       </div>
-                      <div className="grid grid-cols-3 gap-2">
-                        <Button 
-                          size="sm" 
-                          variant="outline"
-                          onClick={() => {
-                            setSelectedTournament(tournament);
-                            setActiveTab("control");
-                          }}
-                          className="border-gray-200/50 hover:shadow-minimal text-xs"
-                        >
-                          <Settings className="w-3 h-3 mr-1" />
-                          Структура
-                        </Button>
+                      <div className="grid grid-cols-2 gap-2">
                         <Button 
                           size="sm" 
                           variant="outline"
@@ -1095,8 +1081,7 @@ const TournamentDirector = () => {
                     </div>
                   </CardContent>
                 </Card>
-                );
-              })}
+              ))}
             </div>
 
             {/* Performance Monitoring */}
