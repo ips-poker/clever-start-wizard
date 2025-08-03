@@ -84,6 +84,7 @@ const TournamentDirector = () => {
   const [activeTab, setActiveTab] = useState("overview");
   const [editingTournament, setEditingTournament] = useState<Tournament | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const isMountedRef = useRef(true);
   const { toast } = useToast();
 
   // New tournament form state
@@ -111,6 +112,7 @@ const TournamentDirector = () => {
   });
 
   useEffect(() => {
+    isMountedRef.current = true;
     loadTournaments();
     loadPlayers();
     
@@ -125,7 +127,11 @@ const TournamentDirector = () => {
       .channel('tournaments-changes')
       .on('postgres_changes', 
         { event: '*', schema: 'public', table: 'tournaments' },
-        () => { loadTournaments(); }
+        () => { 
+          if (isMountedRef.current) {
+            loadTournaments(); 
+          }
+        }
       )
       .subscribe();
 
@@ -133,13 +139,22 @@ const TournamentDirector = () => {
       .channel('players-changes')
       .on('postgres_changes',
         { event: '*', schema: 'public', table: 'players' },
-        () => { loadPlayers(); }
+        () => { 
+          if (isMountedRef.current) {
+            loadPlayers(); 
+          }
+        }
       )
       .subscribe();
 
     return () => {
+      isMountedRef.current = false;
       supabase.removeChannel(tournamentsChannel);
       supabase.removeChannel(playersChannel);
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
     };
   }, []);
 
@@ -148,7 +163,7 @@ const TournamentDirector = () => {
     
     if (selectedTournament) {
       loadRegistrations(selectedTournament.id).then(() => {
-        if (isMounted && selectedTournament.timer_remaining !== undefined) {
+        if (isMounted && isMountedRef.current && selectedTournament.timer_remaining !== undefined) {
           setCurrentTime(selectedTournament.timer_remaining);
           // Save selected tournament to localStorage
           localStorage.setItem('selectedTournamentId', selectedTournament.id);
@@ -169,17 +184,25 @@ const TournamentDirector = () => {
       timerRef.current = null;
     }
 
-    if (timerActive && currentTime > 0 && selectedTournament) {
+    if (timerActive && currentTime > 0 && selectedTournament && isMountedRef.current) {
       timerRef.current = setInterval(() => {
+        if (!isMountedRef.current) {
+          if (timerRef.current) {
+            clearInterval(timerRef.current);
+            timerRef.current = null;
+          }
+          return;
+        }
+
         setCurrentTime(prev => {
           const newTime = prev - 1;
           
           // Sync with database every 5 seconds
-          if (newTime % 5 === 0) {
+          if (newTime % 5 === 0 && isMountedRef.current && selectedTournament) {
             syncTimerWithDatabase(selectedTournament.id, newTime);
           }
           
-          if (newTime <= 0) {
+          if (newTime <= 0 && isMountedRef.current) {
             setTimerActive(false);
             toast({
               title: "Время истекло!",
@@ -202,11 +225,15 @@ const TournamentDirector = () => {
   }, [timerActive, selectedTournament]); // Removed currentTime from deps to prevent timer restart
 
   const loadTournaments = async () => {
+    if (!isMountedRef.current) return;
+    
     try {
       const { data, error } = await supabase
         .from('tournaments')
         .select('*')
         .order('start_time', { ascending: false });
+
+      if (!isMountedRef.current) return;
 
       if (error) {
         console.error('Tournament loading error:', error);
@@ -240,10 +267,14 @@ const TournamentDirector = () => {
   };
 
   const loadPlayers = async () => {
+    if (!isMountedRef.current) return;
+    
     const { data, error } = await supabase
       .from('players')
       .select('*')
       .order('elo_rating', { ascending: false });
+
+    if (!isMountedRef.current) return;
 
     if (error) {
       toast({ title: "Ошибка", description: "Не удалось загрузить игроков", variant: "destructive" });
@@ -253,6 +284,8 @@ const TournamentDirector = () => {
   };
 
   const loadRegistrations = async (tournamentId: string) => {
+    if (!isMountedRef.current) return;
+    
     const { data, error } = await supabase
       .from('tournament_registrations')
       .select(`
@@ -260,6 +293,8 @@ const TournamentDirector = () => {
         player:players(*)
       `)
       .eq('tournament_id', tournamentId);
+
+    if (!isMountedRef.current) return;
 
     if (error) {
       toast({ title: "Ошибка", description: "Не удалось загрузить регистрации", variant: "destructive" });
