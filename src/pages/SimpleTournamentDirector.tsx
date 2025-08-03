@@ -977,7 +977,6 @@ const EnhancedTournamentDirector = () => {
             {selectedTournament ? (
               <BlindStructure 
                 tournamentId={selectedTournament.id} 
-                onUpdate={() => loadTournaments()}
               />
             ) : (
               <Card className="bg-gradient-card border border-poker-border shadow-elevated rounded-2xl">
@@ -1076,16 +1075,23 @@ const EnhancedTournamentDirector = () => {
           </TabsContent>
 
           <TabsContent value="sync" className="space-y-8 animate-fade-in">
-            <TournamentSyncManager />
+            <TournamentSyncManager 
+              tournaments={tournaments}
+              onRefresh={loadTournaments}
+            />
           </TabsContent>
 
           <TabsContent value="ratings" className="space-y-8 animate-fade-in">
-            <RatingManagement />
+            <RatingManagement 
+              tournaments={tournaments}
+              selectedTournament={selectedTournament}
+              onRefresh={loadTournaments}
+            />
           </TabsContent>
 
           <TabsContent value="results" className="space-y-8 animate-fade-in">
             {selectedTournament ? (
-              <TournamentResults tournamentId={selectedTournament.id} />
+              <TournamentResults selectedTournament={selectedTournament} />
             ) : (
               <Card className="bg-gradient-card border border-poker-border shadow-elevated rounded-2xl">
                 <CardContent className="text-center py-20">
