@@ -60,18 +60,23 @@ export function GalleryManager() {
 
   const fetchGallery = async () => {
     try {
+      console.log('Attempting to fetch gallery...');
       const { data, error } = await (supabase as any)
         .from('cms_gallery')
         .select('*')
         .order('display_order', { ascending: true });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
+      console.log('Gallery data received:', data);
       setGallery(data || []);
     } catch (error) {
       console.error('Error fetching gallery:', error);
       toast({
-        title: "Ошибка",
-        description: "Не удалось загрузить галерею",
+        title: "Ошибка подключения",
+        description: "Проблема с сетевым подключением к базе данных",
         variant: "destructive",
       });
     } finally {
