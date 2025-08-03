@@ -220,7 +220,17 @@ const TournamentDirector = () => {
           const savedTournament = data.find(t => t.id === savedTournamentId);
           if (savedTournament) {
             setSelectedTournament(savedTournament);
+          } else if (!selectedTournament && data.length > 0) {
+            // Автовыбор первого турнира если сохранённый не найден
+            const activeTournament = data.find(t => t.status === 'running') || data[0];
+            setSelectedTournament(activeTournament);
+            localStorage.setItem('selectedTournamentId', activeTournament.id);
           }
+        } else if (!selectedTournament && data && data.length > 0) {
+          // Автовыбор первого турнира если ничего не сохранено
+          const activeTournament = data.find(t => t.status === 'running') || data[0];
+          setSelectedTournament(activeTournament);
+          localStorage.setItem('selectedTournamentId', activeTournament.id);
         }
       }
     } catch (err) {
@@ -746,7 +756,13 @@ const TournamentDirector = () => {
                 <CardContent className="text-center py-20">
                   <Trophy className="w-20 h-20 mx-auto mb-8 text-poker-text-muted" />
                   <h3 className="text-3xl font-bold mb-4 text-poker-text-primary">Выберите турнир для мониторинга</h3>
-                  <p className="text-poker-text-secondary text-lg">Выберите активный турнир на вкладке "Турниры" для отображения обзора</p>
+                  <p className="text-poker-text-secondary text-lg mb-6">Выберите активный турнир на вкладке "Турниры" для отображения обзора</p>
+                  <Button 
+                    onClick={() => setActiveTab("tournaments")}
+                    className="bg-gradient-button text-white hover:opacity-90"
+                  >
+                    Перейти к турнирам
+                  </Button>
                 </CardContent>
               </Card>
             )}
@@ -1433,11 +1449,17 @@ const TournamentDirector = () => {
                 </Card>
               </div>
             ) : (
-              <Card className="bg-white/50 backdrop-blur-sm border border-gray-200/30 shadow-minimal">
-                <CardContent className="text-center py-12">
-                  <Trophy className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-                  <h3 className="text-lg font-light mb-2 text-gray-700">Выберите турнир</h3>
-                  <p className="text-gray-600 text-sm">Выберите турнир на вкладке "Турниры" для управления</p>
+              <Card className="bg-gradient-card border border-poker-border shadow-elevated rounded-2xl">
+                <CardContent className="text-center py-20">
+                  <Settings className="w-20 h-20 mx-auto mb-8 text-poker-text-muted" />
+                  <h3 className="text-3xl font-bold mb-4 text-poker-text-primary">Выберите турнир для управления</h3>
+                  <p className="text-poker-text-secondary text-lg mb-6">Выберите турнир на вкладке "Турниры" для доступа к настройкам и управлению</p>
+                  <Button 
+                    onClick={() => setActiveTab("tournaments")}
+                    className="bg-gradient-button text-white hover:opacity-90"
+                  >
+                    Перейти к турнирам
+                  </Button>
                 </CardContent>
               </Card>
             )}
