@@ -5,8 +5,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { 
@@ -371,322 +371,252 @@ const TournamentDirector = () => {
             )}
           </div>
 
-          {/* Custom Tab System - без Radix UI */}
-          <div className="space-y-10">
-            {/* Tab Navigation */}
-            <div className="flex flex-wrap gap-2 p-1 bg-gray-100/60 rounded-lg border border-gray-200/30">
-              {[
-                { id: 'overview', label: 'Обзор', icon: BarChart3 },
-                { id: 'tournaments', label: 'Турниры', icon: Trophy },
-                { id: 'control', label: 'Управление', icon: Settings },
-                { id: 'players', label: 'Игроки', icon: Users },
-                { id: 'ratings', label: 'Рейтинги', icon: TrendingUp },
-                { id: 'results', label: 'Результаты', icon: CheckCircle },
-                { id: 'sync', label: 'Синхронизация', icon: RefreshCw },
-                { id: 'rating-test', label: 'Тест рейтинга', icon: Target }
-              ].map((tab) => {
-                const Icon = tab.icon;
-                const isActive = activeTab === tab.id;
-                return (
-                  <button
-                    key={tab.id}
-                    onClick={() => {
-                      console.log('Tab change start:', activeTab, '->', tab.id);
-                      
-                      // Остановим таймер при переключении
-                      if (timerRef.current) {
-                        clearInterval(timerRef.current);
-                        timerRef.current = null;
-                        setTimerActive(false);
-                      }
-                      
-                      setActiveTab(tab.id);
-                      console.log('Tab change complete:', tab.id);
-                    }}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
-                      isActive 
-                        ? 'bg-white text-gray-900 shadow-sm border border-gray-200/50' 
-                        : 'text-gray-600 hover:text-gray-900 hover:bg-white/50'
-                    }`}
+          {/* Custom Tab System заменяем обратно на Radix Tabs */}
+          <Tabs 
+            value={activeTab} 
+            onValueChange={(value) => {
+              console.log('Tab change:', activeTab, '->', value);
+              
+              // Остановим таймер при переключении
+              if (timerRef.current) {
+                clearInterval(timerRef.current);
+                timerRef.current = null;
+                setTimerActive(false);
+              }
+              
+              setActiveTab(value);
+            }} 
+            className="space-y-10"
+          >
+            <TabsList className="grid grid-cols-4 lg:grid-cols-8 gap-2 h-auto p-1 bg-gray-100/60 rounded-lg border border-gray-200/30">
+              <TabsTrigger value="overview" className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                <BarChart3 className="w-4 h-4" />
+                <span className="hidden sm:inline">Обзор</span>
+              </TabsTrigger>
+              <TabsTrigger value="tournaments" className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                <Trophy className="w-4 h-4" />
+                <span className="hidden sm:inline">Турниры</span>
+              </TabsTrigger>
+              <TabsTrigger value="control" className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                <Settings className="w-4 h-4" />
+                <span className="hidden sm:inline">Управление</span>
+              </TabsTrigger>
+              <TabsTrigger value="players" className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                <Users className="w-4 h-4" />
+                <span className="hidden sm:inline">Игроки</span>
+              </TabsTrigger>
+              <TabsTrigger value="ratings" className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                <TrendingUp className="w-4 h-4" />
+                <span className="hidden sm:inline">Рейтинги</span>
+              </TabsTrigger>
+              <TabsTrigger value="results" className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                <CheckCircle className="w-4 h-4" />
+                <span className="hidden sm:inline">Результаты</span>
+              </TabsTrigger>
+              <TabsTrigger value="sync" className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                <RefreshCw className="w-4 h-4" />
+                <span className="hidden sm:inline">Синхронизация</span>
+              </TabsTrigger>
+              <TabsTrigger value="rating-test" className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                <Target className="w-4 h-4" />
+                <span className="hidden sm:inline">Тест рейтинга</span>
+              </TabsTrigger>
+            </TabsList>
+            <TabsContent value="overview" className="space-y-8 animate-fade-in">
+              {selectedTournament ? (
+                <div className="space-y-8">
+                  <TournamentOverview
+                    tournament={selectedTournament}
+                    players={players}
+                    registrations={registrations}
+                    currentTime={currentTime}
+                    timerActive={timerActive}
+                    onToggleTimer={toggleTimer}
+                    onResetTimer={resetTimer}
+                    onNextLevel={nextLevel}
+                    onPrevLevel={prevLevel}
+                    onStopTournament={stopTournament}
+                    onRefresh={() => loadRegistrations(selectedTournament.id)}
+                    onTimerAdjust={onTimerAdjust}
+                    onFinishTournament={onFinishTournament}
+                  />
+                </div>
+              ) : (
+                <Card className="bg-white/50 backdrop-blur-sm border border-gray-200/30 shadow-minimal">
+                  <CardContent className="text-center py-16">
+                    <AlertTriangle className="h-16 w-16 mx-auto mb-4 text-gray-400" />
+                    <h3 className="text-lg font-medium text-gray-700 mb-2">Турнир не выбран</h3>
+                    <p className="text-gray-500 mb-6">Выберите турнир на вкладке "Турниры" для отображения информации</p>
+                    <Button
+                      onClick={() => setActiveTab('tournaments')}
+                      className="bg-blue-600 hover:bg-blue-700 text-white"
+                    >
+                      Перейти к турнирам
+                    </Button>
+                  </CardContent>
+                </Card>
+              )}
+            </TabsContent>
+
+            <TabsContent value="tournaments" className="space-y-10 animate-fade-in">
+              {/* Create Tournament Section */}
+              <Card className="bg-white/60 backdrop-blur-sm border border-gray-200/40 shadow-minimal hover:shadow-subtle transition-all duration-300 rounded-xl group">
+                <CardHeader className="pb-4">
+                  <CardTitle className="flex items-center gap-3 text-gray-800 text-xl font-light">
+                    <div className="p-2 bg-blue-100/80 rounded-lg group-hover:bg-blue-200/80 transition-colors">
+                      <Plus className="w-5 h-5 text-blue-600" />
+                    </div>
+                    Создать турнир
+                  </CardTitle>
+                  <CardDescription className="text-gray-600">
+                    Настройте новый покерный турнир
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Button 
+                    onClick={() => setIsModalOpen(true)}
+                    className="bg-blue-600 hover:bg-blue-700 text-white shadow-subtle hover:shadow-lg transition-all duration-200"
                   >
-                    <Icon className="w-4 h-4" />
-                    <span className="hidden sm:inline">{tab.label}</span>
-                  </button>
-                );
-              })}
-            </div>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Новый турнир
+                  </Button>
+                </CardContent>
+              </Card>
 
-            {/* Tab Content */}
-            <div className="min-h-[400px]">
-              {/* Overview Tab */}
-              {activeTab === 'overview' && (
-                <div className="space-y-8">
-                  {selectedTournament ? (
-                    <div className="space-y-8">
-                      <TournamentOverview
-                        tournament={selectedTournament}
-                        players={players}
-                        registrations={registrations}
-                        currentTime={currentTime}
-                        timerActive={timerActive}
-                        onToggleTimer={toggleTimer}
-                        onResetTimer={resetTimer}
-                        onNextLevel={nextLevel}
-                        onPrevLevel={prevLevel}
-                        onStopTournament={stopTournament}
-                        onRefresh={() => loadRegistrations(selectedTournament.id)}
-                        onTimerAdjust={onTimerAdjust}
-                        onFinishTournament={onFinishTournament}
-                      />
-                    </div>
-                  ) : (
-                    <Card className="bg-white/50 backdrop-blur-sm border border-gray-200/30 shadow-minimal">
-                      <CardContent className="text-center py-16">
-                        <AlertTriangle className="h-16 w-16 mx-auto mb-4 text-gray-400" />
-                        <h3 className="text-lg font-medium text-gray-700 mb-2">Турнир не выбран</h3>
-                        <p className="text-gray-500 mb-6">Выберите турнир на вкладке "Турниры" для отображения информации</p>
-                        <Button
-                          onClick={() => setActiveTab('tournaments')}
-                          className="bg-blue-600 hover:bg-blue-700 text-white"
-                        >
-                          Перейти к турнирам
-                        </Button>
-                      </CardContent>
-                    </Card>
-                  )}
-                </div>
-              )}
-
-              {/* Tournaments Tab */}
-              {activeTab === 'tournaments' && (
-                <div className="space-y-10">
-                  {/* Create Tournament Section */}
-                  <Card className="bg-white/60 backdrop-blur-sm border border-gray-200/40 shadow-minimal hover:shadow-subtle transition-all duration-300 rounded-xl group">
-                    <CardHeader className="pb-4">
-                      <CardTitle className="flex items-center gap-3 text-gray-800 text-xl font-light">
-                        <div className="p-2 bg-blue-100/80 rounded-lg group-hover:bg-blue-200/80 transition-colors">
-                          <Plus className="w-5 h-5 text-blue-600" />
-                        </div>
-                        Создать турнир
-                      </CardTitle>
-                      <CardDescription className="text-gray-600">
-                        Настройте новый покерный турнир
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <Button 
-                        onClick={() => setIsModalOpen(true)}
-                        className="bg-blue-600 hover:bg-blue-700 text-white shadow-subtle hover:shadow-lg transition-all duration-200"
+              {/* Tournaments List */}
+              <Card className="bg-white/50 backdrop-blur-sm border border-gray-200/30 shadow-minimal">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-gray-700 font-light">
+                    <Trophy className="w-5 h-5" />
+                    Все турниры
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {tournaments.map(tournament => (
+                      <Card 
+                        key={tournament.id} 
+                        className={`cursor-pointer transition-all border-2 hover:shadow-subtle ${
+                          selectedTournament?.id === tournament.id 
+                            ? 'border-blue-300 bg-blue-50' 
+                            : 'border-gray-200/50 hover:border-blue-200/70'
+                        }`}
+                        onClick={() => handleTournamentSelect(tournament)}
                       >
-                        <Plus className="w-4 h-4 mr-2" />
-                        Новый турнир
-                      </Button>
-                    </CardContent>
-                  </Card>
-
-                  {/* Tournaments List */}
-                  <Card className="bg-white/50 backdrop-blur-sm border border-gray-200/30 shadow-minimal">
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2 text-gray-700 font-light">
-                        <Trophy className="w-5 h-5" />
-                        Все турниры
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {tournaments.map(tournament => (
-                          <Card 
-                            key={tournament.id} 
-                            className={`cursor-pointer transition-all border-2 hover:shadow-subtle ${
-                              selectedTournament?.id === tournament.id 
-                                ? 'border-blue-300 bg-blue-50' 
-                                : 'border-gray-200/50 hover:border-blue-200/70'
-                            }`}
-                            onClick={() => handleTournamentSelect(tournament)}
-                          >
-                            <CardContent className="p-4">
-                              <div className="flex justify-between items-start mb-3">
-                                <h3 className="font-semibold text-gray-800 mb-2">{tournament.name}</h3>
-                                <div className="flex gap-1">
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setEditingTournament(tournament);
-                                    }}
-                                    className="h-8 w-8 p-0 hover:bg-blue-100"
-                                  >
-                                    <Edit className="h-4 w-4 text-blue-600" />
-                                  </Button>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      deleteTournament(tournament.id);
-                                    }}
-                                    className="h-8 w-8 p-0 hover:bg-red-100"
-                                  >
-                                    <Trash2 className="h-4 w-4 text-red-600" />
-                                  </Button>
-                                </div>
-                              </div>
-                              <div className="space-y-1 text-sm text-gray-600">
-                                <p>Бай-ин: {tournament.buy_in}₽</p>
-                                <p>Максимум: {tournament.max_players} игроков</p>
-                                <p>Уровень: {tournament.current_level}</p>
-                              </div>
-                              <Badge 
-                                variant={tournament.status === 'running' ? 'default' : 
-                                        tournament.status === 'pending' ? 'secondary' : 'outline'}
-                                className="mt-3"
+                        <CardContent className="p-4">
+                          <div className="flex justify-between items-start mb-3">
+                            <h3 className="font-semibold text-gray-800 mb-2">{tournament.name}</h3>
+                            <div className="flex gap-1">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setEditingTournament(tournament);
+                                }}
+                                className="h-8 w-8 p-0 hover:bg-blue-100"
                               >
-                                {tournament.status === 'running' ? 'Активен' : 
-                                 tournament.status === 'pending' ? 'Ожидание' : 'Завершен'}
-                              </Badge>
-                            </CardContent>
-                          </Card>
-                        ))}
-                      </div>
-                      {tournaments.length === 0 && (
-                        <div className="text-center py-8 text-gray-500">
-                          <Trophy className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                          <p>Турниры не найдены</p>
-                          <p className="text-sm mt-2">Создайте первый турнир</p>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                </div>
-              )}
-
-              {/* Control Tab */}
-              {activeTab === 'control' && (
-                <div className="space-y-8">
-                  {selectedTournament ? (
-                    <div className="space-y-8">
-                      <BlindStructure tournamentId={selectedTournament.id} />
-                      <PayoutStructure tournamentId={selectedTournament.id} registeredPlayers={registrations.length} />
-                      <ManualAdjustments tournaments={tournaments} selectedTournament={selectedTournament} onRefresh={loadTournaments} />
-                    </div>
-                  ) : (
-                    <Card className="bg-white/50 backdrop-blur-sm border border-gray-200/30 shadow-minimal">
-                      <CardContent className="text-center py-16">
-                        <AlertTriangle className="h-16 w-16 mx-auto mb-4 text-gray-400" />
-                        <h3 className="text-lg font-medium text-gray-700 mb-2">Турнир не выбран</h3>
-                        <p className="text-gray-500 mb-6">Выберите турнир для настройки управления</p>
-                        <Button
-                          onClick={() => setActiveTab('tournaments')}
-                          className="bg-blue-600 hover:bg-blue-700 text-white"
-                        >
-                          Выбрать турнир
-                        </Button>
-                      </CardContent>
-                    </Card>
-                  )}
-                </div>
-              )}
-
-              {/* Players Tab */}
-              {activeTab === 'players' && (
-                <div className="space-y-8">
-                  <div className="space-y-8">
-                    {selectedTournament && (
-                      <PlayerManagement 
-                        tournament={selectedTournament}
-                        players={players}
-                        registrations={registrations}
-                        onRegistrationUpdate={() => selectedTournament && loadRegistrations(selectedTournament.id)}
-                      />
-                    )}
+                                <Edit className="h-4 w-4 text-blue-600" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  deleteTournament(tournament.id);
+                                }}
+                                className="h-8 w-8 p-0 hover:bg-red-100"
+                              >
+                                <Trash2 className="h-4 w-4 text-red-600" />
+                              </Button>
+                            </div>
+                          </div>
+                          <div className="space-y-1 text-sm text-gray-600">
+                            <p>Бай-ин: {tournament.buy_in}₽</p>
+                            <p>Максимум: {tournament.max_players} игроков</p>
+                            <p>Уровень: {tournament.current_level}</p>
+                          </div>
+                          <Badge 
+                            variant={tournament.status === 'running' ? 'default' : 
+                                    tournament.status === 'pending' ? 'secondary' : 'outline'}
+                            className="mt-3"
+                          >
+                            {tournament.status === 'running' ? 'Активен' : 
+                             tournament.status === 'pending' ? 'Ожидание' : 'Завершен'}
+                          </Badge>
+                        </CardContent>
+                      </Card>
+                    ))}
                   </div>
-                </div>
-              )}
+                  {tournaments.length === 0 && (
+                    <div className="text-center py-8 text-gray-500">
+                      <Trophy className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                      <p>Турниры не найдены</p>
+                      <p className="text-sm mt-2">Создайте первый турнир</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
 
-              {/* Ratings Tab */}
-              {activeTab === 'ratings' && (
-                <div className="space-y-6">
-                  <RatingManagement 
-                    tournaments={tournaments} 
-                    selectedTournament={selectedTournament}
-                    onRefresh={loadTournaments}
-                  />
+            <TabsContent value="control" className="space-y-8 animate-fade-in">
+              {selectedTournament ? (
+                <div className="space-y-8">
+                  <BlindStructure tournamentId={selectedTournament.id} />
+                  <PayoutStructure tournamentId={selectedTournament.id} registeredPlayers={registrations.length} />
+                  <ManualAdjustments tournaments={tournaments} selectedTournament={selectedTournament} onRefresh={loadTournaments} />
                 </div>
+              ) : (
+                <Card className="bg-white/50 backdrop-blur-sm border border-gray-200/30 shadow-minimal">
+                  <CardContent className="text-center py-16">
+                    <AlertTriangle className="h-16 w-16 mx-auto mb-4 text-gray-400" />
+                    <h3 className="text-lg font-medium text-gray-700 mb-2">Турнир не выбран</h3>
+                    <p className="text-gray-500 mb-6">Выберите турнир для настройки управления</p>
+                    <Button
+                      onClick={() => setActiveTab('tournaments')}
+                      className="bg-blue-600 hover:bg-blue-700 text-white"
+                    >
+                      Выбрать турнир
+                    </Button>
+                  </CardContent>
+                </Card>
               )}
+            </TabsContent>
 
-              {/* Results Tab */}
-              {activeTab === 'results' && (
-                <div className="space-y-6">
-                  <Card className="bg-gradient-card border-poker-border shadow-elevated">
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2 text-poker-text-primary">
-                        <Trophy className="h-5 w-5" />
-                        Результаты турниров
-                      </CardTitle>
-                      <CardDescription className="text-poker-text-muted">
-                        Просматривайте результаты завершенных турниров
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-                        {tournaments.filter(t => t.status === 'completed').map(tournament => (
-                          <Card 
-                            key={tournament.id} 
-                            className={`cursor-pointer transition-all border-2 ${
-                              selectedTournament?.id === tournament.id 
-                                ? 'border-poker-primary bg-poker-primary/10' 
-                                : 'border-poker-border hover:border-poker-primary/50'
-                            }`}
-                            onClick={() => setSelectedTournament(tournament)}
-                          >
-                            <CardContent className="p-4">
-                              <h3 className="font-semibold text-poker-text-primary mb-2">{tournament.name}</h3>
-                              <div className="space-y-1 text-sm text-poker-text-muted">
-                                <p>Бай-ин: {tournament.buy_in}₽</p>
-                                <p>Завершен: {tournament.finished_at ? new Date(tournament.finished_at).toLocaleDateString('ru-RU') : 'Дата неизвестна'}</p>
-                              </div>
-                              <Badge 
-                                variant="outline" 
-                                className="mt-2 border-green-200 bg-green-50 text-green-600"
-                              >
-                                Завершен
-                              </Badge>
-                            </CardContent>
-                          </Card>
-                        ))}
-                      </div>
-                      {tournaments.filter(t => t.status === 'completed').length === 0 && (
-                        <div className="text-center py-8 text-poker-text-muted">
-                          <Trophy className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                          <p>Нет завершенных турниров для отображения</p>
-                          <p className="text-sm mt-2">Завершите турнир через раздел "Управление", чтобы увидеть результаты здесь</p>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                  <TournamentResults selectedTournament={selectedTournament} />
-                </div>
+            <TabsContent value="players" className="space-y-8 animate-fade-in">
+              {selectedTournament && (
+                <PlayerManagement 
+                  tournament={selectedTournament}
+                  players={players}
+                  registrations={registrations}
+                  onRegistrationUpdate={() => selectedTournament && loadRegistrations(selectedTournament.id)}
+                />
               )}
+            </TabsContent>
 
-              {/* Sync Tab */}
-              {activeTab === 'sync' && (
-                <div className="space-y-6">
-                  <TournamentSyncManager 
-                    tournaments={tournaments}
-                    onRefresh={loadTournaments}
-                  />
-                </div>
-              )}
+            <TabsContent value="ratings" className="space-y-6 animate-fade-in">
+              <RatingManagement 
+                tournaments={tournaments} 
+                selectedTournament={selectedTournament}
+                onRefresh={loadTournaments}
+              />
+            </TabsContent>
 
-              {/* Rating Test Tab */}
-              {activeTab === 'rating-test' && (
-                <div className="space-y-6">
-                  <RatingSystemTest />
-                </div>
-              )}
-            </div>
-          </div>
+            <TabsContent value="results" className="space-y-6 animate-fade-in">
+              <TournamentResults selectedTournament={selectedTournament} />
+            </TabsContent>
+
+            <TabsContent value="sync" className="space-y-6 animate-fade-in">
+              <TournamentSyncManager 
+                tournaments={tournaments}
+                onRefresh={loadTournaments}
+              />
+            </TabsContent>
+
+            <TabsContent value="rating-test" className="space-y-6 animate-fade-in">
+              <RatingSystemTest />
+            </TabsContent>
+          </Tabs>
 
           {/* Tournament Modal */}
           <TournamentModal
