@@ -34,23 +34,40 @@ export function TopPlayers() {
   const [showFirstPlaceOnly, setShowFirstPlaceOnly] = useState(false);
 
   useEffect(() => {
-    loadTopPlayers();
-    loadAllPlayers();
+    let isMounted = true;
     
-    // Set up real-time subscription for player updates
+    const loadData = async () => {
+      if (!isMounted) return;
+      await loadTopPlayers();
+      if (!isMounted) return;
+      await loadAllPlayers();
+    };
+    
+    loadData();
+    
+    // Set up real-time subscription for player updates with protection
     const playersChannel = supabase
       .channel('players-changes')
       .on('postgres_changes', 
         { event: '*', schema: 'public', table: 'players' }, 
         () => {
-          loadTopPlayers();
-          loadAllPlayers();
+          if (isMounted) {
+            setTimeout(() => {
+              if (isMounted) {
+                loadTopPlayers();
+                loadAllPlayers();
+              }
+            }, 100);
+          }
         }
       )
       .subscribe();
 
     return () => {
-      supabase.removeChannel(playersChannel);
+      isMounted = false;
+      setTimeout(() => {
+        supabase.removeChannel(playersChannel);
+      }, 50);
     };
   }, []);
 

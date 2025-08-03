@@ -42,11 +42,13 @@ const PayoutStructure = ({ tournamentId, registeredPlayers }: PayoutStructurePro
     calculateAutomaticPayouts();
   }, [registeredPlayers, tournament, registrations]);
 
-  // Реальная синхронизация данных о ребаях и адонах
+  // Реальная синхронизация данных о ребаях и адонах с защитой
   useEffect(() => {
+    let isMounted = true;
+    
     if (!tournamentId) return;
 
-    // Подписываемся на изменения в таблице регистраций
+    // Подписываемся на изменения в таблице регистраций с защитой
     const channel = supabase
       .channel('tournament-registrations-changes')
       .on(
@@ -58,14 +60,20 @@ const PayoutStructure = ({ tournamentId, registeredPlayers }: PayoutStructurePro
           filter: `tournament_id=eq.${tournamentId}`
         },
         () => {
-          // Перезагружаем данные при любых изменениях
-          fetchTournamentData();
+          if (isMounted) {
+            setTimeout(() => {
+              if (isMounted) fetchTournamentData();
+            }, 100);
+          }
         }
       )
       .subscribe();
 
     return () => {
-      supabase.removeChannel(channel);
+      isMounted = false;
+      setTimeout(() => {
+        supabase.removeChannel(channel);
+      }, 50);
     };
   }, [tournamentId]);
 

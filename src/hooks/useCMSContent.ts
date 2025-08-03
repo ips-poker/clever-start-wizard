@@ -16,9 +16,16 @@ export function useCMSContent(pageSlug: string) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchContent();
+    let isMounted = true;
     
-    // Подписываемся на изменения в реальном времени
+    const fetchContentSafe = async () => {
+      if (!isMounted) return;
+      await fetchContent();
+    };
+    
+    fetchContentSafe();
+    
+    // Подписываемся на изменения в реальном времени с защитой
     const channel = supabase
       .channel(`cms_content_${pageSlug}`)
       .on(
@@ -30,14 +37,20 @@ export function useCMSContent(pageSlug: string) {
           filter: `page_slug=eq.${pageSlug}`
         },
         () => {
-          // Перезагружаем контент при изменениях
-          fetchContent();
+          if (isMounted) {
+            setTimeout(() => {
+              if (isMounted) fetchContent();
+            }, 100);
+          }
         }
       )
       .subscribe();
 
     return () => {
-      supabase.removeChannel(channel);
+      isMounted = false;
+      setTimeout(() => {
+        supabase.removeChannel(channel);
+      }, 50);
     };
   }, [pageSlug]);
 

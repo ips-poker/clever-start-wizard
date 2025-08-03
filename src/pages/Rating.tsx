@@ -47,14 +47,27 @@ export default function Rating() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadData();
+    let isMounted = true;
     
-    // Real-time subscriptions
+    const loadDataSafe = async () => {
+      if (!isMounted) return;
+      await loadData();
+    };
+    
+    loadDataSafe();
+    
+    // Real-time subscriptions with protection
     const playersChannel = supabase
       .channel('rating-players-changes')
       .on('postgres_changes', 
         { event: '*', schema: 'public', table: 'players' }, 
-        () => loadData()
+        () => {
+          if (isMounted) {
+            setTimeout(() => {
+              if (isMounted) loadData();
+            }, 100);
+          }
+        }
       )
       .subscribe();
 
@@ -62,13 +75,22 @@ export default function Rating() {
       .channel('rating-tournaments-changes')
       .on('postgres_changes', 
         { event: '*', schema: 'public', table: 'tournaments' }, 
-        () => loadData()
+        () => {
+          if (isMounted) {
+            setTimeout(() => {
+              if (isMounted) loadData();
+            }, 100);
+          }
+        }
       )
       .subscribe();
 
     return () => {
-      supabase.removeChannel(playersChannel);
-      supabase.removeChannel(tournamentsChannel);
+      isMounted = false;
+      setTimeout(() => {
+        supabase.removeChannel(playersChannel);
+        supabase.removeChannel(tournamentsChannel);
+      }, 50);
     };
   }, []);
 
