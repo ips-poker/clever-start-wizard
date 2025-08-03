@@ -59,10 +59,6 @@ export function VoiceControl({ selectedTournament }: VoiceControlProps) {
   }, []);
 
   const startVoiceControl = async () => {
-    // Temporarily disabled due to connection issues
-    toast.error('Голосовой интерфейс временно отключен для устранения проблем с подключением');
-    return;
-    
     try {
       await voiceInterface.current?.connect();
     } catch (error) {
