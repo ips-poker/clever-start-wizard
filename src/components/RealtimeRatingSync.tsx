@@ -73,7 +73,7 @@ export default function RealtimeRatingSync() {
       const { data: tournamentsData, error: tournamentsError } = await supabase
         .from('tournaments')
         .select('id')
-        .eq('status', 'completed');
+        .eq('status', 'finished');
 
       const { data: recentData, error: recentError } = await supabase
         .from('game_results')

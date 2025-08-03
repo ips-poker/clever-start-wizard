@@ -15,7 +15,7 @@ export function RecalculateRatings() {
       const { data: tournaments, error: tournamentsError } = await supabase
         .from('tournaments')
         .select('id, name, status')
-        .or('status.eq.completed,status.eq.cancelled')
+        .or('status.eq.finished,status.eq.cancelled')
         .order('created_at', { ascending: false })
         .limit(1);
 

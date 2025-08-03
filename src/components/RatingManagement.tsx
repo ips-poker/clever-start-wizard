@@ -123,7 +123,7 @@ const RatingManagement = ({ tournaments, selectedTournament, onRefresh }: Rating
       const { data: pendingTournaments, error: tournamentsError } = await supabase
         .from('tournaments')
         .select('id')
-        .eq('status', 'completed')
+        .eq('status', 'finished')
         .is('finished_at', null);
 
       if (tournamentsError) throw tournamentsError;
@@ -293,7 +293,7 @@ const RatingManagement = ({ tournaments, selectedTournament, onRefresh }: Rating
     }
   };
 
-  const completedTournaments = tournaments.filter(t => t.status === 'completed');
+  const completedTournaments = tournaments.filter(t => t.status === 'finished');
   const pendingTournaments = completedTournaments.filter(t => !t.finished_at);
 
   return (
@@ -410,7 +410,7 @@ const RatingManagement = ({ tournaments, selectedTournament, onRefresh }: Rating
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {selectedTournament && selectedTournament.status === 'completed' && (
+              {selectedTournament && selectedTournament.status === 'finished' && (
                 <Alert>
                   <Trophy className="h-4 w-4" />
                   <AlertDescription>
@@ -424,7 +424,7 @@ const RatingManagement = ({ tournaments, selectedTournament, onRefresh }: Rating
                   variant="default"
                   size="sm"
                   onClick={() => selectedTournament && calculateRatings(selectedTournament.id)}
-                  disabled={!selectedTournament || selectedTournament.status !== 'completed' || isCalculating}
+                  disabled={!selectedTournament || selectedTournament.status !== 'finished' || isCalculating}
                 >
                   <Calculator className="w-4 h-4 mr-1" />
                   {isCalculating ? 'Расчет...' : 'Расчет рейтингов'}
@@ -454,7 +454,7 @@ const RatingManagement = ({ tournaments, selectedTournament, onRefresh }: Rating
                   variant="secondary"
                   size="sm"
                   onClick={() => selectedTournament && processFullTournament(selectedTournament.id)}
-                  disabled={!selectedTournament || selectedTournament.status !== 'completed' || isCalculating || isPublishing}
+                  disabled={!selectedTournament || selectedTournament.status !== 'finished' || isCalculating || isPublishing}
                 >
                   <CheckCircle className="w-4 h-4 mr-1" />
                   Полная обработка
