@@ -23,10 +23,9 @@ interface Tournament {
 interface TournamentRegistrationProps {
   tournaments: Tournament[];
   playerId?: string;
-  onRegistrationUpdate: () => void;
 }
 
-export function TournamentRegistration({ tournaments, playerId, onRegistrationUpdate }: TournamentRegistrationProps) {
+export function TournamentRegistration({ tournaments, playerId }: TournamentRegistrationProps) {
   const [registeredTournaments, setRegisteredTournaments] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState<string>("");
   const [tournamentCounts, setTournamentCounts] = useState<Record<string, number>>({});
