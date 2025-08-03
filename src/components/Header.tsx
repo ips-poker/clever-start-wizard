@@ -19,7 +19,7 @@ export function Header() {
   const navItems = [
     { name: "Главная", href: "/" },
     { name: "Турниры", href: "/tournaments" },
-    { name: "Рейтинг", href: "/rating" },
+    { name: "Рейтинг", href: "/ratings" },
     { name: "Галерея", href: "/gallery" },
     { name: "Блог", href: "/blog" },
     { name: "О нас", href: "/about" }

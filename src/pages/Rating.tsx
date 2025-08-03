@@ -6,7 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Trophy, Medal, Award, TrendingUp, Users, Clock, Star, ChevronDown, Crown, Target } from "lucide-react";
+import { Trophy, Medal, Award, TrendingUp, Users, Clock, Star, ChevronDown, Crown } from "lucide-react";
 import { RecalculateRatings } from "@/components/RecalculateRatings";
 
 interface Player {
@@ -45,29 +45,17 @@ export default function Rating() {
   const [allPlayers, setAllPlayers] = useState<Player[]>([]);
   const [recentTournaments, setRecentTournaments] = useState<RecentTournament[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showAll, setShowAll] = useState(false);
 
   useEffect(() => {
-    let isMounted = true;
+    loadData();
     
-    const loadDataSafe = async () => {
-      if (!isMounted) return;
-      await loadData();
-    };
-    
-    loadDataSafe();
-    
-    // Real-time subscriptions with protection
+    // Real-time subscriptions
     const playersChannel = supabase
       .channel('rating-players-changes')
       .on('postgres_changes', 
         { event: '*', schema: 'public', table: 'players' }, 
-        () => {
-          if (isMounted) {
-            setTimeout(() => {
-              if (isMounted) loadData();
-            }, 100);
-          }
-        }
+        () => loadData()
       )
       .subscribe();
 
@@ -75,22 +63,13 @@ export default function Rating() {
       .channel('rating-tournaments-changes')
       .on('postgres_changes', 
         { event: '*', schema: 'public', table: 'tournaments' }, 
-        () => {
-          if (isMounted) {
-            setTimeout(() => {
-              if (isMounted) loadData();
-            }, 100);
-          }
-        }
+        () => loadData()
       )
       .subscribe();
 
     return () => {
-      isMounted = false;
-      setTimeout(() => {
-        supabase.removeChannel(playersChannel);
-        supabase.removeChannel(tournamentsChannel);
-      }, 50);
+      supabase.removeChannel(playersChannel);
+      supabase.removeChannel(tournamentsChannel);
     };
   }, []);
 
@@ -163,13 +142,12 @@ export default function Rating() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-surface">
+      <div className="min-h-screen">
         <Header />
         <main className="pt-20">
           <div className="container mx-auto px-4 py-20">
             <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-poker-primary mx-auto mb-4"></div>
-              <h1 className="text-4xl font-bold mb-4">Загрузка рейтинга...</h1>
+              <h1 className="text-4xl font-bold mb-4 text-poker-text-primary">Загрузка рейтинга...</h1>
             </div>
           </div>
         </main>
@@ -179,11 +157,11 @@ export default function Rating() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-surface">
+    <div className="min-h-screen">
       <Header />
       <main className="pt-20">
         {/* Hero Section */}
-        <section className="py-20 bg-gradient-to-b from-background via-background/50 to-background relative overflow-hidden">
+        <section className="py-20 bg-gradient-to-b from-poker-background via-poker-surface/30 to-poker-background relative overflow-hidden">
           <div className="absolute inset-0 opacity-5">
             <div className="absolute top-20 left-10 w-72 h-72 bg-poker-accent rounded-full blur-3xl"></div>
             <div className="absolute bottom-20 right-10 w-96 h-96 bg-poker-primary rounded-full blur-3xl"></div>
@@ -191,72 +169,48 @@ export default function Rating() {
 
           <div className="container mx-auto px-4 relative">
             <div className="text-center mb-16">
-              <Badge variant="outline" className="mb-4 border-poker-accent text-poker-accent animate-fade-in">
-                <Trophy className="w-4 h-4 mr-2" />
-                Элитный рейтинг
-              </Badge>
-              <h1 className="text-5xl font-bold mb-6 bg-gradient-to-r from-poker-primary to-poker-accent bg-clip-text text-transparent animate-fade-in">
-                Рейтинг IPS
-              </h1>
-              <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed animate-fade-in">
-                Система ELO отслеживает навыки каждого игрока. Каждая партия влияет на рейтинг в зависимости от результата и уровня соперников.
+              <div className="inline-flex items-center gap-3 mb-6">
+                <div className="relative">
+                  <Trophy className="w-8 h-8 text-poker-accent" />
+                  <div className="absolute -inset-1 bg-poker-accent/20 rounded-full blur-sm"></div>
+                </div>
+                <h1 className="text-5xl font-light tracking-tight text-poker-text-primary">
+                  Рейтинг <span className="bg-gradient-to-r from-poker-accent to-poker-primary bg-clip-text text-transparent font-medium">элиты</span>
+                </h1>
+              </div>
+              <p className="text-xl text-poker-text-muted max-w-2xl mx-auto font-light mb-6">
+                Живой рейтинг лучших игроков по системе ELO. Следите за турнирами в реальном времени
               </p>
-              <div className="flex justify-center mt-8">
+              <div className="flex justify-center">
                 <RecalculateRatings />
               </div>
             </div>
 
-            {/* Statistics Cards */}
-            <div className="grid md:grid-cols-3 gap-6 mb-16 max-w-4xl mx-auto">
-              <Card className="p-6 text-center hover:shadow-floating transition-all duration-300 animate-fade-in">
-                <div className="w-16 h-16 bg-poker-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Users className="w-8 h-8 text-poker-primary" />
-                </div>
-                <div className="text-3xl font-bold text-poker-primary mb-2">
-                  {allPlayers.length}
-                </div>
-                <div className="text-muted-foreground">Всего игроков</div>
-              </Card>
-              
-              <Card className="p-6 text-center hover:shadow-floating transition-all duration-300 animate-fade-in">
-                <div className="w-16 h-16 bg-poker-accent/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <TrendingUp className="w-8 h-8 text-poker-accent" />
-                </div>
-                <div className="text-3xl font-bold text-poker-accent mb-2">
-                  {allPlayers.reduce((sum, player) => sum + player.games_played, 0)}
-                </div>
-                <div className="text-muted-foreground">Партий сыграно</div>
-              </Card>
-              
-              <Card className="p-6 text-center hover:shadow-floating transition-all duration-300 animate-fade-in">
-                <div className="w-16 h-16 bg-poker-warning/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Star className="w-8 h-8 text-poker-warning" />
-                </div>
-                <div className="text-3xl font-bold text-poker-warning mb-2">
-                  {topPlayers[0]?.elo_rating || 1200}
-                </div>
-                <div className="text-muted-foreground">Лучший рейтинг</div>
-              </Card>
-            </div>
-
-            {/* Top Players */}
+            {/* Top 5 Players */}
             <div className="max-w-4xl mx-auto">
               {topPlayers.length === 0 ? (
                 <div className="max-w-md mx-auto text-center py-16">
-                  <div className="w-20 h-20 bg-background border border-border rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-sm">
-                    <Trophy className="w-10 h-10 text-muted-foreground" />
+                  <div className="w-20 h-20 bg-poker-surface border border-poker-border rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-sm">
+                    <Trophy className="w-10 h-10 text-poker-text-muted" />
                   </div>
-                  <h3 className="text-xl font-medium mb-3">Рейтинг формируется</h3>
-                  <p className="text-muted-foreground">Станьте первым в элитном списке игроков</p>
+                  <h3 className="text-xl font-medium mb-3 text-poker-text-primary">Рейтинг формируется</h3>
+                  <p className="text-poker-text-muted">Станьте первым в элитном списке игроков</p>
                 </div>
               ) : (
                 <>
                   {/* Champion */}
                   {topPlayers[0] && (
                     <div className="mb-12">
-                      <Card className="bg-gradient-to-br from-background via-background/50 to-background border-2 border-poker-accent/30 rounded-3xl p-8 shadow-floating relative overflow-hidden animate-fade-in">
+                      <Card className="bg-gradient-to-br from-poker-surface via-white to-poker-surface-elevated border-poker-border/50 rounded-3xl p-8 shadow-xl relative overflow-hidden">
                         <div className="absolute top-0 right-0 w-32 h-32 opacity-5">
-                          <Crown className="w-full h-full text-poker-accent" />
+                          <svg viewBox="0 0 40 40" className="w-full h-full">
+                            <defs>
+                              <pattern id="premium-pattern" x="0" y="0" width="8" height="8" patternUnits="userSpaceOnUse">
+                                <circle cx="4" cy="4" r="1" fill="currentColor"/>
+                              </pattern>
+                            </defs>
+                            <rect width="40" height="40" fill="url(#premium-pattern)"/>
+                          </svg>
                         </div>
 
                         <div className="flex items-center gap-6 relative">
@@ -273,30 +227,24 @@ export default function Rating() {
 
                           <div className="flex-grow">
                             <div className="flex items-center gap-3 mb-2">
-                              <h2 className="text-3xl font-bold text-poker-primary">
+                              <h2 className="text-3xl font-medium text-poker-text-primary">
                                 {topPlayers[0].name}
                               </h2>
-                              <Badge className="bg-gradient-to-r from-poker-accent to-poker-primary text-white">
+                              <Badge variant="outline" className="bg-gradient-to-r from-poker-accent/10 to-poker-primary/10 text-poker-accent border-poker-accent/20">
                                 Чемпион
                               </Badge>
                             </div>
-                            <div className="flex items-center gap-6 text-muted-foreground">
-                              <span className="flex items-center gap-2">
-                                <TrendingUp className="w-4 h-4" />
-                                {topPlayers[0].games_played} игр
-                              </span>
-                              <span className="flex items-center gap-2">
-                                <Trophy className="w-4 h-4" />
-                                {getWinRate(topPlayers[0].wins, topPlayers[0].games_played)}% побед
-                              </span>
+                            <div className="flex items-center gap-6 text-poker-text-muted">
+                              <span>{topPlayers[0].games_played} игр</span>
+                              <span>{getWinRate(topPlayers[0].wins, topPlayers[0].games_played)}% побед</span>
                             </div>
                           </div>
 
                           <div className="text-right">
-                            <div className="text-4xl font-bold text-poker-primary mb-1">
+                            <div className="text-4xl font-light text-poker-primary mb-1">
                               {topPlayers[0].elo_rating}
                             </div>
-                            <div className="text-sm text-muted-foreground uppercase tracking-widest">
+                            <div className="text-sm text-poker-text-muted uppercase tracking-widest">
                               ELO
                             </div>
                           </div>
@@ -306,32 +254,36 @@ export default function Rating() {
                   )}
 
                   {/* Positions 2-5 */}
-                  <div className="space-y-4 mb-8">
+                  <div className="space-y-3 mb-8">
                     {topPlayers.slice(1).map((player, index) => {
                       const position = index + 2;
                       const isTopThree = position <= 3;
                       
                       return (
                         <Card key={player.id} className={`
-                          p-6 hover:shadow-floating transition-all duration-300 relative overflow-hidden animate-fade-in
-                          ${isTopThree ? 'border-poker-accent/20 bg-gradient-to-r from-background to-background/80' : 'bg-background/60 backdrop-blur-sm'}
+                          p-5 hover:shadow-lg transition-all duration-300 relative overflow-hidden
+                          ${isTopThree ? 'bg-gradient-to-r from-poker-surface via-white to-poker-surface-elevated border-poker-accent/20' : 'bg-white/60 backdrop-blur-sm'}
                         `}>
+                          {isTopThree && (
+                            <div className="absolute inset-0 bg-gradient-to-r from-poker-accent/5 via-transparent to-poker-primary/5 rounded-2xl"></div>
+                          )}
+
                           <div className="flex items-center justify-between relative">
                             <div className="flex items-center gap-4">
-                              <div className="flex items-center justify-center w-12 h-12">
+                              <div className="flex items-center justify-center w-10 h-10">
                                 {position === 2 && (
-                                  <div className="w-10 h-10 bg-gradient-to-br from-gray-300 to-gray-500 rounded-xl flex items-center justify-center shadow-md">
+                                  <div className="w-8 h-8 bg-gradient-to-br from-gray-300 to-gray-500 rounded-lg flex items-center justify-center shadow-sm">
                                     <Medal className="w-5 h-5 text-white" />
                                   </div>
                                 )}
                                 {position === 3 && (
-                                  <div className="w-10 h-10 bg-gradient-to-br from-amber-400 to-amber-600 rounded-xl flex items-center justify-center shadow-md">
+                                  <div className="w-8 h-8 bg-gradient-to-br from-amber-400 to-amber-600 rounded-lg flex items-center justify-center shadow-sm">
                                     <Award className="w-5 h-5 text-white" />
                                   </div>
                                 )}
                                 {position > 3 && (
-                                  <div className="w-10 h-10 bg-background rounded-xl flex items-center justify-center border border-border shadow-sm">
-                                    <span className="text-muted-foreground font-semibold">
+                                  <div className="w-8 h-8 bg-poker-surface rounded-lg flex items-center justify-center border border-poker-border/30">
+                                    <span className="text-poker-text-muted font-medium text-sm">
                                       {position}
                                     </span>
                                   </div>
@@ -339,20 +291,20 @@ export default function Rating() {
                               </div>
 
                               <div className={`
-                                w-14 h-14 rounded-xl flex items-center justify-center shadow-sm text-xl
+                                w-12 h-12 rounded-xl flex items-center justify-center shadow-sm text-lg
                                 ${isTopThree 
-                                  ? 'bg-gradient-to-br from-poker-accent/20 to-poker-primary/20 border-2 border-poker-accent/30' 
-                                  : 'bg-background border border-border'
+                                  ? 'bg-gradient-to-br from-poker-accent/20 to-poker-primary/20 border border-poker-accent/30' 
+                                  : 'bg-poker-surface border border-poker-border/30'
                                 }
                               `}>
                                 {getPokerAvatar(player.name)}
                               </div>
 
                               <div>
-                                <h3 className="text-xl font-semibold text-poker-primary mb-1">
+                                <h3 className="text-lg font-medium text-poker-text-primary mb-1">
                                   {player.name}
                                 </h3>
-                                <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                                <div className="flex items-center gap-4 text-xs text-poker-text-muted">
                                   <span className="flex items-center gap-1">
                                     <TrendingUp className="w-3 h-3" />
                                     {player.games_played} игр
@@ -361,19 +313,15 @@ export default function Rating() {
                                     <Trophy className="w-3 h-3" />
                                     {getWinRate(player.wins, player.games_played)}% побед
                                   </span>
-                                  <span className="flex items-center gap-1">
-                                    <Star className="w-3 h-3" />
-                                    {player.wins} побед
-                                  </span>
                                 </div>
                               </div>
                             </div>
 
                             <div className="text-right">
-                              <div className={`text-2xl font-bold mb-1 ${isTopThree ? 'text-poker-accent' : 'text-poker-primary'}`}>
+                              <div className={`text-2xl font-light mb-1 ${isTopThree ? 'text-poker-accent' : 'text-poker-text-primary'}`}>
                                 {player.elo_rating}
                               </div>
-                              <div className="text-xs text-muted-foreground uppercase tracking-wide">
+                              <div className="text-xs text-poker-text-muted uppercase tracking-wide">
                                 ELO
                               </div>
                             </div>
@@ -383,115 +331,153 @@ export default function Rating() {
                     })}
                   </div>
 
-                  {/* Full Rating Table */}
+                  {/* Show All Players Button */}
                   {remainingPlayers.length > 0 && (
-                    <div className="space-y-6">
-                      <div className="text-center">
-                        <h2 className="text-2xl font-bold text-poker-primary mb-2">Полный рейтинг</h2>
-                        <p className="text-muted-foreground">Все игроки по убыванию рейтинга</p>
-                      </div>
-                      
-                      <Card className="p-6 bg-background/80 backdrop-blur-sm">
-                        <div className="space-y-3">
-                          {allPlayers.map((player, index) => {
-                            const position = index + 1;
-                            const isTopFive = position <= 5;
-                            
-                            return (
-                              <div key={player.id} className={`
-                                flex items-center justify-between p-4 rounded-xl transition-all duration-200
-                                ${isTopFive ? 'bg-poker-accent/5 border border-poker-accent/20' : 'hover:bg-background/50'}
-                              `}>
-                                <div className="flex items-center gap-4">
-                                  <div className={`
-                                    w-10 h-10 rounded-lg flex items-center justify-center text-sm font-semibold
-                                    ${isTopFive ? 'bg-poker-accent/20 text-poker-accent' : 'bg-background border border-border text-muted-foreground'}
-                                  `}>
-                                    {position}
+                    <div className="text-center">
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button variant="outline" className="group">
+                            <span>Показать полный рейтинг</span>
+                            <ChevronDown className="w-4 h-4 ml-2 group-hover:translate-y-1 transition-transform" />
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+                          <DialogHeader>
+                            <DialogTitle className="flex items-center gap-2">
+                              <Trophy className="w-5 h-5 text-poker-accent" />
+                              Полный рейтинг игроков
+                            </DialogTitle>
+                            <DialogDescription>
+                              Подробный рейтинг всех игроков в системе
+                            </DialogDescription>
+                          </DialogHeader>
+                          <div className="space-y-2">
+                            {allPlayers.map((player, index) => (
+                              <div key={player.id} className="flex items-center justify-between p-3 rounded-lg hover:bg-poker-surface/50 transition-colors">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-8 h-8 rounded-lg bg-poker-surface flex items-center justify-center border border-poker-border/30 text-sm font-medium">
+                                    {index + 1}
                                   </div>
-                                  <div className={`
-                                    w-12 h-12 rounded-lg flex items-center justify-center text-lg
-                                    ${isTopFive ? 'bg-poker-primary/20 border border-poker-primary/30' : 'bg-background border border-border'}
-                                  `}>
-                                    {getPokerAvatar(player.name, position === 1)}
+                                  <div className="w-10 h-10 rounded-lg bg-poker-surface border border-poker-border/30 flex items-center justify-center text-lg">
+                                    {getPokerAvatar(player.name, index === 0)}
                                   </div>
                                   <div>
-                                    <div className={`font-semibold ${isTopFive ? 'text-poker-primary' : 'text-foreground'}`}>
-                                      {player.name}
-                                      {position === 1 && <Crown className="inline w-4 h-4 ml-2 text-poker-warning" />}
-                                    </div>
-                                    <div className="text-sm text-muted-foreground">
-                                      {player.games_played} игр • {getWinRate(player.wins, player.games_played)}% побед • {player.wins} побед
+                                    <div className="font-medium text-poker-text-primary">{player.name}</div>
+                                    <div className="text-xs text-poker-text-muted">
+                                      {player.games_played} игр • {getWinRate(player.wins, player.games_played)}% побед
                                     </div>
                                   </div>
                                 </div>
-                                <div className={`text-xl font-bold ${isTopFive ? 'text-poker-accent' : 'text-poker-primary'}`}>
+                                <div className="text-lg font-light text-poker-text-primary">
                                   {player.elo_rating}
                                 </div>
                               </div>
-                            );
-                          })}
-                        </div>
-                      </Card>
+                            ))}
+                          </div>
+                        </DialogContent>
+                      </Dialog>
                     </div>
                   )}
                 </>
               )}
             </div>
+
+            {/* Statistics */}
+            <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-6 max-w-3xl mx-auto">
+              <Card className="text-center p-6 bg-white/40 backdrop-blur-sm border-poker-border/30">
+                <div className="flex items-center justify-center w-12 h-12 bg-poker-surface rounded-xl mx-auto mb-4 border border-poker-border/30">
+                  <Users className="w-6 h-6 text-poker-text-primary" />
+                </div>
+                <div className="text-3xl font-light text-poker-text-primary mb-2">
+                  {allPlayers.length}
+                </div>
+                <div className="text-sm text-poker-text-muted uppercase tracking-wide">
+                  Всего игроков
+                </div>
+              </Card>
+
+              <Card className="text-center p-6 bg-white/40 backdrop-blur-sm border-poker-border/30">
+                <div className="flex items-center justify-center w-12 h-12 bg-poker-surface rounded-xl mx-auto mb-4 border border-poker-border/30">
+                  <Trophy className="w-6 h-6 text-poker-warning" />
+                </div>
+                <div className="text-3xl font-light text-poker-text-primary mb-2">
+                  {allPlayers.reduce((sum, p) => sum + p.games_played, 0)}
+                </div>
+                <div className="text-sm text-poker-text-muted uppercase tracking-wide">
+                  Игр сыграно
+                </div>
+              </Card>
+
+              <Card className="text-center p-6 bg-white/40 backdrop-blur-sm border-poker-border/30">
+                <div className="flex items-center justify-center w-12 h-12 bg-poker-surface rounded-xl mx-auto mb-4 border border-poker-border/30">
+                  <TrendingUp className="w-6 h-6 text-poker-accent" />
+                </div>
+                <div className="text-3xl font-light text-poker-text-primary mb-2">
+                  {allPlayers.length > 0 ? Math.round(allPlayers.reduce((sum, p) => sum + p.elo_rating, 0) / allPlayers.length) : 0}
+                </div>
+                <div className="text-sm text-poker-text-muted uppercase tracking-wide">
+                  Средний ELO
+                </div>
+              </Card>
+            </div>
           </div>
         </section>
 
-        {/* Recent Tournaments Section */}
-        {recentTournaments.length > 0 && (
-          <section className="py-16 bg-background/50">
-            <div className="container mx-auto px-4">
-              <div className="text-center mb-12">
-                <h2 className="text-3xl font-bold text-poker-primary mb-4">Последние турниры</h2>
-                <p className="text-muted-foreground max-w-2xl mx-auto">
-                  Результаты недавних турниров, которые повлияли на рейтинг игроков
-                </p>
-              </div>
+        {/* Recent Tournaments */}
+        <section className="py-20 bg-poker-surface/20">
+          <div className="container mx-auto px-4">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl font-light text-poker-text-primary mb-4">
+                Последние <span className="text-poker-accent font-medium">турниры</span>
+              </h2>
+              <p className="text-poker-text-muted max-w-xl mx-auto">
+                Результаты недавних турниров и их влияние на рейтинг
+              </p>
+            </div>
 
-              <div className="max-w-4xl mx-auto">
+            <div className="max-w-4xl mx-auto">
+              {recentTournaments.length === 0 ? (
+                <div className="text-center py-12">
+                  <Clock className="w-12 h-12 text-poker-text-muted mx-auto mb-4" />
+                  <p className="text-poker-text-muted">Турниры ещё не завершились</p>
+                </div>
+              ) : (
                 <div className="space-y-4">
                   {recentTournaments.map((tournament, index) => (
-                    <Card key={tournament.tournament_id} className="p-6 hover:shadow-floating transition-all duration-300 bg-background/80 backdrop-blur-sm">
+                    <Card key={tournament.tournament_id} className="p-6 hover:shadow-lg transition-all duration-300">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
-                          <div className="w-12 h-12 bg-poker-primary/10 rounded-xl flex items-center justify-center">
-                            <Trophy className="w-6 h-6 text-poker-primary" />
+                          <div className="w-12 h-12 bg-poker-surface rounded-xl flex items-center justify-center border border-poker-border/30">
+                            <Trophy className="w-6 h-6 text-poker-accent" />
                           </div>
                           <div>
-                            <h3 className="text-lg font-semibold text-poker-primary mb-1">
+                            <h3 className="text-lg font-medium text-poker-text-primary mb-1">
                               {tournament.tournament_name}
                             </h3>
-                            <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                            <div className="flex items-center gap-4 text-sm text-poker-text-muted">
                               <span className="flex items-center gap-1">
-                                <Clock className="w-3 h-3" />
-                                {formatDate(tournament.finished_at)}
-                              </span>
-                              <span className="flex items-center gap-1">
-                                <Users className="w-3 h-3" />
+                                <Users className="w-4 h-4" />
                                 {tournament.participants} участников
                               </span>
                               <span className="flex items-center gap-1">
-                                <Crown className="w-3 h-3" />
+                                <Star className="w-4 h-4" />
                                 Победитель: {tournament.winner}
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <Clock className="w-4 h-4" />
+                                {formatDate(tournament.finished_at)}
                               </span>
                             </div>
                           </div>
                         </div>
-                        <Badge variant="outline" className="border-poker-accent/30 text-poker-accent">
-                          Завершен
-                        </Badge>
                       </div>
                     </Card>
                   ))}
                 </div>
-              </div>
+              )}
             </div>
-          </section>
-        )}
+          </div>
+        </section>
       </main>
       <Footer />
     </div>

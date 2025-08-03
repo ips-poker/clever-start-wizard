@@ -16,42 +16,7 @@ export function useCMSContent(pageSlug: string) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    let isMounted = true;
-    
-    const fetchContentSafe = async () => {
-      if (!isMounted) return;
-      await fetchContent();
-    };
-    
-    fetchContentSafe();
-    
-    // Подписываемся на изменения в реальном времени с защитой
-    const channel = supabase
-      .channel(`cms_content_${pageSlug}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'cms_content',
-          filter: `page_slug=eq.${pageSlug}`
-        },
-        () => {
-          if (isMounted) {
-            setTimeout(() => {
-              if (isMounted) fetchContent();
-            }, 100);
-          }
-        }
-      )
-      .subscribe();
-
-    return () => {
-      isMounted = false;
-      setTimeout(() => {
-        supabase.removeChannel(channel);
-      }, 50);
-    };
+    fetchContent();
   }, [pageSlug]);
 
   const fetchContent = async () => {

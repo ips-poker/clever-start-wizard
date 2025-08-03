@@ -110,16 +110,9 @@ export function FileManager() {
       for (let i = 0; i < selectedFiles.length; i++) {
         const file = selectedFiles[i];
         
-        // Имитация загрузки файла с защитой
+        // Имитация загрузки файла
         await new Promise(resolve => {
-          let isCancelled = false;
           const interval = setInterval(() => {
-            if (isCancelled) {
-              clearInterval(interval);
-              resolve(true);
-              return;
-            }
-            
             setUploadProgress(prev => {
               const newProgress = prev + (100 / selectedFiles.length) / 10;
               if (newProgress >= (i + 1) * (100 / selectedFiles.length)) {
@@ -129,9 +122,6 @@ export function FileManager() {
               return Math.min(newProgress, 100);
             });
           }, 100);
-          
-          // Cancel on component unmount
-          setTimeout(() => { isCancelled = true; }, 10000);
         });
 
         // В реальности здесь будет загрузка в Supabase Storage

@@ -111,35 +111,21 @@ const TournamentDirector = () => {
   });
 
   useEffect(() => {
-    let isMounted = true;
+    loadTournaments();
+    loadPlayers();
     
-    const loadData = async () => {
-      if (!isMounted) return;
-      await loadTournaments();
-      if (!isMounted) return;
-      await loadPlayers();
-      
-      // Restore selected tournament from localStorage
-      const savedTournamentId = localStorage.getItem('selectedTournamentId');
-      if (savedTournamentId && isMounted) {
-        // Will be set after tournaments are loaded
-      }
-    };
+    // Restore selected tournament from localStorage
+    const savedTournamentId = localStorage.getItem('selectedTournamentId');
+    if (savedTournamentId) {
+      // Will be set after tournaments are loaded
+    }
     
-    loadData();
-    
-    // Set up real-time subscriptions with proper cleanup
+    // Set up real-time subscriptions
     const tournamentsChannel = supabase
       .channel('tournaments-changes')
       .on('postgres_changes', 
         { event: '*', schema: 'public', table: 'tournaments' },
-        () => { 
-          if (isMounted) {
-            setTimeout(() => {
-              if (isMounted) loadTournaments();
-            }, 100);
-          }
-        }
+        () => { loadTournaments(); }
       )
       .subscribe();
 
@@ -147,22 +133,13 @@ const TournamentDirector = () => {
       .channel('players-changes')
       .on('postgres_changes',
         { event: '*', schema: 'public', table: 'players' },
-        () => { 
-          if (isMounted) {
-            setTimeout(() => {
-              if (isMounted) loadPlayers();
-            }, 100);
-          }
-        }
+        () => { loadPlayers(); }
       )
       .subscribe();
 
     return () => {
-      isMounted = false;
-      setTimeout(() => {
-        supabase.removeChannel(tournamentsChannel);
-        supabase.removeChannel(playersChannel);
-      }, 50);
+      supabase.removeChannel(tournamentsChannel);
+      supabase.removeChannel(playersChannel);
     };
   }, []);
 
@@ -170,24 +147,13 @@ const TournamentDirector = () => {
     let isMounted = true;
     
     if (selectedTournament) {
-      const loadData = async () => {
-        try {
-          if (!isMounted) return;
-          await loadRegistrations(selectedTournament.id);
-          
-          if (isMounted && selectedTournament.timer_remaining !== undefined) {
-            setCurrentTime(selectedTournament.timer_remaining);
-            // Save selected tournament to localStorage
-            localStorage.setItem('selectedTournamentId', selectedTournament.id);
-          }
-        } catch (error) {
-          if (isMounted) {
-            console.error('Error loading registration data:', error);
-          }
+      loadRegistrations(selectedTournament.id).then(() => {
+        if (isMounted && selectedTournament.timer_remaining !== undefined) {
+          setCurrentTime(selectedTournament.timer_remaining);
+          // Save selected tournament to localStorage
+          localStorage.setItem('selectedTournamentId', selectedTournament.id);
         }
-      };
-      
-      loadData();
+      });
     }
     
     return () => {
@@ -195,45 +161,31 @@ const TournamentDirector = () => {
     };
   }, [selectedTournament]);
 
-  // Timer effect with database sync - защищенный от DOM ошибок
+  // Timer effect with database sync
   useEffect(() => {
-    let isMounted = true;
-    
     // Clear any existing timer first
     if (timerRef.current) {
       clearInterval(timerRef.current);
       timerRef.current = null;
     }
 
-    if (timerActive && currentTime > 0 && selectedTournament && isMounted) {
+    if (timerActive && currentTime > 0 && selectedTournament) {
       timerRef.current = setInterval(() => {
-        if (!isMounted) return;
-        
         setCurrentTime(prev => {
-          if (!isMounted) return prev;
-          
           const newTime = prev - 1;
           
           // Sync with database every 5 seconds
           if (newTime % 5 === 0) {
-            setTimeout(() => {
-              if (isMounted && selectedTournament) {
-                syncTimerWithDatabase(selectedTournament.id, newTime);
-              }
-            }, 0);
+            syncTimerWithDatabase(selectedTournament.id, newTime);
           }
           
           if (newTime <= 0) {
-            if (isMounted) {
-              setTimerActive(false);
-              toast({
-                title: "Время истекло!",
-                description: "Уровень блайндов автоматически повышен",
-              });
-              setTimeout(() => {
-                if (isMounted) nextBlindLevel();
-              }, 100);
-            }
+            setTimerActive(false);
+            toast({
+              title: "Время истекло!",
+              description: "Уровень блайндов автоматически повышен",
+            });
+            nextBlindLevel();
             return 0;
           }
           return newTime;
@@ -242,7 +194,6 @@ const TournamentDirector = () => {
     }
 
     return () => {
-      isMounted = false;
       if (timerRef.current) {
         clearInterval(timerRef.current);
         timerRef.current = null;

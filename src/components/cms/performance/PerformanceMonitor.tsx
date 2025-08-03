@@ -68,27 +68,12 @@ export function PerformanceMonitor() {
   const [autoRefresh, setAutoRefresh] = useState(true);
 
   useEffect(() => {
-    let isMounted = true;
-    
-    const fetchMetricsSafe = async () => {
-      if (isMounted) await fetchMetrics();
-    };
-    
-    fetchMetricsSafe();
+    fetchMetrics();
     
     if (autoRefresh) {
-      const interval = setInterval(() => {
-        if (isMounted) fetchMetrics();
-      }, 30000); // Обновление каждые 30 секунд
-      return () => {
-        isMounted = false;
-        clearInterval(interval);
-      };
+      const interval = setInterval(fetchMetrics, 30000); // Обновление каждые 30 секунд
+      return () => clearInterval(interval);
     }
-    
-    return () => {
-      isMounted = false;
-    };
   }, [timeRange, autoRefresh]);
 
   const fetchMetrics = async () => {

@@ -73,55 +73,32 @@ const TournamentResults = ({ selectedTournament }: TournamentResultsProps) => {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    let isMounted = true;
+    loadResults();
+    loadTopPlayers();
+    loadRecentGames();
+    loadCompletedTournaments();
     
-    const loadAllData = async () => {
-      if (!isMounted) return;
-      await loadResults();
-      if (!isMounted) return;
-      await loadTopPlayers();
-      if (!isMounted) return;
-      await loadRecentGames();
-      if (!isMounted) return;
-      await loadCompletedTournaments();
-    };
-    
-    loadAllData();
-    
-    // Настройка реального времени для результатов турниров с защитой
+    // Настройка реального времени для результатов турниров
     const resultsChannel = supabase
       .channel('tournament-results-realtime')
       .on('postgres_changes',
         { event: '*', schema: 'public', table: 'game_results' },
         () => {
-          if (isMounted) {
-            setTimeout(() => {
-              if (isMounted) {
-                loadResults();
-                loadRecentGames();
-                loadCompletedTournaments();
-              }
-            }, 100);
-          }
+          loadResults();
+          loadRecentGames();
+          loadCompletedTournaments();
         }
       )
       .on('postgres_changes',
         { event: '*', schema: 'public', table: 'players' },
         () => {
-          if (isMounted) {
-            setTimeout(() => {
-              if (isMounted) loadTopPlayers();
-            }, 100);
-          }
+          loadTopPlayers();
         }
       )
       .subscribe();
 
     return () => {
-      isMounted = false;
-      setTimeout(() => {
-        supabase.removeChannel(resultsChannel);
-      }, 50);
+      supabase.removeChannel(resultsChannel);
     };
   }, [selectedTournament]);
 

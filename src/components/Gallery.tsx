@@ -5,17 +5,6 @@ import { Card } from "@/components/ui/card";
 import { X, ZoomIn, Star, Grid3X3, Grid2X2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
-// Import gallery images
-import mainPokerRoom from "@/assets/gallery/main-poker-room.jpg";
-import tournamentTable from "@/assets/gallery/tournament-table.jpg";
-import vipZone from "@/assets/gallery/vip-zone.jpg";
-import loungeArea from "@/assets/gallery/lounge-area.jpg";
-import awardsCeremony from "@/assets/gallery/awards-ceremony.jpg";
-import masterclass from "@/assets/gallery/masterclass.jpg";
-import pokerChips from "@/assets/gallery/poker-chips.jpg";
-import registration from "@/assets/gallery/registration.jpg";
-import teamTournament from "@/assets/gallery/team-tournament.jpg";
-
 interface GalleryImage {
   id: string;
   title: string;
@@ -66,7 +55,7 @@ export function Gallery() {
             id: '1',
             title: 'Главный покерный зал',
             description: 'Просторный зал с профессиональными столами',
-            image_url: mainPokerRoom,
+            image_url: '/src/assets/gallery/main-poker-room.jpg',
             alt_text: 'Главный покерный зал IPS',
             category: 'tournament',
             is_featured: true,
@@ -76,7 +65,7 @@ export function Gallery() {
             id: '2',
             title: 'Турнирный стол',
             description: 'Профессиональный турнирный стол',
-            image_url: tournamentTable,
+            image_url: '/src/assets/gallery/tournament-table.jpg',
             alt_text: 'Турнирный стол',
             category: 'tournament',
             is_featured: false,
@@ -86,7 +75,7 @@ export function Gallery() {
             id: '3',
             title: 'VIP зона',
             description: 'Эксклюзивная VIP зона для привилегированных игроков',
-            image_url: vipZone,
+            image_url: '/src/assets/gallery/vip-zone.jpg',
             alt_text: 'VIP зона',
             category: 'vip',
             is_featured: true,
@@ -96,7 +85,7 @@ export function Gallery() {
             id: '4',
             title: 'Зона отдыха',
             description: 'Комфортная зона отдыха',
-            image_url: loungeArea,
+            image_url: '/src/assets/gallery/lounge-area.jpg',
             alt_text: 'Зона отдыха',
             category: 'lounge',
             is_featured: false,
@@ -106,39 +95,9 @@ export function Gallery() {
             id: '5',
             title: 'Церемония награждения',
             description: 'Торжественная церемония награждения победителей',
-            image_url: awardsCeremony,
+            image_url: '/src/assets/gallery/awards-ceremony.jpg',
             alt_text: 'Церемония награждения',
             category: 'events',
-            is_featured: false,
-            is_active: true
-          },
-          {
-            id: '6',
-            title: 'Мастер-класс',
-            description: 'Обучающий мастер-класс по покеру',
-            image_url: masterclass,
-            alt_text: 'Мастер-класс по покеру',
-            category: 'events',
-            is_featured: false,
-            is_active: true
-          },
-          {
-            id: '7',
-            title: 'Покерные фишки',
-            description: 'Профессиональные покерные фишки',
-            image_url: pokerChips,
-            alt_text: 'Покерные фишки',
-            category: 'general',
-            is_featured: false,
-            is_active: true
-          },
-          {
-            id: '8',
-            title: 'Регистрация на турнир',
-            description: 'Стойка регистрации участников турнира',
-            image_url: registration,
-            alt_text: 'Регистрация на турнир',
-            category: 'tournament',
             is_featured: false,
             is_active: true
           }
