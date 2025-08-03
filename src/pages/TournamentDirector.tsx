@@ -178,167 +178,46 @@ const TournamentDirector = () => {
     }
   }, [toast]);
 
+  // Простая загрузка данных без real-time подписок
   useEffect(() => {
-    let mounted = true;
-    let channels: any[] = [];
-    let timeouts: NodeJS.Timeout[] = [];
-    
-    const initializeData = async () => {
-      if (!mounted) return;
+    const initData = async () => {
       try {
-        await Promise.all([loadTournaments(), loadPlayers()]);
+        await loadTournaments();
+        await loadPlayers();
       } catch (error) {
-        console.warn('Error initializing data:', error);
+        console.warn('Error loading initial data:', error);
       }
     };
     
-    initializeData();
-    
-    // Setup subscriptions with proper cleanup
-    const setupSubscriptions = () => {
-      try {
-        const tournamentsChannel = supabase
-          .channel('tournaments-changes-director-' + Date.now())
-          .on('postgres_changes', 
-            { event: '*', schema: 'public', table: 'tournaments' },
-            () => { 
-              if (!mounted) return;
-              
-              const timeoutId = setTimeout(() => {
-                if (mounted) {
-                  loadTournaments().catch(console.warn);
-                }
-              }, 1000); // Increased debounce time
-              
-              timeouts.push(timeoutId);
-            }
-          );
-        
-        channels.push(tournamentsChannel);
-        
-        tournamentsChannel.subscribe((status, err) => {
-          if (err && mounted) {
-            console.warn('Tournaments subscription error:', err);
-          }
-        });
-
-        const playersChannel = supabase
-          .channel('players-changes-director-' + Date.now())
-          .on('postgres_changes',
-            { event: '*', schema: 'public', table: 'players' },
-            () => { 
-              if (!mounted) return;
-              
-              const timeoutId = setTimeout(() => {
-                if (mounted) {
-                  loadPlayers().catch(console.warn);
-                }
-              }, 1000); // Increased debounce time
-              
-              timeouts.push(timeoutId);
-            }
-          );
-        
-        channels.push(playersChannel);
-        
-        playersChannel.subscribe((status, err) => {
-          if (err && mounted) {
-            console.warn('Players subscription error:', err);
-          }
-        });
-      } catch (error) {
-        console.warn('Error setting up subscriptions:', error);
-      }
-    };
-
-    setupSubscriptions();
-
-    return () => {
-      mounted = false;
-      
-      // Clear all timeouts
-      timeouts.forEach(timeout => {
-        if (timeout) {
-          clearTimeout(timeout);
-        }
-      });
-      
-      // Cleanup channels
-      channels.forEach(channel => {
-        try {
-          if (channel && channel.unsubscribe) {
-            channel.unsubscribe();
-          }
-        } catch (error) {
-          console.warn('Error unsubscribing channel:', error);
-        }
-      });
-      
-      // Remove channels from Supabase
-      channels.forEach(channel => {
-        try {
-          if (channel) {
-            supabase.removeChannel(channel);
-          }
-        } catch (error) {
-          console.warn('Error removing channel:', error);
-        }
-      });
-    };
+    initData();
   }, []);
 
+  // Загрузка данных турнира при выборе
   useEffect(() => {
-    let mounted = true;
-    
-    const loadTournamentData = async () => {
-      if (!selectedTournament || !mounted) return;
-      
-      try {
-        await loadRegistrations(selectedTournament.id);
-        if (mounted && selectedTournament.timer_remaining !== undefined) {
-          setCurrentTime(selectedTournament.timer_remaining);
-          localStorage.setItem('selectedTournamentId', selectedTournament.id);
-        }
-      } catch (error) {
-        console.warn('Error loading tournament data:', error);
-      }
-    };
-    
-    loadTournamentData();
-    
-    return () => {
-      mounted = false;
-    };
+    if (selectedTournament?.id) {
+      loadRegistrations(selectedTournament.id);
+      setCurrentTime(selectedTournament.timer_remaining || 0);
+      localStorage.setItem('selectedTournamentId', selectedTournament.id);
+    }
   }, [selectedTournament?.id]);
 
-  // Оптимизированный таймер с безопасной очисткой
+  // Упрощенный таймер без автоматических обновлений базы
   useEffect(() => {
-    // Clear any existing timer first
     if (timerRef.current) {
       clearInterval(timerRef.current);
       timerRef.current = null;
     }
 
-    if (timerActive && currentTime > 0 && selectedTournament) {
+    if (timerActive && currentTime > 0) {
       timerRef.current = setInterval(() => {
         setCurrentTime(prev => {
           const newTime = prev - 1;
-          
-          // Sync with database every 30 seconds to reduce load
-          if (newTime % 30 === 0 && selectedTournament) {
-            syncTimerWithDatabase(selectedTournament.id, newTime).catch(console.warn);
-          }
-          
           if (newTime <= 0) {
             setTimerActive(false);
             toast({
               title: "Время истекло!",
-              description: "Уровень блайндов автоматически повышен",
+              description: "Уровень блайндов нужно повысить вручную",
             });
-            // Use setTimeout to avoid state updates during render
-            setTimeout(() => {
-              nextBlindLevel().catch(console.warn);
-            }, 100);
             return 0;
           }
           return newTime;
@@ -352,7 +231,7 @@ const TournamentDirector = () => {
         timerRef.current = null;
       }
     };
-  }, [timerActive, selectedTournament?.id]);
+  }, [timerActive]);
 
   const createTournament = async () => {
     if (!newTournament.name || !newTournament.start_time) {
@@ -389,7 +268,10 @@ const TournamentDirector = () => {
         break_start_level: 4,
         tournament_format: "freezeout"
       });
-      loadTournaments();
+      // Перезагружаем данные вручную
+      setTimeout(() => {
+        loadTournaments();
+      }, 500);
       
       // Create default blind levels
       await createDefaultBlindLevels(data.id);
@@ -442,7 +324,10 @@ const TournamentDirector = () => {
     } else {
       toast({ title: "Успех", description: "Игрок добавлен" });
       setNewPlayer({ name: "", email: "" });
-      loadPlayers();
+      // Перезагружаем данные вручную
+      setTimeout(() => {
+        loadPlayers();
+      }, 500);
     }
   };
 
@@ -456,7 +341,10 @@ const TournamentDirector = () => {
       toast({ title: "Ошибка", description: "Не удалось запустить турнир", variant: "destructive" });
     } else {
       toast({ title: "Успех", description: "Турнир запущен" });
-      loadTournaments();
+      // Перезагружаем данные вручную
+      setTimeout(() => {
+        loadTournaments();
+      }, 500);
     }
   };
 
@@ -510,7 +398,10 @@ const TournamentDirector = () => {
         current_big_blind: newBigBlind,
         timer_remaining: newTimerTime
       });
-      loadTournaments();
+      // Перезагружаем данные вручную
+      setTimeout(() => {
+        loadTournaments();
+      }, 500);
     }
   };
 
@@ -564,7 +455,10 @@ const TournamentDirector = () => {
         current_big_blind: newBigBlind,
         timer_remaining: newTimerTime
       });
-      loadTournaments();
+      // Перезагружаем данные вручную
+      setTimeout(() => {
+        loadTournaments();
+      }, 500);
     }
   };
 
@@ -581,7 +475,10 @@ const TournamentDirector = () => {
     } else {
       toast({ title: "Турнир остановлен", description: "Турнир был принудительно остановлен" });
       setTimerActive(false);
-      loadTournaments();
+      // Перезагружаем данные вручную
+      setTimeout(() => {
+        loadTournaments();
+      }, 500);
     }
   };
 
@@ -673,8 +570,11 @@ const TournamentDirector = () => {
 
       setIsFinishDialogOpen(false);
       setTournamentResults({});
-      loadTournaments();
-      loadPlayers();
+      // Перезагружаем данные вручную
+      setTimeout(() => {
+        loadTournaments();
+        loadPlayers();
+      }, 500);
 
     } catch (error) {
       console.error('Error finishing tournament:', error);
@@ -816,9 +716,13 @@ const TournamentDirector = () => {
                   onTimerAdjust={adjustTimer}
                   onFinishTournament={() => setIsFinishDialogOpen(true)}
                   onRefresh={() => {
-                    loadTournaments();
-                    loadPlayers();
-                    loadRegistrations(selectedTournament.id);
+                    setTimeout(() => {
+                      loadTournaments();
+                      loadPlayers();
+                      if (selectedTournament?.id) {
+                        loadRegistrations(selectedTournament.id);
+                      }
+                    }, 300);
                   }}
                 />
                 
