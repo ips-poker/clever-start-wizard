@@ -108,8 +108,7 @@ export function TournamentList() {
         .from('tournament_registrations')
         .insert({
           tournament_id: tournamentId,
-          player_id: user.id,
-          registration_time: new Date().toISOString()
+          player_id: user.id
         });
 
       if (error) throw error;
