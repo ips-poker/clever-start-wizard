@@ -68,14 +68,9 @@ export default function Profile() {
     if (user) {
       loadPlayerData();
       loadTournaments();
-    }
-  }, [user]);
-
-  useEffect(() => {
-    if (player?.id) {
       loadGameResults();
     }
-  }, [player?.id]);
+  }, [user]);
 
   const loadPlayerData = async () => {
     if (!user?.email) return;
@@ -121,25 +116,18 @@ export default function Profile() {
       const { data, error } = await supabase
         .from('tournaments')
         .select(`
-          *
+          *,
+          tournament_registrations(count)
         `)
         .in('status', ['registration', 'active'])
         .order('start_time', { ascending: true });
 
       if (error) throw error;
 
-      // Get registration counts separately
-      const tournamentsWithCount = await Promise.all((data || []).map(async (tournament) => {
-        const { count } = await supabase
-          .from('tournament_registrations')
-          .select('*', { count: 'exact', head: true })
-          .eq('tournament_id', tournament.id);
-
-        return {
-          ...tournament,
-          registered_count: count || 0
-        };
-      }));
+      const tournamentsWithCount = data?.map(tournament => ({
+        ...tournament,
+        registered_count: tournament.tournament_registrations?.[0]?.count || 0
+      })) || [];
 
       setTournaments(tournamentsWithCount);
     } catch (error) {
@@ -194,50 +182,34 @@ export default function Profile() {
     change: result.elo_change
   }));
 
-  const getRankClass = (rating: number) => {
-    if (rating >= 1800) return "from-yellow-400 to-yellow-600";
-    if (rating >= 1600) return "from-purple-400 to-purple-600";
-    if (rating >= 1400) return "from-blue-400 to-blue-600";
-    if (rating >= 1200) return "from-green-400 to-green-600";
-    return "from-gray-400 to-gray-600";
-  };
-
-  const getRankTitle = (rating: number) => {
-    if (rating >= 1800) return "Мастер";
-    if (rating >= 1600) return "Эксперт";
-    if (rating >= 1400) return "Продвинутый";
-    if (rating >= 1200) return "Любитель";
-    return "Новичок";
-  };
-
   const statCards: StatCard[] = [
     {
       title: "Рейтинг ELO",
       value: player?.elo_rating || 1200,
-      description: getRankTitle(player?.elo_rating || 1200),
+      description: "Текущий рейтинг",
       icon: TrendingUp,
-      color: "text-primary"
+      color: "text-blue-500"
     },
     {
       title: "Игр сыграно",
       value: player?.games_played || 0,
       description: "Всего турниров",
       icon: Target,
-      color: "text-chart-2"
+      color: "text-green-500"
     },
     {
       title: "Побед",
       value: player?.wins || 0,
       description: "Первые места",
       icon: Trophy,
-      color: "text-chart-3"
+      color: "text-yellow-500"
     },
     {
       title: "Винрейт",
       value: player?.games_played ? `${Math.round((player.wins / player.games_played) * 100)}%` : "0%",
       description: "Процент побед",
       icon: Award,
-      color: "text-chart-4"
+      color: "text-purple-500"
     }
   ];
 
@@ -259,80 +231,41 @@ export default function Profile() {
         
         <main className="container mx-auto px-4 py-8 space-y-8">
           {/* Profile Header */}
-          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/10 via-background to-primary/5 p-8 border border-primary/10">
-            <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48cGF0dGVybiBpZD0iZ3JpZCIgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBwYXR0ZXJuVW5pdHM9InVzZXJTcGFjZU9uVXNlIj48cGF0aCBkPSJNIDQwIDAgTCAwIDAgMCA0MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJoc2wodmFyKC0tcHJpbWFyeSkpIiBzdHJva2Utd2lkdGg9IjAuNSIgb3BhY2l0eT0iMC4xIi8+PC9wYXR0ZXJuPjwvZGVmcz48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJ1cmwoI2dyaWQpIi8+PC9zdmc+')] opacity-30"></div>
+          <div className="text-center space-y-4">
+            <div className="relative inline-block">
+              <Avatar className="w-32 h-32 mx-auto border-4 border-primary/20 shadow-lg">
+                <AvatarImage src={player?.avatar_url} alt={player?.name} />
+                <AvatarFallback className="text-2xl bg-gradient-to-br from-primary to-primary/60">
+                  {player?.name?.charAt(0).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              <Button
+                onClick={() => setShowAvatarSelector(true)}
+                className="absolute -bottom-2 -right-2 rounded-full w-10 h-10 p-0"
+                size="sm"
+              >
+                ✏️
+              </Button>
+            </div>
             
-            <div className="relative z-10 text-center space-y-6">
-              <div className="relative inline-block">
-                <div className={`absolute inset-0 rounded-full bg-gradient-to-br ${getRankClass(player?.elo_rating || 1200)} opacity-20 blur-xl scale-110`}></div>
-                <Avatar className="relative w-32 h-32 mx-auto border-4 border-background shadow-2xl ring-4 ring-primary/20">
-                  <AvatarImage src={player?.avatar_url} alt={player?.name} />
-                  <AvatarFallback className="text-2xl bg-gradient-to-br from-primary to-primary/60 text-primary-foreground">
-                    {player?.name?.charAt(0).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-                <Button
-                  onClick={() => setShowAvatarSelector(true)}
-                  className="absolute -bottom-2 -right-2 rounded-full w-10 h-10 p-0 shadow-lg hover:scale-110 transition-transform"
-                  size="sm"
-                >
-                  ✏️
-                </Button>
-              </div>
-              
-              <div className="space-y-3">
-                <div className="flex items-center justify-center gap-3">
-                  <h1 className="text-3xl font-bold text-foreground">{player?.name}</h1>
-                  <Badge className={`bg-gradient-to-r ${getRankClass(player?.elo_rating || 1200)} text-white border-0 px-3 py-1 font-semibold`}>
-                    {getRankTitle(player?.elo_rating || 1200)}
-                  </Badge>
-                </div>
-                <p className="text-muted-foreground">{user?.email}</p>
-                
-                {/* Quick Stats */}
-                <div className="flex items-center justify-center gap-6 mt-4 pt-4 border-t border-primary/10">
-                  <div className="text-center">
-                    <p className="text-2xl font-bold text-primary">{player?.elo_rating || 1200}</p>
-                    <p className="text-xs text-muted-foreground">ELO Рейтинг</p>
-                  </div>
-                  <div className="w-px h-8 bg-border"></div>
-                  <div className="text-center">
-                    <p className="text-2xl font-bold text-chart-3">{player?.wins || 0}</p>
-                    <p className="text-xs text-muted-foreground">Побед</p>
-                  </div>
-                  <div className="w-px h-8 bg-border"></div>
-                  <div className="text-center">
-                    <p className="text-2xl font-bold text-chart-2">{player?.games_played || 0}</p>
-                    <p className="text-xs text-muted-foreground">Игр</p>
-                  </div>
-                </div>
-              </div>
+            <div>
+              <h1 className="text-3xl font-bold text-foreground">{player?.name}</h1>
+              <p className="text-muted-foreground">{user?.email}</p>
             </div>
           </div>
 
           {/* Stats Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {statCards.map((stat, index) => (
-              <Card key={index} className="group hover:shadow-xl transition-all duration-300 border-border/50 hover:border-primary/20 bg-gradient-to-br from-card via-card to-card/80 hover:scale-105">
-                <CardContent className="p-6 relative overflow-hidden">
-                  <div className="absolute top-0 right-0 w-16 h-16 opacity-10">
-                    <stat.icon className="w-full h-full text-primary" />
-                  </div>
-                  <div className="relative z-10">
-                    <div className="flex items-center justify-between mb-4">
-                      <div className={`p-3 rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/10`}>
-                        <stat.icon className={`h-5 w-5 ${stat.color}`} />
-                      </div>
-                      <div className="text-right">
-                        <p className="text-2xl font-bold text-foreground group-hover:text-primary transition-colors">
-                          {stat.value}
-                        </p>
-                      </div>
-                    </div>
+              <Card key={index} className="hover:shadow-lg transition-shadow border-border/50">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-muted-foreground mb-1">{stat.title}</p>
+                      <p className="text-sm font-medium text-muted-foreground">{stat.title}</p>
+                      <p className="text-2xl font-bold text-foreground">{stat.value}</p>
                       <p className="text-xs text-muted-foreground">{stat.description}</p>
                     </div>
+                    <stat.icon className={`h-8 w-8 ${stat.color}`} />
                   </div>
                 </CardContent>
               </Card>
@@ -361,152 +294,59 @@ export default function Profile() {
             </TabsList>
 
             <TabsContent value="statistics" className="space-y-6">
-              <div className="grid gap-6 md:grid-cols-2">
-                {/* ELO Chart */}
-                <Card className="border-border/50 md:col-span-2">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <TrendingUp className="h-5 w-5 text-primary" />
-                      График рейтинга ELO
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {eloData.length > 0 ? (
-                      <ResponsiveContainer width="100%" height={350}>
-                        <AreaChart data={eloData}>
-                          <defs>
-                            <linearGradient id="eloGradient" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.4}/>
-                              <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
-                            </linearGradient>
-                          </defs>
-                          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
-                          <XAxis 
-                            dataKey="game" 
-                            stroke="hsl(var(--muted-foreground))"
-                            fontSize={12}
-                            axisLine={false}
-                            tickLine={false}
-                          />
-                          <YAxis 
-                            stroke="hsl(var(--muted-foreground))"
-                            fontSize={12}
-                            axisLine={false}
-                            tickLine={false}
-                          />
-                          <Tooltip 
-                            contentStyle={{
-                              backgroundColor: 'hsl(var(--popover))',
-                              border: '1px solid hsl(var(--border))',
-                              borderRadius: '12px',
-                              boxShadow: '0 10px 40px -10px rgba(0,0,0,0.1)',
-                              fontSize: '14px'
-                            }}
-                            labelStyle={{ color: 'hsl(var(--foreground))' }}
-                            formatter={(value, name) => [
-                              <span style={{ color: 'hsl(var(--primary))' }}>{value}</span>,
-                              'ELO Рейтинг'
-                            ]}
-                            labelFormatter={(label) => `Игра ${label}`}
-                          />
-                          <Area 
-                            type="monotone" 
-                            dataKey="elo" 
-                            stroke="hsl(var(--primary))" 
-                            strokeWidth={3}
-                            fillOpacity={1}
-                            fill="url(#eloGradient)"
-                            dot={{ fill: 'hsl(var(--primary))', strokeWidth: 2, r: 4 }}
-                            activeDot={{ r: 6, stroke: 'hsl(var(--primary))', strokeWidth: 2, fill: 'hsl(var(--background))' }}
-                          />
-                        </AreaChart>
-                      </ResponsiveContainer>
-                    ) : (
-                      <div className="text-center py-16 text-muted-foreground">
-                        <div className="bg-primary/10 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                          <Target className="h-8 w-8 text-primary" />
-                        </div>
-                        <h3 className="text-lg font-medium text-foreground mb-2">Нет данных для отображения</h3>
-                        <p className="text-sm">Сыграйте несколько турниров для просмотра статистики</p>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-
-                {/* Additional Stats */}
-                <Card className="border-border/50">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Medal className="h-5 w-5 text-chart-3" />
-                      Лучшие результаты
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    {gameResults.slice(0, 3).map((result, index) => (
-                      <div key={result.id} className="flex items-center gap-3 p-3 rounded-lg bg-muted/30">
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold text-white ${
-                          result.position === 1 ? 'bg-yellow-500' :
-                          result.position === 2 ? 'bg-gray-400' :
-                          result.position === 3 ? 'bg-amber-600' : 'bg-muted'
-                        }`}>
-                          #{result.position}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium text-sm truncate">{result.tournament.name}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {new Date(result.created_at).toLocaleDateString('ru-RU')}
-                          </p>
-                        </div>
-                        <Badge variant={result.elo_change >= 0 ? "default" : "destructive"} className="text-xs">
-                          {result.elo_change >= 0 ? '+' : ''}{result.elo_change}
-                        </Badge>
-                      </div>
-                    ))}
-                    {gameResults.length === 0 && (
-                      <div className="text-center py-8 text-muted-foreground">
-                        <Trophy className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                        <p className="text-sm">Нет результатов</p>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-
-                <Card className="border-border/50">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Award className="h-5 w-5 text-chart-4" />
-                      Прогресс
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-sm">
-                        <span>До следующего ранга</span>
-                        <span className="font-medium">{Math.max(0, Math.ceil(((Math.floor(((player?.elo_rating || 1200) + 199) / 200) * 200) - (player?.elo_rating || 1200))))}</span>
-                      </div>
-                      <div className="w-full bg-muted rounded-full h-2">
-                        <div 
-                          className="bg-gradient-to-r from-primary to-primary/80 h-2 rounded-full transition-all duration-500" 
-                          style={{ 
-                            width: `${Math.min(100, (((player?.elo_rating || 1200) % 200) / 200) * 100)}%` 
+              <Card className="border-border/50">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <TrendingUp className="h-5 w-5 text-primary" />
+                    График рейтинга ELO
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {eloData.length > 0 ? (
+                    <ResponsiveContainer width="100%" height={300}>
+                      <AreaChart data={eloData}>
+                        <defs>
+                          <linearGradient id="eloGradient" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
+                            <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                        <XAxis 
+                          dataKey="game" 
+                          stroke="hsl(var(--muted-foreground))"
+                          label={{ value: 'Игра', position: 'insideBottom', offset: -5 }}
+                        />
+                        <YAxis 
+                          stroke="hsl(var(--muted-foreground))"
+                          label={{ value: 'ELO', angle: -90, position: 'insideLeft' }}
+                        />
+                        <Tooltip 
+                          contentStyle={{
+                            backgroundColor: 'hsl(var(--card))',
+                            border: '1px solid hsl(var(--border))',
+                            borderRadius: '8px'
                           }}
-                        ></div>
-                      </div>
+                        />
+                        <Area 
+                          type="monotone" 
+                          dataKey="elo" 
+                          stroke="hsl(var(--primary))" 
+                          strokeWidth={2}
+                          fillOpacity={1}
+                          fill="url(#eloGradient)"
+                        />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <div className="text-center py-12 text-muted-foreground">
+                      <Target className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                      <p>Нет данных для отображения</p>
+                      <p className="text-sm">Сыграйте несколько турниров для просмотра статистики</p>
                     </div>
-                    
-                    <div className="grid grid-cols-2 gap-4 pt-2">
-                      <div className="text-center p-3 rounded-lg bg-chart-2/10">
-                        <p className="text-xl font-bold text-chart-2">{((player?.wins || 0) / Math.max(1, player?.games_played || 1) * 100).toFixed(1)}%</p>
-                        <p className="text-xs text-muted-foreground">Winrate</p>
-                      </div>
-                      <div className="text-center p-3 rounded-lg bg-chart-3/10">
-                        <p className="text-xl font-bold text-chart-3">{Math.max(...eloData.map(d => d.elo), player?.elo_rating || 1200)}</p>
-                        <p className="text-xs text-muted-foreground">Пик ELO</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
+                  )}
+                </CardContent>
+              </Card>
             </TabsContent>
 
             <TabsContent value="tournaments" className="space-y-6">
@@ -531,68 +371,39 @@ export default function Profile() {
                 </CardHeader>
                 <CardContent>
                   {gameResults.length > 0 ? (
-                    <div className="space-y-3">
-                      {gameResults.map((result, index) => (
-                        <div key={result.id} className="group relative overflow-hidden rounded-xl border border-border/50 bg-gradient-to-r from-card to-card/80 p-4 hover:shadow-lg hover:border-primary/20 transition-all duration-300">
-                          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                          
-                          <div className="relative z-10 flex items-center justify-between">
-                            <div className="flex items-center gap-4">
-                              <div className="relative">
-                                <div className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-white shadow-lg ${
-                                  result.position === 1 ? 'bg-gradient-to-br from-yellow-400 to-yellow-600' :
-                                  result.position === 2 ? 'bg-gradient-to-br from-gray-300 to-gray-500' :
-                                  result.position === 3 ? 'bg-gradient-to-br from-amber-500 to-amber-700' : 'bg-gradient-to-br from-muted to-muted-foreground'
-                                }`}>
-                                  <span className="text-sm">#{result.position}</span>
-                                </div>
-                                {result.position <= 3 && (
-                                  <div className="absolute -top-1 -right-1">
-                                    {result.position === 1 ? '🥇' : result.position === 2 ? '🥈' : '🥉'}
-                                  </div>
-                                )}
-                              </div>
-                              
-                              <div className="space-y-1">
-                                <p className="font-semibold text-foreground group-hover:text-primary transition-colors">
-                                  {result.tournament.name}
-                                </p>
-                                <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                                  <span className="flex items-center gap-1">
-                                    <Calendar className="h-3 w-3" />
-                                    {new Date(result.created_at).toLocaleDateString('ru-RU')}
-                                  </span>
-                                  <span className="text-xs">•</span>
-                                  <span>ELO: {result.elo_before} → {result.elo_after}</span>
-                                </div>
-                              </div>
+                    <div className="space-y-4">
+                      {gameResults.map((result) => (
+                        <div key={result.id} className="flex items-center justify-between p-4 rounded-lg border border-border/50">
+                          <div className="flex items-center gap-4">
+                            <div className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-white ${
+                              result.position === 1 ? 'bg-yellow-500' :
+                              result.position === 2 ? 'bg-gray-400' :
+                              result.position === 3 ? 'bg-amber-600' : 'bg-muted'
+                            }`}>
+                              #{result.position}
                             </div>
-                            
-                            <div className="text-right space-y-2">
-                              <Badge 
-                                variant={result.elo_change >= 0 ? "default" : "destructive"}
-                                className={`font-bold ${
-                                  result.elo_change >= 0 
-                                    ? 'bg-gradient-to-r from-green-500 to-green-600 text-white border-0' 
-                                    : 'bg-gradient-to-r from-red-500 to-red-600 text-white border-0'
-                                } shadow-lg`}
-                              >
-                                {result.elo_change >= 0 ? '+' : ''}{result.elo_change}
-                              </Badge>
-                              <div className="text-xs text-muted-foreground">
-                                Изменение рейтинга
-                              </div>
+                            <div>
+                              <p className="font-medium">{result.tournament.name}</p>
+                              <p className="text-sm text-muted-foreground">
+                                {new Date(result.created_at).toLocaleDateString('ru-RU')}
+                              </p>
                             </div>
+                          </div>
+                          <div className="text-right">
+                            <Badge variant={result.elo_change >= 0 ? "default" : "destructive"}>
+                              {result.elo_change >= 0 ? '+' : ''}{result.elo_change}
+                            </Badge>
+                            <p className="text-sm text-muted-foreground mt-1">
+                              ELO: {result.elo_after}
+                            </p>
                           </div>
                         </div>
                       ))}
                     </div>
                   ) : (
-                    <div className="text-center py-16 text-muted-foreground">
-                      <div className="bg-primary/10 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                        <Calendar className="h-8 w-8 text-primary" />
-                      </div>
-                      <h3 className="text-lg font-medium text-foreground mb-2">История игр пуста</h3>
+                    <div className="text-center py-12 text-muted-foreground">
+                      <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                      <p>История игр пуста</p>
                       <p className="text-sm">Зарегистрируйтесь на турнир, чтобы начать играть</p>
                     </div>
                   )}
