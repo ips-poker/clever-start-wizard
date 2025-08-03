@@ -218,7 +218,7 @@ export function GalleryManager() {
       {
         title: 'Главный покерный зал',
         description: 'Просторный зал с профессиональными столами',
-        image_url: '/src/assets/gallery/main-poker-room.jpg',
+        image_url: 'https://images.unsplash.com/photo-1542829257-5b7bb9b6e08b?w=800&h=600&fit=crop',
         alt_text: 'Главный покерный зал IPS',
         category: 'tournament',
         display_order: 1,
@@ -228,7 +228,7 @@ export function GalleryManager() {
       {
         title: 'Турнирный стол',
         description: 'Профессиональный турнирный стол',
-        image_url: '/src/assets/gallery/tournament-table.jpg',
+        image_url: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=800&h=600&fit=crop',
         alt_text: 'Турнирный стол',
         category: 'tournament',
         display_order: 2,
@@ -238,7 +238,7 @@ export function GalleryManager() {
       {
         title: 'VIP зона',
         description: 'Эксклюзивная VIP зона для привилегированных игроков',
-        image_url: '/src/assets/gallery/vip-zone.jpg',
+        image_url: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=800&h=600&fit=crop',
         alt_text: 'VIP зона',
         category: 'vip',
         display_order: 3,
@@ -248,7 +248,7 @@ export function GalleryManager() {
       {
         title: 'Зона отдыха',
         description: 'Комфортная зона отдыха',
-        image_url: '/src/assets/gallery/lounge-area.jpg',
+        image_url: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=800&h=600&fit=crop',
         alt_text: 'Зона отдыха',
         category: 'lounge',
         display_order: 4,
@@ -258,7 +258,7 @@ export function GalleryManager() {
       {
         title: 'Церемония награждения',
         description: 'Торжественная церемония награждения победителей',
-        image_url: '/src/assets/gallery/awards-ceremony.jpg',
+        image_url: 'https://images.unsplash.com/photo-1511632765486-a01980e01a18?w=800&h=600&fit=crop',
         alt_text: 'Церемония награждения',
         category: 'events',
         display_order: 5,
@@ -453,20 +453,7 @@ export function GalleryManager() {
                   className="w-full h-48 object-cover"
                   onError={(e) => {
                     const target = e.target as HTMLImageElement;
-                    target.style.display = 'none';
-                    target.parentElement?.classList.add('flex', 'items-center', 'justify-center', 'bg-muted');
-                    const fallbackDiv = document.createElement('div');
-                    fallbackDiv.className = 'flex flex-col items-center justify-center text-muted-foreground p-4';
-                    fallbackDiv.innerHTML = `
-                      <svg class="w-12 h-12 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                      </svg>
-                      <span class="text-sm">Изображение не найдено</span>
-                    `;
-                    if (!target.parentElement?.querySelector('.fallback-content')) {
-                      fallbackDiv.classList.add('fallback-content');
-                      target.parentElement?.appendChild(fallbackDiv);
-                    }
+                    target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjNmNGY2Ii8+PGcgZmlsbD0iIzllYTNhOSI+PHN2ZyB4PSI1MCUiIHk9IjUwJSIgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoLTUwLCAtNTApIiBmaWxsPSJjdXJyZW50Q29sb3IiIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIj48cGF0aCBkPSJNNDIgNGE2IDYgMCAwIDAtNiA2djI4YTYgNiAwIDAgMCA2IDZoMTZhNiA2IDAgMCAwIDYtNlYxMGE2IDYgMCAwIDAtNi02SDQyek0zOCAxMGEyIDIgMCAwIDEgMi0yaDEwdjZINDBsLTItMlY4bDItMmgydjR6bTE2IDE2YTMgMyAwIDEgMS02IDAgMyAzIDAgMCAxIDYgMHptLTE2IDhWMTRsNCAwIDggOC0yIDJIMzhaIi8+PC9zdmc+PC9nPjx0ZXh0IHg9IjUwJSIgeT0iNzAlIiBkb21pbmFudC1iYXNlbGluZT0iY2VudHJhbCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1zaXplPSIxNiIgZmlsbD0iIzllYTNhOSI+0JjQt9C+0LHRgNCw0LbQtdC90LjQtSDQvdC1INC90LDQudC00LXQvdC+PC90ZXh0Pjwvc3ZnPg==';
                   }}
                 />
                 
