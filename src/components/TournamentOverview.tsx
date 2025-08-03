@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -113,10 +113,17 @@ const TournamentOverview = ({
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showFullscreenTimer, setShowFullscreenTimer] = useState(false);
   const { toast } = useToast();
+  const isMountedRef = useRef(true);
 
   useEffect(() => {
+    console.log('TournamentOverview mounted');
     loadSystemStats();
     loadBlindLevels();
+    
+    return () => {
+      console.log('TournamentOverview unmounting');
+      isMountedRef.current = false;
+    };
   }, []);
 
   useEffect(() => {
@@ -126,7 +133,7 @@ const TournamentOverview = ({
   }, [tournament?.id]);
 
   const loadBlindLevels = async () => {
-    if (!tournament?.id) return;
+    if (!tournament?.id || !isMountedRef.current) return;
     
     const { data, error } = await supabase
       .from('blind_levels')
@@ -134,12 +141,14 @@ const TournamentOverview = ({
       .eq('tournament_id', tournament.id)
       .order('level', { ascending: true });
 
-    if (!error && data) {
+    if (!error && data && isMountedRef.current) {
       setBlindLevels(data);
     }
   };
 
   const loadSystemStats = async () => {
+    if (!isMountedRef.current) return;
+    
     try {
       // Get active tournaments
       const { data: activeTournaments } = await supabase
@@ -161,12 +170,14 @@ const TournamentOverview = ({
       const averageRating = allPlayers?.length ? 
         Math.round(allPlayers.reduce((sum, p) => sum + p.elo_rating, 0) / allPlayers.length) : 0;
 
-      setSystemStats({
-        activeTournaments: activeTournaments?.length || 0,
-        totalPlayersInClub: allPlayers?.length || 0,
-        weeklyGames: weeklyResults?.length || 0,
-        averageRating
-      });
+      if (isMountedRef.current) {
+        setSystemStats({
+          activeTournaments: activeTournaments?.length || 0,
+          totalPlayersInClub: allPlayers?.length || 0,
+          weeklyGames: weeklyResults?.length || 0,
+          averageRating
+        });
+      }
     } catch (error) {
       console.error('Error loading system stats:', error);
     }
