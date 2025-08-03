@@ -52,20 +52,52 @@ serve(async (req) => {
             type: "session.update",
             session: {
               modalities: ["text", "audio"],
-              instructions: `Ты голосовой ассистент для управления покерными турнирами. 
-              Ты можешь выполнять следующие команды:
-              - Начать турнир (start_tournament)
-              - Остановить турнир (pause_tournament) 
-              - Возобновить турнир (resume_tournament)
-              - Завершить турнир (complete_tournament)
-              - Показать статистику турнира (show_tournament_stats)
-              - Добавить игрока (add_player)
-              - Показать список игроков (show_players)
-              - Перейти к следующему уровню блайндов (next_blind_level)
-              - Обновить таймер (update_timer)
+              instructions: `Ты профессиональный голосовой ассистент для управления покерными турнирами. 
               
-              Отвечай кратко и по делу. Всегда подтверждай выполнение команд.
-              Говори на русском языке.`,
+              ОСНОВНЫЕ КОМАНДЫ ТУРНИРА:
+              - Начать/запустить турнир
+              - Остановить/поставить на паузу турнир
+              - Возобновить/продолжить турнир
+              - Завершить/закончить турнир
+              - Показать статистику/информацию о турнире
+              
+              УПРАВЛЕНИЕ ИГРОКАМИ:
+              - Добавить игрока [имя]
+              - Удалить игрока [имя]
+              - Показать список игроков
+              - Исключить игрока из турнира
+              - Добавить ребай для игрока [имя]
+              - Добавить адон для игрока [имя]
+              - Показать рейтинг игроков
+              
+              УПРАВЛЕНИЕ БЛАЙНДАМИ И ВРЕМЕНЕМ:
+              - Перейти к следующему уровню блайндов
+              - Вернуться к предыдущему уровню
+              - Установить таймер на [X] минут
+              - Добавить [X] минут к таймеру
+              - Убавить [X] минут с таймера
+              - Перерыв на [X] минут
+              - Завершить перерыв
+              
+              СТРУКТУРА ВЫПЛАТ:
+              - Показать структуру выплат
+              - Изменить призовой фонд
+              - Добавить/убрать призовое место
+              
+              ДОПОЛНИТЕЛЬНЫЕ ФУНКЦИИ:
+              - Объявить результаты
+              - Сделать объявление для игроков
+              - Показать топ игроков
+              - Создать отчет о турнире
+              - Экспорт результатов
+              
+              НАСТРОЙКИ:
+              - Включить/выключить звуковые уведомления
+              - Изменить громкость
+              - Переключить язык
+              
+              Всегда отвечай четко и кратко. Подтверждай выполнение команд. 
+              Если команда неясна - уточняй детали. Говори только на русском языке.`,
               voice: "alloy",
               input_audio_format: "pcm16",
               output_audio_format: "pcm16",
@@ -170,19 +202,182 @@ serve(async (req) => {
                     required: ["tournament_id"]
                   }
                 },
-                {
-                  type: "function",
-                  name: "update_timer",
-                  description: "Обновить таймер турнира",
-                  parameters: {
-                    type: "object",
-                    properties: {
-                      tournament_id: { type: "string", description: "ID турнира" },
-                      minutes: { type: "number", description: "Количество минут для установки" }
-                    },
-                    required: ["tournament_id", "minutes"]
-                  }
-                }
+                 {
+                   type: "function",
+                   name: "update_timer",
+                   description: "Обновить таймер турнира",
+                   parameters: {
+                     type: "object",
+                     properties: {
+                       tournament_id: { type: "string", description: "ID турнира" },
+                       minutes: { type: "number", description: "Количество минут для установки" }
+                     },
+                     required: ["tournament_id", "minutes"]
+                   }
+                 },
+                 {
+                   type: "function",
+                   name: "remove_player",
+                   description: "Удалить игрока из турнира",
+                   parameters: {
+                     type: "object",
+                     properties: {
+                       player_name: { type: "string", description: "Имя игрока для удаления" },
+                       tournament_id: { type: "string", description: "ID турнира" }
+                     },
+                     required: ["player_name"]
+                   }
+                 },
+                 {
+                   type: "function",
+                   name: "add_rebuy",
+                   description: "Добавить ребай для игрока",
+                   parameters: {
+                     type: "object",
+                     properties: {
+                       player_name: { type: "string", description: "Имя игрока" },
+                       amount: { type: "number", description: "Сумма ребая" }
+                     },
+                     required: ["player_name"]
+                   }
+                 },
+                 {
+                   type: "function",
+                   name: "add_addon",
+                   description: "Добавить адон для игрока",
+                   parameters: {
+                     type: "object",
+                     properties: {
+                       player_name: { type: "string", description: "Имя игрока" },
+                       amount: { type: "number", description: "Сумма адона" }
+                     },
+                     required: ["player_name"]
+                   }
+                 },
+                 {
+                   type: "function",
+                   name: "previous_blind_level",
+                   description: "Вернуться к предыдущему уровню блайндов",
+                   parameters: {
+                     type: "object",
+                     properties: {
+                       tournament_id: { type: "string", description: "ID турнира" }
+                     },
+                     required: ["tournament_id"]
+                   }
+                 },
+                 {
+                   type: "function",
+                   name: "add_time",
+                   description: "Добавить время к таймеру",
+                   parameters: {
+                     type: "object",
+                     properties: {
+                       tournament_id: { type: "string", description: "ID турнира" },
+                       minutes: { type: "number", description: "Количество минут для добавления" }
+                     },
+                     required: ["tournament_id", "minutes"]
+                   }
+                 },
+                 {
+                   type: "function",
+                   name: "subtract_time",
+                   description: "Убавить время с таймера",
+                   parameters: {
+                     type: "object",
+                     properties: {
+                       tournament_id: { type: "string", description: "ID турнира" },
+                       minutes: { type: "number", description: "Количество минут для убавления" }
+                     },
+                     required: ["tournament_id", "minutes"]
+                   }
+                 },
+                 {
+                   type: "function",
+                   name: "start_break",
+                   description: "Начать перерыв",
+                   parameters: {
+                     type: "object",
+                     properties: {
+                       tournament_id: { type: "string", description: "ID турнира" },
+                       minutes: { type: "number", description: "Длительность перерыва в минутах" }
+                     },
+                     required: ["tournament_id", "minutes"]
+                   }
+                 },
+                 {
+                   type: "function",
+                   name: "end_break",
+                   description: "Завершить перерыв",
+                   parameters: {
+                     type: "object",
+                     properties: {
+                       tournament_id: { type: "string", description: "ID турнира" }
+                     },
+                     required: ["tournament_id"]
+                   }
+                 },
+                 {
+                   type: "function",
+                   name: "show_payout_structure",
+                   description: "Показать структуру выплат",
+                   parameters: {
+                     type: "object",
+                     properties: {
+                       tournament_id: { type: "string", description: "ID турнира" }
+                     },
+                     required: ["tournament_id"]
+                   }
+                 },
+                 {
+                   type: "function",
+                   name: "show_top_players",
+                   description: "Показать топ игроков по рейтингу",
+                   parameters: {
+                     type: "object",
+                     properties: {
+                       limit: { type: "number", description: "Количество игроков для показа" }
+                     }
+                   }
+                 },
+                 {
+                   type: "function",
+                   name: "make_announcement",
+                   description: "Сделать объявление для игроков",
+                   parameters: {
+                     type: "object",
+                     properties: {
+                       message: { type: "string", description: "Текст объявления" },
+                       tournament_id: { type: "string", description: "ID турнира" }
+                     },
+                     required: ["message"]
+                   }
+                 },
+                 {
+                   type: "function",
+                   name: "change_volume",
+                   description: "Изменить громкость уведомлений",
+                   parameters: {
+                     type: "object",
+                     properties: {
+                       volume: { type: "number", description: "Уровень громкости от 0 до 100" }
+                     },
+                     required: ["volume"]
+                   }
+                 },
+                 {
+                   type: "function",
+                   name: "export_results",
+                   description: "Экспорт результатов турнира",
+                   parameters: {
+                     type: "object",
+                     properties: {
+                       tournament_id: { type: "string", description: "ID турнира" },
+                       format: { type: "string", description: "Формат экспорта (pdf, excel, csv)" }
+                     },
+                     required: ["tournament_id"]
+                   }
+                 }
               ],
               tool_choice: "auto",
               temperature: 0.8,
@@ -293,6 +488,66 @@ async function handleTournamentFunction(functionName: string, args: any, callId:
         
       case 'update_timer':
         result = { success: true, message: `Таймер установлен на ${args.minutes} минут` };
+        break;
+        
+      case 'remove_player':
+        result = { success: true, message: `Игрок ${args.player_name} удален из турнира` };
+        break;
+        
+      case 'add_rebuy':
+        result = { success: true, message: `Ребай добавлен игроку ${args.player_name}${args.amount ? ` на сумму ${args.amount}` : ''}` };
+        break;
+        
+      case 'add_addon':
+        result = { success: true, message: `Адон добавлен игроку ${args.player_name}${args.amount ? ` на сумму ${args.amount}` : ''}` };
+        break;
+        
+      case 'previous_blind_level':
+        result = { success: true, message: `Возврат к предыдущему уровню блайндов в турнире ${args.tournament_id}` };
+        break;
+        
+      case 'add_time':
+        result = { success: true, message: `Добавлено ${args.minutes} минут к таймеру турнира ${args.tournament_id}` };
+        break;
+        
+      case 'subtract_time':
+        result = { success: true, message: `Убавлено ${args.minutes} минут с таймера турнира ${args.tournament_id}` };
+        break;
+        
+      case 'start_break':
+        result = { success: true, message: `Начат перерыв на ${args.minutes} минут в турнире ${args.tournament_id}` };
+        break;
+        
+      case 'end_break':
+        result = { success: true, message: `Перерыв завершен в турнире ${args.tournament_id}` };
+        break;
+        
+      case 'show_payout_structure':
+        result = { 
+          success: true, 
+          message: "Структура выплат: 1 место - 50%, 2 место - 30%, 3 место - 20%. Призовой фонд: 50,000 рублей" 
+        };
+        break;
+        
+      case 'show_top_players':
+        const limit = args.limit || 5;
+        result = { 
+          success: true, 
+          message: `Топ ${limit} игроков: 1. Алексей (1850), 2. Марина (1720), 3. Дмитрий (1680), 4. Ольга (1650), 5. Сергей (1620)` 
+        };
+        break;
+        
+      case 'make_announcement':
+        result = { success: true, message: `Объявление отправлено: "${args.message}"` };
+        break;
+        
+      case 'change_volume':
+        result = { success: true, message: `Громкость изменена на ${args.volume}%` };
+        break;
+        
+      case 'export_results':
+        const format = args.format || 'pdf';
+        result = { success: true, message: `Результаты турнира ${args.tournament_id} экспортированы в формате ${format}` };
         break;
         
       default:

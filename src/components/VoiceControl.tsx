@@ -141,37 +141,147 @@ export function VoiceControl({ selectedTournament }: VoiceControlProps) {
 
           {/* Быстрые команды */}
           {isConnected && (
-            <div className="space-y-2">
+            <div className="space-y-3">
               <p className="text-sm font-medium">Быстрые команды:</p>
-              <div className="grid grid-cols-2 gap-2">
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => sendTestCommand("Покажи статистику турнира")}
-                >
-                  Статистика турнира
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => sendTestCommand("Покажи список игроков")}
-                >
-                  Список игроков
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => sendTestCommand("Следующий уровень блайндов")}
-                >
-                  Следующий уровень
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => sendTestCommand("Установить таймер на 20 минут")}
-                >
-                  Таймер 20 мин
-                </Button>
+              
+              {/* Управление турниром */}
+              <div className="space-y-2">
+                <p className="text-xs text-muted-foreground font-medium">Управление турниром:</p>
+                <div className="grid grid-cols-2 gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => sendTestCommand("Покажи статистику турнира")}
+                  >
+                    Статистика
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => sendTestCommand("Поставить турнир на паузу")}
+                  >
+                    Пауза
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => sendTestCommand("Перерыв на 15 минут")}
+                  >
+                    Перерыв 15 мин
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => sendTestCommand("Завершить перерыв")}
+                  >
+                    Завершить перерыв
+                  </Button>
+                </div>
+              </div>
+
+              {/* Блайнды и время */}
+              <div className="space-y-2">
+                <p className="text-xs text-muted-foreground font-medium">Блайнды и время:</p>
+                <div className="grid grid-cols-2 gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => sendTestCommand("Следующий уровень блайндов")}
+                  >
+                    Следующий уровень
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => sendTestCommand("Предыдущий уровень блайндов")}
+                  >
+                    Предыдущий уровень
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => sendTestCommand("Добавить 5 минут к таймеру")}
+                  >
+                    +5 минут
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => sendTestCommand("Установить таймер на 20 минут")}
+                  >
+                    Таймер 20 мин
+                  </Button>
+                </div>
+              </div>
+
+              {/* Игроки */}
+              <div className="space-y-2">
+                <p className="text-xs text-muted-foreground font-medium">Игроки:</p>
+                <div className="grid grid-cols-2 gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => sendTestCommand("Покажи список игроков")}
+                  >
+                    Список игроков
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => sendTestCommand("Показать топ игроков")}
+                  >
+                    Топ игроков
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => sendTestCommand("Добавить ребай для Алексей")}
+                  >
+                    Добавить ребай
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => sendTestCommand("Добавить адон для Алексей")}
+                  >
+                    Добавить адон
+                  </Button>
+                </div>
+              </div>
+
+              {/* Дополнительные функции */}
+              <div className="space-y-2">
+                <p className="text-xs text-muted-foreground font-medium">Дополнительно:</p>
+                <div className="grid grid-cols-2 gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => sendTestCommand("Показать структуру выплат")}
+                  >
+                    Выплаты
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => sendTestCommand("Сделать объявление внимание игроки")}
+                  >
+                    Объявление
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => sendTestCommand("Изменить громкость на 80")}
+                  >
+                    Громкость 80%
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => sendTestCommand("Экспорт результатов в PDF")}
+                  >
+                    Экспорт PDF
+                  </Button>
+                </div>
               </div>
             </div>
           )}
@@ -223,34 +333,43 @@ export function VoiceControl({ selectedTournament }: VoiceControlProps) {
             <div>
               <h4 className="font-medium mb-2">Управление турниром:</h4>
               <ul className="space-y-1 text-muted-foreground">
-                <li>• "Начать турнир [название]"</li>
-                <li>• "Поставить турнир на паузу"</li>
+                <li>• "Начать/запустить турнир"</li>
+                <li>• "Поставить на паузу"</li>
                 <li>• "Возобновить турнир"</li>
                 <li>• "Завершить турнир"</li>
+                <li>• "Перерыв на [X] минут"</li>
+                <li>• "Завершить перерыв"</li>
               </ul>
             </div>
             <div>
-              <h4 className="font-medium mb-2">Информация:</h4>
+              <h4 className="font-medium mb-2">Блайнды и время:</h4>
               <ul className="space-y-1 text-muted-foreground">
-                <li>• "Покажи статистику турнира"</li>
-                <li>• "Покажи список игроков"</li>
                 <li>• "Следующий уровень блайндов"</li>
+                <li>• "Предыдущий уровень"</li>
                 <li>• "Установить таймер на [X] минут"</li>
+                <li>• "Добавить [X] минут"</li>
+                <li>• "Убавить [X] минут"</li>
               </ul>
             </div>
             <div>
               <h4 className="font-medium mb-2">Игроки:</h4>
               <ul className="space-y-1 text-muted-foreground">
                 <li>• "Добавить игрока [имя]"</li>
-                <li>• "Показать рейтинг игроков"</li>
+                <li>• "Удалить игрока [имя]"</li>
+                <li>• "Показать список игроков"</li>
+                <li>• "Добавить ребай для [имя]"</li>
+                <li>• "Добавить адон для [имя]"</li>
+                <li>• "Показать топ игроков"</li>
               </ul>
             </div>
             <div>
-              <h4 className="font-medium mb-2">Советы:</h4>
+              <h4 className="font-medium mb-2">Дополнительно:</h4>
               <ul className="space-y-1 text-muted-foreground">
-                <li>• Говорите четко и громко</li>
-                <li>• Дождитесь завершения ответа</li>
-                <li>• Используйте простые команды</li>
+                <li>• "Показать структуру выплат"</li>
+                <li>• "Сделать объявление [текст]"</li>
+                <li>• "Изменить громкость на [X]"</li>
+                <li>• "Экспорт результатов в PDF"</li>
+                <li>• "Покажи статистику"</li>
               </ul>
             </div>
           </div>
