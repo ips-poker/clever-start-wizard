@@ -99,27 +99,12 @@ export function EnhancedPerformanceMonitor() {
   const { toast } = useToast();
 
   useEffect(() => {
-    let isMounted = true;
-    
-    const loadData = async () => {
-      if (isMounted) {
-        await fetchPerformanceData();
-      }
-    };
-    
-    loadData();
+    fetchPerformanceData();
     
     // Real-time monitoring every 30 seconds
-    const interval = setInterval(() => {
-      if (isMounted) {
-        fetchPerformanceData();
-      }
-    }, 30000);
+    const interval = setInterval(fetchPerformanceData, 30000);
     
-    return () => {
-      isMounted = false;
-      clearInterval(interval);
-    };
+    return () => clearInterval(interval);
   }, []);
 
   const fetchPerformanceData = async () => {

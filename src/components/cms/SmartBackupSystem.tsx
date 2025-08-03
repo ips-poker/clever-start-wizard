@@ -86,20 +86,8 @@ export function SmartBackupSystem() {
   const { toast } = useToast();
 
   useEffect(() => {
-    let isMounted = true;
-    
-    const loadData = async () => {
-      if (isMounted) {
-        await fetchBackupData();
-        await runAIAnalysis();
-      }
-    };
-    
-    loadData();
-    
-    return () => {
-      isMounted = false;
-    };
+    fetchBackupData();
+    runAIAnalysis();
   }, []);
 
   const fetchBackupData = async () => {
