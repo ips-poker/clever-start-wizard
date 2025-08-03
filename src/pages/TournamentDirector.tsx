@@ -136,7 +136,25 @@ const TournamentDirector = () => {
   useEffect(() => {
     if (selectedTournament) {
       loadRegistrations(selectedTournament.id);
-      setCurrentTime(selectedTournament.timer_remaining || 0);
+      
+      // Восстановить состояние таймера из localStorage
+      const savedTimerState = localStorage.getItem(`timer_${selectedTournament.id}`);
+      if (savedTimerState) {
+        const { currentTime: savedTime, timerActive: savedActive, lastUpdate } = JSON.parse(savedTimerState);
+        const timePassed = Math.floor((Date.now() - lastUpdate) / 1000);
+        
+        if (savedActive && savedTime > timePassed) {
+          setCurrentTime(savedTime - timePassed);
+          setTimerActive(true);
+        } else {
+          setCurrentTime(savedTime);
+          setTimerActive(false);
+        }
+      } else {
+        setCurrentTime(selectedTournament.timer_remaining || selectedTournament.timer_duration || 1200);
+        setTimerActive(false);
+      }
+      
       localStorage.setItem('selectedTournamentId', selectedTournament.id);
     }
   }, [selectedTournament]);
@@ -149,8 +167,28 @@ const TournamentDirector = () => {
           const newTime = prev - 1;
           if (newTime <= 0) {
             setTimerActive(false);
+            // Сохранить завершенное состояние
+            if (selectedTournament) {
+              localStorage.setItem(`timer_${selectedTournament.id}`, JSON.stringify({
+                currentTime: 0,
+                timerActive: false,
+                lastUpdate: Date.now()
+              }));
+              updateTimerInDatabase(0);
+            }
             return 0;
           }
+          
+          // Сохранить текущее состояние каждые 10 секунд
+          if (newTime % 10 === 0 && selectedTournament) {
+            localStorage.setItem(`timer_${selectedTournament.id}`, JSON.stringify({
+              currentTime: newTime,
+              timerActive: true,
+              lastUpdate: Date.now()
+            }));
+            updateTimerInDatabase(newTime);
+          }
+          
           return newTime;
         });
       }, 1000);
@@ -158,6 +196,16 @@ const TournamentDirector = () => {
       if (timerRef.current) {
         clearInterval(timerRef.current);
         timerRef.current = null;
+      }
+      
+      // Сохранить состояние при остановке таймера
+      if (selectedTournament) {
+        localStorage.setItem(`timer_${selectedTournament.id}`, JSON.stringify({
+          currentTime,
+          timerActive: false,
+          lastUpdate: Date.now()
+        }));
+        updateTimerInDatabase(currentTime);
       }
     }
 
@@ -167,7 +215,7 @@ const TournamentDirector = () => {
         timerRef.current = null;
       }
     };
-  }, [timerActive, currentTime]);
+  }, [timerActive, currentTime, selectedTournament]);
 
   const loadTournaments = async () => {
     const { data, error } = await supabase
@@ -205,6 +253,15 @@ const TournamentDirector = () => {
     }
   };
 
+  const updateTimerInDatabase = async (timeRemaining: number) => {
+    if (!selectedTournament) return;
+    
+    await supabase
+      .from('tournaments')
+      .update({ timer_remaining: timeRemaining })
+      .eq('id', selectedTournament.id);
+  };
+
   const handleTournamentSelect = (tournament: Tournament) => {
     console.log('Selecting tournament:', tournament.id);
     setSelectedTournament(tournament);
@@ -218,13 +275,32 @@ const TournamentDirector = () => {
   };
 
   const toggleTimer = () => {
-    setTimerActive(!timerActive);
+    const newTimerActive = !timerActive;
+    setTimerActive(newTimerActive);
+    
+    // Сохранить состояние при переключении
+    if (selectedTournament) {
+      localStorage.setItem(`timer_${selectedTournament.id}`, JSON.stringify({
+        currentTime,
+        timerActive: newTimerActive,
+        lastUpdate: Date.now()
+      }));
+    }
   };
 
   const resetTimer = () => {
     if (selectedTournament) {
-      setCurrentTime(selectedTournament.timer_duration);
+      const resetTime = selectedTournament.timer_duration || 1200;
+      setCurrentTime(resetTime);
       setTimerActive(false);
+      
+      // Сохранить сброшенное состояние
+      localStorage.setItem(`timer_${selectedTournament.id}`, JSON.stringify({
+        currentTime: resetTime,
+        timerActive: false,
+        lastUpdate: Date.now()
+      }));
+      updateTimerInDatabase(resetTime);
     }
   };
 
@@ -234,6 +310,7 @@ const TournamentDirector = () => {
     const newLevel = selectedTournament.current_level + 1;
     const newSmallBlind = Math.round(selectedTournament.current_small_blind * 1.5);
     const newBigBlind = Math.round(selectedTournament.current_big_blind * 1.5);
+    const resetTime = selectedTournament.timer_duration || 1200;
 
     const { error } = await supabase
       .from('tournaments')
@@ -241,7 +318,7 @@ const TournamentDirector = () => {
         current_level: newLevel,
         current_small_blind: newSmallBlind,
         current_big_blind: newBigBlind,
-        timer_remaining: selectedTournament.timer_duration
+        timer_remaining: resetTime
       })
       .eq('id', selectedTournament.id);
 
@@ -252,8 +329,15 @@ const TournamentDirector = () => {
         current_small_blind: newSmallBlind,
         current_big_blind: newBigBlind
       });
-      setCurrentTime(selectedTournament.timer_duration);
+      setCurrentTime(resetTime);
       setTimerActive(false);
+      
+      // Сохранить новое состояние таймера
+      localStorage.setItem(`timer_${selectedTournament.id}`, JSON.stringify({
+        currentTime: resetTime,
+        timerActive: false,
+        lastUpdate: Date.now()
+      }));
     }
   };
 
@@ -263,6 +347,7 @@ const TournamentDirector = () => {
     const newLevel = selectedTournament.current_level - 1;
     const newSmallBlind = Math.round(selectedTournament.current_small_blind / 1.5);
     const newBigBlind = Math.round(selectedTournament.current_big_blind / 1.5);
+    const resetTime = selectedTournament.timer_duration || 1200;
 
     const { error } = await supabase
       .from('tournaments')
@@ -270,7 +355,7 @@ const TournamentDirector = () => {
         current_level: newLevel,
         current_small_blind: newSmallBlind,
         current_big_blind: newBigBlind,
-        timer_remaining: selectedTournament.timer_duration
+        timer_remaining: resetTime
       })
       .eq('id', selectedTournament.id);
 
@@ -281,8 +366,15 @@ const TournamentDirector = () => {
         current_small_blind: newSmallBlind,
         current_big_blind: newBigBlind
       });
-      setCurrentTime(selectedTournament.timer_duration);
+      setCurrentTime(resetTime);
       setTimerActive(false);
+      
+      // Сохранить новое состояние таймера
+      localStorage.setItem(`timer_${selectedTournament.id}`, JSON.stringify({
+        currentTime: resetTime,
+        timerActive: false,
+        lastUpdate: Date.now()
+      }));
     }
   };
 
@@ -302,7 +394,18 @@ const TournamentDirector = () => {
   };
 
   const onTimerAdjust = (seconds: number) => {
-    setCurrentTime(prev => Math.max(0, prev + seconds));
+    const newTime = Math.max(0, currentTime + seconds);
+    setCurrentTime(newTime);
+    
+    // Сохранить изменение
+    if (selectedTournament) {
+      localStorage.setItem(`timer_${selectedTournament.id}`, JSON.stringify({
+        currentTime: newTime,
+        timerActive,
+        lastUpdate: Date.now()
+      }));
+      updateTimerInDatabase(newTime);
+    }
   };
 
   const onFinishTournament = async () => {
@@ -336,6 +439,7 @@ const TournamentDirector = () => {
       if (selectedTournament?.id === id) {
         setSelectedTournament(null);
         localStorage.removeItem('selectedTournamentId');
+        localStorage.removeItem(`timer_${id}`);
       }
     }
   };
