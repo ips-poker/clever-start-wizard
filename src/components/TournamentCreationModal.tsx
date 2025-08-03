@@ -18,6 +18,7 @@ import {
   DollarSign, 
   Target, 
   Timer,
+  Calculator,
   AlertTriangle,
   Settings,
   Trophy,
@@ -715,6 +716,15 @@ export function TournamentCreationModal({ open, onOpenChange, tournament, onTour
                     >
                       Гипер
                     </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setActiveTab('advanced')}
+                      className="text-blue-600 border-blue-200"
+                    >
+                      <Settings className="w-4 h-4 mr-1" />
+                      Детальная настройка
+                    </Button>
                   </div>
                 </div>
               </CardHeader>
@@ -789,8 +799,11 @@ export function TournamentCreationModal({ open, onOpenChange, tournament, onTour
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Settings className="w-5 h-5" />
-                  Дополнительные настройки
+                  Расширенные настройки
                 </CardTitle>
+                <CardDescription>
+                  Детальная настройка турнира и предпросмотр результата
+                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="flex items-center justify-between">
@@ -804,6 +817,75 @@ export function TournamentCreationModal({ open, onOpenChange, tournament, onTour
                     checked={formData.is_published}
                     onCheckedChange={(checked) => updateFormData('is_published', checked)}
                   />
+                </div>
+
+                <Separator />
+
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-base font-medium">Расчет призового фонда</Label>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => {
+                        // Здесь можно добавить предпросмотр призового фонда
+                        toast({
+                          title: "Расчет призового фонда",
+                          description: `Базовый призовой фонд: ${(formData.buy_in * formData.max_players).toLocaleString()} ₽`
+                        });
+                      }}
+                    >
+                      <Calculator className="w-4 h-4 mr-2" />
+                      Предпросмотр
+                    </Button>
+                  </div>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm bg-muted/30 rounded-lg p-4">
+                    <div>
+                      <span className="text-muted-foreground">Бай-ин:</span>
+                      <p className="font-medium">{formData.buy_in.toLocaleString()} ₽</p>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Макс. игроков:</span>
+                      <p className="font-medium">{formData.max_players}</p>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Базовый призовой фонд:</span>
+                      <p className="font-medium">{(formData.buy_in * formData.max_players).toLocaleString()} ₽</p>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">+ Ребаи/Адоны:</span>
+                      <p className="font-medium text-green-600">Дополнительно</p>
+                    </div>
+                  </div>
+                </div>
+
+                <Separator />
+
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-base font-medium">Быстрый доступ к управлению</Label>
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        disabled
+                        className="opacity-50"
+                      >
+                        Структура блайндов
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        disabled
+                        className="opacity-50"
+                      >
+                        Призовой фонд
+                      </Button>
+                    </div>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    После создания турнира эти функции будут доступны во вкладке "Управление" турнирного директора
+                  </p>
                 </div>
 
                 <Separator />
