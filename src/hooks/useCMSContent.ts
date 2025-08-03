@@ -75,6 +75,12 @@ export function useCMSContent(pageSlug: string): UseCMSContentResult {
   }, [pageSlug]);
 
   const setupRealtimeSubscription = useCallback(() => {
+    // Temporarily disable realtime subscriptions to stop connection spam
+    console.log('CMS realtime subscriptions temporarily disabled to reduce server load');
+    return;
+    
+    // Note: Code below is commented out to prevent connection loops
+    /*
     // Clean up existing subscription
     if (channelRef.current) {
       console.log('CMS realtime subscription cleaning up...');
@@ -84,7 +90,7 @@ export function useCMSContent(pageSlug: string): UseCMSContentResult {
 
     // Rate limiting - prevent too frequent reconnections
     const now = Date.now();
-    if (now - lastReconnectTime.current < 10000) { // Increased to 10 seconds
+    if (now - lastReconnectTime.current < 30000) { // Increased to 30 seconds
       console.log('CMS realtime subscription rate limited, skipping...');
       return;
     }
@@ -92,7 +98,7 @@ export function useCMSContent(pageSlug: string): UseCMSContentResult {
 
     console.log('CMS setting up new realtime subscription for:', pageSlug);
     channelRef.current = supabase
-      .channel(`cms_${pageSlug}`)
+      .channel(`cms_${pageSlug}_${Math.random().toString(36).substr(2, 9)}`)
       .on(
         'postgres_changes',
         {
@@ -116,15 +122,16 @@ export function useCMSContent(pageSlug: string): UseCMSContentResult {
         console.log(`CMS realtime subscription status: ${status}`);
         if (status === 'CLOSED') {
           console.error('CMS realtime subscription error, retrying...');
-          // Retry subscription after a delay
-          setTimeout(setupRealtimeSubscription, 5000);
+          // Don't auto-retry to prevent loops
         }
       });
+    */
   }, [pageSlug, fetchContent]);
 
   useEffect(() => {
     fetchContent();
-    setupRealtimeSubscription();
+    // Temporarily disable realtime subscriptions
+    // setupRealtimeSubscription();
 
     return () => {
       if (retryTimeoutRef.current) {
@@ -134,7 +141,7 @@ export function useCMSContent(pageSlug: string): UseCMSContentResult {
         supabase.removeChannel(channelRef.current);
       }
     };
-  }, [fetchContent, setupRealtimeSubscription]);
+  }, [fetchContent]);
 
   const getContent = useCallback((key: string, fallback: string = '') => {
     return content[key] || fallback;
