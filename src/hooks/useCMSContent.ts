@@ -103,7 +103,7 @@ export function useCMSContent(pageSlug: string): UseCMSContentResult {
       )
       .subscribe((status) => {
         console.log(`CMS realtime subscription status: ${status}`);
-        if (status === 'SUBSCRIPTION_ERROR') {
+        if (status === 'CLOSED') {
           console.error('CMS realtime subscription error, retrying...');
           // Retry subscription after a delay
           setTimeout(setupRealtimeSubscription, 5000);

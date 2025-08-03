@@ -20,7 +20,7 @@ export function useSEOManager() {
         .order('page_slug');
 
       if (error) throw error;
-      return data || [];
+      return (data || []) as SEOData[];
     } catch (err: any) {
       const errorMessage = err.message || 'Failed to fetch SEO data';
       setError({ message: errorMessage, code: err.code });
@@ -36,7 +36,7 @@ export function useSEOManager() {
   }, [toast]);
 
   const saveSEOData = useCallback(async (
-    seoData: Partial<SEOData>,
+    seoData: any,
     id?: string
   ): Promise<SEOData | null> => {
     setSaving(true);
@@ -58,11 +58,11 @@ export function useSEOManager() {
           description: "SEO данные обновлены",
         });
         
-        return data;
+        return data as SEOData;
       } else {
         const { data, error } = await supabase
           .from('cms_seo')
-          .insert([seoData])
+          .insert(seoData)
           .select()
           .single();
           
@@ -73,7 +73,7 @@ export function useSEOManager() {
           description: "SEO данные созданы",
         });
         
-        return data;
+        return data as SEOData;
       }
     } catch (err: any) {
       const errorMessage = err.message || 'Failed to save SEO data';

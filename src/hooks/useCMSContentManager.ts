@@ -22,11 +22,11 @@ export function useCMSContentManager() {
 
       if (error) throw error;
 
-      const grouped = (data || []).reduce((acc: Record<string, PageContent>, item: CMSContent) => {
+      const grouped = (data || []).reduce((acc: Record<string, PageContent>, item: any) => {
         if (!acc[item.page_slug]) {
           acc[item.page_slug] = {};
         }
-        acc[item.page_slug][item.content_key] = item;
+        acc[item.page_slug][item.content_key] = item as CMSContent;
         return acc;
       }, {});
 
@@ -111,7 +111,7 @@ export function useCMSContentManager() {
         description: "Новый элемент контента добавлен",
       });
 
-      return data;
+      return data as CMSContent;
     } catch (err: any) {
       const errorMessage = err.message || 'Failed to add content';
       setError({ message: errorMessage, code: err.code });

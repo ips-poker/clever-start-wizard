@@ -168,11 +168,10 @@ export function ContentPageEditor({
                           {typeInfo.label}
                         </Badge>
                         <div className="flex items-center space-x-2">
-                          <Switch
-                            checked={item.is_active}
-                            onCheckedChange={() => onToggleActive(contentKey)}
-                            size="sm"
-                          />
+                           <Switch
+                             checked={item.is_active}
+                             onCheckedChange={() => onToggleActive(contentKey)}
+                           />
                           <span className="text-xs text-muted-foreground">
                             {item.is_active ? 'Активен' : 'Неактивен'}
                           </span>

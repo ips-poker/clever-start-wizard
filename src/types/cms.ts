@@ -7,7 +7,7 @@ export interface CMSContent {
   is_active: boolean;
   created_at: string;
   updated_at: string;
-  meta_data?: Record<string, any>;
+  meta_data?: any;
 }
 
 export interface SEOData {
@@ -21,7 +21,7 @@ export interface SEOData {
   og_image: string | null;
   canonical_url: string | null;
   robots_meta: string;
-  schema_markup?: Record<string, any>;
+  schema_markup?: any;
 }
 
 export interface PageContent {
