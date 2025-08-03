@@ -112,53 +112,84 @@ const TournamentDirector = () => {
 
   useEffect(() => {
     let mounted = true;
+    let channels: any[] = [];
     
     const initializeData = async () => {
       if (mounted) {
-        await loadTournaments();
-        await loadPlayers();
+        try {
+          await loadTournaments();
+          await loadPlayers();
+        } catch (error) {
+          console.warn('Error initializing data:', error);
+        }
       }
     };
     
     initializeData();
     
     // Set up real-time subscriptions with error handling
-    const tournamentsChannel = supabase
-      .channel('tournaments-changes-director')
-      .on('postgres_changes', 
-        { event: '*', schema: 'public', table: 'tournaments' },
-        () => { 
-          if (mounted) {
-            loadTournaments();
+    try {
+      const tournamentsChannel = supabase
+        .channel('tournaments-changes-director')
+        .on('postgres_changes', 
+          { event: '*', schema: 'public', table: 'tournaments' },
+          () => { 
+            if (mounted) {
+              try {
+                loadTournaments();
+              } catch (error) {
+                console.warn('Error loading tournaments in subscription:', error);
+              }
+            }
           }
-        }
-      )
-      .subscribe((status, err) => {
-        if (err) {
+        );
+      
+      channels.push(tournamentsChannel);
+      
+      tournamentsChannel.subscribe((status, err) => {
+        if (err && mounted) {
           console.warn('Tournaments subscription error:', err);
         }
       });
 
-    const playersChannel = supabase
-      .channel('players-changes-director')
-      .on('postgres_changes',
-        { event: '*', schema: 'public', table: 'players' },
-        () => { 
-          if (mounted) {
-            loadPlayers();
+      const playersChannel = supabase
+        .channel('players-changes-director')
+        .on('postgres_changes',
+          { event: '*', schema: 'public', table: 'players' },
+          () => { 
+            if (mounted) {
+              try {
+                loadPlayers();
+              } catch (error) {
+                console.warn('Error loading players in subscription:', error);
+              }
+            }
           }
-        }
-      )
-      .subscribe((status, err) => {
-        if (err) {
+        );
+      
+      channels.push(playersChannel);
+      
+      playersChannel.subscribe((status, err) => {
+        if (err && mounted) {
           console.warn('Players subscription error:', err);
         }
       });
+    } catch (error) {
+      console.warn('Error setting up subscriptions:', error);
+    }
 
     return () => {
       mounted = false;
-      supabase.removeChannel(tournamentsChannel);
-      supabase.removeChannel(playersChannel);
+      // Safely cleanup all channels
+      channels.forEach(channel => {
+        try {
+          if (channel) {
+            supabase.removeChannel(channel);
+          }
+        } catch (error) {
+          console.warn('Error removing channel:', error);
+        }
+      });
     };
   }, []);
 
@@ -268,18 +299,24 @@ const TournamentDirector = () => {
   };
 
   const loadRegistrations = async (tournamentId: string) => {
-    const { data, error } = await supabase
-      .from('tournament_registrations')
-      .select(`
-        *,
-        player:players(*)
-      `)
-      .eq('tournament_id', tournamentId);
+    try {
+      const { data, error } = await supabase
+        .from('tournament_registrations')
+        .select(`
+          *,
+          player:players(*)
+        `)
+        .eq('tournament_id', tournamentId);
 
-    if (error) {
-      toast({ title: "Ошибка", description: "Не удалось загрузить регистрации", variant: "destructive" });
-    } else {
-      setRegistrations(data || []);
+      if (error) {
+        console.error('Registration loading error:', error);
+        toast({ title: "Ошибка", description: "Не удалось загрузить регистрации", variant: "destructive" });
+      } else {
+        setRegistrations(data || []);
+      }
+    } catch (error) {
+      console.error('Unexpected error loading registrations:', error);
+      toast({ title: "Ошибка", description: "Неожиданная ошибка при загрузке регистраций", variant: "destructive" });
     }
   };
 
