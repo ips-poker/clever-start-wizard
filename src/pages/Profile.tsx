@@ -89,13 +89,10 @@ export default function Profile() {
 
       if (error && error.code === 'PGRST116') {
         // Player doesn't exist, create one
-        const playerName = userProfile?.full_name || user.email?.split('@')[0] || 'Player';
-        const uniqueName = `${playerName}_${Date.now()}`; // Make name unique
-        
         const { data: newPlayer, error: createError } = await supabase
           .from('players')
           .insert([{ 
-            name: uniqueName,
+            name: userProfile?.full_name || user.email?.split('@')[0] || 'Player',
             email: user.email,
             elo_rating: 1200
           }])

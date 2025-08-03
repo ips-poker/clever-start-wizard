@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -29,10 +29,14 @@ interface TournamentRegistrationProps {
 export function TournamentRegistration({ tournaments, playerId, onRegistrationUpdate }: TournamentRegistrationProps) {
   const [registeredTournaments, setRegisteredTournaments] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState<string>("");
-  const [tournamentCounts, setTournamentCounts] = useState<Record<string, number>>({});
-  const [isInitialLoading, setIsInitialLoading] = useState(false);
 
-  const loadRegistrations = useCallback(async () => {
+  useEffect(() => {
+    if (playerId) {
+      loadRegistrations();
+    }
+  }, [playerId]);
+
+  const loadRegistrations = async () => {
     if (!playerId) return;
 
     try {
@@ -48,48 +52,7 @@ export function TournamentRegistration({ tournaments, playerId, onRegistrationUp
     } catch (error) {
       console.error('Error loading registrations:', error);
     }
-  }, [playerId]);
-
-  const loadTournamentCounts = useCallback(async () => {
-    if (tournaments.length === 0) return;
-
-    try {
-      // Загружаем счетчики пакетно для оптимизации
-      const tournamentIds = tournaments.map(t => t.id);
-      
-      const { data, error } = await supabase
-        .from('tournament_registrations')
-        .select('tournament_id')
-        .in('tournament_id', tournamentIds);
-
-      if (error) throw error;
-
-      // Подсчитываем регистрации для каждого турнира
-      const counts: Record<string, number> = {};
-      tournamentIds.forEach(id => {
-        counts[id] = data?.filter(reg => reg.tournament_id === id).length || 0;
-      });
-      
-      setTournamentCounts(counts);
-    } catch (error) {
-      console.error('Error loading tournament counts:', error);
-    }
-  }, [tournaments]);
-
-  useEffect(() => {
-    const loadData = async () => {
-      if (playerId && tournaments.length > 0) {
-        setIsInitialLoading(true);
-        try {
-          await Promise.all([loadRegistrations(), loadTournamentCounts()]);
-        } finally {
-          setIsInitialLoading(false);
-        }
-      }
-    };
-    
-    loadData();
-  }, [playerId, tournaments.length]);
+  };
 
   const handleRegister = async (tournamentId: string) => {
     if (!playerId) {
@@ -118,11 +81,6 @@ export function TournamentRegistration({ tournaments, playerId, onRegistrationUp
       }
 
       setRegisteredTournaments(prev => new Set([...prev, tournamentId]));
-      // Обновляем счетчик локально
-      setTournamentCounts(prev => ({
-        ...prev,
-        [tournamentId]: (prev[tournamentId] || 0) + 1
-      }));
       onRegistrationUpdate();
       toast("Успешно зарегистрированы на турнир!");
     } catch (error) {
@@ -152,11 +110,6 @@ export function TournamentRegistration({ tournaments, playerId, onRegistrationUp
         newSet.delete(tournamentId);
         return newSet;
       });
-      // Обновляем счетчик локально
-      setTournamentCounts(prev => ({
-        ...prev,
-        [tournamentId]: Math.max(0, (prev[tournamentId] || 0) - 1)
-      }));
       onRegistrationUpdate();
       toast("Регистрация отменена");
     } catch (error) {
@@ -208,9 +161,6 @@ export function TournamentRegistration({ tournaments, playerId, onRegistrationUp
       <div className="flex items-center gap-2 mb-6">
         <Trophy className="h-6 w-6 text-primary" />
         <h2 className="text-2xl font-bold text-foreground">Доступные турниры</h2>
-        {isInitialLoading && (
-          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary"></div>
-        )}
       </div>
 
       <div className="grid gap-6">
@@ -274,9 +224,9 @@ export function TournamentRegistration({ tournaments, playerId, onRegistrationUp
                     <Users className="h-4 w-4 text-muted-foreground" />
                     <div>
                       <p className="font-medium text-foreground">Игроки</p>
-                       <p className="text-muted-foreground">
-                         {tournamentCounts[tournament.id] || tournament.registered_count || 0}/{tournament.max_players}
-                       </p>
+                      <p className="text-muted-foreground">
+                        {tournament.registered_count || 0}/{tournament.max_players}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -309,7 +259,7 @@ export function TournamentRegistration({ tournaments, playerId, onRegistrationUp
                       ) : (
                         <Button
                           onClick={() => handleRegister(tournament.id)}
-                          disabled={isLoading || (tournamentCounts[tournament.id] || tournament.registered_count || 0) >= tournament.max_players}
+                          disabled={isLoading || (tournament.registered_count || 0) >= tournament.max_players}
                           className="gap-2"
                         >
                           {isLoading ? (
@@ -317,7 +267,7 @@ export function TournamentRegistration({ tournaments, playerId, onRegistrationUp
                           ) : (
                             <UserPlus className="h-4 w-4" />
                           )}
-                          {(tournamentCounts[tournament.id] || tournament.registered_count || 0) >= tournament.max_players ? 'Нет мест' : 'Зарегистрироваться'}
+                          {(tournament.registered_count || 0) >= tournament.max_players ? 'Нет мест' : 'Зарегистрироваться'}
                         </Button>
                       )
                     ) : tournament.status === 'active' ? (
