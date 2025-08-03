@@ -691,16 +691,32 @@ const TournamentDirector = () => {
         <Tabs 
           key={`tabs-${activeTab}-${selectedTournament?.id || 'none'}`}
           value={activeTab} 
-          onValueChange={(value) => {
+          onValueChange={async (value) => {
             console.log('Tab change start:', activeTab, '->', value);
             
-            // Закроем все открытые popover/dropdown перед переключением
-            document.querySelectorAll('[data-radix-popper-content-wrapper]').forEach(el => {
-              const parent = el.parentElement;
-              if (parent && parent.parentElement) {
-                parent.parentElement.style.display = 'none';
-              }
-            });
+            // Агрессивная очистка всех Radix порталов
+            const cleanupRadixPortals = () => {
+              // Закрываем все dropdown меню
+              document.querySelectorAll('[data-radix-dropdown-menu-content]').forEach(el => el.remove());
+              document.querySelectorAll('[data-radix-select-content]').forEach(el => el.remove());
+              document.querySelectorAll('[data-radix-popover-content]').forEach(el => el.remove());
+              document.querySelectorAll('[data-radix-tooltip-content]').forEach(el => el.remove());
+              document.querySelectorAll('[data-radix-dialog-content]').forEach(el => el.remove());
+              
+              // Очищаем все popper обертки
+              document.querySelectorAll('[data-radix-popper-content-wrapper]').forEach(el => {
+                el.remove();
+              });
+              
+              // Очищаем все overlay элементы
+              document.querySelectorAll('[data-radix-select-viewport]').forEach(el => {
+                const parent = el.closest('[data-radix-portal]');
+                if (parent) parent.remove();
+              });
+            };
+            
+            // Выполняем очистку
+            cleanupRadixPortals();
             
             // Остановим таймер при переключении
             if (timerRef.current) {
@@ -709,8 +725,11 @@ const TournamentDirector = () => {
               setTimerActive(false);
             }
             
-            setActiveTab(value);
-            console.log('Tab change complete:', value);
+            // Добавляем небольшую задержку для завершения очистки DOM
+            setTimeout(() => {
+              setActiveTab(value);
+              console.log('Tab change complete:', value);
+            }, 50);
           }} 
           className="space-y-10"
         >
