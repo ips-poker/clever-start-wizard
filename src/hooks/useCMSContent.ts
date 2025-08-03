@@ -83,13 +83,14 @@ export function useCMSContent(pageSlug: string): UseCMSContentResult {
     }
 
     // Rate limiting - prevent too frequent reconnections
-    if (Date.now() - lastReconnectTime.current < 5000) {
+    const now = Date.now();
+    if (now - lastReconnectTime.current < 10000) { // Increased to 10 seconds
       console.log('CMS realtime subscription rate limited, skipping...');
       return;
     }
-    lastReconnectTime.current = Date.now();
+    lastReconnectTime.current = now;
 
-    // Create new subscription with simplified channel name
+    console.log('CMS setting up new realtime subscription for:', pageSlug);
     channelRef.current = supabase
       .channel(`cms_${pageSlug}`)
       .on(
