@@ -21,8 +21,10 @@ function App() {
   return (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <Toaster />
-      <Sonner />
+      <div className="notranslate" translate="no">
+        <Toaster />
+        <Sonner />
+      </div>
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
