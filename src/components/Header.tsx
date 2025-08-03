@@ -112,12 +112,6 @@ export function Header() {
                       {user?.email}
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <Link to="/profile">
-                      <DropdownMenuItem>
-                        <User className="w-4 h-4 mr-2" />
-                        Личный кабинет
-                      </DropdownMenuItem>
-                    </Link>
                     <DropdownMenuItem onClick={handleSignOut}>
                       <LogOut className="w-4 h-4 mr-2" />
                       Выйти
@@ -197,16 +191,6 @@ export function Header() {
                     <div className="text-sm text-muted-foreground mb-2">
                       {user?.email}
                     </div>
-                    <Link to="/profile" onClick={() => setIsMenuOpen(false)}>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="w-full justify-start"
-                      >
-                        <User className="w-4 h-4 mr-2" />
-                        Личный кабинет
-                      </Button>
-                    </Link>
                     <Button 
                       variant="ghost" 
                       size="sm" 
