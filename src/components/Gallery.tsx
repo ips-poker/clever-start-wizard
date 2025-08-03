@@ -151,32 +151,32 @@ export function Gallery() {
   }
 
   return (
-    <section className="py-20 bg-background">
+    <section className="py-12 lg:py-20 bg-background">
       <div className="container mx-auto px-4">
         {/* Header */}
-        <div className="text-center mb-12">
-          <Badge variant="outline" className="mb-4 border-poker-gold text-poker-gold">
+        <div className="text-center mb-8 lg:mb-12">
+          <Badge variant="outline" className="mb-4 border-poker-gold text-poker-gold text-xs lg:text-sm">
             Галерея IPS
           </Badge>
-          <h2 className="text-4xl font-bold text-foreground mb-4">
+          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground mb-4">
             Наш покерный клуб
           </h2>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-base lg:text-xl text-muted-foreground max-w-2xl mx-auto px-4 leading-relaxed">
             Познакомьтесь с атмосферой премиального покерного клуба IPS
           </p>
         </div>
 
         {/* Controls */}
-        <div className="flex flex-col sm:flex-row justify-between items-center mb-8 gap-4">
+        <div className="flex flex-col gap-4 mb-6 lg:mb-8">
           {/* Category Filter */}
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2 justify-center">
             {categories.map((category) => (
               <Button
                 key={category.value}
                 variant={selectedCategory === category.value ? "default" : "outline"}
                 size="sm"
                 onClick={() => setSelectedCategory(category.value)}
-                className={selectedCategory === category.value ? "bg-poker-accent text-white" : ""}
+                className={`touch-target text-xs lg:text-sm px-3 lg:px-4 ${selectedCategory === category.value ? "bg-poker-accent text-white" : ""}`}
               >
                 {category.label}
               </Button>
@@ -184,26 +184,30 @@ export function Gallery() {
           </div>
 
           {/* Grid Size Toggle */}
-          <div className="flex gap-2">
+          <div className="flex gap-2 justify-center">
             <Button
               variant={gridSize === 2 ? "default" : "outline"}
               size="sm"
               onClick={() => setGridSize(2)}
+              className="touch-target"
             >
               <Grid2X2 className="w-4 h-4" />
+              <span className="ml-2 hidden sm:inline">2 колонки</span>
             </Button>
             <Button
               variant={gridSize === 3 ? "default" : "outline"}
               size="sm"
               onClick={() => setGridSize(3)}
+              className="touch-target"
             >
               <Grid3X3 className="w-4 h-4" />
+              <span className="ml-2 hidden sm:inline">3 колонки</span>
             </Button>
           </div>
         </div>
 
         {/* Image Grid */}
-        <div className={`grid gap-6 ${gridSize === 2 ? 'md:grid-cols-2' : 'md:grid-cols-2 lg:grid-cols-3'}`}>
+        <div className={`grid gap-4 lg:gap-6 ${gridSize === 2 ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'}`}>
           {filteredImages.length === 0 ? (
             <div className="col-span-full text-center py-12">
               <p className="text-muted-foreground">Нет изображений для отображения</p>
@@ -215,31 +219,31 @@ export function Gallery() {
                 <img
                   src={image.image_url}
                   alt={image.alt_text || image.title}
-                  className="w-full h-64 object-cover transition-transform duration-300 group-hover:scale-105"
+                  className="w-full h-48 lg:h-64 object-cover transition-transform duration-300 group-hover:scale-105"
                   onClick={() => setSelectedImage(image)}
                 />
                 
                 {/* Featured Badge */}
                 {image.is_featured && (
-                  <div className="absolute top-3 left-3">
-                    <Badge className="bg-poker-gold text-background">
+                  <div className="absolute top-2 lg:top-3 left-2 lg:left-3">
+                    <Badge className="bg-poker-gold text-background text-xs">
                       <Star className="w-3 h-3 mr-1" />
-                      Рекомендуемое
+                      <span className="hidden sm:inline">Рекомендуемое</span>
                     </Badge>
                   </div>
                 )}
 
                 {/* Zoom Icon */}
-                <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                  <div className="w-8 h-8 bg-background/80 rounded-full flex items-center justify-center">
-                    <ZoomIn className="w-4 h-4" />
+                <div className="absolute top-2 lg:top-3 right-2 lg:right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                  <div className="w-7 h-7 lg:w-8 lg:h-8 bg-background/80 rounded-full flex items-center justify-center touch-target">
+                    <ZoomIn className="w-3 h-3 lg:w-4 lg:h-4" />
                   </div>
                 </div>
 
                 {/* Image Info Overlay */}
-                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4 translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
-                  <h3 className="text-white font-semibold text-lg mb-1">{image.title}</h3>
-                  <p className="text-white/80 text-sm">{image.description}</p>
+                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-3 lg:p-4 translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
+                  <h3 className="text-white font-semibold text-sm lg:text-lg mb-1">{image.title}</h3>
+                  <p className="text-white/80 text-xs lg:text-sm line-clamp-2">{image.description}</p>
                 </div>
               </div>
             </Card>

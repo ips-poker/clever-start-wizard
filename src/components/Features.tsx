@@ -80,51 +80,51 @@ export function Features() {
   ];
 
   return (
-    <section className="py-20 bg-accent/50">
+    <section className="py-12 lg:py-20 bg-accent/50">
       <div className="container mx-auto px-4">
-        <div className="text-center mb-16">
-          <Badge variant="outline" className="mb-4">
+        <div className="text-center mb-12 lg:mb-16">
+          <Badge variant="outline" className="mb-4 text-xs lg:text-sm">
             Возможности клуба
           </Badge>
-          <h2 className="text-4xl font-bold text-foreground mb-4">
+          <h2 className="text-2xl lg:text-4xl font-bold text-foreground mb-4">
             Все для профессионального покера
           </h2>
-          <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
+          <p className="text-base lg:text-xl text-muted-foreground max-w-3xl mx-auto px-4">
             IPS предоставляет полный спектр услуг для серьезных покерных игроков: 
             от турниров до персональной аналитики
           </p>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-8">
           {features.map((feature, index) => {
             const IconComponent = feature.icon;
             return (
-              <Card 
-                key={`feature-${index}-${feature.title}`} 
-                className="group hover:shadow-elegant transition-all duration-300 hover:-translate-y-1 border-border/50"
-              >
-                <CardHeader className="pb-4">
-                  <div className={`w-12 h-12 rounded-lg bg-${feature.color}/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300`}>
-                    <IconComponent className={`w-6 h-6 text-${feature.color}`} />
-                  </div>
-                  <CardTitle className="text-xl font-semibold">
-                    {feature.title}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-muted-foreground mb-4">
-                    {feature.description}
-                  </p>
-                  <ul className="space-y-2">
-                    {feature.highlights.map((highlight, idx) => (
-                      <li key={idx} className="flex items-center text-sm">
-                        <div className={`w-1.5 h-1.5 rounded-full bg-${feature.color} mr-2`}></div>
-                        {highlight}
-                      </li>
-                    ))}
-                  </ul>
-                </CardContent>
-              </Card>
+               <Card 
+                 key={`feature-${index}-${feature.title}`} 
+                 className="group hover:shadow-elegant transition-all duration-300 hover:-translate-y-1 border-border/50"
+               >
+                 <CardHeader className="pb-3 lg:pb-4">
+                   <div className={`w-10 h-10 lg:w-12 lg:h-12 rounded-lg bg-${feature.color}/10 flex items-center justify-center mb-3 lg:mb-4 group-hover:scale-110 transition-transform duration-300`}>
+                     <IconComponent className={`w-5 h-5 lg:w-6 lg:h-6 text-${feature.color}`} />
+                   </div>
+                   <CardTitle className="text-lg lg:text-xl font-semibold leading-tight">
+                     {feature.title}
+                   </CardTitle>
+                 </CardHeader>
+                 <CardContent className="pt-0">
+                   <p className="text-muted-foreground mb-4 text-sm lg:text-base leading-relaxed">
+                     {feature.description}
+                   </p>
+                   <ul className="space-y-2">
+                     {feature.highlights.map((highlight, idx) => (
+                       <li key={idx} className="flex items-center text-xs lg:text-sm">
+                         <div className={`w-1.5 h-1.5 rounded-full bg-${feature.color} mr-2 flex-shrink-0`}></div>
+                         <span className="leading-relaxed">{highlight}</span>
+                       </li>
+                     ))}
+                   </ul>
+                 </CardContent>
+               </Card>
             );
           })}
         </div>

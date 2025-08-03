@@ -128,40 +128,40 @@ export function SocialProof() {
   ];
 
   return (
-    <section className="py-20 bg-accent/30">
+    <section className="py-12 lg:py-20 bg-accent/30">
       <div className="container mx-auto px-4">
         {/* Stats Section */}
-        <div className="grid md:grid-cols-4 gap-6 mb-16">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 mb-12 lg:mb-16">
           {stats.map((stat, index) => {
             const IconComponent = stat.icon;
             return (
-              <Card key={`stat-${index}-${stat.value}`} className="text-center p-6 hover:shadow-elegant transition-all duration-300 border-border/50">
-                <div className="flex justify-center mb-4">
-                  <div className="w-12 h-12 bg-poker-gold/10 rounded-full flex items-center justify-center">
-                    <IconComponent className="w-6 h-6 text-poker-gold" />
+              <Card key={`stat-${index}-${stat.value}`} className="text-center p-4 lg:p-6 hover:shadow-elegant transition-all duration-300 border-border/50">
+                <div className="flex justify-center mb-3 lg:mb-4">
+                  <div className="w-10 h-10 lg:w-12 lg:h-12 bg-poker-gold/10 rounded-full flex items-center justify-center">
+                    <IconComponent className="w-5 h-5 lg:w-6 lg:h-6 text-poker-gold" />
                   </div>
                 </div>
-                <div className="text-3xl font-bold text-foreground mb-2">{stat.value}</div>
-                <div className="text-sm text-muted-foreground">{stat.label}</div>
+                <div className="text-xl lg:text-3xl font-bold text-foreground mb-1 lg:mb-2">{stat.value}</div>
+                <div className="text-xs lg:text-sm text-muted-foreground leading-tight">{stat.label}</div>
               </Card>
             );
           })}
         </div>
 
         {/* Testimonials */}
-        <div className="text-center mb-12">
-          <Badge variant="outline" className="mb-4 border-poker-gold text-poker-gold">
+        <div className="text-center mb-8 lg:mb-12">
+          <Badge variant="outline" className="mb-4 border-poker-gold text-poker-gold text-xs lg:text-sm">
             Отзывы игроков
           </Badge>
-          <h2 className="text-4xl font-bold text-foreground mb-4">
+          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground mb-4">
             Что говорят наши игроки?
           </h2>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-base lg:text-xl text-muted-foreground max-w-2xl mx-auto px-4 leading-relaxed">
             Присоединяйтесь к сообществу довольных игроков, которые улучшили свои навыки с IPS
           </p>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-6 mb-16">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6 mb-12 lg:mb-16">
           {loading ? (
             <div className="col-span-3 text-center py-8">
               <div className="text-lg">Загрузка отзывов...</div>
@@ -243,29 +243,31 @@ export function SocialProof() {
               регулярным турнирам и дружелюбному сообществу.
             </p>
             
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-8">
-              <Button size="lg" className="bg-poker-accent hover:bg-poker-accent/90 text-primary font-bold shadow-elegant hover-scale">
-                <UserCheck className="w-5 h-5 mr-2" />
+            <div className="flex flex-col sm:flex-row gap-3 lg:gap-4 justify-center items-center mb-6 lg:mb-8">
+              <Button size="lg" className="w-full sm:w-auto bg-poker-accent hover:bg-poker-accent/90 text-primary font-bold shadow-elegant hover-scale min-h-[48px] px-6 lg:px-8">
+                <UserCheck className="w-4 h-4 lg:w-5 lg:h-5 mr-2" />
                 Присоединиться бесплатно
               </Button>
-              <Button size="lg" variant="outline" className="border-2 border-poker-primary text-poker-primary hover:bg-poker-primary hover:text-primary-foreground font-semibold hover-scale">
+              <Button size="lg" variant="outline" className="w-full sm:w-auto border-2 border-poker-primary text-poker-primary hover:bg-poker-primary hover:text-primary-foreground font-semibold hover-scale min-h-[48px] px-6 lg:px-8">
                 Подробнее о клубе
-                <ArrowRight className="w-5 h-5 ml-2" />
+                <ArrowRight className="w-4 h-4 lg:w-5 lg:h-5 ml-2" />
               </Button>
             </div>
 
-            <div className="flex flex-wrap items-center justify-center gap-6 text-sm text-white/90">
-              <div className="flex items-center space-x-2 bg-white/10 rounded-full px-4 py-2 backdrop-blur">
-                <Clock className="w-4 h-4" />
+            <div className="flex flex-wrap items-center justify-center gap-3 lg:gap-6 text-xs lg:text-sm text-white/90">
+              <div className="flex items-center space-x-2 bg-white/10 rounded-full px-3 lg:px-4 py-2 backdrop-blur touch-target">
+                <Clock className="w-3 h-3 lg:w-4 lg:h-4" />
                 <span>Регистрация 2 минуты</span>
               </div>
-              <div className="flex items-center space-x-2 bg-white/10 rounded-full px-4 py-2 backdrop-blur">
-                <MapPin className="w-4 h-4" />
-                <span>Москва, центр города</span>
+              <div className="flex items-center space-x-2 bg-white/10 rounded-full px-3 lg:px-4 py-2 backdrop-blur touch-target">
+                <MapPin className="w-3 h-3 lg:w-4 lg:h-4" />
+                <span className="hidden sm:inline">Москва, центр города</span>
+                <span className="sm:hidden">Москва</span>
               </div>
-              <div className="flex items-center space-x-2 bg-white/10 rounded-full px-4 py-2 backdrop-blur">
-                <Star className="w-4 h-4" />
-                <span>Без скрытых платежей</span>
+              <div className="flex items-center space-x-2 bg-white/10 rounded-full px-3 lg:px-4 py-2 backdrop-blur touch-target">
+                <Star className="w-3 h-3 lg:w-4 lg:h-4" />
+                <span className="hidden sm:inline">Без скрытых платежей</span>
+                <span className="sm:hidden">Без доплат</span>
               </div>
             </div>
           </div>
