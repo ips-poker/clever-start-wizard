@@ -8,7 +8,8 @@ import {
   FileText,
   Activity,
   TestTube,
-  ArrowLeft
+  ArrowLeft,
+  Mic
 } from "lucide-react";
 import {
   Sidebar,
@@ -32,6 +33,7 @@ const tournamentSections = [
       { title: "Турниры", id: "tournaments", icon: Trophy },
       { title: "Управление", id: "control", icon: Settings },
       { title: "Игроки", id: "players", icon: Users },
+      { title: "Голосовое управление", id: "voice", icon: Mic },
     ]
   },
   {

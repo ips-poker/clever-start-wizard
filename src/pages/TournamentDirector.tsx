@@ -27,11 +27,14 @@ import {
   Pause,
   Square,
   Timer,
-  AlertTriangle
+  AlertTriangle,
+  Mic,
+  Volume2
 } from "lucide-react";
 
 import { AuthGuard } from "@/components/auth/AuthGuard";
 import { TournamentCreationModal } from "@/components/TournamentCreationModal";
+import { VoiceControl } from "@/components/VoiceControl";
 import TournamentOverview from "@/components/TournamentOverview";
 import PlayerManagement from "@/components/PlayerManagement";
 import BlindStructure from "@/components/BlindStructure";
@@ -910,6 +913,10 @@ const TournamentDirector = () => {
 
             <TabsContent value="rating-test" className="space-y-6 animate-fade-in">
               <RatingSystemTest />
+            </TabsContent>
+
+            <TabsContent value="voice" className="space-y-6 animate-fade-in">
+              <VoiceControl selectedTournament={selectedTournament} />
             </TabsContent>
           </Tabs>
 
