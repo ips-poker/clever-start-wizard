@@ -31,6 +31,7 @@ export function GalleryManager() {
   const [uploading, setUploading] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [imageErrors, setImageErrors] = useState<Set<string>>(new Set());
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [formData, setFormData] = useState({
     title: '',
@@ -211,6 +212,10 @@ export function GalleryManager() {
     setEditingId(null);
     setShowAddForm(false);
     resetForm();
+  };
+
+  const handleImageError = (imageId: string) => {
+    setImageErrors(prev => new Set([...prev, imageId]));
   };
 
   const addSampleImages = async () => {
@@ -447,15 +452,23 @@ export function GalleryManager() {
           gallery.map((item) => (
             <Card key={item.id} className="overflow-hidden">
               <div className="relative">
-                <img
-                  src={item.image_url}
-                  alt={item.alt_text || item.title}
-                  className="w-full h-48 object-cover"
-                  onError={(e) => {
-                    const target = e.target as HTMLImageElement;
-                    target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjNmNGY2Ii8+PGcgZmlsbD0iIzllYTNhOSI+PHN2ZyB4PSI1MCUiIHk9IjUwJSIgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoLTUwLCAtNTApIiBmaWxsPSJjdXJyZW50Q29sb3IiIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIj48cGF0aCBkPSJNNDIgNGE2IDYgMCAwIDAtNiA2djI4YTYgNiAwIDAgMCA2IDZoMTZhNiA2IDAgMCAwIDYtNlYxMGE2IDYgMCAwIDAtNi02SDQyek0zOCAxMGEyIDIgMCAwIDEgMi0yaDEwdjZINDBsLTItMlY4bDItMmgydjR6bTE2IDE2YTMgMyAwIDEgMS02IDAgMyAzIDAgMCAxIDYgMHptLTE2IDhWMTRsNCAwIDggOC0yIDJIMzhaIi8+PC9zdmc+PC9nPjx0ZXh0IHg9IjUwJSIgeT0iNzAlIiBkb21pbmFudC1iYXNlbGluZT0iY2VudHJhbCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1zaXplPSIxNiIgZmlsbD0iIzllYTNhOSI+0JjQt9C+0LHRgNCw0LbQtdC90LjQtSDQvdC1INC90LDQudC00LXQvdC+PC90ZXh0Pjwvc3ZnPg==';
-                  }}
-                />
+                {imageErrors.has(item.id) ? (
+                  <div className="w-full h-48 bg-muted flex items-center justify-center">
+                    <div className="flex flex-col items-center justify-center text-muted-foreground p-4">
+                      <svg className="w-12 h-12 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 002 2z"></path>
+                      </svg>
+                      <span className="text-sm">Изображение не найдено</span>
+                    </div>
+                  </div>
+                ) : (
+                  <img
+                    src={item.image_url}
+                    alt={item.alt_text || item.title}
+                    className="w-full h-48 object-cover"
+                    onError={() => handleImageError(item.id)}
+                  />
+                )}
                 
                 <div className="absolute top-2 left-2 flex gap-1">
                   {item.is_featured && (
