@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -30,66 +30,60 @@ export function TournamentRegistration({ tournaments, playerId, onRegistrationUp
   const [registeredTournaments, setRegisteredTournaments] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState<string>("");
   const [tournamentCounts, setTournamentCounts] = useState<Record<string, number>>({});
-  const [isInitialLoading, setIsInitialLoading] = useState(false);
+  const [dataLoaded, setDataLoaded] = useState(false);
 
-  const loadRegistrations = useCallback(async () => {
-    if (!playerId) return;
-
-    try {
-      const { data, error } = await supabase
-        .from('tournament_registrations')
-        .select('tournament_id')
-        .eq('player_id', playerId);
-
-      if (error) throw error;
-
-      const registeredIds = new Set(data?.map(reg => reg.tournament_id) || []);
-      setRegisteredTournaments(registeredIds);
-    } catch (error) {
-      console.error('Error loading registrations:', error);
-    }
-  }, [playerId]);
-
-  const loadTournamentCounts = useCallback(async () => {
-    if (tournaments.length === 0) return;
-
-    try {
-      // Загружаем счетчики пакетно для оптимизации
-      const tournamentIds = tournaments.map(t => t.id);
-      
-      const { data, error } = await supabase
-        .from('tournament_registrations')
-        .select('tournament_id')
-        .in('tournament_id', tournamentIds);
-
-      if (error) throw error;
-
-      // Подсчитываем регистрации для каждого турнира
-      const counts: Record<string, number> = {};
-      tournamentIds.forEach(id => {
-        counts[id] = data?.filter(reg => reg.tournament_id === id).length || 0;
-      });
-      
-      setTournamentCounts(counts);
-    } catch (error) {
-      console.error('Error loading tournament counts:', error);
-    }
-  }, [tournaments]);
-
+  // Загружаем регистрации пользователя только один раз
   useEffect(() => {
-    const loadData = async () => {
-      if (playerId && tournaments.length > 0) {
-        setIsInitialLoading(true);
-        try {
-          await Promise.all([loadRegistrations(), loadTournamentCounts()]);
-        } finally {
-          setIsInitialLoading(false);
-        }
+    if (!playerId || dataLoaded) return;
+
+    const loadRegistrations = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('tournament_registrations')
+          .select('tournament_id')
+          .eq('player_id', playerId);
+
+        if (error) throw error;
+
+        const registeredIds = new Set(data?.map(reg => reg.tournament_id) || []);
+        setRegisteredTournaments(registeredIds);
+        setDataLoaded(true);
+      } catch (error) {
+        console.error('Error loading registrations:', error);
       }
     };
-    
-    loadData();
-  }, [playerId, tournaments.length]);
+
+    loadRegistrations();
+  }, [playerId, dataLoaded]);
+
+  // Загружаем счетчики турниров только когда турниры меняются
+  useEffect(() => {
+    if (tournaments.length === 0) return;
+
+    const loadTournamentCounts = async () => {
+      try {
+        const tournamentIds = tournaments.map(t => t.id);
+        
+        const { data, error } = await supabase
+          .from('tournament_registrations')
+          .select('tournament_id')
+          .in('tournament_id', tournamentIds);
+
+        if (error) throw error;
+
+        const counts: Record<string, number> = {};
+        tournamentIds.forEach(id => {
+          counts[id] = data?.filter(reg => reg.tournament_id === id).length || 0;
+        });
+        
+        setTournamentCounts(counts);
+      } catch (error) {
+        console.error('Error loading tournament counts:', error);
+      }
+    };
+
+    loadTournamentCounts();
+  }, [tournaments.map(t => t.id).sort().join(',')]); // Используем стабильную строку
 
   const handleRegister = async (tournamentId: string) => {
     if (!playerId) {
@@ -118,7 +112,6 @@ export function TournamentRegistration({ tournaments, playerId, onRegistrationUp
       }
 
       setRegisteredTournaments(prev => new Set([...prev, tournamentId]));
-      // Обновляем счетчик локально
       setTournamentCounts(prev => ({
         ...prev,
         [tournamentId]: (prev[tournamentId] || 0) + 1
@@ -152,7 +145,6 @@ export function TournamentRegistration({ tournaments, playerId, onRegistrationUp
         newSet.delete(tournamentId);
         return newSet;
       });
-      // Обновляем счетчик локально
       setTournamentCounts(prev => ({
         ...prev,
         [tournamentId]: Math.max(0, (prev[tournamentId] || 0) - 1)
@@ -208,9 +200,6 @@ export function TournamentRegistration({ tournaments, playerId, onRegistrationUp
       <div className="flex items-center gap-2 mb-6">
         <Trophy className="h-6 w-6 text-primary" />
         <h2 className="text-2xl font-bold text-foreground">Доступные турниры</h2>
-        {isInitialLoading && (
-          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary"></div>
-        )}
       </div>
 
       <div className="grid gap-6">
@@ -218,8 +207,6 @@ export function TournamentRegistration({ tournaments, playerId, onRegistrationUp
           const isRegistered = registeredTournaments.has(tournament.id);
           const isLoading = loading === tournament.id;
           const timeInfo = formatTime(tournament.start_time);
-          const canRegister = tournament.status === 'registration' && playerId;
-          const canUnregister = isRegistered && tournament.status === 'registration';
 
           return (
             <Card key={tournament.id} className="group border-border/50 hover:shadow-xl hover:shadow-primary/5 transition-all duration-300 hover:border-primary/20 bg-gradient-to-br from-card via-card to-card/80 overflow-hidden">
