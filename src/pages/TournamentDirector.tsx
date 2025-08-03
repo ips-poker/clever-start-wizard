@@ -289,10 +289,9 @@ const TournamentDirector = () => {
   const stopTournament = async () => {
     if (!selectedTournament) return;
 
-    const { error } = await supabase
-      .from('tournaments')
-      .update({ status: 'completed' })
-      .eq('id', selectedTournament.id);
+    const { data, error } = await supabase.rpc('complete_tournament', {
+      tournament_id_param: selectedTournament.id
+    });
 
     if (!error) {
       setSelectedTournament({ ...selectedTournament, status: 'completed' });
@@ -309,13 +308,9 @@ const TournamentDirector = () => {
   const onFinishTournament = async () => {
     if (!selectedTournament) return;
 
-    const { error } = await supabase
-      .from('tournaments')
-      .update({ 
-        status: 'completed',
-        finished_at: new Date().toISOString()
-      })
-      .eq('id', selectedTournament.id);
+    const { data, error } = await supabase.rpc('complete_tournament', {
+      tournament_id_param: selectedTournament.id
+    });
 
     if (!error) {
       setSelectedTournament({ 
@@ -567,14 +562,54 @@ const TournamentDirector = () => {
                         
                         <div className="grid grid-cols-2 gap-2">
                           {tournament.status === 'scheduled' && (
+                            <>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={async () => {
+                                  const { data, error } = await supabase.rpc('start_tournament_registration', {
+                                    tournament_id_param: tournament.id
+                                  });
+                                  
+                                  if (!error) {
+                                    loadTournaments();
+                                    toast({ title: "Регистрация открыта" });
+                                  }
+                                }}
+                                className="text-blue-600 border-blue-200 hover:bg-blue-50 transition-colors"
+                              >
+                                <Play className="w-4 h-4 mr-1" />
+                                Открыть регистрацию
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={async () => {
+                                  const { data, error } = await supabase.rpc('start_tournament', {
+                                    tournament_id_param: tournament.id
+                                  });
+                                  
+                                  if (!error) {
+                                    loadTournaments();
+                                    toast({ title: "Турнир запущен" });
+                                  }
+                                }}
+                                className="text-green-600 border-green-200 hover:bg-green-50 transition-colors"
+                              >
+                                <Play className="w-4 h-4 mr-1" />
+                                Запустить сразу
+                              </Button>
+                            </>
+                          )}
+                          
+                          {tournament.status === 'registration' && (
                             <Button
                               variant="outline"
                               size="sm"
                               onClick={async () => {
-                                const { error } = await supabase
-                                  .from('tournaments')
-                                  .update({ status: 'running' })
-                                  .eq('id', tournament.id);
+                                const { data, error } = await supabase.rpc('start_tournament', {
+                                  tournament_id_param: tournament.id
+                                });
                                 
                                 if (!error) {
                                   loadTournaments();
@@ -593,10 +628,9 @@ const TournamentDirector = () => {
                               variant="outline"
                               size="sm"
                               onClick={async () => {
-                                const { error } = await supabase
-                                  .from('tournaments')
-                                  .update({ status: 'paused' })
-                                  .eq('id', tournament.id);
+                                const { data, error } = await supabase.rpc('pause_tournament', {
+                                  tournament_id_param: tournament.id
+                                });
                                 
                                 if (!error) {
                                   loadTournaments();
@@ -607,6 +641,27 @@ const TournamentDirector = () => {
                             >
                               <Pause className="w-4 h-4 mr-1" />
                               Пауза
+                            </Button>
+                          )}
+                          
+                          {tournament.status === 'paused' && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={async () => {
+                                const { data, error } = await supabase.rpc('resume_tournament', {
+                                  tournament_id_param: tournament.id
+                                });
+                                
+                                if (!error) {
+                                  loadTournaments();
+                                  toast({ title: "Турнир возобновлен" });
+                                }
+                              }}
+                              className="text-green-600 border-green-200 hover:bg-green-50 transition-colors"
+                            >
+                              <Play className="w-4 h-4 mr-1" />
+                              Возобновить
                             </Button>
                           )}
                           

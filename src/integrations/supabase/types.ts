@@ -577,6 +577,10 @@ export type Database = {
         Args: { tournament_id_param: string }
         Returns: boolean
       }
+      complete_tournament: {
+        Args: { tournament_id_param: string }
+        Returns: boolean
+      }
       create_first_admin: {
         Args: Record<PropertyKey, never>
         Returns: undefined
@@ -589,7 +593,23 @@ export type Database = {
         Args: { user_uuid: string }
         Returns: boolean
       }
+      pause_tournament: {
+        Args: { tournament_id_param: string }
+        Returns: boolean
+      }
       publish_tournament: {
+        Args: { tournament_id_param: string }
+        Returns: boolean
+      }
+      resume_tournament: {
+        Args: { tournament_id_param: string }
+        Returns: boolean
+      }
+      start_tournament: {
+        Args: { tournament_id_param: string }
+        Returns: boolean
+      }
+      start_tournament_registration: {
         Args: { tournament_id_param: string }
         Returns: boolean
       }
