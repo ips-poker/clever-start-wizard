@@ -40,28 +40,35 @@ import TournamentResults from "@/components/TournamentResults";
 import TournamentSyncManager from "@/components/TournamentSyncManager";
 import RatingSystemTest from "@/components/RatingSystemTest";
 
-interface Tournament {
+// Используем типы из базы данных
+type Tournament = {
   id: string;
   name: string;
+  description: string | null;
   status: string;
   buy_in: number;
   max_players: number;
   current_level: number;
   current_small_blind: number;
   current_big_blind: number;
-  timer_duration: number;
-  timer_remaining: number;
-  rebuy_cost: number;
-  addon_cost: number;
-  rebuy_chips: number;
-  addon_chips: number;
+  timer_duration: number | null;
+  timer_remaining: number | null;
+  rebuy_cost: number | null;
+  addon_cost: number | null;
+  rebuy_chips: number | null;
+  addon_chips: number | null;
   starting_chips: number;
-  tournament_format: string;
-  addon_level: number;
-  break_start_level: number;
+  tournament_format: string | null;
+  addon_level: number | null;
+  break_start_level: number | null;
+  rebuy_end_level: number | null;
+  start_time: string;
   created_at: string;
-  finished_at?: string;
-}
+  finished_at: string | null;
+  is_published: boolean | null;
+  is_archived: boolean | null;
+  updated_at: string;
+};
 
 interface Player {
   id: string;
