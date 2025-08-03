@@ -689,10 +689,18 @@ const TournamentDirector = () => {
         </div>
 
         <Tabs 
-          key={`tabs-${activeTab}`}
+          key={`tabs-${activeTab}-${selectedTournament?.id || 'none'}`}
           value={activeTab} 
           onValueChange={(value) => {
             console.log('Tab change start:', activeTab, '->', value);
+            
+            // Закроем все открытые popover/dropdown перед переключением
+            document.querySelectorAll('[data-radix-popper-content-wrapper]').forEach(el => {
+              const parent = el.parentElement;
+              if (parent && parent.parentElement) {
+                parent.parentElement.style.display = 'none';
+              }
+            });
             
             // Остановим таймер при переключении
             if (timerRef.current) {

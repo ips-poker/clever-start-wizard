@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -76,6 +76,15 @@ const PlayerManagement = ({ tournament, players, registrations, onRegistrationUp
   const [isFinishDialogOpen, setIsFinishDialogOpen] = useState(false);
   const [eliminationOrder, setEliminationOrder] = useState<{[key: string]: number}>({});
   const { toast } = useToast();
+  const isMountedRef = useRef(true);
+
+  useEffect(() => {
+    console.log('PlayerManagement mounted');
+    return () => {
+      console.log('PlayerManagement unmounting');
+      isMountedRef.current = false;
+    };
+  }, []);
 
   useEffect(() => {
     // Set starting chips from tournament
