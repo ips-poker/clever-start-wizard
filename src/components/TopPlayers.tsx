@@ -473,6 +473,33 @@ export function TopPlayers() {
                 </div>
               </div>
             </div>
+
+            {/* CTA Section */}
+            <div className="text-center mt-12">
+              <div className="bg-gradient-to-br from-poker-surface via-white to-poker-surface-elevated border border-poker-border/50 rounded-3xl p-8 shadow-lg relative overflow-hidden max-w-lg mx-auto">
+                <div className="space-y-6">
+                  <div className="w-16 h-16 bg-gradient-to-br from-poker-accent to-poker-primary rounded-2xl flex items-center justify-center mx-auto shadow-lg">
+                    <Users className="w-8 h-8 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-medium text-poker-text-primary mb-3">
+                      Присоединяйтесь к элите
+                    </h3>
+                    <p className="text-poker-text-muted mb-6 max-w-md mx-auto">
+                      Участвуйте в турнирах, развивайте навыки и поднимайтесь в рейтинге
+                    </p>
+                    <Link to="/tournaments">
+                      <Button 
+                        className="bg-gradient-to-r from-poker-accent to-poker-primary text-white hover:from-poker-accent/90 hover:to-poker-primary/90 transition-all duration-300 font-medium px-8 py-3 rounded-xl shadow-lg hover:scale-105 hover:shadow-xl"
+                      >
+                        <Trophy className="w-5 h-5 mr-2" />
+                        Зарегистрироваться на турнир
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         )}
       </div>

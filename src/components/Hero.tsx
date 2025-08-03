@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Trophy, Users, Calendar, Star, TrendingUp, Shield, Award, Play } from "lucide-react";
+import { Link } from "react-router-dom";
 import luxuryPokerHero from "@/assets/luxury-poker-hero.jpg";
 import pokerChipsBg from "@/assets/poker-chips-bg.jpg";
 import ipsLogo from "/lovable-uploads/c77304bf-5309-4bdc-afcc-a81c8d3ff6c2.png";
@@ -96,13 +97,17 @@ export function Hero() {
              </div>
 
              <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start animate-scale-in [animation-delay:1.2s] max-w-lg mx-auto lg:mx-0">
-                <Button size="lg" className="bg-poker-accent text-white hover:bg-poker-accent/90 transition-all duration-300 font-semibold px-8 py-4 text-lg rounded-xl shadow-card hover:scale-105 hover:shadow-elegant">
-                  <Play className="w-6 h-6 mr-3" />
-                  {getContent('cta_primary', 'Начать играть')}
-                </Button>
-                <Button size="lg" variant="outline" className="border-2 border-white/50 text-white bg-white/10 hover:bg-white/20 hover:text-white transition-all duration-300 font-semibold px-8 py-4 text-lg rounded-xl backdrop-blur-md shadow-card hover:scale-105 hover:border-white/70">
-                  {getContent('cta_secondary', 'Рейтинг игроков')}
-                </Button>
+                <Link to="/tournaments">
+                  <Button size="lg" className="bg-poker-accent text-white hover:bg-poker-accent/90 transition-all duration-300 font-semibold px-8 py-4 text-lg rounded-xl shadow-card hover:scale-105 hover:shadow-elegant">
+                    <Play className="w-6 h-6 mr-3" />
+                    {getContent('cta_primary', 'Начать играть')}
+                  </Button>
+                </Link>
+                <Link to="/rating">
+                  <Button size="lg" variant="outline" className="border-2 border-white/50 text-white bg-white/10 hover:bg-white/20 hover:text-white transition-all duration-300 font-semibold px-8 py-4 text-lg rounded-xl backdrop-blur-md shadow-card hover:scale-105 hover:border-white/70">
+                    {getContent('cta_secondary', 'Рейтинг игроков')}
+                  </Button>
+                </Link>
              </div>
 
              {/* Stats */}

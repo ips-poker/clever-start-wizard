@@ -30,7 +30,7 @@ export function Footer() {
             <ul className="space-y-2 text-sm">
               <li><Link to="/" className="hover:text-poker-gold transition-colors">Главная</Link></li>
               <li><Link to="/tournaments" className="hover:text-poker-gold transition-colors">Турниры</Link></li>
-              <li><Link to="/ratings" className="hover:text-poker-gold transition-colors">Рейтинг</Link></li>
+              <li><Link to="/rating" className="hover:text-poker-gold transition-colors">Рейтинг</Link></li>
               <li><Link to="/gallery" className="hover:text-poker-gold transition-colors">Галерея</Link></li>
               <li><Link to="/blog" className="hover:text-poker-gold transition-colors">Блог</Link></li>
               <li><Link to="/about" className="hover:text-poker-gold transition-colors">О нас</Link></li>
