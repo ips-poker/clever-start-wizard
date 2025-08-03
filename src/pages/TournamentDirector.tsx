@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -110,154 +110,8 @@ const TournamentDirector = () => {
     email: ""
   });
 
-  useEffect(() => {
-    let mounted = true;
-    let channels: any[] = [];
-    
-    const initializeData = async () => {
-      if (mounted) {
-        try {
-          await loadTournaments();
-          await loadPlayers();
-        } catch (error) {
-          console.warn('Error initializing data:', error);
-        }
-      }
-    };
-    
-    initializeData();
-    
-    // Set up real-time subscriptions with error handling
-    try {
-      const tournamentsChannel = supabase
-        .channel('tournaments-changes-director')
-        .on('postgres_changes', 
-          { event: '*', schema: 'public', table: 'tournaments' },
-          () => { 
-            if (mounted) {
-              try {
-                loadTournaments();
-              } catch (error) {
-                console.warn('Error loading tournaments in subscription:', error);
-              }
-            }
-          }
-        );
-      
-      channels.push(tournamentsChannel);
-      
-      tournamentsChannel.subscribe((status, err) => {
-        if (err && mounted) {
-          console.warn('Tournaments subscription error:', err);
-        }
-      });
-
-      const playersChannel = supabase
-        .channel('players-changes-director')
-        .on('postgres_changes',
-          { event: '*', schema: 'public', table: 'players' },
-          () => { 
-            if (mounted) {
-              try {
-                loadPlayers();
-              } catch (error) {
-                console.warn('Error loading players in subscription:', error);
-              }
-            }
-          }
-        );
-      
-      channels.push(playersChannel);
-      
-      playersChannel.subscribe((status, err) => {
-        if (err && mounted) {
-          console.warn('Players subscription error:', err);
-        }
-      });
-    } catch (error) {
-      console.warn('Error setting up subscriptions:', error);
-    }
-
-    return () => {
-      mounted = false;
-      // Safely cleanup all channels
-      channels.forEach(channel => {
-        try {
-          if (channel) {
-            supabase.removeChannel(channel);
-          }
-        } catch (error) {
-          console.warn('Error removing channel:', error);
-        }
-      });
-    };
-  }, []);
-
-  useEffect(() => {
-    let mounted = true;
-    
-    const loadTournamentData = async () => {
-      if (selectedTournament && mounted) {
-        try {
-          await loadRegistrations(selectedTournament.id);
-          if (mounted && selectedTournament.timer_remaining !== undefined) {
-            setCurrentTime(selectedTournament.timer_remaining);
-            localStorage.setItem('selectedTournamentId', selectedTournament.id);
-          }
-        } catch (error) {
-          console.warn('Error loading tournament data:', error);
-        }
-      }
-    };
-    
-    loadTournamentData();
-    
-    return () => {
-      mounted = false;
-    };
-  }, [selectedTournament]);
-
-  // Timer effect with database sync
-  useEffect(() => {
-    // Clear any existing timer first
-    if (timerRef.current) {
-      clearInterval(timerRef.current);
-      timerRef.current = null;
-    }
-
-    if (timerActive && currentTime > 0 && selectedTournament) {
-      timerRef.current = setInterval(() => {
-        setCurrentTime(prev => {
-          const newTime = prev - 1;
-          
-          // Sync with database every 5 seconds
-          if (newTime % 5 === 0) {
-            syncTimerWithDatabase(selectedTournament.id, newTime);
-          }
-          
-          if (newTime <= 0) {
-            setTimerActive(false);
-            toast({
-              title: "Время истекло!",
-              description: "Уровень блайндов автоматически повышен",
-            });
-            nextBlindLevel();
-            return 0;
-          }
-          return newTime;
-        });
-      }, 1000);
-    }
-
-    return () => {
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-        timerRef.current = null;
-      }
-    };
-  }, [timerActive, selectedTournament]); // Removed currentTime from deps to prevent timer restart
-
-  const loadTournaments = async () => {
+  // Мемоизированные функции загрузки данных
+  const loadTournaments = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from('tournaments')
@@ -283,22 +137,26 @@ const TournamentDirector = () => {
       console.error('Unexpected error loading tournaments:', err);
       toast({ title: "Ошибка", description: "Неожиданная ошибка при загрузке турниров", variant: "destructive" });
     }
-  };
+  }, [toast]);
 
-  const loadPlayers = async () => {
-    const { data, error } = await supabase
-      .from('players')
-      .select('*')
-      .order('elo_rating', { ascending: false });
+  const loadPlayers = useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from('players')
+        .select('*')
+        .order('elo_rating', { ascending: false });
 
-    if (error) {
-      toast({ title: "Ошибка", description: "Не удалось загрузить игроков", variant: "destructive" });
-    } else {
-      setPlayers(data || []);
+      if (error) {
+        toast({ title: "Ошибка", description: "Не удалось загрузить игроков", variant: "destructive" });
+      } else {
+        setPlayers(data || []);
+      }
+    } catch (error) {
+      console.error('Unexpected error loading players:', error);
     }
-  };
+  }, [toast]);
 
-  const loadRegistrations = async (tournamentId: string) => {
+  const loadRegistrations = useCallback(async (tournamentId: string) => {
     try {
       const { data, error } = await supabase
         .from('tournament_registrations')
@@ -318,7 +176,167 @@ const TournamentDirector = () => {
       console.error('Unexpected error loading registrations:', error);
       toast({ title: "Ошибка", description: "Неожиданная ошибка при загрузке регистраций", variant: "destructive" });
     }
-  };
+  }, [toast]);
+
+  useEffect(() => {
+    let mounted = true;
+    let channels: any[] = [];
+    
+    const initializeData = async () => {
+      if (mounted) {
+        try {
+          await Promise.all([loadTournaments(), loadPlayers()]);
+        } catch (error) {
+          console.warn('Error initializing data:', error);
+        }
+      }
+    };
+    
+    initializeData();
+    
+    // Debounced real-time subscriptions with error handling
+    const setupSubscriptions = () => {
+      try {
+        const tournamentsChannel = supabase
+          .channel('tournaments-changes-director')
+          .on('postgres_changes', 
+            { event: '*', schema: 'public', table: 'tournaments' },
+            () => { 
+              if (mounted) {
+                // Debounce updates to prevent excessive calls
+                setTimeout(() => {
+                  if (mounted) {
+                    try {
+                      loadTournaments();
+                    } catch (error) {
+                      console.warn('Error loading tournaments in subscription:', error);
+                    }
+                  }
+                }, 500);
+              }
+            }
+          );
+        
+        channels.push(tournamentsChannel);
+        
+        tournamentsChannel.subscribe((status, err) => {
+          if (err && mounted) {
+            console.warn('Tournaments subscription error:', err);
+          }
+        });
+
+        const playersChannel = supabase
+          .channel('players-changes-director')
+          .on('postgres_changes',
+            { event: '*', schema: 'public', table: 'players' },
+            () => { 
+              if (mounted) {
+                // Debounce updates to prevent excessive calls
+                setTimeout(() => {
+                  if (mounted) {
+                    try {
+                      loadPlayers();
+                    } catch (error) {
+                      console.warn('Error loading players in subscription:', error);
+                    }
+                  }
+                }, 500);
+              }
+            }
+          );
+        
+        channels.push(playersChannel);
+        
+        playersChannel.subscribe((status, err) => {
+          if (err && mounted) {
+            console.warn('Players subscription error:', err);
+          }
+        });
+      } catch (error) {
+        console.warn('Error setting up subscriptions:', error);
+      }
+    };
+
+    setupSubscriptions();
+
+    return () => {
+      mounted = false;
+      // Safely cleanup all channels
+      channels.forEach(channel => {
+        try {
+          if (channel) {
+            supabase.removeChannel(channel);
+          }
+        } catch (error) {
+          console.warn('Error removing channel:', error);
+        }
+      });
+    };
+  }, [loadTournaments, loadPlayers]);
+
+  useEffect(() => {
+    let mounted = true;
+    
+    const loadTournamentData = async () => {
+      if (selectedTournament && mounted) {
+        try {
+          await loadRegistrations(selectedTournament.id);
+          if (mounted && selectedTournament.timer_remaining !== undefined) {
+            setCurrentTime(selectedTournament.timer_remaining);
+            localStorage.setItem('selectedTournamentId', selectedTournament.id);
+          }
+        } catch (error) {
+          console.warn('Error loading tournament data:', error);
+        }
+      }
+    };
+    
+    loadTournamentData();
+    
+    return () => {
+      mounted = false;
+    };
+  }, [selectedTournament, loadRegistrations]);
+
+  // Оптимизированный таймер с меньшей частотой синхронизации
+  useEffect(() => {
+    // Clear any existing timer first
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+
+    if (timerActive && currentTime > 0 && selectedTournament) {
+      timerRef.current = setInterval(() => {
+        setCurrentTime(prev => {
+          const newTime = prev - 1;
+          
+          // Sync with database every 10 seconds instead of 5 (reduced frequency)
+          if (newTime % 10 === 0) {
+            syncTimerWithDatabase(selectedTournament.id, newTime);
+          }
+          
+          if (newTime <= 0) {
+            setTimerActive(false);
+            toast({
+              title: "Время истекло!",
+              description: "Уровень блайндов автоматически повышен",
+            });
+            nextBlindLevel();
+            return 0;
+          }
+          return newTime;
+        });
+      }, 1000);
+    }
+
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+    };
+  }, [timerActive, selectedTournament, toast]); // Added toast to dependencies
 
   const createTournament = async () => {
     if (!newTournament.name || !newTournament.start_time) {
@@ -1001,9 +1019,11 @@ const TournamentDirector = () => {
               </CardContent>
             </Card>
 
-            {/* Tournament Cards Grid */}
+            {/* Tournament Cards Grid - Мемоизированный рендер */}
             <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-              {tournaments.map((tournament) => (
+              {tournaments.map((tournament) => {
+                const tournamentRegistrations = registrations.filter(r => r.tournament_id === tournament.id);
+                return (
                 <Card key={tournament.id} className="bg-white/60 backdrop-blur-sm border border-gray-200/40 shadow-minimal hover:shadow-subtle transition-all duration-300 rounded-xl group">
                   <CardHeader className="pb-3">
                     <div className="flex items-start justify-between">
@@ -1032,7 +1052,7 @@ const TournamentDirector = () => {
                           <div>
                             <p className="text-xs text-gray-500">Игроки</p>
                             <p className="font-medium text-gray-800">
-                              {registrations.filter(r => r.tournament_id === tournament.id).length}/{tournament.max_players}
+                              {tournamentRegistrations.length}/{tournament.max_players}
                             </p>
                           </div>
                         </div>
@@ -1055,7 +1075,7 @@ const TournamentDirector = () => {
                           <div>
                             <p className="text-xs text-gray-500">Призовой фонд</p>
                             <p className="font-medium text-gray-800">
-                              {(tournament.buy_in * registrations.filter(r => r.tournament_id === tournament.id).length)} EP2016
+                              {(tournament.buy_in * tournamentRegistrations.length)} EP2016
                             </p>
                           </div>
                         </div>
@@ -1155,7 +1175,8 @@ const TournamentDirector = () => {
                     </div>
                   </CardContent>
                 </Card>
-              ))}
+                );
+              })}
             </div>
 
             {/* Performance Monitoring */}

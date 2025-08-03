@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Users, DollarSign, Clock, Trophy, UserCheck, UserPlus, Plus } from "lucide-react";
+import { Calendar, Users, DollarSign, Clock, Trophy, UserCheck, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 import { ru } from "date-fns/locale";
@@ -30,26 +30,8 @@ export function ProfileTournaments({ playerId }: ProfileTournamentsProps) {
   const [loading, setLoading] = useState(true);
   const [registering, setRegistering] = useState<string>("");
 
-  // Загружаем данные только один раз при монтировании
-  useEffect(() => {
-    loadAllData();
-  }, []);
-
-  const loadAllData = async () => {
-    setLoading(true);
-    try {
-      await Promise.all([
-        loadTournaments(),
-        playerId ? loadRegistrations() : Promise.resolve()
-      ]);
-    } catch (error) {
-      console.error('Error loading data:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const loadTournaments = async () => {
+  // Мемоизированные функции для оптимизации производительности
+  const loadTournaments = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from('tournaments')
@@ -83,9 +65,9 @@ export function ProfileTournaments({ playerId }: ProfileTournamentsProps) {
       console.error('Error loading tournaments:', error);
       toast("Ошибка при загрузке турниров");
     }
-  };
+  }, []);
 
-  const loadRegistrations = async () => {
+  const loadRegistrations = useCallback(async () => {
     if (!playerId) return;
 
     try {
@@ -101,9 +83,25 @@ export function ProfileTournaments({ playerId }: ProfileTournamentsProps) {
     } catch (error) {
       console.error('Error loading registrations:', error);
     }
-  };
+  }, [playerId]);
 
-  const handleRegister = async (tournamentId: string) => {
+  // Объединенная функция загрузки данных
+  const loadAllData = useCallback(async () => {
+    setLoading(true);
+    try {
+      await Promise.all([
+        loadTournaments(),
+        playerId ? loadRegistrations() : Promise.resolve()
+      ]);
+    } catch (error) {
+      console.error('Error loading data:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [loadTournaments, loadRegistrations, playerId]);
+
+  // Оптимизированная функция регистрации
+  const handleRegister = useCallback(async (tournamentId: string) => {
     if (!playerId) {
       toast("Ошибка: игрок не найден");
       return;
@@ -142,9 +140,9 @@ export function ProfileTournaments({ playerId }: ProfileTournamentsProps) {
     } finally {
       setRegistering("");
     }
-  };
+  }, [playerId]);
 
-  const handleUnregister = async (tournamentId: string) => {
+  const handleUnregister = useCallback(async (tournamentId: string) => {
     if (!playerId) return;
 
     setRegistering(tournamentId);
@@ -175,9 +173,9 @@ export function ProfileTournaments({ playerId }: ProfileTournamentsProps) {
     } finally {
       setRegistering("");
     }
-  };
+  }, [playerId]);
 
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = useCallback((status: string) => {
     switch (status) {
       case 'registration':
         return <Badge className="bg-gradient-to-r from-green-500 to-green-600 text-white border-0">🔴 Регистрация</Badge>;
@@ -188,16 +186,21 @@ export function ProfileTournaments({ playerId }: ProfileTournamentsProps) {
       default:
         return <Badge variant="secondary">{status}</Badge>;
     }
-  };
+  }, []);
 
-  const formatTime = (dateString: string) => {
+  const formatTime = useCallback((dateString: string) => {
     const date = new Date(dateString);
     return {
       date: date.toLocaleDateString('ru-RU'),
       time: date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }),
       relative: formatDistanceToNow(date, { addSuffix: true, locale: ru })
     };
-  };
+  }, []);
+
+  // Загружаем данные только один раз при монтировании
+  useEffect(() => {
+    loadAllData();
+  }, [loadAllData]);
 
   if (loading) {
     return (
@@ -287,7 +290,7 @@ export function ProfileTournaments({ playerId }: ProfileTournamentsProps) {
                     <DollarSign className="h-4 w-4 text-muted-foreground" />
                     <div>
                       <p className="font-medium text-foreground">Бай-ин</p>
-                      <p className="text-muted-foreground">{tournament.buy_in}₽</p>
+                      <p className="text-muted-foreground">{tournament.buy_in} EP2016</p>
                     </div>
                   </div>
 
