@@ -111,53 +111,78 @@ const TournamentDirector = () => {
   });
 
   useEffect(() => {
-    loadTournaments();
-    loadPlayers();
+    let mounted = true;
     
-    // Restore selected tournament from localStorage
-    const savedTournamentId = localStorage.getItem('selectedTournamentId');
-    if (savedTournamentId) {
-      // Will be set after tournaments are loaded
-    }
+    const initializeData = async () => {
+      if (mounted) {
+        await loadTournaments();
+        await loadPlayers();
+      }
+    };
     
-    // Set up real-time subscriptions
+    initializeData();
+    
+    // Set up real-time subscriptions with error handling
     const tournamentsChannel = supabase
-      .channel('tournaments-changes')
+      .channel('tournaments-changes-director')
       .on('postgres_changes', 
         { event: '*', schema: 'public', table: 'tournaments' },
-        () => { loadTournaments(); }
+        () => { 
+          if (mounted) {
+            loadTournaments();
+          }
+        }
       )
-      .subscribe();
+      .subscribe((status, err) => {
+        if (err) {
+          console.warn('Tournaments subscription error:', err);
+        }
+      });
 
     const playersChannel = supabase
-      .channel('players-changes')
+      .channel('players-changes-director')
       .on('postgres_changes',
         { event: '*', schema: 'public', table: 'players' },
-        () => { loadPlayers(); }
+        () => { 
+          if (mounted) {
+            loadPlayers();
+          }
+        }
       )
-      .subscribe();
+      .subscribe((status, err) => {
+        if (err) {
+          console.warn('Players subscription error:', err);
+        }
+      });
 
     return () => {
+      mounted = false;
       supabase.removeChannel(tournamentsChannel);
       supabase.removeChannel(playersChannel);
     };
   }, []);
 
   useEffect(() => {
-    let isMounted = true;
+    let mounted = true;
     
-    if (selectedTournament) {
-      loadRegistrations(selectedTournament.id).then(() => {
-        if (isMounted && selectedTournament.timer_remaining !== undefined) {
-          setCurrentTime(selectedTournament.timer_remaining);
-          // Save selected tournament to localStorage
-          localStorage.setItem('selectedTournamentId', selectedTournament.id);
+    const loadTournamentData = async () => {
+      if (selectedTournament && mounted) {
+        try {
+          await loadRegistrations(selectedTournament.id);
+          if (mounted && selectedTournament.timer_remaining !== undefined) {
+            setCurrentTime(selectedTournament.timer_remaining);
+            localStorage.setItem('selectedTournamentId', selectedTournament.id);
+          }
+        } catch (error) {
+          console.warn('Error loading tournament data:', error);
         }
-      });
-    }
+      }
+    };
+    
+    loadTournamentData();
     
     return () => {
-      isMounted = false;
+      mounted = false;
     };
   }, [selectedTournament]);
 
