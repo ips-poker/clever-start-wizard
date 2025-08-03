@@ -29,12 +29,14 @@ interface TournamentRegistrationProps {
 export function TournamentRegistration({ tournaments, playerId, onRegistrationUpdate }: TournamentRegistrationProps) {
   const [registeredTournaments, setRegisteredTournaments] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState<string>("");
+  const [tournamentCounts, setTournamentCounts] = useState<Record<string, number>>({});
 
   useEffect(() => {
-    if (playerId) {
+    if (playerId && tournaments.length > 0) {
       loadRegistrations();
+      loadTournamentCounts();
     }
-  }, [playerId]);
+  }, [playerId, tournaments.length]);
 
   const loadRegistrations = async () => {
     if (!playerId) return;
@@ -51,6 +53,28 @@ export function TournamentRegistration({ tournaments, playerId, onRegistrationUp
       setRegisteredTournaments(registeredIds);
     } catch (error) {
       console.error('Error loading registrations:', error);
+    }
+  };
+
+  const loadTournamentCounts = async () => {
+    if (tournaments.length === 0) return;
+
+    try {
+      // Загружаем счетчики для всех турниров одним запросом
+      const counts: Record<string, number> = {};
+      
+      for (const tournament of tournaments) {
+        const { count } = await supabase
+          .from('tournament_registrations')
+          .select('*', { count: 'exact', head: true })
+          .eq('tournament_id', tournament.id);
+        
+        counts[tournament.id] = count || 0;
+      }
+      
+      setTournamentCounts(counts);
+    } catch (error) {
+      console.error('Error loading tournament counts:', error);
     }
   };
 
@@ -81,6 +105,11 @@ export function TournamentRegistration({ tournaments, playerId, onRegistrationUp
       }
 
       setRegisteredTournaments(prev => new Set([...prev, tournamentId]));
+      // Обновляем счетчик локально
+      setTournamentCounts(prev => ({
+        ...prev,
+        [tournamentId]: (prev[tournamentId] || 0) + 1
+      }));
       onRegistrationUpdate();
       toast("Успешно зарегистрированы на турнир!");
     } catch (error) {
@@ -110,6 +139,11 @@ export function TournamentRegistration({ tournaments, playerId, onRegistrationUp
         newSet.delete(tournamentId);
         return newSet;
       });
+      // Обновляем счетчик локально
+      setTournamentCounts(prev => ({
+        ...prev,
+        [tournamentId]: Math.max(0, (prev[tournamentId] || 0) - 1)
+      }));
       onRegistrationUpdate();
       toast("Регистрация отменена");
     } catch (error) {
@@ -224,9 +258,9 @@ export function TournamentRegistration({ tournaments, playerId, onRegistrationUp
                     <Users className="h-4 w-4 text-muted-foreground" />
                     <div>
                       <p className="font-medium text-foreground">Игроки</p>
-                      <p className="text-muted-foreground">
-                        {tournament.registered_count || 0}/{tournament.max_players}
-                      </p>
+                       <p className="text-muted-foreground">
+                         {tournamentCounts[tournament.id] || tournament.registered_count || 0}/{tournament.max_players}
+                       </p>
                     </div>
                   </div>
                 </div>
@@ -259,7 +293,7 @@ export function TournamentRegistration({ tournaments, playerId, onRegistrationUp
                       ) : (
                         <Button
                           onClick={() => handleRegister(tournament.id)}
-                          disabled={isLoading || (tournament.registered_count || 0) >= tournament.max_players}
+                          disabled={isLoading || (tournamentCounts[tournament.id] || tournament.registered_count || 0) >= tournament.max_players}
                           className="gap-2"
                         >
                           {isLoading ? (
@@ -267,7 +301,7 @@ export function TournamentRegistration({ tournaments, playerId, onRegistrationUp
                           ) : (
                             <UserPlus className="h-4 w-4" />
                           )}
-                          {(tournament.registered_count || 0) >= tournament.max_players ? 'Нет мест' : 'Зарегистрироваться'}
+                          {(tournamentCounts[tournament.id] || tournament.registered_count || 0) >= tournament.max_players ? 'Нет мест' : 'Зарегистрироваться'}
                         </Button>
                       )
                     ) : tournament.status === 'active' ? (
