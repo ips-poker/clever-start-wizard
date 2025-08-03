@@ -475,14 +475,6 @@ const TournamentDirector = () => {
             value={activeTab} 
             onValueChange={(value) => {
               console.log('Tab change:', activeTab, '->', value);
-              
-              // Остановим таймер при переключении
-              if (timerRef.current) {
-                clearInterval(timerRef.current);
-                timerRef.current = null;
-                setTimerActive(false);
-              }
-              
               setActiveTab(value);
             }} 
             className="space-y-10"
