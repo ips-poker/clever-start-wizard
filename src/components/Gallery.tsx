@@ -47,7 +47,29 @@ export function Gallery() {
       if (error) throw error;
       
       if (data && data.length > 0) {
-        setImages(data);
+        // Replace broken local paths with working URLs
+        const fixedImages = data.map(image => {
+          if (image.image_url.startsWith('/src/assets/gallery/')) {
+            const filename = image.image_url.split('/').pop();
+            const urlMap: Record<string, string> = {
+              'tournament-table.jpg': 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=800&h=600&fit=crop',
+              'vip-zone.jpg': 'https://images.unsplash.com/photo-1563013544-824ae1b704d3?w=800&h=600&fit=crop',
+              'main-poker-room.jpg': 'https://images.unsplash.com/photo-1542829257-5b7bb9b6e08b?w=800&h=600&fit=crop',
+              'lounge-area.jpg': 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=800&h=600&fit=crop',
+              'awards-ceremony.jpg': 'https://images.unsplash.com/photo-1511632765486-a01980e01a18?w=800&h=600&fit=crop',
+              'poker-chips.jpg': 'https://images.unsplash.com/photo-1596838132731-3301c3fd4317?w=800&h=600&fit=crop',
+              'registration.jpg': 'https://images.unsplash.com/photo-1511632765486-a01980e01a18?w=800&h=600&fit=crop',
+              'masterclass.jpg': 'https://images.unsplash.com/photo-1542829257-5b7bb9b6e08b?w=800&h=600&fit=crop',
+              'team-tournament.jpg': 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=800&h=600&fit=crop'
+            };
+            return {
+              ...image,
+              image_url: urlMap[filename as string] || image.image_url
+            };
+          }
+          return image;
+        });
+        setImages(fixedImages);
       } else {
         // Fallback to static images if no data in database
         setImages([
