@@ -49,8 +49,8 @@ export function TournamentList() {
           tournament_registrations(count)
         `)
         .eq('is_published', true)
-        .in('status', ['registration', 'running'])
-        .eq('is_archived', false)
+        .not('is_archived', 'eq', true)
+        .in('status', ['scheduled', 'registration', 'running'])
         .order('start_time', { ascending: true })
         .limit(6);
 
@@ -85,16 +85,18 @@ export function TournamentList() {
   const getStatusBadge = (status: string) => {
     const variants = {
       scheduled: "secondary",
-      registration: "default",
+      registration: "default", 
       running: "destructive",
-      finished: "outline"
+      completed: "outline",
+      paused: "outline"
     } as const;
 
     const labels = {
       scheduled: "Запланирован",
       registration: "Регистрация",
-      running: "Идет",
-      finished: "Завершен"
+      running: "Идет турнир",
+      completed: "Завершен",
+      paused: "Приостановлен"
     };
 
     return (
@@ -197,9 +199,12 @@ export function TournamentList() {
                       <Button 
                         onClick={() => registerForTournament(tournament.id)}
                         className="w-full bg-gradient-button hover:shadow-elevated transition-all duration-300"
-                        disabled={tournament.status !== 'registration' && tournament.status !== 'scheduled'}
+                        disabled={tournament.status === 'running' || tournament.status === 'completed' || tournament.status === 'paused'}
                       >
-                        {tournament.status === 'registration' ? 'Зарегистрироваться' : 'Скоро откроется регистрация'}
+                        {tournament.status === 'scheduled' ? 'Скоро откроется регистрация' :
+                         tournament.status === 'registration' ? 'Зарегистрироваться' : 
+                         tournament.status === 'running' ? 'Турнир идет' :
+                         tournament.status === 'paused' ? 'Турнир приостановлен' : 'Турнир завершен'}
                       </Button>
                     </div>
                   </div>
