@@ -15,8 +15,7 @@ import {
   Zap,
   TrendingUp,
   Activity,
-  MessageSquare,
-  Receipt
+  MessageSquare
 } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import {
@@ -70,7 +69,6 @@ const adminSections = [
     items: [
       { title: "Воркфлоу", id: "workflows", icon: Zap },
       { title: "Интеграции", id: "integrations", icon: Globe },
-      { title: "Orange Data", id: "orange-data", icon: Receipt },
     ]
   },
   {

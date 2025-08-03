@@ -253,60 +253,6 @@ export type Database = {
         }
         Relationships: []
       }
-      fiscal_receipts: {
-        Row: {
-          amount: number
-          created_at: string
-          error_message: string | null
-          fiscal_at: string | null
-          fiscal_document_attribute: string | null
-          fiscal_document_number: string | null
-          id: string
-          items: Json | null
-          ofd_receipt_url: string | null
-          orange_data_response: Json | null
-          order_id: string | null
-          receipt_id: string
-          status: string
-          updated_at: string
-          user_id: string | null
-        }
-        Insert: {
-          amount: number
-          created_at?: string
-          error_message?: string | null
-          fiscal_at?: string | null
-          fiscal_document_attribute?: string | null
-          fiscal_document_number?: string | null
-          id?: string
-          items?: Json | null
-          ofd_receipt_url?: string | null
-          orange_data_response?: Json | null
-          order_id?: string | null
-          receipt_id: string
-          status?: string
-          updated_at?: string
-          user_id?: string | null
-        }
-        Update: {
-          amount?: number
-          created_at?: string
-          error_message?: string | null
-          fiscal_at?: string | null
-          fiscal_document_attribute?: string | null
-          fiscal_document_number?: string | null
-          id?: string
-          items?: Json | null
-          ofd_receipt_url?: string | null
-          orange_data_response?: Json | null
-          order_id?: string | null
-          receipt_id?: string
-          status?: string
-          updated_at?: string
-          user_id?: string | null
-        }
-        Relationships: []
-      }
       game_results: {
         Row: {
           created_at: string
@@ -357,7 +303,6 @@ export type Database = {
       }
       players: {
         Row: {
-          avatar_url: string | null
           created_at: string
           elo_rating: number
           email: string | null
@@ -368,7 +313,6 @@ export type Database = {
           wins: number
         }
         Insert: {
-          avatar_url?: string | null
           created_at?: string
           elo_rating?: number
           email?: string | null
@@ -379,7 +323,6 @@ export type Database = {
           wins?: number
         }
         Update: {
-          avatar_url?: string | null
           created_at?: string
           elo_rating?: number
           email?: string | null
