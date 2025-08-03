@@ -643,8 +643,15 @@ const TournamentDirector = () => {
           )}
         </div>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-10">
-          <TabsList className="grid w-full grid-cols-8 bg-poker-surface-elevated border border-poker-border shadow-card rounded-2xl p-2 h-16">
+        <Tabs 
+          value={activeTab} 
+          onValueChange={(value) => {
+            console.log('Tab change:', value);
+            setActiveTab(value);
+          }} 
+          className="space-y-10"
+        >
+          <TabsList className="grid w-full grid-cols-8 bg-poker-surface-elevated border border-poker-border shadow-card rounded-2xl p-2 h-16 overflow-x-auto relative z-10">
             <TabsTrigger 
               value="overview" 
               className="data-[state=active]:bg-gradient-button data-[state=active]:text-white data-[state=active]:shadow-accent transition-all duration-300 rounded-xl font-medium"
