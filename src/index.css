@@ -157,3 +157,9 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Touch target utility for mobile accessibility */
+.touch-target {
+  min-height: 44px;
+  min-width: 44px;
+}

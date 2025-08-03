@@ -35,7 +35,7 @@ export function Hero() {
       </div>
 
       <div className="container mx-auto px-4 lg:px-8 relative z-10">
-        <div className="grid lg:grid-cols-2 gap-16 items-center min-h-screen py-20">
+        <div className="grid lg:grid-cols-2 gap-8 lg:gap-16 items-center min-h-[70vh] lg:min-h-screen py-12 lg:py-20">
           {/* Left Column - Content */}
           <div className="text-white space-y-10 animate-fade-in order-2 lg:order-1">
             <div className="space-y-8 animate-slide-up [animation-delay:0.2s]">
@@ -45,28 +45,28 @@ export function Hero() {
                 </Badge>
               </div>
               
-              {/* Logo and Title Section */}
-              <div className="flex flex-col lg:flex-row items-center lg:items-start text-center lg:text-left space-y-6 lg:space-y-0 lg:space-x-8 animate-slide-right [animation-delay:0.6s]">
-                <div className="w-24 h-24 bg-white/10 backdrop-blur-xl rounded-2xl border border-white/30 shadow-elegant flex items-center justify-center p-4 animate-scale-in [animation-delay:0.3s] flex-shrink-0">
+               {/* Logo and Title Section */}
+               <div className="flex flex-col lg:flex-row items-center lg:items-start text-center lg:text-left space-y-4 lg:space-y-0 lg:space-x-8 animate-slide-right [animation-delay:0.6s]">
+                 <div className="w-20 h-20 lg:w-24 lg:h-24 bg-white/10 backdrop-blur-xl rounded-2xl border border-white/30 shadow-elegant flex items-center justify-center p-3 lg:p-4 animate-scale-in [animation-delay:0.3s] flex-shrink-0">
                   <img 
                     src={ipsLogo} 
                     alt="IPS Logo" 
                     className="w-full h-full object-contain filter drop-shadow-xl"
                   />
                 </div>
-                <div className="flex-1">
-                  <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight tracking-tight">
-                    <span className="text-white block leading-none">
-                      {getContent('hero_title', 'IPS')}
-                    </span>
-                    <span className="block text-poker-accent-light text-2xl sm:text-3xl lg:text-4xl mt-2 font-semibold leading-tight">
-                      {getContent('hero_subtitle', 'International')}
-                    </span>
-                    <span className="block text-xl sm:text-2xl lg:text-3xl font-medium text-white/90 tracking-wide leading-tight mt-1">
-                      {getContent('hero_subtitle_2', 'Poker Style')}
-                    </span>
-                  </h1>
-                </div>
+                 <div className="flex-1">
+                   <h1 className="text-3xl sm:text-4xl lg:text-6xl font-bold leading-tight tracking-tight">
+                     <span className="text-white block leading-none">
+                       {getContent('hero_title', 'IPS')}
+                     </span>
+                     <span className="block text-poker-accent-light text-xl sm:text-2xl lg:text-4xl mt-1 lg:mt-2 font-semibold leading-tight">
+                       {getContent('hero_subtitle', 'International')}
+                     </span>
+                     <span className="block text-lg sm:text-xl lg:text-3xl font-medium text-white/90 tracking-wide leading-tight mt-1">
+                       {getContent('hero_subtitle_2', 'Poker Style')}
+                     </span>
+                   </h1>
+                 </div>
               </div>
                
                <div className="text-center lg:text-left">
@@ -75,9 +75,9 @@ export function Hero() {
                  </p>
                </div>
 
-                {/* Key Benefits */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 animate-slide-up [animation-delay:1s] max-w-2xl mx-auto lg:mx-0">
-                   <div className="flex items-center justify-center lg:justify-start space-x-3 text-sm bg-white/8 px-4 py-3 rounded-xl backdrop-blur-md border border-white/20 text-white font-medium shadow-subtle">
+                 {/* Key Benefits */}
+                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 lg:gap-4 animate-slide-up [animation-delay:1s] max-w-2xl mx-auto lg:mx-0">
+                    <div className="flex items-center justify-center lg:justify-start space-x-3 text-sm bg-white/8 px-3 py-3 lg:px-4 lg:py-3 rounded-xl backdrop-blur-md border border-white/20 text-white font-medium shadow-subtle touch-target">
                      <Shield className="w-5 h-5 text-poker-accent-light flex-shrink-0" />
                      <span>{getContent('feature_1', 'Честная игра')}</span>
                    </div>
@@ -96,19 +96,19 @@ export function Hero() {
                 </div>
              </div>
 
-             <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start animate-scale-in [animation-delay:1.2s] max-w-lg mx-auto lg:mx-0">
-                <Link to="/tournaments">
-                  <Button size="lg" className="bg-poker-accent text-white hover:bg-poker-accent/90 transition-all duration-300 font-semibold px-8 py-4 text-lg rounded-xl shadow-card hover:scale-105 hover:shadow-elegant">
-                    <Play className="w-6 h-6 mr-3" />
-                    {getContent('cta_primary', 'Начать играть')}
-                  </Button>
-                </Link>
-                <Link to="/rating">
-                  <Button size="lg" variant="outline" className="border-2 border-white/50 text-white bg-white/10 hover:bg-white/20 hover:text-white transition-all duration-300 font-semibold px-8 py-4 text-lg rounded-xl backdrop-blur-md shadow-card hover:scale-105 hover:border-white/70">
-                    {getContent('cta_secondary', 'Рейтинг игроков')}
-                  </Button>
-                </Link>
-             </div>
+              <div className="flex flex-col sm:flex-row gap-3 lg:gap-4 justify-center lg:justify-start animate-scale-in [animation-delay:1.2s] max-w-lg mx-auto lg:mx-0">
+                 <Link to="/tournaments" className="w-full sm:w-auto">
+                   <Button size="lg" className="w-full bg-poker-accent text-white hover:bg-poker-accent/90 transition-all duration-300 font-semibold px-6 lg:px-8 py-4 text-base lg:text-lg rounded-xl shadow-card hover:scale-105 hover:shadow-elegant min-h-[48px]">
+                     <Play className="w-5 h-5 lg:w-6 lg:h-6 mr-2 lg:mr-3" />
+                     {getContent('cta_primary', 'Начать играть')}
+                   </Button>
+                 </Link>
+                 <Link to="/rating" className="w-full sm:w-auto">
+                   <Button size="lg" variant="outline" className="w-full border-2 border-white/50 text-white bg-white/10 hover:bg-white/20 hover:text-white transition-all duration-300 font-semibold px-6 lg:px-8 py-4 text-base lg:text-lg rounded-xl backdrop-blur-md shadow-card hover:scale-105 hover:border-white/70 min-h-[48px]">
+                     {getContent('cta_secondary', 'Рейтинг игроков')}
+                   </Button>
+                 </Link>
+              </div>
 
              {/* Stats */}
              <div className="grid grid-cols-3 gap-4 md:gap-6 pt-8 animate-slide-up [animation-delay:1.4s] max-w-2xl mx-auto lg:mx-0">
