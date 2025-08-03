@@ -15,7 +15,8 @@ import {
   Zap,
   TrendingUp,
   Activity,
-  MessageSquare
+  MessageSquare,
+  Receipt
 } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import {
@@ -38,6 +39,7 @@ const adminSections = [
       { title: "Дашборд", id: "dashboard", icon: BarChart3 },
       { title: "Аналитика", id: "analytics", icon: TrendingUp },
       { title: "Производительность", id: "performance", icon: Activity },
+      { title: "Безопасность", id: "security", icon: Shield },
       { title: "Быстрая настройка", id: "quick-setup", icon: Zap },
     ]
   },
@@ -52,6 +54,7 @@ const adminSections = [
       { title: "Галерея", id: "gallery", icon: Image },
       { title: "Медиабиблиотека", id: "media", icon: Image },
       { title: "Управление контентом", id: "content", icon: Database },
+      { title: "Расширенный контент", id: "advanced-content", icon: FileText },
     ]
   },
   {
@@ -67,6 +70,7 @@ const adminSections = [
     items: [
       { title: "Воркфлоу", id: "workflows", icon: Zap },
       { title: "Интеграции", id: "integrations", icon: Globe },
+      { title: "Orange Data", id: "orange-data", icon: Receipt },
     ]
   },
   {
@@ -76,6 +80,8 @@ const adminSections = [
       { title: "Настройки сайта", id: "settings", icon: Settings },
       { title: "Файлы", id: "files", icon: Database },
       { title: "Бэкап", id: "backup", icon: Download },
+      { title: "Умные бэкапы", id: "smart-backup", icon: Database },
+      { title: "Расширенная производительность", id: "enhanced-performance", icon: Activity },
     ]
   }
 ];

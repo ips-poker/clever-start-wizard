@@ -3,88 +3,41 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
-import { useToast } from "@/hooks/use-toast";
+import { ImageUploader } from "./ImageUploader";
+import { IconSelector } from "./IconSelector";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, Save, Plus, Trash2, Edit } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { 
+  Save, 
+  Plus, 
+  Trash2, 
+  Upload, 
+  Eye,
+  Users,
+  Trophy,
+  Target,
+  Heart,
+  Zap,
+  Globe,
+  Award,
+  Loader2,
+  Image as ImageIcon
+} from "lucide-react";
 
 interface AboutContent {
-  hero_title: string;
-  hero_subtitle: string;
-  hero_description: string;
-  story_title: string;
-  story_content: string;
-  values_title: string;
-  values_subtitle: string;
-  team_title: string;
-  team_subtitle: string;
-  cta_title: string;
-  cta_description: string;
-}
-
-interface Achievement {
-  title: string;
-  description: string;
-  icon: string;
-}
-
-interface Value {
-  title: string;
-  description: string;
-  icon: string;
-}
-
-interface TeamMember {
-  name: string;
-  role: string;
-  experience: string;
-  image: string;
-  achievements: string[];
+  [key: string]: string;
 }
 
 export function AboutPageEditor() {
-  const { toast } = useToast();
+  const [content, setContent] = useState<AboutContent>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  
-  const [content, setContent] = useState<AboutContent>({
-    hero_title: "International Poker Style",
-    hero_subtitle: "О компании", 
-    hero_description: "Мы создали уникальное пространство для любителей покера...",
-    story_title: "Как всё начиналось",
-    story_content: "В 2021 году группа энтузиастов покера...",
-    values_title: "Во что мы верим",
-    values_subtitle: "Наши принципы определяют каждое решение...",
-    team_title: "Познакомьтесь с нашей командой",
-    team_subtitle: "Профессионалы своего дела...",
-    cta_title: "Готовы стать частью IPS?",
-    cta_description: "Присоединяйтесь к нашему сообществу..."
-  });
-
-  const [achievements, setAchievements] = useState<Achievement[]>([
-    { title: "500+ турниров", description: "Проведено за 3 года работы", icon: "Trophy" },
-    { title: "1000+ игроков", description: "Доверяют нашей системе", icon: "Users" },
-    { title: "4.9/5", description: "Средняя оценка игроков", icon: "Star" },
-    { title: "100%", description: "Безопасность данных", icon: "Shield" }
-  ]);
-
-  const [values, setValues] = useState<Value[]>([
-    { title: "Честность", description: "Прозрачная рейтинговая система...", icon: "Target" },
-    { title: "Сообщество", description: "Мы создаем дружелюбную атмосферу...", icon: "Heart" },
-    { title: "Инновации", description: "Постоянно развиваем технологии...", icon: "Zap" },
-    { title: "Международный уровень", description: "Соответствуем мировым стандартам...", icon: "Globe" }
-  ]);
-
-  const [team, setTeam] = useState<TeamMember[]>([
-    {
-      name: "Александр Петров",
-      role: "Основатель и Турнирный Директор", 
-      experience: "15+ лет в покере",
-      image: "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=300&h=300&fit=crop&crop=face",
-      achievements: ["WSOP Circuit Ring", "EPT Final Table", "Международный судья"]
-    }
-  ]);
+  const { toast } = useToast();
 
   useEffect(() => {
     fetchContent();
@@ -100,27 +53,18 @@ export function AboutPageEditor() {
 
       if (error) throw error;
 
-      if (data && data.length > 0) {
-        const contentObj: any = {};
-        data.forEach(item => {
-          if (item.content_type === 'json') {
-            contentObj[item.content_key] = JSON.parse(item.content_value || '[]');
-          } else {
-            contentObj[item.content_key] = item.content_value || '';
-          }
-        });
+      const contentObj = (data || []).reduce((acc: AboutContent, item) => {
+        acc[item.content_key] = item.content_value || '';
+        return acc;
+      }, {});
 
-        if (contentObj.hero_title) setContent(prev => ({ ...prev, ...contentObj }));
-        if (contentObj.achievements) setAchievements(contentObj.achievements);
-        if (contentObj.values) setValues(contentObj.values);
-        if (contentObj.team) setTeam(contentObj.team);
-      }
+      setContent(contentObj);
     } catch (error) {
       console.error('Error fetching about content:', error);
       toast({
         title: "Ошибка",
-        description: "Не удалось загрузить контент страницы",
-        variant: "destructive"
+        description: "Не удалось загрузить контент страницы О нас",
+        variant: "destructive",
       });
     } finally {
       setLoading(false);
@@ -130,114 +74,51 @@ export function AboutPageEditor() {
   const saveContent = async () => {
     setSaving(true);
     try {
-      const contentItems = [
-        ...Object.entries(content).map(([key, value]) => ({
-          page_slug: 'about',
-          content_key: key,
-          content_value: value,
-          content_type: 'text'
-        })),
-        {
-          page_slug: 'about',
-          content_key: 'achievements',
-          content_value: JSON.stringify(achievements),
-          content_type: 'json'
-        },
-        {
-          page_slug: 'about',
-          content_key: 'values', 
-          content_value: JSON.stringify(values),
-          content_type: 'json'
-        },
-        {
-          page_slug: 'about',
-          content_key: 'team',
-          content_value: JSON.stringify(team),
-          content_type: 'json'
-        }
-      ];
-
-      // Удаляем существующий контент для этой страницы
+      // Удаляем старый контент
       await supabase
         .from('cms_content')
         .delete()
         .eq('page_slug', 'about');
 
-      // Вставляем новый контент
+      // Сохраняем новый контент
+      const contentArray = Object.entries(content).map(([key, value]) => ({
+        page_slug: 'about',
+        content_key: key,
+        content_value: value,
+        content_type: 'text',
+        is_active: true
+      }));
+
       const { error } = await supabase
         .from('cms_content')
-        .insert(contentItems);
+        .insert(contentArray);
 
       if (error) throw error;
 
       toast({
-        title: "Успешно",
-        description: "Контент страницы 'О нас' сохранен"
+        title: "Успешно сохранено",
+        description: "Контент страницы О нас обновлен",
       });
     } catch (error) {
-      console.error('Error saving about content:', error);
+      console.error('Error saving content:', error);
       toast({
         title: "Ошибка",
-        description: "Не удалось сохранить контент",
-        variant: "destructive"
+        description: "Не удалось сохранить изменения",
+        variant: "destructive",
       });
     } finally {
       setSaving(false);
     }
   };
 
-  const addAchievement = () => {
-    setAchievements([...achievements, { title: "", description: "", icon: "Trophy" }]);
-  };
-
-  const removeAchievement = (index: number) => {
-    setAchievements(achievements.filter((_, i) => i !== index));
-  };
-
-  const updateAchievement = (index: number, field: keyof Achievement, value: string) => {
-    const updated = [...achievements];
-    updated[index] = { ...updated[index], [field]: value };
-    setAchievements(updated);
-  };
-
-  const addValue = () => {
-    setValues([...values, { title: "", description: "", icon: "Target" }]);
-  };
-
-  const removeValue = (index: number) => {
-    setValues(values.filter((_, i) => i !== index));
-  };
-
-  const updateValue = (index: number, field: keyof Value, value: string) => {
-    const updated = [...values];
-    updated[index] = { ...updated[index], [field]: value };
-    setValues(updated);
-  };
-
-  const addTeamMember = () => {
-    setTeam([...team, { 
-      name: "", 
-      role: "", 
-      experience: "", 
-      image: "", 
-      achievements: [""] 
-    }]);
-  };
-
-  const removeTeamMember = (index: number) => {
-    setTeam(team.filter((_, i) => i !== index));
-  };
-
-  const updateTeamMember = (index: number, field: keyof TeamMember, value: string | string[]) => {
-    const updated = [...team];
-    updated[index] = { ...updated[index], [field]: value };
-    setTeam(updated);
+  const updateContent = (key: string, value: string) => {
+    setContent(prev => ({ ...prev, [key]: value }));
   };
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center p-8">
-        <Loader2 className="w-6 h-6 animate-spin" />
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="w-8 h-8 animate-spin" />
       </div>
     );
   }
@@ -246,290 +127,333 @@ export function AboutPageEditor() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold">Редактор страницы "О нас"</h2>
-          <p className="text-muted-foreground">
-            Управление контентом страницы "О нас"
-          </p>
+          <h1 className="text-3xl font-bold">Страница "О нас"</h1>
+          <p className="text-muted-foreground">Управление контентом страницы О нас</p>
         </div>
-        <Button onClick={saveContent} disabled={saving} className="bg-gradient-button">
-          {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
-          Сохранить
+        <Button onClick={saveContent} disabled={saving} className="gap-2">
+          {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+          Сохранить изменения
         </Button>
       </div>
 
-      {/* Hero Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Главная секция</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div>
-            <label className="text-sm font-medium">Заголовок</label>
-            <Input
-              value={content.hero_title}
-              onChange={(e) => setContent(prev => ({ ...prev, hero_title: e.target.value }))}
-              placeholder="International Poker Style"
-            />
-          </div>
-          <div>
-            <label className="text-sm font-medium">Подзаголовок</label>
-            <Input
-              value={content.hero_subtitle}
-              onChange={(e) => setContent(prev => ({ ...prev, hero_subtitle: e.target.value }))}
-              placeholder="О компании"
-            />
-          </div>
-          <div>
-            <label className="text-sm font-medium">Описание</label>
-            <Textarea
-              value={content.hero_description}
-              onChange={(e) => setContent(prev => ({ ...prev, hero_description: e.target.value }))}
-              rows={3}
-              placeholder="Описание компании..."
-            />
-          </div>
-        </CardContent>
-      </Card>
+      <Tabs defaultValue="hero" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="hero">Главная секция</TabsTrigger>
+          <TabsTrigger value="story">Наша история</TabsTrigger>
+          <TabsTrigger value="values">Ценности</TabsTrigger>
+          <TabsTrigger value="team">Команда</TabsTrigger>
+        </TabsList>
 
-      {/* Achievements */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Достижения</CardTitle>
-          <Button onClick={addAchievement} variant="outline" size="sm">
-            <Plus className="w-4 h-4 mr-2" />
-            Добавить
-          </Button>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {achievements.map((achievement, index) => (
-            <div key={index} className="border rounded-lg p-4 space-y-3">
-              <div className="flex items-center justify-between">
-                <Badge variant="outline">Достижение #{index + 1}</Badge>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => removeAchievement(index)}
-                >
-                  <Trash2 className="w-4 h-4" />
-                </Button>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
+        {/* Hero Section */}
+        <TabsContent value="hero" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Eye className="w-5 h-5" />
+                Главная секция
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="hero_badge">Бейдж</Label>
                 <Input
-                  placeholder="Заголовок"
-                  value={achievement.title}
-                  onChange={(e) => updateAchievement(index, 'title', e.target.value)}
-                />
-                <Input
-                  placeholder="Иконка"
-                  value={achievement.icon}
-                  onChange={(e) => updateAchievement(index, 'icon', e.target.value)}
+                  id="hero_badge"
+                  value={content.hero_badge || ''}
+                  onChange={(e) => updateContent('hero_badge', e.target.value)}
+                  placeholder="О компании"
                 />
               </div>
-              <Textarea
-                placeholder="Описание"
-                value={achievement.description}
-                onChange={(e) => updateAchievement(index, 'description', e.target.value)}
-                rows={2}
-              />
-            </div>
-          ))}
-        </CardContent>
-      </Card>
-
-      {/* Story Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle>История компании</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div>
-            <label className="text-sm font-medium">Заголовок</label>
-            <Input
-              value={content.story_title}
-              onChange={(e) => setContent(prev => ({ ...prev, story_title: e.target.value }))}
-              placeholder="Как всё начиналось"
-            />
-          </div>
-          <div>
-            <label className="text-sm font-medium">Содержание</label>
-            <Textarea
-              value={content.story_content}
-              onChange={(e) => setContent(prev => ({ ...prev, story_content: e.target.value }))}
-              rows={6}
-              placeholder="История создания компании..."
-            />
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Values */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Ценности</CardTitle>
-          <Button onClick={addValue} variant="outline" size="sm">
-            <Plus className="w-4 h-4 mr-2" />
-            Добавить
-          </Button>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-2 gap-3 mb-4">
-            <div>
-              <label className="text-sm font-medium">Заголовок секции</label>
-              <Input
-                value={content.values_title}
-                onChange={(e) => setContent(prev => ({ ...prev, values_title: e.target.value }))}
-                placeholder="Во что мы верим"
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium">Подзаголовок</label>
-              <Input
-                value={content.values_subtitle}
-                onChange={(e) => setContent(prev => ({ ...prev, values_subtitle: e.target.value }))}
-                placeholder="Описание ценностей"
-              />
-            </div>
-          </div>
-          
-          {values.map((value, index) => (
-            <div key={index} className="border rounded-lg p-4 space-y-3">
-              <div className="flex items-center justify-between">
-                <Badge variant="outline">Ценность #{index + 1}</Badge>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => removeValue(index)}
-                >
-                  <Trash2 className="w-4 h-4" />
-                </Button>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
+              
+              <div className="space-y-2">
+                <Label htmlFor="hero_title">Заголовок</Label>
                 <Input
-                  placeholder="Название"
-                  value={value.title}
-                  onChange={(e) => updateValue(index, 'title', e.target.value)}
-                />
-                <Input
-                  placeholder="Иконка"
-                  value={value.icon}
-                  onChange={(e) => updateValue(index, 'icon', e.target.value)}
+                  id="hero_title"
+                  value={content.hero_title || ''}
+                  onChange={(e) => updateContent('hero_title', e.target.value)}
+                  placeholder="International Poker Style"
                 />
               </div>
-              <Textarea
-                placeholder="Описание"
-                value={value.description}
-                onChange={(e) => updateValue(index, 'description', e.target.value)}
-                rows={2}
-              />
-            </div>
-          ))}
-        </CardContent>
-      </Card>
-
-      {/* Team */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Команда</CardTitle>
-          <Button onClick={addTeamMember} variant="outline" size="sm">
-            <Plus className="w-4 h-4 mr-2" />
-            Добавить
-          </Button>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-2 gap-3 mb-4">
-            <div>
-              <label className="text-sm font-medium">Заголовок секции</label>
-              <Input
-                value={content.team_title}
-                onChange={(e) => setContent(prev => ({ ...prev, team_title: e.target.value }))}
-                placeholder="Познакомьтесь с нашей командой"
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium">Подзаголовок</label>
-              <Input
-                value={content.team_subtitle}
-                onChange={(e) => setContent(prev => ({ ...prev, team_subtitle: e.target.value }))}
-                placeholder="Описание команды"
-              />
-            </div>
-          </div>
-
-          {team.map((member, index) => (
-            <div key={index} className="border rounded-lg p-4 space-y-3">
-              <div className="flex items-center justify-between">
-                <Badge variant="outline">Участник #{index + 1}</Badge>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => removeTeamMember(index)}
-                >
-                  <Trash2 className="w-4 h-4" />
-                </Button>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <Input
-                  placeholder="Имя"
-                  value={member.name}
-                  onChange={(e) => updateTeamMember(index, 'name', e.target.value)}
-                />
-                <Input
-                  placeholder="Должность"
-                  value={member.role}
-                  onChange={(e) => updateTeamMember(index, 'role', e.target.value)}
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <Input
-                  placeholder="Опыт"
-                  value={member.experience}
-                  onChange={(e) => updateTeamMember(index, 'experience', e.target.value)}
-                />
-                <Input
-                  placeholder="URL фото"
-                  value={member.image}
-                  onChange={(e) => updateTeamMember(index, 'image', e.target.value)}
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium">Достижения (по одному на строку)</label>
+              
+              <div className="space-y-2">
+                <Label htmlFor="hero_description">Описание</Label>
                 <Textarea
-                  placeholder="Достижение 1&#10;Достижение 2&#10;Достижение 3"
-                  value={member.achievements.join('\n')}
-                  onChange={(e) => updateTeamMember(index, 'achievements', e.target.value.split('\n'))}
+                  id="hero_description"
+                  value={content.hero_description || ''}
+                  onChange={(e) => updateContent('hero_description', e.target.value)}
+                  placeholder="Описание компании..."
+                  rows={4}
+                />
+              </div>
+
+              <ImageUploader
+                label="Главное изображение"
+                currentImageUrl={content.hero_image || ''}
+                onImageChange={(url) => updateContent('hero_image', url)}
+                folder="about/hero"
+                placeholder="Загрузите главное изображение страницы"
+              />
+            </CardContent>
+          </Card>
+
+          {/* Achievements */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Достижения</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {[1, 2, 3, 4].map((num) => (
+                <div key={num} className="grid grid-cols-3 gap-4 p-4 border rounded-lg">
+                  <div className="space-y-2">
+                    <Label>Заголовок {num}</Label>
+                    <Input
+                      value={content[`achievement_${num}_title`] || ''}
+                      onChange={(e) => updateContent(`achievement_${num}_title`, e.target.value)}
+                      placeholder="500+ турниров"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Описание {num}</Label>
+                    <Input
+                      value={content[`achievement_${num}_desc`] || ''}
+                      onChange={(e) => updateContent(`achievement_${num}_desc`, e.target.value)}
+                      placeholder="Проведено за 3 года работы"
+                    />
+                  </div>
+                  <IconSelector
+                    label={`Иконка ${num}`}
+                    currentIcon={content[`achievement_${num}_icon`] || ''}
+                    onIconChange={(iconName) => updateContent(`achievement_${num}_icon`, iconName)}
+                    placeholder="Выберите иконку достижения"
+                  />
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Story Section */}
+        <TabsContent value="story" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Наша история</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="story_badge">Бейдж секции</Label>
+                <Input
+                  id="story_badge"
+                  value={content.story_badge || ''}
+                  onChange={(e) => updateContent('story_badge', e.target.value)}
+                  placeholder="Наша история"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="story_title">Заголовок</Label>
+                <Input
+                  id="story_title"
+                  value={content.story_title || ''}
+                  onChange={(e) => updateContent('story_title', e.target.value)}
+                  placeholder="Как всё начиналось"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="story_paragraph1">Первый абзац</Label>
+                <Textarea
+                  id="story_paragraph1"
+                  value={content.story_paragraph1 || ''}
+                  onChange={(e) => updateContent('story_paragraph1', e.target.value)}
                   rows={3}
                 />
               </div>
-            </div>
-          ))}
-        </CardContent>
-      </Card>
+              
+              <div className="space-y-2">
+                <Label htmlFor="story_paragraph2">Второй абзац</Label>
+                <Textarea
+                  id="story_paragraph2"
+                  value={content.story_paragraph2 || ''}
+                  onChange={(e) => updateContent('story_paragraph2', e.target.value)}
+                  rows={3}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="story_paragraph3">Третий абзац</Label>
+                <Textarea
+                  id="story_paragraph3"
+                  value={content.story_paragraph3 || ''}
+                  onChange={(e) => updateContent('story_paragraph3', e.target.value)}
+                  rows={3}
+                />
+              </div>
 
-      {/* CTA Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Призыв к действию</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div>
-            <label className="text-sm font-medium">Заголовок</label>
-            <Input
-              value={content.cta_title}
-              onChange={(e) => setContent(prev => ({ ...prev, cta_title: e.target.value }))}
-              placeholder="Готовы стать частью IPS?"
-            />
-          </div>
-          <div>
-            <label className="text-sm font-medium">Описание</label>
-            <Textarea
-              value={content.cta_description}
-              onChange={(e) => setContent(prev => ({ ...prev, cta_description: e.target.value }))}
-              rows={2}
-              placeholder="Текст призыва к действию..."
-            />
-          </div>
-        </CardContent>
-      </Card>
+              <ImageUploader
+                label="Изображение истории"
+                currentImageUrl={content.story_image || ''}
+                onImageChange={(url) => updateContent('story_image', url)}
+                folder="about/story"
+                placeholder="Загрузите изображение для секции истории"
+              />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Values Section */}
+        <TabsContent value="values" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Ценности</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="values_badge">Бейдж секции</Label>
+                <Input
+                  id="values_badge"
+                  value={content.values_badge || ''}
+                  onChange={(e) => updateContent('values_badge', e.target.value)}
+                  placeholder="Наши ценности"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="values_title">Заголовок</Label>
+                <Input
+                  id="values_title"
+                  value={content.values_title || ''}
+                  onChange={(e) => updateContent('values_title', e.target.value)}
+                  placeholder="Во что мы верим"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="values_description">Описание</Label>
+                <Textarea
+                  id="values_description"
+                  value={content.values_description || ''}
+                  onChange={(e) => updateContent('values_description', e.target.value)}
+                  rows={2}
+                />
+              </div>
+
+              {[1, 2, 3, 4].map((num) => (
+                <div key={num} className="grid grid-cols-3 gap-4 p-4 border rounded-lg">
+                  <div className="space-y-2">
+                    <Label>Ценность {num} - Название</Label>
+                    <Input
+                      value={content[`value_${num}_title`] || ''}
+                      onChange={(e) => updateContent(`value_${num}_title`, e.target.value)}
+                      placeholder="Честность"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Ценность {num} - Описание</Label>
+                    <Textarea
+                      value={content[`value_${num}_desc`] || ''}
+                      onChange={(e) => updateContent(`value_${num}_desc`, e.target.value)}
+                      rows={2}
+                    />
+                  </div>
+                  <IconSelector
+                    label={`Иконка ценности ${num}`}
+                    currentIcon={content[`value_${num}_icon`] || ''}
+                    onIconChange={(iconName) => updateContent(`value_${num}_icon`, iconName)}
+                    placeholder="Выберите иконку ценности"
+                  />
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Team Section */}
+        <TabsContent value="team" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Команда</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="team_badge">Бейдж секции</Label>
+                <Input
+                  id="team_badge"
+                  value={content.team_badge || ''}
+                  onChange={(e) => updateContent('team_badge', e.target.value)}
+                  placeholder="Команда"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="team_title">Заголовок</Label>
+                <Input
+                  id="team_title"
+                  value={content.team_title || ''}
+                  onChange={(e) => updateContent('team_title', e.target.value)}
+                  placeholder="Познакомьтесь с нашей командой"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="team_description">Описание</Label>
+                <Textarea
+                  id="team_description"
+                  value={content.team_description || ''}
+                  onChange={(e) => updateContent('team_description', e.target.value)}
+                  rows={2}
+                />
+              </div>
+
+              {[1, 2, 3].map((num) => (
+                <div key={num} className="space-y-4 p-4 border rounded-lg">
+                  <h4 className="font-semibold">Член команды {num}</h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Имя</Label>
+                      <Input
+                        value={content[`team_${num}_name`] || ''}
+                        onChange={(e) => updateContent(`team_${num}_name`, e.target.value)}
+                        placeholder="Александр Петров"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Должность</Label>
+                      <Input
+                        value={content[`team_${num}_role`] || ''}
+                        onChange={(e) => updateContent(`team_${num}_role`, e.target.value)}
+                        placeholder="Основатель и Турнирный Директор"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Опыт</Label>
+                      <Input
+                        value={content[`team_${num}_experience`] || ''}
+                        onChange={(e) => updateContent(`team_${num}_experience`, e.target.value)}
+                        placeholder="15+ лет в покере"
+                      />
+                    </div>
+                    <ImageUploader
+                      label={`Фото ${num}`}
+                      currentImageUrl={content[`team_${num}_image`] || ''}
+                      onImageChange={(url) => updateContent(`team_${num}_image`, url)}
+                      folder={`about/team/member-${num}`}
+                      placeholder="Загрузите фото члена команды"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Достижения (через запятую)</Label>
+                    <Textarea
+                      value={content[`team_${num}_achievements`] || ''}
+                      onChange={(e) => updateContent(`team_${num}_achievements`, e.target.value)}
+                      placeholder="WSOP Circuit Ring, EPT Final Table, Международный судья"
+                      rows={2}
+                    />
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
