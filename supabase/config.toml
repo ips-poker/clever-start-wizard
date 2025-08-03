@@ -1,1 +1,4 @@
 project_id = "mokhssmnorrhohrowxvu"
+
+[functions.realtime-voice-tournament]
+verify_jwt = false

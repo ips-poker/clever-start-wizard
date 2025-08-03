@@ -21,6 +21,7 @@ export function useCMSContent(pageSlug: string): UseCMSContentResult {
   
   const retryTimeoutRef = useRef<NodeJS.Timeout>();
   const channelRef = useRef<any>(null);
+  const lastReconnectTime = useRef(0);
   const retryCountRef = useRef(0);
   const maxRetries = 3;
   const baseRetryDelay = 1000; // 1 second
@@ -76,12 +77,21 @@ export function useCMSContent(pageSlug: string): UseCMSContentResult {
   const setupRealtimeSubscription = useCallback(() => {
     // Clean up existing subscription
     if (channelRef.current) {
+      console.log('CMS realtime subscription cleaning up...');
       supabase.removeChannel(channelRef.current);
+      channelRef.current = null;
     }
 
-    // Create new subscription
+    // Rate limiting - prevent too frequent reconnections
+    if (Date.now() - lastReconnectTime.current < 5000) {
+      console.log('CMS realtime subscription rate limited, skipping...');
+      return;
+    }
+    lastReconnectTime.current = Date.now();
+
+    // Create new subscription with simplified channel name
     channelRef.current = supabase
-      .channel(`cms_content_${pageSlug}_${Date.now()}`) // Unique channel name to prevent conflicts
+      .channel(`cms_${pageSlug}`)
       .on(
         'postgres_changes',
         {
