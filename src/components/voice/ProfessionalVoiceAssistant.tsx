@@ -306,58 +306,289 @@ export function ProfessionalVoiceAssistant({ selectedTournament, onStatusChange 
       {/* Быстрые команды */}
       <Card>
         <CardHeader>
-          <CardTitle>Быстрые команды</CardTitle>
+          <CardTitle>Управление турниром</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Основные команды */}
+          <div className="space-y-2">
+            <p className="text-sm font-medium text-muted-foreground">Основные команды</p>
+            <div className="grid grid-cols-3 gap-2">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => quickCommand("показать статистику турнира")}
+                disabled={!selectedTournament}
+              >
+                Статистика
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => quickCommand("поставить турнир на паузу")}
+                disabled={!selectedTournament}
+              >
+                Пауза
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => quickCommand("возобновить турнир")}
+                disabled={!selectedTournament}
+              >
+                Продолжить
+              </Button>
+            </div>
+          </div>
+
+          {/* Блайнды */}
+          <div className="space-y-2">
+            <p className="text-sm font-medium text-muted-foreground">Блайнды</p>
+            <div className="grid grid-cols-3 gap-2">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => quickCommand("следующий уровень блайндов")}
+                disabled={!selectedTournament}
+              >
+                Следующий уровень
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => quickCommand("предыдущий уровень блайндов")}
+                disabled={!selectedTournament}
+              >
+                Предыдущий уровень
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => quickCommand("установить уровень 5")}
+                disabled={!selectedTournament}
+              >
+                Уровень 5
+              </Button>
+            </div>
+          </div>
+
+          {/* Таймер */}
+          <div className="space-y-2">
+            <p className="text-sm font-medium text-muted-foreground">Таймер</p>
+            <div className="grid grid-cols-4 gap-2">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => quickCommand("таймер 20 минут")}
+                disabled={!selectedTournament}
+              >
+                20 мин
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => quickCommand("добавить время 5 минут")}
+                disabled={!selectedTournament}
+              >
+                +5 мин
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => quickCommand("остановить таймер")}
+                disabled={!selectedTournament}
+              >
+                Стоп
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => quickCommand("запустить таймер")}
+                disabled={!selectedTournament}
+              >
+                Старт
+              </Button>
+            </div>
+          </div>
+
+          {/* Перерывы */}
+          <div className="space-y-2">
+            <p className="text-sm font-medium text-muted-foreground">Перерывы</p>
+            <div className="grid grid-cols-3 gap-2">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => quickCommand("перерыв на 15 минут")}
+                disabled={!selectedTournament}
+              >
+                Перерыв 15 мин
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => quickCommand("перерыв на 30 минут")}
+                disabled={!selectedTournament}
+              >
+                Перерыв 30 мин
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => quickCommand("закончить перерыв")}
+                disabled={!selectedTournament}
+              >
+                Конец перерыва
+              </Button>
+            </div>
+          </div>
+
+          {/* Игроки и столы */}
+          <div className="space-y-2">
+            <p className="text-sm font-medium text-muted-foreground">Игроки и столы</p>
+            <div className="grid grid-cols-3 gap-2">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => quickCommand("список игроков")}
+                disabled={!selectedTournament}
+              >
+                Список игроков
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => quickCommand("перебалансировать столы")}
+                disabled={!selectedTournament}
+              >
+                Перебалансировка
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => quickCommand("лидеры чипов")}
+                disabled={!selectedTournament}
+              >
+                Чип-лидеры
+              </Button>
+            </div>
+          </div>
+
+          {/* Объявления */}
+          <div className="space-y-2">
+            <p className="text-sm font-medium text-muted-foreground">Объявления</p>
+            <div className="grid grid-cols-3 gap-2">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => quickCommand("тишина")}
+                disabled={!selectedTournament}
+              >
+                Тишина
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => quickCommand("последняя рука")}
+                disabled={!selectedTournament}
+              >
+                Последняя рука
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => quickCommand("финальный стол")}
+                disabled={!selectedTournament}
+              >
+                Финальный стол
+              </Button>
+            </div>
+          </div>
+
+          {/* Завершение */}
+          <div className="space-y-2">
+            <p className="text-sm font-medium text-muted-foreground">Завершение</p>
+            <div className="grid grid-cols-3 gap-2">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => quickCommand("выплаты")}
+                disabled={!selectedTournament}
+              >
+                Выплаты
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => quickCommand("награждение")}
+                disabled={!selectedTournament}
+              >
+                Награждение
+              </Button>
+              <Button 
+                variant="destructive" 
+                size="sm"
+                onClick={() => quickCommand("завершить турнир")}
+                disabled={!selectedTournament}
+              >
+                Завершить турнир
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Подсказки по командам */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Голосовые команды</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 gap-2">
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => quickCommand("показать статистику турнира")}
-              disabled={!selectedTournament}
-            >
-              Статистика
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => quickCommand("поставить турнир на паузу")}
-              disabled={!selectedTournament}
-            >
-              Пауза
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => quickCommand("следующий уровень блайндов")}
-              disabled={!selectedTournament}
-            >
-              Следующий уровень
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => quickCommand("перерыв на 15 минут")}
-              disabled={!selectedTournament}
-            >
-              Перерыв 15 мин
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => quickCommand("объявление внимание игроки")}
-              disabled={!selectedTournament}
-            >
-              Объявление
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => quickCommand("завершить турнир")}
-              disabled={!selectedTournament}
-            >
-              Завершить
-            </Button>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+            <div className="space-y-2">
+              <h4 className="font-medium">Управление турниром:</h4>
+              <ul className="space-y-1 text-muted-foreground">
+                <li>• "Запустить турнир"</li>
+                <li>• "Поставить на паузу"</li>
+                <li>• "Возобновить турнир"</li>
+                <li>• "Завершить турнир"</li>
+                <li>• "Показать статистику"</li>
+              </ul>
+            </div>
+            <div className="space-y-2">
+              <h4 className="font-medium">Блайнды и таймер:</h4>
+              <ul className="space-y-1 text-muted-foreground">
+                <li>• "Следующий уровень"</li>
+                <li>• "Установить уровень 5"</li>
+                <li>• "Таймер 20 минут"</li>
+                <li>• "Добавить время 5 минут"</li>
+                <li>• "Остановить таймер"</li>
+              </ul>
+            </div>
+            <div className="space-y-2">
+              <h4 className="font-medium">Игроки:</h4>
+              <ul className="space-y-1 text-muted-foreground">
+                <li>• "Список игроков"</li>
+                <li>• "Исключить игрока Иван"</li>
+                <li>• "Пересадить игрока на стол 3"</li>
+                <li>• "Лидеры чипов"</li>
+                <li>• "Перебалансировать столы"</li>
+              </ul>
+            </div>
+            <div className="space-y-2">
+              <h4 className="font-medium">Объявления:</h4>
+              <ul className="space-y-1 text-muted-foreground">
+                <li>• "Тишина"</li>
+                <li>• "Последняя рука"</li>
+                <li>• "Перерыв на 15 минут"</li>
+                <li>• "Финальный стол"</li>
+                <li>• "Объявление [текст]"</li>
+              </ul>
+            </div>
+          </div>
+          <div className="mt-4 p-3 bg-muted rounded-lg">
+            <p className="text-sm text-muted-foreground">
+              💡 <strong>Совет:</strong> Говорите четко и естественно. Ассистент понимает команды на русском языке 
+              и может выполнять сложные действия, такие как "Пересадить игрока Петров на стол номер 5".
+            </p>
           </div>
         </CardContent>
       </Card>
