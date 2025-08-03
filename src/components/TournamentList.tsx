@@ -73,13 +73,64 @@ export function TournamentList() {
   };
 
   const registerForTournament = async (tournamentId: string) => {
-    // For now, we'll just show a success message
-    // In a real app, this would require authentication
-    toast({
-      title: "Регистрация на турнир",
-      description: "Для регистрации на турнир необходимо войти в систему",
-      variant: "default"
-    });
+    try {
+      // Проверяем авторизацию
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        toast({
+          title: "Требуется авторизация",
+          description: "Для регистрации на турнир необходимо войти в систему",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Проверяем, не зарегистрирован ли уже пользователь
+      const { data: existingRegistration } = await supabase
+        .from('tournament_registrations')
+        .select('id')
+        .eq('tournament_id', tournamentId)
+        .eq('player_id', user.id)
+        .single();
+
+      if (existingRegistration) {
+        toast({
+          title: "Уже зарегистрирован",
+          description: "Вы уже зарегистрированы на этот турнир",
+          variant: "default"
+        });
+        return;
+      }
+
+      // Регистрируем на турнир
+      const { error } = await supabase
+        .from('tournament_registrations')
+        .insert({
+          tournament_id: tournamentId,
+          player_id: user.id,
+          registration_time: new Date().toISOString()
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: "Успешная регистрация",
+        description: "Вы успешно зарегистрированы на турнир",
+        variant: "default"
+      });
+
+      // Обновляем список турниров
+      loadTournaments();
+      
+    } catch (error) {
+      console.error('Error registering for tournament:', error);
+      toast({
+        title: "Ошибка регистрации",
+        description: "Не удалось зарегистрироваться на турнир",
+        variant: "destructive"
+      });
+    }
   };
 
   const getStatusBadge = (status: string) => {
@@ -189,7 +240,7 @@ export function TournamentList() {
                           setSelectedTournament(tournament);
                           setModalOpen(true);
                         }}
-                        className="w-full opacity-0 group-hover:opacity-100 transition-all duration-300 border-poker-accent/30 text-poker-accent hover:bg-poker-accent/10"
+                        className="w-full transition-all duration-300 border-poker-accent/30 text-poker-accent hover:bg-poker-accent/10"
                       >
                         <Info className="w-4 h-4 mr-2" />
                         Подробнее
@@ -215,7 +266,12 @@ export function TournamentList() {
         )}
 
         <div className="text-center mt-12">
-          <Button variant="outline" size="lg" className="hover:bg-poker-primary/10 hover:text-poker-primary transition-all duration-300">
+          <Button 
+            variant="outline" 
+            size="lg" 
+            className="hover:bg-poker-primary/10 hover:text-poker-primary transition-all duration-300"
+            onClick={() => window.location.href = '/tournaments'}
+          >
             Показать все турниры
           </Button>
         </div>
