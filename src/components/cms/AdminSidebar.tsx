@@ -97,6 +97,17 @@ export function AdminSidebar({ activeTab, onTabChange }: AdminSidebarProps) {
 
   const isActive = (tabId: string) => activeTab === tabId;
 
+  const handleNavigation = (itemId: string) => {
+    // Если это турниры - переходим на отдельную страницу
+    if (itemId === 'tournaments') {
+      window.location.href = '/tournament-director';
+      return;
+    }
+    
+    // Для всех остальных - используем callback для смены вкладки
+    onTabChange(itemId);
+  };
+
   return (
     <Sidebar className={collapsed ? "w-14" : "w-64"} collapsible="icon">
       <SidebarTrigger className="m-2 self-end" />
@@ -116,7 +127,7 @@ export function AdminSidebar({ activeTab, onTabChange }: AdminSidebarProps) {
                       className={isActive(item.id) ? "bg-primary/10 text-primary font-medium" : "hover:bg-muted/50"}
                     >
                       <button
-                        onClick={() => onTabChange(item.id)}
+                        onClick={() => handleNavigation(item.id)}
                         className="w-full flex items-center gap-3 px-3 py-2 text-left"
                       >
                         <item.icon className="h-4 w-4 flex-shrink-0" />
