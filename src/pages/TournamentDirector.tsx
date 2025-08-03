@@ -712,7 +712,7 @@ const TournamentDirector = () => {
               className="data-[state=active]:bg-gradient-button data-[state=active]:text-white data-[state=active]:shadow-accent transition-all duration-300 rounded-xl font-medium"
             >
               <Activity className="w-5 h-5 mr-2" />
-              Обзор
+              Управление
             </TabsTrigger>
             <TabsTrigger 
               value="tournaments" 
@@ -726,7 +726,7 @@ const TournamentDirector = () => {
               className="data-[state=active]:bg-gradient-button data-[state=active]:text-white data-[state=active]:shadow-accent transition-all duration-300 rounded-xl font-medium"
             >
               <Settings className="w-5 h-5 mr-2" />
-              Управление
+              Структура
             </TabsTrigger>
             <TabsTrigger 
               value="players" 
@@ -1079,11 +1079,11 @@ const TournamentDirector = () => {
                           variant="outline"
                           onClick={() => {
                             setSelectedTournament(tournament);
-                            setActiveTab("control");
+                            setActiveTab("overview");
                           }}
                           className="border-gray-200/50 hover:shadow-minimal text-xs"
                         >
-                          <Settings className="w-3 h-3 mr-1" />
+                          <Activity className="w-3 h-3 mr-1" />
                           Управление
                         </Button>
                         {tournament.status === 'scheduled' && (
@@ -1122,7 +1122,19 @@ const TournamentDirector = () => {
                           </Button>
                         )}
                       </div>
-                      <div className="grid grid-cols-2 gap-2">
+                      <div className="grid grid-cols-3 gap-2">
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => {
+                            setSelectedTournament(tournament);
+                            setActiveTab("control");
+                          }}
+                          className="border-gray-200/50 hover:shadow-minimal text-xs"
+                        >
+                          <Settings className="w-3 h-3 mr-1" />
+                          Структура
+                        </Button>
                         <Button 
                           size="sm" 
                           variant="outline"
