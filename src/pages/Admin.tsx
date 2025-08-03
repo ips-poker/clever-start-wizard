@@ -35,7 +35,7 @@ export default function Admin() {
   const renderTabContent = () => {
     switch (activeTab) {
       case "dashboard":
-        return <AdminDashboard />;
+        return <AdminDashboard onTabChange={setActiveTab} />;
       case "quick-setup":
         return <QuickSetup />;
       case "home-editor":

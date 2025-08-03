@@ -16,6 +16,10 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
+interface AdminDashboardProps {
+  onTabChange?: (tab: string) => void;
+}
+
 interface DashboardStats {
   totalContent: number;
   activeContent: number;
@@ -30,7 +34,7 @@ interface DashboardStats {
   }>;
 }
 
-export function AdminDashboard() {
+export function AdminDashboard({ onTabChange }: AdminDashboardProps) {
   const [stats, setStats] = useState<DashboardStats>({
     totalContent: 0,
     activeContent: 0,
@@ -236,19 +240,35 @@ export function AdminDashboard() {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 gap-3">
-              <Button variant="outline" className="h-auto p-4 flex flex-col gap-2">
+              <Button 
+                variant="outline" 
+                className="h-auto p-4 flex flex-col gap-2"
+                onClick={() => onTabChange?.('home-editor')}
+              >
                 <FileText className="w-5 h-5" />
                 <span className="text-sm">Редактировать главную</span>
               </Button>
-              <Button variant="outline" className="h-auto p-4 flex flex-col gap-2">
+              <Button 
+                variant="outline" 
+                className="h-auto p-4 flex flex-col gap-2"
+                onClick={() => onTabChange?.('gallery')}
+              >
                 <Image className="w-5 h-5" />
                 <span className="text-sm">Управление галереей</span>
               </Button>
-              <Button variant="outline" className="h-auto p-4 flex flex-col gap-2">
+              <Button 
+                variant="outline" 
+                className="h-auto p-4 flex flex-col gap-2"
+                onClick={() => onTabChange?.('tournaments')}
+              >
                 <Trophy className="w-5 h-5" />
                 <span className="text-sm">Новый турнир</span>
               </Button>
-              <Button variant="outline" className="h-auto p-4 flex flex-col gap-2">
+              <Button 
+                variant="outline" 
+                className="h-auto p-4 flex flex-col gap-2"
+                onClick={() => onTabChange?.('seo')}
+              >
                 <Globe className="w-5 h-5" />
                 <span className="text-sm">SEO настройки</span>
               </Button>
