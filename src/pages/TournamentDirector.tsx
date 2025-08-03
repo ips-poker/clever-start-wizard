@@ -181,39 +181,36 @@ const TournamentDirector = () => {
   useEffect(() => {
     let mounted = true;
     let channels: any[] = [];
+    let timeouts: NodeJS.Timeout[] = [];
     
     const initializeData = async () => {
-      if (mounted) {
-        try {
-          await Promise.all([loadTournaments(), loadPlayers()]);
-        } catch (error) {
-          console.warn('Error initializing data:', error);
-        }
+      if (!mounted) return;
+      try {
+        await Promise.all([loadTournaments(), loadPlayers()]);
+      } catch (error) {
+        console.warn('Error initializing data:', error);
       }
     };
     
     initializeData();
     
-    // Debounced real-time subscriptions with error handling
+    // Setup subscriptions with proper cleanup
     const setupSubscriptions = () => {
       try {
         const tournamentsChannel = supabase
-          .channel('tournaments-changes-director')
+          .channel('tournaments-changes-director-' + Date.now())
           .on('postgres_changes', 
             { event: '*', schema: 'public', table: 'tournaments' },
             () => { 
-              if (mounted) {
-                // Debounce updates to prevent excessive calls
-                setTimeout(() => {
-                  if (mounted) {
-                    try {
-                      loadTournaments();
-                    } catch (error) {
-                      console.warn('Error loading tournaments in subscription:', error);
-                    }
-                  }
-                }, 500);
-              }
+              if (!mounted) return;
+              
+              const timeoutId = setTimeout(() => {
+                if (mounted) {
+                  loadTournaments().catch(console.warn);
+                }
+              }, 1000); // Increased debounce time
+              
+              timeouts.push(timeoutId);
             }
           );
         
@@ -226,22 +223,19 @@ const TournamentDirector = () => {
         });
 
         const playersChannel = supabase
-          .channel('players-changes-director')
+          .channel('players-changes-director-' + Date.now())
           .on('postgres_changes',
             { event: '*', schema: 'public', table: 'players' },
             () => { 
-              if (mounted) {
-                // Debounce updates to prevent excessive calls
-                setTimeout(() => {
-                  if (mounted) {
-                    try {
-                      loadPlayers();
-                    } catch (error) {
-                      console.warn('Error loading players in subscription:', error);
-                    }
-                  }
-                }, 500);
-              }
+              if (!mounted) return;
+              
+              const timeoutId = setTimeout(() => {
+                if (mounted) {
+                  loadPlayers().catch(console.warn);
+                }
+              }, 1000); // Increased debounce time
+              
+              timeouts.push(timeoutId);
             }
           );
         
@@ -261,7 +255,26 @@ const TournamentDirector = () => {
 
     return () => {
       mounted = false;
-      // Safely cleanup all channels
+      
+      // Clear all timeouts
+      timeouts.forEach(timeout => {
+        if (timeout) {
+          clearTimeout(timeout);
+        }
+      });
+      
+      // Cleanup channels
+      channels.forEach(channel => {
+        try {
+          if (channel && channel.unsubscribe) {
+            channel.unsubscribe();
+          }
+        } catch (error) {
+          console.warn('Error unsubscribing channel:', error);
+        }
+      });
+      
+      // Remove channels from Supabase
       channels.forEach(channel => {
         try {
           if (channel) {
@@ -272,22 +285,22 @@ const TournamentDirector = () => {
         }
       });
     };
-  }, [loadTournaments, loadPlayers]);
+  }, []);
 
   useEffect(() => {
     let mounted = true;
     
     const loadTournamentData = async () => {
-      if (selectedTournament && mounted) {
-        try {
-          await loadRegistrations(selectedTournament.id);
-          if (mounted && selectedTournament.timer_remaining !== undefined) {
-            setCurrentTime(selectedTournament.timer_remaining);
-            localStorage.setItem('selectedTournamentId', selectedTournament.id);
-          }
-        } catch (error) {
-          console.warn('Error loading tournament data:', error);
+      if (!selectedTournament || !mounted) return;
+      
+      try {
+        await loadRegistrations(selectedTournament.id);
+        if (mounted && selectedTournament.timer_remaining !== undefined) {
+          setCurrentTime(selectedTournament.timer_remaining);
+          localStorage.setItem('selectedTournamentId', selectedTournament.id);
         }
+      } catch (error) {
+        console.warn('Error loading tournament data:', error);
       }
     };
     
@@ -296,9 +309,9 @@ const TournamentDirector = () => {
     return () => {
       mounted = false;
     };
-  }, [selectedTournament, loadRegistrations]);
+  }, [selectedTournament?.id]);
 
-  // Оптимизированный таймер с меньшей частотой синхронизации
+  // Оптимизированный таймер с безопасной очисткой
   useEffect(() => {
     // Clear any existing timer first
     if (timerRef.current) {
@@ -311,9 +324,9 @@ const TournamentDirector = () => {
         setCurrentTime(prev => {
           const newTime = prev - 1;
           
-          // Sync with database every 10 seconds instead of 5 (reduced frequency)
-          if (newTime % 10 === 0) {
-            syncTimerWithDatabase(selectedTournament.id, newTime);
+          // Sync with database every 30 seconds to reduce load
+          if (newTime % 30 === 0 && selectedTournament) {
+            syncTimerWithDatabase(selectedTournament.id, newTime).catch(console.warn);
           }
           
           if (newTime <= 0) {
@@ -322,7 +335,10 @@ const TournamentDirector = () => {
               title: "Время истекло!",
               description: "Уровень блайндов автоматически повышен",
             });
-            nextBlindLevel();
+            // Use setTimeout to avoid state updates during render
+            setTimeout(() => {
+              nextBlindLevel().catch(console.warn);
+            }, 100);
             return 0;
           }
           return newTime;
@@ -336,7 +352,7 @@ const TournamentDirector = () => {
         timerRef.current = null;
       }
     };
-  }, [timerActive, selectedTournament, toast]); // Added toast to dependencies
+  }, [timerActive, selectedTournament?.id]);
 
   const createTournament = async () => {
     if (!newTournament.name || !newTournament.start_time) {
