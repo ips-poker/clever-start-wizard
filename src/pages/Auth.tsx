@@ -167,20 +167,6 @@ export default function Auth() {
                 </Alert>
               )}
 
-              {/* Диагностическая информация */}
-              <Alert>
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>
-                  <div className="space-y-2">
-                    <p><strong>Диагностика:</strong></p>
-                    <p>URL: https://mokhssmnorrhohrowxvu.supabase.co</p>
-                    <p>Используйте данные: casinofix@ya.ru / Tsukanov34rus#</p>
-                    <Button size="sm" onClick={testConnection}>
-                      Тест подключения к БД
-                    </Button>
-                  </div>
-                </AlertDescription>
-              </Alert>
 
               <TabsContent value="signin">
                 <form onSubmit={handleSignIn} className="space-y-4">
