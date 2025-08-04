@@ -136,7 +136,7 @@ const FullscreenTimer = ({
     setTimeout(() => playBeep(1200, 0.2), 600);
   };
 
-  // Sound warning effects + Voice announcements
+  // Sound warning effects + Voice announcements + Auto level transition
   useEffect(() => {
     // Звуковые предупреждения
     if (currentTime === 120 && !twoMinuteWarning) {
@@ -155,6 +155,13 @@ const FullscreenTimer = ({
       setTenSecondAnnouncement(true);
     }
     
+    // Автоматический переход к следующему уровню при достижении 0
+    if (currentTime === 0 && timerActive === false) {
+      setTimeout(() => {
+        onNextLevel();
+      }, 2000); // Задержка 2 секунды для лучшего UX
+    }
+    
     // Сброс флагов при новом уровне
     if (currentTime > 120) {
       setTwoMinuteWarning(false);
@@ -163,7 +170,7 @@ const FullscreenTimer = ({
       setFiveSecondWarning(false);
       setTenSecondAnnouncement(false);
     }
-  }, [currentTime, twoMinuteWarning, fiveSecondWarning, tenSecondAnnouncement, voiceAnnouncementsEnabled, announceNextLevel, blindLevels, tournament.current_level]);
+  }, [currentTime, twoMinuteWarning, fiveSecondWarning, tenSecondAnnouncement, voiceAnnouncementsEnabled, announceNextLevel, blindLevels, tournament.current_level, timerActive, onNextLevel]);
 
   const activePlayers = registrations.filter(r => r.status === 'registered' || r.status === 'playing');
   const totalRebuys = registrations.reduce((sum, r) => sum + r.rebuys, 0);
