@@ -621,6 +621,53 @@ export type Database = {
           },
         ]
       }
+      voice_command_logs: {
+        Row: {
+          command_text: string
+          created_at: string
+          error_message: string | null
+          id: string
+          processing_time_ms: number | null
+          recognized_action: string | null
+          response_text: string | null
+          success: boolean
+          tournament_id: string | null
+          user_id: string
+        }
+        Insert: {
+          command_text: string
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          processing_time_ms?: number | null
+          recognized_action?: string | null
+          response_text?: string | null
+          success?: boolean
+          tournament_id?: string | null
+          user_id: string
+        }
+        Update: {
+          command_text?: string
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          processing_time_ms?: number | null
+          recognized_action?: string | null
+          response_text?: string | null
+          success?: boolean
+          tournament_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "voice_command_logs_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: false
+            referencedRelation: "tournaments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       voice_commands_log: {
         Row: {
           command: string
