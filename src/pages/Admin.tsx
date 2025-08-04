@@ -19,6 +19,7 @@ import { BackupManager } from "@/components/cms/BackupManager";
 import { SettingsManager } from "@/components/cms/SettingsManager";
 import { QuickSetup } from "@/components/cms/QuickSetup";
 import { TournamentInvitationGenerator } from "@/components/TournamentInvitationGenerator";
+import { SocialInvitationGenerator } from "@/components/SocialInvitationGenerator";
 import { AnalyticsOverview } from "@/components/cms/analytics/AnalyticsOverview";
 import { MediaLibrary } from "@/components/cms/media/MediaLibrary";
 import { WorkflowAutomation } from "@/components/cms/workflows/WorkflowAutomation";
@@ -84,7 +85,7 @@ export default function Admin() {
       case "orange-data":
         return <OrangeDataIntegration />;
       case "invitations":
-        return <TournamentInvitationGenerator />;
+        return <SocialInvitationGenerator />;
       case "tournaments":
         return (
           <div className="p-8">
