@@ -5,7 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { 
-  Volume2, 
+  Volume2,
+  FastForward,
+  Rewind,
   Maximize, 
   StopCircle,
   ChevronLeft,
@@ -30,7 +32,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import PlayerManagement from "./PlayerManagement";
 import FullscreenTimer from "./FullscreenTimer";
-import { useVoiceAnnouncements } from "@/hooks/useVoiceAnnouncements";
+import { useTimerSounds } from "@/hooks/useTimerSounds";
 
 interface Tournament {
   id: string;
@@ -114,17 +116,16 @@ const TournamentOverview = ({
     averageRating: 0
   });
   const [soundEnabled, setSoundEnabled] = useState(true);
-  const [voiceAnnouncementsEnabled, setVoiceAnnouncementsEnabled] = useState(true);
+  const [selectedSound, setSelectedSound] = useState('beep');
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showFullscreenTimer, setShowFullscreenTimer] = useState(false);
-  const [tenSecondAnnouncement, setTenSecondAnnouncement] = useState(false);
   const { toast } = useToast();
   const isMountedRef = useRef(true);
 
-  const { announceNextLevel, stopAnnouncement } = useVoiceAnnouncements({
-    enabled: voiceAnnouncementsEnabled,
-    voice: 'Aria',
-    volume: 0.8
+  const { playTimerAlert, stopSound, soundOptions } = useTimerSounds({
+    enabled: soundEnabled,
+    selectedSound: selectedSound,
+    volume: 0.7
   });
 
   useEffect(() => {
@@ -259,18 +260,12 @@ const TournamentOverview = ({
 
   const timerProgress = ((tournament.timer_duration - currentTime) / tournament.timer_duration) * 100;
 
-  // Голосовые оповещения
+  // Звуковые оповещения
   useEffect(() => {
-    if (currentTime === 10 && !tenSecondAnnouncement && voiceAnnouncementsEnabled) {
-      const nextLevel = blindLevels.find(l => l.level === tournament.current_level + 1);
-      announceNextLevel(tournament.current_level, nextLevel, currentTime);
-      setTenSecondAnnouncement(true);
+    if (soundEnabled) {
+      playTimerAlert(currentTime);
     }
-    
-    if (currentTime > 10) {
-      setTenSecondAnnouncement(false);
-    }
-  }, [currentTime, tenSecondAnnouncement, voiceAnnouncementsEnabled, announceNextLevel, blindLevels, tournament.current_level]);
+  }, [currentTime, soundEnabled, playTimerAlert]);
 
   return (
     <>
@@ -374,7 +369,7 @@ const TournamentOverview = ({
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-4 md:grid-cols-9 gap-2">
+          <div className="grid grid-cols-4 md:grid-cols-10 gap-2">
             <Button
               variant="outline"
               size="sm"
@@ -390,6 +385,27 @@ const TournamentOverview = ({
               <RotateCcw className="w-4 h-4" />
             </Button>
             
+            {/* Кнопки перемотки на 1 минуту */}
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => onTimerAdjust?.(-60)}
+              className="h-12 border-gray-200/50 hover:shadow-subtle"
+              title="Перемотать назад на 1 минуту"
+            >
+              <Rewind className="w-4 h-4" />
+            </Button>
+            
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => onTimerAdjust?.(60)}
+              className="h-12 border-gray-200/50 hover:shadow-subtle"
+              title="Перемотать вперед на 1 минуту"
+            >
+              <FastForward className="w-4 h-4" />
+            </Button>
+            
             <Button variant="outline" size="sm" onClick={onPrevLevel} className="h-12 border-gray-200/50 hover:shadow-subtle">
               <ChevronLeft className="w-4 h-4" />
             </Button>
@@ -403,22 +419,9 @@ const TournamentOverview = ({
               size="sm" 
               onClick={() => setSoundEnabled(!soundEnabled)}
               className={`h-12 border-gray-200/50 hover:shadow-subtle ${soundEnabled ? 'bg-blue-50 text-blue-600' : 'bg-gray-50 text-gray-500'}`}
+              title="Переключить звуковые оповещения"
             >
               <Volume2 className="w-4 h-4" />
-            </Button>
-
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => {
-                setVoiceAnnouncementsEnabled(!voiceAnnouncementsEnabled);
-                if (!voiceAnnouncementsEnabled) {
-                  stopAnnouncement();
-                }
-              }}
-              className={`h-12 border-gray-200/50 hover:shadow-subtle ${voiceAnnouncementsEnabled ? 'bg-green-50 text-green-600' : 'bg-gray-50 text-gray-500'}`}
-            >
-              <Mic className="w-4 h-4" />
             </Button>
             
             <Button variant="outline" size="sm" onClick={onOpenExternalTimer} className="h-12 border-gray-200/50 hover:shadow-subtle">
