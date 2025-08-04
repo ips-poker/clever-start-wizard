@@ -297,17 +297,37 @@ ${tournamentData.description}
       }));
 
       const canvas = await html2canvas(element, {
-        scale: 1, // Уменьшили scale для надежности
-        useCORS: false, // Отключили CORS для упрощения
-        allowTaint: true,
-        backgroundColor: '#1a1a1a',
+        scale: 2, // Увеличили для лучшего качества
+        useCORS: true,
+        allowTaint: false,
+        backgroundColor: null,
         logging: false,
         width: element.offsetWidth,
         height: element.offsetHeight,
         scrollX: 0,
         scrollY: 0,
         windowWidth: window.innerWidth,
-        windowHeight: window.innerHeight
+        windowHeight: window.innerHeight,
+        foreignObjectRendering: false, // Отключаем для лучшей совместимости со стилями
+        removeContainer: true,
+        onclone: (clonedDoc) => {
+          // Копируем все CSS стили в клонированный документ
+          const styles = Array.from(document.styleSheets);
+          styles.forEach((styleSheet, index) => {
+            try {
+              const cssRules = Array.from(styleSheet.cssRules || styleSheet.rules || []);
+              const style = clonedDoc.createElement('style');
+              style.textContent = cssRules.map(rule => rule.cssText).join('\n');
+              clonedDoc.head.appendChild(style);
+            } catch (e) {
+              // Игнорируем ошибки с внешними стилями
+              console.warn('Could not clone stylesheet:', e);
+            }
+          });
+          
+          // Добавляем время для рендеринга стилей
+          return new Promise(resolve => setTimeout(resolve, 1000));
+        }
       });
 
       const dataUrl = canvas.toDataURL('image/png', 0.9);
