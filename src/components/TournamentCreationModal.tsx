@@ -314,9 +314,9 @@ export function TournamentCreationModal({ open, onOpenChange, tournament, onTour
             timer_duration: formData.timer_duration,
             is_published: formData.is_published,
             is_archived: false,
-                current_level: 1,
-                current_small_blind: blindStructure[0]?.small_blind || 100,
-                current_big_blind: blindStructure[0]?.big_blind || 200,
+            current_level: 1,
+            current_small_blind: blindStructure[0]?.small_blind || 100,
+            current_big_blind: blindStructure[0]?.big_blind || 200,
             timer_remaining: formData.timer_duration
           }])
           .select('id')
