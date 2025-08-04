@@ -76,7 +76,7 @@ export const useProfessionalVoiceAssistant = (settings: VoiceSettings) => {
     const announcement = queueRef.current.shift();
     if (announcement) {
       setQueueLength(queueRef.current.length);
-      await playAnnouncementNow(announcement.text);
+      await (settings.useElevenLabs ? playWithElevenLabs(announcement.text) : playAnnouncementNow(announcement.text));
     }
 
     processingRef.current = false;
@@ -86,32 +86,7 @@ export const useProfessionalVoiceAssistant = (settings: VoiceSettings) => {
     if (queueRef.current.length > 0) {
       setTimeout(() => processQueue(), 500);
     }
-  }, []);
-
-  // ElevenLabs TTS
-  const playWithElevenLabs = useCallback(async (text: string): Promise<void> => {
-    try {
-      const response = await fetch('/api/elevenlabs-tts', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          text, 
-          voice_id: settings.elevenLabsVoiceId || 'pNInz6obpgDQGcFmaJgB' // Adam voice
-        })
-      });
-      
-      if (!response.ok) throw new Error('ElevenLabs API error');
-      
-      const audioData = await response.blob();
-      const audio = new Audio(URL.createObjectURL(audioData));
-      audio.volume = settings.volume;
-      await audio.play();
-    } catch (error) {
-      console.error('ElevenLabs error, fallback to browser TTS:', error);
-      // Fallback to browser TTS
-      await playAnnouncementNow(text);
-    }
-  }, [settings, playAnnouncementNow]);
+  }, [settings]);
 
   // Непосредственное воспроизведение
   const playAnnouncementNow = useCallback(async (text: string): Promise<void> => {
@@ -179,6 +154,31 @@ export const useProfessionalVoiceAssistant = (settings: VoiceSettings) => {
       }
     });
   }, [settings]);
+
+  // ElevenLabs TTS
+  const playWithElevenLabs = useCallback(async (text: string): Promise<void> => {
+    try {
+      const response = await fetch('/api/elevenlabs-tts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          text, 
+          voice_id: settings.elevenLabsVoiceId || 'pNInz6obpgDQGcFmaJgB' // Adam voice
+        })
+      });
+      
+      if (!response.ok) throw new Error('ElevenLabs API error');
+      
+      const audioData = await response.blob();
+      const audio = new Audio(URL.createObjectURL(audioData));
+      audio.volume = settings.volume;
+      await audio.play();
+    } catch (error) {
+      console.error('ElevenLabs error, fallback to browser TTS:', error);
+      // Fallback to browser TTS
+      await playAnnouncementNow(text);
+    }
+  }, [settings, playAnnouncementNow]);
 
   // Добавление объявления в очередь
   const addToQueue = useCallback((text: string, priority: VoiceAnnouncementQueue['priority'] = 'medium') => {

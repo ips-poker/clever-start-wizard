@@ -283,6 +283,17 @@ export function ProfessionalVoiceAssistant({
 
               <div className="flex items-center space-x-2">
                 <Switch
+                  id="use-elevenlabs"
+                  checked={settings.useElevenLabs}
+                  onCheckedChange={(checked) => updateSetting('useElevenLabs', checked)}
+                />
+                <Label htmlFor="use-elevenlabs">
+                  Использовать ElevenLabs (красивый AI голос)
+                </Label>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <Switch
                   id="auto-announcements"
                   checked={settings.autoAnnouncements}
                   onCheckedChange={(checked) => updateSetting('autoAnnouncements', checked)}
