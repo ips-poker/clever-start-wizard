@@ -507,42 +507,11 @@ const TournamentDirector = () => {
         <div className="min-h-screen flex w-full bg-gradient-to-br from-gray-50 via-white to-gray-100">
           <TournamentDirectorSidebar 
             activeTab={activeTab} 
-            onTabChange={setActiveTab} 
+            onTabChange={setActiveTab}
+            selectedTournament={selectedTournament}
           />
           <main className="flex-1">
             <div className="container mx-auto px-4 py-8 max-w-7xl">
-          {/* Header without titles */}
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 mb-12">
-            <div className="flex items-center gap-4">
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => navigate('/')}
-                className="flex items-center gap-2"
-              >
-                <Trophy className="w-4 h-4" />
-                На главную
-              </Button>
-              
-              {selectedTournament && (
-                <div className="bg-white/70 backdrop-blur-sm rounded-xl p-4 border border-gray-200/50 shadow-subtle">
-                  <p className="text-sm text-gray-500 mb-1">Активный турнир</p>
-                  <p className="font-medium text-gray-800">{selectedTournament.name}</p>
-                  <Badge 
-                    variant={selectedTournament.status === 'running' ? 'default' : 'secondary'}
-                    className="mt-2"
-                  >
-                    {selectedTournament.status === 'running' ? 'Активен' : 
-                     selectedTournament.status === 'pending' ? 'Ожидание' : 'Завершен'}
-                  </Badge>
-                </div>
-              )}
-            </div>
-            
-            <div className="flex items-center gap-2">
-              <VoiceControl />
-            </div>
-          </div>
 
           {/* Custom Tab System заменяем обратно на Radix Tabs */}
           <Tabs 

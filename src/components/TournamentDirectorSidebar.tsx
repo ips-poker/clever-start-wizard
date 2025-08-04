@@ -9,7 +9,8 @@ import {
   Activity,
   TestTube,
   ArrowLeft,
-  Mic
+  Mic,
+  Globe
 } from "lucide-react";
 import {
   Sidebar,
@@ -24,6 +25,8 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { useNavigate } from "react-router-dom";
 
 const tournamentSections = [
   {
@@ -47,38 +50,68 @@ const tournamentSections = [
   }
 ];
 
+type Tournament = {
+  id: string;
+  name: string;
+  status: string;
+};
+
 interface TournamentDirectorSidebarProps {
   activeTab: string;
   onTabChange: (tab: string) => void;
+  selectedTournament?: Tournament | null;
 }
 
-export function TournamentDirectorSidebar({ activeTab, onTabChange }: TournamentDirectorSidebarProps) {
+export function TournamentDirectorSidebar({ activeTab, onTabChange, selectedTournament }: TournamentDirectorSidebarProps) {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
+  const navigate = useNavigate();
 
   const isActive = (tabId: string) => activeTab === tabId;
-
-  const handleBackToAdmin = () => {
-    window.location.href = '/admin';
-  };
 
   return (
     <Sidebar className={collapsed ? "w-14" : "w-64"} collapsible="icon">
       <SidebarTrigger className="m-2 self-end" />
       
       <SidebarContent className="bg-background">
-        {/* Back to Admin Button */}
-        <div className="p-2">
+        {/* Navigation Buttons */}
+        <div className="p-2 space-y-2 border-b border-border/40">
           <Button
             variant="ghost"
             size="sm"
-            onClick={handleBackToAdmin}
+            onClick={() => navigate('/')}
+            className="w-full justify-start gap-2 text-muted-foreground hover:text-foreground"
+          >
+            <Globe className="h-4 w-4" />
+            {!collapsed && <span>На главную</span>}
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate('/admin')}
             className="w-full justify-start gap-2 text-muted-foreground hover:text-foreground"
           >
             <ArrowLeft className="h-4 w-4" />
-            {!collapsed && <span>Вернуться в админку</span>}
+            {!collapsed && <span>В админку</span>}
           </Button>
         </div>
+
+        {/* Active Tournament Info */}
+        {selectedTournament && !collapsed && (
+          <div className="p-3 border-b border-border/40">
+            <div className="text-xs text-muted-foreground mb-2">Активный турнир</div>
+            <div className="space-y-2">
+              <div className="text-sm font-medium truncate">{selectedTournament.name}</div>
+              <Badge 
+                variant={selectedTournament.status === 'running' ? 'default' : 'secondary'}
+                className="text-xs w-fit"
+              >
+                {selectedTournament.status === 'running' ? 'Запущен' : 
+                 selectedTournament.status === 'pending' ? 'Ожидание' : 'Завершен'}
+              </Badge>
+            </div>
+          </div>
+        )}
 
         {tournamentSections.map((section) => (
           <SidebarGroup key={section.label}>
