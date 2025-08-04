@@ -38,57 +38,7 @@ export const useProfessionalVoiceAssistant = (settings: VoiceSettings) => {
   const processingRef = useRef(false);
   const voicesLoadedRef = useRef(false);
 
-  // Инициализация голосов
-  const initializeVoices = useCallback(() => {
-    if ('speechSynthesis' in window) {
-      const voices = speechSynthesis.getVoices();
-      if (voices.length > 0 && !voicesLoadedRef.current) {
-        voicesLoadedRef.current = true;
-        if (settings.debugMode) {
-          console.log('🗣️ Loaded voices:', voices.map(v => `${v.name} (${v.lang})`));
-        }
-      } else if (voices.length === 0) {
-        speechSynthesis.onvoiceschanged = () => {
-          voicesLoadedRef.current = true;
-          if (settings.debugMode) {
-            console.log('🗣️ Voices loaded on change:', speechSynthesis.getVoices().length);
-          }
-        };
-      }
-    }
-  }, [settings.debugMode]);
-
-  // Обработка очереди объявлений
-  const processQueue = useCallback(async () => {
-    if (processingRef.current || queueRef.current.length === 0) {
-      return;
-    }
-
-    processingRef.current = true;
-    setIsPlaying(true);
-
-    // Сортировка по приоритету
-    queueRef.current.sort((a, b) => {
-      const priorityOrder = { critical: 4, high: 3, medium: 2, low: 1 };
-      return priorityOrder[b.priority] - priorityOrder[a.priority];
-    });
-
-    const announcement = queueRef.current.shift();
-    if (announcement) {
-      setQueueLength(queueRef.current.length);
-      await (settings.useElevenLabs ? playWithElevenLabs(announcement.text) : playAnnouncementNow(announcement.text));
-    }
-
-    processingRef.current = false;
-    setIsPlaying(false);
-
-    // Обработка следующего элемента в очереди
-    if (queueRef.current.length > 0) {
-      setTimeout(() => processQueue(), 500);
-    }
-  }, [settings]);
-
-  // Непосредственное воспроизведение
+  // Непосредственное воспроизведение браузерным TTS
   const playAnnouncementNow = useCallback(async (text: string): Promise<void> => {
     return new Promise((resolve) => {
       if (!settings.enabled || !text) {
@@ -104,20 +54,15 @@ export const useProfessionalVoiceAssistant = (settings: VoiceSettings) => {
       }
 
       try {
-        // Останавливаем предыдущую речь
         speechSynthesis.cancel();
         
-        // Небольшая задержка после cancel для стабильности
         setTimeout(() => {
           const utterance = new SpeechSynthesisUtterance(text);
-          
-          // Настройки голоса
           utterance.lang = settings.language;
           utterance.volume = settings.volume;
           utterance.rate = 0.9;
           utterance.pitch = 1.0;
 
-          // Выбор конкретного голоса если указан
           if (settings.voice) {
             const voices = speechSynthesis.getVoices();
             const selectedVoice = voices.find(v => v.name === settings.voice);
@@ -158,12 +103,15 @@ export const useProfessionalVoiceAssistant = (settings: VoiceSettings) => {
   // ElevenLabs TTS
   const playWithElevenLabs = useCallback(async (text: string): Promise<void> => {
     try {
-      const response = await fetch('/api/elevenlabs-tts', {
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/elevenlabs-tts`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
+        },
         body: JSON.stringify({ 
           text, 
-          voice_id: settings.elevenLabsVoiceId || 'pNInz6obpgDQGcFmaJgB' // Adam voice
+          voice_id: settings.elevenLabsVoiceId || 'pNInz6obpgDQGcFmaJgB'
         })
       });
       
@@ -173,18 +121,67 @@ export const useProfessionalVoiceAssistant = (settings: VoiceSettings) => {
       const audio = new Audio(URL.createObjectURL(audioData));
       audio.volume = settings.volume;
       await audio.play();
+      
+      if (settings.debugMode) console.log('✅ ElevenLabs speech completed');
+      setLastAnnouncement(text);
     } catch (error) {
       console.error('ElevenLabs error, fallback to browser TTS:', error);
-      // Fallback to browser TTS
       await playAnnouncementNow(text);
     }
   }, [settings, playAnnouncementNow]);
+
+  // Обработка очереди объявлений
+  const processQueue = useCallback(async () => {
+    if (processingRef.current || queueRef.current.length === 0) {
+      return;
+    }
+
+    processingRef.current = true;
+    setIsPlaying(true);
+
+    queueRef.current.sort((a, b) => {
+      const priorityOrder = { critical: 4, high: 3, medium: 2, low: 1 };
+      return priorityOrder[b.priority] - priorityOrder[a.priority];
+    });
+
+    const announcement = queueRef.current.shift();
+    if (announcement) {
+      setQueueLength(queueRef.current.length);
+      await (settings.useElevenLabs ? playWithElevenLabs(announcement.text) : playAnnouncementNow(announcement.text));
+    }
+
+    processingRef.current = false;
+    setIsPlaying(false);
+
+    if (queueRef.current.length > 0) {
+      setTimeout(() => processQueue(), 500);
+    }
+  }, [settings, playWithElevenLabs, playAnnouncementNow]);
+
+  // Инициализация голосов
+  const initializeVoices = useCallback(() => {
+    if ('speechSynthesis' in window) {
+      const voices = speechSynthesis.getVoices();
+      if (voices.length > 0 && !voicesLoadedRef.current) {
+        voicesLoadedRef.current = true;
+        if (settings.debugMode) {
+          console.log('🗣️ Loaded voices:', voices.map(v => `${v.name} (${v.lang})`));
+        }
+      } else if (voices.length === 0) {
+        speechSynthesis.onvoiceschanged = () => {
+          voicesLoadedRef.current = true;
+          if (settings.debugMode) {
+            console.log('🗣️ Voices loaded on change:', speechSynthesis.getVoices().length);
+          }
+        };
+      }
+    }
+  }, [settings.debugMode]);
 
   // Добавление объявления в очередь
   const addToQueue = useCallback((text: string, priority: VoiceAnnouncementQueue['priority'] = 'medium') => {
     if (!settings.enabled || !text.trim()) return;
 
-    // Предотвращение дублирования
     if (lastAnnouncementRef.current === text) {
       if (settings.debugMode) console.log('🔇 Skipping duplicate:', text);
       return;
@@ -201,13 +198,11 @@ export const useProfessionalVoiceAssistant = (settings: VoiceSettings) => {
     setQueueLength(queueRef.current.length);
     lastAnnouncementRef.current = text;
 
-    // Сброс дублирования через время
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
     timeoutRef.current = window.setTimeout(() => {
       lastAnnouncementRef.current = '';
     }, 3000);
 
-    // Запускаем обработку очереди
     processQueue();
   }, [settings.enabled, settings.debugMode, processQueue]);
 
@@ -248,9 +243,9 @@ export const useProfessionalVoiceAssistant = (settings: VoiceSettings) => {
   const announceTimeWarning = useCallback((timeLeft: number, nextLevel?: BlindLevel) => {
     if (!settings.autoAnnouncements) return;
 
-    if (timeLeft === 600) { // 10 минут
+    if (timeLeft === 600) {
       addToQueue("До окончания уровня осталось 10 минут.", 'medium');
-    } else if (timeLeft === 300) { // 5 минут
+    } else if (timeLeft === 300) {
       if (nextLevel) {
         if (nextLevel.is_break) {
           addToQueue(`До перерыва осталось 5 минут. Следующий перерыв на ${Math.round(nextLevel.duration / 60)} минут.`, 'medium');
@@ -260,13 +255,13 @@ export const useProfessionalVoiceAssistant = (settings: VoiceSettings) => {
       } else {
         addToQueue("До окончания уровня осталось 5 минут.", 'medium');
       }
-    } else if (timeLeft === 120) { // 2 минуты
+    } else if (timeLeft === 120) {
       addToQueue("До окончания уровня осталось 2 минуты.", 'medium');
-    } else if (timeLeft === 60) { // 1 минута
+    } else if (timeLeft === 60) {
       addToQueue("До окончания уровня осталась 1 минута.", 'medium');
-    } else if (timeLeft === 30) { // 30 секунд
+    } else if (timeLeft === 30) {
       addToQueue("До окончания уровня осталось 30 секунд.", 'medium');
-    } else if (timeLeft === 10) { // 10 секунд с деталями следующего уровня
+    } else if (timeLeft === 10) {
       if (nextLevel) {
         if (nextLevel.is_break) {
           addToQueue(`Со следующей раздачи начинается перерыв на ${Math.round(nextLevel.duration / 60)} минут.`, 'high');
