@@ -312,18 +312,36 @@ const TournamentDirector = () => {
   const nextLevel = async () => {
     if (!selectedTournament) return;
 
+    // Получаем структуру блайндов из базы данных
+    const { data: blindLevels, error: blindError } = await supabase
+      .from('blind_levels')
+      .select('*')
+      .eq('tournament_id', selectedTournament.id)
+      .order('level', { ascending: true });
+
+    if (blindError || !blindLevels) {
+      toast({ title: "Ошибка", description: "Не удалось загрузить структуру блайндов", variant: "destructive" });
+      return;
+    }
+
     const newLevel = selectedTournament.current_level + 1;
-    const newSmallBlind = Math.round(selectedTournament.current_small_blind * 1.5);
-    const newBigBlind = Math.round(selectedTournament.current_big_blind * 1.5);
-    const resetTime = selectedTournament.timer_duration || 1200;
+    const nextBlindLevel = blindLevels.find(bl => bl.level === newLevel);
+    
+    if (!nextBlindLevel) {
+      toast({ title: "Предупреждение", description: "Достигнут максимальный уровень", variant: "destructive" });
+      return;
+    }
+
+    const resetTime = nextBlindLevel.duration || 1200;
 
     const { error } = await supabase
       .from('tournaments')
       .update({
         current_level: newLevel,
-        current_small_blind: newSmallBlind,
-        current_big_blind: newBigBlind,
-        timer_remaining: resetTime
+        current_small_blind: nextBlindLevel.small_blind,
+        current_big_blind: nextBlindLevel.big_blind,
+        timer_remaining: resetTime,
+        timer_duration: resetTime
       })
       .eq('id', selectedTournament.id);
 
@@ -331,8 +349,9 @@ const TournamentDirector = () => {
       setSelectedTournament({
         ...selectedTournament,
         current_level: newLevel,
-        current_small_blind: newSmallBlind,
-        current_big_blind: newBigBlind
+        current_small_blind: nextBlindLevel.small_blind,
+        current_big_blind: nextBlindLevel.big_blind,
+        timer_duration: resetTime
       });
       setCurrentTime(resetTime);
       setTimerActive(false);
@@ -343,24 +362,49 @@ const TournamentDirector = () => {
         timerActive: false,
         lastUpdate: Date.now()
       }));
+
+      toast({ 
+        title: nextBlindLevel.is_break ? "Перерыв" : `Уровень ${newLevel}`, 
+        description: nextBlindLevel.is_break 
+          ? `Перерыв ${Math.floor(resetTime / 60)} минут`
+          : `Блайнды: ${nextBlindLevel.small_blind}/${nextBlindLevel.big_blind}${nextBlindLevel.ante ? ` (анте ${nextBlindLevel.ante})` : ''}`
+      });
     }
   };
 
   const prevLevel = async () => {
     if (!selectedTournament || selectedTournament.current_level <= 1) return;
 
+    // Получаем структуру блайндов из базы данных
+    const { data: blindLevels, error: blindError } = await supabase
+      .from('blind_levels')
+      .select('*')
+      .eq('tournament_id', selectedTournament.id)
+      .order('level', { ascending: true });
+
+    if (blindError || !blindLevels) {
+      toast({ title: "Ошибка", description: "Не удалось загрузить структуру блайндов", variant: "destructive" });
+      return;
+    }
+
     const newLevel = selectedTournament.current_level - 1;
-    const newSmallBlind = Math.round(selectedTournament.current_small_blind / 1.5);
-    const newBigBlind = Math.round(selectedTournament.current_big_blind / 1.5);
-    const resetTime = selectedTournament.timer_duration || 1200;
+    const prevBlindLevel = blindLevels.find(bl => bl.level === newLevel);
+    
+    if (!prevBlindLevel) {
+      toast({ title: "Предупреждение", description: "Нельзя вернуться ниже 1-го уровня", variant: "destructive" });
+      return;
+    }
+
+    const resetTime = prevBlindLevel.duration || 1200;
 
     const { error } = await supabase
       .from('tournaments')
       .update({
         current_level: newLevel,
-        current_small_blind: newSmallBlind,
-        current_big_blind: newBigBlind,
-        timer_remaining: resetTime
+        current_small_blind: prevBlindLevel.small_blind,
+        current_big_blind: prevBlindLevel.big_blind,
+        timer_remaining: resetTime,
+        timer_duration: resetTime
       })
       .eq('id', selectedTournament.id);
 
@@ -368,8 +412,9 @@ const TournamentDirector = () => {
       setSelectedTournament({
         ...selectedTournament,
         current_level: newLevel,
-        current_small_blind: newSmallBlind,
-        current_big_blind: newBigBlind
+        current_small_blind: prevBlindLevel.small_blind,
+        current_big_blind: prevBlindLevel.big_blind,
+        timer_duration: resetTime
       });
       setCurrentTime(resetTime);
       setTimerActive(false);
@@ -380,6 +425,13 @@ const TournamentDirector = () => {
         timerActive: false,
         lastUpdate: Date.now()
       }));
+
+      toast({ 
+        title: prevBlindLevel.is_break ? "Перерыв" : `Уровень ${newLevel}`, 
+        description: prevBlindLevel.is_break 
+          ? `Перерыв ${Math.floor(resetTime / 60)} минут`
+          : `Блайнды: ${prevBlindLevel.small_blind}/${prevBlindLevel.big_blind}${prevBlindLevel.ante ? ` (анте ${prevBlindLevel.ante})` : ''}`
+      });
     }
   };
 
