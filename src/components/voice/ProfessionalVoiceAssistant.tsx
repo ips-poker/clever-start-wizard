@@ -104,6 +104,14 @@ export function ProfessionalVoiceAssistant({ selectedTournament, onStatusChange 
         return;
       }
 
+      // Дедупликация команд
+      const lastCommandTime = Date.now();
+      if (lastCommandTime - (window as any).lastVoiceCommand < 2000) {
+        console.log('Дублирующая команда игнорирована');
+        return;
+      }
+      (window as any).lastVoiceCommand = lastCommandTime;
+
       const { data, error } = await supabase.functions.invoke('voice-assistant', {
         body: {
           action: 'process_command',
@@ -223,12 +231,12 @@ export function ProfessionalVoiceAssistant({ selectedTournament, onStatusChange 
       setIsListening(true);
       toast.success('Слушаю команду...');
 
-      // Auto-stop after 5 seconds
+      // Auto-stop after 8 seconds
       setTimeout(() => {
-        if (isListening) {
+        if (mediaRecorderRef.current?.state === 'recording') {
           stopListening();
         }
-      }, 5000);
+      }, 8000);
 
     } catch (error) {
       console.error('Error starting voice recording:', error);
@@ -311,28 +319,29 @@ export function ProfessionalVoiceAssistant({ selectedTournament, onStatusChange 
 
     fetchTournamentData();
 
-    // Подписка на изменения турнира
+    // Подписка на изменения турнира с дедупликацией
     const subscription = supabase
-      .channel(`tournament-${selectedTournament.id}`)
+      .channel(`voice-tournament-${selectedTournament.id}-${Date.now()}`)
       .on(
         'postgres_changes',
         {
-          event: '*',
+          event: 'UPDATE',
           schema: 'public',
           table: 'tournaments',
           filter: `id=eq.${selectedTournament.id}`
         },
         (payload) => {
-          console.log('Tournament updated:', payload);
-          setTournamentData(payload.new);
+          const newData = payload.new as any;
+          const oldData = payload.old as any;
           
-          // Голосовое уведомление об изменениях
-          if (payload.eventType === 'UPDATE') {
-            const newData = payload.new as any;
-            if (newData.status !== selectedTournament.status) {
+          // Обновляем данные только если они действительно изменились
+          if (newData.updated_at !== tournamentData?.updated_at) {
+            setTournamentData(newData);
+            
+            // Голосовые уведомления только для важных изменений
+            if (oldData.status !== newData.status) {
               speakText(`Статус турнира изменен на ${newData.status}`);
-            }
-            if (newData.current_level !== selectedTournament.current_level) {
+            } else if (oldData.current_level !== newData.current_level) {
               speakText(`Переход на ${newData.current_level} уровень блайндов`);
             }
           }
