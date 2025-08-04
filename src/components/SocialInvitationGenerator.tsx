@@ -277,9 +277,9 @@ ${tournamentData.description}
         scale: 2,
         useCORS: true,
         allowTaint: true,
-        backgroundColor: null,
-        width: format === 'square' ? 700 : 350,
-        height: format === 'square' ? 900 : 800
+        backgroundColor: '#000000',
+        logging: false,
+        foreignObjectRendering: true
       });
 
       // Создаем blob вместо прямого скачивания
@@ -880,31 +880,58 @@ ${tournamentData.description}
                       </div>
 
                       {/* Tournament structure info */}
-                      {(tournamentData.rebuyInfo || tournamentData.addonInfo || tournamentData.timerDuration) && (
-                        <div className="space-y-3">
-                          {tournamentData.timerDuration && (
-                            <div className="bg-purple-500/20 backdrop-blur-sm rounded-xl p-3 text-center border border-purple-400/30">
-                              <Clock className="w-5 h-5 mx-auto mb-1 text-purple-300" />
-                              <div className="text-xs opacity-80 mb-1">СТРУКТУРА</div>
-                              <div className="font-bold text-sm text-purple-300">{tournamentData.timerDuration}</div>
-                            </div>
-                          )}
-                          
-                          {tournamentData.rebuyInfo && (
+                      <div className="space-y-3">
+                        <div className="text-center text-sm font-bold text-yellow-300 mb-3">📋 СТРУКТУРА</div>
+                        
+                        {tournamentData.timerDuration && (
+                          <div className="bg-purple-500/20 backdrop-blur-sm rounded-xl p-3 text-center border border-purple-400/30">
+                            <Clock className="w-4 h-4 mx-auto mb-1 text-purple-300" />
+                            <div className="text-xs opacity-80 mb-1">ВРЕМЯ УРОВНЯ</div>
+                            <div className="font-bold text-sm text-purple-300">{tournamentData.timerDuration}</div>
+                          </div>
+                        )}
+                        
+                        {tournamentData.blindStructure && (
+                          <div className="bg-indigo-500/20 backdrop-blur-sm rounded-xl p-3 text-center border border-indigo-400/30">
+                            <div className="text-xs opacity-80 mb-1">БЛАЙНДЫ</div>
+                            <div className="font-bold text-xs text-indigo-300">{tournamentData.blindStructure}</div>
+                          </div>
+                        )}
+                        
+                        <div className="grid grid-cols-2 gap-3">
+                          {tournamentData.rebuyInfo && tournamentData.rebuyEndLevel && (
                             <div className="bg-orange-500/20 backdrop-blur-sm rounded-xl p-3 text-center border border-orange-400/30">
                               <div className="text-xs opacity-80 mb-1">REBUY</div>
                               <div className="font-semibold text-xs text-orange-300">{tournamentData.rebuyInfo}</div>
+                              <div className="font-semibold text-xs text-orange-300">{tournamentData.rebuyEndLevel}</div>
                             </div>
                           )}
                           
-                          {tournamentData.addonInfo && (
+                          {tournamentData.addonInfo && tournamentData.addonLevel && (
                             <div className="bg-cyan-500/20 backdrop-blur-sm rounded-xl p-3 text-center border border-cyan-400/30">
                               <div className="text-xs opacity-80 mb-1">ADDON</div>
                               <div className="font-semibold text-xs text-cyan-300">{tournamentData.addonInfo}</div>
+                              <div className="font-semibold text-xs text-cyan-300">{tournamentData.addonLevel}</div>
                             </div>
                           )}
                         </div>
-                      )}
+                        
+                        <div className="grid grid-cols-2 gap-3">
+                          {tournamentData.lateRegEndLevel && (
+                            <div className="bg-pink-500/20 backdrop-blur-sm rounded-xl p-3 text-center border border-pink-400/30">
+                              <div className="text-xs opacity-80 mb-1">ПОЗДНЯЯ РЕГ.</div>
+                              <div className="font-semibold text-xs text-pink-300">{tournamentData.lateRegEndLevel}</div>
+                            </div>
+                          )}
+                          
+                          {tournamentData.breakInfo && (
+                            <div className="bg-emerald-500/20 backdrop-blur-sm rounded-xl p-3 text-center border border-emerald-400/30">
+                              <div className="text-xs opacity-80 mb-1">ПЕРЕРЫВ</div>
+                              <div className="font-semibold text-xs text-emerald-300">{tournamentData.breakInfo}</div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
                     </div>
 
                     {/* Footer */}
