@@ -1,3 +1,4 @@
+import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 
 const corsHeaders = {
@@ -11,53 +12,42 @@ serve(async (req) => {
   }
 
   try {
-    const { text, voice = 'Aria', language = 'ru' } = await req.json();
+    const { text, voice = 'alloy' } = await req.json();
 
     if (!text) {
       throw new Error('Text is required');
     }
 
-    const ELEVENLABS_API_KEY = Deno.env.get('ELEVENLABS_API_KEY');
-    if (!ELEVENLABS_API_KEY) {
-      throw new Error('ElevenLabs API key not configured');
+    const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
+    if (!OPENAI_API_KEY) {
+      throw new Error('OpenAI API key not configured');
     }
 
-    // Voice IDs for different voices
-    const voiceIds = {
-      'Aria': '9BWtsMINqrJLrRacOk9x',
-      'Roger': 'CwhRBWXzGAHq8TQ4Fs17',
-      'Sarah': 'EXAVITQu4vr4xnSDxMaL',
-      'Laura': 'FGY2WhTYpPnrIDTdsKH5',
-      'Charlie': 'IKne3meq5aSn9XLyUdCD',
-      'George': 'JBFqnCBsd6RMkjVDRZzb',
-    };
+    // Available OpenAI voices: alloy, echo, fable, onyx, nova, shimmer
+    const availableVoices = ['alloy', 'echo', 'fable', 'onyx', 'nova', 'shimmer'];
+    const selectedVoice = availableVoices.includes(voice) ? voice : 'alloy';
 
-    const voiceId = voiceIds[voice] || voiceIds['Aria'];
+    console.log('🔊 Generating speech with OpenAI TTS:', { text, voice: selectedVoice });
 
-    // Generate speech using ElevenLabs
-    const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
+    // Generate speech using OpenAI TTS
+    const response = await fetch('https://api.openai.com/v1/audio/speech', {
       method: 'POST',
       headers: {
-        'Accept': 'audio/mpeg',
+        'Authorization': `Bearer ${OPENAI_API_KEY}`,
         'Content-Type': 'application/json',
-        'xi-api-key': ELEVENLABS_API_KEY,
       },
       body: JSON.stringify({
-        text: text,
-        model_id: 'eleven_multilingual_v2',
-        voice_settings: {
-          stability: 0.5,
-          similarity_boost: 0.8,
-          style: 0.0,
-          use_speaker_boost: true
-        }
+        model: 'tts-1',
+        input: text,
+        voice: selectedVoice,
+        response_format: 'mp3',
       }),
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('ElevenLabs API error:', errorText);
-      throw new Error(`ElevenLabs API error: ${response.status}`);
+      console.error('OpenAI TTS API error:', errorText);
+      throw new Error(`OpenAI TTS API error: ${response.status}`);
     }
 
     // Convert audio to base64

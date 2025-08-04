@@ -29,7 +29,7 @@ export const useVoiceAnnouncements = (options: VoiceAnnouncementOptions = { enab
       const { data, error } = await supabase.functions.invoke('voice-announcement', {
         body: {
           text,
-          voice: options.voice || 'Aria'
+          voice: options.voice || 'alloy'
         }
       });
 
