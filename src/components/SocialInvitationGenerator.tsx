@@ -173,6 +173,11 @@ export function SocialInvitationGenerator() {
       blindStructure: `10/20, 15/30, 20/40, 25/50...`,
       blindLevels: `Уровни по ${tournament.timer_duration / 60} минут`
     });
+
+    toast({
+      title: "Данные загружены",
+      description: `Информация о турнире "${tournament.name}" обновлена в карточках`,
+    });
   };
 
   const updateField = (field: keyof TournamentData, value: string) => {
