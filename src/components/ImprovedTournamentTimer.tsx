@@ -1,11 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
-import { useProfessionalVoiceAssistant } from '@/hooks/useProfessionalVoiceAssistant';
 import { Play, Pause, RotateCcw, SkipForward, SkipBack, Maximize, Coffee, Clock } from 'lucide-react';
 
 interface BlindLevel {
@@ -48,74 +47,10 @@ const ImprovedTournamentTimer = ({
   const [totalChipsInPlay, setTotalChipsInPlay] = useState(0);
   const [averageStack, setAverageStack] = useState(0);
   const { toast } = useToast();
-  
-  const voiceSettings = {
-    enabled: true,
-    volume: 0.8,
-    language: 'ru-RU',
-    voice: null,
-    autoAnnouncements: true,
-    debugMode: true,
-    useElevenLabs: false,
-    elevenLabsVoiceId: 'pNInz6obpgDQGcFmaJgB'
-  };
-  
-  const { 
-    announceCustomMessage, 
-    announceNewLevel, 
-    announceTimeWarning 
-  } = useProfessionalVoiceAssistant(voiceSettings);
-  
-  const prevLevelRef = useRef(tournament.current_level);
-  const hasAnnouncedLevelRef = useRef(false);
 
   useEffect(() => {
     calculateChipStatistics();
   }, [registrations]);
-
-  // Voice announcements for level transitions and time warnings
-  useEffect(() => {
-    const currentLevel = getCurrentLevel();
-    const nextLevel = getNextLevel();
-    
-    // Check if level has changed
-    if (tournament.current_level !== prevLevelRef.current) {
-      prevLevelRef.current = tournament.current_level;
-      hasAnnouncedLevelRef.current = false;
-      
-      // Announce new level when it starts
-      if (currentLevel) {
-        setTimeout(() => announceNewLevel(currentLevel, true), 500);
-      }
-    }
-
-    // Time-based announcements during active timer
-    if (timerActive && currentLevel) {
-      console.log('⏰ Timer check - currentTime:', currentTime, 'timerActive:', timerActive);
-      announceTimeWarning(currentTime, nextLevel);
-    }
-
-    // Announce when timer reaches 0 (level ends)
-    if (currentTime === 0 && !hasAnnouncedLevelRef.current && currentLevel) {
-      hasAnnouncedLevelRef.current = true;
-      
-      if (currentLevel.is_break && nextLevel) {
-        const message = `Перерыв окончен. Начинается уровень ${nextLevel.level}. Малый блайнд ${nextLevel.small_blind}, большой блайнд ${nextLevel.big_blind}${nextLevel.ante ? `, анте ${nextLevel.ante}` : ''}. Игроки, займите свои места за столами.`;
-        setTimeout(() => announceCustomMessage(message, 'high'), 1000);
-      } else if (!currentLevel.is_break && nextLevel) {
-        if (nextLevel.is_break) {
-          const message = `Уровень ${currentLevel.level} завершен. Начинается перерыв на ${Math.round(nextLevel.duration / 60)} минут.`;
-          setTimeout(() => announceCustomMessage(message, 'high'), 1000);
-        } else {
-          const message = `Уровень ${currentLevel.level} завершен. Автоматический переход на уровень ${nextLevel.level}. Блайнды повышаются до ${nextLevel.small_blind} - ${nextLevel.big_blind}${nextLevel.ante ? `, анте ${nextLevel.ante}` : ''}.`;
-          setTimeout(() => announceCustomMessage(message, 'high'), 1000);
-        }
-      } else if (!nextLevel) {
-        const message = `Время уровня ${currentLevel.level} истекло. Турнир-директор, пожалуйста, выберите действие.`;
-        setTimeout(() => announceCustomMessage(message, 'critical'), 1000);
-      }
-    }
-  }, [tournament.current_level, currentTime, timerActive, announceCustomMessage, announceNewLevel, announceTimeWarning]);
 
   const calculateChipStatistics = () => {
     const activeRegistrations = registrations.filter(r => r.status === 'registered' || r.status === 'playing');
@@ -313,18 +248,6 @@ const ImprovedTournamentTimer = ({
             >
               <RotateCcw className="w-4 h-4 mr-1" />
               Сброс
-            </Button>
-            
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                console.log('🔊 Test button clicked');
-                announceCustomMessage("Тест профессионального голосового помощника. Система работает корректно!", 'high');
-              }}
-              className="bg-green-100 hover:bg-green-200 text-green-800"
-            >
-              🔊 Тест голоса
             </Button>
           </div>
         </CardContent>

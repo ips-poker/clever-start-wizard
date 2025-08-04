@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 import ipsLogo from "/lovable-uploads/c77304bf-5309-4bdc-afcc-a81c8d3ff6c2.png";
 import telegramQr from "@/assets/telegram-qr.png";
-import { useProfessionalVoiceAssistant } from "@/hooks/useProfessionalVoiceAssistant";
+import { useVoiceAnnouncements } from "@/hooks/useVoiceAnnouncements";
 
 interface Tournament {
   id: string;
@@ -93,18 +93,11 @@ const FullscreenTimer = ({
   const [editingSlogan, setEditingSlogan] = useState(false);
   const [tempSlogan, setTempSlogan] = useState(slogan);
 
-  const voiceSettings = {
+  const { announceNextLevel, stopAnnouncement } = useVoiceAnnouncements({
     enabled: voiceAnnouncementsEnabled,
-    volume: 0.8,
-    language: 'ru-RU',
-    voice: null,
-    autoAnnouncements: false,
-    debugMode: false,
-    useElevenLabs: false,
-    elevenLabsVoiceId: 'pNInz6obpgDQGcFmaJgB'
-  };
-  
-  const { announceCustomMessage, stopAll } = useProfessionalVoiceAssistant(voiceSettings);
+    voice: 'Aria',
+    volume: 0.8
+  });
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -158,15 +151,7 @@ const FullscreenTimer = ({
     // Голосовое оповещение за 10 секунд
     if (currentTime === 10 && !tenSecondAnnouncement && voiceAnnouncementsEnabled) {
       const nextLevel = blindLevels.find(l => l.level === tournament.current_level + 1);
-      if (nextLevel) {
-        if (nextLevel.is_break) {
-          announceCustomMessage(`Со следующей раздачи начинается перерыв на ${Math.round(nextLevel.duration / 60)} минут.`);
-        } else {
-          announceCustomMessage(`Со следующей раздачи блайнды ап! Уровень ${nextLevel.level}: малый блайнд ${nextLevel.small_blind}, большой блайнд ${nextLevel.big_blind}${nextLevel.ante ? `, анте ${nextLevel.ante}` : ''}.`);
-        }
-      } else {
-        announceCustomMessage("Внимание! Через 10 секунд время уровня истекает.");
-      }
+      announceNextLevel(tournament.current_level, nextLevel, currentTime);
       setTenSecondAnnouncement(true);
     }
     
@@ -185,7 +170,7 @@ const FullscreenTimer = ({
       setFiveSecondWarning(false);
       setTenSecondAnnouncement(false);
     }
-  }, [currentTime, twoMinuteWarning, fiveSecondWarning, tenSecondAnnouncement, voiceAnnouncementsEnabled, announceCustomMessage, blindLevels, tournament.current_level, timerActive, onNextLevel]);
+  }, [currentTime, twoMinuteWarning, fiveSecondWarning, tenSecondAnnouncement, voiceAnnouncementsEnabled, announceNextLevel, blindLevels, tournament.current_level, timerActive, onNextLevel]);
 
   const activePlayers = registrations.filter(r => r.status === 'registered' || r.status === 'playing');
   const totalRebuys = registrations.reduce((sum, r) => sum + r.rebuys, 0);
@@ -534,7 +519,7 @@ const FullscreenTimer = ({
             onClick={() => {
               setVoiceAnnouncementsEnabled(!voiceAnnouncementsEnabled);
               if (!voiceAnnouncementsEnabled) {
-                stopAll();
+                stopAnnouncement();
               }
             }}
             className={`h-10 px-3 ${voiceAnnouncementsEnabled ? 'bg-green-50 text-green-600' : 'text-gray-500'}`}

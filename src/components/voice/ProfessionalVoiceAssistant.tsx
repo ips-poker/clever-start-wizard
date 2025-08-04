@@ -1,382 +1,821 @@
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Slider } from '@/components/ui/slider';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
-import { Separator } from '@/components/ui/separator';
-import { 
-  Volume2, 
-  VolumeX, 
-  Mic, 
-  Settings, 
-  Play, 
-  Square, 
-  Trash2,
-  Users,
-  Timer,
-  Coffee,
-  Trophy,
-  AlertTriangle,
-  CheckCircle,
-  RotateCcw
-} from 'lucide-react';
-import { useProfessionalVoiceAssistant, VoiceSettings } from '@/hooks/useProfessionalVoiceAssistant';
+import { Mic, MicOff, Volume2, VolumeX, Zap } from 'lucide-react';
+import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
-interface ProfessionalVoiceAssistantProps {
+interface VoiceAssistantProps {
   selectedTournament?: any;
-  currentTime?: number;
-  timerActive?: boolean;
-  registrations?: any[];
+  onStatusChange?: (status: string) => void;
 }
 
-export function ProfessionalVoiceAssistant({ 
-  selectedTournament, 
-  currentTime = 0,
-  timerActive = false,
-  registrations = []
-}: ProfessionalVoiceAssistantProps) {
-  const [settings, setSettings] = useState<VoiceSettings>({
-    enabled: true,
-    volume: 0.8,
-    language: 'ru-RU',
-    voice: null,
-    autoAnnouncements: true,
-    debugMode: false,
-    useElevenLabs: false, // Временно отключаем
-    elevenLabsVoiceId: 'pNInz6obpgDQGcFmaJgB' // Adam voice
-  });
+interface VoiceMessage {
+  type: 'user' | 'assistant' | 'system';
+  content: string;
+  timestamp: Date;
+  action?: any;
+}
 
-  const [availableVoices, setAvailableVoices] = useState<SpeechSynthesisVoice[]>([]);
-  const [showSettings, setShowSettings] = useState(false);
+export function ProfessionalVoiceAssistant({ selectedTournament, onStatusChange }: VoiceAssistantProps) {
+  const [isListening, setIsListening] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [messages, setMessages] = useState<VoiceMessage[]>([]);
+  const [selectedVoice, setSelectedVoice] = useState('CwhRBWXzGAHq8TQ4Fs17'); // Roger
+  const [tournamentData, setTournamentData] = useState<any>(null);
+  
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const audioContextRef = useRef<AudioContext | null>(null);
 
-  const {
-    isPlaying,
-    queueLength,
-    lastAnnouncement,
-    announceCustomMessage,
-    testVoice,
-    stopAll,
-    clearQueue,
-    announceNewLevel,
-    announceTimeWarning,
-    announcePlayerAction
-  } = useProfessionalVoiceAssistant(settings);
+  const voices = [
+    { id: 'CwhRBWXzGAHq8TQ4Fs17', name: 'Роджер', description: 'Профессиональный мужской голос' },
+    { id: 'EXAVITQu4vr4xnSDxMaL', name: 'Сара', description: 'Четкий женский голос' },
+    { id: 'JBFqnCBsd6RMkjVDRZzb', name: 'Джордж', description: 'Авторитетный голос' },
+    { id: 'XB0fDUnXU5powFXDhCwa', name: 'Шарлотта', description: 'Элегантный женский голос' }
+  ];
 
-  // Загрузка доступных голосов
+  const addMessage = (message: VoiceMessage) => {
+    setMessages(prev => [...prev.slice(-9), message]);
+  };
+
+  const playAudio = async (base64Audio: string) => {
+    try {
+      setIsSpeaking(true);
+      const audioData = atob(base64Audio);
+      const arrayBuffer = new ArrayBuffer(audioData.length);
+      const uint8Array = new Uint8Array(arrayBuffer);
+      
+      for (let i = 0; i < audioData.length; i++) {
+        uint8Array[i] = audioData.charCodeAt(i);
+      }
+
+      if (!audioContextRef.current) {
+        audioContextRef.current = new AudioContext();
+      }
+
+      const audioBuffer = await audioContextRef.current.decodeAudioData(arrayBuffer);
+      const source = audioContextRef.current.createBufferSource();
+      source.buffer = audioBuffer;
+      source.connect(audioContextRef.current.destination);
+      
+      source.onended = () => setIsSpeaking(false);
+      source.start(0);
+    } catch (error) {
+      console.error('Error playing audio:', error);
+      setIsSpeaking(false);
+      toast.error('Ошибка воспроизведения аудио');
+    }
+  };
+
+  const speakText = async (text: string) => {
+    try {
+      const { data, error } = await supabase.functions.invoke('voice-assistant', {
+        body: {
+          action: 'speak',
+          text,
+          voice: selectedVoice,
+          tournament_id: selectedTournament?.id
+        }
+      });
+
+      if (error) throw error;
+
+      if (data?.success && data?.audioContent) {
+        await playAudio(data.audioContent);
+        addMessage({
+          type: 'assistant',
+          content: text,
+          timestamp: new Date()
+        });
+      }
+    } catch (error) {
+      console.error('Speech generation error:', error);
+      toast.error('Ошибка генерации речи');
+    }
+  };
+
+  const processVoiceCommand = async (transcript: string) => {
+    try {
+      if (!selectedTournament?.id) {
+        toast.error('Сначала выберите турнир');
+        await speakText('Сначала выберите турнир для управления');
+        return;
+      }
+
+      // Дедупликация команд
+      const lastCommandTime = Date.now();
+      if (lastCommandTime - (window as any).lastVoiceCommand < 2000) {
+        console.log('Дублирующая команда игнорирована');
+        return;
+      }
+      (window as any).lastVoiceCommand = lastCommandTime;
+
+      const { data, error } = await supabase.functions.invoke('voice-assistant', {
+        body: {
+          action: 'process_command',
+          text: transcript,
+          tournament_id: selectedTournament.id
+        }
+      });
+
+      if (error) throw error;
+
+      addMessage({
+        type: 'user',
+        content: transcript,
+        timestamp: new Date()
+      });
+
+      if (data?.success) {
+        if (data.command_recognized) {
+          // Выполняем действие в интерфейсе
+          if (data.action_result) {
+            await executeUIAction(data.action_result);
+          }
+          
+          toast.success('Команда выполнена');
+          onStatusChange?.(data.action_result?.action || 'processed');
+        } else {
+          toast.warning('Команда не распознана');
+        }
+
+        if (data.response_text) {
+          await speakText(data.response_text);
+        }
+      }
+    } catch (error) {
+      console.error('Command processing error:', error);
+      toast.error('Ошибка обработки команды');
+      await speakText('Произошла ошибка при выполнении команды');
+    }
+  };
+
+  // Выполнение UI действий на основе голосовых команд
+  const executeUIAction = async (actionResult: any) => {
+    const { action, tournament_id } = actionResult;
+    
+    try {
+      switch (action) {
+        case 'start_tournament':
+        case 'pause_tournament':
+        case 'resume_tournament':
+        case 'complete_tournament':
+          // Обновляем статус турнира в UI через Supabase RPC
+          await supabase.rpc('handle_voice_tournament_action', {
+            tournament_id_param: tournament_id,
+            action_type: action
+          });
+          break;
+          
+        case 'next_blind_level':
+        case 'previous_blind_level':
+          // Обновляем уровень блайндов
+          await supabase.rpc('handle_voice_tournament_action', {
+            tournament_id_param: tournament_id,
+            action_type: action
+          });
+          break;
+          
+        case 'set_timer':
+        case 'add_time':
+          // Обновляем таймер
+          const minutes = actionResult.minutes || 0;
+          await supabase.rpc('update_tournament_timer', {
+            tournament_id_param: tournament_id,
+            new_timer_remaining: minutes * 60
+          });
+          break;
+          
+        case 'show_stats':
+          // Триггерим показ статистики через callback
+          onStatusChange?.('show_stats');
+          break;
+      }
+    } catch (error) {
+      console.error('UI action error:', error);
+      toast.error('Ошибка выполнения действия в интерфейсе');
+    }
+  };
+
+  const startListening = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        audio: {
+          sampleRate: 16000,
+          channelCount: 1,
+          echoCancellation: true,
+          noiseSuppression: true
+        }
+      });
+
+      mediaRecorderRef.current = new MediaRecorder(stream, {
+        mimeType: 'audio/webm;codecs=opus'
+      });
+
+      audioChunksRef.current = [];
+
+      mediaRecorderRef.current.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
+
+      mediaRecorderRef.current.onstop = async () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        await transcribeAudio(audioBlob);
+      };
+
+      mediaRecorderRef.current.start();
+      setIsListening(true);
+      toast.success('Слушаю команду...');
+
+      // Auto-stop after 8 seconds
+      setTimeout(() => {
+        if (mediaRecorderRef.current?.state === 'recording') {
+          stopListening();
+        }
+      }, 8000);
+
+    } catch (error) {
+      console.error('Error starting voice recording:', error);
+      toast.error('Ошибка доступа к микрофону');
+    }
+  };
+
+  const stopListening = () => {
+    if (mediaRecorderRef.current && isListening) {
+      mediaRecorderRef.current.stop();
+      mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
+      setIsListening(false);
+    }
+  };
+
+  const transcribeAudio = async (audioBlob: Blob) => {
+    try {
+      // Convert to base64 for processing
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        const base64Audio = (reader.result as string).split(',')[1];
+        
+        addMessage({
+          type: 'system',
+          content: 'Распознаю речь...',
+          timestamp: new Date()
+        });
+
+        // Use Whisper API for real transcription
+        const { data, error } = await supabase.functions.invoke('voice-to-text', {
+          body: { audio: base64Audio }
+        });
+
+        if (error) {
+          console.error('Transcription error:', error);
+          toast.error('Ошибка распознавания речи');
+          return;
+        }
+
+        const transcript = data?.text || "";
+        if (transcript.trim()) {
+          await processVoiceCommand(transcript);
+        } else {
+          toast.warning('Не удалось распознать команду');
+        }
+      };
+      reader.readAsDataURL(audioBlob);
+    } catch (error) {
+      console.error('Transcription error:', error);
+      toast.error('Ошибка распознавания речи');
+    }
+  };
+
+  const quickCommand = async (command: string) => {
+    await processVoiceCommand(command);
+  };
+
+  // Получение данных турнира в реальном времени
   useEffect(() => {
-    const loadVoices = () => {
-      if ('speechSynthesis' in window) {
-        const voices = speechSynthesis.getVoices();
-        const russianVoices = voices.filter(voice => 
-          voice.lang.includes('ru') || voice.name.toLowerCase().includes('russia')
-        );
-        setAvailableVoices(russianVoices.length > 0 ? russianVoices : voices.slice(0, 10));
+    if (!selectedTournament?.id) return;
+
+    const fetchTournamentData = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('tournaments')
+          .select(`
+            *,
+            tournament_registrations(count)
+          `)
+          .eq('id', selectedTournament.id)
+          .single();
+
+        if (!error && data) {
+          setTournamentData(data);
+        }
+      } catch (error) {
+        console.error('Error fetching tournament data:', error);
       }
     };
 
-    loadVoices();
-    if ('speechSynthesis' in window) {
-      speechSynthesis.onvoiceschanged = loadVoices;
-    }
+    fetchTournamentData();
+
+    // Подписка на изменения турнира с дедупликацией
+    const subscription = supabase
+      .channel(`voice-tournament-${selectedTournament.id}-${Date.now()}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'tournaments',
+          filter: `id=eq.${selectedTournament.id}`
+        },
+        (payload) => {
+          const newData = payload.new as any;
+          const oldData = payload.old as any;
+          
+          // Обновляем данные только если они действительно изменились
+          if (newData.updated_at !== tournamentData?.updated_at) {
+            setTournamentData(newData);
+            
+            // Голосовые уведомления только для важных изменений
+            if (oldData.status !== newData.status) {
+              speakText(`Статус турнира изменен на ${newData.status}`);
+            } else if (oldData.current_level !== newData.current_level) {
+              speakText(`Переход на ${newData.current_level} уровень блайндов`);
+            }
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(subscription);
+    };
+  }, [selectedTournament?.id]);
+
+  useEffect(() => {
+    return () => {
+      if (audioContextRef.current) {
+        audioContextRef.current.close();
+      }
+    };
   }, []);
 
-  // Быстрые команды для турнирного директора
-  const quickCommands = [
-    { 
-      id: 'shuffle_deal', 
-      text: "Перетасовка и раздача! Турнир начинается!", 
-      label: "Начало турнира",
-      icon: Trophy,
-      category: 'tournament'
-    },
-    { 
-      id: 'seats_please', 
-      text: "Игроки, займите свои места за столами", 
-      label: "Места за столами",
-      icon: Users,
-      category: 'players'
-    },
-    { 
-      id: 'break_over', 
-      text: "Перерыв окончен. Игроки, займите свои места за столами.", 
-      label: "Конец перерыва",
-      icon: CheckCircle,
-      category: 'break'
-    },
-    { 
-      id: 'blinds_up_5min', 
-      text: "До повышения блайндов осталось 5 минут", 
-      label: "5 минут до блайндов",
-      icon: Timer,
-      category: 'time'
-    },
-    { 
-      id: 'blinds_up_1min', 
-      text: "До повышения блайндов осталась 1 минута", 
-      label: "1 минута до блайндов",
-      icon: AlertTriangle,
-      category: 'time'
-    },
-    { 
-      id: 'blinds_up', 
-      text: "Со следующей раздачи блайнды ап!", 
-      label: "Блайнды ап!",
-      icon: RotateCcw,
-      category: 'blinds'
-    },
-    { 
-      id: 'break_start', 
-      text: "Начинается перерыв", 
-      label: "Начало перерыва",
-      icon: Coffee,
-      category: 'break'
-    },
-    { 
-      id: 'final_table', 
-      text: "Собирается финальный стол! Поздравляем финалистов!", 
-      label: "Финальный стол",
-      icon: Trophy,
-      category: 'tournament'
-    }
-  ];
-
-  const updateSetting = <K extends keyof VoiceSettings>(key: K, value: VoiceSettings[K]) => {
-    setSettings(prev => ({ ...prev, [key]: value }));
-  };
-
-  const handleVolumeChange = (value: number[]) => {
-    updateSetting('volume', value[0]);
-  };
-
-  const categories = {
-    tournament: { label: 'Турнир', color: 'bg-yellow-100 text-yellow-800' },
-    players: { label: 'Игроки', color: 'bg-blue-100 text-blue-800' },
-    break: { label: 'Перерыв', color: 'bg-orange-100 text-orange-800' },
-    time: { label: 'Время', color: 'bg-red-100 text-red-800' },
-    blinds: { label: 'Блайнды', color: 'bg-green-100 text-green-800' }
-  };
-
   return (
-    <div className="space-y-6">
-      {/* Основная панель управления */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-              {settings.enabled ? (
-                <Volume2 className="w-5 h-5 text-green-600" />
-              ) : (
-                <VolumeX className="w-5 h-5 text-red-600" />
-              )}
-              Профессиональный голосовой помощник
-              <div className="flex gap-2">
-                <Badge variant={settings.enabled ? "default" : "secondary"}>
-                  {settings.enabled ? "Включен" : "Выключен"}
-                </Badge>
-                {isPlaying && (
-                  <Badge variant="destructive" className="animate-pulse">
-                    <Mic className="w-3 h-3 mr-1" />
-                    Говорит
-                  </Badge>
-                )}
-                {queueLength > 0 && (
-                  <Badge variant="outline">
-                    В очереди: {queueLength}
-                  </Badge>
-                )}
-              </div>
-            </CardTitle>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowSettings(!showSettings)}
-            >
-              <Settings className="w-4 h-4" />
-            </Button>
-          </div>
+    <div className="space-y-4 md:space-y-6">
+      {/* Главная панель управления */}
+      <Card className="border-primary/20">
+        <CardHeader className="pb-3 md:pb-6">
+          <CardTitle className="flex items-center gap-2 text-primary text-sm md:text-base">
+            <Zap className="h-4 w-4 md:h-5 md:w-5" />
+            Профессиональный голосовой ассистент
+          </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          {/* Основные управления */}
-          <div className="flex items-center gap-2 flex-wrap">
-            <Button
-              variant={settings.enabled ? "default" : "outline"}
-              onClick={() => updateSetting('enabled', !settings.enabled)}
-              className="flex items-center gap-2"
-            >
-              {settings.enabled ? (
-                <Volume2 className="w-4 h-4" />
-              ) : (
-                <VolumeX className="w-4 h-4" />
+        <CardContent className="space-y-3 md:space-y-4">
+          {/* Статус */}
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+            <div className="flex items-center gap-2 flex-wrap">
+              <Badge variant={selectedTournament ? "default" : "secondary"} className="text-xs">
+                {selectedTournament ? "Активен" : "Ожидание"}
+              </Badge>
+              {isListening && (
+                <Badge variant="outline" className="animate-pulse text-xs">
+                  <Mic className="h-3 w-3 mr-1" />
+                  Слушаю
+                </Badge>
               )}
-              {settings.enabled ? "Выключить" : "Включить"}
-            </Button>
+              {isSpeaking && (
+                <Badge variant="outline" className="animate-pulse text-xs">
+                  <Volume2 className="h-3 w-3 mr-1" />
+                  Говорю
+                </Badge>
+              )}
+            </div>
             
-            <Button
-              variant="outline"
-              onClick={testVoice}
-              disabled={!settings.enabled}
-            >
-              <Play className="w-4 h-4 mr-2" />
-              Тест голоса
-            </Button>
-            
-            <Button
-              variant="outline"
-              onClick={stopAll}
-              disabled={!settings.enabled || (!isPlaying && queueLength === 0)}
-            >
-              <Square className="w-4 h-4 mr-2" />
-              Остановить все
-            </Button>
-
-            {queueLength > 0 && (
-              <Button
-                variant="outline"
-                onClick={clearQueue}
-                disabled={!settings.enabled}
-              >
-                <Trash2 className="w-4 h-4 mr-2" />
-                Очистить очередь
-              </Button>
-            )}
+            <div className="flex gap-2 w-full md:w-auto">
+              {!isListening ? (
+                <Button 
+                  onClick={startListening} 
+                  className="gap-2 flex-1 md:flex-initial"
+                  disabled={!selectedTournament}
+                  size="sm"
+                >
+                  <Mic className="h-4 w-4" />
+                  <span className="hidden sm:inline">Дать команду</span>
+                  <span className="sm:hidden">Команда</span>
+                </Button>
+              ) : (
+                <Button 
+                  onClick={stopListening} 
+                  variant="outline" 
+                  className="gap-2 flex-1 md:flex-initial"
+                  size="sm"
+                >
+                  <MicOff className="h-4 w-4" />
+                  <span className="hidden sm:inline">Остановить</span>
+                  <span className="sm:hidden">Стоп</span>
+                </Button>
+              )}
+            </div>
           </div>
 
-          {/* Настройки */}
-          {showSettings && (
-            <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
-              <div className="space-y-2">
-                <Label>Громкость: {Math.round(settings.volume * 100)}%</Label>
-                <Slider
-                  value={[settings.volume]}
-                  onValueChange={handleVolumeChange}
-                  max={1}
-                  min={0}
-                  step={0.1}
-                  className="w-full"
-                />
-              </div>
-
-              {availableVoices.length > 0 && (
-                <div className="space-y-2">
-                  <Label>Голос</Label>
-                  <Select
-                    value={settings.voice || "default"}
-                    onValueChange={(value) => updateSetting('voice', value === "default" ? null : value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Выберите голос" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="default">По умолчанию</SelectItem>
-                      {availableVoices.map((voice) => (
-                        <SelectItem key={voice.name} value={voice.name}>
-                          {voice.name} ({voice.lang})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="use-elevenlabs"
-                  checked={settings.useElevenLabs}
-                  onCheckedChange={(checked) => updateSetting('useElevenLabs', checked)}
-                />
-                <Label htmlFor="use-elevenlabs">
-                  Использовать ElevenLabs (красивый AI голос)
-                </Label>
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="auto-announcements"
-                  checked={settings.autoAnnouncements}
-                  onCheckedChange={(checked) => updateSetting('autoAnnouncements', checked)}
-                />
-                <Label htmlFor="auto-announcements">
-                  Автоматические объявления времени
-                </Label>
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="debug-mode"
-                  checked={settings.debugMode}
-                  onCheckedChange={(checked) => updateSetting('debugMode', checked)}
-                />
-                <Label htmlFor="debug-mode">
-                  Режим отладки (логи в консоли)
-                </Label>
-              </div>
+          {/* Выбор голоса */}
+          <div className="space-y-2">
+            <p className="text-xs md:text-sm font-medium">Голос ассистента:</p>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+              {voices.map((voice) => (
+                <Button
+                  key={voice.id}
+                  variant={selectedVoice === voice.id ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setSelectedVoice(voice.id)}
+                  className="justify-start text-xs p-2"
+                >
+                  {voice.name}
+                </Button>
+              ))}
             </div>
-          )}
+          </div>
 
-          {/* Статус */}
-          {lastAnnouncement && (
-            <div className="p-3 bg-blue-50 rounded-lg border-l-4 border-blue-400">
-              <div className="text-sm text-blue-600">Последнее объявление:</div>
-              <div className="text-sm text-blue-800 mt-1">{lastAnnouncement}</div>
-            </div>
-          )}
-
-          <Separator />
-
-          {/* Быстрые команды */}
-          <div className="space-y-3">
-            <h4 className="text-sm font-medium">Быстрые объявления:</h4>
-            
-            {Object.entries(categories).map(([categoryKey, categoryInfo]) => {
-              const commandsInCategory = quickCommands.filter(cmd => cmd.category === categoryKey);
-              if (commandsInCategory.length === 0) return null;
-
-              return (
-                <div key={categoryKey} className="space-y-2">
-                  <Badge className={categoryInfo.color} variant="outline">
-                    {categoryInfo.label}
-                  </Badge>
-                  <div className="grid grid-cols-2 gap-2">
-                    {commandsInCategory.map((command) => {
-                      const IconComponent = command.icon;
-                      return (
-                        <Button
-                          key={command.id}
-                          variant="outline"
-                          size="sm"
-                          onClick={() => announceCustomMessage(command.text, 'medium')}
-                          disabled={!settings.enabled}
-                          className="flex items-center gap-2 text-xs h-auto py-2 px-3"
-                        >
-                          <IconComponent className="w-3 h-3" />
-                          {command.label}
-                        </Button>
-                      );
-                    })}
+          {/* Турнир */}
+          {selectedTournament && (
+            <div className="p-3 bg-muted rounded-lg space-y-2">
+              <p className="text-xs text-muted-foreground">Активный турнир:</p>
+              <p className="font-medium text-sm md:text-base">{selectedTournament.name}</p>
+              {tournamentData && (
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div>
+                    <span className="text-muted-foreground">Статус:</span>
+                    <span className="ml-1 font-medium">{tournamentData.status}</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Уровень:</span>
+                    <span className="ml-1 font-medium">{tournamentData.current_level}</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Блайнды:</span>
+                    <span className="ml-1 font-medium">{tournamentData.current_small_blind}/{tournamentData.current_big_blind}</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Таймер:</span>
+                    <span className="ml-1 font-medium">
+                      {tournamentData.timer_remaining ? 
+                        `${Math.floor(tournamentData.timer_remaining / 60)}:${String(tournamentData.timer_remaining % 60).padStart(2, '0')}` : 
+                        'Остановлен'
+                      }
+                    </span>
                   </div>
                 </div>
-              );
-            })}
-          </div>
-
-          {/* Информация о турнире */}
-          {selectedTournament && (
-            <div className="pt-4 border-t">
-              <div className="text-xs text-muted-foreground space-y-1">
-                <div>Активный турнир: <span className="font-medium">{selectedTournament.name}</span></div>
-                <div>Уровень: <span className="font-medium">{selectedTournament.current_level}</span></div>
-                <div>Игроков: <span className="font-medium">{registrations.length}</span></div>
-                {timerActive && (
-                  <div className="text-green-600">Таймер активен: {Math.floor(currentTime / 60)}:{(currentTime % 60).toString().padStart(2, '0')}</div>
-                )}
-              </div>
+              )}
             </div>
           )}
         </CardContent>
       </Card>
+
+      {/* Быстрые команды */}
+      <Card>
+        <CardHeader className="pb-3 md:pb-6">
+          <CardTitle className="text-sm md:text-base">Управление турниром</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3 md:space-y-4">
+          {/* Основные команды */}
+          <div className="space-y-2">
+            <p className="text-xs md:text-sm font-medium text-muted-foreground">Основные команды</p>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => quickCommand("показать статистику турнира")}
+                disabled={!selectedTournament}
+                className="text-xs p-2"
+              >
+                Статистика
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => quickCommand("поставить турнир на паузу")}
+                disabled={!selectedTournament}
+                className="text-xs p-2"
+              >
+                Пауза
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => quickCommand("возобновить турнир")}
+                disabled={!selectedTournament}
+                className="text-xs p-2"
+              >
+                Продолжить
+              </Button>
+            </div>
+          </div>
+
+          {/* Блайнды */}
+          <div className="space-y-2">
+            <p className="text-xs md:text-sm font-medium text-muted-foreground">Блайнды</p>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => quickCommand("следующий уровень блайндов")}
+                disabled={!selectedTournament}
+                className="text-xs p-2"
+              >
+                След. уровень
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => quickCommand("предыдущий уровень блайндов")}
+                disabled={!selectedTournament}
+                className="text-xs p-2"
+              >
+                Пред. уровень
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => quickCommand("установить уровень 5")}
+                disabled={!selectedTournament}
+                className="text-xs p-2"
+              >
+                Уровень 5
+              </Button>
+            </div>
+          </div>
+
+          {/* Таймер */}
+          <div className="space-y-2">
+            <p className="text-xs md:text-sm font-medium text-muted-foreground">Таймер</p>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => quickCommand("таймер 20 минут")}
+                disabled={!selectedTournament}
+                className="text-xs p-2"
+              >
+                20 мин
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => quickCommand("добавить время 5 минут")}
+                disabled={!selectedTournament}
+                className="text-xs p-2"
+              >
+                +5 мин
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => quickCommand("остановить таймер")}
+                disabled={!selectedTournament}
+                className="text-xs p-2"
+              >
+                Стоп
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => quickCommand("запустить таймер")}
+                disabled={!selectedTournament}
+                className="text-xs p-2"
+              >
+                Старт
+              </Button>
+            </div>
+          </div>
+
+          {/* Перерывы */}
+          <div className="space-y-2">
+            <p className="text-xs md:text-sm font-medium text-muted-foreground">Перерывы</p>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => quickCommand("перерыв на 15 минут")}
+                disabled={!selectedTournament}
+                className="text-xs p-2"
+              >
+                Перерыв 15м
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => quickCommand("перерыв на 30 минут")}
+                disabled={!selectedTournament}
+                className="text-xs p-2"
+              >
+                Перерыв 30м
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => quickCommand("закончить перерыв")}
+                disabled={!selectedTournament}
+                className="text-xs p-2"
+              >
+                Конец перерыва
+              </Button>
+            </div>
+          </div>
+
+          {/* Игроки и столы */}
+          <div className="space-y-2">
+            <p className="text-xs md:text-sm font-medium text-muted-foreground">Игроки и столы</p>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => quickCommand("список игроков")}
+                disabled={!selectedTournament}
+                className="text-xs p-2"
+              >
+                Игроки
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => quickCommand("перебалансировать столы")}
+                disabled={!selectedTournament}
+                className="text-xs p-2"
+              >
+                Балансировка
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => quickCommand("лидеры чипов")}
+                disabled={!selectedTournament}
+                className="text-xs p-2"
+              >
+                Чип-лидеры
+              </Button>
+            </div>
+          </div>
+
+          {/* Объявления */}
+          <div className="space-y-2">
+            <p className="text-xs md:text-sm font-medium text-muted-foreground">Объявления</p>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => quickCommand("тишина")}
+                disabled={!selectedTournament}
+                className="text-xs p-2"
+              >
+                Тишина
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => quickCommand("последняя рука")}
+                disabled={!selectedTournament}
+                className="text-xs p-2"
+              >
+                Последняя рука
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => quickCommand("финальный стол")}
+                disabled={!selectedTournament}
+                className="text-xs p-2"
+              >
+                Финал
+              </Button>
+            </div>
+          </div>
+
+          {/* Завершение */}
+          <div className="space-y-2">
+            <p className="text-xs md:text-sm font-medium text-muted-foreground">Завершение</p>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => quickCommand("выплаты")}
+                disabled={!selectedTournament}
+                className="text-xs p-2"
+              >
+                Выплаты
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => quickCommand("награждение")}
+                disabled={!selectedTournament}
+                className="text-xs p-2"
+              >
+                Награждение
+              </Button>
+              <Button 
+                variant="destructive" 
+                size="sm"
+                onClick={() => quickCommand("завершить турнир")}
+                disabled={!selectedTournament}
+                className="text-xs p-2"
+              >
+                Завершить
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Подсказки по командам */}
+      <Card>
+        <CardHeader className="pb-3 md:pb-6">
+          <CardTitle className="text-sm md:text-base">Голосовые команды</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 text-xs md:text-sm">
+            <div className="space-y-2">
+              <h4 className="font-medium text-sm md:text-base">Управление турниром:</h4>
+              <ul className="space-y-1 text-muted-foreground">
+                <li>• "Запустить турнир"</li>
+                <li>• "Поставить на паузу"</li>
+                <li>• "Возобновить турнир"</li>
+                <li>• "Завершить турнир"</li>
+                <li>• "Показать статистику"</li>
+              </ul>
+            </div>
+            <div className="space-y-2">
+              <h4 className="font-medium text-sm md:text-base">Блайнды и таймер:</h4>
+              <ul className="space-y-1 text-muted-foreground">
+                <li>• "Следующий уровень"</li>
+                <li>• "Установить уровень 5"</li>
+                <li>• "Таймер 20 минут"</li>
+                <li>• "Добавить время 5 минут"</li>
+                <li>• "Остановить таймер"</li>
+              </ul>
+            </div>
+            <div className="space-y-2">
+              <h4 className="font-medium text-sm md:text-base">Игроки:</h4>
+              <ul className="space-y-1 text-muted-foreground">
+                <li>• "Список игроков"</li>
+                <li>• "Исключить игрока Иван"</li>
+                <li>• "Пересадить игрока на стол 3"</li>
+                <li>• "Лидеры чипов"</li>
+                <li>• "Перебалансировать столы"</li>
+              </ul>
+            </div>
+            <div className="space-y-2">
+              <h4 className="font-medium text-sm md:text-base">Объявления:</h4>
+              <ul className="space-y-1 text-muted-foreground">
+                <li>• "Тишина"</li>
+                <li>• "Последняя рука"</li>
+                <li>• "Перерыв на 15 минут"</li>
+                <li>• "Финальный стол"</li>
+                <li>• "Объявление [текст]"</li>
+              </ul>
+            </div>
+          </div>
+          <div className="mt-3 md:mt-4 p-2 md:p-3 bg-muted rounded-lg">
+            <p className="text-xs md:text-sm text-muted-foreground">
+              💡 <strong>Совет:</strong> Говорите четко и естественно. Ассистент понимает команды на русском языке 
+              и может выполнять сложные действия, такие как "Пересадить игрока Петров на стол номер 5".
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* История команд */}
+      {messages.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>История команд</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2 max-h-60 overflow-y-auto">
+              {messages.map((message, index) => (
+                <div
+                  key={index}
+                  className={`p-3 rounded-lg text-sm ${
+                    message.type === 'user'
+                      ? 'bg-primary/10 text-primary border border-primary/20'
+                      : message.type === 'assistant'
+                      ? 'bg-secondary border'
+                      : 'bg-muted border'
+                  }`}
+                >
+                  <div className="flex justify-between items-start">
+                    <span className="flex-1">{message.content}</span>
+                    <span className="text-xs text-muted-foreground ml-2">
+                      {message.timestamp.toLocaleTimeString()}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
