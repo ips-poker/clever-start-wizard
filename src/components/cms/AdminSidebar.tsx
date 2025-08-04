@@ -77,6 +77,7 @@ const adminSections = [
     label: "Настройки",
     items: [
       { title: "SEO", id: "seo", icon: Search },
+      { title: "Оптимизация изображений", id: "image-optimizer", icon: Image },
       { title: "Настройки сайта", id: "settings", icon: Settings },
       { title: "Файлы", id: "files", icon: Database },
       { title: "Бэкап", id: "backup", icon: Download },

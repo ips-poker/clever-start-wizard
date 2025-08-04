@@ -28,6 +28,7 @@ import { AdvancedContentManager } from "@/components/cms/AdvancedContentManager"
 import { SmartBackupSystem } from "@/components/cms/SmartBackupSystem";
 import { EnhancedPerformanceMonitor } from "@/components/cms/EnhancedPerformanceMonitor";
 import { OrangeDataIntegration } from "@/components/cms/OrangeDataIntegration";
+import { ImageOptimizer } from "@/components/cms/ImageOptimizer";
 
 export default function Admin() {
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -54,6 +55,8 @@ export default function Admin() {
         return <GalleryManager />;
       case "seo":
         return <SEOManager />;
+      case "image-optimizer":
+        return <ImageOptimizer />;
       case "files":
         return <FileManager />;
       case "integrations":
