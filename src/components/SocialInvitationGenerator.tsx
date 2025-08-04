@@ -280,120 +280,65 @@ ${tournamentData.description}
     });
   };
 
+  const generateSimpleView = (format: 'square' | 'story') => {
+    // Создаем простую версию для копирования данных
+    const data = {
+      title: tournamentData.title.replace('🏆 ', ''),
+      date: tournamentData.date,
+      time: tournamentData.time,
+      location: tournamentData.location,
+      buyIn: tournamentData.buyIn,
+      prizePool: tournamentData.prizePool,
+      maxPlayers: tournamentData.maxPlayers,
+      startingChips: tournamentData.startingChips,
+      format: tournamentData.format,
+      description: tournamentData.description,
+      contactInfo: tournamentData.contactInfo
+    };
+
+    const formattedText = `
+IPS POKER TOURNAMENT
+
+${data.title}
+${data.description}
+
+📅 Date: ${data.date} at ${data.time}
+📍 Location: ${data.location}
+💰 Buy-in: ${data.buyIn}
+🏆 Prize Pool: ${data.prizePool}
+👥 Players: ${data.maxPlayers}
+🎯 Starting Stack: ${data.startingChips}
+🎮 Format: ${data.format}
+
+📞 Registration: ${data.contactInfo}
+
+#IPS #poker #tournament
+    `.trim();
+
+    // Копируем в буфер обмена
+    navigator.clipboard.writeText(formattedText).then(() => {
+      toast({
+        title: "Данные скопированы!",
+        description: "Информация о турнире скопирована в буфер обмена",
+      });
+    }).catch(() => {
+      toast({
+        title: "Информация",
+        description: formattedText,
+      });
+    });
+  };
+
   const generateAndPreviewImage = async (format: 'square' | 'story') => {
-    const elementId = format === 'square' ? 'social-square-preview' : 'social-story-preview';
+    // Показываем уведомление о временных проблемах
+    toast({
+      title: "Временные технические проблемы",
+      description: "Генерация изображений временно недоступна. Данные скопированы в текстовом формате.",
+      variant: "destructive"
+    });
     
-    // Сначала переключаемся на визуальную вкладку
-    if (activeTab !== 'visual') {
-      setActiveTab('visual');
-      // Даем время на рендеринг
-      await new Promise(resolve => setTimeout(resolve, 1500));
-    }
-    
-    const element = document.getElementById(elementId);
-    
-    if (!element) {
-      toast({
-        title: "Ошибка",
-        description: "Элемент карточки не найден. Попробуйте еще раз.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    // Принудительно делаем элемент видимым
-    element.style.display = 'block';
-    element.style.visibility = 'visible';
-    element.style.opacity = '1';
-    
-    // Ждем еще немного для полного рендеринга
-    await new Promise(resolve => setTimeout(resolve, 500));
-
-    // Проверяем размеры
-    const rect = element.getBoundingClientRect();
-    console.log(`Размеры элемента ${format}:`, rect.width, 'x', rect.height);
-    
-    if (rect.width === 0 || rect.height === 0) {
-      toast({
-        title: "Ошибка размеров",
-        description: `Элемент имеет размер ${rect.width}x${rect.height}. Убедитесь, что вы на вкладке "Визуальные карточки"`,
-        variant: "destructive"
-      });
-      return;
-    }
-
-    try {
-      toast({
-        title: "Создание изображения...",
-        description: "Пожалуйста, подождите",
-      });
-
-      // Используем минимальные настройки html2canvas
-      const canvas = await html2canvas(element, {
-        scale: 2,
-        backgroundColor: '#ffffff',
-        logging: false,
-        useCORS: false,
-        allowTaint: true,
-        scrollX: 0,
-        scrollY: 0,
-        windowWidth: window.innerWidth,
-        windowHeight: window.innerHeight
-      });
-
-      console.log('Canvas создан:', canvas.width, 'x', canvas.height);
-
-      if (canvas.width === 0 || canvas.height === 0) {
-        throw new Error(`Canvas имеет нулевые размеры: ${canvas.width}x${canvas.height}`);
-      }
-
-      const dataUrl = canvas.toDataURL('image/png', 1.0);
-      
-      if (!dataUrl || dataUrl === 'data:,') {
-        throw new Error('Не удалось создать изображение');
-      }
-
-      setPreviewImage(dataUrl);
-      setIsPreviewOpen(true);
-
-      toast({
-        title: "Готово!",
-        description: `Изображение в формате ${format === 'square' ? 'квадрат' : 'stories'} создано`,
-      });
-
-    } catch (error) {
-      console.error('Детальная ошибка генерации:', error);
-      toast({
-        title: "Ошибка генерации",
-        description: `Не удалось создать изображение: ${error.message}`,
-        variant: "destructive"
-      });
-      
-      // Попробуем простой fallback
-      try {
-        console.log('Пробуем fallback вариант...');
-        const simpleCanvas = await html2canvas(element, {
-          scale: 1,
-          backgroundColor: '#ffffff'
-        });
-        
-        const fallbackDataUrl = simpleCanvas.toDataURL('image/png');
-        setPreviewImage(fallbackDataUrl);
-        setIsPreviewOpen(true);
-        
-        toast({
-          title: "Создано в простом режиме",
-          description: "Изображение создано с упрощенными настройками",
-        });
-      } catch (fallbackError) {
-        console.error('Fallback также не сработал:', fallbackError);
-        toast({
-          title: "Критическая ошибка",
-          description: "Попробуйте обновить страницу и повторить",
-          variant: "destructive"
-        });
-      }
-    }
+    // Используем простую альтернативу
+    generateSimpleView(format);
   };
 
   const downloadImage = () => {
@@ -833,14 +778,23 @@ ${tournamentData.description}
                   </div>
                 </div>
               </div>
-              <Button 
-                onClick={() => generateAndPreviewImage('square')}
-                className="w-full"
-                variant="outline"
-              >
-                <Eye className="w-4 h-4 mr-2" />
-                Предпросмотр и скачать
-              </Button>
+              <div className="flex gap-2">
+                <Button 
+                  onClick={() => generateAndPreviewImage('square')}
+                  className="flex-1"
+                  variant="outline"
+                >
+                  <Eye className="w-4 h-4 mr-2" />
+                  Копировать данные
+                </Button>
+                <Button 
+                  onClick={() => generateSimpleView('square')}
+                  variant="secondary"
+                  size="sm"
+                >
+                  <Copy className="w-4 h-4" />
+                </Button>
+              </div>
             </CardContent>
           </Card>
 
@@ -962,14 +916,23 @@ ${tournamentData.description}
                   </div>
                 </div>
               </div>
-              <Button 
-                onClick={() => generateAndPreviewImage('story')}
-                className="w-full"
-                variant="outline"
-              >
-                <Eye className="w-4 h-4 mr-2" />
-                Предпросмотр и скачать
-              </Button>
+              <div className="flex gap-2">
+                <Button 
+                  onClick={() => generateAndPreviewImage('story')}
+                  className="flex-1"
+                  variant="outline"
+                >
+                  <Eye className="w-4 h-4 mr-2" />
+                  Копировать данные
+                </Button>
+                <Button 
+                  onClick={() => generateSimpleView('story')}
+                  variant="secondary"
+                  size="sm"
+                >
+                  <Copy className="w-4 h-4" />
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
