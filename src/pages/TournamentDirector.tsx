@@ -289,13 +289,15 @@ const TournamentDirector = () => {
     const newTimerActive = !timerActive;
     setTimerActive(newTimerActive);
     
-    // Сохранить состояние при переключении
+    // Сохранить состояние асинхронно чтобы не блокировать UI
     if (selectedTournament) {
-      localStorage.setItem(`timer_${selectedTournament.id}`, JSON.stringify({
-        currentTime,
-        timerActive: newTimerActive,
-        lastUpdate: Date.now()
-      }));
+      setTimeout(() => {
+        localStorage.setItem(`timer_${selectedTournament.id}`, JSON.stringify({
+          currentTime,
+          timerActive: newTimerActive,
+          lastUpdate: Date.now()
+        }));
+      }, 0);
     }
   };
 
