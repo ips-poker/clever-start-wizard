@@ -272,23 +272,43 @@ ${tournamentData.description}
   };
 
   const generateAndPreviewImage = async (format: 'square' | 'story') => {
+    console.log('Начинаем генерацию изображения для формата:', format);
+    
     const elementId = format === 'square' ? 'social-square-preview' : 'social-story-preview';
     const element = document.getElementById(elementId);
-    if (!element) return;
+    
+    console.log('Найден элемент:', elementId, element);
+    
+    if (!element) {
+      console.error('Элемент не найден:', elementId);
+      toast({
+        title: "Ошибка",
+        description: "Не удалось найти элемент для генерации изображения",
+        variant: "destructive"
+      });
+      return;
+    }
 
     try {
+      console.log('Начинаем html2canvas...');
       const canvas = await html2canvas(element, {
         scale: 2,
         useCORS: true,
         allowTaint: true,
         backgroundColor: '#000000',
-        logging: false,
+        logging: true,
         foreignObjectRendering: true
       });
 
+      console.log('Canvas создан, размеры:', canvas.width, 'x', canvas.height);
+      
       const dataUrl = canvas.toDataURL('image/png', 1.0);
+      console.log('DataURL создан, длина:', dataUrl.length);
+      
       setPreviewImage(dataUrl);
       setIsPreviewOpen(true);
+      
+      console.log('Состояние обновлено, превью должно открыться');
 
       toast({
         title: "Предпросмотр готов",
@@ -298,7 +318,7 @@ ${tournamentData.description}
       console.error('Ошибка генерации изображения:', error);
       toast({
         title: "Ошибка",
-        description: "Не удалось создать изображение",
+        description: "Не удалось создать изображение: " + error.message,
         variant: "destructive"
       });
     }
