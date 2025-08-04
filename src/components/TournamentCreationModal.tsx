@@ -334,39 +334,58 @@ export function TournamentCreationModal({ open, onOpenChange, tournament, onTour
           .delete()
           .eq('tournament_id', tournamentId);
 
-        // Insert regular blind levels
-        const blindLevelsToInsert = blindStructure.map(level => ({
-          tournament_id: tournamentId,
-          level: level.level,
-          small_blind: level.small_blind,
-          big_blind: level.big_blind,
-          ante: level.ante,
-          duration: level.duration,
-          is_break: false
-        }));
+        // Create combined structure with proper level numbering
+        const combinedLevels: Array<{
+          tournament_id: string;
+          level: number;
+          small_blind: number;
+          big_blind: number;
+          ante: number;
+          duration: number;
+          is_break: boolean;
+        }> = [];
 
-        // Insert break levels
-        const breakLevelsToInsert = breakLevels.map(level => ({
-          tournament_id: tournamentId,
-          level: level,
-          small_blind: 0,
-          big_blind: 0,
-          ante: 0,
-          duration: 900, // 15 minutes
-          is_break: true
-        }));
+        let currentLevel = 1;
 
-        const allLevels = [...blindLevelsToInsert, ...breakLevelsToInsert]
-          .sort((a, b) => a.level - b.level);
+        // Add regular blind levels and breaks in correct order
+        const maxBlindLevel = Math.max(...blindStructure.map(b => b.level), 0);
+        
+        for (let i = 1; i <= maxBlindLevel; i++) {
+          // Add regular blind level if it exists
+          const blindLevel = blindStructure.find(b => b.level === i);
+          if (blindLevel) {
+            combinedLevels.push({
+              tournament_id: tournamentId,
+              level: currentLevel++,
+              small_blind: blindLevel.small_blind,
+              big_blind: blindLevel.big_blind,
+              ante: blindLevel.ante,
+              duration: blindLevel.duration,
+              is_break: false
+            });
+          }
 
-        if (allLevels.length > 0) {
+          // Add break if scheduled for this level
+          if (breakLevels.includes(i)) {
+            combinedLevels.push({
+              tournament_id: tournamentId,
+              level: currentLevel++,
+              small_blind: 0,
+              big_blind: 0,
+              ante: 0,
+              duration: 900, // 15 minutes
+              is_break: true
+            });
+          }
+        }
+
+        if (combinedLevels.length > 0) {
           const { error: blindError } = await supabase
             .from('blind_levels')
-            .insert(allLevels);
+            .insert(combinedLevels);
 
           if (blindError) throw blindError;
         }
-
       }
 
       toast({
