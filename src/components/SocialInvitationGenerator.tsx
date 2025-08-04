@@ -580,7 +580,7 @@ ${tournamentData.description}
               <div className="flex justify-center">
                 <div 
                   id="social-square-preview" 
-                  className="w-[600px] h-[700px] bg-gradient-to-br from-slate-900 via-purple-900 to-indigo-900 text-white relative overflow-hidden border border-white/20"
+                  className="w-[700px] h-[900px] bg-gradient-to-br from-slate-900 via-purple-900 to-indigo-900 text-white relative overflow-hidden border border-white/20"
                   style={{
                     boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.8)',
                   }}
@@ -669,32 +669,63 @@ ${tournamentData.description}
                       </div>
                     </div>
 
-                    {/* Additional tournament structure */}
-                    {(tournamentData.rebuyInfo || tournamentData.addonInfo || tournamentData.timerDuration) && (
-                      <div className="space-y-3 mb-6">
+                    {/* Tournament structure section */}
+                    <div className="space-y-3 mb-6">
+                      <div className="text-center text-lg font-bold text-yellow-300 mb-4">📋 СТРУКТУРА ТУРНИРА</div>
+                      
+                      <div className="grid grid-cols-2 gap-3">
                         {tournamentData.timerDuration && (
-                          <div className="bg-purple-500/20 backdrop-blur-sm rounded-lg p-4 text-center border border-purple-400/30">
-                            <Clock className="w-5 h-5 mx-auto mb-2 text-purple-300" />
-                            <div className="text-xs opacity-80 mb-1">СТРУКТУРА</div>
-                            <div className="font-bold text-purple-300">{tournamentData.timerDuration}</div>
+                          <div className="bg-purple-500/20 backdrop-blur-sm rounded-lg p-3 text-center border border-purple-400/30">
+                            <Clock className="w-5 h-5 mx-auto mb-1 text-purple-300" />
+                            <div className="text-xs opacity-80 mb-1">ВРЕМЯ УРОВНЯ</div>
+                            <div className="font-bold text-sm text-purple-300">{tournamentData.timerDuration}</div>
                           </div>
                         )}
                         
-                        {tournamentData.rebuyInfo && (
-                          <div className="bg-orange-500/20 backdrop-blur-sm rounded-lg p-3 text-center border border-orange-400/30">
-                            <div className="text-xs opacity-80 mb-1">REBUY</div>
-                            <div className="font-semibold text-sm text-orange-300">{tournamentData.rebuyInfo}</div>
-                          </div>
-                        )}
-                        
-                        {tournamentData.addonInfo && (
-                          <div className="bg-cyan-500/20 backdrop-blur-sm rounded-lg p-3 text-center border border-cyan-400/30">
-                            <div className="text-xs opacity-80 mb-1">ADDON</div>
-                            <div className="font-semibold text-sm text-cyan-300">{tournamentData.addonInfo}</div>
+                        {tournamentData.blindStructure && (
+                          <div className="bg-indigo-500/20 backdrop-blur-sm rounded-lg p-3 text-center border border-indigo-400/30">
+                            <div className="text-xs opacity-80 mb-1">БЛАЙНДЫ</div>
+                            <div className="font-bold text-sm text-indigo-300">{tournamentData.blindStructure}</div>
                           </div>
                         )}
                       </div>
-                    )}
+                      
+                      <div className="grid grid-cols-2 gap-3">
+                        {tournamentData.rebuyInfo && tournamentData.rebuyEndLevel && (
+                          <div className="bg-orange-500/20 backdrop-blur-sm rounded-lg p-3 text-center border border-orange-400/30">
+                            <div className="text-xs opacity-80 mb-1">REBUY</div>
+                            <div className="font-semibold text-xs text-orange-300">{tournamentData.rebuyInfo}</div>
+                            <div className="font-semibold text-xs text-orange-300">{tournamentData.rebuyEndLevel}</div>
+                          </div>
+                        )}
+                        
+                        {tournamentData.addonInfo && tournamentData.addonLevel && (
+                          <div className="bg-cyan-500/20 backdrop-blur-sm rounded-lg p-3 text-center border border-cyan-400/30">
+                            <div className="text-xs opacity-80 mb-1">ADDON</div>
+                            <div className="font-semibold text-xs text-cyan-300">{tournamentData.addonInfo}</div>
+                            <div className="font-semibold text-xs text-cyan-300">{tournamentData.addonLevel}</div>
+                          </div>
+                        )}
+                      </div>
+                      
+                      {(tournamentData.lateRegEndLevel || tournamentData.breakInfo) && (
+                        <div className="grid grid-cols-2 gap-3">
+                          {tournamentData.lateRegEndLevel && (
+                            <div className="bg-pink-500/20 backdrop-blur-sm rounded-lg p-3 text-center border border-pink-400/30">
+                              <div className="text-xs opacity-80 mb-1">ПОЗДНЯЯ РЕГ.</div>
+                              <div className="font-semibold text-xs text-pink-300">{tournamentData.lateRegEndLevel}</div>
+                            </div>
+                          )}
+                          
+                          {tournamentData.breakInfo && (
+                            <div className="bg-emerald-500/20 backdrop-blur-sm rounded-lg p-3 text-center border border-emerald-400/30">
+                              <div className="text-xs opacity-80 mb-1">ПЕРЕРЫВ</div>
+                              <div className="font-semibold text-xs text-emerald-300">{tournamentData.breakInfo}</div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
 
                     {/* Footer */}
                     <div className="bg-gradient-to-r from-purple-600/30 to-blue-600/30 backdrop-blur-sm rounded-xl p-5 text-center border border-purple-400/30">
