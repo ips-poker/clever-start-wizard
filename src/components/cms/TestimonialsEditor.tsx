@@ -6,12 +6,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, Save, Plus, Trash2, Edit, Star } from "lucide-react";
+import { Loader2, Save, Plus, Trash2, Edit, Star, Upload, Image as ImageIcon } from "lucide-react";
 
 export function TestimonialsEditor() {
   const { toast } = useToast();
   const [testimonials, setTestimonials] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState(false);
   const [editingTestimonial, setEditingTestimonial] = useState<any>(null);
   const [newTestimonial, setNewTestimonial] = useState({
     name: '',
@@ -69,6 +70,101 @@ export function TestimonialsEditor() {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    try {
+      const file = event.target.files?.[0];
+      if (!file) return;
+
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        toast({
+          title: "Ошибка",
+          description: "Можно загружать только изображения",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        toast({
+          title: "Ошибка",
+          description: "Размер файла не должен превышать 5MB",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setUploading(true);
+      
+      // Generate unique filename
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+      
+      // Upload file to Supabase storage
+      const { data, error } = await supabase.storage
+        .from('testimonials')
+        .upload(fileName, file);
+
+      if (error) throw error;
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('testimonials')
+        .getPublicUrl(fileName);
+
+      // Update testimonial image URL
+      setNewTestimonial(prev => ({ ...prev, image: publicUrl }));
+
+      toast({
+        title: "Успешно",
+        description: "Изображение загружено",
+      });
+    } catch (error) {
+      console.error('Error uploading file:', error);
+      toast({
+        title: "Ошибка",
+        description: "Не удалось загрузить изображение",
+        variant: "destructive",
+      });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const removeUploadedImage = async (imageUrl: string) => {
+    try {
+      // Extract filename from URL
+      const urlParts = imageUrl.split('/');
+      const fileName = urlParts[urlParts.length - 1];
+      
+      // Delete from storage
+      const { error } = await supabase.storage
+        .from('testimonials')
+        .remove([fileName]);
+
+      if (error) {
+        console.error('Error removing file from storage:', error);
+        // Don't throw here as we still want to clear the URL from the form
+      }
+
+      // Clear image URL
+      setNewTestimonial(prev => ({ ...prev, image: '' }));
+
+      toast({
+        title: "Успешно", 
+        description: "Изображение удалено",
+      });
+    } catch (error) {
+      console.error('Error removing image:', error);
+      toast({
+        title: "Ошибка",
+        description: "Не удалось удалить изображение",
+        variant: "destructive",
+      });
     }
   };
 
@@ -241,13 +337,82 @@ export function TestimonialsEditor() {
             />
           </div>
 
-          <div>
-            <label className="text-sm font-medium">Изображение (URL)</label>
-            <Input
-              value={newTestimonial.image}
-              onChange={(e) => setNewTestimonial(prev => ({ ...prev, image: e.target.value }))}
-              placeholder="https://images.unsplash.com/photo-1633332755192-727a05c4013d?w=400&h=400&fit=crop"
-            />
+          <div className="space-y-4">
+            <label className="text-sm font-medium">Фотография</label>
+            
+            {/* Current image preview */}
+            {newTestimonial.image && (
+              <div className="relative inline-block">
+                <img 
+                  src={newTestimonial.image} 
+                  alt="Предпросмотр"
+                  className="w-32 h-32 rounded-lg object-cover border"
+                />
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  className="absolute -top-2 -right-2 h-6 w-6 rounded-full p-0"
+                  onClick={() => removeUploadedImage(newTestimonial.image)}
+                >
+                  ×
+                </Button>
+              </div>
+            )}
+
+            {/* Upload section */}
+            <div className="border-2 border-dashed border-border rounded-lg p-4">
+              <div className="text-center">
+                <ImageIcon className="w-8 h-8 mx-auto text-muted-foreground mb-2" />
+                <div className="space-y-2">
+                  <div>
+                    <label htmlFor="photo-upload" className="cursor-pointer">
+                      <Button 
+                        type="button" 
+                        variant="outline"
+                        className="relative"
+                        disabled={uploading}
+                        asChild
+                      >
+                        <span>
+                          {uploading ? (
+                            <>
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                              Загрузка...
+                            </>
+                          ) : (
+                            <>
+                              <Upload className="w-4 h-4 mr-2" />
+                              Загрузить фото
+                            </>
+                          )}
+                        </span>
+                      </Button>
+                    </label>
+                    <input
+                      id="photo-upload"
+                      type="file"
+                      className="hidden"
+                      accept="image/*"
+                      onChange={handleFileUpload}
+                      disabled={uploading}
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Или введите URL изображения ниже
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* URL input as fallback */}
+            <div>
+              <label className="text-sm font-medium text-muted-foreground">URL изображения (альтернатива)</label>
+              <Input
+                value={newTestimonial.image}
+                onChange={(e) => setNewTestimonial(prev => ({ ...prev, image: e.target.value }))}
+                placeholder="https://example.com/image.jpg"
+              />
+            </div>
           </div>
 
           <div className="flex gap-2">
