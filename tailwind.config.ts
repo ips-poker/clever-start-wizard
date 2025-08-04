@@ -105,14 +105,7 @@ export default {
 				'success': 'var(--shadow-success)',
 				'inset': 'var(--shadow-inset)'
 			},
-			fontFamily: {
-				'inter': ['Inter', 'sans-serif'],
-				'playfair': ['Playfair Display', 'serif'],
-				'mono': ['JetBrains Mono', 'monospace'],
-				'sans': ['Inter', 'system-ui', 'sans-serif'],
-				'serif': ['Playfair Display', 'Georgia', 'serif'],
-			},
-      fontWeight: {
+			fontWeight: {
 				'light': 'var(--font-weight-light)',
 				'normal': 'var(--font-weight-normal)',
 				'medium': 'var(--font-weight-medium)',

@@ -285,46 +285,58 @@ ${tournamentData.description}
     }
 
     try {
-      // Ждем загрузки всех изображений и стилей
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
+      // Ждем загрузки всех изображений
+      const images = element.querySelectorAll('img');
+      await Promise.all(Array.from(images).map(img => {
+        if (img.complete) return Promise.resolve();
+        return new Promise((resolve, reject) => {
+          img.onload = resolve;
+          img.onerror = resolve; // Продолжаем даже если изображение не загрузилось
+          setTimeout(resolve, 3000); // Таймаут 3 секунды
+        });
+      }));
+
       const canvas = await html2canvas(element, {
-        scale: 3,
+        scale: 2, // Увеличили для лучшего качества
         useCORS: true,
         allowTaint: false,
         backgroundColor: null,
         logging: false,
         width: element.offsetWidth,
         height: element.offsetHeight,
-        ignoreElements: (element) => {
-          return element.classList?.contains('no-capture') || false;
-        },
-        onclone: async (clonedDoc, element) => {
-          // Копируем все стили
-          const originalStyles = document.querySelectorAll('style, link[rel="stylesheet"]');
-          for (const style of originalStyles) {
-            const clonedStyle = clonedDoc.createElement(style.tagName.toLowerCase());
-            if (style.tagName === 'STYLE') {
-              clonedStyle.textContent = style.textContent;
-            } else {
-              (clonedStyle as any).href = (style as HTMLLinkElement).href;
-              (clonedStyle as any).rel = 'stylesheet';
+        scrollX: 0,
+        scrollY: 0,
+        windowWidth: window.innerWidth,
+        windowHeight: window.innerHeight,
+        foreignObjectRendering: false, // Отключаем для лучшей совместимости со стилями
+        removeContainer: true,
+        onclone: (clonedDoc) => {
+          // Копируем все CSS стили в клонированный документ
+          const styles = Array.from(document.styleSheets);
+          styles.forEach((styleSheet, index) => {
+            try {
+              const cssRules = Array.from(styleSheet.cssRules || styleSheet.rules || []);
+              const style = clonedDoc.createElement('style');
+              style.textContent = cssRules.map(rule => rule.cssText).join('\n');
+              clonedDoc.head.appendChild(style);
+            } catch (e) {
+              // Игнорируем ошибки с внешними стилями
+              console.warn('Could not clone stylesheet:', e);
             }
-            clonedDoc.head.appendChild(clonedStyle);
-          }
+          });
           
-          // Даём время на загрузку стилей
-          await new Promise(resolve => setTimeout(resolve, 1500));
+          // Добавляем время для рендеринга стилей
+          return new Promise(resolve => setTimeout(resolve, 1000));
         }
       });
 
-      const dataUrl = canvas.toDataURL('image/png', 1.0);
+      const dataUrl = canvas.toDataURL('image/png', 0.9);
       setPreviewImage(dataUrl);
       setIsPreviewOpen(true);
 
       toast({
-        title: "🎨 Шедевр готов!",
-        description: `Изображение в формате ${format} создано в высоком качестве`,
+        title: "Предпросмотр готов",
+        description: `Изображение в формате ${format} создано`,
       });
     } catch (error) {
       console.error('Ошибка генерации изображения:', error);
@@ -351,7 +363,7 @@ ${tournamentData.description}
   };
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-6">
       {/* Tournament Selection */}
       <Card>
         <CardHeader>
@@ -631,118 +643,158 @@ ${tournamentData.description}
               <div className="flex justify-center">
                 <div 
                   id="social-square-preview" 
-                  className="w-[700px] min-h-[900px] bg-white text-gray-900 relative border-2 border-slate-200 shadow-2xl rounded-2xl overflow-hidden"
+                  className="w-[700px] min-h-[900px] bg-gradient-to-br from-slate-900 via-purple-900 to-indigo-900 text-white relative border border-white/20"
                   style={{
-                    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(255, 255, 255, 0.05)',
+                    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.8)',
                   }}
                 >
                   {/* Decorative background */}
                   <div className="absolute inset-0">
-                    {/* Elegant gradient overlay */}
-                    <div className="absolute inset-0 bg-gradient-to-br from-blue-50/30 via-purple-50/20 to-pink-50/30"></div>
-                    
-                    {/* Card symbols with better contrast */}
-                    <div className="absolute top-8 left-8 text-6xl text-amber-500/15 transform rotate-12">♠</div>
-                    <div className="absolute top-8 right-8 text-5xl text-rose-500/15 transform -rotate-12">♥</div>
-                    <div className="absolute bottom-8 left-8 text-5xl text-rose-500/15 transform rotate-12">♦</div>
-                    <div className="absolute bottom-8 right-8 text-6xl text-amber-500/15 transform -rotate-12">♣</div>
-                    
-                    {/* Subtle pattern overlay */}
-                    <div className="absolute inset-0 opacity-5 bg-gradient-to-br from-slate-900 via-transparent to-slate-900"></div>
+                    <div className="absolute top-8 left-8 text-6xl text-yellow-400/20 transform rotate-12">♠</div>
+                    <div className="absolute top-8 right-8 text-5xl text-red-400/20 transform -rotate-12">♥</div>
+                    <div className="absolute bottom-8 left-8 text-5xl text-red-400/20 transform rotate-12">♦</div>
+                    <div className="absolute bottom-8 right-8 text-6xl text-yellow-400/20 transform -rotate-12">♣</div>
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent"></div>
                   </div>
 
-                  <div className="relative h-full flex flex-col p-10 font-inter">
-                    {/* Header with elegant branding */}
-                    <div className="flex items-center justify-between mb-10">
+                  <div className="relative h-full flex flex-col p-8">
+                    {/* Header */}
+                    <div className="flex items-center justify-between mb-6">
                       <div className="flex items-center gap-4">
-                        <div className="w-20 h-20 bg-gradient-to-br from-slate-900 to-slate-700 rounded-2xl flex items-center justify-center shadow-xl">
-                          <span className="text-white font-bold text-xl font-playfair">IPS</span>
+                        <div className="w-16 h-16 bg-white rounded-xl flex items-center justify-center shadow-lg">
+                          <img src={ipsLogo} alt="IPS" className="w-12 h-12" />
                         </div>
                         <div>
-                          <div className="font-bold text-2xl text-slate-900 font-playfair">IPS POKER</div>
-                          <div className="text-sm text-slate-600 font-inter tracking-wide">International Poker Series</div>
+                          <div className="font-bold text-2xl">IPS POKER</div>
+                          <div className="text-sm opacity-80">International Style</div>
                         </div>
                       </div>
                       <div className="text-right">
-                        <div className="bg-gradient-to-r from-amber-500 to-orange-600 text-white font-bold px-6 py-3 rounded-2xl text-lg font-inter shadow-lg">
+                        <Badge className="bg-gradient-to-r from-yellow-400 to-orange-500 text-black font-bold px-4 py-2 text-lg">
                           ТУРНИР
-                        </div>
-                        <div className="text-sm mt-2 text-slate-600 font-medium">Рейтинговый</div>
+                        </Badge>
+                        <div className="text-sm mt-1 opacity-70">Рейтинговый</div>
                       </div>
                     </div>
 
-                    {/* Main Title Section */}
-                    <div className="text-center mb-10 bg-gradient-to-r from-slate-50 to-blue-50 rounded-3xl p-8 border border-slate-200 shadow-sm">
-                      <h2 className="text-4xl font-bold mb-4 text-slate-900 font-playfair leading-tight">
+                    {/* Title */}
+                    <div className="text-center mb-6 bg-white/10 backdrop-blur-sm rounded-xl p-5">
+                      <h2 className="text-3xl font-bold mb-3 bg-gradient-to-r from-yellow-300 to-orange-300 bg-clip-text text-transparent leading-tight">
                         {tournamentData.title}
                       </h2>
-                      <div className="w-32 h-1 bg-gradient-to-r from-amber-500 to-orange-600 mx-auto rounded-full mb-4"></div>
-                      <p className="text-lg text-slate-700 font-inter leading-relaxed">{tournamentData.description}</p>
+                      <p className="text-base opacity-90">{tournamentData.description}</p>
                     </div>
 
-                    {/* Info Cards Grid */}
-                    <div className="grid grid-cols-2 gap-6 mb-8">
-                      {/* Date & Time Card */}
-                      <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-3xl p-6 border border-blue-200 shadow-sm">
-                        <div className="flex items-center gap-4 mb-4">
-                          <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center">
-                            <Calendar className="w-6 h-6 text-white" />
-                          </div>
-                          <div>
-                            <div className="text-xs font-semibold text-blue-600 uppercase tracking-wider font-inter">Дата и время</div>
-                            <div className="text-lg font-bold text-slate-900 font-inter">{tournamentData.date}</div>
-                          </div>
-                        </div>
-                        <div className="text-3xl font-bold text-blue-600 font-mono">{tournamentData.time}</div>
+                    {/* Main info grid */}
+                    <div className="grid grid-cols-2 gap-4 mb-6">
+                      <div className="bg-white/15 backdrop-blur-sm rounded-xl p-5 text-center">
+                        <Calendar className="w-8 h-8 mx-auto mb-3 text-blue-300" />
+                        <div className="text-xs opacity-80 mb-2">ДАТА И ВРЕМЯ</div>
+                        <div className="font-bold text-lg">{tournamentData.date}</div>
+                        <div className="font-bold text-2xl text-blue-300">{tournamentData.time}</div>
                       </div>
                       
-                      {/* Location Card */}
-                      <div className="bg-gradient-to-br from-emerald-50 to-green-50 rounded-3xl p-6 border border-emerald-200 shadow-sm">
-                        <div className="flex items-center gap-4 mb-4">
-                          <div className="w-12 h-12 bg-emerald-600 rounded-2xl flex items-center justify-center">
-                            <MapPin className="w-6 h-6 text-white" />
-                          </div>
-                          <div>
-                            <div className="text-xs font-semibold text-emerald-600 uppercase tracking-wider font-inter">Место</div>
-                            <div className="text-lg font-bold text-slate-900 font-inter leading-tight">{tournamentData.location}</div>
-                          </div>
-                        </div>
+                      <div className="bg-white/15 backdrop-blur-sm rounded-xl p-5 text-center">
+                        <MapPin className="w-8 h-8 mx-auto mb-3 text-green-300" />
+                        <div className="text-xs opacity-80 mb-2">МЕСТО</div>
+                        <div className="font-bold text-2xl text-green-300">{tournamentData.location}</div>
                       </div>
                       
-                      {/* Buy-in Card */}
-                      <div className="bg-gradient-to-br from-amber-50 to-yellow-50 rounded-3xl p-6 border-2 border-amber-300 shadow-sm">
-                        <div className="flex items-center gap-4 mb-4">
-                          <div className="w-12 h-12 bg-amber-600 rounded-2xl flex items-center justify-center">
-                            <DollarSign className="w-6 h-6 text-white" />
-                          </div>
-                          <div>
-                            <div className="text-xs font-semibold text-amber-600 uppercase tracking-wider font-inter">Бай-ин</div>
-                            <div className="text-2xl font-bold text-amber-600 font-mono">{tournamentData.buyIn}</div>
-                          </div>
-                        </div>
+                      <div className="bg-gradient-to-br from-yellow-500/20 to-orange-500/20 backdrop-blur-sm rounded-xl p-5 text-center border border-yellow-400/30">
+                        <DollarSign className="w-8 h-8 mx-auto mb-3 text-yellow-300" />
+                        <div className="text-xs opacity-80 mb-2">БАЙ-ИН</div>
+                        <div className="font-bold text-2xl text-yellow-300">{tournamentData.buyIn}</div>
                       </div>
                       
-                      {/* Prize Pool Card */}
-                      <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-3xl p-6 border border-green-200 shadow-sm">
-                        <div className="flex items-center gap-4 mb-4">
-                          <div className="w-12 h-12 bg-green-600 rounded-2xl flex items-center justify-center">
-                            <Trophy className="w-6 h-6 text-white" />
-                          </div>
-                          <div>
-                            <div className="text-xs font-semibold text-green-600 uppercase tracking-wider font-inter">Призовой фонд</div>
-                            <div className="text-2xl font-bold text-green-600 font-mono">{tournamentData.prizePool}</div>
-                          </div>
-                        </div>
+                      <div className="bg-gradient-to-br from-green-500/20 to-emerald-500/20 backdrop-blur-sm rounded-xl p-5 text-center border border-green-400/30">
+                        <Trophy className="w-8 h-8 mx-auto mb-3 text-green-300" />
+                        <div className="text-xs opacity-80 mb-2">ПРИЗОВОЙ ФОНД</div>
+                        <div className="font-bold text-2xl text-green-300">{tournamentData.prizePool}</div>
                       </div>
                     </div>
 
-                    {/* Contact Section */}
-                    <div className="mt-8 bg-gradient-to-r from-slate-900 to-slate-800 rounded-3xl p-6 text-white shadow-lg">
-                      <div className="text-center">
-                        <div className="text-sm font-semibold text-amber-400 mb-2 uppercase tracking-wider font-inter">Регистрация</div>
-                        <div className="text-2xl font-bold font-mono">{tournamentData.contactInfo}</div>
-                        <div className="text-xs mt-3 text-slate-400 font-inter">#IPS #покер #турнир #ELO</div>
+                    {/* Tournament details */}
+                    <div className="grid grid-cols-3 gap-3 mb-6">
+                      <div className="bg-white/10 rounded-lg p-4 text-center">
+                        <Users className="w-5 h-5 mx-auto mb-2" />
+                        <div className="text-xs opacity-80">МЕСТ</div>
+                        <div className="font-bold text-lg">{tournamentData.maxPlayers}</div>
                       </div>
+                      <div className="bg-white/10 rounded-lg p-4 text-center">
+                        <Zap className="w-5 h-5 mx-auto mb-2" />
+                        <div className="text-xs opacity-80">СТАРТОВЫЙ СТЕК</div>
+                        <div className="font-bold text-lg">{tournamentData.startingChips}</div>
+                      </div>
+                      <div className="bg-white/10 rounded-lg p-4 text-center">
+                        <FileText className="w-5 h-5 mx-auto mb-2" />
+                        <div className="text-xs opacity-80">ФОРМАТ</div>
+                        <div className="font-bold text-lg">{tournamentData.format}</div>
+                      </div>
+                    </div>
+
+                    {/* Tournament structure section */}
+                    <div className="space-y-3 mb-6">
+                      <div className="text-center text-lg font-bold text-yellow-300 mb-4">📋 СТРУКТУРА ТУРНИРА</div>
+                      
+                      <div className="grid grid-cols-2 gap-3">
+                        {tournamentData.timerDuration && (
+                          <div className="bg-purple-500/20 backdrop-blur-sm rounded-lg p-3 text-center border border-purple-400/30">
+                            <Clock className="w-5 h-5 mx-auto mb-1 text-purple-300" />
+                            <div className="text-xs opacity-80 mb-1">ВРЕМЯ УРОВНЯ</div>
+                            <div className="font-bold text-sm text-purple-300">{tournamentData.timerDuration}</div>
+                          </div>
+                        )}
+                        
+                        {tournamentData.blindStructure && (
+                          <div className="bg-indigo-500/20 backdrop-blur-sm rounded-lg p-3 text-center border border-indigo-400/30">
+                            <div className="text-xs opacity-80 mb-1">БЛАЙНДЫ</div>
+                            <div className="font-bold text-sm text-indigo-300">{tournamentData.blindStructure}</div>
+                          </div>
+                        )}
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-3">
+                        {tournamentData.rebuyInfo && tournamentData.rebuyEndLevel && (
+                          <div className="bg-orange-500/20 backdrop-blur-sm rounded-lg p-3 text-center border border-orange-400/30">
+                            <div className="text-xs opacity-80 mb-1">REBUY</div>
+                            <div className="font-semibold text-xs text-orange-300">{tournamentData.rebuyInfo}</div>
+                            <div className="font-semibold text-xs text-orange-300">{tournamentData.rebuyEndLevel}</div>
+                          </div>
+                        )}
+                        
+                        {tournamentData.addonInfo && tournamentData.addonLevel && (
+                          <div className="bg-cyan-500/20 backdrop-blur-sm rounded-lg p-3 text-center border border-cyan-400/30">
+                            <div className="text-xs opacity-80 mb-1">ADDON</div>
+                            <div className="font-semibold text-xs text-cyan-300">{tournamentData.addonInfo}</div>
+                            <div className="font-semibold text-xs text-cyan-300">{tournamentData.addonLevel}</div>
+                          </div>
+                        )}
+                      </div>
+                      
+                      {(tournamentData.lateRegEndLevel || tournamentData.breakInfo) && (
+                        <div className="grid grid-cols-2 gap-3">
+                          {tournamentData.lateRegEndLevel && (
+                            <div className="bg-pink-500/20 backdrop-blur-sm rounded-lg p-3 text-center border border-pink-400/30">
+                              <div className="text-xs opacity-80 mb-1">ПОЗДНЯЯ РЕГ.</div>
+                              <div className="font-semibold text-xs text-pink-300">{tournamentData.lateRegEndLevel}</div>
+                            </div>
+                          )}
+                          
+                          {tournamentData.breakInfo && (
+                            <div className="bg-emerald-500/20 backdrop-blur-sm rounded-lg p-3 text-center border border-emerald-400/30">
+                              <div className="text-xs opacity-80 mb-1">ПЕРЕРЫВ</div>
+                              <div className="font-semibold text-xs text-emerald-300">{tournamentData.breakInfo}</div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Footer */}
+                    <div className="bg-gradient-to-r from-purple-600/30 to-blue-600/30 backdrop-blur-sm rounded-xl p-5 text-center border border-purple-400/30">
+                      <div className="text-sm mb-2 font-semibold">РЕГИСТРАЦИЯ</div>
+                      <div className="text-2xl font-bold text-blue-300">{tournamentData.contactInfo}</div>
+                      <div className="text-xs mt-3 opacity-60">#IPS #покер #турнир #ELO</div>
                     </div>
                   </div>
                 </div>
@@ -752,10 +804,10 @@ ${tournamentData.description}
                   console.log('Нажата кнопка для square формата');
                   generateAndPreviewImage('square');
                 }}
-                className="w-full bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 transform transition-all duration-300 hover:scale-105 hover:shadow-lg group"
+                className="w-full"
               >
-                <Eye className="w-4 h-4 mr-2 group-hover:animate-pulse" />
-                🎨 Посмотреть и скачать
+                <Eye className="w-4 h-4 mr-2" />
+                Посмотреть и скачать
               </Button>
             </CardContent>
           </Card>
@@ -769,24 +821,18 @@ ${tournamentData.description}
               <div className="flex justify-center">
                 <div 
                   id="social-story-preview" 
-                  className="w-[350px] min-h-[800px] bg-white text-gray-900 relative border-2 border-slate-200 shadow-2xl rounded-2xl overflow-hidden"
+                  className="w-[350px] min-h-[800px] bg-gradient-to-b from-indigo-900 via-purple-900 to-pink-900 text-white relative border border-white/20"
                   style={{
-                    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(255, 255, 255, 0.05)',
+                    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.8)',
                   }}
                 >
-                  {/* Elegant background elements */}
+                  {/* Animated background elements */}
                   <div className="absolute inset-0">
-                    {/* Subtle gradient overlay */}
-                    <div className="absolute inset-0 bg-gradient-to-b from-blue-50/40 via-purple-50/30 to-pink-50/40"></div>
-                    
-                    {/* Card symbols with elegant colors */}
-                    <div className="absolute top-16 left-6 text-7xl text-amber-500/12 animate-pulse">♠</div>
-                    <div className="absolute top-24 right-6 text-6xl text-rose-500/12 animate-pulse delay-1000 transform rotate-12">♥</div>
-                    <div className="absolute bottom-40 left-6 text-6xl text-rose-500/12 animate-pulse delay-2000 transform -rotate-12">♦</div>
-                    <div className="absolute bottom-32 right-6 text-7xl text-amber-500/12 animate-pulse delay-3000">♣</div>
-                    
-                    {/* Elegant pattern overlay */}
-                    <div className="absolute inset-0 opacity-3 bg-gradient-to-b from-slate-900 via-transparent to-slate-900"></div>
+                    <div className="absolute top-16 left-6 text-7xl text-yellow-400/20 animate-pulse">♠</div>
+                    <div className="absolute top-24 right-6 text-6xl text-red-400/20 animate-pulse delay-1000 transform rotate-12">♥</div>
+                    <div className="absolute bottom-40 left-6 text-6xl text-red-400/20 animate-pulse delay-2000 transform -rotate-12">♦</div>
+                    <div className="absolute bottom-32 right-6 text-7xl text-yellow-400/20 animate-pulse delay-3000">♣</div>
+                    <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/20 to-black/40"></div>
                   </div>
 
                   <div className="relative h-full flex flex-col p-6">
@@ -930,10 +976,10 @@ ${tournamentData.description}
                   console.log('Нажата кнопка для story формата');
                   generateAndPreviewImage('story');
                 }}
-                className="w-full bg-gradient-to-r from-secondary to-primary hover:from-secondary/90 hover:to-primary/90 transform transition-all duration-300 hover:scale-105 hover:shadow-lg group"
+                className="w-full"
               >
-                <Eye className="w-4 h-4 mr-2 group-hover:animate-pulse" />
-                📱 Посмотреть и скачать
+                <Eye className="w-4 h-4 mr-2" />
+                Посмотреть и скачать
               </Button>
             </CardContent>
           </Card>
@@ -942,30 +988,34 @@ ${tournamentData.description}
 
       {/* Preview Modal */}
       <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-gradient-to-br from-background/95 to-background backdrop-blur-lg border-primary/20">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="text-center text-2xl bg-gradient-to-r from-primary via-accent to-secondary bg-clip-text text-transparent flex items-center justify-center gap-2">
-              ✨ Предпросмотр приглашения
+            <DialogTitle className="flex items-center justify-between">
+              Предпросмотр приглашения
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsPreviewOpen(false)}
+              >
+                <X className="w-4 h-4" />
+              </Button>
             </DialogTitle>
           </DialogHeader>
           
           {previewImage && (
-            <div className="space-y-6 p-4">
-              <div className="flex justify-center bg-gradient-to-br from-muted/50 to-background rounded-xl p-6 shadow-inner animate-fade-in">
+            <div className="space-y-4">
+              <div className="flex justify-center bg-gray-100 rounded-lg p-4">
                 <img 
                   src={previewImage} 
                   alt="Предпросмотр приглашения" 
-                  className="max-w-full h-auto rounded-xl shadow-2xl border-2 border-primary/20 hover:border-primary/40 transition-all duration-300 hover:scale-105 animate-scale-in"
+                  className="max-w-full h-auto rounded-lg shadow-lg"
                 />
               </div>
               
               <div className="flex justify-center gap-4">
-                <Button 
-                  onClick={downloadImage} 
-                  className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 transform transition-all duration-300 hover:scale-105 group"
-                >
-                  <Download className="w-4 h-4 mr-2 group-hover:animate-bounce" />
-                  💾 Скачать изображение
+                <Button onClick={downloadImage} className="flex items-center gap-2">
+                  <Download className="w-4 h-4" />
+                  Скачать изображение
                 </Button>
                 <Button 
                   variant="outline" 
