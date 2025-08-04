@@ -410,12 +410,8 @@ export function ProfessionalVoiceAssistant({ selectedTournament, onStatusChange 
               const message = statusMessages[newData.status] || `Статус изменен на ${newData.status}`;
               speakText(message);
             } else if (oldData.current_level !== newData.current_level) {
-              // Получаем информацию об уровне из базы данных
-              fetchAndAnnounceLevel(newData.current_level, newData.id);
-            } else if (oldData.timer_remaining > 60 && newData.timer_remaining <= 60 && newData.timer_remaining > 0) {
-              speakText('Внимание! До окончания уровня осталась одна минута');
-            } else if (oldData.timer_remaining > 10 && newData.timer_remaining <= 10 && newData.timer_remaining > 0) {
-              speakText('Внимание! До окончания уровня осталось 10 секунд');
+              // Не дублируем объявления уровней, так как они теперь обрабатываются в таймере
+              console.log(`Level changed from ${oldData.current_level} to ${newData.current_level}`);
             }
           }
         }
@@ -456,28 +452,7 @@ export function ProfessionalVoiceAssistant({ selectedTournament, onStatusChange 
     }
   };
 
-  // Автоматические объявления времени
-  useEffect(() => {
-    if (!tournamentData?.timer_remaining || !selectedTournament?.id) return;
-
-    const timeRemaining = tournamentData.timer_remaining;
-    
-    // Объявления на определенных отметках времени
-    if (timeRemaining === 600) { // 10 минут
-      speakText('До окончания уровня осталось 10 минут');
-    } else if (timeRemaining === 300) { // 5 минут
-      speakText('До окончания уровня осталось 5 минут');
-    } else if (timeRemaining === 120) { // 2 минуты
-      speakText('До окончания уровня осталось 2 минуты');
-    } else if (timeRemaining === 60) { // 1 минута
-      speakText('Внимание! До окончания уровня осталась одна минута');
-    } else if (timeRemaining === 30) { // 30 секунд
-      speakText('До окончания уровня осталось 30 секунд');
-    } else if (timeRemaining === 10) { // 10 секунд
-      speakText('Внимание! До окончания уровня осталось 10 секунд');
-    }
-  }, [tournamentData?.timer_remaining]);
-
+  // Очистка ресурсов при размонтировании
   useEffect(() => {
     return () => {
       if (audioContextRef.current) {

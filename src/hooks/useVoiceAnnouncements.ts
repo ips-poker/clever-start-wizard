@@ -18,13 +18,38 @@ interface VoiceAnnouncementOptions {
 
 export const useVoiceAnnouncements = (options: VoiceAnnouncementOptions = { enabled: true }) => {
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const lastAnnouncementRef = useRef<number>(0);
+  const lastAnnouncementRef = useRef<string>('');
+  const announcementTimeoutRef = useRef<number | null>(null);
 
   const playAnnouncement = useCallback(async (text: string) => {
-    if (!options.enabled) return;
+    if (!options.enabled || !text) return;
+
+    // Предотвращаем дублирование одинаковых объявлений
+    const currentKey = `${text}_${Date.now()}`;
+    if (lastAnnouncementRef.current === text) {
+      console.log('🔇 Skipping duplicate announcement:', text);
+      return;
+    }
+    lastAnnouncementRef.current = text;
+
+    // Сбрасываем предыдущий таймаут
+    if (announcementTimeoutRef.current) {
+      clearTimeout(announcementTimeoutRef.current);
+    }
+
+    // Устанавливаем таймаут для сброса последнего объявления
+    announcementTimeoutRef.current = window.setTimeout(() => {
+      lastAnnouncementRef.current = '';
+    }, 3000);
 
     try {
       console.log('🔊 Generating voice announcement:', text);
+
+      // Останавливаем предыдущее воспроизведение
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
 
       // Используем ElevenLabs TTS с голосом Ария
       const { data, error } = await supabase.functions.invoke('voice-announcement', {
@@ -50,8 +75,19 @@ export const useVoiceAnnouncements = (options: VoiceAnnouncementOptions = { enab
         audio.src = `data:audio/mpeg;base64,${data.audioContent}`;
         
         audioRef.current = audio;
+        
+        audio.onended = () => {
+          console.log('✅ Voice announcement completed');
+          audioRef.current = null;
+        };
+        
+        audio.onerror = (e) => {
+          console.error('❌ Audio playback error:', e);
+          playBrowserSpeech(text);
+        };
+        
         await audio.play();
-        console.log('✅ ElevenLabs TTS played successfully');
+        console.log('✅ ElevenLabs TTS started successfully');
       } else {
         // Fallback на встроенную речь
         await playBrowserSpeech(text);
@@ -85,12 +121,6 @@ export const useVoiceAnnouncements = (options: VoiceAnnouncementOptions = { enab
     nextLevel: BlindLevel | null,
     currentTime: number
   ) => {
-    // Предотвращаем повторные оповещения для того же времени
-    if (Math.abs(currentTime - lastAnnouncementRef.current) < 2) {
-      return;
-    }
-    lastAnnouncementRef.current = currentTime;
-
     if (!nextLevel) {
       await playAnnouncement('Внимание! Через 10 секунд время уровня истекает');
       return;
@@ -120,6 +150,16 @@ export const useVoiceAnnouncements = (options: VoiceAnnouncementOptions = { enab
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current = null;
+    }
+    if (announcementTimeoutRef.current) {
+      clearTimeout(announcementTimeoutRef.current);
+      announcementTimeoutRef.current = null;
+    }
+    lastAnnouncementRef.current = '';
+    
+    // Остановить также браузерную речь
+    if ('speechSynthesis' in window) {
+      speechSynthesis.cancel();
     }
   }, []);
 

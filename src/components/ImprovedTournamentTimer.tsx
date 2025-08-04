@@ -56,7 +56,7 @@ const ImprovedTournamentTimer = ({
     calculateChipStatistics();
   }, [registrations]);
 
-  // Voice announcements for level transitions
+  // Voice announcements for level transitions and time warnings
   useEffect(() => {
     const currentLevel = getCurrentLevel();
     const nextLevel = getNextLevel();
@@ -68,39 +68,59 @@ const ImprovedTournamentTimer = ({
       
       // Announce new level when it starts
       if (currentLevel && !currentLevel.is_break) {
-        const message = `Уровень ${currentLevel.level}. Блайнды ${currentLevel.small_blind} ${currentLevel.big_blind}${currentLevel.ante ? `, анте ${currentLevel.ante}` : ''}. Продолжительность ${Math.round(currentLevel.duration / 60)} минут.`;
-        announceCustomMessage(message);
+        const message = `Начинается уровень ${currentLevel.level}. Малый блайнд ${currentLevel.small_blind}, большой блайнд ${currentLevel.big_blind}${currentLevel.ante ? `, анте ${currentLevel.ante}` : ''}. Продолжительность ${Math.round(currentLevel.duration / 60)} минут.`;
+        setTimeout(() => announceCustomMessage(message), 500);
       } else if (currentLevel?.is_break) {
-        const message = `Начинается перерыв на ${Math.round(currentLevel.duration / 60)} минут.`;
-        announceCustomMessage(message);
+        const message = `Начинается перерыв на ${Math.round(currentLevel.duration / 60)} минут. Игроки могут отдохнуть.`;
+        setTimeout(() => announceCustomMessage(message), 500);
       }
     }
 
-    // Announce when timer reaches 0 (level ends)
-    if (currentTime === 0 && !hasAnnouncedLevelRef.current) {
-      hasAnnouncedLevelRef.current = true;
-      
-      if (currentLevel?.is_break && nextLevel) {
-        const message = `Перерыв окончен. Следующий уровень ${nextLevel.level}. Блайнды ${nextLevel.small_blind} ${nextLevel.big_blind}${nextLevel.ante ? `, анте ${nextLevel.ante}` : ''}. Игроки, займите свои места.`;
-        announceCustomMessage(message);
-      } else if (!currentLevel?.is_break && nextLevel) {
-        if (nextLevel.is_break) {
-          const message = `Уровень ${currentLevel?.level} завершен. Следующий перерыв на ${Math.round(nextLevel.duration / 60)} минут.`;
-          announceCustomMessage(message);
+    // Time-based announcements during active timer
+    if (timerActive && currentLevel) {
+      if (currentTime === 600) { // 10 minutes
+        announceCustomMessage("До окончания уровня осталось 10 минут.");
+      } else if (currentTime === 300) { // 5 minutes
+        announceCustomMessage("До окончания уровня осталось 5 минут.");
+      } else if (currentTime === 120) { // 2 minutes
+        announceCustomMessage("До окончания уровня осталось 2 минуты.");
+      } else if (currentTime === 60) { // 1 minute
+        announceCustomMessage("До окончания уровня осталась 1 минута.");
+      } else if (currentTime === 30) { // 30 seconds
+        announceCustomMessage("До окончания уровня осталось 30 секунд.");
+      } else if (currentTime === 10) { // 10 seconds - announce next level
+        if (nextLevel) {
+          if (nextLevel.is_break) {
+            announceCustomMessage(`Внимание! Через 10 секунд начинается перерыв на ${Math.round(nextLevel.duration / 60)} минут.`);
+          } else {
+            const message = `Внимание! Через 10 секунд переход на уровень ${nextLevel.level}. Малый блайнд ${nextLevel.small_blind}, большой блайнд ${nextLevel.big_blind}${nextLevel.ante ? `, анте ${nextLevel.ante}` : ''}.`;
+            announceCustomMessage(message);
+          }
         } else {
-          const message = `Уровень ${currentLevel?.level} завершен. Следующий уровень ${nextLevel.level}. Блайнды повышаются до ${nextLevel.small_blind} ${nextLevel.big_blind}${nextLevel.ante ? `, анте ${nextLevel.ante}` : ''}.`;
-          announceCustomMessage(message);
+          announceCustomMessage("Внимание! Через 10 секунд время уровня истекает.");
         }
       }
     }
 
-    // Time-based announcements
-    if (currentTime === 300 && timerActive) { // 5 minutes
-      announceCustomMessage("До окончания уровня осталось 5 минут.");
-    } else if (currentTime === 60 && timerActive) { // 1 minute
-      announceCustomMessage("До окончания уровня осталась 1 минута.");
-    } else if (currentTime === 30 && timerActive) { // 30 seconds
-      announceCustomMessage("До окончания уровня осталось 30 секунд.");
+    // Announce when timer reaches 0 (level ends)
+    if (currentTime === 0 && !hasAnnouncedLevelRef.current && currentLevel) {
+      hasAnnouncedLevelRef.current = true;
+      
+      if (currentLevel.is_break && nextLevel) {
+        const message = `Перерыв окончен. Начинается уровень ${nextLevel.level}. Малый блайнд ${nextLevel.small_blind}, большой блайнд ${nextLevel.big_blind}${nextLevel.ante ? `, анте ${nextLevel.ante}` : ''}. Игроки, займите свои места за столами.`;
+        setTimeout(() => announceCustomMessage(message), 1000);
+      } else if (!currentLevel.is_break && nextLevel) {
+        if (nextLevel.is_break) {
+          const message = `Уровень ${currentLevel.level} завершен. Начинается перерыв на ${Math.round(nextLevel.duration / 60)} минут.`;
+          setTimeout(() => announceCustomMessage(message), 1000);
+        } else {
+          const message = `Уровень ${currentLevel.level} завершен. Автоматический переход на уровень ${nextLevel.level}. Блайнды повышаются до ${nextLevel.small_blind} - ${nextLevel.big_blind}${nextLevel.ante ? `, анте ${nextLevel.ante}` : ''}.`;
+          setTimeout(() => announceCustomMessage(message), 1000);
+        }
+      } else if (!nextLevel) {
+        const message = `Время уровня ${currentLevel.level} истекло. Турнир-директор, пожалуйста, выберите действие.`;
+        setTimeout(() => announceCustomMessage(message), 1000);
+      }
     }
   }, [tournament.current_level, currentTime, timerActive, announceCustomMessage]);
 
