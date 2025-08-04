@@ -58,7 +58,16 @@ serve(async (req) => {
     }
 
     const audioBuffer = await elevenLabsResponse.arrayBuffer();
-    const base64Audio = btoa(String.fromCharCode(...new Uint8Array(audioBuffer)));
+    
+    // Безопасное преобразование в base64 для больших аудиофайлов
+    const uint8Array = new Uint8Array(audioBuffer);
+    const chunkSize = 0x8000; // 32KB chunks
+    let base64Audio = '';
+    
+    for (let i = 0; i < uint8Array.length; i += chunkSize) {
+      const chunk = uint8Array.subarray(i, i + chunkSize);
+      base64Audio += btoa(String.fromCharCode.apply(null, Array.from(chunk)));
+    }
 
     console.log('✅ TTS generated successfully');
 
