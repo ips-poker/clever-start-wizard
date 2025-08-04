@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
+import { useVoiceAnnouncements } from '@/hooks/useVoiceAnnouncements';
 import { Play, Pause, RotateCcw, SkipForward, SkipBack, Maximize, Coffee, Clock } from 'lucide-react';
 
 interface BlindLevel {
@@ -47,10 +48,61 @@ const ImprovedTournamentTimer = ({
   const [totalChipsInPlay, setTotalChipsInPlay] = useState(0);
   const [averageStack, setAverageStack] = useState(0);
   const { toast } = useToast();
+  const { announceNextLevel, announceCustomMessage } = useVoiceAnnouncements();
+  const prevLevelRef = useRef(tournament.current_level);
+  const hasAnnouncedLevelRef = useRef(false);
 
   useEffect(() => {
     calculateChipStatistics();
   }, [registrations]);
+
+  // Voice announcements for level transitions
+  useEffect(() => {
+    const currentLevel = getCurrentLevel();
+    const nextLevel = getNextLevel();
+    
+    // Check if level has changed
+    if (tournament.current_level !== prevLevelRef.current) {
+      prevLevelRef.current = tournament.current_level;
+      hasAnnouncedLevelRef.current = false;
+      
+      // Announce new level when it starts
+      if (currentLevel && !currentLevel.is_break) {
+        const message = `Уровень ${currentLevel.level}. Блайнды ${currentLevel.small_blind} ${currentLevel.big_blind}${currentLevel.ante ? `, анте ${currentLevel.ante}` : ''}. Продолжительность ${Math.round(currentLevel.duration / 60)} минут.`;
+        announceCustomMessage(message);
+      } else if (currentLevel?.is_break) {
+        const message = `Начинается перерыв на ${Math.round(currentLevel.duration / 60)} минут.`;
+        announceCustomMessage(message);
+      }
+    }
+
+    // Announce when timer reaches 0 (level ends)
+    if (currentTime === 0 && !hasAnnouncedLevelRef.current) {
+      hasAnnouncedLevelRef.current = true;
+      
+      if (currentLevel?.is_break && nextLevel) {
+        const message = `Перерыв окончен. Следующий уровень ${nextLevel.level}. Блайнды ${nextLevel.small_blind} ${nextLevel.big_blind}${nextLevel.ante ? `, анте ${nextLevel.ante}` : ''}. Игроки, займите свои места.`;
+        announceCustomMessage(message);
+      } else if (!currentLevel?.is_break && nextLevel) {
+        if (nextLevel.is_break) {
+          const message = `Уровень ${currentLevel?.level} завершен. Следующий перерыв на ${Math.round(nextLevel.duration / 60)} минут.`;
+          announceCustomMessage(message);
+        } else {
+          const message = `Уровень ${currentLevel?.level} завершен. Следующий уровень ${nextLevel.level}. Блайнды повышаются до ${nextLevel.small_blind} ${nextLevel.big_blind}${nextLevel.ante ? `, анте ${nextLevel.ante}` : ''}.`;
+          announceCustomMessage(message);
+        }
+      }
+    }
+
+    // Time-based announcements
+    if (currentTime === 300 && timerActive) { // 5 minutes
+      announceCustomMessage("До окончания уровня осталось 5 минут.");
+    } else if (currentTime === 60 && timerActive) { // 1 minute
+      announceCustomMessage("До окончания уровня осталась 1 минута.");
+    } else if (currentTime === 30 && timerActive) { // 30 seconds
+      announceCustomMessage("До окончания уровня осталось 30 секунд.");
+    }
+  }, [tournament.current_level, currentTime, timerActive, announceCustomMessage]);
 
   const calculateChipStatistics = () => {
     const activeRegistrations = registrations.filter(r => r.status === 'registered' || r.status === 'playing');
