@@ -191,11 +191,23 @@ const TimerDisplay = () => {
     setTimerActive(newTimerActive);
     
     // Сохраняем изменение в localStorage для синхронизации с основным интерфейсом
-    localStorage.setItem(`timer_${tournament.id}`, JSON.stringify({
-      currentTime,
-      timerActive: newTimerActive,
-      lastUpdate: Date.now()
-    }));
+    setTimeout(() => {
+      localStorage.setItem(`timer_${tournament.id}`, JSON.stringify({
+        currentTime,
+        timerActive: newTimerActive,
+        lastUpdate: Date.now()
+      }));
+      
+      // Принудительное обновление основного интерфейса
+      window.dispatchEvent(new StorageEvent('storage', {
+        key: `timer_${tournament.id}`,
+        newValue: JSON.stringify({
+          currentTime,
+          timerActive: newTimerActive,
+          lastUpdate: Date.now()
+        })
+      }));
+    }, 0);
   };
 
   const handleResetTimer = () => {
@@ -329,12 +341,24 @@ const TimerDisplay = () => {
     const newTime = Math.max(0, currentTime + seconds);
     setCurrentTime(newTime);
     
-    // Синхронизируем через localStorage
-    localStorage.setItem(`timer_${tournament.id}`, JSON.stringify({
-      currentTime: newTime,
-      timerActive,
-      lastUpdate: Date.now()
-    }));
+    // Синхронизируем через localStorage с задержкой для избежания лагов
+    setTimeout(() => {
+      localStorage.setItem(`timer_${tournament.id}`, JSON.stringify({
+        currentTime: newTime,
+        timerActive,
+        lastUpdate: Date.now()
+      }));
+      
+      // Принудительное обновление основного интерфейса
+      window.dispatchEvent(new StorageEvent('storage', {
+        key: `timer_${tournament.id}`,
+        newValue: JSON.stringify({
+          currentTime: newTime,
+          timerActive,
+          lastUpdate: Date.now()
+        })
+      }));
+    }, 100);
   };
   const handleSloganChange = (newSlogan: string) => {
     setSlogan(newSlogan);
