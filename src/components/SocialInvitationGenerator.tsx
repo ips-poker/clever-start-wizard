@@ -188,10 +188,11 @@ export function SocialInvitationGenerator() {
   };
 
   const generateWhatsAppText = () => {
-    let text = `${tournamentData.title}
+    let text = `✨ ${tournamentData.title.replace('🏆 ', '')}
 
 📅 ${tournamentData.date} в ${tournamentData.time}
 📍 ${tournamentData.location}
+
 💰 Бай-ин: ${tournamentData.buyIn}
 🏆 Призовой фонд: ${tournamentData.prizePool}
 👥 Игроков: ${tournamentData.maxPlayers}
@@ -199,70 +200,73 @@ export function SocialInvitationGenerator() {
 
 ${tournamentData.description}
 
+━━━━━━━━━━━━━━━━━━━━━
+
 📋 СТРУКТУРА ТУРНИРА:`;
 
     if (tournamentData.timerDuration) {
-      text += `\n⏱️ ${tournamentData.timerDuration}`;
-    }
-    if (tournamentData.blindStructure) {
-      text += `\n🔢 Блайнды: ${tournamentData.blindStructure}`;
+      text += `\n⏱️ Уровни: ${tournamentData.timerDuration}`;
     }
     if (tournamentData.rebuyInfo && tournamentData.rebuyEndLevel) {
-      text += `\n🔄 Rebuy: ${tournamentData.rebuyInfo} ${tournamentData.rebuyEndLevel}`;
+      text += `\n🔄 Rebuy: ${tournamentData.rebuyInfo} (${tournamentData.rebuyEndLevel})`;
     }
     if (tournamentData.addonInfo && tournamentData.addonLevel) {
-      text += `\n➕ Addon: ${tournamentData.addonInfo} ${tournamentData.addonLevel}`;
+      text += `\n➕ Addon: ${tournamentData.addonInfo} (${tournamentData.addonLevel})`;
     }
     if (tournamentData.lateRegEndLevel) {
-      text += `\n📝 Поздняя регистрация ${tournamentData.lateRegEndLevel}`;
+      text += `\n📝 Поздняя регистрация: ${tournamentData.lateRegEndLevel}`;
     }
     if (tournamentData.breakInfo) {
       text += `\n☕ ${tournamentData.breakInfo}`;
     }
 
-    text += `\n\nРегистрация: ${tournamentData.contactInfo}
+    text += `\n\n━━━━━━━━━━━━━━━━━━━━━
+    
+📞 Регистрация: ${tournamentData.contactInfo}
 
-#IPS #покер #турнир`;
+#IPS #покер #турнир #poker`;
 
     return text;
   };
 
   const generateTelegramText = () => {
-    let text = `<b>${tournamentData.title.replace(/🏆 /, '')}</b>
+    let text = `<b>✨ ${tournamentData.title.replace('🏆 ', '')}</b>
 
-<b>Дата:</b> ${tournamentData.date} в ${tournamentData.time}
-<b>Место:</b> ${tournamentData.location}
-<b>Бай-ин:</b> ${tournamentData.buyIn}
-<b>Призы:</b> ${tournamentData.prizePool}
-<b>Мест:</b> ${tournamentData.maxPlayers}
-<b>Стек:</b> ${tournamentData.startingChips}
+<b>📅 Дата:</b> ${tournamentData.date} в ${tournamentData.time}
+<b>📍 Место:</b> ${tournamentData.location}
+
+<b>💰 Бай-ин:</b> ${tournamentData.buyIn}
+<b>🏆 Призовой фонд:</b> ${tournamentData.prizePool}
+<b>👥 Игроков:</b> ${tournamentData.maxPlayers}
+<b>🎯 Стартовый стек:</b> ${tournamentData.startingChips}
 
 <i>${tournamentData.description}</i>
 
-<b>СТРУКТУРА ТУРНИРА:</b>`;
+━━━━━━━━━━━━━━━━━━━━━
+
+<b>📋 СТРУКТУРА ТУРНИРА:</b>`;
 
     if (tournamentData.timerDuration) {
-      text += `\n<b>Время уровней:</b> ${tournamentData.timerDuration}`;
-    }
-    if (tournamentData.blindStructure) {
-      text += `\n<b>Блайнды:</b> ${tournamentData.blindStructure}`;
+      text += `\n<b>⏱️ Уровни:</b> ${tournamentData.timerDuration}`;
     }
     if (tournamentData.rebuyInfo && tournamentData.rebuyEndLevel) {
-      text += `\n<b>Rebuy:</b> ${tournamentData.rebuyInfo} ${tournamentData.rebuyEndLevel}`;
+      text += `\n<b>🔄 Rebuy:</b> ${tournamentData.rebuyInfo} (${tournamentData.rebuyEndLevel})`;
     }
     if (tournamentData.addonInfo && tournamentData.addonLevel) {
-      text += `\n<b>Addon:</b> ${tournamentData.addonInfo} ${tournamentData.addonLevel}`;
+      text += `\n<b>➕ Addon:</b> ${tournamentData.addonInfo} (${tournamentData.addonLevel})`;
     }
     if (tournamentData.lateRegEndLevel) {
-      text += `\n<b>Поздняя регистрация:</b> ${tournamentData.lateRegEndLevel}`;
+      text += `\n<b>📝 Поздняя регистрация:</b> ${tournamentData.lateRegEndLevel}`;
     }
     if (tournamentData.breakInfo) {
-      text += `\n<b>Перерыв:</b> ${tournamentData.breakInfo}`;
+      text += `\n<b>☕ Перерыв:</b> ${tournamentData.breakInfo}`;
     }
 
-    text += `\n\n<b>Регистрация:</b> ${tournamentData.contactInfo}
+    text += `\n\n━━━━━━━━━━━━━━━━━━━━━
 
-#IPS #покер #турнир #ELO`;
+<b>📞 Регистрация:</b> ${tournamentData.contactInfo}
+
+#IPS #покер #турнир #poker #ELO`;
 
     return text;
   };
@@ -289,65 +293,62 @@ ${tournamentData.description}
       return;
     }
 
+    // Проверяем размеры элемента
+    const rect = element.getBoundingClientRect();
+    if (rect.width === 0 || rect.height === 0) {
+      toast({
+        title: "Ошибка",
+        description: "Элемент карточки имеет нулевые размеры. Попробуйте перейти на вкладку 'Визуальные карточки'",
+        variant: "destructive"
+      });
+      return;
+    }
+
     try {
       // Ждем загрузки всех изображений
       const images = element.querySelectorAll('img');
       await Promise.all(Array.from(images).map(img => {
         if (img.complete) return Promise.resolve();
-        return new Promise((resolve, reject) => {
+        return new Promise((resolve) => {
           img.onload = resolve;
           img.onerror = resolve; // Продолжаем даже если изображение не загрузилось
-          setTimeout(resolve, 3000); // Таймаут 3 секунды
+          setTimeout(resolve, 2000); // Таймаут 2 секунды
         });
       }));
 
+      // Небольшая задержка для рендеринга
+      await new Promise(resolve => setTimeout(resolve, 500));
+
       const canvas = await html2canvas(element, {
-        scale: 2, // Увеличили для лучшего качества
+        scale: 2,
         useCORS: true,
         allowTaint: false,
-        backgroundColor: null,
+        backgroundColor: '#ffffff',
         logging: false,
-        width: element.offsetWidth,
-        height: element.offsetHeight,
+        width: rect.width,
+        height: rect.height,
         scrollX: 0,
         scrollY: 0,
-        windowWidth: window.innerWidth,
-        windowHeight: window.innerHeight,
-        foreignObjectRendering: false, // Отключаем для лучшей совместимости со стилями
-        removeContainer: true,
-        onclone: (clonedDoc) => {
-          // Копируем все CSS стили в клонированный документ
-          const styles = Array.from(document.styleSheets);
-          styles.forEach((styleSheet, index) => {
-            try {
-              const cssRules = Array.from(styleSheet.cssRules || styleSheet.rules || []);
-              const style = clonedDoc.createElement('style');
-              style.textContent = cssRules.map(rule => rule.cssText).join('\n');
-              clonedDoc.head.appendChild(style);
-            } catch (e) {
-              // Игнорируем ошибки с внешними стилями
-              console.warn('Could not clone stylesheet:', e);
-            }
-          });
-          
-          // Добавляем время для рендеринга стилей
-          return new Promise(resolve => setTimeout(resolve, 1000));
+        foreignObjectRendering: false,
+        ignoreElements: (element) => {
+          // Игнорируем элементы, которые могут вызвать проблемы
+          return element.tagName === 'IFRAME' || element.tagName === 'VIDEO';
         }
       });
 
-      const dataUrl = canvas.toDataURL('image/png', 0.9);
+      const dataUrl = canvas.toDataURL('image/png', 1.0);
       setPreviewImage(dataUrl);
       setIsPreviewOpen(true);
 
       toast({
         title: "Предпросмотр готов",
-        description: `Изображение в формате ${format} создано`,
+        description: `Изображение в формате ${format === 'square' ? 'квадрат' : 'stories'} создано`,
       });
     } catch (error) {
       console.error('Ошибка генерации изображения:', error);
       toast({
         title: "Ошибка",
-        description: "Не удалось создать изображение",
+        description: "Не удалось создать изображение. Попробуйте еще раз.",
         variant: "destructive"
       });
     }
@@ -791,14 +792,12 @@ ${tournamentData.description}
                 </div>
               </div>
               <Button 
-                onClick={() => {
-                  console.log('Нажата кнопка для square формата');
-                  generateAndPreviewImage('square');
-                }}
+                onClick={() => generateAndPreviewImage('square')}
                 className="w-full"
+                variant="outline"
               >
                 <Eye className="w-4 h-4 mr-2" />
-                Посмотреть и скачать
+                Предпросмотр и скачать
               </Button>
             </CardContent>
           </Card>
@@ -922,14 +921,12 @@ ${tournamentData.description}
                 </div>
               </div>
               <Button 
-                onClick={() => {
-                  console.log('Нажата кнопка для story формата');
-                  generateAndPreviewImage('story');
-                }}
+                onClick={() => generateAndPreviewImage('story')}
                 className="w-full"
+                variant="outline"
               >
                 <Eye className="w-4 h-4 mr-2" />
-                Посмотреть и скачать
+                Предпросмотр и скачать
               </Button>
             </CardContent>
           </Card>
