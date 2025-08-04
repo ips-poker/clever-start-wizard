@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { 
   Calendar, 
   Clock, 
@@ -21,7 +22,8 @@ import {
   Smartphone,
   Monitor,
   FileText,
-  Zap
+  Zap,
+  X
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -77,6 +79,8 @@ export function SocialInvitationGenerator() {
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
   const [selectedTournamentId, setSelectedTournamentId] = useState<string>("");
   const [activeTab, setActiveTab] = useState("whatsapp");
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const { toast } = useToast();
   
   const [tournamentData, setTournamentData] = useState<TournamentData>({
@@ -282,50 +286,13 @@ ${tournamentData.description}
         foreignObjectRendering: true
       });
 
-      // Создаем blob вместо прямого скачивания
-      canvas.toBlob((blob) => {
-        if (blob) {
-          const url = URL.createObjectURL(blob);
-          // Открываем в новом окне для просмотра
-          const newWindow = window.open();
-          if (newWindow) {
-            newWindow.document.write(`
-              <html>
-                <head>
-                  <title>Приглашение - ${format}</title>
-                  <style>
-                    body { margin: 0; padding: 20px; background: #f0f0f0; text-align: center; }
-                    img { max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.2); }
-                    .download-btn { 
-                      margin-top: 20px; padding: 10px 20px; background: #007bff; color: white; 
-                      border: none; border-radius: 5px; cursor: pointer; font-size: 16px;
-                    }
-                    .download-btn:hover { background: #0056b3; }
-                  </style>
-                </head>
-                <body>
-                  <h2>Приглашение на турнир (${format})</h2>
-                  <img src="${url}" alt="Приглашение на турнир" />
-                  <br>
-                  <button class="download-btn" onclick="downloadImage()">Скачать изображение</button>
-                  <script>
-                    function downloadImage() {
-                      const link = document.createElement('a');
-                      link.download = 'poker-invitation-${format}-${tournamentData.date.replace(/\./g, '-')}.png';
-                      link.href = '${url}';
-                      link.click();
-                    }
-                  </script>
-                </body>
-              </html>
-            `);
-          }
-        }
-      }, 'image/png', 1.0);
+      const dataUrl = canvas.toDataURL('image/png', 1.0);
+      setPreviewImage(dataUrl);
+      setIsPreviewOpen(true);
 
       toast({
         title: "Предпросмотр готов",
-        description: `Изображение открыто в новом окне для просмотра`,
+        description: `Изображение в формате ${format} готово для просмотра`,
       });
     } catch (error) {
       console.error('Ошибка генерации изображения:', error);
@@ -335,6 +302,20 @@ ${tournamentData.description}
         variant: "destructive"
       });
     }
+  };
+
+  const downloadImage = () => {
+    if (!previewImage) return;
+    
+    const link = document.createElement('a');
+    link.download = `poker-invitation-${tournamentData.date.replace(/\./g, '-')}.png`;
+    link.href = previewImage;
+    link.click();
+    
+    toast({
+      title: "Скачано",
+      description: "Изображение сохранено на устройство",
+    });
   };
 
   return (
@@ -954,6 +935,49 @@ ${tournamentData.description}
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Preview Modal */}
+      <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center justify-between">
+              Предпросмотр приглашения
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsPreviewOpen(false)}
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </DialogTitle>
+          </DialogHeader>
+          
+          {previewImage && (
+            <div className="space-y-4">
+              <div className="flex justify-center bg-gray-100 rounded-lg p-4">
+                <img 
+                  src={previewImage} 
+                  alt="Предпросмотр приглашения" 
+                  className="max-w-full h-auto rounded-lg shadow-lg"
+                />
+              </div>
+              
+              <div className="flex justify-center gap-4">
+                <Button onClick={downloadImage} className="flex items-center gap-2">
+                  <Download className="w-4 h-4" />
+                  Скачать изображение
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={() => setIsPreviewOpen(false)}
+                >
+                  Закрыть
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
