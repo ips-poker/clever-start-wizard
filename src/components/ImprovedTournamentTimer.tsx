@@ -80,21 +80,28 @@ const ImprovedTournamentTimer = ({
     if (timerActive && currentLevel) {
       if (currentTime === 600) { // 10 minutes
         announceCustomMessage("До окончания уровня осталось 10 минут.");
-      } else if (currentTime === 300) { // 5 minutes
-        announceCustomMessage("До окончания уровня осталось 5 минут.");
+      } else if (currentTime === 300) { // 5 minutes - announce upcoming blind increase
+        if (!currentLevel.is_break && nextLevel) {
+          if (nextLevel.is_break) {
+            announceCustomMessage(`До перерыва осталось 5 минут. Следующий перерыв на ${Math.round(nextLevel.duration / 60)} минут.`);
+          } else {
+            announceCustomMessage(`До повышения блайндов осталось 5 минут. Следующий уровень: блайнды ${nextLevel.small_blind} - ${nextLevel.big_blind}${nextLevel.ante ? `, анте ${nextLevel.ante}` : ''}.`);
+          }
+        } else {
+          announceCustomMessage("До окончания уровня осталось 5 минут.");
+        }
       } else if (currentTime === 120) { // 2 minutes
         announceCustomMessage("До окончания уровня осталось 2 минуты.");
       } else if (currentTime === 60) { // 1 minute
         announceCustomMessage("До окончания уровня осталась 1 минута.");
       } else if (currentTime === 30) { // 30 seconds
         announceCustomMessage("До окончания уровня осталось 30 секунд.");
-      } else if (currentTime === 10) { // 10 seconds - announce next level
+      } else if (currentTime === 10) { // 10 seconds - announce next level details
         if (nextLevel) {
           if (nextLevel.is_break) {
-            announceCustomMessage(`Внимание! Через 10 секунд начинается перерыв на ${Math.round(nextLevel.duration / 60)} минут.`);
+            announceCustomMessage(`Со следующей раздачи начинается перерыв на ${Math.round(nextLevel.duration / 60)} минут. Игроки могут отдохнуть.`);
           } else {
-            const message = `Внимание! Через 10 секунд переход на уровень ${nextLevel.level}. Малый блайнд ${nextLevel.small_blind}, большой блайнд ${nextLevel.big_blind}${nextLevel.ante ? `, анте ${nextLevel.ante}` : ''}.`;
-            announceCustomMessage(message);
+            announceCustomMessage(`Со следующей раздачи блайнды ап! Уровень ${nextLevel.level}: малый блайнд ${nextLevel.small_blind}, большой блайнд ${nextLevel.big_blind}${nextLevel.ante ? `, анте ${nextLevel.ante}` : ''}.`);
           }
         } else {
           announceCustomMessage("Внимание! Через 10 секунд время уровня истекает.");
