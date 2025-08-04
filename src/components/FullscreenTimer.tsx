@@ -14,10 +14,13 @@ import {
   Coffee,
   Volume2,
   VolumeX,
-  ChevronUp
+  ChevronUp,
+  Mic,
+  MicOff
 } from "lucide-react";
 import ipsLogo from "/lovable-uploads/c77304bf-5309-4bdc-afcc-a81c8d3ff6c2.png";
 import telegramQr from "@/assets/telegram-qr.png";
+import { useVoiceAnnouncements } from "@/hooks/useVoiceAnnouncements";
 
 interface Tournament {
   id: string;
@@ -83,10 +86,18 @@ const FullscreenTimer = ({
   blindLevels = []
 }: FullscreenTimerProps) => {
   const [soundEnabled, setSoundEnabled] = useState(true);
+  const [voiceAnnouncementsEnabled, setVoiceAnnouncementsEnabled] = useState(true);
   const [twoMinuteWarning, setTwoMinuteWarning] = useState(false);
   const [fiveSecondWarning, setFiveSecondWarning] = useState(false);
+  const [tenSecondAnnouncement, setTenSecondAnnouncement] = useState(false);
   const [editingSlogan, setEditingSlogan] = useState(false);
   const [tempSlogan, setTempSlogan] = useState(slogan);
+
+  const { announceNextLevel, stopAnnouncement } = useVoiceAnnouncements({
+    enabled: voiceAnnouncementsEnabled,
+    voice: 'Aria',
+    volume: 0.8
+  });
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -125,8 +136,9 @@ const FullscreenTimer = ({
     setTimeout(() => playBeep(1200, 0.2), 600);
   };
 
-  // Sound warning effects
+  // Sound warning effects + Voice announcements
   useEffect(() => {
+    // Звуковые предупреждения
     if (currentTime === 120 && !twoMinuteWarning) {
       playTwoMinuteWarning();
       setTwoMinuteWarning(true);
@@ -135,13 +147,23 @@ const FullscreenTimer = ({
       playFiveSecondWarning();
       setFiveSecondWarning(true);
     }
+    
+    // Голосовое оповещение за 10 секунд
+    if (currentTime === 10 && !tenSecondAnnouncement && voiceAnnouncementsEnabled) {
+      const nextLevel = blindLevels.find(l => l.level === tournament.current_level + 1);
+      announceNextLevel(tournament.current_level, nextLevel, currentTime);
+      setTenSecondAnnouncement(true);
+    }
+    
+    // Сброс флагов при новом уровне
     if (currentTime > 120) {
       setTwoMinuteWarning(false);
     }
-    if (currentTime > 5) {
+    if (currentTime > 10) {
       setFiveSecondWarning(false);
+      setTenSecondAnnouncement(false);
     }
-  }, [currentTime, twoMinuteWarning, fiveSecondWarning]);
+  }, [currentTime, twoMinuteWarning, fiveSecondWarning, tenSecondAnnouncement, voiceAnnouncementsEnabled, announceNextLevel, blindLevels, tournament.current_level]);
 
   const activePlayers = registrations.filter(r => r.status === 'registered' || r.status === 'playing');
   const totalRebuys = registrations.reduce((sum, r) => sum + r.rebuys, 0);
@@ -482,6 +504,20 @@ const FullscreenTimer = ({
             className={`h-10 px-3 ${soundEnabled ? 'bg-blue-50 text-blue-600' : 'text-gray-500'}`}
           >
             {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              setVoiceAnnouncementsEnabled(!voiceAnnouncementsEnabled);
+              if (!voiceAnnouncementsEnabled) {
+                stopAnnouncement();
+              }
+            }}
+            className={`h-10 px-3 ${voiceAnnouncementsEnabled ? 'bg-green-50 text-green-600' : 'text-gray-500'}`}
+          >
+            {voiceAnnouncementsEnabled ? <Mic className="w-4 h-4" /> : <MicOff className="w-4 h-4" />}
           </Button>
         </div>
       </div>

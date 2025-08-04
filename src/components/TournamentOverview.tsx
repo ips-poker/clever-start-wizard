@@ -24,11 +24,13 @@ import {
   Clock,
   Play,
   Pause,
-  Coffee
+  Coffee,
+  Mic
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import PlayerManagement from "./PlayerManagement";
 import FullscreenTimer from "./FullscreenTimer";
+import { useVoiceAnnouncements } from "@/hooks/useVoiceAnnouncements";
 
 interface Tournament {
   id: string;
@@ -110,10 +112,18 @@ const TournamentOverview = ({
     averageRating: 0
   });
   const [soundEnabled, setSoundEnabled] = useState(true);
+  const [voiceAnnouncementsEnabled, setVoiceAnnouncementsEnabled] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showFullscreenTimer, setShowFullscreenTimer] = useState(false);
+  const [tenSecondAnnouncement, setTenSecondAnnouncement] = useState(false);
   const { toast } = useToast();
   const isMountedRef = useRef(true);
+
+  const { announceNextLevel, stopAnnouncement } = useVoiceAnnouncements({
+    enabled: voiceAnnouncementsEnabled,
+    voice: 'Aria',
+    volume: 0.8
+  });
 
   useEffect(() => {
     console.log('TournamentOverview mounted');
@@ -246,6 +256,19 @@ const TournamentOverview = ({
   const isNextLevelBreak = nextBlindLevel?.is_break || false;
 
   const timerProgress = ((tournament.timer_duration - currentTime) / tournament.timer_duration) * 100;
+
+  // Голосовые оповещения
+  useEffect(() => {
+    if (currentTime === 10 && !tenSecondAnnouncement && voiceAnnouncementsEnabled) {
+      const nextLevel = blindLevels.find(l => l.level === tournament.current_level + 1);
+      announceNextLevel(tournament.current_level, nextLevel, currentTime);
+      setTenSecondAnnouncement(true);
+    }
+    
+    if (currentTime > 10) {
+      setTenSecondAnnouncement(false);
+    }
+  }, [currentTime, tenSecondAnnouncement, voiceAnnouncementsEnabled, announceNextLevel, blindLevels, tournament.current_level]);
 
   return (
     <>
@@ -380,6 +403,20 @@ const TournamentOverview = ({
               className={`h-12 border-gray-200/50 hover:shadow-subtle ${soundEnabled ? 'bg-blue-50 text-blue-600' : 'bg-gray-50 text-gray-500'}`}
             >
               <Volume2 className="w-4 h-4" />
+            </Button>
+
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => {
+                setVoiceAnnouncementsEnabled(!voiceAnnouncementsEnabled);
+                if (!voiceAnnouncementsEnabled) {
+                  stopAnnouncement();
+                }
+              }}
+              className={`h-12 border-gray-200/50 hover:shadow-subtle ${voiceAnnouncementsEnabled ? 'bg-green-50 text-green-600' : 'bg-gray-50 text-gray-500'}`}
+            >
+              <Mic className="w-4 h-4" />
             </Button>
             
             <Button variant="outline" size="sm" onClick={openFullscreenTimer} className="h-12 border-gray-200/50 hover:shadow-subtle">
