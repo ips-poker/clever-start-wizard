@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 import ipsLogo from "/lovable-uploads/c77304bf-5309-4bdc-afcc-a81c8d3ff6c2.png";
 import telegramQr from "@/assets/telegram-qr.png";
-import { useSimpleVoiceAnnouncements } from "@/hooks/useSimpleVoiceAnnouncements";
+import { useProfessionalVoiceAssistant } from "@/hooks/useProfessionalVoiceAssistant";
 
 interface Tournament {
   id: string;
@@ -93,10 +93,16 @@ const FullscreenTimer = ({
   const [editingSlogan, setEditingSlogan] = useState(false);
   const [tempSlogan, setTempSlogan] = useState(slogan);
 
-  const { announceCustomMessage, stopAnnouncement } = useSimpleVoiceAnnouncements({
+  const voiceSettings = {
     enabled: voiceAnnouncementsEnabled,
-    volume: 0.8
-  });
+    volume: 0.8,
+    language: 'ru-RU',
+    voice: null,
+    autoAnnouncements: false,
+    debugMode: false
+  };
+  
+  const { announceCustomMessage, stopAll } = useProfessionalVoiceAssistant(voiceSettings);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -526,7 +532,7 @@ const FullscreenTimer = ({
             onClick={() => {
               setVoiceAnnouncementsEnabled(!voiceAnnouncementsEnabled);
               if (!voiceAnnouncementsEnabled) {
-                stopAnnouncement();
+                stopAll();
               }
             }}
             className={`h-10 px-3 ${voiceAnnouncementsEnabled ? 'bg-green-50 text-green-600' : 'text-gray-500'}`}

@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
-import { useSimpleVoiceAnnouncements } from '@/hooks/useSimpleVoiceAnnouncements';
+import { useProfessionalVoiceAssistant } from '@/hooks/useProfessionalVoiceAssistant';
 import { Play, Pause, RotateCcw, SkipForward, SkipBack, Maximize, Coffee, Clock } from 'lucide-react';
 
 interface BlindLevel {
@@ -48,7 +48,22 @@ const ImprovedTournamentTimer = ({
   const [totalChipsInPlay, setTotalChipsInPlay] = useState(0);
   const [averageStack, setAverageStack] = useState(0);
   const { toast } = useToast();
-  const { announceCustomMessage } = useSimpleVoiceAnnouncements({ enabled: true, volume: 0.8 });
+  
+  const voiceSettings = {
+    enabled: true,
+    volume: 0.8,
+    language: 'ru-RU',
+    voice: null,
+    autoAnnouncements: true,
+    debugMode: true
+  };
+  
+  const { 
+    announceCustomMessage, 
+    announceNewLevel, 
+    announceTimeWarning 
+  } = useProfessionalVoiceAssistant(voiceSettings);
+  
   const prevLevelRef = useRef(tournament.current_level);
   const hasAnnouncedLevelRef = useRef(false);
 
@@ -67,53 +82,15 @@ const ImprovedTournamentTimer = ({
       hasAnnouncedLevelRef.current = false;
       
       // Announce new level when it starts
-      if (currentLevel && !currentLevel.is_break) {
-        const message = `Начинается уровень ${currentLevel.level}. Малый блайнд ${currentLevel.small_blind}, большой блайнд ${currentLevel.big_blind}${currentLevel.ante ? `, анте ${currentLevel.ante}` : ''}. Продолжительность ${Math.round(currentLevel.duration / 60)} минут.`;
-        setTimeout(() => announceCustomMessage(message), 500);
-      } else if (currentLevel?.is_break) {
-        const message = `Начинается перерыв на ${Math.round(currentLevel.duration / 60)} минут. Игроки могут отдохнуть.`;
-        setTimeout(() => announceCustomMessage(message), 500);
+      if (currentLevel) {
+        setTimeout(() => announceNewLevel(currentLevel, true), 500);
       }
     }
 
     // Time-based announcements during active timer
     if (timerActive && currentLevel) {
       console.log('⏰ Timer check - currentTime:', currentTime, 'timerActive:', timerActive);
-      if (currentTime === 600) { // 10 minutes
-        console.log('🔊 Triggering 10 minute announcement');
-        announceCustomMessage("До окончания уровня осталось 10 минут.");
-      } else if (currentTime === 300) { // 5 minutes - announce upcoming blind increase
-        console.log('🔊 Triggering 5 minute announcement with next level info');
-        if (!currentLevel.is_break && nextLevel) {
-          if (nextLevel.is_break) {
-            announceCustomMessage(`До перерыва осталось 5 минут. Следующий перерыв на ${Math.round(nextLevel.duration / 60)} минут.`);
-          } else {
-            announceCustomMessage(`До повышения блайндов осталось 5 минут. Следующий уровень: блайнды ${nextLevel.small_blind} - ${nextLevel.big_blind}${nextLevel.ante ? `, анте ${nextLevel.ante}` : ''}.`);
-          }
-        } else {
-          announceCustomMessage("До окончания уровня осталось 5 минут.");
-        }
-      } else if (currentTime === 120) { // 2 minutes
-        console.log('🔊 Triggering 2 minute announcement');
-        announceCustomMessage("До окончания уровня осталось 2 минуты.");
-      } else if (currentTime === 60) { // 1 minute
-        console.log('🔊 Triggering 1 minute announcement');
-        announceCustomMessage("До окончания уровня осталась 1 минута.");
-      } else if (currentTime === 30) { // 30 seconds
-        console.log('🔊 Triggering 30 second announcement');
-        announceCustomMessage("До окончания уровня осталось 30 секунд.");
-      } else if (currentTime === 10) { // 10 seconds - announce next level details
-        console.log('🔊 Triggering 10 second announcement with next level details');
-        if (nextLevel) {
-          if (nextLevel.is_break) {
-            announceCustomMessage(`Со следующей раздачи начинается перерыв на ${Math.round(nextLevel.duration / 60)} минут. Игроки могут отдохнуть.`);
-          } else {
-            announceCustomMessage(`Со следующей раздачи блайнды ап! Уровень ${nextLevel.level}: малый блайнд ${nextLevel.small_blind}, большой блайнд ${nextLevel.big_blind}${nextLevel.ante ? `, анте ${nextLevel.ante}` : ''}.`);
-          }
-        } else {
-          announceCustomMessage("Внимание! Через 10 секунд время уровня истекает.");
-        }
-      }
+      announceTimeWarning(currentTime, nextLevel);
     }
 
     // Announce when timer reaches 0 (level ends)
@@ -122,21 +99,21 @@ const ImprovedTournamentTimer = ({
       
       if (currentLevel.is_break && nextLevel) {
         const message = `Перерыв окончен. Начинается уровень ${nextLevel.level}. Малый блайнд ${nextLevel.small_blind}, большой блайнд ${nextLevel.big_blind}${nextLevel.ante ? `, анте ${nextLevel.ante}` : ''}. Игроки, займите свои места за столами.`;
-        setTimeout(() => announceCustomMessage(message), 1000);
+        setTimeout(() => announceCustomMessage(message, 'high'), 1000);
       } else if (!currentLevel.is_break && nextLevel) {
         if (nextLevel.is_break) {
           const message = `Уровень ${currentLevel.level} завершен. Начинается перерыв на ${Math.round(nextLevel.duration / 60)} минут.`;
-          setTimeout(() => announceCustomMessage(message), 1000);
+          setTimeout(() => announceCustomMessage(message, 'high'), 1000);
         } else {
           const message = `Уровень ${currentLevel.level} завершен. Автоматический переход на уровень ${nextLevel.level}. Блайнды повышаются до ${nextLevel.small_blind} - ${nextLevel.big_blind}${nextLevel.ante ? `, анте ${nextLevel.ante}` : ''}.`;
-          setTimeout(() => announceCustomMessage(message), 1000);
+          setTimeout(() => announceCustomMessage(message, 'high'), 1000);
         }
       } else if (!nextLevel) {
         const message = `Время уровня ${currentLevel.level} истекло. Турнир-директор, пожалуйста, выберите действие.`;
-        setTimeout(() => announceCustomMessage(message), 1000);
+        setTimeout(() => announceCustomMessage(message, 'critical'), 1000);
       }
     }
-  }, [tournament.current_level, currentTime, timerActive, announceCustomMessage]);
+  }, [tournament.current_level, currentTime, timerActive, announceCustomMessage, announceNewLevel, announceTimeWarning]);
 
   const calculateChipStatistics = () => {
     const activeRegistrations = registrations.filter(r => r.status === 'registered' || r.status === 'playing');
@@ -341,7 +318,7 @@ const ImprovedTournamentTimer = ({
               size="sm"
               onClick={() => {
                 console.log('🔊 Test button clicked');
-                announceCustomMessage("Тест голосового объявления. Новая система работает!");
+                announceCustomMessage("Тест профессионального голосового помощника. Система работает корректно!", 'high');
               }}
               className="bg-green-100 hover:bg-green-200 text-green-800"
             >

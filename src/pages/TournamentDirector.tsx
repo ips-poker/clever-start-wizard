@@ -1029,6 +1029,9 @@ const TournamentDirector = () => {
               <VoiceControl 
                 selectedTournament={selectedTournament} 
                 onVoiceAction={handleVoiceAction}
+                currentTime={currentTime}
+                timerActive={timerActive}
+                registrations={registrations}
               />
             </TabsContent>
           </Tabs>
