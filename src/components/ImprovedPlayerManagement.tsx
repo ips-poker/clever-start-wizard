@@ -311,6 +311,15 @@ const ImprovedPlayerManagement = ({ tournament, players, registrations, onRegist
     const remainingActive = activePlayers.filter(r => r.id !== registrationId);
     const eliminatedChips = registration.chips;
 
+    // Логируем начальное состояние для диагностики
+    console.log('🔍 ИСКЛЮЧЕНИЕ ИГРОКА - начальные данные:', {
+      eliminatedPlayer: registration.player.name,
+      eliminatedChips,
+      remainingPlayersCount: remainingActive.length,
+      remainingPlayersChips: remainingActive.map(p => ({ name: p.player.name, chips: p.chips })),
+      totalChipsBefore: remainingActive.reduce((sum, p) => sum + p.chips, 0) + eliminatedChips
+    });
+
     // Исключаем игрока
     const { error } = await supabase
       .from('tournament_registrations')
@@ -329,6 +338,10 @@ const ImprovedPlayerManagement = ({ tournament, players, registrations, onRegist
     // Перераспределяем фишки
     if (eliminatedChips > 0 && remainingActive.length > 0) {
       await redistributeChips(eliminatedChips, remainingActive);
+    } else if (eliminatedChips <= 0) {
+      console.log('⚠️ ПРЕДУПРЕЖДЕНИЕ: У исключенного игрока 0 фишек, нечего распределять');
+    } else if (remainingActive.length === 0) {
+      console.log('⚠️ ПРЕДУПРЕЖДЕНИЕ: Нет активных игроков для распределения фишек');
     }
 
     toast({ 
