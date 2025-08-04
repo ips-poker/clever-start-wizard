@@ -138,16 +138,14 @@ const FullscreenTimer = ({
 
   // Sound warning effects + Voice announcements + Auto level transition
   useEffect(() => {
-    // Звуковые предупреждения только если включены
-    if (soundEnabled) {
-      if (currentTime === 120 && !twoMinuteWarning) {
-        playTwoMinuteWarning();
-        setTwoMinuteWarning(true);
-      }
-      if (currentTime === 5 && !fiveSecondWarning) {
-        playFiveSecondWarning();
-        setFiveSecondWarning(true);
-      }
+    // Звуковые предупреждения
+    if (currentTime === 120 && !twoMinuteWarning) {
+      playTwoMinuteWarning();
+      setTwoMinuteWarning(true);
+    }
+    if (currentTime === 5 && !fiveSecondWarning) {
+      playFiveSecondWarning();
+      setFiveSecondWarning(true);
     }
     
     // Голосовое оповещение за 10 секунд
@@ -158,13 +156,10 @@ const FullscreenTimer = ({
     }
     
     // Автоматический переход к следующему уровню при достижении 0
-    if (currentTime === 0 && blindLevels.length > 0) {
-      const nextLevel = blindLevels.find(l => l.level === tournament.current_level + 1);
-      if (nextLevel && !timerActive) {
-        setTimeout(() => {
-          onNextLevel();
-        }, 2000); // Задержка 2 секунды для лучшего UX
-      }
+    if (currentTime === 0 && timerActive === false) {
+      setTimeout(() => {
+        onNextLevel();
+      }, 2000); // Задержка 2 секунды для лучшего UX
     }
     
     // Сброс флагов при новом уровне
@@ -196,11 +191,19 @@ const FullscreenTimer = ({
   const nextBreakLevel = blindLevels.find(l => l.is_break && l.level > tournament.current_level);
   const levelsUntilBreak = nextBreakLevel ? nextBreakLevel.level - tournament.current_level : null;
   
-  // Debug logs removed for performance
+  // Отладка для понимания проблемы
+  console.log('🔍 FullscreenTimer Debug:', {
+    blindLevelsCount: blindLevels.length,
+    currentLevel: tournament.current_level,
+    nextBreakLevel: nextBreakLevel?.level,
+    levelsUntilBreak,
+    isBreakLevel
+  });
   
   // Примерное время до перерыва (текущий таймер + время оставшихся уровней)
   const calculateTimeToBreak = () => {
     if (!nextBreakLevel || !levelsUntilBreak || blindLevels.length === 0) {
+      console.log('⚠️ Не могу рассчитать время до перерыва:', { nextBreakLevel: !!nextBreakLevel, levelsUntilBreak, blindLevelsCount: blindLevels.length });
       return null;
     }
     
@@ -210,8 +213,10 @@ const FullscreenTimer = ({
       const levelInfo = blindLevels.find(l => l.level === tournament.current_level + i);
       const levelDuration = levelInfo?.duration || 1200; // по умолчанию 20 минут
       timeToBreak += levelDuration;
+      console.log(`📊 Уровень ${tournament.current_level + i}: +${levelDuration}с`);
     }
     
+    console.log('⏰ Время до перерыва рассчитано:', timeToBreak);
     return timeToBreak;
   };
   

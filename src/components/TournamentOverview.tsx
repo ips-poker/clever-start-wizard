@@ -6,8 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { 
   Volume2, 
-  Maximize,
-  ExternalLink,
+  Maximize, 
   StopCircle,
   ChevronLeft,
   ChevronRight,
@@ -218,29 +217,6 @@ const TournamentOverview = ({
     setShowFullscreenTimer(false);
   };
 
-  const openTimerOnSecondScreen = () => {
-    const timerUrl = `${window.location.origin}/timer/${tournament.id}`;
-    const timerWindow = window.open(
-      timerUrl, 
-      'TimerDisplay',
-      'width=1920,height=1080,fullscreen=yes,scrollbars=no,menubar=no,toolbar=no,location=no,status=no'
-    );
-    
-    if (timerWindow) {
-      timerWindow.focus();
-      toast({
-        title: "Таймер открыт",
-        description: "Таймер открыт в новом окне. Переместите его на второй экран."
-      });
-    } else {
-      toast({
-        title: "Ошибка",
-        description: "Не удалось открыть новое окно. Проверьте настройки браузера.",
-        variant: "destructive"
-      });
-    }
-  };
-
   const activePlayers = registrations.filter(r => r.status === 'registered' || r.status === 'playing');
   const eliminatedPlayers = registrations.filter(r => r.status === 'eliminated');
   const totalRebuys = registrations.reduce((sum, r) => sum + r.rebuys, 0);
@@ -396,7 +372,7 @@ const TournamentOverview = ({
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-4 md:grid-cols-10 gap-2">
+          <div className="grid grid-cols-4 md:grid-cols-9 gap-2">
             <Button
               variant="outline"
               size="sm"
@@ -445,10 +421,6 @@ const TournamentOverview = ({
             
             <Button variant="outline" size="sm" onClick={openFullscreenTimer} className="h-12 border-gray-200/50 hover:shadow-subtle">
               <Maximize className="w-4 h-4" />
-            </Button>
-            
-            <Button variant="outline" size="sm" onClick={openTimerOnSecondScreen} className="h-12 border-gray-200/50 hover:shadow-subtle">
-              <ExternalLink className="w-4 h-4" />
             </Button>
             
             <Button variant="outline" size="sm" onClick={onStopTournament} className="h-12 text-red-500 border-red-200/50 hover:bg-red-50 hover:shadow-subtle">
