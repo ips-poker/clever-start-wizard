@@ -627,14 +627,18 @@ const TournamentDirector = () => {
                           <span className="text-gray-500">Макс. игроков:</span>
                           <span className="font-medium">{tournament.max_players}</span>
                         </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-500">Стартовые фишки:</span>
-                          <span className="font-medium">{tournament.starting_chips.toLocaleString()}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-500">Текущий уровень:</span>
-                          <span className="font-medium">{tournament.current_level}</span>
-                        </div>
+                         <div className="flex justify-between">
+                           <span className="text-gray-500">Стартовые фишки:</span>
+                           <span className="font-medium">{tournament.starting_chips.toLocaleString()}</span>
+                         </div>
+                         <div className="flex justify-between">
+                           <span className="text-gray-500">Фишки за бай-ин:</span>
+                           <span className="font-medium">{tournament.starting_chips.toLocaleString()}</span>
+                         </div>
+                         <div className="flex justify-between">
+                           <span className="text-gray-500">Текущий уровень:</span>
+                           <span className="font-medium">{tournament.current_level}</span>
+                         </div>
                         <div className="flex justify-between">
                           <span className="text-gray-500">Блайнды:</span>
                           <span className="font-medium">{tournament.current_small_blind}/{tournament.current_big_blind}</span>

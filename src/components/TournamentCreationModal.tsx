@@ -81,40 +81,40 @@ const TOURNAMENT_FORMATS = [
 
 const DEFAULT_BLIND_STRUCTURES = {
   standard: [
-    { level: 1, small_blind: 10, big_blind: 20, ante: 0, duration: 1200 },
-    { level: 2, small_blind: 15, big_blind: 30, ante: 0, duration: 1200 },
-    { level: 3, small_blind: 25, big_blind: 50, ante: 0, duration: 1200 },
-    { level: 4, small_blind: 50, big_blind: 100, ante: 0, duration: 1200 },
-    { level: 5, small_blind: 75, big_blind: 150, ante: 0, duration: 1200 },
-    { level: 6, small_blind: 100, big_blind: 200, ante: 25, duration: 1200 },
-    { level: 7, small_blind: 150, big_blind: 300, ante: 50, duration: 1200 },
-    { level: 8, small_blind: 200, big_blind: 400, ante: 50, duration: 1200 },
-    { level: 9, small_blind: 300, big_blind: 600, ante: 75, duration: 1200 },
-    { level: 10, small_blind: 400, big_blind: 800, ante: 100, duration: 1200 }
+    { level: 1, small_blind: 100, big_blind: 200, ante: 200, duration: 1200 },
+    { level: 2, small_blind: 200, big_blind: 400, ante: 400, duration: 1200 },
+    { level: 3, small_blind: 300, big_blind: 600, ante: 600, duration: 1200 },
+    { level: 4, small_blind: 400, big_blind: 800, ante: 800, duration: 1200 },
+    { level: 5, small_blind: 500, big_blind: 1000, ante: 1000, duration: 1200 },
+    { level: 6, small_blind: 600, big_blind: 1200, ante: 1200, duration: 1200 },
+    { level: 7, small_blind: 800, big_blind: 1600, ante: 1600, duration: 1200 },
+    { level: 8, small_blind: 1000, big_blind: 2000, ante: 2000, duration: 1200 },
+    { level: 9, small_blind: 1500, big_blind: 3000, ante: 3000, duration: 1200 },
+    { level: 10, small_blind: 2000, big_blind: 4000, ante: 4000, duration: 1200 }
   ],
   turbo: [
-    { level: 1, small_blind: 10, big_blind: 20, ante: 0, duration: 600 },
-    { level: 2, small_blind: 15, big_blind: 30, ante: 0, duration: 600 },
-    { level: 3, small_blind: 25, big_blind: 50, ante: 0, duration: 600 },
-    { level: 4, small_blind: 50, big_blind: 100, ante: 0, duration: 600 },
-    { level: 5, small_blind: 75, big_blind: 150, ante: 0, duration: 600 },
-    { level: 6, small_blind: 100, big_blind: 200, ante: 25, duration: 600 },
-    { level: 7, small_blind: 150, big_blind: 300, ante: 50, duration: 600 },
-    { level: 8, small_blind: 200, big_blind: 400, ante: 50, duration: 600 },
-    { level: 9, small_blind: 300, big_blind: 600, ante: 75, duration: 600 },
-    { level: 10, small_blind: 500, big_blind: 1000, ante: 100, duration: 600 }
+    { level: 1, small_blind: 100, big_blind: 200, ante: 200, duration: 600 },
+    { level: 2, small_blind: 200, big_blind: 400, ante: 400, duration: 600 },
+    { level: 3, small_blind: 300, big_blind: 600, ante: 600, duration: 600 },
+    { level: 4, small_blind: 500, big_blind: 1000, ante: 1000, duration: 600 },
+    { level: 5, small_blind: 800, big_blind: 1600, ante: 1600, duration: 600 },
+    { level: 6, small_blind: 1000, big_blind: 2000, ante: 2000, duration: 600 },
+    { level: 7, small_blind: 1500, big_blind: 3000, ante: 3000, duration: 600 },
+    { level: 8, small_blind: 2000, big_blind: 4000, ante: 4000, duration: 600 },
+    { level: 9, small_blind: 3000, big_blind: 6000, ante: 6000, duration: 600 },
+    { level: 10, small_blind: 5000, big_blind: 10000, ante: 10000, duration: 600 }
   ],
   hyperTurbo: [
-    { level: 1, small_blind: 10, big_blind: 20, ante: 0, duration: 300 },
-    { level: 2, small_blind: 20, big_blind: 40, ante: 0, duration: 300 },
-    { level: 3, small_blind: 30, big_blind: 60, ante: 0, duration: 300 },
-    { level: 4, small_blind: 50, big_blind: 100, ante: 0, duration: 300 },
-    { level: 5, small_blind: 75, big_blind: 150, ante: 0, duration: 300 },
-    { level: 6, small_blind: 100, big_blind: 200, ante: 25, duration: 300 },
-    { level: 7, small_blind: 150, big_blind: 300, ante: 50, duration: 300 },
-    { level: 8, small_blind: 250, big_blind: 500, ante: 75, duration: 300 },
-    { level: 9, small_blind: 400, big_blind: 800, ante: 100, duration: 300 },
-    { level: 10, small_blind: 600, big_blind: 1200, ante: 150, duration: 300 }
+    { level: 1, small_blind: 100, big_blind: 200, ante: 200, duration: 300 },
+    { level: 2, small_blind: 200, big_blind: 400, ante: 400, duration: 300 },
+    { level: 3, small_blind: 400, big_blind: 800, ante: 800, duration: 300 },
+    { level: 4, small_blind: 600, big_blind: 1200, ante: 1200, duration: 300 },
+    { level: 5, small_blind: 1000, big_blind: 2000, ante: 2000, duration: 300 },
+    { level: 6, small_blind: 1500, big_blind: 3000, ante: 3000, duration: 300 },
+    { level: 7, small_blind: 2500, big_blind: 5000, ante: 5000, duration: 300 },
+    { level: 8, small_blind: 4000, big_blind: 8000, ante: 8000, duration: 300 },
+    { level: 9, small_blind: 6000, big_blind: 12000, ante: 12000, duration: 300 },
+    { level: 10, small_blind: 10000, big_blind: 20000, ante: 20000, duration: 300 }
   ]
 };
 
@@ -261,6 +261,7 @@ export function TournamentCreationModal({ open, onOpenChange, tournament, onTour
       return;
     }
 
+    if (loading) return; // Предотвращаем повторные нажатия
     setLoading(true);
     try {
       let tournamentId = tournament?.id;
@@ -313,9 +314,9 @@ export function TournamentCreationModal({ open, onOpenChange, tournament, onTour
             timer_duration: formData.timer_duration,
             is_published: formData.is_published,
             is_archived: false,
-            current_level: 1,
-            current_small_blind: blindStructure[0]?.small_blind || 10,
-            current_big_blind: blindStructure[0]?.big_blind || 20,
+                current_level: 1,
+                current_small_blind: blindStructure[0]?.small_blind || 100,
+                current_big_blind: blindStructure[0]?.big_blind || 200,
             timer_remaining: formData.timer_duration
           }])
           .select('id')
@@ -358,11 +359,14 @@ export function TournamentCreationModal({ open, onOpenChange, tournament, onTour
         const allLevels = [...blindLevelsToInsert, ...breakLevelsToInsert]
           .sort((a, b) => a.level - b.level);
 
-        const { error: blindError } = await supabase
-          .from('blind_levels')
-          .insert(allLevels);
+        if (allLevels.length > 0) {
+          const { error: blindError } = await supabase
+            .from('blind_levels')
+            .insert(allLevels);
 
-        if (blindError) throw blindError;
+          if (blindError) throw blindError;
+        }
+
       }
 
       toast({
@@ -731,55 +735,107 @@ export function TournamentCreationModal({ open, onOpenChange, tournament, onTour
               <CardContent>
                 <div className="space-y-4">
                   <div className="max-h-96 overflow-y-auto space-y-2">
-                    {blindStructure.map((level, index) => (
-                      <div key={`blind-level-${level.level}-${index}`} className="flex items-center gap-2 p-3 bg-background border rounded-lg">
-                        <div className="text-sm font-medium min-w-[60px]">
-                          Ур. {level.level}
-                        </div>
-                        <div className="flex items-center gap-2 flex-1">
-                          <Input
-                            type="number"
-                            value={level.small_blind}
-                            onChange={(e) => updateBlindLevel(index, 'small_blind', parseInt(e.target.value) || 0)}
-                            className="w-20"
-                            min="0"
-                          />
-                          <span>/</span>
-                          <Input
-                            type="number"
-                            value={level.big_blind}
-                            onChange={(e) => updateBlindLevel(index, 'big_blind', parseInt(e.target.value) || 0)}
-                            className="w-20"
-                            min="0"
-                          />
-                          <span className="text-xs text-muted-foreground">Анте:</span>
-                          <Input
-                            type="number"
-                            value={level.ante}
-                            onChange={(e) => updateBlindLevel(index, 'ante', parseInt(e.target.value) || 0)}
-                            className="w-16"
-                            min="0"
-                          />
-                          <span className="text-xs text-muted-foreground">Время:</span>
-                          <Input
-                            type="number"
-                            value={level.duration}
-                            onChange={(e) => updateBlindLevel(index, 'duration', parseInt(e.target.value) || 0)}
-                            className="w-20"
-                            min="300"
-                          />
-                          <span className="text-xs text-muted-foreground">сек</span>
-                        </div>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => removeBlindLevel(index)}
-                          className="text-red-600 hover:bg-red-50"
-                        >
-                          <Minus className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    ))}
+                    {(() => {
+                      // Создаем объединенный массив уровней и перерывов
+                      const allLevels = [];
+                      blindStructure.forEach(level => {
+                        allLevels.push({ ...level, type: 'game' });
+                        // Проверяем, есть ли перерыв после этого уровня
+                        if (breakLevels.includes(level.level)) {
+                          allLevels.push({ 
+                            level: level.level + 0.5, 
+                            type: 'break',
+                            duration: 900 // 15 минут 
+                          });
+                        }
+                      });
+                      
+                      return allLevels.map((item, index) => (
+                        item.type === 'break' ? (
+                          <div key={`break-${item.level}-${index}`} className="flex items-center gap-2 p-3 bg-orange-50 border border-orange-200 rounded-lg">
+                            <div className="text-sm font-medium min-w-[60px] text-orange-600">
+                              ☕ Перерыв
+                            </div>
+                            <div className="text-sm text-orange-600">
+                              15 минут после уровня {Math.floor(item.level)}
+                            </div>
+                          </div>
+                        ) : (
+                          <div key={`blind-level-${item.level}-${index}`} className="flex items-center gap-2 p-3 bg-background border rounded-lg">
+                            <div className="text-sm font-medium min-w-[60px]">
+                              Ур. {item.level}
+                            </div>
+                            <div className="flex items-center gap-2 flex-1">
+                              <Input
+                                type="number"
+                                value={item.small_blind}
+                                onChange={(e) => {
+                                  const gameIndex = blindStructure.findIndex(level => level.level === item.level);
+                                  if (gameIndex !== -1) {
+                                    updateBlindLevel(gameIndex, 'small_blind', parseInt(e.target.value) || 0);
+                                  }
+                                }}
+                                className="w-20"
+                                min="0"
+                              />
+                              <span>/</span>
+                              <Input
+                                type="number"
+                                value={item.big_blind}
+                                onChange={(e) => {
+                                  const gameIndex = blindStructure.findIndex(level => level.level === item.level);
+                                  if (gameIndex !== -1) {
+                                    updateBlindLevel(gameIndex, 'big_blind', parseInt(e.target.value) || 0);
+                                  }
+                                }}
+                                className="w-20"
+                                min="0"
+                              />
+                              <span className="text-xs text-muted-foreground">Анте:</span>
+                              <Input
+                                type="number"
+                                value={item.ante}
+                                onChange={(e) => {
+                                  const gameIndex = blindStructure.findIndex(level => level.level === item.level);
+                                  if (gameIndex !== -1) {
+                                    updateBlindLevel(gameIndex, 'ante', parseInt(e.target.value) || 0);
+                                  }
+                                }}
+                                className="w-16"
+                                min="0"
+                              />
+                              <span className="text-xs text-muted-foreground">Время:</span>
+                              <Input
+                                type="number"
+                                value={item.duration}
+                                onChange={(e) => {
+                                  const gameIndex = blindStructure.findIndex(level => level.level === item.level);
+                                  if (gameIndex !== -1) {
+                                    updateBlindLevel(gameIndex, 'duration', parseInt(e.target.value) || 0);
+                                  }
+                                }}
+                                className="w-20"
+                                min="300"
+                              />
+                              <span className="text-xs text-muted-foreground">сек</span>
+                            </div>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                const gameIndex = blindStructure.findIndex(level => level.level === item.level);
+                                if (gameIndex !== -1) {
+                                  removeBlindLevel(gameIndex);
+                                }
+                              }}
+                              className="text-red-600 hover:bg-red-50"
+                            >
+                              <Minus className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        )
+                      ));
+                    })()}
                   </div>
                   <Button
                     variant="outline"
