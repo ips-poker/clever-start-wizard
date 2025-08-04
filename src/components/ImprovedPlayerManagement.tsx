@@ -65,7 +65,6 @@ const ImprovedPlayerManagement = ({ tournament, players, registrations, onRegist
   const [selectedRegistration, setSelectedRegistration] = useState<Registration | null>(null);
   const [bulkPlayersList, setBulkPlayersList] = useState('');
   const [eliminationOrder, setEliminationOrder] = useState<string[]>([]);
-  const [chipDistributionMethod, setChipDistributionMethod] = useState<'proportional' | 'equal'>('proportional');
   const { toast } = useToast();
 
   useEffect(() => {
@@ -254,52 +253,54 @@ const ImprovedPlayerManagement = ({ tournament, players, registrations, onRegist
   };
 
   const redistributeChips = async (eliminatedChips: number, remainingPlayers: Registration[]) => {
-    if (remainingPlayers.length === 0) return;
+    if (remainingPlayers.length === 0 || eliminatedChips <= 0) return;
 
-    let updates: Array<{ id: string; chips: number }> = [];
+    // ВСЕГДА равное распределение фишек для правильного подсчета среднего стека
+    const chipsPerPlayer = Math.floor(eliminatedChips / remainingPlayers.length);
+    const remainderChips = eliminatedChips % remainingPlayers.length;
 
-    if (chipDistributionMethod === 'equal') {
-      // Равное распределение
-      const chipsPerPlayer = Math.floor(eliminatedChips / remainingPlayers.length);
-      const remainderChips = eliminatedChips % remainingPlayers.length;
-
-      updates = remainingPlayers.map((player, index) => ({
-        id: player.id,
-        chips: player.chips + chipsPerPlayer + (index < remainderChips ? 1 : 0)
-      }));
-    } else {
-      // Пропорциональное распределение
-      const totalChips = remainingPlayers.reduce((sum, p) => sum + p.chips, 0);
-      
-      updates = remainingPlayers.map(player => {
-        const proportion = player.chips / totalChips;
-        const additionalChips = Math.floor(eliminatedChips * proportion);
-        return {
-          id: player.id,
-          chips: player.chips + additionalChips
-        };
-      });
-
-      // Распределяем оставшиеся фишки игроку с наибольшим стеком
-      const distributed = updates.reduce((sum, u) => sum + (u.chips - remainingPlayers.find(p => p.id === u.id)!.chips), 0);
-      const remainder = eliminatedChips - distributed;
-      if (remainder > 0) {
-        const biggestStack = updates.reduce((max, current) => current.chips > max.chips ? current : max);
-        biggestStack.chips += remainder;
-      }
-    }
+    // Создаем обновления для каждого игрока
+    const updates = remainingPlayers.map((player, index) => ({
+      id: player.id,
+      chips: player.chips + chipsPerPlayer + (index < remainderChips ? 1 : 0),
+      additionalChips: chipsPerPlayer + (index < remainderChips ? 1 : 0)
+    }));
 
     // Обновляем фишки в базе данных
-    for (const update of updates) {
-      await supabase
+    const updatePromises = updates.map(update => 
+      supabase
         .from('tournament_registrations')
         .update({ chips: update.chips })
-        .eq('id', update.id);
+        .eq('id', update.id)
+    );
+
+    const results = await Promise.all(updatePromises);
+    const hasError = results.some(result => result.error);
+
+    if (hasError) {
+      toast({
+        title: "Ошибка",
+        description: "Не удалось перераспределить все фишки",
+        variant: "destructive"
+      });
+      return;
     }
 
+    // Проверяем правильность распределения
+    const totalDistributed = updates.reduce((sum, u) => sum + u.additionalChips, 0);
+    
     toast({
-      title: "Фишки перераспределены",
-      description: `${eliminatedChips.toLocaleString()} фишек распределено между ${remainingPlayers.length} игроками`
+      title: "Фишки перераспределены равномерно",
+      description: `${eliminatedChips.toLocaleString()} фишек распределено поровну между ${remainingPlayers.length} игроками (по ${chipsPerPlayer.toLocaleString()}${remainderChips > 0 ? '+1 некоторым' : ''})`
+    });
+
+    console.log('Перераспределение фишек:', {
+      eliminatedChips,
+      playersCount: remainingPlayers.length,
+      chipsPerPlayer,
+      remainderChips,
+      totalDistributed,
+      updates: updates.map(u => ({ playerId: u.id, added: u.additionalChips, newTotal: u.chips }))
     });
   };
 
@@ -552,18 +553,6 @@ const ImprovedPlayerManagement = ({ tournament, players, registrations, onRegist
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
                 <span>Активные игроки ({activePlayers.length})</span>
-                <div>
-                  <Label htmlFor="distribution-method" className="text-sm">Метод распределения фишек:</Label>
-                  <Select value={chipDistributionMethod} onValueChange={(value: 'proportional' | 'equal') => setChipDistributionMethod(value)}>
-                    <SelectTrigger className="w-48">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="proportional">Пропорционально стекам</SelectItem>
-                      <SelectItem value="equal">Поровну всем</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -758,9 +747,9 @@ const ImprovedPlayerManagement = ({ tournament, players, registrations, onRegist
             <AlertDialogDescription>
               Исключить {selectedRegistration?.player.name} из турнира? 
               {selectedRegistration?.chips && selectedRegistration.chips > 0 && (
-                <div className="mt-2 p-2 bg-yellow-50 rounded border">
-                  <strong>Внимание:</strong> {selectedRegistration.chips.toLocaleString()} фишек будут 
-                  перераспределены между оставшимися игроками методом "{chipDistributionMethod === 'proportional' ? 'пропорционально стекам' : 'поровну всем'}".
+                <div className="mt-2 p-2 bg-blue-50 rounded border">
+                  <strong>Информация:</strong> {selectedRegistration.chips.toLocaleString()} фишек будут 
+                  распределены <strong>поровну</strong> между всеми оставшимися игроками для корректного подсчета среднего стека.
                 </div>
               )}
             </AlertDialogDescription>
