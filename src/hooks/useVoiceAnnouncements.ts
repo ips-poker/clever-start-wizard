@@ -82,8 +82,18 @@ export const useVoiceAnnouncements = (options: VoiceAnnouncementOptions = { enab
 
   // Объявления для таймера турнира
   const announceTimeWarning = useCallback(async (minutes: number) => {
-    const time = minutes === 1 ? '1 минута' : `${minutes} минут`;
-    await playAnnouncement(`Внимание! До окончания уровня осталось ${time}.`);
+    let message = '';
+    if (minutes === 5) {
+      message = 'Внимание! До окончания уровня осталось 5 минут.';
+    } else if (minutes === 2) {
+      message = 'Внимание! До окончания уровня осталось 2 минуты. Скоро блайнд ап!';
+    } else if (minutes === 1) {
+      message = 'Внимание! До окончания уровня осталась 1 минута. Готовьтесь к повышению блайндов!';
+    } else {
+      const time = minutes === 1 ? '1 минута' : `${minutes} минут`;
+      message = `Внимание! До окончания уровня осталось ${time}.`;
+    }
+    await playAnnouncement(message);
   }, [playAnnouncement]);
 
   const announceNextLevel = useCallback(async (
@@ -124,14 +134,14 @@ export const useVoiceAnnouncements = (options: VoiceAnnouncementOptions = { enab
     if (level.is_break) {
       announcementText = `Начинается перерыв на ${Math.floor(level.duration / 60)} минут. Участники могут отдохнуть.`;
     } else {
-      announcementText = `Начинается уровень ${level.level}. `;
-      announcementText += `Блайнды: малый ${level.small_blind}, большой ${level.big_blind}`;
+      announcementText = `Новый уровень ${level.level}! `;
+      announcementText += `Малый блайнд ${level.small_blind}, большой блайнд ${level.big_blind}`;
       
       if (level.ante && level.ante > 0) {
         announcementText += `, анте ${level.ante}`;
       }
       
-      announcementText += '. Удачи игрокам!';
+      announcementText += '. Блайнды повышены, удачи игрокам!';
     }
 
     await playAnnouncement(announcementText);
@@ -161,6 +171,36 @@ export const useVoiceAnnouncements = (options: VoiceAnnouncementOptions = { enab
     await playAnnouncement(message);
   }, [playAnnouncement]);
 
+  const announceBlindIncrease = useCallback(async (currentLevel: BlindLevel, nextLevel: BlindLevel) => {
+    const blindIncreaseMessage = `Внимание! Блайнды повышаются с уровня ${currentLevel.level} на уровень ${nextLevel.level}. ` +
+      `Новые блайнды: малый ${nextLevel.small_blind}, большой ${nextLevel.big_blind}` +
+      (nextLevel.ante && nextLevel.ante > 0 ? `, анте ${nextLevel.ante}` : '') + 
+      '. Приспосабливайтесь к новым условиям игры!';
+    
+    await playAnnouncement(blindIncreaseMessage);
+  }, [playAnnouncement]);
+
+  const announcePlayerElimination = useCallback(async (playerName: string, position: number) => {
+    const message = `Игрок ${playerName} покидает турнир на ${position} месте. Спасибо за участие!`;
+    await playAnnouncement(message);
+  }, [playAnnouncement]);
+
+  const announceBreakStart = useCallback(async (duration: number) => {
+    const minutes = Math.floor(duration / 60);
+    const message = `Внимание! Начинается перерыв на ${minutes} минут. Игроки могут отдохнуть и восстановить силы.`;
+    await playAnnouncement(message);
+  }, [playAnnouncement]);
+
+  const announceBreakEnd = useCallback(async () => {
+    const message = 'Перерыв окончен! Игроки, займите свои места. Игра возобновляется!';
+    await playAnnouncement(message);
+  }, [playAnnouncement]);
+
+  const announceChipCount = useCallback(async (totalChips: number, averageStack: number) => {
+    const message = `Статистика турнира: общий банк фишек ${totalChips.toLocaleString()}, средний стек ${Math.round(averageStack).toLocaleString()} фишек.`;
+    await playAnnouncement(message);
+  }, [playAnnouncement]);
+
   const stopAnnouncement = useCallback(() => {
     if (audioRef.current) {
       audioRef.current.pause();
@@ -173,6 +213,11 @@ export const useVoiceAnnouncements = (options: VoiceAnnouncementOptions = { enab
     announceLevelStart,
     announceTimeWarning,
     announceCustomMessage,
+    announceBlindIncrease,
+    announcePlayerElimination,
+    announceBreakStart,
+    announceBreakEnd,
+    announceChipCount,
     announceTournamentStatus,
     stopAnnouncement,
     playAnnouncement

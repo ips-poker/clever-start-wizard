@@ -112,6 +112,18 @@ serve(async (req) => {
         response_text = "Сбрасываю таймер до начального времени уровня.";
         action_result = { action: 'reset_timer', tournament_id };
 
+      // ОБЪЯВЛЕНИЯ И ГОЛОСОВЫЕ КОМАНДЫ
+      } else if (command.includes('объявить') || command.includes('сказать') || command.includes('озвучить')) {
+        const announcement = command.replace(/.*(?:объявить|сказать|озвучить)\s*/, '').trim();
+        response_text = `Озвучиваю: ${announcement}`;
+        action_result = { action: 'announce', tournament_id, message: announcement };
+      } else if (command.includes('объявить блайнды') || command.includes('озвучить блайнды')) {
+        response_text = "Объявляю текущие блайнды";
+        action_result = { action: 'announce_blinds', tournament_id };
+      } else if (command.includes('статистика фишек') || command.includes('банк фишек')) {
+        response_text = "Озвучиваю статистику по фишкам";
+        action_result = { action: 'announce_chip_stats', tournament_id };
+        
       // ПЕРЕРЫВЫ
       } else if (command.includes('перерыв')) {
         const minutes = command.match(/(\d+)\s*минут/)?.[1] || '15';

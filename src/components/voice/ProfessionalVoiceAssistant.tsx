@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Mic, MicOff, Volume2, VolumeX, Zap } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { useVoiceAnnouncements } from '@/hooks/useVoiceAnnouncements';
 
 interface VoiceAssistantProps {
   selectedTournament?: any;
@@ -28,6 +29,9 @@ export function ProfessionalVoiceAssistant({ selectedTournament, onStatusChange 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const audioContextRef = useRef<AudioContext | null>(null);
+  
+  // Инициализируем голосовые объявления
+  const voiceAnnouncements = useVoiceAnnouncements({ enabled: true, volume: 0.8 });
 
   const voices = [
     { id: 'CwhRBWXzGAHq8TQ4Fs17', name: 'Роджер', description: 'Профессиональный мужской голос' },
@@ -195,6 +199,35 @@ export function ProfessionalVoiceAssistant({ selectedTournament, onStatusChange 
         case 'announce_5_minutes':
           // Передаем специальные действия
           onStatusChange?.(action, actionResult);
+          break;
+          
+        case 'announce':
+          // Пользовательское объявление
+          if (actionResult.message) {
+            await voiceAnnouncements.announceCustomMessage(actionResult.message);
+          }
+          break;
+          
+        case 'announce_blinds':
+          // Объявляем текущие блайнды
+          if (tournamentData) {
+            await voiceAnnouncements.announceCustomMessage(
+              `Текущие блайнды: малый ${tournamentData.small_blind || 0}, большой ${tournamentData.big_blind || 0}`
+            );
+          }
+          break;
+          
+        case 'announce_chip_stats':
+          // Объявляем статистику фишек
+          if (tournamentData) {
+            const totalChips = tournamentData.total_chips || 0;
+            const avgStack = tournamentData.avg_stack || 0;
+            await voiceAnnouncements.announceChipCount(totalChips, avgStack);
+          }
+          break;
+          
+        case 'end_break':
+          await voiceAnnouncements.announceBreakEnd();
           break;
       }
     } catch (error) {

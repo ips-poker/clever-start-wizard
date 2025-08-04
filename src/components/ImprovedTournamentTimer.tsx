@@ -71,6 +71,9 @@ const ImprovedTournamentTimer = ({
     if (currentTime === 300 && lastAnnouncedTime !== 300) { // 5 минут
       voiceAnnouncements.announceTimeWarning(5);
       setLastAnnouncedTime(300);
+    } else if (currentTime === 120 && lastAnnouncedTime !== 120) { // 2 минуты
+      voiceAnnouncements.announceTimeWarning(2);
+      setLastAnnouncedTime(120);
     } else if (currentTime === 60 && lastAnnouncedTime !== 60) { // 1 минута
       voiceAnnouncements.announceTimeWarning(1);
       setLastAnnouncedTime(60);
