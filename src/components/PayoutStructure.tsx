@@ -5,7 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Minus, Trophy, Calculator } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Plus, Minus, Trophy, Calculator, Zap, Settings } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -32,6 +33,8 @@ const PayoutStructure = ({ tournamentId, registeredPlayers }: PayoutStructurePro
   const [baseRP, setBaseRP] = useState(1000);
   const [tournament, setTournament] = useState<any>(null);
   const [registrations, setRegistrations] = useState<TournamentRegistration[]>([]);
+  const [autoProcessEnabled, setAutoProcessEnabled] = useState(true);
+  const [isProcessingRatings, setIsProcessingRatings] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -227,13 +230,135 @@ const PayoutStructure = ({ tournamentId, registeredPlayers }: PayoutStructurePro
     return payoutPlaces.reduce((sum, payout) => sum + payout.rp, 0);
   };
 
+  // Автоматический расчет рейтингов
+  const triggerRatingsCalculation = async () => {
+    if (!tournament || tournament.status !== 'finished') {
+      toast({
+        title: "Невозможно рассчитать рейтинги",
+        description: "Турнир должен быть завершен",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsProcessingRatings(true);
+    
+    try {
+      // Получить результаты турнира
+      const { data: tournamentRegistrations, error: regError } = await supabase
+        .from('tournament_registrations')
+        .select('player_id, position, rebuys, addons')
+        .eq('tournament_id', tournamentId)
+        .not('position', 'is', null)
+        .order('position');
+
+      if (regError) throw regError;
+
+      if (!tournamentRegistrations || tournamentRegistrations.length === 0) {
+        throw new Error('Нет результатов для расчета рейтингов');
+      }
+
+      // Вызвать функцию расчета ELO
+      const { error: eloError } = await supabase.functions.invoke('calculate-elo', {
+        body: {
+          tournament_id: tournamentId,
+          results: tournamentRegistrations.map(reg => ({
+            player_id: reg.player_id,
+            position: reg.position,
+            rebuys: reg.rebuys || 0,
+            addons: reg.addons || 0
+          }))
+        }
+      });
+
+      if (eloError) throw eloError;
+
+      // Опубликовать результаты
+      const { error: publishError } = await supabase
+        .from('tournaments')
+        .update({ 
+          is_published: true,
+          finished_at: new Date().toISOString()
+        })
+        .eq('id', tournamentId);
+
+      if (publishError) throw publishError;
+
+      toast({
+        title: "Рейтинги рассчитаны",
+        description: `Обновлены рейтинги для ${tournamentRegistrations.length} игроков`,
+      });
+
+    } catch (error: any) {
+      toast({
+        title: "Ошибка расчета рейтингов",
+        description: error.message,
+        variant: "destructive"
+      });
+    } finally {
+      setIsProcessingRatings(false);
+    }
+  };
+
+  // Автоматическая обработка при завершении турнира
+  useEffect(() => {
+    if (autoProcessEnabled && tournament?.status === 'finished' && payoutPlaces.length > 0) {
+      // Небольшая задержка для корректного расчета
+      const timer = setTimeout(() => {
+        triggerRatingsCalculation();
+      }, 2000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [tournament?.status, payoutPlaces.length, autoProcessEnabled]);
+
   return (
     <div className="space-y-6">
-      {/* Настройки призового фонда */}
-      <Card className="bg-white/50 border border-gray-200/50">
+      {/* Автоматизация */}
+      <Card className="bg-gradient-card border-poker-border shadow-elevated">
         <CardHeader className="pb-4">
-          <CardTitle className="flex items-center gap-2 text-lg font-medium text-gray-800">
-            <Calculator className="w-5 h-5" />
+          <CardTitle className="flex items-center gap-2 text-poker-text-primary">
+            <Zap className="w-5 h-5 text-poker-accent" />
+            Автоматизация обработки
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between">
+            <Label htmlFor="auto-process">Автоматический расчет рейтингов при завершении</Label>
+            <Switch 
+              id="auto-process"
+              checked={autoProcessEnabled}
+              onCheckedChange={setAutoProcessEnabled}
+            />
+          </div>
+          
+          {tournament?.status === 'finished' && (
+            <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="font-medium text-green-800">Турнир завершен</h4>
+                  <p className="text-sm text-green-600">Готов к автоматической обработке рейтингов</p>
+                </div>
+                <Button
+                  onClick={triggerRatingsCalculation}
+                  disabled={isProcessingRatings}
+                  size="sm"
+                  className="bg-poker-accent hover:bg-poker-accent/90 text-white"
+                >
+                  <Settings className="w-4 h-4 mr-1" />
+                  {isProcessingRatings ? 'Обработка...' : 'Обработать сейчас'}
+                </Button>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Настройки призового фонда */}
+      <Card className="bg-gradient-card border-poker-border shadow-elevated">
+        <CardHeader className="pb-4">
+          <CardTitle className="flex items-center gap-2 text-poker-text-primary">
+            <Calculator className="w-5 h-5 text-poker-accent" />
             Настройки призового фонда
           </CardTitle>
         </CardHeader>
@@ -306,7 +431,7 @@ const PayoutStructure = ({ tournamentId, registeredPlayers }: PayoutStructurePro
 
       {/* Таблица выплат */}
       {payoutPlaces.length > 0 && (
-        <Card className="bg-white/50 border border-gray-200/50">
+        <Card className="bg-gradient-card border-poker-border shadow-elevated">
           <CardContent className="p-0">
             <Table>
               <TableHeader>
@@ -355,7 +480,7 @@ const PayoutStructure = ({ tournamentId, registeredPlayers }: PayoutStructurePro
 
       {/* Итоговая статистика */}
       {payoutPlaces.length > 0 && (
-        <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200/50">
+        <Card className="bg-gradient-card border-poker-border shadow-elevated">
           <CardContent className="p-6">
             <div className="grid grid-cols-3 gap-6 text-center">
               <div>

@@ -27,6 +27,7 @@ import { useToast } from '@/hooks/use-toast';
 import ManualAdjustments from './ManualAdjustments';
 import SystemCheck from './SystemCheck';
 import RealtimeRatingSync from './RealtimeRatingSync';
+import AutomatedTournamentProcessor from './AutomatedTournamentProcessor';
 
 interface Tournament {
   id: string;
@@ -299,8 +300,9 @@ const RatingManagement = ({ tournaments, selectedTournament, onRefresh }: Rating
   return (
     <div className="space-y-6">
       <Tabs defaultValue="automation" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="automation">Автоматизация</TabsTrigger>
+          <TabsTrigger value="processor">Авто-обработка</TabsTrigger>
           <TabsTrigger value="manual">Ручные корректировки</TabsTrigger>
           <TabsTrigger value="system">Проверка системы</TabsTrigger>
         </TabsList>
