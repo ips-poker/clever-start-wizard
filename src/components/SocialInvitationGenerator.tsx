@@ -776,7 +776,10 @@ ${tournamentData.description}
                 </div>
               </div>
               <Button 
-                onClick={() => generateAndPreviewImage('square')}
+                onClick={() => {
+                  console.log('Нажата кнопка для square формата');
+                  generateAndPreviewImage('square');
+                }}
                 className="w-full"
               >
                 <Eye className="w-4 h-4 mr-2" />
@@ -945,7 +948,10 @@ ${tournamentData.description}
                 </div>
               </div>
               <Button 
-                onClick={() => generateAndPreviewImage('story')}
+                onClick={() => {
+                  console.log('Нажата кнопка для story формата');
+                  generateAndPreviewImage('story');
+                }}
                 className="w-full"
               >
                 <Eye className="w-4 h-4 mr-2" />
