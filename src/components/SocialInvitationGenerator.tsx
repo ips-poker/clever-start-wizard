@@ -272,48 +272,59 @@ ${tournamentData.description}
   };
 
   const generateAndPreviewImage = async (format: 'square' | 'story') => {
-    alert('Кнопка нажата! Формат: ' + format); // Для тестирования
-    
     const elementId = format === 'square' ? 'social-square-preview' : 'social-story-preview';
     const element = document.getElementById(elementId);
     
     if (!element) {
-      alert('Элемент не найден: ' + elementId);
+      toast({
+        title: "Ошибка",
+        description: "Не удалось найти элемент для генерации изображения",
+        variant: "destructive"
+      });
       return;
     }
 
     try {
-      // Временно создаем простое изображение для тестирования
-      const canvas = document.createElement('canvas');
-      canvas.width = format === 'square' ? 700 : 350;
-      canvas.height = format === 'square' ? 900 : 800;
-      const ctx = canvas.getContext('2d');
-      
-      if (ctx) {
-        // Рисуем тестовое изображение
-        ctx.fillStyle = '#4c1d95';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.fillStyle = '#ffffff';
-        ctx.font = '48px Arial';
-        ctx.textAlign = 'center';
-        ctx.fillText('ТЕСТ', canvas.width/2, canvas.height/2);
-        ctx.fillText('КАРТОЧКА', canvas.width/2, canvas.height/2 + 60);
-        ctx.fillText(format.toUpperCase(), canvas.width/2, canvas.height/2 + 120);
-      }
-      
-      const dataUrl = canvas.toDataURL('image/png', 1.0);
-      console.log('Создан тестовый dataUrl, длина:', dataUrl.length);
-      
+      // Ждем загрузки всех изображений
+      const images = element.querySelectorAll('img');
+      await Promise.all(Array.from(images).map(img => {
+        if (img.complete) return Promise.resolve();
+        return new Promise((resolve, reject) => {
+          img.onload = resolve;
+          img.onerror = resolve; // Продолжаем даже если изображение не загрузилось
+          setTimeout(resolve, 3000); // Таймаут 3 секунды
+        });
+      }));
+
+      const canvas = await html2canvas(element, {
+        scale: 1, // Уменьшили scale для надежности
+        useCORS: false, // Отключили CORS для упрощения
+        allowTaint: true,
+        backgroundColor: '#1a1a1a',
+        logging: false,
+        width: element.offsetWidth,
+        height: element.offsetHeight,
+        scrollX: 0,
+        scrollY: 0,
+        windowWidth: window.innerWidth,
+        windowHeight: window.innerHeight
+      });
+
+      const dataUrl = canvas.toDataURL('image/png', 0.9);
       setPreviewImage(dataUrl);
       setIsPreviewOpen(true);
 
       toast({
-        title: "Тестовый предпросмотр",
-        description: `Тестовое изображение ${format} создано`,
+        title: "Предпросмотр готов",
+        description: `Изображение в формате ${format} создано`,
       });
     } catch (error) {
-      console.error('Ошибка:', error);
-      alert('Ошибка: ' + error.message);
+      console.error('Ошибка генерации изображения:', error);
+      toast({
+        title: "Ошибка",
+        description: "Не удалось создать изображение",
+        variant: "destructive"
+      });
     }
   };
 
