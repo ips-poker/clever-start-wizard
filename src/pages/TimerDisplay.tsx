@@ -130,22 +130,58 @@ const TimerDisplay = () => {
     };
   }, [tournamentId]);
 
-  // Таймер (только для отображения, управление происходит из основного интерфейса)
+  // Таймер синхронизированный с основным интерфейсом
   useEffect(() => {
     if (!tournament) return;
     
-    // Проверяем статус турнира для определения активности таймера
-    const isTimerRunning = tournament.status === 'running';
-    setTimerActive(isTimerRunning);
+    // Восстанавливаем состояние таймера из localStorage (как в основном интерфейсе)
+    const savedTimerState = localStorage.getItem(`timer_${tournament.id}`);
+    if (savedTimerState) {
+      const { currentTime: savedTime, timerActive: savedActive, lastUpdate } = JSON.parse(savedTimerState);
+      const timePassed = Math.floor((Date.now() - lastUpdate) / 1000);
+      
+      if (savedActive && savedTime > timePassed) {
+        setCurrentTime(savedTime - timePassed);
+        setTimerActive(true);
+      } else {
+        setCurrentTime(savedTime);
+        setTimerActive(savedActive);
+      }
+    }
     
-    if (isTimerRunning) {
+    // Слушаем изменения в localStorage для синхронизации
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === `timer_${tournament.id}` && e.newValue) {
+        const { currentTime: newTime, timerActive: newActive, lastUpdate } = JSON.parse(e.newValue);
+        const timePassed = Math.floor((Date.now() - lastUpdate) / 1000);
+        
+        if (newActive && newTime > timePassed) {
+          setCurrentTime(newTime - timePassed);
+          setTimerActive(true);
+        } else {
+          setCurrentTime(newTime);
+          setTimerActive(newActive);
+        }
+      }
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, [tournament?.id]);
+
+  // Локальный таймер для отсчета
+  useEffect(() => {
+    if (timerActive && currentTime > 0) {
       const interval = setInterval(() => {
         setCurrentTime(prev => Math.max(0, prev - 1));
       }, 1000);
       
       return () => clearInterval(interval);
     }
-  }, [tournament?.status]);
+  }, [timerActive, currentTime]);
 
   // Dummy функции для интерфейса (не используются в display режиме)
   const handleToggleTimer = () => {};
