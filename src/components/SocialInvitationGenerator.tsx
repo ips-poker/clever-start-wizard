@@ -329,16 +329,36 @@ ${data.description}
     });
   };
 
-  const generateAndPreviewImage = async (format: 'square' | 'story') => {
-    // Показываем уведомление о временных проблемах
-    toast({
-      title: "Временные технические проблемы",
-      description: "Генерация изображений временно недоступна. Данные скопированы в текстовом формате.",
-      variant: "destructive"
+  const generateInvitationLink = (format: 'square' | 'story') => {
+    const params = new URLSearchParams({
+      title: tournamentData.title,
+      date: tournamentData.date,
+      time: tournamentData.time,
+      location: tournamentData.location,
+      buyIn: tournamentData.buyIn,
+      format: tournamentData.format,
+      description: tournamentData.description,
+      contactInfo: tournamentData.contactInfo,
+      prizePool: tournamentData.prizePool,
+      maxPlayers: tournamentData.maxPlayers,
+      startingChips: tournamentData.startingChips,
     });
+
+    // Добавляем дополнительные параметры если они есть
+    if (tournamentData.rebuyInfo) params.append('rebuyInfo', tournamentData.rebuyInfo);
+    if (tournamentData.addonInfo) params.append('addonInfo', tournamentData.addonInfo);
+    if (tournamentData.timerDuration) params.append('timerDuration', tournamentData.timerDuration);
+    if (tournamentData.breakInfo) params.append('breakInfo', tournamentData.breakInfo);
+
+    const invitationUrl = `${window.location.origin}/invitation/card?${params.toString()}`;
     
-    // Используем простую альтернативу
-    generateSimpleView(format);
+    // Открываем карточку в новой вкладке
+    window.open(invitationUrl, '_blank');
+    
+    toast({
+      title: "Карточка создана!",
+      description: "Приглашение открыто в новой вкладке. Вы можете поделиться ссылкой или скачать изображение.",
+    });
   };
 
   const downloadImage = () => {
@@ -780,12 +800,12 @@ ${data.description}
               </div>
               <div className="flex gap-2">
                 <Button 
-                  onClick={() => generateAndPreviewImage('square')}
+                  onClick={() => generateInvitationLink('square')}
                   className="flex-1"
                   variant="outline"
                 >
                   <Eye className="w-4 h-4 mr-2" />
-                  Копировать данные
+                  Открыть карточку
                 </Button>
                 <Button 
                   onClick={() => generateSimpleView('square')}
@@ -918,12 +938,12 @@ ${data.description}
               </div>
               <div className="flex gap-2">
                 <Button 
-                  onClick={() => generateAndPreviewImage('story')}
+                  onClick={() => generateInvitationLink('story')}
                   className="flex-1"
                   variant="outline"
                 >
                   <Eye className="w-4 h-4 mr-2" />
-                  Копировать данные
+                  Открыть карточку
                 </Button>
                 <Button 
                   onClick={() => generateSimpleView('story')}
