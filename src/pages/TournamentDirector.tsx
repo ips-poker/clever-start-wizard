@@ -181,6 +181,12 @@ const TournamentDirector = () => {
               }));
               updateTimerInDatabase(0);
             }
+            
+            // Автоматический переход к следующему уровню
+            setTimeout(() => {
+              nextLevel();
+            }, 1000);
+            
             return 0;
           }
           
