@@ -114,7 +114,7 @@ const TournamentOverview = ({
     averageRating: 0
   });
   const [soundEnabled, setSoundEnabled] = useState(true);
-  const [voiceAnnouncementsEnabled, setVoiceAnnouncementsEnabled] = useState(true);
+  const [voiceAnnouncementsEnabled, setVoiceAnnouncementsEnabled] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showFullscreenTimer, setShowFullscreenTimer] = useState(false);
   const [tenSecondAnnouncement, setTenSecondAnnouncement] = useState(false);
