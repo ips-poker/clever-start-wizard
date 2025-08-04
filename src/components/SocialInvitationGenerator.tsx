@@ -219,39 +219,39 @@ ${tournamentData.description}
   };
 
   const generateTelegramText = () => {
-    let text = `🎰 <b>${tournamentData.title}</b>
+    let text = `<b>${tournamentData.title.replace(/🏆 /, '')}</b>
 
-📅 <b>Дата:</b> ${tournamentData.date} в ${tournamentData.time}
-📍 <b>Место:</b> ${tournamentData.location}
-💰 <b>Бай-ин:</b> ${tournamentData.buyIn}
-🏆 <b>Призы:</b> ${tournamentData.prizePool}
-👥 <b>Мест:</b> ${tournamentData.maxPlayers}
-🎯 <b>Стек:</b> ${tournamentData.startingChips}
+<b>Дата:</b> ${tournamentData.date} в ${tournamentData.time}
+<b>Место:</b> ${tournamentData.location}
+<b>Бай-ин:</b> ${tournamentData.buyIn}
+<b>Призы:</b> ${tournamentData.prizePool}
+<b>Мест:</b> ${tournamentData.maxPlayers}
+<b>Стек:</b> ${tournamentData.startingChips}
 
 <i>${tournamentData.description}</i>
 
-<b>📋 СТРУКТУРА ТУРНИРА:</b>`;
+<b>СТРУКТУРА ТУРНИРА:</b>`;
 
     if (tournamentData.timerDuration) {
-      text += `\n⏱️ <b>Время:</b> ${tournamentData.timerDuration}`;
+      text += `\n<b>Время уровней:</b> ${tournamentData.timerDuration}`;
     }
     if (tournamentData.blindStructure) {
-      text += `\n🔢 <b>Блайнды:</b> ${tournamentData.blindStructure}`;
+      text += `\n<b>Блайнды:</b> ${tournamentData.blindStructure}`;
     }
     if (tournamentData.rebuyInfo && tournamentData.rebuyEndLevel) {
-      text += `\n🔄 <b>Rebuy:</b> ${tournamentData.rebuyInfo} ${tournamentData.rebuyEndLevel}`;
+      text += `\n<b>Rebuy:</b> ${tournamentData.rebuyInfo} ${tournamentData.rebuyEndLevel}`;
     }
     if (tournamentData.addonInfo && tournamentData.addonLevel) {
-      text += `\n➕ <b>Addon:</b> ${tournamentData.addonInfo} ${tournamentData.addonLevel}`;
+      text += `\n<b>Addon:</b> ${tournamentData.addonInfo} ${tournamentData.addonLevel}`;
     }
     if (tournamentData.lateRegEndLevel) {
-      text += `\n📝 <b>Поздняя регистрация:</b> ${tournamentData.lateRegEndLevel}`;
+      text += `\n<b>Поздняя регистрация:</b> ${tournamentData.lateRegEndLevel}`;
     }
     if (tournamentData.breakInfo) {
-      text += `\n☕ <b>Перерыв:</b> ${tournamentData.breakInfo}`;
+      text += `\n<b>Перерыв:</b> ${tournamentData.breakInfo}`;
     }
 
-    text += `\n\n🚀 <b>Регистрация:</b> ${tournamentData.contactInfo}
+    text += `\n\n<b>Регистрация:</b> ${tournamentData.contactInfo}
 
 #IPS #покер #турнир #ELO`;
 
@@ -267,7 +267,7 @@ ${tournamentData.description}
     });
   };
 
-  const generateImage = async (format: 'square' | 'story') => {
+  const generateAndPreviewImage = async (format: 'square' | 'story') => {
     const elementId = format === 'square' ? 'social-square-preview' : 'social-story-preview';
     const element = document.getElementById(elementId);
     if (!element) return;
@@ -277,17 +277,55 @@ ${tournamentData.description}
         scale: 2,
         useCORS: true,
         allowTaint: true,
-        backgroundColor: null
+        backgroundColor: null,
+        width: format === 'square' ? 700 : 350,
+        height: format === 'square' ? 900 : 800
       });
 
-      const link = document.createElement('a');
-      link.download = `poker-invitation-${format}-${tournamentData.date.replace(/\./g, '-')}.png`;
-      link.href = canvas.toDataURL();
-      link.click();
+      // Создаем blob вместо прямого скачивания
+      canvas.toBlob((blob) => {
+        if (blob) {
+          const url = URL.createObjectURL(blob);
+          // Открываем в новом окне для просмотра
+          const newWindow = window.open();
+          if (newWindow) {
+            newWindow.document.write(`
+              <html>
+                <head>
+                  <title>Приглашение - ${format}</title>
+                  <style>
+                    body { margin: 0; padding: 20px; background: #f0f0f0; text-align: center; }
+                    img { max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.2); }
+                    .download-btn { 
+                      margin-top: 20px; padding: 10px 20px; background: #007bff; color: white; 
+                      border: none; border-radius: 5px; cursor: pointer; font-size: 16px;
+                    }
+                    .download-btn:hover { background: #0056b3; }
+                  </style>
+                </head>
+                <body>
+                  <h2>Приглашение на турнир (${format})</h2>
+                  <img src="${url}" alt="Приглашение на турнир" />
+                  <br>
+                  <button class="download-btn" onclick="downloadImage()">Скачать изображение</button>
+                  <script>
+                    function downloadImage() {
+                      const link = document.createElement('a');
+                      link.download = 'poker-invitation-${format}-${tournamentData.date.replace(/\./g, '-')}.png';
+                      link.href = '${url}';
+                      link.click();
+                    }
+                  </script>
+                </body>
+              </html>
+            `);
+          }
+        }
+      }, 'image/png', 1.0);
 
       toast({
-        title: "Изображение сохранено",
-        description: `Изображение в формате ${format} готово для публикации`,
+        title: "Предпросмотр готов",
+        description: `Изображение открыто в новом окне для просмотра`,
       });
     } catch (error) {
       console.error('Ошибка генерации изображения:', error);
@@ -737,11 +775,11 @@ ${tournamentData.description}
                 </div>
               </div>
               <Button 
-                onClick={() => generateImage('square')}
+                onClick={() => generateAndPreviewImage('square')}
                 className="w-full"
               >
-                <Download className="w-4 h-4 mr-2" />
-                Скачать квадратное изображение
+                <Eye className="w-4 h-4 mr-2" />
+                Посмотреть и скачать
               </Button>
             </CardContent>
           </Card>
@@ -879,11 +917,11 @@ ${tournamentData.description}
                 </div>
               </div>
               <Button 
-                onClick={() => generateImage('story')}
+                onClick={() => generateAndPreviewImage('story')}
                 className="w-full"
               >
-                <Download className="w-4 h-4 mr-2" />
-                Скачать для Stories
+                <Eye className="w-4 h-4 mr-2" />
+                Посмотреть и скачать
               </Button>
             </CardContent>
           </Card>
