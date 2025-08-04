@@ -500,11 +500,26 @@ const TournamentDirector = () => {
     
     switch (action) {
       case 'show_stats':
+      case 'show_overview':
         setActiveTab('overview');
+        break;
+      case 'show_tab':
+        if (data?.tab) {
+          setActiveTab(data.tab);
+        }
         break;
       case 'timer_update':
         if (data?.time) {
           setCurrentTime(data.time);
+        }
+        break;
+      case 'timer_control':
+        if (data?.action === 'start_timer') {
+          setTimerActive(true);
+        } else if (data?.action === 'stop_timer') {
+          setTimerActive(false);
+        } else if (data?.action === 'toggle_timer') {
+          setTimerActive(!timerActive);
         }
         break;
       case 'level_change':
@@ -515,12 +530,20 @@ const TournamentDirector = () => {
         }
         break;
       case 'tournament_control':
-        if (data?.status) {
-          // Обновляем состояние турнира
-          loadTournaments();
-          if (selectedTournament) {
-            loadRegistrations(selectedTournament.id);
-          }
+        // Обновляем состояние турнира
+        loadTournaments();
+        if (selectedTournament) {
+          loadRegistrations(selectedTournament.id);
+        }
+        // Показываем уведомление о выполненном действии
+        if (data?.action) {
+          const actionText = {
+            'start_tournament': 'Турнир запущен',
+            'pause_tournament': 'Турнир приостановлен', 
+            'resume_tournament': 'Турнир возобновлен',
+            'complete_tournament': 'Турнир завершен'
+          }[data.action] || 'Статус турнира обновлен';
+          toast({ title: actionText });
         }
         break;
       default:

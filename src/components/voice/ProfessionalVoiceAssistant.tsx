@@ -8,7 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 
 interface VoiceAssistantProps {
   selectedTournament?: any;
-  onStatusChange?: (status: string) => void;
+  onStatusChange?: (status: string, data?: any) => void;
 }
 
 interface VoiceMessage {
@@ -167,12 +167,22 @@ export function ProfessionalVoiceAssistant({ selectedTournament, onStatusChange 
             tournament_id_param: tournament_id,
             action_type: action
           });
+          // Обновляем интерфейс через callback
+          onStatusChange?.('tournament_control', { action: action });
           break;
           
         case 'next_blind_level':
+          // Переход к следующему уровню
+          onStatusChange?.('level_change', { direction: 'next' });
+          break;
+          
         case 'previous_blind_level':
+          // Возврат к предыдущему уровню
+          onStatusChange?.('level_change', { direction: 'prev' });
+          break;
+          
         case 'set_blind_level':
-          // Обновляем уровень блайндов
+          // Установка конкретного уровня
           const parameters = actionResult.level ? { level: actionResult.level } : {};
           await supabase.rpc('handle_voice_tournament_action', {
             tournament_id_param: tournament_id,
@@ -201,15 +211,15 @@ export function ProfessionalVoiceAssistant({ selectedTournament, onStatusChange 
             tournament_id_param: tournament_id,
             new_timer_remaining: newTime
           });
+          // Обновляем интерфейс
+          onStatusChange?.('timer_update', { time: newTime });
           break;
           
         case 'start_timer':
         case 'stop_timer':
+        case 'toggle_timer':
           // Управление таймером
-          await supabase.rpc('handle_voice_tournament_action', {
-            tournament_id_param: tournament_id,
-            action_type: action
-          });
+          onStatusChange?.('timer_control', { action: action });
           break;
           
         case 'start_break':
@@ -227,7 +237,19 @@ export function ProfessionalVoiceAssistant({ selectedTournament, onStatusChange 
           break;
           
         case 'show_stats':
+        case 'show_overview':
+          onStatusChange?.('show_tab', { tab: 'overview' });
+          break;
+          
         case 'show_players':
+          onStatusChange?.('show_tab', { tab: 'players' });
+          break;
+          
+        case 'show_control':
+        case 'show_timer':
+          onStatusChange?.('show_tab', { tab: 'control' });
+          break;
+          
         case 'show_payouts':
         case 'current_level_info':
         case 'next_level_info':
