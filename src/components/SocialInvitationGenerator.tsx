@@ -272,55 +272,48 @@ ${tournamentData.description}
   };
 
   const generateAndPreviewImage = async (format: 'square' | 'story') => {
-    console.log('Начинаем генерацию изображения для формата:', format);
+    alert('Кнопка нажата! Формат: ' + format); // Для тестирования
     
     const elementId = format === 'square' ? 'social-square-preview' : 'social-story-preview';
     const element = document.getElementById(elementId);
     
-    console.log('Найден элемент:', elementId, element);
-    
     if (!element) {
-      console.error('Элемент не найден:', elementId);
-      toast({
-        title: "Ошибка",
-        description: "Не удалось найти элемент для генерации изображения",
-        variant: "destructive"
-      });
+      alert('Элемент не найден: ' + elementId);
       return;
     }
 
     try {
-      console.log('Начинаем html2canvas...');
-      const canvas = await html2canvas(element, {
-        scale: 2,
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: '#000000',
-        logging: true,
-        foreignObjectRendering: true
-      });
-
-      console.log('Canvas создан, размеры:', canvas.width, 'x', canvas.height);
+      // Временно создаем простое изображение для тестирования
+      const canvas = document.createElement('canvas');
+      canvas.width = format === 'square' ? 700 : 350;
+      canvas.height = format === 'square' ? 900 : 800;
+      const ctx = canvas.getContext('2d');
+      
+      if (ctx) {
+        // Рисуем тестовое изображение
+        ctx.fillStyle = '#4c1d95';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '48px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('ТЕСТ', canvas.width/2, canvas.height/2);
+        ctx.fillText('КАРТОЧКА', canvas.width/2, canvas.height/2 + 60);
+        ctx.fillText(format.toUpperCase(), canvas.width/2, canvas.height/2 + 120);
+      }
       
       const dataUrl = canvas.toDataURL('image/png', 1.0);
-      console.log('DataURL создан, длина:', dataUrl.length);
+      console.log('Создан тестовый dataUrl, длина:', dataUrl.length);
       
       setPreviewImage(dataUrl);
       setIsPreviewOpen(true);
-      
-      console.log('Состояние обновлено, превью должно открыться');
 
       toast({
-        title: "Предпросмотр готов",
-        description: `Изображение в формате ${format} готово для просмотра`,
+        title: "Тестовый предпросмотр",
+        description: `Тестовое изображение ${format} создано`,
       });
     } catch (error) {
-      console.error('Ошибка генерации изображения:', error);
-      toast({
-        title: "Ошибка",
-        description: "Не удалось создать изображение: " + error.message,
-        variant: "destructive"
-      });
+      console.error('Ошибка:', error);
+      alert('Ошибка: ' + error.message);
     }
   };
 
