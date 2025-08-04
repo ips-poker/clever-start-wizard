@@ -32,6 +32,17 @@ export function SocialProof() {
 
   useEffect(() => {
     fetchTestimonials();
+    
+    // Listen for testimonials updates from admin
+    const handleTestimonialsUpdate = () => {
+      fetchTestimonials();
+    };
+    
+    window.addEventListener('testimonials-updated', handleTestimonialsUpdate);
+    
+    return () => {
+      window.removeEventListener('testimonials-updated', handleTestimonialsUpdate);
+    };
   }, []);
 
   const fetchTestimonials = async () => {
@@ -67,7 +78,14 @@ export function SocialProof() {
         } else if (item.content_key.includes('_text')) {
           acc[position].text = item.content_value;
         } else if (item.content_key.includes('_image')) {
-          acc[position].avatar = item.content_value;
+          // Add cache-busting parameter to force image refresh
+          let imageUrl = item.content_value;
+          if (imageUrl && imageUrl.includes('supabase')) {
+            imageUrl = imageUrl.includes('?') 
+              ? imageUrl.split('?')[0] + `?t=${Date.now()}`
+              : imageUrl + `?t=${Date.now()}`;
+          }
+          acc[position].avatar = imageUrl;
         }
         
         return acc;

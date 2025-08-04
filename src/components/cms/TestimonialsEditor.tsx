@@ -137,18 +137,19 @@ export function TestimonialsEditor() {
 
   const removeUploadedImage = async (imageUrl: string) => {
     try {
-      // Extract filename from URL
-      const urlParts = imageUrl.split('/');
-      const fileName = urlParts[urlParts.length - 1];
-      
-      // Delete from storage
-      const { error } = await supabase.storage
-        .from('testimonials')
-        .remove([fileName]);
+      if (imageUrl && imageUrl.includes('supabase')) {
+        // Extract filename from URL
+        const urlParts = imageUrl.split('/');
+        const fileName = urlParts[urlParts.length - 1];
+        
+        // Delete from storage
+        const { error } = await supabase.storage
+          .from('testimonials')
+          .remove([fileName]);
 
-      if (error) {
-        console.error('Error removing file from storage:', error);
-        // Don't throw here as we still want to clear the URL from the form
+        if (error) {
+          console.error('Error removing file from storage:', error);
+        }
       }
 
       // Clear image URL
@@ -173,6 +174,27 @@ export function TestimonialsEditor() {
       const testimonialData = editingTestimonial || newTestimonial;
       const position = editingTestimonial ? editingTestimonial.position : (Math.max(...testimonials.map(t => t.position), 0) + 1);
 
+      // If editing and image changed, delete old image from storage
+      if (editingTestimonial && editingTestimonial.image && editingTestimonial.image !== testimonialData.image) {
+        if (editingTestimonial.image.includes('supabase')) {
+          try {
+            const urlParts = editingTestimonial.image.split('/');
+            const fileName = urlParts[urlParts.length - 1];
+            await supabase.storage
+              .from('testimonials')
+              .remove([fileName]);
+          } catch (error) {
+            console.error('Error removing old image:', error);
+          }
+        }
+      }
+
+      // Add cache-busting parameter to image URL if it's a new upload
+      let imageUrl = testimonialData.image;
+      if (imageUrl && imageUrl.includes('supabase')) {
+        imageUrl = `${imageUrl}?t=${Date.now()}`;
+      }
+
       // Save name, text, and image as separate records
       const records = [
         {
@@ -194,7 +216,7 @@ export function TestimonialsEditor() {
         {
           page_slug: 'testimonials',
           content_key: `testimonial_${position}_image`,
-          content_value: testimonialData.image,
+          content_value: imageUrl,
           content_type: 'image',
           is_active: true,
           meta_data: { rating: testimonialData.rating, position }
@@ -224,7 +246,12 @@ export function TestimonialsEditor() {
 
       setEditingTestimonial(null);
       setNewTestimonial({ name: '', text: '', image: '', rating: 5, position: 1 });
-      fetchTestimonials();
+      
+      // Force reload testimonials to show updated data
+      await fetchTestimonials();
+      
+      // Force page refresh of testimonials on main site
+      window.dispatchEvent(new CustomEvent('testimonials-updated'));
     } catch (error) {
       console.error('Error saving testimonial:', error);
       toast({
