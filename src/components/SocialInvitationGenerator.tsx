@@ -29,7 +29,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
-import { Canvas as FabricCanvas, Rect, Text as FabricText, Circle, FabricImage, Gradient, Shadow } from 'fabric';
+import html2canvas from 'html2canvas';
 import ipsLogo from "/lovable-uploads/c77304bf-5309-4bdc-afcc-a81c8d3ff6c2.png";
 
 interface TournamentData {
@@ -271,313 +271,54 @@ ${tournamentData.description}
     });
   };
 
-  const generateImageWithFabric = async (format: 'square' | 'story') => {
+  const generateAndPreviewImage = async (format: 'square' | 'story') => {
+    const elementId = format === 'square' ? 'social-square-preview' : 'social-story-preview';
+    const element = document.getElementById(elementId);
+    
+    if (!element) {
+      toast({
+        title: "Ошибка",
+        description: "Не удалось найти элемент для генерации изображения",
+        variant: "destructive"
+      });
+      return;
+    }
+
     try {
-      // Создаем канвас высокого разрешения
-      const baseWidth = format === 'square' ? 1080 : 1080;
-      const baseHeight = format === 'square' ? 1080 : 1920;
+      // Ждем загрузки всех изображений и стилей
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
-      const canvas = new FabricCanvas(null, {
-        width: baseWidth,
-        height: baseHeight,
-        backgroundColor: 'transparent'
+      const canvas = await html2canvas(element, {
+        scale: 3,
+        useCORS: true,
+        allowTaint: false,
+        backgroundColor: null,
+        logging: false,
+        width: element.offsetWidth,
+        height: element.offsetHeight,
+        ignoreElements: (element) => {
+          return element.classList?.contains('no-capture') || false;
+        },
+        onclone: async (clonedDoc, element) => {
+          // Копируем все стили
+          const originalStyles = document.querySelectorAll('style, link[rel="stylesheet"]');
+          for (const style of originalStyles) {
+            const clonedStyle = clonedDoc.createElement(style.tagName.toLowerCase());
+            if (style.tagName === 'STYLE') {
+              clonedStyle.textContent = style.textContent;
+            } else {
+              (clonedStyle as any).href = (style as HTMLLinkElement).href;
+              (clonedStyle as any).rel = 'stylesheet';
+            }
+            clonedDoc.head.appendChild(clonedStyle);
+          }
+          
+          // Даём время на загрузку стилей
+          await new Promise(resolve => setTimeout(resolve, 1500));
+        }
       });
 
-      // Создаем сложный градиентный фон с несколькими слоями
-      const mainGradient = format === 'square' 
-        ? new Gradient({
-            type: 'radial',
-            coords: { 
-              x1: baseWidth * 0.5, 
-              y1: baseHeight * 0.3, 
-              x2: baseWidth * 0.5, 
-              y2: baseHeight * 0.3, 
-              r1: 0, 
-              r2: baseWidth * 0.8 
-            },
-            colorStops: [
-              { offset: 0, color: '#1e1b4b' },
-              { offset: 0.3, color: '#312e81' },
-              { offset: 0.6, color: '#581c87' },
-              { offset: 0.8, color: '#7c2d12' },
-              { offset: 1, color: '#0f172a' }
-            ]
-          })
-        : new Gradient({
-            type: 'linear',
-            coords: { x1: 0, y1: 0, x2: 0, y2: baseHeight },
-            colorStops: [
-              { offset: 0, color: '#0f0f23' },
-              { offset: 0.2, color: '#1e1b4b' },
-              { offset: 0.4, color: '#581c87' },
-              { offset: 0.6, color: '#7c2d12' },
-              { offset: 0.8, color: '#be123c' },
-              { offset: 1, color: '#0f172a' }
-            ]
-          });
-
-      const background = new Rect({
-        left: 0,
-        top: 0,
-        width: baseWidth,
-        height: baseHeight,
-        fill: mainGradient
-      });
-      canvas.add(background);
-
-      // Добавляем декоративный слой с полупрозрачными геометрическими фигурами
-      const decorCircles = [
-        { x: baseWidth * 0.15, y: baseHeight * 0.2, radius: 80, color: '#fbbf24', opacity: 0.1 },
-        { x: baseWidth * 0.85, y: baseHeight * 0.3, radius: 60, color: '#ef4444', opacity: 0.15 },
-        { x: baseWidth * 0.25, y: baseHeight * 0.7, radius: 100, color: '#3b82f6', opacity: 0.08 },
-        { x: baseWidth * 0.75, y: baseHeight * 0.8, radius: 70, color: '#10b981', opacity: 0.12 }
-      ];
-
-      decorCircles.forEach(({ x, y, radius, color, opacity }) => {
-        const circle = new Circle({
-          left: x - radius,
-          top: y - radius,
-          radius: radius,
-          fill: color,
-          opacity: opacity,
-          selectable: false
-        });
-        canvas.add(circle);
-      });
-
-      // Добавляем карточные символы с эффектами
-      const symbols = [
-        { symbol: '♠', x: baseWidth * 0.1, y: baseHeight * 0.15, size: 120, color: '#fbbf24', angle: -15 },
-        { symbol: '♥', x: baseWidth * 0.9, y: baseHeight * 0.25, size: 100, color: '#ef4444', angle: 20 },
-        { symbol: '♦', x: baseWidth * 0.15, y: baseHeight * 0.85, size: 90, color: '#ef4444', angle: -25 },
-        { symbol: '♣', x: baseWidth * 0.85, y: baseHeight * 0.9, size: 110, color: '#fbbf24', angle: 15 }
-      ];
-
-      symbols.forEach(({ symbol, x, y, size, color, angle }) => {
-        const symbolText = new FabricText(symbol, {
-          left: x,
-          top: y,
-          fontSize: size,
-          fill: color,
-          opacity: 0.15,
-          angle: angle,
-          originX: 'center',
-          originY: 'center',
-          fontFamily: 'Arial',
-          selectable: false,
-          shadow: new Shadow({
-            color: color,
-            blur: 20,
-            offsetX: 0,
-            offsetY: 0
-          })
-        });
-        canvas.add(symbolText);
-      });
-
-      // Добавляем логотип IPS (если нужно)
-      try {
-        const logoImg = await FabricImage.fromURL(ipsLogo);
-        logoImg.set({
-          left: baseWidth - 120,
-          top: 40,
-          scaleX: 0.15,
-          scaleY: 0.15,
-          opacity: 0.8,
-          selectable: false
-        });
-        canvas.add(logoImg);
-      } catch (e) {
-        console.warn('Logo loading failed:', e);
-      }
-
-      // Заголовок с градиентным эффектом
-      const titleGradient = new Gradient({
-        type: 'linear',
-        coords: { x1: 0, y1: 0, x2: baseWidth, y2: 0 },
-        colorStops: [
-          { offset: 0, color: '#fbbf24' },
-          { offset: 0.5, color: '#ffffff' },
-          { offset: 1, color: '#60a5fa' }
-        ]
-      });
-
-      const title = new FabricText(tournamentData.title.toUpperCase(), {
-        left: baseWidth / 2,
-        top: format === 'square' ? baseHeight * 0.25 : baseHeight * 0.15,
-        fontSize: format === 'square' ? 48 : 56,
-        fill: titleGradient,
-        fontWeight: 'bold',
-        textAlign: 'center',
-        originX: 'center',
-        originY: 'center',
-        fontFamily: 'Arial Black',
-        selectable: false,
-        shadow: new Shadow({
-          color: '#000000',
-          blur: 10,
-          offsetX: 2,
-          offsetY: 2
-        }),
-        stroke: '#000000',
-        strokeWidth: 1
-      });
-      canvas.add(title);
-
-      // Информационный блок с фоном
-      const infoBoxY = format === 'square' ? baseHeight * 0.4 : baseHeight * 0.35;
-      const infoBox = new Rect({
-        left: baseWidth * 0.1,
-        top: infoBoxY,
-        width: baseWidth * 0.8,
-        height: format === 'square' ? 300 : 400,
-        fill: 'rgba(0, 0, 0, 0.6)',
-        rx: 20,
-        ry: 20,
-        selectable: false,
-        stroke: '#fbbf24',
-        strokeWidth: 2
-      });
-      canvas.add(infoBox);
-
-      // Дата и время
-      const dateTime = new FabricText(`📅 ${tournamentData.date} ⏰ ${tournamentData.time}`, {
-        left: baseWidth / 2,
-        top: infoBoxY + 40,
-        fontSize: format === 'square' ? 32 : 36,
-        fill: '#93c5fd',
-        fontWeight: 'bold',
-        textAlign: 'center',
-        originX: 'center',
-        originY: 'top',
-        fontFamily: 'Arial',
-        selectable: false
-      });
-      canvas.add(dateTime);
-
-      // Место
-      const location = new FabricText(`📍 ${tournamentData.location}`, {
-        left: baseWidth / 2,
-        top: infoBoxY + 90,
-        fontSize: format === 'square' ? 28 : 32,
-        fill: '#86efac',
-        fontWeight: 'bold',
-        textAlign: 'center',
-        originX: 'center',
-        originY: 'top',
-        fontFamily: 'Arial',
-        selectable: false
-      });
-      canvas.add(location);
-
-      // Бай-ин с эффектом
-      const buyIn = new FabricText(`💰 БАЙ-ИН: ${tournamentData.buyIn}`, {
-        left: baseWidth / 2,
-        top: infoBoxY + 140,
-        fontSize: format === 'square' ? 36 : 40,
-        fill: '#fbbf24',
-        fontWeight: 'bold',
-        textAlign: 'center',
-        originX: 'center',
-        originY: 'top',
-        fontFamily: 'Arial Black',
-        selectable: false,
-        shadow: new Shadow({
-          color: '#000000',
-          blur: 5,
-          offsetX: 1,
-          offsetY: 1
-        })
-      });
-      canvas.add(buyIn);
-
-      // Призовой фонд
-      const prizePool = new FabricText(`🏆 ПРИЗЫ: ${tournamentData.prizePool}`, {
-        left: baseWidth / 2,
-        top: infoBoxY + 190,
-        fontSize: format === 'square' ? 32 : 36,
-        fill: '#86efac',
-        fontWeight: 'bold',
-        textAlign: 'center',
-        originX: 'center',
-        originY: 'top',
-        fontFamily: 'Arial',
-        selectable: false,
-        shadow: new Shadow({
-          color: '#000000',
-          blur: 5,
-          offsetX: 1,
-          offsetY: 1
-        })
-      });
-      canvas.add(prizePool);
-
-      // Описание (если есть место)
-      if (tournamentData.description && tournamentData.description.length < 100) {
-        const description = new FabricText(tournamentData.description, {
-          left: baseWidth / 2,
-          top: infoBoxY + 240,
-          fontSize: format === 'square' ? 20 : 24,
-          fill: '#ffffff',
-          textAlign: 'center',
-          originX: 'center',
-          originY: 'top',
-          fontFamily: 'Arial',
-          selectable: false
-        });
-        canvas.add(description);
-      }
-
-      // Контактная информация внизу
-      const contactBox = new Rect({
-        left: baseWidth * 0.05,
-        top: baseHeight - 150,
-        width: baseWidth * 0.9,
-        height: 100,
-        fill: 'rgba(251, 191, 36, 0.2)',
-        rx: 15,
-        ry: 15,
-        selectable: false,
-        stroke: '#fbbf24',
-        strokeWidth: 1
-      });
-      canvas.add(contactBox);
-
-      const contact = new FabricText(`📞 Регистрация: ${tournamentData.contactInfo}`, {
-        left: baseWidth / 2,
-        top: baseHeight - 120,
-        fontSize: format === 'square' ? 24 : 28,
-        fill: '#ffffff',
-        fontWeight: 'bold',
-        textAlign: 'center',
-        originX: 'center',
-        originY: 'top',
-        fontFamily: 'Arial',
-        selectable: false
-      });
-      canvas.add(contact);
-
-      // Хештеги
-      const hashtags = new FabricText('#IPS #покер #турнир #ELO #poker', {
-        left: baseWidth / 2,
-        top: baseHeight - 40,
-        fontSize: 18,
-        fill: '#94a3b8',
-        textAlign: 'center',
-        originX: 'center',
-        originY: 'top',
-        fontFamily: 'Arial',
-        selectable: false
-      });
-      canvas.add(hashtags);
-
-      // Рендерим в высоком качестве
-      const dataUrl = canvas.toDataURL({
-        format: 'png',
-        quality: 1,
-        multiplier: 2
-      });
-
+      const dataUrl = canvas.toDataURL('image/png', 1.0);
       setPreviewImage(dataUrl);
       setIsPreviewOpen(true);
 
@@ -585,9 +326,6 @@ ${tournamentData.description}
         title: "🎨 Шедевр готов!",
         description: `Изображение в формате ${format} создано в высоком качестве`,
       });
-
-      // Очищаем канвас
-      canvas.dispose();
     } catch (error) {
       console.error('Ошибка генерации изображения:', error);
       toast({
@@ -1052,7 +790,7 @@ ${tournamentData.description}
               <Button 
                 onClick={() => {
                   console.log('Нажата кнопка для square формата');
-                  generateImageWithFabric('square');
+                  generateAndPreviewImage('square');
                 }}
                 className="w-full bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 transform transition-all duration-300 hover:scale-105 hover:shadow-lg group"
               >
@@ -1224,7 +962,7 @@ ${tournamentData.description}
               <Button 
                 onClick={() => {
                   console.log('Нажата кнопка для story формата');
-                  generateImageWithFabric('story');
+                  generateAndPreviewImage('story');
                 }}
                 className="w-full bg-gradient-to-r from-secondary to-primary hover:from-secondary/90 hover:to-primary/90 transform transition-all duration-300 hover:scale-105 hover:shadow-lg group"
               >
