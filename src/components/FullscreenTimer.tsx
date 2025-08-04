@@ -29,6 +29,7 @@ interface Tournament {
   timer_remaining: number;
   buy_in: number;
   break_start_level: number;
+  starting_chips: number;
 }
 
 interface BlindLevel {
@@ -45,6 +46,7 @@ interface Registration {
   status: string;
   rebuys: number;
   addons: number;
+  chips?: number;
 }
 
 interface FullscreenTimerProps {
@@ -145,6 +147,10 @@ const FullscreenTimer = ({
   const totalRebuys = registrations.reduce((sum, r) => sum + r.rebuys, 0);
   const totalAddons = registrations.reduce((sum, r) => sum + r.addons, 0);
   const prizePool = (registrations.length * tournament.buy_in) + (totalRebuys * tournament.buy_in) + (totalAddons * tournament.buy_in);
+  
+  // Расчет среднего стека
+  const totalChips = registrations.reduce((sum, r) => sum + (r.chips || tournament.starting_chips), 0);
+  const averageStack = activePlayers.length > 0 ? Math.round(totalChips / activePlayers.length) : 0;
 
   const timerProgress = ((tournament.timer_duration - currentTime) / tournament.timer_duration) * 100;
   
@@ -152,9 +158,25 @@ const FullscreenTimer = ({
   const currentLevel = blindLevels.find(l => l.level === tournament.current_level);
   const isBreakLevel = currentLevel?.is_break || false;
   
-  // Находим следующий перерыв
+  // Находим следующий перерыв и считаем время до него
   const nextBreakLevel = blindLevels.find(l => l.is_break && l.level > tournament.current_level);
-  const levelsUntilBreak = nextBreakLevel ? nextBreakLevel.level - tournament.current_level : '∞';
+  const levelsUntilBreak = nextBreakLevel ? nextBreakLevel.level - tournament.current_level : null;
+  
+  // Примерное время до перерыва (текущий таймер + время оставшихся уровней)
+  const calculateTimeToBreak = () => {
+    if (!nextBreakLevel || !levelsUntilBreak) return null;
+    
+    // Время текущего уровня + время промежуточных уровней
+    let timeToBreak = currentTime;
+    for (let i = 1; i < levelsUntilBreak; i++) {
+      const levelInfo = blindLevels.find(l => l.level === tournament.current_level + i);
+      timeToBreak += levelInfo?.duration || 1200; // по умолчанию 20 минут
+    }
+    
+    return timeToBreak;
+  };
+  
+  const timeToBreak = calculateTimeToBreak();
 
   // Calculate next level blinds
   const nextLevel = blindLevels.find(l => l.level === tournament.current_level + 1);
@@ -315,9 +337,9 @@ const FullscreenTimer = ({
           </div>
         </div>
 
-        {/* Statistics */}
-        <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 max-w-4xl w-full">
-          <div className="grid grid-cols-4 gap-6 text-center">
+        {/* Statistics - расширенная статистика */}
+        <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 max-w-6xl w-full">
+          <div className="grid grid-cols-5 gap-6 text-center">
             <div>
               <div className="flex items-center justify-center mb-1">
                 <Users className="w-4 h-4 text-gray-600 mr-2" />
@@ -328,9 +350,15 @@ const FullscreenTimer = ({
             <div>
               <div className="flex items-center justify-center mb-1">
                 <Trophy className="w-4 h-4 text-amber-600 mr-2" />
-                <span className="text-sm text-gray-600">Призовой (RP)</span>
+                <span className="text-sm text-gray-600">Призовой (₽)</span>
               </div>
               <p className="text-xl font-medium text-gray-800">{prizePool.toLocaleString()}</p>
+            </div>
+            <div>
+              <div className="flex items-center justify-center mb-1">
+                <span className="text-sm text-gray-600">Средний стек</span>
+              </div>
+              <p className="text-xl font-medium text-gray-800">{averageStack.toLocaleString()}</p>
             </div>
             <div>
               <div className="flex items-center justify-center mb-1">
@@ -343,7 +371,16 @@ const FullscreenTimer = ({
                 <Coffee className="w-4 h-4 text-amber-600 mr-2" />
                 <span className="text-sm text-gray-600">До перерыва</span>
               </div>
-              <p className="text-xl font-medium text-gray-800">{isBreakLevel ? "СЕЙЧАС" : levelsUntilBreak}</p>
+              {isBreakLevel ? (
+                <p className="text-xl font-medium text-amber-600">СЕЙЧАС</p>
+              ) : timeToBreak ? (
+                <div>
+                  <p className="text-lg font-medium text-gray-800">{formatTime(timeToBreak)}</p>
+                  <p className="text-xs text-gray-500">({levelsUntilBreak} ур.)</p>
+                </div>
+              ) : (
+                <p className="text-xl font-medium text-gray-800">∞</p>
+              )}
             </div>
           </div>
         </div>

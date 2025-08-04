@@ -212,10 +212,33 @@ const TournamentOverview = ({
   const totalRebuys = registrations.reduce((sum, r) => sum + r.rebuys, 0);
   const totalAddons = registrations.reduce((sum, r) => sum + r.addons, 0);
   const prizePool = (registrations.length * tournament.buy_in) + (totalRebuys * tournament.buy_in) + (totalAddons * tournament.buy_in);
+  
+  // Расчет среднего стека
+  const totalChips = registrations.reduce((sum, r) => sum + (r.chips || tournament.starting_chips), 0);
+  const averageStack = activePlayers.length > 0 ? Math.round(totalChips / activePlayers.length) : 0;
 
   // Найти следующий уровень из структуры блайндов
   const currentBlindLevel = blindLevels.find(level => level.level === tournament.current_level);
   const nextBlindLevel = blindLevels.find(level => level.level === tournament.current_level + 1);
+  
+  // Найти следующий перерыв и время до него
+  const nextBreakLevel = blindLevels.find(l => l.is_break && l.level > tournament.current_level);
+  const levelsUntilBreak = nextBreakLevel ? nextBreakLevel.level - tournament.current_level : null;
+  
+  // Примерное время до перерыва
+  const calculateTimeToBreak = () => {
+    if (!nextBreakLevel || !levelsUntilBreak) return null;
+    
+    let timeToBreak = currentTime;
+    for (let i = 1; i < levelsUntilBreak; i++) {
+      const levelInfo = blindLevels.find(l => l.level === tournament.current_level + i);
+      timeToBreak += levelInfo?.duration || 1200;
+    }
+    return timeToBreak;
+  };
+  
+  const timeToBreak = calculateTimeToBreak();
+  const isCurrentBreak = currentBlindLevel?.is_break || false;
   
   // Fallback на простое умножение, если структура не загружена
   const nextSmallBlind = nextBlindLevel ? nextBlindLevel.small_blind : Math.round(tournament.current_small_blind * 1.5);
@@ -423,6 +446,34 @@ const TournamentOverview = ({
                 <RotateCcw className="w-5 h-5 mx-auto mb-1 text-blue-600" />
                 <p className="text-xl font-light text-blue-600">{totalRebuys}</p>
                 <p className="text-xs text-gray-500">Ребаев</p>
+              </div>
+            </div>
+            
+            {/* Дополнительная статистика */}
+            <div className="grid grid-cols-2 gap-3 mt-4 pt-4 border-t border-gray-200/30">
+              <div className="text-center p-3 border border-gray-200/20 rounded-lg bg-white/30">
+                <Trophy className="w-5 h-5 mx-auto mb-1 text-amber-600" />
+                <p className="text-xl font-light text-gray-800">{averageStack.toLocaleString()}</p>
+                <p className="text-xs text-gray-500">Средний стек</p>
+              </div>
+              <div className="text-center p-3 border border-gray-200/20 rounded-lg bg-white/30">
+                <Coffee className="w-5 h-5 mx-auto mb-1 text-amber-600" />
+                {isCurrentBreak ? (
+                  <>
+                    <p className="text-xl font-light text-amber-600">СЕЙЧАС</p>
+                    <p className="text-xs text-gray-500">Перерыв</p>
+                  </>
+                ) : timeToBreak ? (
+                  <>
+                    <p className="text-lg font-light text-gray-800">{formatTime(timeToBreak)}</p>
+                    <p className="text-xs text-gray-500">До перерыва ({levelsUntilBreak} ур.)</p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-xl font-light text-gray-800">∞</p>
+                    <p className="text-xs text-gray-500">До перерыва</p>
+                  </>
+                )}
               </div>
             </div>
           </CardContent>
