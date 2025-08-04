@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 
 interface BlindLevel {
   level: number;
@@ -87,6 +88,7 @@ export function TournamentModal({ tournament, open, onOpenChange, onTournamentUp
   });
   const [breakLevels, setBreakLevels] = useState<number[]>([]);
   const { toast } = useToast();
+  const { isAdmin } = useAuth();
 
   useEffect(() => {
     if (tournament && open) {
@@ -342,7 +344,7 @@ export function TournamentModal({ tournament, open, onOpenChange, onTournamentUp
               <Badge variant={getStatusColor(tournament.status)}>
                 {getStatusLabel(tournament.status)}
               </Badge>
-              {tournament.status !== 'completed' && (
+              {tournament.status !== 'completed' && isAdmin && (
                 <Button
                   variant={isEditing ? "default" : "outline"}
                   size="sm"
