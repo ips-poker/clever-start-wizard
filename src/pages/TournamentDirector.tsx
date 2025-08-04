@@ -511,26 +511,40 @@ const TournamentDirector = () => {
           />
           <main className="flex-1">
             <div className="container mx-auto px-4 py-8 max-w-7xl">
-          {/* Header */}
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 mb-12">
-            <div>
-              <h1 className="text-4xl font-light text-gray-800 mb-2">Директор турниров</h1>
-              <p className="text-gray-600 text-lg">Управление и мониторинг покерных турниров</p>
+          {/* Compact Header */}
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 mb-8">
+            <div className="flex items-center gap-4">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => navigate('/')}
+                className="flex items-center gap-2 hover:bg-primary/10 transition-colors"
+              >
+                <Trophy className="w-4 h-4" />
+                На главную
+              </Button>
+              
+              {selectedTournament && (
+                <div className="flex items-center gap-3">
+                  <div className="h-6 w-px bg-gray-300"></div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-gray-600">Турнир:</span>
+                    <span className="font-medium text-gray-800">{selectedTournament.name}</span>
+                    <Badge 
+                      variant={selectedTournament.status === 'running' ? 'default' : 'secondary'}
+                      className="text-xs"
+                    >
+                      {selectedTournament.status === 'running' ? 'Активен' : 
+                       selectedTournament.status === 'pending' ? 'Ожидание' : 'Завершен'}
+                    </Badge>
+                  </div>
+                </div>
+              )}
             </div>
             
-            {selectedTournament && (
-              <div className="bg-white/70 backdrop-blur-sm rounded-xl p-4 border border-gray-200/50 shadow-subtle">
-                <p className="text-sm text-gray-500 mb-1">Активный турнир</p>
-                <p className="font-medium text-gray-800">{selectedTournament.name}</p>
-                <Badge 
-                  variant={selectedTournament.status === 'running' ? 'default' : 'secondary'}
-                  className="mt-2"
-                >
-                  {selectedTournament.status === 'running' ? 'Активен' : 
-                   selectedTournament.status === 'pending' ? 'Ожидание' : 'Завершен'}
-                </Badge>
-              </div>
-            )}
+            <div className="flex items-center gap-2">
+              <VoiceControl />
+            </div>
           </div>
 
           {/* Custom Tab System заменяем обратно на Radix Tabs */}
