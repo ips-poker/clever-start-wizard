@@ -293,47 +293,40 @@ ${tournamentData.description}
       return;
     }
 
-    // Проверяем размеры элемента
+    // Переключаемся на вкладку визуальных карточек
+    setActiveTab('visual');
+    
+    // Ждем рендеринга вкладки
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    // Проверяем размеры элемента после переключения
     const rect = element.getBoundingClientRect();
+    console.log('Element dimensions:', rect.width, rect.height);
+    
     if (rect.width === 0 || rect.height === 0) {
       toast({
         title: "Ошибка",
-        description: "Элемент карточки имеет нулевые размеры. Попробуйте перейти на вкладку 'Визуальные карточки'",
+        description: "Элемент карточки не отображается. Убедитесь, что вы на вкладке 'Визуальные карточки'",
         variant: "destructive"
       });
       return;
     }
 
     try {
-      // Ждем загрузки всех изображений
-      const images = element.querySelectorAll('img');
-      await Promise.all(Array.from(images).map(img => {
-        if (img.complete) return Promise.resolve();
-        return new Promise((resolve) => {
-          img.onload = resolve;
-          img.onerror = resolve; // Продолжаем даже если изображение не загрузилось
-          setTimeout(resolve, 2000); // Таймаут 2 секунды
-        });
-      }));
+      toast({
+        title: "Генерация изображения",
+        description: "Создаем изображение, пожалуйста подождите...",
+      });
 
-      // Небольшая задержка для рендеринга
-      await new Promise(resolve => setTimeout(resolve, 500));
-
+      // Простая конфигурация html2canvas
       const canvas = await html2canvas(element, {
-        scale: 2,
+        scale: 1.5,
         useCORS: true,
-        allowTaint: false,
+        allowTaint: true,
         backgroundColor: '#ffffff',
         logging: false,
         width: rect.width,
-        height: rect.height,
-        scrollX: 0,
-        scrollY: 0,
-        foreignObjectRendering: false,
-        ignoreElements: (element) => {
-          // Игнорируем элементы, которые могут вызвать проблемы
-          return element.tagName === 'IFRAME' || element.tagName === 'VIDEO';
-        }
+        height: rect.height
       });
 
       const dataUrl = canvas.toDataURL('image/png', 1.0);
@@ -341,14 +334,14 @@ ${tournamentData.description}
       setIsPreviewOpen(true);
 
       toast({
-        title: "Предпросмотр готов",
+        title: "Готово!",
         description: `Изображение в формате ${format === 'square' ? 'квадрат' : 'stories'} создано`,
       });
     } catch (error) {
       console.error('Ошибка генерации изображения:', error);
       toast({
         title: "Ошибка",
-        description: "Не удалось создать изображение. Попробуйте еще раз.",
+        description: "Не удалось создать изображение. Убедитесь, что карточка полностью загружена.",
         variant: "destructive"
       });
     }
