@@ -183,8 +183,12 @@ const TournamentDirector = () => {
             }
             
             // Автоматический переход к следующему уровню
-            setTimeout(() => {
-              nextLevel();
+            setTimeout(async () => {
+              await nextLevel();
+              // Автоматически запустить таймер после смены уровня
+              setTimeout(() => {
+                setTimerActive(true);
+              }, 500);
             }, 1000);
             
             return 0;
@@ -360,12 +364,12 @@ const TournamentDirector = () => {
         timer_duration: resetTime
       });
       setCurrentTime(resetTime);
-      setTimerActive(false);
+      // При автоматическом переходе не останавливаем таймер навсегда
       
       // Сохранить новое состояние таймера
       localStorage.setItem(`timer_${selectedTournament.id}`, JSON.stringify({
         currentTime: resetTime,
-        timerActive: false,
+        timerActive: false, // Временно останавливаем, но автоматически запустится
         lastUpdate: Date.now()
       }));
 
