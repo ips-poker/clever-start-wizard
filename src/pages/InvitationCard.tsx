@@ -132,19 +132,19 @@ export default function InvitationCard() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-primary p-4">
+    <div className="min-h-screen bg-slate-50 p-4">
       <div className="max-w-md mx-auto space-y-4">
         {/* Action Buttons */}
         <div className="flex gap-2 justify-center">
-          <Button variant="outline" size="sm" onClick={shareCard} className="border-poker-border">
+          <Button variant="outline" size="sm" onClick={shareCard} className="border-slate-200">
             <Share2 className="w-4 h-4 mr-2" />
             Поделиться
           </Button>
-          <Button variant="outline" size="sm" onClick={copyLink} className="border-poker-border">
+          <Button variant="outline" size="sm" onClick={copyLink} className="border-slate-200">
             <Copy className="w-4 h-4 mr-2" />
             Копировать ссылку
           </Button>
-          <Button variant="outline" size="sm" onClick={downloadAsImage} className="border-poker-border">
+          <Button variant="outline" size="sm" onClick={downloadAsImage} className="border-slate-200">
             <Download className="w-4 h-4 mr-2" />
             Скачать
           </Button>
@@ -153,131 +153,143 @@ export default function InvitationCard() {
         {/* Tournament Card */}
         <Card 
           id="invitation-card"
-          className="overflow-hidden bg-gradient-card border-poker-border shadow-elevated"
+          className="w-full min-h-[600px] bg-white text-slate-900 relative overflow-hidden border border-slate-200"
+          style={{
+            background: 'linear-gradient(145deg, #ffffff 0%, #f9fafb 100%)',
+            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.06), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'
+          }}
         >
           <CardContent className="p-0">
-            {/* Header with Logo */}
-            <div className="relative bg-gradient-accent text-primary-foreground p-6 text-center">
-              <div className="absolute top-4 right-4 w-12 h-12 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
-                <img 
-                  src={ipsLogo} 
-                  alt="IPS Logo" 
-                  className="w-8 h-8 object-contain"
-                />
+            {/* Minimal background accents */}
+            <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-slate-900/20 to-transparent"></div>
+            <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-slate-900/10 to-transparent"></div>
+
+            <div className="relative h-full flex flex-col p-6">
+              {/* Header */}
+              <div className="flex items-center justify-between mb-8">
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center">
+                    <img src={ipsLogo} alt="IPS" className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <div className="font-semibold text-lg tracking-tight text-slate-900">IPS POKER</div>
+                    <div className="text-xs text-slate-500 font-medium">International Style</div>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="bg-slate-900 text-white text-xs font-semibold px-3 py-1 rounded-full tracking-wide">
+                    TOURNAMENT
+                  </div>
+                </div>
               </div>
-              <div className="pr-16">
-                <h1 className="text-xl font-bold leading-tight mb-2 text-white">
-                  {cardData.title}
+
+              {/* Title */}
+              <div className="text-center mb-8">
+                <h1 className="text-2xl font-light text-slate-900 mb-2 tracking-tight leading-tight">
+                  {cardData.title.replace('🏆 ', '')}
                 </h1>
-                <p className="text-white/90 text-sm">
+                <div className="text-slate-600 text-sm font-normal">
                   {cardData.description}
-                </p>
+                </div>
               </div>
-            </div>
 
-            {/* Main Info */}
-            <div className="p-6 space-y-4">
-              {/* Date and Time */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-poker-accent/20 flex items-center justify-center">
-                    <Calendar className="w-5 h-5 text-poker-accent" />
+              {/* Main info */}
+              <div className="mb-6">
+                <div className="grid grid-cols-2 gap-4 mb-6">
+                  <div className="text-center py-4">
+                    <div className="text-slate-500 text-xs font-medium mb-1 tracking-wide uppercase">Date & Time</div>
+                    <div className="text-lg font-light text-slate-900 mb-1">{cardData.date}</div>
+                    <div className="text-xl font-normal text-slate-900">{cardData.time}</div>
+                  </div>
+                  <div className="text-center py-4">
+                    <div className="text-slate-500 text-xs font-medium mb-1 tracking-wide uppercase">Location</div>
+                    <div className="text-lg font-light text-slate-900">{cardData.location}</div>
+                  </div>
+                </div>
+                
+                <div className="w-full h-px bg-slate-200 my-4"></div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="text-center py-3">
+                    <div className="text-slate-500 text-xs font-medium mb-1 tracking-wide uppercase">Buy-in</div>
+                    <div className="text-xl font-light text-slate-900">{cardData.buyIn}</div>
+                  </div>
+                  <div className="text-center py-3">
+                    <div className="text-slate-500 text-xs font-medium mb-1 tracking-wide uppercase">Prize Pool</div>
+                    <div className="text-xl font-light text-slate-900">{cardData.prizePool}</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Tournament details */}
+              <div className="mb-6">
+                <div className="flex justify-center gap-6 text-center mb-4">
+                  <div>
+                    <div className="text-slate-500 text-xs font-medium mb-1 tracking-wide uppercase">Players</div>
+                    <div className="text-sm font-light text-slate-900">{cardData.maxPlayers}</div>
                   </div>
                   <div>
-                    <p className="text-sm text-poker-text-secondary">Дата</p>
-                    <p className="font-semibold text-poker-text-primary">{cardData.date}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-poker-accent/20 flex items-center justify-center">
-                    <Clock className="w-5 h-5 text-poker-accent" />
+                    <div className="text-slate-500 text-xs font-medium mb-1 tracking-wide uppercase">Starting Stack</div>
+                    <div className="text-sm font-light text-slate-900">{cardData.startingChips}</div>
                   </div>
                   <div>
-                    <p className="text-sm text-poker-text-secondary">Время</p>
-                    <p className="font-semibold text-poker-text-primary">{cardData.time}</p>
+                    <div className="text-slate-500 text-xs font-medium mb-1 tracking-wide uppercase">Format</div>
+                    <div className="text-sm font-light text-slate-900">{cardData.format}</div>
                   </div>
                 </div>
+
+                {/* Additional tournament info */}
+                {(cardData.timerDuration || cardData.rebuyInfo || cardData.addonInfo || cardData.breakInfo) && (
+                  <>
+                    <div className="w-full h-px bg-slate-200 mb-4"></div>
+                    <div className="space-y-3">
+                      <div className="text-center text-slate-500 text-xs font-medium tracking-wide uppercase mb-4">Tournament Structure</div>
+                      <div className="grid grid-cols-2 gap-4 text-center">
+                        {cardData.timerDuration && (
+                          <div>
+                            <div className="text-slate-500 text-xs font-medium mb-1 tracking-wide uppercase">Level Duration</div>
+                            <div className="text-xs font-light text-slate-900">{cardData.timerDuration}</div>
+                          </div>
+                        )}
+                        {cardData.breakInfo && (
+                          <div>
+                            <div className="text-slate-500 text-xs font-medium mb-1 tracking-wide uppercase">Break</div>
+                            <div className="text-xs font-light text-slate-900">{cardData.breakInfo}</div>
+                          </div>
+                        )}
+                      </div>
+                      <div className="grid grid-cols-2 gap-4 text-center">
+                        {cardData.rebuyInfo && (
+                          <div>
+                            <div className="text-slate-500 text-xs font-medium mb-1 tracking-wide uppercase">Rebuy</div>
+                            <div className="text-xs font-light text-slate-900">{cardData.rebuyInfo}</div>
+                          </div>
+                        )}
+                        {cardData.addonInfo && (
+                          <div>
+                            <div className="text-slate-500 text-xs font-medium mb-1 tracking-wide uppercase">Addon</div>
+                            <div className="text-xs font-light text-slate-900">{cardData.addonInfo}</div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
 
-              {/* Location */}
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-poker-accent/20 flex items-center justify-center">
-                  <MapPin className="w-5 h-5 text-poker-accent" />
+              {/* Footer */}
+              <div className="mt-auto">
+                <div className="text-center bg-slate-50 rounded-xl py-4">
+                  <div className="text-slate-500 text-xs font-medium mb-1 tracking-wide uppercase">Registration</div>
+                  <div className="text-lg font-light text-slate-900">{cardData.contactInfo}</div>
                 </div>
-                <div>
-                  <p className="text-sm text-poker-text-secondary">Место проведения</p>
-                  <p className="font-semibold text-poker-text-primary">{cardData.location}</p>
-                </div>
-              </div>
-
-              {/* Tournament Details */}
-              <div className="grid grid-cols-2 gap-4 pt-4 border-t border-poker-border">
-                <div className="text-center">
-                  <DollarSign className="w-6 h-6 text-poker-accent mx-auto mb-1" />
-                  <p className="text-sm text-poker-text-secondary">Бай-ин</p>
-                  <p className="font-bold text-lg text-poker-text-primary">{cardData.buyIn}</p>
-                </div>
-                <div className="text-center">
-                  <Trophy className="w-6 h-6 text-poker-accent mx-auto mb-1" />
-                  <p className="text-sm text-poker-text-secondary">Призовой фонд</p>
-                  <p className="font-bold text-lg text-poker-text-primary">{cardData.prizePool}</p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="text-center">
-                  <Users className="w-6 h-6 text-poker-accent mx-auto mb-1" />
-                  <p className="text-sm text-poker-text-secondary">Игроков</p>
-                  <p className="font-semibold text-poker-text-primary">{cardData.maxPlayers}</p>
-                </div>
-                <div className="text-center">
-                  <div className="w-6 h-6 rounded bg-poker-accent/20 text-poker-accent flex items-center justify-center mx-auto mb-1 text-sm font-bold">
-                    T
-                  </div>
-                  <p className="text-sm text-poker-text-secondary">Стартовый стек</p>
-                  <p className="font-semibold text-poker-text-primary">{cardData.startingChips}</p>
-                </div>
-              </div>
-
-              {/* Format Badge */}
-              <div className="flex justify-center pt-4">
-                <Badge variant="secondary" className="text-sm px-4 py-1 bg-poker-accent/10 text-poker-accent border-poker-accent/20">
-                  {cardData.format} Tournament
-                </Badge>
-              </div>
-
-              {/* Additional Info */}
-              {(cardData.rebuyInfo || cardData.addonInfo || cardData.timerDuration || cardData.breakInfo) && (
-                <div className="pt-4 border-t border-poker-border space-y-2">
-                  <h3 className="font-semibold text-sm text-poker-text-secondary uppercase tracking-wide">
-                    Структура турнира
-                  </h3>
-                  {cardData.timerDuration && (
-                    <p className="text-sm text-poker-text-primary">⏱️ {cardData.timerDuration}</p>
-                  )}
-                  {cardData.rebuyInfo && (
-                    <p className="text-sm text-poker-text-primary">🔄 Rebuy: {cardData.rebuyInfo}</p>
-                  )}
-                  {cardData.addonInfo && (
-                    <p className="text-sm text-poker-text-primary">➕ Addon: {cardData.addonInfo}</p>
-                  )}
-                  {cardData.breakInfo && (
-                    <p className="text-sm text-poker-text-primary">☕ {cardData.breakInfo}</p>
-                  )}
-                </div>
-              )}
-
-              {/* Contact Info */}
-              <div className="bg-poker-surface rounded-lg p-4 text-center border border-poker-border">
-                <p className="text-sm text-poker-text-secondary mb-1">Регистрация</p>
-                <p className="font-semibold text-poker-accent">{cardData.contactInfo}</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
         {/* Footer */}
-        <div className="text-center text-xs text-poker-text-muted space-y-1">
+        <div className="text-center text-xs text-slate-400 space-y-1">
           <p>International Poker Series</p>
           <p>#IPS #покер #турнир #poker</p>
         </div>
