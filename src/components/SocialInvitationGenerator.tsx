@@ -42,6 +42,10 @@ interface TournamentData {
   prizePool: string;
   maxPlayers: string;
   startingChips: string;
+  rebuyInfo?: string;
+  addonInfo?: string;
+  timerDuration?: string;
+  breakInfo?: string;
 }
 
 interface Tournament {
@@ -61,6 +65,7 @@ interface Tournament {
   addon_level: number;
   tournament_format: string;
   timer_duration: number;
+  break_start_level?: number;
 }
 
 export function SocialInvitationGenerator() {
@@ -80,7 +85,11 @@ export function SocialInvitationGenerator() {
     contactInfo: "@ips_poker",
     prizePool: "100 000₽",
     maxPlayers: "50",
-    startingChips: "10 000"
+    startingChips: "10 000",
+    rebuyInfo: "1000₽ = 5000 фишек до 6 уровня",
+    addonInfo: "1000₽ = 5000 фишек на 7 уровне",
+    timerDuration: "20 мин/уровень",
+    breakInfo: "Перерыв после 4 уровня"
   });
 
   useEffect(() => {
@@ -139,7 +148,11 @@ export function SocialInvitationGenerator() {
       contactInfo: "@ips_poker",
       prizePool: `${(tournament.buy_in * tournament.max_players * 0.9).toLocaleString()}₽`,
       maxPlayers: tournament.max_players.toString(),
-      startingChips: tournament.starting_chips.toLocaleString()
+      startingChips: tournament.starting_chips.toLocaleString(),
+      rebuyInfo: tournament.rebuy_cost ? `${tournament.rebuy_cost.toLocaleString()}₽ = ${tournament.rebuy_chips?.toLocaleString() || '0'} фишек до ${tournament.rebuy_end_level || 6} уровня` : '',
+      addonInfo: tournament.addon_cost ? `${tournament.addon_cost.toLocaleString()}₽ = ${tournament.addon_chips?.toLocaleString() || '0'} фишек на ${tournament.addon_level || 7} уровне` : '',
+      timerDuration: `${tournament.timer_duration / 60} мин/уровень`,
+      breakInfo: `Перерыв после ${tournament.break_start_level || 4} уровня`
     });
   };
 
@@ -417,7 +430,7 @@ ${tournamentData.description}
               <div className="flex justify-center">
                 <div 
                   id="social-square-preview" 
-                  className="w-[500px] h-[500px] bg-gradient-to-br from-slate-900 via-purple-900 to-indigo-900 text-white relative overflow-hidden border border-white/20"
+                  className="w-[600px] h-[700px] bg-gradient-to-br from-slate-900 via-purple-900 to-indigo-900 text-white relative overflow-hidden border border-white/20"
                   style={{
                     boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.8)',
                   }}
@@ -435,82 +448,109 @@ ${tournamentData.description}
                     {/* Header */}
                     <div className="flex items-center justify-between mb-6">
                       <div className="flex items-center gap-4">
-                        <div className="w-14 h-14 bg-white rounded-xl flex items-center justify-center shadow-lg">
-                          <img src={ipsLogo} alt="IPS" className="w-10 h-10" />
+                        <div className="w-16 h-16 bg-white rounded-xl flex items-center justify-center shadow-lg">
+                          <img src={ipsLogo} alt="IPS" className="w-12 h-12" />
                         </div>
                         <div>
-                          <div className="font-bold text-xl">IPS POKER</div>
+                          <div className="font-bold text-2xl">IPS POKER</div>
                           <div className="text-sm opacity-80">International Style</div>
                         </div>
                       </div>
                       <div className="text-right">
-                        <Badge className="bg-gradient-to-r from-yellow-400 to-orange-500 text-black font-bold px-3 py-1">
+                        <Badge className="bg-gradient-to-r from-yellow-400 to-orange-500 text-black font-bold px-4 py-2 text-lg">
                           ТУРНИР
                         </Badge>
-                        <div className="text-xs mt-1 opacity-60">Рейтинговый</div>
+                        <div className="text-sm mt-1 opacity-70">Рейтинговый</div>
                       </div>
                     </div>
 
                     {/* Title */}
-                    <div className="text-center mb-6 bg-white/10 backdrop-blur-sm rounded-xl p-4">
-                      <h2 className="text-2xl font-bold mb-2 bg-gradient-to-r from-yellow-300 to-orange-300 bg-clip-text text-transparent">
+                    <div className="text-center mb-6 bg-white/10 backdrop-blur-sm rounded-xl p-5">
+                      <h2 className="text-3xl font-bold mb-3 bg-gradient-to-r from-yellow-300 to-orange-300 bg-clip-text text-transparent leading-tight">
                         {tournamentData.title}
                       </h2>
-                      <p className="text-sm opacity-90">{tournamentData.description}</p>
+                      <p className="text-base opacity-90">{tournamentData.description}</p>
                     </div>
 
                     {/* Main info grid */}
-                    <div className="grid grid-cols-2 gap-3 mb-6">
-                      <div className="bg-white/15 backdrop-blur-sm rounded-xl p-4 text-center">
-                        <Calendar className="w-6 h-6 mx-auto mb-2 text-blue-300" />
-                        <div className="text-xs opacity-80 mb-1">ДАТА</div>
-                        <div className="font-bold text-sm">{tournamentData.date}</div>
-                        <div className="font-bold text-lg">{tournamentData.time}</div>
+                    <div className="grid grid-cols-2 gap-4 mb-6">
+                      <div className="bg-white/15 backdrop-blur-sm rounded-xl p-5 text-center">
+                        <Calendar className="w-8 h-8 mx-auto mb-3 text-blue-300" />
+                        <div className="text-xs opacity-80 mb-2">ДАТА И ВРЕМЯ</div>
+                        <div className="font-bold text-lg">{tournamentData.date}</div>
+                        <div className="font-bold text-2xl text-blue-300">{tournamentData.time}</div>
                       </div>
                       
-                      <div className="bg-white/15 backdrop-blur-sm rounded-xl p-4 text-center">
-                        <MapPin className="w-6 h-6 mx-auto mb-2 text-green-300" />
-                        <div className="text-xs opacity-80 mb-1">МЕСТО</div>
-                        <div className="font-bold text-lg">{tournamentData.location}</div>
+                      <div className="bg-white/15 backdrop-blur-sm rounded-xl p-5 text-center">
+                        <MapPin className="w-8 h-8 mx-auto mb-3 text-green-300" />
+                        <div className="text-xs opacity-80 mb-2">МЕСТО</div>
+                        <div className="font-bold text-2xl text-green-300">{tournamentData.location}</div>
                       </div>
                       
-                      <div className="bg-gradient-to-br from-yellow-500/20 to-orange-500/20 backdrop-blur-sm rounded-xl p-4 text-center border border-yellow-400/30">
-                        <DollarSign className="w-6 h-6 mx-auto mb-2 text-yellow-300" />
-                        <div className="text-xs opacity-80 mb-1">БАЙ-ИН</div>
-                        <div className="font-bold text-xl text-yellow-300">{tournamentData.buyIn}</div>
+                      <div className="bg-gradient-to-br from-yellow-500/20 to-orange-500/20 backdrop-blur-sm rounded-xl p-5 text-center border border-yellow-400/30">
+                        <DollarSign className="w-8 h-8 mx-auto mb-3 text-yellow-300" />
+                        <div className="text-xs opacity-80 mb-2">БАЙ-ИН</div>
+                        <div className="font-bold text-2xl text-yellow-300">{tournamentData.buyIn}</div>
                       </div>
                       
-                      <div className="bg-gradient-to-br from-green-500/20 to-emerald-500/20 backdrop-blur-sm rounded-xl p-4 text-center border border-green-400/30">
-                        <Trophy className="w-6 h-6 mx-auto mb-2 text-green-300" />
-                        <div className="text-xs opacity-80 mb-1">ПРИЗЫ</div>
-                        <div className="font-bold text-xl text-green-300">{tournamentData.prizePool}</div>
+                      <div className="bg-gradient-to-br from-green-500/20 to-emerald-500/20 backdrop-blur-sm rounded-xl p-5 text-center border border-green-400/30">
+                        <Trophy className="w-8 h-8 mx-auto mb-3 text-green-300" />
+                        <div className="text-xs opacity-80 mb-2">ПРИЗОВОЙ ФОНД</div>
+                        <div className="font-bold text-2xl text-green-300">{tournamentData.prizePool}</div>
                       </div>
                     </div>
 
-                    {/* Additional info */}
-                    <div className="grid grid-cols-3 gap-2 mb-6">
-                      <div className="bg-white/10 rounded-lg p-3 text-center">
-                        <Users className="w-4 h-4 mx-auto mb-1" />
+                    {/* Tournament details */}
+                    <div className="grid grid-cols-3 gap-3 mb-6">
+                      <div className="bg-white/10 rounded-lg p-4 text-center">
+                        <Users className="w-5 h-5 mx-auto mb-2" />
                         <div className="text-xs opacity-80">МЕСТ</div>
-                        <div className="font-bold">{tournamentData.maxPlayers}</div>
+                        <div className="font-bold text-lg">{tournamentData.maxPlayers}</div>
                       </div>
-                      <div className="bg-white/10 rounded-lg p-3 text-center">
-                        <Zap className="w-4 h-4 mx-auto mb-1" />
-                        <div className="text-xs opacity-80">СТЕК</div>
-                        <div className="font-bold">{tournamentData.startingChips}</div>
+                      <div className="bg-white/10 rounded-lg p-4 text-center">
+                        <Zap className="w-5 h-5 mx-auto mb-2" />
+                        <div className="text-xs opacity-80">СТАРТОВЫЙ СТЕК</div>
+                        <div className="font-bold text-lg">{tournamentData.startingChips}</div>
                       </div>
-                      <div className="bg-white/10 rounded-lg p-3 text-center">
-                        <FileText className="w-4 h-4 mx-auto mb-1" />
+                      <div className="bg-white/10 rounded-lg p-4 text-center">
+                        <FileText className="w-5 h-5 mx-auto mb-2" />
                         <div className="text-xs opacity-80">ФОРМАТ</div>
-                        <div className="font-bold">{tournamentData.format}</div>
+                        <div className="font-bold text-lg">{tournamentData.format}</div>
                       </div>
                     </div>
+
+                    {/* Additional tournament structure */}
+                    {(tournamentData.rebuyInfo || tournamentData.addonInfo || tournamentData.timerDuration) && (
+                      <div className="space-y-3 mb-6">
+                        {tournamentData.timerDuration && (
+                          <div className="bg-purple-500/20 backdrop-blur-sm rounded-lg p-4 text-center border border-purple-400/30">
+                            <Clock className="w-5 h-5 mx-auto mb-2 text-purple-300" />
+                            <div className="text-xs opacity-80 mb-1">СТРУКТУРА</div>
+                            <div className="font-bold text-purple-300">{tournamentData.timerDuration}</div>
+                          </div>
+                        )}
+                        
+                        {tournamentData.rebuyInfo && (
+                          <div className="bg-orange-500/20 backdrop-blur-sm rounded-lg p-3 text-center border border-orange-400/30">
+                            <div className="text-xs opacity-80 mb-1">REBUY</div>
+                            <div className="font-semibold text-sm text-orange-300">{tournamentData.rebuyInfo}</div>
+                          </div>
+                        )}
+                        
+                        {tournamentData.addonInfo && (
+                          <div className="bg-cyan-500/20 backdrop-blur-sm rounded-lg p-3 text-center border border-cyan-400/30">
+                            <div className="text-xs opacity-80 mb-1">ADDON</div>
+                            <div className="font-semibold text-sm text-cyan-300">{tournamentData.addonInfo}</div>
+                          </div>
+                        )}
+                      </div>
+                    )}
 
                     {/* Footer */}
-                    <div className="bg-gradient-to-r from-purple-600/30 to-blue-600/30 backdrop-blur-sm rounded-xl p-4 text-center border border-purple-400/30">
+                    <div className="bg-gradient-to-r from-purple-600/30 to-blue-600/30 backdrop-blur-sm rounded-xl p-5 text-center border border-purple-400/30">
                       <div className="text-sm mb-2 font-semibold">РЕГИСТРАЦИЯ</div>
-                      <div className="text-xl font-bold text-blue-300">{tournamentData.contactInfo}</div>
-                      <div className="text-xs mt-2 opacity-60">#IPS #покер #турнир #ELO</div>
+                      <div className="text-2xl font-bold text-blue-300">{tournamentData.contactInfo}</div>
+                      <div className="text-xs mt-3 opacity-60">#IPS #покер #турнир #ELO</div>
                     </div>
                   </div>
                 </div>
@@ -534,7 +574,7 @@ ${tournamentData.description}
               <div className="flex justify-center">
                 <div 
                   id="social-story-preview" 
-                  className="w-[350px] h-[622px] bg-gradient-to-b from-indigo-900 via-purple-900 to-pink-900 text-white relative overflow-hidden border border-white/20"
+                  className="w-[350px] h-[800px] bg-gradient-to-b from-indigo-900 via-purple-900 to-pink-900 text-white relative overflow-hidden border border-white/20"
                   style={{
                     boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.8)',
                   }}
@@ -619,6 +659,33 @@ ${tournamentData.description}
                           <div className="font-bold">{tournamentData.format}</div>
                         </div>
                       </div>
+
+                      {/* Tournament structure info */}
+                      {(tournamentData.rebuyInfo || tournamentData.addonInfo || tournamentData.timerDuration) && (
+                        <div className="space-y-3">
+                          {tournamentData.timerDuration && (
+                            <div className="bg-purple-500/20 backdrop-blur-sm rounded-xl p-3 text-center border border-purple-400/30">
+                              <Clock className="w-5 h-5 mx-auto mb-1 text-purple-300" />
+                              <div className="text-xs opacity-80 mb-1">СТРУКТУРА</div>
+                              <div className="font-bold text-sm text-purple-300">{tournamentData.timerDuration}</div>
+                            </div>
+                          )}
+                          
+                          {tournamentData.rebuyInfo && (
+                            <div className="bg-orange-500/20 backdrop-blur-sm rounded-xl p-3 text-center border border-orange-400/30">
+                              <div className="text-xs opacity-80 mb-1">REBUY</div>
+                              <div className="font-semibold text-xs text-orange-300">{tournamentData.rebuyInfo}</div>
+                            </div>
+                          )}
+                          
+                          {tournamentData.addonInfo && (
+                            <div className="bg-cyan-500/20 backdrop-blur-sm rounded-xl p-3 text-center border border-cyan-400/30">
+                              <div className="text-xs opacity-80 mb-1">ADDON</div>
+                              <div className="font-semibold text-xs text-cyan-300">{tournamentData.addonInfo}</div>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
 
                     {/* Footer */}
