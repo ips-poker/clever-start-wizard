@@ -32,7 +32,7 @@ serve(async (req) => {
 
     const voiceId = voiceMap[voice] || voice;
 
-    const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
+    const elevenLabsResponse = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
       method: 'POST',
       headers: {
         'Accept': 'audio/mpeg',
@@ -51,13 +51,13 @@ serve(async (req) => {
       }),
     });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('ElevenLabs API error:', response.status, errorText);
-      throw new Error(`ElevenLabs API error: ${response.status} - ${errorText}`);
+    if (!elevenLabsResponse.ok) {
+      const errorText = await elevenLabsResponse.text();
+      console.error('ElevenLabs API error:', elevenLabsResponse.status, errorText);
+      throw new Error(`ElevenLabs API error: ${elevenLabsResponse.status} - ${errorText}`);
     }
 
-    const audioBuffer = await response.arrayBuffer();
+    const audioBuffer = await elevenLabsResponse.arrayBuffer();
     const base64Audio = btoa(String.fromCharCode(...new Uint8Array(audioBuffer)));
 
     console.log('✅ TTS generated successfully');
