@@ -12,42 +12,53 @@ serve(async (req) => {
   }
 
   try {
-    const { text, voice = 'alloy' } = await req.json();
+    const { text, voice = 'Aria', volume = 0.8, language = 'ru' } = await req.json();
 
     if (!text) {
       throw new Error('Text is required');
     }
 
-    const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
-    if (!OPENAI_API_KEY) {
-      throw new Error('OpenAI API key not configured');
+    const ELEVENLABS_API_KEY = Deno.env.get('ELEVENLABS_API_KEY');
+    if (!ELEVENLABS_API_KEY) {
+      throw new Error('ElevenLabs API key not configured');
     }
 
-    // Available OpenAI voices: alloy, echo, fable, onyx, nova, shimmer
-    const availableVoices = ['alloy', 'echo', 'fable', 'onyx', 'nova', 'shimmer'];
-    const selectedVoice = availableVoices.includes(voice) ? voice : 'alloy';
+    // ElevenLabs voice IDs
+    const voiceIds = {
+      'Aria': '9BWtsMINqrJLrRacOk9x',
+      'Sarah': 'EXAVITQu4vr4xnSDxMaL',
+      'Laura': 'FGY2WhTYpPnrIDTdsKH5',
+      'Charlotte': 'XB0fDUnXU5powFXDhCwa'
+    };
 
-    console.log('🔊 Generating speech with OpenAI TTS:', { text, voice: selectedVoice });
+    const selectedVoiceId = voiceIds[voice] || voiceIds['Aria'];
 
-    // Generate speech using OpenAI TTS
-    const response = await fetch('https://api.openai.com/v1/audio/speech', {
+    console.log('🔊 Generating speech with ElevenLabs TTS:', { text, voice, language });
+
+    // Generate speech using ElevenLabs TTS
+    const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${selectedVoiceId}`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${OPENAI_API_KEY}`,
+        'Accept': 'audio/mpeg',
         'Content-Type': 'application/json',
+        'xi-api-key': ELEVENLABS_API_KEY,
       },
       body: JSON.stringify({
-        model: 'tts-1',
-        input: text,
-        voice: selectedVoice,
-        response_format: 'mp3',
+        text: text,
+        model_id: 'eleven_multilingual_v2',
+        voice_settings: {
+          stability: 0.5,
+          similarity_boost: 0.75,
+          style: 0.0,
+          use_speaker_boost: true
+        }
       }),
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('OpenAI TTS API error:', errorText);
-      throw new Error(`OpenAI TTS API error: ${response.status}`);
+      console.error('ElevenLabs TTS API error:', errorText);
+      throw new Error(`ElevenLabs TTS API error: ${response.status}`);
     }
 
     // Convert audio to base64
@@ -56,7 +67,7 @@ serve(async (req) => {
       String.fromCharCode(...new Uint8Array(arrayBuffer))
     );
 
-    console.log('✅ Voice announcement generated successfully');
+    console.log('✅ Voice announcement generated successfully with ElevenLabs');
 
     return new Response(
       JSON.stringify({ 

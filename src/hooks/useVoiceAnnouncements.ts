@@ -26,16 +26,18 @@ export const useVoiceAnnouncements = (options: VoiceAnnouncementOptions = { enab
     try {
       console.log('🔊 Generating voice announcement:', text);
 
-      // Попробуем сначала OpenAI TTS
+      // Используем ElevenLabs TTS с голосом Ария
       const { data, error } = await supabase.functions.invoke('voice-announcement', {
         body: {
           text,
-          voice: 'alloy' // Используем OpenAI голос
+          voice: 'Aria',
+          volume: options.volume || 0.8,
+          language: 'ru'
         }
       });
 
       if (error) {
-        console.error('❌ OpenAI TTS error, trying browser speech:', error);
+        console.error('❌ ElevenLabs TTS error, trying browser speech:', error);
         // Fallback на встроенную речь браузера
         await playBrowserSpeech(text);
         return;
@@ -49,13 +51,13 @@ export const useVoiceAnnouncements = (options: VoiceAnnouncementOptions = { enab
         
         audioRef.current = audio;
         await audio.play();
-        console.log('✅ OpenAI TTS played successfully');
+        console.log('✅ ElevenLabs TTS played successfully');
       } else {
         // Fallback на встроенную речь
         await playBrowserSpeech(text);
       }
     } catch (error) {
-      console.error('❌ Failed to play OpenAI TTS, trying browser speech:', error);
+      console.error('❌ Failed to play ElevenLabs TTS, trying browser speech:', error);
       // Fallback на встроенную речь браузера
       await playBrowserSpeech(text);
     }
