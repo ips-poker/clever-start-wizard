@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
-import { useVoiceAnnouncements } from '@/hooks/useVoiceAnnouncements';
+import { useSimpleVoiceAnnouncements } from '@/hooks/useSimpleVoiceAnnouncements';
 import { Play, Pause, RotateCcw, SkipForward, SkipBack, Maximize, Coffee, Clock } from 'lucide-react';
 
 interface BlindLevel {
@@ -48,7 +48,7 @@ const ImprovedTournamentTimer = ({
   const [totalChipsInPlay, setTotalChipsInPlay] = useState(0);
   const [averageStack, setAverageStack] = useState(0);
   const { toast } = useToast();
-  const { announceNextLevel, announceCustomMessage } = useVoiceAnnouncements({ enabled: true, volume: 0.8 });
+  const { announceCustomMessage } = useSimpleVoiceAnnouncements({ enabled: true, volume: 0.8 });
   const prevLevelRef = useRef(tournament.current_level);
   const hasAnnouncedLevelRef = useRef(false);
 
@@ -340,10 +340,10 @@ const ImprovedTournamentTimer = ({
               variant="outline"
               size="sm"
               onClick={() => {
-                console.log('🔊 Test button clicked - calling announceCustomMessage');
-                announceCustomMessage("Тест голосового объявления. Это проверка работы системы.");
+                console.log('🔊 Test button clicked');
+                announceCustomMessage("Тест голосового объявления. Новая система работает!");
               }}
-              className="bg-orange-100 hover:bg-orange-200 text-orange-800"
+              className="bg-green-100 hover:bg-green-200 text-green-800"
             >
               🔊 Тест голоса
             </Button>

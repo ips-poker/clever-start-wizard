@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 import ipsLogo from "/lovable-uploads/c77304bf-5309-4bdc-afcc-a81c8d3ff6c2.png";
 import telegramQr from "@/assets/telegram-qr.png";
-import { useVoiceAnnouncements } from "@/hooks/useVoiceAnnouncements";
+import { useSimpleVoiceAnnouncements } from "@/hooks/useSimpleVoiceAnnouncements";
 
 interface Tournament {
   id: string;
@@ -93,9 +93,8 @@ const FullscreenTimer = ({
   const [editingSlogan, setEditingSlogan] = useState(false);
   const [tempSlogan, setTempSlogan] = useState(slogan);
 
-  const { announceNextLevel, stopAnnouncement } = useVoiceAnnouncements({
+  const { announceCustomMessage, stopAnnouncement } = useSimpleVoiceAnnouncements({
     enabled: voiceAnnouncementsEnabled,
-    voice: 'Aria',
     volume: 0.8
   });
 
@@ -151,7 +150,15 @@ const FullscreenTimer = ({
     // Голосовое оповещение за 10 секунд
     if (currentTime === 10 && !tenSecondAnnouncement && voiceAnnouncementsEnabled) {
       const nextLevel = blindLevels.find(l => l.level === tournament.current_level + 1);
-      announceNextLevel(tournament.current_level, nextLevel, currentTime);
+      if (nextLevel) {
+        if (nextLevel.is_break) {
+          announceCustomMessage(`Со следующей раздачи начинается перерыв на ${Math.round(nextLevel.duration / 60)} минут.`);
+        } else {
+          announceCustomMessage(`Со следующей раздачи блайнды ап! Уровень ${nextLevel.level}: малый блайнд ${nextLevel.small_blind}, большой блайнд ${nextLevel.big_blind}${nextLevel.ante ? `, анте ${nextLevel.ante}` : ''}.`);
+        }
+      } else {
+        announceCustomMessage("Внимание! Через 10 секунд время уровня истекает.");
+      }
       setTenSecondAnnouncement(true);
     }
     
@@ -170,7 +177,7 @@ const FullscreenTimer = ({
       setFiveSecondWarning(false);
       setTenSecondAnnouncement(false);
     }
-  }, [currentTime, twoMinuteWarning, fiveSecondWarning, tenSecondAnnouncement, voiceAnnouncementsEnabled, announceNextLevel, blindLevels, tournament.current_level, timerActive, onNextLevel]);
+  }, [currentTime, twoMinuteWarning, fiveSecondWarning, tenSecondAnnouncement, voiceAnnouncementsEnabled, announceCustomMessage, blindLevels, tournament.current_level, timerActive, onNextLevel]);
 
   const activePlayers = registrations.filter(r => r.status === 'registered' || r.status === 'playing');
   const totalRebuys = registrations.reduce((sum, r) => sum + r.rebuys, 0);
