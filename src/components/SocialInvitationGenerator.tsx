@@ -631,7 +631,7 @@ ${tournamentData.description}
               <div className="flex justify-center">
                 <div 
                   id="social-square-preview" 
-                  className="w-[700px] min-h-[900px] bg-gradient-to-br from-slate-900 via-purple-900 to-indigo-900 text-white relative border border-white/20"
+                  className="w-[700px] min-h-[900px] bg-gradient-to-br from-white via-blue-50 to-purple-100 text-gray-800 relative border-2 border-gradient-to-r from-blue-200 to-purple-200 shadow-2xl"
                   style={{
                     boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.8)',
                   }}
@@ -809,7 +809,7 @@ ${tournamentData.description}
               <div className="flex justify-center">
                 <div 
                   id="social-story-preview" 
-                  className="w-[350px] min-h-[800px] bg-gradient-to-b from-indigo-900 via-purple-900 to-pink-900 text-white relative border border-white/20"
+                  className="w-[350px] min-h-[800px] bg-gradient-to-b from-blue-50 via-purple-50 to-pink-50 text-gray-800 relative border-2 border-gradient-to-b from-blue-200 to-pink-200 shadow-2xl"
                   style={{
                     boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.8)',
                   }}
