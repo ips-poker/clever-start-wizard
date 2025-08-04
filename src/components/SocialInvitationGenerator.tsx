@@ -282,31 +282,41 @@ ${tournamentData.description}
 
   const generateAndPreviewImage = async (format: 'square' | 'story') => {
     const elementId = format === 'square' ? 'social-square-preview' : 'social-story-preview';
+    
+    // Сначала переключаемся на визуальную вкладку
+    if (activeTab !== 'visual') {
+      setActiveTab('visual');
+      // Даем время на рендеринг
+      await new Promise(resolve => setTimeout(resolve, 1500));
+    }
+    
     const element = document.getElementById(elementId);
     
     if (!element) {
       toast({
         title: "Ошибка",
-        description: "Не удалось найти элемент для генерации изображения",
+        description: "Элемент карточки не найден. Попробуйте еще раз.",
         variant: "destructive"
       });
       return;
     }
 
-    // Переключаемся на вкладку визуальных карточек
-    setActiveTab('visual');
+    // Принудительно делаем элемент видимым
+    element.style.display = 'block';
+    element.style.visibility = 'visible';
+    element.style.opacity = '1';
     
-    // Ждем рендеринга вкладки
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    // Ждем еще немного для полного рендеринга
+    await new Promise(resolve => setTimeout(resolve, 500));
 
-    // Проверяем размеры элемента после переключения
+    // Проверяем размеры
     const rect = element.getBoundingClientRect();
-    console.log('Element dimensions:', rect.width, rect.height);
+    console.log(`Размеры элемента ${format}:`, rect.width, 'x', rect.height);
     
     if (rect.width === 0 || rect.height === 0) {
       toast({
-        title: "Ошибка",
-        description: "Элемент карточки не отображается. Убедитесь, что вы на вкладке 'Визуальные карточки'",
+        title: "Ошибка размеров",
+        description: `Элемент имеет размер ${rect.width}x${rect.height}. Убедитесь, что вы на вкладке "Визуальные карточки"`,
         variant: "destructive"
       });
       return;
@@ -314,22 +324,35 @@ ${tournamentData.description}
 
     try {
       toast({
-        title: "Генерация изображения",
-        description: "Создаем изображение, пожалуйста подождите...",
+        title: "Создание изображения...",
+        description: "Пожалуйста, подождите",
       });
 
-      // Простая конфигурация html2canvas
+      // Используем минимальные настройки html2canvas
       const canvas = await html2canvas(element, {
-        scale: 1.5,
-        useCORS: true,
-        allowTaint: true,
+        scale: 2,
         backgroundColor: '#ffffff',
         logging: false,
-        width: rect.width,
-        height: rect.height
+        useCORS: false,
+        allowTaint: true,
+        scrollX: 0,
+        scrollY: 0,
+        windowWidth: window.innerWidth,
+        windowHeight: window.innerHeight
       });
 
+      console.log('Canvas создан:', canvas.width, 'x', canvas.height);
+
+      if (canvas.width === 0 || canvas.height === 0) {
+        throw new Error(`Canvas имеет нулевые размеры: ${canvas.width}x${canvas.height}`);
+      }
+
       const dataUrl = canvas.toDataURL('image/png', 1.0);
+      
+      if (!dataUrl || dataUrl === 'data:,') {
+        throw new Error('Не удалось создать изображение');
+      }
+
       setPreviewImage(dataUrl);
       setIsPreviewOpen(true);
 
@@ -337,13 +360,39 @@ ${tournamentData.description}
         title: "Готово!",
         description: `Изображение в формате ${format === 'square' ? 'квадрат' : 'stories'} создано`,
       });
+
     } catch (error) {
-      console.error('Ошибка генерации изображения:', error);
+      console.error('Детальная ошибка генерации:', error);
       toast({
-        title: "Ошибка",
-        description: "Не удалось создать изображение. Убедитесь, что карточка полностью загружена.",
+        title: "Ошибка генерации",
+        description: `Не удалось создать изображение: ${error.message}`,
         variant: "destructive"
       });
+      
+      // Попробуем простой fallback
+      try {
+        console.log('Пробуем fallback вариант...');
+        const simpleCanvas = await html2canvas(element, {
+          scale: 1,
+          backgroundColor: '#ffffff'
+        });
+        
+        const fallbackDataUrl = simpleCanvas.toDataURL('image/png');
+        setPreviewImage(fallbackDataUrl);
+        setIsPreviewOpen(true);
+        
+        toast({
+          title: "Создано в простом режиме",
+          description: "Изображение создано с упрощенными настройками",
+        });
+      } catch (fallbackError) {
+        console.error('Fallback также не сработал:', fallbackError);
+        toast({
+          title: "Критическая ошибка",
+          description: "Попробуйте обновить страницу и повторить",
+          variant: "destructive"
+        });
+      }
     }
   };
 
