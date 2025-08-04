@@ -38,7 +38,7 @@ export const useProfessionalVoiceAssistant = (settings: VoiceSettings) => {
   const processingRef = useRef(false);
   const voicesLoadedRef = useRef(false);
 
-  // Непосредственное воспроизведение браузерным TTS
+  // Непосредственное воспроизведение браузерным TTS (улучшенная версия)
   const playAnnouncementNow = useCallback(async (text: string): Promise<void> => {
     return new Promise((resolve) => {
       if (!settings.enabled || !text) {
@@ -56,20 +56,22 @@ export const useProfessionalVoiceAssistant = (settings: VoiceSettings) => {
       try {
         speechSynthesis.cancel();
         
+        // Увеличиваем задержку для надежности
         setTimeout(() => {
           const utterance = new SpeechSynthesisUtterance(text);
-          utterance.lang = settings.language;
-          utterance.volume = settings.volume;
-          utterance.rate = 0.9;
-          utterance.pitch = 1.0;
-
-          if (settings.voice) {
-            const voices = speechSynthesis.getVoices();
-            const selectedVoice = voices.find(v => v.name === settings.voice);
-            if (selectedVoice) {
-              utterance.voice = selectedVoice;
-            }
+          
+          // Проверяем доступные голоса
+          const voices = speechSynthesis.getVoices();
+          const russianVoices = voices.filter(v => v.lang.includes('ru'));
+          
+          if (russianVoices.length > 0) {
+            utterance.voice = russianVoices[0];
           }
+          
+          utterance.lang = 'ru-RU';
+          utterance.volume = settings.volume;
+          utterance.rate = 0.85; // Немного медленнее для лучшего понимания
+          utterance.pitch = 1.0;
 
           utterance.onstart = () => {
             if (settings.debugMode) console.log('✅ Speech started:', text);
@@ -77,21 +79,28 @@ export const useProfessionalVoiceAssistant = (settings: VoiceSettings) => {
           };
 
           utterance.onend = () => {
-            if (settings.debugMode) console.log('✅ Speech ended');
+            if (settings.debugMode) console.log('✅ Speech ended successfully');
             resolve();
           };
 
           utterance.onerror = (e) => {
-            console.error('❌ Speech error:', e);
-            resolve();
+            console.warn('⚠️ Speech error, trying again:', e);
+            // Пробуем еще раз без настроек голоса
+            const simpleUtterance = new SpeechSynthesisUtterance(text);
+            simpleUtterance.lang = 'ru-RU';
+            simpleUtterance.volume = settings.volume;
+            simpleUtterance.onend = () => resolve();
+            simpleUtterance.onerror = () => resolve(); // Не блокируем выполнение
+            speechSynthesis.speak(simpleUtterance);
           };
 
           if (settings.debugMode) {
             console.log('🔊 Playing announcement:', text);
+            console.log('Available voices:', voices.length);
           }
 
           speechSynthesis.speak(utterance);
-        }, 100);
+        }, 200);
 
       } catch (error) {
         console.error('❌ Speech synthesis error:', error);
@@ -100,35 +109,12 @@ export const useProfessionalVoiceAssistant = (settings: VoiceSettings) => {
     });
   }, [settings]);
 
-  // ElevenLabs TTS
+  // ElevenLabs TTS (временно отключаем)
   const playWithElevenLabs = useCallback(async (text: string): Promise<void> => {
-    try {
-      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/elevenlabs-tts`, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
-        },
-        body: JSON.stringify({ 
-          text, 
-          voice_id: settings.elevenLabsVoiceId || 'pNInz6obpgDQGcFmaJgB'
-        })
-      });
-      
-      if (!response.ok) throw new Error('ElevenLabs API error');
-      
-      const audioData = await response.blob();
-      const audio = new Audio(URL.createObjectURL(audioData));
-      audio.volume = settings.volume;
-      await audio.play();
-      
-      if (settings.debugMode) console.log('✅ ElevenLabs speech completed');
-      setLastAnnouncement(text);
-    } catch (error) {
-      console.error('ElevenLabs error, fallback to browser TTS:', error);
-      await playAnnouncementNow(text);
-    }
-  }, [settings, playAnnouncementNow]);
+    // Пока ElevenLabs не работает, используем браузерный TTS
+    console.log('⚠️ ElevenLabs temporarily disabled, using browser TTS');
+    await playAnnouncementNow(text);
+  }, [playAnnouncementNow]);
 
   // Обработка очереди объявлений
   const processQueue = useCallback(async () => {

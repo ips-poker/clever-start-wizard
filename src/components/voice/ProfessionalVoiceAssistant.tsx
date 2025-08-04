@@ -45,7 +45,7 @@ export function ProfessionalVoiceAssistant({
     voice: null,
     autoAnnouncements: true,
     debugMode: false,
-    useElevenLabs: false,
+    useElevenLabs: false, // Временно отключаем
     elevenLabsVoiceId: 'pNInz6obpgDQGcFmaJgB' // Adam voice
   });
 
