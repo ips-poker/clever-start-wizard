@@ -232,13 +232,13 @@ export function SocialProof() {
 
         {/* Call to Action - Enhanced readability */}
         <div className="relative overflow-hidden rounded-2xl">
-          <div className="absolute inset-0 bg-gradient-surface opacity-95"></div>
-          <div className="absolute inset-0 bg-gradient-to-br from-poker-primary/20 via-poker-accent/20 to-poker-primary/20"></div>
-          <div className="relative text-center p-12 bg-card/50 backdrop-blur-sm border border-border/50">
-            <h3 className="text-4xl font-bold mb-6 text-poker-text-primary">
+          <div className="absolute inset-0 bg-card opacity-95"></div>
+          <div className="absolute inset-0 bg-gradient-to-br from-poker-accent/10 via-poker-accent/5 to-poker-accent/10"></div>
+          <div className="relative text-center p-12 bg-card/80 backdrop-blur-sm border border-poker-accent/30">
+            <h3 className="text-4xl font-bold mb-6 text-foreground">
               Готовы начать свой путь к покерному мастерству?
             </h3>
-            <p className="text-xl mb-8 text-poker-text-secondary max-w-2xl mx-auto leading-relaxed">
+            <p className="text-xl mb-8 text-muted-foreground max-w-2xl mx-auto leading-relaxed">
               Присоединяйтесь к IPS сегодня и получите доступ к профессиональной рейтинговой системе, 
               регулярным турнирам и дружелюбному сообществу.
             </p>
