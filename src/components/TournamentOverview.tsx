@@ -4,10 +4,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { 
   Volume2, 
-  VolumeX,
   Maximize, 
   StopCircle,
   ChevronLeft,
@@ -27,12 +25,9 @@ import {
   Play,
   Pause,
   Coffee,
-  Mic,
-  FastForward,
-  Rewind
+  Mic
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useTimerSounds, SoundType } from "@/hooks/useTimerSounds";
 import PlayerManagement from "./PlayerManagement";
 import FullscreenTimer from "./FullscreenTimer";
 import { useVoiceAnnouncements } from "@/hooks/useVoiceAnnouncements";
@@ -118,24 +113,11 @@ const TournamentOverview = ({
     weeklyGames: 0,
     averageRating: 0
   });
-  const [showFullscreenTimer, setShowFullscreenTimer] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(true);
+  const [voiceAnnouncementsEnabled, setVoiceAnnouncementsEnabled] = useState(true);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [showFullscreenTimer, setShowFullscreenTimer] = useState(false);
   const [tenSecondAnnouncement, setTenSecondAnnouncement] = useState(false);
-  const [voiceAnnouncementsEnabled, setVoiceAnnouncementsEnabled] = useState(false);
-  const [lastWarningTime, setLastWarningTime] = useState<number>(0);
-
-  // Система звуковых оповещений
-  const {
-    soundsEnabled,
-    setSoundsEnabled,
-    currentSoundType,
-    setCurrentSoundType,
-    volume,
-    setVolume,
-    playWarningSound,
-    playFinalCountdown
-  } = useTimerSounds({ enabled: true, soundType: 'beep', volume: 0.5 });
-
   const { toast } = useToast();
   const isMountedRef = useRef(true);
 
@@ -155,25 +137,6 @@ const TournamentOverview = ({
       isMountedRef.current = false;
     };
   }, []);
-
-  // Система оповещений по времени
-  useEffect(() => {
-    if (!timerActive) return;
-
-    // Проверяем оповещения только если время изменилось
-    if (lastWarningTime === currentTime) return;
-    setLastWarningTime(currentTime);
-
-    // Оповещения: 5 мин, 1 мин, 10 сек, и последние 5 секунд
-    if ([300, 60, 10].includes(currentTime) || (currentTime <= 5 && currentTime > 0)) {
-      playWarningSound(currentTime);
-    }
-
-    // Финальный отсчет при окончании времени
-    if (currentTime === 0) {
-      playFinalCountdown();
-    }
-  }, [currentTime, timerActive, lastWarningTime, playWarningSound, playFinalCountdown]);
 
   useEffect(() => {
     if (tournament?.id) {
@@ -236,6 +199,16 @@ const TournamentOverview = ({
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen();
+      setIsFullscreen(true);
+    } else {
+      document.exitFullscreen();
+      setIsFullscreen(false);
+    }
   };
 
   const openFullscreenTimer = () => {
@@ -400,208 +373,76 @@ const TournamentOverview = ({
             Управление
           </CardTitle>
         </CardHeader>
-        <CardContent className="p-8">
-          {/* Modern Timer Controls */}
-          <div className="space-y-8">
+        <CardContent>
+          <div className="grid grid-cols-4 md:grid-cols-9 gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onToggleTimer}
+              className={`h-12 border-gray-200/50 hover:shadow-subtle transition-all ${
+                timerActive ? 'bg-red-50 text-red-600 hover:bg-red-100' : 'bg-green-50 text-green-600 hover:bg-green-100'
+              }`}
+            >
+              {timerActive ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+            </Button>
             
-            {/* Main Timer Controls */}
-            <div className="flex items-center justify-center gap-2 flex-wrap">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={onPrevLevel}
-                disabled={tournament.current_level <= 1}
-                className="h-11 w-11 rounded-xl border-gray-200 hover:border-gray-300 hover:bg-gray-50 disabled:opacity-40 transition-all duration-200 animate-fade-in"
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </Button>
-              
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => onTimerAdjust?.(-300)}
-                disabled={currentTime <= 0}
-                className="h-11 px-4 rounded-xl bg-red-50/50 border-red-100 text-red-600 hover:bg-red-50 hover:border-red-200 disabled:opacity-40 transition-all duration-200 hover-scale"
-              >
-                <Rewind className="w-4 h-4 mr-1.5" />
-                -5м
-              </Button>
-              
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => onTimerAdjust?.(-60)}
-                disabled={currentTime <= 0}
-                className="h-11 px-3 rounded-xl border-gray-200 hover:border-gray-300 hover:bg-gray-50 disabled:opacity-40 transition-all duration-200"
-              >
-                -1м
-              </Button>
-              
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => onTimerAdjust?.(-10)}
-                disabled={currentTime <= 0}
-                className="h-11 px-3 rounded-xl border-gray-200 hover:border-gray-300 hover:bg-gray-50 disabled:opacity-40 transition-all duration-200"
-              >
-                -10с
-              </Button>
-              
-              <Button
-                onClick={onToggleTimer}
-                size="lg"
-                className={`h-14 px-8 rounded-2xl font-medium shadow-sm transition-all duration-300 hover-scale ${
-                  timerActive 
-                    ? 'bg-red-500 hover:bg-red-600 text-white shadow-red-100' 
-                    : 'bg-green-500 hover:bg-green-600 text-white shadow-green-100'
-                }`}
-              >
-                {timerActive ? (
-                  <>
-                    <Pause className="w-5 h-5 mr-2" />
-                    Пауза
-                  </>
-                ) : (
-                  <>
-                    <Play className="w-5 h-5 mr-2" />
-                    Старт
-                  </>
-                )}
-              </Button>
-              
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => onTimerAdjust?.(10)}
-                className="h-11 px-3 rounded-xl border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-all duration-200"
-              >
-                +10с
-              </Button>
-              
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => onTimerAdjust?.(60)}
-                className="h-11 px-3 rounded-xl border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-all duration-200"
-              >
-                +1м
-              </Button>
-              
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => onTimerAdjust?.(300)}
-                className="h-11 px-4 rounded-xl bg-green-50/50 border-green-100 text-green-600 hover:bg-green-50 hover:border-green-200 transition-all duration-200 hover-scale"
-              >
-                <FastForward className="w-4 h-4 mr-1.5" />
-                +5м
-              </Button>
-              
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={onNextLevel}
-                className="h-11 w-11 rounded-xl border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-all duration-200 animate-fade-in"
-              >
-                <ChevronRight className="w-4 h-4" />
-              </Button>
-            </div>
+            <Button variant="outline" size="sm" onClick={onResetTimer} className="h-12 border-gray-200/50 hover:shadow-subtle">
+              <RotateCcw className="w-4 h-4" />
+            </Button>
+            
+            <Button variant="outline" size="sm" onClick={onPrevLevel} className="h-12 border-gray-200/50 hover:shadow-subtle">
+              <ChevronLeft className="w-4 h-4" />
+            </Button>
+            
+            <Button variant="outline" size="sm" onClick={onNextLevel} className="h-12 border-gray-200/50 hover:shadow-subtle">
+              <ChevronRight className="w-4 h-4" />
+            </Button>
+            
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => setSoundEnabled(!soundEnabled)}
+              className={`h-12 border-gray-200/50 hover:shadow-subtle ${soundEnabled ? 'bg-blue-50 text-blue-600' : 'bg-gray-50 text-gray-500'}`}
+            >
+              <Volume2 className="w-4 h-4" />
+            </Button>
 
-            {/* Sound Settings */}
-            <div className="flex items-center justify-center gap-6">
-              <div className="flex items-center gap-3 p-4 bg-white border border-gray-100 rounded-2xl shadow-sm">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setSoundsEnabled(!soundsEnabled)}
-                  className={`h-10 px-3 rounded-xl transition-all duration-200 ${soundsEnabled 
-                    ? 'bg-green-50 text-green-600 hover:bg-green-100' 
-                    : 'bg-gray-50 text-gray-400 hover:bg-gray-100'
-                  }`}
-                >
-                  {soundsEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
-                </Button>
-                
-                <div className="h-6 w-px bg-gray-200"></div>
-                
-                <Select value={currentSoundType} onValueChange={(value: SoundType) => setCurrentSoundType(value)}>
-                  <SelectTrigger className="w-36 h-10 border-gray-200 rounded-xl bg-gray-50/50 text-sm">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="beep">Сигнал</SelectItem>
-                    <SelectItem value="bell">Звонок</SelectItem>
-                    <SelectItem value="chime">Колокол</SelectItem>
-                    <SelectItem value="alert">Тревога</SelectItem>
-                    <SelectItem value="digital">Цифра</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => {
+                setVoiceAnnouncementsEnabled(!voiceAnnouncementsEnabled);
+                if (!voiceAnnouncementsEnabled) {
+                  stopAnnouncement();
+                }
+              }}
+              className={`h-12 border-gray-200/50 hover:shadow-subtle ${voiceAnnouncementsEnabled ? 'bg-green-50 text-green-600' : 'bg-gray-50 text-gray-500'}`}
+            >
+              <Mic className="w-4 h-4" />
+            </Button>
+            
+            <Button variant="outline" size="sm" onClick={onOpenExternalTimer} className="h-12 border-gray-200/50 hover:shadow-subtle">
+              <Maximize className="w-4 h-4" />
+            </Button>
+            
+            <Button variant="outline" size="sm" onClick={onStopTournament} className="h-12 text-red-500 border-red-200/50 hover:bg-red-50 hover:shadow-subtle">
+              <StopCircle className="w-4 h-4" />
+            </Button>
+            
+            <Button variant="outline" size="sm" onClick={onRefresh} className="h-12 border-gray-200/50 hover:shadow-subtle">
+              <Activity className="w-4 h-4" />
+            </Button>
 
-              {soundsEnabled && (
-                <div className="animate-fade-in">
-                  <div className="text-center p-3 bg-blue-50/50 border border-blue-100 rounded-xl">
-                    <div className="text-sm font-medium text-blue-700 mb-1">Оповещения</div>
-                    <div className="text-xs text-blue-600">5м → 1м → 10с → 5с</div>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* System Controls */}
-            <div className="flex items-center justify-center gap-3 flex-wrap">
+            {tournament.status === 'running' && onFinishTournament && (
               <Button 
                 variant="outline" 
                 size="sm" 
-                onClick={onResetTimer} 
-                className="h-10 px-4 rounded-xl border-gray-200 hover:border-amber-200 hover:bg-amber-50 text-gray-600 hover:text-amber-600 transition-all duration-200"
+                onClick={onFinishTournament} 
+                className="h-12 text-green-600 border-green-200/50 hover:bg-green-50 hover:shadow-subtle"
               >
-                <RotateCcw className="w-4 h-4 mr-2" />
-                Сброс
+                <CheckCircle className="w-4 h-4" />
               </Button>
-              
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={onOpenExternalTimer} 
-                className="h-10 px-4 rounded-xl border-gray-200 hover:border-purple-200 hover:bg-purple-50 text-gray-600 hover:text-purple-600 transition-all duration-200"
-              >
-                <Maximize className="w-4 h-4 mr-2" />
-                Экран
-              </Button>
-              
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={onRefresh} 
-                className="h-10 px-4 rounded-xl border-gray-200 hover:border-blue-200 hover:bg-blue-50 text-gray-600 hover:text-blue-600 transition-all duration-200"
-              >
-                <Activity className="w-4 h-4 mr-2" />
-                Обновить
-              </Button>
-
-              {tournament.status === 'running' && onFinishTournament && (
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={onFinishTournament} 
-                  className="h-10 px-4 rounded-xl border-gray-200 hover:border-green-200 hover:bg-green-50 text-gray-600 hover:text-green-600 transition-all duration-200"
-                >
-                  <CheckCircle className="w-4 h-4 mr-2" />
-                  Завершить
-                </Button>
-              )}
-              
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={onStopTournament} 
-                className="h-10 px-4 rounded-xl border-gray-200 hover:border-red-200 hover:bg-red-50 text-gray-600 hover:text-red-600 transition-all duration-200"
-              >
-                <StopCircle className="w-4 h-4 mr-2" />
-                Стоп
-              </Button>
-            </div>
+            )}
           </div>
         </CardContent>
       </Card>

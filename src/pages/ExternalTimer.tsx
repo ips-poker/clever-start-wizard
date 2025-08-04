@@ -3,7 +3,6 @@ import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Progress } from "@/components/ui/progress";
 import { Coffee, Clock, Users, Trophy } from "lucide-react";
-import { useTimerSounds } from "@/hooks/useTimerSounds";
 import ipsLogo from "/lovable-uploads/c77304bf-5309-4bdc-afcc-a81c8d3ff6c2.png";
 import telegramQr from "@/assets/telegram-qr.png";
 
@@ -46,14 +45,6 @@ const ExternalTimer = () => {
   const [currentTime, setCurrentTime] = useState(0);
   const [timerActive, setTimerActive] = useState(false);
   const [slogan, setSlogan] = useState("Престижные турниры. Высокие стандарты.");
-  const [lastWarningTime, setLastWarningTime] = useState<number>(0);
-
-  // Звуковые оповещения
-  const { playWarningSound, playFinalCountdown } = useTimerSounds({ 
-    enabled: true, 
-    soundType: 'chime', 
-    volume: 0.7 
-  });
 
   useEffect(() => {
     if (!tournamentId) return;
@@ -84,25 +75,6 @@ const ExternalTimer = () => {
 
     return () => clearInterval(syncInterval);
   }, [tournament]);
-
-  // Звуковые оповещения
-  useEffect(() => {
-    if (!timerActive) return;
-
-    // Проверяем оповещения только если время изменилось
-    if (lastWarningTime === currentTime) return;
-    setLastWarningTime(currentTime);
-
-    // Оповещения: 5 мин, 1 мин, 10 сек, и последние 5 секунд
-    if ([300, 60, 10].includes(currentTime) || (currentTime <= 5 && currentTime > 0)) {
-      playWarningSound(currentTime);
-    }
-
-    // Финальный отсчет при окончании времени
-    if (currentTime === 0) {
-      playFinalCountdown();
-    }
-  }, [currentTime, timerActive, lastWarningTime, playWarningSound, playFinalCountdown]);
 
   const loadTournamentData = async () => {
     if (!tournamentId) return;

@@ -4,10 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { useTimerSounds, SoundType } from '@/hooks/useTimerSounds';
-import { Play, Pause, RotateCcw, SkipForward, SkipBack, Maximize, Coffee, Clock, Volume2, VolumeX, FastForward, Rewind } from 'lucide-react';
+import { Play, Pause, RotateCcw, SkipForward, SkipBack, Maximize, Coffee, Clock } from 'lucide-react';
 
 interface BlindLevel {
   id: string;
@@ -48,43 +46,11 @@ const ImprovedTournamentTimer = ({
 }: TournamentTimerProps) => {
   const [totalChipsInPlay, setTotalChipsInPlay] = useState(0);
   const [averageStack, setAverageStack] = useState(0);
-  const [lastWarningTime, setLastWarningTime] = useState<number>(0);
   const { toast } = useToast();
-
-  // Система звуковых оповещений
-  const {
-    soundsEnabled,
-    setSoundsEnabled,
-    currentSoundType,
-    setCurrentSoundType,
-    volume,
-    setVolume,
-    playWarningSound,
-    playFinalCountdown
-  } = useTimerSounds({ enabled: true, soundType: 'beep', volume: 0.5 });
 
   useEffect(() => {
     calculateChipStatistics();
   }, [registrations]);
-
-  // Система оповещений по времени
-  useEffect(() => {
-    if (!timerActive) return;
-
-    // Проверяем оповещения только если время изменилось
-    if (lastWarningTime === currentTime) return;
-    setLastWarningTime(currentTime);
-
-    // Оповещения: 5 мин, 1 мин, 10 сек, и последние 5 секунд
-    if ([300, 60, 10].includes(currentTime) || (currentTime <= 5 && currentTime > 0)) {
-      playWarningSound(currentTime);
-    }
-
-    // Финальный отсчет при окончании времени
-    if (currentTime === 0) {
-      playFinalCountdown();
-    }
-  }, [currentTime, timerActive, lastWarningTime, playWarningSound, playFinalCountdown]);
 
   const calculateChipStatistics = () => {
     const activeRegistrations = registrations.filter(r => r.status === 'registered' || r.status === 'playing');
@@ -225,17 +191,6 @@ const ImprovedTournamentTimer = ({
             <Button
               variant="outline"
               size="sm"
-              onClick={() => onTimerAdjust(-300)}
-              disabled={currentTime <= 0}
-              className="text-red-600 border-red-200 hover:bg-red-50"
-            >
-              <Rewind className="w-3 h-3 mr-1" />
-              -5м
-            </Button>
-            
-            <Button
-              variant="outline"
-              size="sm"
               onClick={() => onTimerAdjust(-60)}
               disabled={currentTime <= 0}
             >
@@ -279,48 +234,13 @@ const ImprovedTournamentTimer = ({
             <Button
               variant="outline"
               size="sm"
-              onClick={() => onTimerAdjust(300)}
-              className="text-green-600 border-green-200 hover:bg-green-50"
-            >
-              <FastForward className="w-3 h-3 mr-1" />
-              +5м
-            </Button>
-            
-            <Button
-              variant="outline"
-              size="sm"
               onClick={onNextLevel}
             >
               <SkipForward className="w-4 h-4" />
             </Button>
           </div>
 
-          {/* Sound Settings & Reset */}
-          <div className="flex justify-center gap-2 flex-wrap items-center">
-            <div className="flex items-center gap-2 bg-muted/50 rounded-lg p-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setSoundsEnabled(!soundsEnabled)}
-                className={soundsEnabled ? 'text-green-600' : 'text-red-500'}
-              >
-                {soundsEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
-              </Button>
-              
-              <Select value={currentSoundType} onValueChange={(value: SoundType) => setCurrentSoundType(value)}>
-                <SelectTrigger className="w-24 h-8 text-xs">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="beep">Сигнал</SelectItem>
-                  <SelectItem value="bell">Звонок</SelectItem>
-                  <SelectItem value="chime">Колокол</SelectItem>
-                  <SelectItem value="alert">Тревога</SelectItem>
-                  <SelectItem value="digital">Цифра</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
+          <div className="flex justify-center gap-2">
             <Button
               variant="outline"
               size="sm"
@@ -332,21 +252,6 @@ const ImprovedTournamentTimer = ({
           </div>
         </CardContent>
       </Card>
-
-      {/* Sound Preview Card */}
-      {soundsEnabled && (
-        <Card className="bg-blue-50 border-blue-200">
-          <CardContent className="p-4 text-center">
-            <div className="flex items-center justify-center gap-2 mb-2">
-              <Volume2 className="w-5 h-5 text-blue-600" />
-              <span className="text-sm font-medium text-blue-800">Звуковые оповещения включены</span>
-            </div>
-            <div className="text-xs text-blue-600">
-              Сигналы: 5 мин • 1 мин • 10 сек • последние 5 сек
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
       {/* Tournament Statistics */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
