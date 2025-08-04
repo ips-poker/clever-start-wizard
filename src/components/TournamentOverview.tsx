@@ -400,18 +400,20 @@ const TournamentOverview = ({
             Управление
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          {/* Timer Controls Row 1 - Navigation & Main Controls */}
-          <div className="space-y-4">
-            <div className="flex justify-center gap-2 flex-wrap">
+        <CardContent className="p-6">
+          {/* Improved Timer Controls */}
+          <div className="space-y-6">
+            
+            {/* Main Timer Controls */}
+            <div className="flex items-center justify-center gap-3 flex-wrap">
               <Button
                 variant="outline"
                 size="sm"
                 onClick={onPrevLevel}
                 disabled={tournament.current_level <= 1}
-                className="h-10 border-gray-200/50 hover:shadow-subtle"
+                className="h-12 w-12 border-gray-300 hover:border-gray-400 hover:bg-gray-50 disabled:opacity-50"
               >
-                <ChevronLeft className="w-4 h-4" />
+                <ChevronLeft className="w-5 h-5" />
               </Button>
               
               <Button
@@ -419,9 +421,9 @@ const TournamentOverview = ({
                 size="sm"
                 onClick={() => onTimerAdjust?.(-300)}
                 disabled={currentTime <= 0}
-                className="h-10 text-red-600 border-red-200 hover:bg-red-50"
+                className="h-12 px-4 bg-gradient-to-r from-red-50 to-red-100 border-red-200 text-red-700 hover:from-red-100 hover:to-red-200 hover:border-red-300 disabled:opacity-50"
               >
-                <Rewind className="w-3 h-3 mr-1" />
+                <Rewind className="w-4 h-4 mr-1" />
                 -5м
               </Button>
               
@@ -430,7 +432,7 @@ const TournamentOverview = ({
                 size="sm"
                 onClick={() => onTimerAdjust?.(-60)}
                 disabled={currentTime <= 0}
-                className="h-10 border-gray-200/50 hover:shadow-subtle"
+                className="h-12 px-4 border-gray-300 hover:border-gray-400 hover:bg-gray-50 disabled:opacity-50"
               >
                 -1м
               </Button>
@@ -440,27 +442,38 @@ const TournamentOverview = ({
                 size="sm"
                 onClick={() => onTimerAdjust?.(-10)}
                 disabled={currentTime <= 0}
-                className="h-10 border-gray-200/50 hover:shadow-subtle"
+                className="h-12 px-4 border-gray-300 hover:border-gray-400 hover:bg-gray-50 disabled:opacity-50"
               >
                 -10с
               </Button>
               
               <Button
-                variant="outline"
-                size="sm"
                 onClick={onToggleTimer}
-                className={`h-10 px-6 border-gray-200/50 hover:shadow-subtle transition-all ${
-                  timerActive ? 'bg-red-50 text-red-600 hover:bg-red-100' : 'bg-green-50 text-green-600 hover:bg-green-100'
+                size="lg"
+                className={`h-14 px-8 text-white font-medium shadow-lg transition-all duration-200 ${
+                  timerActive 
+                    ? 'bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 shadow-red-200' 
+                    : 'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 shadow-green-200'
                 }`}
               >
-                {timerActive ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+                {timerActive ? (
+                  <>
+                    <Pause className="w-5 h-5 mr-2" />
+                    Пауза
+                  </>
+                ) : (
+                  <>
+                    <Play className="w-5 h-5 mr-2" />
+                    Старт
+                  </>
+                )}
               </Button>
               
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => onTimerAdjust?.(10)}
-                className="h-10 border-gray-200/50 hover:shadow-subtle"
+                className="h-12 px-4 border-gray-300 hover:border-gray-400 hover:bg-gray-50"
               >
                 +10с
               </Button>
@@ -469,7 +482,7 @@ const TournamentOverview = ({
                 variant="outline"
                 size="sm"
                 onClick={() => onTimerAdjust?.(60)}
-                className="h-10 border-gray-200/50 hover:shadow-subtle"
+                className="h-12 px-4 border-gray-300 hover:border-gray-400 hover:bg-gray-50"
               >
                 +1м
               </Button>
@@ -478,9 +491,9 @@ const TournamentOverview = ({
                 variant="outline"
                 size="sm"
                 onClick={() => onTimerAdjust?.(300)}
-                className="h-10 text-green-600 border-green-200 hover:bg-green-50"
+                className="h-12 px-4 bg-gradient-to-r from-green-50 to-green-100 border-green-200 text-green-700 hover:from-green-100 hover:to-green-200 hover:border-green-300"
               >
-                <FastForward className="w-3 h-3 mr-1" />
+                <FastForward className="w-4 h-4 mr-1" />
                 +5м
               </Button>
               
@@ -488,45 +501,62 @@ const TournamentOverview = ({
                 variant="outline"
                 size="sm"
                 onClick={onNextLevel}
-                className="h-10 border-gray-200/50 hover:shadow-subtle"
+                className="h-12 w-12 border-gray-300 hover:border-gray-400 hover:bg-gray-50"
               >
-                <ChevronRight className="w-4 h-4" />
+                <ChevronRight className="w-5 h-5" />
               </Button>
             </div>
 
-            {/* Timer Controls Row 2 - Sound Settings & System Controls */}
-            <div className="flex justify-center gap-2 flex-wrap">
-              <div className="flex items-center gap-2 bg-muted/50 rounded-lg p-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setSoundsEnabled(!soundsEnabled)}
-                  className={`h-8 ${soundsEnabled ? 'text-green-600' : 'text-red-500'}`}
-                >
-                  {soundsEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
-                </Button>
-                
-                <Select value={currentSoundType} onValueChange={(value: SoundType) => setCurrentSoundType(value)}>
-                  <SelectTrigger className="w-20 h-8 text-xs">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="beep">Сигнал</SelectItem>
-                    <SelectItem value="bell">Звонок</SelectItem>
-                    <SelectItem value="chime">Колокол</SelectItem>
-                    <SelectItem value="alert">Тревога</SelectItem>
-                    <SelectItem value="digital">Цифра</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+            {/* Sound Settings Card */}
+            <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-center gap-4 flex-wrap">
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setSoundsEnabled(!soundsEnabled)}
+                      className={`h-10 px-3 ${soundsEnabled 
+                        ? 'bg-green-100 text-green-700 hover:bg-green-200' 
+                        : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                      }`}
+                    >
+                      {soundsEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
+                    </Button>
+                    
+                    <Select value={currentSoundType} onValueChange={(value: SoundType) => setCurrentSoundType(value)}>
+                      <SelectTrigger className="w-32 h-10 bg-white border-blue-200">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="beep">🔔 Сигнал</SelectItem>
+                        <SelectItem value="bell">🔔 Звонок</SelectItem>
+                        <SelectItem value="chime">🎵 Колокол</SelectItem>
+                        <SelectItem value="alert">⚠️ Тревога</SelectItem>
+                        <SelectItem value="digital">📱 Цифра</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
 
+                  {soundsEnabled && (
+                    <div className="text-center">
+                      <div className="text-sm font-medium text-blue-800 mb-1">Звуковые оповещения</div>
+                      <div className="text-xs text-blue-600">5 мин • 1 мин • 10 сек • финальные 5 сек</div>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* System Controls */}
+            <div className="flex items-center justify-center gap-3 flex-wrap">
               <Button 
                 variant="outline" 
                 size="sm" 
                 onClick={onResetTimer} 
-                className="h-8 border-gray-200/50 hover:shadow-subtle"
+                className="h-11 px-4 bg-gradient-to-r from-amber-50 to-yellow-50 border-amber-200 text-amber-700 hover:from-amber-100 hover:to-yellow-100 hover:border-amber-300"
               >
-                <RotateCcw className="w-4 h-4 mr-1" />
+                <RotateCcw className="w-4 h-4 mr-2" />
                 Сброс
               </Button>
               
@@ -534,28 +564,20 @@ const TournamentOverview = ({
                 variant="outline" 
                 size="sm" 
                 onClick={onOpenExternalTimer} 
-                className="h-8 border-gray-200/50 hover:shadow-subtle"
+                className="h-11 px-4 bg-gradient-to-r from-purple-50 to-indigo-50 border-purple-200 text-purple-700 hover:from-purple-100 hover:to-indigo-100 hover:border-purple-300"
               >
-                <Maximize className="w-4 h-4 mr-1" />
-                Экран
-              </Button>
-              
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={onStopTournament} 
-                className="h-8 text-red-500 border-red-200/50 hover:bg-red-50"
-              >
-                <StopCircle className="w-4 h-4" />
+                <Maximize className="w-4 h-4 mr-2" />
+                Внешний экран
               </Button>
               
               <Button 
                 variant="outline" 
                 size="sm" 
                 onClick={onRefresh} 
-                className="h-8 border-gray-200/50 hover:shadow-subtle"
+                className="h-11 px-4 bg-gradient-to-r from-cyan-50 to-blue-50 border-cyan-200 text-cyan-700 hover:from-cyan-100 hover:to-blue-100 hover:border-cyan-300"
               >
-                <Activity className="w-4 h-4" />
+                <Activity className="w-4 h-4 mr-2" />
+                Обновить
               </Button>
 
               {tournament.status === 'running' && onFinishTournament && (
@@ -563,22 +585,23 @@ const TournamentOverview = ({
                   variant="outline" 
                   size="sm" 
                   onClick={onFinishTournament} 
-                  className="h-8 text-green-600 border-green-200/50 hover:bg-green-50"
+                  className="h-11 px-4 bg-gradient-to-r from-emerald-50 to-green-50 border-emerald-200 text-emerald-700 hover:from-emerald-100 hover:to-green-100 hover:border-emerald-300"
                 >
-                  <CheckCircle className="w-4 h-4" />
+                  <CheckCircle className="w-4 h-4 mr-2" />
+                  Завершить
                 </Button>
               )}
+              
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={onStopTournament} 
+                className="h-11 px-4 bg-gradient-to-r from-red-50 to-rose-50 border-red-200 text-red-700 hover:from-red-100 hover:to-rose-100 hover:border-red-300"
+              >
+                <StopCircle className="w-4 h-4 mr-2" />
+                Остановить
+              </Button>
             </div>
-
-            {/* Sound Preview */}
-            {soundsEnabled && (
-              <div className="flex justify-center">
-                <div className="inline-flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-lg px-3 py-1">
-                  <Volume2 className="w-4 h-4 text-blue-600" />
-                  <span className="text-xs text-blue-800">Звуки: 5мин • 1мин • 10сек • 5сек</span>
-                </div>
-              </div>
-            )}
           </div>
         </CardContent>
       </Card>
