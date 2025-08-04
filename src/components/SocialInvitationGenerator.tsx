@@ -46,6 +46,11 @@ interface TournamentData {
   addonInfo?: string;
   timerDuration?: string;
   breakInfo?: string;
+  blindStructure?: string;
+  rebuyEndLevel?: string;
+  addonLevel?: string;
+  lateRegEndLevel?: string;
+  blindLevels?: string;
 }
 
 interface Tournament {
@@ -86,10 +91,15 @@ export function SocialInvitationGenerator() {
     prizePool: "100 000₽",
     maxPlayers: "50",
     startingChips: "10 000",
-    rebuyInfo: "1000₽ = 5000 фишек до 6 уровня",
-    addonInfo: "1000₽ = 5000 фишек на 7 уровне",
+    rebuyInfo: "1000₽ = 5000 фишек",
+    addonInfo: "1000₽ = 5000 фишек",
     timerDuration: "20 мин/уровень",
-    breakInfo: "Перерыв после 4 уровня"
+    breakInfo: "Перерыв после 4 уровня",
+    blindStructure: "10/20, 15/30, 20/40, 25/50...",
+    rebuyEndLevel: "до 6 уровня",
+    addonLevel: "на 7 уровне",
+    lateRegEndLevel: "до 6 уровня",
+    blindLevels: "Уровни по 20 минут"
   });
 
   useEffect(() => {
@@ -149,10 +159,15 @@ export function SocialInvitationGenerator() {
       prizePool: `${(tournament.buy_in * tournament.max_players * 0.9).toLocaleString()}₽`,
       maxPlayers: tournament.max_players.toString(),
       startingChips: tournament.starting_chips.toLocaleString(),
-      rebuyInfo: tournament.rebuy_cost ? `${tournament.rebuy_cost.toLocaleString()}₽ = ${tournament.rebuy_chips?.toLocaleString() || '0'} фишек до ${tournament.rebuy_end_level || 6} уровня` : '',
-      addonInfo: tournament.addon_cost ? `${tournament.addon_cost.toLocaleString()}₽ = ${tournament.addon_chips?.toLocaleString() || '0'} фишек на ${tournament.addon_level || 7} уровне` : '',
+      rebuyInfo: tournament.rebuy_cost ? `${tournament.rebuy_cost.toLocaleString()}₽ = ${tournament.rebuy_chips?.toLocaleString() || '0'} фишек` : '',
+      addonInfo: tournament.addon_cost ? `${tournament.addon_cost.toLocaleString()}₽ = ${tournament.addon_chips?.toLocaleString() || '0'} фишек` : '',
       timerDuration: `${tournament.timer_duration / 60} мин/уровень`,
-      breakInfo: `Перерыв после ${tournament.break_start_level || 4} уровня`
+      breakInfo: `Перерыв после ${tournament.break_start_level || 4} уровня`,
+      rebuyEndLevel: `до ${tournament.rebuy_end_level || 6} уровня`,
+      addonLevel: `на ${tournament.addon_level || 7} уровне`,
+      lateRegEndLevel: `до ${tournament.rebuy_end_level || 6} уровня`,
+      blindStructure: `10/20, 15/30, 20/40, 25/50...`,
+      blindLevels: `Уровни по ${tournament.timer_duration / 60} минут`
     });
   };
 
@@ -164,24 +179,47 @@ export function SocialInvitationGenerator() {
   };
 
   const generateWhatsAppText = () => {
-    return `${tournamentData.title}
+    let text = `${tournamentData.title}
 
 📅 ${tournamentData.date} в ${tournamentData.time}
 📍 ${tournamentData.location}
 💰 Бай-ин: ${tournamentData.buyIn}
 🏆 Призовой фонд: ${tournamentData.prizePool}
 👥 Игроков: ${tournamentData.maxPlayers}
-🎯 Фишки: ${tournamentData.startingChips}
+🎯 Стартовый стек: ${tournamentData.startingChips}
 
 ${tournamentData.description}
 
-Регистрация: ${tournamentData.contactInfo}
+📋 СТРУКТУРА ТУРНИРА:`;
+
+    if (tournamentData.timerDuration) {
+      text += `\n⏱️ ${tournamentData.timerDuration}`;
+    }
+    if (tournamentData.blindStructure) {
+      text += `\n🔢 Блайнды: ${tournamentData.blindStructure}`;
+    }
+    if (tournamentData.rebuyInfo && tournamentData.rebuyEndLevel) {
+      text += `\n🔄 Rebuy: ${tournamentData.rebuyInfo} ${tournamentData.rebuyEndLevel}`;
+    }
+    if (tournamentData.addonInfo && tournamentData.addonLevel) {
+      text += `\n➕ Addon: ${tournamentData.addonInfo} ${tournamentData.addonLevel}`;
+    }
+    if (tournamentData.lateRegEndLevel) {
+      text += `\n📝 Поздняя регистрация ${tournamentData.lateRegEndLevel}`;
+    }
+    if (tournamentData.breakInfo) {
+      text += `\n☕ ${tournamentData.breakInfo}`;
+    }
+
+    text += `\n\nРегистрация: ${tournamentData.contactInfo}
 
 #IPS #покер #турнир`;
+
+    return text;
   };
 
   const generateTelegramText = () => {
-    return `🎰 <b>${tournamentData.title}</b>
+    let text = `🎰 <b>${tournamentData.title}</b>
 
 📅 <b>Дата:</b> ${tournamentData.date} в ${tournamentData.time}
 📍 <b>Место:</b> ${tournamentData.location}
@@ -192,9 +230,32 @@ ${tournamentData.description}
 
 <i>${tournamentData.description}</i>
 
-🚀 <b>Регистрация:</b> ${tournamentData.contactInfo}
+<b>📋 СТРУКТУРА ТУРНИРА:</b>`;
+
+    if (tournamentData.timerDuration) {
+      text += `\n⏱️ <b>Время:</b> ${tournamentData.timerDuration}`;
+    }
+    if (tournamentData.blindStructure) {
+      text += `\n🔢 <b>Блайнды:</b> ${tournamentData.blindStructure}`;
+    }
+    if (tournamentData.rebuyInfo && tournamentData.rebuyEndLevel) {
+      text += `\n🔄 <b>Rebuy:</b> ${tournamentData.rebuyInfo} ${tournamentData.rebuyEndLevel}`;
+    }
+    if (tournamentData.addonInfo && tournamentData.addonLevel) {
+      text += `\n➕ <b>Addon:</b> ${tournamentData.addonInfo} ${tournamentData.addonLevel}`;
+    }
+    if (tournamentData.lateRegEndLevel) {
+      text += `\n📝 <b>Поздняя регистрация:</b> ${tournamentData.lateRegEndLevel}`;
+    }
+    if (tournamentData.breakInfo) {
+      text += `\n☕ <b>Перерыв:</b> ${tournamentData.breakInfo}`;
+    }
+
+    text += `\n\n🚀 <b>Регистрация:</b> ${tournamentData.contactInfo}
 
 #IPS #покер #турнир #ELO`;
+
+    return text;
   };
 
   const copyToClipboard = (text: string) => {
@@ -344,6 +405,95 @@ ${tournamentData.description}
               rows={2}
               placeholder="Краткое описание турнира..."
             />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Tournament Structure */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Clock className="w-5 h-5" />
+            Структура турнира
+          </CardTitle>
+          <CardDescription>
+            Подробная информация о формате и правилах турнира
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div>
+              <Label>Длительность уровней</Label>
+              <Input
+                value={tournamentData.timerDuration || ''}
+                onChange={(e) => updateField('timerDuration', e.target.value)}
+                placeholder="20 мин/уровень"
+              />
+            </div>
+            <div>
+              <Label>Структура блайндов</Label>
+              <Input
+                value={tournamentData.blindStructure || ''}
+                onChange={(e) => updateField('blindStructure', e.target.value)}
+                placeholder="10/20, 15/30, 20/40..."
+              />
+            </div>
+            <div>
+              <Label>Информация о перерыве</Label>
+              <Input
+                value={tournamentData.breakInfo || ''}
+                onChange={(e) => updateField('breakInfo', e.target.value)}
+                placeholder="Перерыв после 4 уровня"
+              />
+            </div>
+            <div>
+              <Label>Rebuy информация</Label>
+              <Input
+                value={tournamentData.rebuyInfo || ''}
+                onChange={(e) => updateField('rebuyInfo', e.target.value)}
+                placeholder="1000₽ = 5000 фишек"
+              />
+            </div>
+            <div>
+              <Label>Rebuy до уровня</Label>
+              <Input
+                value={tournamentData.rebuyEndLevel || ''}
+                onChange={(e) => updateField('rebuyEndLevel', e.target.value)}
+                placeholder="до 6 уровня"
+              />
+            </div>
+            <div>
+              <Label>Addon информация</Label>
+              <Input
+                value={tournamentData.addonInfo || ''}
+                onChange={(e) => updateField('addonInfo', e.target.value)}
+                placeholder="1000₽ = 5000 фишек"
+              />
+            </div>
+            <div>
+              <Label>Addon уровень</Label>
+              <Input
+                value={tournamentData.addonLevel || ''}
+                onChange={(e) => updateField('addonLevel', e.target.value)}
+                placeholder="на 7 уровне"
+              />
+            </div>
+            <div>
+              <Label>Поздняя регистрация</Label>
+              <Input
+                value={tournamentData.lateRegEndLevel || ''}
+                onChange={(e) => updateField('lateRegEndLevel', e.target.value)}
+                placeholder="до 6 уровня"
+              />
+            </div>
+            <div>
+              <Label>Детали уровней</Label>
+              <Input
+                value={tournamentData.blindLevels || ''}
+                onChange={(e) => updateField('blindLevels', e.target.value)}
+                placeholder="Уровни по 20 минут"
+              />
+            </div>
           </div>
         </CardContent>
       </Card>
