@@ -23,6 +23,7 @@ export function ProfessionalVoiceAssistant({ selectedTournament, onStatusChange 
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [messages, setMessages] = useState<VoiceMessage[]>([]);
   const [selectedVoice, setSelectedVoice] = useState('CwhRBWXzGAHq8TQ4Fs17'); // Roger
+  const [tournamentData, setTournamentData] = useState<any>(null);
   
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -97,11 +98,17 @@ export function ProfessionalVoiceAssistant({ selectedTournament, onStatusChange 
 
   const processVoiceCommand = async (transcript: string) => {
     try {
+      if (!selectedTournament?.id) {
+        toast.error('Сначала выберите турнир');
+        await speakText('Сначала выберите турнир для управления');
+        return;
+      }
+
       const { data, error } = await supabase.functions.invoke('voice-assistant', {
         body: {
           action: 'process_command',
           text: transcript,
-          tournament_id: selectedTournament?.id
+          tournament_id: selectedTournament.id
         }
       });
 
@@ -115,6 +122,11 @@ export function ProfessionalVoiceAssistant({ selectedTournament, onStatusChange 
 
       if (data?.success) {
         if (data.command_recognized) {
+          // Выполняем действие в интерфейсе
+          if (data.action_result) {
+            await executeUIAction(data.action_result);
+          }
+          
           toast.success('Команда выполнена');
           onStatusChange?.(data.action_result?.action || 'processed');
         } else {
@@ -128,6 +140,54 @@ export function ProfessionalVoiceAssistant({ selectedTournament, onStatusChange 
     } catch (error) {
       console.error('Command processing error:', error);
       toast.error('Ошибка обработки команды');
+      await speakText('Произошла ошибка при выполнении команды');
+    }
+  };
+
+  // Выполнение UI действий на основе голосовых команд
+  const executeUIAction = async (actionResult: any) => {
+    const { action, tournament_id } = actionResult;
+    
+    try {
+      switch (action) {
+        case 'start_tournament':
+        case 'pause_tournament':
+        case 'resume_tournament':
+        case 'complete_tournament':
+          // Обновляем статус турнира в UI через Supabase RPC
+          await supabase.rpc('handle_voice_tournament_action', {
+            tournament_id_param: tournament_id,
+            action_type: action
+          });
+          break;
+          
+        case 'next_blind_level':
+        case 'previous_blind_level':
+          // Обновляем уровень блайндов
+          await supabase.rpc('handle_voice_tournament_action', {
+            tournament_id_param: tournament_id,
+            action_type: action
+          });
+          break;
+          
+        case 'set_timer':
+        case 'add_time':
+          // Обновляем таймер
+          const minutes = actionResult.minutes || 0;
+          await supabase.rpc('update_tournament_timer', {
+            tournament_id_param: tournament_id,
+            new_timer_remaining: minutes * 60
+          });
+          break;
+          
+        case 'show_stats':
+          // Триггерим показ статистики через callback
+          onStatusChange?.('show_stats');
+          break;
+      }
+    } catch (error) {
+      console.error('UI action error:', error);
+      toast.error('Ошибка выполнения действия в интерфейсе');
     }
   };
 
@@ -191,16 +251,29 @@ export function ProfessionalVoiceAssistant({ selectedTournament, onStatusChange 
       reader.onloadend = async () => {
         const base64Audio = (reader.result as string).split(',')[1];
         
-        // For now, simulate transcription - in real implementation, use Whisper API
-        const simulatedTranscript = "показать статистику турнира"; // This would come from actual speech recognition
-        
         addMessage({
           type: 'system',
-          content: 'Обрабатываю голосовую команду...',
+          content: 'Распознаю речь...',
           timestamp: new Date()
         });
 
-        await processVoiceCommand(simulatedTranscript);
+        // Use Whisper API for real transcription
+        const { data, error } = await supabase.functions.invoke('voice-to-text', {
+          body: { audio: base64Audio }
+        });
+
+        if (error) {
+          console.error('Transcription error:', error);
+          toast.error('Ошибка распознавания речи');
+          return;
+        }
+
+        const transcript = data?.text || "";
+        if (transcript.trim()) {
+          await processVoiceCommand(transcript);
+        } else {
+          toast.warning('Не удалось распознать команду');
+        }
       };
       reader.readAsDataURL(audioBlob);
     } catch (error) {
@@ -212,6 +285,65 @@ export function ProfessionalVoiceAssistant({ selectedTournament, onStatusChange 
   const quickCommand = async (command: string) => {
     await processVoiceCommand(command);
   };
+
+  // Получение данных турнира в реальном времени
+  useEffect(() => {
+    if (!selectedTournament?.id) return;
+
+    const fetchTournamentData = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('tournaments')
+          .select(`
+            *,
+            tournament_registrations(count)
+          `)
+          .eq('id', selectedTournament.id)
+          .single();
+
+        if (!error && data) {
+          setTournamentData(data);
+        }
+      } catch (error) {
+        console.error('Error fetching tournament data:', error);
+      }
+    };
+
+    fetchTournamentData();
+
+    // Подписка на изменения турнира
+    const subscription = supabase
+      .channel(`tournament-${selectedTournament.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'tournaments',
+          filter: `id=eq.${selectedTournament.id}`
+        },
+        (payload) => {
+          console.log('Tournament updated:', payload);
+          setTournamentData(payload.new);
+          
+          // Голосовое уведомление об изменениях
+          if (payload.eventType === 'UPDATE') {
+            const newData = payload.new as any;
+            if (newData.status !== selectedTournament.status) {
+              speakText(`Статус турнира изменен на ${newData.status}`);
+            }
+            if (newData.current_level !== selectedTournament.current_level) {
+              speakText(`Переход на ${newData.current_level} уровень блайндов`);
+            }
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(subscription);
+    };
+  }, [selectedTournament?.id]);
 
   useEffect(() => {
     return () => {
@@ -299,9 +431,34 @@ export function ProfessionalVoiceAssistant({ selectedTournament, onStatusChange 
 
           {/* Турнир */}
           {selectedTournament && (
-            <div className="p-3 bg-muted rounded-lg">
+            <div className="p-3 bg-muted rounded-lg space-y-2">
               <p className="text-xs text-muted-foreground">Активный турнир:</p>
               <p className="font-medium text-sm md:text-base">{selectedTournament.name}</p>
+              {tournamentData && (
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div>
+                    <span className="text-muted-foreground">Статус:</span>
+                    <span className="ml-1 font-medium">{tournamentData.status}</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Уровень:</span>
+                    <span className="ml-1 font-medium">{tournamentData.current_level}</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Блайнды:</span>
+                    <span className="ml-1 font-medium">{tournamentData.current_small_blind}/{tournamentData.current_big_blind}</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Таймер:</span>
+                    <span className="ml-1 font-medium">
+                      {tournamentData.timer_remaining ? 
+                        `${Math.floor(tournamentData.timer_remaining / 60)}:${String(tournamentData.timer_remaining % 60).padStart(2, '0')}` : 
+                        'Остановлен'
+                      }
+                    </span>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </CardContent>

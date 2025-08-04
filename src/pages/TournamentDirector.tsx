@@ -494,6 +494,40 @@ const TournamentDirector = () => {
     }
   };
 
+  // Обработчик голосовых команд
+  const handleVoiceAction = async (action: string, data?: any) => {
+    console.log('Voice action received:', action, data);
+    
+    switch (action) {
+      case 'show_stats':
+        setActiveTab('overview');
+        break;
+      case 'timer_update':
+        if (data?.time) {
+          setCurrentTime(data.time);
+        }
+        break;
+      case 'level_change':
+        if (data?.direction === 'next') {
+          await nextLevel();
+        } else if (data?.direction === 'prev') {
+          await prevLevel();
+        }
+        break;
+      case 'tournament_control':
+        if (data?.status) {
+          // Обновляем состояние турнира
+          loadTournaments();
+          if (selectedTournament) {
+            loadRegistrations(selectedTournament.id);
+          }
+        }
+        break;
+      default:
+        console.log('Unknown voice action:', action);
+    }
+  };
+
   const deleteTournament = async (id: string) => {
     const { error } = await supabase
       .from('tournaments')
@@ -532,7 +566,7 @@ const TournamentDirector = () => {
             }} 
             className="space-y-10"
           >
-            <TabsList className="grid grid-cols-4 lg:grid-cols-8 gap-2 h-auto p-1 bg-gray-100/60 rounded-lg border border-gray-200/30">
+            <TabsList className="grid grid-cols-4 lg:grid-cols-9 gap-2 h-auto p-1 bg-gray-100/60 rounded-lg border border-gray-200/30">
               <TabsTrigger value="overview" className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm">
                 <BarChart3 className="w-4 h-4" />
                 <span className="hidden sm:inline">Обзор</span>
@@ -548,6 +582,10 @@ const TournamentDirector = () => {
               <TabsTrigger value="players" className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm">
                 <Users className="w-4 h-4" />
                 <span className="hidden sm:inline">Игроки</span>
+              </TabsTrigger>
+              <TabsTrigger value="voice" className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                <Mic className="w-4 h-4" />
+                <span className="hidden sm:inline">Голос</span>
               </TabsTrigger>
               <TabsTrigger value="ratings" className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm">
                 <TrendingUp className="w-4 h-4" />
@@ -965,7 +1003,10 @@ const TournamentDirector = () => {
             </TabsContent>
 
             <TabsContent value="voice" className="space-y-6 animate-fade-in">
-              <VoiceControl selectedTournament={selectedTournament} />
+              <VoiceControl 
+                selectedTournament={selectedTournament} 
+                onVoiceAction={handleVoiceAction}
+              />
             </TabsContent>
           </Tabs>
 

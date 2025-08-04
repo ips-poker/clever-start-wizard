@@ -8,9 +8,10 @@ import { VoiceNotifications } from '@/components/voice/VoiceNotifications';
 
 interface VoiceControlProps {
   selectedTournament?: any;
+  onVoiceAction?: (action: string, data?: any) => void;
 }
 
-export function VoiceControl({ selectedTournament }: VoiceControlProps) {
+export function VoiceControl({ selectedTournament, onVoiceAction }: VoiceControlProps) {
 
   return (
     <div className="space-y-4 md:space-y-6 p-2 md:p-0">
@@ -36,7 +37,10 @@ export function VoiceControl({ selectedTournament }: VoiceControlProps) {
         </TabsList>
 
         <TabsContent value="control" className="space-y-6">
-          <ProfessionalVoiceAssistant selectedTournament={selectedTournament} />
+          <ProfessionalVoiceAssistant 
+            selectedTournament={selectedTournament} 
+            onStatusChange={onVoiceAction}
+          />
         </TabsContent>
 
         <TabsContent value="analytics">
