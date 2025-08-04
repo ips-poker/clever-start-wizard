@@ -435,10 +435,11 @@ const PlayerManagement = ({ tournament, players, registrations, onRegistrationUp
   return (
     <div className="space-y-6">
       <Tabs defaultValue="register" className="w-full">
-        <TabsList className="grid w-full grid-cols-4 bg-white/60 border border-gray-200/50">
+        <TabsList className="grid w-full grid-cols-5 bg-white/60 border border-gray-200/50">
           <TabsTrigger value="register">Регистрация</TabsTrigger>
           <TabsTrigger value="active">Активные ({activePlayers.length})</TabsTrigger>
           <TabsTrigger value="eliminated">Выбывшие ({eliminatedPlayers.length})</TabsTrigger>
+          <TabsTrigger value="seating">Рассадка</TabsTrigger>
           <TabsTrigger value="finish">Завершение</TabsTrigger>
         </TabsList>
 
@@ -663,6 +664,14 @@ const PlayerManagement = ({ tournament, players, registrations, onRegistrationUp
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="seating">
+          <TableSeating 
+            tournamentId={tournament.id}
+            registrations={registrations}
+            onSeatingUpdate={onRegistrationUpdate}
+          />
         </TabsContent>
 
         <TabsContent value="finish" className="space-y-4">
