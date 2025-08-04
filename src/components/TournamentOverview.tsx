@@ -87,6 +87,7 @@ interface TournamentOverviewProps {
   onRefresh: () => void;
   onTimerAdjust?: (seconds: number) => void;
   onFinishTournament?: () => void;
+  onOpenExternalTimer: () => void;
 }
 
 const TournamentOverview = ({
@@ -102,7 +103,8 @@ const TournamentOverview = ({
   onStopTournament,
   onRefresh,
   onTimerAdjust,
-  onFinishTournament
+  onFinishTournament,
+  onOpenExternalTimer
 }: TournamentOverviewProps) => {
   const [blindLevels, setBlindLevels] = useState<any[]>([]);
   const [systemStats, setSystemStats] = useState({
@@ -419,7 +421,7 @@ const TournamentOverview = ({
               <Mic className="w-4 h-4" />
             </Button>
             
-            <Button variant="outline" size="sm" onClick={openFullscreenTimer} className="h-12 border-gray-200/50 hover:shadow-subtle">
+            <Button variant="outline" size="sm" onClick={onOpenExternalTimer} className="h-12 border-gray-200/50 hover:shadow-subtle">
               <Maximize className="w-4 h-4" />
             </Button>
             

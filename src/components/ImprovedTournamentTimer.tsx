@@ -115,7 +115,7 @@ const ImprovedTournamentTimer = ({
               className="flex items-center gap-1"
             >
               <Maximize className="w-4 h-4" />
-              Полный экран
+              Внешний экран
             </Button>
           </div>
         </CardHeader>

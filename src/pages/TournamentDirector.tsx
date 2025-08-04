@@ -579,6 +579,9 @@ const TournamentDirector = () => {
                     onRefresh={() => loadRegistrations(selectedTournament.id)}
                     onTimerAdjust={onTimerAdjust}
                     onFinishTournament={onFinishTournament}
+                    onOpenExternalTimer={() => {
+                      window.open(`/external-timer?tournamentId=${selectedTournament.id}`, '_blank', 'width=1920,height=1080,fullscreen=yes');
+                    }}
                   />
                 </div>
               ) : (
