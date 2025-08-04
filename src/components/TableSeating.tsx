@@ -43,8 +43,94 @@ const TableSeating = ({
   const { toast } = useToast();
 
   useEffect(() => {
-    generateTablesFromRegistrations();
+    loadSavedSeating();
+  }, [tournamentId]);
+
+  useEffect(() => {
+    if (tables.length === 0) {
+      generateTablesFromRegistrations();
+    }
   }, [registrations, maxPlayersPerTable]);
+
+  const loadSavedSeating = async () => {
+    try {
+      // Сначала пытаемся загрузить из localStorage
+      const savedSeating = localStorage.getItem(`seating_${tournamentId}`);
+      if (savedSeating) {
+        const parsedSeating = JSON.parse(savedSeating);
+        setTables(parsedSeating);
+        console.log('🪑 Рассадка загружена из localStorage');
+        return;
+      }
+
+      // Если в localStorage нет данных, загружаем из базы данных
+      const { data: seatingData, error } = await supabase
+        .from('tournament_registrations')
+        .select(`
+          player_id,
+          seat_number,
+          chips,
+          status,
+          player:players(id, name)
+        `)
+        .eq('tournament_id', tournamentId)
+        .not('seat_number', 'is', null);
+
+      if (error) {
+        console.error('Ошибка загрузки рассадки:', error);
+        generateTablesFromRegistrations();
+        return;
+      }
+
+      if (seatingData && seatingData.length > 0) {
+        // Создаем столы на основе сохраненной рассадки
+        const maxSeatNumber = Math.max(...seatingData.map(s => s.seat_number || 0));
+        const totalTables = Math.ceil(maxSeatNumber / maxPlayersPerTable);
+        
+        const newTables: Table[] = [];
+        
+        for (let tableNum = 1; tableNum <= totalTables; tableNum++) {
+          const seats: TableSeat[] = [];
+          
+          for (let seatNum = 1; seatNum <= maxPlayersPerTable; seatNum++) {
+            const seatData = seatingData.find(s => s.seat_number === ((tableNum - 1) * maxPlayersPerTable + seatNum));
+            
+            seats.push({
+              seat_number: seatNum,
+              player_id: seatData?.player_id,
+              player_name: seatData?.player?.name,
+              chips: seatData?.chips,
+              status: seatData?.status
+            });
+          }
+          
+          newTables.push({
+            table_number: tableNum,
+            seats,
+            active_players: seats.filter(s => s.player_id).length
+          });
+        }
+        
+        setTables(newTables);
+        saveSeatingToLocalStorage(newTables);
+        console.log('🪑 Рассадка загружена из базы данных');
+      } else {
+        generateTablesFromRegistrations();
+      }
+    } catch (error) {
+      console.error('Ошибка при загрузке рассадки:', error);
+      generateTablesFromRegistrations();
+    }
+  };
+
+  const saveSeatingToLocalStorage = (tablesData: Table[]) => {
+    try {
+      localStorage.setItem(`seating_${tournamentId}`, JSON.stringify(tablesData));
+      console.log('🪑 Рассадка сохранена в localStorage');
+    } catch (error) {
+      console.error('Ошибка сохранения в localStorage:', error);
+    }
+  };
 
   const generateTablesFromRegistrations = () => {
     const activePlayers = registrations.filter(r => r.status === 'registered' || r.status === 'playing');
@@ -86,19 +172,45 @@ const TableSeating = ({
     });
     
     setTables(newTables);
+    saveSeatingToLocalStorage(newTables);
+    console.log('🪑 Столы сгенерированы из регистраций');
   };
 
   const updateSeatingInDatabase = async (tablesData: Table[]) => {
-    for (const table of tablesData) {
-      for (const seat of table.seats) {
-        if (seat.player_id) {
-          await supabase
-            .from('tournament_registrations')
-            .update({ seat_number: seat.seat_number })
-            .eq('player_id', seat.player_id)
-            .eq('tournament_id', tournamentId);
+    try {
+      console.log('🪑 Обновление рассадки в базе данных...');
+      
+      for (const table of tablesData) {
+        for (const seat of table.seats) {
+          if (seat.player_id) {
+            const seatNumber = (table.table_number - 1) * maxPlayersPerTable + seat.seat_number;
+            
+            const { error } = await supabase
+              .from('tournament_registrations')
+              .update({ seat_number: seatNumber })
+              .eq('player_id', seat.player_id)
+              .eq('tournament_id', tournamentId);
+              
+            if (error) {
+              console.error('Ошибка обновления места игрока:', error);
+            }
+          }
         }
       }
+      
+      saveSeatingToLocalStorage(tablesData);
+      console.log('🪑 Рассадка обновлена в базе данных и localStorage');
+      
+      if (onSeatingUpdate) {
+        onSeatingUpdate();
+      }
+    } catch (error) {
+      console.error('Ошибка при обновлении рассадки:', error);
+      toast({ 
+        title: "Ошибка", 
+        description: "Не удалось сохранить рассадку", 
+        variant: "destructive" 
+      });
     }
   };
 
@@ -222,10 +334,11 @@ const TableSeating = ({
     setTables(newTables);
     updateSeatingInDatabase(newTables);
     
-    // Обновляем seat_number в базе данных
+    // Обновляем seat_number в базе данных (дублирующее обновление для надежности)
+    const absoluteSeatNumber = (toTable - 1) * maxPlayersPerTable + toSeat;
     await supabase
       .from('tournament_registrations')
-      .update({ seat_number: toSeat })
+      .update({ seat_number: absoluteSeatNumber })
       .eq('player_id', playerId)
       .eq('tournament_id', tournamentId);
     
