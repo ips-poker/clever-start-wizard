@@ -121,6 +121,7 @@ const DEFAULT_BLIND_STRUCTURES = {
 export function TournamentCreationModal({ open, onOpenChange, tournament, onTournamentUpdate }: TournamentCreationModalProps) {
   const [activeTab, setActiveTab] = useState('basic');
   const [loading, setLoading] = useState(false);
+  const [isCreating, setIsCreating] = useState(false); // Дополнительная защита от дублей
   const [formData, setFormData] = useState<Tournament>({
     name: '',
     description: '',
@@ -261,8 +262,12 @@ export function TournamentCreationModal({ open, onOpenChange, tournament, onTour
       return;
     }
 
-    if (loading) return; // Предотвращаем повторные нажатия
+    // Двойная защита от множественных кликов
+    if (loading || isCreating) return;
+    
     setLoading(true);
+    setIsCreating(true);
+    
     try {
       let tournamentId = tournament?.id;
 
@@ -403,6 +408,7 @@ export function TournamentCreationModal({ open, onOpenChange, tournament, onTour
       });
     } finally {
       setLoading(false);
+      setIsCreating(false);
     }
   };
 
@@ -1012,7 +1018,7 @@ export function TournamentCreationModal({ open, onOpenChange, tournament, onTour
           </Button>
           <Button 
             onClick={saveTournament}
-            disabled={loading || !formData.name.trim()}
+            disabled={loading || isCreating || !formData.name.trim()}
             className="bg-gradient-button hover:shadow-elevated transition-all duration-300"
           >
             {loading ? (
