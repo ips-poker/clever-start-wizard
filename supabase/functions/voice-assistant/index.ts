@@ -92,22 +92,25 @@ serve(async (req) => {
         }
 
       // УПРАВЛЕНИЕ ТАЙМЕРОМ
-      } else if (command.includes('таймер') && command.includes('минут')) {
-        const minutes = command.match(/(\d+)\s*минут/)?.[1];
+      } else if (command.includes('таймер') && (command.includes('минут') || command.includes('минуту'))) {
+        const minutes = command.match(/(\d+)\s*минут/)?.[1] || command.match(/(\d+)\s*минуту/)?.[1];
         if (minutes) {
           response_text = `Устанавливаю таймер на ${minutes} минут.`;
           action_result = { action: 'set_timer', tournament_id, minutes: parseInt(minutes) };
         }
-      } else if (command.includes('добавить время')) {
+      } else if (command.includes('добавить время') || command.includes('прибавить время')) {
         const minutes = command.match(/(\d+)\s*минут/)?.[1] || '5';
         response_text = `Добавляю ${minutes} минут к таймеру.`;
         action_result = { action: 'add_time', tournament_id, minutes: parseInt(minutes) };
-      } else if (command.includes('остановить таймер')) {
+      } else if (command.includes('остановить таймер') || command.includes('стоп таймер')) {
         response_text = "Останавливаю таймер.";
         action_result = { action: 'stop_timer', tournament_id };
-      } else if (command.includes('запустить таймер')) {
+      } else if (command.includes('запустить таймер') || command.includes('старт таймер')) {
         response_text = "Запускаю таймер.";
         action_result = { action: 'start_timer', tournament_id };
+      } else if (command.includes('сбросить таймер') || command.includes('обнулить таймер')) {
+        response_text = "Сбрасываю таймер до начального времени уровня.";
+        action_result = { action: 'reset_timer', tournament_id };
 
       // ПЕРЕРЫВЫ
       } else if (command.includes('перерыв')) {
@@ -206,9 +209,31 @@ serve(async (req) => {
         response_text = "Приглашаю финалистов на фотосессию.";
         action_result = { action: 'photo_session', tournament_id };
 
+      // ДОПОЛНИТЕЛЬНЫЕ КОМАНДЫ УПРАВЛЕНИЯ
+      } else if (command.includes('текущий статус') || command.includes('статус турнира')) {
+        response_text = "Показываю текущий статус турнира и всю актуальную информацию.";
+        action_result = { action: 'show_status', tournament_id };
+      } else if (command.includes('рассадка') || command.includes('столы')) {
+        response_text = "Открываю управление рассадкой и столами.";
+        action_result = { action: 'show_seating', tournament_id };
+      } else if (command.includes('топ игроки') || command.includes('лидеры')) {
+        response_text = "Показываю топ игроков по фишкам.";
+        action_result = { action: 'show_chip_leaders', tournament_id };
+
+      // АВТОМАТИЧЕСКИЕ ОБЪЯВЛЕНИЯ
+      } else if (command.includes('объявить') && command.includes('10 секунд')) {
+        response_text = "Внимание! Через 10 секунд переход к следующему уровню блайндов!";
+        action_result = { action: 'announce_10_seconds', tournament_id };
+      } else if (command.includes('объявить') && command.includes('1 минута')) {
+        response_text = "Внимание! До окончания уровня осталась 1 минута!";
+        action_result = { action: 'announce_1_minute', tournament_id };
+      } else if (command.includes('объявить') && command.includes('5 минут')) {
+        response_text = "Внимание! До окончания уровня осталось 5 минут!";
+        action_result = { action: 'announce_5_minutes', tournament_id };
+
       // ПОМОЩЬ И ИНФОРМАЦИЯ
       } else if (command.includes('помощь') || command.includes('команды')) {
-        response_text = "Я умею управлять турниром, работать с блайндами, таймером, игроками, столами и многое другое. Просто скажите что нужно сделать.";
+        response_text = "Доступны команды: запустить/остановить турнир, следующий/предыдущий уровень, таймер, игроки, статистика, рассадка и многое другое.";
         action_result = { action: 'help', tournament_id };
       } else if (command.includes('время') || command.includes('сколько времени')) {
         response_text = "Показываю текущее время и оставшееся время уровня.";

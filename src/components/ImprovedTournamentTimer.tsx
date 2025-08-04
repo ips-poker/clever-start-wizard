@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
+import { useVoiceAnnouncements } from '@/hooks/useVoiceAnnouncements';
 import { Play, Pause, RotateCcw, SkipForward, SkipBack, Maximize, Coffee, Clock } from 'lucide-react';
 
 interface BlindLevel {
@@ -14,7 +15,7 @@ interface BlindLevel {
   big_blind: number;
   ante: number;
   duration: number;
-  is_break?: boolean;
+  is_break: boolean;
 }
 
 interface TournamentTimerProps {
@@ -46,11 +47,47 @@ const ImprovedTournamentTimer = ({
 }: TournamentTimerProps) => {
   const [totalChipsInPlay, setTotalChipsInPlay] = useState(0);
   const [averageStack, setAverageStack] = useState(0);
+  const [lastAnnouncedTime, setLastAnnouncedTime] = useState<number | null>(null);
   const { toast } = useToast();
+  
+  // Голосовые объявления
+  const voiceAnnouncements = useVoiceAnnouncements({
+    enabled: true,
+    volume: 0.8
+  });
 
   useEffect(() => {
     calculateChipStatistics();
   }, [registrations]);
+
+  // Автоматические голосовые объявления на основе таймера
+  useEffect(() => {
+    if (!timerActive || !currentTime) return;
+
+    const currentLevel = getCurrentLevel();
+    const nextLevel = getNextLevel();
+
+    // Объявления времени
+    if (currentTime === 300 && lastAnnouncedTime !== 300) { // 5 минут
+      voiceAnnouncements.announceTimeWarning(5);
+      setLastAnnouncedTime(300);
+    } else if (currentTime === 60 && lastAnnouncedTime !== 60) { // 1 минута
+      voiceAnnouncements.announceTimeWarning(1);
+      setLastAnnouncedTime(60);
+    } else if (currentTime === 10 && lastAnnouncedTime !== 10) { // 10 секунд
+      voiceAnnouncements.announceNextLevel(
+        tournament.current_level,
+        nextLevel,
+        currentTime
+      );
+      setLastAnnouncedTime(10);
+    }
+
+    // Сброс при смене времени уровня
+    if (currentTime > lastAnnouncedTime + 60) {
+      setLastAnnouncedTime(null);
+    }
+  }, [currentTime, timerActive, tournament.current_level, voiceAnnouncements, lastAnnouncedTime]);
 
   const calculateChipStatistics = () => {
     const activeRegistrations = registrations.filter(r => r.status === 'registered' || r.status === 'playing');
@@ -77,7 +114,7 @@ const ImprovedTournamentTimer = ({
 
   const currentLevel = getCurrentLevel();
   const nextLevel = getNextLevel();
-  const isBreak = currentLevel?.is_break || false;
+  const isBreak = currentLevel?.is_break ?? false;
   const progress = currentLevel ? ((currentLevel.duration - currentTime) / currentLevel.duration) * 100 : 0;
 
   const timeWarningClass = () => {

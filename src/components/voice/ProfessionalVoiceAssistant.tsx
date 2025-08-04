@@ -8,7 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 
 interface VoiceAssistantProps {
   selectedTournament?: any;
-  onStatusChange?: (status: string) => void;
+  onStatusChange?: (status: string, data?: any) => void;
 }
 
 interface VoiceMessage {
@@ -162,35 +162,39 @@ export function ProfessionalVoiceAssistant({ selectedTournament, onStatusChange 
         case 'pause_tournament':
         case 'resume_tournament':
         case 'complete_tournament':
-          // Обновляем статус турнира в UI через Supabase RPC
-          await supabase.rpc('handle_voice_tournament_action', {
-            tournament_id_param: tournament_id,
-            action_type: action
-          });
+          // Передаем действие в родительский компонент
+          onStatusChange?.(action, actionResult);
           break;
           
         case 'next_blind_level':
         case 'previous_blind_level':
-          // Обновляем уровень блайндов
-          await supabase.rpc('handle_voice_tournament_action', {
-            tournament_id_param: tournament_id,
-            action_type: action
-          });
+          // Передаем действие в родительский компонент
+          onStatusChange?.(action, actionResult);
           break;
           
         case 'set_timer':
         case 'add_time':
-          // Обновляем таймер
-          const minutes = actionResult.minutes || 0;
-          await supabase.rpc('update_tournament_timer', {
-            tournament_id_param: tournament_id,
-            new_timer_remaining: minutes * 60
-          });
+        case 'start_timer':
+        case 'stop_timer':
+          // Передаем действие в родительский компонент
+          onStatusChange?.(action, actionResult);
           break;
           
         case 'show_stats':
-          // Триггерим показ статистики через callback
-          onStatusChange?.('show_stats');
+        case 'show_players':
+        case 'show_payouts':
+        case 'show_seating':
+        case 'rebalance_tables':
+          // Передаем действие в родительский компонент для переключения вкладок
+          onStatusChange?.(action, actionResult);
+          break;
+
+        case 'break':
+        case 'announce_10_seconds':
+        case 'announce_1_minute':
+        case 'announce_5_minutes':
+          // Передаем специальные действия
+          onStatusChange?.(action, actionResult);
           break;
       }
     } catch (error) {

@@ -498,33 +498,165 @@ const TournamentDirector = () => {
   const handleVoiceAction = async (action: string, data?: any) => {
     console.log('Voice action received:', action, data);
     
-    switch (action) {
-      case 'show_stats':
-        setActiveTab('overview');
-        break;
-      case 'timer_update':
-        if (data?.time) {
-          setCurrentTime(data.time);
-        }
-        break;
-      case 'level_change':
-        if (data?.direction === 'next') {
-          await nextLevel();
-        } else if (data?.direction === 'prev') {
-          await prevLevel();
-        }
-        break;
-      case 'tournament_control':
-        if (data?.status) {
-          // Обновляем состояние турнира
-          loadTournaments();
+    try {
+      switch (action) {
+        // УПРАВЛЕНИЕ ТУРНИРОМ
+        case 'start_tournament':
           if (selectedTournament) {
-            loadRegistrations(selectedTournament.id);
+            await supabase.rpc('start_tournament', { tournament_id_param: selectedTournament.id });
+            setTimerActive(true);
+            toast({ title: "✅ Турнир запущен", description: "Голосовая команда выполнена" });
+            loadTournaments();
           }
-        }
-        break;
-      default:
-        console.log('Unknown voice action:', action);
+          break;
+          
+        case 'pause_tournament':
+          if (selectedTournament) {
+            await supabase.rpc('pause_tournament', { tournament_id_param: selectedTournament.id });
+            setTimerActive(false);
+            toast({ title: "⏸️ Турнир приостановлен", description: "Голосовая команда выполнена" });
+            loadTournaments();
+          }
+          break;
+          
+        case 'resume_tournament':
+          if (selectedTournament) {
+            await supabase.rpc('resume_tournament', { tournament_id_param: selectedTournament.id });
+            setTimerActive(true);
+            toast({ title: "▶️ Турнир возобновлен", description: "Голосовая команда выполнена" });
+            loadTournaments();
+          }
+          break;
+          
+        case 'complete_tournament':
+          if (selectedTournament) {
+            await supabase.rpc('complete_tournament', { tournament_id_param: selectedTournament.id });
+            setTimerActive(false);
+            toast({ title: "🏆 Турнир завершен", description: "Голосовая команда выполнена" });
+            loadTournaments();
+          }
+          break;
+
+        // УПРАВЛЕНИЕ БЛАЙНДАМИ  
+        case 'next_blind_level':
+          await nextLevel();
+          toast({ title: "⬆️ Следующий уровень", description: "Переход к следующему уровню блайндов" });
+          break;
+          
+        case 'previous_blind_level':
+          await prevLevel();
+          toast({ title: "⬇️ Предыдущий уровень", description: "Возврат к предыдущему уровню блайндов" });
+          break;
+
+        // УПРАВЛЕНИЕ ТАЙМЕРОМ
+        case 'set_timer':
+          if (data?.minutes && selectedTournament) {
+            const seconds = data.minutes * 60;
+            setCurrentTime(seconds);
+            localStorage.setItem(`timer_${selectedTournament.id}`, JSON.stringify({
+              currentTime: seconds,
+              timerActive,
+              lastUpdate: Date.now()
+            }));
+            updateTimerInDatabase(seconds);
+            toast({ title: "⏱️ Таймер установлен", description: `Время: ${data.minutes} минут` });
+          }
+          break;
+          
+        case 'add_time':
+          if (data?.minutes) {
+            onTimerAdjust(data.minutes * 60);
+            toast({ title: "➕ Время добавлено", description: `+${data.minutes} минут` });
+          }
+          break;
+          
+        case 'start_timer':
+          setTimerActive(true);
+          toast({ title: "▶️ Таймер запущен", description: "Голосовая команда выполнена" });
+          break;
+          
+        case 'stop_timer':
+          setTimerActive(false);
+          toast({ title: "⏹️ Таймер остановлен", description: "Голосовая команда выполнена" });
+          break;
+
+        // НАВИГАЦИЯ И ОТОБРАЖЕНИЕ
+        case 'show_stats':
+          setActiveTab('overview');
+          toast({ title: "📊 Статистика", description: "Отображение статистики турнира" });
+          break;
+          
+        case 'show_players':
+          setActiveTab('players');
+          toast({ title: "👥 Игроки", description: "Отображение списка игроков" });
+          break;
+          
+        case 'show_payouts':
+          setActiveTab('results');
+          toast({ title: "💰 Выплаты", description: "Отображение структуры выплат" });
+          break;
+          
+        case 'rebalance_tables':
+        case 'show_seating':
+          setActiveTab('seating');
+          toast({ title: "🎲 Рассадка", description: "Управление рассадкой игроков" });
+          break;
+
+        // ПЕРЕРЫВЫ
+        case 'break':
+          if (data?.duration && selectedTournament) {
+            const breakTime = data.duration * 60;
+            setCurrentTime(breakTime);
+            setTimerActive(true);
+            localStorage.setItem(`timer_${selectedTournament.id}`, JSON.stringify({
+              currentTime: breakTime,
+              timerActive: true,
+              lastUpdate: Date.now()
+            }));
+            updateTimerInDatabase(breakTime);
+            toast({ title: "☕ Перерыв", description: `Перерыв на ${data.duration} минут` });
+          }
+          break;
+
+        // СОВМЕСТИМОСТЬ
+        case 'timer_update':
+          if (data?.time) {
+            setCurrentTime(data.time);
+          }
+          break;
+          
+        case 'level_change':
+          if (data?.direction === 'next') {
+            await nextLevel();
+          } else if (data?.direction === 'prev') {
+            await prevLevel();
+          }
+          break;
+          
+        case 'tournament_control':
+          if (data?.status) {
+            loadTournaments();
+            if (selectedTournament) {
+              loadRegistrations(selectedTournament.id);
+            }
+          }
+          break;
+
+        case 'processed':
+          // Общее подтверждение обработки команды
+          break;
+
+        default:
+          console.log('Unknown voice action:', action);
+          toast({ title: "❓ Неизвестная команда", description: "Команда не распознана" });
+      }
+    } catch (error) {
+      console.error('Ошибка выполнения голосовой команды:', error);
+      toast({ 
+        title: "❌ Ошибка", 
+        description: "Не удалось выполнить голосовую команду",
+        variant: "destructive" 
+      });
     }
   };
 

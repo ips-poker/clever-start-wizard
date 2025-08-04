@@ -80,6 +80,12 @@ export const useVoiceAnnouncements = (options: VoiceAnnouncementOptions = { enab
     }
   }, [options.volume]);
 
+  // Объявления для таймера турнира
+  const announceTimeWarning = useCallback(async (minutes: number) => {
+    const time = minutes === 1 ? '1 минута' : `${minutes} минут`;
+    await playAnnouncement(`Внимание! До окончания уровня осталось ${time}.`);
+  }, [playAnnouncement]);
+
   const announceNextLevel = useCallback(async (
     currentLevel: number,
     nextLevel: BlindLevel | null,
@@ -112,6 +118,45 @@ export const useVoiceAnnouncements = (options: VoiceAnnouncementOptions = { enab
     await playAnnouncement(announcementText);
   }, [playAnnouncement]);
 
+  const announceLevelStart = useCallback(async (level: BlindLevel) => {
+    let announcementText = '';
+    
+    if (level.is_break) {
+      announcementText = `Начинается перерыв на ${Math.floor(level.duration / 60)} минут. Участники могут отдохнуть.`;
+    } else {
+      announcementText = `Начинается уровень ${level.level}. `;
+      announcementText += `Блайнды: малый ${level.small_blind}, большой ${level.big_blind}`;
+      
+      if (level.ante && level.ante > 0) {
+        announcementText += `, анте ${level.ante}`;
+      }
+      
+      announcementText += '. Удачи игрокам!';
+    }
+
+    await playAnnouncement(announcementText);
+  }, [playAnnouncement]);
+
+  const announceTournamentStatus = useCallback(async (status: string) => {
+    let message = '';
+    
+    switch (status) {
+      case 'running':
+        message = 'Турнир запущен. Игра началась!';
+        break;
+      case 'paused':
+        message = 'Турнир приостановлен. Участники, сохраните свои позиции.';
+        break;
+      case 'completed':
+        message = 'Турнир завершен. Поздравляем победителей!';
+        break;
+      default:
+        return;
+    }
+    
+    await playAnnouncement(message);
+  }, [playAnnouncement]);
+
   const announceCustomMessage = useCallback(async (message: string) => {
     await playAnnouncement(message);
   }, [playAnnouncement]);
@@ -125,7 +170,10 @@ export const useVoiceAnnouncements = (options: VoiceAnnouncementOptions = { enab
 
   return {
     announceNextLevel,
+    announceLevelStart,
+    announceTimeWarning,
     announceCustomMessage,
+    announceTournamentStatus,
     stopAnnouncement,
     playAnnouncement
   };
