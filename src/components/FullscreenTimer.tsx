@@ -162,17 +162,32 @@ const FullscreenTimer = ({
   const nextBreakLevel = blindLevels.find(l => l.is_break && l.level > tournament.current_level);
   const levelsUntilBreak = nextBreakLevel ? nextBreakLevel.level - tournament.current_level : null;
   
+  // Отладка для понимания проблемы
+  console.log('🔍 FullscreenTimer Debug:', {
+    blindLevelsCount: blindLevels.length,
+    currentLevel: tournament.current_level,
+    nextBreakLevel: nextBreakLevel?.level,
+    levelsUntilBreak,
+    isBreakLevel
+  });
+  
   // Примерное время до перерыва (текущий таймер + время оставшихся уровней)
   const calculateTimeToBreak = () => {
-    if (!nextBreakLevel || !levelsUntilBreak) return null;
+    if (!nextBreakLevel || !levelsUntilBreak || blindLevels.length === 0) {
+      console.log('⚠️ Не могу рассчитать время до перерыва:', { nextBreakLevel: !!nextBreakLevel, levelsUntilBreak, blindLevelsCount: blindLevels.length });
+      return null;
+    }
     
     // Время текущего уровня + время промежуточных уровней
     let timeToBreak = currentTime;
     for (let i = 1; i < levelsUntilBreak; i++) {
       const levelInfo = blindLevels.find(l => l.level === tournament.current_level + i);
-      timeToBreak += levelInfo?.duration || 1200; // по умолчанию 20 минут
+      const levelDuration = levelInfo?.duration || 1200; // по умолчанию 20 минут
+      timeToBreak += levelDuration;
+      console.log(`📊 Уровень ${tournament.current_level + i}: +${levelDuration}с`);
     }
     
+    console.log('⏰ Время до перерыва рассчитано:', timeToBreak);
     return timeToBreak;
   };
   
@@ -378,8 +393,16 @@ const FullscreenTimer = ({
                   <p className="text-lg font-medium text-gray-800">{formatTime(timeToBreak)}</p>
                   <p className="text-xs text-gray-500">({levelsUntilBreak} ур.)</p>
                 </div>
+              ) : blindLevels.length === 0 ? (
+                <div>
+                  <p className="text-sm font-medium text-gray-500">Загрузка...</p>
+                  <p className="text-xs text-gray-400">структуры блайндов</p>
+                </div>
               ) : (
-                <p className="text-xl font-medium text-gray-800">∞</p>
+                <div>
+                  <p className="text-xl font-medium text-gray-800">∞</p>
+                  <p className="text-xs text-gray-500">нет перерывов</p>
+                </div>
               )}
             </div>
           </div>
