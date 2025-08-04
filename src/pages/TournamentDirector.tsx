@@ -44,6 +44,7 @@ import RatingManagement from "@/components/RatingManagement";
 import TournamentResults from "@/components/TournamentResults";
 import TournamentSyncManager from "@/components/TournamentSyncManager";
 import RatingSystemTest from "@/components/RatingSystemTest";
+import { useVoiceAnnouncements } from "@/hooks/useVoiceAnnouncements";
 
 // Используем типы из базы данных
 type Tournament = {
@@ -108,6 +109,10 @@ const TournamentDirector = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const [lastAnnouncedTime, setLastAnnouncedTime] = useState<number | null>(null);
+  
+  // Инициализация голосовых объявлений
+  const voiceAnnouncements = useVoiceAnnouncements();
 
   // Load data on component mount
   useEffect(() => {
@@ -164,7 +169,7 @@ const TournamentDirector = () => {
     }
   }, [selectedTournament]);
 
-  // Timer effect
+  // Timer effect with voice announcements
   useEffect(() => {
     if (timerActive && currentTime > 0) {
       timerRef.current = setInterval(() => {
@@ -231,6 +236,34 @@ const TournamentDirector = () => {
       }
     };
   }, [timerActive, currentTime, selectedTournament]);
+
+  // Голосовые объявления на основе времени таймера
+  useEffect(() => {
+    if (!timerActive || !selectedTournament) return;
+
+    // Объявления по времени
+    if (currentTime === 300 && lastAnnouncedTime !== 300) { // 5 минут
+      voiceAnnouncements.announceTimeWarning(5);
+      setLastAnnouncedTime(300);
+    } else if (currentTime === 120 && lastAnnouncedTime !== 120) { // 2 минуты
+      voiceAnnouncements.announceTimeWarning(2);
+      setLastAnnouncedTime(120);
+    } else if (currentTime === 60 && lastAnnouncedTime !== 60) { // 1 минута
+      voiceAnnouncements.announceTimeWarning(1);
+      setLastAnnouncedTime(60);
+    } else if (currentTime === 30 && lastAnnouncedTime !== 30) { // 30 секунд
+      voiceAnnouncements.announceCustomMessage("Внимание! До окончания уровня осталось 30 секунд!");
+      setLastAnnouncedTime(30);
+    } else if (currentTime === 10 && lastAnnouncedTime !== 10) { // 10 секунд
+      voiceAnnouncements.announceCustomMessage("Внимание! До окончания уровня осталось 10 секунд!");
+      setLastAnnouncedTime(10);
+    }
+
+    // Сброс при смене времени уровня
+    if (currentTime > (lastAnnouncedTime || 0) + 60) {
+      setLastAnnouncedTime(null);
+    }
+  }, [currentTime, timerActive, selectedTournament?.current_level, voiceAnnouncements, lastAnnouncedTime]);
 
   const loadTournaments = async () => {
     const { data, error } = await supabase
@@ -372,6 +405,13 @@ const TournamentDirector = () => {
         timerActive: false, // Временно останавливаем, но автоматически запустится
         lastUpdate: Date.now()
       }));
+
+      // Голосовое объявление о новом уровне
+      if (nextBlindLevel.is_break) {
+        voiceAnnouncements.announceBreakStart(Math.floor(resetTime / 60));
+      } else {
+        voiceAnnouncements.announceLevelStart(nextBlindLevel);
+      }
 
       toast({ 
         title: nextBlindLevel.is_break ? "Перерыв" : `Уровень ${newLevel}`, 
