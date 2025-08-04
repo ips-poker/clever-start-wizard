@@ -183,16 +183,159 @@ const TimerDisplay = () => {
     }
   }, [timerActive, currentTime]);
 
-  // Dummy функции для интерфейса (не используются в display режиме)
-  const handleToggleTimer = () => {};
-  const handleResetTimer = () => {};
-  const handleNextLevel = () => {};
-  const handlePrevLevel = () => {};
-  const handleStopTournament = () => {};
+  // Функции управления таймером (синхронизируются с основным интерфейсом через localStorage)
+  const handleToggleTimer = () => {
+    if (!tournament) return;
+    
+    const newTimerActive = !timerActive;
+    setTimerActive(newTimerActive);
+    
+    // Сохраняем изменение в localStorage для синхронизации с основным интерфейсом
+    localStorage.setItem(`timer_${tournament.id}`, JSON.stringify({
+      currentTime,
+      timerActive: newTimerActive,
+      lastUpdate: Date.now()
+    }));
+  };
+
+  const handleResetTimer = () => {
+    if (!tournament) return;
+    
+    const resetTime = tournament.timer_duration || 1200;
+    setCurrentTime(resetTime);
+    setTimerActive(false);
+    
+    // Сохраняем сброс в localStorage
+    localStorage.setItem(`timer_${tournament.id}`, JSON.stringify({
+      currentTime: resetTime,
+      timerActive: false,
+      lastUpdate: Date.now()
+    }));
+  };
+
+  const handleNextLevel = async () => {
+    if (!tournament) return;
+    
+    // Вызываем API для перехода к следующему уровню
+    try {
+      const { data: blindLevels } = await supabase
+        .from('blind_levels')
+        .select('*')
+        .eq('tournament_id', tournament.id)
+        .order('level', { ascending: true });
+
+      if (blindLevels) {
+        const newLevel = tournament.current_level + 1;
+        const nextBlindLevel = blindLevels.find(bl => bl.level === newLevel);
+        
+        if (nextBlindLevel) {
+          const resetTime = nextBlindLevel.duration || 1200;
+          
+          // Обновляем турнир в базе данных
+          await supabase
+            .from('tournaments')
+            .update({
+              current_level: newLevel,
+              current_small_blind: nextBlindLevel.small_blind,
+              current_big_blind: nextBlindLevel.big_blind,
+              timer_duration: resetTime,
+              timer_remaining: resetTime
+            })
+            .eq('id', tournament.id);
+
+          // Обновляем локальное состояние
+          setCurrentTime(resetTime);
+          setTimerActive(false);
+          
+          // Синхронизируем через localStorage
+          localStorage.setItem(`timer_${tournament.id}`, JSON.stringify({
+            currentTime: resetTime,
+            timerActive: false,
+            lastUpdate: Date.now()
+          }));
+        }
+      }
+    } catch (error) {
+      console.error('Error advancing level:', error);
+    }
+  };
+
+  const handlePrevLevel = async () => {
+    if (!tournament || tournament.current_level <= 1) return;
+    
+    try {
+      const { data: blindLevels } = await supabase
+        .from('blind_levels')
+        .select('*')
+        .eq('tournament_id', tournament.id)
+        .order('level', { ascending: true });
+
+      if (blindLevels) {
+        const newLevel = tournament.current_level - 1;
+        const prevBlindLevel = blindLevels.find(bl => bl.level === newLevel);
+        
+        if (prevBlindLevel) {
+          const resetTime = prevBlindLevel.duration || 1200;
+          
+          // Обновляем турнир в базе данных
+          await supabase
+            .from('tournaments')
+            .update({
+              current_level: newLevel,
+              current_small_blind: prevBlindLevel.small_blind,
+              current_big_blind: prevBlindLevel.big_blind,
+              timer_duration: resetTime,
+              timer_remaining: resetTime
+            })
+            .eq('id', tournament.id);
+
+          // Обновляем локальное состояние
+          setCurrentTime(resetTime);
+          setTimerActive(false);
+          
+          // Синхронизируем через localStorage
+          localStorage.setItem(`timer_${tournament.id}`, JSON.stringify({
+            currentTime: resetTime,
+            timerActive: false,
+            lastUpdate: Date.now()
+          }));
+        }
+      }
+    } catch (error) {
+      console.error('Error going back level:', error);
+    }
+  };
+
+  const handleStopTournament = async () => {
+    if (!tournament) return;
+    
+    try {
+      await supabase
+        .from('tournaments')
+        .update({ status: 'completed', finished_at: new Date().toISOString() })
+        .eq('id', tournament.id);
+    } catch (error) {
+      console.error('Error stopping tournament:', error);
+    }
+  };
+
   const handleClose = () => {
     window.close();
   };
-  const handleTimerAdjust = () => {};
+
+  const handleTimerAdjust = (seconds: number) => {
+    if (!tournament) return;
+    
+    const newTime = Math.max(0, currentTime + seconds);
+    setCurrentTime(newTime);
+    
+    // Синхронизируем через localStorage
+    localStorage.setItem(`timer_${tournament.id}`, JSON.stringify({
+      currentTime: newTime,
+      timerActive,
+      lastUpdate: Date.now()
+    }));
+  };
   const handleSloganChange = (newSlogan: string) => {
     setSlogan(newSlogan);
   };
