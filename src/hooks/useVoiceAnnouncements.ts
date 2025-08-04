@@ -26,34 +26,57 @@ export const useVoiceAnnouncements = (options: VoiceAnnouncementOptions = { enab
     try {
       console.log('🔊 Generating voice announcement:', text);
 
+      // Попробуем сначала OpenAI TTS
       const { data, error } = await supabase.functions.invoke('voice-announcement', {
         body: {
           text,
-          voice: options.voice || 'alloy'
+          voice: 'alloy' // Используем OpenAI голос
         }
       });
 
       if (error) {
-        console.error('❌ Voice announcement error:', error);
+        console.error('❌ OpenAI TTS error, trying browser speech:', error);
+        // Fallback на встроенную речь браузера
+        await playBrowserSpeech(text);
         return;
       }
 
       if (data?.audioContent) {
-        // Create audio element and play
+        // Создаем аудио элемент и воспроизводим
         const audio = new Audio();
         audio.volume = options.volume || 0.7;
         audio.src = `data:audio/mpeg;base64,${data.audioContent}`;
         
-        // Store reference for potential cleanup
         audioRef.current = audio;
-        
         await audio.play();
-        console.log('✅ Voice announcement played successfully');
+        console.log('✅ OpenAI TTS played successfully');
+      } else {
+        // Fallback на встроенную речь
+        await playBrowserSpeech(text);
       }
     } catch (error) {
-      console.error('❌ Failed to play voice announcement:', error);
+      console.error('❌ Failed to play OpenAI TTS, trying browser speech:', error);
+      // Fallback на встроенную речь браузера
+      await playBrowserSpeech(text);
     }
   }, [options.enabled, options.voice, options.volume]);
+
+  const playBrowserSpeech = useCallback(async (text: string) => {
+    try {
+      if ('speechSynthesis' in window) {
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = 'ru-RU';
+        utterance.volume = options.volume || 0.7;
+        utterance.rate = 0.9;
+        utterance.pitch = 1;
+        
+        speechSynthesis.speak(utterance);
+        console.log('✅ Browser speech played successfully');
+      }
+    } catch (error) {
+      console.error('❌ Browser speech also failed:', error);
+    }
+  }, [options.volume]);
 
   const announceNextLevel = useCallback(async (
     currentLevel: number,
