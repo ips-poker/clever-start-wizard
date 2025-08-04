@@ -20,8 +20,11 @@ serve(async (req) => {
 
     const ELEVENLABS_API_KEY = Deno.env.get('ELEVENLABS_API_KEY');
     if (!ELEVENLABS_API_KEY) {
+      console.error('❌ ElevenLabs API key not found in environment');
       throw new Error('ElevenLabs API key not configured');
     }
+    
+    console.log('✅ ElevenLabs API key found, length:', ELEVENLABS_API_KEY.length);
 
     // ElevenLabs voice IDs
     const voiceIds = {
