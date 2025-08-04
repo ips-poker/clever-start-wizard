@@ -41,7 +41,7 @@ serve(async (req) => {
       headers: {
         'Accept': 'audio/mpeg',
         'Content-Type': 'application/json',
-        'xi-api-key': ELEVENLABS_API_KEY,
+        'xi-api-key': ELEVENLABS_API_KEY?.toString() || '',
       },
       body: JSON.stringify({
         text: text,
