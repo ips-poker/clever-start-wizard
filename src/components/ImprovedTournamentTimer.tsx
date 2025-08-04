@@ -78,9 +78,12 @@ const ImprovedTournamentTimer = ({
 
     // Time-based announcements during active timer
     if (timerActive && currentLevel) {
+      console.log('⏰ Timer check - currentTime:', currentTime, 'timerActive:', timerActive);
       if (currentTime === 600) { // 10 minutes
+        console.log('🔊 Triggering 10 minute announcement');
         announceCustomMessage("До окончания уровня осталось 10 минут.");
       } else if (currentTime === 300) { // 5 minutes - announce upcoming blind increase
+        console.log('🔊 Triggering 5 minute announcement with next level info');
         if (!currentLevel.is_break && nextLevel) {
           if (nextLevel.is_break) {
             announceCustomMessage(`До перерыва осталось 5 минут. Следующий перерыв на ${Math.round(nextLevel.duration / 60)} минут.`);
@@ -91,12 +94,16 @@ const ImprovedTournamentTimer = ({
           announceCustomMessage("До окончания уровня осталось 5 минут.");
         }
       } else if (currentTime === 120) { // 2 minutes
+        console.log('🔊 Triggering 2 minute announcement');
         announceCustomMessage("До окончания уровня осталось 2 минуты.");
       } else if (currentTime === 60) { // 1 minute
+        console.log('🔊 Triggering 1 minute announcement');
         announceCustomMessage("До окончания уровня осталась 1 минута.");
       } else if (currentTime === 30) { // 30 seconds
+        console.log('🔊 Triggering 30 second announcement');
         announceCustomMessage("До окончания уровня осталось 30 секунд.");
       } else if (currentTime === 10) { // 10 seconds - announce next level details
+        console.log('🔊 Triggering 10 second announcement with next level details');
         if (nextLevel) {
           if (nextLevel.is_break) {
             announceCustomMessage(`Со следующей раздачи начинается перерыв на ${Math.round(nextLevel.duration / 60)} минут. Игроки могут отдохнуть.`);
@@ -327,6 +334,18 @@ const ImprovedTournamentTimer = ({
             >
               <RotateCcw className="w-4 h-4 mr-1" />
               Сброс
+            </Button>
+            
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                console.log('🔊 Test button clicked - calling announceCustomMessage');
+                announceCustomMessage("Тест голосового объявления. Это проверка работы системы.");
+              }}
+              className="bg-orange-100 hover:bg-orange-200 text-orange-800"
+            >
+              🔊 Тест голоса
             </Button>
           </div>
         </CardContent>

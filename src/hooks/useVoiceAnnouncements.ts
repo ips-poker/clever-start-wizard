@@ -22,7 +22,10 @@ export const useVoiceAnnouncements = (options: VoiceAnnouncementOptions = { enab
   const announcementTimeoutRef = useRef<number | null>(null);
 
   const playAnnouncement = useCallback(async (text: string) => {
-    if (!options.enabled || !text) return;
+    if (!options.enabled || !text) {
+      console.log('🔇 Voice announcements disabled or no text:', { enabled: options.enabled, text });
+      return;
+    }
 
     // Предотвращаем дублирование одинаковых объявлений
     const currentKey = `${text}_${Date.now()}`;
@@ -52,6 +55,7 @@ export const useVoiceAnnouncements = (options: VoiceAnnouncementOptions = { enab
       }
 
       // Используем ElevenLabs TTS с голосом Ария
+      console.log('📡 Calling voice-announcement edge function...');
       const { data, error } = await supabase.functions.invoke('voice-announcement', {
         body: {
           text,
@@ -60,6 +64,8 @@ export const useVoiceAnnouncements = (options: VoiceAnnouncementOptions = { enab
           language: 'ru'
         }
       });
+
+      console.log('📡 Edge function response:', { data, error });
 
       if (error) {
         console.error('❌ ElevenLabs TTS error, trying browser speech:', error);
@@ -102,6 +108,7 @@ export const useVoiceAnnouncements = (options: VoiceAnnouncementOptions = { enab
   const playBrowserSpeech = useCallback(async (text: string) => {
     try {
       if ('speechSynthesis' in window) {
+        console.log('🔊 Using browser speech synthesis as fallback');
         const utterance = new SpeechSynthesisUtterance(text);
         utterance.lang = 'ru-RU';
         utterance.volume = options.volume || 0.7;
@@ -121,6 +128,7 @@ export const useVoiceAnnouncements = (options: VoiceAnnouncementOptions = { enab
     nextLevel: BlindLevel | null,
     currentTime: number
   ) => {
+    console.log('📢 announceNextLevel called:', { currentLevel, nextLevel, currentTime });
     if (!nextLevel) {
       await playAnnouncement('Внимание! Через 10 секунд время уровня истекает');
       return;
@@ -143,6 +151,7 @@ export const useVoiceAnnouncements = (options: VoiceAnnouncementOptions = { enab
   }, [playAnnouncement]);
 
   const announceCustomMessage = useCallback(async (message: string) => {
+    console.log('📢 announceCustomMessage called:', message);
     await playAnnouncement(message);
   }, [playAnnouncement]);
 
