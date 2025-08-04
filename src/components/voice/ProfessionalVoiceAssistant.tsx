@@ -44,7 +44,9 @@ export function ProfessionalVoiceAssistant({
     language: 'ru-RU',
     voice: null,
     autoAnnouncements: true,
-    debugMode: false
+    debugMode: false,
+    useElevenLabs: false,
+    elevenLabsVoiceId: 'pNInz6obpgDQGcFmaJgB' // Adam voice
   });
 
   const [availableVoices, setAvailableVoices] = useState<SpeechSynthesisVoice[]>([]);

@@ -7,6 +7,8 @@ export interface VoiceSettings {
   voice: string | null;
   autoAnnouncements: boolean;
   debugMode: boolean;
+  useElevenLabs: boolean;
+  elevenLabsVoiceId: string;
 }
 
 export interface BlindLevel {
@@ -85,6 +87,31 @@ export const useProfessionalVoiceAssistant = (settings: VoiceSettings) => {
       setTimeout(() => processQueue(), 500);
     }
   }, []);
+
+  // ElevenLabs TTS
+  const playWithElevenLabs = useCallback(async (text: string): Promise<void> => {
+    try {
+      const response = await fetch('/api/elevenlabs-tts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          text, 
+          voice_id: settings.elevenLabsVoiceId || 'pNInz6obpgDQGcFmaJgB' // Adam voice
+        })
+      });
+      
+      if (!response.ok) throw new Error('ElevenLabs API error');
+      
+      const audioData = await response.blob();
+      const audio = new Audio(URL.createObjectURL(audioData));
+      audio.volume = settings.volume;
+      await audio.play();
+    } catch (error) {
+      console.error('ElevenLabs error, fallback to browser TTS:', error);
+      // Fallback to browser TTS
+      await playAnnouncementNow(text);
+    }
+  }, [settings, playAnnouncementNow]);
 
   // Непосредственное воспроизведение
   const playAnnouncementNow = useCallback(async (text: string): Promise<void> => {

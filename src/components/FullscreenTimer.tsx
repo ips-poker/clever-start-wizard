@@ -99,7 +99,9 @@ const FullscreenTimer = ({
     language: 'ru-RU',
     voice: null,
     autoAnnouncements: false,
-    debugMode: false
+    debugMode: false,
+    useElevenLabs: false,
+    elevenLabsVoiceId: 'pNInz6obpgDQGcFmaJgB'
   };
   
   const { announceCustomMessage, stopAll } = useProfessionalVoiceAssistant(voiceSettings);

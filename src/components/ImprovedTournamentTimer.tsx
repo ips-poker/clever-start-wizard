@@ -55,7 +55,9 @@ const ImprovedTournamentTimer = ({
     language: 'ru-RU',
     voice: null,
     autoAnnouncements: true,
-    debugMode: true
+    debugMode: true,
+    useElevenLabs: false,
+    elevenLabsVoiceId: 'pNInz6obpgDQGcFmaJgB'
   };
   
   const { 
