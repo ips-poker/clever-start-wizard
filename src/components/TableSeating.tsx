@@ -88,11 +88,23 @@ const TableSeating = ({
     setTables(newTables);
   };
 
+  const updateSeatingInDatabase = async (tablesData: Table[]) => {
+    for (const table of tablesData) {
+      for (const seat of table.seats) {
+        if (seat.player_id) {
+          await supabase
+            .from('tournament_registrations')
+            .update({ seat_number: seat.seat_number })
+            .eq('player_id', seat.player_id)
+            .eq('tournament_id', tournamentId);
+        }
+      }
+    }
+  };
+
   const autoBalanceTables = () => {
     const activePlayers = registrations.filter(r => r.status === 'registered' || r.status === 'playing');
     const totalTables = tables.length;
-    const playersPerTable = Math.floor(activePlayers.length / totalTables);
-    const extraPlayers = activePlayers.length % totalTables;
     
     const newTables = [...tables];
     
@@ -219,20 +231,6 @@ const TableSeating = ({
     
     toast({ title: "Игрок перемещен", description: `Стол ${toTable}, место ${toSeat}` });
     setIsMoveDialogOpen(false);
-  };
-
-  const updateSeatingInDatabase = async (tablesData: Table[]) => {
-    for (const table of tablesData) {
-      for (const seat of table.seats) {
-        if (seat.player_id) {
-          await supabase
-            .from('tournament_registrations')
-            .update({ seat_number: seat.seat_number })
-            .eq('player_id', seat.player_id)
-            .eq('tournament_id', tournamentId);
-        }
-      }
-    }
   };
 
   const suggestPlayerMove = (tableNum: number) => {
