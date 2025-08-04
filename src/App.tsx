@@ -13,6 +13,7 @@ import Gallery from "./pages/Gallery";
 import Tournaments from "./pages/Tournaments";
 import Rating from "./pages/Rating";
 import Profile from "./pages/Profile";
+import TimerDisplay from "./pages/TimerDisplay";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -37,6 +38,7 @@ function App() {
           <Route path="/tournaments" element={<Tournaments />} />
           <Route path="/rating" element={<Rating />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/timer/:tournamentId" element={<TimerDisplay />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
