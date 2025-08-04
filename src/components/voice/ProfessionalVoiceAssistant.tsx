@@ -171,26 +171,87 @@ export function ProfessionalVoiceAssistant({ selectedTournament, onStatusChange 
           
         case 'next_blind_level':
         case 'previous_blind_level':
+        case 'set_blind_level':
           // Обновляем уровень блайндов
+          const parameters = actionResult.level ? { level: actionResult.level } : {};
+          await supabase.rpc('handle_voice_tournament_action', {
+            tournament_id_param: tournament_id,
+            action_type: action,
+            parameters: parameters
+          });
+          break;
+          
+        case 'set_timer':
+        case 'add_time':
+        case 'remove_time':
+        case 'reset_timer':
+          // Обновляем таймер
+          const minutes = actionResult.minutes || 0;
+          let newTime = minutes * 60;
+          
+          if (action === 'add_time' && tournamentData?.timer_remaining) {
+            newTime = tournamentData.timer_remaining + (minutes * 60);
+          } else if (action === 'remove_time' && tournamentData?.timer_remaining) {
+            newTime = Math.max(0, tournamentData.timer_remaining - (minutes * 60));
+          } else if (action === 'reset_timer') {
+            newTime = tournamentData?.timer_duration || 1200; // По умолчанию 20 минут
+          }
+          
+          await supabase.rpc('update_tournament_timer', {
+            tournament_id_param: tournament_id,
+            new_timer_remaining: newTime
+          });
+          break;
+          
+        case 'start_timer':
+        case 'stop_timer':
+          // Управление таймером
           await supabase.rpc('handle_voice_tournament_action', {
             tournament_id_param: tournament_id,
             action_type: action
           });
           break;
           
-        case 'set_timer':
-        case 'add_time':
-          // Обновляем таймер
-          const minutes = actionResult.minutes || 0;
-          await supabase.rpc('update_tournament_timer', {
+        case 'start_break':
+        case 'end_break':
+        case 'extend_break':
+          // Управление перерывами
+          const breakParams = actionResult.duration || actionResult.minutes 
+            ? { duration: actionResult.duration || actionResult.minutes } 
+            : {};
+          await supabase.rpc('handle_voice_tournament_action', {
             tournament_id_param: tournament_id,
-            new_timer_remaining: minutes * 60
+            action_type: action,
+            parameters: breakParams
           });
           break;
           
         case 'show_stats':
-          // Триггерим показ статистики через callback
-          onStatusChange?.('show_stats');
+        case 'show_players':
+        case 'show_payouts':
+        case 'current_level_info':
+        case 'next_level_info':
+        case 'blind_structure_info':
+        case 'time_remaining':
+          // Триггерим показ информации через callback
+          onStatusChange?.(action);
+          break;
+          
+        case 'announcement':
+        case 'silence_announcement':
+        case 'last_hand_announcement':
+        case 'one_minute_warning':
+        case 'ten_minutes_warning':
+        case 'five_minutes_warning':
+          // Голосовые объявления
+          if (actionResult.message) {
+            await speakText(actionResult.message);
+          }
+          break;
+          
+        case 'help':
+          // Показываем справку по командам
+          onStatusChange?.('show_help');
           break;
       }
     } catch (error) {
@@ -338,11 +399,23 @@ export function ProfessionalVoiceAssistant({ selectedTournament, onStatusChange 
           if (newData.updated_at !== tournamentData?.updated_at) {
             setTournamentData(newData);
             
-            // Голосовые уведомления только для важных изменений
+            // Умные голосовые уведомления только для важных изменений
             if (oldData.status !== newData.status) {
-              speakText(`Статус турнира изменен на ${newData.status}`);
+              const statusMessages = {
+                'playing': 'Турнир запущен',
+                'paused': 'Турнир приостановлен',
+                'finished': 'Турнир завершен',
+                'registration': 'Открыта регистрация'
+              };
+              const message = statusMessages[newData.status] || `Статус изменен на ${newData.status}`;
+              speakText(message);
             } else if (oldData.current_level !== newData.current_level) {
-              speakText(`Переход на ${newData.current_level} уровень блайндов`);
+              // Получаем информацию об уровне из базы данных
+              fetchAndAnnounceLevel(newData.current_level, newData.id);
+            } else if (oldData.timer_remaining > 60 && newData.timer_remaining <= 60 && newData.timer_remaining > 0) {
+              speakText('Внимание! До окончания уровня осталась одна минута');
+            } else if (oldData.timer_remaining > 10 && newData.timer_remaining <= 10 && newData.timer_remaining > 0) {
+              speakText('Внимание! До окончания уровня осталось 10 секунд');
             }
           }
         }
@@ -353,6 +426,57 @@ export function ProfessionalVoiceAssistant({ selectedTournament, onStatusChange 
       supabase.removeChannel(subscription);
     };
   }, [selectedTournament?.id]);
+
+  // Получение информации об уровне блайндов для объявления
+  const fetchAndAnnounceLevel = async (level: number, tournamentId: string) => {
+    try {
+      const { data: blindLevel } = await supabase
+        .from('blind_levels')
+        .select('*')
+        .eq('tournament_id', tournamentId)
+        .eq('level', level)
+        .single();
+
+      if (blindLevel) {
+        if (blindLevel.is_break) {
+          const duration = Math.floor(blindLevel.duration / 60);
+          speakText(`Начинается перерыв на ${duration} минут`);
+        } else {
+          let announcement = `Переход на ${level} уровень блайндов. `;
+          announcement += `Малый блайнд ${blindLevel.small_blind}, большой блайнд ${blindLevel.big_blind}`;
+          if (blindLevel.ante && blindLevel.ante > 0) {
+            announcement += `, анте ${blindLevel.ante}`;
+          }
+          speakText(announcement);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching blind level:', error);
+      speakText(`Переход на ${level} уровень блайндов`);
+    }
+  };
+
+  // Автоматические объявления времени
+  useEffect(() => {
+    if (!tournamentData?.timer_remaining || !selectedTournament?.id) return;
+
+    const timeRemaining = tournamentData.timer_remaining;
+    
+    // Объявления на определенных отметках времени
+    if (timeRemaining === 600) { // 10 минут
+      speakText('До окончания уровня осталось 10 минут');
+    } else if (timeRemaining === 300) { // 5 минут
+      speakText('До окончания уровня осталось 5 минут');
+    } else if (timeRemaining === 120) { // 2 минуты
+      speakText('До окончания уровня осталось 2 минуты');
+    } else if (timeRemaining === 60) { // 1 минута
+      speakText('Внимание! До окончания уровня осталась одна минута');
+    } else if (timeRemaining === 30) { // 30 секунд
+      speakText('До окончания уровня осталось 30 секунд');
+    } else if (timeRemaining === 10) { // 10 секунд
+      speakText('Внимание! До окончания уровня осталось 10 секунд');
+    }
+  }, [tournamentData?.timer_remaining]);
 
   useEffect(() => {
     return () => {
@@ -486,20 +610,29 @@ export function ProfessionalVoiceAssistant({ selectedTournament, onStatusChange 
               <Button 
                 variant="outline" 
                 size="sm"
-                onClick={() => quickCommand("показать статистику турнира")}
+                onClick={() => quickCommand("какой текущий уровень блайндов")}
                 disabled={!selectedTournament}
                 className="text-xs p-2"
               >
-                Статистика
+                Текущий уровень
               </Button>
               <Button 
                 variant="outline" 
                 size="sm"
-                onClick={() => quickCommand("поставить турнир на паузу")}
+                onClick={() => quickCommand("какие следующие блайнды")}
                 disabled={!selectedTournament}
                 className="text-xs p-2"
               >
-                Пауза
+                Следующий уровень
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => quickCommand("сколько времени осталось")}
+                disabled={!selectedTournament}
+                className="text-xs p-2"
+              >
+                Время уровня
               </Button>
               <Button 
                 variant="outline" 
