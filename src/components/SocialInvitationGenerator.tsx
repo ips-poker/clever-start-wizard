@@ -631,18 +631,24 @@ ${tournamentData.description}
               <div className="flex justify-center">
                 <div 
                   id="social-square-preview" 
-                  className="w-[700px] min-h-[900px] bg-gradient-to-br from-white via-blue-50 to-purple-100 text-gray-800 relative border-2 border-gradient-to-r from-blue-200 to-purple-200 shadow-2xl"
+                  className="w-[700px] min-h-[900px] bg-white text-gray-900 relative border-2 border-slate-200 shadow-2xl rounded-2xl overflow-hidden"
                   style={{
-                    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.8)',
+                    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(255, 255, 255, 0.05)',
                   }}
                 >
                   {/* Decorative background */}
                   <div className="absolute inset-0">
-                    <div className="absolute top-8 left-8 text-6xl text-yellow-400/20 transform rotate-12">♠</div>
-                    <div className="absolute top-8 right-8 text-5xl text-red-400/20 transform -rotate-12">♥</div>
-                    <div className="absolute bottom-8 left-8 text-5xl text-red-400/20 transform rotate-12">♦</div>
-                    <div className="absolute bottom-8 right-8 text-6xl text-yellow-400/20 transform -rotate-12">♣</div>
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent"></div>
+                    {/* Elegant gradient overlay */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-blue-50/30 via-purple-50/20 to-pink-50/30"></div>
+                    
+                    {/* Card symbols with better contrast */}
+                    <div className="absolute top-8 left-8 text-6xl text-amber-500/15 transform rotate-12">♠</div>
+                    <div className="absolute top-8 right-8 text-5xl text-rose-500/15 transform -rotate-12">♥</div>
+                    <div className="absolute bottom-8 left-8 text-5xl text-rose-500/15 transform rotate-12">♦</div>
+                    <div className="absolute bottom-8 right-8 text-6xl text-amber-500/15 transform -rotate-12">♣</div>
+                    
+                    {/* Subtle pattern overlay */}
+                    <div className="absolute inset-0 opacity-5 bg-gradient-to-br from-slate-900 via-transparent to-slate-900"></div>
                   </div>
 
                   <div className="relative h-full flex flex-col p-8">
@@ -809,18 +815,24 @@ ${tournamentData.description}
               <div className="flex justify-center">
                 <div 
                   id="social-story-preview" 
-                  className="w-[350px] min-h-[800px] bg-gradient-to-b from-blue-50 via-purple-50 to-pink-50 text-gray-800 relative border-2 border-gradient-to-b from-blue-200 to-pink-200 shadow-2xl"
+                  className="w-[350px] min-h-[800px] bg-white text-gray-900 relative border-2 border-slate-200 shadow-2xl rounded-2xl overflow-hidden"
                   style={{
-                    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.8)',
+                    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(255, 255, 255, 0.05)',
                   }}
                 >
-                  {/* Animated background elements */}
+                  {/* Elegant background elements */}
                   <div className="absolute inset-0">
-                    <div className="absolute top-16 left-6 text-7xl text-yellow-400/20 animate-pulse">♠</div>
-                    <div className="absolute top-24 right-6 text-6xl text-red-400/20 animate-pulse delay-1000 transform rotate-12">♥</div>
-                    <div className="absolute bottom-40 left-6 text-6xl text-red-400/20 animate-pulse delay-2000 transform -rotate-12">♦</div>
-                    <div className="absolute bottom-32 right-6 text-7xl text-yellow-400/20 animate-pulse delay-3000">♣</div>
-                    <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/20 to-black/40"></div>
+                    {/* Subtle gradient overlay */}
+                    <div className="absolute inset-0 bg-gradient-to-b from-blue-50/40 via-purple-50/30 to-pink-50/40"></div>
+                    
+                    {/* Card symbols with elegant colors */}
+                    <div className="absolute top-16 left-6 text-7xl text-amber-500/12 animate-pulse">♠</div>
+                    <div className="absolute top-24 right-6 text-6xl text-rose-500/12 animate-pulse delay-1000 transform rotate-12">♥</div>
+                    <div className="absolute bottom-40 left-6 text-6xl text-rose-500/12 animate-pulse delay-2000 transform -rotate-12">♦</div>
+                    <div className="absolute bottom-32 right-6 text-7xl text-amber-500/12 animate-pulse delay-3000">♣</div>
+                    
+                    {/* Elegant pattern overlay */}
+                    <div className="absolute inset-0 opacity-3 bg-gradient-to-b from-slate-900 via-transparent to-slate-900"></div>
                   </div>
 
                   <div className="relative h-full flex flex-col p-6">
