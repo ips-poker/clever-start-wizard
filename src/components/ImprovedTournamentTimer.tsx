@@ -48,7 +48,7 @@ const ImprovedTournamentTimer = ({
   const [totalChipsInPlay, setTotalChipsInPlay] = useState(0);
   const [averageStack, setAverageStack] = useState(0);
   const { toast } = useToast();
-  const { announceNextLevel, announceCustomMessage } = useVoiceAnnouncements();
+  const { announceNextLevel, announceCustomMessage } = useVoiceAnnouncements({ enabled: true, volume: 0.8 });
   const prevLevelRef = useRef(tournament.current_level);
   const hasAnnouncedLevelRef = useRef(false);
 
