@@ -510,49 +510,39 @@ const TournamentDirector = () => {
             onTabChange={setActiveTab} 
           />
           <main className="flex-1">
-            {/* Top Navigation Bar */}
-            <div className="bg-white/80 backdrop-blur-sm border-b border-gray-200/50 px-6 py-4 sticky top-0 z-10">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-6">
-                  <Button 
-                    variant="ghost" 
-                    onClick={() => navigate('/')}
-                    className="text-muted-foreground hover:text-primary"
+            <div className="container mx-auto px-4 py-8 max-w-7xl">
+          {/* Header without titles */}
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 mb-12">
+            <div className="flex items-center gap-4">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => navigate('/')}
+                className="flex items-center gap-2"
+              >
+                <Trophy className="w-4 h-4" />
+                На главную
+              </Button>
+              
+              {selectedTournament && (
+                <div className="bg-white/70 backdrop-blur-sm rounded-xl p-4 border border-gray-200/50 shadow-subtle">
+                  <p className="text-sm text-gray-500 mb-1">Активный турнир</p>
+                  <p className="font-medium text-gray-800">{selectedTournament.name}</p>
+                  <Badge 
+                    variant={selectedTournament.status === 'running' ? 'default' : 'secondary'}
+                    className="mt-2"
                   >
-                    ← Вернуться на сайт
-                  </Button>
-                  
-                  <div className="h-6 w-px bg-gray-300"></div>
-                  
-                  <div className="flex items-center gap-2">
-                    <Trophy className="w-5 h-5 text-primary" />
-                    <h1 className="text-xl font-semibold text-gray-800">Турнирный директор</h1>
-                  </div>
+                    {selectedTournament.status === 'running' ? 'Активен' : 
+                     selectedTournament.status === 'pending' ? 'Ожидание' : 'Завершен'}
+                  </Badge>
                 </div>
-                
-                <div className="flex items-center gap-4">
-                  {selectedTournament && (
-                    <div className="flex items-center gap-3 bg-gray-50/80 rounded-lg px-4 py-2">
-                      <div className="text-sm">
-                        <span className="text-gray-600">Активный турнир: </span>
-                        <span className="font-medium text-gray-900">{selectedTournament.name}</span>
-                      </div>
-                      <Badge 
-                        variant={selectedTournament.status === 'running' ? 'default' : 'secondary'}
-                        className="text-xs"
-                      >
-                        {selectedTournament.status === 'running' ? 'Запущен' : 
-                         selectedTournament.status === 'pending' ? 'Ожидание' : 'Завершен'}
-                      </Badge>
-                    </div>
-                  )}
-                  
-                  <VoiceControl />
-                </div>
-              </div>
+              )}
             </div>
-
-            <div className="container mx-auto px-6 py-6 max-w-7xl">
+            
+            <div className="flex items-center gap-2">
+              <VoiceControl />
+            </div>
+          </div>
 
           {/* Custom Tab System заменяем обратно на Radix Tabs */}
           <Tabs 
