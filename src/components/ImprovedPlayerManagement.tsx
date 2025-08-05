@@ -729,17 +729,26 @@ const ImprovedPlayerManagement = ({ tournament, players, registrations, onRegist
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-4">
-                        <div className={`w-12 h-12 rounded-full flex items-center justify-center text-white font-light text-lg ${
-                          (registration.position || 0) <= 3 ? 'bg-yellow-500' : 'bg-slate-500'
-                        }`}>
-                          {registration.position}
+                        <div className="relative">
+                          <Avatar className="w-12 h-12">
+                            <AvatarImage src={getPlayerAvatar(registration.player.id)} alt={registration.player.name} />
+                            <AvatarFallback className="bg-slate-200 text-slate-700 font-light">
+                              {registration.player.name.charAt(0).toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className={`absolute -top-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium text-white shadow-sm ${
+                            (registration.position || 0) <= 3 
+                              ? 'bg-gradient-to-br from-yellow-400 to-yellow-600' 
+                              : 'bg-gradient-to-br from-slate-400 to-slate-600'
+                          }`}>
+                            {registration.position}
+                          </div>
+                          {(registration.position || 0) <= 3 && (
+                            <div className="absolute -top-2 -left-2">
+                              <Trophy className="w-5 h-5 text-yellow-500 drop-shadow-sm" />
+                            </div>
+                          )}
                         </div>
-                        <Avatar className="w-12 h-12">
-                          <AvatarImage src={getPlayerAvatar(registration.player.id)} alt={registration.player.name} />
-                          <AvatarFallback className="bg-slate-200 text-slate-700 font-light">
-                            {registration.player.name.charAt(0).toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
                         <div>
                           <h4 className="text-lg font-light text-slate-900">{registration.player.name}</h4>
                           <div className="flex items-center gap-3 text-sm text-slate-500 font-light">
