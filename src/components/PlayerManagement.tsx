@@ -581,16 +581,37 @@ const PlayerManagement = ({ tournament, players, registrations, onRegistrationUp
             </Card>
           ) : (
             <div className="space-y-6">
-              {/* Группировка игроков по столам */}
+              {/* Группировка игроков по столам из актуальной рассадки */}
               {(() => {
                 const maxPlayersPerTable = 9;
                 const tableGroups: { [key: number]: Registration[] } = {};
                 
-                // Группируем игроков по столам
+                // Загружаем актуальную рассадку из localStorage
+                const savedSeating = localStorage.getItem(`seating_${tournament.id}`);
+                let currentSeating: any[] = [];
+                
+                if (savedSeating) {
+                  try {
+                    currentSeating = JSON.parse(savedSeating);
+                  } catch (e) {
+                    console.error('Ошибка парсинга рассадки:', e);
+                  }
+                }
+                
+                // Группируем игроков на основе актуальной рассадки
                 activePlayers.forEach(player => {
-                  const tableNumber = player.seat_number 
-                    ? Math.ceil(player.seat_number / maxPlayersPerTable)
-                    : 0; // игроки без места попадают в стол 0
+                  let tableNumber = 0; // По умолчанию "без стола"
+                  
+                  // Ищем игрока в актуальной рассадке
+                  if (currentSeating.length > 0) {
+                    for (const table of currentSeating) {
+                      const seat = table.seats?.find((s: any) => s.player_id === player.player.id);
+                      if (seat) {
+                        tableNumber = table.table_number;
+                        break;
+                      }
+                    }
+                  }
                   
                   if (!tableGroups[tableNumber]) {
                     tableGroups[tableNumber] = [];

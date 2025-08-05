@@ -62,10 +62,12 @@ const TableSeating = ({
   }, [tournamentId]);
 
   useEffect(() => {
-    if (tables.length === 0) {
+    // Только создаем пустые столы если есть сохраненная рассадка
+    const savedSeating = localStorage.getItem(`seating_${tournamentId}`);
+    if (tables.length === 0 && !savedSeating && registrations.length > 0) {
       generateTablesFromRegistrations();
     }
-  }, [registrations, seatingSettings.maxPlayersPerTable]);
+  }, [registrations, seatingSettings.maxPlayersPerTable, tournamentId]);
 
   useEffect(() => {
     const savedSettings = localStorage.getItem(`seating_settings_${tournamentId}`);
