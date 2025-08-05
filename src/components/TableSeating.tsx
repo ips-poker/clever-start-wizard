@@ -82,16 +82,7 @@ const TableSeating = ({
 
   const loadSavedSeating = async () => {
     try {
-      // Сначала пытаемся загрузить из localStorage
-      const savedSeating = localStorage.getItem(`seating_${tournamentId}`);
-      if (savedSeating) {
-        const parsedSeating = JSON.parse(savedSeating);
-        setTables(parsedSeating);
-        console.log('🪑 Рассадка загружена из localStorage');
-        return;
-      }
-
-      // Если в localStorage нет данных, загружаем из базы данных
+      // Загружаем данные из базы данных
       const { data: seatingData, error } = await supabase
         .from('tournament_registrations')
         .select(`
@@ -99,7 +90,7 @@ const TableSeating = ({
           seat_number,
           chips,
           status,
-          player:players(id, name)
+          player:players(id, name, avatar_url, elo_rating)
         `)
         .eq('tournament_id', tournamentId)
         .not('seat_number', 'is', null);
@@ -111,6 +102,8 @@ const TableSeating = ({
       }
 
       if (seatingData && seatingData.length > 0) {
+        console.log('🪑 Найдена рассадка в БД:', seatingData.length, 'игроков');
+        
         // Создаем столы на основе сохраненной рассадки
         const maxSeatNumber = Math.max(...seatingData.map(s => s.seat_number || 0));
         const totalTables = Math.ceil(maxSeatNumber / seatingSettings.maxPlayersPerTable);
@@ -121,14 +114,17 @@ const TableSeating = ({
           const seats: TableSeat[] = [];
           
           for (let seatNum = 1; seatNum <= seatingSettings.maxPlayersPerTable; seatNum++) {
-            const seatData = seatingData.find(s => s.seat_number === ((tableNum - 1) * seatingSettings.maxPlayersPerTable + seatNum));
+            const absoluteSeatNumber = (tableNum - 1) * seatingSettings.maxPlayersPerTable + seatNum;
+            const seatData = seatingData.find(s => s.seat_number === absoluteSeatNumber);
             
             seats.push({
               seat_number: seatNum,
               player_id: seatData?.player_id,
               player_name: seatData?.player?.name,
               chips: seatData?.chips,
-              status: seatData?.status
+              status: seatData?.status,
+              avatar_url: seatData?.player?.avatar_url,
+              elo_rating: seatData?.player?.elo_rating
             });
           }
           
@@ -140,10 +136,21 @@ const TableSeating = ({
         }
         
         setTables(newTables);
+        setIsSeated(true);
         saveSeatingToLocalStorage(newTables);
         console.log('🪑 Рассадка загружена из базы данных');
       } else {
-        generateTablesFromRegistrations();
+        // Проверяем localStorage как fallback
+        const savedSeating = localStorage.getItem(`seating_${tournamentId}`);
+        if (savedSeating) {
+          const parsedSeating = JSON.parse(savedSeating);
+          setTables(parsedSeating);
+          setIsSeated(true);
+          console.log('🪑 Рассадка загружена из localStorage');
+        } else {
+          generateTablesFromRegistrations();
+          console.log('🪑 Рассадка не найдена, создаем пустые столы');
+        }
       }
     } catch (error) {
       console.error('Ошибка при загрузке рассадки:', error);
@@ -167,14 +174,14 @@ const TableSeating = ({
   };
 
   // Профессиональная рассадка
-  const performInitialSeating = () => {
+  const performInitialSeating = async () => {
     const activePlayers = registrations.filter(r => r.status === 'registered' || r.status === 'playing');
     
-    // Проверяем минимальное количество игроков для двух столов
-    if (activePlayers.length < seatingSettings.minPlayersToStartTwoTables) {
+    // Проверяем минимальное количество игроков
+    if (activePlayers.length < 2) {
       toast({ 
         title: "Недостаточно игроков", 
-        description: `Для рассадки за два стола нужно минимум ${seatingSettings.minPlayersToStartTwoTables} игроков` 
+        description: "Для рассадки нужно минимум 2 игрока" 
       });
       return;
     }
@@ -221,9 +228,12 @@ const TableSeating = ({
     });
     
     setTables(newTables);
-    updateSeatingInDatabase(newTables);
+    await updateSeatingInDatabase(newTables);
     setIsSeated(true);
-    toast({ title: "Рассадка выполнена", description: "Игроки рассажены в случайном порядке" });
+    toast({ 
+      title: "✅ Рассадка выполнена", 
+      description: `${activePlayers.length} игроков рассажены в случайном порядке за ${totalTables} столов` 
+    });
   };
 
   const generateTablesFromRegistrations = () => {
@@ -256,6 +266,13 @@ const TableSeating = ({
     try {
       console.log('🪑 Обновление рассадки в базе данных...');
       
+      // Сначала очищаем все seat_number для этого турнира
+      await supabase
+        .from('tournament_registrations')
+        .update({ seat_number: null })
+        .eq('tournament_id', tournamentId);
+      
+      // Теперь устанавливаем новые seat_number
       for (const table of tablesData) {
         for (const seat of table.seats) {
           if (seat.player_id) {
@@ -269,6 +286,8 @@ const TableSeating = ({
               
             if (error) {
               console.error('Ошибка обновления места игрока:', error);
+            } else {
+              console.log(`✅ Игрок ${seat.player_name} посажен на место ${seatNumber}`);
             }
           }
         }
@@ -742,11 +761,10 @@ const TableSeating = ({
           {/* Основные физические кнопки управления рассадкой */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             {/* Кнопка ПУСК - главная кнопка начальной рассадки */}
-            {!isSeated && (
+            {!isSeated && registrations.filter(r => r.status === 'registered' || r.status === 'playing').length >= 2 && (
               <Button 
                 onClick={performInitialSeating}
                 className="h-16 text-lg font-bold bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white shadow-lg hover:shadow-xl transition-all duration-300"
-                disabled={registrations.filter(r => r.status === 'registered' || r.status === 'playing').length < seatingSettings.minPlayersToStartTwoTables}
               >
                 <div className="flex flex-col items-center">
                   <Users className="w-6 h-6 mb-1" />
