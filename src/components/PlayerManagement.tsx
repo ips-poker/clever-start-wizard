@@ -715,7 +715,6 @@ const PlayerManagement = ({ tournament, players, registrations, onRegistrationUp
           <TableSeating 
             tournamentId={tournament.id}
             registrations={registrations}
-            tournamentStatus={tournament.status}
             onSeatingUpdate={onRegistrationUpdate}
           />
         </TabsContent>

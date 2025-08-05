@@ -27,7 +27,6 @@ interface Tournament {
   current_level: number;
   rebuy_end_level?: number;
   addon_level?: number;
-  status: string;
 }
 
 interface Player {
@@ -691,7 +690,6 @@ const ImprovedPlayerManagement = ({ tournament, players, registrations, onRegist
           <TableSeating 
             tournamentId={tournament.id}
             registrations={registrations}
-            tournamentStatus={tournament.status}
             onSeatingUpdate={onRegistrationUpdate}
           />
         </TabsContent>
