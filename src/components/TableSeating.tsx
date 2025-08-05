@@ -9,8 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { Users, ArrowUpDown, Plus, Shuffle, Settings, RotateCcw, UserMinus, MoveRight, Crown } from 'lucide-react';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Users, ArrowUpDown, Plus, Shuffle, Settings, RotateCcw, UserMinus } from 'lucide-react';
 
 interface TableSeat {
   seat_number: number;
@@ -18,8 +17,6 @@ interface TableSeat {
   player_name?: string;
   chips?: number;
   status?: string;
-  avatar_url?: string;
-  elo_rating?: number;
 }
 
 interface Table {
@@ -58,11 +55,14 @@ const TableSeating = ({
   const { toast } = useToast();
 
   useEffect(() => {
-    console.log('🔄 TableSeating - Инициализация компонента для турнира:', tournamentId);
-    if (tournamentId) {
-      initializeSeating();
+    loadSavedSeating();
+  }, [tournamentId]);
+
+  useEffect(() => {
+    if (tables.length === 0) {
+      generateTablesFromRegistrations();
     }
-  }, [tournamentId]); // ✅ Загружаем только при смене турнира
+  }, [registrations, seatingSettings.maxPlayersPerTable]);
 
   useEffect(() => {
     const savedSettings = localStorage.getItem(`seating_settings_${tournamentId}`);
@@ -72,111 +72,23 @@ const TableSeating = ({
   }, [tournamentId]);
 
   useEffect(() => {
-    // ✅ КРИТИЧНО: НЕ перезагружаем рассадку при изменении регистраций!
-    // Только обновляем данные существующих игроков, если рассадка уже есть
-    if (tournamentId && isSeated && tables.length > 0) {
-      console.log('🔄 Регистрации изменились, обновляем только данные игроков (НЕ позиции)');
-      updateExistingPlayersData();
-    }
-  }, [registrations]);
-
-  const updateExistingPlayersData = () => {
-    console.log('📊 Обновление данных существующих игроков без изменения позиций');
-    const activePlayers = registrations.filter(r => r.status === 'registered' || r.status === 'playing');
-    
-    setTables(currentTables => {
-      const updatedTables = currentTables.map(table => ({
-        ...table,
-        seats: table.seats.map(seat => {
-          if (seat.player_id) {
-            // Находим актуальные данные игрока
-            const playerData = activePlayers.find(p => p.player.id === seat.player_id);
-            if (playerData) {
-              return {
-                ...seat,
-                player_name: playerData.player.name,
-                chips: playerData.chips,
-                status: playerData.status,
-                elo_rating: playerData.player.elo_rating
-              };
-            } else {
-              // Игрок исключен - очищаем место
-              console.log(`❌ Игрок ${seat.player_name} исключен, освобождаем место`);
-              return {
-                seat_number: seat.seat_number
-              };
-            }
-          }
-          return seat;
-        }),
-      }));
-      
-      // Пересчитываем количество активных игроков
-      const finalTables = updatedTables.map(table => ({
-        ...table,
-        active_players: table.seats.filter(s => s.player_id).length
-      }));
-      
-      return finalTables;
-    });
-  };
-
-  const initializeSeating = async () => {
-    console.log('🎯 ИНИЦИАЛИЗАЦИЯ РАССАДКИ для турнира:', tournamentId);
-    
-    // Сначала проверяем статус рассадки
-    const hasSeating = await checkSeatingStatus();
-    console.log('🔍 Проверка завершена, есть рассадка:', hasSeating);
-    
-    // Затем загружаем данные
-    await loadSavedSeating();
-    
-    console.log('✅ Инициализация завершена, isSeated:', isSeated);
-  };
-
-  const checkSeatingStatus = async () => {
-    try {
-      console.log('🔍 Проверка статуса рассадки для турнира:', tournamentId);
-      
-      const { data: seatedPlayers, error } = await supabase
-        .from('tournament_registrations')
-        .select('seat_number, player_id, status, player:players(name)')
-        .eq('tournament_id', tournamentId)
-        .not('seat_number', 'is', null)
-        .in('status', ['registered', 'playing']);
-
-      if (error) {
-        console.error('❌ Ошибка проверки рассадки:', error);
-        setIsSeated(false);
-        return false;
-      }
-
-      const hasSeating = seatedPlayers && seatedPlayers.length > 0;
-      setIsSeated(hasSeating);
-      
-      console.log('🎯 СТАТУС РАССАДКИ:', { 
-        hasSeating, 
-        seatedCount: seatedPlayers?.length,
-        seatedPlayers: seatedPlayers?.map(p => ({ 
-          player: p.player?.name, 
-          seat: p.seat_number, 
-          status: p.status 
-        }))
-      });
-      
-      return hasSeating;
-    } catch (error) {
-      console.error('❌ Ошибка проверки рассадки:', error);
-      setIsSeated(false);
-      return false;
-    }
-  };
+    // Проверяем рассадку при запуске турнира
+    const savedSeating = localStorage.getItem(`seating_${tournamentId}`);
+    setIsSeated(!!savedSeating);
+  }, [tournamentId]);
 
   const loadSavedSeating = async () => {
     try {
-      console.log('🔍 Загрузка рассадки для турнира:', tournamentId);
+      // Сначала пытаемся загрузить из localStorage
+      const savedSeating = localStorage.getItem(`seating_${tournamentId}`);
+      if (savedSeating) {
+        const parsedSeating = JSON.parse(savedSeating);
+        setTables(parsedSeating);
+        console.log('🪑 Рассадка загружена из localStorage');
+        return;
+      }
 
-      // ✅ ВСЕГДА проверяем БД на существующую рассадку
+      // Если в localStorage нет данных, загружаем из базы данных
       const { data: seatingData, error } = await supabase
         .from('tournament_registrations')
         .select(`
@@ -184,162 +96,64 @@ const TableSeating = ({
           seat_number,
           chips,
           status,
-          player:players(id, name, elo_rating)
+          player:players(id, name)
         `)
         .eq('tournament_id', tournamentId)
-        .not('seat_number', 'is', null)
-        .in('status', ['registered', 'playing']);
-
-      console.log('🔍 Данные рассадки из БД:', { 
-        seatingData, 
-        error,
-        foundSeats: seatingData?.length || 0
-      });
+        .not('seat_number', 'is', null);
 
       if (error) {
-        console.error('❌ Ошибка загрузки рассадки:', error);
-        // Попробуем загрузить из localStorage как резерв
-        const localLoaded = loadFromLocalStorage();
-        if (!localLoaded) {
-          createEmptyTables();
-          setIsSeated(false);
-        }
+        console.error('Ошибка загрузки рассадки:', error);
+        generateTablesFromRegistrations();
         return;
       }
 
       if (seatingData && seatingData.length > 0) {
-        console.log('✅ НАЙДЕНА СУЩЕСТВУЮЩАЯ РАССАДКА! Восстанавливаем позиции');
-        createTablesFromSeatingData(seatingData);
-        setIsSeated(true);
+        // Создаем столы на основе сохраненной рассадки
+        const maxSeatNumber = Math.max(...seatingData.map(s => s.seat_number || 0));
+        const totalTables = Math.ceil(maxSeatNumber / seatingSettings.maxPlayersPerTable);
         
-        // Сохраняем в localStorage для резерва
-        setTimeout(() => {
-          saveSeatingToLocalStorage(tables);
-        }, 100);
-      } else {
-        console.log('📋 Рассадка не найдена в БД');
-        // Проверяем localStorage только если нет данных в БД
-        const localLoaded = loadFromLocalStorage();
-        if (!localLoaded) {
-          console.log('🆕 Создаем пустые столы для новой рассадки');
-          createEmptyTables();
-          setIsSeated(false);
+        const newTables: Table[] = [];
+        
+        for (let tableNum = 1; tableNum <= totalTables; tableNum++) {
+          const seats: TableSeat[] = [];
+          
+          for (let seatNum = 1; seatNum <= seatingSettings.maxPlayersPerTable; seatNum++) {
+            const seatData = seatingData.find(s => s.seat_number === ((tableNum - 1) * seatingSettings.maxPlayersPerTable + seatNum));
+            
+            seats.push({
+              seat_number: seatNum,
+              player_id: seatData?.player_id,
+              player_name: seatData?.player?.name,
+              chips: seatData?.chips,
+              status: seatData?.status
+            });
+          }
+          
+          newTables.push({
+            table_number: tableNum,
+            seats,
+            active_players: seats.filter(s => s.player_id).length
+          });
         }
-      }
-    } catch (error) {
-      console.error('❌ Ошибка при загрузке рассадки:', error);
-      const localLoaded = loadFromLocalStorage();
-      if (!localLoaded) {
-        createEmptyTables();
-        setIsSeated(false);
-      }
-    }
-  };
-
-  const loadFromLocalStorage = () => {
-    try {
-      const seatingKey = `seating_${tournamentId}`;
-      const savedSeating = localStorage.getItem(seatingKey);
-      if (savedSeating) {
-        const parsedTables = JSON.parse(savedSeating);
-        console.log('💾 ЗАГРУЖЕНО ИЗ localStorage:', {
-          key: seatingKey,
-          tablesCount: parsedTables.length,
-          totalPlayers: parsedTables.reduce((sum: number, t: Table) => sum + t.active_players, 0),
-          tablesData: parsedTables.map((t: Table) => ({ 
-            table: t.table_number, 
-            players: t.active_players 
-          }))
-        });
-        setTables(parsedTables);
-        setIsSeated(true);
-        return true;
-      }
-      console.log('💾 localStorage пуст для ключа:', seatingKey);
-      return false;
-    } catch (error) {
-      console.error('❌ Ошибка загрузки из localStorage:', error);
-      return false;
-    }
-  };
-
-  const createTablesFromSeatingData = (seatingData: any[]) => {
-    const maxSeatNumber = Math.max(...seatingData.map(s => s.seat_number || 0));
-    const totalTables = Math.ceil(maxSeatNumber / seatingSettings.maxPlayersPerTable);
-    
-    const newTables: Table[] = [];
-    
-    for (let tableNum = 1; tableNum <= totalTables; tableNum++) {
-      const seats: TableSeat[] = [];
-      
-      for (let seatNum = 1; seatNum <= seatingSettings.maxPlayersPerTable; seatNum++) {
-        const seatData = seatingData.find(s => s.seat_number === ((tableNum - 1) * seatingSettings.maxPlayersPerTable + seatNum));
         
-        seats.push({
-          seat_number: seatNum,
-          player_id: seatData?.player_id,
-          player_name: seatData?.player?.name,
-          chips: seatData?.chips,
-          status: seatData?.status,
-          elo_rating: seatData?.player?.elo_rating
-        });
+        setTables(newTables);
+        saveSeatingToLocalStorage(newTables);
+        console.log('🪑 Рассадка загружена из базы данных');
+      } else {
+        generateTablesFromRegistrations();
       }
-      
-      newTables.push({
-        table_number: tableNum,
-        seats,
-        active_players: seats.filter(s => s.player_id).length
-      });
+    } catch (error) {
+      console.error('Ошибка при загрузке рассадки:', error);
+      generateTablesFromRegistrations();
     }
-    
-    setTables(newTables);
-    console.log('🪑 Рассадка создана из данных БД:', newTables);
-  };
-
-  const createEmptyTables = () => {
-    const activePlayers = registrations.filter(r => r.status === 'registered' || r.status === 'playing');
-    
-    if (activePlayers.length === 0) {
-      setTables([]);
-      return;
-    }
-
-    const totalTables = Math.ceil(activePlayers.length / seatingSettings.maxPlayersPerTable);
-    const newTables: Table[] = [];
-    
-    for (let tableNum = 1; tableNum <= totalTables; tableNum++) {
-      const seats: TableSeat[] = [];
-      
-      for (let seatNum = 1; seatNum <= seatingSettings.maxPlayersPerTable; seatNum++) {
-        seats.push({
-          seat_number: seatNum
-        });
-      }
-      
-      newTables.push({
-        table_number: tableNum,
-        seats,
-        active_players: 0
-      });
-    }
-    
-    setTables(newTables);
-    console.log(`🪑 Создано ${totalTables} пустых столов для ${activePlayers.length} игроков`);
   };
 
   const saveSeatingToLocalStorage = (tablesData: Table[]) => {
     try {
-      if (tablesData && tablesData.length > 0) {
-        const seatingKey = `seating_${tournamentId}`;
-        localStorage.setItem(seatingKey, JSON.stringify(tablesData));
-        console.log('💾 РАССАДКА СОХРАНЕНА В localStorage:', {
-          key: seatingKey,
-          tablesCount: tablesData.length,
-          totalPlayers: tablesData.reduce((sum, t) => sum + t.active_players, 0)
-        });
-      }
+      localStorage.setItem(`seating_${tournamentId}`, JSON.stringify(tablesData));
+      console.log('🪑 Рассадка сохранена в localStorage');
     } catch (error) {
-      console.error('❌ Ошибка сохранения в localStorage:', error);
+      console.error('Ошибка сохранения в localStorage:', error);
     }
   };
 
@@ -349,29 +163,9 @@ const TableSeating = ({
     setSeatingSettings(settings);
   };
 
-  // ❌ УДАЛЯЕМ эту функцию - она вызывает хаос!
-  // Обновление столов при изменении регистраций заменено на updateExistingPlayersData
-
-  // Профессиональная рассадка - ТОЛЬКО для первичной рассадки
-  const performInitialSeating = async () => {
-    // ✅ КРИТИЧЕСКАЯ ПРОВЕРКА: если рассадка уже есть - НЕ ВЫПОЛНЯЕМ!
-    const existingSeating = await checkSeatingStatus();
-    if (existingSeating) {
-      toast({ 
-        title: "Рассадка уже выполнена", 
-        description: "Используйте функции балансировки для изменений", 
-        variant: "destructive" 
-      });
-      return;
-    }
-
+  // Профессиональная рассадка
+  const performInitialSeating = () => {
     const activePlayers = registrations.filter(r => r.status === 'registered' || r.status === 'playing');
-    
-    console.log('🎯 ПЕРВИЧНАЯ РАССАДКА - начало:', {
-      totalRegistrations: registrations.length,
-      activePlayers: activePlayers.length,
-      eliminatedPlayers: registrations.filter(r => r.status === 'eliminated').length
-    });
     
     // Проверяем минимальное количество игроков для двух столов
     if (activePlayers.length < seatingSettings.minPlayersToStartTwoTables) {
@@ -427,96 +221,75 @@ const TableSeating = ({
     updateSeatingInDatabase(newTables);
     setIsSeated(true);
     toast({ title: "Рассадка выполнена", description: "Игроки рассажены в случайном порядке" });
-    
-    // Сохраняем в localStorage
-    saveSeatingToLocalStorage(newTables);
   };
 
-  // Удаляем функцию - заменена на createEmptyTables
-
   const generateTablesFromRegistrations = () => {
-    createEmptyTables();
+    const activePlayers = registrations.filter(r => r.status === 'registered' || r.status === 'playing');
+    const totalTables = Math.ceil(activePlayers.length / seatingSettings.maxPlayersPerTable);
+    
+    const newTables: Table[] = [];
+    
+    for (let tableNum = 1; tableNum <= totalTables; tableNum++) {
+      const seats: TableSeat[] = [];
+      
+      for (let seatNum = 1; seatNum <= seatingSettings.maxPlayersPerTable; seatNum++) {
+        seats.push({
+          seat_number: seatNum
+        });
+      }
+      
+      newTables.push({
+        table_number: tableNum,
+        seats,
+        active_players: 0
+      });
+    }
+    
+    setTables(newTables);
+    console.log('🪑 Столы созданы без рассадки');
   };
 
   const updateSeatingInDatabase = async (tablesData: Table[]) => {
     try {
-      console.log('🪑 ОБНОВЛЕНИЕ РАССАДКИ В БД - начало операции');
+      console.log('🪑 Обновление рассадки в базе данных...');
       
-      // ✅ Собираем все обновления ПЕРЕД очисткой
-      const seatUpdates = [];
       for (const table of tablesData) {
         for (const seat of table.seats) {
           if (seat.player_id) {
             const seatNumber = (table.table_number - 1) * seatingSettings.maxPlayersPerTable + seat.seat_number;
-            seatUpdates.push({
-              player_id: seat.player_id,
-              seat_number: seatNumber,
-              player_name: seat.player_name
-            });
+            
+            const { error } = await supabase
+              .from('tournament_registrations')
+              .update({ seat_number: seatNumber })
+              .eq('player_id', seat.player_id)
+              .eq('tournament_id', tournamentId);
+              
+            if (error) {
+              console.error('Ошибка обновления места игрока:', error);
+            }
           }
         }
       }
-
-      console.log('🎯 Подготовленные обновления:', seatUpdates);
-
-      // ✅ ТОЛЬКО ОДИН раз очищаем места для этого турнира
-      const { error: clearError } = await supabase
-        .from('tournament_registrations')
-        .update({ seat_number: null })
-        .eq('tournament_id', tournamentId)
-        .not('seat_number', 'is', null);
-        
-      if (clearError) {
-        console.error('❌ Ошибка очистки мест:', clearError);
-        throw clearError;
-      }
-
-      console.log('✅ Места успешно очищены');
-
-      // ✅ Применяем все обновления ОДНИМ BATCH-запросом для каждого игрока
-      for (const update of seatUpdates) {
-        const { error } = await supabase
-          .from('tournament_registrations')
-          .update({ seat_number: update.seat_number })
-          .eq('player_id', update.player_id)
-          .eq('tournament_id', tournamentId);
-          
-        if (error) {
-          console.error(`❌ Ошибка назначения места ${update.seat_number} игроку ${update.player_name}:`, error);
-        } else {
-          console.log(`✅ Место ${update.seat_number} назначено игроку ${update.player_name}`);
-        }
-      }
       
-      console.log('🪑 РАССАДКА УСПЕШНО ОБНОВЛЕНА В БД');
-      
-      // Сохраняем в localStorage как резерв
       saveSeatingToLocalStorage(tablesData);
+      console.log('🪑 Рассадка обновлена в базе данных и localStorage');
       
       if (onSeatingUpdate) {
         onSeatingUpdate();
       }
     } catch (error) {
-      console.error('❌ КРИТИЧЕСКАЯ ОШИБКА при обновлении рассадки:', error);
+      console.error('Ошибка при обновлении рассадки:', error);
       toast({ 
-        title: "Ошибка рассадки", 
-        description: "Не удалось сохранить рассадку в базе данных", 
+        title: "Ошибка", 
+        description: "Не удалось сохранить рассадку", 
         variant: "destructive" 
       });
     }
   };
 
-  const autoBalanceTables = async () => {
-    console.log('⚖️ АВТОБАЛАНСИРОВКА СТОЛОВ - начало');
-    
+  const autoBalanceTables = () => {
     const activePlayers = registrations.filter(r => r.status === 'registered' || r.status === 'playing');
     const totalTables = tables.length;
-    
-    console.log('⚖️ Балансировка:', {
-      activePlayers: activePlayers.length,
-      totalTables,
-      currentDistribution: tables.map(t => ({ table: t.table_number, players: t.active_players }))
-    });
     
     const newTables = [...tables];
     
@@ -528,7 +301,6 @@ const TableSeating = ({
           seat.player_name = undefined;
           seat.chips = undefined;
           seat.status = undefined;
-          seat.elo_rating = undefined;
         }
       });
       table.active_players = 0;
@@ -546,39 +318,18 @@ const TableSeating = ({
         emptySeat.player_name = registration.player.name;
         emptySeat.chips = registration.chips;
         emptySeat.status = registration.status;
-        emptySeat.elo_rating = registration.player.elo_rating;
         targetTable.active_players++;
       }
     });
     
-    console.log('⚖️ Новое распределение:', newTables.map(t => ({ 
-      table: t.table_number, 
-      players: t.active_players,
-      playerNames: t.seats.filter(s => s.player_id).map(s => s.player_name)
-    })));
-    
     setTables(newTables);
-    await updateSeatingInDatabase(newTables);
-    saveSeatingToLocalStorage(newTables);
-    setIsSeated(true); // ✅ Важно: обновляем статус
-    
-    toast({ 
-      title: "Столы сбалансированы", 
-      description: `${activePlayers.length} игроков распределены по ${totalTables} столам` 
-    });
+    updateSeatingInDatabase(newTables);
+    toast({ title: "Столы автоматически сбалансированы" });
   };
 
-  const shuffleSeating = async () => {
-    console.log('🔀 ПЕРЕМЕШИВАНИЕ РАССАДКИ - начало');
-    
+  const shuffleSeating = () => {
     const activePlayers = registrations.filter(r => r.status === 'registered' || r.status === 'playing');
     const shuffledPlayers = [...activePlayers].sort(() => Math.random() - 0.5);
-    
-    console.log('🔀 Перемешивание:', {
-      totalPlayers: activePlayers.length,
-      originalOrder: activePlayers.slice(0, 5).map(p => p.player.name),
-      shuffledOrder: shuffledPlayers.slice(0, 5).map(p => p.player.name)
-    });
     
     const newTables = [...tables];
     
@@ -590,7 +341,6 @@ const TableSeating = ({
           seat.player_name = undefined;
           seat.chips = undefined;
           seat.status = undefined;
-          seat.elo_rating = undefined;
         }
       });
       table.active_players = 0;
@@ -607,51 +357,30 @@ const TableSeating = ({
           player_id: registration.player.id,
           player_name: registration.player.name,
           chips: registration.chips,
-          status: registration.status,
-          elo_rating: registration.player.elo_rating
+          status: registration.status
         };
         newTables[tableIndex].active_players++;
       }
     });
     
-    console.log('🔀 Результат перемешивания:', newTables.map(t => ({ 
-      table: t.table_number, 
-      players: t.active_players,
-      playerNames: t.seats.filter(s => s.player_id).map(s => s.player_name)
-    })));
-    
     setTables(newTables);
-    await updateSeatingInDatabase(newTables);
-    saveSeatingToLocalStorage(newTables);
-    setIsSeated(true); // ✅ Важно: обновляем статус
-    
-    toast({ 
-      title: "Рассадка перемешана", 
-      description: `${shuffledPlayers.length} игроков перемешаны случайным образом` 
-    });
+    updateSeatingInDatabase(newTables);
+    toast({ title: "Рассадка перемешана" });
   };
 
   const movePlayer = async (playerId: string, fromTable: number, toTable: number, toSeat: number) => {
-    console.log('🔄 ПЕРЕМЕЩЕНИЕ ИГРОКА:', { playerId, fromTable, toTable, toSeat });
-    
     const newTables = [...tables];
     
     // Найдем игрока в старом месте
     const fromTableObj = newTables.find(t => t.table_number === fromTable);
     const toTableObj = newTables.find(t => t.table_number === toTable);
     
-    if (!fromTableObj || !toTableObj) {
-      console.error('❌ Столы не найдены');
-      return;
-    }
+    if (!fromTableObj || !toTableObj) return;
     
     const playerSeat = fromTableObj.seats.find(s => s.player_id === playerId);
     const targetSeat = toTableObj.seats.find(s => s.seat_number === toSeat);
     
-    if (!playerSeat || !targetSeat) {
-      console.error('❌ Места не найдены');
-      return;
-    }
+    if (!playerSeat || !targetSeat) return;
     
     // Проверяем, свободно ли целевое место
     if (targetSeat.player_id) {
@@ -659,33 +388,24 @@ const TableSeating = ({
       return;
     }
     
-    console.log('🔄 Перемещение игрока:', {
-      player: playerSeat.player_name,
-      from: `Стол ${fromTable}, место ${playerSeat.seat_number}`,
-      to: `Стол ${toTable}, место ${toSeat}`
-    });
-    
     // Перемещаем игрока
     targetSeat.player_id = playerSeat.player_id;
     targetSeat.player_name = playerSeat.player_name;
     targetSeat.chips = playerSeat.chips;
     targetSeat.status = playerSeat.status;
-    targetSeat.elo_rating = playerSeat.elo_rating;
     
     // Освобождаем старое место
     playerSeat.player_id = undefined;
     playerSeat.player_name = undefined;
     playerSeat.chips = undefined;
     playerSeat.status = undefined;
-    playerSeat.elo_rating = undefined;
     
     // Обновляем счетчики
     fromTableObj.active_players--;
     toTableObj.active_players++;
     
     setTables(newTables);
-    await updateSeatingInDatabase(newTables);
-    saveSeatingToLocalStorage(newTables);
+    updateSeatingInDatabase(newTables);
     
     // Обновляем seat_number в базе данных (дублирующее обновление для надежности)
     const absoluteSeatNumber = (toTable - 1) * seatingSettings.maxPlayersPerTable + toSeat;
@@ -719,28 +439,35 @@ const TableSeating = ({
     });
   };
 
-  // Улучшенная проверка баланса столов
+  // Профессиональная балансировка столов
   const checkTableBalance = () => {
     if (tables.length < 2) return null;
     
-    const tableCounts = tables.map(t => ({ table: t.table_number, count: t.active_players }))
-                            .filter(t => t.count > 0) // только столы с игроками
-                            .sort((a, b) => b.count - a.count);
-    
-    if (tableCounts.length < 2) return null;
+    const tableCounts = tables.map(t => ({ table: t.table_number, count: t.active_players }));
+    tableCounts.sort((a, b) => b.count - a.count);
     
     const maxTable = tableCounts[0];
     const minTable = tableCounts[tableCounts.length - 1];
     
-    // Если разница больше 1, нужна балансировка
-    if (maxTable.count - minTable.count > 1) {
-      return { fromTable: maxTable.table, toTable: minTable.table, difference: maxTable.count - minTable.count };
+    if (maxTable.count - minTable.count > seatingSettings.maxImbalance) {
+      return { fromTable: maxTable.table, toTable: minTable.table };
     }
     
     return null;
   };
 
-  // Улучшенная умная балансировка
+  // Получение следующего игрока на большом блайнде
+  const getNextBigBlindPlayer = (tableNumber: number) => {
+    const table = tables.find(t => t.table_number === tableNumber);
+    if (!table) return null;
+    
+    // Здесь логика определения следующего игрока на большом блайнде
+    // Пока возвращаем последнего игрока за столом
+    const activePlayers = table.seats.filter(s => s.player_id);
+    return activePlayers[activePlayers.length - 1];
+  };
+
+  // Умная балансировка
   const smartTableBalance = () => {
     const imbalance = checkTableBalance();
     if (!imbalance) {
@@ -748,11 +475,19 @@ const TableSeating = ({
       return;
     }
 
-    toast({
-      title: "Требуется балансировка",
-      description: `Переместите игрока со стола ${imbalance.fromTable} (перевес: ${imbalance.difference}) на стол ${imbalance.toTable}`,
-      variant: "destructive"
-    });
+    const nextBBPlayer = getNextBigBlindPlayer(imbalance.fromTable);
+    if (nextBBPlayer) {
+      // Найдем ближайшее место к следующему большому блайнду на целевом столе
+      const targetTable = tables.find(t => t.table_number === imbalance.toTable);
+      const firstEmptySeat = targetTable?.seats.find(s => !s.player_id);
+      
+      if (firstEmptySeat) {
+        toast({
+          title: "Рекомендация балансировки",
+          description: `Переместите игрока ${nextBBPlayer.player_name} со стола ${imbalance.fromTable} на стол ${imbalance.toTable}, место ${firstEmptySeat.seat_number}`
+        });
+      }
+    }
   };
 
   return (
@@ -961,229 +696,61 @@ const TableSeating = ({
         </CardContent>
       </Card>
 
-      {/* Столы в стиле приглашений */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {tables.map(table => (
-          <Card key={table.table_number} className="relative overflow-hidden bg-white/70 backdrop-blur-sm border border-gray-200/50 shadow-subtle rounded-xl hover:shadow-lg transition-all duration-300">
-            <div className="absolute inset-0 bg-gradient-to-br from-blue-50/30 via-white/20 to-purple-50/30" />
-            
-            <CardHeader className="relative bg-white/50 border-b border-gray-200/30 pb-4">
+          <Card key={table.table_number} className="relative">
+            <CardHeader className="pb-3">
               <CardTitle className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className={`
-                    w-10 h-10 rounded-lg flex items-center justify-center font-bold border shadow-sm transition-all duration-300
-                    ${checkTableBalance()?.fromTable === table.table_number 
-                      ? 'bg-gradient-to-br from-red-100 to-rose-100 text-red-700 border-red-200/70 animate-pulse shadow-red-200/50' 
-                      : checkTableBalance()?.toTable === table.table_number
-                      ? 'bg-gradient-to-br from-green-100 to-emerald-100 text-green-700 border-green-200/70 animate-pulse shadow-green-200/50'
-                      : 'bg-gradient-to-br from-blue-100 to-indigo-100 text-blue-700 border-blue-200/50'
-                    }
-                  `}>
-                    {table.table_number}
-                  </div>
-                  <span className="text-lg font-light text-gray-800">Стол {table.table_number}</span>
-                  {checkTableBalance()?.fromTable === table.table_number && (
-                    <Badge className="text-xs bg-gradient-to-r from-red-100 to-rose-100 text-red-700 border border-red-200/70 animate-bounce">
-                      📤 Убрать игрока
-                    </Badge>
-                  )}
-                  {checkTableBalance()?.toTable === table.table_number && (
-                    <Badge className="text-xs bg-gradient-to-r from-green-100 to-emerald-100 text-green-700 border border-green-200/70 animate-bounce">
-                      📥 Принять игрока
-                    </Badge>
-                  )}
-                </div>
+                <span>Стол {table.table_number}</span>
                 <div className="flex items-center gap-2">
-                  <Badge 
-                    className={`text-sm px-3 py-1 font-light border ${
-                      table.active_players <= seatingSettings.maxPlayersPerTable / 2 
-                        ? "bg-gradient-to-r from-red-100 to-rose-100 text-red-700 border-red-200/70" 
-                        : "bg-gradient-to-r from-emerald-100 to-teal-100 text-emerald-700 border-emerald-200/70"
-                    }`}
-                  >
+                  <Badge variant={table.active_players <= seatingSettings.maxPlayersPerTable / 2 ? "destructive" : "default"}>
                     {table.active_players}/{seatingSettings.maxPlayersPerTable}
                   </Badge>
-                  {checkTableBalance()?.fromTable === table.table_number && (
-                    <Badge className="text-xs animate-pulse bg-gradient-to-r from-yellow-100 to-amber-100 text-yellow-700 border border-yellow-200/70">
-                      ⚡ Балансировка
-                    </Badge>
-                  )}
-                </div>
-              </CardTitle>
-            </CardHeader>
-            
-            <CardContent className="relative space-y-3 p-6 bg-white/40 backdrop-blur-sm">
-              {/* Сетка мест в стиле приглашений */}
-              <div className="grid grid-cols-3 gap-3">
-                {table.seats.map(seat => (
-                  <div 
-                    key={seat.seat_number}
-                    className={`
-                      relative p-3 rounded-xl border transition-all duration-300 hover:scale-105
-                      ${seat.player_id 
-                        ? 'bg-white/70 backdrop-blur-sm border border-gray-200/50 shadow-sm hover:shadow-md' 
-                        : 'bg-white/30 backdrop-blur-sm border-dashed border-gray-300/50 hover:border-blue-300/50 hover:bg-white/50'
-                      }
-                    `}
-                  >
-                    {/* Номер места в стиле приглашений */}
-                    <div className="absolute -top-2 -left-2 w-6 h-6 bg-gradient-to-br from-gray-100 to-gray-200 border border-gray-300/50 rounded-full flex items-center justify-center text-xs font-bold text-gray-600 shadow-sm">
-                      {seat.seat_number}
-                    </div>
-                    
-                    {seat.player_id ? (
-                      <div className="space-y-3">
-                        {/* Красиво размещенное имя и аватар */}
-                        <div className="text-center">
-                          <Avatar className="w-12 h-12 mx-auto border-2 border-white/70 shadow-md">
-                            <AvatarImage 
-                              src={registrations.find(r => r.player.id === seat.player_id)?.player.avatar_url || ''} 
-                              alt={seat.player_name || ''} 
-                            />
-                            <AvatarFallback className="text-sm font-medium bg-gradient-to-br from-blue-100 to-indigo-100 text-blue-700 border border-blue-200/50">
-                              {seat.player_name?.slice(0, 2).toUpperCase()}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="mt-2">
-                            <div className="text-sm font-medium text-gray-800 truncate px-1" title={seat.player_name}>
-                              {seat.player_name}
-                            </div>
-                            <div className="text-xs text-gray-500 font-light flex items-center justify-center gap-1 mt-1">
-                              <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-sm"></span>
-                              {registrations.find(r => r.player.id === seat.player_id)?.player.elo_rating || 1200}
-                            </div>
-                          </div>
-                        </div>
-                        
-                        {/* Кнопка перемещения с рейтингом */}
-                        {isSeated && (
-                          <Dialog>
-                            <DialogTrigger asChild>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="w-full h-8 bg-white/60 border border-gray-200/50 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:border-blue-200/50 transition-all duration-300 group text-xs"
-                              >
-                                <div className="flex items-center justify-center gap-1">
-                                  <MoveRight className="w-3 h-3 text-gray-600 group-hover:text-blue-600 transition-colors" />
-                                  <span className="font-medium text-gray-700 group-hover:text-blue-700">
-                                    {registrations.find(r => r.player.id === seat.player_id)?.player.elo_rating || 1200}
-                                  </span>
-                                </div>
-                              </Button>
-                            </DialogTrigger>
-                            <DialogContent className="bg-white/90 backdrop-blur-sm border border-gray-200/50">
-                              <DialogHeader>
-                                <DialogTitle className="flex items-center gap-3 text-gray-800 font-light">
-                                  <Avatar className="w-8 h-8 border border-gray-200/50">
-                                    <AvatarImage 
-                                      src={registrations.find(r => r.player.id === seat.player_id)?.player.avatar_url || ''} 
-                                      alt={seat.player_name || ''} 
-                                    />
-                                    <AvatarFallback className="text-xs font-light bg-gradient-to-br from-blue-100 to-indigo-100 text-blue-700">
-                                      {seat.player_name?.slice(0, 2).toUpperCase()}
-                                    </AvatarFallback>
-                                  </Avatar>
-                                  Переместить {seat.player_name}
-                                </DialogTitle>
-                              </DialogHeader>
-                              <div className="space-y-4">
-                                <div className="text-sm text-gray-500 font-light bg-white/50 p-3 rounded-lg border border-gray-200/30">
-                                  Текущее местоположение: Стол {table.table_number}, место {seat.seat_number}
-                                </div>
-                                
-                                <div className="grid grid-cols-2 gap-4">
-                                  <div>
-                                    <Label className="text-gray-600 font-light">Целевой стол</Label>
-                                    <Select 
-                                      value={targetTable.toString()} 
-                                      onValueChange={(v) => setTargetTable(Number(v))}
-                                    >
-                                      <SelectTrigger className="bg-white/50 border border-gray-200/50">
-                                        <SelectValue />
-                                      </SelectTrigger>
-                                      <SelectContent>
-                                        {tables.filter(t => t.table_number !== table.table_number).map(t => (
-                                          <SelectItem key={t.table_number} value={t.table_number.toString()}>
-                                            Стол {t.table_number} ({t.active_players}/{seatingSettings.maxPlayersPerTable})
-                                          </SelectItem>
-                                        ))}
-                                      </SelectContent>
-                                    </Select>
-                                  </div>
-                                  
-                                  <div>
-                                    <Label className="text-gray-600 font-light">Целевое место</Label>
-                                    <Select 
-                                      value={targetSeat.toString()} 
-                                      onValueChange={(v) => setTargetSeat(Number(v))}
-                                    >
-                                      <SelectTrigger className="bg-white/50 border border-gray-200/50">
-                                        <SelectValue />
-                                      </SelectTrigger>
-                                      <SelectContent>
-                                        {Array.from({ length: seatingSettings.maxPlayersPerTable }, (_, i) => i + 1).map(seatNum => {
-                                          const targetTableObj = tables.find(t => t.table_number === targetTable);
-                                          const seatTaken = targetTableObj?.seats.find(s => s.seat_number === seatNum)?.player_id;
-                                          return (
-                                            <SelectItem 
-                                              key={seatNum} 
-                                              value={seatNum.toString()} 
-                                              disabled={!!seatTaken}
-                                            >
-                                              Место {seatNum} {seatTaken ? '(занято)' : '(свободно)'}
-                                            </SelectItem>
-                                          );
-                                        })}
-                                      </SelectContent>
-                                    </Select>
-                                  </div>
-                                </div>
-                                
-                                <Button 
-                                  onClick={() => movePlayer(seat.player_id!, table.table_number, targetTable, targetSeat)}
-                                  className="w-full bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 text-white hover:from-emerald-600 hover:via-teal-600 hover:to-cyan-600 hover:shadow-lg transition-all duration-300"
-                                  disabled={!targetTable || !targetSeat}
-                                >
-                                  <MoveRight className="w-4 h-4 mr-2" />
-                                  Переместить игрока
-                                </Button>
-                              </div>
-                            </DialogContent>
-                          </Dialog>
-                        )}
-                      </div>
-                    ) : (
-                      <div className="h-16 flex items-center justify-center">
-                        <div className="text-center text-gray-400">
-                          <div className="text-2xl opacity-50">💺</div>
-                          <div className="text-xs font-light">Свободно</div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-              
-              {/* Действия стола в стиле приглашений */}
-              {table.active_players > 0 && (
-                <div className="flex items-center justify-between pt-3 border-t border-gray-200/30">
-                  <div className="text-xs text-gray-500 font-light">
-                    Игроков за столом: {table.active_players}
-                  </div>
                   {table.active_players < seatingSettings.maxPlayersPerTable / 2 && (
                     <Button 
                       size="sm" 
                       variant="outline"
-                      onClick={() => smartTableBalance()}
-                      className="text-xs h-7 bg-white/50 border border-yellow-200/50 text-yellow-700 hover:bg-yellow-50 hover:border-yellow-300/50 transition-all duration-300"
+                      onClick={() => suggestPlayerMove(table.table_number)}
                     >
-                      <Crown className="w-3 h-3 mr-1" />
                       Подсказка
                     </Button>
                   )}
                 </div>
-              )}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-3 gap-2">
+                {table.seats.map(seat => (
+                  <div 
+                    key={seat.seat_number}
+                    className={`p-2 rounded border text-center text-sm ${
+                      seat.player_id 
+                        ? 'bg-primary/10 border-primary' 
+                        : 'bg-muted border-muted-foreground/20'
+                    }`}
+                  >
+                    <div className="font-medium">#{seat.seat_number}</div>
+                    {seat.player_name ? (
+                      <div className="space-y-1">
+                        <div className="truncate" title={seat.player_name}>
+                          {seat.player_name}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {seat.chips?.toLocaleString()} фишек
+                        </div>
+                        <Badge 
+                          variant={seat.status === 'playing' ? 'destructive' : 'default'}
+                          className="text-xs"
+                        >
+                          {seat.status === 'playing' ? 'Играет' : 'Готов'}
+                        </Badge>
+                      </div>
+                    ) : (
+                      <div className="text-muted-foreground text-xs">Свободно</div>
+                    )}
+                  </div>
+                ))}
+              </div>
             </CardContent>
           </Card>
         ))}
