@@ -7,7 +7,7 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Settings, Volume2, Mic, Globe, Zap } from 'lucide-react';
+import { Settings, Volume2, Mic, Globe, Zap, Clock, Speaker } from 'lucide-react';
 
 interface VoiceSettingsData {
   voice_enabled: boolean;
@@ -16,6 +16,15 @@ interface VoiceSettingsData {
   auto_confirm_critical: boolean;
   volume_level: number;
   voice_speed: number;
+  voice_provider: 'system' | 'elevenlabs';
+  elevenlabs_voice: string;
+  warning_intervals: {
+    five_minutes: boolean;
+    two_minutes: boolean;
+    one_minute: boolean;
+    thirty_seconds: boolean;
+    ten_seconds: boolean;
+  };
 }
 
 interface VoiceSettingsProps {
@@ -30,6 +39,14 @@ const languages = [
   { value: 'de', label: 'Deutsch' }
 ];
 
+const elevenLabsVoices = [
+  { value: 'Aria', label: 'Aria (женский, английский)' },
+  { value: 'Roger', label: 'Roger (мужской, английский)' },
+  { value: 'Sarah', label: 'Sarah (женский, английский)' },
+  { value: 'George', label: 'George (мужской, английский)' },
+  { value: 'Charlotte', label: 'Charlotte (женский, английский)' }
+];
+
 export function VoiceSettings({ onSettingsChange }: VoiceSettingsProps) {
   const [settings, setSettings] = useState<VoiceSettingsData>({
     voice_enabled: true,
@@ -37,7 +54,16 @@ export function VoiceSettings({ onSettingsChange }: VoiceSettingsProps) {
     confidence_threshold: 0.7,
     auto_confirm_critical: false,
     volume_level: 80,
-    voice_speed: 1.0
+    voice_speed: 1.0,
+    voice_provider: 'elevenlabs',
+    elevenlabs_voice: 'Aria',
+    warning_intervals: {
+      five_minutes: true,
+      two_minutes: true,
+      one_minute: true,
+      thirty_seconds: true,
+      ten_seconds: true
+    }
   });
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -60,12 +86,21 @@ export function VoiceSettings({ onSettingsChange }: VoiceSettingsProps) {
 
       if (data) {
         setSettings({
-          voice_enabled: data.voice_enabled,
-          voice_language: data.voice_language,
-          confidence_threshold: data.confidence_threshold,
-          auto_confirm_critical: data.auto_confirm_critical,
-          volume_level: data.volume_level,
-          voice_speed: data.voice_speed
+          voice_enabled: data.voice_enabled ?? true,
+          voice_language: data.voice_language ?? 'ru',
+          confidence_threshold: data.confidence_threshold ?? 0.7,
+          auto_confirm_critical: data.auto_confirm_critical ?? false,
+          volume_level: data.volume_level ?? 80,
+          voice_speed: data.voice_speed ?? 1.0,
+          voice_provider: data.voice_provider ?? 'elevenlabs',
+          elevenlabs_voice: data.elevenlabs_voice ?? 'Aria',
+          warning_intervals: data.warning_intervals ?? {
+            five_minutes: true,
+            two_minutes: true,
+            one_minute: true,
+            thirty_seconds: true,
+            ten_seconds: true
+          }
         });
       }
     } catch (error) {
@@ -182,6 +217,102 @@ export function VoiceSettings({ onSettingsChange }: VoiceSettingsProps) {
               ))}
             </SelectContent>
           </Select>
+        </div>
+
+        {/* Настройки голосового движка */}
+        <div className="space-y-4">
+          <Label className="flex items-center gap-2">
+            <Speaker className="h-4 w-4" />
+            Голосовой движок
+          </Label>
+          <Select
+            value={settings.voice_provider}
+            onValueChange={(value: 'system' | 'elevenlabs') => updateSetting('voice_provider', value)}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Выберите голосовой движок" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="system">Системный голос</SelectItem>
+              <SelectItem value="elevenlabs">ElevenLabs AI</SelectItem>
+            </SelectContent>
+          </Select>
+          
+          {settings.voice_provider === 'elevenlabs' && (
+            <div className="space-y-2 ml-4">
+              <Label>Голос ElevenLabs</Label>
+              <Select
+                value={settings.elevenlabs_voice}
+                onValueChange={(value) => updateSetting('elevenlabs_voice', value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Выберите голос" />
+                </SelectTrigger>
+                <SelectContent>
+                  {elevenLabsVoices.map((voice) => (
+                    <SelectItem key={voice.value} value={voice.value}>
+                      {voice.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+        </div>
+
+        {/* Настройки временных интервалов */}
+        <div className="space-y-4">
+          <Label className="flex items-center gap-2">
+            <Clock className="h-4 w-4" />
+            Временные предупреждения
+          </Label>
+          <div className="space-y-3 ml-4">
+            <div className="flex items-center justify-between">
+              <Label className="text-sm">За 5 минут до окончания уровня</Label>
+              <Switch
+                checked={settings.warning_intervals.five_minutes}
+                onCheckedChange={(checked) => 
+                  updateSetting('warning_intervals', { ...settings.warning_intervals, five_minutes: checked })
+                }
+              />
+            </div>
+            <div className="flex items-center justify-between">
+              <Label className="text-sm">За 2 минуты до окончания уровня</Label>
+              <Switch
+                checked={settings.warning_intervals.two_minutes}
+                onCheckedChange={(checked) => 
+                  updateSetting('warning_intervals', { ...settings.warning_intervals, two_minutes: checked })
+                }
+              />
+            </div>
+            <div className="flex items-center justify-between">
+              <Label className="text-sm">За 1 минуту до окончания уровня</Label>
+              <Switch
+                checked={settings.warning_intervals.one_minute}
+                onCheckedChange={(checked) => 
+                  updateSetting('warning_intervals', { ...settings.warning_intervals, one_minute: checked })
+                }
+              />
+            </div>
+            <div className="flex items-center justify-between">
+              <Label className="text-sm">За 30 секунд до окончания уровня</Label>
+              <Switch
+                checked={settings.warning_intervals.thirty_seconds}
+                onCheckedChange={(checked) => 
+                  updateSetting('warning_intervals', { ...settings.warning_intervals, thirty_seconds: checked })
+                }
+              />
+            </div>
+            <div className="flex items-center justify-between">
+              <Label className="text-sm">За 10 секунд до окончания уровня</Label>
+              <Switch
+                checked={settings.warning_intervals.ten_seconds}
+                onCheckedChange={(checked) => 
+                  updateSetting('warning_intervals', { ...settings.warning_intervals, ten_seconds: checked })
+                }
+              />
+            </div>
+          </div>
         </div>
 
         {/* Настройки распознавания */}
