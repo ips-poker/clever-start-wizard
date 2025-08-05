@@ -150,10 +150,8 @@ export const useVoiceAnnouncements = (options: VoiceAnnouncementOptions = { enab
       }
     } catch (error) {
       console.error('❌ Failed to play voice announcement, trying browser speech:', error);
-      // Fallback на встроенную речь браузера в случае ошибки ElevenLabs
-      if (settings.voice_enabled) {
-        await playBrowserSpeech(text);
-      }
+      // Fallback на встроенную речь браузера
+      await playBrowserSpeech(text);
     }
   }, [options.enabled, settings]);
 
