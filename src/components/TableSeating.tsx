@@ -62,8 +62,22 @@ const TableSeating = ({
   }, [tournamentId]);
 
   useEffect(() => {
+    console.log('🔄 TableSeating - registrations изменились:', {
+      totalRegistrations: registrations.length,
+      activeRegistrations: registrations.filter(r => r.status === 'registered' || r.status === 'playing').length,
+      registrationsData: registrations.map(r => ({ 
+        id: r.id, 
+        name: r.player?.name, 
+        status: r.status, 
+        seat_number: r.seat_number 
+      }))
+    });
+    
     if (tables.length === 0) {
       generateTablesFromRegistrations();
+    } else {
+      // Обновляем существующие столы с новыми данными
+      updateTablesWithCurrentRegistrations();
     }
   }, [registrations, seatingSettings.maxPlayersPerTable]);
 
@@ -255,7 +269,35 @@ const TableSeating = ({
     }
     
     setTables(newTables);
-    console.log('🪑 Столы созданы без рассадки');
+    console.log('🪑 Столы созданы без рассадки', { tablesCount: newTables.length, activePlayersCount: activePlayers.length });
+  };
+
+  const updateTablesWithCurrentRegistrations = () => {
+    console.log('🔄 Обновление столов с текущими регистрациями...');
+    const activePlayers = registrations.filter(r => r.status === 'registered' || r.status === 'playing');
+    
+    // Обновляем счетчики активных игроков в существующих столах
+    const updatedTables = tables.map(table => {
+      const playersAtTable = table.seats.filter(seat => {
+        if (!seat.player_id) return false;
+        
+        // Проверяем, что игрок еще активен
+        const playerRegistration = activePlayers.find(reg => reg.player.id === seat.player_id);
+        return !!playerRegistration;
+      });
+      
+      return {
+        ...table,
+        active_players: playersAtTable.length
+      };
+    });
+    
+    setTables(updatedTables);
+    console.log('🔄 Столы обновлены:', { 
+      tablesCount: updatedTables.length, 
+      totalActivePlayers: activePlayers.length,
+      tablesActivePlayers: updatedTables.map(t => ({ table: t.table_number, active: t.active_players }))
+    });
   };
 
   const updateSeatingInDatabase = async (tablesData: Table[]) => {

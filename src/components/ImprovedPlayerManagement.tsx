@@ -80,6 +80,17 @@ const ImprovedPlayerManagement = ({ tournament, players, registrations, onRegist
     r.status === 'registered' || r.status === 'playing'
   );
 
+  console.log('🎮 ImprovedPlayerManagement - состояние игроков:', {
+    totalRegistrations: registrations.length,
+    activePlayers: activePlayers.length,
+    activePlayersData: activePlayers.map(p => ({ 
+      id: p.id, 
+      name: p.player?.name, 
+      status: p.status, 
+      seat_number: p.seat_number 
+    }))
+  });
+
   const eliminatedPlayers = registrations
     .filter(r => r.status === 'eliminated')
     .sort((a, b) => (b.position || 0) - (a.position || 0));
