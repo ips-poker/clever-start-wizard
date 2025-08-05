@@ -202,7 +202,7 @@ const TableSeating = ({
   const startInitialSeating = async () => {
     const activePlayers = getActivePlayers();
     if (activePlayers.length === 0) {
-      toast({ title: "Error", description: "No active players for seating", variant: "destructive" });
+      toast({ title: "Ошибка", description: "Нет активных игроков для рассадки", variant: "destructive" });
       return;
     }
 
@@ -268,8 +268,9 @@ const TableSeating = ({
     setIsSeatingStarted(true);
     
     toast({ 
-      title: "Initial seating completed", 
-      description: `${shuffledPlayers.length} players seated at ${totalTables} tables` 
+      title: "Рассадка завершена", 
+      description: `${shuffledPlayers.length} игроков рассажено за ${totalTables} столов`,
+      className: "font-medium"
     });
   };
 
@@ -299,9 +300,10 @@ const TableSeating = ({
     } catch (error) {
       console.error('Error updating seating:', error);
       toast({ 
-        title: "Error", 
-        description: "Failed to save seating", 
-        variant: "destructive" 
+        title: "Ошибка", 
+        description: "Не удалось сохранить рассадку", 
+        variant: "destructive",
+        className: "font-medium"
       });
     }
   };
@@ -337,8 +339,9 @@ const TableSeating = ({
       setTables(newTables);
       
       toast({ 
-        title: "Player eliminated", 
-        description: "Seat freed. Player removed from active players." 
+        title: "Игрок исключен", 
+        description: "Место освобождено. Игрок удален из активных.",
+        className: "font-medium"
       });
 
       if (onSeatingUpdate) {
@@ -395,13 +398,15 @@ const TableSeating = ({
         setTables(newTables);
 
         toast({ 
-          title: "Player restored", 
-          description: `Player seated at table ${tableWithFreeSpace.table_number}, seat ${freeSeatIndex + 1}` 
+          title: "Игрок восстановлен", 
+          description: `Игрок посажен за стол ${tableWithFreeSpace.table_number}, место ${freeSeatIndex + 1}`,
+          className: "font-medium"
         });
       } else {
         toast({ 
-          title: "Player restored", 
-          description: "Player returned to active list. No free seats - use auto-seating." 
+          title: "Игрок восстановлен", 
+          description: "Игрок возвращен в активный список. Нет свободных мест - используйте авто-рассадку.",
+          className: "font-medium"
         });
       }
 
@@ -411,9 +416,10 @@ const TableSeating = ({
     } catch (error) {
       console.error('Error restoring player:', error);
       toast({ 
-        title: "Error", 
-        description: "Failed to restore player", 
-        variant: "destructive" 
+        title: "Ошибка", 
+        description: "Не удалось восстановить игрока", 
+        variant: "destructive",
+        className: "font-medium"
       });
     }
   };
@@ -423,9 +429,10 @@ const TableSeating = ({
     
     if (activePlayers.length > finalTableSize) {
       toast({
-        title: "Too many players",
-        description: `Final table requires ${finalTableSize} or fewer players`,
-        variant: "destructive"
+        title: "Слишком много игроков",
+        description: `Финальный стол требует ${finalTableSize} или меньше игроков`,
+        variant: "destructive",
+        className: "font-medium"
       });
       return;
     }
@@ -478,8 +485,9 @@ const TableSeating = ({
     await updateSeatingInDatabase([finalTable]);
     
     toast({
-      title: "🏆 FINAL TABLE FORMED!",
-      description: `${shuffledPlayers.length} players seated at final table`,
+      title: "🏆 ФИНАЛЬНЫЙ СТОЛ СФОРМИРОВАН!",
+      description: `${shuffledPlayers.length} игроков рассажено за финальный стол`,
+      className: "font-bold text-lg"
     });
   };
 
@@ -499,8 +507,9 @@ const TableSeating = ({
 
     if (unseatedPlayers.length === 0) {
       toast({
-        title: "All players seated",
-        description: "No players without seats",
+        title: "Все игроки рассажены",
+        description: "Нет игроков без мест",
+        className: "font-medium"
       });
       return;
     }
@@ -547,8 +556,9 @@ const TableSeating = ({
     await updateSeatingInDatabase(newTables);
 
     toast({
-      title: "Auto-seating completed",
-      description: `${playersSeated} players seated at tables`
+      title: "Авто-рассадка завершена",
+      description: `${playersSeated} игроков рассажено за столы`,
+      className: "font-medium"
     });
   };
 
@@ -567,27 +577,28 @@ const TableSeating = ({
     const maxPlayers = Math.max(...balanceInfo.map(t => t.players));
     const difference = maxPlayers - minPlayers;
     
-    let message = "📊 Balance Analysis:\n\n";
+    let message = "📊 Анализ баланса:\n\n";
     
     if (difference <= 1) {
-      message += "✅ Tables are perfectly balanced (difference ≤1 player)";
+      message += "✅ Столы идеально сбалансированы (разница ≤1 игрока)";
     } else {
-      message += `⚠️ Balancing required (difference ${difference} players)\n\n`;
-      message += "📊 Current state:\n";
+      message += `⚠️ Требуется балансировка (разница ${difference} игроков)\n\n`;
+      message += "📊 Текущее состояние:\n";
       balanceInfo.forEach(t => {
         if (t.players === minPlayers) {
-          message += `🔻 Table ${t.tableNumber}: ${t.players}/${t.maxPlayers} (needs players)\n`;
+          message += `🔻 Стол ${t.tableNumber}: ${t.players}/${t.maxPlayers} (нужны игроки)\n`;
         }
         if (t.players === maxPlayers) {
-          message += `🔺 Table ${t.tableNumber}: ${t.players}/${t.maxPlayers} (can move players)\n`;
+          message += `🔺 Стол ${t.tableNumber}: ${t.players}/${t.maxPlayers} (можно переместить игроков)\n`;
         }
       });
     }
     
     toast({ 
-      title: "Balance Analysis", 
+      title: "Анализ баланса", 
       description: message,
-      duration: 8000
+      duration: 8000,
+      className: "font-medium"
     });
     
     setBalancingInProgress(false);
@@ -598,9 +609,10 @@ const TableSeating = ({
     
     if (activePlayers.length < maxPlayersPerTable * 2) {
       toast({
-        title: "Not enough players",
-        description: "Need more players to open new table",
-        variant: "destructive"
+        title: "Недостаточно игроков",
+        description: "Нужно больше игроков для открытия нового стола",
+        variant: "destructive",
+        className: "font-medium"
       });
       return;
     }
@@ -629,8 +641,9 @@ const TableSeating = ({
     setTables(newTables);
 
     toast({
-      title: "New table opened",
-      description: `Table ${newTableNumber} ready for players.`
+      title: "Новый стол открыт",
+      description: `Стол ${newTableNumber} готов для игроков.`,
+      className: "font-medium"
     });
   };
 
@@ -640,9 +653,10 @@ const TableSeating = ({
       const targetTableObj = tables.find(t => t.table_number === toTable);
       if (!targetTableObj) {
         toast({
-          title: "Error",
-          description: "Target table not found",
-          variant: "destructive"
+          title: "Ошибка",
+          description: "Целевой стол не найден",
+          variant: "destructive",
+          className: "font-medium"
         });
         return;
       }
@@ -650,9 +664,10 @@ const TableSeating = ({
       const targetSeatObj = targetTableObj.seats.find(s => s.seat_number === toSeat);
       if (!targetSeatObj || targetSeatObj.player_id) {
         toast({
-          title: "Error", 
-          description: "Target seat is occupied",
-          variant: "destructive"
+          title: "Ошибка", 
+          description: "Целевое место занято",
+          variant: "destructive",
+          className: "font-medium"
         });
         return;
       }
@@ -661,9 +676,10 @@ const TableSeating = ({
       const sourceTableObj = tables.find(t => t.table_number === fromTable);
       if (!sourceTableObj) {
         toast({
-          title: "Error",
-          description: "Source table not found", 
-          variant: "destructive"
+          title: "Ошибка",
+          description: "Исходный стол не найден", 
+          variant: "destructive",
+          className: "font-medium"
         });
         return;
       }
@@ -671,9 +687,10 @@ const TableSeating = ({
       const sourceSeatObj = sourceTableObj.seats.find(s => s.seat_number === fromSeat && s.player_id === playerId);
       if (!sourceSeatObj) {
         toast({
-          title: "Error",
-          description: "Player not found at source seat",
-          variant: "destructive"
+          title: "Ошибка",
+          description: "Игрок не найден на исходном месте",
+          variant: "destructive",
+          className: "font-medium"
         });
         return;
       }
@@ -725,8 +742,9 @@ const TableSeating = ({
           .eq('tournament_id', tournamentId);
 
         toast({
-          title: "Player moved",
-          description: `${sourceSeatObj.player_name} moved from Table ${fromTable} Seat ${fromSeat} to Table ${toTable} Seat ${toSeat}`
+          title: "Игрок перемещен",
+          description: `${sourceSeatObj.player_name} перемещен со стола ${fromTable} места ${fromSeat} за стол ${toTable} место ${toSeat}`,
+          className: "font-medium"
         });
 
         if (onSeatingUpdate) {
@@ -736,9 +754,10 @@ const TableSeating = ({
     } catch (error) {
       console.error('Error moving player:', error);
       toast({
-        title: "Error",
-        description: "Failed to move player",
-        variant: "destructive"
+        title: "Ошибка",
+        description: "Не удалось переместить игрока",
+        variant: "destructive",
+        className: "font-medium"
       });
     }
   };
@@ -748,9 +767,10 @@ const TableSeating = ({
       const tableToClose = tables.find(t => t.table_number === tableNumber);
       if (!tableToClose) {
         toast({
-          title: "Error",
-          description: "Table not found",
-          variant: "destructive"
+          title: "Ошибка",
+          description: "Стол не найден",
+          variant: "destructive",
+          className: "font-medium"
         });
         return;
       }
@@ -760,8 +780,9 @@ const TableSeating = ({
         const newTables = tables.filter(t => t.table_number !== tableNumber);
         setTables(newTables);
         toast({
-          title: "Table closed",
-          description: `Empty table ${tableNumber} removed`
+          title: "Стол закрыт",
+          description: `Пустой стол ${tableNumber} удален`,
+          className: "font-medium"
         });
         return;
       }
@@ -774,9 +795,10 @@ const TableSeating = ({
 
       if (availableTables.length === 0) {
         toast({
-          title: "Cannot close table",
-          description: "No available seats at other tables",
-          variant: "destructive"
+          title: "Невозможно закрыть стол",
+          description: "Нет свободных мест за другими столами",
+          variant: "destructive",
+          className: "font-medium"
         });
         return;
       }
@@ -823,9 +845,10 @@ const TableSeating = ({
 
         if (!placed) {
           toast({
-            title: "Warning",
-            description: `Could not move ${player.player_name} - no available seats`,
-            variant: "destructive"
+            title: "Предупреждение",
+            description: `Не удалось переместить ${player.player_name} - нет свободных мест`,
+            variant: "destructive",
+            className: "font-medium"
           });
         }
       }
@@ -844,8 +867,9 @@ const TableSeating = ({
       setTables(finalTables);
 
       toast({
-        title: "Table closed",
-        description: `Table ${tableNumber} closed. ${movedPlayers} players relocated.`
+        title: "Стол закрыт",
+        description: `Стол ${tableNumber} закрыт. ${movedPlayers} игроков перемещено.`,
+        className: "font-medium"
       });
 
       if (onSeatingUpdate) {
@@ -854,9 +878,10 @@ const TableSeating = ({
     } catch (error) {
       console.error('Error closing table:', error);
       toast({
-        title: "Error",
-        description: "Failed to close table",
-        variant: "destructive"
+        title: "Ошибка",
+        description: "Не удалось закрыть стол",
+        variant: "destructive",
+        className: "font-medium"
       });
     }
   };
