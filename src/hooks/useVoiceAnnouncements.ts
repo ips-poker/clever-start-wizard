@@ -47,9 +47,24 @@ export const useVoiceAnnouncements = (options: VoiceAnnouncementOptions = { enab
         // Создаем аудио элемент и воспроизводим
         const audio = new Audio();
         audio.volume = options.volume || 0.7;
-        audio.src = `data:audio/mpeg;base64,${data.audioContent}`;
         
+        // Создаем blob из base64 для более надежного воспроизведения
+        const binaryString = atob(data.audioContent);
+        const bytes = new Uint8Array(binaryString.length);
+        for (let i = 0; i < binaryString.length; i++) {
+          bytes[i] = binaryString.charCodeAt(i);
+        }
+        const blob = new Blob([bytes], { type: 'audio/mpeg' });
+        const audioUrl = URL.createObjectURL(blob);
+        
+        audio.src = audioUrl;
         audioRef.current = audio;
+        
+        // Очистка URL после проигрывания
+        audio.onended = () => {
+          URL.revokeObjectURL(audioUrl);
+        };
+        
         await audio.play();
         console.log('✅ ElevenLabs TTS played successfully');
       } else {
