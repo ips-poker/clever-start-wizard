@@ -228,6 +228,12 @@ const TableSeating = ({
 
   const generateTablesFromRegistrations = () => {
     const activePlayers = registrations.filter(r => r.status === 'registered' || r.status === 'playing');
+    
+    if (activePlayers.length === 0) {
+      setTables([]);
+      return;
+    }
+    
     const totalTables = Math.ceil(activePlayers.length / seatingSettings.maxPlayersPerTable);
     
     const newTables: Table[] = [];
