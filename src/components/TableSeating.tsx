@@ -95,17 +95,15 @@ const TableSeating = ({
   }, [tournamentId]);
 
   const loadSavedSeating = async () => {
+    console.log('🔄 ПРИНУДИТЕЛЬНАЯ ЗАГРУЗКА из базы данных...');
     try {
-      // Сначала пытаемся загрузить из localStorage
-      const savedSeating = localStorage.getItem(`seating_${tournamentId}`);
-      if (savedSeating) {
-        const parsedSeating = JSON.parse(savedSeating);
-        setTables(parsedSeating);
-        console.log('🪑 Рассадка загружена из localStorage');
-        return;
-      }
-
-      // Если в localStorage нет данных, загружаем из базы данных
+      console.log('🔄 Загрузка рассадки...');
+      
+      // ВРЕМЕННО: очищаем localStorage для отладки
+      localStorage.removeItem(`seating_${tournamentId}`);
+      console.log('🗑️ localStorage очищен для отладки');
+      
+      // Загружаем из базы данных
       const { data: seatingData, error } = await supabase
         .from('tournament_registrations')
         .select(`
