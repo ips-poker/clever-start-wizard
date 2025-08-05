@@ -242,6 +242,8 @@ export function VoiceSettings({ onSettingsChange }: VoiceSettingsProps) {
         updated_at: new Date().toISOString()
       };
 
+      console.log('Saving settings to database:', settingsToSave);
+
       if (existingSettings) {
         await supabase
           .from('voice_settings')
