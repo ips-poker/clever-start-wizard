@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { 
   Users, ArrowUpDown, Plus, Shuffle, Play, Crown, 
   UserMinus, AlertTriangle, Target, Settings,
@@ -94,6 +95,11 @@ const TableSeating = ({
 
   const getEliminatedPlayers = () => {
     return registrations.filter(r => r.status === 'eliminated');
+  };
+
+  const getPlayerAvatar = (playerId: string) => {
+    const avatarIndex = Math.abs(playerId.split('').reduce((a, b) => a + b.charCodeAt(0), 0)) % 6 + 1;
+    return `src/assets/avatars/poker-avatar-${avatarIndex}.png`;
   };
 
   const loadSavedSeating = async () => {
@@ -196,17 +202,15 @@ const TableSeating = ({
   const startInitialSeating = async () => {
     const activePlayers = getActivePlayers();
     if (activePlayers.length === 0) {
-      toast({ title: "Ошибка", description: "Нет активных игроков для рассадки", variant: "destructive" });
+      toast({ title: "Error", description: "No active players for seating", variant: "destructive" });
       return;
     }
 
-    // Очищаем все seat_number в базе данных
     await supabase
       .from('tournament_registrations')
       .update({ seat_number: null })
       .eq('tournament_id', tournamentId);
 
-    // Перемешиваем игроков случайным образом
     const shuffledPlayers = [...activePlayers].sort(() => Math.random() - 0.5);
     const totalTables = Math.ceil(shuffledPlayers.length / maxPlayersPerTable);
     
@@ -233,7 +237,6 @@ const TableSeating = ({
       });
     }
     
-    // Размещаем перемешанных игроков
     shuffledPlayers.forEach((registration, index) => {
       const tableIndex = Math.floor(index / maxPlayersPerTable);
       const seatIndex = index % maxPlayersPerTable;
@@ -251,7 +254,6 @@ const TableSeating = ({
       }
     });
 
-    // Пересчитываем средние стеки
     newTables.forEach(table => {
       const activeSeats = table.seats.filter(s => s.player_id);
       if (activeSeats.length > 0) {
@@ -266,8 +268,8 @@ const TableSeating = ({
     setIsSeatingStarted(true);
     
     toast({ 
-      title: "Начальная рассадка завершена", 
-      description: `${shuffledPlayers.length} игроков размещены за ${totalTables} столами` 
+      title: "Initial seating completed", 
+      description: `${shuffledPlayers.length} players seated at ${totalTables} tables` 
     });
   };
 
@@ -285,7 +287,7 @@ const TableSeating = ({
               .eq('tournament_id', tournamentId);
               
             if (error) {
-              console.error('Ошибка обновления места игрока:', error);
+              console.error('Error updating player seat:', error);
             }
           }
         }
@@ -295,10 +297,10 @@ const TableSeating = ({
         onSeatingUpdate();
       }
     } catch (error) {
-      console.error('Ошибка при обновлении рассадки:', error);
+      console.error('Error updating seating:', error);
       toast({ 
-        title: "Ошибка", 
-        description: "Не удалось сохранить рассадку", 
+        title: "Error", 
+        description: "Failed to save seating", 
         variant: "destructive" 
       });
     }
@@ -311,7 +313,6 @@ const TableSeating = ({
     newTables.forEach(table => {
       table.seats.forEach(seat => {
         if (seat.player_id === playerId) {
-          // Полностью очищаем место
           seat.status = undefined;
           seat.player_id = undefined;
           seat.player_name = undefined;
@@ -324,7 +325,6 @@ const TableSeating = ({
     });
 
     if (playerFound) {
-      // Обновляем статус в базе данных и убираем seat_number
       await supabase
         .from('tournament_registrations')
         .update({ 
@@ -337,30 +337,24 @@ const TableSeating = ({
       setTables(newTables);
       
       toast({ 
-        title: "Игрок исключен", 
-        description: "Место освобождено. Игрок удален из активных игроков." 
+        title: "Player eliminated", 
+        description: "Seat freed. Player removed from active players." 
       });
 
-      // Вызываем callback для обновления компонента активных игроков
       if (onSeatingUpdate) {
         onSeatingUpdate();
       }
-
-      // Проверяем необходимость балансировки
-      checkForTableBreaking(newTables);
     }
   };
 
   const restorePlayer = async (playerId: string) => {
     try {
-      // Возвращаем игрока в статус 'registered'
       await supabase
         .from('tournament_registrations')
         .update({ status: 'registered' })
         .eq('player_id', playerId)
         .eq('tournament_id', tournamentId);
 
-      // Находим свободное место для восстановленного игрока
       let tableWithFreeSpace = null;
       let freeSeatIndex = -1;
       
@@ -374,11 +368,9 @@ const TableSeating = ({
       }
 
       if (tableWithFreeSpace && freeSeatIndex !== -1) {
-        // Обновляем локальное состояние
         const newTables = [...tables];
         const targetTable = newTables.find(t => t.table_number === tableWithFreeSpace.table_number);
         if (targetTable) {
-          // Получаем данные восстановленного игрока
           const restoredPlayer = registrations.find(r => r.player.id === playerId);
           if (restoredPlayer) {
             targetTable.seats[freeSeatIndex] = {
@@ -393,7 +385,6 @@ const TableSeating = ({
           }
         }
         
-        // Сохраняем в базу данных
         const absoluteSeatNumber = (tableWithFreeSpace.table_number - 1) * maxPlayersPerTable + (freeSeatIndex + 1);
         await supabase
           .from('tournament_registrations')
@@ -404,61 +395,211 @@ const TableSeating = ({
         setTables(newTables);
 
         toast({ 
-          title: "Игрок восстановлен", 
-          description: `Игрок посажен за стол ${tableWithFreeSpace.table_number}, место ${freeSeatIndex + 1}` 
+          title: "Player restored", 
+          description: `Player seated at table ${tableWithFreeSpace.table_number}, seat ${freeSeatIndex + 1}` 
         });
       } else {
         toast({ 
-          title: "Игрок восстановлен", 
-          description: "Игрок возвращен в список активных. Свободных мест нет - используйте автопосадку." 
+          title: "Player restored", 
+          description: "Player returned to active list. No free seats - use auto-seating." 
         });
       }
 
-      // Обновляем компонент активных игроков
       if (onSeatingUpdate) {
         onSeatingUpdate();
       }
     } catch (error) {
-      console.error('Ошибка при восстановлении игрока:', error);
+      console.error('Error restoring player:', error);
       toast({ 
-        title: "Ошибка", 
-        description: "Не удалось восстановить игрока", 
+        title: "Error", 
+        description: "Failed to restore player", 
         variant: "destructive" 
       });
     }
   };
 
-  const closeTable = (tableNumber: number) => {
-    const newTables = tables.filter(t => t.table_number !== tableNumber);
-    setTables(newTables);
+  const createFinalTable = async () => {
+    const activePlayers = getActivePlayers();
     
-    toast({ 
-      title: "Стол закрыт", 
-      description: `Стол ${tableNumber} удален из списка столов` 
+    if (activePlayers.length > finalTableSize) {
+      toast({
+        title: "Too many players",
+        description: `Final table requires ${finalTableSize} or fewer players`,
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const shuffledPlayers = [...activePlayers].sort(() => Math.random() - 0.5);
+    const seats: TableSeat[] = [];
+    
+    for (let seatNum = 1; seatNum <= finalTableSize; seatNum++) {
+      seats.push({
+        seat_number: seatNum,
+        stack_bb: 0
+      });
+    }
+
+    const finalTable: Table = {
+      table_number: 1,
+      seats,
+      active_players: 0,
+      max_seats: finalTableSize,
+      dealer_position: Math.floor(Math.random() * finalTableSize) + 1,
+      table_status: 'final',
+      is_final_table: true,
+      average_stack: 0
+    };
+
+    shuffledPlayers.forEach((registration, index) => {
+      if (index < finalTableSize) {
+        finalTable.seats[index].player_id = registration.player.id;
+        finalTable.seats[index].player_name = registration.player.name;
+        finalTable.seats[index].chips = registration.chips;
+        finalTable.seats[index].status = registration.status;
+        finalTable.seats[index].stack_bb = Math.round((registration.chips || 0) / bigBlind);
+        finalTable.active_players++;
+      }
+    });
+
+    const activeSeats = finalTable.seats.filter(s => s.player_id);
+    if (activeSeats.length > 0) {
+      finalTable.average_stack = Math.round(
+        activeSeats.reduce((sum, seat) => sum + (seat.chips || 0), 0) / activeSeats.length
+      );
+    }
+
+    await supabase
+      .from('tournament_registrations')
+      .update({ seat_number: null })
+      .eq('tournament_id', tournamentId);
+
+    setTables([finalTable]);
+    await updateSeatingInDatabase([finalTable]);
+    
+    toast({
+      title: "🏆 FINAL TABLE FORMED!",
+      description: `${shuffledPlayers.length} players seated at final table`,
     });
   };
 
-  const checkForTableBreaking = (currentTables: Table[]) => {
-    const activeTables = currentTables.filter(table => table.active_players > 0);
-    const tablesNeedingBreaking = activeTables.filter(table => table.active_players <= 3);
-    
-    if (tablesNeedingBreaking.length > 0) {
+  const autoSeatLatePlayers = async () => {
+    const seatedPlayerIds = new Set();
+    tables.forEach(table => {
+      table.seats.forEach(seat => {
+        if (seat.player_id) {
+          seatedPlayerIds.add(seat.player_id);
+        }
+      });
+    });
+
+    const unseatedPlayers = getActivePlayers().filter(player => 
+      !seatedPlayerIds.has(player.player.id)
+    );
+
+    if (unseatedPlayers.length === 0) {
       toast({
-        title: "Требуется балансировка столов",
-        description: `За столом ${tablesNeedingBreaking[0].table_number} осталось ${tablesNeedingBreaking[0].active_players} игроков`,
-        variant: "destructive"
+        title: "All players seated",
+        description: "No players without seats",
+      });
+      return;
+    }
+
+    const newTables = [...tables];
+    let playersSeated = 0;
+
+    for (const player of unseatedPlayers) {
+      let placed = false;
+      
+      const availableTables = newTables
+        .filter(table => table.active_players < table.max_seats)
+        .sort((a, b) => a.active_players - b.active_players);
+
+      for (const table of availableTables) {
+        const freeSeats = table.seats.filter(seat => !seat.player_id);
+        if (freeSeats.length > 0) {
+          const randomSeat = freeSeats[Math.floor(Math.random() * freeSeats.length)];
+          
+          randomSeat.player_id = player.player.id;
+          randomSeat.player_name = player.player.name;
+          randomSeat.chips = player.chips;
+          randomSeat.status = player.status;
+          randomSeat.stack_bb = Math.round((player.chips || 0) / bigBlind);
+          
+          table.active_players++;
+          playersSeated++;
+          placed = true;
+          break;
+        }
+      }
+    }
+
+    newTables.forEach(table => {
+      const activeSeats = table.seats.filter(s => s.player_id);
+      if (activeSeats.length > 0) {
+        table.average_stack = Math.round(
+          activeSeats.reduce((sum, seat) => sum + (seat.chips || 0), 0) / activeSeats.length
+        );
+      }
+    });
+
+    setTables(newTables);
+    await updateSeatingInDatabase(newTables);
+
+    toast({
+      title: "Auto-seating completed",
+      description: `${playersSeated} players seated at tables`
+    });
+  };
+
+  const checkTableBalance = () => {
+    setBalancingInProgress(true);
+    
+    const activeTables = tables.filter(t => t.active_players > 0);
+    const balanceInfo = activeTables.map(table => ({
+      tableNumber: table.table_number,
+      players: table.active_players,
+      maxPlayers: table.max_seats,
+      tableObj: table
+    }));
+    
+    const minPlayers = Math.min(...balanceInfo.map(t => t.players));
+    const maxPlayers = Math.max(...balanceInfo.map(t => t.players));
+    const difference = maxPlayers - minPlayers;
+    
+    let message = "📊 Balance Analysis:\n\n";
+    
+    if (difference <= 1) {
+      message += "✅ Tables are perfectly balanced (difference ≤1 player)";
+    } else {
+      message += `⚠️ Balancing required (difference ${difference} players)\n\n`;
+      message += "📊 Current state:\n";
+      balanceInfo.forEach(t => {
+        if (t.players === minPlayers) {
+          message += `🔻 Table ${t.tableNumber}: ${t.players}/${t.maxPlayers} (needs players)\n`;
+        }
+        if (t.players === maxPlayers) {
+          message += `🔺 Table ${t.tableNumber}: ${t.players}/${t.maxPlayers} (can move players)\n`;
+        }
       });
     }
+    
+    toast({ 
+      title: "Balance Analysis", 
+      description: message,
+      duration: 8000
+    });
+    
+    setBalancingInProgress(false);
   };
 
   const openNewTable = () => {
     const activePlayers = getActivePlayers();
-    const currentTables = tables.filter(t => t.active_players > 0);
     
     if (activePlayers.length < maxPlayersPerTable * 2) {
       toast({
-        title: "Недостаточно игроков",
-        description: "Для открытия нового стола нужно больше игроков",
+        title: "Not enough players",
+        description: "Need more players to open new table",
         variant: "destructive"
       });
       return;
@@ -488,879 +629,288 @@ const TableSeating = ({
     setTables(newTables);
 
     toast({
-      title: "Новый стол открыт",
-      description: `Стол ${newTableNumber} готов к заполнению. Пересадите игроков с переполненных столов.`
+      title: "New table opened",
+      description: `Table ${newTableNumber} ready for players.`
     });
-  };
-
-  const autoSeatLatePlayers = async () => {
-    // Находим игроков без места за столом
-    const seatedPlayerIds = new Set();
-    tables.forEach(table => {
-      table.seats.forEach(seat => {
-        if (seat.player_id) {
-          seatedPlayerIds.add(seat.player_id);
-        }
-      });
-    });
-
-    const unseatedPlayers = getActivePlayers().filter(player => 
-      !seatedPlayerIds.has(player.player.id)
-    );
-
-    if (unseatedPlayers.length === 0) {
-      toast({
-        title: "Все игроки размещены",
-        description: "Нет игроков без места за столом",
-      });
-      return;
-    }
-
-    const newTables = [...tables];
-    let playersSeated = 0;
-
-    // Стратегия размещения: сначала заполняем недоукомплектованные столы
-    for (const player of unseatedPlayers) {
-      let placed = false;
-      
-      // Ищем стол с наименьшим количеством игроков
-      const availableTables = newTables
-        .filter(table => table.active_players < table.max_seats)
-        .sort((a, b) => a.active_players - b.active_players);
-
-      for (const table of availableTables) {
-        // Ищем первое свободное место
-        const freeSeats = table.seats.filter(seat => !seat.player_id);
-        if (freeSeats.length > 0) {
-          // Случайно выбираем одно из свободных мест
-          const randomSeat = freeSeats[Math.floor(Math.random() * freeSeats.length)];
-          
-          randomSeat.player_id = player.player.id;
-          randomSeat.player_name = player.player.name;
-          randomSeat.chips = player.chips;
-          randomSeat.status = player.status;
-          randomSeat.stack_bb = Math.round((player.chips || 0) / bigBlind);
-          
-          table.active_players++;
-          playersSeated++;
-          placed = true;
-          break;
-        }
-      }
-
-      // Если не удалось разместить - открываем новый стол
-      if (!placed && newTables.every(t => t.active_players >= t.max_seats)) {
-        const newTableNumber = Math.max(...newTables.map(t => t.table_number)) + 1;
-        const seats: TableSeat[] = [];
-        
-        for (let seatNum = 1; seatNum <= maxPlayersPerTable; seatNum++) {
-          seats.push({
-            seat_number: seatNum,
-            stack_bb: 0
-          });
-        }
-
-        // Размещаем игрока на первое место нового стола
-        seats[0] = {
-          seat_number: 1,
-          player_id: player.player.id,
-          player_name: player.player.name,
-          chips: player.chips,
-          status: player.status,
-          stack_bb: Math.round((player.chips || 0) / bigBlind)
-        };
-
-        const newTable: Table = {
-          table_number: newTableNumber,
-          seats,
-          active_players: 1,
-          max_seats: maxPlayersPerTable,
-          dealer_position: Math.floor(Math.random() * maxPlayersPerTable) + 1,
-          table_status: 'active',
-          average_stack: player.chips || 0
-        };
-
-        newTables.push(newTable);
-        playersSeated++;
-      }
-    }
-
-    // Пересчитываем средние стеки
-    newTables.forEach(table => {
-      const activeSeats = table.seats.filter(s => s.player_id);
-      if (activeSeats.length > 0) {
-        table.average_stack = Math.round(
-          activeSeats.reduce((sum, seat) => sum + (seat.chips || 0), 0) / activeSeats.length
-        );
-      }
-    });
-
-    setTables(newTables);
-    await updateSeatingInDatabase(newTables);
-
-    toast({
-      title: "Автоматическое размещение завершено",
-      description: `${playersSeated} игроков размещены за столами`
-    });
-  };
-
-  const checkTableBalance = () => {
-    setBalancingInProgress(true);
-    
-    const activeTables = tables.filter(t => t.active_players > 0);
-    const balanceInfo = activeTables.map(table => ({
-      tableNumber: table.table_number,
-      players: table.active_players,
-      maxPlayers: table.max_seats,
-      tableObj: table
-    }));
-    
-    // Находим столы с минимальным и максимальным количеством игроков
-    const minPlayers = Math.min(...balanceInfo.map(t => t.players));
-    const maxPlayers = Math.max(...balanceInfo.map(t => t.players));
-    const difference = maxPlayers - minPlayers;
-    
-    const tablesNeedingPlayers = balanceInfo.filter(t => t.players === minPlayers);
-    const tablesWithExtraPlayers = balanceInfo.filter(t => t.players === maxPlayers);
-    
-    let message = "📊 УМНЫЙ АНАЛИЗ БАЛАНСИРОВКИ:\n\n";
-    
-    if (difference <= 1) {
-      message += "✅ Столы сбалансированы идеально (разница ≤1 игрока)";
-    } else {
-      message += `⚠️ Требуется балансировка (разница ${difference} игроков)\n\n`;
-      
-      // Конкретные рекомендации по пересадке
-      if (tablesWithExtraPlayers.length > 0 && tablesNeedingPlayers.length > 0) {
-        const sourceTable = tablesWithExtraPlayers[0];
-        const targetTable = tablesNeedingPlayers[0];
-        
-        // Находим игроков с наименьшими стеками для пересадки
-        const playersToMove = sourceTable.tableObj.seats
-          .filter(seat => seat.player_id && seat.chips)
-          .sort((a, b) => (a.chips || 0) - (b.chips || 0))
-          .slice(0, Math.floor(difference / 2));
-        
-        message += "🎯 КОНКРЕТНЫЕ РЕКОМЕНДАЦИИ:\n\n";
-        message += `📤 Пересадить СО СТОЛА ${sourceTable.tableNumber}:\n`;
-        playersToMove.forEach(player => {
-          const stackBB = Math.round((player.chips || 0) / bigBlind);
-          message += `  • ${player.player_name} (${stackBB} BB, место ${player.seat_number})\n`;
-        });
-        
-        message += `\n📥 НА СТОЛ ${targetTable.tableNumber} (свободных мест: ${targetTable.maxPlayers - targetTable.players})\n\n`;
-        message += "🔄 Порядок действий:\n";
-        message += "1. Выберите игрока с наименьшим стеком\n";
-        message += "2. Используйте кнопку 'Переместить игрока'\n";
-        message += "3. Повторите до выравнивания столов";
-      }
-      
-      message += "\n📊 ТЕКУЩЕЕ СОСТОЯНИЕ:\n";
-      tablesNeedingPlayers.forEach(t => {
-        message += `🔻 Стол ${t.tableNumber}: ${t.players}/${t.maxPlayers} (нужно +${Math.floor(difference/2)})\n`;
-      });
-      tablesWithExtraPlayers.forEach(t => {
-        message += `🔺 Стол ${t.tableNumber}: ${t.players}/${t.maxPlayers} (можно -${Math.floor(difference/2)})\n`;
-      });
-    }
-    
-    toast({ 
-      title: "Умный анализ балансировки", 
-      description: message,
-      duration: 12000
-    });
-    
-    setBalancingInProgress(false);
-  };
-
-  const createFinalTable = async () => {
-    const activePlayers = getActivePlayers();
-    
-    if (activePlayers.length > finalTableSize) {
-      toast({
-        title: "Слишком много игроков",
-        description: `Для финального стола должно остаться не более ${finalTableSize} игроков`,
-        variant: "destructive"
-      });
-      return;
-    }
-
-    // Перемешиваем игроков для случайной рассадки
-    const shuffledPlayers = [...activePlayers].sort(() => Math.random() - 0.5);
-    const seats: TableSeat[] = [];
-    
-    for (let seatNum = 1; seatNum <= finalTableSize; seatNum++) {
-      seats.push({
-        seat_number: seatNum,
-        stack_bb: 0
-      });
-    }
-
-    const finalTable: Table = {
-      table_number: 1,
-      seats,
-      active_players: 0,
-      max_seats: finalTableSize,
-      dealer_position: Math.floor(Math.random() * finalTableSize) + 1,
-      table_status: 'final',
-      is_final_table: true,
-      average_stack: 0
-    };
-
-    // Размещаем игроков на финальном столе
-    shuffledPlayers.forEach((registration, index) => {
-      if (index < finalTableSize) {
-        finalTable.seats[index].player_id = registration.player.id;
-        finalTable.seats[index].player_name = registration.player.name;
-        finalTable.seats[index].chips = registration.chips;
-        finalTable.seats[index].status = registration.status;
-        finalTable.seats[index].stack_bb = Math.round((registration.chips || 0) / bigBlind);
-        finalTable.active_players++;
-      }
-    });
-
-    // Вычисляем средний стек
-    const activeSeats = finalTable.seats.filter(s => s.player_id);
-    if (activeSeats.length > 0) {
-      finalTable.average_stack = Math.round(
-        activeSeats.reduce((sum, seat) => sum + (seat.chips || 0), 0) / activeSeats.length
-      );
-    }
-
-    // Очищаем все seat_number и устанавливаем новые
-    await supabase
-      .from('tournament_registrations')
-      .update({ seat_number: null })
-      .eq('tournament_id', tournamentId);
-
-    setTables([finalTable]);
-    await updateSeatingInDatabase([finalTable]);
-    
-    toast({
-      title: "🏆 ФИНАЛЬНЫЙ СТОЛ СФОРМИРОВАН!",
-      description: `${shuffledPlayers.length} игроков размещены за финальным столом`,
-    });
-  };
-
-  const movePlayer = async (playerId: string, fromTable: number, toTable: number, toSeat: number) => {
-    const newTables = [...tables];
-    
-    // Найдем игрока в старом месте
-    const fromTableObj = newTables.find(t => t.table_number === fromTable);
-    const toTableObj = newTables.find(t => t.table_number === toTable);
-    
-    if (!fromTableObj || !toTableObj) return;
-    
-    const playerSeat = fromTableObj.seats.find(s => s.player_id === playerId);
-    const targetSeat = toTableObj.seats.find(s => s.seat_number === toSeat);
-    
-    if (!playerSeat || !targetSeat) return;
-    
-    // Проверяем, свободно ли целевое место
-    if (targetSeat.player_id) {
-      toast({ title: "Ошибка", description: "Место уже занято", variant: "destructive" });
-      return;
-    }
-    
-    // Перемещаем игрока
-    targetSeat.player_id = playerSeat.player_id;
-    targetSeat.player_name = playerSeat.player_name;
-    targetSeat.chips = playerSeat.chips;
-    targetSeat.status = playerSeat.status;
-    
-    // Освобождаем старое место
-    playerSeat.player_id = undefined;
-    playerSeat.player_name = undefined;
-    playerSeat.chips = undefined;
-    playerSeat.status = undefined;
-    
-    // Обновляем счетчики
-    fromTableObj.active_players--;
-    toTableObj.active_players++;
-    
-    setTables(newTables);
-    updateSeatingInDatabase(newTables);
-    
-    // Обновляем seat_number в базе данных (дублирующее обновление для надежности)
-    const absoluteSeatNumber = (toTable - 1) * maxPlayersPerTable + toSeat;
-    await supabase
-      .from('tournament_registrations')
-      .update({ seat_number: absoluteSeatNumber })
-      .eq('player_id', playerId)
-      .eq('tournament_id', tournamentId);
-    
-    toast({ title: "Игрок перемещен", description: `Стол ${toTable}, место ${toSeat}` });
-    setIsMoveDialogOpen(false);
-  };
-
-  const suggestPlayerMove = (tableNum: number) => {
-    const table = tables.find(t => t.table_number === tableNum);
-    if (!table) return;
-    
-    // Найдем стол с наименьшим количеством игроков
-    const targetTable = tables.reduce((min, current) => 
-      current.active_players < min.active_players ? current : min
-    );
-    
-    if (targetTable.table_number === tableNum) {
-      toast({ title: "Рекомендация", description: "Этот стол уже имеет минимальное количество игроков" });
-      return;
-    }
-    
-    toast({ 
-      title: "Рекомендация пересадки", 
-      description: `Пересадите игрока со стола ${tableNum} на стол ${targetTable.table_number}` 
-    });
-  };
-
-  const getSeatColorClass = (seat: TableSeat) => {
-    if (!seat.player_id) return 'bg-muted border-muted-foreground/20';
-    if (seat.status === 'eliminated') return 'bg-destructive/10 border-destructive/30';
-    if (seat.status === 'playing') return 'bg-accent/10 border-accent/30';
-    return 'bg-primary/10 border-primary/30';
-  };
-
-  const getTableStatusBadge = (table: Table) => {
-    if (table.is_final_table) return <Badge variant="destructive" className="bg-gradient-to-r from-yellow-400 to-orange-500">🏆 ФИНАЛ</Badge>;
-    if (table.table_status === 'breaking') return <Badge variant="destructive">Ликвидация</Badge>;
-    if (table.table_status === 'balancing') return <Badge variant="outline">Балансировка</Badge>;
-    if (table.active_players === 0) return <Badge variant="secondary">Пустой</Badge>;
-    if (table.active_players <= 3) return <Badge variant="destructive">Требует балансировки</Badge>;
-    
-    // Умная индикация балансировки
-    const activeTables = tables.filter(t => t.active_players > 0);
-    if (activeTables.length > 1) {
-      const minPlayers = Math.min(...activeTables.map(t => t.active_players));
-      const maxPlayers = Math.max(...activeTables.map(t => t.active_players));
-      const difference = maxPlayers - minPlayers;
-      
-      if (difference > 1) {
-        if (table.active_players === minPlayers) {
-          return <Badge className="bg-blue-500 text-white">🔻 {table.active_players}/{table.max_seats} (нужны игроки)</Badge>;
-        }
-        if (table.active_players === maxPlayers) {
-          return <Badge className="bg-orange-500 text-white">🔺 {table.active_players}/{table.max_seats} (можно пересадить)</Badge>;
-        }
-      }
-    }
-    
-    return <Badge variant="default" className="bg-green-500 text-white">✅ {table.active_players}/{table.max_seats}</Badge>;
-  };
-
-  const getPlayerAvatar = (playerId: string) => {
-    // В будущем можно загружать аватары из профилей
-    // Пока генерируем случайную аватарку из коллекции
-    const avatarIndex = Math.abs(playerId.split('').reduce((a, b) => a + b.charCodeAt(0), 0)) % 6 + 1;
-    return `/src/assets/avatars/poker-avatar-${avatarIndex}.png`;
   };
 
   return (
-    <div className="space-y-6">
-      {/* Главная карточка с градиентом */}
-      <Card className="bg-gradient-to-r from-white via-gray-50/30 to-white border border-gray-200/50 shadow-floating">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="text-2xl font-light text-gray-800 flex items-center gap-3">
-                <div className="p-2 bg-gradient-primary rounded-lg">
+    <div className="min-h-screen bg-slate-50 space-y-6">
+      {/* Главная карточка в стиле приглашений */}
+      <Card className="w-full bg-white border border-slate-200 shadow-[0_20px_25px_-5px_rgba(0,0,0,0.06),0_10px_10px_-5px_rgba(0,0,0,0.04)]"
+        style={{ background: 'linear-gradient(145deg, #ffffff 0%, #f9fafb 100%)' }}
+      >
+        <CardContent className="p-0">
+          {/* Минимальные акцентные линии */}
+          <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-slate-900/20 to-transparent"></div>
+          <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-slate-900/10 to-transparent"></div>
+
+          <div className="relative p-6">
+            {/* Заголовок в стиле приглашений */}
+            <div className="flex items-center justify-between mb-8">
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center">
                   <Users className="w-6 h-6 text-white" />
                 </div>
-                Система рассадки турнира
-              </CardTitle>
-              <CardDescription className="font-light text-gray-600 mt-2">
-                Профессиональное управление столами и балансировкой игроков
-              </CardDescription>
+                <div>
+                  <div className="font-semibold text-lg tracking-tight text-slate-900">TABLE SEATING</div>
+                  <div className="text-xs text-slate-500 font-medium">Professional Tournament Management</div>
+                </div>
+              </div>
+              <div className="text-right">
+                {isSeatingStarted ? (
+                  <div className="bg-slate-900 text-white text-xs font-semibold px-3 py-1 rounded-full tracking-wide">
+                    ACTIVE
+                  </div>
+                ) : (
+                  <div className="bg-slate-300 text-slate-700 text-xs font-semibold px-3 py-1 rounded-full tracking-wide">
+                    PENDING
+                  </div>
+                )}
+              </div>
             </div>
-            {isSeatingStarted && (
-              <Badge className="bg-gradient-to-r from-emerald-500 to-green-500 text-white px-4 py-2 font-medium shadow-sm">
-                ✅ Система активна
-              </Badge>
-            )}
-          </div>
-        </CardHeader>
 
-        {/* Статистические блоки */}
-        <CardContent>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="p-4 bg-white/70 backdrop-blur-sm border border-gray-200/50 rounded-xl shadow-subtle text-center">
-              <div className="flex items-center justify-center mb-2">
-                <div className="p-2 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg">
-                  <Users className="w-5 h-5 text-white" />
+            {/* Статистические блоки в стиле приглашений */}
+            <div className="mb-6">
+              <div className="grid grid-cols-2 gap-4 mb-6">
+                <div className="text-center py-4">
+                  <div className="text-slate-500 text-xs font-medium mb-1 tracking-wide uppercase">Active Players</div>
+                  <div className="text-3xl font-light text-slate-900">{getActivePlayers().length}</div>
+                </div>
+                <div className="text-center py-4">
+                  <div className="text-slate-500 text-xs font-medium mb-1 tracking-wide uppercase">Eliminated</div>
+                  <div className="text-3xl font-light text-slate-900">{getEliminatedPlayers().length}</div>
                 </div>
               </div>
-              <div className="text-3xl font-light text-gray-800">{getActivePlayers().length}</div>
-              <div className="text-sm font-light text-gray-600">Активных игроков</div>
-            </div>
-            <div className="p-4 bg-white/70 backdrop-blur-sm border border-gray-200/50 rounded-xl shadow-subtle text-center">
-              <div className="flex items-center justify-center mb-2">
-                <div className="p-2 bg-gradient-to-r from-red-500 to-orange-500 rounded-lg">
-                  <UserMinus className="w-5 h-5 text-white" />
+              
+              <div className="w-full h-px bg-slate-200 my-4"></div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="text-center py-3">
+                  <div className="text-slate-500 text-xs font-medium mb-1 tracking-wide uppercase">Active Tables</div>
+                  <div className="text-xl font-light text-slate-900">{tables.filter(t => t.active_players > 0).length}</div>
+                </div>
+                <div className="text-center py-3">
+                  <div className="text-slate-500 text-xs font-medium mb-1 tracking-wide uppercase">Avg Stack (BB)</div>
+                  <div className="text-xl font-light text-slate-900">{Math.round(tables.reduce((sum, t) => sum + (t.average_stack || 0), 0) / Math.max(tables.length, 1))}</div>
                 </div>
               </div>
-              <div className="text-3xl font-light text-gray-800">{getEliminatedPlayers().length}</div>
-              <div className="text-sm font-light text-gray-600">Выбыло</div>
-            </div>
-            <div className="p-4 bg-white/70 backdrop-blur-sm border border-gray-200/50 rounded-xl shadow-subtle text-center">
-              <div className="flex items-center justify-center mb-2">
-                <div className="p-2 bg-gradient-to-r from-green-500 to-emerald-500 rounded-lg">
-                  <Target className="w-5 h-5 text-white" />
-                </div>
-              </div>
-              <div className="text-3xl font-light text-gray-800">{tables.filter(t => t.active_players > 0).length}</div>
-              <div className="text-sm font-light text-gray-600">Активных столов</div>
-            </div>
-            <div className="p-4 bg-white/70 backdrop-blur-sm border border-gray-200/50 rounded-xl shadow-subtle text-center">
-              <div className="flex items-center justify-center mb-2">
-                <div className="p-2 bg-gradient-to-r from-amber-500 to-yellow-500 rounded-lg">
-                  <Trophy className="w-5 h-5 text-white" />
-                </div>
-              </div>
-              <div className="text-3xl font-light text-gray-800">{Math.round(tables.reduce((sum, t) => sum + (t.average_stack || 0), 0) / Math.max(tables.length, 1))}</div>
-              <div className="text-sm font-light text-gray-600">Ср. стек (BB)</div>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Уведомления */}
+      {/* Уведомления в стиле приглашений */}
       {isFinalTableReady && (
-        <Alert className="border-accent bg-accent/10">
-          <Trophy className="h-4 w-4" />
-          <AlertDescription>
-            🏆 Готов к формированию финального стола! Осталось {getActivePlayers().length} игроков.
-          </AlertDescription>
-        </Alert>
-      )}
-
-      {/* Выбывшие игроки */}
-      {getEliminatedPlayers().length > 0 && (
-        <Card className="bg-white/70 backdrop-blur-sm border border-gray-200/50 shadow-subtle">
-          <CardHeader className="bg-white/50 border-b border-gray-200/30">
-            <CardTitle className="text-xl font-light text-gray-800 flex items-center gap-3">
-              <div className="p-2 bg-gradient-to-r from-red-500 to-orange-500 rounded-lg">
-                <UserMinus className="w-5 h-5 text-white" />
-              </div>
-              Выбывшие игроки ({getEliminatedPlayers().length})
-            </CardTitle>
-            <CardDescription className="font-light text-gray-600">
-              Игроки, которые покинули турнир. Можно восстановить для возвращения в игру
-            </CardDescription>
-          </CardHeader>
+        <Card className="w-full bg-white border border-slate-200 shadow-[0_20px_25px_-5px_rgba(0,0,0,0.06),0_10px_10px_-5px_rgba(0,0,0,0.04)]">
           <CardContent className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {getEliminatedPlayers().map(player => (
-                <div key={player.player.id} className="p-4 bg-white/80 backdrop-blur-sm border border-gray-200/50 rounded-xl shadow-subtle hover:scale-105 transition-all duration-300">
-                  <div className="flex items-center gap-3 mb-3">
-                    <img 
-                      src={getPlayerAvatar(player.player.id)} 
-                      alt={player.player.name}
-                      className="w-10 h-10 rounded-full object-cover border-2 border-gray-200/50"
-                    />
-                    <div className="flex-1 min-w-0">
-                      <div className="font-medium text-gray-800 truncate">{player.player.name}</div>
-                      <div className="text-sm text-gray-500">Исключён из турнира</div>
-                    </div>
-                  </div>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="w-full bg-white/80 hover:bg-gradient-to-r hover:from-emerald-500 hover:to-green-500 hover:text-white transition-all duration-300 hover:scale-105 border-gray-200/50"
-                    onClick={() => restorePlayer(player.player.id)}
-                  >
-                    <UserCheck className="w-4 h-4 mr-2" />
-                    Восстановить игрока
-                  </Button>
-                </div>
-              ))}
+            <div className="text-center">
+              <div className="text-slate-500 text-xs font-medium mb-2 tracking-wide uppercase">Final Table Ready</div>
+              <div className="text-lg font-light text-slate-900 mb-2">🏆 {getActivePlayers().length} players remaining</div>
+              <div className="text-sm text-slate-600">Tournament ready for final table formation</div>
             </div>
           </CardContent>
         </Card>
       )}
 
-      {/* Панель управления с премиальным дизайном */}
-      <Card className="bg-gradient-to-r from-white via-purple-50/30 to-white border border-gray-200/50 shadow-floating">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="text-xl font-light text-gray-800 flex items-center gap-3">
-                <div className="p-2 bg-gradient-to-r from-purple-500 to-indigo-500 rounded-lg">
-                  <Settings className="w-5 h-5 text-white" />
-                </div>
-                Панель управления столами
-              </CardTitle>
-              <CardDescription className="font-light text-gray-600 mt-1">
-                Инструменты для управления рассадкой и балансировкой игроков
-              </CardDescription>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-wrap gap-3">
-            {!isSeatingStarted ? (
-              <Button 
-                onClick={startInitialSeating}
-                className="flex items-center gap-3 bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 text-white hover:from-emerald-600 hover:via-teal-600 hover:to-cyan-600 hover:shadow-[0_8px_30px_rgba(20,184,166,0.4)] hover:scale-105 transition-all duration-300 group relative overflow-hidden px-6 py-3"
-                disabled={getActivePlayers().length === 0}
-              >
-                <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/25 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
-                <Play className="w-5 h-5 group-hover:animate-bounce transition-transform duration-300 relative z-10" />
-                <span className="group-hover:translate-x-1 transition-transform duration-300 relative z-10 font-medium">
-                  🚀 ЗАПУСК РАССАДКИ
-                </span>
-              </Button>
-            ) : (
-              <>
-                <Button 
-                  onClick={openNewTable}
-                  variant="outline"
-                  className="flex items-center gap-3 bg-white/80 hover:bg-gradient-to-r hover:from-blue-500 hover:to-purple-500 hover:text-white transition-all duration-300 hover:scale-105 border-gray-200/50 px-4 py-2"
-                  disabled={getActivePlayers().length < maxPlayersPerTable * 2}
-                >
-                  <Plus className="w-4 h-4" />
-                  <span className="font-medium">➕ Новый стол</span>
-                </Button>
-                
-                <Button 
-                  onClick={checkTableBalance}
-                  variant="outline"
-                  className="flex items-center gap-3 bg-white/80 hover:bg-gradient-to-r hover:from-amber-500 hover:to-yellow-500 hover:text-white transition-all duration-300 hover:scale-105 border-gray-200/50 px-4 py-2"
-                  disabled={balancingInProgress}
-                >
-                  <ArrowUpDown className="w-4 h-4" />
-                  <span className="font-medium">{balancingInProgress ? '🔄 Анализ...' : '⚖️ Баланс'}</span>
-                </Button>
-
-                <Button 
-                  onClick={autoSeatLatePlayers}
-                  variant="outline"
-                  className="flex items-center gap-3 bg-white/80 hover:bg-gradient-to-r hover:from-indigo-500 hover:to-purple-500 hover:text-white transition-all duration-300 hover:scale-105 border-gray-200/50 px-4 py-2"
-                >
-                  <Shuffle className="w-4 h-4" />
-                  <span className="font-medium">🎯 Авто-размещение</span>
-                </Button>
-
-                {isFinalTableReady && (
-                  <Button 
-                    onClick={createFinalTable}
-                    className="flex items-center gap-3 bg-gradient-to-r from-yellow-400 via-orange-500 to-red-500 text-white hover:from-yellow-500 hover:via-orange-600 hover:to-red-600 hover:shadow-[0_8px_30px_rgba(245,158,11,0.4)] hover:scale-105 transition-all duration-300 group relative overflow-hidden px-6 py-3"
-                  >
-                    <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/25 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
-                    <Crown className="w-5 h-5 group-hover:animate-bounce transition-transform duration-300 relative z-10" />
-                    <span className="group-hover:translate-x-1 transition-transform duration-300 relative z-10 font-medium">
-                      🏆 ФИНАЛЬНЫЙ СТОЛ
-                    </span>
-                  </Button>
-                )}
-              </>
-            )}
-
-            <Dialog open={isMoveDialogOpen} onOpenChange={setIsMoveDialogOpen}>
-              <DialogTrigger asChild>
-                <Button 
-                  variant="outline"
-                  className="flex items-center gap-3 bg-white/80 hover:bg-gradient-to-r hover:from-green-500 hover:to-emerald-500 hover:text-white transition-all duration-300 hover:scale-105 border-gray-200/50 px-4 py-2"
-                  disabled={!isSeatingStarted}
-                >
-                  <Target className="w-4 h-4" />
-                  <span className="font-medium">🎯 Переместить игрока</span>
-                </Button>
-              </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Переместить игрока</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4">
-                <div>
-                  <label className="text-sm font-medium">Игрок</label>
-                  <Select value={selectedPlayer} onValueChange={setSelectedPlayer}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Выберите игрока" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {registrations
-                        .filter(r => r.status === 'registered' || r.status === 'playing')
-                        .map(reg => (
-                          <SelectItem key={reg.player.id} value={reg.player.id}>
-                            {reg.player.name}
-                          </SelectItem>
-                        ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <label className="text-sm font-medium">Стол</label>
-                  <Select value={targetTable.toString()} onValueChange={(v) => setTargetTable(Number(v))}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {tables.map(table => (
-                        <SelectItem key={table.table_number} value={table.table_number.toString()}>
-                          Стол {table.table_number} ({table.active_players}/{maxPlayersPerTable})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <label className="text-sm font-medium">Место</label>
-                  <Select value={targetSeat.toString()} onValueChange={(v) => setTargetSeat(Number(v))}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Array.from({ length: maxPlayersPerTable }, (_, i) => i + 1).map(seat => {
-                        const table = tables.find(t => t.table_number === targetTable);
-                        const seatTaken = table?.seats.find(s => s.seat_number === seat)?.player_id;
-                        return (
-                          <SelectItem 
-                            key={seat} 
-                            value={seat.toString()} 
-                            disabled={!!seatTaken}
-                          >
-                            Место {seat} {seatTaken ? '(занято)' : '(свободно)'}
-                          </SelectItem>
-                        );
-                      })}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <Button 
-                  onClick={() => {
-                    const currentPlayer = registrations.find(r => r.player.id === selectedPlayer);
-                    const currentTable = tables.find(t => 
-                      t.seats.some(s => s.player_id === selectedPlayer)
-                    )?.table_number || 1;
-                    
-                    movePlayer(selectedPlayer, currentTable, targetTable, targetSeat);
-                  }}
-                  disabled={!selectedPlayer}
-                  className="w-full"
-                >
-                  Переместить
-                </Button>
+      {/* Выбывшие игроки в стиле приглашений */}
+      {getEliminatedPlayers().length > 0 && (
+        <Card className="w-full bg-white border border-slate-200 shadow-[0_20px_25px_-5px_rgba(0,0,0,0.06),0_10px_10px_-5px_rgba(0,0,0,0.04)]"
+          style={{ background: 'linear-gradient(145deg, #ffffff 0%, #f9fafb 100%)' }}
+        >
+          <CardContent className="p-0">
+            <div className="relative p-6">
+              <div className="text-center mb-6">
+                <div className="text-slate-500 text-xs font-medium mb-1 tracking-wide uppercase">Eliminated Players</div>
+                <div className="text-lg font-light text-slate-900">{getEliminatedPlayers().length} players out</div>
               </div>
-            </DialogContent>
-            </Dialog>
+              
+              <div className="w-full h-px bg-slate-200 mb-6"></div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {getEliminatedPlayers().map(player => (
+                  <div key={player.player.id} className="bg-slate-50 rounded-xl py-4 px-4 text-center">
+                    <Avatar className="w-12 h-12 mx-auto mb-3">
+                      <AvatarImage src={getPlayerAvatar(player.player.id)} alt={player.player.name} />
+                      <AvatarFallback className="bg-slate-200 text-slate-700">
+                        {player.player.name.charAt(0).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="text-sm font-light text-slate-900 mb-1">{player.player.name}</div>
+                    <div className="text-xs text-slate-500 mb-3">Eliminated</div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="w-full bg-white border-slate-200 text-slate-700 hover:bg-slate-900 hover:text-white transition-all"
+                      onClick={() => restorePlayer(player.player.id)}
+                    >
+                      Restore
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Панель управления в стиле приглашений */}
+      <Card className="w-full bg-white border border-slate-200 shadow-[0_20px_25px_-5px_rgba(0,0,0,0.06),0_10px_10px_-5px_rgba(0,0,0,0.04)]"
+        style={{ background: 'linear-gradient(145deg, #ffffff 0%, #f9fafb 100%)' }}
+      >
+        <CardContent className="p-0">
+          <div className="relative p-6">
+            <div className="text-center mb-6">
+              <div className="text-slate-500 text-xs font-medium mb-1 tracking-wide uppercase">Control Panel</div>
+              <div className="text-lg font-light text-slate-900">Tournament Management</div>
+            </div>
+            
+            <div className="w-full h-px bg-slate-200 mb-6"></div>
+            
+            <div className="flex flex-wrap gap-3 justify-center">
+              {!isSeatingStarted ? (
+                <Button 
+                  onClick={startInitialSeating}
+                  className="bg-slate-900 text-white hover:bg-slate-700 px-6 py-2 rounded-lg font-medium text-sm tracking-wide transition-all"
+                  disabled={getActivePlayers().length === 0}
+                >
+                  <Play className="w-4 h-4 mr-2" />
+                  START SEATING
+                </Button>
+              ) : (
+                <>
+                  <Button 
+                    onClick={openNewTable}
+                    variant="outline"
+                    className="bg-white border-slate-200 text-slate-700 hover:bg-slate-50 px-4 py-2 rounded-lg font-medium text-sm"
+                    disabled={getActivePlayers().length < maxPlayersPerTable * 2}
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    New Table
+                  </Button>
+                  
+                  <Button 
+                    onClick={checkTableBalance}
+                    variant="outline"
+                    className="bg-white border-slate-200 text-slate-700 hover:bg-slate-50 px-4 py-2 rounded-lg font-medium text-sm"
+                    disabled={balancingInProgress}
+                  >
+                    <ArrowUpDown className="w-4 h-4 mr-2" />
+                    {balancingInProgress ? 'Analyzing...' : 'Balance'}
+                  </Button>
+
+                  <Button 
+                    onClick={autoSeatLatePlayers}
+                    variant="outline"
+                    className="bg-white border-slate-200 text-slate-700 hover:bg-slate-50 px-4 py-2 rounded-lg font-medium text-sm"
+                  >
+                    <Shuffle className="w-4 h-4 mr-2" />
+                    Auto-Seat
+                  </Button>
+
+                  {isFinalTableReady && (
+                    <Button 
+                      onClick={createFinalTable}
+                      className="bg-slate-900 text-white hover:bg-slate-700 px-6 py-2 rounded-lg font-medium text-sm tracking-wide transition-all"
+                    >
+                      <Crown className="w-4 h-4 mr-2" />
+                      FINAL TABLE
+                    </Button>
+                  )}
+                </>
+              )}
+            </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Столы с улучшенным дизайном */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {tables.map(table => (
-          <Card 
-            key={table.table_number} 
-            className={`relative transition-all duration-300 hover:scale-105 ${
-              table.is_final_table 
-                ? 'bg-gradient-to-br from-yellow-50 via-amber-50 to-orange-50 border-2 border-gradient-to-r from-yellow-400 to-orange-500 shadow-[0_8px_30px_rgba(245,158,11,0.3)]' 
-                : 'bg-white/70 backdrop-blur-sm border border-gray-200/50 shadow-subtle hover:shadow-floating'
-            }`}
-          >
-            <CardHeader className={`pb-3 ${table.is_final_table ? 'bg-gradient-to-r from-yellow-100 to-orange-100 border-b border-yellow-200/50' : 'bg-white/50 border-b border-gray-200/30'}`}>
-              <CardTitle className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  {table.is_final_table ? (
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-lg">
-                        <Crown className="w-5 h-5 text-white" />
-                      </div>
-                      <span className="text-xl font-light text-gray-800">🏆 ФИНАЛЬНЫЙ СТОЛ</span>
+      {/* Столы в стиле приглашений */}
+      {tables.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+          {tables.map(table => (
+            <Card 
+              key={table.table_number} 
+              className={`w-full border shadow-[0_20px_25px_-5px_rgba(0,0,0,0.06),0_10px_10px_-5px_rgba(0,0,0,0.04)] ${
+                table.is_final_table 
+                  ? 'bg-gradient-to-br from-yellow-50 to-amber-50 border-yellow-200' 
+                  : 'bg-white border-slate-200'
+              }`}
+              style={{ 
+                background: table.is_final_table 
+                  ? 'linear-gradient(145deg, #fffbeb 0%, #fef3c7 100%)' 
+                  : 'linear-gradient(145deg, #ffffff 0%, #f9fafb 100%)' 
+              }}
+            >
+              <CardContent className="p-0">
+                <div className="relative p-6">
+                  {/* Заголовок стола */}
+                  <div className="text-center mb-6">
+                    <div className="text-slate-500 text-xs font-medium mb-1 tracking-wide uppercase">
+                      {table.is_final_table ? 'Final Table' : `Table ${table.table_number}`}
                     </div>
-                  ) : (
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg">
-                        <Target className="w-5 h-5 text-white" />
-                      </div>
-                      <span className="text-lg font-light text-gray-800">Стол {table.table_number}</span>
+                    <div className="text-lg font-light text-slate-900">
+                      {table.active_players}/{table.max_seats} Players
                     </div>
-                  )}
-                  {table.dealer_position && (
-                    <Badge variant="outline" className="bg-white/80 border-gray-200/50 text-xs font-light">
-                      Дилер: {table.dealer_position}
-                    </Badge>
-                  )}
-                </div>
-                <div className="flex items-center gap-2">
-                  {getTableStatusBadge(table)}
-                  {table.active_players > 0 && table.active_players <= 3 && !table.is_final_table && (
-                    <Button 
-                      size="sm" 
-                      variant="outline"
-                      onClick={() => suggestPlayerMove(table.table_number)}
-                      className="text-xs"
-                    >
-                      <AlertTriangle className="w-3 h-3 mr-1" />
-                      Балансировка
-                    </Button>
-                  )}
-                  {table.active_players === 0 && !table.is_final_table && (
-                    <Button 
-                      size="sm" 
-                      variant="destructive"
-                      onClick={() => closeTable(table.table_number)}
-                      className="text-xs"
-                    >
-                      <X className="w-3 h-3" />
-                    </Button>
-                  )}
-                </div>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {/* Информация о столе */}
-              {table.average_stack && table.average_stack > 0 && (
-                <div className="flex justify-between text-xs text-muted-foreground mb-3">
-                  <span>Средний стек: {Math.round(table.average_stack / bigBlind)} BB</span>
-                  <span>Активных: {table.active_players}</span>
-                </div>
-              )}
-              
-              {/* Места за столом */}
-              <div className="grid grid-cols-3 gap-2">
-                {table.seats.map(seat => (
-                  <div 
-                    key={seat.seat_number}
-                    className={`p-3 rounded border text-center text-sm transition-all hover:shadow-md ${getSeatColorClass(seat)} ${
-                      seat.seat_number === table.dealer_position ? 'ring-1 ring-blue-400' : ''
-                    }`}
-                  >
-                    <div className="font-bold mb-1 flex items-center justify-center gap-1">
-                      #{seat.seat_number}
-                      {seat.seat_number === table.dealer_position && <span className="text-blue-500">🎯</span>}
-                    </div>
-                    
-                    {seat.player_name ? (
-                      <div className="space-y-2">
-                        {/* Аватар игрока */}
-                        <div className="flex items-center justify-center">
-                          <img 
-                            src={getPlayerAvatar(seat.player_id!)} 
-                            alt={seat.player_name}
-                            className="w-8 h-8 rounded-full object-cover border-2 border-white/80 shadow-sm"
-                          />
-                        </div>
-                        
-                        <div className="truncate font-medium text-gray-800 text-center" title={seat.player_name}>
-                          {seat.player_name}
-                        </div>
-                        
-                        {seat.chips && (
-                          <div className="text-xs text-center">
-                            <div className="font-medium text-gray-700">{seat.chips.toLocaleString()}</div>
-                            {seat.stack_bb && <div className="text-gray-500">{seat.stack_bb} BB</div>}
-                          </div>
-                        )}
-                        
-                        <div className="flex justify-center">
-                          <Badge 
-                            variant={seat.status === 'playing' ? 'default' : seat.status === 'eliminated' ? 'destructive' : 'secondary'}
-                            className={`text-xs font-light ${
-                              seat.status === 'playing' ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white' :
-                              seat.status === 'eliminated' ? 'bg-gradient-to-r from-red-500 to-orange-500 text-white' :
-                              'bg-gradient-to-r from-gray-400 to-gray-500 text-white'
-                            }`}
-                          >
-                            {seat.status === 'playing' ? '🎮 В игре' : 
-                             seat.status === 'eliminated' ? '❌ Выбыл' : '✅ Готов'}
-                          </Badge>
-                        </div>
-
-                        {/* Кнопки управления игроком */}
-                        {seat.status !== 'eliminated' && isSeatingStarted && (
-                          <div className="flex gap-1 mt-2">
+                    {table.is_final_table && (
+                      <div className="text-yellow-600 text-xs font-medium mt-1">🏆 Championship Round</div>
+                    )}
+                  </div>
+                  
+                  <div className="w-full h-px bg-slate-200 mb-6"></div>
+                  
+                  {/* Места за столом */}
+                  <div className="grid grid-cols-3 gap-3 mb-6">
+                    {table.seats.map(seat => (
+                      <div 
+                        key={seat.seat_number} 
+                        className={`
+                          p-3 rounded-lg text-center transition-all
+                          ${seat.player_id 
+                            ? 'bg-slate-100 border border-slate-200' 
+                            : 'bg-slate-50 border border-slate-100 opacity-50'
+                          }
+                        `}
+                      >
+                        <div className="text-xs text-slate-500 mb-1">Seat {seat.seat_number}</div>
+                        {seat.player_id ? (
+                          <div>
+                            <Avatar className="w-8 h-8 mx-auto mb-2">
+                              <AvatarImage src={getPlayerAvatar(seat.player_id)} alt={seat.player_name} />
+                              <AvatarFallback className="bg-slate-200 text-slate-700 text-xs">
+                                {seat.player_name?.charAt(0).toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="text-xs font-medium text-slate-900 truncate">{seat.player_name}</div>
+                            <div className="text-xs text-slate-600">{seat.stack_bb} BB</div>
                             <Button
                               size="sm"
                               variant="outline"
-                              className="flex-1 text-xs bg-white/80 hover:bg-gradient-to-r hover:from-blue-500 hover:to-purple-500 hover:text-white transition-all duration-300 border-gray-200/50"
-                              onClick={() => {
-                                setSelectedPlayer(seat.player_id!);
-                                setTargetTable(table.table_number);
-                                setIsMoveDialogOpen(true);
-                              }}
-                            >
-                              🔄
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="destructive"
-                              className="flex-1 text-xs bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 hover:scale-105 transition-all duration-300"
+                              className="mt-2 w-full h-6 px-2 text-xs bg-white border-slate-200 text-red-600 hover:bg-red-50"
                               onClick={() => eliminatePlayer(seat.player_id!)}
                             >
-                              <UserMinus className="w-3 h-3" />
+                              Out
                             </Button>
                           </div>
+                        ) : (
+                          <div className="text-xs text-slate-400">Empty</div>
                         )}
                       </div>
-                    ) : (
-                      <div className="text-gray-500 text-xs font-light flex flex-col items-center justify-center py-4">
-                        <div className="w-8 h-8 rounded-full border-2 border-dashed border-gray-300 flex items-center justify-center mb-2">
-                          <Plus className="w-4 h-4 text-gray-400" />
-                        </div>
-                        <span>Свободно</span>
-                      </div>
-                    )}
+                    ))}
                   </div>
-                ))}
-              </div>
-              
-              {/* Дополнительные действия для стола */}
-              {table.active_players > 0 && !table.is_final_table && (
-                <div className={`mt-4 pt-4 ${table.is_final_table ? 'border-t border-yellow-200/50' : 'border-t border-gray-200/30'}`}>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm font-light text-gray-600">Управление столом:</span>
-                    <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="text-xs bg-white/80 hover:bg-gradient-to-r hover:from-purple-500 hover:to-indigo-500 hover:text-white transition-all duration-300 hover:scale-105 border-gray-200/50"
-                        onClick={() => {
-                          const newTables = [...tables];
-                          const currentTable = newTables.find(t => t.table_number === table.table_number);
-                          if (currentTable) {
-                            currentTable.dealer_position = (currentTable.dealer_position % currentTable.max_seats) + 1;
-                            setTables(newTables);
-                          }
-                        }}
-                        title="Передвинуть позицию дилера"
-                      >
-                        <RotateCcw className="w-3 h-3 mr-1" />
-                        🎲 Дилер
-                      </Button>
-                      
-                      {table.active_players <= 3 && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="text-xs bg-white/80 hover:bg-gradient-to-r hover:from-amber-500 hover:to-yellow-500 hover:text-white transition-all duration-300 hover:scale-105 border-gray-200/50"
-                          onClick={() => suggestPlayerMove(table.table_number)}
-                        >
-                          <AlertTriangle className="w-3 h-3 mr-1" />
-                          💡 Совет
-                        </Button>
-                      )}
+                  
+                  {/* Статистика стола */}
+                  {table.active_players > 0 && (
+                    <div className="text-center bg-slate-50 rounded-lg py-3">
+                      <div className="text-slate-500 text-xs font-medium mb-1 tracking-wide uppercase">Average Stack</div>
+                      <div className="text-sm font-light text-slate-900">{Math.round(table.average_stack || 0)} chips</div>
                     </div>
-                  </div>
+                  )}
                 </div>
-              )}
-              
-              {table.active_players === 0 && (
-                <div className="mt-4 pt-4 border-t border-gray-200/30">
-                  <Button
-                    size="sm"
-                    variant="destructive"
-                    className="w-full text-xs bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 hover:scale-105 transition-all duration-300"
-                    onClick={() => closeTable(table.table_number)}
-                  >
-                    <X className="w-3 h-3 mr-2" />
-                    🗑️ Закрыть пустой стол
-                  </Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
   );
 };
