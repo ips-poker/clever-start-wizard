@@ -127,11 +127,43 @@ const ImprovedPlayerManagement = ({ tournament, players, registrations, onRegist
       return;
     }
 
+    // Проверяем лимит турнира ЗАРАНЕЕ
+    const currentRegistrationsCount = registrations.length;
+    const availableSlots = tournament.max_players - currentRegistrationsCount;
+    
+    if (availableSlots <= 0) {
+      toast({ 
+        title: "Турнир переполнен", 
+        description: "Нет свободных мест", 
+        variant: "destructive" 
+      });
+      return;
+    }
+
+    // Ограничиваем количество регистрируемых игроков
+    const playersToRegister = playerNames.slice(0, availableSlots);
+    
+    if (playersToRegister.length < playerNames.length) {
+      toast({ 
+        title: "Внимание", 
+        description: `Будет зарегистрировано только ${playersToRegister.length} из ${playerNames.length} игроков (нет мест)` 
+      });
+    }
+
+    console.log('🎯 Массовая регистрация:', {
+      totalNames: playerNames.length,
+      toRegister: playersToRegister.length,
+      availableSlots,
+      currentRegistrations: currentRegistrationsCount
+    });
+
     let registered = 0;
     let failed = 0;
+    const failedPlayers: string[] = [];
 
-    for (const name of playerNames) {
+    for (const name of playersToRegister) {
       try {
+        // Проверяем существующего игрока
         const { data: existingPlayer, error: playerSearchError } = await supabase
           .from('players')
           .select('*')
@@ -141,37 +173,42 @@ const ImprovedPlayerManagement = ({ tournament, players, registrations, onRegist
         let playerId;
 
         if (playerSearchError && playerSearchError.code === 'PGRST116') {
+          // Игрок не найден - создаем нового
           const { data: newPlayer, error: createError } = await supabase
             .from('players')
             .insert([{
               name: name,
-              email: `${name.toLowerCase().replace(/\s+/g, '.')}@placeholder.com`,
+              email: `${name.toLowerCase().replace(/\s+/g, '.')}@example.com`,
               elo_rating: 1200
             }])
             .select()
             .single();
 
           if (createError) {
+            console.error('❌ Ошибка создания игрока:', createError);
             failed++;
+            failedPlayers.push(`${name} (не создан)`);
             continue;
           }
           playerId = newPlayer.id;
+          console.log('✅ Создан новый игрок:', name);
         } else if (existingPlayer) {
+          // Игрок найден - проверяем дубликат регистрации
           const existingRegistration = registrations.find(reg => reg.player.id === existingPlayer.id);
           if (existingRegistration) {
             failed++;
+            failedPlayers.push(`${name} (уже зарегистрирован)`);
             continue;
           }
           playerId = existingPlayer.id;
+          console.log('✅ Найден существующий игрок:', name);
         } else {
           failed++;
+          failedPlayers.push(`${name} (ошибка поиска)`);
           continue;
         }
 
-        if (registrations.length + registered >= tournament.max_players) {
-          break;
-        }
-
+        // Регистрируем игрока на турнир
         const { error: registrationError } = await supabase
           .from('tournament_registrations')
           .insert([{
@@ -183,18 +220,30 @@ const ImprovedPlayerManagement = ({ tournament, players, registrations, onRegist
 
         if (!registrationError) {
           registered++;
+          console.log('✅ Зарегистрирован:', name);
         } else {
+          console.error('❌ Ошибка регистрации:', registrationError);
           failed++;
+          failedPlayers.push(`${name} (ошибка регистрации)`);
         }
       } catch (error) {
+        console.error('❌ Общая ошибка:', error);
         failed++;
+        failedPlayers.push(`${name} (системная ошибка)`);
       }
     }
 
+    // Показываем детальный результат
+    const successMessage = `Зарегистрировано: ${registered}`;
+    const failureMessage = failed > 0 ? `Ошибок: ${failed}` : '';
+    const detailMessage = failedPlayers.length > 0 ? `\nНе удалось: ${failedPlayers.join(', ')}` : '';
+
     toast({ 
       title: "Массовая регистрация завершена", 
-      description: `Зарегистрировано: ${registered}, Ошибок: ${failed}` 
+      description: `${successMessage}${failureMessage ? `, ${failureMessage}` : ''}${detailMessage}`,
+      variant: failed > 0 ? "destructive" : "default"
     });
+
     setBulkPlayersList("");
     onRegistrationUpdate();
   };
