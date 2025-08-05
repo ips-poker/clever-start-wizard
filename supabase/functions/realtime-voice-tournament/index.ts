@@ -90,12 +90,19 @@ serve(async (req) => {
               - Изменить призовой фонд
               - Добавить/убрать призовое место
               
-              ДОПОЛНИТЕЛЬНЫЕ ФУНКЦИИ:
-              - Объявить результаты
-              - Сделать объявление для игроков
-              - Показать топ игроков
-              - Создать отчет о турнире
-              - Экспорт результатов
+               РАССАДКА И СТОЛЫ:
+               - Показать рассадку за столами
+               - Проверить баланс столов
+               - Переместить игрока [имя] на стол [номер]
+               - Сбалансировать столы
+               - Показать статистику столов
+               
+               ДОПОЛНИТЕЛЬНЫЕ ФУНКЦИИ:
+               - Объявить результаты
+               - Сделать объявление для игроков
+               - Показать топ игроков
+               - Создать отчет о турнире
+               - Экспорт результатов
               
               НАСТРОЙКИ:
               - Включить/выключить звуковые уведомления
@@ -370,20 +377,60 @@ serve(async (req) => {
                      },
                      required: ["volume"]
                    }
-                 },
-                 {
-                   type: "function",
-                   name: "export_results",
-                   description: "Экспорт результатов турнира",
-                   parameters: {
-                     type: "object",
-                     properties: {
-                       tournament_id: { type: "string", description: "ID турнира" },
-                       format: { type: "string", description: "Формат экспорта (pdf, excel, csv)" }
-                     },
-                     required: ["tournament_id"]
-                   }
-                 }
+                  },
+                  {
+                    type: "function",
+                    name: "show_table_seating",
+                    description: "Показать текущую рассадку за столами",
+                    parameters: {
+                      type: "object",
+                      properties: {
+                        tournament_id: { type: "string", description: "ID турнира" }
+                      },
+                      required: ["tournament_id"]
+                    }
+                  },
+                  {
+                    type: "function",
+                    name: "balance_tables",
+                    description: "Проверить баланс столов и дать рекомендации по пересадке",
+                    parameters: {
+                      type: "object",
+                      properties: {
+                        tournament_id: { type: "string", description: "ID турнира" }
+                      },
+                      required: ["tournament_id"]
+                    }
+                  },
+                  {
+                    type: "function",
+                    name: "move_player_to_table",
+                    description: "Переместить игрока с одного стола на другой",
+                    parameters: {
+                      type: "object",
+                      properties: {
+                        tournament_id: { type: "string", description: "ID турнира" },
+                        player_name: { type: "string", description: "Имя игрока для перемещения" },
+                        from_table: { type: "number", description: "Номер стола, с которого перемещаем" },
+                        to_table: { type: "number", description: "Номер стола, на который перемещаем" },
+                        to_seat: { type: "number", description: "Номер места на целевом столе" }
+                      },
+                      required: ["tournament_id", "player_name", "to_table"]
+                    }
+                  },
+                  {
+                    type: "function",
+                    name: "export_results",
+                    description: "Экспорт результатов турнира",
+                    parameters: {
+                      type: "object",
+                      properties: {
+                        tournament_id: { type: "string", description: "ID турнира" },
+                        format: { type: "string", description: "Формат экспорта (pdf, excel, csv)" }
+                      },
+                      required: ["tournament_id"]
+                    }
+                  }
               ],
               tool_choice: "auto",
               temperature: 0.8,
@@ -703,6 +750,134 @@ async function handleTournamentFunction(functionName: string, args: any, callId:
             volume_level: args.volume
           }]);
         result = { success: true, message: `Громкость изменена на ${args.volume}%` };
+        break;
+        
+      case 'show_table_seating':
+        const { data: seatingData, error: seatingError } = await supabase
+          .from('tournament_registrations')
+          .select(`
+            seat_number,
+            chips,
+            status,
+            player:players(name, elo_rating)
+          `)
+          .eq('tournament_id', args.tournament_id)
+          .not('seat_number', 'is', null)
+          .order('seat_number');
+        
+        if (seatingError) {
+          result = { success: false, message: 'Ошибка получения данных рассадки' };
+        } else if (seatingData && seatingData.length > 0) {
+          // Группируем по столам (предполагая 9 игроков за столом максимум)
+          const tablesData: { [key: number]: any[] } = {};
+          seatingData.forEach((seat: any) => {
+            const tableNumber = Math.ceil(seat.seat_number / 9);
+            if (!tablesData[tableNumber]) tablesData[tableNumber] = [];
+            tablesData[tableNumber].push(seat);
+          });
+          
+          const tablesInfo = Object.entries(tablesData).map(([tableNum, seats]) => 
+            `Стол ${tableNum}: ${seats.length} игроков - ${seats.map((s: any) => s.player.name).join(', ')}`
+          ).join('. ');
+          
+          result = { 
+            success: true, 
+            message: `Текущая рассадка: ${tablesInfo}` 
+          };
+        } else {
+          result = { success: false, message: 'Рассадка еще не была выполнена' };
+        }
+        break;
+        
+      case 'balance_tables':
+        const { data: tableBalanceData, error: balanceError } = await supabase
+          .from('tournament_registrations')
+          .select(`
+            seat_number,
+            player:players(name)
+          `)
+          .eq('tournament_id', args.tournament_id)
+          .eq('status', 'playing')
+          .not('seat_number', 'is', null);
+        
+        if (balanceError) {
+          result = { success: false, message: 'Ошибка проверки баланса столов' };
+        } else if (tableBalanceData && tableBalanceData.length > 0) {
+          // Группируем по столам
+          const tablesBalance: { [key: number]: number } = {};
+          tableBalanceData.forEach((seat: any) => {
+            const tableNumber = Math.ceil(seat.seat_number / 9);
+            tablesBalance[tableNumber] = (tablesBalance[tableNumber] || 0) + 1;
+          });
+          
+          const tableCounts = Object.entries(tablesBalance).map(([table, count]) => ({ 
+            table: parseInt(table), 
+            count: count as number 
+          })).sort((a, b) => b.count - a.count);
+          
+          if (tableCounts.length >= 2) {
+            const maxTable = tableCounts[0];
+            const minTable = tableCounts[tableCounts.length - 1];
+            
+            if (maxTable.count - minTable.count > 1) {
+              result = { 
+                success: true, 
+                message: `Требуется балансировка! Стол ${maxTable.table} имеет ${maxTable.count} игроков, а стол ${minTable.table} - ${minTable.count}. Переместите игрока со стола ${maxTable.table} на стол ${minTable.table}` 
+              };
+            } else {
+              result = { success: true, message: 'Столы сбалансированы. Балансировка не требуется' };
+            }
+          } else {
+            result = { success: true, message: 'Недостаточно столов для проверки баланса' };
+          }
+        } else {
+          result = { success: false, message: 'Нет данных о рассадке игроков' };
+        }
+        break;
+        
+      case 'move_player_to_table':
+        const { data: playerToMove } = await supabase
+          .from('players')
+          .select('id')
+          .eq('name', args.player_name)
+          .single();
+        
+        if (!playerToMove) {
+          result = { success: false, message: `Игрок ${args.player_name} не найден` };
+          break;
+        }
+        
+        // Рассчитываем новый seat_number
+        const newSeatNumber = (args.to_table - 1) * 9 + (args.to_seat || 1);
+        
+        // Проверяем, свободно ли место
+        const { data: existingSeat } = await supabase
+          .from('tournament_registrations')
+          .select('id')
+          .eq('tournament_id', args.tournament_id)
+          .eq('seat_number', newSeatNumber)
+          .single();
+        
+        if (existingSeat) {
+          result = { success: false, message: `Место ${args.to_seat || 1} за столом ${args.to_table} уже занято` };
+          break;
+        }
+        
+        // Перемещаем игрока
+        const { error: moveError } = await supabase
+          .from('tournament_registrations')
+          .update({ seat_number: newSeatNumber })
+          .eq('tournament_id', args.tournament_id)
+          .eq('player_id', playerToMove.id);
+        
+        if (moveError) {
+          result = { success: false, message: 'Ошибка перемещения игрока' };
+        } else {
+          result = { 
+            success: true, 
+            message: `Игрок ${args.player_name} успешно перемещен на стол ${args.to_table}, место ${args.to_seat || 1}` 
+          };
+        }
         break;
         
       case 'export_results':
