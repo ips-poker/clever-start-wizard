@@ -478,307 +478,234 @@ const PlayerManagement = ({ tournament, players, registrations, onRegistrationUp
   const eliminatedPlayers = registrations.filter(r => r.status === 'eliminated').sort((a, b) => (b.position || 0) - (a.position || 0));
 
   return (
-    <div className="min-h-screen bg-slate-50 space-y-6">
+    <div className="space-y-6">
       <Tabs defaultValue="register" className="w-full">
-        <TabsList className="grid w-full grid-cols-5 bg-white border border-slate-200 shadow-sm">
-          <TabsTrigger value="register" className="data-[state=active]:bg-slate-900 data-[state=active]:text-white">Регистрация</TabsTrigger>
-          <TabsTrigger value="active" className="data-[state=active]:bg-slate-900 data-[state=active]:text-white">Активные ({activePlayers.length})</TabsTrigger>
-          <TabsTrigger value="eliminated" className="data-[state=active]:bg-slate-900 data-[state=active]:text-white">Выбывшие ({eliminatedPlayers.length})</TabsTrigger>
-          <TabsTrigger value="seating" className="data-[state=active]:bg-slate-900 data-[state=active]:text-white">Рассадка</TabsTrigger>
-          <TabsTrigger value="finish" className="data-[state=active]:bg-slate-900 data-[state=active]:text-white">Завершение</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-5 bg-white/60 border border-gray-200/50">
+          <TabsTrigger value="register">Регистрация</TabsTrigger>
+          <TabsTrigger value="active">Активные ({activePlayers.length})</TabsTrigger>
+          <TabsTrigger value="eliminated">Выбывшие ({eliminatedPlayers.length})</TabsTrigger>
+          <TabsTrigger value="seating">Рассадка</TabsTrigger>
+          <TabsTrigger value="finish">Завершение</TabsTrigger>
         </TabsList>
 
         <TabsContent value="register" className="space-y-4">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card className="w-full bg-white border border-slate-200 shadow-[0_20px_25px_-5px_rgba(0,0,0,0.06),0_10px_10px_-5px_rgba(0,0,0,0.04)]"
-              style={{ background: 'linear-gradient(145deg, #ffffff 0%, #f9fafb 100%)' }}
-            >
-              <CardContent className="p-0">
-                <div className="relative p-6">
-                  <div className="flex items-center gap-4 mb-6">
-                    <div className="w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center">
-                      <UserPlus className="w-6 h-6 text-white" />
-                    </div>
-                    <div>
-                      <div className="font-semibold text-lg tracking-tight text-slate-900">ADD PLAYER</div>
-                      <div className="text-xs text-slate-500 font-medium">Single Registration</div>
-                    </div>
+            <Card className="bg-white/70 backdrop-blur-sm border border-gray-200/50 shadow-subtle">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <UserPlus className="w-5 h-5" />
+                  Добавить игрока
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>Имя игрока</Label>
+                    <Input
+                      value={playerName}
+                      onChange={(e) => setPlayerName(e.target.value)}
+                      placeholder="Введите имя игрока"
+                    />
                   </div>
-                  
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label className="text-slate-700 text-sm font-medium">Имя игрока</Label>
-                        <Input
-                          value={playerName}
-                          onChange={(e) => setPlayerName(e.target.value)}
-                          placeholder="Введите имя игрока"
-                          className="bg-white border-slate-200"
-                        />
-                      </div>
-                      <div>
-                        <Label className="text-slate-700 text-sm font-medium">Место</Label>
-                        <Input
-                          type="number"
-                          min="1"
-                          max={tournament.max_players}
-                          value={seatNumber}
-                          onChange={(e) => setSeatNumber(e.target.value)}
-                          placeholder="Опционально"
-                          className="bg-white border-slate-200"
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <Label className="text-slate-700 text-sm font-medium">Стартовые фишки</Label>
-                      <Input
-                        type="number"
-                        min="100"
-                        value={startingChips}
-                        onChange={(e) => setStartingChips(parseInt(e.target.value))}
-                        className="bg-white border-slate-200"
-                      />
-                    </div>
-                    <Button 
-                      onClick={registerPlayer} 
-                      className="w-full bg-slate-900 text-white hover:bg-slate-700 px-6 py-3 rounded-lg font-medium text-sm tracking-wide transition-all"
-                      disabled={!playerName.trim() || registrations.length >= tournament.max_players}
-                    >
-                      <UserPlus className="w-4 h-4 mr-2" />
-                      REGISTER PLAYER
-                    </Button>
+                  <div>
+                    <Label>Место</Label>
+                    <Input
+                      type="number"
+                      min="1"
+                      max={tournament.max_players}
+                      value={seatNumber}
+                      onChange={(e) => setSeatNumber(e.target.value)}
+                      placeholder="Опционально"
+                    />
                   </div>
                 </div>
+                <div>
+                  <Label>Стартовые фишки</Label>
+                  <Input
+                    type="number"
+                    min="100"
+                    value={startingChips}
+                    onChange={(e) => setStartingChips(parseInt(e.target.value))}
+                  />
+                </div>
+                <Button 
+                  onClick={registerPlayer} 
+                  className="w-full"
+                  disabled={!playerName.trim() || registrations.length >= tournament.max_players}
+                >
+                  <UserPlus className="w-4 h-4 mr-2" />
+                  Зарегистрировать
+                </Button>
               </CardContent>
             </Card>
 
-            <Card className="w-full bg-white border border-slate-200 shadow-[0_20px_25px_-5px_rgba(0,0,0,0.06),0_10px_10px_-5px_rgba(0,0,0,0.04)]"
-              style={{ background: 'linear-gradient(145deg, #ffffff 0%, #f9fafb 100%)' }}
-            >
-              <CardContent className="p-0">
-                <div className="relative p-6">
-                  <div className="flex items-center gap-4 mb-6">
-                    <div className="w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center">
-                      <Upload className="w-6 h-6 text-white" />
-                    </div>
-                    <div>
-                      <div className="font-semibold text-lg tracking-tight text-slate-900">BULK REGISTRATION</div>
-                      <div className="text-xs text-slate-500 font-medium">Multiple Players at Once</div>
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-4">
-                    <Textarea
-                      placeholder="Иван Петров&#10;Мария Сидорова&#10;Алексей Иванов"
-                      value={bulkPlayersList}
-                      onChange={(e) => setBulkPlayersList(e.target.value)}
-                      rows={6}
-                      className="bg-white border-slate-200"
-                    />
-                    <Button 
-                      onClick={bulkRegisterPlayers} 
-                      className="w-full bg-slate-900 text-white hover:bg-slate-700 px-6 py-3 rounded-lg font-medium text-sm tracking-wide transition-all"
-                      disabled={!bulkPlayersList.trim()}
-                    >
-                      <Users className="w-4 h-4 mr-2" />
-                      REGISTER ALL
-                    </Button>
-                  </div>
-                </div>
+            <Card className="bg-white/70 backdrop-blur-sm border border-gray-200/50 shadow-subtle">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Upload className="w-5 h-5" />
+                  Массовая регистрация
+                </CardTitle>
+                <CardDescription>Введите имена игроков, каждое с новой строки</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <Textarea
+                  placeholder="Иван Петров&#10;Мария Сидорова&#10;Алексей Иванов"
+                  value={bulkPlayersList}
+                  onChange={(e) => setBulkPlayersList(e.target.value)}
+                  rows={6}
+                />
+                <Button 
+                  onClick={bulkRegisterPlayers} 
+                  className="w-full"
+                  disabled={!bulkPlayersList.trim()}
+                >
+                  <Users className="w-4 h-4 mr-2" />
+                  Зарегистрировать всех
+                </Button>
               </CardContent>
             </Card>
           </div>
         </TabsContent>
 
         <TabsContent value="active" className="space-y-4">
-          <Card className="w-full bg-white border border-slate-200 shadow-[0_20px_25px_-5px_rgba(0,0,0,0.06),0_10px_10px_-5px_rgba(0,0,0,0.04)]"
-            style={{ background: 'linear-gradient(145deg, #ffffff 0%, #f9fafb 100%)' }}
-          >
-            <CardContent className="p-0">
-              <div className="relative p-6">
-                <div className="flex items-center gap-4 mb-6">
-                  <div className="w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center">
-                    <Users className="w-6 h-6 text-white" />
+          <Card className="bg-white/70 backdrop-blur-sm border border-gray-200/50 shadow-subtle">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="w-5 h-5" />
+                Активные игроки
+              </CardTitle>
+              <CardDescription>Управление ребаями, аддонами и исключениями</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {activePlayers.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    <Users className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                    <p>Нет активных игроков</p>
                   </div>
-                  <div>
-                    <div className="font-semibold text-lg tracking-tight text-slate-900">ACTIVE PLAYERS</div>
-                    <div className="text-xs text-slate-500 font-medium">Manage Rebuys, Add-ons & Eliminations</div>
-                  </div>
-                </div>
-
-                {/* Статистические блоки */}
-                <div className="mb-6">
-                  <div className="grid grid-cols-2 gap-4 mb-6">
-                    <div className="text-center py-4">
-                      <div className="text-slate-500 text-xs font-medium mb-1 tracking-wide uppercase">Active</div>
-                      <div className="text-3xl font-light text-slate-900">{activePlayers.length}</div>
-                    </div>
-                    <div className="text-center py-4">
-                      <div className="text-slate-500 text-xs font-medium mb-1 tracking-wide uppercase">In Tournament</div>
-                      <div className="text-3xl font-light text-slate-900">{registrations.length}</div>
-                    </div>
-                  </div>
-                  
-                  <div className="w-full h-px bg-slate-200 my-4"></div>
-                  
-                  <div className="space-y-3">
-                    {activePlayers.length === 0 ? (
-                      <div className="text-center py-8">
-                        <Users className="w-12 h-12 mx-auto mb-4 text-slate-300" />
-                        <div className="text-slate-500 text-sm font-medium">No active players</div>
-                      </div>
-                    ) : (
-                      activePlayers.map((registration) => (
-                        <div
-                          key={registration.id}
-                          className="flex items-center justify-between p-4 bg-slate-50 rounded-xl hover:bg-slate-100 transition-all duration-300"
-                        >
-                          <div className="flex items-center gap-4">
-                            <div className="w-10 h-10 bg-slate-900 rounded-full flex items-center justify-center text-white font-bold text-sm">
-                              {registration.seat_number || '?'}
-                            </div>
-                            <div>
-                              <div className="font-medium text-slate-900">{registration.player.name}</div>
-                              <div className="flex items-center gap-3 text-xs text-slate-500">
-                                <span>ELO: {registration.player.elo_rating}</span>
-                                <span>Chips: {registration.chips.toLocaleString()}</span>
-                                <span>Rebuys: {registration.rebuys}</span>
-                                <span>Add-ons: {registration.addons}</span>
-                                {getStatusBadge(registration.status)}
-                              </div>
-                            </div>
+                ) : (
+                  activePlayers.map((registration) => (
+                    <div
+                      key={registration.id}
+                      className="flex items-center justify-between p-4 border border-gray-200/30 rounded-xl bg-white/50 hover:shadow-subtle transition-all"
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center text-white font-bold">
+                          {registration.seat_number || '?'}
+                        </div>
+                        <div>
+                          <h4 className="font-semibold">{registration.player.name}</h4>
+                          <div className="flex items-center gap-3 text-sm text-gray-600">
+                            <span>ELO: {registration.player.elo_rating}</span>
+                            <span>Фишки: {registration.chips.toLocaleString()}</span>
+                            <span>Ребаи: {registration.rebuys}</span>
+                            <span>Аддоны: {registration.addons}</span>
+                            {getStatusBadge(registration.status)}
                           </div>
-                          <div className="flex items-center gap-2">
-                            {tournament.tournament_format !== 'freezeout' && (
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {tournament.tournament_format !== 'freezeout' && (
+                          <>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => updateRebuys(registration.id, -1)}
+                              disabled={registration.rebuys <= 0}
+                            >
+                              <Minus className="w-3 h-3" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => updateRebuys(registration.id, 1)}
+                            >
+                              <RotateCcw className="w-3 h-3" />
+                            </Button>
+                            {tournament.current_level >= tournament.addon_level && (
                               <>
                                 <Button
                                   variant="outline"
                                   size="sm"
-                                  onClick={() => updateRebuys(registration.id, -1)}
-                                  disabled={registration.rebuys <= 0}
-                                  className="bg-white border-slate-200 hover:bg-slate-50"
+                                  onClick={() => updateAddons(registration.id, -1)}
+                                  disabled={registration.addons <= 0}
                                 >
                                   <Minus className="w-3 h-3" />
                                 </Button>
                                 <Button
                                   variant="outline"
                                   size="sm"
-                                  onClick={() => updateRebuys(registration.id, 1)}
-                                  className="bg-white border-slate-200 hover:bg-slate-50"
+                                  onClick={() => updateAddons(registration.id, 1)}
                                 >
-                                  <RotateCcw className="w-3 h-3" />
+                                  <Plus className="w-3 h-3" />
                                 </Button>
-                                {tournament.current_level >= tournament.addon_level && (
-                                  <>
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      onClick={() => updateAddons(registration.id, -1)}
-                                      disabled={registration.addons <= 0}
-                                      className="bg-white border-slate-200 hover:bg-slate-50"
-                                    >
-                                      <Minus className="w-3 h-3" />
-                                    </Button>
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      onClick={() => updateAddons(registration.id, 1)}
-                                      className="bg-white border-slate-200 hover:bg-slate-50"
-                                    >
-                                      <Plus className="w-3 h-3" />
-                                    </Button>
-                                  </>
-                                )}
                               </>
                             )}
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => eliminatePlayer(registration.id, registrations.length - eliminatedPlayers.length)}
-                              className="bg-white border-slate-200 text-red-600 hover:bg-red-50 hover:border-red-200"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </div>
+                          </>
+                        )}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => eliminatePlayer(registration.id, registrations.length - eliminatedPlayers.length)}
+                          className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
             </CardContent>
           </Card>
         </TabsContent>
 
         <TabsContent value="eliminated" className="space-y-4">
-          <Card className="w-full bg-white border border-slate-200 shadow-[0_20px_25px_-5px_rgba(0,0,0,0.06),0_10px_10px_-5px_rgba(0,0,0,0.04)]"
-            style={{ background: 'linear-gradient(145deg, #ffffff 0%, #f9fafb 100%)' }}
-          >
-            <CardContent className="p-0">
-              <div className="relative p-6">
-                <div className="flex items-center gap-4 mb-6">
-                  <div className="w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center">
-                    <Trophy className="w-6 h-6 text-white" />
+          <Card className="bg-white/70 backdrop-blur-sm border border-gray-200/50 shadow-subtle">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Trophy className="w-5 h-5" />
+                Выбывшие игроки
+              </CardTitle>
+              <CardDescription>Порядок выбывания и призовые места</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {eliminatedPlayers.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    <Trophy className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                    <p>Никто еще не выбыл</p>
                   </div>
-                  <div>
-                    <div className="font-semibold text-lg tracking-tight text-slate-900">ELIMINATED PLAYERS</div>
-                    <div className="text-xs text-slate-500 font-medium">Elimination Order & Prize Places</div>
-                  </div>
-                </div>
-
-                {/* Статистические блоки */}
-                <div className="mb-6">
-                  <div className="grid grid-cols-2 gap-4 mb-6">
-                    <div className="text-center py-4">
-                      <div className="text-slate-500 text-xs font-medium mb-1 tracking-wide uppercase">Eliminated</div>
-                      <div className="text-3xl font-light text-slate-900">{eliminatedPlayers.length}</div>
-                    </div>
-                    <div className="text-center py-4">
-                      <div className="text-slate-500 text-xs font-medium mb-1 tracking-wide uppercase">Prize Places</div>
-                      <div className="text-3xl font-light text-slate-900">{eliminatedPlayers.filter(p => (p.position || 0) <= 3).length}</div>
-                    </div>
-                  </div>
-                  
-                  <div className="w-full h-px bg-slate-200 my-4"></div>
-                  
-                  <div className="space-y-3">
-                    {eliminatedPlayers.length === 0 ? (
-                      <div className="text-center py-8">
-                        <Trophy className="w-12 h-12 mx-auto mb-4 text-slate-300" />
-                        <div className="text-slate-500 text-sm font-medium">No eliminated players yet</div>
-                      </div>
-                    ) : (
-                      eliminatedPlayers.map((registration) => (
-                        <div
-                          key={registration.id}
-                          className="flex items-center justify-between p-4 bg-slate-50 rounded-xl"
-                        >
-                          <div className="flex items-center gap-4">
-                            <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm ${
-                              (registration.position || 0) <= 3 ? 'bg-yellow-500' : 'bg-slate-500'
-                            }`}>
-                              {registration.position}
-                            </div>
-                            <div>
-                              <div className="font-medium text-slate-900">{registration.player.name}</div>
-                              <div className="flex items-center gap-3 text-xs text-slate-500">
-                                <span>ELO: {registration.player.elo_rating}</span>
-                                <span>Rebuys: {registration.rebuys}</span>
-                                <span>Add-ons: {registration.addons}</span>
-                              </div>
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            <div className="font-medium text-slate-900">{registration.position} место</div>
-                            <div className="text-xs text-slate-500">
-                              {(registration.position || 0) <= 3 ? 'Prize Place' : 'Eliminated'}
-                            </div>
+                ) : (
+                  eliminatedPlayers.map((registration) => (
+                    <div
+                      key={registration.id}
+                      className="flex items-center justify-between p-4 border border-gray-200/30 rounded-xl bg-gray-50/50"
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold ${
+                          (registration.position || 0) <= 3 ? 'bg-yellow-500' : 'bg-gray-500'
+                        }`}>
+                          {registration.position}
+                        </div>
+                        <div>
+                          <h4 className="font-semibold">{registration.player.name}</h4>
+                          <div className="flex items-center gap-3 text-sm text-gray-600">
+                            <span>ELO: {registration.player.elo_rating}</span>
+                            <span>Ребаи: {registration.rebuys}</span>
+                            <span>Аддоны: {registration.addons}</span>
                           </div>
                         </div>
-                      ))
-                    )}
-                  </div>
-                </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-semibold">{registration.position} место</p>
+                        <p className="text-sm text-gray-600">
+                          {(registration.position || 0) <= 3 ? 'Призовое место' : 'Выбыл'}
+                        </p>
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
             </CardContent>
           </Card>
@@ -793,71 +720,66 @@ const PlayerManagement = ({ tournament, players, registrations, onRegistrationUp
         </TabsContent>
 
         <TabsContent value="finish" className="space-y-4">
-          <Card className="w-full bg-white border border-slate-200 shadow-[0_20px_25px_-5px_rgba(0,0,0,0.06),0_10px_10px_-5px_rgba(0,0,0,0.04)]"
-            style={{ background: 'linear-gradient(145deg, #ffffff 0%, #f9fafb 100%)' }}
-          >
-            <CardContent className="p-0">
-              <div className="relative p-6">
-                <div className="flex items-center gap-4 mb-6">
-                  <div className="w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center">
-                    <CheckCircle className="w-6 h-6 text-white" />
-                  </div>
-                  <div>
-                    <div className="font-semibold text-lg tracking-tight text-slate-900">TOURNAMENT FINISH</div>
-                    <div className="text-xs text-slate-500 font-medium">Automatic Rating Calculation & Prize Places</div>
-                  </div>
+          <Card className="bg-white/70 backdrop-blur-sm border border-gray-200/50 shadow-subtle">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <CheckCircle className="w-5 h-5" />
+                Завершение турнира
+              </CardTitle>
+              <CardDescription>Автоматический расчет рейтингов и призовых мест</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="text-center p-4 border border-gray-200/30 rounded-lg bg-white/30">
+                  <TrendingUp className="w-8 h-8 mx-auto mb-2 text-green-600" />
+                  <p className="text-2xl font-bold text-green-600">{activePlayers.length}</p>
+                  <p className="text-sm text-gray-600">Активных игроков</p>
                 </div>
-
-                {/* Статистические блоки */}
-                <div className="mb-6">
-                  <div className="grid grid-cols-3 gap-4 mb-6">
-                    <div className="text-center py-4">
-                      <div className="text-slate-500 text-xs font-medium mb-1 tracking-wide uppercase">Active</div>
-                      <div className="text-3xl font-light text-green-600">{activePlayers.length}</div>
-                    </div>
-                    <div className="text-center py-4">
-                      <div className="text-slate-500 text-xs font-medium mb-1 tracking-wide uppercase">Eliminated</div>
-                      <div className="text-3xl font-light text-yellow-600">{eliminatedPlayers.length}</div>
-                    </div>
-                    <div className="text-center py-4">
-                      <div className="text-slate-500 text-xs font-medium mb-1 tracking-wide uppercase">Total</div>
-                      <div className="text-3xl font-light text-slate-900">{registrations.length}</div>
-                    </div>
-                  </div>
-                  
-                  <div className="w-full h-px bg-slate-200 my-6"></div>
-
-                  {activePlayers.length <= 1 ? (
-                    <div className="space-y-4">
-                      <div className="text-center py-6 bg-green-50 rounded-xl border border-green-200">
-                        <CheckCircle className="w-12 h-12 mx-auto mb-3 text-green-600" />
-                        <div className="font-medium text-green-800 mb-1">Tournament Ready to Finish</div>
-                        <div className="text-sm text-green-700">
-                          {activePlayers.length === 0 ? 'No' : 'One'} active player remaining. 
-                          Ready for automatic rating calculation.
-                        </div>
-                      </div>
-                      <Button 
-                        onClick={finishTournament} 
-                        className="w-full bg-slate-900 text-white hover:bg-slate-700 px-6 py-4 rounded-lg font-medium text-sm tracking-wide transition-all"
-                        size="lg"
-                      >
-                        <Trophy className="w-5 h-5 mr-2" />
-                        FINISH TOURNAMENT & CALCULATE RATINGS
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="text-center py-6 bg-amber-50 rounded-xl border border-amber-200">
-                      <AlertTriangle className="w-12 h-12 mx-auto mb-3 text-amber-600" />
-                      <div className="font-medium text-amber-800 mb-1">Tournament Not Ready</div>
-                      <div className="text-sm text-amber-700">
-                        {activePlayers.length} active players remaining. 
-                        Must have maximum one player to finish.
-                      </div>
-                    </div>
-                  )}
+                <div className="text-center p-4 border border-gray-200/30 rounded-lg bg-white/30">
+                  <Trophy className="w-8 h-8 mx-auto mb-2 text-yellow-600" />
+                  <p className="text-2xl font-bold text-yellow-600">{eliminatedPlayers.length}</p>
+                  <p className="text-sm text-gray-600">Выбыло</p>
+                </div>
+                <div className="text-center p-4 border border-gray-200/30 rounded-lg bg-white/30">
+                  <Users className="w-8 h-8 mx-auto mb-2 text-blue-600" />
+                  <p className="text-2xl font-bold text-blue-600">{registrations.length}</p>
+                  <p className="text-sm text-gray-600">Всего участников</p>
                 </div>
               </div>
+
+              {activePlayers.length <= 1 ? (
+                <div className="space-y-4">
+                  <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                    <div className="flex items-center gap-2 text-green-800">
+                      <CheckCircle className="w-5 h-5" />
+                      <span className="font-semibold">Турнир готов к завершению</span>
+                    </div>
+                    <p className="text-sm text-green-700 mt-1">
+                      Остался {activePlayers.length === 0 ? 'ноль' : 'один'} активный игрок. 
+                      Нажмите кнопку для автоматического расчета рейтингов.
+                    </p>
+                  </div>
+                  <Button 
+                    onClick={finishTournament} 
+                    className="w-full bg-green-600 hover:bg-green-700"
+                    size="lg"
+                  >
+                    <Trophy className="w-5 h-5 mr-2" />
+                    Завершить турнир и рассчитать рейтинги
+                  </Button>
+                </div>
+              ) : (
+                <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                  <div className="flex items-center gap-2 text-amber-800">
+                    <AlertTriangle className="w-5 h-5" />
+                    <span className="font-semibold">Турнир не готов к завершению</span>
+                  </div>
+                  <p className="text-sm text-amber-700 mt-1">
+                    Осталось {activePlayers.length} активных игроков. 
+                    Для завершения должен остаться максимум один игрок.
+                  </p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
