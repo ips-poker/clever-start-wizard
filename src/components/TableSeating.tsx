@@ -299,32 +299,62 @@ const TableSeating = ({
     try {
       console.log('🪑 Обновление рассадки в базе данных...');
       
+      // ✅ СНАЧАЛА очищаем все seat_number для этого турнира
+      const { error: clearError } = await supabase
+        .from('tournament_registrations')
+        .update({ seat_number: null })
+        .eq('tournament_id', tournamentId);
+        
+      if (clearError) {
+        console.error('❌ Ошибка очистки мест:', clearError);
+        toast({ 
+          title: "Ошибка", 
+          description: "Не удалось очистить места", 
+          variant: "destructive" 
+        });
+        return;
+      }
+
+      console.log('✅ Места успешно очищены');
+
+      // ✅ ТЕПЕРЬ назначаем новые места
+      const updates = [];
       for (const table of tablesData) {
         for (const seat of table.seats) {
           if (seat.player_id) {
             const seatNumber = (table.table_number - 1) * seatingSettings.maxPlayersPerTable + seat.seat_number;
-            
-            const { error } = await supabase
-              .from('tournament_registrations')
-              .update({ seat_number: seatNumber })
-              .eq('player_id', seat.player_id)
-              .eq('tournament_id', tournamentId);
-              
-            if (error) {
-              console.error('Ошибка обновления места игрока:', error);
-            }
+            updates.push({
+              player_id: seat.player_id,
+              seat_number: seatNumber
+            });
           }
         }
       }
+
+      console.log('🎯 Обновления для применения:', updates);
+
+      // Применяем обновления по одному для избежания конфликтов
+      for (const update of updates) {
+        const { error } = await supabase
+          .from('tournament_registrations')
+          .update({ seat_number: update.seat_number })
+          .eq('player_id', update.player_id)
+          .eq('tournament_id', tournamentId);
+          
+        if (error) {
+          console.error(`❌ Ошибка обновления места для игрока ${update.player_id}:`, error);
+        } else {
+          console.log(`✅ Обновлено место ${update.seat_number} для игрока ${update.player_id}`);
+        }
+      }
       
-      saveSeatingToLocalStorage(tablesData);
-      console.log('🪑 Рассадка обновлена в базе данных и localStorage');
+      console.log('🪑 Рассадка обновлена в базе данных');
       
       if (onSeatingUpdate) {
         onSeatingUpdate();
       }
     } catch (error) {
-      console.error('Ошибка при обновлении рассадки:', error);
+      console.error('❌ Ошибка при обновлении рассадки:', error);
       toast({ 
         title: "Ошибка", 
         description: "Не удалось сохранить рассадку", 
