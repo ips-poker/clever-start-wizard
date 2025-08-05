@@ -443,11 +443,208 @@ const TableSeating = ({
   };
 
   // Улучшенная проверка баланса столов
+  // Проверка возможности финального стола
+  const canCreateFinalTable = () => {
+    const activePlayers = registrations.filter(r => r.status === 'playing' || r.status === 'registered');
+    const finalTableSize = seatingSettings.maxPlayersPerTable; // Размер финального стола
+    return activePlayers.length <= finalTableSize && activePlayers.length > 1;
+  };
+
+  // Создание финального стола
+  const createFinalTable = () => {
+    const activePlayers = registrations.filter(r => r.status === 'playing' || r.status === 'registered');
+    const finalTableSize = seatingSettings.maxPlayersPerTable;
+    
+    if (activePlayers.length > finalTableSize) {
+      toast({ 
+        title: "Нельзя создать финальный стол", 
+        description: `Слишком много игроков (${activePlayers.length}). Нужно ${finalTableSize} или меньше.`,
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Перемешиваем игроков для финального стола
+    const shuffledPlayers = [...activePlayers].sort(() => Math.random() - 0.5);
+    
+    const finalTable: Table = {
+      table_number: 1,
+      seats: [],
+      active_players: shuffledPlayers.length
+    };
+
+    // Создаем места за финальным столом
+    for (let seatNum = 1; seatNum <= finalTableSize; seatNum++) {
+      const player = shuffledPlayers[seatNum - 1];
+      finalTable.seats.push({
+        seat_number: seatNum,
+        player_id: player?.player.id,
+        player_name: player?.player.name,
+        chips: player?.chips,
+        status: player?.status
+      });
+    }
+
+    setTables([finalTable]);
+    updateSeatingInDatabase([finalTable]);
+    toast({ 
+      title: "ФИНАЛЬНЫЙ СТОЛ СОЗДАН! 🏆", 
+      description: `${shuffledPlayers.length} игроков рассажены за финальным столом`,
+    });
+  };
+
+  // Открытие нового стола
+  const openNewTable = () => {
+    const activePlayers = registrations.filter(r => r.status === 'playing' || r.status === 'registered');
+    const currentTableCount = tables.length;
+    const newTableNumber = currentTableCount + 1;
+    
+    // Создаем новый стол
+    const newTable: Table = {
+      table_number: newTableNumber,
+      seats: [],
+      active_players: 0
+    };
+
+    for (let seatNum = 1; seatNum <= seatingSettings.maxPlayersPerTable; seatNum++) {
+      newTable.seats.push({
+        seat_number: seatNum
+      });
+    }
+
+    const newTables = [...tables, newTable];
+    setTables(newTables);
+
+    // Предлагаем пересадку для балансировки
+    const suggestionsText = generateRebalancingSuggestions(newTables);
+    
+    toast({ 
+      title: `Новый стол ${newTableNumber} открыт`, 
+      description: suggestionsText,
+      duration: 8000
+    });
+  };
+
+  // Генерация предложений по пересадке
+  const generateRebalancingSuggestions = (tablesData: Table[]) => {
+    const tableStats = tablesData.map(t => ({
+      number: t.table_number,
+      players: t.active_players
+    })).filter(t => t.players > 0).sort((a, b) => b.players - a.players);
+
+    if (tableStats.length < 2) return "Недостаточно столов для балансировки";
+
+    const maxPlayers = tableStats[0].players;
+    const suggestions = tableStats
+      .filter(t => t.players === maxPlayers && t.players > 1)
+      .map(t => `со стола ${t.number} (${t.players} игроков)`)
+      .slice(0, 2)
+      .join(" или ");
+
+    return `Рекомендуется пересадить игроков ${suggestions} на новый стол ${tablesData.length}`;
+  };
+
+  // Предложение места для нового игрока
+  const suggestSeatForNewPlayer = (playerId: string, playerName: string) => {
+    // Найдем стол с наименьшим количеством игроков
+    const tableWithLeastPlayers = tables.reduce((min, current) => 
+      current.active_players < min.active_players ? current : min
+    );
+
+    // Найдем первое свободное место
+    const emptySeat = tableWithLeastPlayers.seats.find(seat => !seat.player_id);
+    
+    if (emptySeat) {
+      toast({
+        title: "Предложение места",
+        description: `Рекомендуется посадить ${playerName} за стол ${tableWithLeastPlayers.table_number}, место ${emptySeat.seat_number}`,
+        duration: 10000
+      });
+      
+      return {
+        table: tableWithLeastPlayers.table_number,
+        seat: emptySeat.seat_number
+      };
+    }
+    
+    return null;
+  };
+
+  // Автоматическая посадка нового игрока
+  const autoSeatNewPlayer = async (playerId: string, playerName: string, chips: number) => {
+    const suggestion = suggestSeatForNewPlayer(playerId, playerName);
+    
+    if (suggestion) {
+      const newTables = [...tables];
+      const targetTable = newTables.find(t => t.table_number === suggestion.table);
+      const targetSeat = targetTable?.seats.find(s => s.seat_number === suggestion.seat);
+      
+      if (targetTable && targetSeat && !targetSeat.player_id) {
+        targetSeat.player_id = playerId;
+        targetSeat.player_name = playerName;
+        targetSeat.chips = chips;
+        targetSeat.status = 'playing';
+        targetTable.active_players++;
+        
+        setTables(newTables);
+        updateSeatingInDatabase(newTables);
+        
+        // Обновляем seat_number в базе данных
+        const absoluteSeatNumber = (suggestion.table - 1) * seatingSettings.maxPlayersPerTable + suggestion.seat;
+        await supabase
+          .from('tournament_registrations')
+          .update({ seat_number: absoluteSeatNumber })
+          .eq('player_id', playerId)
+          .eq('tournament_id', tournamentId);
+        
+        toast({ 
+          title: "Игрок посажен", 
+          description: `${playerName} посажен за стол ${suggestion.table}, место ${suggestion.seat}` 
+        });
+      }
+    }
+  };
+
+  // Удаление выбывшего игрока
+  const removeEliminatedPlayer = async (playerId: string) => {
+    const newTables = [...tables];
+    let removed = false;
+    
+    for (const table of newTables) {
+      for (const seat of table.seats) {
+        if (seat.player_id === playerId) {
+          seat.player_id = undefined;
+          seat.player_name = undefined;
+          seat.chips = undefined;
+          seat.status = undefined;
+          table.active_players--;
+          removed = true;
+          break;
+        }
+      }
+      if (removed) break;
+    }
+    
+    if (removed) {
+      setTables(newTables);
+      updateSeatingInDatabase(newTables);
+      
+      // Очищаем seat_number в базе данных
+      await supabase
+        .from('tournament_registrations')
+        .update({ seat_number: null })
+        .eq('player_id', playerId)
+        .eq('tournament_id', tournamentId);
+      
+      toast({ title: "Игрок удален из рассадки" });
+    }
+  };
+
   const checkTableBalance = () => {
     if (tables.length < 2) return null;
     
     const tableCounts = tables.map(t => ({ table: t.table_number, count: t.active_players }))
-                            .filter(t => t.count > 0) // только столы с игроками
+                            .filter(t => t.count > 0)
                             .sort((a, b) => b.count - a.count);
     
     if (tableCounts.length < 2) return null;
@@ -455,7 +652,6 @@ const TableSeating = ({
     const maxTable = tableCounts[0];
     const minTable = tableCounts[tableCounts.length - 1];
     
-    // Если разница больше 1, нужна балансировка
     if (maxTable.count - minTable.count > 1) {
       return { fromTable: maxTable.table, toTable: minTable.table, difference: maxTable.count - minTable.count };
     }
@@ -463,7 +659,6 @@ const TableSeating = ({
     return null;
   };
 
-  // Улучшенная умная балансировка
   const smartTableBalance = () => {
     const imbalance = checkTableBalance();
     if (!imbalance) {
@@ -544,18 +739,64 @@ const TableSeating = ({
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-wrap gap-2">
+          {/* Основные физические кнопки управления рассадкой */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            {/* Кнопка ПУСК - главная кнопка начальной рассадки */}
             {!isSeated && (
               <Button 
                 onClick={performInitialSeating}
-                className="flex items-center gap-2"
+                className="h-16 text-lg font-bold bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white shadow-lg hover:shadow-xl transition-all duration-300"
                 disabled={registrations.filter(r => r.status === 'registered' || r.status === 'playing').length < seatingSettings.minPlayersToStartTwoTables}
               >
-                <Users className="w-4 h-4" />
-                Осуществить рассадку
+                <div className="flex flex-col items-center">
+                  <Users className="w-6 h-6 mb-1" />
+                  <span>ПУСК</span>
+                </div>
               </Button>
             )}
             
+            {/* Кнопка открытия нового стола */}
+            {isSeated && (
+              <Button 
+                onClick={openNewTable}
+                className="h-16 text-lg font-bold bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white shadow-lg hover:shadow-xl transition-all duration-300"
+              >
+                <div className="flex flex-col items-center">
+                  <Plus className="w-6 h-6 mb-1" />
+                  <span>Открыть новый стол</span>
+                </div>
+              </Button>
+            )}
+            
+            {/* Кнопка балансировки столов */}
+            {isSeated && (
+              <Button 
+                onClick={autoBalanceTables}
+                className="h-16 text-lg font-bold bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white shadow-lg hover:shadow-xl transition-all duration-300"
+              >
+                <div className="flex flex-col items-center">
+                  <ArrowUpDown className="w-6 h-6 mb-1" />
+                  <span>Сбалансировать столы</span>
+                </div>
+              </Button>
+            )}
+            
+            {/* Кнопка ФИНАЛ - создание финального стола */}
+            {isSeated && canCreateFinalTable() && (
+              <Button 
+                onClick={createFinalTable}
+                className="h-16 text-lg font-bold bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white shadow-lg hover:shadow-xl transition-all duration-300 animate-pulse"
+              >
+                <div className="flex flex-col items-center">
+                  <Crown className="w-6 h-6 mb-1" />
+                  <span>ФИНАЛ 🏆</span>
+                </div>
+              </Button>
+            )}
+          </div>
+
+          {/* Дополнительные инструменты */}
+          <div className="flex flex-wrap gap-2">
             <Button 
               onClick={smartTableBalance}
               variant="outline"
