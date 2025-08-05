@@ -43,8 +43,11 @@ export const useVoiceSettings = () => {
 
   const loadSettings = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const authResponse = await supabase.auth.getUser();
+      const user = authResponse?.data?.user;
+      
       if (!user) {
+        console.log('No authenticated user found');
         setSettings(defaultSettings);
         setIsLoading(false);
         return defaultSettings;
@@ -93,8 +96,11 @@ export const useVoiceSettings = () => {
 
     // Подписка на realtime обновления настроек
     const setupRealtimeSubscription = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
+      try {
+        const authResponse = await supabase.auth.getUser();
+        const user = authResponse?.data?.user;
+        
+        if (user) {
         const channel = supabase
           .channel('voice_settings_changes')
           .on(
@@ -112,9 +118,9 @@ export const useVoiceSettings = () => {
           )
           .subscribe();
 
-        return () => {
-          supabase.removeChannel(channel);
-        };
+        }
+      } catch (error) {
+        console.error('Error setting up realtime subscription:', error);
       }
     };
 
@@ -132,8 +138,13 @@ export const useVoiceSettings = () => {
 
   const saveSettingsToDatabase = async (settingsToSave: VoiceSettings) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      const authResponse = await supabase.auth.getUser();
+      const user = authResponse?.data?.user;
+      
+      if (!user) {
+        console.log('No user found, cannot save settings');
+        return;
+      }
 
       const { data: existingSettings } = await supabase
         .from('voice_settings')
