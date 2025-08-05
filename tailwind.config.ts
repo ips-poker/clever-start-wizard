@@ -113,13 +113,6 @@ export default {
 				'bold': 'var(--font-weight-bold)',
 				'black': 'var(--font-weight-black)'
 			},
-			fontFamily: {
-				'sans': ['Inter', 'system-ui', 'sans-serif'],
-				'serif': ['Playfair Display', 'Georgia', 'serif'],
-				'mono': ['JetBrains Mono', 'Consolas', 'Monaco', 'monospace'],
-				'display': ['Playfair Display', 'Georgia', 'serif'],
-				'body': ['Inter', 'system-ui', 'sans-serif']
-			},
 			borderRadius: {
 				lg: 'var(--radius)',
 				md: 'calc(var(--radius) - 2px)',
