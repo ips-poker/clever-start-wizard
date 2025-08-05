@@ -327,8 +327,7 @@ const ImprovedPlayerManagement = ({ tournament, players, registrations, onRegist
       .update({ 
         status: 'eliminated',
         position: position,
-        chips: 0, // Обнуляем фишки у выбывшего игрока
-        seat_number: null // Освобождаем место в рассадке
+        chips: 0 // Обнуляем фишки у выбывшего игрока
       })
       .eq('id', registrationId);
 
@@ -348,7 +347,7 @@ const ImprovedPlayerManagement = ({ tournament, players, registrations, onRegist
 
     toast({ 
       title: "Игрок исключен", 
-      description: `${registration.player.name} - место ${position}. Место в рассадке освобождено.` 
+      description: `${registration.player.name} - место ${position}` 
     });
     onRegistrationUpdate();
     
