@@ -442,35 +442,28 @@ const TableSeating = ({
     });
   };
 
-  // Профессиональная балансировка столов
+  // Улучшенная проверка баланса столов
   const checkTableBalance = () => {
     if (tables.length < 2) return null;
     
-    const tableCounts = tables.map(t => ({ table: t.table_number, count: t.active_players }));
-    tableCounts.sort((a, b) => b.count - a.count);
+    const tableCounts = tables.map(t => ({ table: t.table_number, count: t.active_players }))
+                            .filter(t => t.count > 0) // только столы с игроками
+                            .sort((a, b) => b.count - a.count);
+    
+    if (tableCounts.length < 2) return null;
     
     const maxTable = tableCounts[0];
     const minTable = tableCounts[tableCounts.length - 1];
     
-    if (maxTable.count - minTable.count > seatingSettings.maxImbalance) {
-      return { fromTable: maxTable.table, toTable: minTable.table };
+    // Если разница больше 1, нужна балансировка
+    if (maxTable.count - minTable.count > 1) {
+      return { fromTable: maxTable.table, toTable: minTable.table, difference: maxTable.count - minTable.count };
     }
     
     return null;
   };
 
-  // Получение следующего игрока на большом блайнде
-  const getNextBigBlindPlayer = (tableNumber: number) => {
-    const table = tables.find(t => t.table_number === tableNumber);
-    if (!table) return null;
-    
-    // Здесь логика определения следующего игрока на большом блайнде
-    // Пока возвращаем последнего игрока за столом
-    const activePlayers = table.seats.filter(s => s.player_id);
-    return activePlayers[activePlayers.length - 1];
-  };
-
-  // Умная балансировка
+  // Улучшенная умная балансировка
   const smartTableBalance = () => {
     const imbalance = checkTableBalance();
     if (!imbalance) {
@@ -478,19 +471,11 @@ const TableSeating = ({
       return;
     }
 
-    const nextBBPlayer = getNextBigBlindPlayer(imbalance.fromTable);
-    if (nextBBPlayer) {
-      // Найдем ближайшее место к следующему большому блайнду на целевом столе
-      const targetTable = tables.find(t => t.table_number === imbalance.toTable);
-      const firstEmptySeat = targetTable?.seats.find(s => !s.player_id);
-      
-      if (firstEmptySeat) {
-        toast({
-          title: "Рекомендация балансировки",
-          description: `Переместите игрока ${nextBBPlayer.player_name} со стола ${imbalance.fromTable} на стол ${imbalance.toTable}, место ${firstEmptySeat.seat_number}`
-        });
-      }
-    }
+    toast({
+      title: "Требуется балансировка",
+      description: `Переместите игрока со стола ${imbalance.fromTable} (перевес: ${imbalance.difference}) на стол ${imbalance.toTable}`,
+      variant: "destructive"
+    });
   };
 
   return (
@@ -750,38 +735,26 @@ const TableSeating = ({
                     
                     {seat.player_id ? (
                       <div className="space-y-2">
-                        {/* Аватар и имя */}
+                        {/* Аватар и имя - лаконично */}
                         <div className="flex items-center gap-2">
-                          <Avatar className="w-8 h-8 border-2 border-primary/20">
+                          <Avatar className="w-10 h-10 border-2 border-primary/20 shadow-sm">
                             <AvatarImage 
                               src={registrations.find(r => r.player.id === seat.player_id)?.player.avatar_url || ''} 
                               alt={seat.player_name || ''} 
                             />
-                            <AvatarFallback className="text-xs font-bold bg-primary/10">
+                            <AvatarFallback className="text-sm font-bold bg-gradient-to-br from-primary/20 to-primary/10 text-primary">
                               {seat.player_name?.slice(0, 2).toUpperCase()}
                             </AvatarFallback>
                           </Avatar>
                           <div className="flex-1 min-w-0">
-                            <div className="truncate text-sm font-medium" title={seat.player_name}>
+                            <div className="truncate text-sm font-semibold" title={seat.player_name}>
                               {seat.player_name}
                             </div>
-                            <div className="text-xs text-muted-foreground">
-                              ELO: {registrations.find(r => r.player.id === seat.player_id)?.player.elo_rating || 1200}
+                            <div className="text-xs text-muted-foreground flex items-center gap-1">
+                              <span className="inline-block w-2 h-2 rounded-full bg-green-500"></span>
+                              ELO {registrations.find(r => r.player.id === seat.player_id)?.player.elo_rating || 1200}
                             </div>
                           </div>
-                        </div>
-                        
-                        {/* Фишки */}
-                        <div className="text-center">
-                          <div className="text-sm font-bold text-primary">
-                            {seat.chips?.toLocaleString()} фишек
-                          </div>
-                          <Badge 
-                            variant={seat.status === 'playing' ? 'destructive' : 'default'}
-                            className="text-xs mt-1"
-                          >
-                            {seat.status === 'playing' ? 'Играет' : 'Готов'}
-                          </Badge>
                         </div>
                         
                         {/* Кнопка перемещения */}
