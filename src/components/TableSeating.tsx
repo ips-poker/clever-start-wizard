@@ -118,7 +118,7 @@ const TableSeating = ({
           seat_number,
           chips,
           status,
-          player:players(id, name, avatar_url)
+          player:players(id, name, avatar_url, user_id)
         `)
         .eq('tournament_id', tournamentId)
         .not('seat_number', 'is', null);
