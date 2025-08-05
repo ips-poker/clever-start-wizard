@@ -73,14 +73,10 @@ const TableSeating = ({
         },
         (payload) => {
           console.log('🔄 Обновление регистраций для рассадки:', payload);
-          // Перезагружаем рассадку при любых изменениях в регистрациях
+          // Только перезагружаем рассадку, без автоматического размещения
           setTimeout(() => {
             loadSavedSeating();
-            // Автоматически размещаем новых игроков после загрузки рассадки
-            setTimeout(() => {
-              autoPlacePlayersWithoutSeats();
-            }, 1000);
-          }, 500); // Небольшая задержка для корректного обновления
+          }, 500);
         }
       )
       .subscribe();
@@ -90,12 +86,24 @@ const TableSeating = ({
     };
   }, [tournamentId]);
 
-  // Отдельный useEffect для автоматического размещения игроков
+  // Автоматическое размещение только при изменении количества регистраций
   useEffect(() => {
     if (tables.length > 0 && registrations.length > 0) {
-      autoPlacePlayersWithoutSeats();
+      const activePlayers = registrations.filter(r => 
+        (r.status === 'registered' || r.status === 'playing')
+      );
+      
+      // Проверяем есть ли игроки без места
+      const playersWithoutSeats = activePlayers.filter(r => !r.seat_number);
+      
+      if (playersWithoutSeats.length > 0) {
+        console.log(`🪑 Найдено ${playersWithoutSeats.length} игроков без места`);
+        setTimeout(() => {
+          autoPlacePlayersWithoutSeats();
+        }, 1000);
+      }
     }
-  }, [registrations.length, tables.length]);
+  }, [registrations.length]);
 
   useEffect(() => {
     // Только создаем пустые столы если есть сохраненная рассадка
@@ -533,10 +541,22 @@ const TableSeating = ({
     
     if (activePlayers.length === 0) return;
     
+    console.log(`🪑 Автоматическое размещение: найдено ${activePlayers.length} игроков без места`);
+    
     const newTables = [...tables];
     let playersPlaced = 0;
     
     for (const player of activePlayers) {
+      // Проверяем, не размещен ли уже игрок в текущих столах
+      const isAlreadySeated = newTables.some(table => 
+        table.seats.some(seat => seat.player_id === player.player.id)
+      );
+      
+      if (isAlreadySeated) {
+        console.log(`🪑 Игрок ${player.player.name} уже размещен, пропускаем`);
+        continue;
+      }
+      
       // Найдем стол с наименьшим количеством игроков
       const tableWithLeastPlayers = newTables.reduce((min, current) => 
         current.active_players < min.active_players ? current : min
@@ -554,19 +574,32 @@ const TableSeating = ({
         tableWithLeastPlayers.active_players++;
         playersPlaced++;
         
+        console.log(`🪑 Размещен игрок ${player.player.name} на стол ${tableWithLeastPlayers.table_number}, место ${emptySeat.seat_number}`);
+        
         // Обновляем seat_number в базе данных
         const absoluteSeatNumber = (tableWithLeastPlayers.table_number - 1) * seatingSettings.maxPlayersPerTable + emptySeat.seat_number;
-        await supabase
-          .from('tournament_registrations')
-          .update({ seat_number: absoluteSeatNumber })
-          .eq('player_id', player.player.id)
-          .eq('tournament_id', tournamentId);
+        
+        try {
+          const { error } = await supabase
+            .from('tournament_registrations')
+            .update({ seat_number: absoluteSeatNumber })
+            .eq('player_id', player.player.id)
+            .eq('tournament_id', tournamentId);
+            
+          if (error) {
+            console.error(`🪑 Ошибка обновления seat_number для игрока ${player.player.name}:`, error);
+          }
+        } catch (err) {
+          console.error(`🪑 Исключение при обновлении seat_number:`, err);
+        }
+      } else {
+        console.log(`🪑 Нет свободных мест на столе ${tableWithLeastPlayers.table_number} для игрока ${player.player.name}`);
       }
     }
     
     if (playersPlaced > 0) {
       setTables(newTables);
-      updateSeatingInDatabase(newTables);
+      saveSeatingToLocalStorage(newTables);
       toast({ 
         title: "Автоматическое размещение", 
         description: `Размещено ${playersPlaced} игроков на столы с наименьшим количеством участников` 
