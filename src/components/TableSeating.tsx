@@ -912,17 +912,17 @@ const TableSeating = ({
                   <Users className="w-6 h-6 text-white" />
                 </div>
                 <div>
-                  <div className="font-bold text-lg tracking-tight text-slate-900">РАССАДКА ИГРОКОВ</div>
-                  <div className="text-xs text-slate-500 font-medium">Профессиональное управление турниром</div>
+                  <div className="font-semibold text-lg tracking-tight text-slate-900">РАССАДКА ИГРОКОВ</div>
+                  <div className="text-xs text-slate-500 font-semibold">Профессиональное управление турниром</div>
                 </div>
               </div>
               <div className="text-right">
                 {isSeatingStarted ? (
-                  <div className="bg-slate-900 text-white text-xs font-bold px-3 py-1 rounded-full tracking-wide">
+                  <div className="bg-slate-900 text-white text-xs font-semibold px-3 py-1 rounded-full tracking-wide">
                     АКТИВНА
                   </div>
                 ) : (
-                  <div className="bg-slate-300 text-slate-700 text-xs font-bold px-3 py-1 rounded-full tracking-wide">
+                  <div className="bg-slate-300 text-slate-700 text-xs font-semibold px-3 py-1 rounded-full tracking-wide">
                     В ОЖИДАНИИ
                   </div>
                 )}
@@ -933,12 +933,12 @@ const TableSeating = ({
             <div className="mb-6">
               <div className="grid grid-cols-2 gap-4 mb-6">
                 <div className="text-center py-4">
-                  <div className="text-slate-500 text-xs font-bold mb-1 tracking-wide uppercase">Активные игроки</div>
-                  <div className="text-3xl font-bold text-slate-900">{getActivePlayers().length}</div>
+                  <div className="text-slate-500 text-xs font-semibold mb-1 tracking-wide uppercase">Активные игроки</div>
+                  <div className="text-3xl font-semibold text-slate-900">{getActivePlayers().length}</div>
                 </div>
                 <div className="text-center py-4">
-                  <div className="text-slate-500 text-xs font-bold mb-1 tracking-wide uppercase">Выбывшие</div>
-                  <div className="text-3xl font-bold text-slate-900">{getEliminatedPlayers().length}</div>
+                  <div className="text-slate-500 text-xs font-semibold mb-1 tracking-wide uppercase">Выбывшие</div>
+                  <div className="text-3xl font-semibold text-slate-900">{getEliminatedPlayers().length}</div>
                 </div>
               </div>
               
@@ -946,12 +946,12 @@ const TableSeating = ({
               
               <div className="grid grid-cols-2 gap-4">
                 <div className="text-center py-3">
-                  <div className="text-slate-500 text-xs font-bold mb-1 tracking-wide uppercase">Активные столы</div>
-                  <div className="text-xl font-bold text-slate-900">{tables.filter(t => t.active_players > 0).length}</div>
+                  <div className="text-slate-500 text-xs font-semibold mb-1 tracking-wide uppercase">Активные столы</div>
+                  <div className="text-xl font-semibold text-slate-900">{tables.filter(t => t.active_players > 0).length}</div>
                 </div>
                 <div className="text-center py-3">
-                  <div className="text-slate-500 text-xs font-bold mb-1 tracking-wide uppercase">Средний стек (BB)</div>
-                  <div className="text-xl font-bold text-slate-900">{Math.round(tables.reduce((sum, t) => sum + (t.average_stack || 0), 0) / Math.max(tables.length, 1))}</div>
+                  <div className="text-slate-500 text-xs font-semibold mb-1 tracking-wide uppercase">Средний стек (BB)</div>
+                  <div className="text-xl font-semibold text-slate-900">{Math.round(tables.reduce((sum, t) => sum + (t.average_stack || 0), 0) / Math.max(tables.length, 1))}</div>
                 </div>
               </div>
             </div>
@@ -964,9 +964,9 @@ const TableSeating = ({
         <Card className="w-full bg-white border border-slate-200 shadow-[0_20px_25px_-5px_rgba(0,0,0,0.06),0_10px_10px_-5px_rgba(0,0,0,0.04)]">
           <CardContent className="p-6">
             <div className="text-center">
-              <div className="text-slate-500 text-xs font-bold mb-2 tracking-wide uppercase">Финальный стол готов</div>
-              <div className="text-lg font-bold text-slate-900 mb-2">🏆 Осталось {getActivePlayers().length} игроков</div>
-              <div className="text-sm text-slate-600 font-medium">Турнир готов для формирования финального стола</div>
+              <div className="text-slate-500 text-xs font-semibold mb-2 tracking-wide uppercase">Финальный стол готов</div>
+              <div className="text-lg font-semibold text-slate-900 mb-2">🏆 Осталось {getActivePlayers().length} игроков</div>
+              <div className="text-sm text-slate-600 font-semibold">Турнир готов для формирования финального стола</div>
             </div>
           </CardContent>
         </Card>
@@ -980,8 +980,8 @@ const TableSeating = ({
           <CardContent className="p-0">
             <div className="relative p-6">
               <div className="text-center mb-6">
-                <div className="text-slate-500 text-xs font-bold mb-1 tracking-wide uppercase">Выбывшие игроки</div>
-                <div className="text-lg font-bold text-slate-900">{getEliminatedPlayers().length} игроков выбыло</div>
+                <div className="text-slate-500 text-xs font-semibold mb-1 tracking-wide uppercase">Выбывшие игроки</div>
+                <div className="text-lg font-semibold text-slate-900">{getEliminatedPlayers().length} игроков выбыло</div>
               </div>
               
               <div className="w-full h-px bg-slate-200 mb-6"></div>
@@ -995,8 +995,8 @@ const TableSeating = ({
                         {player.player.name.charAt(0).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
-                    <div className="text-sm font-medium text-slate-900 mb-1">{player.player.name}</div>
-                    <div className="text-xs text-slate-500 mb-3 font-medium">Выбыл</div>
+                    <div className="text-sm font-semibold text-slate-900 mb-1">{player.player.name}</div>
+                    <div className="text-xs text-slate-500 mb-3 font-semibold">Выбыл</div>
                     <Button
                       size="sm"
                       variant="outline"
@@ -1020,8 +1020,8 @@ const TableSeating = ({
         <CardContent className="p-0">
           <div className="relative p-6">
             <div className="text-center mb-6">
-              <div className="text-slate-500 text-xs font-bold mb-1 tracking-wide uppercase">Панель управления</div>
-              <div className="text-lg font-bold text-slate-900">Управление турниром</div>
+              <div className="text-slate-500 text-xs font-semibold mb-1 tracking-wide uppercase">Панель управления</div>
+              <div className="text-lg font-semibold text-slate-900">Управление турниром</div>
             </div>
             
             <div className="w-full h-px bg-slate-200 mb-6"></div>
@@ -1030,7 +1030,7 @@ const TableSeating = ({
               {!isSeatingStarted ? (
                 <Button 
                   onClick={startInitialSeating}
-                  className="bg-slate-900 text-white hover:bg-slate-700 px-6 py-2 rounded-lg font-bold text-sm tracking-wide transition-all"
+                  className="bg-slate-900 text-white hover:bg-slate-700 px-6 py-2 rounded-lg font-semibold text-sm tracking-wide transition-all"
                   disabled={getActivePlayers().length === 0}
                 >
                   <Play className="w-4 h-4 mr-2" />
@@ -1041,7 +1041,7 @@ const TableSeating = ({
                   <Button 
                     onClick={openNewTable}
                     variant="outline"
-                    className="bg-white border-slate-200 text-slate-700 hover:bg-slate-50 px-4 py-2 rounded-lg font-bold text-sm"
+                    className="bg-white border-slate-200 text-slate-700 hover:bg-slate-50 px-4 py-2 rounded-lg font-semibold text-sm"
                     disabled={getActivePlayers().length < maxPlayersPerTable * 2}
                   >
                     <Plus className="w-4 h-4 mr-2" />
@@ -1051,7 +1051,7 @@ const TableSeating = ({
                   <Button 
                     onClick={checkTableBalance}
                     variant="outline"
-                    className="bg-white border-slate-200 text-slate-700 hover:bg-slate-50 px-4 py-2 rounded-lg font-bold text-sm"
+                    className="bg-white border-slate-200 text-slate-700 hover:bg-slate-50 px-4 py-2 rounded-lg font-semibold text-sm"
                     disabled={balancingInProgress}
                   >
                     <ArrowUpDown className="w-4 h-4 mr-2" />
@@ -1061,7 +1061,7 @@ const TableSeating = ({
                   <Button 
                     onClick={autoSeatLatePlayers}
                     variant="outline"
-                    className="bg-white border-slate-200 text-slate-700 hover:bg-slate-50 px-4 py-2 rounded-lg font-bold text-sm"
+                    className="bg-white border-slate-200 text-slate-700 hover:bg-slate-50 px-4 py-2 rounded-lg font-semibold text-sm"
                   >
                     <Shuffle className="w-4 h-4 mr-2" />
                     Авто-рассадка
@@ -1070,7 +1070,7 @@ const TableSeating = ({
                   {isFinalTableReady && (
                     <Button 
                       onClick={createFinalTable}
-                      className="bg-slate-900 text-white hover:bg-slate-700 px-6 py-2 rounded-lg font-bold text-sm tracking-wide transition-all"
+                      className="bg-slate-900 text-white hover:bg-slate-700 px-6 py-2 rounded-lg font-semibold text-sm tracking-wide transition-all"
                     >
                       <Crown className="w-4 h-4 mr-2" />
                       ФИНАЛЬНЫЙ СТОЛ
@@ -1107,11 +1107,11 @@ const TableSeating = ({
                     <div className="text-slate-500 text-xs font-medium mb-1 tracking-wide uppercase">
                       {table.is_final_table ? 'Финальный стол' : `Стол ${table.table_number}`}
                     </div>
-                    <div className="text-lg font-bold text-slate-900">
+                    <div className="text-lg font-semibold text-slate-900">
                       {table.active_players}/{table.max_seats} Игроков
                     </div>
                     {table.is_final_table && (
-                      <div className="text-yellow-600 text-xs font-bold mt-1">🏆 Чемпионский раунд</div>
+                      <div className="text-yellow-600 text-xs font-semibold mt-1">🏆 Чемпионский раунд</div>
                     )}
                     
                     {/* Кнопка закрытия стола */}
@@ -1143,7 +1143,7 @@ const TableSeating = ({
                           }
                         `}
                       >
-                        <div className="text-xs text-slate-500 mb-1 font-medium">Место {seat.seat_number}</div>
+                        <div className="text-xs text-slate-500 mb-1 font-semibold">Место {seat.seat_number}</div>
                         {seat.player_id ? (
                           <div>
                             <Avatar className="w-8 h-8 mx-auto mb-2">
@@ -1152,8 +1152,8 @@ const TableSeating = ({
                                 {seat.player_name?.charAt(0).toUpperCase()}
                               </AvatarFallback>
                             </Avatar>
-                            <div className="text-xs font-bold text-slate-900 truncate">{seat.player_name}</div>
-                            <div className="text-xs text-slate-600 mb-2 font-medium">{seat.stack_bb} BB</div>
+                            <div className="text-xs font-semibold text-slate-900 truncate">{seat.player_name}</div>
+                            <div className="text-xs text-slate-600 mb-2 font-semibold">{seat.stack_bb} BB</div>
                             
                             {/* Кнопки управления игроком */}
                             <div className="flex gap-1">
@@ -1236,7 +1236,7 @@ const TableSeating = ({
                             </div>
                           </div>
                         ) : (
-                          <div className="text-xs text-slate-400 font-medium">Пусто</div>
+                          <div className="text-xs text-slate-400 font-semibold">Пусто</div>
                         )}
                       </div>
                     ))}
@@ -1245,8 +1245,8 @@ const TableSeating = ({
                   {/* Статистика стола */}
                   {table.active_players > 0 && (
                     <div className="text-center bg-slate-50 rounded-lg py-3">
-                      <div className="text-slate-500 text-xs font-bold mb-1 tracking-wide uppercase">Средний стек</div>
-                      <div className="text-sm font-bold text-slate-900">{Math.round(table.average_stack || 0)} фишек</div>
+                      <div className="text-slate-500 text-xs font-semibold mb-1 tracking-wide uppercase">Средний стек</div>
+                      <div className="text-sm font-semibold text-slate-900">{Math.round(table.average_stack || 0)} фишек</div>
                     </div>
                   )}
                 </div>
