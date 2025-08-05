@@ -996,7 +996,7 @@ const TableSeating = ({
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {getEliminatedPlayers().map(player => (
                   <div key={player.player.id} className="bg-slate-50 rounded-xl py-4 px-4 text-center">
-                    <Avatar className="w-12 h-12 mx-auto mb-3">
+                    <Avatar className="w-14 h-14 mx-auto mb-3">
                       <AvatarImage src={getPlayerAvatar(player.player.id)} alt={player.player.name} />
                       <AvatarFallback className="bg-slate-200 text-slate-700">
                         {player.player.name.charAt(0).toUpperCase()}
@@ -1153,7 +1153,7 @@ const TableSeating = ({
                         <div className="text-xs text-slate-500 mb-1 font-light">Место {seat.seat_number}</div>
                         {seat.player_id ? (
                           <div>
-                            <Avatar className="w-8 h-8 mx-auto mb-2">
+                            <Avatar className="w-10 h-10 mx-auto mb-2">
                               <AvatarImage src={getPlayerAvatar(seat.player_id)} alt={seat.player_name} />
                               <AvatarFallback className="bg-slate-200 text-slate-700 text-xs">
                                 {seat.player_name?.charAt(0).toUpperCase()}
