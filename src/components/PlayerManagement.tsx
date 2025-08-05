@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,10 +7,12 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
+import { useVoiceAnnouncements } from "@/hooks/useVoiceAnnouncements";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import TableSeating from "@/components/TableSeating";
-import { useVoiceAnnouncements } from "@/hooks/useVoiceAnnouncements";
+import { useToast } from "@/hooks/use-toast";
+import { Badge } from "@/components/ui/badge";
+import { supabase } from "@/integrations/supabase/client";
 import { 
   UserPlus, 
   Trash2, 
@@ -24,7 +26,6 @@ import {
   CheckCircle,
   Upload
 } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
 
 interface Tournament {
   id: string;
@@ -49,6 +50,7 @@ interface Player {
   elo_rating: number;
   games_played: number;
   wins: number;
+  avatar_url?: string;
 }
 
 interface Registration {
@@ -107,6 +109,16 @@ const PlayerManagement = ({ tournament, players, registrations, onRegistrationUp
     });
     setEliminationOrder(order);
   }, [registrations]);
+
+  const getPlayerAvatar = (playerId: string) => {
+    const player = registrations.find(r => r.player.id === playerId);
+    if (player?.player.avatar_url) {
+      return player.player.avatar_url;
+    }
+    
+    const avatarIndex = Math.abs(playerId.split('').reduce((a, b) => a + b.charCodeAt(0), 0)) % 6 + 1;
+    return `/src/assets/avatars/poker-avatar-${avatarIndex}.png`;
+  };
 
   const registerPlayer = async () => {
     if (!playerName.trim()) {
@@ -578,97 +590,119 @@ const PlayerManagement = ({ tournament, players, registrations, onRegistrationUp
           </div>
         </TabsContent>
 
-        <TabsContent value="active" className="space-y-4">
-          <Card className="bg-white/70 backdrop-blur-sm border border-gray-200/50 shadow-subtle">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Users className="w-5 h-5" />
-                Активные игроки
-              </CardTitle>
-              <CardDescription>Управление ребаями, аддонами и исключениями</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {activePlayers.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500">
-                    <Users className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                    <p>Нет активных игроков</p>
-                  </div>
-                ) : (
-                  activePlayers.map((registration) => (
-                    <div
-                      key={registration.id}
-                      className="flex items-center justify-between p-4 border border-gray-200/30 rounded-xl bg-white/50 hover:shadow-subtle transition-all"
-                    >
-                      <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center text-white font-bold">
-                          {registration.seat_number || '?'}
+        <TabsContent value="active" className="space-y-6">
+          <div className="space-y-6">
+            <div>
+              <div className="text-slate-500 text-xs font-light mb-1 tracking-wide uppercase">Активные участники</div>
+              <div className="text-lg font-light text-slate-900">{activePlayers.length} игроков в турнире</div>
+            </div>
+            
+            <div className="w-full h-px bg-slate-200 mb-6"></div>
+            
+            {activePlayers.length === 0 ? (
+              <div className="text-center py-16 text-slate-500">
+                <Users className="w-16 h-16 mx-auto mb-4 opacity-30" />
+                <p className="text-lg font-light">Нет активных игроков</p>
+                <p className="text-sm font-light">Зарегистрируйте участников в турнире</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {activePlayers.map((registration) => (
+                  <div
+                    key={registration.id}
+                    className="bg-white/80 backdrop-blur-sm border border-slate-200/50 rounded-2xl p-6 hover:shadow-md transition-all duration-200"
+                  >
+                    <div className="flex items-center gap-4 mb-4">
+                      <Avatar className="w-14 h-14">
+                        <AvatarImage src={getPlayerAvatar(registration.player.id)} alt={registration.player.name} />
+                        <AvatarFallback className="bg-slate-200 text-slate-700 font-light">
+                          {registration.player.name.charAt(0).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1">
+                        <h4 className="text-lg font-light text-slate-900 mb-1">{registration.player.name}</h4>
+                        <div className="flex items-center gap-2 text-sm text-slate-500 font-light">
+                          <span>Место {registration.seat_number || '—'}</span>
+                          <span>•</span>
+                          <span>ELO {registration.player.elo_rating}</span>
                         </div>
-                        <div>
-                          <h4 className="font-semibold">{registration.player.name}</h4>
-                          <div className="flex items-center gap-3 text-sm text-gray-600">
-                            <span>ELO: {registration.player.elo_rating}</span>
-                            <span>Фишки: {registration.chips.toLocaleString()}</span>
-                            <span>Ребаи: {registration.rebuys}</span>
-                            <span>Аддоны: {registration.addons}</span>
-                            {getStatusBadge(registration.status)}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {tournament.tournament_format !== 'freezeout' && (
-                          <>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => updateRebuys(registration.id, -1)}
-                              disabled={registration.rebuys <= 0}
-                            >
-                              <Minus className="w-3 h-3" />
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => updateRebuys(registration.id, 1)}
-                            >
-                              <RotateCcw className="w-3 h-3" />
-                            </Button>
-                            {tournament.current_level >= tournament.addon_level && (
-                              <>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => updateAddons(registration.id, -1)}
-                                  disabled={registration.addons <= 0}
-                                >
-                                  <Minus className="w-3 h-3" />
-                                </Button>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => updateAddons(registration.id, 1)}
-                                >
-                                  <Plus className="w-3 h-3" />
-                                </Button>
-                              </>
-                            )}
-                          </>
-                        )}
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => eliminatePlayer(registration.id, registrations.length - eliminatedPlayers.length)}
-                          className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
                       </div>
                     </div>
-                  ))
-                )}
+
+                    <div className="grid grid-cols-2 gap-3 mb-4">
+                      <div className="text-center p-3 bg-slate-50/50 rounded-xl">
+                        <div className="text-lg font-light text-slate-800">{registration.chips.toLocaleString()}</div>
+                        <div className="text-xs text-slate-500 font-light">фишки</div>
+                      </div>
+                      <div className="text-center p-3 bg-slate-50/50 rounded-xl">
+                        <div className="text-lg font-light text-slate-800">{registration.rebuys + registration.addons}</div>
+                        <div className="text-xs text-slate-500 font-light">ребаи + аддоны</div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      {tournament.tournament_format !== 'freezeout' && (
+                        <div className="flex items-center gap-1">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => updateRebuys(registration.id, -1)}
+                            disabled={registration.rebuys <= 0}
+                            className="h-8 w-8 p-0 rounded-lg"
+                          >
+                            <Minus className="w-3 h-3" />
+                          </Button>
+                          <span className="mx-2 text-sm font-light">{registration.rebuys}R</span>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => updateRebuys(registration.id, 1)}
+                            className="h-8 w-8 p-0 rounded-lg"
+                          >
+                            <Plus className="w-3 h-3" />
+                          </Button>
+                          
+                          {tournament.current_level >= tournament.addon_level && (
+                            <>
+                              <span className="mx-1 text-slate-300">|</span>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => updateAddons(registration.id, -1)}
+                                disabled={registration.addons <= 0}
+                                className="h-8 w-8 p-0 rounded-lg"
+                              >
+                                <Minus className="w-3 h-3" />
+                              </Button>
+                              <span className="mx-2 text-sm font-light">{registration.addons}A</span>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => updateAddons(registration.id, 1)}
+                                className="h-8 w-8 p-0 rounded-lg"
+                              >
+                                <Plus className="w-3 h-3" />
+                              </Button>
+                            </>
+                          )}
+                        </div>
+                      )}
+                      
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => eliminatePlayer(registration.id, registrations.length - eliminatedPlayers.length)}
+                        className="text-red-500 hover:text-red-700 hover:bg-red-50/50 h-8 px-3 rounded-lg font-light"
+                      >
+                        <Trash2 className="w-4 h-4 mr-1" />
+                        Исключить
+                      </Button>
+                    </div>
+                  </div>
+                ))}
               </div>
-            </CardContent>
-          </Card>
+            )}
+          </div>
         </TabsContent>
 
         <TabsContent value="eliminated" className="space-y-4">
