@@ -634,6 +634,240 @@ const TableSeating = ({
     });
   };
 
+  const movePlayer = async (playerId: string, fromTable: number, fromSeat: number, toTable: number, toSeat: number) => {
+    try {
+      // Проверяем, что целевое место свободно
+      const targetTableObj = tables.find(t => t.table_number === toTable);
+      if (!targetTableObj) {
+        toast({
+          title: "Error",
+          description: "Target table not found",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      const targetSeatObj = targetTableObj.seats.find(s => s.seat_number === toSeat);
+      if (!targetSeatObj || targetSeatObj.player_id) {
+        toast({
+          title: "Error", 
+          description: "Target seat is occupied",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Находим игрока
+      const sourceTableObj = tables.find(t => t.table_number === fromTable);
+      if (!sourceTableObj) {
+        toast({
+          title: "Error",
+          description: "Source table not found", 
+          variant: "destructive"
+        });
+        return;
+      }
+
+      const sourceSeatObj = sourceTableObj.seats.find(s => s.seat_number === fromSeat && s.player_id === playerId);
+      if (!sourceSeatObj) {
+        toast({
+          title: "Error",
+          description: "Player not found at source seat",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Обновляем столы локально
+      const newTables = [...tables];
+      const newSourceTable = newTables.find(t => t.table_number === fromTable);
+      const newTargetTable = newTables.find(t => t.table_number === toTable);
+
+      if (newSourceTable && newTargetTable) {
+        // Очищаем исходное место
+        const sourceSeat = newSourceTable.seats.find(s => s.seat_number === fromSeat);
+        if (sourceSeat) {
+          sourceSeat.player_id = undefined;
+          sourceSeat.player_name = undefined;
+          sourceSeat.chips = undefined;
+          sourceSeat.status = undefined;
+          sourceSeat.stack_bb = undefined;
+          newSourceTable.active_players--;
+        }
+
+        // Занимаем новое место
+        const targetSeat = newTargetTable.seats.find(s => s.seat_number === toSeat);
+        if (targetSeat) {
+          targetSeat.player_id = sourceSeatObj.player_id;
+          targetSeat.player_name = sourceSeatObj.player_name;
+          targetSeat.chips = sourceSeatObj.chips;
+          targetSeat.status = sourceSeatObj.status;
+          targetSeat.stack_bb = sourceSeatObj.stack_bb;
+          newTargetTable.active_players++;
+        }
+
+        // Обновляем средний стек для обеих столов
+        [newSourceTable, newTargetTable].forEach(table => {
+          const activeSeats = table.seats.filter(s => s.player_id);
+          table.average_stack = activeSeats.length > 0 
+            ? Math.round(activeSeats.reduce((sum, seat) => sum + (seat.chips || 0), 0) / activeSeats.length)
+            : 0;
+        });
+
+        setTables(newTables);
+
+        // Обновляем в базе данных
+        const newAbsoluteSeatNumber = (toTable - 1) * maxPlayersPerTable + toSeat;
+        await supabase
+          .from('tournament_registrations')
+          .update({ seat_number: newAbsoluteSeatNumber })
+          .eq('player_id', playerId)
+          .eq('tournament_id', tournamentId);
+
+        toast({
+          title: "Player moved",
+          description: `${sourceSeatObj.player_name} moved from Table ${fromTable} Seat ${fromSeat} to Table ${toTable} Seat ${toSeat}`
+        });
+
+        if (onSeatingUpdate) {
+          onSeatingUpdate();
+        }
+      }
+    } catch (error) {
+      console.error('Error moving player:', error);
+      toast({
+        title: "Error",
+        description: "Failed to move player",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const closeTable = async (tableNumber: number) => {
+    try {
+      const tableToClose = tables.find(t => t.table_number === tableNumber);
+      if (!tableToClose) {
+        toast({
+          title: "Error",
+          description: "Table not found",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      if (tableToClose.active_players === 0) {
+        // Просто удаляем пустой стол
+        const newTables = tables.filter(t => t.table_number !== tableNumber);
+        setTables(newTables);
+        toast({
+          title: "Table closed",
+          description: `Empty table ${tableNumber} removed`
+        });
+        return;
+      }
+
+      // Находим столы с свободными местами
+      const availableTables = tables.filter(t => 
+        t.table_number !== tableNumber && 
+        t.active_players < t.max_seats
+      );
+
+      if (availableTables.length === 0) {
+        toast({
+          title: "Cannot close table",
+          description: "No available seats at other tables",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Перемещаем игроков
+      const playersToMove = tableToClose.seats.filter(s => s.player_id);
+      const newTables = [...tables];
+      let movedPlayers = 0;
+
+      for (const player of playersToMove) {
+        // Находим свободное место
+        let placed = false;
+        for (const targetTable of availableTables) {
+          const freeSeats = targetTable.seats.filter(s => !s.player_id);
+          if (freeSeats.length > 0) {
+            const freeSeat = freeSeats[0];
+            
+            // Обновляем место
+            freeSeat.player_id = player.player_id;
+            freeSeat.player_name = player.player_name;
+            freeSeat.chips = player.chips;
+            freeSeat.status = player.status;
+            freeSeat.stack_bb = player.stack_bb;
+            
+            // Обновляем счетчики
+            const newTargetTable = newTables.find(t => t.table_number === targetTable.table_number);
+            if (newTargetTable) {
+              newTargetTable.active_players++;
+            }
+
+            // Обновляем в БД
+            const newAbsoluteSeatNumber = (targetTable.table_number - 1) * maxPlayersPerTable + freeSeat.seat_number;
+            await supabase
+              .from('tournament_registrations')
+              .update({ seat_number: newAbsoluteSeatNumber })
+              .eq('player_id', player.player_id)
+              .eq('tournament_id', tournamentId);
+
+            movedPlayers++;
+            placed = true;
+            break;
+          }
+        }
+
+        if (!placed) {
+          toast({
+            title: "Warning",
+            description: `Could not move ${player.player_name} - no available seats`,
+            variant: "destructive"
+          });
+        }
+      }
+
+      // Удаляем закрытый стол
+      const finalTables = newTables.filter(t => t.table_number !== tableNumber);
+      
+      // Пересчитываем средние стеки
+      finalTables.forEach(table => {
+        const activeSeats = table.seats.filter(s => s.player_id);
+        table.average_stack = activeSeats.length > 0 
+          ? Math.round(activeSeats.reduce((sum, seat) => sum + (seat.chips || 0), 0) / activeSeats.length)
+          : 0;
+      });
+
+      setTables(finalTables);
+
+      toast({
+        title: "Table closed",
+        description: `Table ${tableNumber} closed. ${movedPlayers} players relocated.`
+      });
+
+      if (onSeatingUpdate) {
+        onSeatingUpdate();
+      }
+    } catch (error) {
+      console.error('Error closing table:', error);
+      toast({
+        title: "Error",
+        description: "Failed to close table",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const getAvailableSeats = (tableNumber: number) => {
+    const table = tables.find(t => t.table_number === tableNumber);
+    if (!table) return [];
+    
+    return table.seats.filter(seat => !seat.player_id).map(seat => seat.seat_number);
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 space-y-6">
       {/* Главная карточка в стиле приглашений */}
@@ -844,7 +1078,7 @@ const TableSeating = ({
               <CardContent className="p-0">
                 <div className="relative p-6">
                   {/* Заголовок стола */}
-                  <div className="text-center mb-6">
+                  <div className="text-center mb-6 relative">
                     <div className="text-slate-500 text-xs font-medium mb-1 tracking-wide uppercase">
                       {table.is_final_table ? 'Final Table' : `Table ${table.table_number}`}
                     </div>
@@ -853,6 +1087,19 @@ const TableSeating = ({
                     </div>
                     {table.is_final_table && (
                       <div className="text-yellow-600 text-xs font-medium mt-1">🏆 Championship Round</div>
+                    )}
+                    
+                    {/* Кнопка закрытия стола */}
+                    {!table.is_final_table && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="absolute top-0 right-0 h-6 w-6 p-0 bg-white border-slate-200 text-red-600 hover:bg-red-50"
+                        onClick={() => closeTable(table.table_number)}
+                        title="Close table"
+                      >
+                        <X className="w-3 h-3" />
+                      </Button>
                     )}
                   </div>
                   
@@ -920,9 +1167,9 @@ const TableSeating = ({
                                           <SelectValue placeholder="Seat" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                          {Array.from({length: maxPlayersPerTable}, (_, i) => i + 1).map(seatNum => (
+                                          {getAvailableSeats(targetTable).map(seatNum => (
                                             <SelectItem key={seatNum} value={seatNum.toString()}>
-                                              Seat {seatNum}
+                                              Seat {seatNum} (Free)
                                             </SelectItem>
                                           ))}
                                         </SelectContent>
@@ -932,13 +1179,18 @@ const TableSeating = ({
                                     <div className="flex gap-2">
                                       <Button 
                                         onClick={() => {
-                                          // Здесь будет логика перемещения
-                                          toast({
-                                            title: "Player moved",
-                                            description: `${seat.player_name} moved to table ${targetTable}, seat ${targetSeat}`
-                                          });
+                                          if (seat.player_id) {
+                                            movePlayer(
+                                              seat.player_id, 
+                                              table.table_number, 
+                                              seat.seat_number, 
+                                              targetTable, 
+                                              targetSeat
+                                            );
+                                          }
                                         }}
                                         className="flex-1"
+                                        disabled={getAvailableSeats(targetTable).length === 0}
                                       >
                                         <ArrowUpDown className="w-4 h-4 mr-2" />
                                         Move
