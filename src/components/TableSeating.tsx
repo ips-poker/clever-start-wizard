@@ -6,7 +6,10 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Users, ArrowUpDown, Plus, Shuffle } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
+import { Users, ArrowUpDown, Plus, Shuffle, Settings, RotateCcw, UserMinus } from 'lucide-react';
 
 interface TableSeat {
   seat_number: number;
@@ -25,6 +28,7 @@ interface Table {
 interface TableSeatingProps {
   tournamentId: string;
   registrations: any[];
+  tournamentStatus: string;
   maxPlayersPerTable?: number;
   onSeatingUpdate?: () => void;
 }
@@ -32,6 +36,7 @@ interface TableSeatingProps {
 const TableSeating = ({ 
   tournamentId, 
   registrations, 
+  tournamentStatus,
   maxPlayersPerTable = 9,
   onSeatingUpdate 
 }: TableSeatingProps) => {
@@ -40,6 +45,13 @@ const TableSeating = ({
   const [targetTable, setTargetTable] = useState<number>(1);
   const [targetSeat, setTargetSeat] = useState<number>(1);
   const [isMoveDialogOpen, setIsMoveDialogOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [seatingSettings, setSeatingSettings] = useState({
+    maxPlayersPerTable: maxPlayersPerTable,
+    minPlayersToStartTwoTables: 10,
+    maxImbalance: 2 // максимальная разница в игроках между столами
+  });
+  const [isSeated, setIsSeated] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -50,7 +62,20 @@ const TableSeating = ({
     if (tables.length === 0) {
       generateTablesFromRegistrations();
     }
-  }, [registrations, maxPlayersPerTable]);
+  }, [registrations, seatingSettings.maxPlayersPerTable]);
+
+  useEffect(() => {
+    const savedSettings = localStorage.getItem(`seating_settings_${tournamentId}`);
+    if (savedSettings) {
+      setSeatingSettings(JSON.parse(savedSettings));
+    }
+  }, [tournamentId]);
+
+  useEffect(() => {
+    // Проверяем рассадку при запуске турнира
+    const savedSeating = localStorage.getItem(`seating_${tournamentId}`);
+    setIsSeated(!!savedSeating);
+  }, [tournamentId]);
 
   const loadSavedSeating = async () => {
     try {
@@ -85,15 +110,15 @@ const TableSeating = ({
       if (seatingData && seatingData.length > 0) {
         // Создаем столы на основе сохраненной рассадки
         const maxSeatNumber = Math.max(...seatingData.map(s => s.seat_number || 0));
-        const totalTables = Math.ceil(maxSeatNumber / maxPlayersPerTable);
+        const totalTables = Math.ceil(maxSeatNumber / seatingSettings.maxPlayersPerTable);
         
         const newTables: Table[] = [];
         
         for (let tableNum = 1; tableNum <= totalTables; tableNum++) {
           const seats: TableSeat[] = [];
           
-          for (let seatNum = 1; seatNum <= maxPlayersPerTable; seatNum++) {
-            const seatData = seatingData.find(s => s.seat_number === ((tableNum - 1) * maxPlayersPerTable + seatNum));
+          for (let seatNum = 1; seatNum <= seatingSettings.maxPlayersPerTable; seatNum++) {
+            const seatData = seatingData.find(s => s.seat_number === ((tableNum - 1) * seatingSettings.maxPlayersPerTable + seatNum));
             
             seats.push({
               seat_number: seatNum,
@@ -132,16 +157,37 @@ const TableSeating = ({
     }
   };
 
-  const generateTablesFromRegistrations = () => {
+  // Сохранение настроек рассадки
+  const saveSeatingSettings = (settings: any) => {
+    localStorage.setItem(`seating_settings_${tournamentId}`, JSON.stringify(settings));
+    setSeatingSettings(settings);
+  };
+
+  // Профессиональная рассадка
+  const performInitialSeating = () => {
     const activePlayers = registrations.filter(r => r.status === 'registered' || r.status === 'playing');
-    const totalTables = Math.ceil(activePlayers.length / maxPlayersPerTable);
+    
+    // Проверяем минимальное количество игроков для двух столов
+    if (activePlayers.length < seatingSettings.minPlayersToStartTwoTables) {
+      toast({ 
+        title: "Недостаточно игроков", 
+        description: `Для рассадки за два стола нужно минимум ${seatingSettings.minPlayersToStartTwoTables} игроков` 
+      });
+      return;
+    }
+
+    const totalTables = Math.ceil(activePlayers.length / seatingSettings.maxPlayersPerTable);
+    
+    // Перемешиваем игроков в случайном порядке
+    const shuffledPlayers = [...activePlayers].sort(() => Math.random() - 0.5);
     
     const newTables: Table[] = [];
     
+    // Создаем столы
     for (let tableNum = 1; tableNum <= totalTables; tableNum++) {
       const seats: TableSeat[] = [];
       
-      for (let seatNum = 1; seatNum <= maxPlayersPerTable; seatNum++) {
+      for (let seatNum = 1; seatNum <= seatingSettings.maxPlayersPerTable; seatNum++) {
         seats.push({
           seat_number: seatNum
         });
@@ -154,10 +200,10 @@ const TableSeating = ({
       });
     }
     
-    // Распределяем игроков по столам
-    activePlayers.forEach((registration, index) => {
-      const tableIndex = Math.floor(index / maxPlayersPerTable);
-      const seatIndex = index % maxPlayersPerTable;
+    // Распределяем игроков в хаотичном порядке
+    shuffledPlayers.forEach((registration, index) => {
+      const tableIndex = Math.floor(index / seatingSettings.maxPlayersPerTable);
+      const seatIndex = index % seatingSettings.maxPlayersPerTable;
       
       if (newTables[tableIndex]) {
         newTables[tableIndex].seats[seatIndex] = {
@@ -172,8 +218,35 @@ const TableSeating = ({
     });
     
     setTables(newTables);
-    saveSeatingToLocalStorage(newTables);
-    console.log('🪑 Столы сгенерированы из регистраций');
+    updateSeatingInDatabase(newTables);
+    setIsSeated(true);
+    toast({ title: "Рассадка выполнена", description: "Игроки рассажены в случайном порядке" });
+  };
+
+  const generateTablesFromRegistrations = () => {
+    const activePlayers = registrations.filter(r => r.status === 'registered' || r.status === 'playing');
+    const totalTables = Math.ceil(activePlayers.length / seatingSettings.maxPlayersPerTable);
+    
+    const newTables: Table[] = [];
+    
+    for (let tableNum = 1; tableNum <= totalTables; tableNum++) {
+      const seats: TableSeat[] = [];
+      
+      for (let seatNum = 1; seatNum <= seatingSettings.maxPlayersPerTable; seatNum++) {
+        seats.push({
+          seat_number: seatNum
+        });
+      }
+      
+      newTables.push({
+        table_number: tableNum,
+        seats,
+        active_players: 0
+      });
+    }
+    
+    setTables(newTables);
+    console.log('🪑 Столы созданы без рассадки');
   };
 
   const updateSeatingInDatabase = async (tablesData: Table[]) => {
@@ -183,7 +256,7 @@ const TableSeating = ({
       for (const table of tablesData) {
         for (const seat of table.seats) {
           if (seat.player_id) {
-            const seatNumber = (table.table_number - 1) * maxPlayersPerTable + seat.seat_number;
+            const seatNumber = (table.table_number - 1) * seatingSettings.maxPlayersPerTable + seat.seat_number;
             
             const { error } = await supabase
               .from('tournament_registrations')
@@ -275,8 +348,8 @@ const TableSeating = ({
     
     // Размещаем перемешанных игроков
     shuffledPlayers.forEach((registration, index) => {
-      const tableIndex = Math.floor(index / maxPlayersPerTable);
-      const seatIndex = index % maxPlayersPerTable;
+      const tableIndex = Math.floor(index / seatingSettings.maxPlayersPerTable);
+      const seatIndex = index % seatingSettings.maxPlayersPerTable;
       
       if (newTables[tableIndex]) {
         newTables[tableIndex].seats[seatIndex] = {
@@ -335,7 +408,7 @@ const TableSeating = ({
     updateSeatingInDatabase(newTables);
     
     // Обновляем seat_number в базе данных (дублирующее обновление для надежности)
-    const absoluteSeatNumber = (toTable - 1) * maxPlayersPerTable + toSeat;
+    const absoluteSeatNumber = (toTable - 1) * seatingSettings.maxPlayersPerTable + toSeat;
     await supabase
       .from('tournament_registrations')
       .update({ seat_number: absoluteSeatNumber })
@@ -366,122 +439,262 @@ const TableSeating = ({
     });
   };
 
+  // Профессиональная балансировка столов
+  const checkTableBalance = () => {
+    if (tables.length < 2) return null;
+    
+    const tableCounts = tables.map(t => ({ table: t.table_number, count: t.active_players }));
+    tableCounts.sort((a, b) => b.count - a.count);
+    
+    const maxTable = tableCounts[0];
+    const minTable = tableCounts[tableCounts.length - 1];
+    
+    if (maxTable.count - minTable.count > seatingSettings.maxImbalance) {
+      return { fromTable: maxTable.table, toTable: minTable.table };
+    }
+    
+    return null;
+  };
+
+  // Получение следующего игрока на большом блайнде
+  const getNextBigBlindPlayer = (tableNumber: number) => {
+    const table = tables.find(t => t.table_number === tableNumber);
+    if (!table) return null;
+    
+    // Здесь логика определения следующего игрока на большом блайнде
+    // Пока возвращаем последнего игрока за столом
+    const activePlayers = table.seats.filter(s => s.player_id);
+    return activePlayers[activePlayers.length - 1];
+  };
+
+  // Умная балансировка
+  const smartTableBalance = () => {
+    const imbalance = checkTableBalance();
+    if (!imbalance) {
+      toast({ title: "Столы сбалансированы", description: "Балансировка не требуется" });
+      return;
+    }
+
+    const nextBBPlayer = getNextBigBlindPlayer(imbalance.fromTable);
+    if (nextBBPlayer) {
+      // Найдем ближайшее место к следующему большому блайнду на целевом столе
+      const targetTable = tables.find(t => t.table_number === imbalance.toTable);
+      const firstEmptySeat = targetTable?.seats.find(s => !s.player_id);
+      
+      if (firstEmptySeat) {
+        toast({
+          title: "Рекомендация балансировки",
+          description: `Переместите игрока ${nextBBPlayer.player_name} со стола ${imbalance.fromTable} на стол ${imbalance.toTable}, место ${firstEmptySeat.seat_number}`
+        });
+      }
+    }
+  };
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold flex items-center gap-2">
-          <Users className="w-5 h-5" />
-          Рассадка за столами
-        </h3>
-        <div className="flex gap-2">
-          <Button 
-            onClick={autoBalanceTables}
-            variant="outline"
-            size="sm"
-            className="flex items-center gap-2"
-          >
-            <ArrowUpDown className="w-4 h-4" />
-            Сбалансировать
-          </Button>
-          <Button 
-            onClick={shuffleSeating}
-            variant="outline"
-            size="sm"
-            className="flex items-center gap-2"
-          >
-            <Shuffle className="w-4 h-4" />
-            Перемешать
-          </Button>
-          <Dialog open={isMoveDialogOpen} onOpenChange={setIsMoveDialogOpen}>
-            <DialogTrigger asChild>
+      {/* Настройки рассадки */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Users className="w-5 h-5" />
+              Профессиональная рассадка
+            </div>
+            <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <Settings className="w-4 h-4 mr-2" />
+                  Настройки
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Настройки рассадки</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="maxPlayers">Максимум игроков за столом</Label>
+                    <Select 
+                      value={seatingSettings.maxPlayersPerTable.toString()} 
+                      onValueChange={(v) => saveSeatingSettings({...seatingSettings, maxPlayersPerTable: Number(v)})}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="8">8 игроков</SelectItem>
+                        <SelectItem value="9">9 игроков</SelectItem>
+                        <SelectItem value="10">10 игроков</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="minTwoTables">Минимум игроков для двух столов</Label>
+                    <Input
+                      id="minTwoTables"
+                      type="number"
+                      min="6"
+                      max="20"
+                      value={seatingSettings.minPlayersToStartTwoTables}
+                      onChange={(e) => saveSeatingSettings({...seatingSettings, minPlayersToStartTwoTables: Number(e.target.value)})}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="maxImbalance">Максимальная разница между столами</Label>
+                    <Input
+                      id="maxImbalance"
+                      type="number"
+                      min="1"
+                      max="5"
+                      value={seatingSettings.maxImbalance}
+                      onChange={(e) => saveSeatingSettings({...seatingSettings, maxImbalance: Number(e.target.value)})}
+                    />
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-wrap gap-2">
+            {!isSeated && (
               <Button 
-                variant="outline"
-                size="sm"
+                onClick={performInitialSeating}
                 className="flex items-center gap-2"
+                disabled={registrations.filter(r => r.status === 'registered' || r.status === 'playing').length < seatingSettings.minPlayersToStartTwoTables}
               >
-                <Plus className="w-4 h-4" />
-                Переместить игрока
+                <Users className="w-4 h-4" />
+                Осуществить рассадку
               </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Переместить игрока</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4">
-                <div>
-                  <label className="text-sm font-medium">Игрок</label>
-                  <Select value={selectedPlayer} onValueChange={setSelectedPlayer}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Выберите игрока" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {registrations
-                        .filter(r => r.status === 'registered' || r.status === 'playing')
-                        .map(reg => (
-                          <SelectItem key={reg.player.id} value={reg.player.id}>
-                            {reg.player.name}
+            )}
+            
+            <Button 
+              onClick={smartTableBalance}
+              variant="outline"
+              size="sm"
+              className="flex items-center gap-2"
+              disabled={!isSeated}
+            >
+              <ArrowUpDown className="w-4 h-4" />
+              Проверить баланс
+            </Button>
+            
+            <Button 
+              onClick={shuffleSeating}
+              variant="outline"
+              size="sm"
+              className="flex items-center gap-2"
+              disabled={tournamentStatus === 'running' || tournamentStatus === 'paused' || !isSeated}
+            >
+              <Shuffle className="w-4 h-4" />
+              Перемешать
+            </Button>
+
+            <Dialog open={isMoveDialogOpen} onOpenChange={setIsMoveDialogOpen}>
+              <DialogTrigger asChild>
+                <Button 
+                  variant="outline"
+                  size="sm"
+                  className="flex items-center gap-2"
+                  disabled={!isSeated}
+                >
+                  <UserMinus className="w-4 h-4" />
+                  Переместить игрока
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Профессиональная пересадка</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div>
+                    <Label>Игрок для пересадки</Label>
+                    <Select value={selectedPlayer} onValueChange={setSelectedPlayer}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Выберите игрока" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {tables.flatMap(table =>
+                          table.seats
+                            .filter(seat => seat.player_id)
+                            .map(seat => (
+                              <SelectItem key={seat.player_id} value={seat.player_id!}>
+                                {seat.player_name} (Стол {table.table_number}, место {seat.seat_number})
+                              </SelectItem>
+                            ))
+                        )}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>Целевой стол</Label>
+                    <Select value={targetTable.toString()} onValueChange={(v) => setTargetTable(Number(v))}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {tables.map(table => (
+                          <SelectItem key={table.table_number} value={table.table_number.toString()}>
+                            Стол {table.table_number} ({table.active_players}/{seatingSettings.maxPlayersPerTable})
                           </SelectItem>
                         ))}
-                    </SelectContent>
-                  </Select>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>Целевое место</Label>
+                    <Select value={targetSeat.toString()} onValueChange={(v) => setTargetSeat(Number(v))}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Array.from({ length: seatingSettings.maxPlayersPerTable }, (_, i) => i + 1).map(seat => {
+                          const table = tables.find(t => t.table_number === targetTable);
+                          const seatTaken = table?.seats.find(s => s.seat_number === seat)?.player_id;
+                          return (
+                            <SelectItem 
+                              key={seat} 
+                              value={seat.toString()} 
+                              disabled={!!seatTaken}
+                            >
+                              Место {seat} {seatTaken ? '(занято)' : '(свободно)'}
+                            </SelectItem>
+                          );
+                        })}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <Button 
+                    onClick={() => {
+                      const currentTable = tables.find(t => 
+                        t.seats.some(s => s.player_id === selectedPlayer)
+                      )?.table_number || 1;
+                      
+                      movePlayer(selectedPlayer, currentTable, targetTable, targetSeat);
+                    }}
+                    disabled={!selectedPlayer}
+                    className="w-full"
+                  >
+                    Переместить игрока
+                  </Button>
                 </div>
-                <div>
-                  <label className="text-sm font-medium">Стол</label>
-                  <Select value={targetTable.toString()} onValueChange={(v) => setTargetTable(Number(v))}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {tables.map(table => (
-                        <SelectItem key={table.table_number} value={table.table_number.toString()}>
-                          Стол {table.table_number} ({table.active_players}/{maxPlayersPerTable})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <label className="text-sm font-medium">Место</label>
-                  <Select value={targetSeat.toString()} onValueChange={(v) => setTargetSeat(Number(v))}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Array.from({ length: maxPlayersPerTable }, (_, i) => i + 1).map(seat => {
-                        const table = tables.find(t => t.table_number === targetTable);
-                        const seatTaken = table?.seats.find(s => s.seat_number === seat)?.player_id;
-                        return (
-                          <SelectItem 
-                            key={seat} 
-                            value={seat.toString()} 
-                            disabled={!!seatTaken}
-                          >
-                            Место {seat} {seatTaken ? '(занято)' : '(свободно)'}
-                          </SelectItem>
-                        );
-                      })}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <Button 
-                  onClick={() => {
-                    const currentPlayer = registrations.find(r => r.player.id === selectedPlayer);
-                    const currentTable = tables.find(t => 
-                      t.seats.some(s => s.player_id === selectedPlayer)
-                    )?.table_number || 1;
-                    
-                    movePlayer(selectedPlayer, currentTable, targetTable, targetSeat);
-                  }}
-                  disabled={!selectedPlayer}
-                  className="w-full"
-                >
-                  Переместить
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
-        </div>
-      </div>
+              </DialogContent>
+            </Dialog>
+          </div>
+          
+          {/* Статистика и предупреждения */}
+          <div className="mt-4 p-3 rounded-lg bg-muted/50">
+            <div className="flex items-center justify-between text-sm">
+              <span>Игроков: {registrations.filter(r => r.status === 'registered' || r.status === 'playing').length}</span>
+              <span>Столов: {tables.length}</span>
+              <span>Настройка: {seatingSettings.maxPlayersPerTable} макс/стол</span>
+              {checkTableBalance() && (
+                <Badge variant="destructive">Нужна балансировка</Badge>
+              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {tables.map(table => (
@@ -490,10 +703,10 @@ const TableSeating = ({
               <CardTitle className="flex items-center justify-between">
                 <span>Стол {table.table_number}</span>
                 <div className="flex items-center gap-2">
-                  <Badge variant={table.active_players <= maxPlayersPerTable / 2 ? "destructive" : "default"}>
-                    {table.active_players}/{maxPlayersPerTable}
+                  <Badge variant={table.active_players <= seatingSettings.maxPlayersPerTable / 2 ? "destructive" : "default"}>
+                    {table.active_players}/{seatingSettings.maxPlayersPerTable}
                   </Badge>
-                  {table.active_players < maxPlayersPerTable / 2 && (
+                  {table.active_players < seatingSettings.maxPlayersPerTable / 2 && (
                     <Button 
                       size="sm" 
                       variant="outline"
