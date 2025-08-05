@@ -92,15 +92,23 @@ export function VoiceSettings({ onSettingsChange }: VoiceSettingsProps) {
           auto_confirm_critical: data.auto_confirm_critical ?? false,
           volume_level: data.volume_level ?? 80,
           voice_speed: data.voice_speed ?? 1.0,
-          voice_provider: data.voice_provider ?? 'elevenlabs',
+          voice_provider: (data.voice_provider as 'system' | 'elevenlabs') ?? 'elevenlabs',
           elevenlabs_voice: data.elevenlabs_voice ?? 'Aria',
-          warning_intervals: data.warning_intervals ?? {
-            five_minutes: true,
-            two_minutes: true,
-            one_minute: true,
-            thirty_seconds: true,
-            ten_seconds: true
-          }
+          warning_intervals: (typeof data.warning_intervals === 'object' && data.warning_intervals !== null) 
+            ? data.warning_intervals as {
+                five_minutes: boolean;
+                two_minutes: boolean;
+                one_minute: boolean;
+                thirty_seconds: boolean;
+                ten_seconds: boolean;
+              }
+            : {
+                five_minutes: true,
+                two_minutes: true,
+                one_minute: true,
+                thirty_seconds: true,
+                ten_seconds: true
+              }
         });
       }
     } catch (error) {

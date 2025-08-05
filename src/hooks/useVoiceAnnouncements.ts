@@ -26,65 +26,79 @@ export const useVoiceAnnouncements = (options: VoiceAnnouncementOptions = { enab
     try {
       console.log('🔊 Generating voice announcement:', text);
 
-      // Используем ElevenLabs TTS с голосом Ария
-      const { data, error } = await supabase.functions.invoke('voice-announcement', {
-        body: {
-          text,
-          voice: 'Aria',
-          volume: options.volume || 0.8,
-          language: 'ru'
-        }
-      });
+      // Получаем настройки голоса пользователя
+      const { data: voiceSettings } = await supabase
+        .from('voice_settings')
+        .select('*')
+        .single();
 
-      if (error) {
-        console.error('❌ ElevenLabs TTS error, trying browser speech:', error);
-        // Fallback на встроенную речь браузера
-        await playBrowserSpeech(text);
-        return;
-      }
+      const useElevenLabs = voiceSettings?.voice_provider === 'elevenlabs';
+      const voice = voiceSettings?.elevenlabs_voice || 'Aria';
 
-      if (data?.audioContent) {
-        // Создаем аудио элемент и воспроизводим
-        const audio = new Audio();
-        audio.volume = options.volume || 0.7;
-        
-        // Создаем blob из base64 для более надежного воспроизведения
-        const binaryString = atob(data.audioContent);
-        const bytes = new Uint8Array(binaryString.length);
-        for (let i = 0; i < binaryString.length; i++) {
-          bytes[i] = binaryString.charCodeAt(i);
+      if (useElevenLabs) {
+        // Используем ElevenLabs TTS
+        const { data, error } = await supabase.functions.invoke('voice-announcement', {
+          body: {
+            text,
+            voice,
+            volume: voiceSettings?.volume_level ? voiceSettings.volume_level / 100 : (options.volume || 0.8),
+            language: voiceSettings?.voice_language || 'ru'
+          }
+        });
+
+        if (error) {
+          console.error('❌ ElevenLabs TTS error, trying browser speech:', error);
+          // Fallback на встроенную речь браузера
+          await playBrowserSpeech(text, voiceSettings);
+          return;
         }
-        const blob = new Blob([bytes], { type: 'audio/mpeg' });
-        const audioUrl = URL.createObjectURL(blob);
-        
-        audio.src = audioUrl;
-        audioRef.current = audio;
-        
-        // Очистка URL после проигрывания
-        audio.onended = () => {
-          URL.revokeObjectURL(audioUrl);
-        };
-        
-        await audio.play();
-        console.log('✅ ElevenLabs TTS played successfully');
+
+        if (data?.audioContent) {
+          // Создаем аудио элемент и воспроизводим
+          const audio = new Audio();
+          audio.volume = voiceSettings?.volume_level ? voiceSettings.volume_level / 100 : (options.volume || 0.7);
+          
+          // Создаем blob из base64 для более надежного воспроизведения
+          const binaryString = atob(data.audioContent);
+          const bytes = new Uint8Array(binaryString.length);
+          for (let i = 0; i < binaryString.length; i++) {
+            bytes[i] = binaryString.charCodeAt(i);
+          }
+          const blob = new Blob([bytes], { type: 'audio/mpeg' });
+          const audioUrl = URL.createObjectURL(blob);
+          
+          audio.src = audioUrl;
+          audioRef.current = audio;
+          
+          // Очистка URL после проигрывания
+          audio.onended = () => {
+            URL.revokeObjectURL(audioUrl);
+          };
+          
+          await audio.play();
+          console.log('✅ ElevenLabs TTS played successfully');
+        } else {
+          // Fallback на встроенную речь
+          await playBrowserSpeech(text, voiceSettings);
+        }
       } else {
-        // Fallback на встроенную речь
-        await playBrowserSpeech(text);
+        // Используем системный голос
+        await playBrowserSpeech(text, voiceSettings);
       }
     } catch (error) {
-      console.error('❌ Failed to play ElevenLabs TTS, trying browser speech:', error);
+      console.error('❌ Failed to play voice announcement, trying browser speech:', error);
       // Fallback на встроенную речь браузера
       await playBrowserSpeech(text);
     }
   }, [options.enabled, options.voice, options.volume]);
 
-  const playBrowserSpeech = useCallback(async (text: string) => {
+  const playBrowserSpeech = useCallback(async (text: string, voiceSettings?: any) => {
     try {
       if ('speechSynthesis' in window) {
         const utterance = new SpeechSynthesisUtterance(text);
-        utterance.lang = 'ru-RU';
-        utterance.volume = options.volume || 0.7;
-        utterance.rate = 0.9;
+        utterance.lang = voiceSettings?.voice_language === 'en' ? 'en-US' : 'ru-RU';
+        utterance.volume = voiceSettings?.volume_level ? voiceSettings.volume_level / 100 : (options.volume || 0.7);
+        utterance.rate = voiceSettings?.voice_speed || 1.0;
         utterance.pitch = 1;
         
         speechSynthesis.speak(utterance);

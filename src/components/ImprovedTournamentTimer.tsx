@@ -60,31 +60,56 @@ const ImprovedTournamentTimer = ({
     calculateChipStatistics();
   }, [registrations]);
 
-  // Автоматические голосовые объявления на основе таймера
+  // Автоматические голосовые объявления на основе таймера с учетом настроек
   useEffect(() => {
     if (!timerActive || !currentTime) return;
 
-    const currentLevel = getCurrentLevel();
-    const nextLevel = getNextLevel();
+    const checkAndAnnounce = async () => {
+      // Получаем настройки предупреждений пользователя
+      const { data: voiceSettings } = await supabase
+        .from('voice_settings')
+        .select('*')
+        .single();
 
-    // Объявления времени
-    if (currentTime === 300 && lastAnnouncedTime !== 300) { // 5 минут
-      voiceAnnouncements.announceTimeWarning(5);
-      setLastAnnouncedTime(300);
-    } else if (currentTime === 120 && lastAnnouncedTime !== 120) { // 2 минуты
-      voiceAnnouncements.announceTimeWarning(2);
-      setLastAnnouncedTime(120);
-    } else if (currentTime === 60 && lastAnnouncedTime !== 60) { // 1 минута
-      voiceAnnouncements.announceTimeWarning(1);
-      setLastAnnouncedTime(60);
-    } else if (currentTime === 10 && lastAnnouncedTime !== 10) { // 10 секунд
-      voiceAnnouncements.announceNextLevel(
-        tournament.current_level,
-        nextLevel,
-        currentTime
-      );
-      setLastAnnouncedTime(10);
-    }
+      const intervals = (typeof voiceSettings?.warning_intervals === 'object' && voiceSettings?.warning_intervals !== null)
+        ? voiceSettings.warning_intervals as {
+            five_minutes: boolean;
+            two_minutes: boolean;
+            one_minute: boolean;
+            thirty_seconds: boolean;
+            ten_seconds: boolean;
+          }
+        : {
+            five_minutes: true,
+            two_minutes: true,
+            one_minute: true,
+            thirty_seconds: true,
+            ten_seconds: true
+          };
+
+      const currentLevel = getCurrentLevel();
+      const nextLevel = getNextLevel();
+
+      // Объявления времени согласно настройкам пользователя
+      if (currentTime === 300 && lastAnnouncedTime !== 300 && intervals.five_minutes) { // 5 минут
+        voiceAnnouncements.announceTimeWarning(5);
+        setLastAnnouncedTime(300);
+      } else if (currentTime === 120 && lastAnnouncedTime !== 120 && intervals.two_minutes) { // 2 минуты
+        voiceAnnouncements.announceTimeWarning(2);
+        setLastAnnouncedTime(120);
+      } else if (currentTime === 60 && lastAnnouncedTime !== 60 && intervals.one_minute) { // 1 минута
+        voiceAnnouncements.announceTimeWarning(1);
+        setLastAnnouncedTime(60);
+      } else if (currentTime === 30 && lastAnnouncedTime !== 30 && intervals.thirty_seconds) { // 30 секунд
+        await voiceAnnouncements.playAnnouncement('Внимание! До окончания уровня осталось 30 секунд!');
+        setLastAnnouncedTime(30);
+      } else if (currentTime === 10 && lastAnnouncedTime !== 10 && intervals.ten_seconds) { // 10 секунд
+        await voiceAnnouncements.playAnnouncement('Внимание! До окончания уровня осталось 10 секунд!');
+        setLastAnnouncedTime(10);
+      }
+    };
+
+    checkAndAnnounce();
 
     // Сброс при смене времени уровня
     if (currentTime > lastAnnouncedTime + 60) {
