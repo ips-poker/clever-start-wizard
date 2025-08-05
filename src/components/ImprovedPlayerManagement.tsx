@@ -12,7 +12,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Users, UserX, Trophy, Clock, TrendingUp, TrendingDown, Shuffle, Upload, Plus, Minus } from 'lucide-react';
+import { Users, UserX, Trophy, Clock, TrendingUp, TrendingDown, Shuffle, Upload, Plus, Minus, X } from 'lucide-react';
 import TableSeating from './TableSeating';
 
 interface Tournament {
@@ -605,100 +605,83 @@ const ImprovedPlayerManagement = ({ tournament, players, registrations, onRegist
                 <p className="text-sm font-light">Зарегистрируйте участников в турнире</p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="space-y-3">
                 {activePlayers.map((registration) => (
                   <div
                     key={registration.id}
-                    className="bg-white/80 backdrop-blur-sm border border-slate-200/50 rounded-2xl p-6 hover:shadow-md transition-all duration-200"
+                    className="bg-white/80 backdrop-blur-sm border border-slate-200/50 rounded-2xl p-4 hover:shadow-md transition-all duration-200"
                   >
-                    <div className="flex items-center gap-4 mb-4">
-                      <Avatar className="w-14 h-14">
-                        <AvatarImage src={getPlayerAvatar(registration.player.id)} alt={registration.player.name} />
-                        <AvatarFallback className="bg-slate-200 text-slate-700 font-light">
-                          {registration.player.name.charAt(0).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1">
-                        <h4 className="text-lg font-light text-slate-900 mb-1">{registration.player.name}</h4>
-                        <div className="flex items-center gap-2 text-sm text-slate-500 font-light">
-                          <span>Место {registration.seat_number || '—'}</span>
-                          <span>•</span>
-                          <span>ELO {registration.player.elo_rating}</span>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <Avatar className="w-12 h-12">
+                          <AvatarImage src={getPlayerAvatar(registration.player.id)} alt={registration.player.name} />
+                          <AvatarFallback className="bg-slate-200 text-slate-700 font-light">
+                            {registration.player.name.charAt(0).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <h4 className="text-lg font-light text-slate-900">{registration.player.name}</h4>
+                          <div className="flex items-center gap-3 text-sm text-slate-500 font-light">
+                            <span>Место {registration.seat_number || '—'}</span>
+                            <span>•</span>
+                            <span>ELO {registration.player.elo_rating}</span>
+                            <span>•</span>
+                            <span>{registration.chips.toLocaleString()} фишек</span>
+                          </div>
                         </div>
                       </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-3 mb-4">
-                      <div className="text-center p-3 bg-slate-50/50 rounded-xl">
-                        <div className="text-lg font-light text-slate-800">{registration.chips.toLocaleString()}</div>
-                        <div className="text-xs text-slate-500 font-light">фишки</div>
-                      </div>
-                      <div className="text-center p-3 bg-slate-50/50 rounded-xl">
-                        <div className="text-lg font-light text-slate-800">{registration.rebuys + registration.addons}</div>
-                        <div className="text-xs text-slate-500 font-light">ребаи + аддоны</div>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      {tournament.current_level <= (tournament.rebuy_end_level || 6) && (
-                        <div className="flex items-center gap-1">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => updateRebuys(registration.id, -1)}
-                            disabled={registration.rebuys <= 0}
-                            className="h-8 w-8 p-0 rounded-lg"
-                          >
-                            <Minus className="w-3 h-3" />
-                          </Button>
-                          <span className="mx-2 text-sm font-light">{registration.rebuys}R</span>
+                      
+                      <div className="flex items-center gap-4">
+                        <div className="text-right">
+                          <div className="text-sm text-slate-500 font-light">Ребаи + Аддоны</div>
+                          <div className="text-lg font-light text-slate-800">{registration.rebuys + registration.addons}</div>
+                        </div>
+                        
+                        <div className="flex gap-2">
                           <Button
                             size="sm"
                             variant="outline"
                             onClick={() => updateRebuys(registration.id, 1)}
-                            className="h-8 w-8 p-0 rounded-lg"
+                            className="h-8 w-8 p-0 border-green-200 text-green-600 hover:bg-green-50"
                           >
                             <Plus className="w-3 h-3" />
                           </Button>
-                          
-                          {tournament.current_level >= (tournament.addon_level || 7) && (
-                            <>
-                              <span className="mx-1 text-slate-300">|</span>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => updateAddons(registration.id, -1)}
-                                disabled={registration.addons <= 0}
-                                className="h-8 w-8 p-0 rounded-lg"
-                              >
-                                <Minus className="w-3 h-3" />
-                              </Button>
-                              <span className="mx-2 text-sm font-light">{registration.addons}A</span>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => updateAddons(registration.id, 1)}
-                                className="h-8 w-8 p-0 rounded-lg"
-                              >
-                                <Plus className="w-3 h-3" />
-                              </Button>
-                            </>
-                          )}
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => updateRebuys(registration.id, -1)}
+                            disabled={registration.rebuys === 0}
+                            className="h-8 w-8 p-0 border-red-200 text-red-600 hover:bg-red-50"
+                          >
+                            <Minus className="w-3 h-3" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => updateAddons(registration.id, 1)}
+                            className="h-8 w-8 p-0 border-blue-200 text-blue-600 hover:bg-blue-50"
+                          >
+                            <Plus className="w-3 h-3" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => updateAddons(registration.id, -1)}
+                            disabled={registration.addons === 0}
+                            className="h-8 w-8 p-0 border-orange-200 text-orange-600 hover:bg-orange-50"
+                          >
+                            <Minus className="w-3 h-3" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => eliminatePlayer(registration.id, activePlayers.length)}
+                            className="h-8 w-8 p-0 border-red-200 text-red-600 hover:bg-red-50"
+                          >
+                            <X className="w-3 h-3" />
+                          </Button>
                         </div>
-                      )}
-                      
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => {
-                          setSelectedRegistration(registration);
-                          setIsEliminateDialogOpen(true);
-                        }}
-                        className="text-red-500 hover:text-red-700 hover:bg-red-50/50 h-8 px-3 rounded-lg font-light"
-                      >
-                        <UserX className="w-4 h-4 mr-1" />
-                        Исключить
-                      </Button>
+                      </div>
                     </div>
                   </div>
                 ))}
