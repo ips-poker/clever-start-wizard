@@ -136,14 +136,42 @@ export function VoiceSettings({ onSettingsChange }: VoiceSettingsProps) {
         return;
       }
 
+      // Проверяем, есть ли уже настройки для пользователя
+      const { data: existingSettings } = await supabase
+        .from('voice_settings')
+        .select('id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
       const settingsToSave = {
-        ...settings,
-        user_id: user.id
+        voice_enabled: settings.voice_enabled,
+        voice_language: settings.voice_language,
+        confidence_threshold: settings.confidence_threshold,
+        auto_confirm_critical: settings.auto_confirm_critical,
+        volume_level: settings.volume_level,
+        voice_speed: settings.voice_speed,
+        voice_provider: settings.voice_provider,
+        elevenlabs_voice: settings.elevenlabs_voice,
+        warning_intervals: settings.warning_intervals,
+        updated_at: new Date().toISOString()
       };
 
-      const { error } = await supabase
-        .from('voice_settings')
-        .upsert([settingsToSave]);
+      let error;
+      if (existingSettings) {
+        // Обновляем существующую запись
+        ({ error } = await supabase
+          .from('voice_settings')
+          .update(settingsToSave)
+          .eq('user_id', user.id));
+      } else {
+        // Создаем новую запись
+        ({ error } = await supabase
+          .from('voice_settings')
+          .insert([{
+            ...settingsToSave,
+            user_id: user.id
+          }]));
+      }
 
       if (error) throw error;
 
