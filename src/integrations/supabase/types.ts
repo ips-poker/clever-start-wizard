@@ -365,6 +365,7 @@ export type Database = {
           id: string
           name: string
           updated_at: string
+          user_id: string | null
           wins: number
         }
         Insert: {
@@ -376,6 +377,7 @@ export type Database = {
           id?: string
           name: string
           updated_at?: string
+          user_id?: string | null
           wins?: number
         }
         Update: {
@@ -387,6 +389,7 @@ export type Database = {
           id?: string
           name?: string
           updated_at?: string
+          user_id?: string | null
           wins?: number
         }
         Relationships: []
@@ -871,6 +874,10 @@ export type Database = {
       is_admin: {
         Args: { user_uuid: string }
         Returns: boolean
+      }
+      link_players_to_profiles: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
       }
       pause_tournament: {
         Args: { tournament_id_param: string }
