@@ -561,32 +561,154 @@ const ImprovedPlayerManagement = ({ tournament, players, registrations, onRegist
             </Card>
           </div>
 
-          <Card className="bg-white/80 backdrop-blur-sm border border-slate-200/50 shadow-sm rounded-2xl overflow-hidden">
-            <CardHeader className="bg-gradient-to-r from-slate-50 to-slate-100/50 border-b border-slate-100">
-              <CardTitle className="flex items-center gap-3 text-slate-800 font-light text-xl">
-                <div className="p-2 bg-purple-500/10 rounded-xl">
-                  <TrendingUp className="w-5 h-5 text-purple-600" />
+          {/* Расширенная статистика турнира */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Статистика регистрации */}
+            <Card className="bg-white/80 backdrop-blur-sm border border-slate-200/50 shadow-sm rounded-2xl overflow-hidden">
+              <CardHeader className="bg-gradient-to-r from-purple-50 to-purple-100/50 border-b border-purple-100">
+                <CardTitle className="flex items-center gap-3 text-slate-800 font-light text-xl">
+                  <div className="p-2 bg-purple-500/10 rounded-xl">
+                    <Users className="w-5 h-5 text-purple-600" />
+                  </div>
+                  Статистика игроков
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-6">
+                <div className="grid grid-cols-3 gap-4 text-center">
+                  <div className="p-4 bg-slate-50/50 rounded-xl">
+                    <div className="text-2xl font-light text-slate-800">{registrations.length}</div>
+                    <div className="text-sm text-slate-500 font-light">Всего</div>
+                  </div>
+                  <div className="p-4 bg-green-50/50 rounded-xl">
+                    <div className="text-2xl font-light text-green-600">{activePlayers.length}</div>
+                    <div className="text-sm text-slate-500 font-light">Активных</div>
+                  </div>
+                  <div className="p-4 bg-blue-50/50 rounded-xl">
+                    <div className="text-2xl font-light text-blue-600">{tournament.max_players - registrations.length}</div>
+                    <div className="text-sm text-slate-500 font-light">Свободных мест</div>
+                  </div>
                 </div>
-                Статистика регистрации
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-6">
-              <div className="grid grid-cols-3 gap-4 text-center">
-                <div className="p-4 bg-slate-50/50 rounded-xl">
-                  <div className="text-2xl font-light text-slate-800">{registrations.length}</div>
-                  <div className="text-sm text-slate-500 font-light">Всего</div>
+              </CardContent>
+            </Card>
+
+            {/* Статистика ребаев и аддонов */}
+            <Card className="bg-white/80 backdrop-blur-sm border border-slate-200/50 shadow-sm rounded-2xl overflow-hidden">
+              <CardHeader className="bg-gradient-to-r from-amber-50 to-amber-100/50 border-b border-amber-100">
+                <CardTitle className="flex items-center gap-3 text-slate-800 font-light text-xl">
+                  <div className="p-2 bg-amber-500/10 rounded-xl">
+                    <Plus className="w-5 h-5 text-amber-600" />
+                  </div>
+                  Ребаи и аддоны
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-6">
+                <div className="grid grid-cols-2 gap-4 text-center">
+                  <div className="p-4 bg-green-50/50 rounded-xl">
+                    <div className="text-2xl font-light text-green-600">
+                      {registrations.reduce((sum, reg) => sum + reg.rebuys, 0)}
+                    </div>
+                    <div className="text-sm text-slate-500 font-light">Ребаев</div>
+                  </div>
+                  <div className="p-4 bg-blue-50/50 rounded-xl">
+                    <div className="text-2xl font-light text-blue-600">
+                      {registrations.reduce((sum, reg) => sum + reg.addons, 0)}
+                    </div>
+                    <div className="text-sm text-slate-500 font-light">Аддонов</div>
+                  </div>
                 </div>
-                <div className="p-4 bg-green-50/50 rounded-xl">
-                  <div className="text-2xl font-light text-green-600">{activePlayers.length}</div>
-                  <div className="text-sm text-slate-500 font-light">Активных</div>
+              </CardContent>
+            </Card>
+
+            {/* Финансовая статистика */}
+            <Card className="bg-white/80 backdrop-blur-sm border border-slate-200/50 shadow-sm rounded-2xl overflow-hidden">
+              <CardHeader className="bg-gradient-to-r from-emerald-50 to-emerald-100/50 border-b border-emerald-100">
+                <CardTitle className="flex items-center gap-3 text-slate-800 font-light text-xl">
+                  <div className="p-2 bg-emerald-500/10 rounded-xl">
+                    <TrendingUp className="w-5 h-5 text-emerald-600" />
+                  </div>
+                  Призовой фонд
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-6">
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center p-3 bg-slate-50/50 rounded-xl">
+                    <span className="text-sm text-slate-600 font-light">Основные взносы</span>
+                    <span className="text-lg font-light text-slate-800">
+                      {(tournament.buy_in * registrations.length).toLocaleString()} ₽
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center p-3 bg-green-50/50 rounded-xl">
+                    <span className="text-sm text-slate-600 font-light">Ребаи</span>
+                    <span className="text-lg font-light text-green-600">
+                      {(tournament.rebuy_cost * registrations.reduce((sum, reg) => sum + reg.rebuys, 0)).toLocaleString()} ₽
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center p-3 bg-blue-50/50 rounded-xl">
+                    <span className="text-sm text-slate-600 font-light">Аддоны</span>
+                    <span className="text-lg font-light text-blue-600">
+                      {(tournament.addon_cost * registrations.reduce((sum, reg) => sum + reg.addons, 0)).toLocaleString()} ₽
+                    </span>
+                  </div>
+                  <div className="border-t border-slate-200 pt-3">
+                    <div className="flex justify-between items-center p-3 bg-emerald-50/50 rounded-xl">
+                      <span className="text-base text-slate-800 font-medium">Общий призовой фонд</span>
+                      <span className="text-xl font-light text-emerald-600">
+                        {(
+                          tournament.buy_in * registrations.length +
+                          tournament.rebuy_cost * registrations.reduce((sum, reg) => sum + reg.rebuys, 0) +
+                          tournament.addon_cost * registrations.reduce((sum, reg) => sum + reg.addons, 0)
+                        ).toLocaleString()} ₽
+                      </span>
+                    </div>
+                  </div>
                 </div>
-                <div className="p-4 bg-blue-50/50 rounded-xl">
-                  <div className="text-2xl font-light text-blue-600">{tournament.max_players - registrations.length}</div>
-                  <div className="text-sm text-slate-500 font-light">Свободных мест</div>
+              </CardContent>
+            </Card>
+
+            {/* Статистика фишек */}
+            <Card className="bg-white/80 backdrop-blur-sm border border-slate-200/50 shadow-sm rounded-2xl overflow-hidden">
+              <CardHeader className="bg-gradient-to-r from-indigo-50 to-indigo-100/50 border-b border-indigo-100">
+                <CardTitle className="flex items-center gap-3 text-slate-800 font-light text-xl">
+                  <div className="p-2 bg-indigo-500/10 rounded-xl">
+                    <Trophy className="w-5 h-5 text-indigo-600" />
+                  </div>
+                  Статистика фишек
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-6">
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center p-3 bg-slate-50/50 rounded-xl">
+                    <span className="text-sm text-slate-600 font-light">Всего фишек в игре</span>
+                    <span className="text-lg font-light text-slate-800">
+                      {activePlayers.reduce((sum, player) => sum + player.chips, 0).toLocaleString()}
+                    </span>
+                  </div>
+                  {activePlayers.length > 0 && (
+                    <div className="flex justify-between items-center p-3 bg-indigo-50/50 rounded-xl">
+                      <span className="text-sm text-slate-600 font-light">Средний стек</span>
+                      <span className="text-lg font-light text-indigo-600">
+                        {Math.round(activePlayers.reduce((sum, player) => sum + player.chips, 0) / activePlayers.length).toLocaleString()}
+                      </span>
+                    </div>
+                  )}
+                  <div className="flex justify-between items-center p-3 bg-green-50/50 rounded-xl">
+                    <span className="text-sm text-slate-600 font-light">Стартовые фишки</span>
+                    <span className="text-lg font-light text-green-600">
+                      {tournament.starting_chips.toLocaleString()}
+                    </span>
+                  </div>
+                  {activePlayers.length > 0 && (
+                    <div className="flex justify-between items-center p-3 bg-blue-50/50 rounded-xl">
+                      <span className="text-sm text-slate-600 font-light">Лидер по фишкам</span>
+                      <span className="text-lg font-light text-blue-600">
+                        {Math.max(...activePlayers.map(p => p.chips)).toLocaleString()}
+                      </span>
+                    </div>
+                  )}
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
 
         <TabsContent value="active" className="space-y-6">
