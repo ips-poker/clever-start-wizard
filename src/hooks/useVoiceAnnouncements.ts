@@ -1,4 +1,4 @@
-import { useRef, useCallback } from 'react';
+import { useRef, useCallback, useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useVoiceSettings } from './useVoiceSettings';
 
@@ -21,6 +21,31 @@ export const useVoiceAnnouncements = (options: VoiceAnnouncementOptions = { enab
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const lastAnnouncementRef = useRef<number>(0);
   const { settings } = useVoiceSettings();
+  const [customIntervals, setCustomIntervals] = useState<Array<{seconds: number, message: string}>>([]);
+
+  // Load custom time intervals
+  useEffect(() => {
+    const loadCustomIntervals = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const { data } = await supabase
+          .from('voice_time_intervals')
+          .select('seconds, message')
+          .eq('user_id', user.id)
+          .eq('is_active', true);
+
+        if (data) {
+          setCustomIntervals(data);
+        }
+      } catch (error) {
+        console.error('Error loading custom intervals:', error);
+      }
+    };
+
+    loadCustomIntervals();
+  }, []);
 
   const playAnnouncement = useCallback(async (text: string) => {
     if (!options.enabled || !settings.voice_enabled) return;
@@ -124,21 +149,36 @@ export const useVoiceAnnouncements = (options: VoiceAnnouncementOptions = { enab
     }
   }, [settings]);
 
-  // Объявления для таймера турнира
-  const announceTimeWarning = useCallback(async (minutes: number) => {
+  // Объявления для таймера турнира с поддержкой пользовательских интервалов
+  const announceTimeWarning = useCallback(async (timeInSeconds: number) => {
+    // Проверяем пользовательские интервалы
+    const customInterval = customIntervals.find(interval => interval.seconds === timeInSeconds);
+    if (customInterval) {
+      await playAnnouncement(customInterval.message);
+      return;
+    }
+
+    // Стандартные интервалы
+    const minutes = Math.floor(timeInSeconds / 60);
     let message = '';
-    if (minutes === 5) {
+    if (timeInSeconds === 300) {
       message = 'Внимание! До окончания уровня осталось 5 минут.';
-    } else if (minutes === 2) {
+    } else if (timeInSeconds === 120) {
       message = 'Внимание! До окончания уровня осталось 2 минуты. Скоро блайнд ап!';
-    } else if (minutes === 1) {
+    } else if (timeInSeconds === 60) {
       message = 'Внимание! До окончания уровня осталась 1 минута. Готовьтесь к повышению блайндов!';
-    } else {
+    } else if (timeInSeconds === 30) {
+      message = 'Внимание! До окончания уровня осталось 30 секунд!';
+    } else if (timeInSeconds === 10) {
+      message = 'Внимание! До окончания уровня осталось 10 секунд!';
+    } else if (minutes > 0) {
       const time = minutes === 1 ? '1 минута' : `${minutes} минут`;
       message = `Внимание! До окончания уровня осталось ${time}.`;
+    } else {
+      message = `Внимание! До окончания уровня осталось ${timeInSeconds} секунд.`;
     }
     await playAnnouncement(message);
-  }, [playAnnouncement]);
+  }, [playAnnouncement, customIntervals]);
 
   const announceNextLevel = useCallback(async (
     currentLevel: number,

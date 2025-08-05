@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import TableSeating from "@/components/TableSeating";
+import { useVoiceAnnouncements } from "@/hooks/useVoiceAnnouncements";
 import { 
   UserPlus, 
   Trash2, 
@@ -78,6 +79,9 @@ const PlayerManagement = ({ tournament, players, registrations, onRegistrationUp
   const [eliminationOrder, setEliminationOrder] = useState<{[key: string]: number}>({});
   const { toast } = useToast();
   const isMountedRef = useRef(true);
+
+  // Голосовые объявления
+  const voiceAnnouncements = useVoiceAnnouncements({ enabled: true });
 
   useEffect(() => {
     console.log('PlayerManagement mounted');
@@ -319,6 +323,9 @@ const PlayerManagement = ({ tournament, players, registrations, onRegistrationUp
   };
 
   const eliminatePlayer = async (registrationId: string, position: number) => {
+    const registration = registrations.find(r => r.id === registrationId);
+    if (!registration) return;
+
     const { error } = await supabase
       .from('tournament_registrations')
       .update({ 
@@ -330,13 +337,48 @@ const PlayerManagement = ({ tournament, players, registrations, onRegistrationUp
     if (error) {
       toast({ title: "Ошибка", description: "Не удалось исключить игрока", variant: "destructive" });
     } else {
-      toast({ title: "Игрок исключен", description: `Место: ${position}` });
+      toast({ title: "Игрок исключен", description: `${registration.player.name} - место ${position}` });
+      
+      // Голосовое объявление об исключении игрока
+      await voiceAnnouncements.announcePlayerElimination(registration.player.name, position);
+      
+      // Проверяем необходимость балансировки столов
+      const remainingPlayers = registrations.filter(r => r.status !== 'eliminated' && r.id !== registrationId);
+      if (remainingPlayers.length > 1) {
+        await announceTableBalancing(remainingPlayers);
+      }
+      
       onRegistrationUpdate();
       
       // Check if tournament should finish
       const activePlayers = registrations.filter(r => r.status !== 'eliminated').length;
       if (activePlayers <= 1) {
         toast({ title: "Турнир готов к завершению", description: "Остался один игрок" });
+        await voiceAnnouncements.playAnnouncement('Внимание! Остался последний игрок. Турнир готов к завершению!');
+      }
+    }
+  };
+
+  // Функция для объявления балансировки столов
+  const announceTableBalancing = async (remainingPlayers: Registration[]) => {
+    const playersPerTable = 9; // Максимум игроков за столом
+    const totalTables = Math.ceil(remainingPlayers.length / playersPerTable);
+    
+    if (totalTables > 1) {
+      // Если нужна пересадка
+      const unbalancedTables = remainingPlayers.reduce((acc, player) => {
+        const tableNum = Math.floor((player.seat_number || 0 - 1) / playersPerTable) + 1;
+        acc[tableNum] = (acc[tableNum] || 0) + 1;
+        return acc;
+      }, {} as {[key: number]: number});
+      
+      // Проверяем, есть ли столы с малым количеством игроков
+      const smallTables = Object.entries(unbalancedTables).filter(([_, count]) => count < 6);
+      
+      if (smallTables.length > 0) {
+        await voiceAnnouncements.playAnnouncement(
+          `Внимание! Требуется балансировка столов. Игроки со стола ${smallTables[0][0]}, пересядьте за основной стол для продолжения игры.`
+        );
       }
     }
   };

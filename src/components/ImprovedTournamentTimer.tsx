@@ -71,20 +71,47 @@ const ImprovedTournamentTimer = ({
     const checkAndAnnounce = async () => {
       // Объявления времени согласно настройкам пользователя
       if (currentTime === 300 && lastAnnouncedTime !== 300 && voiceSettings.warning_intervals.five_minutes) {
-        voiceAnnouncements.announceTimeWarning(5);
+        voiceAnnouncements.announceTimeWarning(300);
         setLastAnnouncedTime(300);
       } else if (currentTime === 120 && lastAnnouncedTime !== 120 && voiceSettings.warning_intervals.two_minutes) {
-        voiceAnnouncements.announceTimeWarning(2);
+        voiceAnnouncements.announceTimeWarning(120);
         setLastAnnouncedTime(120);
       } else if (currentTime === 60 && lastAnnouncedTime !== 60 && voiceSettings.warning_intervals.one_minute) {
-        voiceAnnouncements.announceTimeWarning(1);
+        voiceAnnouncements.announceTimeWarning(60);
         setLastAnnouncedTime(60);
       } else if (currentTime === 30 && lastAnnouncedTime !== 30 && voiceSettings.warning_intervals.thirty_seconds) {
-        await voiceAnnouncements.playAnnouncement('Внимание! До окончания уровня осталось 30 секунд!');
+        voiceAnnouncements.announceTimeWarning(30);
         setLastAnnouncedTime(30);
       } else if (currentTime === 10 && lastAnnouncedTime !== 10 && voiceSettings.warning_intervals.ten_seconds) {
-        await voiceAnnouncements.playAnnouncement('Внимание! До окончания уровня осталось 10 секунд!');
+        voiceAnnouncements.announceTimeWarning(10);
         setLastAnnouncedTime(10);
+      }
+
+      // Проверяем пользовательские интервалы
+      // Получаем список всех активных пользовательских интервалов
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { data: customIntervals } = await supabase
+            .from('voice_time_intervals')
+            .select('seconds, message')
+            .eq('user_id', user.id)
+            .eq('is_active', true);
+
+          if (customIntervals) {
+            const customInterval = customIntervals.find(interval => 
+              interval.seconds === currentTime && 
+              lastAnnouncedTime !== currentTime
+            );
+            
+            if (customInterval) {
+              await voiceAnnouncements.playAnnouncement(customInterval.message);
+              setLastAnnouncedTime(currentTime);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error checking custom intervals:', error);
       }
     };
 

@@ -718,6 +718,42 @@ export type Database = {
           },
         ]
       }
+      voice_custom_commands: {
+        Row: {
+          action_type: string
+          created_at: string
+          id: string
+          is_active: boolean
+          response_text: string
+          timer_value: number | null
+          trigger: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          action_type: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          response_text: string
+          timer_value?: number | null
+          trigger: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          action_type?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          response_text?: string
+          timer_value?: number | null
+          trigger?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       voice_settings: {
         Row: {
           auto_confirm_critical: boolean | null
@@ -763,6 +799,39 @@ export type Database = {
           voice_speed?: number | null
           volume_level?: number | null
           warning_intervals?: Json | null
+        }
+        Relationships: []
+      }
+      voice_time_intervals: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          message: string
+          name: string
+          seconds: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          message: string
+          name: string
+          seconds: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          message?: string
+          name?: string
+          seconds?: number
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }

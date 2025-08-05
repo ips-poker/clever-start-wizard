@@ -7,8 +7,9 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Settings, Volume2, Mic, Globe, Zap, Clock, Speaker } from 'lucide-react';
-import { CustomVoiceCommands } from './CustomVoiceCommands';
+import { Settings, Volume2, Mic, Globe, Zap, Clock, Speaker, Plus, Trash2 } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 
 interface VoiceSettingsData {
   voice_enabled: boolean;
@@ -68,9 +69,14 @@ export function VoiceSettings({ onSettingsChange }: VoiceSettingsProps) {
   });
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  
+  // Custom intervals state
+  const [customIntervals, setCustomIntervals] = useState<Array<{id?: string, seconds: number, message: string}>>([]);
+  const [newInterval, setNewInterval] = useState({ seconds: 180, message: '' });
 
   useEffect(() => {
     loadSettings();
+    loadCustomIntervals();
   }, []);
 
   const loadSettings = async () => {
@@ -125,6 +131,25 @@ export function VoiceSettings({ onSettingsChange }: VoiceSettingsProps) {
       toast.error('Ошибка загрузки настроек голосового управления');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const loadCustomIntervals = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data } = await supabase
+        .from('voice_time_intervals')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('seconds', { ascending: false });
+
+      if (data) {
+        setCustomIntervals(data);
+      }
+    } catch (error) {
+      console.error('Error loading custom intervals:', error);
     }
   };
 
@@ -198,6 +223,54 @@ export function VoiceSettings({ onSettingsChange }: VoiceSettingsProps) {
     setSettings(prev => ({ ...prev, [key]: value }));
   };
 
+  const addCustomInterval = async () => {
+    if (!newInterval.message.trim() || newInterval.seconds <= 0) {
+      toast.error('Заполните все поля корректно');
+      return;
+    }
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { error } = await supabase
+        .from('voice_time_intervals')
+        .insert([{
+          user_id: user.id,
+          name: `За ${Math.floor(newInterval.seconds / 60)} мин ${newInterval.seconds % 60} сек`,
+          seconds: newInterval.seconds,
+          message: newInterval.message,
+          is_active: true
+        }]);
+
+      if (error) throw error;
+
+      toast.success('Интервал добавлен');
+      setNewInterval({ seconds: 180, message: '' });
+      loadCustomIntervals();
+    } catch (error) {
+      console.error('Error adding interval:', error);
+      toast.error('Ошибка добавления интервала');
+    }
+  };
+
+  const removeCustomInterval = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('voice_time_intervals')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      toast.success('Интервал удален');
+      loadCustomIntervals();
+    } catch (error) {
+      console.error('Error removing interval:', error);
+      toast.error('Ошибка удаления интервала');
+    }
+  };
+
   if (isLoading) {
     return (
       <Card>
@@ -217,15 +290,14 @@ export function VoiceSettings({ onSettingsChange }: VoiceSettingsProps) {
   }
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Settings className="h-5 w-5" />
-            Настройки голосового управления
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-6">
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Settings className="h-5 w-5" />
+          Настройки голосового управления
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-6">
         {/* Основные настройки */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
@@ -465,10 +537,66 @@ export function VoiceSettings({ onSettingsChange }: VoiceSettingsProps) {
             Вы можете добавить свои собственные команды в разделе "Пользовательские команды"
           </p>
         </div>
-        </CardContent>
-      </Card>
-      
-      <CustomVoiceCommands />
-    </div>
+
+        {/* Custom Time Intervals */}
+        <div className="space-y-4">
+          <Label className="flex items-center gap-2">
+            <Clock className="h-4 w-4" />
+            Дополнительные временные интервалы
+          </Label>
+          
+          {/* Add new interval */}
+          <div className="space-y-3 p-4 border rounded-lg bg-muted/50">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div>
+                <Label className="text-sm">Время (секунды)</Label>
+                <Input
+                  type="number"
+                  value={newInterval.seconds}
+                  onChange={(e) => setNewInterval({...newInterval, seconds: parseInt(e.target.value) || 0})}
+                  placeholder="180"
+                />
+              </div>
+              <div className="md:col-span-2">
+                <Label className="text-sm">Сообщение</Label>
+                <div className="flex gap-2">
+                  <Input
+                    value={newInterval.message}
+                    onChange={(e) => setNewInterval({...newInterval, message: e.target.value})}
+                    placeholder="Внимание! До окончания уровня осталось 3 минуты."
+                  />
+                  <Button size="sm" onClick={addCustomInterval}>
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* List of custom intervals */}
+          {customIntervals.length > 0 && (
+            <div className="space-y-2">
+              {customIntervals.map((interval) => (
+                <div key={interval.id} className="flex items-center justify-between p-3 border rounded-lg">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium">{Math.floor(interval.seconds / 60)}мин {interval.seconds % 60}сек</span>
+                    </div>
+                    <p className="text-sm text-muted-foreground">{interval.message}</p>
+                  </div>
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    onClick={() => removeCustomInterval(interval.id!)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </CardContent>
+    </Card>
   );
 }
