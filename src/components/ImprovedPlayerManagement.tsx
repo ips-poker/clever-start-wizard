@@ -700,36 +700,74 @@ const ImprovedPlayerManagement = ({ tournament, players, registrations, onRegist
         </TabsContent>
 
         <TabsContent value="eliminated" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Выбывшие игроки ({eliminatedPlayers.length})</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                {eliminatedPlayers.map(registration => (
-                  <div key={registration.id} className="flex items-center justify-between p-3 border rounded-lg bg-muted/30">
-                    <div className="flex items-center gap-3">
-                      <div className="text-center min-w-[60px]">
-                        <div className="text-lg font-bold">#{registration.position}</div>
-                        {(registration.position || 0) <= 3 && (
-                          <Trophy className="w-4 h-4 mx-auto text-yellow-500" />
-                        )}
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-2xl font-light text-slate-900">Выбывшие игроки</h3>
+                <p className="text-slate-500 font-light">Порядок выбывания и призовые места</p>
+              </div>
+              <div className="text-right">
+                <div className="text-3xl font-light text-slate-600">{eliminatedPlayers.length}</div>
+                <div className="text-sm text-slate-500 font-light">выбыло</div>
+              </div>
+            </div>
+            
+            <div className="w-full h-px bg-slate-200 mb-6"></div>
+            
+            {eliminatedPlayers.length === 0 ? (
+              <div className="text-center py-16 text-slate-500">
+                <Trophy className="w-16 h-16 mx-auto mb-4 opacity-30" />
+                <p className="text-lg font-light">Никто еще не выбыл</p>
+                <p className="text-sm font-light">Все игроки все еще в игре</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {eliminatedPlayers.map((registration) => (
+                  <div
+                    key={registration.id}
+                    className="bg-white/80 backdrop-blur-sm border border-slate-200/50 rounded-2xl p-4 hover:shadow-md transition-all duration-200"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <div className={`w-12 h-12 rounded-full flex items-center justify-center text-white font-light text-lg ${
+                          (registration.position || 0) <= 3 ? 'bg-yellow-500' : 'bg-slate-500'
+                        }`}>
+                          {registration.position}
+                        </div>
+                        <Avatar className="w-12 h-12">
+                          <AvatarImage src={getPlayerAvatar(registration.player.id)} alt={registration.player.name} />
+                          <AvatarFallback className="bg-slate-200 text-slate-700 font-light">
+                            {registration.player.name.charAt(0).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <h4 className="text-lg font-light text-slate-900">{registration.player.name}</h4>
+                          <div className="flex items-center gap-3 text-sm text-slate-500 font-light">
+                            <span>ELO {registration.player.elo_rating}</span>
+                            <span>•</span>
+                            <span>Ребаи {registration.rebuys}</span>
+                            <span>•</span>
+                            <span>Аддоны {registration.addons}</span>
+                          </div>
+                        </div>
                       </div>
-                      <div>
-                        <div className="font-medium">{registration.player.name}</div>
-                        <div className="text-sm text-muted-foreground">
-                          ELO: {registration.player.elo_rating} | 
-                          Ребаи: {registration.rebuys} | 
-                          Аддоны: {registration.addons}
+                      
+                      <div className="text-right">
+                        <div className="text-lg font-light text-slate-800">{registration.position} место</div>
+                        <div className="text-sm text-slate-500 font-light">
+                          {(registration.position || 0) <= 3 ? (
+                            <span className="text-yellow-600">Призовое место</span>
+                          ) : (
+                            'Выбыл'
+                          )}
                         </div>
                       </div>
                     </div>
-                    {getStatusBadge(registration.status)}
                   </div>
                 ))}
               </div>
-            </CardContent>
-          </Card>
+            )}
+          </div>
         </TabsContent>
 
         <TabsContent value="seating">
@@ -741,60 +779,66 @@ const ImprovedPlayerManagement = ({ tournament, players, registrations, onRegist
         </TabsContent>
 
         <TabsContent value="finish" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Trophy className="w-5 h-5" />
-                Завершение турнира
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="text-center p-4 border rounded-lg">
-                  <div className="text-2xl font-bold text-green-600">{activePlayers.length}</div>
-                  <div className="text-sm text-muted-foreground">Активных игроков</div>
-                </div>
-                <div className="text-center p-4 border rounded-lg">
-                  <div className="text-2xl font-bold text-gray-600">{eliminatedPlayers.length}</div>
-                  <div className="text-sm text-muted-foreground">Выбывших игроков</div>
-                </div>
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-2xl font-light text-slate-900">Завершение турнира</h3>
+                <p className="text-slate-500 font-light">Автоматический расчет рейтингов и призовых мест</p>
               </div>
-              
-              <AlertDialog open={isFinishDialogOpen} onOpenChange={setIsFinishDialogOpen}>
-                <AlertDialogTrigger asChild>
-                  <Button 
-                    className="w-full"
-                    variant={activePlayers.length <= 1 ? "default" : "destructive"}
-                    disabled={activePlayers.length > 3}
-                  >
-                    <Trophy className="w-4 h-4 mr-2" />
+            </div>
+            
+            <div className="w-full h-px bg-slate-200 mb-6"></div>
+            
+            <div className="grid grid-cols-2 gap-4 mb-6">
+              <div className="bg-white/80 backdrop-blur-sm border border-slate-200/50 rounded-2xl p-6 text-center">
+                <div className="text-3xl font-light text-green-600 mb-1">{activePlayers.length}</div>
+                <div className="text-sm text-slate-500 font-light">Активных игроков</div>
+              </div>
+              <div className="bg-white/80 backdrop-blur-sm border border-slate-200/50 rounded-2xl p-6 text-center">
+                <div className="text-3xl font-light text-slate-600 mb-1">{eliminatedPlayers.length}</div>
+                <div className="text-sm text-slate-500 font-light">Выбывших игроков</div>
+              </div>
+            </div>
+            
+            <AlertDialog open={isFinishDialogOpen} onOpenChange={setIsFinishDialogOpen}>
+              <AlertDialogTrigger asChild>
+                <Button 
+                  className={`w-full h-12 text-base font-light ${
+                    activePlayers.length <= 1 
+                      ? 'bg-green-600 hover:bg-green-700' 
+                      : 'bg-red-600 hover:bg-red-700'
+                  }`}
+                  disabled={activePlayers.length > 3}
+                >
+                  <Trophy className="w-4 h-4 mr-2" />
+                  Завершить турнир
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Завершить турнир?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Это действие нельзя отменить. Все активные игроки получат 1-е место, 
+                    будут рассчитаны рейтинги ELO и турнир будет закрыт.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Отмена</AlertDialogCancel>
+                  <AlertDialogAction onClick={finishTournament}>
                     Завершить турнир
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Завершить турнир?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Это действие нельзя отменить. Все активные игроки получат 1-е место, 
-                      будут рассчитаны рейтинги ELO и турнир будет закрыт.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Отмена</AlertDialogCancel>
-                    <AlertDialogAction onClick={finishTournament}>
-                      Завершить турнир
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-              
-              {activePlayers.length > 1 && (
-                <p className="text-sm text-muted-foreground text-center">
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+            
+            {activePlayers.length > 1 && (
+              <div className="bg-amber-50/80 backdrop-blur-sm border border-amber-200/50 rounded-2xl p-6 text-center">
+                <p className="text-amber-700 font-light">
                   Рекомендуется завершать турнир когда остается 1 игрок
                 </p>
-              )}
-            </CardContent>
-          </Card>
+              </div>
+            )}
+          </div>
         </TabsContent>
       </Tabs>
 

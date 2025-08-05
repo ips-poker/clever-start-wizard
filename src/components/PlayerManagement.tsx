@@ -702,54 +702,74 @@ const PlayerManagement = ({ tournament, players, registrations, onRegistrationUp
         </TabsContent>
 
         <TabsContent value="eliminated" className="space-y-4">
-          <Card className="bg-white/70 backdrop-blur-sm border border-gray-200/50 shadow-subtle">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Trophy className="w-5 h-5" />
-                Выбывшие игроки
-              </CardTitle>
-              <CardDescription>Порядок выбывания и призовые места</CardDescription>
-            </CardHeader>
-            <CardContent>
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-2xl font-light text-slate-900">Выбывшие игроки</h3>
+                <p className="text-slate-500 font-light">Порядок выбывания и призовые места</p>
+              </div>
+              <div className="text-right">
+                <div className="text-3xl font-light text-slate-600">{eliminatedPlayers.length}</div>
+                <div className="text-sm text-slate-500 font-light">выбыло</div>
+              </div>
+            </div>
+            
+            <div className="w-full h-px bg-slate-200 mb-6"></div>
+            
+            {eliminatedPlayers.length === 0 ? (
+              <div className="text-center py-16 text-slate-500">
+                <Trophy className="w-16 h-16 mx-auto mb-4 opacity-30" />
+                <p className="text-lg font-light">Никто еще не выбыл</p>
+                <p className="text-sm font-light">Все игроки все еще в игре</p>
+              </div>
+            ) : (
               <div className="space-y-3">
-                {eliminatedPlayers.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500">
-                    <Trophy className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                    <p>Никто еще не выбыл</p>
-                  </div>
-                ) : (
-                  eliminatedPlayers.map((registration) => (
-                    <div
-                      key={registration.id}
-                      className="flex items-center justify-between p-4 border border-gray-200/30 rounded-xl bg-gray-50/50"
-                    >
+                {eliminatedPlayers.map((registration) => (
+                  <div
+                    key={registration.id}
+                    className="bg-white/80 backdrop-blur-sm border border-slate-200/50 rounded-2xl p-4 hover:shadow-md transition-all duration-200"
+                  >
+                    <div className="flex items-center justify-between">
                       <div className="flex items-center gap-4">
-                        <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold ${
-                          (registration.position || 0) <= 3 ? 'bg-yellow-500' : 'bg-gray-500'
+                        <div className={`w-12 h-12 rounded-full flex items-center justify-center text-white font-light text-lg ${
+                          (registration.position || 0) <= 3 ? 'bg-yellow-500' : 'bg-slate-500'
                         }`}>
                           {registration.position}
                         </div>
+                        <Avatar className="w-12 h-12">
+                          <AvatarImage src={getPlayerAvatar(registration.player.id)} alt={registration.player.name} />
+                          <AvatarFallback className="bg-slate-200 text-slate-700 font-light">
+                            {registration.player.name.charAt(0).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
                         <div>
-                          <h4 className="font-semibold">{registration.player.name}</h4>
-                          <div className="flex items-center gap-3 text-sm text-gray-600">
-                            <span>ELO: {registration.player.elo_rating}</span>
-                            <span>Ребаи: {registration.rebuys}</span>
-                            <span>Аддоны: {registration.addons}</span>
+                          <h4 className="text-lg font-light text-slate-900">{registration.player.name}</h4>
+                          <div className="flex items-center gap-3 text-sm text-slate-500 font-light">
+                            <span>ELO {registration.player.elo_rating}</span>
+                            <span>•</span>
+                            <span>Ребаи {registration.rebuys}</span>
+                            <span>•</span>
+                            <span>Аддоны {registration.addons}</span>
                           </div>
                         </div>
                       </div>
+                      
                       <div className="text-right">
-                        <p className="font-semibold">{registration.position} место</p>
-                        <p className="text-sm text-gray-600">
-                          {(registration.position || 0) <= 3 ? 'Призовое место' : 'Выбыл'}
-                        </p>
+                        <div className="text-lg font-light text-slate-800">{registration.position} место</div>
+                        <div className="text-sm text-slate-500 font-light">
+                          {(registration.position || 0) <= 3 ? (
+                            <span className="text-yellow-600">Призовое место</span>
+                          ) : (
+                            'Выбыл'
+                          )}
+                        </div>
                       </div>
                     </div>
-                  ))
-                )}
+                  </div>
+                ))}
               </div>
-            </CardContent>
-          </Card>
+            )}
+          </div>
         </TabsContent>
 
         <TabsContent value="seating">
@@ -761,68 +781,68 @@ const PlayerManagement = ({ tournament, players, registrations, onRegistrationUp
         </TabsContent>
 
         <TabsContent value="finish" className="space-y-4">
-          <Card className="bg-white/70 backdrop-blur-sm border border-gray-200/50 shadow-subtle">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <CheckCircle className="w-5 h-5" />
-                Завершение турнира
-              </CardTitle>
-              <CardDescription>Автоматический расчет рейтингов и призовых мест</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="text-center p-4 border border-gray-200/30 rounded-lg bg-white/30">
-                  <TrendingUp className="w-8 h-8 mx-auto mb-2 text-green-600" />
-                  <p className="text-2xl font-bold text-green-600">{activePlayers.length}</p>
-                  <p className="text-sm text-gray-600">Активных игроков</p>
-                </div>
-                <div className="text-center p-4 border border-gray-200/30 rounded-lg bg-white/30">
-                  <Trophy className="w-8 h-8 mx-auto mb-2 text-yellow-600" />
-                  <p className="text-2xl font-bold text-yellow-600">{eliminatedPlayers.length}</p>
-                  <p className="text-sm text-gray-600">Выбыло</p>
-                </div>
-                <div className="text-center p-4 border border-gray-200/30 rounded-lg bg-white/30">
-                  <Users className="w-8 h-8 mx-auto mb-2 text-blue-600" />
-                  <p className="text-2xl font-bold text-blue-600">{registrations.length}</p>
-                  <p className="text-sm text-gray-600">Всего участников</p>
-                </div>
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-2xl font-light text-slate-900">Завершение турнира</h3>
+                <p className="text-slate-500 font-light">Автоматический расчет рейтингов и призовых мест</p>
               </div>
+            </div>
+            
+            <div className="w-full h-px bg-slate-200 mb-6"></div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+              <div className="bg-white/80 backdrop-blur-sm border border-slate-200/50 rounded-2xl p-6 text-center">
+                <TrendingUp className="w-8 h-8 mx-auto mb-3 text-green-600" />
+                <p className="text-3xl font-light text-green-600 mb-1">{activePlayers.length}</p>
+                <p className="text-sm text-slate-500 font-light">Активных игроков</p>
+              </div>
+              <div className="bg-white/80 backdrop-blur-sm border border-slate-200/50 rounded-2xl p-6 text-center">
+                <Trophy className="w-8 h-8 mx-auto mb-3 text-yellow-600" />
+                <p className="text-3xl font-light text-yellow-600 mb-1">{eliminatedPlayers.length}</p>
+                <p className="text-sm text-slate-500 font-light">Выбыло</p>
+              </div>
+              <div className="bg-white/80 backdrop-blur-sm border border-slate-200/50 rounded-2xl p-6 text-center">
+                <Users className="w-8 h-8 mx-auto mb-3 text-blue-600" />
+                <p className="text-3xl font-light text-blue-600 mb-1">{registrations.length}</p>
+                <p className="text-sm text-slate-500 font-light">Всего участников</p>
+              </div>
+            </div>
 
-              {activePlayers.length <= 1 ? (
-                <div className="space-y-4">
-                  <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-                    <div className="flex items-center gap-2 text-green-800">
-                      <CheckCircle className="w-5 h-5" />
-                      <span className="font-semibold">Турнир готов к завершению</span>
-                    </div>
-                    <p className="text-sm text-green-700 mt-1">
-                      Остался {activePlayers.length === 0 ? 'ноль' : 'один'} активный игрок. 
-                      Нажмите кнопку для автоматического расчета рейтингов.
-                    </p>
+            {activePlayers.length <= 1 ? (
+              <div className="space-y-4">
+                <div className="bg-green-50/80 backdrop-blur-sm border border-green-200/50 rounded-2xl p-6">
+                  <div className="flex items-center gap-3 text-green-800 mb-2">
+                    <CheckCircle className="w-6 h-6" />
+                    <span className="text-lg font-light">Турнир готов к завершению</span>
                   </div>
-                  <Button 
-                    onClick={finishTournament} 
-                    className="w-full bg-green-600 hover:bg-green-700"
-                    size="lg"
-                  >
-                    <Trophy className="w-5 h-5 mr-2" />
-                    Завершить турнир и рассчитать рейтинги
-                  </Button>
-                </div>
-              ) : (
-                <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
-                  <div className="flex items-center gap-2 text-amber-800">
-                    <AlertTriangle className="w-5 h-5" />
-                    <span className="font-semibold">Турнир не готов к завершению</span>
-                  </div>
-                  <p className="text-sm text-amber-700 mt-1">
-                    Осталось {activePlayers.length} активных игроков. 
-                    Для завершения должен остаться максимум один игрок.
+                  <p className="text-green-700 font-light">
+                    Остался {activePlayers.length === 0 ? 'ноль' : 'один'} активный игрок. 
+                    Нажмите кнопку для автоматического расчета рейтингов.
                   </p>
                 </div>
-              )}
-            </CardContent>
-          </Card>
+                <Button 
+                  onClick={finishTournament} 
+                  className="w-full bg-green-600 hover:bg-green-700 h-12 text-base font-light"
+                  size="lg"
+                >
+                  <Trophy className="w-5 h-5 mr-2" />
+                  Завершить турнир и рассчитать рейтинги
+                </Button>
+              </div>
+            ) : (
+              <div className="bg-amber-50/80 backdrop-blur-sm border border-amber-200/50 rounded-2xl p-6">
+                <div className="flex items-center gap-3 text-amber-800 mb-2">
+                  <AlertTriangle className="w-6 h-6" />
+                  <span className="text-lg font-light">Турнир не готов к завершению</span>
+                </div>
+                <p className="text-amber-700 font-light">
+                  Осталось {activePlayers.length} активных игроков. 
+                  Для завершения должен остаться максимум один игрок.
+                </p>
+              </div>
+            )}
+          </div>
         </TabsContent>
       </Tabs>
     </div>
