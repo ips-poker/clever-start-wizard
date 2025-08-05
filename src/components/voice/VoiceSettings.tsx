@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Settings, Volume2, Mic, Globe, Zap, Clock, Speaker } from 'lucide-react';
+import { CustomVoiceCommands } from './CustomVoiceCommands';
 
 interface VoiceSettingsData {
   voice_enabled: boolean;
@@ -216,14 +217,15 @@ export function VoiceSettings({ onSettingsChange }: VoiceSettingsProps) {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Settings className="h-5 w-5" />
-          Настройки голосового управления
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-6">
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Settings className="h-5 w-5" />
+            Настройки голосового управления
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
         {/* Основные настройки */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
@@ -459,8 +461,14 @@ export function VoiceSettings({ onSettingsChange }: VoiceSettingsProps) {
               <strong>Игроки:</strong> добавить, показать список, ребай
             </div>
           </div>
+          <p className="text-xs text-muted-foreground mt-2">
+            Вы можете добавить свои собственные команды в разделе "Пользовательские команды"
+          </p>
         </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+      
+      <CustomVoiceCommands />
+    </div>
   );
 }
