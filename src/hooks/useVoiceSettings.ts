@@ -90,6 +90,35 @@ export const useVoiceSettings = () => {
 
   useEffect(() => {
     loadSettings();
+
+    // Подписка на realtime обновления настроек
+    const setupRealtimeSubscription = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const channel = supabase
+          .channel('voice_settings_changes')
+          .on(
+            'postgres_changes',
+            {
+              event: '*',
+              schema: 'public',
+              table: 'voice_settings',
+              filter: `user_id=eq.${user.id}`
+            },
+            (payload) => {
+              console.log('Voice settings changed via realtime:', payload);
+              loadSettings(); // Перезагружаем настройки при изменении
+            }
+          )
+          .subscribe();
+
+        return () => {
+          supabase.removeChannel(channel);
+        };
+      }
+    };
+
+    setupRealtimeSubscription();
   }, []);
 
   const updateSettings = async (newSettings: VoiceSettings) => {
