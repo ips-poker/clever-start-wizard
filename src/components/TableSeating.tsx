@@ -693,10 +693,28 @@ const TableSeating = ({
             <CardHeader className="relative bg-white/50 border-b border-gray-200/30 pb-4">
               <CardTitle className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-100 to-indigo-100 flex items-center justify-center text-blue-700 font-bold border border-blue-200/50 shadow-sm">
+                  <div className={`
+                    w-10 h-10 rounded-lg flex items-center justify-center font-bold border shadow-sm transition-all duration-300
+                    ${checkTableBalance()?.fromTable === table.table_number 
+                      ? 'bg-gradient-to-br from-red-100 to-rose-100 text-red-700 border-red-200/70 animate-pulse shadow-red-200/50' 
+                      : checkTableBalance()?.toTable === table.table_number
+                      ? 'bg-gradient-to-br from-green-100 to-emerald-100 text-green-700 border-green-200/70 animate-pulse shadow-green-200/50'
+                      : 'bg-gradient-to-br from-blue-100 to-indigo-100 text-blue-700 border-blue-200/50'
+                    }
+                  `}>
                     {table.table_number}
                   </div>
                   <span className="text-lg font-light text-gray-800">Стол {table.table_number}</span>
+                  {checkTableBalance()?.fromTable === table.table_number && (
+                    <Badge className="text-xs bg-gradient-to-r from-red-100 to-rose-100 text-red-700 border border-red-200/70 animate-bounce">
+                      📤 Убрать игрока
+                    </Badge>
+                  )}
+                  {checkTableBalance()?.toTable === table.table_number && (
+                    <Badge className="text-xs bg-gradient-to-r from-green-100 to-emerald-100 text-green-700 border border-green-200/70 animate-bounce">
+                      📥 Принять игрока
+                    </Badge>
+                  )}
                 </div>
                 <div className="flex items-center gap-2">
                   <Badge 
@@ -737,39 +755,44 @@ const TableSeating = ({
                     </div>
                     
                     {seat.player_id ? (
-                      <div className="space-y-2">
-                        {/* Аватар и имя в стиле приглашений */}
-                        <div className="flex items-center gap-2">
-                          <Avatar className="w-10 h-10 border-2 border-white/50 shadow-sm">
+                      <div className="space-y-3">
+                        {/* Красиво размещенное имя и аватар */}
+                        <div className="text-center">
+                          <Avatar className="w-12 h-12 mx-auto border-2 border-white/70 shadow-md">
                             <AvatarImage 
                               src={registrations.find(r => r.player.id === seat.player_id)?.player.avatar_url || ''} 
                               alt={seat.player_name || ''} 
                             />
-                            <AvatarFallback className="text-sm font-light bg-gradient-to-br from-blue-100 to-indigo-100 text-blue-700 border border-blue-200/50">
+                            <AvatarFallback className="text-sm font-medium bg-gradient-to-br from-blue-100 to-indigo-100 text-blue-700 border border-blue-200/50">
                               {seat.player_name?.slice(0, 2).toUpperCase()}
                             </AvatarFallback>
                           </Avatar>
-                          <div className="flex-1 min-w-0">
-                            <div className="truncate text-sm font-light text-gray-800" title={seat.player_name}>
+                          <div className="mt-2">
+                            <div className="text-sm font-medium text-gray-800 truncate px-1" title={seat.player_name}>
                               {seat.player_name}
                             </div>
-                            <div className="text-xs text-gray-500 font-light flex items-center gap-1">
-                              <span className="inline-block w-2 h-2 rounded-full bg-emerald-400 shadow-sm"></span>
-                              ELO {registrations.find(r => r.player.id === seat.player_id)?.player.elo_rating || 1200}
+                            <div className="text-xs text-gray-500 font-light flex items-center justify-center gap-1 mt-1">
+                              <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-sm"></span>
+                              {registrations.find(r => r.player.id === seat.player_id)?.player.elo_rating || 1200}
                             </div>
                           </div>
                         </div>
                         
-                        {/* Кнопка перемещения - только иконка */}
+                        {/* Кнопка перемещения с рейтингом */}
                         {isSeated && (
                           <Dialog>
                             <DialogTrigger asChild>
                               <Button
                                 size="sm"
                                 variant="outline"
-                                className="w-full h-7 bg-white/50 border border-gray-200/50 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:border-blue-200/50 transition-all duration-300 group"
+                                className="w-full h-8 bg-white/60 border border-gray-200/50 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:border-blue-200/50 transition-all duration-300 group text-xs"
                               >
-                                <MoveRight className="w-3 h-3 text-gray-600 group-hover:text-blue-600 transition-colors" />
+                                <div className="flex items-center justify-center gap-1">
+                                  <MoveRight className="w-3 h-3 text-gray-600 group-hover:text-blue-600 transition-colors" />
+                                  <span className="font-medium text-gray-700 group-hover:text-blue-700">
+                                    {registrations.find(r => r.player.id === seat.player_id)?.player.elo_rating || 1200}
+                                  </span>
+                                </div>
                               </Button>
                             </DialogTrigger>
                             <DialogContent className="bg-white/90 backdrop-blur-sm border border-gray-200/50">
