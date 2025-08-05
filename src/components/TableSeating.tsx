@@ -59,6 +59,31 @@ const TableSeating = ({
 
   useEffect(() => {
     loadSavedSeating();
+    
+    // Подписка на real-time изменения в регистрациях
+    const channel = supabase
+      .channel('table-seating-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'tournament_registrations',
+          filter: `tournament_id=eq.${tournamentId}`
+        },
+        (payload) => {
+          console.log('🔄 Обновление регистраций для рассадки:', payload);
+          // Перезагружаем рассадку при любых изменениях в регистрациях
+          setTimeout(() => {
+            loadSavedSeating();
+          }, 500); // Небольшая задержка для корректного обновления
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [tournamentId]);
 
   useEffect(() => {
@@ -101,10 +126,11 @@ const TableSeating = ({
           seat_number,
           chips,
           status,
-          player:players(id, name)
+          player:players(id, name, elo_rating)
         `)
         .eq('tournament_id', tournamentId)
-        .not('seat_number', 'is', null);
+        .not('seat_number', 'is', null)
+        .neq('status', 'eliminated'); // Исключаем исключенных игроков
 
       if (error) {
         console.error('Ошибка загрузки рассадки:', error);
