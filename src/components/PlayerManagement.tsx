@@ -159,13 +159,12 @@ const PlayerManagement = ({ tournament, players, registrations, onRegistrationUp
         return;
       }
 
-      // Регистрируем игрока на турнир
+      // Регистрируем игрока на турнир (без указания места - рассадка отдельно)
       const { error: registrationError } = await supabase
         .from('tournament_registrations')
         .insert([{
           tournament_id: tournament.id,
           player_id: playerId,
-          seat_number: seatNumber ? parseInt(seatNumber) : null,
           chips: startingChips,
           status: 'registered'
         }]);
@@ -330,7 +329,8 @@ const PlayerManagement = ({ tournament, players, registrations, onRegistrationUp
       .from('tournament_registrations')
       .update({ 
         status: 'eliminated',
-        position: position
+        position: position,
+        seat_number: null // Освобождаем место при исключении
       })
       .eq('id', registrationId);
 
@@ -342,7 +342,7 @@ const PlayerManagement = ({ tournament, players, registrations, onRegistrationUp
       // Голосовое объявление об исключении игрока
       await voiceAnnouncements.announcePlayerElimination(registration.player.name, position);
       
-      // Проверяем необходимость балансировки столов с задержкой 30 секунд
+      // Проверяем необходимость балансировки столов с задержкой 15 секунд
       const remainingPlayers = registrations.filter(r => r.status !== 'eliminated' && r.id !== registrationId);
       if (remainingPlayers.length > 1) {
         setTimeout(async () => {

@@ -37,6 +37,7 @@ import { TournamentCreationModal } from "@/components/TournamentCreationModal";
 import { VoiceControl } from "@/components/VoiceControl";
 import TournamentOverview from "@/components/TournamentOverview";
 import PlayerManagement from "@/components/PlayerManagement";
+import TableSeating from "@/components/TableSeating";
 import BlindStructure from "@/components/BlindStructure";
 import PayoutStructure from "@/components/PayoutStructure";
 import ManualAdjustments from "@/components/ManualAdjustments";
@@ -1143,13 +1144,38 @@ const TournamentDirector = () => {
             </TabsContent>
 
             <TabsContent value="players" className="space-y-8 animate-fade-in">
-              {selectedTournament && (
-                <PlayerManagement 
-                  tournament={selectedTournament}
-                  players={players}
-                  registrations={registrations}
-                  onRegistrationUpdate={() => selectedTournament && loadRegistrations(selectedTournament.id)}
-                />
+              {selectedTournament ? (
+                <div className="space-y-8">
+                  <PlayerManagement 
+                    tournament={selectedTournament}
+                    players={players}
+                    registrations={registrations}
+                    onRegistrationUpdate={() => loadRegistrations(selectedTournament.id)}
+                  />
+                  
+                  {/* Интегрированная рассадка */}
+                  <TableSeating 
+                    tournamentId={selectedTournament.id}
+                    registrations={registrations}
+                    tournamentStatus={selectedTournament.status}
+                    maxPlayersPerTable={9}
+                    onSeatingUpdate={() => loadRegistrations(selectedTournament.id)}
+                  />
+                </div>
+              ) : (
+                <Card className="bg-white/50 backdrop-blur-sm border border-gray-200/30 shadow-minimal">
+                  <CardContent className="text-center py-16">
+                    <AlertTriangle className="h-16 w-16 mx-auto mb-4 text-gray-400" />
+                    <h3 className="text-lg font-medium text-gray-700 mb-2">Турнир не выбран</h3>
+                    <p className="text-gray-500 mb-6">Выберите турнир для управления игроками</p>
+                    <Button
+                      onClick={() => setActiveTab('tournaments')}
+                      className="bg-blue-600 hover:bg-blue-700 text-white"
+                    >
+                      Выбрать турнир
+                    </Button>
+                  </CardContent>
+                </Card>
               )}
             </TabsContent>
 
