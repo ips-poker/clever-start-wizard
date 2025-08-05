@@ -360,10 +360,59 @@ const TableSeating = ({
         .eq('player_id', playerId)
         .eq('tournament_id', tournamentId);
 
-      toast({ 
-        title: "Игрок восстановлен", 
-        description: "Игрок возвращен в список активных. Пересадите его за стол." 
-      });
+      // Находим свободное место для восстановленного игрока
+      let tableWithFreeSpace = null;
+      let freeSeatIndex = -1;
+      
+      for (const table of tables) {
+        const freeIndex = table.seats.findIndex(seat => !seat.player_id);
+        if (freeIndex !== -1) {
+          tableWithFreeSpace = table;
+          freeSeatIndex = freeIndex;
+          break;
+        }
+      }
+
+      if (tableWithFreeSpace && freeSeatIndex !== -1) {
+        // Обновляем локальное состояние
+        const newTables = [...tables];
+        const targetTable = newTables.find(t => t.table_number === tableWithFreeSpace.table_number);
+        if (targetTable) {
+          // Получаем данные восстановленного игрока
+          const restoredPlayer = registrations.find(r => r.player.id === playerId);
+          if (restoredPlayer) {
+            targetTable.seats[freeSeatIndex] = {
+              seat_number: freeSeatIndex + 1,
+              player_id: playerId,
+              player_name: restoredPlayer.player.name,
+              chips: restoredPlayer.chips,
+              status: 'registered',
+              stack_bb: Math.round((restoredPlayer.chips || 0) / bigBlind)
+            };
+            targetTable.active_players++;
+          }
+        }
+        
+        // Сохраняем в базу данных
+        const absoluteSeatNumber = (tableWithFreeSpace.table_number - 1) * maxPlayersPerTable + (freeSeatIndex + 1);
+        await supabase
+          .from('tournament_registrations')
+          .update({ seat_number: absoluteSeatNumber })
+          .eq('player_id', playerId)
+          .eq('tournament_id', tournamentId);
+
+        setTables(newTables);
+
+        toast({ 
+          title: "Игрок восстановлен", 
+          description: `Игрок посажен за стол ${tableWithFreeSpace.table_number}, место ${freeSeatIndex + 1}` 
+        });
+      } else {
+        toast({ 
+          title: "Игрок восстановлен", 
+          description: "Игрок возвращен в список активных. Свободных мест нет - используйте автопосадку." 
+        });
+      }
 
       // Обновляем компонент активных игроков
       if (onSeatingUpdate) {
