@@ -92,8 +92,52 @@ export const useVoiceSettings = () => {
     loadSettings();
   }, []);
 
-  const updateSettings = (newSettings: VoiceSettings) => {
+  const updateSettings = async (newSettings: VoiceSettings) => {
     setSettings(newSettings);
+    // Также синхронизируем с базой данных
+    await saveSettingsToDatabase(newSettings);
+  };
+
+  const saveSettingsToDatabase = async (settingsToSave: VoiceSettings) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: existingSettings } = await supabase
+        .from('voice_settings')
+        .select('id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      const dbSettings = {
+        voice_enabled: settingsToSave.voice_enabled,
+        voice_language: settingsToSave.voice_language,
+        confidence_threshold: settingsToSave.confidence_threshold,
+        auto_confirm_critical: settingsToSave.auto_confirm_critical,
+        volume_level: settingsToSave.volume_level,
+        voice_speed: settingsToSave.voice_speed,
+        voice_provider: settingsToSave.voice_provider,
+        elevenlabs_voice: settingsToSave.elevenlabs_voice,
+        warning_intervals: settingsToSave.warning_intervals,
+        updated_at: new Date().toISOString()
+      };
+
+      if (existingSettings) {
+        await supabase
+          .from('voice_settings')
+          .update(dbSettings)
+          .eq('user_id', user.id);
+      } else {
+        await supabase
+          .from('voice_settings')
+          .insert([{
+            ...dbSettings,
+            user_id: user.id
+          }]);
+      }
+    } catch (error) {
+      console.error('Error saving settings to database:', error);
+    }
   };
 
   return {

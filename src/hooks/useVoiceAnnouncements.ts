@@ -172,10 +172,27 @@ export const useVoiceAnnouncements = (options: VoiceAnnouncementOptions = { enab
     } else if (timeInSeconds === 10) {
       message = 'Внимание! До окончания уровня осталось 10 секунд!';
     } else if (minutes > 0) {
-      const time = minutes === 1 ? '1 минута' : `${minutes} минут`;
-      message = `Внимание! До окончания уровня осталось ${time}.`;
+      // Правильное склонение для русского языка
+      let timeWord = '';
+      if (minutes === 1) {
+        timeWord = '1 минута';
+      } else if (minutes >= 2 && minutes <= 4) {
+        timeWord = `${minutes} минуты`;
+      } else {
+        timeWord = `${minutes} минут`;
+      }
+      message = `Внимание! До окончания уровня осталось ${timeWord}.`;
     } else {
-      message = `Внимание! До окончания уровня осталось ${timeInSeconds} секунд.`;
+      // Правильное склонение для секунд
+      let timeWord = '';
+      if (timeInSeconds === 1) {
+        timeWord = '1 секунда';
+      } else if (timeInSeconds >= 2 && timeInSeconds <= 4) {
+        timeWord = `${timeInSeconds} секунды`;
+      } else {
+        timeWord = `${timeInSeconds} секунд`;
+      }
+      message = `Внимание! До окончания уровня осталось ${timeWord}.`;
     }
     await playAnnouncement(message);
   }, [playAnnouncement, customIntervals]);

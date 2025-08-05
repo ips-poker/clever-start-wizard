@@ -204,10 +204,8 @@ export function VoiceSettings({ onSettingsChange }: VoiceSettingsProps) {
       toast.success('Настройки голосового управления сохранены');
       onSettingsChange?.(settings);
       
-      // Принудительно перезагружаем настройки, чтобы они применились везде
-      setTimeout(() => {
-        window.location.reload();
-      }, 500);
+      // Обновляем настройки в реальном времени без перезагрузки страницы
+      await loadSettings();
     } catch (error) {
       console.error('Error saving voice settings:', error);
       toast.error('Ошибка сохранения настроек');
