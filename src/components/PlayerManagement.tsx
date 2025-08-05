@@ -9,7 +9,6 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import TableSeating from "@/components/TableSeating";
 import { useVoiceAnnouncements } from "@/hooks/useVoiceAnnouncements";
 import { 
@@ -23,8 +22,7 @@ import {
   TrendingUp,
   AlertTriangle,
   CheckCircle,
-  Upload,
-  MoveRight
+  Upload
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -51,7 +49,6 @@ interface Player {
   elo_rating: number;
   games_played: number;
   wins: number;
-  avatar_url?: string;
 }
 
 interface Registration {
@@ -333,8 +330,7 @@ const PlayerManagement = ({ tournament, players, registrations, onRegistrationUp
       .from('tournament_registrations')
       .update({ 
         status: 'eliminated',
-        position: position,
-        seat_number: null // Очищаем место при исключении
+        position: position
       })
       .eq('id', registrationId);
 
@@ -342,9 +338,6 @@ const PlayerManagement = ({ tournament, players, registrations, onRegistrationUp
       toast({ title: "Ошибка", description: "Не удалось исключить игрока", variant: "destructive" });
     } else {
       toast({ title: "Игрок исключен", description: `${registration.player.name} - место ${position}` });
-      
-      // Принудительно очищаем localStorage рассадки для обновления
-      localStorage.removeItem(`seating_${tournament.id}`);
       
       // Голосовое объявление об исключении игрока
       await voiceAnnouncements.announcePlayerElimination(registration.player.name, position);
@@ -575,170 +568,96 @@ const PlayerManagement = ({ tournament, players, registrations, onRegistrationUp
         </TabsContent>
 
         <TabsContent value="active" className="space-y-4">
-          {activePlayers.length === 0 ? (
-            <Card className="bg-white/70 backdrop-blur-sm border border-gray-200/50 shadow-subtle">
-              <CardContent className="text-center py-12 text-gray-500">
-                <Users className="w-16 h-16 mx-auto mb-4 opacity-50" />
-                <p className="text-lg font-medium">Нет активных игроков</p>
-                <p className="text-sm">Зарегистрируйте игроков в разделе "Регистрация"</p>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="space-y-6">
-              {/* Группировка игроков по столам из актуальной рассадки */}
-              {(() => {
-                const maxPlayersPerTable = 9;
-                const tableGroups: { [key: number]: Registration[] } = {};
-                
-                // Загружаем актуальную рассадку из localStorage
-                const savedSeating = localStorage.getItem(`seating_${tournament.id}`);
-                let currentSeating: any[] = [];
-                
-                if (savedSeating) {
-                  try {
-                    currentSeating = JSON.parse(savedSeating);
-                  } catch (e) {
-                    console.error('Ошибка парсинга рассадки:', e);
-                  }
-                }
-                
-                // Группируем игроков на основе актуальной рассадки
-                activePlayers.forEach(player => {
-                  let tableNumber = 0; // По умолчанию "без стола"
-                  
-                  // Ищем игрока в актуальной рассадке
-                  if (currentSeating.length > 0) {
-                    for (const table of currentSeating) {
-                      const seat = table.seats?.find((s: any) => s.player_id === player.player.id);
-                      if (seat) {
-                        tableNumber = table.table_number;
-                        break;
-                      }
-                    }
-                  }
-                  
-                  if (!tableGroups[tableNumber]) {
-                    tableGroups[tableNumber] = [];
-                  }
-                  tableGroups[tableNumber].push(player);
-                });
-                
-                return Object.entries(tableGroups)
-                  .sort(([a], [b]) => parseInt(a) - parseInt(b))
-                  .map(([tableNum, players]) => (
-                    <Card key={tableNum} className="bg-white/70 backdrop-blur-sm border border-gray-200/50 shadow-subtle">
-                      <CardHeader>
-                        <CardTitle className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-gradient-to-br from-blue-100 to-indigo-100 text-blue-700 border border-blue-200/50 rounded-lg flex items-center justify-center font-bold shadow-sm">
-                              {tableNum === '0' ? '?' : tableNum}
-                            </div>
-                            <span className="text-lg font-light text-gray-800">
-                              {tableNum === '0' ? 'Игроки без места' : `Стол ${tableNum}`}
-                            </span>
-                          </div>
-                          <Badge className="text-sm px-3 py-1 font-light border bg-gradient-to-r from-emerald-100 to-teal-100 text-emerald-700 border-emerald-200/70">
-                            {players.length} игроков
-                          </Badge>
-                        </CardTitle>
-                      </CardHeader>
-                      
-                      <CardContent className="space-y-3 p-4 bg-white/40 backdrop-blur-sm">
-                        {/* Сетка игроков в компактном стиле */}
-                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-                          {players.map((registration) => (
-                            <div
-                              key={registration.id}
-                              className="relative p-3 rounded-lg border bg-white/70 backdrop-blur-sm border-gray-200/50 shadow-sm hover:shadow-md transition-all duration-300 hover:scale-105"
-                            >
-                              {/* Номер места - компактный */}
-                              <div className="absolute -top-1 -left-1 w-6 h-6 bg-gradient-to-br from-gray-100 to-gray-200 border border-gray-300/50 rounded-full flex items-center justify-center text-xs font-bold text-gray-600 shadow-sm">
-                                {registration.seat_number || '?'}
-                              </div>
-                              
-                              <div className="space-y-2">
-                                {/* Игрок с аватаром - компактный */}
-                                <div className="text-center">
-                                  <Avatar className="w-10 h-10 mx-auto border-2 border-white/70 shadow-md">
-                                    <AvatarImage 
-                                      src={registration.player.avatar_url || ''} 
-                                      alt={registration.player.name || ''} 
-                                    />
-                                    <AvatarFallback className="text-xs font-medium bg-gradient-to-br from-blue-100 to-indigo-100 text-blue-700 border border-blue-200/50">
-                                      {registration.player.name?.slice(0, 2).toUpperCase()}
-                                    </AvatarFallback>
-                                  </Avatar>
-                                  <div className="mt-1">
-                                    <div className="text-xs font-medium text-gray-800 truncate px-1" title={registration.player.name}>
-                                      {registration.player.name}
-                                    </div>
-                                    <div className="text-xs text-gray-500 font-light flex items-center justify-center gap-1">
-                                      <span className="inline-block w-1 h-1 rounded-full bg-emerald-400"></span>
-                                      {registration.player.elo_rating}
-                                    </div>
-                                  </div>
-                                </div>
-                                
-                                {/* Статистика игрока - компактная */}
-                                <div className="space-y-1 text-xs text-gray-600">
-                                  <div className="flex justify-between">
-                                    <span>Фишки:</span>
-                                    <span className="font-medium">{Math.round(registration.chips / 1000)}K</span>
-                                  </div>
-                                  {(registration.rebuys > 0 || registration.addons > 0) && (
-                                    <div className="flex justify-between text-xs">
-                                      {registration.rebuys > 0 && <span>R:{registration.rebuys}</span>}
-                                      {registration.addons > 0 && <span>A:{registration.addons}</span>}
-                                    </div>
-                                  )}
-                                </div>
-                                
-                                {/* Кнопки управления - компактные */}
-                                <div className="flex flex-wrap gap-1 justify-center">
-                                  {tournament.tournament_format !== 'freezeout' && (
-                                    <>
-                                      <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() => updateRebuys(registration.id, 1)}
-                                        className="text-xs px-1 py-0 h-5 w-5"
-                                        title="Ребай"
-                                      >
-                                        <RotateCcw className="w-2 h-2" />
-                                      </Button>
-                                      {tournament.current_level >= tournament.addon_level && (
-                                        <Button
-                                          variant="outline"
-                                          size="sm"
-                                          onClick={() => updateAddons(registration.id, 1)}
-                                          className="text-xs px-1 py-0 h-5 w-5"
-                                          title="Аддон"
-                                        >
-                                          <Plus className="w-2 h-2" />
-                                        </Button>
-                                      )}
-                                    </>
-                                  )}
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => eliminatePlayer(registration.id, registrations.length - eliminatedPlayers.length)}
-                                    className="text-xs px-1 py-0 h-5 w-5 text-red-500 hover:text-red-700 hover:bg-red-50"
-                                    title="Исключить"
-                                  >
-                                    <Trash2 className="w-2 h-2" />
-                                  </Button>
-                                </div>
-                              </div>
-                            </div>
-                          ))}
+          <Card className="bg-white/70 backdrop-blur-sm border border-gray-200/50 shadow-subtle">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="w-5 h-5" />
+                Активные игроки
+              </CardTitle>
+              <CardDescription>Управление ребаями, аддонами и исключениями</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {activePlayers.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    <Users className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                    <p>Нет активных игроков</p>
+                  </div>
+                ) : (
+                  activePlayers.map((registration) => (
+                    <div
+                      key={registration.id}
+                      className="flex items-center justify-between p-4 border border-gray-200/30 rounded-xl bg-white/50 hover:shadow-subtle transition-all"
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center text-white font-bold">
+                          {registration.seat_number || '?'}
                         </div>
-                      </CardContent>
-                    </Card>
-                  ));
-              })()}
-            </div>
-          )}
+                        <div>
+                          <h4 className="font-semibold">{registration.player.name}</h4>
+                          <div className="flex items-center gap-3 text-sm text-gray-600">
+                            <span>ELO: {registration.player.elo_rating}</span>
+                            <span>Фишки: {registration.chips.toLocaleString()}</span>
+                            <span>Ребаи: {registration.rebuys}</span>
+                            <span>Аддоны: {registration.addons}</span>
+                            {getStatusBadge(registration.status)}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {tournament.tournament_format !== 'freezeout' && (
+                          <>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => updateRebuys(registration.id, -1)}
+                              disabled={registration.rebuys <= 0}
+                            >
+                              <Minus className="w-3 h-3" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => updateRebuys(registration.id, 1)}
+                            >
+                              <RotateCcw className="w-3 h-3" />
+                            </Button>
+                            {tournament.current_level >= tournament.addon_level && (
+                              <>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => updateAddons(registration.id, -1)}
+                                  disabled={registration.addons <= 0}
+                                >
+                                  <Minus className="w-3 h-3" />
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => updateAddons(registration.id, 1)}
+                                >
+                                  <Plus className="w-3 h-3" />
+                                </Button>
+                              </>
+                            )}
+                          </>
+                        )}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => eliminatePlayer(registration.id, registrations.length - eliminatedPlayers.length)}
+                          className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="eliminated" className="space-y-4">
