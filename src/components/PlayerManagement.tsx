@@ -342,10 +342,12 @@ const PlayerManagement = ({ tournament, players, registrations, onRegistrationUp
       // Голосовое объявление об исключении игрока
       await voiceAnnouncements.announcePlayerElimination(registration.player.name, position);
       
-      // Проверяем необходимость балансировки столов
+      // Проверяем необходимость балансировки столов с задержкой 30 секунд
       const remainingPlayers = registrations.filter(r => r.status !== 'eliminated' && r.id !== registrationId);
       if (remainingPlayers.length > 1) {
-        await announceTableBalancing(remainingPlayers);
+        setTimeout(async () => {
+          await announceTableBalancing(remainingPlayers);
+        }, 30000); // 30 секунд задержки
       }
       
       onRegistrationUpdate();
