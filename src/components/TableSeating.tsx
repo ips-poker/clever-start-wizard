@@ -229,8 +229,15 @@ const TableSeating = ({
   const generateTablesFromRegistrations = () => {
     const activePlayers = registrations.filter(r => r.status === 'registered' || r.status === 'playing');
     
+    console.log('🔄 Генерация столов:', {
+      totalRegistrations: registrations.length,
+      activePlayersCount: activePlayers.length,
+      activePlayersData: activePlayers.map(p => ({ name: p.player?.name || 'Unknown', status: p.status }))
+    });
+    
     if (activePlayers.length === 0) {
       setTables([]);
+      console.log('🪑 Нет активных игроков, столы очищены');
       return;
     }
     
@@ -255,7 +262,7 @@ const TableSeating = ({
     }
     
     setTables(newTables);
-    console.log('🪑 Столы созданы без рассадки');
+    console.log(`🪑 Создано ${totalTables} столов для ${activePlayers.length} активных игроков`);
   };
 
   const updateSeatingInDatabase = async (tablesData: Table[]) => {
