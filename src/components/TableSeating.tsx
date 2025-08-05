@@ -684,101 +684,103 @@ const TableSeating = ({
         </CardContent>
       </Card>
 
-      {/* Столы с красивым дизайном */}
+      {/* Столы в стиле приглашений */}
       <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
         {tables.map(table => (
-          <Card key={table.table_number} className="relative overflow-hidden border-2 shadow-lg hover:shadow-xl transition-all duration-300">
-            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent" />
+          <Card key={table.table_number} className="relative overflow-hidden bg-white/70 backdrop-blur-sm border border-gray-200/50 shadow-subtle rounded-xl hover:shadow-lg transition-all duration-300">
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-50/30 via-white/20 to-purple-50/30" />
             
-            <CardHeader className="relative pb-4">
+            <CardHeader className="relative bg-white/50 border-b border-gray-200/30 pb-4">
               <CardTitle className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-bold">
+                  <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-100 to-indigo-100 flex items-center justify-center text-blue-700 font-bold border border-blue-200/50 shadow-sm">
                     {table.table_number}
                   </div>
-                  <span className="text-lg">Стол {table.table_number}</span>
+                  <span className="text-lg font-light text-gray-800">Стол {table.table_number}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Badge 
-                    variant={table.active_players <= seatingSettings.maxPlayersPerTable / 2 ? "destructive" : "default"}
-                    className="text-sm px-3 py-1"
+                    className={`text-sm px-3 py-1 font-light border ${
+                      table.active_players <= seatingSettings.maxPlayersPerTable / 2 
+                        ? "bg-gradient-to-r from-red-100 to-rose-100 text-red-700 border-red-200/70" 
+                        : "bg-gradient-to-r from-emerald-100 to-teal-100 text-emerald-700 border-emerald-200/70"
+                    }`}
                   >
                     {table.active_players}/{seatingSettings.maxPlayersPerTable}
                   </Badge>
                   {checkTableBalance()?.fromTable === table.table_number && (
-                    <Badge variant="outline" className="text-xs animate-pulse border-yellow-500 text-yellow-600">
-                      Нужна балансировка
+                    <Badge className="text-xs animate-pulse bg-gradient-to-r from-yellow-100 to-amber-100 text-yellow-700 border border-yellow-200/70">
+                      ⚡ Балансировка
                     </Badge>
                   )}
                 </div>
               </CardTitle>
             </CardHeader>
             
-            <CardContent className="relative space-y-3">
-              {/* Сетка мест */}
+            <CardContent className="relative space-y-3 p-6 bg-white/40 backdrop-blur-sm">
+              {/* Сетка мест в стиле приглашений */}
               <div className="grid grid-cols-3 gap-3">
                 {table.seats.map(seat => (
                   <div 
                     key={seat.seat_number}
                     className={`
-                      relative p-3 rounded-xl border-2 transition-all duration-300 hover:scale-105
+                      relative p-3 rounded-xl border transition-all duration-300 hover:scale-105
                       ${seat.player_id 
-                        ? 'bg-gradient-to-br from-primary/10 to-primary/5 border-primary shadow-md' 
-                        : 'bg-gradient-to-br from-muted/50 to-transparent border-dashed border-muted-foreground/30 hover:border-primary/30'
+                        ? 'bg-white/70 backdrop-blur-sm border border-gray-200/50 shadow-sm hover:shadow-md' 
+                        : 'bg-white/30 backdrop-blur-sm border-dashed border-gray-300/50 hover:border-blue-300/50 hover:bg-white/50'
                       }
                     `}
                   >
-                    {/* Номер места */}
-                    <div className="absolute -top-2 -left-2 w-6 h-6 bg-background border-2 border-primary rounded-full flex items-center justify-center text-xs font-bold">
+                    {/* Номер места в стиле приглашений */}
+                    <div className="absolute -top-2 -left-2 w-6 h-6 bg-gradient-to-br from-gray-100 to-gray-200 border border-gray-300/50 rounded-full flex items-center justify-center text-xs font-bold text-gray-600 shadow-sm">
                       {seat.seat_number}
                     </div>
                     
                     {seat.player_id ? (
                       <div className="space-y-2">
-                        {/* Аватар и имя - лаконично */}
+                        {/* Аватар и имя в стиле приглашений */}
                         <div className="flex items-center gap-2">
-                          <Avatar className="w-10 h-10 border-2 border-primary/20 shadow-sm">
+                          <Avatar className="w-10 h-10 border-2 border-white/50 shadow-sm">
                             <AvatarImage 
                               src={registrations.find(r => r.player.id === seat.player_id)?.player.avatar_url || ''} 
                               alt={seat.player_name || ''} 
                             />
-                            <AvatarFallback className="text-sm font-bold bg-gradient-to-br from-primary/20 to-primary/10 text-primary">
+                            <AvatarFallback className="text-sm font-light bg-gradient-to-br from-blue-100 to-indigo-100 text-blue-700 border border-blue-200/50">
                               {seat.player_name?.slice(0, 2).toUpperCase()}
                             </AvatarFallback>
                           </Avatar>
                           <div className="flex-1 min-w-0">
-                            <div className="truncate text-sm font-semibold" title={seat.player_name}>
+                            <div className="truncate text-sm font-light text-gray-800" title={seat.player_name}>
                               {seat.player_name}
                             </div>
-                            <div className="text-xs text-muted-foreground flex items-center gap-1">
-                              <span className="inline-block w-2 h-2 rounded-full bg-green-500"></span>
+                            <div className="text-xs text-gray-500 font-light flex items-center gap-1">
+                              <span className="inline-block w-2 h-2 rounded-full bg-emerald-400 shadow-sm"></span>
                               ELO {registrations.find(r => r.player.id === seat.player_id)?.player.elo_rating || 1200}
                             </div>
                           </div>
                         </div>
                         
-                        {/* Кнопка перемещения */}
+                        {/* Кнопка перемещения - только иконка */}
                         {isSeated && (
                           <Dialog>
                             <DialogTrigger asChild>
                               <Button
                                 size="sm"
                                 variant="outline"
-                                className="w-full h-7 text-xs hover:bg-primary hover:text-primary-foreground transition-colors"
+                                className="w-full h-7 bg-white/50 border border-gray-200/50 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:border-blue-200/50 transition-all duration-300 group"
                               >
-                                <MoveRight className="w-3 h-3 mr-1" />
-                                Переместить
+                                <MoveRight className="w-3 h-3 text-gray-600 group-hover:text-blue-600 transition-colors" />
                               </Button>
                             </DialogTrigger>
-                            <DialogContent>
+                            <DialogContent className="bg-white/90 backdrop-blur-sm border border-gray-200/50">
                               <DialogHeader>
-                                <DialogTitle className="flex items-center gap-2">
-                                  <Avatar className="w-8 h-8">
+                                <DialogTitle className="flex items-center gap-3 text-gray-800 font-light">
+                                  <Avatar className="w-8 h-8 border border-gray-200/50">
                                     <AvatarImage 
                                       src={registrations.find(r => r.player.id === seat.player_id)?.player.avatar_url || ''} 
                                       alt={seat.player_name || ''} 
                                     />
-                                    <AvatarFallback className="text-xs">
+                                    <AvatarFallback className="text-xs font-light bg-gradient-to-br from-blue-100 to-indigo-100 text-blue-700">
                                       {seat.player_name?.slice(0, 2).toUpperCase()}
                                     </AvatarFallback>
                                   </Avatar>
@@ -786,18 +788,18 @@ const TableSeating = ({
                                 </DialogTitle>
                               </DialogHeader>
                               <div className="space-y-4">
-                                <div className="text-sm text-muted-foreground">
+                                <div className="text-sm text-gray-500 font-light bg-white/50 p-3 rounded-lg border border-gray-200/30">
                                   Текущее местоположение: Стол {table.table_number}, место {seat.seat_number}
                                 </div>
                                 
                                 <div className="grid grid-cols-2 gap-4">
                                   <div>
-                                    <Label>Целевой стол</Label>
+                                    <Label className="text-gray-600 font-light">Целевой стол</Label>
                                     <Select 
                                       value={targetTable.toString()} 
                                       onValueChange={(v) => setTargetTable(Number(v))}
                                     >
-                                      <SelectTrigger>
+                                      <SelectTrigger className="bg-white/50 border border-gray-200/50">
                                         <SelectValue />
                                       </SelectTrigger>
                                       <SelectContent>
@@ -811,12 +813,12 @@ const TableSeating = ({
                                   </div>
                                   
                                   <div>
-                                    <Label>Целевое место</Label>
+                                    <Label className="text-gray-600 font-light">Целевое место</Label>
                                     <Select 
                                       value={targetSeat.toString()} 
                                       onValueChange={(v) => setTargetSeat(Number(v))}
                                     >
-                                      <SelectTrigger>
+                                      <SelectTrigger className="bg-white/50 border border-gray-200/50">
                                         <SelectValue />
                                       </SelectTrigger>
                                       <SelectContent>
@@ -840,7 +842,7 @@ const TableSeating = ({
                                 
                                 <Button 
                                   onClick={() => movePlayer(seat.player_id!, table.table_number, targetTable, targetSeat)}
-                                  className="w-full"
+                                  className="w-full bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 text-white hover:from-emerald-600 hover:via-teal-600 hover:to-cyan-600 hover:shadow-lg transition-all duration-300"
                                   disabled={!targetTable || !targetSeat}
                                 >
                                   <MoveRight className="w-4 h-4 mr-2" />
@@ -852,10 +854,10 @@ const TableSeating = ({
                         )}
                       </div>
                     ) : (
-                      <div className="h-20 flex items-center justify-center">
-                        <div className="text-center text-muted-foreground">
-                          <div className="text-lg opacity-50">💺</div>
-                          <div className="text-xs">Свободно</div>
+                      <div className="h-16 flex items-center justify-center">
+                        <div className="text-center text-gray-400">
+                          <div className="text-2xl opacity-50">💺</div>
+                          <div className="text-xs font-light">Свободно</div>
                         </div>
                       </div>
                     )}
@@ -863,10 +865,10 @@ const TableSeating = ({
                 ))}
               </div>
               
-              {/* Действия стола */}
+              {/* Действия стола в стиле приглашений */}
               {table.active_players > 0 && (
-                <div className="flex items-center justify-between pt-3 border-t">
-                  <div className="text-xs text-muted-foreground">
+                <div className="flex items-center justify-between pt-3 border-t border-gray-200/30">
+                  <div className="text-xs text-gray-500 font-light">
                     Игроков за столом: {table.active_players}
                   </div>
                   {table.active_players < seatingSettings.maxPlayersPerTable / 2 && (
@@ -874,7 +876,7 @@ const TableSeating = ({
                       size="sm" 
                       variant="outline"
                       onClick={() => smartTableBalance()}
-                      className="text-xs h-7"
+                      className="text-xs h-7 bg-white/50 border border-yellow-200/50 text-yellow-700 hover:bg-yellow-50 hover:border-yellow-300/50 transition-all duration-300"
                     >
                       <Crown className="w-3 h-3 mr-1" />
                       Подсказка
