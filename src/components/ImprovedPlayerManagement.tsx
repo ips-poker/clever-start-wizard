@@ -643,8 +643,9 @@ const ImprovedPlayerManagement = ({ tournament, players, registrations, onRegist
                             variant="outline"
                             onClick={() => updateRebuys(registration.id, 1)}
                             className="h-8 w-8 p-0 border-green-200 text-green-600 hover:bg-green-50"
+                            title="Добавить ребай"
                           >
-                            <Plus className="w-3 h-3" />
+                            <span className="text-xs font-medium">R</span>
                           </Button>
                           <Button
                             size="sm"
@@ -652,31 +653,39 @@ const ImprovedPlayerManagement = ({ tournament, players, registrations, onRegist
                             onClick={() => updateRebuys(registration.id, -1)}
                             disabled={registration.rebuys === 0}
                             className="h-8 w-8 p-0 border-red-200 text-red-600 hover:bg-red-50"
+                            title="Убрать ребай"
                           >
                             <Minus className="w-3 h-3" />
                           </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => updateAddons(registration.id, 1)}
-                            className="h-8 w-8 p-0 border-blue-200 text-blue-600 hover:bg-blue-50"
-                          >
-                            <Plus className="w-3 h-3" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => updateAddons(registration.id, -1)}
-                            disabled={registration.addons === 0}
-                            className="h-8 w-8 p-0 border-orange-200 text-orange-600 hover:bg-orange-50"
-                          >
-                            <Minus className="w-3 h-3" />
-                          </Button>
+                          {tournament.current_level === tournament.addon_level && (
+                            <>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => updateAddons(registration.id, 1)}
+                                className="h-8 w-8 p-0 border-blue-200 text-blue-600 hover:bg-blue-50"
+                                title="Добавить аддон"
+                              >
+                                <span className="text-xs font-medium">A</span>
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => updateAddons(registration.id, -1)}
+                                disabled={registration.addons === 0}
+                                className="h-8 w-8 p-0 border-orange-200 text-orange-600 hover:bg-orange-50"
+                                title="Убрать аддон"
+                              >
+                                <Minus className="w-3 h-3" />
+                              </Button>
+                            </>
+                          )}
                           <Button
                             size="sm"
                             variant="outline"
                             onClick={() => eliminatePlayer(registration.id, activePlayers.length)}
                             className="h-8 w-8 p-0 border-red-200 text-red-600 hover:bg-red-50"
+                            title="Исключить игрока"
                           >
                             <X className="w-3 h-3" />
                           </Button>
