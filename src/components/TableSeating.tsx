@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
@@ -12,7 +12,8 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { 
   Users, ArrowUpDown, Plus, Shuffle, Play, Crown, 
   UserMinus, AlertTriangle, Target, Settings,
-  Clock, Trophy, Zap, RotateCcw, UserCheck, X
+  Clock, Trophy, Zap, RotateCcw, UserCheck, X,
+  RefreshCw, BarChart3
 } from 'lucide-react';
 
 interface TableSeat {
@@ -66,6 +67,7 @@ const TableSeating = ({
   const [newTableSize, setNewTableSize] = useState<number>(maxPlayersPerTable);
   const [balancingInProgress, setBalancingInProgress] = useState(false);
   const [isFinalTableReady, setIsFinalTableReady] = useState(false);
+  const [balanceRecommendations, setBalanceRecommendations] = useState<any>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -673,6 +675,10 @@ const TableSeating = ({
     setBalancingInProgress(false);
   };
 
+  const analyzePlacement = autoSeatLatePlayers;
+  const analyzeBalance = checkTableBalance;
+  const syncToDatabase = () => updateSeatingInDatabase(tables);
+
   const createFinalTable = async () => {
     const activePlayers = getActivePlayers();
     
@@ -848,8 +854,51 @@ const TableSeating = ({
   };
 
   return (
-    <div className="space-y-6">
-      {/* Статистика турнира */}
+    <Card className="bg-gradient-to-r from-white via-gray-50/30 to-white border border-gray-200/50 shadow-floating">
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="text-2xl font-light text-gray-800 flex items-center gap-3">
+              <div className="p-2 bg-gradient-primary rounded-lg">
+                <Users className="w-6 h-6 text-white" />
+              </div>
+              Рассадка игроков
+            </CardTitle>
+            <CardDescription className="font-light text-gray-600 mt-2">
+              Управление посадкой игроков за столы с автоматической балансировкой
+            </CardDescription>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              onClick={analyzePlacement}
+              variant="outline"
+              className="bg-white/80 hover:bg-gray-50/80 border-gray-200/50 transition-all duration-300 hover:scale-105"
+            >
+              <Zap className="w-4 h-4 mr-2" />
+              Автопосадка
+            </Button>
+            <Button
+              onClick={analyzeBalance}
+              variant="outline"
+              className="bg-white/80 hover:bg-gray-50/80 border-gray-200/50 transition-all duration-300 hover:scale-105"
+            >
+              <BarChart3 className="w-4 h-4 mr-2" />
+              Баланс столов
+            </Button>
+            <Button 
+              onClick={syncToDatabase} 
+              variant="outline"
+              className="bg-white/80 hover:bg-gray-50/80 border-gray-200/50 transition-all duration-300 hover:scale-105"
+            >
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Синхронизация
+            </Button>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-6">
+          {/* Статистика турнира */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardContent className="p-4 text-center">
@@ -1075,15 +1124,31 @@ const TableSeating = ({
       {/* Столы */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {tables.map(table => (
-          <Card key={table.table_number} className={`relative ${table.is_final_table ? 'ring-2 ring-yellow-400 shadow-lg' : ''}`}>
+          <Card key={table.table_number} className={`relative transition-all duration-300 hover:scale-[1.02] ${
+            table.is_final_table 
+              ? 'bg-gradient-to-br from-yellow-50 via-amber-50/30 to-yellow-50 border-2 border-yellow-400/50 shadow-floating ring-2 ring-yellow-400/20' 
+              : 'bg-gradient-to-br from-white via-gray-50/30 to-white border border-gray-200/50 shadow-floating'
+          }`}>
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className={table.is_final_table ? 'text-yellow-600 font-bold' : ''}>
-                    {table.is_final_table ? '🏆 ФИНАЛЬНЫЙ СТОЛ' : `Стол ${table.table_number}`}
-                  </span>
+                <div className="flex items-center gap-3">
+                  {table.is_final_table ? (
+                    <div className="flex items-center gap-2">
+                      <div className="p-2 bg-gradient-to-r from-yellow-500 to-amber-600 rounded-lg">
+                        <Trophy className="w-5 h-5 text-white" />
+                      </div>
+                      <span className="text-yellow-700 font-bold text-lg">ФИНАЛЬНЫЙ СТОЛ</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <div className="p-2 bg-gradient-primary rounded-lg">
+                        <Users className="w-5 h-5 text-white" />
+                      </div>
+                      <span className="font-light text-gray-800">Стол {table.table_number}</span>
+                    </div>
+                  )}
                   {table.dealer_position && (
-                    <Badge variant="outline" className="text-xs">
+                    <Badge variant="outline" className="text-xs bg-white/80 border-gray-200/50">
                       D: {table.dealer_position}
                     </Badge>
                   )}
@@ -1095,7 +1160,7 @@ const TableSeating = ({
                       size="sm" 
                       variant="outline"
                       onClick={() => suggestPlayerMove(table.table_number)}
-                      className="text-xs"
+                      className="text-xs bg-white/80 hover:bg-gray-50/80 border-gray-200/50 transition-all duration-300 hover:scale-105"
                     >
                       <AlertTriangle className="w-3 h-3 mr-1" />
                       Балансировка
@@ -1106,7 +1171,7 @@ const TableSeating = ({
                       size="sm" 
                       variant="destructive"
                       onClick={() => closeTable(table.table_number)}
-                      className="text-xs"
+                      className="text-xs transition-all duration-300 hover:scale-105"
                     >
                       <X className="w-3 h-3" />
                     </Button>
@@ -1221,8 +1286,10 @@ const TableSeating = ({
             </CardContent>
           </Card>
         ))}
-      </div>
-    </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 };
 
