@@ -312,6 +312,9 @@ const TableSeating = ({
       table.seats.forEach(seat => {
         if (seat.player_id === playerId) {
           seat.status = 'eliminated';
+          seat.player_id = undefined;
+          seat.player_name = undefined;
+          seat.chips = undefined;
           table.active_players--;
           playerFound = true;
         }
@@ -319,9 +322,13 @@ const TableSeating = ({
     });
 
     if (playerFound) {
+      // Обновляем статус в базе данных и убираем seat_number
       await supabase
         .from('tournament_registrations')
-        .update({ status: 'eliminated' })
+        .update({ 
+          status: 'eliminated',
+          seat_number: null
+        })
         .eq('player_id', playerId)
         .eq('tournament_id', tournamentId);
 
@@ -329,8 +336,13 @@ const TableSeating = ({
       
       toast({ 
         title: "Игрок исключен", 
-        description: "Игрок помечен как выбывший" 
+        description: "Игрок автоматически удален из активных игроков" 
       });
+
+      // Вызываем callback для обновления компонента активных игроков
+      if (onSeatingUpdate) {
+        onSeatingUpdate();
+      }
 
       // Проверяем необходимость балансировки
       checkForTableBreaking(newTables);
@@ -392,76 +404,48 @@ const TableSeating = ({
     });
   };
 
-  const autoBalanceTables = async () => {
+  const checkTableBalance = () => {
     setBalancingInProgress(true);
     
-    const activePlayers = getActivePlayers();
-    const totalActiveTables = Math.ceil(activePlayers.length / maxPlayersPerTable);
+    const activeTables = tables.filter(t => t.active_players > 0);
+    const balanceInfo = activeTables.map(table => ({
+      tableNumber: table.table_number,
+      players: table.active_players,
+      maxPlayers: table.max_seats
+    }));
     
-    // Создаем новую структуру столов
-    const newTables: Table[] = [];
+    // Находим столы с минимальным и максимальным количеством игроков
+    const minPlayers = Math.min(...balanceInfo.map(t => t.players));
+    const maxPlayers = Math.max(...balanceInfo.map(t => t.players));
+    const difference = maxPlayers - minPlayers;
     
-    for (let tableNum = 1; tableNum <= totalActiveTables; tableNum++) {
-      const seats: TableSeat[] = [];
-      
-      for (let seatNum = 1; seatNum <= maxPlayersPerTable; seatNum++) {
-        seats.push({
-          seat_number: seatNum,
-          stack_bb: 0
-        });
-      }
-      
-      newTables.push({
-        table_number: tableNum,
-        seats,
-        active_players: 0,
-        max_seats: maxPlayersPerTable,
-        dealer_position: Math.floor(Math.random() * maxPlayersPerTable) + 1,
-        table_status: 'active',
-        average_stack: 0
+    const tablesNeedingPlayers = balanceInfo.filter(t => t.players === minPlayers);
+    const tablesWithExtraPlayers = balanceInfo.filter(t => t.players === maxPlayers);
+    
+    let message = "📊 АНАЛИЗ БАЛАНСИРОВКИ:\n\n";
+    
+    if (difference <= 1) {
+      message += "✅ Столы сбалансированы хорошо (разница ≤1 игрока)";
+    } else {
+      message += `⚠️ Требуется балансировка (разница ${difference} игроков)\n\n`;
+      message += "📉 СТОЛЫ С МЕНЬШИМ КОЛИЧЕСТВОМ ИГРОКОВ:\n";
+      tablesNeedingPlayers.forEach(t => {
+        message += `• Стол ${t.tableNumber}: ${t.players}/${t.maxPlayers} игроков\n`;
       });
+      message += "\n📈 СТОЛЫ С БОЛЬШИМ КОЛИЧЕСТВОМ ИГРОКОВ:\n";
+      tablesWithExtraPlayers.forEach(t => {
+        message += `• Стол ${t.tableNumber}: ${t.players}/${t.maxPlayers} игроков\n`;
+      });
+      message += "\n💡 Рекомендация: Пересадите игроков с переполненных столов на столы с меньшим количеством игроков.";
     }
     
-    // Распределяем игроков равномерно
-    activePlayers.forEach((registration, index) => {
-      const tableIndex = index % totalActiveTables;
-      const seatIndex = Math.floor(index / totalActiveTables);
-      
-      if (newTables[tableIndex] && seatIndex < maxPlayersPerTable) {
-        const seat = newTables[tableIndex].seats[seatIndex];
-        seat.player_id = registration.player.id;
-        seat.player_name = registration.player.name;
-        seat.chips = registration.chips;
-        seat.status = registration.status;
-        seat.stack_bb = Math.round((registration.chips || 0) / bigBlind);
-        newTables[tableIndex].active_players++;
-      }
-    });
-
-    // Пересчитываем средние стеки
-    newTables.forEach(table => {
-      const activeSeats = table.seats.filter(s => s.player_id);
-      if (activeSeats.length > 0) {
-        table.average_stack = Math.round(
-          activeSeats.reduce((sum, seat) => sum + (seat.chips || 0), 0) / activeSeats.length
-        );
-      }
-    });
-    
-    // Очищаем старые seat_number
-    await supabase
-      .from('tournament_registrations')
-      .update({ seat_number: null })
-      .eq('tournament_id', tournamentId);
-    
-    setTables(newTables);
-    await updateSeatingInDatabase(newTables);
-    setBalancingInProgress(false);
-    
     toast({ 
-      title: "Столы сбалансированы", 
-      description: `Игроки равномерно распределены по ${totalActiveTables} столам` 
+      title: "Анализ балансировки", 
+      description: message,
+      duration: 8000
     });
+    
+    setBalancingInProgress(false);
   };
 
   const createFinalTable = async () => {
@@ -692,14 +676,14 @@ const TableSeating = ({
               </Button>
               
               <Button 
-                onClick={autoBalanceTables}
+                onClick={checkTableBalance}
                 variant="outline"
                 size="sm"
                 className="flex items-center gap-2"
                 disabled={balancingInProgress}
               >
                 <ArrowUpDown className="w-4 h-4" />
-                {balancingInProgress ? 'Балансировка...' : 'Сбалансировать'}
+                {balancingInProgress ? 'Анализ...' : 'Баланс'}
               </Button>
 
               {isFinalTableReady && (
@@ -884,17 +868,30 @@ const TableSeating = ({
                           </Badge>
                         </div>
 
-                        {/* Кнопка исключения игрока */}
+                        {/* Кнопки управления игроком */}
                         {seat.status !== 'eliminated' && isSeatingStarted && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="w-full text-xs mt-1"
-                            onClick={() => eliminatePlayer(seat.player_id!)}
-                          >
-                            <UserMinus className="w-3 h-3 mr-1" />
-                            Исключить
-                          </Button>
+                          <div className="flex gap-1 mt-1">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="flex-1 text-xs"
+                              onClick={() => {
+                                setSelectedPlayer(seat.player_id!);
+                                setTargetTable(table.table_number);
+                                setIsMoveDialogOpen(true);
+                              }}
+                            >
+                              ↔️
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              className="flex-1 text-xs"
+                              onClick={() => eliminatePlayer(seat.player_id!)}
+                            >
+                              <UserMinus className="w-3 h-3" />
+                            </Button>
+                          </div>
                         )}
                       </div>
                     ) : (
