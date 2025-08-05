@@ -58,8 +58,13 @@ const TableSeating = ({
   const { toast } = useToast();
 
   useEffect(() => {
+    console.log('🔄 TableSeating - registrations изменились:', {
+      totalRegistrations: registrations.length,
+      activeRegistrations: registrations.filter(r => r.status === 'registered' || r.status === 'playing').length,
+      eliminatedRegistrations: registrations.filter(r => r.status === 'eliminated').length
+    });
     loadSavedSeating();
-  }, [tournamentId]);
+  }, [tournamentId, registrations]); // ✅ Перезагружаем при изменении registrations
 
   useEffect(() => {
     if (tables.length === 0 || registrations.length > 0) {
@@ -102,7 +107,8 @@ const TableSeating = ({
           player:players(id, name, elo_rating)
         `)
         .eq('tournament_id', tournamentId)
-        .not('seat_number', 'is', null);
+        .not('seat_number', 'is', null)
+        .in('status', ['registered', 'playing']); // ✅ ТОЛЬКО АКТИВНЫЕ ИГРОКИ
 
       console.log('🔍 Данные рассадки из БД:', { seatingData, error });
 
@@ -174,6 +180,12 @@ const TableSeating = ({
   // Профессиональная рассадка
   const performInitialSeating = () => {
     const activePlayers = registrations.filter(r => r.status === 'registered' || r.status === 'playing');
+    
+    console.log('🎯 Начало рассадки:', {
+      totalRegistrations: registrations.length,
+      activePlayers: activePlayers.length,
+      eliminatedPlayers: registrations.filter(r => r.status === 'eliminated').length
+    });
     
     // Проверяем минимальное количество игроков для двух столов
     if (activePlayers.length < seatingSettings.minPlayersToStartTwoTables) {
