@@ -62,8 +62,8 @@ const TableSeating = ({
   }, [tournamentId]);
 
   useEffect(() => {
-    if (tables.length === 0) {
-      generateTablesFromRegistrations();
+    if (tables.length === 0 || registrations.length > 0) {
+      updateTablesWithCurrentRegistrations();
     }
   }, [registrations, seatingSettings.maxPlayersPerTable]);
 
@@ -82,16 +82,16 @@ const TableSeating = ({
 
   const loadSavedSeating = async () => {
     try {
-      // Сначала пытаемся загрузить из localStorage
+      console.log('🔍 Загрузка рассадки для турнира:', tournamentId);
+      
+      // Очищаем старые данные из localStorage если они есть
       const savedSeating = localStorage.getItem(`seating_${tournamentId}`);
       if (savedSeating) {
-        const parsedSeating = JSON.parse(savedSeating);
-        setTables(parsedSeating);
-        console.log('🪑 Рассадка загружена из localStorage');
-        return;
+        console.log('🗑️ Очищаем старую рассадку из localStorage');
+        localStorage.removeItem(`seating_${tournamentId}`);
       }
 
-      // Если в localStorage нет данных, загружаем из базы данных
+      // ВСЕГДА загружаем из базы данных для обеспечения синхронизации
       const { data: seatingData, error } = await supabase
         .from('tournament_registrations')
         .select(`
@@ -99,18 +99,21 @@ const TableSeating = ({
           seat_number,
           chips,
           status,
-          player:players(id, name)
+          player:players(id, name, elo_rating)
         `)
         .eq('tournament_id', tournamentId)
         .not('seat_number', 'is', null);
 
+      console.log('🔍 Данные рассадки из БД:', { seatingData, error });
+
       if (error) {
-        console.error('Ошибка загрузки рассадки:', error);
-        generateTablesFromRegistrations();
+        console.error('❌ Ошибка загрузки рассадки:', error);
+        updateTablesWithCurrentRegistrations();
         return;
       }
 
       if (seatingData && seatingData.length > 0) {
+        console.log('✅ Найдена рассадка в БД, создаем столы');
         // Создаем столы на основе сохраненной рассадки
         const maxSeatNumber = Math.max(...seatingData.map(s => s.seat_number || 0));
         const totalTables = Math.ceil(maxSeatNumber / seatingSettings.maxPlayersPerTable);
@@ -128,7 +131,8 @@ const TableSeating = ({
               player_id: seatData?.player_id,
               player_name: seatData?.player?.name,
               chips: seatData?.chips,
-              status: seatData?.status
+              status: seatData?.status,
+              elo_rating: seatData?.player?.elo_rating
             });
           }
           
@@ -141,13 +145,14 @@ const TableSeating = ({
         
         setTables(newTables);
         saveSeatingToLocalStorage(newTables);
-        console.log('🪑 Рассадка загружена из базы данных');
+        console.log('🪑 Рассадка загружена из базы данных:', newTables);
       } else {
-        generateTablesFromRegistrations();
+        console.log('📋 Рассадка не найдена в БД, создаем на основе регистраций');
+        updateTablesWithCurrentRegistrations();
       }
     } catch (error) {
-      console.error('Ошибка при загрузке рассадки:', error);
-      generateTablesFromRegistrations();
+      console.error('❌ Ошибка при загрузке рассадки:', error);
+      updateTablesWithCurrentRegistrations();
     }
   };
 
@@ -226,13 +231,13 @@ const TableSeating = ({
     toast({ title: "Рассадка выполнена", description: "Игроки рассажены в случайном порядке" });
   };
 
-  const generateTablesFromRegistrations = () => {
+  const updateTablesWithCurrentRegistrations = () => {
     const activePlayers = registrations.filter(r => r.status === 'registered' || r.status === 'playing');
     
-    console.log('🔄 Генерация столов:', {
+    console.log('🔄 Обновление столов с текущими регистрациями:', {
       totalRegistrations: registrations.length,
       activePlayersCount: activePlayers.length,
-      activePlayersData: activePlayers.map(p => ({ name: p.player?.name || 'Unknown', status: p.status }))
+      activePlayersData: activePlayers.map(p => ({ name: p.player?.name || 'Unknown', status: p.status, seat_number: p.seat_number }))
     });
     
     if (activePlayers.length === 0) {
@@ -242,7 +247,6 @@ const TableSeating = ({
     }
     
     const totalTables = Math.ceil(activePlayers.length / seatingSettings.maxPlayersPerTable);
-    
     const newTables: Table[] = [];
     
     for (let tableNum = 1; tableNum <= totalTables; tableNum++) {
@@ -263,6 +267,10 @@ const TableSeating = ({
     
     setTables(newTables);
     console.log(`🪑 Создано ${totalTables} столов для ${activePlayers.length} активных игроков`);
+  };
+
+  const generateTablesFromRegistrations = () => {
+    updateTablesWithCurrentRegistrations();
   };
 
   const updateSeatingInDatabase = async (tablesData: Table[]) => {
