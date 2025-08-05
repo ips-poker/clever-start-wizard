@@ -591,7 +591,7 @@ const TableSeating = ({
   const getSeatColorClass = (seat: TableSeat) => {
     if (!seat.player_id) return 'bg-muted border-muted-foreground/20';
     if (seat.status === 'eliminated') return 'bg-destructive/10 border-destructive/30';
-    if (seat.status === 'playing') return 'bg-warning/10 border-warning/30';
+    if (seat.status === 'playing') return 'bg-accent/10 border-accent/30';
     return 'bg-primary/10 border-primary/30';
   };
 
@@ -628,7 +628,7 @@ const TableSeating = ({
         </Card>
         <Card>
           <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-warning">{Math.round(tables.reduce((sum, t) => sum + (t.average_stack || 0), 0) / Math.max(tables.length, 1))}</div>
+            <div className="text-2xl font-bold text-accent">{Math.round(tables.reduce((sum, t) => sum + (t.average_stack || 0), 0) / Math.max(tables.length, 1))}</div>
             <div className="text-sm text-muted-foreground">Ср. стек (BB)</div>
           </CardContent>
         </Card>
@@ -636,7 +636,7 @@ const TableSeating = ({
 
       {/* Уведомления */}
       {isFinalTableReady && (
-        <Alert className="border-warning bg-warning/10">
+        <Alert className="border-accent bg-accent/10">
           <Trophy className="h-4 w-4" />
           <AlertDescription>
             🏆 Готов к формированию финального стола! Осталось {getActivePlayers().length} игроков.
