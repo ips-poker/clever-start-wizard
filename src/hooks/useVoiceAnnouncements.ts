@@ -37,6 +37,7 @@ export const useVoiceAnnouncements = (options: VoiceAnnouncementOptions = { enab
           .eq('is_active', true);
 
         if (data) {
+          console.log('🔄 Loaded custom intervals:', data);
           setCustomIntervals(data);
         }
       } catch (error) {
@@ -45,6 +46,22 @@ export const useVoiceAnnouncements = (options: VoiceAnnouncementOptions = { enab
     };
 
     loadCustomIntervals();
+
+    // Подписка на изменения в таблице пользовательских интервалов
+    const subscription = supabase
+      .channel('voice_time_intervals_changes')
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'voice_time_intervals' },
+        (payload) => {
+          console.log('🔄 Voice time intervals changed:', payload);
+          loadCustomIntervals();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(subscription);
+    };
   }, []);
 
   const playAnnouncement = useCallback(async (text: string) => {
