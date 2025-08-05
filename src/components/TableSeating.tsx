@@ -76,6 +76,10 @@ const TableSeating = ({
           // Перезагружаем рассадку при любых изменениях в регистрациях
           setTimeout(() => {
             loadSavedSeating();
+            // Автоматически размещаем новых игроков после загрузки рассадки
+            setTimeout(() => {
+              autoPlacePlayersWithoutSeats();
+            }, 1000);
           }, 500); // Небольшая задержка для корректного обновления
         }
       )
@@ -85,6 +89,13 @@ const TableSeating = ({
       supabase.removeChannel(channel);
     };
   }, [tournamentId]);
+
+  // Отдельный useEffect для автоматического размещения игроков
+  useEffect(() => {
+    if (tables.length > 0 && registrations.length > 0) {
+      autoPlacePlayersWithoutSeats();
+    }
+  }, [registrations.length, tables.length]);
 
   useEffect(() => {
     // Только создаем пустые столы если есть сохраненная рассадка
@@ -512,6 +523,57 @@ const TableSeating = ({
     });
   };
 
+  // Автоматическое размещение игроков без места
+  const autoPlacePlayersWithoutSeats = async () => {
+    if (tables.length === 0) return;
+    
+    const activePlayers = registrations.filter(r => 
+      (r.status === 'registered' || r.status === 'playing') && !r.seat_number
+    );
+    
+    if (activePlayers.length === 0) return;
+    
+    const newTables = [...tables];
+    let playersPlaced = 0;
+    
+    for (const player of activePlayers) {
+      // Найдем стол с наименьшим количеством игроков
+      const tableWithLeastPlayers = newTables.reduce((min, current) => 
+        current.active_players < min.active_players ? current : min
+      );
+      
+      // Найдем свободное место в этом столе
+      const emptySeat = tableWithLeastPlayers.seats.find(seat => !seat.player_id);
+      
+      if (emptySeat) {
+        emptySeat.player_id = player.player.id;
+        emptySeat.player_name = player.player.name;
+        emptySeat.chips = player.chips;
+        emptySeat.status = player.status;
+        emptySeat.elo_rating = player.player.elo_rating;
+        tableWithLeastPlayers.active_players++;
+        playersPlaced++;
+        
+        // Обновляем seat_number в базе данных
+        const absoluteSeatNumber = (tableWithLeastPlayers.table_number - 1) * seatingSettings.maxPlayersPerTable + emptySeat.seat_number;
+        await supabase
+          .from('tournament_registrations')
+          .update({ seat_number: absoluteSeatNumber })
+          .eq('player_id', player.player.id)
+          .eq('tournament_id', tournamentId);
+      }
+    }
+    
+    if (playersPlaced > 0) {
+      setTables(newTables);
+      updateSeatingInDatabase(newTables);
+      toast({ 
+        title: "Автоматическое размещение", 
+        description: `Размещено ${playersPlaced} игроков на столы с наименьшим количеством участников` 
+      });
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Настройки рассадки */}
@@ -707,7 +769,8 @@ const TableSeating = ({
           {/* Статистика и предупреждения */}
           <div className="mt-4 p-3 rounded-lg bg-muted/50">
             <div className="flex items-center justify-between text-sm">
-              <span>Игроков: {registrations.filter(r => r.status === 'registered' || r.status === 'playing').length}</span>
+              <span>Активных игроков: {registrations.filter(r => r.status === 'registered' || r.status === 'playing').length}</span>
+              <span>Исключенных: {registrations.filter(r => r.status === 'eliminated').length}</span>
               <span>Столов: {tables.length}</span>
               <span>Настройка: {seatingSettings.maxPlayersPerTable} макс/стол</span>
               {checkTableBalance() && (
