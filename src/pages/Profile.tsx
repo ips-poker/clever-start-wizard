@@ -95,7 +95,9 @@ export default function Profile() {
           .insert([{ 
             name: uniqueName,
             email: user.email,
-            elo_rating: 1200
+            elo_rating: 1200,
+            user_id: user.id,
+            avatar_url: userProfile?.avatar_url
           }])
           .select()
           .single();
