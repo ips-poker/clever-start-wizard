@@ -189,8 +189,10 @@ export const useVoiceAnnouncements = (options: VoiceAnnouncementOptions = { enab
       // Правильное склонение для русского языка
       let timeWord = '';
       if (minutes === 1) {
-        timeWord = '1 минута';
-      } else if (minutes >= 2 && minutes <= 4) {
+        timeWord = 'одна минута';
+      } else if (minutes === 2) {
+        timeWord = 'две минуты';
+      } else if (minutes === 3 || minutes === 4) {
         timeWord = `${minutes} минуты`;
       } else {
         timeWord = `${minutes} минут`;
@@ -200,7 +202,7 @@ export const useVoiceAnnouncements = (options: VoiceAnnouncementOptions = { enab
       // Правильное склонение для секунд
       let timeWord = '';
       if (timeInSeconds === 1) {
-        timeWord = '1 секунда';
+        timeWord = 'одна секунда';
       } else if (timeInSeconds >= 2 && timeInSeconds <= 4) {
         timeWord = `${timeInSeconds} секунды`;
       } else {

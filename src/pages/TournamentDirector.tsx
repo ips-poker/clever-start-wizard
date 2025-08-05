@@ -406,12 +406,14 @@ const TournamentDirector = () => {
         lastUpdate: Date.now()
       }));
 
-      // Голосовое объявление о новом уровне
-      if (nextBlindLevel.is_break) {
-        voiceAnnouncements.announceBreakStart(Math.floor(resetTime / 60));
-      } else {
-        voiceAnnouncements.announceLevelStart(nextBlindLevel);
-      }
+      // Голосовое объявление о новом уровне (с задержкой для избежания двойного голоса)
+      setTimeout(() => {
+        if (nextBlindLevel.is_break) {
+          voiceAnnouncements.announceBreakStart(Math.floor(resetTime / 60));
+        } else {
+          voiceAnnouncements.announceLevelStart(nextBlindLevel);
+        }
+      }, 500);
 
       toast({ 
         title: nextBlindLevel.is_break ? "Перерыв" : `Уровень ${newLevel}`, 

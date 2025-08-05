@@ -132,8 +132,10 @@ export const useVoiceSettings = () => {
     setSettings(newSettings);
     // Синхронизируем с базой данных
     await saveSettingsToDatabase(newSettings);
-    // Принудительно перезагружаем настройки для синхронизации
-    setTimeout(() => loadSettings(), 100);
+    // Ждем сохранения и принудительно перезагружаем
+    setTimeout(async () => {
+      await loadSettings();
+    }, 200);
   };
 
   const saveSettingsToDatabase = async (settingsToSave: VoiceSettings) => {
