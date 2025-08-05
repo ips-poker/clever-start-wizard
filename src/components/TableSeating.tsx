@@ -128,16 +128,9 @@ const TableSeating = ({
 
   const loadSavedSeating = async () => {
     try {
-      // Сначала пытаемся загрузить из localStorage
-      const savedSeating = localStorage.getItem(`seating_${tournamentId}`);
-      if (savedSeating) {
-        const parsedSeating = JSON.parse(savedSeating);
-        setTables(parsedSeating);
-        console.log('🪑 Рассадка загружена из localStorage');
-        return;
-      }
-
-      // Если в localStorage нет данных, загружаем из базы данных
+      console.log('🪑 Загрузка рассадки из базы данных...');
+      
+      // Загружаем из базы данных актуальную информацию
       const { data: seatingData, error } = await supabase
         .from('tournament_registrations')
         .select(`
@@ -145,7 +138,7 @@ const TableSeating = ({
           seat_number,
           chips,
           status,
-          player:players(id, name, elo_rating)
+          player:players(id, name, elo_rating, avatar_url)
         `)
         .eq('tournament_id', tournamentId)
         .not('seat_number', 'is', null)
@@ -158,7 +151,9 @@ const TableSeating = ({
       }
 
       if (seatingData && seatingData.length > 0) {
-        // Создаем столы на основе сохраненной рассадки
+        console.log(`🪑 Найдено ${seatingData.length} размещенных игроков`);
+        
+        // Создаем столы на основе актуальной рассадки из БД
         const maxSeatNumber = Math.max(...seatingData.map(s => s.seat_number || 0));
         const totalTables = Math.ceil(maxSeatNumber / seatingSettings.maxPlayersPerTable);
         
@@ -175,7 +170,9 @@ const TableSeating = ({
               player_id: seatData?.player_id,
               player_name: seatData?.player?.name,
               chips: seatData?.chips,
-              status: seatData?.status
+              status: seatData?.status,
+              avatar_url: seatData?.player?.avatar_url,
+              elo_rating: seatData?.player?.elo_rating
             });
           }
           
@@ -188,8 +185,9 @@ const TableSeating = ({
         
         setTables(newTables);
         saveSeatingToLocalStorage(newTables);
-        console.log('🪑 Рассадка загружена из базы данных');
+        console.log('🪑 Рассадка обновлена из базы данных');
       } else {
+        console.log('🪑 Нет размещенных игроков, создаем пустые столы');
         generateTablesFromRegistrations();
       }
     } catch (error) {

@@ -333,7 +333,8 @@ const PlayerManagement = ({ tournament, players, registrations, onRegistrationUp
       .from('tournament_registrations')
       .update({ 
         status: 'eliminated',
-        position: position
+        position: position,
+        seat_number: null // Очищаем место при исключении
       })
       .eq('id', registrationId);
 
@@ -341,6 +342,9 @@ const PlayerManagement = ({ tournament, players, registrations, onRegistrationUp
       toast({ title: "Ошибка", description: "Не удалось исключить игрока", variant: "destructive" });
     } else {
       toast({ title: "Игрок исключен", description: `${registration.player.name} - место ${position}` });
+      
+      // Принудительно очищаем localStorage рассадки для обновления
+      localStorage.removeItem(`seating_${tournament.id}`);
       
       // Голосовое объявление об исключении игрока
       await voiceAnnouncements.announcePlayerElimination(registration.player.name, position);
