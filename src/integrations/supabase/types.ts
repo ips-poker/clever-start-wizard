@@ -723,37 +723,46 @@ export type Database = {
           auto_confirm_critical: boolean | null
           confidence_threshold: number | null
           created_at: string
+          elevenlabs_voice: string | null
           id: string
           updated_at: string
           user_id: string | null
           voice_enabled: boolean | null
           voice_language: string | null
+          voice_provider: string | null
           voice_speed: number | null
           volume_level: number | null
+          warning_intervals: Json | null
         }
         Insert: {
           auto_confirm_critical?: boolean | null
           confidence_threshold?: number | null
           created_at?: string
+          elevenlabs_voice?: string | null
           id?: string
           updated_at?: string
           user_id?: string | null
           voice_enabled?: boolean | null
           voice_language?: string | null
+          voice_provider?: string | null
           voice_speed?: number | null
           volume_level?: number | null
+          warning_intervals?: Json | null
         }
         Update: {
           auto_confirm_critical?: boolean | null
           confidence_threshold?: number | null
           created_at?: string
+          elevenlabs_voice?: string | null
           id?: string
           updated_at?: string
           user_id?: string | null
           voice_enabled?: boolean | null
           voice_language?: string | null
+          voice_provider?: string | null
           voice_speed?: number | null
           volume_level?: number | null
+          warning_intervals?: Json | null
         }
         Relationships: []
       }
