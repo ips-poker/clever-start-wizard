@@ -48,7 +48,13 @@ export const useVoiceAnnouncements = (options: VoiceAnnouncementOptions = { enab
   }, []);
 
   const playAnnouncement = useCallback(async (text: string) => {
-    if (!options.enabled || !settings.voice_enabled) return;
+    console.log('🎯 playAnnouncement called with text:', text);
+    console.log('🎯 Options enabled:', options.enabled, 'Voice enabled:', settings.voice_enabled);
+    
+    if (!options.enabled || !settings.voice_enabled) {
+      console.log('🚫 Announcement blocked - options.enabled:', options.enabled, 'settings.voice_enabled:', settings.voice_enabled);
+      return;
+    }
 
     try {
       console.log('🔊 Generating voice announcement:', text);
@@ -151,9 +157,17 @@ export const useVoiceAnnouncements = (options: VoiceAnnouncementOptions = { enab
 
   // Объявления для таймера турнира с поддержкой пользовательских интервалов
   const announceTimeWarning = useCallback(async (timeInSeconds: number) => {
+    console.log('🕒 announceTimeWarning called with:', timeInSeconds, 'seconds');
+    console.log('🔧 Voice settings check:', { 
+      enabled: settings.voice_enabled, 
+      provider: settings.voice_provider,
+      optionsEnabled: options.enabled 
+    });
+    
     // Проверяем пользовательские интервалы
     const customInterval = customIntervals.find(interval => interval.seconds === timeInSeconds);
     if (customInterval) {
+      console.log('📝 Using custom interval:', customInterval);
       await playAnnouncement(customInterval.message);
       return;
     }
@@ -194,8 +208,10 @@ export const useVoiceAnnouncements = (options: VoiceAnnouncementOptions = { enab
       }
       message = `Внимание! До окончания уровня осталось ${timeWord}.`;
     }
+    
+    console.log('📢 Final message to announce:', message);
     await playAnnouncement(message);
-  }, [playAnnouncement, customIntervals]);
+  }, [playAnnouncement, customIntervals, settings, options]);
 
   const announceNextLevel = useCallback(async (
     currentLevel: number,

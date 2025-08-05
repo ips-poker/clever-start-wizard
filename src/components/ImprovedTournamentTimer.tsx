@@ -84,7 +84,8 @@ const ImprovedTournamentTimer = ({
       // Объявления времени согласно настройкам пользователя (только если голосовые уведомления включены)
       // Проверяем голосовые предупреждения только если они включены
       if (!voiceSettingsLoading && voiceSettings.voice_enabled && voiceSettings.warning_intervals) {
-        console.log('Checking voice warnings for time:', currentTime, 'Settings:', voiceSettings.warning_intervals);
+        console.log('⏰ Timer check - currentTime:', currentTime, 'lastAnnounced:', lastAnnouncedTime);
+        console.log('⏰ Warning intervals settings:', voiceSettings.warning_intervals);
         
         if (currentTime === 300 && lastAnnouncedTime !== 300 && voiceSettings.warning_intervals.five_minutes) {
           console.log('Announcing 5 minutes - settings allow:', voiceSettings.warning_intervals.five_minutes);
