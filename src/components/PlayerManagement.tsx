@@ -854,6 +854,34 @@ const PlayerManagement = ({ tournament, players, registrations, onRegistrationUp
           </div>
         </TabsContent>
       </Tabs>
+
+      {/* Статистика турнира */}
+      <Card className="bg-white/80 backdrop-blur-sm border border-slate-200/50 shadow-sm rounded-2xl overflow-hidden">
+        <CardHeader className="bg-gradient-to-r from-slate-50 to-slate-100/50 border-b border-slate-100">
+          <CardTitle className="flex items-center gap-3 text-slate-800 font-light text-xl">
+            <div className="p-2 bg-purple-500/10 rounded-xl">
+              <TrendingUp className="w-5 h-5 text-purple-600" />
+            </div>
+            Статистика регистрации
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-6">
+          <div className="grid grid-cols-3 gap-4 text-center">
+            <div className="p-4 bg-slate-50/50 rounded-xl">
+              <div className="text-2xl font-light text-slate-800">{registrations.length}</div>
+              <div className="text-sm text-slate-500 font-light">Всего</div>
+            </div>
+            <div className="p-4 bg-green-50/50 rounded-xl">
+              <div className="text-2xl font-light text-green-600">{activePlayers.length}</div>
+              <div className="text-sm text-slate-500 font-light">Активных</div>
+            </div>
+            <div className="p-4 bg-blue-50/50 rounded-xl">
+              <div className="text-2xl font-light text-blue-600">{tournament.max_players - registrations.length}</div>
+              <div className="text-sm text-slate-500 font-light">Свободных мест</div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };
