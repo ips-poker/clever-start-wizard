@@ -444,6 +444,117 @@ const TableSeating = ({
     });
   };
 
+  const autoSeatLatePlayers = async () => {
+    // Находим игроков без места за столом
+    const seatedPlayerIds = new Set();
+    tables.forEach(table => {
+      table.seats.forEach(seat => {
+        if (seat.player_id) {
+          seatedPlayerIds.add(seat.player_id);
+        }
+      });
+    });
+
+    const unseatedPlayers = getActivePlayers().filter(player => 
+      !seatedPlayerIds.has(player.player.id)
+    );
+
+    if (unseatedPlayers.length === 0) {
+      toast({
+        title: "Все игроки размещены",
+        description: "Нет игроков без места за столом",
+      });
+      return;
+    }
+
+    const newTables = [...tables];
+    let playersSeated = 0;
+
+    // Стратегия размещения: сначала заполняем недоукомплектованные столы
+    for (const player of unseatedPlayers) {
+      let placed = false;
+      
+      // Ищем стол с наименьшим количеством игроков
+      const availableTables = newTables
+        .filter(table => table.active_players < table.max_seats)
+        .sort((a, b) => a.active_players - b.active_players);
+
+      for (const table of availableTables) {
+        // Ищем первое свободное место
+        const freeSeats = table.seats.filter(seat => !seat.player_id);
+        if (freeSeats.length > 0) {
+          // Случайно выбираем одно из свободных мест
+          const randomSeat = freeSeats[Math.floor(Math.random() * freeSeats.length)];
+          
+          randomSeat.player_id = player.player.id;
+          randomSeat.player_name = player.player.name;
+          randomSeat.chips = player.chips;
+          randomSeat.status = player.status;
+          randomSeat.stack_bb = Math.round((player.chips || 0) / bigBlind);
+          
+          table.active_players++;
+          playersSeated++;
+          placed = true;
+          break;
+        }
+      }
+
+      // Если не удалось разместить - открываем новый стол
+      if (!placed && newTables.every(t => t.active_players >= t.max_seats)) {
+        const newTableNumber = Math.max(...newTables.map(t => t.table_number)) + 1;
+        const seats: TableSeat[] = [];
+        
+        for (let seatNum = 1; seatNum <= maxPlayersPerTable; seatNum++) {
+          seats.push({
+            seat_number: seatNum,
+            stack_bb: 0
+          });
+        }
+
+        // Размещаем игрока на первое место нового стола
+        seats[0] = {
+          seat_number: 1,
+          player_id: player.player.id,
+          player_name: player.player.name,
+          chips: player.chips,
+          status: player.status,
+          stack_bb: Math.round((player.chips || 0) / bigBlind)
+        };
+
+        const newTable: Table = {
+          table_number: newTableNumber,
+          seats,
+          active_players: 1,
+          max_seats: maxPlayersPerTable,
+          dealer_position: Math.floor(Math.random() * maxPlayersPerTable) + 1,
+          table_status: 'active',
+          average_stack: player.chips || 0
+        };
+
+        newTables.push(newTable);
+        playersSeated++;
+      }
+    }
+
+    // Пересчитываем средние стеки
+    newTables.forEach(table => {
+      const activeSeats = table.seats.filter(s => s.player_id);
+      if (activeSeats.length > 0) {
+        table.average_stack = Math.round(
+          activeSeats.reduce((sum, seat) => sum + (seat.chips || 0), 0) / activeSeats.length
+        );
+      }
+    });
+
+    setTables(newTables);
+    await updateSeatingInDatabase(newTables);
+
+    toast({
+      title: "Автоматическое размещение завершено",
+      description: `${playersSeated} игроков размещены за столами`
+    });
+  };
+
   const checkTableBalance = () => {
     setBalancingInProgress(true);
     
@@ -451,7 +562,8 @@ const TableSeating = ({
     const balanceInfo = activeTables.map(table => ({
       tableNumber: table.table_number,
       players: table.active_players,
-      maxPlayers: table.max_seats
+      maxPlayers: table.max_seats,
+      tableObj: table
     }));
     
     // Находим столы с минимальным и максимальным количеством игроков
@@ -462,27 +574,51 @@ const TableSeating = ({
     const tablesNeedingPlayers = balanceInfo.filter(t => t.players === minPlayers);
     const tablesWithExtraPlayers = balanceInfo.filter(t => t.players === maxPlayers);
     
-    let message = "📊 АНАЛИЗ БАЛАНСИРОВКИ:\n\n";
+    let message = "📊 УМНЫЙ АНАЛИЗ БАЛАНСИРОВКИ:\n\n";
     
     if (difference <= 1) {
-      message += "✅ Столы сбалансированы хорошо (разница ≤1 игрока)";
+      message += "✅ Столы сбалансированы идеально (разница ≤1 игрока)";
     } else {
       message += `⚠️ Требуется балансировка (разница ${difference} игроков)\n\n`;
-      message += "📉 СТОЛЫ С МЕНЬШИМ КОЛИЧЕСТВОМ ИГРОКОВ:\n";
+      
+      // Конкретные рекомендации по пересадке
+      if (tablesWithExtraPlayers.length > 0 && tablesNeedingPlayers.length > 0) {
+        const sourceTable = tablesWithExtraPlayers[0];
+        const targetTable = tablesNeedingPlayers[0];
+        
+        // Находим игроков с наименьшими стеками для пересадки
+        const playersToMove = sourceTable.tableObj.seats
+          .filter(seat => seat.player_id && seat.chips)
+          .sort((a, b) => (a.chips || 0) - (b.chips || 0))
+          .slice(0, Math.floor(difference / 2));
+        
+        message += "🎯 КОНКРЕТНЫЕ РЕКОМЕНДАЦИИ:\n\n";
+        message += `📤 Пересадить СО СТОЛА ${sourceTable.tableNumber}:\n`;
+        playersToMove.forEach(player => {
+          const stackBB = Math.round((player.chips || 0) / bigBlind);
+          message += `  • ${player.player_name} (${stackBB} BB, место ${player.seat_number})\n`;
+        });
+        
+        message += `\n📥 НА СТОЛ ${targetTable.tableNumber} (свободных мест: ${targetTable.maxPlayers - targetTable.players})\n\n`;
+        message += "🔄 Порядок действий:\n";
+        message += "1. Выберите игрока с наименьшим стеком\n";
+        message += "2. Используйте кнопку 'Переместить игрока'\n";
+        message += "3. Повторите до выравнивания столов";
+      }
+      
+      message += "\n📊 ТЕКУЩЕЕ СОСТОЯНИЕ:\n";
       tablesNeedingPlayers.forEach(t => {
-        message += `• Стол ${t.tableNumber}: ${t.players}/${t.maxPlayers} игроков\n`;
+        message += `🔻 Стол ${t.tableNumber}: ${t.players}/${t.maxPlayers} (нужно +${Math.floor(difference/2)})\n`;
       });
-      message += "\n📈 СТОЛЫ С БОЛЬШИМ КОЛИЧЕСТВОМ ИГРОКОВ:\n";
       tablesWithExtraPlayers.forEach(t => {
-        message += `• Стол ${t.tableNumber}: ${t.players}/${t.maxPlayers} игроков\n`;
+        message += `🔺 Стол ${t.tableNumber}: ${t.players}/${t.maxPlayers} (можно -${Math.floor(difference/2)})\n`;
       });
-      message += "\n💡 Рекомендация: Пересадите игроков с переполненных столов на столы с меньшим количеством игроков.";
     }
     
     toast({ 
-      title: "Анализ балансировки", 
+      title: "Умный анализ балансировки", 
       description: message,
-      duration: 8000
+      duration: 12000
     });
     
     setBalancingInProgress(false);
@@ -641,7 +777,25 @@ const TableSeating = ({
     if (table.table_status === 'balancing') return <Badge variant="outline">Балансировка</Badge>;
     if (table.active_players === 0) return <Badge variant="secondary">Пустой</Badge>;
     if (table.active_players <= 3) return <Badge variant="destructive">Требует балансировки</Badge>;
-    return <Badge variant="default">{table.active_players}/{table.max_seats}</Badge>;
+    
+    // Умная индикация балансировки
+    const activeTables = tables.filter(t => t.active_players > 0);
+    if (activeTables.length > 1) {
+      const minPlayers = Math.min(...activeTables.map(t => t.active_players));
+      const maxPlayers = Math.max(...activeTables.map(t => t.active_players));
+      const difference = maxPlayers - minPlayers;
+      
+      if (difference > 1) {
+        if (table.active_players === minPlayers) {
+          return <Badge className="bg-blue-500 text-white">🔻 {table.active_players}/{table.max_seats} (нужны игроки)</Badge>;
+        }
+        if (table.active_players === maxPlayers) {
+          return <Badge className="bg-orange-500 text-white">🔺 {table.active_players}/{table.max_seats} (можно пересадить)</Badge>;
+        }
+      }
+    }
+    
+    return <Badge variant="default" className="bg-green-500 text-white">✅ {table.active_players}/{table.max_seats}</Badge>;
   };
 
   return (
@@ -753,6 +907,16 @@ const TableSeating = ({
               >
                 <ArrowUpDown className="w-4 h-4" />
                 {balancingInProgress ? 'Анализ...' : 'Баланс'}
+              </Button>
+
+              <Button 
+                onClick={autoSeatLatePlayers}
+                variant="outline"
+                size="sm"
+                className="flex items-center gap-2"
+              >
+                <Shuffle className="w-4 h-4" />
+                Авто-размещение
               </Button>
 
               {isFinalTableReady && (
