@@ -122,9 +122,20 @@ export function VoiceSettings({ onSettingsChange }: VoiceSettingsProps) {
   const saveSettings = async () => {
     setIsSaving(true);
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error('Необходимо войти в систему');
+        return;
+      }
+
+      const settingsToSave = {
+        ...settings,
+        user_id: user.id
+      };
+
       const { error } = await supabase
         .from('voice_settings')
-        .upsert([settings]);
+        .upsert([settingsToSave]);
 
       if (error) throw error;
 

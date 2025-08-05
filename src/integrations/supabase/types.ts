@@ -726,7 +726,7 @@ export type Database = {
           elevenlabs_voice: string | null
           id: string
           updated_at: string
-          user_id: string | null
+          user_id: string
           voice_enabled: boolean | null
           voice_language: string | null
           voice_provider: string | null
@@ -741,7 +741,7 @@ export type Database = {
           elevenlabs_voice?: string | null
           id?: string
           updated_at?: string
-          user_id?: string | null
+          user_id?: string
           voice_enabled?: boolean | null
           voice_language?: string | null
           voice_provider?: string | null
@@ -756,7 +756,7 @@ export type Database = {
           elevenlabs_voice?: string | null
           id?: string
           updated_at?: string
-          user_id?: string | null
+          user_id?: string
           voice_enabled?: boolean | null
           voice_language?: string | null
           voice_provider?: string | null
