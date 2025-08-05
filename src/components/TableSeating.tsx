@@ -6,7 +6,14 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Users, ArrowUpDown, Plus, Shuffle } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Separator } from '@/components/ui/separator';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { 
+  Users, ArrowUpDown, Plus, Shuffle, Play, Crown, 
+  UserMinus, AlertTriangle, Target, Settings,
+  Clock, Trophy, Zap, RotateCcw
+} from 'lucide-react';
 
 interface TableSeat {
   seat_number: number;
@@ -14,18 +21,30 @@ interface TableSeat {
   player_name?: string;
   chips?: number;
   status?: string;
+  is_dealer?: boolean;
+  is_big_blind?: boolean;
+  is_small_blind?: boolean;
+  last_action?: string;
+  stack_bb?: number;
 }
 
 interface Table {
   table_number: number;
   seats: TableSeat[];
   active_players: number;
+  max_seats: number;
+  is_final_table?: boolean;
+  dealer_position: number;
+  average_stack?: number;
+  table_status: 'active' | 'breaking' | 'balancing' | 'final';
 }
 
 interface TableSeatingProps {
   tournamentId: string;
   registrations: any[];
   maxPlayersPerTable?: number;
+  finalTableSize?: number;
+  bigBlind?: number;
   onSeatingUpdate?: () => void;
 }
 
@@ -33,6 +52,8 @@ const TableSeating = ({
   tournamentId, 
   registrations, 
   maxPlayersPerTable = 9,
+  finalTableSize = 9,
+  bigBlind = 20,
   onSeatingUpdate 
 }: TableSeatingProps) => {
   const [tables, setTables] = useState<Table[]>([]);
@@ -40,6 +61,11 @@ const TableSeating = ({
   const [targetTable, setTargetTable] = useState<number>(1);
   const [targetSeat, setTargetSeat] = useState<number>(1);
   const [isMoveDialogOpen, setIsMoveDialogOpen] = useState(false);
+  const [isSeatingStarted, setIsSeatingStarted] = useState(false);
+  const [isBreakingTables, setIsBreakingTables] = useState(false);
+  const [newTableSize, setNewTableSize] = useState<number>(maxPlayersPerTable);
+  const [balancingInProgress, setBalancingInProgress] = useState(false);
+  const [isFinalTableReady, setIsFinalTableReady] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -47,23 +73,31 @@ const TableSeating = ({
   }, [tournamentId]);
 
   useEffect(() => {
-    if (tables.length === 0) {
-      generateTablesFromRegistrations();
+    if (tables.length === 0 && registrations.length > 0) {
+      initializeTablesStructure();
     }
   }, [registrations, maxPlayersPerTable]);
 
+  useEffect(() => {
+    checkFinalTableReadiness();
+  }, [tables, finalTableSize]);
+
+  const checkFinalTableReadiness = () => {
+    const activePlayers = getActivePlayers();
+    const readyForFinal = activePlayers.length <= finalTableSize && activePlayers.length > 1;
+    setIsFinalTableReady(readyForFinal);
+  };
+
+  const getActivePlayers = () => {
+    return registrations.filter(r => r.status === 'registered' || r.status === 'playing');
+  };
+
+  const getEliminatedPlayers = () => {
+    return registrations.filter(r => r.status === 'eliminated');
+  };
+
   const loadSavedSeating = async () => {
     try {
-      // Сначала пытаемся загрузить из localStorage
-      const savedSeating = localStorage.getItem(`seating_${tournamentId}`);
-      if (savedSeating) {
-        const parsedSeating = JSON.parse(savedSeating);
-        setTables(parsedSeating);
-        console.log('🪑 Рассадка загружена из localStorage');
-        return;
-      }
-
-      // Если в localStorage нет данных, загружаем из базы данных
       const { data: seatingData, error } = await supabase
         .from('tournament_registrations')
         .select(`
@@ -78,62 +112,59 @@ const TableSeating = ({
 
       if (error) {
         console.error('Ошибка загрузки рассадки:', error);
-        generateTablesFromRegistrations();
         return;
       }
 
       if (seatingData && seatingData.length > 0) {
-        // Создаем столы на основе сохраненной рассадки
-        const maxSeatNumber = Math.max(...seatingData.map(s => s.seat_number || 0));
-        const totalTables = Math.ceil(maxSeatNumber / maxPlayersPerTable);
-        
-        const newTables: Table[] = [];
-        
-        for (let tableNum = 1; tableNum <= totalTables; tableNum++) {
-          const seats: TableSeat[] = [];
-          
-          for (let seatNum = 1; seatNum <= maxPlayersPerTable; seatNum++) {
-            const seatData = seatingData.find(s => s.seat_number === ((tableNum - 1) * maxPlayersPerTable + seatNum));
-            
-            seats.push({
-              seat_number: seatNum,
-              player_id: seatData?.player_id,
-              player_name: seatData?.player?.name,
-              chips: seatData?.chips,
-              status: seatData?.status
-            });
-          }
-          
-          newTables.push({
-            table_number: tableNum,
-            seats,
-            active_players: seats.filter(s => s.player_id).length
-          });
-        }
-        
-        setTables(newTables);
-        saveSeatingToLocalStorage(newTables);
-        console.log('🪑 Рассадка загружена из базы данных');
-      } else {
-        generateTablesFromRegistrations();
+        reconstructTablesFromDatabase(seatingData);
+        setIsSeatingStarted(true);
       }
     } catch (error) {
       console.error('Ошибка при загрузке рассадки:', error);
-      generateTablesFromRegistrations();
     }
   };
 
-  const saveSeatingToLocalStorage = (tablesData: Table[]) => {
-    try {
-      localStorage.setItem(`seating_${tournamentId}`, JSON.stringify(tablesData));
-      console.log('🪑 Рассадка сохранена в localStorage');
-    } catch (error) {
-      console.error('Ошибка сохранения в localStorage:', error);
+  const reconstructTablesFromDatabase = (seatingData: any[]) => {
+    const maxSeatNumber = Math.max(...seatingData.map(s => s.seat_number || 0));
+    const totalTables = Math.ceil(maxSeatNumber / maxPlayersPerTable);
+    
+    const newTables: Table[] = [];
+    
+    for (let tableNum = 1; tableNum <= totalTables; tableNum++) {
+      const seats: TableSeat[] = [];
+      
+      for (let seatNum = 1; seatNum <= maxPlayersPerTable; seatNum++) {
+        const seatData = seatingData.find(s => s.seat_number === ((tableNum - 1) * maxPlayersPerTable + seatNum));
+        
+        seats.push({
+          seat_number: seatNum,
+          player_id: seatData?.player_id,
+          player_name: seatData?.player?.name,
+          chips: seatData?.chips,
+          status: seatData?.status,
+          stack_bb: seatData?.chips ? Math.round(seatData.chips / bigBlind) : undefined
+        });
+      }
+      
+      const activePlayers = seats.filter(s => s.player_id && s.status !== 'eliminated').length;
+      
+      newTables.push({
+        table_number: tableNum,
+        seats,
+        active_players: activePlayers,
+        max_seats: maxPlayersPerTable,
+        dealer_position: 1,
+        table_status: 'active',
+        average_stack: activePlayers > 0 ? 
+          Math.round(seats.filter(s => s.chips).reduce((sum, s) => sum + (s.chips || 0), 0) / activePlayers) : 0
+      });
     }
+    
+    setTables(newTables);
   };
 
-  const generateTablesFromRegistrations = () => {
-    const activePlayers = registrations.filter(r => r.status === 'registered' || r.status === 'playing');
+  const initializeTablesStructure = () => {
+    const activePlayers = getActivePlayers();
     const totalTables = Math.ceil(activePlayers.length / maxPlayersPerTable);
     
     const newTables: Table[] = [];
@@ -143,19 +174,67 @@ const TableSeating = ({
       
       for (let seatNum = 1; seatNum <= maxPlayersPerTable; seatNum++) {
         seats.push({
-          seat_number: seatNum
+          seat_number: seatNum,
+          stack_bb: 0
         });
       }
       
       newTables.push({
         table_number: tableNum,
         seats,
-        active_players: 0
+        active_players: 0,
+        max_seats: maxPlayersPerTable,
+        dealer_position: 1,
+        table_status: 'active',
+        average_stack: 0
       });
     }
     
-    // Распределяем игроков по столам
-    activePlayers.forEach((registration, index) => {
+    setTables(newTables);
+  };
+
+  const startInitialSeating = async () => {
+    const activePlayers = getActivePlayers();
+    if (activePlayers.length === 0) {
+      toast({ title: "Ошибка", description: "Нет активных игроков для рассадки", variant: "destructive" });
+      return;
+    }
+
+    // Очищаем все seat_number в базе данных
+    await supabase
+      .from('tournament_registrations')
+      .update({ seat_number: null })
+      .eq('tournament_id', tournamentId);
+
+    // Перемешиваем игроков случайным образом
+    const shuffledPlayers = [...activePlayers].sort(() => Math.random() - 0.5);
+    const totalTables = Math.ceil(shuffledPlayers.length / maxPlayersPerTable);
+    
+    const newTables: Table[] = [];
+    
+    for (let tableNum = 1; tableNum <= totalTables; tableNum++) {
+      const seats: TableSeat[] = [];
+      
+      for (let seatNum = 1; seatNum <= maxPlayersPerTable; seatNum++) {
+        seats.push({
+          seat_number: seatNum,
+          stack_bb: 0
+        });
+      }
+      
+      newTables.push({
+        table_number: tableNum,
+        seats,
+        active_players: 0,
+        max_seats: maxPlayersPerTable,
+        dealer_position: Math.floor(Math.random() * maxPlayersPerTable) + 1,
+        table_status: 'active',
+        average_stack: 0
+      });
+    }
+    
+    // Размещаем перемешанных игроков
+    shuffledPlayers.forEach((registration, index) => {
       const tableIndex = Math.floor(index / maxPlayersPerTable);
       const seatIndex = index % maxPlayersPerTable;
       
@@ -165,21 +244,35 @@ const TableSeating = ({
           player_id: registration.player.id,
           player_name: registration.player.name,
           chips: registration.chips,
-          status: registration.status
+          status: registration.status,
+          stack_bb: Math.round((registration.chips || 0) / bigBlind)
         };
         newTables[tableIndex].active_players++;
       }
     });
+
+    // Пересчитываем средние стеки
+    newTables.forEach(table => {
+      const activeSeats = table.seats.filter(s => s.player_id);
+      if (activeSeats.length > 0) {
+        table.average_stack = Math.round(
+          activeSeats.reduce((sum, seat) => sum + (seat.chips || 0), 0) / activeSeats.length
+        );
+      }
+    });
     
     setTables(newTables);
-    saveSeatingToLocalStorage(newTables);
-    console.log('🪑 Столы сгенерированы из регистраций');
+    await updateSeatingInDatabase(newTables);
+    setIsSeatingStarted(true);
+    
+    toast({ 
+      title: "Начальная рассадка завершена", 
+      description: `${shuffledPlayers.length} игроков размещены за ${totalTables} столами` 
+    });
   };
 
   const updateSeatingInDatabase = async (tablesData: Table[]) => {
     try {
-      console.log('🪑 Обновление рассадки в базе данных...');
-      
       for (const table of tablesData) {
         for (const seat of table.seats) {
           if (seat.player_id) {
@@ -198,9 +291,6 @@ const TableSeating = ({
         }
       }
       
-      saveSeatingToLocalStorage(tablesData);
-      console.log('🪑 Рассадка обновлена в базе данных и localStorage');
-      
       if (onSeatingUpdate) {
         onSeatingUpdate();
       }
@@ -214,85 +304,233 @@ const TableSeating = ({
     }
   };
 
-  const autoBalanceTables = () => {
-    const activePlayers = registrations.filter(r => r.status === 'registered' || r.status === 'playing');
-    const totalTables = tables.length;
-    
+  const eliminatePlayer = async (playerId: string) => {
     const newTables = [...tables];
+    let playerFound = false;
     
-    // Очищаем все столы
     newTables.forEach(table => {
       table.seats.forEach(seat => {
-        if (seat.player_id) {
-          seat.player_id = undefined;
-          seat.player_name = undefined;
-          seat.chips = undefined;
-          seat.status = undefined;
+        if (seat.player_id === playerId) {
+          seat.status = 'eliminated';
+          table.active_players--;
+          playerFound = true;
         }
       });
-      table.active_players = 0;
     });
-    
-    // Перераспределяем игроков равномерно
-    activePlayers.forEach((registration, index) => {
-      const tableIndex = index % totalTables;
-      const targetTable = newTables[tableIndex];
+
+    if (playerFound) {
+      await supabase
+        .from('tournament_registrations')
+        .update({ status: 'eliminated' })
+        .eq('player_id', playerId)
+        .eq('tournament_id', tournamentId);
+
+      setTables(newTables);
       
-      // Найдем первое свободное место за столом
-      const emptySeat = targetTable.seats.find(seat => !seat.player_id);
-      if (emptySeat) {
-        emptySeat.player_id = registration.player.id;
-        emptySeat.player_name = registration.player.name;
-        emptySeat.chips = registration.chips;
-        emptySeat.status = registration.status;
-        targetTable.active_players++;
-      }
-    });
-    
-    setTables(newTables);
-    updateSeatingInDatabase(newTables);
-    toast({ title: "Столы автоматически сбалансированы" });
+      toast({ 
+        title: "Игрок исключен", 
+        description: "Игрок помечен как выбывший" 
+      });
+
+      // Проверяем необходимость балансировки
+      checkForTableBreaking(newTables);
+    }
   };
 
-  const shuffleSeating = () => {
-    const activePlayers = registrations.filter(r => r.status === 'registered' || r.status === 'playing');
-    const shuffledPlayers = [...activePlayers].sort(() => Math.random() - 0.5);
+  const checkForTableBreaking = (currentTables: Table[]) => {
+    const activeTables = currentTables.filter(table => table.active_players > 0);
+    const tablesNeedingBreaking = activeTables.filter(table => table.active_players <= 3);
     
-    const newTables = [...tables];
-    
-    // Очищаем все столы
-    newTables.forEach(table => {
-      table.seats.forEach(seat => {
-        if (seat.player_id) {
-          seat.player_id = undefined;
-          seat.player_name = undefined;
-          seat.chips = undefined;
-          seat.status = undefined;
-        }
+    if (tablesNeedingBreaking.length > 0) {
+      toast({
+        title: "Требуется балансировка столов",
+        description: `За столом ${tablesNeedingBreaking[0].table_number} осталось ${tablesNeedingBreaking[0].active_players} игроков`,
+        variant: "destructive"
       });
-      table.active_players = 0;
-    });
+    }
+  };
+
+  const openNewTable = () => {
+    const activePlayers = getActivePlayers();
+    const currentTables = tables.filter(t => t.active_players > 0);
     
-    // Размещаем перемешанных игроков
-    shuffledPlayers.forEach((registration, index) => {
-      const tableIndex = Math.floor(index / maxPlayersPerTable);
-      const seatIndex = index % maxPlayersPerTable;
+    if (activePlayers.length < maxPlayersPerTable * 2) {
+      toast({
+        title: "Недостаточно игроков",
+        description: "Для открытия нового стола нужно больше игроков",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const newTableNumber = Math.max(...tables.map(t => t.table_number)) + 1;
+    const seats: TableSeat[] = [];
+    
+    for (let seatNum = 1; seatNum <= maxPlayersPerTable; seatNum++) {
+      seats.push({
+        seat_number: seatNum,
+        stack_bb: 0
+      });
+    }
+
+    const newTable: Table = {
+      table_number: newTableNumber,
+      seats,
+      active_players: 0,
+      max_seats: maxPlayersPerTable,
+      dealer_position: 1,
+      table_status: 'active',
+      average_stack: 0
+    };
+
+    const newTables = [...tables, newTable];
+    setTables(newTables);
+
+    toast({
+      title: "Новый стол открыт",
+      description: `Стол ${newTableNumber} готов к заполнению. Пересадите игроков с переполненных столов.`
+    });
+  };
+
+  const autoBalanceTables = async () => {
+    setBalancingInProgress(true);
+    
+    const activePlayers = getActivePlayers();
+    const totalActiveTables = Math.ceil(activePlayers.length / maxPlayersPerTable);
+    
+    // Создаем новую структуру столов
+    const newTables: Table[] = [];
+    
+    for (let tableNum = 1; tableNum <= totalActiveTables; tableNum++) {
+      const seats: TableSeat[] = [];
       
-      if (newTables[tableIndex]) {
-        newTables[tableIndex].seats[seatIndex] = {
-          seat_number: seatIndex + 1,
-          player_id: registration.player.id,
-          player_name: registration.player.name,
-          chips: registration.chips,
-          status: registration.status
-        };
+      for (let seatNum = 1; seatNum <= maxPlayersPerTable; seatNum++) {
+        seats.push({
+          seat_number: seatNum,
+          stack_bb: 0
+        });
+      }
+      
+      newTables.push({
+        table_number: tableNum,
+        seats,
+        active_players: 0,
+        max_seats: maxPlayersPerTable,
+        dealer_position: Math.floor(Math.random() * maxPlayersPerTable) + 1,
+        table_status: 'active',
+        average_stack: 0
+      });
+    }
+    
+    // Распределяем игроков равномерно
+    activePlayers.forEach((registration, index) => {
+      const tableIndex = index % totalActiveTables;
+      const seatIndex = Math.floor(index / totalActiveTables);
+      
+      if (newTables[tableIndex] && seatIndex < maxPlayersPerTable) {
+        const seat = newTables[tableIndex].seats[seatIndex];
+        seat.player_id = registration.player.id;
+        seat.player_name = registration.player.name;
+        seat.chips = registration.chips;
+        seat.status = registration.status;
+        seat.stack_bb = Math.round((registration.chips || 0) / bigBlind);
         newTables[tableIndex].active_players++;
       }
     });
+
+    // Пересчитываем средние стеки
+    newTables.forEach(table => {
+      const activeSeats = table.seats.filter(s => s.player_id);
+      if (activeSeats.length > 0) {
+        table.average_stack = Math.round(
+          activeSeats.reduce((sum, seat) => sum + (seat.chips || 0), 0) / activeSeats.length
+        );
+      }
+    });
+    
+    // Очищаем старые seat_number
+    await supabase
+      .from('tournament_registrations')
+      .update({ seat_number: null })
+      .eq('tournament_id', tournamentId);
     
     setTables(newTables);
-    updateSeatingInDatabase(newTables);
-    toast({ title: "Рассадка перемешана" });
+    await updateSeatingInDatabase(newTables);
+    setBalancingInProgress(false);
+    
+    toast({ 
+      title: "Столы сбалансированы", 
+      description: `Игроки равномерно распределены по ${totalActiveTables} столам` 
+    });
+  };
+
+  const createFinalTable = async () => {
+    const activePlayers = getActivePlayers();
+    
+    if (activePlayers.length > finalTableSize) {
+      toast({
+        title: "Слишком много игроков",
+        description: `Для финального стола должно остаться не более ${finalTableSize} игроков`,
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Перемешиваем игроков для случайной рассадки
+    const shuffledPlayers = [...activePlayers].sort(() => Math.random() - 0.5);
+    const seats: TableSeat[] = [];
+    
+    for (let seatNum = 1; seatNum <= finalTableSize; seatNum++) {
+      seats.push({
+        seat_number: seatNum,
+        stack_bb: 0
+      });
+    }
+
+    const finalTable: Table = {
+      table_number: 1,
+      seats,
+      active_players: 0,
+      max_seats: finalTableSize,
+      dealer_position: Math.floor(Math.random() * finalTableSize) + 1,
+      table_status: 'final',
+      is_final_table: true,
+      average_stack: 0
+    };
+
+    // Размещаем игроков на финальном столе
+    shuffledPlayers.forEach((registration, index) => {
+      if (index < finalTableSize) {
+        finalTable.seats[index].player_id = registration.player.id;
+        finalTable.seats[index].player_name = registration.player.name;
+        finalTable.seats[index].chips = registration.chips;
+        finalTable.seats[index].status = registration.status;
+        finalTable.seats[index].stack_bb = Math.round((registration.chips || 0) / bigBlind);
+        finalTable.active_players++;
+      }
+    });
+
+    // Вычисляем средний стек
+    const activeSeats = finalTable.seats.filter(s => s.player_id);
+    if (activeSeats.length > 0) {
+      finalTable.average_stack = Math.round(
+        activeSeats.reduce((sum, seat) => sum + (seat.chips || 0), 0) / activeSeats.length
+      );
+    }
+
+    // Очищаем все seat_number и устанавливаем новые
+    await supabase
+      .from('tournament_registrations')
+      .update({ seat_number: null })
+      .eq('tournament_id', tournamentId);
+
+    setTables([finalTable]);
+    await updateSeatingInDatabase([finalTable]);
+    
+    toast({
+      title: "🏆 ФИНАЛЬНЫЙ СТОЛ СФОРМИРОВАН!",
+      description: `${shuffledPlayers.length} игроков размещены за финальным столом`,
+    });
   };
 
   const movePlayer = async (playerId: string, fromTable: number, toTable: number, toSeat: number) => {
@@ -366,40 +604,125 @@ const TableSeating = ({
     });
   };
 
+  const getSeatColorClass = (seat: TableSeat) => {
+    if (!seat.player_id) return 'bg-muted border-muted-foreground/20';
+    if (seat.status === 'eliminated') return 'bg-destructive/10 border-destructive/30';
+    if (seat.status === 'playing') return 'bg-warning/10 border-warning/30';
+    return 'bg-primary/10 border-primary/30';
+  };
+
+  const getTableStatusBadge = (table: Table) => {
+    if (table.is_final_table) return <Badge variant="destructive" className="bg-gradient-to-r from-yellow-400 to-orange-500">🏆 ФИНАЛ</Badge>;
+    if (table.table_status === 'breaking') return <Badge variant="destructive">Ликвидация</Badge>;
+    if (table.table_status === 'balancing') return <Badge variant="outline">Балансировка</Badge>;
+    if (table.active_players === 0) return <Badge variant="secondary">Пустой</Badge>;
+    if (table.active_players <= 3) return <Badge variant="destructive">Требует балансировки</Badge>;
+    return <Badge variant="default">{table.active_players}/{table.max_seats}</Badge>;
+  };
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      {/* Статистика турнира */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="p-4 text-center">
+            <div className="text-2xl font-bold text-primary">{getActivePlayers().length}</div>
+            <div className="text-sm text-muted-foreground">Активных игроков</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4 text-center">
+            <div className="text-2xl font-bold text-destructive">{getEliminatedPlayers().length}</div>
+            <div className="text-sm text-muted-foreground">Выбыло</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4 text-center">
+            <div className="text-2xl font-bold text-accent">{tables.filter(t => t.active_players > 0).length}</div>
+            <div className="text-sm text-muted-foreground">Активных столов</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4 text-center">
+            <div className="text-2xl font-bold text-warning">{Math.round(tables.reduce((sum, t) => sum + (t.average_stack || 0), 0) / Math.max(tables.length, 1))}</div>
+            <div className="text-sm text-muted-foreground">Ср. стек (BB)</div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Уведомления */}
+      {isFinalTableReady && (
+        <Alert className="border-warning bg-warning/10">
+          <Trophy className="h-4 w-4" />
+          <AlertDescription>
+            🏆 Готов к формированию финального стола! Осталось {getActivePlayers().length} игроков.
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* Панель управления */}
+      <div className="flex items-center justify-between flex-wrap gap-4">
         <h3 className="text-lg font-semibold flex items-center gap-2">
           <Users className="w-5 h-5" />
-          Рассадка за столами
+          Система рассадки
+          {isSeatingStarted && <Badge variant="outline">Активна</Badge>}
         </h3>
-        <div className="flex gap-2">
-          <Button 
-            onClick={autoBalanceTables}
-            variant="outline"
-            size="sm"
-            className="flex items-center gap-2"
-          >
-            <ArrowUpDown className="w-4 h-4" />
-            Сбалансировать
-          </Button>
-          <Button 
-            onClick={shuffleSeating}
-            variant="outline"
-            size="sm"
-            className="flex items-center gap-2"
-          >
-            <Shuffle className="w-4 h-4" />
-            Перемешать
-          </Button>
+        
+        <div className="flex flex-wrap gap-2">
+          {!isSeatingStarted ? (
+            <Button 
+              onClick={startInitialSeating}
+              className="flex items-center gap-2 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
+              disabled={getActivePlayers().length === 0}
+            >
+              <Play className="w-4 h-4" />
+              ПУСК
+            </Button>
+          ) : (
+            <>
+              <Button 
+                onClick={openNewTable}
+                variant="outline"
+                size="sm"
+                className="flex items-center gap-2"
+                disabled={getActivePlayers().length < maxPlayersPerTable * 2}
+              >
+                <Plus className="w-4 h-4" />
+                Открыть новый стол
+              </Button>
+              
+              <Button 
+                onClick={autoBalanceTables}
+                variant="outline"
+                size="sm"
+                className="flex items-center gap-2"
+                disabled={balancingInProgress}
+              >
+                <ArrowUpDown className="w-4 h-4" />
+                {balancingInProgress ? 'Балансировка...' : 'Сбалансировать'}
+              </Button>
+
+              {isFinalTableReady && (
+                <Button 
+                  onClick={createFinalTable}
+                  className="flex items-center gap-2 bg-gradient-to-r from-yellow-500 to-orange-600 hover:from-yellow-600 hover:to-orange-700"
+                >
+                  <Crown className="w-4 h-4" />
+                  ФИНАЛ
+                </Button>
+              )}
+            </>
+          )}
+
           <Dialog open={isMoveDialogOpen} onOpenChange={setIsMoveDialogOpen}>
             <DialogTrigger asChild>
               <Button 
                 variant="outline"
                 size="sm"
                 className="flex items-center gap-2"
+                disabled={!isSeatingStarted}
               >
-                <Plus className="w-4 h-4" />
+                <Target className="w-4 h-4" />
                 Переместить игрока
               </Button>
             </DialogTrigger>
@@ -483,54 +806,96 @@ const TableSeating = ({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      {/* Столы */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {tables.map(table => (
-          <Card key={table.table_number} className="relative">
+          <Card key={table.table_number} className={`relative ${table.is_final_table ? 'ring-2 ring-yellow-400 shadow-lg' : ''}`}>
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center justify-between">
-                <span>Стол {table.table_number}</span>
                 <div className="flex items-center gap-2">
-                  <Badge variant={table.active_players <= maxPlayersPerTable / 2 ? "destructive" : "default"}>
-                    {table.active_players}/{maxPlayersPerTable}
-                  </Badge>
-                  {table.active_players < maxPlayersPerTable / 2 && (
+                  <span className={table.is_final_table ? 'text-yellow-600 font-bold' : ''}>
+                    {table.is_final_table ? '🏆 ФИНАЛЬНЫЙ СТОЛ' : `Стол ${table.table_number}`}
+                  </span>
+                  {table.dealer_position && (
+                    <Badge variant="outline" className="text-xs">
+                      D: {table.dealer_position}
+                    </Badge>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  {getTableStatusBadge(table)}
+                  {table.active_players > 0 && table.active_players <= 3 && !table.is_final_table && (
                     <Button 
                       size="sm" 
                       variant="outline"
                       onClick={() => suggestPlayerMove(table.table_number)}
+                      className="text-xs"
                     >
-                      Подсказка
+                      <AlertTriangle className="w-3 h-3 mr-1" />
+                      Балансировка
                     </Button>
                   )}
                 </div>
               </CardTitle>
             </CardHeader>
             <CardContent>
+              {/* Информация о столе */}
+              {table.average_stack && table.average_stack > 0 && (
+                <div className="flex justify-between text-xs text-muted-foreground mb-3">
+                  <span>Средний стек: {Math.round(table.average_stack / bigBlind)} BB</span>
+                  <span>Активных: {table.active_players}</span>
+                </div>
+              )}
+              
+              {/* Места за столом */}
               <div className="grid grid-cols-3 gap-2">
                 {table.seats.map(seat => (
                   <div 
                     key={seat.seat_number}
-                    className={`p-2 rounded border text-center text-sm ${
-                      seat.player_id 
-                        ? 'bg-primary/10 border-primary' 
-                        : 'bg-muted border-muted-foreground/20'
+                    className={`p-3 rounded border text-center text-sm transition-all hover:shadow-md ${getSeatColorClass(seat)} ${
+                      seat.seat_number === table.dealer_position ? 'ring-1 ring-blue-400' : ''
                     }`}
                   >
-                    <div className="font-medium">#{seat.seat_number}</div>
+                    <div className="font-bold mb-1 flex items-center justify-center gap-1">
+                      #{seat.seat_number}
+                      {seat.seat_number === table.dealer_position && <span className="text-blue-500">🎯</span>}
+                    </div>
+                    
                     {seat.player_name ? (
                       <div className="space-y-1">
-                        <div className="truncate" title={seat.player_name}>
+                        <div className="truncate font-medium" title={seat.player_name}>
                           {seat.player_name}
                         </div>
-                        <div className="text-xs text-muted-foreground">
-                          {seat.chips?.toLocaleString()} фишек
+                        
+                        {seat.chips && (
+                          <div className="text-xs text-muted-foreground">
+                            {seat.chips.toLocaleString()}
+                            {seat.stack_bb && <span className="block">{seat.stack_bb} BB</span>}
+                          </div>
+                        )}
+                        
+                        <div className="flex flex-wrap gap-1 justify-center">
+                          <Badge 
+                            variant={seat.status === 'playing' ? 'default' : seat.status === 'eliminated' ? 'destructive' : 'secondary'}
+                            className="text-xs"
+                          >
+                            {seat.status === 'playing' ? 'В игре' : 
+                             seat.status === 'eliminated' ? 'Выбыл' : 'Готов'}
+                          </Badge>
                         </div>
-                        <Badge 
-                          variant={seat.status === 'playing' ? 'destructive' : 'default'}
-                          className="text-xs"
-                        >
-                          {seat.status === 'playing' ? 'Играет' : 'Готов'}
-                        </Badge>
+
+                        {/* Кнопка исключения игрока */}
+                        {seat.status !== 'eliminated' && isSeatingStarted && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="w-full text-xs mt-1"
+                            onClick={() => eliminatePlayer(seat.player_id!)}
+                          >
+                            <UserMinus className="w-3 h-3 mr-1" />
+                            Исключить
+                          </Button>
+                        )}
                       </div>
                     ) : (
                       <div className="text-muted-foreground text-xs">Свободно</div>
@@ -538,6 +903,32 @@ const TableSeating = ({
                   </div>
                 ))}
               </div>
+              
+              {/* Дополнительные действия для стола */}
+              {table.active_players > 0 && !table.is_final_table && (
+                <div className="mt-3 pt-3 border-t">
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="text-muted-foreground">Действия:</span>
+                    <div className="flex gap-1">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="text-xs"
+                        onClick={() => {
+                          const newTables = [...tables];
+                          const currentTable = newTables.find(t => t.table_number === table.table_number);
+                          if (currentTable) {
+                            currentTable.dealer_position = (currentTable.dealer_position % currentTable.max_seats) + 1;
+                            setTables(newTables);
+                          }
+                        }}
+                      >
+                        <RotateCcw className="w-3 h-3" />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         ))}
