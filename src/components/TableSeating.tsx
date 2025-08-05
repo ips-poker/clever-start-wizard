@@ -122,13 +122,16 @@ const TableSeating = ({
   };
 
   const initializeSeating = async () => {
-    console.log('🎯 Инициализация рассадки для турнира:', tournamentId);
+    console.log('🎯 ИНИЦИАЛИЗАЦИЯ РАССАДКИ для турнира:', tournamentId);
     
     // Сначала проверяем статус рассадки
-    await checkSeatingStatus();
+    const hasSeating = await checkSeatingStatus();
+    console.log('🔍 Проверка завершена, есть рассадка:', hasSeating);
     
     // Затем загружаем данные
     await loadSavedSeating();
+    
+    console.log('✅ Инициализация завершена, isSeated:', isSeated);
   };
 
   const checkSeatingStatus = async () => {
@@ -235,14 +238,24 @@ const TableSeating = ({
 
   const loadFromLocalStorage = () => {
     try {
-      const savedSeating = localStorage.getItem(`seating_${tournamentId}`);
+      const seatingKey = `seating_${tournamentId}`;
+      const savedSeating = localStorage.getItem(seatingKey);
       if (savedSeating) {
         const parsedTables = JSON.parse(savedSeating);
-        console.log('💾 Загружено из localStorage:', parsedTables);
+        console.log('💾 ЗАГРУЖЕНО ИЗ localStorage:', {
+          key: seatingKey,
+          tablesCount: parsedTables.length,
+          totalPlayers: parsedTables.reduce((sum: number, t: Table) => sum + t.active_players, 0),
+          tablesData: parsedTables.map((t: Table) => ({ 
+            table: t.table_number, 
+            players: t.active_players 
+          }))
+        });
         setTables(parsedTables);
         setIsSeated(true);
         return true;
       }
+      console.log('💾 localStorage пуст для ключа:', seatingKey);
       return false;
     } catch (error) {
       console.error('❌ Ошибка загрузки из localStorage:', error);
@@ -317,8 +330,13 @@ const TableSeating = ({
   const saveSeatingToLocalStorage = (tablesData: Table[]) => {
     try {
       if (tablesData && tablesData.length > 0) {
-        localStorage.setItem(`seating_${tournamentId}`, JSON.stringify(tablesData));
-        console.log('💾 Рассадка сохранена в localStorage');
+        const seatingKey = `seating_${tournamentId}`;
+        localStorage.setItem(seatingKey, JSON.stringify(tablesData));
+        console.log('💾 РАССАДКА СОХРАНЕНА В localStorage:', {
+          key: seatingKey,
+          tablesCount: tablesData.length,
+          totalPlayers: tablesData.reduce((sum, t) => sum + t.active_players, 0)
+        });
       }
     } catch (error) {
       console.error('❌ Ошибка сохранения в localStorage:', error);
@@ -488,9 +506,17 @@ const TableSeating = ({
     }
   };
 
-  const autoBalanceTables = () => {
+  const autoBalanceTables = async () => {
+    console.log('⚖️ АВТОБАЛАНСИРОВКА СТОЛОВ - начало');
+    
     const activePlayers = registrations.filter(r => r.status === 'registered' || r.status === 'playing');
     const totalTables = tables.length;
+    
+    console.log('⚖️ Балансировка:', {
+      activePlayers: activePlayers.length,
+      totalTables,
+      currentDistribution: tables.map(t => ({ table: t.table_number, players: t.active_players }))
+    });
     
     const newTables = [...tables];
     
@@ -502,6 +528,7 @@ const TableSeating = ({
           seat.player_name = undefined;
           seat.chips = undefined;
           seat.status = undefined;
+          seat.elo_rating = undefined;
         }
       });
       table.active_players = 0;
@@ -519,19 +546,39 @@ const TableSeating = ({
         emptySeat.player_name = registration.player.name;
         emptySeat.chips = registration.chips;
         emptySeat.status = registration.status;
+        emptySeat.elo_rating = registration.player.elo_rating;
         targetTable.active_players++;
       }
     });
     
+    console.log('⚖️ Новое распределение:', newTables.map(t => ({ 
+      table: t.table_number, 
+      players: t.active_players,
+      playerNames: t.seats.filter(s => s.player_id).map(s => s.player_name)
+    })));
+    
     setTables(newTables);
-    updateSeatingInDatabase(newTables);
+    await updateSeatingInDatabase(newTables);
     saveSeatingToLocalStorage(newTables);
-    toast({ title: "Столы автоматически сбалансированы" });
+    setIsSeated(true); // ✅ Важно: обновляем статус
+    
+    toast({ 
+      title: "Столы сбалансированы", 
+      description: `${activePlayers.length} игроков распределены по ${totalTables} столам` 
+    });
   };
 
-  const shuffleSeating = () => {
+  const shuffleSeating = async () => {
+    console.log('🔀 ПЕРЕМЕШИВАНИЕ РАССАДКИ - начало');
+    
     const activePlayers = registrations.filter(r => r.status === 'registered' || r.status === 'playing');
     const shuffledPlayers = [...activePlayers].sort(() => Math.random() - 0.5);
+    
+    console.log('🔀 Перемешивание:', {
+      totalPlayers: activePlayers.length,
+      originalOrder: activePlayers.slice(0, 5).map(p => p.player.name),
+      shuffledOrder: shuffledPlayers.slice(0, 5).map(p => p.player.name)
+    });
     
     const newTables = [...tables];
     
@@ -543,6 +590,7 @@ const TableSeating = ({
           seat.player_name = undefined;
           seat.chips = undefined;
           seat.status = undefined;
+          seat.elo_rating = undefined;
         }
       });
       table.active_players = 0;
@@ -559,31 +607,51 @@ const TableSeating = ({
           player_id: registration.player.id,
           player_name: registration.player.name,
           chips: registration.chips,
-          status: registration.status
+          status: registration.status,
+          elo_rating: registration.player.elo_rating
         };
         newTables[tableIndex].active_players++;
       }
     });
     
+    console.log('🔀 Результат перемешивания:', newTables.map(t => ({ 
+      table: t.table_number, 
+      players: t.active_players,
+      playerNames: t.seats.filter(s => s.player_id).map(s => s.player_name)
+    })));
+    
     setTables(newTables);
-    updateSeatingInDatabase(newTables);
+    await updateSeatingInDatabase(newTables);
     saveSeatingToLocalStorage(newTables);
-    toast({ title: "Рассадка перемешана" });
+    setIsSeated(true); // ✅ Важно: обновляем статус
+    
+    toast({ 
+      title: "Рассадка перемешана", 
+      description: `${shuffledPlayers.length} игроков перемешаны случайным образом` 
+    });
   };
 
   const movePlayer = async (playerId: string, fromTable: number, toTable: number, toSeat: number) => {
+    console.log('🔄 ПЕРЕМЕЩЕНИЕ ИГРОКА:', { playerId, fromTable, toTable, toSeat });
+    
     const newTables = [...tables];
     
     // Найдем игрока в старом месте
     const fromTableObj = newTables.find(t => t.table_number === fromTable);
     const toTableObj = newTables.find(t => t.table_number === toTable);
     
-    if (!fromTableObj || !toTableObj) return;
+    if (!fromTableObj || !toTableObj) {
+      console.error('❌ Столы не найдены');
+      return;
+    }
     
     const playerSeat = fromTableObj.seats.find(s => s.player_id === playerId);
     const targetSeat = toTableObj.seats.find(s => s.seat_number === toSeat);
     
-    if (!playerSeat || !targetSeat) return;
+    if (!playerSeat || !targetSeat) {
+      console.error('❌ Места не найдены');
+      return;
+    }
     
     // Проверяем, свободно ли целевое место
     if (targetSeat.player_id) {
@@ -591,24 +659,32 @@ const TableSeating = ({
       return;
     }
     
+    console.log('🔄 Перемещение игрока:', {
+      player: playerSeat.player_name,
+      from: `Стол ${fromTable}, место ${playerSeat.seat_number}`,
+      to: `Стол ${toTable}, место ${toSeat}`
+    });
+    
     // Перемещаем игрока
     targetSeat.player_id = playerSeat.player_id;
     targetSeat.player_name = playerSeat.player_name;
     targetSeat.chips = playerSeat.chips;
     targetSeat.status = playerSeat.status;
+    targetSeat.elo_rating = playerSeat.elo_rating;
     
     // Освобождаем старое место
     playerSeat.player_id = undefined;
     playerSeat.player_name = undefined;
     playerSeat.chips = undefined;
     playerSeat.status = undefined;
+    playerSeat.elo_rating = undefined;
     
     // Обновляем счетчики
     fromTableObj.active_players--;
     toTableObj.active_players++;
     
     setTables(newTables);
-    updateSeatingInDatabase(newTables);
+    await updateSeatingInDatabase(newTables);
     saveSeatingToLocalStorage(newTables);
     
     // Обновляем seat_number в базе данных (дублирующее обновление для надежности)
