@@ -144,6 +144,7 @@ export const useVoiceSettings = () => {
     settings,
     isLoading,
     loadSettings,
-    updateSettings
+    updateSettings,
+    saveSettingsToDatabase
   };
 };

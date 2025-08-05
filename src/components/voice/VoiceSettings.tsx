@@ -203,9 +203,6 @@ export function VoiceSettings({ onSettingsChange }: VoiceSettingsProps) {
 
       toast.success('Настройки голосового управления сохранены');
       onSettingsChange?.(settings);
-      
-      // Обновляем настройки в реальном времени без перезагрузки страницы
-      await loadSettings();
     } catch (error) {
       console.error('Error saving voice settings:', error);
       toast.error('Ошибка сохранения настроек');
@@ -214,11 +211,56 @@ export function VoiceSettings({ onSettingsChange }: VoiceSettingsProps) {
     }
   };
 
-  const updateSetting = <K extends keyof VoiceSettingsData>(
+  const updateSetting = async <K extends keyof VoiceSettingsData>(
     key: K,
     value: VoiceSettingsData[K]
   ) => {
-    setSettings(prev => ({ ...prev, [key]: value }));
+    const newSettings = { ...settings, [key]: value };
+    setSettings(newSettings);
+    
+    // Автоматически сохраняем при каждом изменении настроек
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: existingSettings } = await supabase
+        .from('voice_settings')
+        .select('id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      const settingsToSave = {
+        voice_enabled: newSettings.voice_enabled,
+        voice_language: newSettings.voice_language,
+        confidence_threshold: newSettings.confidence_threshold,
+        auto_confirm_critical: newSettings.auto_confirm_critical,
+        volume_level: newSettings.volume_level,
+        voice_speed: newSettings.voice_speed,
+        voice_provider: newSettings.voice_provider,
+        elevenlabs_voice: newSettings.elevenlabs_voice,
+        warning_intervals: newSettings.warning_intervals,
+        updated_at: new Date().toISOString()
+      };
+
+      if (existingSettings) {
+        await supabase
+          .from('voice_settings')
+          .update(settingsToSave)
+          .eq('user_id', user.id);
+      } else {
+        await supabase
+          .from('voice_settings')
+          .insert([{
+            ...settingsToSave,
+            user_id: user.id
+          }]);
+      }
+
+      console.log('Settings auto-saved:', newSettings);
+      onSettingsChange?.(newSettings);
+    } catch (error) {
+      console.error('Error auto-saving settings:', error);
+    }
   };
 
   const addCustomInterval = async () => {

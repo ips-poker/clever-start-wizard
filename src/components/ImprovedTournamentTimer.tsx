@@ -52,7 +52,7 @@ const ImprovedTournamentTimer = ({
   const { toast } = useToast();
   
   // Загрузка настроек голоса
-  const { settings: voiceSettings, isLoading: voiceSettingsLoading } = useVoiceSettings();
+  const { settings: voiceSettings, isLoading: voiceSettingsLoading, loadSettings: reloadVoiceSettings } = useVoiceSettings();
   
   // Голосовые объявления с настройками пользователя
   const voiceAnnouncements = useVoiceAnnouncements({
@@ -64,26 +64,43 @@ const ImprovedTournamentTimer = ({
     calculateChipStatistics();
   }, [registrations]);
 
+  // Перезагружаем настройки при монтировании компонента
+  useEffect(() => {
+    reloadVoiceSettings();
+  }, []);
+
   // Автоматические голосовые объявления на основе таймера с учетом настроек
   useEffect(() => {
-    if (!timerActive || !currentTime || voiceSettingsLoading || !voiceSettings.voice_enabled) return;
+    if (!timerActive || !currentTime || voiceSettingsLoading) return;
 
     const checkAndAnnounce = async () => {
+      console.log('Voice check:', {
+        voice_enabled: voiceSettings.voice_enabled,
+        currentTime,
+        warning_intervals: voiceSettings.warning_intervals,
+        lastAnnouncedTime
+      });
+
       // Объявления времени согласно настройкам пользователя (только если голосовые уведомления включены)
       if (voiceSettings.voice_enabled) {
         if (currentTime === 300 && lastAnnouncedTime !== 300 && voiceSettings.warning_intervals.five_minutes) {
+          console.log('Announcing 5 minutes');
           voiceAnnouncements.announceTimeWarning(300);
           setLastAnnouncedTime(300);
         } else if (currentTime === 120 && lastAnnouncedTime !== 120 && voiceSettings.warning_intervals.two_minutes) {
+          console.log('Announcing 2 minutes');
           voiceAnnouncements.announceTimeWarning(120);
           setLastAnnouncedTime(120);
         } else if (currentTime === 60 && lastAnnouncedTime !== 60 && voiceSettings.warning_intervals.one_minute) {
+          console.log('Announcing 1 minute');
           voiceAnnouncements.announceTimeWarning(60);
           setLastAnnouncedTime(60);
         } else if (currentTime === 30 && lastAnnouncedTime !== 30 && voiceSettings.warning_intervals.thirty_seconds) {
+          console.log('Announcing 30 seconds');
           voiceAnnouncements.announceTimeWarning(30);
           setLastAnnouncedTime(30);
         } else if (currentTime === 10 && lastAnnouncedTime !== 10 && voiceSettings.warning_intervals.ten_seconds) {
+          console.log('Announcing 10 seconds');
           voiceAnnouncements.announceTimeWarning(10);
           setLastAnnouncedTime(10);
         }
