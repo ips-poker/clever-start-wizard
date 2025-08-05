@@ -12,7 +12,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { 
   Users, ArrowUpDown, Plus, Shuffle, Play, Crown, 
   UserMinus, AlertTriangle, Target, Settings,
-  Clock, Trophy, Zap, RotateCcw
+  Clock, Trophy, Zap, RotateCcw, UserCheck, X
 } from 'lucide-react';
 
 interface TableSeat {
@@ -311,10 +311,12 @@ const TableSeating = ({
     newTables.forEach(table => {
       table.seats.forEach(seat => {
         if (seat.player_id === playerId) {
-          seat.status = 'eliminated';
+          // Полностью очищаем место
+          seat.status = undefined;
           seat.player_id = undefined;
           seat.player_name = undefined;
           seat.chips = undefined;
+          seat.stack_bb = undefined;
           table.active_players--;
           playerFound = true;
         }
@@ -336,7 +338,7 @@ const TableSeating = ({
       
       toast({ 
         title: "Игрок исключен", 
-        description: "Игрок автоматически удален из активных игроков" 
+        description: "Место освобождено. Игрок удален из активных игроков." 
       });
 
       // Вызываем callback для обновления компонента активных игроков
@@ -347,6 +349,44 @@ const TableSeating = ({
       // Проверяем необходимость балансировки
       checkForTableBreaking(newTables);
     }
+  };
+
+  const restorePlayer = async (playerId: string) => {
+    try {
+      // Возвращаем игрока в статус 'registered'
+      await supabase
+        .from('tournament_registrations')
+        .update({ status: 'registered' })
+        .eq('player_id', playerId)
+        .eq('tournament_id', tournamentId);
+
+      toast({ 
+        title: "Игрок восстановлен", 
+        description: "Игрок возвращен в список активных. Пересадите его за стол." 
+      });
+
+      // Обновляем компонент активных игроков
+      if (onSeatingUpdate) {
+        onSeatingUpdate();
+      }
+    } catch (error) {
+      console.error('Ошибка при восстановлении игрока:', error);
+      toast({ 
+        title: "Ошибка", 
+        description: "Не удалось восстановить игрока", 
+        variant: "destructive" 
+      });
+    }
+  };
+
+  const closeTable = (tableNumber: number) => {
+    const newTables = tables.filter(t => t.table_number !== tableNumber);
+    setTables(newTables);
+    
+    toast({ 
+      title: "Стол закрыт", 
+      description: `Стол ${tableNumber} удален из списка столов` 
+    });
   };
 
   const checkForTableBreaking = (currentTables: Table[]) => {
@@ -644,6 +684,35 @@ const TableSeating = ({
         </Alert>
       )}
 
+      {/* Выбывшие игроки */}
+      {getEliminatedPlayers().length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <UserMinus className="w-5 h-5" />
+              Выбывшие игроки ({getEliminatedPlayers().length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+              {getEliminatedPlayers().map(player => (
+                <div key={player.player.id} className="flex items-center justify-between p-2 bg-destructive/10 rounded border">
+                  <span className="text-sm truncate">{player.player.name}</span>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="text-xs"
+                    onClick={() => restorePlayer(player.player.id)}
+                  >
+                    <UserCheck className="w-3 h-3" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Панель управления */}
       <div className="flex items-center justify-between flex-wrap gap-4">
         <h3 className="text-lg font-semibold flex items-center gap-2">
@@ -817,6 +886,16 @@ const TableSeating = ({
                     >
                       <AlertTriangle className="w-3 h-3 mr-1" />
                       Балансировка
+                    </Button>
+                  )}
+                  {table.active_players === 0 && !table.is_final_table && (
+                    <Button 
+                      size="sm" 
+                      variant="destructive"
+                      onClick={() => closeTable(table.table_number)}
+                      className="text-xs"
+                    >
+                      <X className="w-3 h-3" />
                     </Button>
                   )}
                 </div>
