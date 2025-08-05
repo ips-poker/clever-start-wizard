@@ -508,9 +508,9 @@ const ImprovedPlayerManagement = ({ tournament, players, registrations, onRegist
                 <Button 
                   onClick={registerPlayer}
                   disabled={!selectedPlayerId || registrations.length >= tournament.max_players}
-                  className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white font-light rounded-xl shadow-sm transition-all duration-200 hover:shadow-md"
+                  className="w-full h-11 bg-slate-600 hover:bg-slate-700 text-white font-light rounded-xl shadow-sm transition-all duration-200 hover:shadow-md"
                 >
-                  <Users className="w-5 h-5 mr-2" />
+                  <Users className="w-4 h-4 mr-2" />
                   Зарегистрировать игрока
                 </Button>
               </CardContent>
@@ -541,9 +541,9 @@ const ImprovedPlayerManagement = ({ tournament, players, registrations, onRegist
                 <Button 
                   onClick={bulkRegisterPlayers}
                   disabled={!bulkPlayersList.trim()}
-                  className="w-full h-12 bg-green-600 hover:bg-green-700 text-white font-light rounded-xl shadow-sm transition-all duration-200 hover:shadow-md"
+                  className="w-full h-11 bg-slate-600 hover:bg-slate-700 text-white font-light rounded-xl shadow-sm transition-all duration-200 hover:shadow-md"
                 >
-                  <Upload className="w-5 h-5 mr-2" />
+                  <Upload className="w-4 h-4 mr-2" />
                   Зарегистрировать всех
                 </Button>
               </CardContent>

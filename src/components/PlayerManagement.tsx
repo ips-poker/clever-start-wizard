@@ -535,10 +535,10 @@ const PlayerManagement = ({ tournament, players, registrations, onRegistrationUp
                 </div>
                 <Button 
                   onClick={registerPlayer} 
-                  className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white font-light rounded-xl shadow-sm transition-all duration-200 hover:shadow-md"
+                  className="w-full h-11 bg-slate-600 hover:bg-slate-700 text-white font-light rounded-xl shadow-sm transition-all duration-200 hover:shadow-md"
                   disabled={!playerName.trim() || registrations.length >= tournament.max_players}
                 >
-                  <UserPlus className="w-5 h-5 mr-2" />
+                  <UserPlus className="w-4 h-4 mr-2" />
                   Зарегистрировать
                 </Button>
               </CardContent>
@@ -567,10 +567,10 @@ const PlayerManagement = ({ tournament, players, registrations, onRegistrationUp
                 </div>
                 <Button 
                   onClick={bulkRegisterPlayers} 
-                  className="w-full h-12 bg-green-600 hover:bg-green-700 text-white font-light rounded-xl shadow-sm transition-all duration-200 hover:shadow-md"
+                  className="w-full h-11 bg-slate-600 hover:bg-slate-700 text-white font-light rounded-xl shadow-sm transition-all duration-200 hover:shadow-md"
                   disabled={!bulkPlayersList.trim()}
                 >
-                  <Users className="w-5 h-5 mr-2" />
+                  <Users className="w-4 h-4 mr-2" />
                   Зарегистрировать всех
                 </Button>
               </CardContent>
