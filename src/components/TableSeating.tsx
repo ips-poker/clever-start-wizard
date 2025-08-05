@@ -881,126 +881,88 @@ const TableSeating = ({
                               </AvatarFallback>
                             </Avatar>
                             <div className="text-xs font-medium text-slate-900 truncate">{seat.player_name}</div>
-                            <div className="text-xs text-slate-600">{seat.stack_bb} BB</div>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="mt-2 w-full h-6 px-2 text-xs bg-white border-slate-200 text-red-600 hover:bg-red-50"
-                              onClick={() => eliminatePlayer(seat.player_id!)}
-                            >
-                              Out
-                            </Button>
+                            <div className="text-xs text-slate-600 mb-2">{seat.stack_bb} BB</div>
+                            
+                            {/* Кнопки управления игроком */}
+                            <div className="flex gap-1">
+                              <Dialog>
+                                <DialogTrigger asChild>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="flex-1 h-6 px-1 text-xs bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
+                                    onClick={() => setSelectedPlayer(seat.player_id!)}
+                                  >
+                                    <ArrowUpDown className="w-3 h-3" />
+                                  </Button>
+                                </DialogTrigger>
+                                <DialogContent className="sm:max-w-md">
+                                  <DialogHeader>
+                                    <DialogTitle>Move {seat.player_name}</DialogTitle>
+                                  </DialogHeader>
+                                  <div className="space-y-4">
+                                    <div className="grid grid-cols-2 gap-2">
+                                      <Select value={targetTable.toString()} onValueChange={(v) => setTargetTable(Number(v))}>
+                                        <SelectTrigger>
+                                          <SelectValue placeholder="Table" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          {tables.map(t => (
+                                            <SelectItem key={t.table_number} value={t.table_number.toString()}>
+                                              Table {t.table_number}
+                                            </SelectItem>
+                                          ))}
+                                        </SelectContent>
+                                      </Select>
+                                      
+                                      <Select value={targetSeat.toString()} onValueChange={(v) => setTargetSeat(Number(v))}>
+                                        <SelectTrigger>
+                                          <SelectValue placeholder="Seat" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          {Array.from({length: maxPlayersPerTable}, (_, i) => i + 1).map(seatNum => (
+                                            <SelectItem key={seatNum} value={seatNum.toString()}>
+                                              Seat {seatNum}
+                                            </SelectItem>
+                                          ))}
+                                        </SelectContent>
+                                      </Select>
+                                    </div>
+                                    
+                                    <div className="flex gap-2">
+                                      <Button 
+                                        onClick={() => {
+                                          // Здесь будет логика перемещения
+                                          toast({
+                                            title: "Player moved",
+                                            description: `${seat.player_name} moved to table ${targetTable}, seat ${targetSeat}`
+                                          });
+                                        }}
+                                        className="flex-1"
+                                      >
+                                        <ArrowUpDown className="w-4 h-4 mr-2" />
+                                        Move
+                                      </Button>
+                                    </div>
+                                  </div>
+                                </DialogContent>
+                              </Dialog>
+                              
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="flex-1 h-6 px-1 text-xs bg-white border-slate-200 text-red-600 hover:bg-red-50"
+                                onClick={() => eliminatePlayer(seat.player_id!)}
+                              >
+                                <UserMinus className="w-3 h-3" />
+                              </Button>
+                            </div>
                           </div>
                         ) : (
                           <div className="text-xs text-slate-400">Empty</div>
                         )}
                       </div>
                     ))}
-                  </div>
-                  
-                  {/* Кнопки управления столом */}
-                  <div className="flex gap-2 mb-4">
-                    <Dialog open={isMoveDialogOpen} onOpenChange={setIsMoveDialogOpen}>
-                      <DialogTrigger asChild>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="flex-1 bg-white border-slate-200 text-slate-700 hover:bg-slate-50 text-xs"
-                          disabled={table.active_players === 0}
-                        >
-                          <ArrowUpDown className="w-3 h-3 mr-1" />
-                          Move
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent className="sm:max-w-md">
-                        <DialogHeader>
-                          <DialogTitle>Move Player</DialogTitle>
-                        </DialogHeader>
-                        <div className="space-y-4">
-                          <Select value={selectedPlayer} onValueChange={setSelectedPlayer}>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select player to move" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {table.seats.filter(s => s.player_id).map(seat => (
-                                <SelectItem key={seat.player_id} value={seat.player_id!}>
-                                  {seat.player_name} (Seat {seat.seat_number})
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          
-                          <div className="grid grid-cols-2 gap-2">
-                            <Select value={targetTable.toString()} onValueChange={(v) => setTargetTable(Number(v))}>
-                              <SelectTrigger>
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {tables.map(t => (
-                                  <SelectItem key={t.table_number} value={t.table_number.toString()}>
-                                    Table {t.table_number}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            
-                            <Select value={targetSeat.toString()} onValueChange={(v) => setTargetSeat(Number(v))}>
-                              <SelectTrigger>
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {Array.from({length: maxPlayersPerTable}, (_, i) => i + 1).map(seatNum => (
-                                  <SelectItem key={seatNum} value={seatNum.toString()}>
-                                    Seat {seatNum}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          
-                          <div className="flex gap-2">
-                            <Button 
-                              onClick={() => {
-                                // movePlayer(selectedPlayer, targetTable, targetSeat);
-                                setIsMoveDialogOpen(false);
-                              }}
-                              className="flex-1"
-                              disabled={!selectedPlayer}
-                            >
-                              Move Player
-                            </Button>
-                            <Button 
-                              variant="outline" 
-                              onClick={() => setIsMoveDialogOpen(false)}
-                              className="flex-1"
-                            >
-                              Cancel
-                            </Button>
-                          </div>
-                        </div>
-                      </DialogContent>
-                    </Dialog>
-                    
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="bg-white border-slate-200 text-red-600 hover:bg-red-50 text-xs"
-                      onClick={() => {
-                        // Закрыть стол - переместить всех игроков
-                        table.seats.forEach(seat => {
-                          if (seat.player_id) {
-                            eliminatePlayer(seat.player_id);
-                          }
-                        });
-                        toast({
-                          title: "Table closed",
-                          description: `All players from table ${table.table_number} have been moved`
-                        });
-                      }}
-                    >
-                      <X className="w-3 h-3 mr-1" />
-                      Close
-                    </Button>
                   </div>
                   
                   {/* Статистика стола */}
