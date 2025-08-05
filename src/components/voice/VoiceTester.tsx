@@ -61,24 +61,40 @@ export const VoiceTester: React.FC<VoiceTesterProps> = ({ selectedTournament }) 
       if (data?.audioContent) {
         const audio = new Audio();
         
-        // Создаем blob из base64 для более надежного воспроизведения
-        const binaryString = atob(data.audioContent);
-        const bytes = new Uint8Array(binaryString.length);
-        for (let i = 0; i < binaryString.length; i++) {
-          bytes[i] = binaryString.charCodeAt(i);
+        // Безопасное создание blob из base64 (тот же код что в useVoiceAnnouncements)
+        try {
+          // Проверяем корректность base64
+          if (!data.audioContent || typeof data.audioContent !== 'string') {
+            throw new Error('Invalid audio content format');
+          }
+          
+          // Очищаем base64 от возможных проблемных символов
+          const cleanBase64 = data.audioContent.replace(/[^A-Za-z0-9+/=]/g, '');
+          
+          // Добавляем padding если нужен
+          const paddedBase64 = cleanBase64 + '='.repeat((4 - cleanBase64.length % 4) % 4);
+          
+          const binaryString = atob(paddedBase64);
+          const bytes = new Uint8Array(binaryString.length);
+          for (let i = 0; i < binaryString.length; i++) {
+            bytes[i] = binaryString.charCodeAt(i);
+          }
+          const blob = new Blob([bytes], { type: 'audio/mpeg' });
+          const audioUrl = URL.createObjectURL(blob);
+          
+          audio.src = audioUrl;
+          audio.volume = 0.8;
+          
+          audio.onended = () => {
+            URL.revokeObjectURL(audioUrl);
+          };
+          
+          await audio.play();
+          addTestResult('ElevenLabs TTS', 'success', 'ElevenLabs TTS работает корректно');
+        } catch (base64Error) {
+          console.error('❌ Base64 decode error in test:', base64Error);
+          throw new Error('Failed to decode test audio content');
         }
-        const blob = new Blob([bytes], { type: 'audio/mpeg' });
-        const audioUrl = URL.createObjectURL(blob);
-        
-        audio.src = audioUrl;
-        audio.volume = 0.8;
-        
-        audio.onended = () => {
-          URL.revokeObjectURL(audioUrl);
-        };
-        
-        await audio.play();
-        addTestResult('ElevenLabs TTS', 'success', 'ElevenLabs TTS работает корректно');
       } else {
         throw new Error('Нет аудио контента в ответе');
       }
