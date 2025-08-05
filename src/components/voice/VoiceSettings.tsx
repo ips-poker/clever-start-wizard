@@ -75,10 +75,18 @@ export function VoiceSettings({ onSettingsChange }: VoiceSettingsProps) {
   const loadSettings = async () => {
     setIsLoading(true);
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        console.log('No user found, using default settings');
+        setIsLoading(false);
+        return;
+      }
+
       const { data, error } = await supabase
         .from('voice_settings')
         .select('*')
-        .single();
+        .eq('user_id', user.id)
+        .maybeSingle();
 
       if (error && error.code !== 'PGRST116') {
         throw error;
