@@ -161,8 +161,39 @@ export const useVoiceAnnouncements = (options: VoiceAnnouncementOptions = { enab
     console.log('🔧 Voice settings check:', { 
       enabled: settings.voice_enabled, 
       provider: settings.voice_provider,
-      optionsEnabled: options.enabled 
+      optionsEnabled: options.enabled,
+      warningIntervals: settings.warning_intervals
     });
+    
+    // Проверяем настройки голоса
+    if (!options.enabled || !settings.voice_enabled) {
+      console.log('🚫 Voice announcements disabled');
+      return;
+    }
+    
+    // Проверяем конкретные интервалы предупреждений
+    const warningIntervals = settings.warning_intervals as any || {};
+    
+    if (timeInSeconds === 300 && !warningIntervals.five_minutes) {
+      console.log('🚫 5-minute warning disabled');
+      return;
+    }
+    if (timeInSeconds === 120 && !warningIntervals.two_minutes) {
+      console.log('🚫 2-minute warning disabled');
+      return;
+    }
+    if (timeInSeconds === 60 && !warningIntervals.one_minute) {
+      console.log('🚫 1-minute warning disabled');
+      return;
+    }
+    if (timeInSeconds === 30 && !warningIntervals.thirty_seconds) {
+      console.log('🚫 30-second warning disabled');
+      return;
+    }
+    if (timeInSeconds === 10 && !warningIntervals.ten_seconds) {
+      console.log('🚫 10-second warning disabled');
+      return;
+    }
     
     // Проверяем пользовательские интервалы
     const customInterval = customIntervals.find(interval => interval.seconds === timeInSeconds);
@@ -172,19 +203,19 @@ export const useVoiceAnnouncements = (options: VoiceAnnouncementOptions = { enab
       return;
     }
 
-    // Стандартные интервалы
+    // Стандартные интервалы с правильными склонениями
     const minutes = Math.floor(timeInSeconds / 60);
     let message = '';
     if (timeInSeconds === 300) {
-      message = 'Внимание! До окончания уровня осталось 5 минут.';
+      message = 'Внимание! До окончания уровня осталось пять минут.';
     } else if (timeInSeconds === 120) {
-      message = 'Внимание! До окончания уровня осталось 2 минуты. Скоро блайнд ап!';
+      message = 'Внимание! До окончания уровня остались две минуты. Скоро блайнд ап!';
     } else if (timeInSeconds === 60) {
-      message = 'Внимание! До окончания уровня осталась 1 минута. Готовьтесь к повышению блайндов!';
+      message = 'Внимание! До окончания уровня осталась одна минута. Готовьтесь к повышению блайндов!';
     } else if (timeInSeconds === 30) {
-      message = 'Внимание! До окончания уровня осталось 30 секунд!';
+      message = 'Внимание! До окончания уровня осталось тридцать секунд!';
     } else if (timeInSeconds === 10) {
-      message = 'Внимание! До окончания уровня осталось 10 секунд!';
+      message = 'Внимание! До окончания уровня осталось десять секунд!';
     } else if (minutes > 0) {
       // Правильное склонение для русского языка
       let timeWord = '';
@@ -192,10 +223,21 @@ export const useVoiceAnnouncements = (options: VoiceAnnouncementOptions = { enab
         timeWord = 'одна минута';
       } else if (minutes === 2) {
         timeWord = 'две минуты';
-      } else if (minutes === 3 || minutes === 4) {
-        timeWord = `${minutes} минуты`;
-      } else {
+      } else if (minutes === 3) {
+        timeWord = 'три минуты';
+      } else if (minutes === 4) {
+        timeWord = 'четыре минуты';
+      } else if (minutes >= 5 && minutes <= 20) {
         timeWord = `${minutes} минут`;
+      } else {
+        const lastDigit = minutes % 10;
+        if (lastDigit === 1 && minutes !== 11) {
+          timeWord = `${minutes} минута`;
+        } else if ([2, 3, 4].includes(lastDigit) && ![12, 13, 14].includes(minutes)) {
+          timeWord = `${minutes} минуты`;
+        } else {
+          timeWord = `${minutes} минут`;
+        }
       }
       message = `Внимание! До окончания уровня осталось ${timeWord}.`;
     } else {
@@ -203,10 +245,23 @@ export const useVoiceAnnouncements = (options: VoiceAnnouncementOptions = { enab
       let timeWord = '';
       if (timeInSeconds === 1) {
         timeWord = 'одна секунда';
-      } else if (timeInSeconds >= 2 && timeInSeconds <= 4) {
-        timeWord = `${timeInSeconds} секунды`;
-      } else {
+      } else if (timeInSeconds === 2) {
+        timeWord = 'две секунды';
+      } else if (timeInSeconds === 3) {
+        timeWord = 'три секунды';
+      } else if (timeInSeconds === 4) {
+        timeWord = 'четыре секунды';
+      } else if (timeInSeconds >= 5 && timeInSeconds <= 20) {
         timeWord = `${timeInSeconds} секунд`;
+      } else {
+        const lastDigit = timeInSeconds % 10;
+        if (lastDigit === 1 && timeInSeconds !== 11) {
+          timeWord = `${timeInSeconds} секунда`;
+        } else if ([2, 3, 4].includes(lastDigit) && ![12, 13, 14].includes(timeInSeconds)) {
+          timeWord = `${timeInSeconds} секунды`;
+        } else {
+          timeWord = `${timeInSeconds} секунд`;
+        }
       }
       message = `Внимание! До окончания уровня осталось ${timeWord}.`;
     }
