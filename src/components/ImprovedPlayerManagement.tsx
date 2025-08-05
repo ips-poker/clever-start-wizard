@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Users, UserX, Trophy, Clock, TrendingUp, TrendingDown, Shuffle } from 'lucide-react';
+import { Users, UserX, Trophy, Clock, TrendingUp, TrendingDown, Shuffle, Upload } from 'lucide-react';
 import TableSeating from './TableSeating';
 
 interface Tournament {
@@ -455,20 +455,22 @@ const ImprovedPlayerManagement = ({ tournament, players, registrations, onRegist
         </TabsList>
 
         <TabsContent value="registration" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Single Player Registration */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Users className="w-5 h-5" />
+            <Card className="bg-white/80 backdrop-blur-sm border border-slate-200/50 shadow-sm rounded-2xl overflow-hidden">
+              <CardHeader className="bg-gradient-to-r from-slate-50 to-slate-100/50 border-b border-slate-100">
+                <CardTitle className="flex items-center gap-3 text-slate-800 font-light text-xl">
+                  <div className="p-2 bg-blue-500/10 rounded-xl">
+                    <Users className="w-5 h-5 text-blue-600" />
+                  </div>
                   Регистрация игрока
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label htmlFor="player">Игрок</Label>
+              <CardContent className="p-6 space-y-5">
+                <div className="space-y-2">
+                  <Label htmlFor="player" className="text-slate-600 font-light text-sm">Игрок</Label>
                   <Select value={selectedPlayerId} onValueChange={setSelectedPlayerId}>
-                    <SelectTrigger>
+                    <SelectTrigger className="border-slate-200 focus:border-blue-400 focus:ring-blue-400/20 rounded-xl h-11 font-light">
                       <SelectValue placeholder="Выберите игрока" />
                     </SelectTrigger>
                     <SelectContent>
@@ -480,8 +482,8 @@ const ImprovedPlayerManagement = ({ tournament, players, registrations, onRegist
                     </SelectContent>
                   </Select>
                 </div>
-                <div>
-                  <Label htmlFor="seat">Место (опционально)</Label>
+                <div className="space-y-2">
+                  <Label htmlFor="seat" className="text-slate-600 font-light text-sm">Место (опционально)</Label>
                   <Input
                     id="seat"
                     type="number"
@@ -489,72 +491,87 @@ const ImprovedPlayerManagement = ({ tournament, players, registrations, onRegist
                     onChange={(e) => setSeatNumber(e.target.value)}
                     placeholder="Номер места"
                     min="1"
+                    className="border-slate-200 focus:border-blue-400 focus:ring-blue-400/20 rounded-xl h-11 font-light"
                   />
                 </div>
-                <div>
-                  <Label htmlFor="chips">Стартовые фишки</Label>
+                <div className="space-y-2">
+                  <Label htmlFor="chips" className="text-slate-600 font-light text-sm">Стартовые фишки</Label>
                   <Input
                     id="chips"
                     type="number"
                     value={startingChips}
                     onChange={(e) => setStartingChips(Number(e.target.value))}
                     min="1"
+                    className="border-slate-200 focus:border-blue-400 focus:ring-blue-400/20 rounded-xl h-11 font-light"
                   />
                 </div>
                 <Button 
                   onClick={registerPlayer}
                   disabled={!selectedPlayerId || registrations.length >= tournament.max_players}
-                  className="w-full"
+                  className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white font-light rounded-xl shadow-sm transition-all duration-200 hover:shadow-md"
                 >
+                  <Users className="w-5 h-5 mr-2" />
                   Зарегистрировать игрока
                 </Button>
               </CardContent>
             </Card>
 
             {/* Bulk Registration */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Массовая регистрация</CardTitle>
+            <Card className="bg-white/80 backdrop-blur-sm border border-slate-200/50 shadow-sm rounded-2xl overflow-hidden">
+              <CardHeader className="bg-gradient-to-r from-slate-50 to-slate-100/50 border-b border-slate-100">
+                <CardTitle className="flex items-center gap-3 text-slate-800 font-light text-xl">
+                  <div className="p-2 bg-green-500/10 rounded-xl">
+                    <Upload className="w-5 h-5 text-green-600" />
+                  </div>
+                  Массовая регистрация
+                </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label htmlFor="bulk-players">Список игроков (по одному в строке)</Label>
+              <CardContent className="p-6 space-y-5">
+                <div className="space-y-2">
+                  <Label htmlFor="bulk-players" className="text-slate-600 font-light text-sm">Список игроков (по одному в строке)</Label>
                   <Textarea
                     id="bulk-players"
                     value={bulkPlayersList}
                     onChange={(e) => setBulkPlayersList(e.target.value)}
                     placeholder="Иван Петров&#10;Анна Сидорова&#10;Михаил Иванов"
                     rows={6}
+                    className="border-slate-200 focus:border-green-400 focus:ring-green-400/20 rounded-xl font-light resize-none"
                   />
                 </div>
                 <Button 
                   onClick={bulkRegisterPlayers}
                   disabled={!bulkPlayersList.trim()}
-                  className="w-full"
+                  className="w-full h-12 bg-green-600 hover:bg-green-700 text-white font-light rounded-xl shadow-sm transition-all duration-200 hover:shadow-md"
                 >
+                  <Upload className="w-5 h-5 mr-2" />
                   Зарегистрировать всех
                 </Button>
               </CardContent>
             </Card>
           </div>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Статистика регистрации</CardTitle>
+          <Card className="bg-white/80 backdrop-blur-sm border border-slate-200/50 shadow-sm rounded-2xl overflow-hidden">
+            <CardHeader className="bg-gradient-to-r from-slate-50 to-slate-100/50 border-b border-slate-100">
+              <CardTitle className="flex items-center gap-3 text-slate-800 font-light text-xl">
+                <div className="p-2 bg-purple-500/10 rounded-xl">
+                  <TrendingUp className="w-5 h-5 text-purple-600" />
+                </div>
+                Статистика регистрации
+              </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-6">
               <div className="grid grid-cols-3 gap-4 text-center">
-                <div>
-                  <div className="text-2xl font-bold text-primary">{registrations.length}</div>
-                  <div className="text-sm text-muted-foreground">Всего</div>
+                <div className="p-4 bg-slate-50/50 rounded-xl">
+                  <div className="text-2xl font-light text-slate-800">{registrations.length}</div>
+                  <div className="text-sm text-slate-500 font-light">Всего</div>
                 </div>
-                <div>
-                  <div className="text-2xl font-bold text-green-600">{activePlayers.length}</div>
-                  <div className="text-sm text-muted-foreground">Активных</div>
+                <div className="p-4 bg-green-50/50 rounded-xl">
+                  <div className="text-2xl font-light text-green-600">{activePlayers.length}</div>
+                  <div className="text-sm text-slate-500 font-light">Активных</div>
                 </div>
-                <div>
-                  <div className="text-2xl font-bold text-gray-500">{tournament.max_players - registrations.length}</div>
-                  <div className="text-sm text-muted-foreground">Свободных мест</div>
+                <div className="p-4 bg-blue-50/50 rounded-xl">
+                  <div className="text-2xl font-light text-blue-600">{tournament.max_players - registrations.length}</div>
+                  <div className="text-sm text-slate-500 font-light">Свободных мест</div>
                 </div>
               </div>
             </CardContent>

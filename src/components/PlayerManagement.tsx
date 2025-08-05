@@ -490,25 +490,28 @@ const PlayerManagement = ({ tournament, players, registrations, onRegistrationUp
 
         <TabsContent value="register" className="space-y-4">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card className="bg-white/70 backdrop-blur-sm border border-gray-200/50 shadow-subtle">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <UserPlus className="w-5 h-5" />
+            <Card className="bg-white/80 backdrop-blur-sm border border-slate-200/50 shadow-sm rounded-2xl overflow-hidden">
+              <CardHeader className="bg-gradient-to-r from-slate-50 to-slate-100/50 border-b border-slate-100">
+                <CardTitle className="flex items-center gap-3 text-slate-800 font-light text-xl">
+                  <div className="p-2 bg-blue-500/10 rounded-xl">
+                    <UserPlus className="w-5 h-5 text-blue-600" />
+                  </div>
                   Добавить игрока
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="p-6 space-y-5">
                 <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label>Имя игрока</Label>
+                  <div className="space-y-2">
+                    <Label className="text-slate-600 font-light text-sm">Имя игрока</Label>
                     <Input
                       value={playerName}
                       onChange={(e) => setPlayerName(e.target.value)}
                       placeholder="Введите имя игрока"
+                      className="border-slate-200 focus:border-blue-400 focus:ring-blue-400/20 rounded-xl h-11 font-light"
                     />
                   </div>
-                  <div>
-                    <Label>Место</Label>
+                  <div className="space-y-2">
+                    <Label className="text-slate-600 font-light text-sm">Место</Label>
                     <Input
                       type="number"
                       min="1"
@@ -516,50 +519,58 @@ const PlayerManagement = ({ tournament, players, registrations, onRegistrationUp
                       value={seatNumber}
                       onChange={(e) => setSeatNumber(e.target.value)}
                       placeholder="Опционально"
+                      className="border-slate-200 focus:border-blue-400 focus:ring-blue-400/20 rounded-xl h-11 font-light"
                     />
                   </div>
                 </div>
-                <div>
-                  <Label>Стартовые фишки</Label>
+                <div className="space-y-2">
+                  <Label className="text-slate-600 font-light text-sm">Стартовые фишки</Label>
                   <Input
                     type="number"
                     min="100"
                     value={startingChips}
                     onChange={(e) => setStartingChips(parseInt(e.target.value))}
+                    className="border-slate-200 focus:border-blue-400 focus:ring-blue-400/20 rounded-xl h-11 font-light"
                   />
                 </div>
                 <Button 
                   onClick={registerPlayer} 
-                  className="w-full"
+                  className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white font-light rounded-xl shadow-sm transition-all duration-200 hover:shadow-md"
                   disabled={!playerName.trim() || registrations.length >= tournament.max_players}
                 >
-                  <UserPlus className="w-4 h-4 mr-2" />
+                  <UserPlus className="w-5 h-5 mr-2" />
                   Зарегистрировать
                 </Button>
               </CardContent>
             </Card>
 
-            <Card className="bg-white/70 backdrop-blur-sm border border-gray-200/50 shadow-subtle">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Upload className="w-5 h-5" />
+            <Card className="bg-white/80 backdrop-blur-sm border border-slate-200/50 shadow-sm rounded-2xl overflow-hidden">
+              <CardHeader className="bg-gradient-to-r from-slate-50 to-slate-100/50 border-b border-slate-100">
+                <CardTitle className="flex items-center gap-3 text-slate-800 font-light text-xl">
+                  <div className="p-2 bg-green-500/10 rounded-xl">
+                    <Upload className="w-5 h-5 text-green-600" />
+                  </div>
                   Массовая регистрация
                 </CardTitle>
-                <CardDescription>Введите имена игроков, каждое с новой строки</CardDescription>
+                <CardDescription className="text-slate-500 font-light mt-2">Введите имена игроков, каждое с новой строки</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <Textarea
-                  placeholder="Иван Петров&#10;Мария Сидорова&#10;Алексей Иванов"
-                  value={bulkPlayersList}
-                  onChange={(e) => setBulkPlayersList(e.target.value)}
-                  rows={6}
-                />
+              <CardContent className="p-6 space-y-5">
+                <div className="space-y-2">
+                  <Label className="text-slate-600 font-light text-sm">Список игроков</Label>
+                  <Textarea
+                    placeholder="Иван Петров&#10;Мария Сидорова&#10;Алексей Иванов"
+                    value={bulkPlayersList}
+                    onChange={(e) => setBulkPlayersList(e.target.value)}
+                    rows={6}
+                    className="border-slate-200 focus:border-green-400 focus:ring-green-400/20 rounded-xl font-light resize-none"
+                  />
+                </div>
                 <Button 
                   onClick={bulkRegisterPlayers} 
-                  className="w-full"
+                  className="w-full h-12 bg-green-600 hover:bg-green-700 text-white font-light rounded-xl shadow-sm transition-all duration-200 hover:shadow-md"
                   disabled={!bulkPlayersList.trim()}
                 >
-                  <Users className="w-4 h-4 mr-2" />
+                  <Users className="w-5 h-5 mr-2" />
                   Зарегистрировать всех
                 </Button>
               </CardContent>
