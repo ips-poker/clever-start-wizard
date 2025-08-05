@@ -241,21 +241,21 @@ const TournamentDirector = () => {
   useEffect(() => {
     if (!timerActive || !selectedTournament) return;
 
-    // Объявления по времени
+    // Объявления по времени - передаем правильные значения в секундах
     if (currentTime === 300 && lastAnnouncedTime !== 300) { // 5 минут
-      voiceAnnouncements.announceTimeWarning(5);
+      voiceAnnouncements.announceTimeWarning(300); // 300 секунд = 5 минут
       setLastAnnouncedTime(300);
     } else if (currentTime === 120 && lastAnnouncedTime !== 120) { // 2 минуты
-      voiceAnnouncements.announceTimeWarning(2);
+      voiceAnnouncements.announceTimeWarning(120); // 120 секунд = 2 минуты
       setLastAnnouncedTime(120);
     } else if (currentTime === 60 && lastAnnouncedTime !== 60) { // 1 минута
-      voiceAnnouncements.announceTimeWarning(1);
+      voiceAnnouncements.announceTimeWarning(60); // 60 секунд = 1 минута
       setLastAnnouncedTime(60);
     } else if (currentTime === 30 && lastAnnouncedTime !== 30) { // 30 секунд
-      voiceAnnouncements.announceCustomMessage("Внимание! До окончания уровня осталось 30 секунд!");
+      voiceAnnouncements.announceTimeWarning(30); // 30 секунд
       setLastAnnouncedTime(30);
     } else if (currentTime === 10 && lastAnnouncedTime !== 10) { // 10 секунд
-      voiceAnnouncements.announceCustomMessage("Внимание! До окончания уровня осталось 10 секунд!");
+      voiceAnnouncements.announceTimeWarning(10); // 10 секунд
       setLastAnnouncedTime(10);
     }
 
