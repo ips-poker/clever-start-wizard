@@ -98,8 +98,15 @@ const TableSeating = ({
   };
 
   const getPlayerAvatar = (playerId: string) => {
+    // Сначала ищем игрока с аватаром из профиля
+    const player = registrations.find(r => r.player.id === playerId);
+    if (player?.player.avatar_url) {
+      return player.player.avatar_url;
+    }
+    
+    // Если нет аватара, используем дефолтный
     const avatarIndex = Math.abs(playerId.split('').reduce((a, b) => a + b.charCodeAt(0), 0)) % 6 + 1;
-    return `src/assets/avatars/poker-avatar-${avatarIndex}.png`;
+    return `/src/assets/avatars/poker-avatar-${avatarIndex}.png`;
   };
 
   const loadSavedSeating = async () => {
@@ -111,7 +118,7 @@ const TableSeating = ({
           seat_number,
           chips,
           status,
-          player:players(id, name)
+          player:players(id, name, avatar_url)
         `)
         .eq('tournament_id', tournamentId)
         .not('seat_number', 'is', null);

@@ -292,7 +292,7 @@ const TournamentDirector = () => {
       .from('tournament_registrations')
       .select(`
         *,
-        player:players(*)
+        player:players(id, name, email, avatar_url, elo_rating, games_played, wins)
       `)
       .eq('tournament_id', tournamentId);
 
