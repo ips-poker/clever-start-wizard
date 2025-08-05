@@ -912,18 +912,18 @@ const TableSeating = ({
                   <Users className="w-6 h-6 text-white" />
                 </div>
                 <div>
-                  <div className="font-semibold text-lg tracking-tight text-slate-900">TABLE SEATING</div>
-                  <div className="text-xs text-slate-500 font-medium">Professional Tournament Management</div>
+                  <div className="font-bold text-lg tracking-tight text-slate-900">РАССАДКА ИГРОКОВ</div>
+                  <div className="text-xs text-slate-500 font-medium">Профессиональное управление турниром</div>
                 </div>
               </div>
               <div className="text-right">
                 {isSeatingStarted ? (
-                  <div className="bg-slate-900 text-white text-xs font-semibold px-3 py-1 rounded-full tracking-wide">
-                    ACTIVE
+                  <div className="bg-slate-900 text-white text-xs font-bold px-3 py-1 rounded-full tracking-wide">
+                    АКТИВНА
                   </div>
                 ) : (
-                  <div className="bg-slate-300 text-slate-700 text-xs font-semibold px-3 py-1 rounded-full tracking-wide">
-                    PENDING
+                  <div className="bg-slate-300 text-slate-700 text-xs font-bold px-3 py-1 rounded-full tracking-wide">
+                    В ОЖИДАНИИ
                   </div>
                 )}
               </div>
@@ -933,12 +933,12 @@ const TableSeating = ({
             <div className="mb-6">
               <div className="grid grid-cols-2 gap-4 mb-6">
                 <div className="text-center py-4">
-                  <div className="text-slate-500 text-xs font-medium mb-1 tracking-wide uppercase">Active Players</div>
-                  <div className="text-3xl font-light text-slate-900">{getActivePlayers().length}</div>
+                  <div className="text-slate-500 text-xs font-bold mb-1 tracking-wide uppercase">Активные игроки</div>
+                  <div className="text-3xl font-bold text-slate-900">{getActivePlayers().length}</div>
                 </div>
                 <div className="text-center py-4">
-                  <div className="text-slate-500 text-xs font-medium mb-1 tracking-wide uppercase">Eliminated</div>
-                  <div className="text-3xl font-light text-slate-900">{getEliminatedPlayers().length}</div>
+                  <div className="text-slate-500 text-xs font-bold mb-1 tracking-wide uppercase">Выбывшие</div>
+                  <div className="text-3xl font-bold text-slate-900">{getEliminatedPlayers().length}</div>
                 </div>
               </div>
               
@@ -946,12 +946,12 @@ const TableSeating = ({
               
               <div className="grid grid-cols-2 gap-4">
                 <div className="text-center py-3">
-                  <div className="text-slate-500 text-xs font-medium mb-1 tracking-wide uppercase">Active Tables</div>
-                  <div className="text-xl font-light text-slate-900">{tables.filter(t => t.active_players > 0).length}</div>
+                  <div className="text-slate-500 text-xs font-bold mb-1 tracking-wide uppercase">Активные столы</div>
+                  <div className="text-xl font-bold text-slate-900">{tables.filter(t => t.active_players > 0).length}</div>
                 </div>
                 <div className="text-center py-3">
-                  <div className="text-slate-500 text-xs font-medium mb-1 tracking-wide uppercase">Avg Stack (BB)</div>
-                  <div className="text-xl font-light text-slate-900">{Math.round(tables.reduce((sum, t) => sum + (t.average_stack || 0), 0) / Math.max(tables.length, 1))}</div>
+                  <div className="text-slate-500 text-xs font-bold mb-1 tracking-wide uppercase">Средний стек (BB)</div>
+                  <div className="text-xl font-bold text-slate-900">{Math.round(tables.reduce((sum, t) => sum + (t.average_stack || 0), 0) / Math.max(tables.length, 1))}</div>
                 </div>
               </div>
             </div>
@@ -964,9 +964,9 @@ const TableSeating = ({
         <Card className="w-full bg-white border border-slate-200 shadow-[0_20px_25px_-5px_rgba(0,0,0,0.06),0_10px_10px_-5px_rgba(0,0,0,0.04)]">
           <CardContent className="p-6">
             <div className="text-center">
-              <div className="text-slate-500 text-xs font-medium mb-2 tracking-wide uppercase">Final Table Ready</div>
-              <div className="text-lg font-light text-slate-900 mb-2">🏆 {getActivePlayers().length} players remaining</div>
-              <div className="text-sm text-slate-600">Tournament ready for final table formation</div>
+              <div className="text-slate-500 text-xs font-bold mb-2 tracking-wide uppercase">Финальный стол готов</div>
+              <div className="text-lg font-bold text-slate-900 mb-2">🏆 Осталось {getActivePlayers().length} игроков</div>
+              <div className="text-sm text-slate-600 font-medium">Турнир готов для формирования финального стола</div>
             </div>
           </CardContent>
         </Card>
@@ -980,8 +980,8 @@ const TableSeating = ({
           <CardContent className="p-0">
             <div className="relative p-6">
               <div className="text-center mb-6">
-                <div className="text-slate-500 text-xs font-medium mb-1 tracking-wide uppercase">Eliminated Players</div>
-                <div className="text-lg font-light text-slate-900">{getEliminatedPlayers().length} players out</div>
+                <div className="text-slate-500 text-xs font-bold mb-1 tracking-wide uppercase">Выбывшие игроки</div>
+                <div className="text-lg font-bold text-slate-900">{getEliminatedPlayers().length} игроков выбыло</div>
               </div>
               
               <div className="w-full h-px bg-slate-200 mb-6"></div>
@@ -995,15 +995,15 @@ const TableSeating = ({
                         {player.player.name.charAt(0).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
-                    <div className="text-sm font-light text-slate-900 mb-1">{player.player.name}</div>
-                    <div className="text-xs text-slate-500 mb-3">Eliminated</div>
+                    <div className="text-sm font-medium text-slate-900 mb-1">{player.player.name}</div>
+                    <div className="text-xs text-slate-500 mb-3 font-medium">Выбыл</div>
                     <Button
                       size="sm"
                       variant="outline"
                       className="w-full bg-white border-slate-200 text-slate-700 hover:bg-slate-900 hover:text-white transition-all"
                       onClick={() => restorePlayer(player.player.id)}
                     >
-                      Restore
+                      Восстановить
                     </Button>
                   </div>
                 ))}
@@ -1020,8 +1020,8 @@ const TableSeating = ({
         <CardContent className="p-0">
           <div className="relative p-6">
             <div className="text-center mb-6">
-              <div className="text-slate-500 text-xs font-medium mb-1 tracking-wide uppercase">Control Panel</div>
-              <div className="text-lg font-light text-slate-900">Tournament Management</div>
+              <div className="text-slate-500 text-xs font-bold mb-1 tracking-wide uppercase">Панель управления</div>
+              <div className="text-lg font-bold text-slate-900">Управление турниром</div>
             </div>
             
             <div className="w-full h-px bg-slate-200 mb-6"></div>
@@ -1030,50 +1030,50 @@ const TableSeating = ({
               {!isSeatingStarted ? (
                 <Button 
                   onClick={startInitialSeating}
-                  className="bg-slate-900 text-white hover:bg-slate-700 px-6 py-2 rounded-lg font-medium text-sm tracking-wide transition-all"
+                  className="bg-slate-900 text-white hover:bg-slate-700 px-6 py-2 rounded-lg font-bold text-sm tracking-wide transition-all"
                   disabled={getActivePlayers().length === 0}
                 >
                   <Play className="w-4 h-4 mr-2" />
-                  START SEATING
+                  НАЧАТЬ РАССАДКУ
                 </Button>
               ) : (
                 <>
                   <Button 
                     onClick={openNewTable}
                     variant="outline"
-                    className="bg-white border-slate-200 text-slate-700 hover:bg-slate-50 px-4 py-2 rounded-lg font-medium text-sm"
+                    className="bg-white border-slate-200 text-slate-700 hover:bg-slate-50 px-4 py-2 rounded-lg font-bold text-sm"
                     disabled={getActivePlayers().length < maxPlayersPerTable * 2}
                   >
                     <Plus className="w-4 h-4 mr-2" />
-                    New Table
+                    Новый стол
                   </Button>
                   
                   <Button 
                     onClick={checkTableBalance}
                     variant="outline"
-                    className="bg-white border-slate-200 text-slate-700 hover:bg-slate-50 px-4 py-2 rounded-lg font-medium text-sm"
+                    className="bg-white border-slate-200 text-slate-700 hover:bg-slate-50 px-4 py-2 rounded-lg font-bold text-sm"
                     disabled={balancingInProgress}
                   >
                     <ArrowUpDown className="w-4 h-4 mr-2" />
-                    {balancingInProgress ? 'Analyzing...' : 'Balance'}
+                    {balancingInProgress ? 'Анализ...' : 'Баланс'}
                   </Button>
 
                   <Button 
                     onClick={autoSeatLatePlayers}
                     variant="outline"
-                    className="bg-white border-slate-200 text-slate-700 hover:bg-slate-50 px-4 py-2 rounded-lg font-medium text-sm"
+                    className="bg-white border-slate-200 text-slate-700 hover:bg-slate-50 px-4 py-2 rounded-lg font-bold text-sm"
                   >
                     <Shuffle className="w-4 h-4 mr-2" />
-                    Auto-Seat
+                    Авто-рассадка
                   </Button>
 
                   {isFinalTableReady && (
                     <Button 
                       onClick={createFinalTable}
-                      className="bg-slate-900 text-white hover:bg-slate-700 px-6 py-2 rounded-lg font-medium text-sm tracking-wide transition-all"
+                      className="bg-slate-900 text-white hover:bg-slate-700 px-6 py-2 rounded-lg font-bold text-sm tracking-wide transition-all"
                     >
                       <Crown className="w-4 h-4 mr-2" />
-                      FINAL TABLE
+                      ФИНАЛЬНЫЙ СТОЛ
                     </Button>
                   )}
                 </>
@@ -1105,13 +1105,13 @@ const TableSeating = ({
                   {/* Заголовок стола */}
                   <div className="text-center mb-6 relative">
                     <div className="text-slate-500 text-xs font-medium mb-1 tracking-wide uppercase">
-                      {table.is_final_table ? 'Final Table' : `Table ${table.table_number}`}
+                      {table.is_final_table ? 'Финальный стол' : `Стол ${table.table_number}`}
                     </div>
-                    <div className="text-lg font-light text-slate-900">
-                      {table.active_players}/{table.max_seats} Players
+                    <div className="text-lg font-bold text-slate-900">
+                      {table.active_players}/{table.max_seats} Игроков
                     </div>
                     {table.is_final_table && (
-                      <div className="text-yellow-600 text-xs font-medium mt-1">🏆 Championship Round</div>
+                      <div className="text-yellow-600 text-xs font-bold mt-1">🏆 Чемпионский раунд</div>
                     )}
                     
                     {/* Кнопка закрытия стола */}
@@ -1121,7 +1121,7 @@ const TableSeating = ({
                         variant="outline"
                         className="absolute top-0 right-0 h-6 w-6 p-0 bg-white border-slate-200 text-red-600 hover:bg-red-50"
                         onClick={() => closeTable(table.table_number)}
-                        title="Close table"
+                        title="Закрыть стол"
                       >
                         <X className="w-3 h-3" />
                       </Button>
@@ -1143,7 +1143,7 @@ const TableSeating = ({
                           }
                         `}
                       >
-                        <div className="text-xs text-slate-500 mb-1">Seat {seat.seat_number}</div>
+                        <div className="text-xs text-slate-500 mb-1 font-medium">Место {seat.seat_number}</div>
                         {seat.player_id ? (
                           <div>
                             <Avatar className="w-8 h-8 mx-auto mb-2">
@@ -1152,8 +1152,8 @@ const TableSeating = ({
                                 {seat.player_name?.charAt(0).toUpperCase()}
                               </AvatarFallback>
                             </Avatar>
-                            <div className="text-xs font-medium text-slate-900 truncate">{seat.player_name}</div>
-                            <div className="text-xs text-slate-600 mb-2">{seat.stack_bb} BB</div>
+                            <div className="text-xs font-bold text-slate-900 truncate">{seat.player_name}</div>
+                            <div className="text-xs text-slate-600 mb-2 font-medium">{seat.stack_bb} BB</div>
                             
                             {/* Кнопки управления игроком */}
                             <div className="flex gap-1">
@@ -1170,18 +1170,18 @@ const TableSeating = ({
                                 </DialogTrigger>
                                 <DialogContent className="sm:max-w-md">
                                   <DialogHeader>
-                                    <DialogTitle>Move {seat.player_name}</DialogTitle>
+                                    <DialogTitle>Переместить {seat.player_name}</DialogTitle>
                                   </DialogHeader>
                                   <div className="space-y-4">
                                     <div className="grid grid-cols-2 gap-2">
                                       <Select value={targetTable.toString()} onValueChange={(v) => setTargetTable(Number(v))}>
                                         <SelectTrigger>
-                                          <SelectValue placeholder="Table" />
+                                          <SelectValue placeholder="Стол" />
                                         </SelectTrigger>
                                         <SelectContent>
                                           {tables.map(t => (
                                             <SelectItem key={t.table_number} value={t.table_number.toString()}>
-                                              Table {t.table_number}
+                                              Стол {t.table_number}
                                             </SelectItem>
                                           ))}
                                         </SelectContent>
@@ -1189,12 +1189,12 @@ const TableSeating = ({
                                       
                                       <Select value={targetSeat.toString()} onValueChange={(v) => setTargetSeat(Number(v))}>
                                         <SelectTrigger>
-                                          <SelectValue placeholder="Seat" />
+                                          <SelectValue placeholder="Место" />
                                         </SelectTrigger>
                                         <SelectContent>
                                           {getAvailableSeats(targetTable).map(seatNum => (
                                             <SelectItem key={seatNum} value={seatNum.toString()}>
-                                              Seat {seatNum} (Free)
+                                              Место {seatNum} (Свободно)
                                             </SelectItem>
                                           ))}
                                         </SelectContent>
@@ -1218,7 +1218,7 @@ const TableSeating = ({
                                         disabled={getAvailableSeats(targetTable).length === 0}
                                       >
                                         <ArrowUpDown className="w-4 h-4 mr-2" />
-                                        Move
+                                        Переместить
                                       </Button>
                                     </div>
                                   </div>
@@ -1236,7 +1236,7 @@ const TableSeating = ({
                             </div>
                           </div>
                         ) : (
-                          <div className="text-xs text-slate-400">Empty</div>
+                          <div className="text-xs text-slate-400 font-medium">Пусто</div>
                         )}
                       </div>
                     ))}
@@ -1245,8 +1245,8 @@ const TableSeating = ({
                   {/* Статистика стола */}
                   {table.active_players > 0 && (
                     <div className="text-center bg-slate-50 rounded-lg py-3">
-                      <div className="text-slate-500 text-xs font-medium mb-1 tracking-wide uppercase">Average Stack</div>
-                      <div className="text-sm font-light text-slate-900">{Math.round(table.average_stack || 0)} chips</div>
+                      <div className="text-slate-500 text-xs font-bold mb-1 tracking-wide uppercase">Средний стек</div>
+                      <div className="text-sm font-bold text-slate-900">{Math.round(table.average_stack || 0)} фишек</div>
                     </div>
                   )}
                 </div>
