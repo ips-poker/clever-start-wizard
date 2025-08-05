@@ -9,7 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { Users, ArrowUpDown, Plus, Shuffle, Settings, RotateCcw, UserMinus } from 'lucide-react';
+import { Users, ArrowUpDown, Plus, Shuffle, Settings, RotateCcw, UserMinus, MoveRight, Crown } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 interface TableSeat {
   seat_number: number;
@@ -17,6 +18,8 @@ interface TableSeat {
   player_name?: string;
   chips?: number;
   status?: string;
+  avatar_url?: string;
+  elo_rating?: number;
 }
 
 interface Table {
@@ -696,61 +699,216 @@ const TableSeating = ({
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      {/* Столы с красивым дизайном */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
         {tables.map(table => (
-          <Card key={table.table_number} className="relative">
-            <CardHeader className="pb-3">
+          <Card key={table.table_number} className="relative overflow-hidden border-2 shadow-lg hover:shadow-xl transition-all duration-300">
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent" />
+            
+            <CardHeader className="relative pb-4">
               <CardTitle className="flex items-center justify-between">
-                <span>Стол {table.table_number}</span>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-bold">
+                    {table.table_number}
+                  </div>
+                  <span className="text-lg">Стол {table.table_number}</span>
+                </div>
                 <div className="flex items-center gap-2">
-                  <Badge variant={table.active_players <= seatingSettings.maxPlayersPerTable / 2 ? "destructive" : "default"}>
+                  <Badge 
+                    variant={table.active_players <= seatingSettings.maxPlayersPerTable / 2 ? "destructive" : "default"}
+                    className="text-sm px-3 py-1"
+                  >
                     {table.active_players}/{seatingSettings.maxPlayersPerTable}
                   </Badge>
-                  {table.active_players < seatingSettings.maxPlayersPerTable / 2 && (
-                    <Button 
-                      size="sm" 
-                      variant="outline"
-                      onClick={() => suggestPlayerMove(table.table_number)}
-                    >
-                      Подсказка
-                    </Button>
+                  {checkTableBalance()?.fromTable === table.table_number && (
+                    <Badge variant="outline" className="text-xs animate-pulse border-yellow-500 text-yellow-600">
+                      Нужна балансировка
+                    </Badge>
                   )}
                 </div>
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-3 gap-2">
+            
+            <CardContent className="relative space-y-3">
+              {/* Сетка мест */}
+              <div className="grid grid-cols-3 gap-3">
                 {table.seats.map(seat => (
                   <div 
                     key={seat.seat_number}
-                    className={`p-2 rounded border text-center text-sm ${
-                      seat.player_id 
-                        ? 'bg-primary/10 border-primary' 
-                        : 'bg-muted border-muted-foreground/20'
-                    }`}
+                    className={`
+                      relative p-3 rounded-xl border-2 transition-all duration-300 hover:scale-105
+                      ${seat.player_id 
+                        ? 'bg-gradient-to-br from-primary/10 to-primary/5 border-primary shadow-md' 
+                        : 'bg-gradient-to-br from-muted/50 to-transparent border-dashed border-muted-foreground/30 hover:border-primary/30'
+                      }
+                    `}
                   >
-                    <div className="font-medium">#{seat.seat_number}</div>
-                    {seat.player_name ? (
-                      <div className="space-y-1">
-                        <div className="truncate" title={seat.player_name}>
-                          {seat.player_name}
+                    {/* Номер места */}
+                    <div className="absolute -top-2 -left-2 w-6 h-6 bg-background border-2 border-primary rounded-full flex items-center justify-center text-xs font-bold">
+                      {seat.seat_number}
+                    </div>
+                    
+                    {seat.player_id ? (
+                      <div className="space-y-2">
+                        {/* Аватар и имя */}
+                        <div className="flex items-center gap-2">
+                          <Avatar className="w-8 h-8 border-2 border-primary/20">
+                            <AvatarImage 
+                              src={registrations.find(r => r.player.id === seat.player_id)?.player.avatar_url || ''} 
+                              alt={seat.player_name || ''} 
+                            />
+                            <AvatarFallback className="text-xs font-bold bg-primary/10">
+                              {seat.player_name?.slice(0, 2).toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 min-w-0">
+                            <div className="truncate text-sm font-medium" title={seat.player_name}>
+                              {seat.player_name}
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              ELO: {registrations.find(r => r.player.id === seat.player_id)?.player.elo_rating || 1200}
+                            </div>
+                          </div>
                         </div>
-                        <div className="text-xs text-muted-foreground">
-                          {seat.chips?.toLocaleString()} фишек
+                        
+                        {/* Фишки */}
+                        <div className="text-center">
+                          <div className="text-sm font-bold text-primary">
+                            {seat.chips?.toLocaleString()} фишек
+                          </div>
+                          <Badge 
+                            variant={seat.status === 'playing' ? 'destructive' : 'default'}
+                            className="text-xs mt-1"
+                          >
+                            {seat.status === 'playing' ? 'Играет' : 'Готов'}
+                          </Badge>
                         </div>
-                        <Badge 
-                          variant={seat.status === 'playing' ? 'destructive' : 'default'}
-                          className="text-xs"
-                        >
-                          {seat.status === 'playing' ? 'Играет' : 'Готов'}
-                        </Badge>
+                        
+                        {/* Кнопка перемещения */}
+                        {isSeated && (
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="w-full h-7 text-xs hover:bg-primary hover:text-primary-foreground transition-colors"
+                              >
+                                <MoveRight className="w-3 h-3 mr-1" />
+                                Переместить
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent>
+                              <DialogHeader>
+                                <DialogTitle className="flex items-center gap-2">
+                                  <Avatar className="w-8 h-8">
+                                    <AvatarImage 
+                                      src={registrations.find(r => r.player.id === seat.player_id)?.player.avatar_url || ''} 
+                                      alt={seat.player_name || ''} 
+                                    />
+                                    <AvatarFallback className="text-xs">
+                                      {seat.player_name?.slice(0, 2).toUpperCase()}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                  Переместить {seat.player_name}
+                                </DialogTitle>
+                              </DialogHeader>
+                              <div className="space-y-4">
+                                <div className="text-sm text-muted-foreground">
+                                  Текущее местоположение: Стол {table.table_number}, место {seat.seat_number}
+                                </div>
+                                
+                                <div className="grid grid-cols-2 gap-4">
+                                  <div>
+                                    <Label>Целевой стол</Label>
+                                    <Select 
+                                      value={targetTable.toString()} 
+                                      onValueChange={(v) => setTargetTable(Number(v))}
+                                    >
+                                      <SelectTrigger>
+                                        <SelectValue />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        {tables.filter(t => t.table_number !== table.table_number).map(t => (
+                                          <SelectItem key={t.table_number} value={t.table_number.toString()}>
+                                            Стол {t.table_number} ({t.active_players}/{seatingSettings.maxPlayersPerTable})
+                                          </SelectItem>
+                                        ))}
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+                                  
+                                  <div>
+                                    <Label>Целевое место</Label>
+                                    <Select 
+                                      value={targetSeat.toString()} 
+                                      onValueChange={(v) => setTargetSeat(Number(v))}
+                                    >
+                                      <SelectTrigger>
+                                        <SelectValue />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        {Array.from({ length: seatingSettings.maxPlayersPerTable }, (_, i) => i + 1).map(seatNum => {
+                                          const targetTableObj = tables.find(t => t.table_number === targetTable);
+                                          const seatTaken = targetTableObj?.seats.find(s => s.seat_number === seatNum)?.player_id;
+                                          return (
+                                            <SelectItem 
+                                              key={seatNum} 
+                                              value={seatNum.toString()} 
+                                              disabled={!!seatTaken}
+                                            >
+                                              Место {seatNum} {seatTaken ? '(занято)' : '(свободно)'}
+                                            </SelectItem>
+                                          );
+                                        })}
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+                                </div>
+                                
+                                <Button 
+                                  onClick={() => movePlayer(seat.player_id!, table.table_number, targetTable, targetSeat)}
+                                  className="w-full"
+                                  disabled={!targetTable || !targetSeat}
+                                >
+                                  <MoveRight className="w-4 h-4 mr-2" />
+                                  Переместить игрока
+                                </Button>
+                              </div>
+                            </DialogContent>
+                          </Dialog>
+                        )}
                       </div>
                     ) : (
-                      <div className="text-muted-foreground text-xs">Свободно</div>
+                      <div className="h-20 flex items-center justify-center">
+                        <div className="text-center text-muted-foreground">
+                          <div className="text-lg opacity-50">💺</div>
+                          <div className="text-xs">Свободно</div>
+                        </div>
+                      </div>
                     )}
                   </div>
                 ))}
               </div>
+              
+              {/* Действия стола */}
+              {table.active_players > 0 && (
+                <div className="flex items-center justify-between pt-3 border-t">
+                  <div className="text-xs text-muted-foreground">
+                    Игроков за столом: {table.active_players}
+                  </div>
+                  {table.active_players < seatingSettings.maxPlayersPerTable / 2 && (
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      onClick={() => smartTableBalance()}
+                      className="text-xs h-7"
+                    >
+                      <Crown className="w-3 h-3 mr-1" />
+                      Подсказка
+                    </Button>
+                  )}
+                </div>
+              )}
             </CardContent>
           </Card>
         ))}
