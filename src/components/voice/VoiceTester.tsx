@@ -68,13 +68,26 @@ export const VoiceTester: React.FC<VoiceTesterProps> = ({ selectedTournament }) 
             throw new Error('Invalid audio content format');
           }
           
-          // Очищаем base64 от возможных проблемных символов
-          const cleanBase64 = data.audioContent.replace(/[^A-Za-z0-9+/=]/g, '');
+          // Очищаем base64 от возможных проблемных символов и проверяем длину
+          let cleanBase64 = data.audioContent.replace(/\s/g, '').replace(/[^A-Za-z0-9+/=]/g, '');
+          
+          // Если строка пустая после очистки
+          if (!cleanBase64) {
+            throw new Error('Empty base64 string after cleaning');
+          }
           
           // Добавляем padding если нужен
-          const paddedBase64 = cleanBase64 + '='.repeat((4 - cleanBase64.length % 4) % 4);
+          const padding = (4 - cleanBase64.length % 4) % 4;
+          if (padding > 0) {
+            cleanBase64 += '='.repeat(padding);
+          }
           
-          const binaryString = atob(paddedBase64);
+          // Проверяем валидность base64 перед декодированием
+          if (!/^[A-Za-z0-9+/]*={0,2}$/.test(cleanBase64)) {
+            throw new Error('Invalid base64 format');
+          }
+          
+          const binaryString = atob(cleanBase64);
           const bytes = new Uint8Array(binaryString.length);
           for (let i = 0; i < binaryString.length; i++) {
             bytes[i] = binaryString.charCodeAt(i);

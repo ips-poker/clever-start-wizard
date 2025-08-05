@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import { useVoiceAnnouncements } from '@/hooks/useVoiceAnnouncements';
+import { useVoiceSettings } from '@/hooks/useVoiceSettings';
 import { Play, Pause, RotateCcw, SkipForward, SkipBack, Maximize, Coffee, Clock } from 'lucide-react';
 
 interface BlindLevel {
@@ -50,10 +51,13 @@ const ImprovedTournamentTimer = ({
   const [lastAnnouncedTime, setLastAnnouncedTime] = useState<number | null>(null);
   const { toast } = useToast();
   
-  // Голосовые объявления
+  // Загрузка настроек голоса
+  const { settings: voiceSettings, isLoading: voiceSettingsLoading } = useVoiceSettings();
+  
+  // Голосовые объявления с настройками пользователя
   const voiceAnnouncements = useVoiceAnnouncements({
-    enabled: true,
-    volume: 0.8
+    enabled: voiceSettings.voice_enabled,
+    volume: voiceSettings.volume_level / 100
   });
 
   useEffect(() => {
@@ -62,23 +66,23 @@ const ImprovedTournamentTimer = ({
 
   // Автоматические голосовые объявления на основе таймера с учетом настроек
   useEffect(() => {
-    if (!timerActive || !currentTime) return;
+    if (!timerActive || !currentTime || voiceSettingsLoading || !voiceSettings.voice_enabled) return;
 
     const checkAndAnnounce = async () => {
       // Объявления времени согласно настройкам пользователя
-      if (currentTime === 300 && lastAnnouncedTime !== 300) { // 5 минут
+      if (currentTime === 300 && lastAnnouncedTime !== 300 && voiceSettings.warning_intervals.five_minutes) {
         voiceAnnouncements.announceTimeWarning(5);
         setLastAnnouncedTime(300);
-      } else if (currentTime === 120 && lastAnnouncedTime !== 120) { // 2 минуты
+      } else if (currentTime === 120 && lastAnnouncedTime !== 120 && voiceSettings.warning_intervals.two_minutes) {
         voiceAnnouncements.announceTimeWarning(2);
         setLastAnnouncedTime(120);
-      } else if (currentTime === 60 && lastAnnouncedTime !== 60) { // 1 минута
+      } else if (currentTime === 60 && lastAnnouncedTime !== 60 && voiceSettings.warning_intervals.one_minute) {
         voiceAnnouncements.announceTimeWarning(1);
         setLastAnnouncedTime(60);
-      } else if (currentTime === 30 && lastAnnouncedTime !== 30) { // 30 секунд
+      } else if (currentTime === 30 && lastAnnouncedTime !== 30 && voiceSettings.warning_intervals.thirty_seconds) {
         await voiceAnnouncements.playAnnouncement('Внимание! До окончания уровня осталось 30 секунд!');
         setLastAnnouncedTime(30);
-      } else if (currentTime === 10 && lastAnnouncedTime !== 10) { // 10 секунд
+      } else if (currentTime === 10 && lastAnnouncedTime !== 10 && voiceSettings.warning_intervals.ten_seconds) {
         await voiceAnnouncements.playAnnouncement('Внимание! До окончания уровня осталось 10 секунд!');
         setLastAnnouncedTime(10);
       }
@@ -90,7 +94,7 @@ const ImprovedTournamentTimer = ({
     if (currentTime > lastAnnouncedTime + 60) {
       setLastAnnouncedTime(null);
     }
-  }, [currentTime, timerActive, tournament.current_level, voiceAnnouncements, lastAnnouncedTime]);
+  }, [currentTime, timerActive, tournament.current_level, voiceAnnouncements, lastAnnouncedTime, voiceSettings, voiceSettingsLoading]);
 
   const calculateChipStatistics = () => {
     const activeRegistrations = registrations.filter(r => r.status === 'registered' || r.status === 'playing');
