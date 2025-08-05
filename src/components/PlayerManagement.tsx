@@ -347,7 +347,7 @@ const PlayerManagement = ({ tournament, players, registrations, onRegistrationUp
       if (remainingPlayers.length > 1) {
         setTimeout(async () => {
           await announceTableBalancing(remainingPlayers);
-        }, 30000); // 30 секунд задержки
+        }, 15000); // 15 секунд задержки
       }
       
       onRegistrationUpdate();
