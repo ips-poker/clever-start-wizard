@@ -904,72 +904,29 @@ const TableSeating = ({
               </div>
             </div>
 
-            {/* Премиальные статистические блоки */}
-            <div className="mb-8">
-              <div className="grid grid-cols-2 gap-6 mb-8">
-                {/* Активные игроки */}
-                <div className="relative group">
-                  <div className="absolute inset-0 bg-gradient-to-br from-emerald-50 to-green-50 rounded-2xl opacity-0 group-hover:opacity-100 transition-all duration-300"></div>
-                  <div className="relative bg-white border border-slate-200 rounded-2xl p-6 shadow-[0_8px_16px_-6px_rgba(0,0,0,0.08)] hover:shadow-[0_16px_24px_-8px_rgba(0,0,0,0.12)] transition-all duration-300">
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="w-10 h-10 bg-emerald-500 rounded-xl flex items-center justify-center">
-                        <UserCheck className="w-5 h-5 text-white" />
-                      </div>
-                      <div className="text-2xl font-light text-slate-900">{getActivePlayers().length}</div>
-                    </div>
-                    <div className="text-slate-600 text-sm font-medium">Active Players</div>
-                    <div className="text-slate-400 text-xs mt-1">Currently playing</div>
-                  </div>
+            {/* Статистические блоки в стиле приглашений */}
+            <div className="mb-6">
+              <div className="grid grid-cols-2 gap-4 mb-6">
+                <div className="text-center py-4">
+                  <div className="text-slate-500 text-xs font-medium mb-1 tracking-wide uppercase">Active Players</div>
+                  <div className="text-3xl font-light text-slate-900">{getActivePlayers().length}</div>
                 </div>
-
-                {/* Выбывшие игроки */}
-                <div className="relative group">
-                  <div className="absolute inset-0 bg-gradient-to-br from-red-50 to-rose-50 rounded-2xl opacity-0 group-hover:opacity-100 transition-all duration-300"></div>
-                  <div className="relative bg-white border border-slate-200 rounded-2xl p-6 shadow-[0_8px_16px_-6px_rgba(0,0,0,0.08)] hover:shadow-[0_16px_24px_-8px_rgba(0,0,0,0.12)] transition-all duration-300">
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="w-10 h-10 bg-red-500 rounded-xl flex items-center justify-center">
-                        <UserMinus className="w-5 h-5 text-white" />
-                      </div>
-                      <div className="text-2xl font-light text-slate-900">{getEliminatedPlayers().length}</div>
-                    </div>
-                    <div className="text-slate-600 text-sm font-medium">Eliminated</div>
-                    <div className="text-slate-400 text-xs mt-1">Tournament busts</div>
-                  </div>
+                <div className="text-center py-4">
+                  <div className="text-slate-500 text-xs font-medium mb-1 tracking-wide uppercase">Eliminated</div>
+                  <div className="text-3xl font-light text-slate-900">{getEliminatedPlayers().length}</div>
                 </div>
               </div>
               
-              {/* Тонкий разделитель */}
-              <div className="relative h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent"></div>
+              <div className="w-full h-px bg-slate-200 my-4"></div>
               
-              <div className="grid grid-cols-2 gap-6 mt-8">
-                {/* Активные столы */}
-                <div className="relative group">
-                  <div className="absolute inset-0 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl opacity-0 group-hover:opacity-100 transition-all duration-300"></div>
-                  <div className="relative bg-white border border-slate-200 rounded-2xl p-6 shadow-[0_8px_16px_-6px_rgba(0,0,0,0.08)] hover:shadow-[0_16px_24px_-8px_rgba(0,0,0,0.12)] transition-all duration-300">
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center">
-                        <Target className="w-5 h-5 text-white" />
-                      </div>
-                      <div className="text-2xl font-light text-slate-900">{tables.filter(t => t.active_players > 0).length}</div>
-                    </div>
-                    <div className="text-slate-600 text-sm font-medium">Active Tables</div>
-                    <div className="text-slate-400 text-xs mt-1">In progress</div>
-                  </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="text-center py-3">
+                  <div className="text-slate-500 text-xs font-medium mb-1 tracking-wide uppercase">Active Tables</div>
+                  <div className="text-xl font-light text-slate-900">{tables.filter(t => t.active_players > 0).length}</div>
                 </div>
-
-                {/* Средний стек */}
-                <div className="relative group">
-                  <div className="absolute inset-0 bg-gradient-to-br from-amber-50 to-yellow-50 rounded-2xl opacity-0 group-hover:opacity-100 transition-all duration-300"></div>
-                  <div className="relative bg-white border border-slate-200 rounded-2xl p-6 shadow-[0_8px_16px_-6px_rgba(0,0,0,0.08)] hover:shadow-[0_16px_24px_-8px_rgba(0,0,0,0.12)] transition-all duration-300">
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="w-10 h-10 bg-amber-500 rounded-xl flex items-center justify-center">
-                        <Trophy className="w-5 h-5 text-white" />
-                      </div>
-                      <div className="text-2xl font-light text-slate-900">{Math.round(tables.reduce((sum, t) => sum + (t.average_stack || 0), 0) / Math.max(tables.length, 1))}</div>
-                    </div>
-                    <div className="text-slate-600 text-sm font-medium">Avg Stack</div>
-                    <div className="text-slate-400 text-xs mt-1">Big blinds</div>
-                  </div>
+                <div className="text-center py-3">
+                  <div className="text-slate-500 text-xs font-medium mb-1 tracking-wide uppercase">Avg Stack (BB)</div>
+                  <div className="text-xl font-light text-slate-900">{Math.round(tables.reduce((sum, t) => sum + (t.average_stack || 0), 0) / Math.max(tables.length, 1))}</div>
                 </div>
               </div>
             </div>
