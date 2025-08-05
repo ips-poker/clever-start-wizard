@@ -62,22 +62,8 @@ const TableSeating = ({
   }, [tournamentId]);
 
   useEffect(() => {
-    console.log('🔄 TableSeating - registrations изменились:', {
-      totalRegistrations: registrations.length,
-      activeRegistrations: registrations.filter(r => r.status === 'registered' || r.status === 'playing').length,
-      registrationsData: registrations.map(r => ({ 
-        id: r.id, 
-        name: r.player?.name, 
-        status: r.status, 
-        seat_number: r.seat_number 
-      }))
-    });
-    
     if (tables.length === 0) {
       generateTablesFromRegistrations();
-    } else {
-      // Обновляем существующие столы с новыми данными
-      updateTablesWithCurrentRegistrations();
     }
   }, [registrations, seatingSettings.maxPlayersPerTable]);
 
@@ -95,15 +81,17 @@ const TableSeating = ({
   }, [tournamentId]);
 
   const loadSavedSeating = async () => {
-    console.log('🔄 ПРИНУДИТЕЛЬНАЯ ЗАГРУЗКА из базы данных...');
     try {
-      console.log('🔄 Загрузка рассадки...');
-      
-      // ВРЕМЕННО: очищаем localStorage для отладки
-      localStorage.removeItem(`seating_${tournamentId}`);
-      console.log('🗑️ localStorage очищен для отладки');
-      
-      // Загружаем из базы данных
+      // Сначала пытаемся загрузить из localStorage
+      const savedSeating = localStorage.getItem(`seating_${tournamentId}`);
+      if (savedSeating) {
+        const parsedSeating = JSON.parse(savedSeating);
+        setTables(parsedSeating);
+        console.log('🪑 Рассадка загружена из localStorage');
+        return;
+      }
+
+      // Если в localStorage нет данных, загружаем из базы данных
       const { data: seatingData, error } = await supabase
         .from('tournament_registrations')
         .select(`
@@ -267,35 +255,7 @@ const TableSeating = ({
     }
     
     setTables(newTables);
-    console.log('🪑 Столы созданы без рассадки', { tablesCount: newTables.length, activePlayersCount: activePlayers.length });
-  };
-
-  const updateTablesWithCurrentRegistrations = () => {
-    console.log('🔄 Обновление столов с текущими регистрациями...');
-    const activePlayers = registrations.filter(r => r.status === 'registered' || r.status === 'playing');
-    
-    // Обновляем счетчики активных игроков в существующих столах
-    const updatedTables = tables.map(table => {
-      const playersAtTable = table.seats.filter(seat => {
-        if (!seat.player_id) return false;
-        
-        // Проверяем, что игрок еще активен
-        const playerRegistration = activePlayers.find(reg => reg.player.id === seat.player_id);
-        return !!playerRegistration;
-      });
-      
-      return {
-        ...table,
-        active_players: playersAtTable.length
-      };
-    });
-    
-    setTables(updatedTables);
-    console.log('🔄 Столы обновлены:', { 
-      tablesCount: updatedTables.length, 
-      totalActivePlayers: activePlayers.length,
-      tablesActivePlayers: updatedTables.map(t => ({ table: t.table_number, active: t.active_players }))
-    });
+    console.log('🪑 Столы созданы без рассадки');
   };
 
   const updateSeatingInDatabase = async (tablesData: Table[]) => {

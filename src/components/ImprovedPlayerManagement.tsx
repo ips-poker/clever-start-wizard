@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -79,17 +79,6 @@ const ImprovedPlayerManagement = ({ tournament, players, registrations, onRegist
   const activePlayers = registrations.filter(r => 
     r.status === 'registered' || r.status === 'playing'
   );
-
-  console.log('🎮 ImprovedPlayerManagement - состояние игроков:', {
-    totalRegistrations: registrations.length,
-    activePlayers: activePlayers.length,
-    activePlayersData: activePlayers.map(p => ({ 
-      id: p.id, 
-      name: p.player?.name, 
-      status: p.status, 
-      seat_number: p.seat_number 
-    }))
-  });
 
   const eliminatedPlayers = registrations
     .filter(r => r.status === 'eliminated')
@@ -581,143 +570,85 @@ const ImprovedPlayerManagement = ({ tournament, players, registrations, onRegist
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {/* Статистика */}
-              <div className="mb-6 p-3 rounded-lg bg-muted/50">
-                <div className="flex items-center justify-between text-sm">
-                  <span>Активных игроков: {activePlayers.length}</span>
-                  <span>Выбывших: {eliminatedPlayers.length}</span>
-                  <span>Всего: {registrations.length}</span>
-                </div>
-              </div>
-
-              {/* Список игроков в виде карточек */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {activePlayers.map(registration => {
-                  const tableNumber = registration.seat_number ? Math.ceil(registration.seat_number / 9) : null;
-                  const seatAtTable = registration.seat_number ? ((registration.seat_number - 1) % 9) + 1 : null;
-                  
-                  return (
-                    <Card key={registration.id} className="relative overflow-hidden bg-white/70 backdrop-blur-sm border border-gray-200/50 shadow-subtle rounded-xl hover:shadow-lg transition-all duration-300">
-                      <div className="absolute inset-0 bg-gradient-to-br from-emerald-50/30 via-white/20 to-teal-50/30" />
+              <div className="space-y-3">
+                {activePlayers.map(registration => (
+                  <div key={registration.id} className="flex items-center justify-between p-3 border rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <div>
+                        <div className="font-medium">{registration.player.name}</div>
+                        <div className="text-sm text-muted-foreground">
+                          Место: {registration.seat_number || 'Не назначено'} | 
+                          ELO: {registration.player.elo_rating}
+                        </div>
+                      </div>
+                      {getStatusBadge(registration.status)}
+                    </div>
+                    
+                    <div className="flex items-center gap-4">
+                      <div className="text-center">
+                        <div className="text-lg font-bold">{registration.chips.toLocaleString()}</div>
+                        <div className="text-xs text-muted-foreground">фишек</div>
+                      </div>
                       
-                      <CardContent className="relative p-4 space-y-3">
-                        {/* Номер стола */}
-                        {tableNumber && (
-                          <div className="absolute -top-2 -right-2 w-8 h-8 bg-gradient-to-br from-blue-100 to-indigo-100 border border-blue-200/50 rounded-full flex items-center justify-center text-xs font-bold text-blue-700 shadow-sm">
-                            {tableNumber}
-                          </div>
-                        )}
-                        
-                        {/* Информация об игроке */}
-                        <div className="text-center space-y-2">
-                          <div className="flex items-center justify-center">
-                            <div className="text-lg font-medium text-gray-800">{registration.player.name}</div>
-                          </div>
-                          
-                          <div className="flex items-center justify-center gap-4 text-sm text-gray-600">
-                            {tableNumber ? (
-                              <span className="bg-white/60 px-2 py-1 rounded-md border border-gray-200/50">
-                                Стол {tableNumber}, место {seatAtTable}
-                              </span>
-                            ) : (
-                              <span className="bg-amber-100/60 px-2 py-1 rounded-md border border-amber-200/50 text-amber-700">
-                                Не рассажен
-                              </span>
-                            )}
-                          </div>
-                          
-                          <div className="flex items-center justify-center gap-2">
-                            <span className="text-xs text-gray-500">ELO:</span>
-                            <Badge className="bg-gradient-to-r from-blue-100 to-indigo-100 text-blue-700 border border-blue-200/50">
-                              {registration.player.elo_rating}
-                            </Badge>
-                          </div>
-                          
-                          {getStatusBadge(registration.status)}
-                        </div>
-
-                        {/* Фишки */}
-                        <div className="text-center">
-                          <div className="text-2xl font-bold text-emerald-700">{registration.chips.toLocaleString()}</div>
-                          <div className="text-xs text-gray-500">фишек</div>
-                        </div>
-
-                        {/* Управление ребаями и аддонами */}
-                        <div className="flex items-center justify-center gap-4">
-                          {/* Rebuys */}
-                          {tournament.current_level <= (tournament.rebuy_end_level || 6) && (
-                            <div className="flex items-center gap-1">
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => updateRebuys(registration.id, -1)}
-                                disabled={registration.rebuys <= 0}
-                                className="w-8 h-8 p-0 bg-white/60 border-gray-200/50"
-                              >
-                                -
-                              </Button>
-                              <div className="text-center min-w-[3rem]">
-                                <div className="text-sm font-bold">{registration.rebuys}</div>
-                                <div className="text-xs text-gray-500">R</div>
-                              </div>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => updateRebuys(registration.id, 1)}
-                                className="w-8 h-8 p-0 bg-white/60 border-gray-200/50"
-                              >
-                                +
-                              </Button>
-                            </div>
-                          )}
-                          
-                          {/* Addons */}
-                          {tournament.current_level >= (tournament.addon_level || 7) && (
-                            <div className="flex items-center gap-1">
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => updateAddons(registration.id, -1)}
-                                disabled={registration.addons <= 0}
-                                className="w-8 h-8 p-0 bg-white/60 border-gray-200/50"
-                              >
-                                -
-                              </Button>
-                              <div className="text-center min-w-[3rem]">
-                                <div className="text-sm font-bold">{registration.addons}</div>
-                                <div className="text-xs text-gray-500">A</div>
-                              </div>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => updateAddons(registration.id, 1)}
-                                className="w-8 h-8 p-0 bg-white/60 border-gray-200/50"
-                              >
-                                +
-                              </Button>
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Кнопка исключения */}
-                        <div className="text-center">
+                      {/* Rebuys */}
+                      {tournament.current_level <= (tournament.rebuy_end_level || 6) && (
+                        <div className="flex items-center gap-1">
                           <Button
                             size="sm"
-                            variant="destructive"
-                            onClick={() => {
-                              setSelectedRegistration(registration);
-                              setIsEliminateDialogOpen(true);
-                            }}
-                            className="bg-red-100/60 text-red-700 border border-red-200/50 hover:bg-red-200/60"
+                            variant="outline"
+                            onClick={() => updateRebuys(registration.id, -1)}
+                            disabled={registration.rebuys <= 0}
                           >
-                            <UserX className="w-4 h-4 mr-1" />
-                            Исключить
+                            -
                           </Button>
+                          <span className="w-8 text-center text-sm">{registration.rebuys}</span>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => updateRebuys(registration.id, 1)}
+                          >
+                            +
+                          </Button>
+                          <span className="text-xs text-muted-foreground ml-1">R</span>
                         </div>
-                      </CardContent>
-                    </Card>
-                  );
-                })}
+                      )}
+                      
+                      {/* Addons */}
+                      {tournament.current_level >= (tournament.addon_level || 7) && (
+                        <div className="flex items-center gap-1">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => updateAddons(registration.id, -1)}
+                            disabled={registration.addons <= 0}
+                          >
+                            -
+                          </Button>
+                          <span className="w-8 text-center text-sm">{registration.addons}</span>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => updateAddons(registration.id, 1)}
+                          >
+                            +
+                          </Button>
+                          <span className="text-xs text-muted-foreground ml-1">A</span>
+                        </div>
+                      )}
+                      
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => {
+                          setSelectedRegistration(registration);
+                          setIsEliminateDialogOpen(true);
+                        }}
+                      >
+                        <UserX className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
               </div>
             </CardContent>
           </Card>
