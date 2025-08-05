@@ -96,6 +96,12 @@ const TableSeating = ({
     return registrations.filter(r => r.status === 'eliminated');
   };
 
+  const getPlayerAvatar = (playerId: string) => {
+    // Генерируем случайную аватарку из коллекции
+    const avatarIndex = Math.abs(playerId.split('').reduce((a, b) => a + b.charCodeAt(0), 0)) % 6 + 1;
+    return `/src/assets/avatars/poker-avatar-${avatarIndex}.png`;
+  };
+
   const loadSavedSeating = async () => {
     try {
       const { data: seatingData, error } = await supabase
@@ -341,12 +347,10 @@ const TableSeating = ({
         description: "Место освобождено. Игрок удален из активных игроков." 
       });
 
-      // Вызываем callback для обновления компонента активных игроков
       if (onSeatingUpdate) {
         onSeatingUpdate();
       }
 
-      // Проверяем необходимость балансировки
       checkForTableBreaking(newTables);
     }
   };
@@ -414,7 +418,6 @@ const TableSeating = ({
         });
       }
 
-      // Обновляем компонент активных игроков
       if (onSeatingUpdate) {
         onSeatingUpdate();
       }
@@ -426,16 +429,6 @@ const TableSeating = ({
         variant: "destructive" 
       });
     }
-  };
-
-  const closeTable = (tableNumber: number) => {
-    const newTables = tables.filter(t => t.table_number !== tableNumber);
-    setTables(newTables);
-    
-    toast({ 
-      title: "Стол закрыт", 
-      description: `Стол ${tableNumber} удален из списка столов` 
-    });
   };
 
   const checkForTableBreaking = (currentTables: Table[]) => {
@@ -781,7 +774,7 @@ const TableSeating = ({
     setTables(newTables);
     updateSeatingInDatabase(newTables);
     
-    // Обновляем seat_number в базе данных (дублирующее обновление для надежности)
+    // Обновляем seat_number в базе данных
     const absoluteSeatNumber = (toTable - 1) * maxPlayersPerTable + toSeat;
     await supabase
       .from('tournament_registrations')
@@ -847,518 +840,560 @@ const TableSeating = ({
     return <Badge variant="default" className="bg-green-500 text-white">✅ {table.active_players}/{table.max_seats}</Badge>;
   };
 
-  const getPlayerAvatar = (playerId: string) => {
-    // В будущем можно загружать аватары из профилей
-    // Пока генерируем случайную аватарку из коллекции
-    const avatarIndex = Math.abs(playerId.split('').reduce((a, b) => a + b.charCodeAt(0), 0)) % 6 + 1;
-    return `/src/assets/avatars/poker-avatar-${avatarIndex}.png`;
+  const closeTable = (tableNumber: number) => {
+    const newTables = tables.filter(t => t.table_number !== tableNumber);
+    setTables(newTables);
+    
+    toast({ 
+      title: "Стол закрыт", 
+      description: `Стол ${tableNumber} удален из списка столов` 
+    });
   };
 
   return (
-    <div className="space-y-6">
-      {/* Главная карточка с градиентом */}
-      <Card className="bg-gradient-to-r from-white via-gray-50/30 to-white border border-gray-200/50 shadow-floating">
-        <CardHeader>
-          <div className="flex items-center justify-between">
+    <div className="space-y-8 animate-fade-in">
+      {/* Главный заголовок в стиле таймера */}
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-50 via-white to-blue-50/30 border border-slate-200/60 shadow-floating">
+        {/* Декоративные элементы как в приглашениях */}
+        <div className="absolute inset-0 opacity-5">
+          <div className="absolute top-8 left-8 text-6xl text-slate-400/40 animate-float [animation-delay:0s] font-serif">♠</div>
+          <div className="absolute top-16 right-12 text-5xl text-slate-400/30 animate-float [animation-delay:1s] font-serif">♥</div>
+          <div className="absolute bottom-16 left-12 text-6xl text-slate-400/40 animate-float [animation-delay:2s] font-serif">♦</div>
+          <div className="absolute bottom-8 right-8 text-5xl text-slate-400/30 animate-float [animation-delay:3s] font-serif">♣</div>
+        </div>
+
+        <div className="relative p-8">
+          <div className="flex items-center justify-between mb-6">
             <div>
-              <CardTitle className="text-2xl font-light text-gray-800 flex items-center gap-3">
-                <div className="p-2 bg-gradient-primary rounded-lg">
-                  <Users className="w-6 h-6 text-white" />
-                </div>
-                Система рассадки турнира
-              </CardTitle>
-              <CardDescription className="font-light text-gray-600 mt-2">
-                Профессиональное управление столами и балансировкой игроков
-              </CardDescription>
+              <h1 className="text-4xl font-serif font-semibold text-slate-800 tracking-tight mb-2">
+                Система рассадки игроков
+              </h1>
+              <p className="text-lg font-body text-slate-600 font-light">
+                Профессиональное управление столами и балансировкой турнира
+              </p>
             </div>
             {isSeatingStarted && (
-              <Badge className="bg-gradient-to-r from-emerald-500 to-green-500 text-white px-4 py-2 font-medium shadow-sm">
-                ✅ Система активна
-              </Badge>
+              <div className="flex items-center gap-3">
+                <div className="w-3 h-3 bg-emerald-500 rounded-full animate-pulse"></div>
+                <Badge className="bg-gradient-to-r from-emerald-500 to-green-500 text-white px-6 py-2 font-medium text-base shadow-subtle">
+                  ✅ Система активна
+                </Badge>
+              </div>
             )}
           </div>
-        </CardHeader>
 
-        {/* Статистические блоки */}
-        <CardContent>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="p-4 bg-white/70 backdrop-blur-sm border border-gray-200/50 rounded-xl shadow-subtle text-center">
-              <div className="flex items-center justify-center mb-2">
-                <div className="p-2 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg">
-                  <Users className="w-5 h-5 text-white" />
-                </div>
-              </div>
-              <div className="text-3xl font-light text-gray-800">{getActivePlayers().length}</div>
-              <div className="text-sm font-light text-gray-600">Активных игроков</div>
-            </div>
-            <div className="p-4 bg-white/70 backdrop-blur-sm border border-gray-200/50 rounded-xl shadow-subtle text-center">
-              <div className="flex items-center justify-center mb-2">
-                <div className="p-2 bg-gradient-to-r from-red-500 to-orange-500 rounded-lg">
-                  <UserMinus className="w-5 h-5 text-white" />
-                </div>
-              </div>
-              <div className="text-3xl font-light text-gray-800">{getEliminatedPlayers().length}</div>
-              <div className="text-sm font-light text-gray-600">Выбыло</div>
-            </div>
-            <div className="p-4 bg-white/70 backdrop-blur-sm border border-gray-200/50 rounded-xl shadow-subtle text-center">
-              <div className="flex items-center justify-center mb-2">
-                <div className="p-2 bg-gradient-to-r from-green-500 to-emerald-500 rounded-lg">
-                  <Target className="w-5 h-5 text-white" />
-                </div>
-              </div>
-              <div className="text-3xl font-light text-gray-800">{tables.filter(t => t.active_players > 0).length}</div>
-              <div className="text-sm font-light text-gray-600">Активных столов</div>
-            </div>
-            <div className="p-4 bg-white/70 backdrop-blur-sm border border-gray-200/50 rounded-xl shadow-subtle text-center">
-              <div className="flex items-center justify-center mb-2">
-                <div className="p-2 bg-gradient-to-r from-amber-500 to-yellow-500 rounded-lg">
-                  <Trophy className="w-5 h-5 text-white" />
-                </div>
-              </div>
-              <div className="text-3xl font-light text-gray-800">{Math.round(tables.reduce((sum, t) => sum + (t.average_stack || 0), 0) / Math.max(tables.length, 1))}</div>
-              <div className="text-sm font-light text-gray-600">Ср. стек (BB)</div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Уведомления */}
-      {isFinalTableReady && (
-        <Alert className="border-accent bg-accent/10">
-          <Trophy className="h-4 w-4" />
-          <AlertDescription>
-            🏆 Готов к формированию финального стола! Осталось {getActivePlayers().length} игроков.
-          </AlertDescription>
-        </Alert>
-      )}
-
-      {/* Выбывшие игроки */}
-      {getEliminatedPlayers().length > 0 && (
-        <Card className="bg-white/70 backdrop-blur-sm border border-gray-200/50 shadow-subtle">
-          <CardHeader className="bg-white/50 border-b border-gray-200/30">
-            <CardTitle className="text-xl font-light text-gray-800 flex items-center gap-3">
-              <div className="p-2 bg-gradient-to-r from-red-500 to-orange-500 rounded-lg">
-                <UserMinus className="w-5 h-5 text-white" />
-              </div>
-              Выбывшие игроки ({getEliminatedPlayers().length})
-            </CardTitle>
-            <CardDescription className="font-light text-gray-600">
-              Игроки, которые покинули турнир. Можно восстановить для возвращения в игру
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {getEliminatedPlayers().map(player => (
-                <div key={player.player.id} className="p-4 bg-white/80 backdrop-blur-sm border border-gray-200/50 rounded-xl shadow-subtle hover:scale-105 transition-all duration-300">
-                  <div className="flex items-center gap-3 mb-3">
-                    <img 
-                      src={getPlayerAvatar(player.player.id)} 
-                      alt={player.player.name}
-                      className="w-10 h-10 rounded-full object-cover border-2 border-gray-200/50"
-                    />
-                    <div className="flex-1 min-w-0">
-                      <div className="font-medium text-gray-800 truncate">{player.player.name}</div>
-                      <div className="text-sm text-gray-500">Исключён из турнира</div>
-                    </div>
+          {/* Статистические блоки в стиле таймера */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="relative group">
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-2xl blur-xl transition-all duration-500 group-hover:blur-2xl"></div>
+              <div className="relative p-6 bg-white/80 backdrop-blur-sm border border-slate-200/50 rounded-2xl shadow-card hover:shadow-elevated transition-all duration-500 hover:scale-105">
+                <div className="flex items-center justify-center mb-3">
+                  <div className="p-3 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl">
+                    <Users className="w-6 h-6 text-white" />
                   </div>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="w-full bg-white/80 hover:bg-gradient-to-r hover:from-emerald-500 hover:to-green-500 hover:text-white transition-all duration-300 hover:scale-105 border-gray-200/50"
-                    onClick={() => restorePlayer(player.player.id)}
-                  >
-                    <UserCheck className="w-4 h-4 mr-2" />
-                    Восстановить игрока
-                  </Button>
                 </div>
-              ))}
+                <div className="text-3xl font-mono font-bold text-slate-800 text-center mb-1">{getActivePlayers().length}</div>
+                <div className="text-sm font-body font-medium text-slate-600 text-center">Активных игроков</div>
+              </div>
             </div>
-          </CardContent>
-        </Card>
+
+            <div className="relative group">
+              <div className="absolute inset-0 bg-gradient-to-br from-red-500/20 to-orange-500/20 rounded-2xl blur-xl transition-all duration-500 group-hover:blur-2xl"></div>
+              <div className="relative p-6 bg-white/80 backdrop-blur-sm border border-slate-200/50 rounded-2xl shadow-card hover:shadow-elevated transition-all duration-500 hover:scale-105">
+                <div className="flex items-center justify-center mb-3">
+                  <div className="p-3 bg-gradient-to-br from-red-500 to-orange-600 rounded-xl">
+                    <UserMinus className="w-6 h-6 text-white" />
+                  </div>
+                </div>
+                <div className="text-3xl font-mono font-bold text-slate-800 text-center mb-1">{getEliminatedPlayers().length}</div>
+                <div className="text-sm font-body font-medium text-slate-600 text-center">Выбыло</div>
+              </div>
+            </div>
+
+            <div className="relative group">
+              <div className="absolute inset-0 bg-gradient-to-br from-green-500/20 to-emerald-500/20 rounded-2xl blur-xl transition-all duration-500 group-hover:blur-2xl"></div>
+              <div className="relative p-6 bg-white/80 backdrop-blur-sm border border-slate-200/50 rounded-2xl shadow-card hover:shadow-elevated transition-all duration-500 hover:scale-105">
+                <div className="flex items-center justify-center mb-3">
+                  <div className="p-3 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl">
+                    <Target className="w-6 h-6 text-white" />
+                  </div>
+                </div>
+                <div className="text-3xl font-mono font-bold text-slate-800 text-center mb-1">{tables.filter(t => t.active_players > 0).length}</div>
+                <div className="text-sm font-body font-medium text-slate-600 text-center">Активных столов</div>
+              </div>
+            </div>
+
+            <div className="relative group">
+              <div className="absolute inset-0 bg-gradient-to-br from-amber-500/20 to-yellow-500/20 rounded-2xl blur-xl transition-all duration-500 group-hover:blur-2xl"></div>
+              <div className="relative p-6 bg-white/80 backdrop-blur-sm border border-slate-200/50 rounded-2xl shadow-card hover:shadow-elevated transition-all duration-500 hover:scale-105">
+                <div className="flex items-center justify-center mb-3">
+                  <div className="p-3 bg-gradient-to-br from-amber-500 to-yellow-600 rounded-xl">
+                    <Trophy className="w-6 h-6 text-white" />
+                  </div>
+                </div>
+                <div className="text-3xl font-mono font-bold text-slate-800 text-center mb-1">{Math.round(tables.reduce((sum, t) => sum + (t.average_stack || 0), 0) / Math.max(tables.length, 1))}</div>
+                <div className="text-sm font-body font-medium text-slate-600 text-center">Ср. стек (BB)</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Уведомления в стиле таймера */}
+      {isFinalTableReady && (
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-yellow-50 via-amber-50 to-orange-50 border border-amber-200/60 shadow-accent">
+          <div className="absolute inset-0 bg-gradient-to-r from-yellow-400/10 to-orange-400/10"></div>
+          <div className="relative p-6">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-gradient-to-br from-yellow-500 to-orange-600 rounded-xl animate-pulse-glow">
+                <Trophy className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h3 className="text-xl font-serif font-semibold text-amber-800 mb-1">Готов к формированию финального стола!</h3>
+                <p className="text-amber-700 font-body">Осталось {getActivePlayers().length} игроков. Самое время создать финальный стол.</p>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
 
-      {/* Панель управления с премиальным дизайном */}
-      <Card className="bg-gradient-to-r from-white via-purple-50/30 to-white border border-gray-200/50 shadow-floating">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="text-xl font-light text-gray-800 flex items-center gap-3">
-                <div className="p-2 bg-gradient-to-r from-purple-500 to-indigo-500 rounded-lg">
-                  <Settings className="w-5 h-5 text-white" />
-                </div>
-                Панель управления столами
-              </CardTitle>
-              <CardDescription className="font-light text-gray-600 mt-1">
-                Инструменты для управления рассадкой и балансировкой игроков
-              </CardDescription>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-wrap gap-3">
-            {!isSeatingStarted ? (
-              <Button 
-                onClick={startInitialSeating}
-                className="flex items-center gap-3 bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 text-white hover:from-emerald-600 hover:via-teal-600 hover:to-cyan-600 hover:shadow-[0_8px_30px_rgba(20,184,166,0.4)] hover:scale-105 transition-all duration-300 group relative overflow-hidden px-6 py-3"
-                disabled={getActivePlayers().length === 0}
-              >
-                <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/25 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
-                <Play className="w-5 h-5 group-hover:animate-bounce transition-transform duration-300 relative z-10" />
-                <span className="group-hover:translate-x-1 transition-transform duration-300 relative z-10 font-medium">
-                  🚀 ЗАПУСК РАССАДКИ
-                </span>
-              </Button>
-            ) : (
-              <>
-                <Button 
-                  onClick={openNewTable}
-                  variant="outline"
-                  className="flex items-center gap-3 bg-white/80 hover:bg-gradient-to-r hover:from-blue-500 hover:to-purple-500 hover:text-white transition-all duration-300 hover:scale-105 border-gray-200/50 px-4 py-2"
-                  disabled={getActivePlayers().length < maxPlayersPerTable * 2}
-                >
-                  <Plus className="w-4 h-4" />
-                  <span className="font-medium">➕ Новый стол</span>
-                </Button>
-                
-                <Button 
-                  onClick={checkTableBalance}
-                  variant="outline"
-                  className="flex items-center gap-3 bg-white/80 hover:bg-gradient-to-r hover:from-amber-500 hover:to-yellow-500 hover:text-white transition-all duration-300 hover:scale-105 border-gray-200/50 px-4 py-2"
-                  disabled={balancingInProgress}
-                >
-                  <ArrowUpDown className="w-4 h-4" />
-                  <span className="font-medium">{balancingInProgress ? '🔄 Анализ...' : '⚖️ Баланс'}</span>
-                </Button>
-
-                <Button 
-                  onClick={autoSeatLatePlayers}
-                  variant="outline"
-                  className="flex items-center gap-3 bg-white/80 hover:bg-gradient-to-r hover:from-indigo-500 hover:to-purple-500 hover:text-white transition-all duration-300 hover:scale-105 border-gray-200/50 px-4 py-2"
-                >
-                  <Shuffle className="w-4 h-4" />
-                  <span className="font-medium">🎯 Авто-размещение</span>
-                </Button>
-
-                {isFinalTableReady && (
-                  <Button 
-                    onClick={createFinalTable}
-                    className="flex items-center gap-3 bg-gradient-to-r from-yellow-400 via-orange-500 to-red-500 text-white hover:from-yellow-500 hover:via-orange-600 hover:to-red-600 hover:shadow-[0_8px_30px_rgba(245,158,11,0.4)] hover:scale-105 transition-all duration-300 group relative overflow-hidden px-6 py-3"
-                  >
-                    <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/25 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
-                    <Crown className="w-5 h-5 group-hover:animate-bounce transition-transform duration-300 relative z-10" />
-                    <span className="group-hover:translate-x-1 transition-transform duration-300 relative z-10 font-medium">
-                      🏆 ФИНАЛЬНЫЙ СТОЛ
-                    </span>
-                  </Button>
-                )}
-              </>
-            )}
-
-            <Dialog open={isMoveDialogOpen} onOpenChange={setIsMoveDialogOpen}>
-              <DialogTrigger asChild>
-                <Button 
-                  variant="outline"
-                  className="flex items-center gap-3 bg-white/80 hover:bg-gradient-to-r hover:from-green-500 hover:to-emerald-500 hover:text-white transition-all duration-300 hover:scale-105 border-gray-200/50 px-4 py-2"
-                  disabled={!isSeatingStarted}
-                >
-                  <Target className="w-4 h-4" />
-                  <span className="font-medium">🎯 Переместить игрока</span>
-                </Button>
-              </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Переместить игрока</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4">
-                <div>
-                  <label className="text-sm font-medium">Игрок</label>
-                  <Select value={selectedPlayer} onValueChange={setSelectedPlayer}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Выберите игрока" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {registrations
-                        .filter(r => r.status === 'registered' || r.status === 'playing')
-                        .map(reg => (
-                          <SelectItem key={reg.player.id} value={reg.player.id}>
-                            {reg.player.name}
-                          </SelectItem>
-                        ))}
-                    </SelectContent>
-                  </Select>
+      {/* Выбывшие игроки в премиальном стиле */}
+      {getEliminatedPlayers().length > 0 && (
+        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-50 via-white to-red-50/30 border border-slate-200/60 shadow-floating">
+          <div className="absolute inset-0 bg-gradient-to-r from-red-500/5 to-orange-500/5"></div>
+          <div className="relative">
+            <div className="p-6 border-b border-slate-200/50">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-gradient-to-br from-red-500 to-orange-600 rounded-xl">
+                  <UserMinus className="w-6 h-6 text-white" />
                 </div>
                 <div>
-                  <label className="text-sm font-medium">Стол</label>
-                  <Select value={targetTable.toString()} onValueChange={(v) => setTargetTable(Number(v))}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {tables.map(table => (
-                        <SelectItem key={table.table_number} value={table.table_number.toString()}>
-                          Стол {table.table_number} ({table.active_players}/{maxPlayersPerTable})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <h2 className="text-2xl font-serif font-semibold text-slate-800">Выбывшие игроки</h2>
+                  <p className="text-slate-600 font-body font-light mt-1">
+                    {getEliminatedPlayers().length} игроков покинули турнир. Можно восстановить для возвращения в игру
+                  </p>
                 </div>
-                <div>
-                  <label className="text-sm font-medium">Место</label>
-                  <Select value={targetSeat.toString()} onValueChange={(v) => setTargetSeat(Number(v))}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Array.from({ length: maxPlayersPerTable }, (_, i) => i + 1).map(seat => {
-                        const table = tables.find(t => t.table_number === targetTable);
-                        const seatTaken = table?.seats.find(s => s.seat_number === seat)?.player_id;
-                        return (
-                          <SelectItem 
-                            key={seat} 
-                            value={seat.toString()} 
-                            disabled={!!seatTaken}
-                          >
-                            Место {seat} {seatTaken ? '(занято)' : '(свободно)'}
-                          </SelectItem>
-                        );
-                      })}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <Button 
-                  onClick={() => {
-                    const currentPlayer = registrations.find(r => r.player.id === selectedPlayer);
-                    const currentTable = tables.find(t => 
-                      t.seats.some(s => s.player_id === selectedPlayer)
-                    )?.table_number || 1;
-                    
-                    movePlayer(selectedPlayer, currentTable, targetTable, targetSeat);
-                  }}
-                  disabled={!selectedPlayer}
-                  className="w-full"
-                >
-                  Переместить
-                </Button>
               </div>
-            </DialogContent>
-            </Dialog>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Столы с улучшенным дизайном */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {tables.map(table => (
-          <Card 
-            key={table.table_number} 
-            className={`relative transition-all duration-300 hover:scale-105 ${
-              table.is_final_table 
-                ? 'bg-gradient-to-br from-yellow-50 via-amber-50 to-orange-50 border-2 border-gradient-to-r from-yellow-400 to-orange-500 shadow-[0_8px_30px_rgba(245,158,11,0.3)]' 
-                : 'bg-white/70 backdrop-blur-sm border border-gray-200/50 shadow-subtle hover:shadow-floating'
-            }`}
-          >
-            <CardHeader className={`pb-3 ${table.is_final_table ? 'bg-gradient-to-r from-yellow-100 to-orange-100 border-b border-yellow-200/50' : 'bg-white/50 border-b border-gray-200/30'}`}>
-              <CardTitle className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  {table.is_final_table ? (
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-lg">
-                        <Crown className="w-5 h-5 text-white" />
-                      </div>
-                      <span className="text-xl font-light text-gray-800">🏆 ФИНАЛЬНЫЙ СТОЛ</span>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg">
-                        <Target className="w-5 h-5 text-white" />
-                      </div>
-                      <span className="text-lg font-light text-gray-800">Стол {table.table_number}</span>
-                    </div>
-                  )}
-                  {table.dealer_position && (
-                    <Badge variant="outline" className="bg-white/80 border-gray-200/50 text-xs font-light">
-                      Дилер: {table.dealer_position}
-                    </Badge>
-                  )}
-                </div>
-                <div className="flex items-center gap-2">
-                  {getTableStatusBadge(table)}
-                  {table.active_players > 0 && table.active_players <= 3 && !table.is_final_table && (
-                    <Button 
-                      size="sm" 
-                      variant="outline"
-                      onClick={() => suggestPlayerMove(table.table_number)}
-                      className="text-xs"
-                    >
-                      <AlertTriangle className="w-3 h-3 mr-1" />
-                      Балансировка
-                    </Button>
-                  )}
-                  {table.active_players === 0 && !table.is_final_table && (
-                    <Button 
-                      size="sm" 
-                      variant="destructive"
-                      onClick={() => closeTable(table.table_number)}
-                      className="text-xs"
-                    >
-                      <X className="w-3 h-3" />
-                    </Button>
-                  )}
-                </div>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {/* Информация о столе */}
-              {table.average_stack && table.average_stack > 0 && (
-                <div className="flex justify-between text-xs text-muted-foreground mb-3">
-                  <span>Средний стек: {Math.round(table.average_stack / bigBlind)} BB</span>
-                  <span>Активных: {table.active_players}</span>
-                </div>
-              )}
-              
-              {/* Места за столом */}
-              <div className="grid grid-cols-3 gap-2">
-                {table.seats.map(seat => (
-                  <div 
-                    key={seat.seat_number}
-                    className={`p-3 rounded border text-center text-sm transition-all hover:shadow-md ${getSeatColorClass(seat)} ${
-                      seat.seat_number === table.dealer_position ? 'ring-1 ring-blue-400' : ''
-                    }`}
-                  >
-                    <div className="font-bold mb-1 flex items-center justify-center gap-1">
-                      #{seat.seat_number}
-                      {seat.seat_number === table.dealer_position && <span className="text-blue-500">🎯</span>}
-                    </div>
-                    
-                    {seat.player_name ? (
-                      <div className="space-y-2">
-                        {/* Аватар игрока */}
-                        <div className="flex items-center justify-center">
+            </div>
+            <div className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {getEliminatedPlayers().map(player => (
+                  <div key={player.player.id} className="group relative">
+                    <div className="absolute inset-0 bg-gradient-to-br from-red-500/10 to-orange-500/10 rounded-2xl blur-lg transition-all duration-500 group-hover:blur-xl"></div>
+                    <div className="relative p-5 bg-white/90 backdrop-blur-sm border border-slate-200/50 rounded-2xl shadow-card hover:shadow-elevated transition-all duration-500 hover:scale-105">
+                      <div className="flex items-center gap-4 mb-4">
+                        <div className="relative">
                           <img 
-                            src={getPlayerAvatar(seat.player_id!)} 
-                            alt={seat.player_name}
-                            className="w-8 h-8 rounded-full object-cover border-2 border-white/80 shadow-sm"
+                            src={getPlayerAvatar(player.player.id)} 
+                            alt={player.player.name}
+                            className="w-12 h-12 rounded-full object-cover border-2 border-white shadow-sm"
                           />
+                          <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-red-500 rounded-full border-2 border-white"></div>
                         </div>
-                        
-                        <div className="truncate font-medium text-gray-800 text-center" title={seat.player_name}>
-                          {seat.player_name}
+                        <div className="flex-1 min-w-0">
+                          <div className="font-serif font-semibold text-slate-800 truncate text-lg">{player.player.name}</div>
+                          <div className="text-sm text-slate-500 font-body">Исключён из турнира</div>
                         </div>
-                        
-                        {seat.chips && (
-                          <div className="text-xs text-center">
-                            <div className="font-medium text-gray-700">{seat.chips.toLocaleString()}</div>
-                            {seat.stack_bb && <div className="text-gray-500">{seat.stack_bb} BB</div>}
-                          </div>
-                        )}
-                        
-                        <div className="flex justify-center">
-                          <Badge 
-                            variant={seat.status === 'playing' ? 'default' : seat.status === 'eliminated' ? 'destructive' : 'secondary'}
-                            className={`text-xs font-light ${
-                              seat.status === 'playing' ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white' :
-                              seat.status === 'eliminated' ? 'bg-gradient-to-r from-red-500 to-orange-500 text-white' :
-                              'bg-gradient-to-r from-gray-400 to-gray-500 text-white'
-                            }`}
-                          >
-                            {seat.status === 'playing' ? '🎮 В игре' : 
-                             seat.status === 'eliminated' ? '❌ Выбыл' : '✅ Готов'}
-                          </Badge>
-                        </div>
-
-                        {/* Кнопки управления игроком */}
-                        {seat.status !== 'eliminated' && isSeatingStarted && (
-                          <div className="flex gap-1 mt-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="flex-1 text-xs bg-white/80 hover:bg-gradient-to-r hover:from-blue-500 hover:to-purple-500 hover:text-white transition-all duration-300 border-gray-200/50"
-                              onClick={() => {
-                                setSelectedPlayer(seat.player_id!);
-                                setTargetTable(table.table_number);
-                                setIsMoveDialogOpen(true);
-                              }}
-                            >
-                              🔄
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="destructive"
-                              className="flex-1 text-xs bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 hover:scale-105 transition-all duration-300"
-                              onClick={() => eliminatePlayer(seat.player_id!)}
-                            >
-                              <UserMinus className="w-3 h-3" />
-                            </Button>
-                          </div>
-                        )}
                       </div>
-                    ) : (
-                      <div className="text-gray-500 text-xs font-light flex flex-col items-center justify-center py-4">
-                        <div className="w-8 h-8 rounded-full border-2 border-dashed border-gray-300 flex items-center justify-center mb-2">
-                          <Plus className="w-4 h-4 text-gray-400" />
-                        </div>
-                        <span>Свободно</span>
-                      </div>
-                    )}
+                      <Button
+                        size="sm"
+                        className="w-full bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white font-medium transition-all duration-300 hover:scale-105 shadow-subtle"
+                        onClick={() => restorePlayer(player.player.id)}
+                      >
+                        <UserCheck className="w-4 h-4 mr-2" />
+                        Восстановить игрока
+                      </Button>
+                    </div>
                   </div>
                 ))}
               </div>
-              
-              {/* Дополнительные действия для стола */}
-              {table.active_players > 0 && !table.is_final_table && (
-                <div className={`mt-4 pt-4 ${table.is_final_table ? 'border-t border-yellow-200/50' : 'border-t border-gray-200/30'}`}>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm font-light text-gray-600">Управление столом:</span>
-                    <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="text-xs bg-white/80 hover:bg-gradient-to-r hover:from-purple-500 hover:to-indigo-500 hover:text-white transition-all duration-300 hover:scale-105 border-gray-200/50"
-                        onClick={() => {
-                          const newTables = [...tables];
-                          const currentTable = newTables.find(t => t.table_number === table.table_number);
-                          if (currentTable) {
-                            currentTable.dealer_position = (currentTable.dealer_position % currentTable.max_seats) + 1;
-                            setTables(newTables);
-                          }
-                        }}
-                        title="Передвинуть позицию дилера"
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Панель управления в стиле таймера */}
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-50 via-white to-purple-50/30 border border-slate-200/60 shadow-floating">
+        <div className="absolute inset-0 bg-gradient-to-r from-purple-500/5 to-indigo-500/5"></div>
+        <div className="relative p-8">
+          <div className="flex items-center gap-4 mb-6">
+            <div className="p-3 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-xl">
+              <Settings className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h2 className="text-2xl font-serif font-semibold text-slate-800">Панель управления столами</h2>
+              <p className="text-slate-600 font-body font-light mt-1">
+                Инструменты для управления рассадкой и балансировкой игроков
+              </p>
+            </div>
+          </div>
+          
+          <div className="flex flex-wrap gap-4">
+            {!isSeatingStarted ? (
+              <div className="relative group">
+                <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/20 to-cyan-500/20 rounded-2xl blur-lg transition-all duration-500 group-hover:blur-xl"></div>
+                <Button 
+                  onClick={startInitialSeating}
+                  className="relative flex items-center gap-4 bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 text-white hover:from-emerald-600 hover:via-teal-600 hover:to-cyan-600 transition-all duration-500 hover:scale-105 shadow-elevated text-lg px-8 py-4 rounded-2xl font-serif font-semibold"
+                  disabled={getActivePlayers().length === 0}
+                >
+                  <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/25 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 rounded-2xl"></div>
+                  <Play className="w-6 h-6 group-hover:animate-bounce transition-transform duration-300 relative z-10" />
+                  <span className="group-hover:translate-x-1 transition-transform duration-300 relative z-10">
+                    🚀 ЗАПУСК РАССАДКИ ТУРНИРА
+                  </span>
+                </Button>
+              </div>
+            ) : (
+              <>
+                <div className="relative group">
+                  <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-xl blur-lg transition-all duration-500 group-hover:blur-xl"></div>
+                  <Button 
+                    onClick={openNewTable}
+                    className="relative flex items-center gap-3 bg-white/90 hover:bg-gradient-to-r hover:from-blue-500 hover:to-purple-500 hover:text-white transition-all duration-500 hover:scale-105 border border-slate-200/50 px-6 py-3 rounded-xl font-medium text-slate-700"
+                    disabled={getActivePlayers().length < maxPlayersPerTable * 2}
+                  >
+                    <Plus className="w-5 h-5" />
+                    <span>➕ Новый стол</span>
+                  </Button>
+                </div>
+                
+                <div className="relative group">
+                  <div className="absolute inset-0 bg-gradient-to-r from-amber-500/20 to-yellow-500/20 rounded-xl blur-lg transition-all duration-500 group-hover:blur-xl"></div>
+                  <Button 
+                    onClick={checkTableBalance}
+                    className="relative flex items-center gap-3 bg-white/90 hover:bg-gradient-to-r hover:from-amber-500 hover:to-yellow-500 hover:text-white transition-all duration-500 hover:scale-105 border border-slate-200/50 px-6 py-3 rounded-xl font-medium text-slate-700"
+                    disabled={balancingInProgress}
+                  >
+                    <ArrowUpDown className="w-5 h-5" />
+                    <span>{balancingInProgress ? '🔄 Анализ...' : '⚖️ Умный баланс'}</span>
+                  </Button>
+                </div>
+
+                <div className="relative group">
+                  <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/20 to-purple-500/20 rounded-xl blur-lg transition-all duration-500 group-hover:blur-xl"></div>
+                  <Button 
+                    onClick={autoSeatLatePlayers}
+                    className="relative flex items-center gap-3 bg-white/90 hover:bg-gradient-to-r hover:from-indigo-500 hover:to-purple-500 hover:text-white transition-all duration-500 hover:scale-105 border border-slate-200/50 px-6 py-3 rounded-xl font-medium text-slate-700"
+                  >
+                    <Shuffle className="w-5 h-5" />
+                    <span>🎯 Авто-размещение</span>
+                  </Button>
+                </div>
+
+                <Dialog open={isMoveDialogOpen} onOpenChange={setIsMoveDialogOpen}>
+                  <DialogTrigger asChild>
+                    <div className="relative group">
+                      <div className="absolute inset-0 bg-gradient-to-r from-green-500/20 to-emerald-500/20 rounded-xl blur-lg transition-all duration-500 group-hover:blur-xl"></div>
+                      <Button 
+                        className="relative flex items-center gap-3 bg-white/90 hover:bg-gradient-to-r hover:from-green-500 hover:to-emerald-500 hover:text-white transition-all duration-500 hover:scale-105 border border-slate-200/50 px-6 py-3 rounded-xl font-medium text-slate-700"
+                        disabled={!isSeatingStarted}
                       >
-                        <RotateCcw className="w-3 h-3 mr-1" />
-                        🎲 Дилер
+                        <Target className="w-5 h-5" />
+                        <span>🎯 Переместить игрока</span>
                       </Button>
+                    </div>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-md bg-white/95 backdrop-blur-xl border border-slate-200/50 shadow-floating">
+                    <DialogHeader>
+                      <DialogTitle className="font-serif text-xl text-slate-800">Перемещение игрока</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="text-sm font-medium text-slate-700 font-body">Выберите игрока:</label>
+                        <Select value={selectedPlayer} onValueChange={setSelectedPlayer}>
+                          <SelectTrigger className="bg-white/80 border-slate-200/50">
+                            <SelectValue placeholder="Выберите игрока..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {tables.flatMap(table => 
+                              table.seats
+                                .filter(seat => seat.player_id)
+                                .map(seat => (
+                                  <SelectItem key={seat.player_id} value={seat.player_id!}>
+                                    {seat.player_name} (Стол {table.table_number}, Место {seat.seat_number})
+                                  </SelectItem>
+                                ))
+                            )}
+                          </SelectContent>
+                        </Select>
+                      </div>
                       
-                      {table.active_players <= 3 && (
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="text-sm font-medium text-slate-700 font-body">Целевой стол:</label>
+                          <Input
+                            type="number"
+                            value={targetTable}
+                            onChange={(e) => setTargetTable(Number(e.target.value))}
+                            min={1}
+                            max={tables.length}
+                            className="bg-white/80 border-slate-200/50"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium text-slate-700 font-body">Целевое место:</label>
+                          <Input
+                            type="number"
+                            value={targetSeat}
+                            onChange={(e) => setTargetSeat(Number(e.target.value))}
+                            min={1}
+                            max={maxPlayersPerTable}
+                            className="bg-white/80 border-slate-200/50"
+                          />
+                        </div>
+                      </div>
+                      
+                      <div className="flex gap-3 pt-4">
+                        <Button
+                          onClick={() => {
+                            if (selectedPlayer) {
+                              const playerTable = tables.find(t => 
+                                t.seats.some(s => s.player_id === selectedPlayer)
+                              );
+                              if (playerTable) {
+                                movePlayer(selectedPlayer, playerTable.table_number, targetTable, targetSeat);
+                              }
+                            }
+                          }}
+                          className="flex-1 bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white font-medium"
+                          disabled={!selectedPlayer}
+                        >
+                          Переместить
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          onClick={() => setIsMoveDialogOpen(false)}
+                          className="flex-1 bg-white/80 border-slate-200/50"
+                        >
+                          Отмена
+                        </Button>
+                      </div>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+
+                {isFinalTableReady && (
+                  <div className="relative group">
+                    <div className="absolute inset-0 bg-gradient-to-r from-yellow-500/30 to-orange-500/30 rounded-2xl blur-lg transition-all duration-500 group-hover:blur-xl"></div>
+                    <Button 
+                      onClick={createFinalTable}
+                      className="relative flex items-center gap-4 bg-gradient-to-r from-yellow-400 via-orange-500 to-red-500 text-white hover:from-yellow-500 hover:via-orange-600 hover:to-red-600 transition-all duration-500 hover:scale-105 shadow-elevated text-lg px-8 py-4 rounded-2xl font-serif font-semibold"
+                    >
+                      <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/25 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 rounded-2xl"></div>
+                      <Crown className="w-6 h-6 group-hover:animate-bounce transition-transform duration-300 relative z-10" />
+                      <span className="group-hover:translate-x-1 transition-transform duration-300 relative z-10">
+                        🏆 СОЗДАТЬ ФИНАЛЬНЫЙ СТОЛ
+                      </span>
+                    </Button>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Столы в премиальном стиле */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        {tables.map(table => (
+          <div 
+            key={table.table_number} 
+            className={`relative group transition-all duration-500 hover:scale-[1.02] ${
+              table.is_final_table 
+                ? 'animate-pulse-glow' 
+                : ''
+            }`}
+          >
+            <div className={`absolute inset-0 rounded-3xl blur-xl transition-all duration-500 group-hover:blur-2xl ${
+              table.is_final_table 
+                ? 'bg-gradient-to-br from-yellow-500/30 to-orange-500/30' 
+                : 'bg-gradient-to-br from-slate-500/10 to-blue-500/10'
+            }`}></div>
+            
+            <div className={`relative overflow-hidden rounded-3xl border shadow-card hover:shadow-elevated transition-all duration-500 ${
+              table.is_final_table 
+                ? 'bg-gradient-to-br from-yellow-50 via-amber-50 to-orange-50 border-amber-200/60' 
+                : 'bg-white/90 backdrop-blur-sm border-slate-200/50'
+            }`}>
+              <div className={`p-6 border-b ${
+                table.is_final_table 
+                  ? 'bg-gradient-to-r from-yellow-100 to-orange-100 border-amber-200/50' 
+                  : 'bg-white/60 border-slate-200/30'
+              }`}>
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-3">
+                    {table.is_final_table ? (
+                      <div className="flex items-center gap-3">
+                        <div className="p-3 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-xl animate-glow">
+                          <Crown className="w-6 h-6 text-white" />
+                        </div>
+                        <span className="text-xl font-serif font-bold text-amber-800">🏆 ФИНАЛЬНЫЙ СТОЛ</span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-3">
+                        <div className="p-3 bg-gradient-to-r from-blue-500 to-purple-500 rounded-xl">
+                          <Target className="w-6 h-6 text-white" />
+                        </div>
+                        <span className="text-xl font-serif font-semibold text-slate-800">Стол {table.table_number}</span>
+                      </div>
+                    )}
+                  </div>
+                  {getTableStatusBadge(table)}
+                </div>
+                
+                {table.dealer_position && (
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline" className="bg-white/80 border-slate-200/50 text-sm font-body">
+                      Дилер: позиция {table.dealer_position}
+                    </Badge>
+                    {table.average_stack && (
+                      <Badge variant="outline" className="bg-white/80 border-slate-200/50 text-sm font-body">
+                        Ср. стек: {table.average_stack} BB
+                      </Badge>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              <div className="p-6">
+                {/* Сетка мест */}
+                <div className="grid grid-cols-3 gap-3 mb-6">
+                  {table.seats.map((seat, index) => (
+                    <div
+                      key={`${table.table_number}-${seat.seat_number}`}
+                      className={`relative p-4 rounded-2xl border-2 transition-all duration-300 hover:scale-105 ${
+                        seat.player_name 
+                          ? 'bg-white/90 border-slate-200/50 shadow-subtle' 
+                          : 'bg-slate-50/50 border-dashed border-slate-300/50'
+                      }`}
+                    >
+                      <div className="text-xs font-mono font-bold text-slate-500 mb-2 text-center">
+                        Место {seat.seat_number}
+                      </div>
+                      
+                      {seat.player_name ? (
+                        <div className="space-y-3">
+                          {/* Аватар игрока */}
+                          <div className="flex items-center justify-center">
+                            <div className="relative">
+                              <img 
+                                src={getPlayerAvatar(seat.player_id!)} 
+                                alt={seat.player_name}
+                                className="w-10 h-10 rounded-full object-cover border-2 border-white shadow-sm"
+                              />
+                              <div className={`absolute -bottom-1 -right-1 w-3 h-3 rounded-full border border-white ${
+                                seat.status === 'playing' ? 'bg-green-500' : 
+                                seat.status === 'eliminated' ? 'bg-red-500' : 'bg-blue-500'
+                              }`}></div>
+                            </div>
+                          </div>
+                          
+                          <div className="text-center">
+                            <div className="font-serif font-semibold text-slate-800 text-sm truncate mb-1" title={seat.player_name}>
+                              {seat.player_name}
+                            </div>
+                            
+                            {seat.chips && (
+                              <div className="text-xs space-y-1">
+                                <div className="font-mono font-bold text-slate-700">{seat.chips.toLocaleString()}</div>
+                                {seat.stack_bb && <div className="text-slate-500 font-body">{seat.stack_bb} BB</div>}
+                              </div>
+                            )}
+                          </div>
+                          
+                          {/* Кнопки управления игроком */}
+                          {seat.status !== 'eliminated' && isSeatingStarted && (
+                            <div className="flex gap-1">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="flex-1 text-xs bg-white/80 hover:bg-gradient-to-r hover:from-blue-500 hover:to-purple-500 hover:text-white transition-all duration-300 border-slate-200/50"
+                                onClick={() => {
+                                  setSelectedPlayer(seat.player_id!);
+                                  setTargetTable(table.table_number);
+                                  setIsMoveDialogOpen(true);
+                                }}
+                              >
+                                🔄
+                              </Button>
+                              <Button
+                                size="sm"
+                                className="flex-1 text-xs bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 hover:scale-105 transition-all duration-300 text-white"
+                                onClick={() => eliminatePlayer(seat.player_id!)}
+                              >
+                                <UserMinus className="w-3 h-3" />
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="text-slate-500 text-xs font-body flex flex-col items-center justify-center py-4">
+                          <div className="w-8 h-8 rounded-full border-2 border-dashed border-slate-300 flex items-center justify-center mb-2">
+                            <Plus className="w-4 h-4 text-slate-400" />
+                          </div>
+                          <span>Свободно</span>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                
+                {/* Действия со столом */}
+                {table.active_players > 0 && !table.is_final_table && (
+                  <div className={`pt-4 border-t ${table.is_final_table ? 'border-amber-200/50' : 'border-slate-200/30'}`}>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-body font-medium text-slate-600">Управление столом:</span>
+                      <div className="flex gap-2">
                         <Button
                           size="sm"
                           variant="outline"
-                          className="text-xs bg-white/80 hover:bg-gradient-to-r hover:from-amber-500 hover:to-yellow-500 hover:text-white transition-all duration-300 hover:scale-105 border-gray-200/50"
-                          onClick={() => suggestPlayerMove(table.table_number)}
+                          className="text-xs bg-white/80 hover:bg-gradient-to-r hover:from-purple-500 hover:to-indigo-500 hover:text-white transition-all duration-300 hover:scale-105 border-slate-200/50"
+                          onClick={() => {
+                            const newTables = [...tables];
+                            const currentTable = newTables.find(t => t.table_number === table.table_number);
+                            if (currentTable) {
+                              currentTable.dealer_position = (currentTable.dealer_position % currentTable.max_seats) + 1;
+                              setTables(newTables);
+                            }
+                          }}
+                          title="Передвинуть позицию дилера"
                         >
-                          <AlertTriangle className="w-3 h-3 mr-1" />
-                          💡 Совет
+                          <RotateCcw className="w-3 h-3 mr-1" />
+                          🎲 Дилер
                         </Button>
-                      )}
+                        
+                        {table.active_players <= 3 && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="text-xs bg-white/80 hover:bg-gradient-to-r hover:from-amber-500 hover:to-yellow-500 hover:text-white transition-all duration-300 hover:scale-105 border-slate-200/50"
+                            onClick={() => suggestPlayerMove(table.table_number)}
+                          >
+                            <AlertTriangle className="w-3 h-3 mr-1" />
+                            💡 Совет
+                          </Button>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-              )}
-              
-              {table.active_players === 0 && (
-                <div className="mt-4 pt-4 border-t border-gray-200/30">
-                  <Button
-                    size="sm"
-                    variant="destructive"
-                    className="w-full text-xs bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 hover:scale-105 transition-all duration-300"
-                    onClick={() => closeTable(table.table_number)}
-                  >
-                    <X className="w-3 h-3 mr-2" />
-                    🗑️ Закрыть пустой стол
-                  </Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                )}
+                
+                {table.active_players === 0 && (
+                  <div className="pt-4 border-t border-slate-200/30">
+                    <Button
+                      size="sm"
+                      className="w-full text-xs bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 hover:scale-105 transition-all duration-300 text-white"
+                      onClick={() => closeTable(table.table_number)}
+                    >
+                      <X className="w-3 h-3 mr-2" />
+                      🗑️ Закрыть пустой стол
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
         ))}
       </div>
     </div>
