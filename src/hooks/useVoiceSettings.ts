@@ -92,9 +92,14 @@ export const useVoiceSettings = () => {
     loadSettings();
   }, []);
 
+  const updateSettings = (newSettings: VoiceSettings) => {
+    setSettings(newSettings);
+  };
+
   return {
     settings,
     isLoading,
-    loadSettings
+    loadSettings,
+    updateSettings
   };
 };
