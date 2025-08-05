@@ -899,6 +899,10 @@ export type Database = {
         Args: { tournament_id_param: string }
         Returns: boolean
       }
+      sync_all_player_avatars: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       update_player_wins: {
         Args: Record<PropertyKey, never>
         Returns: undefined
