@@ -455,13 +455,13 @@ export default function Profile() {
                     <div className="space-y-2">
                       <div className="flex justify-between text-sm">
                         <span>До следующего ранга</span>
-                        <span className="font-medium">{Math.max(0, Math.ceil(((Math.floor(((player?.elo_rating || 1200) + 199) / 200) * 200) - (player?.elo_rating || 1200))))}</span>
+                        <span className="font-medium">{Math.max(0, Math.ceil(((Math.floor(((player?.elo_rating || 100) + 199) / 200) * 200) - (player?.elo_rating || 100))))}</span>
                       </div>
                       <div className="w-full bg-muted rounded-full h-2">
                         <div 
                           className="bg-gradient-to-r from-primary to-primary/80 h-2 rounded-full transition-all duration-500" 
                           style={{ 
-                            width: `${Math.min(100, (((player?.elo_rating || 1200) % 200) / 200) * 100)}%` 
+                            width: `${Math.min(100, (((player?.elo_rating || 100) % 200) / 200) * 100)}%` 
                           }}
                         ></div>
                       </div>

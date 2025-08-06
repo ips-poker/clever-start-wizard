@@ -353,12 +353,12 @@ const RatingManagement = ({ tournaments, selectedTournament, onRefresh }: Rating
           {/* Automation Settings */}
           <Card className="bg-gradient-card border-poker-border shadow-elevated">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-poker-text-primary">
+                <CardTitle className="flex items-center gap-2 text-poker-text-primary">
                 <Settings className="h-5 w-5 text-poker-accent" />
-                Автоматизация RPS рейтингов
+                Система рейтинговых баллов RPS
               </CardTitle>
               <CardDescription className="text-poker-text-secondary">
-                Настройте автоматические процессы для обработки турниров
+                Настройте автоматические процессы для обработки турниров RPS
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -502,24 +502,24 @@ const RatingManagement = ({ tournaments, selectedTournament, onRefresh }: Rating
           {/* Rating System Info */}
           <Card>
             <CardHeader>
-              <CardTitle>Как работает рейтинговая система</CardTitle>
+              <CardTitle>Как работает Система рейтинговых баллов RPS</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="flex items-start gap-2">
                 <CheckCircle className="h-4 w-4 text-green-500 mt-0.5" />
-                <p className="text-sm">Рейтинги рассчитываются по модифицированной системе Эло</p>
+                <p className="text-sm">Новые игроки получают 100 баллов при регистрации</p>
               </div>
               <div className="flex items-start gap-2">
                 <CheckCircle className="h-4 w-4 text-green-500 mt-0.5" />
-                <p className="text-sm">Учитывается позиция в турнире и средний рейтинг соперников</p>
+                <p className="text-sm">+1 балл за каждый ребай и адон</p>
               </div>
               <div className="flex items-start gap-2">
                 <CheckCircle className="h-4 w-4 text-green-500 mt-0.5" />
-                <p className="text-sm">Дополнительные очки начисляются за высокие места</p>
+                <p className="text-sm">Призовые баллы = 0,1% от суммы выигрыша</p>
               </div>
               <div className="flex items-start gap-2">
                 <CheckCircle className="h-4 w-4 text-green-500 mt-0.5" />
-                <p className="text-sm">Рейтинги ограничены диапазоном {settings.min_rating}-{settings.max_rating}</p>
+                <p className="text-sm">Рейтинг не может быть меньше 0 баллов</p>
               </div>
             </CardContent>
           </Card>
