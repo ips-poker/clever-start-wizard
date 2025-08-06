@@ -163,11 +163,11 @@ const TournamentOverview = ({
     if (!isMountedRef.current) return;
     
     try {
-      // Get active tournaments
+      // Get active tournaments (running and registration status)
       const { data: activeTournaments } = await supabase
         .from('tournaments')
         .select('id')
-        .eq('status', 'running');
+        .in('status', ['running', 'registration']);
 
       // Get total players
       const { data: allPlayers } = await supabase
