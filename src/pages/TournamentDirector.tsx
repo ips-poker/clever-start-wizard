@@ -791,11 +791,15 @@ const TournamentDirector = () => {
               <TabsTrigger value="sync" className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm">
                 <RefreshCw className="w-4 h-4" />
                 <span className="hidden sm:inline">Синхронизация</span>
-              </TabsTrigger>
-              <TabsTrigger value="rating-test" className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm">
-                <Target className="w-4 h-4" />
-                <span className="hidden sm:inline">Тест рейтинга</span>
-              </TabsTrigger>
+               </TabsTrigger>
+               <TabsTrigger value="analysis" className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                 <BarChart3 className="w-4 h-4" />
+                 <span className="hidden sm:inline">Анализ турнира</span>
+               </TabsTrigger>
+               <TabsTrigger value="rating-test" className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                 <Target className="w-4 h-4" />
+                 <span className="hidden sm:inline">Тест рейтинга</span>
+               </TabsTrigger>
             </TabsList>
             <TabsContent value="overview" className="space-y-8 animate-fade-in">
               {selectedTournament ? (
