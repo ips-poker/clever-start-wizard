@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { 
   Trophy, 
@@ -15,7 +16,8 @@ import {
   AlertCircle,
   Edit,
   Save,
-  X
+  X,
+  BarChart3
 } from 'lucide-react';
 
 interface TournamentAnalysis {
@@ -33,6 +35,16 @@ const TournamentAnalysisAndRating = () => {
   const [isEditingPayouts, setIsEditingPayouts] = useState(false);
   const [editedPayouts, setEditedPayouts] = useState<any[]>([]);
   const { toast } = useToast();
+
+  const getPlayerAvatar = (playerId: string, playerName: string) => {
+    // Используем хеш от ID для выбора аватара
+    const avatarIndex = Math.abs(playerId.split('').reduce((a, b) => a + b.charCodeAt(0), 0)) % 6 + 1;
+    return `/src/assets/avatars/poker-avatar-${avatarIndex}.png`;
+  };
+
+  const getPlayerInitials = (name: string) => {
+    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  };
 
   const analyzeTournament = async () => {
     setIsLoading(true);
@@ -80,29 +92,15 @@ const TournamentAnalysisAndRating = () => {
           (addons * (tournament.addon_cost || 0));
       });
 
-      // ВАЖНО: Проверяем реальные позиции из базы данных
-      console.log('🔍 Анализ позиций участников:', participants.map(p => ({
-        name: p.players?.name,
-        position: p.position,
-        final_position: p.final_position,
-        status: p.status,
-        eliminated_at: p.eliminated_at,
-        created_at: p.created_at
-      })));
-
-      // ПОЗИЦИИ УЖЕ ПРАВИЛЬНЫЕ: final_position теперь корректно рассчитывается функцией calculate_final_positions
-      // 1 место = последний выбывший (победитель), 2 место = предпоследний выбывший и т.д.
+      // Проверяем позиции участников
       const participantsWithPositions = participants.map(p => {
         let corrected_position;
         
         if (p.status === 'eliminated' && p.final_position) {
-          // final_position уже рассчитан правильно: 1=победитель, 2=второе место и т.д.
           corrected_position = p.final_position;
         } else if (p.position && p.position > 0) {
-          // Для активных игроков или тех, кому вручную установили позицию
           corrected_position = p.position;
         } else {
-          // Если нет ни того, ни другого - ошибка
           corrected_position = null;
         }
 
@@ -116,8 +114,6 @@ const TournamentAnalysisAndRating = () => {
       const participantsWithoutPositions = participantsWithPositions.filter(p => p.corrected_position === null || p.corrected_position === undefined);
       
       if (participantsWithoutPositions.length > 0) {
-        console.warn('⚠️ ПРОБЛЕМА: У некоторых участников отсутствуют позиции:', participantsWithoutPositions.map(p => p.players?.name));
-        
         throw new Error(`
           Не все участники имеют корректные позиции! 
           
@@ -127,8 +123,6 @@ const TournamentAnalysisAndRating = () => {
           1. Завершить игру через рассадку столов (удалить игроков из столов при выбывании)
           2. Для оставшихся игроков установить финальные позиции вручную
           3. Или использовать функцию "Завершить турнир" для автоматического расчета
-          
-          Игроки выбывают в порядке удаления из рассадки столов.
         `);
       }
 
@@ -136,15 +130,6 @@ const TournamentAnalysisAndRating = () => {
       const sortedParticipants = [...participantsWithPositions].sort((a, b) => {
         return a.corrected_position! - b.corrected_position!;
       });
-
-      console.log('✅ Финальные позиции участников:', sortedParticipants.map(p => ({
-        name: p.players?.name,
-        position: p.corrected_position,
-        rebuys: p.rebuys,
-        addons: p.addons,
-        eliminated_at: p.eliminated_at,
-        elimination_order: `${p.eliminated_at ? new Date(p.eliminated_at).toLocaleTimeString() : 'активен'}`
-      })));
 
       const finalParticipants = sortedParticipants;
 
@@ -226,7 +211,6 @@ const TournamentAnalysisAndRating = () => {
       // Создаем структуру выплат
       let finalPayoutStructure;
       if (!payoutStructure || payoutStructure.length === 0) {
-        // Используем динамическую структуру на основе количества игроков
         const dynamicPayouts = getPayoutStructure(participants.length);
         
         finalPayoutStructure = dynamicPayouts.map(payout => ({
@@ -239,7 +223,6 @@ const TournamentAnalysisAndRating = () => {
           updated_at: new Date().toISOString()
         }));
       } else {
-        // Пересчитываем суммы для существующей структуры
         finalPayoutStructure = payoutStructure.map(payout => ({
           ...payout,
           amount: Math.floor((totalPrizePool * payout.percentage) / 100)
@@ -252,13 +235,9 @@ const TournamentAnalysisAndRating = () => {
         const rebuys = participant.rebuys || 0;
         const addons = participant.addons || 0;
         
-        // Базовые очки за участие
         let rpsChange = 1;
-        
-        // Бонусы за ребаи и адоны
         rpsChange += rebuys + addons;
         
-        // Призовые баллы (только для призовых мест)
         let prizePoints = 0;
         let prizeAmount = 0;
         let isWinner = false;
@@ -267,7 +246,7 @@ const TournamentAnalysisAndRating = () => {
           const payout = finalPayoutStructure.find(p => p.place === position);
           if (payout) {
             prizeAmount = payout.amount;
-            prizePoints = Math.max(1, Math.floor(prizeAmount * 0.001)); // 0.1% от выигрыша
+            prizePoints = Math.max(1, Math.floor(prizeAmount * 0.001));
             rpsChange += prizePoints;
             isWinner = true;
           }
@@ -288,7 +267,6 @@ const TournamentAnalysisAndRating = () => {
         };
       });
 
-      // Сортируем по позициям
       ratingCalculations.sort((a, b) => a.position - b.position);
 
       setAnalysis({
@@ -321,7 +299,6 @@ const TournamentAnalysisAndRating = () => {
 
     setIsLoading(true);
     try {
-      // Удаляем старые результаты если есть
       const { error: deleteError } = await supabase
         .from('game_results')
         .delete()
@@ -331,7 +308,6 @@ const TournamentAnalysisAndRating = () => {
         console.warn('No old results to delete:', deleteError);
       }
 
-      // Применяем корректные позиции к регистрациям
       const updatePromises = analysis.ratingCalculations.map(calc => 
         supabase
           .from('tournament_registrations')
@@ -342,7 +318,6 @@ const TournamentAnalysisAndRating = () => {
 
       await Promise.all(updatePromises);
 
-      // Вызываем функцию расчета рейтингов
       const results = analysis.ratingCalculations.map(calc => ({
         player_id: calc.player_id,
         position: calc.position,
@@ -361,8 +336,6 @@ const TournamentAnalysisAndRating = () => {
         console.error('Error from calculate-elo:', error);
         throw error;
       }
-
-      console.log('✅ RPS рейтинги успешно пересчитаны:', data);
 
       setIsProcessed(true);
       
@@ -399,13 +372,11 @@ const TournamentAnalysisAndRating = () => {
 
     setIsLoading(true);
     try {
-      // Удаляем старую структуру
       await supabase
         .from('tournament_payouts')
         .delete()
         .eq('tournament_id', analysis.tournament.id);
 
-      // Добавляем новую структуру
       const payoutsToInsert = editedPayouts.map(payout => ({
         tournament_id: analysis.tournament.id,
         place: payout.place,
@@ -419,7 +390,6 @@ const TournamentAnalysisAndRating = () => {
 
       if (error) throw error;
 
-      // Обновляем анализ
       const updatedPayoutStructure = payoutsToInsert.map((payout, index) => ({
         ...payout,
         id: `updated-${index}`,
@@ -463,37 +433,38 @@ const TournamentAnalysisAndRating = () => {
   };
 
   const getPositionBadge = (position: number) => {
-    if (position === 1) return <Badge className="bg-yellow-500 text-white">🥇 1 место</Badge>;
-    if (position === 2) return <Badge className="bg-gray-400 text-white">🥈 2 место</Badge>;
-    if (position === 3) return <Badge className="bg-amber-600 text-white">🥉 3 место</Badge>;
-    if (position <= 6) return <Badge className="bg-green-600 text-white">🏆 {position} место</Badge>;
-    return <Badge variant="outline">{position} место</Badge>;
+    if (position === 1) return <Badge className="bg-yellow-500/10 text-yellow-800 border-yellow-200">🥇 1 место</Badge>;
+    if (position === 2) return <Badge className="bg-gray-400/10 text-gray-800 border-gray-200">🥈 2 место</Badge>;
+    if (position === 3) return <Badge className="bg-amber-600/10 text-amber-800 border-amber-200">🥉 3 место</Badge>;
+    if (position <= 6) return <Badge className="bg-green-600/10 text-green-800 border-green-200">🏆 {position} место</Badge>;
+    return <Badge variant="outline" className="bg-slate-50 text-slate-600">{position} место</Badge>;
   };
 
   return (
     <div className="space-y-6">
-      <Card className="bg-gradient-glass backdrop-blur-sm border border-white/10 shadow-elegant hover:shadow-card transition-all duration-300 rounded-xl">
-        <CardHeader className="pb-4">
-          <CardTitle className="flex items-center gap-2 text-poker-charcoal font-semibold text-xl">
-            <Calculator className="w-6 h-6 text-poker-gold" />
+      <Card className="bg-white/40 backdrop-blur-sm border border-gray-200/20 shadow-minimal">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-gray-700 font-light">
+            <BarChart3 className="w-4 h-4" />
             Анализатор турнира
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex flex-col sm:flex-row gap-4">
+          <div className="flex flex-col sm:flex-row gap-3">
             <Button 
               onClick={analyzeTournament} 
               disabled={isLoading}
-              className="bg-poker-charcoal hover:bg-poker-slate text-white font-medium px-6 py-3 rounded-lg transition-all duration-300 shadow-elegant hover:shadow-card flex-1"
+              variant="outline"
+              className="bg-white/60 border-gray-200/30 text-gray-700 hover:bg-white/80 font-light flex-1"
             >
               {isLoading ? (
                 <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></div>
                   Анализируем...
                 </div>
               ) : (
                 <>
-                  <Trophy className="w-5 h-5 mr-2" />
+                  <Calculator className="w-4 h-4 mr-2" />
                   Анализировать последний турнир
                 </>
               )}
@@ -502,7 +473,8 @@ const TournamentAnalysisAndRating = () => {
             <Button 
               onClick={applyCorrectRatings}
               disabled={isLoading || !analysis}
-              className="bg-poker-slate hover:bg-poker-charcoal text-white font-medium px-6 py-3 rounded-lg transition-all duration-300 shadow-elegant hover:shadow-card"
+              variant="outline"
+              className="bg-white/60 border-gray-200/30 text-gray-700 hover:bg-white/80 font-light"
             >
               <Star className="w-4 h-4 mr-2" />
               Применить рейтинги
@@ -510,55 +482,55 @@ const TournamentAnalysisAndRating = () => {
           </div>
 
           {isProcessed && (
-            <div className="flex items-center gap-2 p-4 bg-gradient-glass border border-green-200/50 rounded-xl backdrop-blur-sm">
-              <CheckCircle className="w-5 h-5 text-green-600" />
-              <span className="text-green-700 font-medium">Рейтинги успешно обновлены!</span>
+            <div className="flex items-center gap-2 p-3 bg-green-50/50 border border-green-200/30 rounded-lg">
+              <CheckCircle className="w-4 h-4 text-green-600" />
+              <span className="text-green-700 font-light text-sm">Рейтинги успешно обновлены!</span>
             </div>
           )}
 
           {analysis && (
             <div className="space-y-6">
               {/* Общая информация о турнире */}
-              <Card className="bg-gradient-glass backdrop-blur-sm border border-white/10 shadow-elegant rounded-xl">
-                <CardHeader className="pb-4">
-                  <CardTitle className="flex items-center gap-3 text-poker-charcoal font-medium text-lg">
-                    <div className="w-10 h-10 bg-poker-charcoal rounded-full flex items-center justify-center">
-                      <Trophy className="w-5 h-5 text-white" />
-                    </div>
+              <Card className="bg-white/40 backdrop-blur-sm border border-gray-200/20 shadow-minimal">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-3 text-gray-700 font-light">
+                    <Trophy className="w-4 h-4" />
                     {analysis.tournament.name}
-                    <Badge className="bg-green-100 text-green-700 border-green-200">Завершен</Badge>
+                    <Badge className="bg-green-100/50 text-green-700 border-green-200/30 font-light">Завершен</Badge>
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                    <div className="text-center p-4 bg-gradient-glass border border-white/10 rounded-xl">
-                      <div className="text-xs text-poker-silver mb-1 tracking-wide uppercase font-medium">Участников</div>
-                      <div className="text-2xl font-semibold text-poker-charcoal">{analysis.participants.length}</div>
+                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div className="text-center p-3 border border-gray-200/15 rounded-lg bg-white/20">
+                      <Users className="w-4 h-4 mx-auto mb-1 text-gray-600" />
+                      <p className="text-lg font-light text-gray-800">{analysis.participants.length}</p>
+                      <p className="text-xs text-gray-500 font-light">Участников</p>
                     </div>
-                    <div className="text-center p-4 bg-gradient-glass border border-white/10 rounded-xl">
-                      <div className="text-xs text-poker-silver mb-1 tracking-wide uppercase font-medium">Призовой фонд</div>
-                      <div className="text-2xl font-semibold text-green-600">{analysis.totalPrizePool.toLocaleString()}₽</div>
+                    <div className="text-center p-3 border border-gray-200/15 rounded-lg bg-white/20">
+                      <DollarSign className="w-4 h-4 mx-auto mb-1 text-gray-600" />
+                      <p className="text-lg font-light text-green-600">{analysis.totalPrizePool.toLocaleString()}₽</p>
+                      <p className="text-xs text-gray-500 font-light">Призовой фонд</p>
                     </div>
-                    <div className="text-center p-4 bg-gradient-glass border border-white/10 rounded-xl">
-                      <div className="text-xs text-poker-silver mb-1 tracking-wide uppercase font-medium">Призовых мест</div>
-                      <div className="text-2xl font-semibold text-purple-600">{analysis.payoutStructure.length}</div>
+                    <div className="text-center p-3 border border-gray-200/15 rounded-lg bg-white/20">
+                      <Trophy className="w-4 h-4 mx-auto mb-1 text-gray-600" />
+                      <p className="text-lg font-light text-purple-600">{analysis.payoutStructure.length}</p>
+                      <p className="text-xs text-gray-500 font-light">Призовых мест</p>
                     </div>
-                    <div className="text-center p-4 bg-gradient-glass border border-white/10 rounded-xl">
-                      <div className="text-xs text-poker-silver mb-1 tracking-wide uppercase font-medium">Бай-ин</div>
-                      <div className="text-2xl font-semibold text-orange-600">{analysis.tournament.buy_in.toLocaleString()}₽</div>
+                    <div className="text-center p-3 border border-gray-200/15 rounded-lg bg-white/20">
+                      <BarChart3 className="w-4 h-4 mx-auto mb-1 text-gray-600" />
+                      <p className="text-lg font-light text-orange-600">{analysis.tournament.buy_in.toLocaleString()}₽</p>
+                      <p className="text-xs text-gray-500 font-light">Бай-ин</p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
               {/* Структура призов */}
-              <Card className="bg-gradient-glass backdrop-blur-sm border border-white/10 shadow-elegant rounded-xl">
-                <CardHeader className="pb-4">
+              <Card className="bg-white/40 backdrop-blur-sm border border-gray-200/20 shadow-minimal">
+                <CardHeader>
                   <div className="flex items-center justify-between">
-                    <CardTitle className="flex items-center gap-3 text-poker-charcoal font-medium text-lg">
-                      <div className="w-10 h-10 bg-poker-charcoal rounded-full flex items-center justify-center">
-                        <DollarSign className="w-5 h-5 text-white" />
-                      </div>
+                    <CardTitle className="flex items-center gap-2 text-gray-700 font-light">
+                      <DollarSign className="w-4 h-4" />
                       Структура призового фонда
                     </CardTitle>
                     <div className="flex gap-2">
@@ -567,9 +539,9 @@ const TournamentAnalysisAndRating = () => {
                           onClick={startEditingPayouts}
                           variant="outline"
                           size="sm"
-                          className="border-poker-silver text-poker-charcoal hover:bg-gradient-glass transition-colors"
+                          className="bg-white/60 border-gray-200/30 text-gray-700 hover:bg-white/80 font-light text-xs"
                         >
-                          <Edit className="w-4 h-4 mr-1" />
+                          <Edit className="w-3 h-3 mr-1" />
                           Редактировать
                         </Button>
                       ) : (
@@ -578,18 +550,19 @@ const TournamentAnalysisAndRating = () => {
                             onClick={savePayoutStructure}
                             disabled={isLoading}
                             size="sm"
-                            className="bg-green-600 hover:bg-green-700 text-white"
+                            variant="outline"
+                            className="bg-green-50 border-green-200 text-green-700 hover:bg-green-100 font-light text-xs"
                           >
-                            <Save className="w-4 h-4 mr-1" />
+                            <Save className="w-3 h-3 mr-1" />
                             Сохранить
                           </Button>
                           <Button
                             onClick={cancelEditingPayouts}
                             variant="outline"
                             size="sm"
-                            className="border-poker-silver hover:bg-gradient-glass"
+                            className="bg-white/60 border-gray-200/30 text-gray-700 hover:bg-white/80 font-light text-xs"
                           >
-                            <X className="w-4 h-4 mr-1" />
+                            <X className="w-3 h-3 mr-1" />
                             Отменить
                           </Button>
                         </>
@@ -601,7 +574,7 @@ const TournamentAnalysisAndRating = () => {
                   {isEditingPayouts ? (
                     <div className="space-y-3">
                       {editedPayouts.map((payout) => (
-                        <div key={payout.place} className="flex items-center gap-3 p-4 bg-gradient-glass border border-white/10 rounded-xl">
+                        <div key={payout.place} className="flex items-center gap-3 p-3 bg-white/60 rounded-lg border border-gray-200/30">
                           {getPositionBadge(payout.place)}
                           <div className="flex items-center gap-2">
                             <Input
@@ -611,31 +584,28 @@ const TournamentAnalysisAndRating = () => {
                               max="100"
                               value={payout.percentage}
                               onChange={(e) => updatePayoutPercentage(payout.place, e.target.value)}
-                              className="w-20 border-white/20"
+                              className="w-16 text-xs border-gray-200/50"
                             />
-                            <span className="text-poker-silver">%</span>
+                            <span className="text-gray-500 text-xs font-light">%</span>
                           </div>
-                          <div className="text-sm text-poker-silver">
+                          <div className="text-xs text-gray-600 font-light">
                             = {Math.floor((analysis.totalPrizePool * payout.percentage) / 100).toLocaleString()}₽
                           </div>
                         </div>
                       ))}
-                      <div className="text-xs text-poker-silver text-center pt-2">
-                        Общий процент: {editedPayouts.reduce((sum, p) => sum + p.percentage, 0).toFixed(1)}%
-                      </div>
                     </div>
                   ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                       {analysis.payoutStructure.map((payout) => (
-                        <div key={payout.place} className="bg-gradient-glass border border-white/10 rounded-xl p-6 text-center hover:shadow-card transition-all duration-300">
-                          <div className="flex items-center justify-center mb-3">
+                        <div key={payout.place} className="bg-white/60 rounded-lg border border-gray-200/30 p-4 text-center">
+                          <div className="flex items-center justify-center mb-2">
                             {getPositionBadge(payout.place)}
                           </div>
-                          <div className="text-lg font-medium text-poker-silver mb-1">{payout.percentage}%</div>
-                          <div className="text-2xl font-semibold text-green-600 mb-2">
+                          <div className="text-sm font-light text-gray-600 mb-1">{payout.percentage}%</div>
+                          <div className="text-lg font-light text-green-600 mb-1">
                             {payout.amount.toLocaleString()}₽
                           </div>
-                          <div className="text-xs text-poker-silver">
+                          <div className="text-xs text-gray-500 font-light">
                             RPS: {Math.max(1, Math.floor(payout.amount * 0.001))} очков
                           </div>
                         </div>
@@ -646,12 +616,10 @@ const TournamentAnalysisAndRating = () => {
               </Card>
 
               {/* Рейтинговые расчеты */}
-              <Card className="bg-gradient-glass backdrop-blur-sm border border-white/10 shadow-elegant rounded-xl">
-                <CardHeader className="pb-4">
-                  <CardTitle className="flex items-center gap-3 text-poker-charcoal font-medium text-lg">
-                    <div className="w-10 h-10 bg-poker-charcoal rounded-full flex items-center justify-center">
-                      <Star className="w-5 h-5 text-white" />
-                    </div>
+              <Card className="bg-white/40 backdrop-blur-sm border border-gray-200/20 shadow-minimal">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-gray-700 font-light">
+                    <Star className="w-4 h-4" />
                     Расчет рейтинговых очков (RPS)
                   </CardTitle>
                 </CardHeader>
@@ -660,41 +628,50 @@ const TournamentAnalysisAndRating = () => {
                     {analysis.ratingCalculations.map((calc) => (
                       <div 
                         key={calc.player_id} 
-                        className={`p-4 rounded-xl border border-white/10 transition-all duration-300 hover:shadow-card ${
+                        className={`p-4 rounded-lg border border-gray-200/30 transition-all duration-200 ${
                           calc.is_winner 
-                            ? 'bg-gradient-glass' 
-                            : 'bg-gradient-glass opacity-75'
+                            ? 'bg-white/80' 
+                            : 'bg-white/60'
                         }`}
                       >
                         <div className="flex items-center justify-between mb-3">
                           <div className="flex items-center gap-3">
+                            <Avatar className="w-8 h-8">
+                              <AvatarImage 
+                                src={getPlayerAvatar(calc.player_id, calc.player_name)} 
+                                alt={calc.player_name}
+                              />
+                              <AvatarFallback className="text-xs font-light bg-gray-100 text-gray-600">
+                                {getPlayerInitials(calc.player_name)}
+                              </AvatarFallback>
+                            </Avatar>
                             {getPositionBadge(calc.position)}
-                            <span className="font-medium text-poker-charcoal">{calc.player_name}</span>
+                            <span className="font-light text-gray-800">{calc.player_name}</span>
                             {calc.is_winner && <Trophy className="w-4 h-4 text-yellow-500" />}
                           </div>
                           <div className="text-right">
-                            <div className="font-semibold text-lg text-green-600">
+                            <div className="font-light text-lg text-green-600">
                               +{calc.total_rps_change} RPS
                             </div>
                           </div>
                         </div>
                         
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
-                          <div className="text-center p-2 bg-gradient-glass border border-white/10 rounded-lg">
-                            <div className="text-xs text-poker-silver mb-1 tracking-wide uppercase font-medium">Участие</div>
-                            <div className="font-semibold text-poker-charcoal">+{calc.base_points} RPS</div>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+                          <div className="text-center p-2 border border-gray-200/15 rounded bg-white/40">
+                            <div className="text-xs text-gray-500 mb-1 font-light">Участие</div>
+                            <div className="font-light text-gray-700">+{calc.base_points} RPS</div>
                           </div>
-                          <div className="text-center p-2 bg-gradient-glass border border-white/10 rounded-lg">
-                            <div className="text-xs text-poker-silver mb-1 tracking-wide uppercase font-medium">Ребаи/Адоны</div>
-                            <div className="font-semibold text-poker-charcoal">+{calc.rebuy_addon_points} RPS</div>
+                          <div className="text-center p-2 border border-gray-200/15 rounded bg-white/40">
+                            <div className="text-xs text-gray-500 mb-1 font-light">Ребаи/Адоны</div>
+                            <div className="font-light text-gray-700">+{calc.rebuy_addon_points} RPS</div>
                           </div>
-                          <div className="text-center p-2 bg-gradient-glass border border-white/10 rounded-lg">
-                            <div className="text-xs text-poker-silver mb-1 tracking-wide uppercase font-medium">Призовые</div>
-                            <div className="font-semibold text-green-600">+{calc.prize_points} RPS</div>
+                          <div className="text-center p-2 border border-gray-200/15 rounded bg-white/40">
+                            <div className="text-xs text-gray-500 mb-1 font-light">Призовые</div>
+                            <div className="font-light text-green-600">+{calc.prize_points} RPS</div>
                           </div>
-                          <div className="text-center p-2 bg-gradient-glass border border-white/10 rounded-lg">
-                            <div className="text-xs text-poker-silver mb-1 tracking-wide uppercase font-medium">Выигрыш</div>
-                            <div className="font-semibold text-poker-charcoal">{calc.prize_amount.toLocaleString()}₽</div>
+                          <div className="text-center p-2 border border-gray-200/15 rounded bg-white/40">
+                            <div className="text-xs text-gray-500 mb-1 font-light">Выигрыш</div>
+                            <div className="font-light text-gray-700">{calc.prize_amount.toLocaleString()}₽</div>
                           </div>
                         </div>
                       </div>
