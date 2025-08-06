@@ -177,9 +177,11 @@ serve(async (req) => {
 function calculateRPSChanges(players: Player[], results: TournamentResult[], tournament: any, payoutStructureFromDB?: any[]) {
   const changes = []
 
-  // Проверяем, что позиции корректно присвоены (кто последний вылетел - первое место)
-  // results уже должны приходить с правильными позициями из компонента
+  // ВАЖНО: Сортируем по позиции (1-е место это позиция 1, последнее место - максимальная позиция)
+  // Позиции должны быть присвоены по принципу: кто последний вылетел = 1-е место
   results.sort((a, b) => a.position - b.position)
+  
+  console.log('Processing results for positions:', results.map(r => `Player ${r.player_id}: position ${r.position}`))
 
   // Рассчитываем общий призовой фонд
   let totalPrizePool = 0
@@ -190,6 +192,8 @@ function calculateRPSChanges(players: Player[], results: TournamentResult[], tou
       (rebuys * (tournament.rebuy_cost || 0)) + 
       (addons * (tournament.addon_cost || 0))
   })
+
+  console.log(`Total prize pool: ${totalPrizePool}`)
 
   // Используем структуру выплат из БД (только призовые места)
   let payoutStructure: number[] = []
@@ -209,11 +213,8 @@ function calculateRPSChanges(players: Player[], results: TournamentResult[], tou
     const player = players.find(p => p.id === playerResult.player_id)
     if (!player) continue
 
-    // Начинаем с базового рейтинга (исправлено: используем правильную базу расчета)
-    let rpsChange = 0
-
-    // Базовые очки за участие (все получают минимальные очки)
-    rpsChange += 1
+    // Базовые очки за участие
+    let rpsChange = 1
 
     // Бонусы за ребаи и адоны
     const rebuys = playerResult.rebuys || 0
@@ -229,12 +230,14 @@ function calculateRPSChanges(players: Player[], results: TournamentResult[], tou
       const prizePoints = Math.floor(prizeAmount * 0.001) 
       rpsChange += prizePoints
       
-      console.log(`Призовые баллы для позиции ${position}: ${prizePercentage}% от ${totalPrizePool} = ${prizeAmount}, баллы: ${prizePoints}`)
+      console.log(`Prize points for position ${position}: ${prizePercentage}% of ${totalPrizePool} = ${prizeAmount}, points: ${prizePoints}`)
     }
 
-    // Рейтинг не может уйти в минус (минимум 100)
+    // Рейтинг не может быть меньше 100 (ИСПРАВЛЕНО: база 100, а не 1200!)
     const newRating = Math.max(100, player.elo_rating + rpsChange)
     const finalChange = newRating - player.elo_rating
+
+    console.log(`Player ${player.name}: position ${position}, RPS change: ${finalChange} (from ${player.elo_rating} to ${newRating})`)
 
     changes.push({
       player_id: player.id,

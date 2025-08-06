@@ -378,7 +378,7 @@ const ImprovedPlayerManagement = ({ tournament, players, registrations, onRegist
       const { error: tournamentError } = await supabase
         .from('tournaments')
         .update({ 
-          status: 'completed',
+          status: 'finished',
           finished_at: new Date().toISOString()
         })
         .eq('id', tournament.id);
