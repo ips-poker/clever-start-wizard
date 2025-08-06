@@ -348,7 +348,7 @@ export function TournamentRegistration() {
                 <option value="">Выберите игрока</option>
                 {players.map(player => (
                   <option key={player.id} value={player.id}>
-                    {player.name} (ELO: {player.elo_rating})
+                    {player.name} (RPS: {player.elo_rating})
                   </option>
                 ))}
               </select>
@@ -412,7 +412,7 @@ export function TournamentRegistration() {
                           {tournamentRegs.map(reg => (
                             <div key={reg.id} className="flex items-center justify-between bg-muted/30 rounded px-3 py-2">
                               <span className="text-sm">
-                                {reg.player.name} (ELO: {reg.player.elo_rating})
+                                {reg.player.name} (RPS: {reg.player.elo_rating})
                               </span>
                               <Button
                                 size="sm"

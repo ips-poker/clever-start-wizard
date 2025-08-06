@@ -17,7 +17,7 @@ export function RatingBenefits() {
   const benefits = [
     {
       icon: BarChart3,
-      title: "Точный ELO рейтинг",
+      title: "Точный RPS рейтинг",
       description: "Математически точная система оценки навыков игрока",
       value: "От 1000 до 2500+",
       color: "poker-blue"
@@ -68,7 +68,7 @@ export function RatingBenefits() {
             <span className="text-poker-gold block sm:inline"> уникальна?</span>
           </h2>
           <p className="text-base lg:text-xl text-muted-foreground max-w-3xl mx-auto px-4 leading-relaxed">
-            Профессиональная система ELO адаптированная специально для покера. 
+            Профессиональная система RPS адаптированная специально для покера. 
             Получайте точную оценку навыков и отслеживайте свой прогресс.
           </p>
         </div>

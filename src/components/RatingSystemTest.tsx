@@ -186,7 +186,7 @@ const RatingSystemTest = () => {
                         <div key={player.id} className="flex justify-between items-center text-sm">
                           <span>{player.name}</span>
                           <div className="flex gap-2">
-                            <Badge variant="outline">ELO: {player.elo_rating}</Badge>
+                            <Badge variant="outline">RPS: {player.elo_rating}</Badge>
                             <Badge variant="outline">Игр: {player.games_played}</Badge>
                             <Badge variant="outline">Побед: {player.wins}</Badge>
                           </div>

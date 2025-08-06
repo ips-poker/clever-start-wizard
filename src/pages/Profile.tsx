@@ -185,7 +185,7 @@ export default function Profile() {
 
   const statCards: StatCard[] = [
     {
-      title: "Рейтинг ELO",
+      title: "Рейтинг RPS",
       value: player?.elo_rating || 1200,
       description: getRankTitle(player?.elo_rating || 1200),
       icon: TrendingUp,
@@ -266,7 +266,7 @@ export default function Profile() {
                 <div className="flex items-center justify-center gap-6 mt-4 pt-4 border-t border-primary/10">
                   <div className="text-center">
                     <p className="text-2xl font-bold text-primary">{player?.elo_rating || 1200}</p>
-                    <p className="text-xs text-muted-foreground">ELO Рейтинг</p>
+                    <p className="text-xs text-muted-foreground">RPS Рейтинг</p>
                   </div>
                   <div className="w-px h-8 bg-border"></div>
                   <div className="text-center">
@@ -340,7 +340,7 @@ export default function Profile() {
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <TrendingUp className="h-5 w-5 text-primary" />
-                      График рейтинга ELO
+                      График рейтинга RPS
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
@@ -378,7 +378,7 @@ export default function Profile() {
                             labelStyle={{ color: 'hsl(var(--foreground))' }}
                             formatter={(value, name) => [
                               <span style={{ color: 'hsl(var(--primary))' }}>{value}</span>,
-                              'ELO Рейтинг'
+                              'RPS Рейтинг'
                             ]}
                             labelFormatter={(label) => `Игра ${label}`}
                           />
@@ -474,7 +474,7 @@ export default function Profile() {
                       </div>
                       <div className="text-center p-3 rounded-lg bg-chart-3/10">
                         <p className="text-xl font-bold text-chart-3">{Math.max(...eloData.map(d => d.elo), player?.elo_rating || 1200)}</p>
-                        <p className="text-xs text-muted-foreground">Пик ELO</p>
+                        <p className="text-xs text-muted-foreground">Пик RPS</p>
                       </div>
                     </div>
                   </CardContent>
@@ -532,7 +532,7 @@ export default function Profile() {
                                     {new Date(result.created_at).toLocaleDateString('ru-RU')}
                                   </span>
                                   <span className="text-xs">•</span>
-                                  <span>ELO: {result.elo_before} → {result.elo_after}</span>
+                                  <span>RPS: {result.elo_before} → {result.elo_after}</span>
                                 </div>
                               </div>
                             </div>

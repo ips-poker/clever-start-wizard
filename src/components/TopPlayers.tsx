@@ -120,7 +120,7 @@ export function TopPlayers() {
             </h2>
           </div>
           <p className="text-lg text-poker-text-muted max-w-xl mx-auto font-light">
-            Система ELO рейтинга. Поднимайтесь к вершине покерного мастерства
+            Система RPS рейтинга. Поднимайтесь к вершине покерного мастерства
           </p>
         </div>
 
@@ -339,7 +339,7 @@ export function TopPlayers() {
                                   {player.elo_rating}
                                 </div>
                                 <div className="text-xs text-poker-text-muted uppercase tracking-wide">
-                                  ELO
+                                  RPS
                                 </div>
                               </div>
                             </div>

@@ -177,7 +177,7 @@ export default function Rating() {
                 Рейтинг IPS
               </h1>
               <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed animate-fade-in">
-                Система ELO отслеживает навыки каждого игрока. Каждая партия влияет на рейтинг в зависимости от результата и уровня соперников.
+                Система RPS отслеживает навыки каждого игрока. Каждая партия влияет на рейтинг в зависимости от результата и уровня соперников.
               </p>
               <div className="flex justify-center mt-8">
                 <RecalculateRatings />
@@ -275,7 +275,7 @@ export default function Rating() {
                               {topPlayers[0].elo_rating}
                             </div>
                             <div className="text-sm text-muted-foreground uppercase tracking-widest">
-                              ELO
+                              RPS
                             </div>
                           </div>
                         </div>
@@ -352,7 +352,7 @@ export default function Rating() {
                                 {player.elo_rating}
                               </div>
                               <div className="text-xs text-muted-foreground uppercase tracking-wide">
-                                ELO
+                                RPS
                               </div>
                             </div>
                           </div>

@@ -192,7 +192,7 @@ export function PlayerStats() {
                           'border-orange-500 text-orange-700'
                         }`}
                       >
-                        {player.elo_rating}
+                        RPS {player.elo_rating}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-center text-muted-foreground">
