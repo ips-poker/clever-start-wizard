@@ -38,7 +38,7 @@ import { VoiceControl } from "@/components/VoiceControl";
 import TournamentOverview from "@/components/TournamentOverview";
 import PlayerManagement from "@/components/PlayerManagement";
 import BlindStructure from "@/components/BlindStructure";
-import PayoutStructure from "@/components/PayoutStructure";
+import PrizeStructureManager from "@/components/PrizeStructureManager";
 import ManualAdjustments from "@/components/ManualAdjustments";
 import RatingManagement from "@/components/RatingManagement";
 import TournamentResults from "@/components/TournamentResults";
@@ -1145,7 +1145,7 @@ const TournamentDirector = () => {
               {selectedTournament ? (
                 <div className="space-y-8">
                   <BlindStructure tournamentId={selectedTournament.id} />
-                  <PayoutStructure tournamentId={selectedTournament.id} registeredPlayers={registrations.length} />
+                  <PrizeStructureManager tournamentId={selectedTournament.id} registeredPlayers={registrations.length} mode="management" />
                   <ManualAdjustments tournaments={tournaments} selectedTournament={selectedTournament} onRefresh={loadTournaments} />
                 </div>
               ) : (
@@ -1200,7 +1200,20 @@ const TournamentDirector = () => {
             </TabsContent>
 
             <TabsContent value="analysis" className="space-y-6 animate-fade-in">
-              <TournamentAnalysisAndRating />
+              {selectedTournament ? (
+                <div className="space-y-8">
+                  <PrizeStructureManager tournamentId={selectedTournament.id} registeredPlayers={registrations.length} mode="analysis" />
+                  <TournamentAnalysisAndRating />
+                </div>
+              ) : (
+                <Card className="bg-white/50 backdrop-blur-sm border border-gray-200/30 shadow-minimal">
+                  <CardContent className="text-center py-16">
+                    <AlertTriangle className="h-16 w-16 mx-auto mb-4 text-gray-400" />
+                    <h3 className="text-lg font-medium text-gray-700 mb-2">Турнир не выбран</h3>
+                    <p className="text-gray-500">Выберите турнир для анализа</p>
+                  </CardContent>
+                </Card>
+              )}
             </TabsContent>
 
             <TabsContent value="voice" className="space-y-6 animate-fade-in">
