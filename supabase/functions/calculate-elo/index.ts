@@ -132,11 +132,11 @@ serve(async (req) => {
       }
     }
 
-    // Mark tournament as finished with timestamp
+    // Mark tournament as finished with timestamp (используем правильный статус)
     const { error: tournamentUpdateError } = await supabaseClient
       .from('tournaments')
       .update({ 
-        status: 'completed',
+        status: 'finished',
         finished_at: new Date().toISOString()
       })
       .eq('id', tournament_id)
@@ -177,7 +177,8 @@ serve(async (req) => {
 function calculateRPSChanges(players: Player[], results: TournamentResult[], tournament: any, payoutStructureFromDB?: any[]) {
   const changes = []
 
-  // Sort results by position
+  // Проверяем, что позиции корректно присвоены (кто последний вылетел - первое место)
+  // results уже должны приходить с правильными позициями из компонента
   results.sort((a, b) => a.position - b.position)
 
   // Рассчитываем общий призовой фонд
@@ -190,15 +191,15 @@ function calculateRPSChanges(players: Player[], results: TournamentResult[], tou
       (addons * (tournament.addon_cost || 0))
   })
 
-  // Используем структуру выплат из БД или дефолтную
+  // Используем структуру выплат из БД (только призовые места)
   let payoutStructure: number[] = []
   
   if (payoutStructureFromDB && payoutStructureFromDB.length > 0) {
-    // Используем сохраненную структуру из БД
+    // Используем сохраненную структуру из БД - только реальные призовые места
     payoutStructure = payoutStructureFromDB.map(p => p.percentage)
     console.log('Using payout structure from database:', payoutStructure)
   } else {
-    // Fallback к дефолтной структуре
+    // Fallback к дефолтной структуре призовых мест
     payoutStructure = getPayoutStructure(results.length)
     console.log('Using default payout structure:', payoutStructure)
   }
@@ -208,27 +209,31 @@ function calculateRPSChanges(players: Player[], results: TournamentResult[], tou
     const player = players.find(p => p.id === playerResult.player_id)
     if (!player) continue
 
+    // Начинаем с базового рейтинга (исправлено: используем правильную базу расчета)
     let rpsChange = 0
+
+    // Базовые очки за участие (все получают минимальные очки)
+    rpsChange += 1
 
     // Бонусы за ребаи и адоны
     const rebuys = playerResult.rebuys || 0
     const addons = playerResult.addons || 0
     rpsChange += rebuys + addons // +1 балл за каждый ребай/адон
 
-    // Призовые баллы (только для призовых мест)
+    // Призовые баллы (ТОЛЬКО для призовых мест по структуре выплат!)
     const position = playerResult.position
     if (position <= payoutStructure.length) {
       const prizePercentage = payoutStructure[position - 1]
       const prizeAmount = (totalPrizePool * prizePercentage) / 100
-      // 0.1% от призовой суммы (исправлено на правильный расчет)
+      // 0.1% от призовой суммы как рейтинговые очки
       const prizePoints = Math.floor(prizeAmount * 0.001) 
       rpsChange += prizePoints
       
       console.log(`Призовые баллы для позиции ${position}: ${prizePercentage}% от ${totalPrizePool} = ${prizeAmount}, баллы: ${prizePoints}`)
     }
 
-    // Рейтинг не может уйти в минус
-    const newRating = Math.max(0, player.elo_rating + rpsChange)
+    // Рейтинг не может уйти в минус (минимум 100)
+    const newRating = Math.max(100, player.elo_rating + rpsChange)
     const finalChange = newRating - player.elo_rating
 
     changes.push({

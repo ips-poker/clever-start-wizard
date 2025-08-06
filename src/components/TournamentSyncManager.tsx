@@ -202,7 +202,7 @@ const TournamentSyncManager = ({ tournaments, onRefresh }: TournamentSyncManager
     if (tournament.is_archived) return <Badge variant="secondary">Архив</Badge>;
     if (tournament.is_published && tournament.status === 'registration') return <Badge variant="default">Открыт для регистрации</Badge>;
     if (tournament.is_published && tournament.status === 'running') return <Badge variant="destructive">Идет турнир</Badge>;
-    if (tournament.status === 'completed') return <Badge variant="outline">Завершен</Badge>;
+    if (tournament.status === 'finished') return <Badge variant="outline">Завершен</Badge>;
     if (tournament.status === 'cancelled') return <Badge variant="secondary">Отменен</Badge>;
     return <Badge variant="secondary">Черновик</Badge>;
   };
@@ -301,14 +301,14 @@ const TournamentSyncManager = ({ tournaments, onRefresh }: TournamentSyncManager
                         <Button
                           size="sm"
                           onClick={() => publishTournament(tournament.id)}
-                          disabled={tournament.status === 'running' || tournament.status === 'completed' || tournament.status === 'cancelled'}
+                          disabled={tournament.status === 'running' || tournament.status === 'finished' || tournament.status === 'cancelled'}
                         >
                           <Eye className="w-4 h-4 mr-1" />
                           Опубликовать
                         </Button>
                       )}
                       
-                      {tournament.status === 'completed' && (
+                      {tournament.status === 'finished' && (
                         <Button
                           size="sm"
                           variant="outline"

@@ -344,7 +344,7 @@ export function TournamentModal({ tournament, open, onOpenChange, onTournamentUp
               <Badge variant={getStatusColor(tournament.status)}>
                 {getStatusLabel(tournament.status)}
               </Badge>
-              {tournament.status !== 'completed' && isAdmin && (
+              {tournament.status !== 'finished' && isAdmin && (
                 <Button
                   variant={isEditing ? "default" : "outline"}
                   size="sm"

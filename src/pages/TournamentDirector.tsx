@@ -879,7 +879,7 @@ const TournamentDirector = () => {
                         >
                           {tournament.status === 'running' ? 'Активен' : 
                            tournament.status === 'scheduled' ? 'Запланирован' : 
-                           tournament.status === 'completed' ? 'Завершен' : tournament.status}
+                           tournament.status === 'finished' ? 'Завершен' : tournament.status}
                         </Badge>
                       </div>
                       <CardDescription className="text-gray-600 text-sm">

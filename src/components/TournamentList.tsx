@@ -249,7 +249,7 @@ export function TournamentList() {
                       <Button 
                         onClick={() => registerForTournament(tournament.id)}
                         className="w-full bg-gradient-button hover:shadow-elevated transition-all duration-300"
-                        disabled={tournament.status === 'running' || tournament.status === 'completed' || tournament.status === 'paused'}
+                        disabled={tournament.status === 'running' || tournament.status === 'finished' || tournament.status === 'paused'}
                       >
                         {tournament.status === 'scheduled' ? 'Скоро откроется регистрация' :
                          tournament.status === 'registration' ? 'Зарегистрироваться' : 

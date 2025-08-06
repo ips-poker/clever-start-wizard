@@ -257,7 +257,7 @@ const PayoutStructure = ({ tournamentId, registeredPlayers }: PayoutStructurePro
 
   // Автоматический расчет рейтингов
   const triggerRatingsCalculation = async () => {
-    if (!tournament || tournament.status !== 'completed') {
+    if (!tournament || tournament.status !== 'finished') {
       toast({
         title: "Невозможно рассчитать рейтинги",
         description: "Турнир должен быть завершен",
@@ -327,7 +327,7 @@ const PayoutStructure = ({ tournamentId, registeredPlayers }: PayoutStructurePro
 
   // Автоматическая обработка при завершении турнира
   useEffect(() => {
-    if (autoProcessEnabled && tournament?.status === 'completed' && payoutPlaces.length > 0) {
+    if (autoProcessEnabled && tournament?.status === 'finished' && payoutPlaces.length > 0) {
       // Небольшая задержка для корректного расчета
       const timer = setTimeout(() => {
         triggerRatingsCalculation();
@@ -357,7 +357,7 @@ const PayoutStructure = ({ tournamentId, registeredPlayers }: PayoutStructurePro
             />
           </div>
           
-          {tournament?.status === 'completed' && (
+          {tournament?.status === 'finished' && (
             <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
               <div className="flex items-center justify-between">
                 <div>
