@@ -142,7 +142,8 @@ const TournamentAnalysisAndRating = () => {
         position: p.corrected_position,
         rebuys: p.rebuys,
         addons: p.addons,
-        eliminated_at: p.eliminated_at
+        eliminated_at: p.eliminated_at,
+        elimination_order: `${p.eliminated_at ? new Date(p.eliminated_at).toLocaleTimeString() : 'активен'}`
       })));
 
       const finalParticipants = sortedParticipants;
