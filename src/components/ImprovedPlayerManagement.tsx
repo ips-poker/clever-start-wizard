@@ -322,7 +322,10 @@ const ImprovedPlayerManagement = ({ tournament, players, registrations, onRegist
     const remainingActive = activePlayers.filter(r => r.id !== registrationId);
     const eliminatedChips = registration.chips;
     
-    // Позиция = количество оставшихся игроков + 1 (тот кто исключается занимает следующее место)
+    // ЛОГИКА ПОЗИЦИЙ:
+    // - Если в турнире 10 игроков, первый исключенный получает позицию 10 (остается 9, позиция = 9+1 = 10)
+    // - Второй исключенный получает позицию 9 (остается 8, позиция = 8+1 = 9)
+    // - Последний исключенный получает позицию 1 (остается 0, позиция = 0+1 = 1) - ПОБЕДИТЕЛЬ!
     const position = remainingActive.length + 1;
 
     // Логируем начальное состояние для диагностики
