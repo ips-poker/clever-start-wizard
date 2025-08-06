@@ -97,9 +97,8 @@ const TournamentAnalysisAndRating = () => {
         let corrected_position;
         
         if (p.status === 'eliminated' && p.final_position) {
-          // Инвертируем позицию: последний выбывший = лучшее место среди выбывших
-          const totalParticipants = participants.length;
-          corrected_position = totalParticipants - p.final_position + 1;
+          // final_position уже рассчитан правильно в функции calculate_final_positions
+          corrected_position = p.final_position;
         } else if (p.position && p.position > 0) {
           // Для активных игроков или тех, кому вручную установили позицию
           corrected_position = p.position;
