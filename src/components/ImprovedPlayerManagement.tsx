@@ -400,10 +400,19 @@ const ImprovedPlayerManagement = ({ tournament, players, registrations, onRegist
 
       await Promise.all(activePlayerUpdates);
 
+      // Получаем обновленные регистрации с позициями после обновления
+      const { data: updatedRegistrations, error: regError } = await supabase
+        .from('tournament_registrations')
+        .select('player_id, position, rebuys, addons')
+        .eq('tournament_id', tournament.id)
+        .not('position', 'is', null);
+
+      if (regError) throw regError;
+
       // Подготавливаем результаты для расчета ELO
-      const results = registrations.map((reg) => ({
-        player_id: reg.player.id,
-        position: reg.position || 1,
+      const results = updatedRegistrations.map((reg) => ({
+        player_id: reg.player_id,
+        position: reg.position,
         rebuys: reg.rebuys || 0,
         addons: reg.addons || 0
       }));
