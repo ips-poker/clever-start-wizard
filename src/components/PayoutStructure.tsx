@@ -109,37 +109,30 @@ const PayoutStructure = ({ tournamentId, registeredPlayers }: PayoutStructurePro
       return;
     }
 
-    // Стандартное распределение призовых мест по покерным правилам
-    let payoutPositions = 1;
-    if (registeredPlayers >= 10) payoutPositions = Math.floor(registeredPlayers * 0.15);
-    else if (registeredPlayers >= 6) payoutPositions = 2;
-    else if (registeredPlayers >= 4) payoutPositions = 1;
-
-    // Стандартные проценты для призовых мест
-    const standardPercentages: { [key: number]: number[] } = {
-      1: [100],
-      2: [65, 35],
-      3: [50, 30, 20],
-      4: [40, 25, 20, 15],
-      5: [35, 22, 18, 15, 10],
-      6: [30, 20, 15, 12, 12, 11],
-      7: [27, 18, 14, 11, 10, 10, 10],
-      8: [25, 17, 13, 10, 9, 9, 9, 8],
-      9: [23, 16, 12, 9, 8, 8, 8, 8, 8]
+    // Новая логика расчета призовых мест согласно профессиональной таблице
+    const getPayoutStructure = (playerCount: number): number[] => {
+      if (playerCount <= 8) {
+        return [60, 40]; // 2 места
+      } else if (playerCount <= 11) {
+        return [50, 30, 20]; // 3 места
+      } else if (playerCount <= 20) {
+        return [40, 27, 19, 14]; // 4 места
+      } else if (playerCount <= 30) {
+        return [36.0, 25.0, 17.5, 12.8, 8.7]; // 5 мест
+      } else if (playerCount <= 50) {
+        return [34.0, 23.0, 16.5, 11.9, 8.0, 6.6]; // 6 мест
+      } else if (playerCount <= 70) {
+        return [31.7, 20.7, 15.3, 10.8, 7.2, 5.8, 4.6, 3.9]; // 8 мест
+      } else if (playerCount <= 100) {
+        return [30.5, 19.5, 13.7, 10.0, 6.7, 5.4, 4.2, 3.7, 3.3, 3.0]; // 10 мест
+      } else if (playerCount <= 130) {
+        return [29.0, 18.7, 13.5, 9.5, 6.5, 5.2, 4.0, 3.4, 2.9, 2.6, 2.4, 2.3]; // 12 мест
+      } else {
+        return [28.0, 18.0, 13.0, 9.3, 6.3, 5.0, 3.9, 3.3, 2.8, 2.55, 2.25, 2.0, 1.8]; // 13+ мест
+      }
     };
 
-    let percentages = standardPercentages[Math.min(payoutPositions, 9)] || [];
-    
-    // Если больше 9 мест, распределяем оставшийся процент равномерно
-    if (payoutPositions > 9) {
-      const remainingPercentage = 100 - percentages.reduce((sum, p) => sum + p, 0);
-      const additionalPlaces = payoutPositions - 9;
-      const equalShare = remainingPercentage / additionalPlaces;
-      
-      for (let i = 0; i < additionalPlaces; i++) {
-        percentages.push(Math.round(equalShare * 100) / 100);
-      }
-    }
+    const percentages = getPayoutStructure(registeredPlayers);
 
     // Расчет призового фонда с учетом ребаев и адонов
     const buyInTotal = tournament.buy_in * registeredPlayers;
