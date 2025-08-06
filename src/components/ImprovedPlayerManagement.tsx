@@ -315,17 +315,21 @@ const ImprovedPlayerManagement = ({ tournament, players, registrations, onRegist
     });
   };
 
-  const eliminatePlayer = async (registrationId: string, position: number) => {
+  const eliminatePlayer = async (registrationId: string) => {
     const registration = registrations.find(r => r.id === registrationId);
     if (!registration) return;
 
     const remainingActive = activePlayers.filter(r => r.id !== registrationId);
     const eliminatedChips = registration.chips;
+    
+    // Позиция = количество оставшихся игроков + 1 (тот кто исключается занимает следующее место)
+    const position = remainingActive.length + 1;
 
     // Логируем начальное состояние для диагностики
     console.log('🔍 ИСКЛЮЧЕНИЕ ИГРОКА - начальные данные:', {
       eliminatedPlayer: registration.player.name,
       eliminatedChips,
+      position: position,
       remainingPlayersCount: remainingActive.length,
       remainingPlayersChips: remainingActive.map(p => ({ name: p.player.name, chips: p.chips })),
       totalChipsBefore: remainingActive.reduce((sum, p) => sum + p.chips, 0) + eliminatedChips
@@ -805,7 +809,7 @@ const ImprovedPlayerManagement = ({ tournament, players, registrations, onRegist
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => eliminatePlayer(registration.id, activePlayers.length)}
+                            onClick={() => eliminatePlayer(registration.id)}
                             className="h-8 w-8 p-0 border-red-200 text-red-600 hover:bg-red-50"
                             title="Исключить игрока"
                           >
@@ -993,7 +997,7 @@ const ImprovedPlayerManagement = ({ tournament, players, registrations, onRegist
             <AlertDialogAction 
               onClick={() => {
                 if (selectedRegistration) {
-                  eliminatePlayer(selectedRegistration.id, activePlayers.length);
+                  eliminatePlayer(selectedRegistration.id);
                   setIsEliminateDialogOpen(false);
                   setSelectedRegistration(null);
                 }
