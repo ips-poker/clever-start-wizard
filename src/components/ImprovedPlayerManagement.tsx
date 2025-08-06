@@ -417,6 +417,12 @@ const ImprovedPlayerManagement = ({ tournament, players, registrations, onRegist
         addons: reg.addons || 0
       }));
 
+      console.log('🏆 ОТПРАВКА РЕЗУЛЬТАТОВ В CALCULATE-ELO:', {
+        tournament_id: tournament.id,
+        results: results.map(r => `Player ${r.player_id}: position ${r.position}`),
+        total_players: results.length
+      });
+
       // Вызываем функцию расчета ELO
       const { error: eloError } = await supabase.functions.invoke('calculate-elo', {
         body: {

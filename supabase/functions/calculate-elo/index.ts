@@ -78,16 +78,27 @@ serve(async (req) => {
       .eq('tournament_id', tournament_id)
 
     if (existingResults && existingResults.length > 0) {
-      return new Response(
-        JSON.stringify({ 
-          error: 'Результаты для этого турнира уже существуют',
-          success: false 
-        }),
-        { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 400
-        }
-      )
+      console.log(`Tournament ${tournament_id} already has results, deleting old ones for recalculation`)
+      
+      // Удаляем старые результаты для пересчета
+      const { error: deleteError } = await supabaseClient
+        .from('game_results')
+        .delete()
+        .eq('tournament_id', tournament_id)
+        
+      if (deleteError) {
+        console.error('Error deleting old results:', deleteError)
+        return new Response(
+          JSON.stringify({ 
+            error: 'Ошибка удаления старых результатов',
+            success: false 
+          }),
+          { 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 400
+          }
+        )
+      }
     }
 
     // Calculate new RPS ratings changes
@@ -233,7 +244,7 @@ function calculateRPSChanges(players: Player[], results: TournamentResult[], tou
       console.log(`Prize points for position ${position}: ${prizePercentage}% of ${totalPrizePool} = ${prizeAmount}, points: ${prizePoints}`)
     }
 
-    // Рейтинг не может быть меньше 100 (ИСПРАВЛЕНО: база 100, а не 1200!)
+    // Рейтинг не может быть меньше 100 (база RPS = 100, а не 1200!)
     const newRating = Math.max(100, player.elo_rating + rpsChange)
     const finalChange = newRating - player.elo_rating
 
