@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { 
   Trophy, 
@@ -11,7 +12,10 @@ import {
   DollarSign, 
   Star,
   CheckCircle,
-  AlertCircle 
+  AlertCircle,
+  Edit,
+  Save,
+  X
 } from 'lucide-react';
 
 interface TournamentAnalysis {
@@ -26,6 +30,8 @@ const TournamentAnalysisAndRating = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [analysis, setAnalysis] = useState<TournamentAnalysis | null>(null);
   const [isProcessed, setIsProcessed] = useState(false);
+  const [isEditingPayouts, setIsEditingPayouts] = useState(false);
+  const [editedPayouts, setEditedPayouts] = useState<any[]>([]);
   const { toast } = useToast();
 
   const analyzeTournament = async () => {
@@ -120,20 +126,88 @@ const TournamentAnalysisAndRating = () => {
         corrected_position: index + 1
       }));
 
-      // Создаем структуру выплат по умолчанию, если нет в базе
+      // Определяем количество и проценты призовых мест на основе количества участников
+      const getPayoutStructure = (playerCount: number) => {
+        if (playerCount <= 8) {
+          return [{ place: 1, percentage: 60.0 }];
+        } else if (playerCount <= 11) {
+          return [
+            { place: 1, percentage: 50.0 },
+            { place: 2, percentage: 30.0 }
+          ];
+        } else if (playerCount <= 20) {
+          return [
+            { place: 1, percentage: 40.0 },
+            { place: 2, percentage: 27.0 },
+            { place: 3, percentage: 19.0 }
+          ];
+        } else if (playerCount <= 30) {
+          return [
+            { place: 1, percentage: 36.0 },
+            { place: 2, percentage: 25.0 },
+            { place: 3, percentage: 17.5 },
+            { place: 4, percentage: 14.0 }
+          ];
+        } else if (playerCount <= 50) {
+          return [
+            { place: 1, percentage: 34.0 },
+            { place: 2, percentage: 23.0 },
+            { place: 3, percentage: 16.5 },
+            { place: 4, percentage: 11.9 },
+            { place: 5, percentage: 8.0 }
+          ];
+        } else if (playerCount <= 70) {
+          return [
+            { place: 1, percentage: 31.7 },
+            { place: 2, percentage: 20.7 },
+            { place: 3, percentage: 15.3 },
+            { place: 4, percentage: 10.8 },
+            { place: 5, percentage: 7.2 },
+            { place: 6, percentage: 6.6 }
+          ];
+        } else if (playerCount <= 100) {
+          return [
+            { place: 1, percentage: 30.5 },
+            { place: 2, percentage: 19.5 },
+            { place: 3, percentage: 13.7 },
+            { place: 4, percentage: 10.0 },
+            { place: 5, percentage: 6.7 },
+            { place: 6, percentage: 5.4 },
+            { place: 7, percentage: 4.2 }
+          ];
+        } else if (playerCount <= 130) {
+          return [
+            { place: 1, percentage: 29.0 },
+            { place: 2, percentage: 18.7 },
+            { place: 3, percentage: 13.5 },
+            { place: 4, percentage: 9.5 },
+            { place: 5, percentage: 6.5 },
+            { place: 6, percentage: 5.2 },
+            { place: 7, percentage: 4.0 },
+            { place: 8, percentage: 3.4 }
+          ];
+        } else {
+          return [
+            { place: 1, percentage: 28.0 },
+            { place: 2, percentage: 18.0 },
+            { place: 3, percentage: 13.0 },
+            { place: 4, percentage: 9.3 },
+            { place: 5, percentage: 6.3 },
+            { place: 6, percentage: 5.0 },
+            { place: 7, percentage: 3.9 },
+            { place: 8, percentage: 3.3 },
+            { place: 9, percentage: 2.9 }
+          ];
+        }
+      };
+
+      // Создаем структуру выплат
       let finalPayoutStructure;
       if (!payoutStructure || payoutStructure.length === 0) {
-        // Стандартная структура выплат для 6 призовых мест
-        const defaultPayouts = [
-          { place: 1, percentage: 34.0 },
-          { place: 2, percentage: 23.0 },
-          { place: 3, percentage: 16.5 },
-          { place: 4, percentage: 11.9 },
-          { place: 5, percentage: 8.0 },
-          { place: 6, percentage: 6.6 }
-        ];
+        // Используем динамическую структуру на основе количества игроков
+        const dynamicPayouts = getPayoutStructure(participants.length);
         
-        finalPayoutStructure = defaultPayouts.map(payout => ({
+        finalPayoutStructure = dynamicPayouts.map(payout => ({
           id: `default-${payout.place}`,
           tournament_id: tournament.id,
           place: payout.place,
@@ -287,6 +361,85 @@ const TournamentAnalysisAndRating = () => {
     }
   };
 
+  const startEditingPayouts = () => {
+    if (!analysis) return;
+    setEditedPayouts([...analysis.payoutStructure]);
+    setIsEditingPayouts(true);
+  };
+
+  const cancelEditingPayouts = () => {
+    setIsEditingPayouts(false);
+    setEditedPayouts([]);
+  };
+
+  const savePayoutStructure = async () => {
+    if (!analysis || !editedPayouts.length) return;
+
+    setIsLoading(true);
+    try {
+      // Удаляем старую структуру
+      await supabase
+        .from('tournament_payouts')
+        .delete()
+        .eq('tournament_id', analysis.tournament.id);
+
+      // Добавляем новую структуру
+      const payoutsToInsert = editedPayouts.map(payout => ({
+        tournament_id: analysis.tournament.id,
+        place: payout.place,
+        percentage: parseFloat(payout.percentage),
+        amount: Math.floor((analysis.totalPrizePool * parseFloat(payout.percentage)) / 100)
+      }));
+
+      const { error } = await supabase
+        .from('tournament_payouts')
+        .insert(payoutsToInsert);
+
+      if (error) throw error;
+
+      // Обновляем анализ
+      const updatedPayoutStructure = payoutsToInsert.map((payout, index) => ({
+        ...payout,
+        id: `updated-${index}`,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }));
+
+      setAnalysis({
+        ...analysis,
+        payoutStructure: updatedPayoutStructure
+      });
+
+      setIsEditingPayouts(false);
+      setEditedPayouts([]);
+
+      toast({
+        title: "Структура призового фонда обновлена",
+        description: "Изменения сохранены в базе данных"
+      });
+
+    } catch (error) {
+      console.error('Error saving payout structure:', error);
+      toast({
+        title: "Ошибка сохранения",
+        description: error.message,
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const updatePayoutPercentage = (place: number, percentage: string) => {
+    setEditedPayouts(prev => 
+      prev.map(payout => 
+        payout.place === place 
+          ? { ...payout, percentage: parseFloat(percentage) || 0 }
+          : payout
+      )
+    );
+  };
+
   const getPositionBadge = (position: number) => {
     if (position === 1) return <Badge className="bg-yellow-500 text-white">🥇 1 место</Badge>;
     if (position === 2) return <Badge className="bg-gray-400 text-white">🥈 2 место</Badge>;
@@ -374,30 +527,97 @@ const TournamentAnalysisAndRating = () => {
               {/* Призовые места и выплаты */}
               <Card className="bg-yellow-50 border-yellow-200">
                 <CardHeader>
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <DollarSign className="w-5 h-5" />
-                    Структура призового фонда
+                  <CardTitle className="text-lg flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <DollarSign className="w-5 h-5" />
+                      Структура призового фонда
+                    </div>
+                    <div className="flex gap-2">
+                      {isEditingPayouts ? (
+                        <>
+                          <Button 
+                            onClick={savePayoutStructure}
+                            disabled={isLoading}
+                            size="sm"
+                            className="bg-green-600 hover:bg-green-700"
+                          >
+                            <Save className="w-4 h-4 mr-1" />
+                            Сохранить
+                          </Button>
+                          <Button 
+                            onClick={cancelEditingPayouts}
+                            disabled={isLoading}
+                            variant="outline"
+                            size="sm"
+                          >
+                            <X className="w-4 h-4 mr-1" />
+                            Отмена
+                          </Button>
+                        </>
+                      ) : (
+                        <Button 
+                          onClick={startEditingPayouts}
+                          disabled={isLoading}
+                          variant="outline"
+                          size="sm"
+                        >
+                          <Edit className="w-4 h-4 mr-1" />
+                          Редактировать
+                        </Button>
+                      )}
+                    </div>
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                    {analysis.payoutStructure.map((payout) => (
-                      <div key={payout.place} className="p-3 bg-white rounded-lg border border-yellow-300">
-                        <div className="flex items-center justify-between mb-2">
+                  {isEditingPayouts ? (
+                    <div className="space-y-3">
+                      <div className="text-sm text-gray-600 mb-3">
+                        Общий призовой фонд: <strong>{analysis.totalPrizePool.toLocaleString()}₽</strong>
+                      </div>
+                      {editedPayouts.map((payout) => (
+                        <div key={payout.place} className="flex items-center gap-3 p-3 bg-white rounded-lg border">
                           {getPositionBadge(payout.place)}
-                          <span className="font-bold text-lg">{payout.percentage}%</span>
-                        </div>
-                        <div className="text-center">
-                          <div className="text-xl font-bold text-green-600">
-                            {payout.amount.toLocaleString()}₽
+                          <div className="flex items-center gap-2">
+                            <Input
+                              type="number"
+                              step="0.1"
+                              min="0"
+                              max="100"
+                              value={payout.percentage}
+                              onChange={(e) => updatePayoutPercentage(payout.place, e.target.value)}
+                              className="w-20"
+                            />
+                            <span>%</span>
                           </div>
                           <div className="text-sm text-gray-600">
-                            RP: {Math.max(1, Math.floor(payout.amount * 0.001))} очков
+                            = {Math.floor((analysis.totalPrizePool * payout.percentage) / 100).toLocaleString()}₽
                           </div>
                         </div>
+                      ))}
+                      <div className="text-xs text-gray-500">
+                        Общий процент: {editedPayouts.reduce((sum, p) => sum + p.percentage, 0).toFixed(1)}%
                       </div>
-                    ))}
-                  </div>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {analysis.payoutStructure.map((payout) => (
+                        <div key={payout.place} className="p-3 bg-white rounded-lg border border-yellow-300">
+                          <div className="flex items-center justify-between mb-2">
+                            {getPositionBadge(payout.place)}
+                            <span className="font-bold text-lg">{payout.percentage}%</span>
+                          </div>
+                          <div className="text-center">
+                            <div className="text-xl font-bold text-green-600">
+                              {payout.amount.toLocaleString()}₽
+                            </div>
+                            <div className="text-sm text-gray-600">
+                              RP: {Math.max(1, Math.floor(payout.amount * 0.001))} очков
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
 
