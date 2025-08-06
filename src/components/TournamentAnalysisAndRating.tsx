@@ -90,14 +90,13 @@ const TournamentAnalysisAndRating = () => {
         created_at: p.created_at
       })));
 
-      // ИСПРАВЛЯЕМ: Преобразуем позиции в правильный порядок
-      // final_position дает позиции в порядке выбывания (первый выбывший = худшее место)
-      // Нам нужно инвертировать их в правильный турнирный порядок (1 место = победитель)
+      // ПОЗИЦИИ УЖЕ ПРАВИЛЬНЫЕ: final_position теперь корректно рассчитывается функцией calculate_final_positions
+      // 1 место = последний выбывший (победитель), 2 место = предпоследний выбывший и т.д.
       const participantsWithPositions = participants.map(p => {
         let corrected_position;
         
         if (p.status === 'eliminated' && p.final_position) {
-          // final_position уже рассчитан правильно в функции calculate_final_positions
+          // final_position уже рассчитан правильно: 1=победитель, 2=второе место и т.д.
           corrected_position = p.final_position;
         } else if (p.position && p.position > 0) {
           // Для активных игроков или тех, кому вручную установили позицию
