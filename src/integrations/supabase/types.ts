@@ -473,6 +473,8 @@ export type Database = {
           addons: number | null
           chips: number | null
           created_at: string
+          eliminated_at: string | null
+          final_position: number | null
           id: string
           player_id: string
           position: number | null
@@ -485,6 +487,8 @@ export type Database = {
           addons?: number | null
           chips?: number | null
           created_at?: string
+          eliminated_at?: string | null
+          final_position?: number | null
           id?: string
           player_id: string
           position?: number | null
@@ -497,6 +501,8 @@ export type Database = {
           addons?: number | null
           chips?: number | null
           created_at?: string
+          eliminated_at?: string | null
+          final_position?: number | null
           id?: string
           player_id?: string
           position?: number | null
@@ -884,6 +890,10 @@ export type Database = {
       archive_tournament: {
         Args: { tournament_id_param: string }
         Returns: boolean
+      }
+      calculate_final_positions: {
+        Args: { tournament_id_param: string }
+        Returns: undefined
       }
       complete_tournament: {
         Args: { tournament_id_param: string }
