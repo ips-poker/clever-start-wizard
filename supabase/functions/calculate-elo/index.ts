@@ -232,16 +232,20 @@ function calculateRPSChanges(players: Player[], results: TournamentResult[], tou
     const addons = playerResult.addons || 0
     rpsChange += rebuys + addons // +1 балл за каждый ребай/адон
 
-    // Призовые баллы (ТОЛЬКО для призовых мест по структуре выплат!)
+    // Призовые баллы (ТОЛЬКО для призовых мест по структуре выплат из базы данных!)
     const position = playerResult.position
     if (position <= payoutStructure.length) {
       const prizePercentage = payoutStructure[position - 1]
       const prizeAmount = (totalPrizePool * prizePercentage) / 100
-      // 0.1% от призовой суммы как рейтинговые очки
-      const prizePoints = Math.floor(prizeAmount * 0.001) 
+      
+      // ИСПРАВЛЕНО: 0.1% от призовой суммы = prizeAmount * 0.001
+      // Но делаем минимум 1 очко за призовое место
+      const prizePoints = Math.max(1, Math.floor(prizeAmount * 0.001))
       rpsChange += prizePoints
       
-      console.log(`Prize points for position ${position}: ${prizePercentage}% of ${totalPrizePool} = ${prizeAmount}, points: ${prizePoints}`)
+      console.log(`🏆 ПРИЗОВЫЕ ОЧКИ для позиции ${position}: ${prizePercentage}% от ${totalPrizePool} = ${prizeAmount}₽, очки: ${prizePoints} (0.1% от выигрыша)`)
+    } else {
+      console.log(`❌ Позиция ${position} не входит в призовые места (всего призовых мест: ${payoutStructure.length})`)
     }
 
     // Рейтинг не может быть меньше 100 (база RPS = 100, а не 1200!)
