@@ -214,25 +214,29 @@ const PrizeStructureManager = ({ tournamentId, registeredPlayers, mode = 'manage
 
   const savePayoutStructure = async (payouts: PayoutPlace[]) => {
     try {
-      // Удаляем старые записи
-      await supabase
+      // Удаляем старые записи и ждем завершения операции
+      const { error: deleteError } = await supabase
         .from('tournament_payouts')
         .delete()
         .eq('tournament_id', tournamentId);
 
-      // Создаем новые записи
-      const payoutRecords = payouts.map(payout => ({
-        tournament_id: tournamentId,
-        place: payout.place,
-        percentage: payout.percentage,
-        amount: payout.amount
-      }));
+      if (deleteError) throw deleteError;
 
-      const { error } = await supabase
-        .from('tournament_payouts')
-        .insert(payoutRecords);
+      // Создаем новые записи только если есть что сохранять
+      if (payouts.length > 0) {
+        const payoutRecords = payouts.map(payout => ({
+          tournament_id: tournamentId,
+          place: payout.place,
+          percentage: payout.percentage,
+          amount: payout.amount
+        }));
 
-      if (error) throw error;
+        const { error: insertError } = await supabase
+          .from('tournament_payouts')
+          .insert(payoutRecords);
+
+        if (insertError) throw insertError;
+      }
 
       toast({
         title: "Сохранено",
