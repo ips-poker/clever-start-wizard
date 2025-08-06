@@ -175,7 +175,7 @@ export default function RealtimeRatingSync() {
       
       toast({
         title: "Синхронизация завершена",
-        description: "Рейтинги игроков обновлены",
+        description: "RPS рейтинги игроков обновлены",
         variant: "default"
       });
     } catch (error) {
@@ -192,7 +192,7 @@ export default function RealtimeRatingSync() {
 
   const showSyncNotification = () => {
     toast({
-      title: "Рейтинг обновлен",
+      title: "RPS рейтинг обновлен",
       description: "Данные синхронизированы в реальном времени",
       variant: "default"
     });

@@ -197,19 +197,19 @@ const TournamentAnalysisAndRating = () => {
         throw error;
       }
 
-      console.log('✅ Рейтинги успешно пересчитаны:', data);
+      console.log('✅ RPS рейтинги успешно пересчитаны:', data);
 
       setIsProcessed(true);
       
       toast({
-        title: "Рейтинги обновлены!",
-        description: `Корректные рейтинги присвоены ${analysis.ratingCalculations.length} игрокам`
+        title: "RPS рейтинги обновлены!",
+        description: `Корректные RPS рейтинги присвоены ${analysis.ratingCalculations.length} игрокам`
       });
 
     } catch (error) {
       console.error('Error applying ratings:', error);
       toast({
-        title: "Ошибка применения рейтингов",
+        title: "Ошибка применения RPS рейтингов",
         description: error.message,
         variant: "destructive"
       });
