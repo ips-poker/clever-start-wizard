@@ -115,7 +115,7 @@ const TournamentAnalysisAndRating = () => {
       });
 
       // Проверяем, что у всех участников есть позиции
-      const participantsWithoutPositions = participantsWithPositions.filter(p => !p.corrected_position);
+      const participantsWithoutPositions = participantsWithPositions.filter(p => p.corrected_position === null || p.corrected_position === undefined);
       
       if (participantsWithoutPositions.length > 0) {
         console.warn('⚠️ ПРОБЛЕМА: У некоторых участников отсутствуют позиции:', participantsWithoutPositions.map(p => p.players?.name));
