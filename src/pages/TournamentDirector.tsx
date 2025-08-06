@@ -703,20 +703,31 @@ const TournamentDirector = () => {
   };
 
   const deleteTournament = async (id: string) => {
-    const { error } = await supabase
-      .from('tournaments')
-      .delete()
-      .eq('id', id);
+    try {
+      // Удаляем связанные данные сначала
+      await supabase.from('tournament_payouts').delete().eq('tournament_id', id);
+      await supabase.from('blind_levels').delete().eq('tournament_id', id);
+      await supabase.from('tournament_registrations').delete().eq('tournament_id', id);
+      await supabase.from('game_results').delete().eq('tournament_id', id);
+      
+      // Теперь удаляем сам турнир
+      const { error } = await supabase
+        .from('tournaments')
+        .delete()
+        .eq('id', id);
 
-    if (!error) {
-      toast({ title: "Турнир удален" });
-      loadTournaments();
-      if (selectedTournament?.id === id) {
-        setSelectedTournament(null);
-        localStorage.removeItem('selectedTournamentId');
-        localStorage.removeItem(`timer_${id}`);
+      if (!error) {
+        toast({ title: "Турнир удален" });
+        loadTournaments();
+        if (selectedTournament?.id === id) {
+          setSelectedTournament(null);
+          localStorage.removeItem('selectedTournamentId');
+          localStorage.removeItem(`timer_${id}`);
+        }
+      } else {
+        throw error;
       }
-    } else {
+    } catch (error) {
       console.error('Ошибка удаления турнира:', error);
       toast({ 
         title: "Ошибка", 
