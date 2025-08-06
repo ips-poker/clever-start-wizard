@@ -102,7 +102,7 @@ const PayoutStructure = ({ tournamentId, registeredPlayers }: PayoutStructurePro
     }
   };
 
-  const calculateAutomaticPayouts = () => {
+  const calculateAutomaticPayouts = async () => {
     if (registeredPlayers === 0 || !tournament) {
       setPayoutPlaces([]);
       setTotalPrizePool(0);
@@ -150,6 +150,35 @@ const PayoutStructure = ({ tournamentId, registeredPlayers }: PayoutStructurePro
     }));
 
     setPayoutPlaces(payouts);
+
+    // Сохраняем структуру выплат в БД
+    await savePayoutStructure(payouts, totalPrizePool);
+  };
+
+  const savePayoutStructure = async (payouts: PayoutPlace[], prizePool: number) => {
+    try {
+      // Удаляем старые записи
+      await supabase
+        .from('tournament_payouts')
+        .delete()
+        .eq('tournament_id', tournamentId);
+
+      // Создаем новые записи
+      const payoutRecords = payouts.map(payout => ({
+        tournament_id: tournamentId,
+        place: payout.place,
+        percentage: payout.percentage,
+        amount: Math.round((prizePool * payout.percentage) / 100)
+      }));
+
+      const { error } = await supabase
+        .from('tournament_payouts')
+        .insert(payoutRecords);
+
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error saving payout structure:', error);
+    }
   };
 
   const addPayoutPlace = () => {
@@ -205,7 +234,7 @@ const PayoutStructure = ({ tournamentId, registeredPlayers }: PayoutStructurePro
     setPayoutPlaces(normalizedPayouts);
   };
 
-  const updatePayoutPercentage = (index: number, newPercentage: number) => {
+  const updatePayoutPercentage = async (index: number, newPercentage: number) => {
     const updatedPayouts = [...payoutPlaces];
     updatedPayouts[index] = {
       ...updatedPayouts[index],
@@ -213,6 +242,9 @@ const PayoutStructure = ({ tournamentId, registeredPlayers }: PayoutStructurePro
       rp: Math.round((totalPrizePool * newPercentage) / 100)
     };
     setPayoutPlaces(updatedPayouts);
+    
+    // Сохраняем изменения в БД
+    await savePayoutStructure(updatedPayouts, totalPrizePool);
   };
 
   const getTotalPercentage = () => {
@@ -225,7 +257,7 @@ const PayoutStructure = ({ tournamentId, registeredPlayers }: PayoutStructurePro
 
   // Автоматический расчет рейтингов
   const triggerRatingsCalculation = async () => {
-    if (!tournament || tournament.status !== 'finished') {
+    if (!tournament || tournament.status !== 'completed') {
       toast({
         title: "Невозможно рассчитать рейтинги",
         description: "Турнир должен быть завершен",
@@ -295,7 +327,7 @@ const PayoutStructure = ({ tournamentId, registeredPlayers }: PayoutStructurePro
 
   // Автоматическая обработка при завершении турнира
   useEffect(() => {
-    if (autoProcessEnabled && tournament?.status === 'finished' && payoutPlaces.length > 0) {
+    if (autoProcessEnabled && tournament?.status === 'completed' && payoutPlaces.length > 0) {
       // Небольшая задержка для корректного расчета
       const timer = setTimeout(() => {
         triggerRatingsCalculation();
@@ -325,7 +357,7 @@ const PayoutStructure = ({ tournamentId, registeredPlayers }: PayoutStructurePro
             />
           </div>
           
-          {tournament?.status === 'finished' && (
+          {tournament?.status === 'completed' && (
             <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
               <div className="flex items-center justify-between">
                 <div>

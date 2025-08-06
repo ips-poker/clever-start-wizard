@@ -430,6 +430,44 @@ export type Database = {
         }
         Relationships: []
       }
+      tournament_payouts: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          percentage: number
+          place: number
+          tournament_id: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          id?: string
+          percentage: number
+          place: number
+          tournament_id: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          percentage?: number
+          place?: number
+          tournament_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tournament_payouts_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: false
+            referencedRelation: "tournaments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tournament_registrations: {
         Row: {
           addons: number | null

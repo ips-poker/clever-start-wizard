@@ -50,6 +50,18 @@ serve(async (req) => {
 
     if (tournamentError) throw tournamentError
 
+    // Get tournament payout structure from database
+    const { data: payoutStructure, error: payoutError } = await supabaseClient
+      .from('tournament_payouts')
+      .select('place, percentage, amount')
+      .eq('tournament_id', tournament_id)
+      .order('place')
+
+    if (payoutError) {
+      console.error('Error fetching payout structure:', payoutError)
+      // Fallback to default structure if no custom structure exists
+    }
+
     // Get all players involved in the tournament
     const playerIds = results.map((r: TournamentResult) => r.player_id)
     const { data: players, error: playersError } = await supabaseClient
@@ -79,7 +91,7 @@ serve(async (req) => {
     }
 
     // Calculate new RPS ratings changes
-    const rpsChanges = calculateRPSChanges(players, results, tournament)
+    const rpsChanges = calculateRPSChanges(players, results, tournament, payoutStructure)
 
     // Update players and create game results
     for (const change of rpsChanges) {
@@ -162,7 +174,7 @@ serve(async (req) => {
   }
 })
 
-function calculateRPSChanges(players: Player[], results: TournamentResult[], tournament: any) {
+function calculateRPSChanges(players: Player[], results: TournamentResult[], tournament: any, payoutStructureFromDB?: any[]) {
   const changes = []
 
   // Sort results by position
@@ -178,8 +190,18 @@ function calculateRPSChanges(players: Player[], results: TournamentResult[], tou
       (addons * (tournament.addon_cost || 0))
   })
 
-  // Получаем структуру выплат
-  const payoutStructure = getPayoutStructure(results.length)
+  // Используем структуру выплат из БД или дефолтную
+  let payoutStructure: number[] = []
+  
+  if (payoutStructureFromDB && payoutStructureFromDB.length > 0) {
+    // Используем сохраненную структуру из БД
+    payoutStructure = payoutStructureFromDB.map(p => p.percentage)
+    console.log('Using payout structure from database:', payoutStructure)
+  } else {
+    // Fallback к дефолтной структуре
+    payoutStructure = getPayoutStructure(results.length)
+    console.log('Using default payout structure:', payoutStructure)
+  }
   
   for (let i = 0; i < results.length; i++) {
     const playerResult = results[i]
@@ -198,8 +220,8 @@ function calculateRPSChanges(players: Player[], results: TournamentResult[], tou
     if (position <= payoutStructure.length) {
       const prizePercentage = payoutStructure[position - 1]
       const prizeAmount = (totalPrizePool * prizePercentage) / 100
-      // 0.1% от призовой суммы = прizeAmount * 0.001, но чтобы было заметно делаем * 0.01 (1%)
-      const prizePoints = Math.floor(prizeAmount * 0.01) 
+      // 0.1% от призовой суммы (исправлено на правильный расчет)
+      const prizePoints = Math.floor(prizeAmount * 0.001) 
       rpsChange += prizePoints
       
       console.log(`Призовые баллы для позиции ${position}: ${prizePercentage}% от ${totalPrizePool} = ${prizeAmount}, баллы: ${prizePoints}`)
