@@ -334,6 +334,7 @@ const TableSeating = ({
     });
 
     if (playerFound) {
+      // Обновляем статус на eliminated - триггер автоматически установит время выбывания
       await supabase
         .from('tournament_registrations')
         .update({ 
@@ -343,17 +344,49 @@ const TableSeating = ({
         .eq('player_id', playerId)
         .eq('tournament_id', tournamentId);
 
+      // Пересчитываем финальные позиции для всех выбывших игроков
+      await supabase.rpc('calculate_final_positions', {
+        tournament_id_param: tournamentId
+      });
+
       setTables(newTables);
       
       toast({ 
-        title: "Игрок исключен", 
-        description: "Место освобождено. Игрок удален из активных.",
+        title: "Игрок выбыл", 
+        description: "Игрок исключен из турнира. Позиция автоматически рассчитана по времени выбывания.",
         className: "font-medium"
       });
 
       if (onSeatingUpdate) {
         onSeatingUpdate();
       }
+    }
+  };
+
+  const recalculatePositions = async () => {
+    try {
+      // Пересчитываем финальные позиции для всех выбывших игроков
+      await supabase.rpc('calculate_final_positions', {
+        tournament_id_param: tournamentId
+      });
+
+      toast({ 
+        title: "Позиции пересчитаны", 
+        description: "Финальные позиции всех выбывших игроков обновлены согласно времени выбывания.",
+        className: "font-medium"
+      });
+
+      if (onSeatingUpdate) {
+        onSeatingUpdate();
+      }
+    } catch (error) {
+      console.error('Error recalculating positions:', error);
+      toast({ 
+        title: "Ошибка", 
+        description: "Не удалось пересчитать позиции", 
+        variant: "destructive",
+        className: "font-medium"
+      });
     }
   };
 
@@ -1072,6 +1105,15 @@ const TableSeating = ({
                   >
                     <Shuffle className="w-4 h-4 mr-2" />
                     Авто-рассадка
+                  </Button>
+
+                  <Button 
+                    onClick={recalculatePositions}
+                    variant="outline"
+                    className="bg-white border-slate-200 text-slate-700 hover:bg-slate-50 px-4 py-2 rounded-lg font-light text-sm"
+                  >
+                    <RotateCcw className="w-4 h-4 mr-2" />
+                    Пересчитать позиции
                   </Button>
 
                   {isFinalTableReady && (

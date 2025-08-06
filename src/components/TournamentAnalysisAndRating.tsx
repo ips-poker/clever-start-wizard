@@ -84,46 +84,64 @@ const TournamentAnalysisAndRating = () => {
       console.log('🔍 Анализ позиций участников:', participants.map(p => ({
         name: p.players?.name,
         position: p.position,
+        final_position: p.final_position,
         status: p.status,
+        eliminated_at: p.eliminated_at,
         created_at: p.created_at
       })));
 
-      // Если у участников НЕТ корректных позиций в базе данных
-      const hasValidPositions = participants.some(p => p.position && p.position > 0);
+      // Используем final_position для выбывших игроков, position для остальных
+      const participantsWithPositions = participants.map(p => {
+        let corrected_position;
+        
+        if (p.status === 'eliminated' && p.final_position) {
+          // Для выбывших игроков используем автоматически рассчитанную позицию
+          corrected_position = p.final_position;
+        } else if (p.position && p.position > 0) {
+          // Для активных игроков или тех, кому вручную установили позицию
+          corrected_position = p.position;
+        } else {
+          // Если нет ни того, ни другого - ошибка
+          corrected_position = null;
+        }
+
+        return {
+          ...p,
+          corrected_position
+        };
+      });
+
+      // Проверяем, что у всех участников есть позиции
+      const participantsWithoutPositions = participantsWithPositions.filter(p => !p.corrected_position);
       
-      if (!hasValidPositions) {
-        console.warn('⚠️ ПРОБЛЕМА: У участников отсутствуют корректные позиции в базе данных!');
-        console.warn('⚠️ Для корректного анализа необходимо сначала правильно завершить турнир с указанием мест участников');
+      if (participantsWithoutPositions.length > 0) {
+        console.warn('⚠️ ПРОБЛЕМА: У некоторых участников отсутствуют позиции:', participantsWithoutPositions.map(p => p.players?.name));
         
         throw new Error(`
-          Турнир завершен некорректно! 
-          У участников отсутствуют финальные позиции в базе данных.
+          Не все участники имеют корректные позиции! 
+          
+          Участники без позиций: ${participantsWithoutPositions.map(p => p.players?.name).join(', ')}
           
           Для корректного анализа призовых мест необходимо:
-          1. Правильно завершить турнир через интерфейс Tournament Director
-          2. Указать финальные позиции всех участников
-          3. Только после этого проводить анализ
+          1. Завершить игру через рассадку столов (удалить игроков из столов при выбывании)
+          2. Для оставшихся игроков установить финальные позиции вручную
+          3. Или использовать функцию "Завершить турнир" для автоматического расчета
           
-          Текущее состояние: все участники имеют position = NULL
+          Игроки выбывают в порядке удаления из рассадки столов.
         `);
       }
 
-      // Используем ТОЛЬКО реальные позиции из базы данных
-      const participantsWithPositions = participants.map(p => ({
-        ...p,
-        corrected_position: p.position || 999 // 999 для участников без позиции (не должно быть)
-      }));
-
       // Сортируем по финальным позициям (1 место = победитель)
       const sortedParticipants = [...participantsWithPositions].sort((a, b) => {
-        return a.corrected_position - b.corrected_position;
+        return a.corrected_position! - b.corrected_position!;
       });
 
       console.log('✅ Финальные позиции участников:', sortedParticipants.map(p => ({
         name: p.players?.name,
         position: p.corrected_position,
         rebuys: p.rebuys,
-        addons: p.addons
+        addons: p.addons,
+        eliminated_at: p.eliminated_at
       })));
 
       const finalParticipants = sortedParticipants;
