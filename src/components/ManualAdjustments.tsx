@@ -369,15 +369,17 @@ const ManualAdjustments = ({ tournaments, selectedTournament, onRefresh }: Manua
         </TabsList>
 
         <TabsContent value="ratings" className="space-y-4">
-          <Card>
+          <Card className="bg-white/60 backdrop-blur-sm border border-gray-200/40 shadow-minimal hover:shadow-subtle transition-all duration-300 rounded-xl group">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle className="flex items-center gap-2">
-                    <User className="h-5 w-5" />
+                  <CardTitle className="flex items-center gap-3 text-xl font-light">
+                    <div className="p-2 bg-blue-100/80 rounded-lg group-hover:bg-blue-200/80 transition-colors">
+                      <User className="w-5 h-5 text-blue-600" />
+                    </div>
                     Ручная корректировка рейтингов игроков
                   </CardTitle>
-                  <CardDescription>
+                  <CardDescription className="text-sm text-gray-600">
                     Изменение рейтингов игроков с указанием причины корректировки
                   </CardDescription>
                 </div>

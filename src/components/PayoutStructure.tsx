@@ -458,21 +458,6 @@ const PayoutStructure = ({ tournamentId, registeredPlayers }: PayoutStructurePro
         </div>
       </div>
 
-      {/* Информация о логике призовых мест */}
-      {payoutPlaces.length > 0 && (
-        <Card className="bg-blue-50 border-blue-200 shadow-elevated">
-          <CardContent className="p-4">
-            <h4 className="font-medium mb-2 text-blue-800">📋 Логика распределения призовых мест в покере:</h4>
-            <div className="text-sm space-y-1 text-blue-700">
-              <div>• <strong>1-е место:</strong> Последний выживший игрок (позиция {registeredPlayers})</div>
-              <div>• <strong>2-е место:</strong> Предпоследний игрок (позиция {registeredPlayers - 1})</div>
-              <div>• <strong>3-е место:</strong> Третий с конца (позиция {registeredPlayers - 2})</div>
-              <div>• И так далее в обратном порядке вылета...</div>
-              <div>• <strong>Вне призов:</strong> Позиции 1-{Math.max(1, registeredPlayers - payoutPlaces.length)}</div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
       {/* Таблица выплат */}
       {payoutPlaces.length > 0 && (

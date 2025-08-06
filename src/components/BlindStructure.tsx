@@ -263,24 +263,30 @@ const BlindStructure = ({ tournamentId }: BlindStructureProps) => {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div className="flex items-center gap-4">
-          <div className="text-sm text-gray-600">
-            Всего уровней: <span className="font-semibold text-gray-800">{blindLevels.length}</span>
+      <Card className="bg-white/60 backdrop-blur-sm border border-gray-200/40 shadow-minimal hover:shadow-subtle transition-all duration-300 rounded-xl group">
+        <CardContent className="p-6">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h2 className="text-xl font-light text-gray-800 mb-2 flex items-center gap-3">
+                <div className="p-2 bg-blue-100/80 rounded-lg group-hover:bg-blue-200/80 transition-colors">
+                  <Clock className="w-5 h-5 text-blue-600" />
+                </div>
+                Структура блайндов
+              </h2>
+              <div className="flex items-center gap-4 text-sm text-gray-600">
+                <span>Всего уровней: <span className="font-medium text-gray-800">{blindLevels.length}</span></span>
+                <span>Общее время: <span className="font-medium text-gray-800">
+                  {Math.floor(blindLevels.reduce((acc, level) => acc + level.duration, 0) / 60)} мин
+                </span></span>
+              </div>
+            </div>
+            <Button onClick={openAddDialog} size="sm" className="bg-blue-600 hover:bg-blue-700 text-white shadow-subtle hover:shadow-lg transition-all duration-200">
+              <Plus className="w-4 h-4 mr-2" />
+              Добавить уровень
+            </Button>
           </div>
-          <div className="text-sm text-gray-600">
-            Общее время: <span className="font-semibold text-gray-800">
-              {Math.floor(blindLevels.reduce((acc, level) => acc + level.duration, 0) / 60)} мин
-            </span>
-          </div>
-        </div>
-        <Button onClick={openAddDialog} size="sm" className="bg-gradient-button text-white">
-          <Plus className="w-4 h-4 mr-2" />
-          Добавить уровень
-        </Button>
-      </div>
 
-      <div className="bg-white/50 rounded-lg border border-gray-200/50 overflow-hidden">
+          <div className="bg-white/50 rounded-lg border border-gray-200/50 overflow-hidden">
         <div className="max-h-96 overflow-y-auto">
           <Table>
             <TableHeader className="sticky top-0 bg-white/90 backdrop-blur-sm">
@@ -352,9 +358,11 @@ const BlindStructure = ({ tournamentId }: BlindStructureProps) => {
                 </TableRow>
               ))}
             </TableBody>
-          </Table>
+            </Table>
+          </div>
         </div>
-      </div>
+        </CardContent>
+      </Card>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="bg-white/95 backdrop-blur-sm border border-gray-200 rounded-xl max-w-md">

@@ -371,16 +371,18 @@ const PrizeStructureManager = ({ tournamentId, registeredPlayers, mode = 'manage
     <div className="space-y-6">
       {/* Настройки режима */}
       {mode === 'management' && (
-        <Card className="bg-gradient-card border-poker-border shadow-elevated">
+        <Card className="bg-white/60 backdrop-blur-sm border border-gray-200/40 shadow-minimal hover:shadow-subtle transition-all duration-300 rounded-xl group">
           <CardHeader className="pb-4">
-            <CardTitle className="flex items-center gap-2 text-poker-text-primary">
-              <Calculator className="w-5 h-5 text-poker-accent" />
+            <CardTitle className="flex items-center gap-3 text-gray-800 text-xl font-light">
+              <div className="p-2 bg-green-100/80 rounded-lg group-hover:bg-green-200/80 transition-colors">
+                <Calculator className="w-5 h-5 text-green-600" />
+              </div>
               Настройки призового фонда
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center justify-between mb-4">
-              <Label htmlFor="auto-calculate">Автоматический расчет при изменениях</Label>
+              <Label htmlFor="auto-calculate" className="text-sm text-gray-600">Автоматический расчет при изменениях</Label>
               <Switch 
                 id="auto-calculate"
                 checked={autoCalculate}
@@ -390,25 +392,25 @@ const PrizeStructureManager = ({ tournamentId, registeredPlayers, mode = 'manage
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <Label>Зарегистрировано игроков</Label>
+                <Label className="text-xs text-gray-500 tracking-wide uppercase">Зарегистрировано игроков</Label>
                 <Input
                   type="number"
                   value={registeredPlayers}
                   disabled
-                  className="bg-gray-50"
+                  className="bg-gray-50/80 border-gray-200/50"
                 />
               </div>
               <div>
-                <Label>Ребаи и Адоны</Label>
+                <Label className="text-xs text-gray-500 tracking-wide uppercase">Ребаи и Адоны</Label>
                 <div className="text-sm text-gray-600 space-y-1">
                   <div>Ребаев: {registrations.reduce((sum, reg) => sum + reg.rebuys, 0)} × {tournament?.rebuy_cost || 0}</div>
                   <div>Адонов: {registrations.reduce((sum, reg) => sum + reg.addons, 0)} × {tournament?.addon_cost || 0}</div>
                 </div>
               </div>
               <div>
-                <Label>Общий призовой фонд</Label>
-                <div className="text-2xl font-bold text-poker-text-primary">
-                  {totalPrizePool.toLocaleString()}
+                <Label className="text-xs text-gray-500 tracking-wide uppercase">Общий призовой фонд</Label>
+                <div className="text-xl font-light text-gray-800">
+                  {totalPrizePool.toLocaleString()}₽
                 </div>
               </div>
             </div>
@@ -484,21 +486,6 @@ const PrizeStructureManager = ({ tournamentId, registeredPlayers, mode = 'manage
         </div>
       </div>
 
-      {/* Информация о логике призовых мест */}
-      {(payoutPlaces.length > 0 || editedPayouts.length > 0) && (
-        <Card className="bg-blue-50 border-blue-200 shadow-elevated">
-          <CardContent className="p-4">
-            <h4 className="font-medium mb-2 text-blue-800">📋 Логика распределения призовых мест в покере:</h4>
-            <div className="text-sm space-y-1 text-blue-700">
-              <div>• <strong>1-е место:</strong> Последний выживший игрок (позиция {registeredPlayers})</div>
-              <div>• <strong>2-е место:</strong> Предпоследний игрок (позиция {registeredPlayers - 1})</div>
-              <div>• <strong>3-е место:</strong> Третий с конца (позиция {registeredPlayers - 2})</div>
-              <div>• И так далее в обратном порядке вылета...</div>
-              <div>• <strong>Вне призов:</strong> Позиции 1-{Math.max(1, registeredPlayers - (isEditing ? editedPayouts.length : payoutPlaces.length))}</div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
       {/* Таблица выплат */}
       {(payoutPlaces.length > 0 || editedPayouts.length > 0) && (
