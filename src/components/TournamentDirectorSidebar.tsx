@@ -10,7 +10,8 @@ import {
   TestTube,
   ArrowLeft,
   Mic,
-  Globe
+  Globe,
+  Calculator
 } from "lucide-react";
 import {
   Sidebar,
@@ -44,6 +45,7 @@ const tournamentSections = [
     items: [
       { title: "Рейтинги", id: "ratings", icon: TrendingUp },
       { title: "Результаты", id: "results", icon: FileText },
+      { title: "Анализ турнира", id: "analysis", icon: Calculator },
       { title: "Синхронизация", id: "sync", icon: Activity },
       { title: "Тест рейтингов", id: "rating-test", icon: TestTube },
     ]

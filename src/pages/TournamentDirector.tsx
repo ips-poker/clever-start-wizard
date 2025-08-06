@@ -44,6 +44,7 @@ import RatingManagement from "@/components/RatingManagement";
 import TournamentResults from "@/components/TournamentResults";
 import TournamentSyncManager from "@/components/TournamentSyncManager";
 import RatingSystemTest from "@/components/RatingSystemTest";
+import TournamentAnalysisAndRating from "@/components/TournamentAnalysisAndRating";
 import { useVoiceAnnouncements } from "@/hooks/useVoiceAnnouncements";
 
 // Используем типы из базы данных
@@ -1192,6 +1193,10 @@ const TournamentDirector = () => {
 
             <TabsContent value="rating-test" className="space-y-6 animate-fade-in">
               <RatingSystemTest />
+            </TabsContent>
+
+            <TabsContent value="analysis" className="space-y-6 animate-fade-in">
+              <TournamentAnalysisAndRating />
             </TabsContent>
 
             <TabsContent value="voice" className="space-y-6 animate-fade-in">
