@@ -250,7 +250,7 @@ const TournamentResults = ({ selectedTournament }: TournamentResultsProps) => {
     }
   };
 
-  const getEloChangeIcon = (change: number) => {
+  const getRPSChangeIcon = (change: number) => {
     if (change > 0) return <TrendingUp className="h-4 w-4 text-poker-success" />;
     if (change < 0) return <TrendingDown className="h-4 w-4 text-poker-error" />;
     return <Minus className="h-4 w-4 text-poker-text-muted" />;
@@ -374,13 +374,13 @@ const TournamentResults = ({ selectedTournament }: TournamentResultsProps) => {
                             <span className="font-medium">{result.players.name}</span>
                           </div>
                         </TableCell>
-                        <TableCell>{result.elo_before}</TableCell>
+                         <TableCell>{result.elo_before}</TableCell>
                         <TableCell>
                           <Badge variant="outline">{result.elo_after}</Badge>
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-1">
-                            {getEloChangeIcon(result.elo_change)}
+                            {getRPSChangeIcon(result.elo_change)}
                             <span className={`font-medium ${
                               result.elo_change > 0 ? 'text-poker-success' : 
                               result.elo_change < 0 ? 'text-poker-error' : 
@@ -479,18 +479,18 @@ const TournamentResults = ({ selectedTournament }: TournamentResultsProps) => {
                         </div>
                       </TableCell>
                       <TableCell>{getRankIcon(game.position)}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-1">
-                          {getEloChangeIcon(game.elo_change)}
-                          <span className={`font-medium ${
-                            game.elo_change > 0 ? 'text-poker-success' : 
-                            game.elo_change < 0 ? 'text-poker-error' : 
-                            'text-poker-text-muted'
-                          }`}>
-                            {game.elo_change > 0 ? '+' : ''}{game.elo_change}
-                          </span>
-                        </div>
-                      </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-1">
+                        {getRPSChangeIcon(game.elo_change)}
+                        <span className={`font-medium ${
+                          game.elo_change > 0 ? 'text-poker-success' : 
+                          game.elo_change < 0 ? 'text-poker-error' : 
+                          'text-poker-text-muted'
+                        }`}>
+                          {game.elo_change > 0 ? '+' : ''}{game.elo_change}
+                        </span>
+                      </div>
+                    </TableCell>
                       <TableCell className="text-sm text-poker-text-muted">
                         {new Date(game.created_at).toLocaleDateString('ru-RU')}
                       </TableCell>
