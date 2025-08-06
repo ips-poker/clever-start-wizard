@@ -386,12 +386,12 @@ const ImprovedPlayerManagement = ({ tournament, players, registrations, onRegist
       if (tournamentError) throw tournamentError;
 
       // Определяем финальные позиции для оставшихся игроков
-      // Если остался только один игрок - он получает 1 место
-      // Если остались несколько - они делят места по количеству фишек
-      const sortedActivePlayers = activePlayers.sort((a, b) => b.chips - a.chips);
+      // В офлайн турнире позиции определяются исключительно по порядку исключения
+      // Оставшиеся активные игроки получают места с 1-го по количество активных игроков
+      // Порядок среди активных игроков определяется случайно или по желанию директора
       
-      const activePlayerUpdates = sortedActivePlayers.map(async (reg, index) => {
-        const finalPosition = index + 1; // 1-е место для лидера по фишкам, 2-е для следующего и т.д.
+      const activePlayerUpdates = activePlayers.map(async (reg, index) => {
+        const finalPosition = index + 1; // 1-е, 2-е, 3-е место и т.д.
         return supabase
           .from('tournament_registrations')
           .update({ position: finalPosition })
@@ -967,7 +967,7 @@ const ImprovedPlayerManagement = ({ tournament, players, registrations, onRegist
                 <AlertDialogHeader>
                   <AlertDialogTitle>Завершить турнир?</AlertDialogTitle>
                   <AlertDialogDescription>
-                    Это действие нельзя отменить. Все активные игроки получат 1-е место, 
+                    Это действие нельзя отменить. Активные игроки получат места по порядку исключения, 
                     будут рассчитаны рейтинги RPS и турнир будет закрыт.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
