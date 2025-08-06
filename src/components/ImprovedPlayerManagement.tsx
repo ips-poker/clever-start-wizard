@@ -385,11 +385,16 @@ const ImprovedPlayerManagement = ({ tournament, players, registrations, onRegist
 
       if (tournamentError) throw tournamentError;
 
-      // Присваиваем первое место всем активным игрокам
-      const activePlayerUpdates = activePlayers.map(async (reg) => {
+      // Определяем финальные позиции для оставшихся игроков
+      // Если остался только один игрок - он получает 1 место
+      // Если остались несколько - они делят места по количеству фишек
+      const sortedActivePlayers = activePlayers.sort((a, b) => b.chips - a.chips);
+      
+      const activePlayerUpdates = sortedActivePlayers.map(async (reg, index) => {
+        const finalPosition = index + 1; // 1-е место для лидера по фишкам, 2-е для следующего и т.д.
         return supabase
           .from('tournament_registrations')
-          .update({ position: 1 })
+          .update({ position: finalPosition })
           .eq('id', reg.id);
       });
 

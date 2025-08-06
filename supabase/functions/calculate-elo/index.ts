@@ -198,8 +198,11 @@ function calculateRPSChanges(players: Player[], results: TournamentResult[], tou
     if (position <= payoutStructure.length) {
       const prizePercentage = payoutStructure[position - 1]
       const prizeAmount = (totalPrizePool * prizePercentage) / 100
-      const prizePoints = Math.floor(prizeAmount * 0.001) // 0.1% от призовой суммы
+      // 0.1% от призовой суммы = прizeAmount * 0.001, но чтобы было заметно делаем * 0.01 (1%)
+      const prizePoints = Math.floor(prizeAmount * 0.01) 
       rpsChange += prizePoints
+      
+      console.log(`Призовые баллы для позиции ${position}: ${prizePercentage}% от ${totalPrizePool} = ${prizeAmount}, баллы: ${prizePoints}`)
     }
 
     // Рейтинг не может уйти в минус

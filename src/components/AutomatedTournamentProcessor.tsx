@@ -80,7 +80,7 @@ const AutomatedTournamentProcessor = () => {
       const { data, error } = await supabase
         .from('tournaments')
         .select('*')
-        .eq('status', 'finished')
+        .eq('status', 'completed')
         .is('finished_at', null)
         .order('created_at', { ascending: false });
 
@@ -105,7 +105,7 @@ const AutomatedTournamentProcessor = () => {
           event: 'UPDATE',
           schema: 'public',
           table: 'tournaments',
-          filter: 'status=eq.finished'
+          filter: 'status=eq.completed'
         },
         async (payload) => {
           const tournament = payload.new as Tournament;
