@@ -168,7 +168,7 @@ const PrizeStructureManager = ({ tournamentId, registeredPlayers, mode = 'manage
     return buyInTotal + rebuyTotal + addonTotal;
   };
 
-  // Функция для расчета призовых мест в покере (как в Python)
+  // Функция для расчета призовых мест в покере (правильная логика)
   const calculatePokerPrizes = (totalPlayers: number, payoutSpots: number) => {
     const prizes: { [key: number]: number | null } = {};
     
@@ -184,10 +184,24 @@ const PrizeStructureManager = ({ tournamentId, registeredPlayers, mode = 'manage
       prizes[eliminationPosition] = prizeRank;
     }
     
-    // Победитель (никогда не выбывал)
-    prizes[totalPlayers + 1] = 1;
+    // Победитель (последний выживший игрок)
+    prizes[totalPlayers] = 1;
     
     return prizes;
+  };
+
+  // Функция для получения правильного места в призовой структуре на основе позиции в турнире
+  const getCorrectPrizePlace = (eliminationPosition: number, totalPlayers: number, payoutSpots: number): number | null => {
+    if (eliminationPosition <= totalPlayers - payoutSpots) {
+      return null; // Вне призов
+    }
+    
+    if (eliminationPosition === totalPlayers) {
+      return 1; // Победитель
+    }
+    
+    // Остальные призовые места в обратном порядке
+    return payoutSpots - (eliminationPosition - (totalPlayers - payoutSpots + 1)) + 1;
   };
 
   // Автоматический расчет процентов для дополнительных мест
@@ -470,6 +484,22 @@ const PrizeStructureManager = ({ tournamentId, registeredPlayers, mode = 'manage
         </div>
       </div>
 
+      {/* Информация о логике призовых мест */}
+      {(payoutPlaces.length > 0 || editedPayouts.length > 0) && (
+        <Card className="bg-blue-50 border-blue-200 shadow-elevated">
+          <CardContent className="p-4">
+            <h4 className="font-medium mb-2 text-blue-800">📋 Логика распределения призовых мест в покере:</h4>
+            <div className="text-sm space-y-1 text-blue-700">
+              <div>• <strong>1-е место:</strong> Последний выживший игрок (позиция {registeredPlayers})</div>
+              <div>• <strong>2-е место:</strong> Предпоследний игрок (позиция {registeredPlayers - 1})</div>
+              <div>• <strong>3-е место:</strong> Третий с конца (позиция {registeredPlayers - 2})</div>
+              <div>• И так далее в обратном порядке вылета...</div>
+              <div>• <strong>Вне призов:</strong> Позиции 1-{Math.max(1, registeredPlayers - (isEditing ? editedPayouts.length : payoutPlaces.length))}</div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Таблица выплат */}
       {(payoutPlaces.length > 0 || editedPayouts.length > 0) && (
         <Card className="bg-gradient-card border-poker-border shadow-elevated">
@@ -477,41 +507,51 @@ const PrizeStructureManager = ({ tournamentId, registeredPlayers, mode = 'manage
             <Table>
               <TableHeader>
                 <TableRow className="border-gray-200/50">
-                  <TableHead className="text-poker-text-secondary font-medium">Место</TableHead>
+                  <TableHead className="text-poker-text-secondary font-medium">Призовое место</TableHead>
+                  <TableHead className="text-poker-text-secondary font-medium">Позиция в турнире</TableHead>
                   <TableHead className="text-poker-text-secondary font-medium">Процент</TableHead>
                   <TableHead className="text-poker-text-secondary font-medium">Сумма</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {(isEditing ? editedPayouts : payoutPlaces).map((payout, index) => (
-                  <TableRow key={payout.place} className="border-gray-200/30">
-                    <TableCell className="font-medium">
-                      <Badge variant="outline" className="bg-poker-accent/10 text-poker-accent border-poker-accent/20">
-                        <Trophy className="w-3 h-3 mr-1" />
-                        {payout.place}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {isEditing ? (
-                        <Input
-                          type="number"
-                          step="0.1"
-                          value={payout.percentage}
-                          onChange={(e) => updateEditedPercentage(index, parseFloat(e.target.value) || 0)}
-                          className="w-20"
-                        />
-                      ) : (
-                        <span className="font-medium">{payout.percentage.toFixed(1)}%</span>
-                      )}
-                    </TableCell>
-                    <TableCell className="font-bold text-poker-text-primary">
-                      {isEditing 
-                        ? Math.round((totalPrizePool * payout.percentage) / 100).toLocaleString()
-                        : payout.amount.toLocaleString()
-                      }
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {(isEditing ? editedPayouts : payoutPlaces).map((payout, index) => {
+                  const eliminationPosition = registeredPlayers - index;
+                  return (
+                    <TableRow key={payout.place} className="border-gray-200/30">
+                      <TableCell className="font-medium">
+                        <Badge variant="outline" className="bg-poker-accent/10 text-poker-accent border-poker-accent/20">
+                          <Trophy className="w-3 h-3 mr-1" />
+                          {payout.place} место
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="font-medium text-poker-text-secondary">
+                        Позиция {eliminationPosition}
+                        {eliminationPosition === registeredPlayers && (
+                          <Badge className="ml-2 bg-yellow-500 text-white text-xs">Победитель</Badge>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {isEditing ? (
+                          <Input
+                            type="number"
+                            step="0.1"
+                            value={payout.percentage}
+                            onChange={(e) => updateEditedPercentage(index, parseFloat(e.target.value) || 0)}
+                            className="w-20"
+                          />
+                        ) : (
+                          <span className="font-medium">{payout.percentage.toFixed(1)}%</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="font-bold text-poker-text-primary">
+                        {isEditing 
+                          ? Math.round((totalPrizePool * payout.percentage) / 100).toLocaleString()
+                          : payout.amount.toLocaleString()
+                        }
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
             

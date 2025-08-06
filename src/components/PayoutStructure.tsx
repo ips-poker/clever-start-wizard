@@ -142,12 +142,16 @@ const PayoutStructure = ({ tournamentId, registeredPlayers }: PayoutStructurePro
     const totalPrizePool = buyInTotal + rebuyTotal + addonTotal;
     setTotalPrizePool(totalPrizePool);
 
-    // Создаем структуру выплат
-    const payouts = percentages.map((percentage, index) => ({
-      place: index + 1,
-      percentage,
-      rp: Math.round((totalPrizePool * percentage) / 100)
-    }));
+    // Создаем структуру выплат (ПРАВИЛЬНАЯ логика для покера)
+    // В покере призовые места идут от последнего к первому по порядку вылета
+    const payouts = percentages.map((percentage, index) => {
+      const prizeRank = index + 1; // 1-е место, 2-е место, 3-е место и т.д.
+      return {
+        place: prizeRank,
+        percentage,
+        rp: Math.round((totalPrizePool * percentage) / 100)
+      };
+    });
 
     setPayoutPlaces(payouts);
 
@@ -454,6 +458,22 @@ const PayoutStructure = ({ tournamentId, registeredPlayers }: PayoutStructurePro
         </div>
       </div>
 
+      {/* Информация о логике призовых мест */}
+      {payoutPlaces.length > 0 && (
+        <Card className="bg-blue-50 border-blue-200 shadow-elevated">
+          <CardContent className="p-4">
+            <h4 className="font-medium mb-2 text-blue-800">📋 Логика распределения призовых мест в покере:</h4>
+            <div className="text-sm space-y-1 text-blue-700">
+              <div>• <strong>1-е место:</strong> Последний выживший игрок (позиция {registeredPlayers})</div>
+              <div>• <strong>2-е место:</strong> Предпоследний игрок (позиция {registeredPlayers - 1})</div>
+              <div>• <strong>3-е место:</strong> Третий с конца (позиция {registeredPlayers - 2})</div>
+              <div>• И так далее в обратном порядке вылета...</div>
+              <div>• <strong>Вне призов:</strong> Позиции 1-{Math.max(1, registeredPlayers - payoutPlaces.length)}</div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Таблица выплат */}
       {payoutPlaces.length > 0 && (
         <Card className="bg-gradient-card border-poker-border shadow-elevated">
@@ -461,42 +481,46 @@ const PayoutStructure = ({ tournamentId, registeredPlayers }: PayoutStructurePro
             <Table>
               <TableHeader>
                 <TableRow className="border-gray-200/50">
-                  <TableHead className="text-gray-600 font-medium">Место</TableHead>
+                  <TableHead className="text-gray-600 font-medium">Призовое место</TableHead>
+                  <TableHead className="text-gray-600 font-medium">Позиция в турнире</TableHead>
                   <TableHead className="text-gray-600 font-medium">Процент (%)</TableHead>
                   <TableHead className="text-gray-600 font-medium">Рейтинг Поинтс (RP)</TableHead>
-                  <TableHead className="text-gray-600 font-medium">Действия</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {payoutPlaces.map((payout, index) => (
-                  <TableRow key={payout.place} className="border-gray-200/50 hover:bg-gray-50/50">
-                    <TableCell className="font-medium text-gray-800">
-                      <div className="flex items-center gap-2">
-                        {index < 3 && <Trophy className="w-4 h-4 text-yellow-500" />}
-                        {payout.place} место
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Input
-                        type="number"
-                        value={payout.percentage}
-                        onChange={(e) => updatePayoutPercentage(index, parseFloat(e.target.value) || 0)}
-                        className="w-20"
-                        step="0.1"
-                        min="0"
-                        max="100"
-                      />
-                    </TableCell>
-                    <TableCell className="font-medium text-gray-800">
-                      {payout.rp.toLocaleString()} RP
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className="bg-green-100 text-green-800">
-                        {(payout.rp / totalPrizePool * 100).toFixed(1)}%
-                      </Badge>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {payoutPlaces.map((payout, index) => {
+                  const eliminationPosition = registeredPlayers - index;
+                  return (
+                    <TableRow key={payout.place} className="border-gray-200/50 hover:bg-gray-50/50">
+                      <TableCell className="font-medium text-gray-800">
+                        <div className="flex items-center gap-2">
+                          {index < 3 && <Trophy className="w-4 h-4 text-yellow-500" />}
+                          {payout.place} место
+                        </div>
+                      </TableCell>
+                      <TableCell className="font-medium text-gray-600">
+                        Позиция {eliminationPosition}
+                        {eliminationPosition === registeredPlayers && (
+                          <Badge className="ml-2 bg-yellow-500 text-white text-xs">Победитель</Badge>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <Input
+                          type="number"
+                          value={payout.percentage}
+                          onChange={(e) => updatePayoutPercentage(index, parseFloat(e.target.value) || 0)}
+                          className="w-20"
+                          step="0.1"
+                          min="0"
+                          max="100"
+                        />
+                      </TableCell>
+                      <TableCell className="font-medium text-gray-800">
+                        {payout.rp.toLocaleString()} RP
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           </CardContent>

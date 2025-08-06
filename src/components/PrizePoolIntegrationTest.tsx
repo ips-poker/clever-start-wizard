@@ -292,8 +292,19 @@ const PrizePoolIntegrationTest = () => {
             </Card>
           )}
 
-          <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
-            <h4 className="font-medium mb-2 text-yellow-800">📋 Как работает интеграция:</h4>
+            <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+            <h4 className="font-medium mb-2 text-blue-800">📋 ВАЖНО: Логика призовых мест в покере</h4>
+            <div className="text-sm space-y-2 text-blue-700">
+              <div>🏆 <strong>1-е место:</strong> Последний выживший игрок (позиция {testData?.players_count})</div>
+              <div>🥈 <strong>2-е место:</strong> Предпоследний игрок (позиция {(testData?.players_count || 0) - 1})</div>
+              <div>🥉 <strong>3-е место:</strong> Третий с конца (позиция {(testData?.players_count || 0) - 2})</div>
+              <div>📍 И так далее в обратном порядке вылета...</div>
+              <div>❌ <strong>Вне призов:</strong> Позиции 1-{Math.max(1, (testData?.players_count || 0) - (testData?.payout_structure.length || 0))}</div>
+            </div>
+            </div>
+
+            <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
+            <h4 className="font-medium mb-2 text-yellow-800">🔄 Как работает интеграция:</h4>
             <ol className="text-sm space-y-1 list-decimal list-inside text-yellow-700">
               <li>Система берет структуру призовых мест из таблицы tournament_payouts</li>
               <li>Рассчитывает общий призовой фонд (бай-ин + ребаи + адоны всех участников)</li>
