@@ -87,7 +87,7 @@ const TournamentAnalysisAndRating = () => {
         'BluffMaster_XX': 9
       };
 
-      // Присваиваем корректные позиции
+      // Присваиваем корректные позиции без дублей
       const participantsWithPositions = participants.map((p, index) => {
         const playerName = p.players?.name;
         
@@ -109,8 +109,49 @@ const TournamentAnalysisAndRating = () => {
         };
       });
 
+      // Сортируем участников по позициям и присваиваем уникальные позиции
+      const sortedParticipants = [...participantsWithPositions].sort((a, b) => {
+        return a.corrected_position - b.corrected_position;
+      });
+
+      // Присваиваем уникальные позиции от 1 до количества участников
+      const finalParticipants = sortedParticipants.map((p, index) => ({
+        ...p,
+        corrected_position: index + 1
+      }));
+
+      // Создаем структуру выплат по умолчанию, если нет в базе
+      let finalPayoutStructure;
+      if (!payoutStructure || payoutStructure.length === 0) {
+        // Стандартная структура выплат для 6 призовых мест
+        const defaultPayouts = [
+          { place: 1, percentage: 34.0 },
+          { place: 2, percentage: 23.0 },
+          { place: 3, percentage: 16.5 },
+          { place: 4, percentage: 11.9 },
+          { place: 5, percentage: 8.0 },
+          { place: 6, percentage: 6.6 }
+        ];
+        
+        finalPayoutStructure = defaultPayouts.map(payout => ({
+          id: `default-${payout.place}`,
+          tournament_id: tournament.id,
+          place: payout.place,
+          percentage: payout.percentage,
+          amount: Math.floor((totalPrizePool * payout.percentage) / 100),
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }));
+      } else {
+        // Пересчитываем суммы для существующей структуры
+        finalPayoutStructure = payoutStructure.map(payout => ({
+          ...payout,
+          amount: Math.floor((totalPrizePool * payout.percentage) / 100)
+        }));
+      }
+
       // Рассчитываем рейтинговые очки для каждого участника
-      const ratingCalculations = participantsWithPositions.map(participant => {
+      const ratingCalculations = finalParticipants.map(participant => {
         const position = participant.corrected_position;
         const rebuys = participant.rebuys || 0;
         const addons = participant.addons || 0;
@@ -126,10 +167,10 @@ const TournamentAnalysisAndRating = () => {
         let prizeAmount = 0;
         let isWinner = false;
         
-        if (position <= payoutStructure.length) {
-          const payout = payoutStructure.find(p => p.place === position);
+        if (position <= finalPayoutStructure.length) {
+          const payout = finalPayoutStructure.find(p => p.place === position);
           if (payout) {
-            prizeAmount = (totalPrizePool * payout.percentage) / 100;
+            prizeAmount = payout.amount;
             prizePoints = Math.max(1, Math.floor(prizeAmount * 0.001)); // 0.1% от выигрыша
             rpsChange += prizePoints;
             isWinner = true;
@@ -156,8 +197,8 @@ const TournamentAnalysisAndRating = () => {
 
       setAnalysis({
         tournament,
-        participants: participantsWithPositions,
-        payoutStructure,
+        participants: finalParticipants,
+        payoutStructure: finalPayoutStructure,
         totalPrizePool,
         ratingCalculations
       });
