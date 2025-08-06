@@ -156,7 +156,7 @@ const ImprovedPlayerManagement = ({ tournament, players, registrations, onRegist
             .insert([{
               name: name,
               email: `${name.toLowerCase().replace(/\s+/g, '.')}@placeholder.com`,
-              elo_rating: 1200
+              elo_rating: 100
             }])
             .select()
             .single();
@@ -408,8 +408,8 @@ const ImprovedPlayerManagement = ({ tournament, players, registrations, onRegist
       });
 
       if (eloError) {
-        console.error('Ошибка расчета ELO:', eloError);
-        toast({ 
+        console.error('Ошибка расчета RPS:', eloError);
+        toast({
           title: "Предупреждение", 
           description: "Турнир завершен, но возникла ошибка при расчете рейтингов",
           variant: "destructive"
@@ -487,7 +487,7 @@ const ImprovedPlayerManagement = ({ tournament, players, registrations, onRegist
                     <SelectContent>
                       {availablePlayers.map(player => (
                         <SelectItem key={player.id} value={player.id}>
-                          {player.name} (ELO: {player.elo_rating})
+                          {player.name} (RPS: {player.elo_rating})
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -746,7 +746,7 @@ const ImprovedPlayerManagement = ({ tournament, players, registrations, onRegist
                           <div className="flex items-center gap-3 text-sm text-slate-500 font-light">
                             <span>Место {registration.seat_number || '—'}</span>
                             <span>•</span>
-                            <span>ELO {registration.player.elo_rating}</span>
+                            <span>RPS {registration.player.elo_rating}</span>
                             <span>•</span>
                             <span>{registration.chips.toLocaleString()} фишек</span>
                           </div>
@@ -874,7 +874,7 @@ const ImprovedPlayerManagement = ({ tournament, players, registrations, onRegist
                         <div>
                           <h4 className="text-lg font-light text-slate-900">{registration.player.name}</h4>
                           <div className="flex items-center gap-3 text-sm text-slate-500 font-light">
-                            <span>ELO {registration.player.elo_rating}</span>
+                            <span>RPS {registration.player.elo_rating}</span>
                             <span>•</span>
                             <span>Ребаи {registration.rebuys}</span>
                             <span>•</span>
@@ -914,7 +914,7 @@ const ImprovedPlayerManagement = ({ tournament, players, registrations, onRegist
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-2xl font-light text-slate-900">Завершение турнира</h3>
-                <p className="text-slate-500 font-light">Автоматический расчет рейтингов и призовых мест</p>
+                <p className="text-slate-500 font-light">Автоматический расчет RPS рейтингов и призовых мест</p>
               </div>
             </div>
             
@@ -950,7 +950,7 @@ const ImprovedPlayerManagement = ({ tournament, players, registrations, onRegist
                   <AlertDialogTitle>Завершить турнир?</AlertDialogTitle>
                   <AlertDialogDescription>
                     Это действие нельзя отменить. Все активные игроки получат 1-е место, 
-                    будут рассчитаны рейтинги ELO и турнир будет закрыт.
+                    будут рассчитаны рейтинги RPS и турнир будет закрыт.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>

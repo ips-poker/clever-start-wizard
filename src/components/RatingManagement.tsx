@@ -191,12 +191,12 @@ const RatingManagement = ({ tournaments, selectedTournament, onRefresh }: Rating
       });
 
       if (error) {
-        console.error('Ошибка вызова функции расчета ELO:', error);
+        console.error('Ошибка вызова функции расчета RPS:', error);
         throw error;
       }
 
       toast({
-        title: 'Рейтинги рассчитаны',
+        title: 'RPS рейтинги рассчитаны',
         description: `Обновлены рейтинги для ${registrations.length} игроков`,
       });
 
@@ -342,7 +342,7 @@ const RatingManagement = ({ tournaments, selectedTournament, onRefresh }: Rating
                 <div className="flex items-center space-x-2">
                   <Activity className="h-4 w-4 text-poker-success" />
                   <div>
-                    <p className="text-2xl font-bold text-poker-text-primary">ELO</p>
+                    <p className="text-2xl font-bold text-poker-text-primary">RPS</p>
                     <p className="text-xs text-poker-text-muted">Система рейтинга</p>
                   </div>
                 </div>
@@ -355,7 +355,7 @@ const RatingManagement = ({ tournaments, selectedTournament, onRefresh }: Rating
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-poker-text-primary">
                 <Settings className="h-5 w-5 text-poker-accent" />
-                Автоматизация рейтингов
+                Автоматизация RPS рейтингов
               </CardTitle>
               <CardDescription className="text-poker-text-secondary">
                 Настройте автоматические процессы для обработки турниров
@@ -429,7 +429,7 @@ const RatingManagement = ({ tournaments, selectedTournament, onRefresh }: Rating
                   disabled={!selectedTournament || selectedTournament.status !== 'finished' || isCalculating}
                 >
                   <Calculator className="w-4 h-4 mr-1" />
-                  {isCalculating ? 'Расчет...' : 'Расчет рейтингов'}
+                  {isCalculating ? 'Расчет RPS...' : 'Расчет RPS рейтингов'}
                 </Button>
 
                 <Button

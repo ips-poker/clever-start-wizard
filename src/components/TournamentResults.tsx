@@ -351,9 +351,9 @@ const TournamentResults = ({ selectedTournament }: TournamentResultsProps) => {
                     <TableRow>
                       <TableHead>Место</TableHead>
                       <TableHead>Игрок</TableHead>
-                      <TableHead>Рейтинг до</TableHead>
-                      <TableHead>Рейтинг после</TableHead>
-                      <TableHead>Изменение</TableHead>
+                      <TableHead>RPS до</TableHead>
+                      <TableHead>RPS после</TableHead>
+                      <TableHead>Изменение RPS</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -408,7 +408,7 @@ const TournamentResults = ({ selectedTournament }: TournamentResultsProps) => {
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-poker-text-primary">
                 <BarChart3 className="h-5 w-5 text-poker-accent" />
-                Топ игроков по рейтингу
+                Топ игроков по RPS рейтингу
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -431,7 +431,7 @@ const TournamentResults = ({ selectedTournament }: TournamentResultsProps) => {
                     </div>
                     <div className="text-right">
                       <div className="text-2xl font-bold text-poker-text-primary">{player.elo_rating}</div>
-                      <div className="text-sm text-poker-text-muted">рейтинг</div>
+                      <div className="text-sm text-poker-text-muted">RPS рейтинг</div>
                     </div>
                   </div>
                 ))}
@@ -455,7 +455,7 @@ const TournamentResults = ({ selectedTournament }: TournamentResultsProps) => {
                     <TableHead>Игрок</TableHead>
                     <TableHead>Турнир</TableHead>
                     <TableHead>Место</TableHead>
-                    <TableHead>Изменение рейтинга</TableHead>
+                    <TableHead>Изменение RPS</TableHead>
                     <TableHead>Дата</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -536,7 +536,7 @@ const TournamentResults = ({ selectedTournament }: TournamentResultsProps) => {
                     <p className="text-2xl font-bold text-poker-text-primary">
                       {topPlayers.length > 0 ? Math.round(topPlayers.reduce((sum, p) => sum + p.elo_rating, 0) / topPlayers.length) : 0}
                     </p>
-                    <p className="text-xs text-poker-text-muted">Средний рейтинг</p>
+                    <p className="text-xs text-poker-text-muted">Средний RPS</p>
                   </div>
                 </div>
               </CardContent>
