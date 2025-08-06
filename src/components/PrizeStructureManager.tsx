@@ -137,23 +137,26 @@ const PrizeStructureManager = ({ tournamentId, registeredPlayers, mode = 'manage
     }
   };
 
+  // Профессиональная таблица распределения призовых процентов
   const getPayoutStructure = (playerCount: number): number[] => {
     if (playerCount <= 8) {
-      return [100]; // 1 место
-    } else if (playerCount <= 11) {
       return [60, 40]; // 2 места
-    } else if (playerCount <= 20) {
+    } else if (playerCount <= 11) {
       return [50, 30, 20]; // 3 места
-    } else if (playerCount <= 30) {
+    } else if (playerCount <= 20) {
       return [40, 27, 19, 14]; // 4 места
-    } else if (playerCount <= 50) {
+    } else if (playerCount <= 30) {
       return [36.0, 25.0, 17.5, 12.8, 8.7]; // 5 мест
-    } else if (playerCount <= 70) {
+    } else if (playerCount <= 50) {
       return [34.0, 23.0, 16.5, 11.9, 8.0, 6.6]; // 6 мест
-    } else if (playerCount <= 100) {
+    } else if (playerCount <= 70) {
       return [31.7, 20.7, 15.3, 10.8, 7.2, 5.8, 4.6, 3.9]; // 8 мест
-    } else {
+    } else if (playerCount <= 100) {
       return [30.5, 19.5, 13.7, 10.0, 6.7, 5.4, 4.2, 3.7, 3.3, 3.0]; // 10 мест
+    } else if (playerCount <= 130) {
+      return [28.0, 18.0, 13.0, 9.3, 6.3, 5.0, 3.9, 3.3, 2.8, 2.55, 2.25, 2.0]; // 12 мест
+    } else {
+      return [28.0, 18.0, 13.0, 9.3, 6.3, 5.0, 3.9, 3.3, 2.8, 2.55, 2.25, 2.0, 1.8, 1.7]; // 14 мест
     }
   };
 
@@ -163,6 +166,24 @@ const PrizeStructureManager = ({ tournamentId, registeredPlayers, mode = 'manage
     const addonTotal = registrations.reduce((sum, reg) => sum + (reg.addons * (tournament.addon_cost || 0)), 0);
     
     return buyInTotal + rebuyTotal + addonTotal;
+  };
+
+  // Автоматический расчет процентов для дополнительных мест
+  const calculateAdditionalPlacePercentage = (currentPlaces: PayoutPlace[], newPlaceNumber: number) => {
+    if (currentPlaces.length === 0) return 5;
+    
+    // Берем процент последнего места и уменьшаем на 0.5%
+    const lastPlace = currentPlaces[currentPlaces.length - 1];
+    const newPercentage = Math.max(lastPlace.percentage - 0.5, 1.0);
+    
+    // Пропорционально уменьшаем проценты всех предыдущих мест
+    const reductionPerPlace = 0.1;
+    const adjustedPlaces = currentPlaces.map(place => ({
+      ...place,
+      percentage: Math.max(place.percentage - reductionPerPlace, 1.0)
+    }));
+    
+    return { adjustedPlaces, newPercentage };
   };
 
   const calculateAutomaticPayouts = async () => {
@@ -253,17 +274,53 @@ const PrizeStructureManager = ({ tournamentId, registeredPlayers, mode = 'manage
 
   const addPayoutPlace = () => {
     const newPlace = editedPayouts.length + 1;
+    const calculation = calculateAdditionalPlacePercentage(editedPayouts, newPlace);
+    
+    let updatedPayouts: PayoutPlace[];
+    let newPercentage: number;
+    
+    if (typeof calculation === 'object' && 'adjustedPlaces' in calculation) {
+      updatedPayouts = calculation.adjustedPlaces;
+      newPercentage = calculation.newPercentage;
+    } else {
+      updatedPayouts = editedPayouts;
+      newPercentage = calculation as number;
+    }
+    
     const newPayout: PayoutPlace = {
       place: newPlace,
-      percentage: 5,
-      amount: Math.round((totalPrizePool * 5) / 100)
+      percentage: newPercentage,
+      amount: Math.round((totalPrizePool * newPercentage) / 100)
     };
-    setEditedPayouts([...editedPayouts, newPayout]);
+    
+    // Обновляем суммы для скорректированных мест
+    const finalPayouts = [
+      ...updatedPayouts.map(payout => ({
+        ...payout,
+        amount: Math.round((totalPrizePool * payout.percentage) / 100)
+      })),
+      newPayout
+    ];
+    
+    setEditedPayouts(finalPayouts);
   };
 
   const removePayoutPlace = () => {
     if (editedPayouts.length <= 1) return;
-    setEditedPayouts(editedPayouts.slice(0, -1));
+    
+    const removedPayouts = editedPayouts.slice(0, -1);
+    
+    // Пропорционально увеличиваем проценты оставшихся мест
+    const totalRemovedPercentage = editedPayouts[editedPayouts.length - 1].percentage;
+    const increasePerPlace = totalRemovedPercentage / removedPayouts.length;
+    
+    const adjustedPayouts = removedPayouts.map(payout => ({
+      ...payout,
+      percentage: payout.percentage + increasePerPlace,
+      amount: Math.round((totalPrizePool * (payout.percentage + increasePerPlace)) / 100)
+    }));
+    
+    setEditedPayouts(adjustedPayouts);
   };
 
   const getTotalPercentage = (payouts: PayoutPlace[]) => {
@@ -344,7 +401,7 @@ const PrizeStructureManager = ({ tournamentId, registeredPlayers, mode = 'manage
                 className="bg-gradient-button text-white"
               >
                 <RefreshCw className="w-4 h-4 mr-2" />
-                Пересчитать
+                Автоматический расчет
               </Button>
             </>
           ) : (
@@ -354,6 +411,7 @@ const PrizeStructureManager = ({ tournamentId, registeredPlayers, mode = 'manage
                 disabled={editedPayouts.length <= 1}
                 size="sm"
                 variant="outline"
+                title="Удалить последнее место"
               >
                 <Minus className="w-4 h-4" />
               </Button>
@@ -362,6 +420,7 @@ const PrizeStructureManager = ({ tournamentId, registeredPlayers, mode = 'manage
                 disabled={editedPayouts.length >= registeredPlayers}
                 size="sm"
                 variant="outline"
+                title="Добавить призовое место (автоматический расчет %)"
               >
                 <Plus className="w-4 h-4" />
               </Button>
