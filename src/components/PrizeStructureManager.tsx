@@ -168,6 +168,28 @@ const PrizeStructureManager = ({ tournamentId, registeredPlayers, mode = 'manage
     return buyInTotal + rebuyTotal + addonTotal;
   };
 
+  // Функция для расчета призовых мест в покере (как в Python)
+  const calculatePokerPrizes = (totalPlayers: number, payoutSpots: number) => {
+    const prizes: { [key: number]: number | null } = {};
+    
+    // Игроки вне призовой зоны (не получают денег)
+    for (let position = 1; position <= totalPlayers - payoutSpots; position++) {
+      prizes[position] = null;
+    }
+    
+    // Призовые места (распределение в обратном порядке вылета)
+    for (let i = 0; i < payoutSpots; i++) {
+      const eliminationPosition = totalPlayers - payoutSpots + 1 + i;
+      const prizeRank = payoutSpots - i;
+      prizes[eliminationPosition] = prizeRank;
+    }
+    
+    // Победитель (никогда не выбывал)
+    prizes[totalPlayers + 1] = 1;
+    
+    return prizes;
+  };
+
   // Автоматический расчет процентов для дополнительных мест
   const calculateAdditionalPlacePercentage = (currentPlaces: PayoutPlace[], newPlaceNumber: number) => {
     if (currentPlaces.length === 0) return 5;
