@@ -716,6 +716,13 @@ const TournamentDirector = () => {
         localStorage.removeItem('selectedTournamentId');
         localStorage.removeItem(`timer_${id}`);
       }
+    } else {
+      console.error('Ошибка удаления турнира:', error);
+      toast({ 
+        title: "Ошибка", 
+        description: "Не удалось удалить турнир", 
+        variant: "destructive" 
+      });
     }
   };
 
