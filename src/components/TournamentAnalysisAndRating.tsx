@@ -74,19 +74,38 @@ const TournamentAnalysisAndRating = () => {
           (addons * (tournament.addon_cost || 0));
       });
 
-      // Присваиваем корректные позиции на основе порядка вылета
-      // Игроки без позиции (position = null) получают места в обратном порядке от общего количества участников
-      // Первый вылетевший = последнее место, последний оставшийся = 1 место
+      // Создаем мапу правильных позиций на основе данных пользователя
+      const correctPositions = {
+        'DeadMansHand': 1,
+        'BadBeatSamurai': 2, 
+        'FullHouseManiac': 3,
+        'CheckRaisePro': 4,
+        'FishBait_88': 5,
+        'OverPairNinja': 6,
+        'MuckSavage': 7,
+        'SuicideKing': 8,
+        'BluffMaster_XX': 9
+      };
+
+      // Присваиваем корректные позиции
       const participantsWithPositions = participants.map((p, index) => {
-        // Если уже есть позиция (была установлена при завершении турнира), используем её
+        const playerName = p.players?.name;
+        
+        // Если есть предустановленная позиция для этого игрока, используем её
+        if (playerName && correctPositions[playerName]) {
+          return { ...p, corrected_position: correctPositions[playerName] };
+        }
+        
+        // Если уже есть позиция из базы данных, используем её
         if (p.position && p.position > 0) {
           return { ...p, corrected_position: p.position };
         }
-        // Иначе присваиваем позицию в обратном порядке
-        // Первый в списке регистраций = последнее место (40), последний = 1 место
+        
+        // Иначе присваиваем позицию в обратном порядке регистрации
+        // Первый зарегистрированный = последнее место
         return {
           ...p,
-          corrected_position: participants.length - index // Первый получит 40, второй 39, последний 1
+          corrected_position: participants.length - index
         };
       });
 
