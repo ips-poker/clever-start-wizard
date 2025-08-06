@@ -605,7 +605,7 @@ const TournamentOverview = ({
               <Badge variant="secondary" className="bg-green-50 text-green-700 border-green-200">Активно</Badge>
             </div>
             <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-600">ELO расчеты</span>
+              <span className="text-gray-600">RPS расчеты</span>
               <Badge variant="secondary" className="bg-green-50 text-green-700 border-green-200">Готово</Badge>
             </div>
             <div className="flex items-center justify-between text-sm">

@@ -149,7 +149,7 @@ const PlayerManagement = ({ tournament, players, registrations, onRegistrationUp
           .insert([{
             name: playerName.trim(),
             email: `${playerName.trim().toLowerCase().replace(/\s+/g, '.')}@placeholder.com`,
-            elo_rating: 1200
+            elo_rating: 100
           }])
           .select()
           .single();
@@ -228,7 +228,7 @@ const PlayerManagement = ({ tournament, players, registrations, onRegistrationUp
             .insert([{
               name: name,
               email: `${name.toLowerCase().replace(/\s+/g, '.')}@placeholder.com`,
-              elo_rating: 1200
+              elo_rating: 100
             }])
             .select()
             .single();
@@ -408,39 +408,51 @@ const PlayerManagement = ({ tournament, players, registrations, onRegistrationUp
 
       if (tournamentError) throw tournamentError;
 
-      // Ensure all active players get position 1 (winner/tie)
-      const activePlayerUpdates = registrations
-        .filter(r => r.status !== 'eliminated')
-        .map(async (reg) => {
-          return supabase
-            .from('tournament_registrations')
-            .update({ position: 1 })
-            .eq('id', reg.id);
-        });
+      // Assign proper positions to remaining players
+      const activePlayersToUpdate = registrations.filter(r => r.status !== 'eliminated');
+      const eliminatedPlayersCount = registrations.filter(r => r.status === 'eliminated').length;
+      
+      // Активные игроки получают позиции начиная с 1 места до количества активных игроков
+      const activePlayerUpdates = activePlayersToUpdate.map(async (reg, index) => {
+        const position = index + 1; // 1, 2, 3... для активных игроков
+        return supabase
+          .from('tournament_registrations')
+          .update({ position })
+          .eq('id', reg.id);
+      });
 
       await Promise.all(activePlayerUpdates);
 
-      // Prepare results for ELO calculation - make sure all players have positions
-      const results = registrations.map((reg) => ({
-        player_id: reg.player.id,
-        position: reg.position || 1, // Active players get 1st place
-        rebuys: reg.rebuys || 0,
-        addons: reg.addons || 0
-      }));
+      // Prepare results for RPS calculation with correct positions
+      const results = registrations.map((reg) => {
+        let position = reg.position;
+        if (reg.status !== 'eliminated') {
+          // Find position for active players based on their order
+          const activeIndex = activePlayersToUpdate.findIndex(p => p.id === reg.id);
+          position = activeIndex + 1;
+        }
+        
+        return {
+          player_id: reg.player.id,
+          position: position || 1,
+          rebuys: reg.rebuys || 0,
+          addons: reg.addons || 0
+        };
+      });
 
       console.log('Завершение турнира - отправка результатов:', results);
 
-      // Call ELO calculation function
-      const { error: eloError } = await supabase.functions.invoke('calculate-elo', {
+      // Call RPS calculation function
+      const { error: rpsError } = await supabase.functions.invoke('calculate-elo', {
         body: {
           tournament_id: tournament.id,
           results: results
         }
       });
 
-      if (eloError) {
-        console.error('Ошибка расчета ELO:', eloError);
-        throw eloError;
+      if (rpsError) {
+        console.error('Ошибка расчета RPS:', rpsError);
+        throw rpsError;
       }
 
       toast({ 
@@ -626,7 +638,7 @@ const PlayerManagement = ({ tournament, players, registrations, onRegistrationUp
                           <div className="flex items-center gap-3 text-sm text-slate-500 font-light">
                             <span>Место {registration.seat_number || '—'}</span>
                             <span>•</span>
-                            <span>ELO {registration.player.elo_rating}</span>
+                            <span>RPS {registration.player.elo_rating}</span>
                             <span>•</span>
                             <span>{registration.chips.toLocaleString()} фишек</span>
                           </div>
@@ -754,7 +766,7 @@ const PlayerManagement = ({ tournament, players, registrations, onRegistrationUp
                         <div>
                           <h4 className="text-lg font-light text-slate-900">{registration.player.name}</h4>
                           <div className="flex items-center gap-3 text-sm text-slate-500 font-light">
-                            <span>ELO {registration.player.elo_rating}</span>
+                            <span>RPS {registration.player.elo_rating}</span>
                             <span>•</span>
                             <span>Ребаи {registration.rebuys}</span>
                             <span>•</span>
