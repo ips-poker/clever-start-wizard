@@ -146,7 +146,7 @@ const PlayerRegistration = ({ tournament, players, registrations, onRegistration
                 <SelectContent>
                   {availablePlayers.map((player) => (
                     <SelectItem key={player.id} value={player.id}>
-                      {player.name} (ELO: {player.elo_rating})
+                      {player.name} (RPS: {player.elo_rating})
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -216,7 +216,7 @@ const PlayerRegistration = ({ tournament, players, registrations, onRegistration
                     <div>
                       <h4 className="font-semibold text-poker-charcoal">{registration.player.name}</h4>
                       <div className="flex items-center gap-3 text-sm text-poker-silver">
-                        <span>ELO: {registration.player.elo_rating}</span>
+                        <span>RPS: {registration.player.elo_rating}</span>
                         <span>Фишки: {registration.chips}</span>
                         {getStatusBadge(registration.status)}
                       </div>
