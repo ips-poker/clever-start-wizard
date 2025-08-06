@@ -71,7 +71,7 @@ export function Hero() {
                
                <div className="text-center lg:text-left">
                  <p className="text-lg text-white/90 max-w-2xl mx-auto lg:mx-0 leading-relaxed font-medium animate-fade-in [animation-delay:0.8s]">
-                   {getContent('hero_description', 'Премиальный покерный клуб с рейтинговой системой ELO. Развивайте навыки в элегантной атмосфере среди профессиональных игроков.')}
+                   {getContent('hero_description', 'Премиальный покерный клуб с уникальной рейтинговой системой RPS. Развивайте навыки в элегантной атмосфере среди профессиональных игроков.')}
                  </p>
                </div>
 
@@ -87,7 +87,7 @@ export function Hero() {
                    </div>
                    <div className="flex items-center justify-center lg:justify-start space-x-3 text-sm bg-white/8 px-4 py-3 rounded-xl backdrop-blur-md border border-white/20 text-white font-medium shadow-subtle">
                      <Award className="w-5 h-5 text-poker-accent-light flex-shrink-0" />
-                     <span>{getContent('feature_3', 'Рейтинг ELO')}</span>
+                     <span>{getContent('feature_3', 'Рейтинг RPS')}</span>
                    </div>
                    <div className="flex items-center justify-center lg:justify-start space-x-3 text-sm bg-white/8 px-4 py-3 rounded-xl backdrop-blur-md border border-white/20 text-white font-medium shadow-subtle">
                      <Users className="w-5 h-5 text-poker-accent-light flex-shrink-0" />
@@ -135,8 +135,8 @@ export function Hero() {
                   <div className="w-20 h-20 bg-poker-accent rounded-2xl flex items-center justify-center mx-auto shadow-card text-white">
                     <Trophy className="w-10 h-10" />
                   </div>
-                  <h3 className="text-2xl lg:text-3xl font-bold text-white">{getContent('main_feature_title', 'Рейтинговая система ELO')}</h3>
-                  <p className="text-white/90 text-base lg:text-lg font-medium">{getContent('main_feature_description', 'Профессиональная система оценки навыков покерных игроков')}</p>
+                   <h3 className="text-2xl lg:text-3xl font-bold text-white">{getContent('main_feature_title', 'Рейтинговая система RPS')}</h3>
+                   <p className="text-white/90 text-base lg:text-lg font-medium">{getContent('main_feature_description', 'Уникальная система Rating Points System для справедливой оценки мастерства')}</p>
                   <Badge className="bg-poker-accent-light text-white px-6 py-3 font-semibold text-sm lg:text-base shadow-card">
                     Главная особенность
                   </Badge>

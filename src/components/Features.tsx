@@ -23,9 +23,9 @@ export function Features() {
     },
     {
       icon: BarChart3,
-      title: "Рейтинговая система",
-      description: "Комплексная система оценки игроков с детальной статистикой",
-      highlights: ["ELO рейтинг", "Детальная статистика", "История игр"],
+      title: "Рейтинговая система RPS",
+      description: "Уникальная система RPS (Rating Points System) для справедливого определения мастерства",
+      highlights: ["RPS рейтинг", "Призовые баллы", "История игр"],
       color: "poker-blue"
     },
     {

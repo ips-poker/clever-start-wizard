@@ -39,7 +39,7 @@ serve(async (req) => {
       throw new Error('Missing tournament_id or results')
     }
 
-    console.log(`Calculating ELO for tournament ${tournament_id} with ${results.length} players`)
+    console.log(`Calculating RPS ratings for tournament ${tournament_id} with ${results.length} players`)
 
     // Get tournament data to check rebuy/addon costs
     const { data: tournament, error: tournamentError } = await supabaseClient
@@ -58,18 +58,6 @@ serve(async (req) => {
       .in('id', playerIds)
 
     if (playersError) throw playersError
-
-    // Calculate total buy-in for each player (including rebuys and addons from results data)
-    const playerBuyIns = new Map()
-    results.forEach(result => {
-      const rebuys = result.rebuys || 0
-      const addons = result.addons || 0
-      const totalBuyIn = tournament.buy_in + 
-        (rebuys * (tournament.rebuy_cost || 0)) + 
-        (addons * (tournament.addon_cost || 0))
-      playerBuyIns.set(result.player_id, totalBuyIn)
-      console.log(`Player ${result.player_id}: buy_in=${tournament.buy_in}, rebuys=${rebuys}*${tournament.rebuy_cost || 0}, addons=${addons}*${tournament.addon_cost || 0}, total=${totalBuyIn}`)
-    })
 
     // Check if results already exist for this tournament
     const { data: existingResults } = await supabaseClient
@@ -90,11 +78,11 @@ serve(async (req) => {
       )
     }
 
-    // Calculate new ELO ratings with buy-in consideration
-    const eloChanges = calculateEloChanges(players, results, playerBuyIns)
+    // Calculate new RPS ratings changes
+    const rpsChanges = calculateRPSChanges(players, results, tournament)
 
     // Update players and create game results
-    for (const change of eloChanges) {
+    for (const change of rpsChanges) {
       const player = players.find(p => p.id === change.player_id)
       if (!player) continue
 
@@ -145,13 +133,13 @@ serve(async (req) => {
       console.error('Error updating tournament status:', tournamentUpdateError)
     }
 
-    console.log('ELO calculation completed successfully')
+    console.log('RPS calculation completed successfully')
 
     return new Response(
       JSON.stringify({ 
         success: true, 
-        message: 'ELO ratings updated successfully',
-        changes: eloChanges
+        message: 'RPS ratings updated successfully',
+        changes: rpsChanges
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -174,64 +162,78 @@ serve(async (req) => {
   }
 })
 
-function calculateEloChanges(players: Player[], results: TournamentResult[], playerBuyIns: Map<string, number>) {
-  const BASE_K = 32 // Base ELO K-factor
+function calculateRPSChanges(players: Player[], results: TournamentResult[], tournament: any) {
   const changes = []
 
   // Sort results by position
   results.sort((a, b) => a.position - b.position)
 
-  // Calculate average buy-in for scaling
-  const totalBuyIns = Array.from(playerBuyIns.values())
-  const avgBuyIn = totalBuyIns.reduce((sum, buyIn) => sum + buyIn, 0) / totalBuyIns.length
+  // Рассчитываем общий призовой фонд
+  let totalPrizePool = 0
+  results.forEach(result => {
+    const rebuys = result.rebuys || 0
+    const addons = result.addons || 0
+    totalPrizePool += tournament.buy_in + 
+      (rebuys * (tournament.rebuy_cost || 0)) + 
+      (addons * (tournament.addon_cost || 0))
+  })
 
+  // Получаем структуру выплат
+  const payoutStructure = getPayoutStructure(results.length)
+  
   for (let i = 0; i < results.length; i++) {
     const playerResult = results[i]
     const player = players.find(p => p.id === playerResult.player_id)
     if (!player) continue
 
-    // Scale K-factor based on player's total investment
-    const playerBuyIn = playerBuyIns.get(player.id) || avgBuyIn
-    const buyInMultiplier = Math.max(0.5, Math.min(2.0, playerBuyIn / avgBuyIn))
-    const K = BASE_K * buyInMultiplier
+    let rpsChange = 0
 
-    let totalEloChange = 0
-    let opponentCount = 0
+    // Бонусы за ребаи и адоны
+    const rebuys = playerResult.rebuys || 0
+    const addons = playerResult.addons || 0
+    rpsChange += rebuys + addons // +1 балл за каждый ребай/адон
 
-    // Calculate ELO change against all other players
-    for (let j = 0; j < results.length; j++) {
-      if (i === j) continue
-
-      const opponentResult = results[j]
-      const opponent = players.find(p => p.id === opponentResult.player_id)
-      if (!opponent) continue
-
-      // Determine score based on position comparison
-      let score = 0.5 // Default tie
-      if (playerResult.position < opponentResult.position) {
-        score = 1 // Win (better position)
-      } else if (playerResult.position > opponentResult.position) {
-        score = 0 // Loss (worse position)
-      }
-
-      // Calculate expected score
-      const expectedScore = 1 / (1 + Math.pow(10, (opponent.elo_rating - player.elo_rating) / 400))
-
-      // Calculate ELO change for this matchup
-      const eloChange = K * (score - expectedScore)
-      totalEloChange += eloChange
-      opponentCount++
+    // Призовые баллы (только для призовых мест)
+    const position = playerResult.position
+    if (position <= payoutStructure.length) {
+      const prizePercentage = payoutStructure[position - 1]
+      const prizeAmount = (totalPrizePool * prizePercentage) / 100
+      const prizePoints = Math.floor(prizeAmount * 0.001) // 0.1% от призовой суммы
+      rpsChange += prizePoints
     }
 
-    // Average the ELO change
-    const avgEloChange = opponentCount > 0 ? Math.round(totalEloChange / opponentCount) : 0
+    // Рейтинг не может уйти в минус
+    const newRating = Math.max(0, player.elo_rating + rpsChange)
+    const finalChange = newRating - player.elo_rating
 
     changes.push({
       player_id: player.id,
       position: playerResult.position,
-      elo_change: avgEloChange
+      elo_change: finalChange
     })
   }
 
   return changes
+}
+
+function getPayoutStructure(playerCount: number): number[] {
+  if (playerCount <= 8) {
+    return [60, 40]; // 2 места
+  } else if (playerCount <= 11) {
+    return [50, 30, 20]; // 3 места
+  } else if (playerCount <= 20) {
+    return [40, 27, 19, 14]; // 4 места
+  } else if (playerCount <= 30) {
+    return [36.0, 25.0, 17.5, 12.8, 8.7]; // 5 мест
+  } else if (playerCount <= 50) {
+    return [34.0, 23.0, 16.5, 11.9, 8.0, 6.6]; // 6 мест
+  } else if (playerCount <= 70) {
+    return [31.7, 20.7, 15.3, 10.8, 7.2, 5.8, 4.6, 3.9]; // 8 мест
+  } else if (playerCount <= 100) {
+    return [30.5, 19.5, 13.7, 10.0, 6.7, 5.4, 4.2, 3.7, 3.3, 3.0]; // 10 мест
+  } else if (playerCount <= 130) {
+    return [29.0, 18.7, 13.5, 9.5, 6.5, 5.2, 4.0, 3.4, 2.9, 2.6, 2.4, 2.3]; // 12 мест
+  } else {
+    return [28.0, 18.0, 13.0, 9.3, 6.3, 5.0, 3.9, 3.3, 2.8, 2.55, 2.25, 2.0, 1.8]; // 13+ мест
+  }
 }

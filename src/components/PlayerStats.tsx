@@ -151,7 +151,7 @@ export function PlayerStats() {
                 <TableRow>
                   <TableHead className="w-16">Место</TableHead>
                   <TableHead>Игрок</TableHead>
-                  <TableHead className="text-center">ELO</TableHead>
+                  <TableHead className="text-center">RPS</TableHead>
                   <TableHead className="text-center">Игр</TableHead>
                   <TableHead className="text-center">Побед</TableHead>
                   <TableHead className="text-center">Винрейт</TableHead>
