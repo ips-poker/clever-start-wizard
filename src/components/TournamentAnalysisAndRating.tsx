@@ -74,12 +74,21 @@ const TournamentAnalysisAndRating = () => {
           (addons * (tournament.addon_cost || 0));
       });
 
-      // Присваиваем корректные позиции (эмулируем порядок вылета)
-      // Последний в списке = победитель (1 место)
-      const participantsWithPositions = participants.map((p, index) => ({
-        ...p,
-        corrected_position: participants.length - index // Инвертируем позиции
-      }));
+      // Присваиваем корректные позиции на основе порядка вылета
+      // Игроки без позиции (position = null) получают места в обратном порядке от общего количества участников
+      // Первый вылетевший = последнее место, последний оставшийся = 1 место
+      const participantsWithPositions = participants.map((p, index) => {
+        // Если уже есть позиция (была установлена при завершении турнира), используем её
+        if (p.position && p.position > 0) {
+          return { ...p, corrected_position: p.position };
+        }
+        // Иначе присваиваем позицию в обратном порядке
+        // Первый в списке регистраций = последнее место (40), последний = 1 место
+        return {
+          ...p,
+          corrected_position: participants.length - index // Первый получит 40, второй 39, последний 1
+        };
+      });
 
       // Рассчитываем рейтинговые очки для каждого участника
       const ratingCalculations = participantsWithPositions.map(participant => {
