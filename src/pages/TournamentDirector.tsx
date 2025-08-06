@@ -704,11 +704,11 @@ const TournamentDirector = () => {
 
   const deleteTournament = async (id: string) => {
     try {
-      // Удаляем связанные данные сначала
+      // Удаляем только настройки турнира, НЕ затрагивая результаты игр и статистику
       await supabase.from('tournament_payouts').delete().eq('tournament_id', id);
       await supabase.from('blind_levels').delete().eq('tournament_id', id);
-      await supabase.from('tournament_registrations').delete().eq('tournament_id', id);
-      await supabase.from('game_results').delete().eq('tournament_id', id);
+      
+      // НЕ удаляем game_results и tournament_registrations - они нужны для статистики!
       
       // Теперь удаляем сам турнир
       const { error } = await supabase
@@ -717,7 +717,7 @@ const TournamentDirector = () => {
         .eq('id', id);
 
       if (!error) {
-        toast({ title: "Турнир удален" });
+        toast({ title: "Турнир удален", description: "Результаты игр и рейтинги сохранены" });
         loadTournaments();
         if (selectedTournament?.id === id) {
           setSelectedTournament(null);
