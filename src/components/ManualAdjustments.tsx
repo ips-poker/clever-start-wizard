@@ -294,7 +294,7 @@ const ManualAdjustments = ({ tournaments, selectedTournament, onRefresh }: Manua
       const { error } = await supabase
         .from('players')
         .update({
-          elo_rating: 1200, // Default starting rating
+          elo_rating: 100, // Default starting rating
           games_played: 0,
           wins: 0
         })

@@ -116,7 +116,7 @@ const SystemCheck = ({ onRefresh }: SystemCheckProps) => {
         .insert({
           name: testPlayerName,
           email: `${testPlayerName.toLowerCase().replace(/\s+/g, '')}@test.com`,
-          elo_rating: 1200,
+          elo_rating: 100,
           games_played: 0,
           wins: 0
         })

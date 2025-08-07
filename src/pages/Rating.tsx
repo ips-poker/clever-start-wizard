@@ -211,7 +211,7 @@ export default function Rating() {
                   <Star className="w-8 h-8 text-poker-warning" />
                 </div>
                 <div className="text-3xl font-bold text-poker-warning mb-2">
-                  {topPlayers[0]?.elo_rating || 1200}
+                  {topPlayers[0]?.elo_rating || 100}
                 </div>
                 <div className="text-muted-foreground">Лучший рейтинг</div>
               </Card>

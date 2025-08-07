@@ -99,7 +99,7 @@ export default function Profile() {
           .insert([{ 
             name: uniqueName,
             email: user.email,
-            elo_rating: 1200,
+            elo_rating: 100,
             user_id: user.id,
             avatar_url: userProfile?.avatar_url
           }])
@@ -221,8 +221,8 @@ export default function Profile() {
   const statCards: StatCard[] = [
     {
       title: "Рейтинг RPS",
-      value: player?.elo_rating || 1200,
-      description: getRankTitle(player?.elo_rating || 1200),
+      value: player?.elo_rating || 100,
+      description: getRankTitle(player?.elo_rating || 100),
       icon: TrendingUp,
       color: "text-primary"
     },
@@ -272,7 +272,7 @@ export default function Profile() {
             
             <div className="relative z-10 text-center space-y-6">
               <div className="relative inline-block">
-                <div className={`absolute inset-0 rounded-full bg-gradient-to-br ${getRankClass(player?.elo_rating || 1200)} opacity-20 blur-xl scale-110`}></div>
+                <div className={`absolute inset-0 rounded-full bg-gradient-to-br ${getRankClass(player?.elo_rating || 100)} opacity-20 blur-xl scale-110`}></div>
                 <Avatar className="relative w-32 h-32 mx-auto border-4 border-background shadow-2xl ring-4 ring-primary/20">
                   <AvatarImage src={player?.avatar_url} alt={player?.name} />
                   <AvatarFallback className="text-2xl bg-gradient-to-br from-primary to-primary/60 text-primary-foreground">
@@ -329,8 +329,8 @@ export default function Profile() {
                       </Button>
                     </div>
                   )}
-                  <Badge className={`bg-gradient-to-r ${getRankClass(player?.elo_rating || 1200)} text-white border-0 px-3 py-1 font-semibold`}>
-                    {getRankTitle(player?.elo_rating || 1200)}
+                  <Badge className={`bg-gradient-to-r ${getRankClass(player?.elo_rating || 100)} text-white border-0 px-3 py-1 font-semibold`}>
+                    {getRankTitle(player?.elo_rating || 100)}
                   </Badge>
                 </div>
                 <p className="text-muted-foreground text-center">{user?.email}</p>
@@ -338,7 +338,7 @@ export default function Profile() {
                 {/* Quick Stats */}
                 <div className="flex items-center justify-center gap-6 mt-4 pt-4 border-t border-primary/10">
                   <div className="text-center">
-                    <p className="text-2xl font-bold text-primary">{player?.elo_rating || 1200}</p>
+                    <p className="text-2xl font-bold text-primary">{player?.elo_rating || 100}</p>
                     <p className="text-xs text-muted-foreground">RPS Рейтинг</p>
                   </div>
                   <div className="w-px h-8 bg-border"></div>
@@ -550,7 +550,7 @@ export default function Profile() {
                         <p className="text-xs text-muted-foreground">Winrate</p>
                       </div>
                       <div className="text-center p-3 rounded-lg bg-chart-3/10">
-                        <p className="text-xl font-bold text-chart-3">{Math.max(...eloData.map(d => d.elo), player?.elo_rating || 1200)}</p>
+                        <p className="text-xl font-bold text-chart-3">{Math.max(...eloData.map(d => d.elo), player?.elo_rating || 100)}</p>
                         <p className="text-xs text-muted-foreground">Пик RPS</p>
                       </div>
                     </div>

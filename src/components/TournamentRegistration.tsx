@@ -134,7 +134,7 @@ export function TournamentRegistration() {
         .insert([{
           name: newPlayerName.trim(),
           email: newPlayerEmail.trim(),
-          elo_rating: 1200
+          elo_rating: 100
         }])
         .select()
         .single();
