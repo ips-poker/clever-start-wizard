@@ -124,8 +124,8 @@ export default function Admin() {
           <AdminSidebar activeTab={activeTab} onTabChange={setActiveTab} />
           
           <main className="flex-1 pt-12">
-            <div className="container mx-auto p-6">
-              <div className="bg-card border rounded-lg p-6 shadow-sm">
+            <div className="container mx-auto p-2 sm:p-4 lg:p-6">
+              <div className="bg-card border rounded-lg p-3 sm:p-4 lg:p-6 shadow-sm">
                 {renderTabContent()}
               </div>
             </div>

@@ -35,6 +35,7 @@ import {
 import { AuthGuard } from "@/components/auth/AuthGuard";
 import { TournamentCreationModal } from "@/components/TournamentCreationModal";
 import { VoiceControl } from "@/components/VoiceControl";
+import { TournamentDirectorMobileMenu } from "@/components/TournamentDirectorMobileMenu";
 import TournamentOverview from "@/components/TournamentOverview";
 import PlayerManagement from "@/components/PlayerManagement";
 import BlindStructure from "@/components/BlindStructure";
@@ -748,7 +749,7 @@ const TournamentDirector = () => {
             selectedTournament={selectedTournament}
           />
           <main className="flex-1">
-            <div className="container mx-auto px-4 py-8 max-w-7xl">
+            <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-8 max-w-7xl">
 
           {/* Custom Tab System заменяем обратно на Radix Tabs */}
           <Tabs 
@@ -759,42 +760,46 @@ const TournamentDirector = () => {
             }} 
             className="space-y-10"
           >
-            <TabsList className="grid grid-cols-4 lg:grid-cols-9 gap-2 h-auto p-1 bg-gray-100/60 rounded-lg border border-gray-200/30">
-              <TabsTrigger value="overview" className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm">
-                <BarChart3 className="w-4 h-4" />
+            <TabsList className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-9 gap-1 sm:gap-2 h-auto p-1 bg-gray-100/60 rounded-lg border border-gray-200/30 overflow-x-auto">
+              <TabsTrigger value="overview" className="flex items-center gap-1 sm:gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm text-xs sm:text-sm py-2 px-2 sm:px-3">
+                <BarChart3 className="w-3 h-3 sm:w-4 sm:h-4" />
                 <span className="hidden sm:inline">Обзор</span>
+                <span className="sm:hidden">Обзор</span>
               </TabsTrigger>
-              <TabsTrigger value="tournaments" className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm">
-                <Trophy className="w-4 h-4" />
+              <TabsTrigger value="tournaments" className="flex items-center gap-1 sm:gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm text-xs sm:text-sm py-2 px-2 sm:px-3">
+                <Trophy className="w-3 h-3 sm:w-4 sm:h-4" />
                 <span className="hidden sm:inline">Турниры</span>
+                <span className="sm:hidden">Турн</span>
               </TabsTrigger>
-              <TabsTrigger value="control" className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm">
-                <Settings className="w-4 h-4" />
+              <TabsTrigger value="control" className="flex items-center gap-1 sm:gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm text-xs sm:text-sm py-2 px-2 sm:px-3">
+                <Settings className="w-3 h-3 sm:w-4 sm:h-4" />
                 <span className="hidden sm:inline">Управление</span>
+                <span className="sm:hidden">Управ</span>
               </TabsTrigger>
-              <TabsTrigger value="players" className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm">
-                <Users className="w-4 h-4" />
-                <span className="hidden sm:inline">Игроки</span>
+              <TabsTrigger value="players" className="flex items-center gap-1 sm:gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm text-xs sm:text-sm py-2 px-2 sm:px-3 hidden sm:flex">
+                <Users className="w-3 h-3 sm:w-4 sm:h-4" />
+                <span className="hidden lg:inline">Игроки</span>
+                <span className="lg:hidden">Игр</span>
               </TabsTrigger>
-              <TabsTrigger value="voice" className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm">
-                <Mic className="w-4 h-4" />
-                <span className="hidden sm:inline">Голос</span>
+              <TabsTrigger value="voice" className="flex items-center gap-1 sm:gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm text-xs sm:text-sm py-2 px-2 sm:px-3 hidden lg:flex">
+                <Mic className="w-3 h-3 sm:w-4 sm:h-4" />
+                <span>Голос</span>
               </TabsTrigger>
-              <TabsTrigger value="ratings" className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm">
-                <TrendingUp className="w-4 h-4" />
-                <span className="hidden sm:inline">Рейтинги</span>
+              <TabsTrigger value="ratings" className="flex items-center gap-1 sm:gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm text-xs sm:text-sm py-2 px-2 sm:px-3 hidden lg:flex">
+                <TrendingUp className="w-3 h-3 sm:w-4 sm:h-4" />
+                <span>Рейтинги</span>
               </TabsTrigger>
-              <TabsTrigger value="results" className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm">
-                <CheckCircle className="w-4 h-4" />
-                <span className="hidden sm:inline">Результаты</span>
+              <TabsTrigger value="results" className="flex items-center gap-1 sm:gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm text-xs sm:text-sm py-2 px-2 sm:px-3 hidden lg:flex">
+                <CheckCircle className="w-3 h-3 sm:w-4 sm:h-4" />
+                <span>Результаты</span>
               </TabsTrigger>
-              <TabsTrigger value="sync" className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm">
-                <RefreshCw className="w-4 h-4" />
-                <span className="hidden sm:inline">Синхронизация</span>
+              <TabsTrigger value="sync" className="flex items-center gap-1 sm:gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm text-xs sm:text-sm py-2 px-2 sm:px-3 hidden lg:flex">
+                <RefreshCw className="w-3 h-3 sm:w-4 sm:h-4" />
+                <span>Синхронизация</span>
                </TabsTrigger>
-               <TabsTrigger value="analysis" className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm">
-                 <BarChart3 className="w-4 h-4" />
-                 <span className="hidden sm:inline">Анализ турнира</span>
+               <TabsTrigger value="analysis" className="flex items-center gap-1 sm:gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm text-xs sm:text-sm py-2 px-2 sm:px-3 hidden lg:flex">
+                 <BarChart3 className="w-3 h-3 sm:w-4 sm:h-4" />
+                 <span>Анализ турнира</span>
                </TabsTrigger>
                <TabsTrigger value="rating-test" className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm">
                  <Target className="w-4 h-4" />
@@ -1237,6 +1242,12 @@ const TournamentDirector = () => {
           />
             </div>
           </main>
+          
+          {/* Mobile Menu for hidden tabs */}
+          <TournamentDirectorMobileMenu 
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+          />
         </div>
       </SidebarProvider>
     </AuthGuard>

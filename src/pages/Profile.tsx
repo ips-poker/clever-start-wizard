@@ -9,7 +9,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Trophy, TrendingUp, Calendar, Users, Star, Medal, Award, Target } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Trophy, TrendingUp, Calendar, Users, Star, Medal, Award, Target, Edit3, Check, X } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from "recharts";
 import { toast } from "sonner";
 import { PlayerStats } from "@/components/PlayerStats";
@@ -62,6 +64,8 @@ export default function Profile() {
   const [gameResults, setGameResults] = useState<GameResult[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAvatarSelector, setShowAvatarSelector] = useState(false);
+  const [editingName, setEditingName] = useState(false);
+  const [newPlayerName, setNewPlayerName] = useState("");
 
   useEffect(() => {
     if (user) {
@@ -161,6 +165,37 @@ export default function Profile() {
     }
   };
 
+  const handleNameUpdate = async () => {
+    if (!player || !newPlayerName.trim()) return;
+
+    try {
+      const { error } = await supabase
+        .from('players')
+        .update({ name: newPlayerName.trim() })
+        .eq('id', player.id);
+
+      if (error) throw error;
+
+      setPlayer({ ...player, name: newPlayerName.trim() });
+      setEditingName(false);
+      setNewPlayerName("");
+      toast("Имя игрока обновлено успешно!");
+    } catch (error) {
+      console.error('Error updating player name:', error);
+      toast("Ошибка при обновлении имени");
+    }
+  };
+
+  const startNameEdit = () => {
+    setNewPlayerName(player?.name || "");
+    setEditingName(true);
+  };
+
+  const cancelNameEdit = () => {
+    setEditingName(false);
+    setNewPlayerName("");
+  };
+
   const eloData = gameResults.slice(0, 10).reverse().map((result, index) => ({
     game: index + 1,
     elo: result.elo_after,
@@ -254,13 +289,51 @@ export default function Profile() {
               </div>
               
               <div className="space-y-3">
-                <div className="flex items-center justify-center gap-3">
-                  <h1 className="text-3xl font-bold text-foreground">{player?.name}</h1>
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+                  {editingName ? (
+                    <div className="flex items-center gap-2">
+                      <Input
+                        value={newPlayerName}
+                        onChange={(e) => setNewPlayerName(e.target.value)}
+                        className="text-center text-xl font-bold max-w-xs"
+                        placeholder="Введите новое имя"
+                        onKeyPress={(e) => e.key === 'Enter' && handleNameUpdate()}
+                      />
+                      <Button
+                        onClick={handleNameUpdate}
+                        size="sm"
+                        className="h-8 w-8 p-0"
+                        disabled={!newPlayerName.trim()}
+                      >
+                        <Check className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        onClick={cancelNameEdit}
+                        variant="outline"
+                        size="sm"
+                        className="h-8 w-8 p-0"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <h1 className="text-2xl sm:text-3xl font-bold text-foreground text-center">{player?.name}</h1>
+                      <Button
+                        onClick={startNameEdit}
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 w-8 p-0 hover:bg-primary/10"
+                      >
+                        <Edit3 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  )}
                   <Badge className={`bg-gradient-to-r ${getRankClass(player?.elo_rating || 1200)} text-white border-0 px-3 py-1 font-semibold`}>
                     {getRankTitle(player?.elo_rating || 1200)}
                   </Badge>
                 </div>
-                <p className="text-muted-foreground">{user?.email}</p>
+                <p className="text-muted-foreground text-center">{user?.email}</p>
                 
                 {/* Quick Stats */}
                 <div className="flex items-center justify-center gap-6 mt-4 pt-4 border-t border-primary/10">
@@ -284,7 +357,7 @@ export default function Profile() {
           </div>
 
           {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
             {statCards.map((stat, index) => (
               <Card key={index} className="group hover:shadow-xl transition-all duration-300 border-border/50 hover:border-primary/20 bg-gradient-to-br from-card via-card to-card/80 hover:scale-105">
                 <CardContent className="p-6 relative overflow-hidden">
@@ -314,29 +387,33 @@ export default function Profile() {
 
           {/* Main Content */}
           <Tabs defaultValue="statistics" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-1 md:grid-cols-4 bg-muted/30">
-              <TabsTrigger value="statistics" className="flex items-center gap-2">
-                <TrendingUp className="h-4 w-4" />
-                Статистика
+            <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 bg-muted/30 h-auto p-1">
+              <TabsTrigger value="statistics" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm py-2">
+                <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4" />
+                <span className="hidden sm:inline">Статистика</span>
+                <span className="sm:hidden">Статс</span>
               </TabsTrigger>
-              <TabsTrigger value="tournaments" className="flex items-center gap-2">
-                <Calendar className="h-4 w-4" />
-                Турниры
+              <TabsTrigger value="tournaments" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm py-2">
+                <Calendar className="h-3 w-3 sm:h-4 sm:w-4" />
+                <span className="hidden sm:inline">Турниры</span>
+                <span className="sm:hidden">Турн</span>
               </TabsTrigger>
-              <TabsTrigger value="leaderboard" className="flex items-center gap-2">
-                <Users className="h-4 w-4" />
-                Рейтинг
+              <TabsTrigger value="leaderboard" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm py-2">
+                <Users className="h-3 w-3 sm:h-4 sm:w-4" />
+                <span className="hidden sm:inline">Рейтинг</span>
+                <span className="sm:hidden">Топ</span>
               </TabsTrigger>
-              <TabsTrigger value="history" className="flex items-center gap-2">
-                <Star className="h-4 w-4" />
-                История
+              <TabsTrigger value="history" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm py-2">
+                <Star className="h-3 w-3 sm:h-4 sm:w-4" />
+                <span className="hidden sm:inline">История</span>
+                <span className="sm:hidden">Игры</span>
               </TabsTrigger>
             </TabsList>
 
             <TabsContent value="statistics" className="space-y-6">
-              <div className="grid gap-6 md:grid-cols-2">
+              <div className="grid gap-6 lg:grid-cols-2">
                 {/* ELO Chart */}
-                <Card className="border-border/50 md:col-span-2">
+                <Card className="border-border/50 lg:col-span-2">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <TrendingUp className="h-5 w-5 text-primary" />
