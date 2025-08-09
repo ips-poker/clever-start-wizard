@@ -46,6 +46,7 @@ import TournamentResults from "@/components/TournamentResults";
 import TournamentSyncManager from "@/components/TournamentSyncManager";
 import RatingSystemTest from "@/components/RatingSystemTest";
 import TournamentAnalysisAndRating from "@/components/TournamentAnalysisAndRating";
+import RatingSystemSettings from "@/components/RatingSystemSettings";
 import { useVoiceAnnouncements } from "@/hooks/useVoiceAnnouncements";
 
 // Используем типы из базы данных
@@ -760,7 +761,7 @@ const TournamentDirector = () => {
             }} 
             className="space-y-10"
           >
-            <TabsList className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-9 gap-1 sm:gap-2 h-auto p-1 bg-gray-100/60 rounded-lg border border-gray-200/30 overflow-x-auto">
+            <TabsList className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-10 gap-1 sm:gap-2 h-auto p-1 bg-gray-100/60 rounded-lg border border-gray-200/30 overflow-x-auto">
               <TabsTrigger value="overview" className="flex items-center gap-1 sm:gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm text-xs sm:text-sm py-2 px-2 sm:px-3">
                 <BarChart3 className="w-3 h-3 sm:w-4 sm:h-4" />
                 <span className="hidden sm:inline">Обзор</span>
@@ -801,10 +802,14 @@ const TournamentDirector = () => {
                  <BarChart3 className="w-3 h-3 sm:w-4 sm:h-4" />
                  <span>Анализ турнира</span>
                </TabsTrigger>
-               <TabsTrigger value="rating-test" className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm">
-                 <Target className="w-4 h-4" />
-                 <span className="hidden sm:inline">Тест рейтинга</span>
-               </TabsTrigger>
+                <TabsTrigger value="rating-test" className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                  <Target className="w-4 h-4" />
+                  <span className="hidden sm:inline">Тест рейтинга</span>
+                </TabsTrigger>
+                <TabsTrigger value="rating-settings" className="flex items-center gap-1 sm:gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm text-xs sm:text-sm py-2 px-2 sm:px-3 hidden lg:flex">
+                  <Settings className="w-3 h-3 sm:w-4 sm:h-4" />
+                  <span>Настройки RPS</span>
+                </TabsTrigger>
             </TabsList>
             <TabsContent value="overview" className="space-y-8 animate-fade-in">
               {selectedTournament ? (
@@ -1202,6 +1207,10 @@ const TournamentDirector = () => {
 
             <TabsContent value="rating-test" className="space-y-6 animate-fade-in">
               <RatingSystemTest />
+            </TabsContent>
+
+            <TabsContent value="rating-settings" className="space-y-6 animate-fade-in">
+              <RatingSystemSettings />
             </TabsContent>
 
             <TabsContent value="analysis" className="space-y-6 animate-fade-in">
