@@ -46,7 +46,7 @@ import TournamentResults from "@/components/TournamentResults";
 import TournamentSyncManager from "@/components/TournamentSyncManager";
 import RatingSystemTest from "@/components/RatingSystemTest";
 import TournamentAnalysisAndRating from "@/components/TournamentAnalysisAndRating";
-import RatingSystemSettings from "@/components/RatingSystemSettings";
+import RatingSystemAdvancedSettings from "@/components/RatingSystemAdvancedSettings";
 import { useVoiceAnnouncements } from "@/hooks/useVoiceAnnouncements";
 
 // Используем типы из базы данных
@@ -1210,7 +1210,7 @@ const TournamentDirector = () => {
             </TabsContent>
 
             <TabsContent value="rating-settings" className="space-y-6 animate-fade-in">
-              <RatingSystemSettings />
+              <RatingSystemAdvancedSettings />
             </TabsContent>
 
             <TabsContent value="analysis" className="space-y-6 animate-fade-in">

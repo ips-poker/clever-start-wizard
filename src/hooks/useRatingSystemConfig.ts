@@ -2,6 +2,11 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 export interface RatingSystemConfig {
+  // Профиль настроек
+  profile_name: string;
+  profile_description?: string;
+  tournament_types?: string[]; // массив типов турниров для которых подходит профиль
+  
   // Базовые настройки
   base_points: number;
   min_rating: number;
@@ -10,54 +15,178 @@ export interface RatingSystemConfig {
   // Бонусные очки
   rebuy_multiplier: number;
   addon_multiplier: number;
+  double_rebuy_multiplier: number; // для двойных ребаев
+  late_entry_penalty: number; // штраф за позднюю регистрацию
   
   // Призовые очки
   prize_coefficient: number; // % от призовой суммы
   min_prize_points: number;
+  max_prize_points: number;
+  prize_distribution_weight: number; // вес распределения призов
   
   // Позиционные бонусы
   enable_position_bonus: boolean;
   first_place_bonus: number;
+  second_place_bonus: number;
+  third_place_bonus: number;
   top_3_bonus: number;
+  top_10_percent_bonus: number;
+  top_25_percent_bonus: number;
+  itm_bonus: number; // бонус за попадание в призы
   
-  // Участие
+  // Участие и время
   participation_bonus: number;
   elimination_penalty: boolean;
   bubble_bonus: number; // бонус за "пузырь"
+  heads_up_bonus: number; // бонус за игру один на один
+  duration_multiplier: boolean; // учет длительности турнира
+  late_finish_bonus: number; // бонус за поздний финиш
   
   // Турнирные модификаторы
   field_size_modifier: boolean;
+  field_size_breakpoints: number[]; // точки изменения модификатора
   buy_in_modifier: boolean;
+  buy_in_tiers: { min: number; max: number; multiplier: number }[];
   
-  // Прогрессия
+  // Специальные модификаторы
+  knockout_bonus: number; // бонус за нокауты (если применимо)
+  guarantee_modifier: boolean; // модификатор для гарантированных турниров
+  satellite_modifier: boolean; // модификатор для сателлитов
+  freeroll_modifier: number; // модификатор для фриролов
+  turbo_modifier: number; // модификатор для турбо турниров
+  deepstack_modifier: number; // модификатор для дипстек турниров
+  
+  // Прогрессия и рейтинг
   progressive_scaling: boolean;
   high_rating_dampening: number;
+  skill_gap_adjustment: boolean; // учет разрыва в скилле
+  rating_confidence_factor: number; // фактор уверенности в рейтинге
+  volatility_control: number; // контроль волатильности изменений
   
-  // Система
+  // Временные модификаторы
+  time_of_day_modifier: boolean;
+  day_of_week_modifier: boolean;
+  holiday_modifier: number;
+  
+  // Система и валидация
   auto_apply: boolean;
   require_confirmation: boolean;
+  min_players_for_rating: number;
+  rating_decay: boolean; // затухание рейтинга при неактивности
+  decay_rate: number;
+  
+  // Весовые коэффициенты для разных факторов
+  weights: {
+    position_weight: number;
+    prize_weight: number;
+    field_size_weight: number;
+    buy_in_weight: number;
+    duration_weight: number;
+    performance_weight: number;
+  };
 }
 
-const DEFAULT_CONFIG: RatingSystemConfig = {
+export interface RatingProfile {
+  id: string;
+  name: string;
+  description: string;
+  config: RatingSystemConfig;
+  tournament_types: string[];
+  is_default: boolean;
+  created_at: string;
+  updated_at: string;
+  usage_count: number;
+  avg_rating_change: number;
+}
+
+export const DEFAULT_CONFIG: RatingSystemConfig = {
+  // Профиль настроек
+  profile_name: "Стандартный",
+  profile_description: "Базовая конфигурация рейтинговой системы RPS",
+  tournament_types: ["standard", "freezeout", "deepstack"],
+  
+  // Базовые настройки
   base_points: 1,
   min_rating: 100,
   max_rating: 5000,
+  
+  // Бонусные очки
   rebuy_multiplier: 1.0,
   addon_multiplier: 1.0,
+  double_rebuy_multiplier: 1.5,
+  late_entry_penalty: 0.2,
+  
+  // Призовые очки
   prize_coefficient: 0.001,
   min_prize_points: 1,
+  max_prize_points: 100,
+  prize_distribution_weight: 1.0,
+  
+  // Позиционные бонусы
   enable_position_bonus: true,
-  first_place_bonus: 2,
+  first_place_bonus: 5,
+  second_place_bonus: 3,
+  third_place_bonus: 2,
   top_3_bonus: 1,
+  top_10_percent_bonus: 0.5,
+  top_25_percent_bonus: 0.2,
+  itm_bonus: 1,
+  
+  // Участие и время
   participation_bonus: 0,
   elimination_penalty: false,
   bubble_bonus: 1,
+  heads_up_bonus: 2,
+  duration_multiplier: false,
+  late_finish_bonus: 1,
+  
+  // Турнирные модификаторы
   field_size_modifier: false,
+  field_size_breakpoints: [50, 100, 200, 500],
   buy_in_modifier: false,
+  buy_in_tiers: [
+    { min: 0, max: 500, multiplier: 0.8 },
+    { min: 501, max: 2000, multiplier: 1.0 },
+    { min: 2001, max: 10000, multiplier: 1.2 },
+    { min: 10001, max: 999999, multiplier: 1.5 }
+  ],
+  
+  // Специальные модификаторы
+  knockout_bonus: 0.5,
+  guarantee_modifier: true,
+  satellite_modifier: false,
+  freeroll_modifier: 0.5,
+  turbo_modifier: 0.9,
+  deepstack_modifier: 1.1,
+  
+  // Прогрессия и рейтинг
   progressive_scaling: false,
   high_rating_dampening: 0.8,
+  skill_gap_adjustment: false,
+  rating_confidence_factor: 1.0,
+  volatility_control: 0.2,
+  
+  // Временные модификаторы
+  time_of_day_modifier: false,
+  day_of_week_modifier: false,
+  holiday_modifier: 1.2,
+  
+  // Система и валидация
   auto_apply: true,
-  require_confirmation: false
+  require_confirmation: false,
+  min_players_for_rating: 8,
+  rating_decay: false,
+  decay_rate: 0.01,
+  
+  // Весовые коэффициенты
+  weights: {
+    position_weight: 1.0,
+    prize_weight: 0.8,
+    field_size_weight: 0.6,
+    buy_in_weight: 0.4,
+    duration_weight: 0.3,
+    performance_weight: 1.0
+  }
 };
 
 export function useRatingSystemConfig() {
