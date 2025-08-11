@@ -82,15 +82,41 @@ export function useRatingProfiles() {
 
   const saveProfile = async (profile: RatingProfile) => {
     try {
-      const { error } = await supabase
+      // Сначала проверяем существует ли запись
+      const { data: existingProfile } = await supabase
         .from('cms_settings')
-        .upsert({
-          setting_key: profile.id,
-          setting_value: JSON.stringify(profile.config),
-          setting_type: 'json',
-          category: 'rating_profiles',
-          description: profile.description
-        });
+        .select('id')
+        .eq('setting_key', profile.id)
+        .eq('category', 'rating_profiles')
+        .single();
+
+      let error;
+      if (existingProfile) {
+        // Обновляем существующую запись
+        const result = await supabase
+          .from('cms_settings')
+          .update({
+            setting_value: JSON.stringify(profile.config),
+            setting_type: 'json',
+            description: profile.description,
+            updated_at: new Date().toISOString()
+          })
+          .eq('setting_key', profile.id)
+          .eq('category', 'rating_profiles');
+        error = result.error;
+      } else {
+        // Создаем новую запись
+        const result = await supabase
+          .from('cms_settings')
+          .insert({
+            setting_key: profile.id,
+            setting_value: JSON.stringify(profile.config),
+            setting_type: 'json',
+            category: 'rating_profiles',
+            description: profile.description
+          });
+        error = result.error;
+      }
 
       if (error) throw error;
 
