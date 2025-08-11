@@ -710,6 +710,241 @@ export default function RatingSystemAdvancedSettingsTooltips() {
               </Card>
             </TabsContent>
 
+            <TabsContent value="prizes" className="space-y-4">
+              <Card className="bg-gradient-card border-poker-border shadow-card">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-poker-text-primary">
+                    <DollarSign className="h-5 w-5 text-poker-accent" />
+                    Призовая система
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <TooltipField id="prize_coefficient" label={`Коэффициент призовых: ${localConfig.prize_coefficient}`} tooltip={tooltips.prize_coefficient}>
+                      <Slider
+                        value={[localConfig.prize_coefficient]}
+                        onValueChange={(values) => setLocalConfig({...localConfig, prize_coefficient: values[0]})}
+                        max={0.01}
+                        min={0}
+                        step={0.0001}
+                      />
+                    </TooltipField>
+
+                    <TooltipField id="min_prize_points" label={`Минимум призовых очков: ${localConfig.min_prize_points}`} tooltip={tooltips.min_prize_points}>
+                      <Slider
+                        value={[localConfig.min_prize_points]}
+                        onValueChange={(values) => setLocalConfig({...localConfig, min_prize_points: values[0]})}
+                        max={20}
+                        min={0}
+                        step={0.5}
+                      />
+                    </TooltipField>
+
+                    <TooltipField id="max_prize_points" label={`Максимум призовых очков: ${localConfig.max_prize_points}`} tooltip={tooltips.max_prize_points}>
+                      <Slider
+                        value={[localConfig.max_prize_points]}
+                        onValueChange={(values) => setLocalConfig({...localConfig, max_prize_points: values[0]})}
+                        max={500}
+                        min={0}
+                        step={5}
+                      />
+                    </TooltipField>
+
+                    <TooltipField id="prize_distribution_weight" label={`Вес распределения призов: ${localConfig.prize_distribution_weight}`} tooltip={tooltips.prize_distribution_weight}>
+                      <Slider
+                        value={[localConfig.prize_distribution_weight]}
+                        onValueChange={(values) => setLocalConfig({...localConfig, prize_distribution_weight: values[0]})}
+                        max={3}
+                        min={0}
+                        step={0.1}
+                      />
+                    </TooltipField>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="modifiers" className="space-y-4">
+              <Card className="bg-gradient-card border-poker-border shadow-card">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-poker-text-primary">
+                    <Zap className="h-5 w-5 text-poker-accent" />
+                    Модификаторы турниров
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <TooltipField id="turbo_modifier" label={`Турбо модификатор: ${localConfig.turbo_modifier}`} tooltip={tooltips.turbo_modifier}>
+                      <Slider
+                        value={[localConfig.turbo_modifier]}
+                        onValueChange={(values) => setLocalConfig({...localConfig, turbo_modifier: values[0]})}
+                        max={2}
+                        min={0}
+                        step={0.1}
+                      />
+                    </TooltipField>
+
+                    <TooltipField id="deepstack_modifier" label={`Дипстек модификатор: ${localConfig.deepstack_modifier}`} tooltip={tooltips.deepstack_modifier}>
+                      <Slider
+                        value={[localConfig.deepstack_modifier]}
+                        onValueChange={(values) => setLocalConfig({...localConfig, deepstack_modifier: values[0]})}
+                        max={2}
+                        min={0}
+                        step={0.1}
+                      />
+                    </TooltipField>
+
+                    <TooltipField id="freeroll_modifier" label={`Фрироль модификатор: ${localConfig.freeroll_modifier}`} tooltip={tooltips.freeroll_modifier}>
+                      <Slider
+                        value={[localConfig.freeroll_modifier]}
+                        onValueChange={(values) => setLocalConfig({...localConfig, freeroll_modifier: values[0]})}
+                        max={2}
+                        min={0}
+                        step={0.1}
+                      />
+                    </TooltipField>
+
+                    <TooltipField id="knockout_bonus" label={`Бонус за нокаут: ${localConfig.knockout_bonus}`} tooltip={tooltips.knockout_bonus}>
+                      <Slider
+                        value={[localConfig.knockout_bonus]}
+                        onValueChange={(values) => setLocalConfig({...localConfig, knockout_bonus: values[0]})}
+                        max={5}
+                        min={0}
+                        step={0.1}
+                      />
+                    </TooltipField>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                        id="field_size_modifier"
+                        checked={localConfig.field_size_modifier}
+                        onCheckedChange={(checked) => setLocalConfig({...localConfig, field_size_modifier: checked})}
+                      />
+                      <Label htmlFor="field_size_modifier" className="text-poker-text-primary">Модификатор размера поля</Label>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <HelpCircle className="h-4 w-4 text-poker-text-muted hover:text-poker-accent cursor-help" />
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="max-w-xs bg-gradient-tooltip border-poker-border">
+                          <p className="text-sm">{tooltips.field_size_modifier}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
+
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                        id="buy_in_modifier"
+                        checked={localConfig.buy_in_modifier}
+                        onCheckedChange={(checked) => setLocalConfig({...localConfig, buy_in_modifier: checked})}
+                      />
+                      <Label htmlFor="buy_in_modifier" className="text-poker-text-primary">Модификатор бай-ина</Label>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <HelpCircle className="h-4 w-4 text-poker-text-muted hover:text-poker-accent cursor-help" />
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="max-w-xs bg-gradient-tooltip border-poker-border">
+                          <p className="text-sm">{tooltips.buy_in_modifier}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
+
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                        id="guarantee_modifier"
+                        checked={localConfig.guarantee_modifier}
+                        onCheckedChange={(checked) => setLocalConfig({...localConfig, guarantee_modifier: checked})}
+                      />
+                      <Label htmlFor="guarantee_modifier" className="text-poker-text-primary">Гарантированный турнир</Label>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <HelpCircle className="h-4 w-4 text-poker-text-muted hover:text-poker-accent cursor-help" />
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="max-w-xs bg-gradient-tooltip border-poker-border">
+                          <p className="text-sm">{tooltips.guarantee_modifier}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="weights" className="space-y-4">
+              <Card className="bg-gradient-card border-poker-border shadow-card">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-poker-text-primary">
+                    <BarChart3 className="h-5 w-5 text-poker-accent" />
+                    Весовые коэффициенты
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <TooltipField id="position_weight" label={`Вес позиции: ${localConfig.weights.position_weight}`} tooltip={tooltips.position_weight}>
+                      <Slider
+                        value={[localConfig.weights.position_weight]}
+                        onValueChange={(values) => setLocalConfig({...localConfig, weights: {...localConfig.weights, position_weight: values[0]}})}
+                        max={3}
+                        min={0}
+                        step={0.1}
+                      />
+                    </TooltipField>
+
+                    <TooltipField id="prize_weight" label={`Вес приза: ${localConfig.weights.prize_weight}`} tooltip={tooltips.prize_weight}>
+                      <Slider
+                        value={[localConfig.weights.prize_weight]}
+                        onValueChange={(values) => setLocalConfig({...localConfig, weights: {...localConfig.weights, prize_weight: values[0]}})}
+                        max={3}
+                        min={0}
+                        step={0.1}
+                      />
+                    </TooltipField>
+
+                    <TooltipField id="field_size_weight" label={`Вес размера поля: ${localConfig.weights.field_size_weight}`} tooltip={tooltips.field_size_weight}>
+                      <Slider
+                        value={[localConfig.weights.field_size_weight]}
+                        onValueChange={(values) => setLocalConfig({...localConfig, weights: {...localConfig.weights, field_size_weight: values[0]}})}
+                        max={3}
+                        min={0}
+                        step={0.1}
+                      />
+                    </TooltipField>
+
+                    <TooltipField id="buy_in_weight" label={`Вес бай-ина: ${localConfig.weights.buy_in_weight}`} tooltip={tooltips.buy_in_weight}>
+                      <Slider
+                        value={[localConfig.weights.buy_in_weight]}
+                        onValueChange={(values) => setLocalConfig({...localConfig, weights: {...localConfig.weights, buy_in_weight: values[0]}})}
+                        max={3}
+                        min={0}
+                        step={0.1}
+                      />
+                    </TooltipField>
+
+                    <TooltipField id="duration_weight" label={`Вес длительности: ${localConfig.weights.duration_weight}`} tooltip={tooltips.duration_weight}>
+                      <Slider
+                        value={[localConfig.weights.duration_weight]}
+                        onValueChange={(values) => setLocalConfig({...localConfig, weights: {...localConfig.weights, duration_weight: values[0]}})}
+                        max={3}
+                        min={0}
+                        step={0.1}
+                      />
+                    </TooltipField>
+
+                    <TooltipField id="performance_weight" label={`Вес производительности: ${localConfig.weights.performance_weight}`} tooltip={tooltips.performance_weight}>
+                      <Slider
+                        value={[localConfig.weights.performance_weight]}
+                        onValueChange={(values) => setLocalConfig({...localConfig, weights: {...localConfig.weights, performance_weight: values[0]}})}
+                        max={3}
+                        min={0}
+                        step={0.1}
+                      />
+                    </TooltipField>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
             {/* Остальные вкладки аналогично с TooltipField */}
           </Tabs>
         )}
