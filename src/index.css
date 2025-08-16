@@ -51,6 +51,11 @@
     --poker-text-primary: 220 26% 14%;      /* Main text color */
     --poker-text-secondary: 220 16% 46%;    /* Secondary text */
     --poker-text-muted: 220 14% 71%;        /* Muted text */
+    --poker-gold: 43 100% 65%;              /* Gold accent */
+    --poker-steel: 210 15% 45%;             /* Steel blue */
+    --poker-charcoal: 220 26% 14%;          /* Dark charcoal */
+    --poker-cream: 45 100% 96%;             /* Cream white */
+    --poker-platinum: 210 10% 85%;          /* Platinum silver */
     
     /* Professional Gradients - Light Theme */
     --gradient-primary: linear-gradient(135deg, hsl(220 14% 99%) 0%, hsl(220 20% 96%) 50%, hsl(220 14% 93%) 100%);
@@ -63,6 +68,9 @@
     --gradient-border: linear-gradient(135deg, hsl(220 14% 91%) 0%, hsl(220 20% 88%) 100%);
     --gradient-button: linear-gradient(135deg, hsl(220 26% 14%) 0%, hsl(220 26% 18%) 100%);
     --gradient-surface: linear-gradient(135deg, hsl(220 14% 99%) 0%, hsl(220 20% 97%) 100%);
+    --gradient-steel: linear-gradient(135deg, hsl(210 15% 45%) 0%, hsl(210 15% 50%) 100%);
+    --gradient-charcoal: linear-gradient(135deg, hsl(220 26% 14%) 0%, hsl(220 26% 18%) 100%);
+    --gradient-overlay: linear-gradient(135deg, rgba(0, 0, 0, 0.3) 0%, rgba(0, 0, 0, 0.6) 100%);
     
     /* Professional Shadows - Light Theme */
     --shadow-minimal: 0 1px 3px hsl(220 26% 14% / 0.05);
@@ -74,6 +82,9 @@
     --shadow-accent: 0 4px 16px hsl(260 100% 65% / 0.25);
     --shadow-success: 0 4px 16px hsl(142 71% 45% / 0.25);
     --shadow-inset: inset 0 1px 3px hsl(220 26% 14% / 0.06);
+    --shadow-elegant: 0 8px 32px hsl(220 26% 14% / 0.15);
+    --shadow-gold: 0 4px 16px hsl(43 100% 65% / 0.25);
+    --shadow-charcoal: 0 4px 16px hsl(220 26% 14% / 0.25);
     
     /* Typography Enhancements */
     --font-weight-light: 300;
