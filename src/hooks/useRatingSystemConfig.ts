@@ -101,91 +101,92 @@ export interface RatingProfile {
 
 export const DEFAULT_CONFIG: RatingSystemConfig = {
   // Профиль настроек
-  profile_name: "Стандартный",
-  profile_description: "Базовая конфигурация рейтинговой системы RPS",
-  tournament_types: ["standard", "freezeout", "deepstack"],
+  profile_name: "Профессиональный",
+  profile_description: "Продвинутая конфигурация для профессиональных покерных турниров",
+  tournament_types: ["standard", "freezeout", "deepstack", "turbo"],
   
-  // Базовые настройки
-  base_points: 1,
+  // Базовые настройки (улучшенные для профессионального использования)
+  base_points: 2,
   min_rating: 100,
   max_rating: 5000,
   
-  // Бонусные очки
-  rebuy_multiplier: 1.0,
-  addon_multiplier: 1.0,
-  double_rebuy_multiplier: 1.5,
-  late_entry_penalty: 0.2,
+  // Бонусные очки (настроены для баланса)
+  rebuy_multiplier: 1.2,
+  addon_multiplier: 1.1,
+  double_rebuy_multiplier: 1.8,
+  late_entry_penalty: 0.3,
   
-  // Призовые очки
-  prize_coefficient: 0.001,
-  min_prize_points: 1,
-  max_prize_points: 100,
-  prize_distribution_weight: 1.0,
+  // Призовые очки (оптимизированы)
+  prize_coefficient: 0.002,
+  min_prize_points: 2,
+  max_prize_points: 150,
+  prize_distribution_weight: 1.2,
   
-  // Позиционные бонусы
+  // Позиционные бонусы (включены для профессионального использования)
   enable_position_bonus: true,
-  first_place_bonus: 5,
-  second_place_bonus: 3,
-  third_place_bonus: 2,
-  top_3_bonus: 1,
-  top_10_percent_bonus: 0.5,
-  top_25_percent_bonus: 0.2,
-  itm_bonus: 1,
+  first_place_bonus: 8,
+  second_place_bonus: 5,
+  third_place_bonus: 3,
+  top_3_bonus: 2,
+  top_10_percent_bonus: 1,
+  top_25_percent_bonus: 0.5,
+  itm_bonus: 2,
   
   // Участие и время
-  participation_bonus: 0,
+  participation_bonus: 1,
   elimination_penalty: false,
-  bubble_bonus: 1,
-  heads_up_bonus: 2,
-  duration_multiplier: false,
-  late_finish_bonus: 1,
+  bubble_bonus: 2,
+  heads_up_bonus: 3,
+  duration_multiplier: true,
+  late_finish_bonus: 1.5,
   
-  // Турнирные модификаторы
-  field_size_modifier: false,
-  field_size_breakpoints: [50, 100, 200, 500],
-  buy_in_modifier: false,
+  // Турнирные модификаторы (активированы)
+  field_size_modifier: true,
+  field_size_breakpoints: [25, 50, 100, 200, 500],
+  buy_in_modifier: true,
   buy_in_tiers: [
     { min: 0, max: 500, multiplier: 0.8 },
-    { min: 501, max: 2000, multiplier: 1.0 },
-    { min: 2001, max: 10000, multiplier: 1.2 },
-    { min: 10001, max: 999999, multiplier: 1.5 }
+    { min: 501, max: 1500, multiplier: 1.0 },
+    { min: 1501, max: 5000, multiplier: 1.3 },
+    { min: 5001, max: 15000, multiplier: 1.5 },
+    { min: 15001, max: 999999, multiplier: 1.8 }
   ],
   
   // Специальные модификаторы
-  knockout_bonus: 0.5,
+  knockout_bonus: 1.0,
   guarantee_modifier: true,
-  satellite_modifier: false,
-  freeroll_modifier: 0.5,
-  turbo_modifier: 0.9,
-  deepstack_modifier: 1.1,
+  satellite_modifier: true,
+  freeroll_modifier: 0.6,
+  turbo_modifier: 0.85,
+  deepstack_modifier: 1.2,
   
-  // Прогрессия и рейтинг
-  progressive_scaling: false,
-  high_rating_dampening: 0.8,
-  skill_gap_adjustment: false,
-  rating_confidence_factor: 1.0,
-  volatility_control: 0.2,
+  // Прогрессия и рейтинг (продвинутые настройки)
+  progressive_scaling: true,
+  high_rating_dampening: 0.75,
+  skill_gap_adjustment: true,
+  rating_confidence_factor: 1.1,
+  volatility_control: 0.15,
   
   // Временные модификаторы
   time_of_day_modifier: false,
   day_of_week_modifier: false,
-  holiday_modifier: 1.2,
+  holiday_modifier: 1.1,
   
   // Система и валидация
-  auto_apply: true,
-  require_confirmation: false,
-  min_players_for_rating: 8,
-  rating_decay: false,
-  decay_rate: 0.01,
+  auto_apply: false,
+  require_confirmation: true,
+  min_players_for_rating: 6,
+  rating_decay: true,
+  decay_rate: 0.005,
   
-  // Весовые коэффициенты
+  // Весовые коэффициенты (сбалансированные)
   weights: {
-    position_weight: 1.0,
-    prize_weight: 0.8,
-    field_size_weight: 0.6,
-    buy_in_weight: 0.4,
-    duration_weight: 0.3,
-    performance_weight: 1.0
+    position_weight: 1.2,
+    prize_weight: 1.0,
+    field_size_weight: 0.8,
+    buy_in_weight: 0.6,
+    duration_weight: 0.4,
+    performance_weight: 1.3
   }
 };
 

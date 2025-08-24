@@ -210,20 +210,28 @@ function calculateRPSChanges(players: Player[], results: TournamentResult[], tou
 
   // Defaults for configuration (fallback if no config provided)
   const config = {
-    base_points: ratingConfig?.base_points || 1,
+    base_points: ratingConfig?.base_points || 2,
     min_rating: ratingConfig?.min_rating || 100,
-    rebuy_multiplier: ratingConfig?.rebuy_multiplier || 1.0,
-    addon_multiplier: ratingConfig?.addon_multiplier || 1.0,
-    prize_coefficient: ratingConfig?.prize_coefficient || 0.001,
-    min_prize_points: ratingConfig?.min_prize_points || 1,
-    enable_position_bonus: ratingConfig?.enable_position_bonus || false,
-    first_place_bonus: ratingConfig?.first_place_bonus || 0,
-    second_place_bonus: ratingConfig?.second_place_bonus || 0,
-    third_place_bonus: ratingConfig?.third_place_bonus || 0,
-    participation_bonus: ratingConfig?.participation_bonus || 0
+    rebuy_multiplier: ratingConfig?.rebuy_multiplier || 1.2,
+    addon_multiplier: ratingConfig?.addon_multiplier || 1.1,
+    prize_coefficient: ratingConfig?.prize_coefficient || 0.002,
+    min_prize_points: ratingConfig?.min_prize_points || 2,
+    enable_position_bonus: ratingConfig?.enable_position_bonus !== false,
+    first_place_bonus: ratingConfig?.first_place_bonus || 8,
+    second_place_bonus: ratingConfig?.second_place_bonus || 5,
+    third_place_bonus: ratingConfig?.third_place_bonus || 3,
+    top_3_bonus: ratingConfig?.top_3_bonus || 2,
+    itm_bonus: ratingConfig?.itm_bonus || 2,
+    bubble_bonus: ratingConfig?.bubble_bonus || 2,
+    participation_bonus: ratingConfig?.participation_bonus || 1,
+    field_size_modifier: ratingConfig?.field_size_modifier || false,
+    buy_in_modifier: ratingConfig?.buy_in_modifier || false,
+    progressive_scaling: ratingConfig?.progressive_scaling || false,
+    high_rating_dampening: ratingConfig?.high_rating_dampening || 0.75,
+    volatility_control: ratingConfig?.volatility_control || 0.15
   }
 
-  console.log('Using RPS configuration:', config)
+  console.log('Using enhanced RPS configuration:', config)
 
   // ВАЖНО: Сортируем по позиции (1-е место это позиция 1, последнее место - максимальная позиция)
   // Позиции должны быть присвоены по принципу: кто последний вылетел = 1-е место
@@ -274,10 +282,16 @@ function calculateRPSChanges(players: Player[], results: TournamentResult[], tou
     if (config.enable_position_bonus) {
       if (position === 1) {
         rpsChange += config.first_place_bonus
+        console.log(`🥇 First place bonus: +${config.first_place_bonus} points`)
       } else if (position === 2) {
-        rpsChange += config.second_place_bonus  
+        rpsChange += config.second_place_bonus
+        console.log(`🥈 Second place bonus: +${config.second_place_bonus} points`)
       } else if (position === 3) {
         rpsChange += config.third_place_bonus
+        console.log(`🥉 Third place bonus: +${config.third_place_bonus} points`)
+      } else if (position <= 3) {
+        rpsChange += config.top_3_bonus
+        console.log(`🏆 Top 3 bonus: +${config.top_3_bonus} points`)
       }
     }
 
@@ -286,13 +300,52 @@ function calculateRPSChanges(players: Player[], results: TournamentResult[], tou
       const prizePercentage = payoutStructure[position - 1]
       const prizeAmount = (totalPrizePool * prizePercentage) / 100
       
+      // ITM бонус
+      rpsChange += config.itm_bonus
+      
       // Используем конфигурацию для расчета призовых очков
       const prizePoints = Math.max(config.min_prize_points, Math.floor(prizeAmount * config.prize_coefficient))
       rpsChange += prizePoints
       
-      console.log(`🏆 ПРИЗОВЫЕ ОЧКИ для позиции ${position}: ${prizePercentage}% от ${totalPrizePool} = ${prizeAmount}₽, очки: ${prizePoints} (коэффициент ${config.prize_coefficient})`)
+      console.log(`🏆 ПРИЗОВЫЕ ОЧКИ для позиции ${position}: ${prizePercentage}% от ${totalPrizePool} = ${prizeAmount}₽, очки: ${prizePoints} (коэффициент ${config.prize_coefficient}) + ITM бонус: ${config.itm_bonus}`)
     } else {
       console.log(`❌ Позиция ${position} не входит в призовые места (всего призовых мест: ${payoutStructure.length})`)
+      
+      // Бонус за "пузырь" (первый не получивший призовые)
+      if (position === payoutStructure.length + 1) {
+        rpsChange += config.bubble_bonus
+        console.log(`💥 Bubble bonus: +${config.bubble_bonus} points`)
+      }
+    }
+
+    // Модификаторы размера поля
+    if (config.field_size_modifier) {
+      const fieldSizeMultiplier = 1 + (Math.log10(results.length) / 10)
+      rpsChange = Math.floor(rpsChange * fieldSizeMultiplier)
+      console.log(`📊 Field size modifier applied: x${fieldSizeMultiplier.toFixed(2)}`)
+    }
+
+    // Модификаторы бай-ина
+    if (config.buy_in_modifier && tournament.buy_in > 0) {
+      const buyInMultiplier = 1 + (Math.log10(tournament.buy_in || 1000) / 20)
+      rpsChange = Math.floor(rpsChange * buyInMultiplier)
+      console.log(`💰 Buy-in modifier applied: x${buyInMultiplier.toFixed(2)}`)
+    }
+
+    // Прогрессивное масштабирование для высоких рейтингов
+    if (config.progressive_scaling && player.elo_rating > 1000) {
+      const scalingFactor = config.high_rating_dampening
+      rpsChange = Math.floor(rpsChange * scalingFactor)
+      console.log(`⚖️ High rating dampening applied: x${scalingFactor}`)
+    }
+
+    // Контроль волатильности
+    if (config.volatility_control > 0) {
+      const maxChange = Math.max(5, player.elo_rating * config.volatility_control)
+      if (Math.abs(rpsChange) > maxChange) {
+        rpsChange = rpsChange > 0 ? maxChange : -maxChange
+        console.log(`🔄 Volatility control applied, capped at: ±${maxChange}`)
+      }
     }
 
     // Рейтинг не может быть меньше минимального (используем конфигурацию)

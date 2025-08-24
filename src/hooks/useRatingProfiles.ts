@@ -60,10 +60,10 @@ export function useRatingProfiles() {
   const createDefaultProfile = async () => {
     const defaultProfile: RatingProfile = {
       id: 'default_profile',
-      name: 'Стандартный профиль',
-      description: 'Базовая конфигурация рейтинговой системы RPS',
+      name: 'Профессиональный профиль',
+      description: 'Продвинутая конфигурация рейтинговой системы для профессиональных турниров',
       config: DEFAULT_CONFIG,
-      tournament_types: ['standard', 'freezeout', 'deepstack'],
+      tournament_types: ['standard', 'freezeout', 'deepstack', 'turbo'],
       is_default: true,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),

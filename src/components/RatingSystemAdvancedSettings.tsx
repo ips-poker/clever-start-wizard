@@ -40,6 +40,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import RatingSystemProfilesManager from './RatingSystemProfilesManager';
 
 interface CalculationPreview {
   scenario: string;
@@ -439,14 +440,29 @@ export default function RatingSystemAdvancedSettings() {
 
       {localConfig && (
         <Tabs defaultValue="basic" className="w-full">
-          <TabsList className="grid w-full grid-cols-6">
+          <TabsList className="grid w-full grid-cols-7">
             <TabsTrigger value="basic">Базовые</TabsTrigger>
             <TabsTrigger value="bonuses">Бонусы</TabsTrigger>
             <TabsTrigger value="prizes">Призовые</TabsTrigger>
             <TabsTrigger value="modifiers">Модификаторы</TabsTrigger>
             <TabsTrigger value="weights">Веса</TabsTrigger>
+            <TabsTrigger value="profiles">Профили</TabsTrigger>
             <TabsTrigger value="preview">Превью</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="profiles" className="space-y-4">
+            <Card className="bg-gradient-card border-poker-border shadow-card">
+              <CardHeader>
+                <CardTitle className="text-poker-text-primary">Менеджер профилей</CardTitle>
+                <CardDescription className="text-poker-text-secondary">
+                  Управление профилями рейтинговой системы
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <RatingSystemProfilesManager />
+              </CardContent>
+            </Card>
+          </TabsContent>
 
           <TabsContent value="preview" className="space-y-4">
             <Card className="bg-gradient-card border-poker-border shadow-card">

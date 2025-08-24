@@ -47,6 +47,7 @@ import TournamentSyncManager from "@/components/TournamentSyncManager";
 import RatingSystemTest from "@/components/RatingSystemTest";
 import TournamentAnalysisAndRating from "@/components/TournamentAnalysisAndRating";
 import RatingSystemAdvancedSettingsTooltips from "@/components/RatingSystemAdvancedSettingsTooltips";
+import RatingSystemIntegrationTest from "@/components/RatingSystemIntegrationTest";
 import { useVoiceAnnouncements } from "@/hooks/useVoiceAnnouncements";
 
 // Используем типы из базы данных
