@@ -5,7 +5,7 @@ import { Trophy, Users, Calendar, Star, TrendingUp, Shield, Award, Play } from "
 import { Link } from "react-router-dom";
 import luxuryPokerHero from "@/assets/luxury-poker-hero.jpg";
 import pokerChipsBg from "@/assets/poker-chips-bg.jpg";
-import ipsLogo from "/lovable-uploads/c77304bf-5309-4bdc-afcc-a81c8d3ff6c2.png";
+import epcLogo from "/lovable-uploads/30d01ad9-7079-44b2-b8ef-44eb90d9e715.png";
 import { useCMSContent } from "@/hooks/useCMSContent";
 
 export function Hero() {
@@ -42,23 +42,23 @@ export function Hero() {
                {/* Logo and Title Section */}
                <div className="flex flex-col lg:flex-row items-center lg:items-start text-center lg:text-left space-y-4 lg:space-y-0 lg:space-x-8 animate-slide-right [animation-delay:0.6s]">
                  <div className="w-20 h-20 lg:w-24 lg:h-24 bg-white/20 rounded-2xl border border-white/40 shadow-lg flex items-center justify-center p-3 lg:p-4 flex-shrink-0">
-                  <img 
-                    src={ipsLogo} 
-                    alt="IPS Logo" 
-                    className="w-full h-full object-contain filter drop-shadow-xl"
-                  />
+                   <img 
+                     src={epcLogo} 
+                     alt="EPC Logo" 
+                     className="w-full h-full object-contain filter drop-shadow-xl"
+                   />
                 </div>
                  <div className="flex-1">
                    <h1 className="text-3xl sm:text-4xl lg:text-6xl font-bold leading-tight tracking-tight">
-                     <span className="text-white block leading-none">
-                       {getContent('hero_title', 'IPS')}
-                     </span>
-                     <span className="block text-poker-accent-light text-xl sm:text-2xl lg:text-4xl mt-1 lg:mt-2 font-semibold leading-tight">
-                       {getContent('hero_subtitle', 'International')}
-                     </span>
-                     <span className="block text-lg sm:text-xl lg:text-3xl font-medium text-white/90 tracking-wide leading-tight mt-1">
-                       {getContent('hero_subtitle_2', 'Poker Style')}
-                     </span>
+                      <span className="text-white block leading-none" style={{ fontFamily: 'Sintony, sans-serif' }}>
+                        {getContent('hero_title', 'EPC')}
+                      </span>
+                      <span className="block text-poker-accent-light text-xl sm:text-2xl lg:text-4xl mt-1 lg:mt-2 font-semibold leading-tight" style={{ fontFamily: 'Sintony, sans-serif' }}>
+                        {getContent('hero_subtitle', 'Event Poker')}
+                      </span>
+                      <span className="block text-lg sm:text-xl lg:text-3xl font-medium text-white/90 tracking-wide leading-tight mt-1" style={{ fontFamily: 'Sintony, sans-serif' }}>
+                        {getContent('hero_subtitle_2', 'Club')}
+                      </span>
                    </h1>
                  </div>
               </div>

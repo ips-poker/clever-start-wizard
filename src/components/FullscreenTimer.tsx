@@ -18,7 +18,7 @@ import {
   Mic,
   MicOff
 } from "lucide-react";
-import ipsLogo from "/lovable-uploads/c77304bf-5309-4bdc-afcc-a81c8d3ff6c2.png";
+import epcLogo from "/lovable-uploads/30d01ad9-7079-44b2-b8ef-44eb90d9e715.png";
 import telegramQr from "@/assets/telegram-qr.png";
 import { useVoiceAnnouncements } from "@/hooks/useVoiceAnnouncements";
 
@@ -239,14 +239,14 @@ const FullscreenTimer = ({
         <div className="flex items-center space-x-3">
           <div className="w-20 h-20 bg-white rounded-lg flex items-center justify-center shadow-md border border-gray-200">
             <img 
-              src={ipsLogo} 
-              alt="IPS Logo" 
+              src={epcLogo} 
+              alt="EPC Logo" 
               className="w-12 h-12 object-contain"
             />
           </div>
           <div className="flex flex-col">
-            <span className="text-lg font-bold text-gray-800">IPS</span>
-            <span className="text-xs text-gray-500">International Poker Series</span>
+            <span className="text-lg font-bold text-gray-800" style={{ fontFamily: 'Sintony, sans-serif' }}>EPC</span>
+            <span className="text-xs text-gray-500" style={{ fontFamily: 'Sintony, sans-serif' }}>Event Poker Club</span>
           </div>
         </div>
 
