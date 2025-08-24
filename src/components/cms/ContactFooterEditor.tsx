@@ -106,9 +106,9 @@ export function ContactFooterEditor() {
       },
       footer: {
         brand_name: 'IPS',
-        brand_subtitle: 'International Poker Club',
+        brand_subtitle: 'International Poker Style',
         brand_description: 'Элитный покерный клуб с рейтинговой системой. Профессиональные турниры и высокий уровень игры.',
-        copyright: '© 2024 IPS International Poker Club. Все права защищены.',
+        copyright: '© 2024 IPS International Poker Style. Все права защищены.',
         legal_notice: 'Игра проходит в рамках действующего законодательства без денежных призов.'
       },
       services: {

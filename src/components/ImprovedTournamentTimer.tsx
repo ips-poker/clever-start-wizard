@@ -60,10 +60,6 @@ const ImprovedTournamentTimer = ({
     volume: voiceSettings.volume_level / 100
   });
 
-  // Debug toggle: set localStorage.DEBUG = 'true' to enable verbose logs
-  const DEBUG = localStorage.getItem('DEBUG') === 'true';
-  const dlog = (...args: any[]) => { if (DEBUG) console.log(...args); };
-
   useEffect(() => {
     calculateChipStatistics();
   }, [registrations]);
@@ -78,7 +74,7 @@ const ImprovedTournamentTimer = ({
     if (!timerActive || !currentTime || voiceSettingsLoading) return;
 
     const checkAndAnnounce = async () => {
-      dlog('Voice check:', {
+      console.log('Voice check:', {
         voice_enabled: voiceSettings.voice_enabled,
         currentTime,
         warning_intervals: voiceSettings.warning_intervals,
@@ -88,34 +84,34 @@ const ImprovedTournamentTimer = ({
       // Объявления времени согласно настройкам пользователя (только если голосовые уведомления включены)
       // Проверяем голосовые предупреждения только если они включены
       if (!voiceSettingsLoading && voiceSettings.voice_enabled && voiceSettings.warning_intervals) {
-        dlog('⏰ Timer check - currentTime:', currentTime, 'lastAnnounced:', lastAnnouncedTime);
-        dlog('⏰ Warning intervals settings:', voiceSettings.warning_intervals);
+        console.log('⏰ Timer check - currentTime:', currentTime, 'lastAnnounced:', lastAnnouncedTime);
+        console.log('⏰ Warning intervals settings:', voiceSettings.warning_intervals);
         
         if (currentTime === 300 && lastAnnouncedTime !== 300 && voiceSettings.warning_intervals.five_minutes) {
-          dlog('Announcing 5 minutes - settings allow:', voiceSettings.warning_intervals.five_minutes);
+          console.log('Announcing 5 minutes - settings allow:', voiceSettings.warning_intervals.five_minutes);
           voiceAnnouncements.announceTimeWarning(300);
           setLastAnnouncedTime(300);
         } else if (currentTime === 120 && lastAnnouncedTime !== 120 && voiceSettings.warning_intervals.two_minutes) {
-          dlog('Announcing 2 minutes - settings allow:', voiceSettings.warning_intervals.two_minutes);
+          console.log('Announcing 2 minutes - settings allow:', voiceSettings.warning_intervals.two_minutes);
           voiceAnnouncements.announceTimeWarning(120);
           setLastAnnouncedTime(120);
         } else if (currentTime === 60 && lastAnnouncedTime !== 60 && voiceSettings.warning_intervals.one_minute) {
-          dlog('Announcing 1 minute - settings allow:', voiceSettings.warning_intervals.one_minute);
+          console.log('Announcing 1 minute - settings allow:', voiceSettings.warning_intervals.one_minute);
           voiceAnnouncements.announceTimeWarning(60);
           setLastAnnouncedTime(60);
         } else if (currentTime === 30 && lastAnnouncedTime !== 30 && voiceSettings.warning_intervals.thirty_seconds) {
-          dlog('Announcing 30 seconds - settings allow:', voiceSettings.warning_intervals.thirty_seconds);
+          console.log('Announcing 30 seconds - settings allow:', voiceSettings.warning_intervals.thirty_seconds);
           voiceAnnouncements.announceTimeWarning(30);
           setLastAnnouncedTime(30);
         } else if (currentTime === 10 && lastAnnouncedTime !== 10 && voiceSettings.warning_intervals.ten_seconds) {
-          dlog('Announcing 10 seconds - settings allow:', voiceSettings.warning_intervals.ten_seconds);
+          console.log('Announcing 10 seconds - settings allow:', voiceSettings.warning_intervals.ten_seconds);
           voiceAnnouncements.announceTimeWarning(10);
           setLastAnnouncedTime(10);
         } else if (currentTime === 5 && lastAnnouncedTime !== 5) {
-          dlog('Time is 5 seconds, but this should not trigger minute announcement');
+          console.log('Time is 5 seconds, but this should not trigger minute announcement');
         }
       } else {
-        dlog('Voice announcements disabled. Voice enabled:', voiceSettings.voice_enabled, 'Loading:', voiceSettingsLoading, 'Warning intervals:', voiceSettings.warning_intervals);
+        console.log('Voice announcements disabled. Voice enabled:', voiceSettings.voice_enabled, 'Loading:', voiceSettingsLoading, 'Warning intervals:', voiceSettings.warning_intervals);
       }
 
       // Проверяем пользовательские интервалы

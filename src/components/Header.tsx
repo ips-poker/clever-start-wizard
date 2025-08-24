@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Menu, X, Spade, LogIn, Settings, LogOut, User, Trophy } from "lucide-react";
-import epcLogo from "@/assets/epc-logo.png";
 import { useAuth } from "@/hooks/useAuth";
 import {
   DropdownMenu,
@@ -41,18 +40,18 @@ export function Header() {
               {/* Custom logo with brand colors */}
               <div className="w-12 h-12 bg-white rounded-lg flex items-center justify-center shadow-elegant group-hover:shadow-gold transition-all duration-500 border border-poker-platinum/20 group-hover:border-poker-gold/40">
                 <img 
-                  src={epcLogo}
-                  alt="EPC Logo" 
+                  src="/lovable-uploads/c77304bf-5309-4bdc-afcc-a81c8d3ff6c2.png" 
+                  alt="IPS Logo" 
                   className="w-8 h-8 object-contain group-hover:scale-110 transition-transform duration-300"
                 />
               </div>
             </div>
             <div className="flex flex-col">
-              <span className="text-2xl font-black text-poker-gold tracking-tight font-sintony">
-                EPC
+              <span className="text-2xl font-black text-poker-gold tracking-tight">
+                IPS
               </span>
-              <span className="text-xs text-muted-foreground -mt-1 font-medium tracking-wide font-sintony">
-                Event Poker Club
+              <span className="text-xs text-muted-foreground -mt-1 font-medium tracking-wide">
+                International Poker Style
               </span>
             </div>
           </Link>

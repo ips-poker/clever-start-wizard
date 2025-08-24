@@ -536,7 +536,7 @@ export function TournamentInvitationGenerator() {
                     </div>
                     <div>
                       <h1 className="text-2xl sm:text-4xl font-light text-gray-800 leading-none tracking-tight">IPS</h1>
-                      <p className="text-lg sm:text-xl text-gray-600 font-light">International Poker Club</p>
+                      <p className="text-lg sm:text-xl text-gray-600 font-light">International Poker Style</p>
                       <p className="text-xs sm:text-sm text-gray-500 font-light">Премиальный покерный клуб</p>
                     </div>
                   </div>

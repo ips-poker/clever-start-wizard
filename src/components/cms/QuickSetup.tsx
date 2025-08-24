@@ -14,7 +14,7 @@ export function QuickSetup() {
     // Главная страница
     { page_slug: 'home', content_key: 'hero_title', content_type: 'text', content_value: 'IPS', is_active: true },
     { page_slug: 'home', content_key: 'hero_subtitle', content_type: 'text', content_value: 'International', is_active: true },
-    { page_slug: 'home', content_key: 'hero_subtitle_2', content_type: 'text', content_value: 'Poker Club', is_active: true },
+    { page_slug: 'home', content_key: 'hero_subtitle_2', content_type: 'text', content_value: 'Poker Style', is_active: true },
     { page_slug: 'home', content_key: 'hero_badge', content_type: 'text', content_value: 'Премиальный покерный клуб', is_active: true },
     { page_slug: 'home', content_key: 'hero_description', content_type: 'text', content_value: 'Премиальный покерный клуб с рейтинговой системой ELO. Развивайте навыки в элегантной атмосфере среди профессиональных игроков.', is_active: true },
     { page_slug: 'home', content_key: 'feature_1', content_type: 'text', content_value: 'Честная игра', is_active: true },
@@ -38,9 +38,9 @@ export function QuickSetup() {
     
     // Футер
     { page_slug: 'footer', content_key: 'brand_name', content_type: 'text', content_value: 'IPS', is_active: true },
-    { page_slug: 'footer', content_key: 'brand_subtitle', content_type: 'text', content_value: 'International Poker Club', is_active: true },
+    { page_slug: 'footer', content_key: 'brand_subtitle', content_type: 'text', content_value: 'International Poker Style', is_active: true },
     { page_slug: 'footer', content_key: 'brand_description', content_type: 'text', content_value: 'Элитный покерный клуб с рейтинговой системой. Профессиональные турниры и высокий уровень игры.', is_active: true },
-    { page_slug: 'footer', content_key: 'copyright', content_type: 'text', content_value: '© 2024 IPS International Poker Club. Все права защищены.', is_active: true },
+    { page_slug: 'footer', content_key: 'copyright', content_type: 'text', content_value: '© 2024 IPS International Poker Style. Все права защищены.', is_active: true },
     { page_slug: 'footer', content_key: 'legal_notice', content_type: 'text', content_value: 'Игра проходит в рамках действующего законодательства без денежных призов.', is_active: true },
     
     // Сервисы

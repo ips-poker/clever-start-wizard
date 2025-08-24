@@ -18,7 +18,7 @@ import {
   Mic,
   MicOff
 } from "lucide-react";
-import epcLogo from "@/assets/epc-logo.png";
+import ipsLogo from "/lovable-uploads/c77304bf-5309-4bdc-afcc-a81c8d3ff6c2.png";
 import telegramQr from "@/assets/telegram-qr.png";
 import { useVoiceAnnouncements } from "@/hooks/useVoiceAnnouncements";
 
@@ -98,10 +98,6 @@ const FullscreenTimer = ({
     voice: 'Aria',
     volume: 0.8
   });
-
-  // Debug toggle: set localStorage.DEBUG = 'true' to enable verbose logs
-  const DEBUG = localStorage.getItem('DEBUG') === 'true';
-  const dlog = (...args: any[]) => { if (DEBUG) console.log(...args); };
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -196,7 +192,7 @@ const FullscreenTimer = ({
   const levelsUntilBreak = nextBreakLevel ? nextBreakLevel.level - tournament.current_level : null;
   
   // Отладка для понимания проблемы
-  dlog('🔍 FullscreenTimer Debug:', {
+  console.log('🔍 FullscreenTimer Debug:', {
     blindLevelsCount: blindLevels.length,
     currentLevel: tournament.current_level,
     nextBreakLevel: nextBreakLevel?.level,
@@ -207,7 +203,7 @@ const FullscreenTimer = ({
   // Примерное время до перерыва (текущий таймер + время оставшихся уровней)
   const calculateTimeToBreak = () => {
     if (!nextBreakLevel || !levelsUntilBreak || blindLevels.length === 0) {
-      dlog('⚠️ Не могу рассчитать время до перерыва:', { nextBreakLevel: !!nextBreakLevel, levelsUntilBreak, blindLevelsCount: blindLevels.length });
+      console.log('⚠️ Не могу рассчитать время до перерыва:', { nextBreakLevel: !!nextBreakLevel, levelsUntilBreak, blindLevelsCount: blindLevels.length });
       return null;
     }
     
@@ -217,10 +213,10 @@ const FullscreenTimer = ({
       const levelInfo = blindLevels.find(l => l.level === tournament.current_level + i);
       const levelDuration = levelInfo?.duration || 1200; // по умолчанию 20 минут
       timeToBreak += levelDuration;
-      dlog(`📊 Уровень ${tournament.current_level + i}: +${levelDuration}с`);
+      console.log(`📊 Уровень ${tournament.current_level + i}: +${levelDuration}с`);
     }
     
-    dlog('⏰ Время до перерыва рассчитано:', timeToBreak);
+    console.log('⏰ Время до перерыва рассчитано:', timeToBreak);
     return timeToBreak;
   };
   
@@ -243,14 +239,14 @@ const FullscreenTimer = ({
         <div className="flex items-center space-x-3">
           <div className="w-20 h-20 bg-white rounded-lg flex items-center justify-center shadow-md border border-gray-200">
             <img 
-              src={epcLogo} 
-              alt="EPC Logo" 
+              src={ipsLogo} 
+              alt="IPS Logo" 
               className="w-12 h-12 object-contain"
             />
           </div>
           <div className="flex flex-col">
-            <span className="text-lg font-bold text-gray-800 font-sintony">EPC</span>
-            <span className="text-xs text-gray-500 font-sintony">Event Poker Club</span>
+            <span className="text-lg font-bold text-gray-800">IPS</span>
+            <span className="text-xs text-gray-500">International Poker Series</span>
           </div>
         </div>
 
