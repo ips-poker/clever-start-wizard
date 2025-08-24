@@ -49,17 +49,34 @@ const TournamentAnalysisAndRating = () => {
   const analyzeTournament = async () => {
     setIsLoading(true);
     try {
-      // Получаем последний завершенный турнир
+      // Получаем последний завершенный турнир (поддерживаем оба статуса)
       const { data: tournament } = await supabase
         .from('tournaments')
         .select('*')
-        .eq('status', 'finished')
+        .or('status.eq.finished,status.eq.completed')
         .order('finished_at', { ascending: false })
         .limit(1)
         .single();
 
       if (!tournament) {
         throw new Error('Нет завершенных турниров');
+      }
+
+      // Проверяем, не был ли уже проанализирован этот турнир
+      const { data: existingResults } = await supabase
+        .from('game_results')
+        .select('id')
+        .eq('tournament_id', tournament.id)
+        .limit(1);
+
+      if (existingResults && existingResults.length > 0) {
+        toast({
+          title: "Турнир уже проанализирован",
+          description: `Турнир "${tournament.name}" уже имеет результаты расчета рейтингов. Для пересчета используйте кнопку "Пересчитать рейтинги".`,
+          variant: "destructive"
+        });
+        setIsLoading(false);
+        return;
       }
 
       // Получаем участников
@@ -297,17 +314,24 @@ const TournamentAnalysisAndRating = () => {
   const applyCorrectRatings = async () => {
     if (!analysis) return;
 
+    // Проверяем, не были ли уже применены рейтинги для этого турнира
+    const { data: existingResults } = await supabase
+      .from('game_results')
+      .select('id')
+      .eq('tournament_id', analysis.tournament.id);
+
+    if (existingResults && existingResults.length > 0) {
+      toast({
+        title: "Рейтинги уже применены",
+        description: `Для турнира "${analysis.tournament.name}" рейтинги уже были рассчитаны. Для пересчета используйте кнопку "Пересчитать рейтинги".`,
+        variant: "destructive"
+      });
+      return;
+    }
+
     setIsLoading(true);
     try {
-      const { error: deleteError } = await supabase
-        .from('game_results')
-        .delete()
-        .eq('tournament_id', analysis.tournament.id);
-
-      if (deleteError) {
-        console.warn('No old results to delete:', deleteError);
-      }
-
+      // Обновляем позиции в регистрациях турнира
       const updatePromises = analysis.ratingCalculations.map(calc => 
         supabase
           .from('tournament_registrations')
@@ -318,6 +342,7 @@ const TournamentAnalysisAndRating = () => {
 
       await Promise.all(updatePromises);
 
+      // Готовим результаты для edge function
       const results = analysis.ratingCalculations.map(calc => ({
         player_id: calc.player_id,
         position: calc.position,
@@ -325,6 +350,7 @@ const TournamentAnalysisAndRating = () => {
         addons: calc.addons
       }));
 
+      // Вызываем edge function для расчета рейтингов с учетом настроек RPS
       const { data, error } = await supabase.functions.invoke('calculate-elo', {
         body: {
           tournament_id: analysis.tournament.id,
@@ -341,7 +367,7 @@ const TournamentAnalysisAndRating = () => {
       
       toast({
         title: "RPS рейтинги обновлены!",
-        description: `Корректные RPS рейтинги присвоены ${analysis.ratingCalculations.length} игрокам`
+        description: `Корректные RPS рейтинги присвоены ${analysis.ratingCalculations.length} игрокам с учетом настроек системы`
       });
 
     } catch (error) {

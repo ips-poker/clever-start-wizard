@@ -41,6 +41,26 @@ serve(async (req) => {
 
     console.log(`Calculating RPS ratings for tournament ${tournament_id} with ${results.length} players`)
 
+    // Load rating system configuration from database
+    let ratingConfig = null
+    try {
+      const { data: configData } = await supabaseClient
+        .from('cms_settings')
+        .select('setting_value')
+        .eq('setting_key', 'rating_system_config')
+        .eq('category', 'rating_system')
+        .single()
+      
+      if (configData?.setting_value) {
+        ratingConfig = JSON.parse(configData.setting_value)
+        console.log('Loaded rating system config from database')
+      } else {
+        console.log('No rating system config found, using defaults')
+      }
+    } catch (error) {
+      console.warn('Error loading rating config:', error)
+    }
+
     // Get tournament data to check rebuy/addon costs
     const { data: tournament, error: tournamentError } = await supabaseClient
       .from('tournaments')
@@ -102,7 +122,7 @@ serve(async (req) => {
     }
 
     // Calculate new RPS ratings changes
-    const rpsChanges = calculateRPSChanges(players, results, tournament, payoutStructure)
+    const rpsChanges = calculateRPSChanges(players, results, tournament, payoutStructure, ratingConfig)
 
     // Update players and create game results
     for (const change of rpsChanges) {
@@ -185,8 +205,25 @@ serve(async (req) => {
   }
 })
 
-function calculateRPSChanges(players: Player[], results: TournamentResult[], tournament: any, payoutStructureFromDB?: any[]) {
+function calculateRPSChanges(players: Player[], results: TournamentResult[], tournament: any, payoutStructureFromDB?: any[], ratingConfig?: any) {
   const changes = []
+
+  // Defaults for configuration (fallback if no config provided)
+  const config = {
+    base_points: ratingConfig?.base_points || 1,
+    min_rating: ratingConfig?.min_rating || 100,
+    rebuy_multiplier: ratingConfig?.rebuy_multiplier || 1.0,
+    addon_multiplier: ratingConfig?.addon_multiplier || 1.0,
+    prize_coefficient: ratingConfig?.prize_coefficient || 0.001,
+    min_prize_points: ratingConfig?.min_prize_points || 1,
+    enable_position_bonus: ratingConfig?.enable_position_bonus || false,
+    first_place_bonus: ratingConfig?.first_place_bonus || 0,
+    second_place_bonus: ratingConfig?.second_place_bonus || 0,
+    third_place_bonus: ratingConfig?.third_place_bonus || 0,
+    participation_bonus: ratingConfig?.participation_bonus || 0
+  }
+
+  console.log('Using RPS configuration:', config)
 
   // ВАЖНО: Сортируем по позиции (1-е место это позиция 1, последнее место - максимальная позиция)
   // Позиции должны быть присвоены по принципу: кто последний вылетел = 1-е место
@@ -224,32 +261,42 @@ function calculateRPSChanges(players: Player[], results: TournamentResult[], tou
     const player = players.find(p => p.id === playerResult.player_id)
     if (!player) continue
 
-    // Базовые очки за участие
-    let rpsChange = 1
+    // Базовые очки за участие (используем конфигурацию)
+    let rpsChange = config.base_points + config.participation_bonus
 
-    // Бонусы за ребаи и адоны
+    // Бонусы за ребаи и адоны (используем конфигурацию)
     const rebuys = playerResult.rebuys || 0
     const addons = playerResult.addons || 0
-    rpsChange += rebuys + addons // +1 балл за каждый ребай/адон
+    rpsChange += (rebuys * config.rebuy_multiplier) + (addons * config.addon_multiplier)
+
+    // Позиционные бонусы (используем конфигурацию)
+    const position = playerResult.position
+    if (config.enable_position_bonus) {
+      if (position === 1) {
+        rpsChange += config.first_place_bonus
+      } else if (position === 2) {
+        rpsChange += config.second_place_bonus  
+      } else if (position === 3) {
+        rpsChange += config.third_place_bonus
+      }
+    }
 
     // Призовые баллы (ТОЛЬКО для призовых мест по структуре выплат из базы данных!)
-    const position = playerResult.position
     if (position <= payoutStructure.length) {
       const prizePercentage = payoutStructure[position - 1]
       const prizeAmount = (totalPrizePool * prizePercentage) / 100
       
-      // ИСПРАВЛЕНО: 0.1% от призовой суммы = prizeAmount * 0.001
-      // Но делаем минимум 1 очко за призовое место
-      const prizePoints = Math.max(1, Math.floor(prizeAmount * 0.001))
+      // Используем конфигурацию для расчета призовых очков
+      const prizePoints = Math.max(config.min_prize_points, Math.floor(prizeAmount * config.prize_coefficient))
       rpsChange += prizePoints
       
-      console.log(`🏆 ПРИЗОВЫЕ ОЧКИ для позиции ${position}: ${prizePercentage}% от ${totalPrizePool} = ${prizeAmount}₽, очки: ${prizePoints} (0.1% от выигрыша)`)
+      console.log(`🏆 ПРИЗОВЫЕ ОЧКИ для позиции ${position}: ${prizePercentage}% от ${totalPrizePool} = ${prizeAmount}₽, очки: ${prizePoints} (коэффициент ${config.prize_coefficient})`)
     } else {
       console.log(`❌ Позиция ${position} не входит в призовые места (всего призовых мест: ${payoutStructure.length})`)
     }
 
-    // Рейтинг не может быть меньше 100 (база RPS = 100, а не 1200!)
-    const newRating = Math.max(100, player.elo_rating + rpsChange)
+    // Рейтинг не может быть меньше минимального (используем конфигурацию)
+    const newRating = Math.max(config.min_rating, player.elo_rating + rpsChange)
     const finalChange = newRating - player.elo_rating
 
     console.log(`Player ${player.name}: position ${position}, RPS change: ${finalChange} (from ${player.elo_rating} to ${newRating})`)
