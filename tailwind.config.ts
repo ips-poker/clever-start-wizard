@@ -107,7 +107,6 @@ export default {
 			},
 			fontFamily: {
 				'sinkin': ['Work Sans', 'sans-serif'],
-				'inter': ['Inter', 'system-ui', 'sans-serif'],
 			},
 			fontWeight: {
 				'light': 'var(--font-weight-light)',
