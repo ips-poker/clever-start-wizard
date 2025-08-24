@@ -347,13 +347,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "game_results_player_id_fkey"
-            columns: ["player_id"]
-            isOneToOne: false
-            referencedRelation: "players_public"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "game_results_tournament_id_fkey"
             columns: ["tournament_id"]
             isOneToOne: false
@@ -521,13 +514,6 @@ export type Database = {
             columns: ["player_id"]
             isOneToOne: false
             referencedRelation: "players"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "tournament_registrations_player_id_fkey"
-            columns: ["player_id"]
-            isOneToOne: false
-            referencedRelation: "players_public"
             referencedColumns: ["id"]
           },
           {
@@ -895,42 +881,7 @@ export type Database = {
       }
     }
     Views: {
-      players_public: {
-        Row: {
-          avatar_url: string | null
-          created_at: string | null
-          elo_rating: number | null
-          games_played: number | null
-          id: string | null
-          name: string | null
-          updated_at: string | null
-          user_id: string | null
-          wins: number | null
-        }
-        Insert: {
-          avatar_url?: string | null
-          created_at?: string | null
-          elo_rating?: number | null
-          games_played?: number | null
-          id?: string | null
-          name?: string | null
-          updated_at?: string | null
-          user_id?: string | null
-          wins?: number | null
-        }
-        Update: {
-          avatar_url?: string | null
-          created_at?: string | null
-          elo_rating?: number | null
-          games_played?: number | null
-          id?: string | null
-          name?: string | null
-          updated_at?: string | null
-          user_id?: string | null
-          wins?: number | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Functions: {
       archive_tournament: {
