@@ -7,18 +7,16 @@ import luxuryPokerHero from "@/assets/luxury-poker-hero.jpg";
 import pokerChipsBg from "@/assets/poker-chips-bg.jpg";
 import pokerLogo from "/lovable-uploads/a689ff05-9338-4573-bd08-aa9486811d3f.png";
 import { useCMSContent } from "@/hooks/useCMSContent";
-
 export function Hero() {
-  const { getContent, loading } = useCMSContent('home');
-  return (
-    <section className="relative min-h-screen flex items-center overflow-hidden">
+  const {
+    getContent,
+    loading
+  } = useCMSContent('home');
+  return <section className="relative min-h-screen flex items-center overflow-hidden">
       {/* Optimized Background - Removed expensive blur filter */}
-      <div 
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-        style={{ 
-          backgroundImage: `url(${luxuryPokerHero})`
-        }}
-      >
+      <div className="absolute inset-0 bg-cover bg-center bg-no-repeat" style={{
+      backgroundImage: `url(${luxuryPokerHero})`
+    }}>
         <div className="absolute inset-0 bg-slate-900/70"></div>
         <div className="absolute inset-0 bg-gradient-to-br from-slate-900/40 via-slate-800/30 to-slate-900/60"></div>
       </div>
@@ -42,11 +40,7 @@ export function Hero() {
                {/* Logo and Title Section */}
                <div className="flex flex-col lg:flex-row items-center lg:items-start text-center lg:text-left space-y-4 lg:space-y-0 lg:space-x-8 animate-slide-right [animation-delay:0.6s]">
                  <div className="w-24 h-24 lg:w-28 lg:h-28 bg-white/80 rounded-2xl border border-white/40 shadow-lg flex items-center justify-center p-3 lg:p-4 flex-shrink-0">
-                  <img 
-                    src={pokerLogo} 
-                    alt="Poker Club Logo" 
-                    className="w-full h-full object-contain filter drop-shadow-xl"
-                  />
+                  <img src={pokerLogo} alt="Poker Club Logo" className="w-full h-full object-contain filter drop-shadow-xl" />
                 </div>
                  <div className="flex-1">
                    <h1 className="text-3xl sm:text-4xl lg:text-6xl font-sinkin leading-tight tracking-tight">
@@ -56,9 +50,7 @@ export function Hero() {
                      <span className="block text-poker-accent-light text-xl sm:text-2xl lg:text-4xl mt-1 lg:mt-2 font-semibold leading-tight">
                        {getContent('hero_subtitle', 'Event Poker')}
                      </span>
-                     <span className="block text-lg sm:text-xl lg:text-3xl font-medium text-white/90 tracking-wide leading-tight mt-1">
-                       {getContent('hero_subtitle_2', 'Club')}
-                     </span>
+                     
                    </h1>
                  </div>
               </div>
@@ -177,6 +169,5 @@ export function Hero() {
            </div>
          </div>
        </div>
-     </section>
-   );
- }
+     </section>;
+}
