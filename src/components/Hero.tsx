@@ -17,8 +17,8 @@ export function Hero() {
       <div className="absolute inset-0 bg-cover bg-center bg-no-repeat" style={{
       backgroundImage: `url(${luxuryPokerHero})`
     }}>
-        <div className="absolute inset-0 bg-slate-900/53"></div>
-        <div className="absolute inset-0 bg-gradient-to-br from-slate-900/30 via-slate-800/23 to-slate-900/45"></div>
+        <div className="absolute inset-0 bg-slate-900/27"></div>
+        <div className="absolute inset-0 bg-gradient-to-br from-slate-900/15 via-slate-800/12 to-slate-900/23"></div>
       </div>
       {/* Reduced floating elements for better performance */}
       <div className="absolute inset-0 opacity-10 overflow-hidden motion-reduce:hidden">
@@ -40,7 +40,7 @@ export function Hero() {
                {/* Logo and Title Section - Logo without background */}
                <div className="flex flex-col lg:flex-row items-center lg:items-start text-center lg:text-left space-y-4 lg:space-y-0 lg:space-x-8 animate-slide-right [animation-delay:0.6s]">
                  <div className="flex-shrink-0">
-                   <img src={pokerLogo} alt="Poker Club Logo" className="w-20 h-20 lg:w-24 lg:h-24 object-contain filter drop-shadow-2xl" />
+                   <img src={pokerLogo} alt="Poker Club Logo" className="w-16 h-16 lg:w-20 lg:h-20 object-contain filter drop-shadow-2xl" />
                  </div>
                  <div className="flex-1">
                    <h1 className="text-3xl sm:text-4xl lg:text-6xl font-sinkin leading-tight tracking-tight">
