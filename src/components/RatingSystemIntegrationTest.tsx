@@ -397,7 +397,7 @@ export default function RatingSystemIntegrationTest() {
     }
   };
 
-  const testTournamentsIntegration = async () => {
+  const testTournamentsIntegration = async (): Promise<TestFunctionResult> => {
     try {
       const { data: tournaments, error } = await supabase
         .from('tournaments')
@@ -406,18 +406,20 @@ export default function RatingSystemIntegrationTest() {
 
       if (error) {
         return {
-          status: 'error' as const,
+          status: 'error',
           message: 'Ошибка доступа к турнирам',
           details: { error: error.message },
-          recommendations: ['Проверьте RLS политики для таблицы tournaments']
+          recommendations: ['Проверьте RLS политики для таблицы tournaments'],
+          metrics: {}
         };
       }
 
       if (!tournaments || tournaments.length === 0) {
         return {
-          status: 'warning' as const,
+          status: 'warning',
           message: 'В системе нет турниров для тестирования',
-          recommendations: ['Создайте тестовые турниры для проверки работы системы']
+          recommendations: ['Создайте тестовые турниры для проверки работы системы'],
+          metrics: {}
         };
       }
 
@@ -440,19 +442,20 @@ export default function RatingSystemIntegrationTest() {
 
       if (invalidTournaments.length > 0) {
         return {
-          status: 'warning' as const,
+          status: 'warning',
           message: 'Обнаружены турниры с некорректными данными',
           details: { 
             invalidCount: invalidTournaments.length,
             formatStats,
             buyInRanges
           },
-          recommendations: ['Проверьте и исправьте данные некорректных турниров']
+          recommendations: ['Проверьте и исправьте данные некорректных турниров'],
+          metrics: { totalTournaments: tournaments.length, formatsCount: Object.keys(formatStats).length }
         };
       }
 
       return {
-        status: 'success' as const,
+        status: 'success',
         message: 'Турниры загружаются корректно',
         details: { 
           tournamentsCount: tournaments.length,
@@ -462,14 +465,16 @@ export default function RatingSystemIntegrationTest() {
         metrics: { 
           totalTournaments: tournaments.length,
           formatsCount: Object.keys(formatStats).length
-        }
+        },
+        recommendations: []
       };
     } catch (tourError) {
       return {
-        status: 'error' as const,
+        status: 'error',
         message: 'Критическая ошибка при работе с турнирами',
         details: { tourError },
-        recommendations: ['Проверьте структуру таблицы tournaments и её индексы']
+        recommendations: ['Проверьте структуру таблицы tournaments и её индексы'],
+        metrics: {}
       };
     }
   };

@@ -50,7 +50,7 @@ import RatingSystemAdvancedSettingsTooltips from "@/components/RatingSystemAdvan
 import ProfessionalRatingSettings from '@/components/ProfessionalRatingSettings';
 import OfflinePokerRatingAnalyzer from '@/components/OfflinePokerRatingAnalyzer';
 import OfflinePokerProfileManager from '@/components/OfflinePokerProfileManager';
-import RatingSystemIntegrationTest from "@/components/RatingSystemIntegrationTest";
+import IntegratedTournamentRatingSettings from '@/components/IntegratedTournamentRatingSettings';
 import { useVoiceAnnouncements } from "@/hooks/useVoiceAnnouncements";
 
 // Используем типы из базы данных
@@ -1214,14 +1214,10 @@ const TournamentDirector = () => {
             </TabsContent>
 
             <TabsContent value="rating-settings" className="space-y-6 animate-fade-in">
-              <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-                <div className="space-y-6">
-                  <ProfessionalRatingSettings />
-                  <OfflinePokerProfileManager />
-                  <RatingSystemIntegrationTest />
-                </div>
-                <OfflinePokerRatingAnalyzer />
-              </div>
+              <IntegratedTournamentRatingSettings 
+                selectedTournament={selectedTournament}
+                onTournamentUpdate={loadTournaments}
+              />
             </TabsContent>
 
             <TabsContent value="analysis" className="space-y-6 animate-fade-in">
