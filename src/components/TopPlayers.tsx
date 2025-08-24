@@ -49,7 +49,7 @@ export function TopPlayers() {
       const {
         data,
         error
-      } = await supabase.from('players').select('*').order('elo_rating', {
+      } = await supabase.from('players_public').select('*').order('elo_rating', {
         ascending: false
       }).limit(5);
       if (error) throw error;
@@ -65,7 +65,7 @@ export function TopPlayers() {
       const {
         data,
         error
-      } = await supabase.from('players').select('*').order('elo_rating', {
+      } = await supabase.from('players_public').select('*').order('elo_rating', {
         ascending: false
       });
       if (error) throw error;

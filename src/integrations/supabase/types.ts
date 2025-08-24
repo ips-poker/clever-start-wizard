@@ -7,7 +7,7 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.3 (519615d)"
@@ -347,6 +347,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "game_results_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players_public"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "game_results_tournament_id_fkey"
             columns: ["tournament_id"]
             isOneToOne: false
@@ -517,6 +524,13 @@ export type Database = {
             columns: ["player_id"]
             isOneToOne: false
             referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tournament_registrations_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players_public"
             referencedColumns: ["id"]
           },
           {
@@ -884,7 +898,42 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      players_public: {
+        Row: {
+          avatar_url: string | null
+          created_at: string | null
+          elo_rating: number | null
+          games_played: number | null
+          id: string | null
+          name: string | null
+          updated_at: string | null
+          user_id: string | null
+          wins: number | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string | null
+          elo_rating?: number | null
+          games_played?: number | null
+          id?: string | null
+          name?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+          wins?: number | null
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string | null
+          elo_rating?: number | null
+          games_played?: number | null
+          id?: string | null
+          name?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+          wins?: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       archive_tournament: {
@@ -903,6 +952,21 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      get_player_safe: {
+        Args: { player_id_param: string }
+        Returns: {
+          avatar_url: string
+          created_at: string
+          elo_rating: number
+          email: string
+          games_played: number
+          id: string
+          name: string
+          updated_at: string
+          user_id: string
+          wins: number
+        }[]
+      }
       get_tournament_voice_stats: {
         Args: { tournament_id_param: string }
         Returns: Json
@@ -913,9 +977,9 @@ export type Database = {
       }
       handle_voice_tournament_action: {
         Args: {
-          tournament_id_param: string
           action_type: string
           parameters?: Json
+          tournament_id_param: string
         }
         Returns: Json
       }
@@ -957,9 +1021,9 @@ export type Database = {
       }
       update_tournament_timer: {
         Args: {
-          tournament_id_param: string
-          new_timer_remaining: number
           new_timer_active?: boolean
+          new_timer_remaining: number
+          tournament_id_param: string
         }
         Returns: undefined
       }
