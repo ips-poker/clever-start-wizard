@@ -39,9 +39,9 @@ export function Hero() {
               
                {/* Logo and Title Section - Logo without background */}
                <div className="flex flex-col lg:flex-row items-center lg:items-start text-center lg:text-left space-y-4 lg:space-y-0 lg:space-x-8 animate-slide-right [animation-delay:0.6s]">
-                 <div className="flex-shrink-0">
-                   <img src={pokerLogo} alt="Poker Club Logo" className="w-16 h-16 lg:w-20 lg:h-20 object-contain filter drop-shadow-2xl" />
-                 </div>
+                <div className="flex-shrink-0">
+                  <img src={pokerLogo} alt="Poker Club Logo" className="w-16 h-16 lg:w-20 lg:h-20 object-contain bg-white/90 rounded-xl p-2 shadow-elegant border border-white/20" />
+                </div>
                  <div className="flex-1">
                    <h1 className="text-3xl sm:text-4xl lg:text-6xl font-sinkin leading-tight tracking-tight">
                      <span className="text-white block leading-none">
