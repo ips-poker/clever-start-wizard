@@ -245,8 +245,8 @@ const FullscreenTimer = ({
             />
           </div>
           <div className="flex flex-col">
-            <span className="text-lg font-bold text-gray-800">EPC</span>
-            <span className="text-xs text-gray-500">Event Poker Club</span>
+            <span className="text-lg font-bold text-gray-800 font-sinkin">EPC</span>
+            <span className="text-xs text-gray-500 font-sinkin">Event Poker Club</span>
           </div>
         </div>
 

@@ -48,10 +48,10 @@ export function Header() {
               </div>
             </div>
             <div className="flex flex-col">
-              <span className="text-2xl font-black text-poker-gold tracking-tight">
+              <span className="text-2xl font-black text-poker-gold tracking-tight font-sinkin">
                 EPC
               </span>
-              <span className="text-xs text-muted-foreground -mt-1 font-medium tracking-wide">
+              <span className="text-xs text-muted-foreground -mt-1 font-medium tracking-wide font-sinkin">
                 Event Poker Club
               </span>
             </div>
