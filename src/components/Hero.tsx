@@ -47,9 +47,9 @@ export function Hero() {
                      <span className="text-white block leading-none">
                        {getContent('hero_title', 'EPC')}
                      </span>
-                     <span className="block text-poker-accent-light text-xl sm:text-2xl lg:text-4xl mt-1 lg:mt-2 font-semibold leading-tight">
-                       {getContent('hero_subtitle', 'Event Poker')}
-                     </span>
+                      <span className="block text-poker-accent-light text-xl sm:text-2xl lg:text-4xl mt-1 lg:mt-2 font-sinkin leading-tight">
+                        {getContent('hero_subtitle', 'Event Poker Club')}
+                      </span>
                      
                    </h1>
                  </div>
