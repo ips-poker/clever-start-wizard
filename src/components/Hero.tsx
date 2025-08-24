@@ -39,19 +39,9 @@ export function Hero() {
               
                {/* Logo and Title Section */}
                <div className="flex flex-col lg:flex-row items-center lg:items-start text-center lg:text-left space-y-4 lg:space-y-0 lg:space-x-8 animate-slide-right [animation-delay:0.6s]">
-                 <div className="w-24 h-24 lg:w-28 lg:h-28 bg-white/80 rounded-2xl border border-white/40 shadow-lg flex items-center justify-center p-3 lg:p-4 flex-shrink-0">
-                  <img src={pokerLogo} alt="Poker Club Logo" className="w-full h-full object-contain filter drop-shadow-xl" />
-                </div>
+                 
                  <div className="flex-1">
-                   <h1 className="text-3xl sm:text-4xl lg:text-6xl font-sinkin leading-tight tracking-tight">
-                     <span className="text-white block leading-none">
-                       {getContent('hero_title', 'EPC')}
-                     </span>
-                      <span className="block text-poker-accent-light text-xl sm:text-2xl lg:text-4xl mt-1 lg:mt-2 font-sinkin leading-tight">
-                        {getContent('hero_subtitle', 'Event Poker Club')}
-                      </span>
-                     
-                   </h1>
+                   
                  </div>
               </div>
                
