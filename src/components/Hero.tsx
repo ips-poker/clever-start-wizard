@@ -5,7 +5,7 @@ import { Trophy, Users, Calendar, Star, TrendingUp, Shield, Award, Play } from "
 import { Link } from "react-router-dom";
 import luxuryPokerHero from "@/assets/luxury-poker-hero.jpg";
 import pokerChipsBg from "@/assets/poker-chips-bg.jpg";
-import { RoundedLogo } from "@/components/RoundedLogo";
+import { LogoProcessor } from "@/components/LogoProcessor";
 import { useCMSContent } from "@/hooks/useCMSContent";
 
 export function Hero() {
@@ -42,12 +42,13 @@ export function Hero() {
                {/* Logo and Title Section */}
                <div className="flex flex-col lg:flex-row items-center lg:items-start text-center lg:text-left space-y-4 lg:space-y-0 lg:space-x-8 animate-slide-right [animation-delay:0.6s]">
                  <div className="w-20 h-20 lg:w-24 lg:h-24 bg-white/20 rounded-2xl border border-white/40 shadow-lg flex items-center justify-center p-3 lg:p-4 flex-shrink-0">
-                     <RoundedLogo 
-                       src="/lovable-uploads/30d01ad9-7079-44b2-b8ef-44eb90d9e715.png"
-                       alt="EPC Logo" 
-                       className="w-full h-full object-contain filter drop-shadow-xl"
-                       radius={16}
-                     />
+                    <LogoProcessor 
+                      originalSrc="/lovable-uploads/30d01ad9-7079-44b2-b8ef-44eb90d9e715.png"
+                      alt="EPC Logo" 
+                      className="w-full h-full object-contain filter drop-shadow-xl"
+                      rounded={true}
+                      radius={16}
+                    />
                 </div>
                  <div className="flex-1">
                    <h1 className="text-3xl sm:text-4xl lg:text-6xl font-bold leading-tight tracking-tight">
