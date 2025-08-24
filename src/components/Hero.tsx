@@ -17,8 +17,8 @@ export function Hero() {
       <div className="absolute inset-0 bg-cover bg-center bg-no-repeat" style={{
       backgroundImage: `url(${luxuryPokerHero})`
     }}>
-        <div className="absolute inset-0 bg-slate-900/11"></div>
-        <div className="absolute inset-0 bg-gradient-to-br from-slate-900/6 via-slate-800/5 to-slate-900/9"></div>
+        <div className="absolute inset-0 bg-slate-900/43"></div>
+        <div className="absolute inset-0 bg-gradient-to-br from-slate-900/24 via-slate-800/19 to-slate-900/37"></div>
       </div>
       {/* Reduced floating elements for better performance */}
       <div className="absolute inset-0 opacity-10 overflow-hidden motion-reduce:hidden">
