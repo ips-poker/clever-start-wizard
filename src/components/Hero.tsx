@@ -49,15 +49,15 @@ export function Hero() {
                   />
                 </div>
                  <div className="flex-1">
-                   <h1 className="text-3xl sm:text-4xl lg:text-6xl font-bold leading-tight tracking-tight">
+                   <h1 className="text-3xl sm:text-4xl lg:text-6xl font-sinkin leading-tight tracking-tight">
                      <span className="text-white block leading-none">
-                       {getContent('hero_title', 'IPS')}
+                       {getContent('hero_title', 'EPC')}
                      </span>
                      <span className="block text-poker-accent-light text-xl sm:text-2xl lg:text-4xl mt-1 lg:mt-2 font-semibold leading-tight">
-                       {getContent('hero_subtitle', 'International')}
+                       {getContent('hero_subtitle', 'Event Poker')}
                      </span>
                      <span className="block text-lg sm:text-xl lg:text-3xl font-medium text-white/90 tracking-wide leading-tight mt-1">
-                       {getContent('hero_subtitle_2', 'Poker Style')}
+                       {getContent('hero_subtitle_2', 'Club')}
                      </span>
                    </h1>
                  </div>

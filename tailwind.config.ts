@@ -105,6 +105,9 @@ export default {
 				'success': 'var(--shadow-success)',
 				'inset': 'var(--shadow-inset)'
 			},
+			fontFamily: {
+				'sinkin': ['Work Sans', 'sans-serif'],
+			},
 			fontWeight: {
 				'light': 'var(--font-weight-light)',
 				'normal': 'var(--font-weight-normal)',

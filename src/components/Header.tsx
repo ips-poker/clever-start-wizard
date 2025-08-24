@@ -47,11 +47,11 @@ export function Header() {
               </div>
             </div>
             <div className="flex flex-col">
-              <span className="text-2xl font-black text-poker-gold tracking-tight">
-                IPS
+              <span className="text-2xl font-sinkin text-poker-gold tracking-tight">
+                EPC
               </span>
-              <span className="text-xs text-muted-foreground -mt-1 font-medium tracking-wide">
-                International Poker Style
+              <span className="text-xs text-muted-foreground -mt-1 font-sinkin font-medium tracking-wide">
+                Event Poker Club
               </span>
             </div>
           </Link>
