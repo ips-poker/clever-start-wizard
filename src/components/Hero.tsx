@@ -12,26 +12,20 @@ export function Hero() {
   const { getContent, loading } = useCMSContent('home');
   return (
     <section className="relative min-h-screen flex items-center overflow-hidden">
-      {/* Background Image with Overlay */}
+      {/* Optimized Background - Removed expensive blur filter */}
       <div 
         className="absolute inset-0 bg-cover bg-center bg-no-repeat"
         style={{ 
-          backgroundImage: `url(${luxuryPokerHero})`,
-          filter: 'blur(6px)'
+          backgroundImage: `url(${luxuryPokerHero})`
         }}
       >
-        <div className="absolute inset-0 bg-slate-900/50"></div>
-        <div className="absolute inset-0 bg-gradient-overlay"></div>
+        <div className="absolute inset-0 bg-slate-900/70"></div>
+        <div className="absolute inset-0 bg-gradient-to-br from-slate-900/40 via-slate-800/30 to-slate-900/60"></div>
       </div>
-      {/* Subtle Floating Elements */}
-      <div className="absolute inset-0 opacity-10 overflow-hidden">
-        <div className="absolute top-20 left-10 text-6xl text-white/30 animate-float [animation-delay:0s]">♠</div>
-        <div className="absolute top-40 right-20 text-5xl text-white/20 animate-float [animation-delay:1s]">♥</div>
-        <div className="absolute bottom-40 left-20 text-6xl text-white/30 animate-float [animation-delay:2s]">♦</div>
-        <div className="absolute bottom-20 right-10 text-5xl text-white/20 animate-float [animation-delay:3s]">♣</div>
-        
-        <div className="absolute top-32 left-1/3 text-4xl text-white/15 animate-bounce-subtle [animation-delay:4s]">♠</div>
-        <div className="absolute bottom-32 right-1/3 text-4xl text-white/15 animate-bounce-subtle [animation-delay:5s]">♣</div>
+      {/* Reduced floating elements for better performance */}
+      <div className="absolute inset-0 opacity-10 overflow-hidden motion-reduce:hidden">
+        <div className="absolute top-20 left-10 text-6xl text-white/20">♠</div>
+        <div className="absolute bottom-20 right-10 text-5xl text-white/15">♣</div>
       </div>
 
       <div className="container mx-auto px-4 lg:px-8 relative z-10">
@@ -47,7 +41,7 @@ export function Hero() {
               
                {/* Logo and Title Section */}
                <div className="flex flex-col lg:flex-row items-center lg:items-start text-center lg:text-left space-y-4 lg:space-y-0 lg:space-x-8 animate-slide-right [animation-delay:0.6s]">
-                 <div className="w-20 h-20 lg:w-24 lg:h-24 bg-white/10 backdrop-blur-xl rounded-2xl border border-white/30 shadow-elegant flex items-center justify-center p-3 lg:p-4 animate-scale-in [animation-delay:0.3s] flex-shrink-0">
+                 <div className="w-20 h-20 lg:w-24 lg:h-24 bg-white/20 rounded-2xl border border-white/40 shadow-lg flex items-center justify-center p-3 lg:p-4 flex-shrink-0">
                   <img 
                     src={ipsLogo} 
                     alt="IPS Logo" 
@@ -130,7 +124,7 @@ export function Hero() {
            {/* Right Column - Cards */}
            <div className="space-y-6 animate-slide-right [animation-delay:0.4s] order-1 lg:order-2">
               {/* Main Feature Card */}
-              <Card className="p-8 bg-white/8 backdrop-blur-xl border border-white/20 shadow-card hover:scale-105 transition-all duration-300 hover:shadow-elegant">
+              <Card className="p-8 bg-white/15 border border-white/30 shadow-lg">
                 <div className="text-center space-y-6">
                   <div className="w-20 h-20 bg-poker-accent rounded-2xl flex items-center justify-center mx-auto shadow-card text-white">
                     <Trophy className="w-10 h-10" />

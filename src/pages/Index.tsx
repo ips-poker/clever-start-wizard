@@ -5,7 +5,7 @@ import { Features } from "@/components/Features";
 import { Gallery } from "@/components/Gallery";
 import { SocialProof } from "@/components/SocialProof";
 import { Footer } from "@/components/Footer";
-import { TournamentList } from "@/components/TournamentList";
+import { LazyTournamentList } from "@/components/LazyTournamentList";
 import { TopPlayers } from "@/components/TopPlayers";
 
 const Index = () => {
@@ -14,7 +14,7 @@ const Index = () => {
       <Header />
       <main>
         <Hero />
-        <TournamentList />
+        <LazyTournamentList />
         <TopPlayers />
         <RatingBenefits />
         <Features />
