@@ -39,11 +39,11 @@ export function Header() {
           <Link to="/" className="flex items-center space-x-3 group">
             <div className="relative">
               {/* Custom logo with brand colors */}
-              <div className="w-12 h-12 flex items-center justify-center shadow-elegant group-hover:shadow-gold transition-all duration-500 rounded-lg group-hover:bg-white/10">
+              <div className="w-12 h-12 bg-white rounded-lg flex items-center justify-center shadow-elegant group-hover:shadow-gold transition-all duration-500 border border-poker-platinum/20 group-hover:border-poker-gold/40">
                 <img 
                   src={epcLogo}
                   alt="EPC Logo" 
-                  className="w-10 h-10 object-contain group-hover:scale-110 transition-transform duration-300"
+                  className="w-8 h-8 object-contain group-hover:scale-110 transition-transform duration-300"
                 />
               </div>
             </div>
