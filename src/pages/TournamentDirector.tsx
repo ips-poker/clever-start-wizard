@@ -48,6 +48,8 @@ import RatingSystemTest from "@/components/RatingSystemTest";
 import TournamentAnalysisAndRating from "@/components/TournamentAnalysisAndRating";
 import RatingSystemAdvancedSettingsTooltips from "@/components/RatingSystemAdvancedSettingsTooltips";
 import ProfessionalRatingSettings from '@/components/ProfessionalRatingSettings';
+import OfflinePokerRatingAnalyzer from '@/components/OfflinePokerRatingAnalyzer';
+import OfflinePokerProfileManager from '@/components/OfflinePokerProfileManager';
 import RatingSystemIntegrationTest from "@/components/RatingSystemIntegrationTest";
 import { useVoiceAnnouncements } from "@/hooks/useVoiceAnnouncements";
 
@@ -1212,7 +1214,13 @@ const TournamentDirector = () => {
             </TabsContent>
 
             <TabsContent value="rating-settings" className="space-y-6 animate-fade-in">
-              <ProfessionalRatingSettings />
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                <div className="space-y-6">
+                  <ProfessionalRatingSettings />
+                  <OfflinePokerProfileManager />
+                </div>
+                <OfflinePokerRatingAnalyzer />
+              </div>
             </TabsContent>
 
             <TabsContent value="analysis" className="space-y-6 animate-fade-in">
