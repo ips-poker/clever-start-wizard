@@ -50,7 +50,7 @@ export function Header() {
               <span className="text-2xl font-sinkin text-poker-gold tracking-tight">
                 EPC
               </span>
-              <span className="text-xs text-muted-foreground -mt-1 font-sinkin font-medium tracking-wide">
+              <span className="text-sm text-muted-foreground -mt-1 font-sinkin font-medium tracking-wide">
                 Event Poker Club
               </span>
             </div>
