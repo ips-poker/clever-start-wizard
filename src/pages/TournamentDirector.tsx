@@ -1218,6 +1218,7 @@ const TournamentDirector = () => {
                 <div className="space-y-6">
                   <ProfessionalRatingSettings />
                   <OfflinePokerProfileManager />
+                  <RatingSystemIntegrationTest />
                 </div>
                 <OfflinePokerRatingAnalyzer />
               </div>
