@@ -39,9 +39,13 @@ export function Hero() {
               
                {/* Logo and Title Section */}
                <div className="flex flex-col lg:flex-row items-center lg:items-start text-center lg:text-left space-y-4 lg:space-y-0 lg:space-x-8 animate-slide-right [animation-delay:0.6s]">
-                 <div className="w-24 h-24 lg:w-28 lg:h-28 bg-white/80 rounded-2xl border border-white/40 shadow-lg flex items-center justify-center p-3 lg:p-4 flex-shrink-0">
-                  <img src={pokerLogo} alt="Poker Club Logo" className="w-full h-full object-contain filter drop-shadow-xl" />
-                </div>
+                 <div className="relative group">
+                   <div className="w-24 h-24 lg:w-28 lg:h-28 bg-gradient-to-br from-white via-white/95 to-white/90 rounded-3xl border border-white/60 shadow-2xl flex items-center justify-center p-3 lg:p-4 flex-shrink-0 backdrop-blur-sm transition-all duration-300 group-hover:scale-105 group-hover:shadow-elegant">
+                     <div className="absolute inset-0 bg-gradient-to-br from-poker-accent/5 via-transparent to-poker-accent-light/10 rounded-3xl opacity-50"></div>
+                     <img src={pokerLogo} alt="Poker Club Logo" className="w-full h-full object-contain filter drop-shadow-2xl relative z-10" />
+                   </div>
+                   <div className="absolute -inset-1 bg-gradient-to-r from-poker-accent via-poker-accent-light to-poker-accent opacity-20 rounded-3xl blur-md group-hover:opacity-30 transition-opacity duration-300"></div>
+                 </div>
                  <div className="flex-1">
                    <h1 className="text-3xl sm:text-4xl lg:text-6xl font-sinkin leading-tight tracking-tight">
                      <span className="text-white block leading-none">

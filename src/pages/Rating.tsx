@@ -75,10 +75,7 @@ export default function Rating() {
   const loadData = async () => {
     try {
       // Load all players
-      const { data: playersData, error: playersError } = await supabase
-        .from('players_public')
-        .select('*')
-        .order('elo_rating', { ascending: false });
+      const { data: playersData, error: playersError } = await supabase.rpc('get_players_public');
 
       if (playersError) throw playersError;
 
@@ -114,7 +111,8 @@ export default function Rating() {
         };
       }) || [];
 
-      setAllPlayers(playersData || []);
+      const sortedPlayersData = (playersData || []).sort((a, b) => b.elo_rating - a.elo_rating);
+      setAllPlayers(sortedPlayersData);
       setRecentTournaments(processedTournaments);
     } catch (error) {
       console.error('Error loading rating data:', error);
