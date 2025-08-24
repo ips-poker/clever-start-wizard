@@ -46,12 +46,11 @@ export function TopPlayers() {
   }, []);
   const loadTopPlayers = async () => {
     try {
-      const {
-        data,
-        error
-      } = await supabase.rpc('get_players_public').order('elo_rating', {
-        ascending: false
-      }).limit(5);
+      const { data, error } = await supabase
+        .rpc('get_players_public')
+        .order('elo_rating', { ascending: false })
+        .limit(5);
+      
       if (error) throw error;
       setTopPlayers(data || []);
     } catch (error) {
@@ -62,12 +61,10 @@ export function TopPlayers() {
   };
   const loadAllPlayers = async () => {
     try {
-      const {
-        data,
-        error
-      } = await supabase.rpc('get_players_public').order('elo_rating', {
-        ascending: false
-      });
+      const { data, error } = await supabase
+        .rpc('get_players_public')
+        .order('elo_rating', { ascending: false });
+      
       if (error) throw error;
       setAllPlayers(data || []);
       setFilteredPlayers(data || []);

@@ -1,148 +1,147 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Phone, Diamond, Trophy, Target } from "lucide-react";
+import { Trophy, Users, Calendar, Star, Play, Phone, Diamond, CheckCircle, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
+import pokerLogo from "/lovable-uploads/a689ff05-9338-4573-bd08-aa9486811d3f.png";
 import { useCMSContent } from "@/hooks/useCMSContent";
 
 export function Hero() {
-  const {
-    getContent,
-    loading
-  } = useCMSContent('home');
+  const { getContent, loading } = useCMSContent('home');
 
   return (
-    <section className="relative min-h-screen flex items-center bg-gradient-to-br from-slate-50 via-white to-purple-50">
-      {/* Background Pattern */}
-      <div className="absolute inset-0 opacity-5">
-        <div className="absolute top-20 left-20 w-64 h-64 bg-purple-600 rounded-full blur-3xl"></div>
-        <div className="absolute bottom-20 right-20 w-80 h-80 bg-blue-500 rounded-full blur-3xl"></div>
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full blur-3xl"></div>
+    <section className="relative min-h-screen bg-gradient-to-br from-background via-card to-background/90 overflow-hidden">
+      {/* Subtle background pattern */}
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,hsl(var(--primary)/0.1),transparent_60%)]"></div>
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,hsl(var(--accent)/0.08),transparent_50%)]"></div>
+      
+      {/* Floating elements */}
+      <div className="absolute inset-0 overflow-hidden opacity-10">
+        <div className="absolute top-20 left-10 text-4xl text-primary/30">♠</div>
+        <div className="absolute bottom-20 right-10 text-3xl text-primary/25">♣</div>
+        <div className="absolute top-1/2 left-1/4 text-2xl text-accent/20">♥</div>
+        <div className="absolute top-1/3 right-1/4 text-2xl text-accent/20">♦</div>
       </div>
 
-      <div className="container mx-auto px-4 lg:px-8 relative z-10">
-        <div className="text-center space-y-16 py-20">
-          {/* Badge */}
-          <div className="flex justify-center animate-fade-in">
-            <Badge className="bg-purple-100 border border-purple-200 text-purple-700 font-semibold px-6 py-3 rounded-full shadow-sm">
-              ⭐ {getContent('hero_badge', 'Премиум-сервис для VIP клиентов')} 💎
+      <div className="container mx-auto px-4 relative z-10 min-h-screen flex items-center">
+        {/* Center content */}
+        <div className="w-full text-center py-16 lg:py-20">
+          {/* Premium badge */}
+          <div className="flex justify-center mb-8">
+            <Badge className="bg-primary/15 border border-primary/30 text-primary font-semibold px-6 py-3 rounded-full shadow-lg animate-fade-in">
+              ✨ Премиум-сервис для VIP клиентов
             </Badge>
           </div>
-          
-          {/* Main Title */}
-          <div className="space-y-6 animate-slide-up [animation-delay:0.2s]">
-            <h1 className="text-5xl md:text-7xl font-bold text-center">
-              <span className="text-gray-600">Выездной</span>
-              <br />
-              <span className="text-purple-600">покер</span>
-              <br />
-              <span className="text-gray-500 text-3xl md:text-4xl font-normal">премиум-класса</span>
+
+          {/* Main heading */}
+          <div className="space-y-6 mb-12">
+            <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold leading-tight">
+              <span className="block text-foreground">Выездной</span>
+              <span className="block bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">покер</span>
+              <span className="block text-muted-foreground text-2xl sm:text-3xl lg:text-4xl font-normal mt-2">премиум-класса</span>
             </h1>
-            
-            <p className="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
-              {getContent('hero_description', 'Организация корпоративных покерных турниров с профессиональными дилерами и премиум оборудованием')}
+            <p className="text-lg sm:text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed font-medium">
+              Организация корпоративных покерных турниров с профессиональными дилерами и премиум оборудованием
             </p>
           </div>
 
-          {/* Feature Cards Grid */}
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto animate-slide-up [animation-delay:0.4s]">
-            {/* Call to Action Card */}
-            <Card className="p-8 bg-purple-600 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
-              <div className="space-y-6 text-center">
-                <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center mx-auto">
-                  <Phone className="w-8 h-8 text-white" />
+          {/* Service cards grid */}
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto mb-12">
+            {/* Main CTA card */}
+            <Card className="lg:col-span-1 p-6 bg-primary text-primary-foreground shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
+              <div className="text-center space-y-4">
+                <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center mx-auto">
+                  <Phone className="w-6 h-6" />
                 </div>
-                <div>
-                  <h3 className="text-xl font-bold mb-3">Заказать мероприятие</h3>
-                  <p className="text-purple-100 text-sm mb-6">
-                    Бесплатная консультация и расчет стоимости за 15 минут
-                  </p>
-                  <Link to="/tournaments">
-                    <Button className="w-full bg-white text-purple-600 hover:bg-purple-50 font-semibold">
-                      Получить расчет →
-                    </Button>
-                  </Link>
-                  <p className="text-xs text-purple-200 mt-3 flex items-center justify-center gap-2">
-                    🛡️ Гарантия качества
-                  </p>
+                <h3 className="text-xl font-bold">Заказать мероприятие</h3>
+                <p className="text-sm opacity-90">Бесплатная консультация и расчет стоимости за 15 минут</p>
+                <Button 
+                  variant="secondary" 
+                  className="w-full bg-white text-primary hover:bg-white/90"
+                >
+                  Получить расчет <ArrowRight className="w-4 h-4 ml-2" />
+                </Button>
+                <div className="flex items-center justify-center gap-2 text-xs opacity-75">
+                  <CheckCircle className="w-4 h-4" />
+                  Гарантия качества
                 </div>
               </div>
             </Card>
 
-            {/* Premium Equipment */}
-            <Card className="p-6 bg-white/80 backdrop-blur-sm border border-gray-200 shadow-sm hover:shadow-lg transition-all duration-300 hover:scale-105">
-              <div className="space-y-4">
-                <div className="w-12 h-12 bg-yellow-100 rounded-xl flex items-center justify-center">
-                  <Diamond className="w-6 h-6 text-yellow-600" />
+            {/* Premium equipment */}
+            <Card className="p-6 bg-card hover:bg-accent/5 transition-all duration-300 hover:scale-105 shadow-md hover:shadow-lg">
+              <div className="text-center space-y-4">
+                <div className="w-12 h-12 bg-accent/20 rounded-xl flex items-center justify-center mx-auto">
+                  <Diamond className="w-6 h-6 text-accent" />
                 </div>
-                <div>
-                  <h3 className="font-bold text-gray-800 mb-2">Премиум оборудование</h3>
-                  <p className="text-sm text-gray-600">
-                    Профессиональные столы казино-класса от ведущих производителей
-                  </p>
-                </div>
+                <h3 className="text-lg font-semibold">Премиум оборудование</h3>
+                <p className="text-sm text-muted-foreground">Профессиональные столы казино-класса от ведущих производителей</p>
               </div>
             </Card>
 
             {/* Portfolio */}
-            <Card className="p-6 bg-white/80 backdrop-blur-sm border border-gray-200 shadow-sm hover:shadow-lg transition-all duration-300 hover:scale-105">
-              <div className="space-y-4">
-                <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
-                  <Trophy className="w-6 h-6 text-blue-600" />
+            <Card className="p-6 bg-card hover:bg-accent/5 transition-all duration-300 hover:scale-105 shadow-md hover:shadow-lg">
+              <div className="text-center space-y-4">
+                <div className="w-12 h-12 bg-secondary/80 rounded-xl flex items-center justify-center mx-auto">
+                  <Trophy className="w-6 h-6 text-secondary-foreground" />
                 </div>
-                <div>
-                  <h3 className="font-bold text-gray-800 mb-2">Портфолио работ</h3>
-                  <p className="text-sm text-gray-600">
-                    Более 200 успешно проведенных мероприятий премиум-класса
-                  </p>
-                </div>
+                <h3 className="text-lg font-semibold">Портфолио работ</h3>
+                <p className="text-sm text-muted-foreground">Более 200 успешно проведенных мероприятий премиум-класса</p>
               </div>
             </Card>
 
             {/* Calculator */}
-            <Card className="p-6 bg-white/80 backdrop-blur-sm border border-gray-200 shadow-sm hover:shadow-lg transition-all duration-300 hover:scale-105 relative">
-              <div className="space-y-4">
-                <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
-                  <Target className="w-6 h-6 text-green-600" />
+            <Card className="p-6 bg-card hover:bg-accent/5 transition-all duration-300 hover:scale-105 shadow-md hover:shadow-lg">
+              <div className="text-center space-y-4">
+                <div className="w-12 h-12 bg-green-500/20 rounded-xl flex items-center justify-center mx-auto">
+                  <CheckCircle className="w-6 h-6 text-green-600" />
                 </div>
-                <div>
-                  <h3 className="font-bold text-gray-800 mb-2">Калькулятор стоимости</h3>
-                  <p className="text-sm text-gray-600 mb-4">
-                    Рассчитайте точную стоимость мероприятия онлайн
-                  </p>
-                </div>
-              </div>
-              
-              {/* Discount Badge */}
-              <div className="absolute -top-2 -right-2 bg-orange-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg">
-                Скидка 15%
-              </div>
-              <div className="mt-4">
-                <p className="text-xs text-gray-500">
-                  При заказе до конца месяца получите скидку на все услуги
-                </p>
+                <h3 className="text-lg font-semibold">Калькулятор стоимости</h3>
+                <p className="text-sm text-muted-foreground">Рассчитайте точную стоимость мероприятия онлайн</p>
               </div>
             </Card>
           </div>
 
-          {/* Statistics */}
-          <div className="grid grid-cols-4 gap-8 max-w-4xl mx-auto pt-16 animate-slide-up [animation-delay:0.6s]">
-            <div className="text-center">
-              <div className="text-4xl font-bold text-purple-600 mb-2">⭐ 4,9</div>
-              <div className="text-sm text-gray-600">Средний рейтинг</div>
+          {/* CTA Buttons */}
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-16 max-w-lg mx-auto">
+            <Link to="/tournaments" className="w-full sm:w-auto">
+              <Button size="lg" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold px-8 py-4 text-lg rounded-xl shadow-lg hover:scale-105 transition-all duration-300">
+                <Play className="w-5 h-5 mr-3" />
+                Начать играть
+              </Button>
+            </Link>
+            <Link to="/rating" className="w-full sm:w-auto">
+              <Button size="lg" variant="outline" className="w-full border-2 border-primary/30 hover:bg-primary/10 font-semibold px-8 py-4 text-lg rounded-xl hover:scale-105 transition-all duration-300">
+                Рейтинг игроков
+              </Button>
+            </Link>
+          </div>
+
+          {/* Stats */}
+          <div className="grid grid-cols-4 gap-6 max-w-2xl mx-auto">
+            <div className="text-center p-4 bg-card/50 rounded-xl border border-border/50 hover:bg-accent/5 transition-all duration-300">
+              <div className="text-2xl sm:text-3xl font-bold text-accent mb-1">⭐ 4.9</div>
+              <div className="text-xs text-muted-foreground">Рейтинг</div>
             </div>
-            <div className="text-center">
-              <div className="text-4xl font-bold text-orange-500 mb-2">💰 200+</div>
-              <div className="text-sm text-gray-600">Проведено мероприятий</div>
+            <div className="text-center p-4 bg-card/50 rounded-xl border border-border/50 hover:bg-accent/5 transition-all duration-300">
+              <div className="text-2xl sm:text-3xl font-bold text-secondary mb-1">🏆 200+</div>
+              <div className="text-xs text-muted-foreground">Событий</div>
             </div>
-            <div className="text-center">
-              <div className="text-4xl font-bold text-purple-600 mb-2">💎 15+</div>
-              <div className="text-sm text-gray-600">Лет опыта</div>
+            <div className="text-center p-4 bg-card/50 rounded-xl border border-border/50 hover:bg-accent/5 transition-all duration-300">
+              <div className="text-2xl sm:text-3xl font-bold text-primary mb-1">⚡ 15+</div>
+              <div className="text-xs text-muted-foreground">Лет опыта</div>
             </div>
-            <div className="text-center">
-              <div className="text-4xl font-bold text-blue-500 mb-2">👥 2000+</div>
-              <div className="text-sm text-gray-600">Довольных клиентов</div>
+            <div className="text-center p-4 bg-card/50 rounded-xl border border-border/50 hover:bg-accent/5 transition-all duration-300">
+              <div className="text-2xl sm:text-3xl font-bold text-blue-600 mb-1">👥 2000+</div>
+              <div className="text-xs text-muted-foreground">Клиентов</div>
             </div>
+          </div>
+
+          {/* Special offer badge */}
+          <div className="mt-12 flex justify-center">
+            <Badge className="bg-accent/15 border border-accent/30 text-accent font-semibold px-6 py-2 rounded-full shadow-lg animate-pulse">
+              Скидка 15% при заказе до конца месяца
+            </Badge>
           </div>
         </div>
       </div>
