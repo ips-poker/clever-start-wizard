@@ -126,7 +126,7 @@ export default function About() {
                   {getContent('hero_badge', 'О компании')}
                 </Badge>
                 <h1 className="text-5xl font-bold mb-6 bg-gradient-to-r from-poker-primary to-poker-accent bg-clip-text text-transparent">
-                  {getContent('hero_title', 'International Poker Style')}
+                  {getContent('hero_title', 'International Poker Club')}
                 </h1>
                 <p className="text-xl text-muted-foreground leading-relaxed mb-8">
                   {getContent('hero_description', 'Мы создали уникальное пространство для любителей покера, где каждый может развивать свои навыки, участвовать в честных турнирах и расти в профессиональной рейтинговой системе.')}

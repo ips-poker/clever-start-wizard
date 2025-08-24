@@ -143,7 +143,7 @@ export default function Auth() {
             <Spade className="w-8 h-8 text-primary" />
             <span>IPS</span>
           </Link>
-          <p className="text-muted-foreground mt-2">International Poker Style</p>
+          <p className="text-muted-foreground mt-2 font-sintony">International Poker Club</p>
         </div>
 
         <Card className="shadow-lg border-0">

@@ -170,7 +170,7 @@ export function AboutPageEditor() {
                   id="hero_title"
                   value={content.hero_title || ''}
                   onChange={(e) => updateContent('hero_title', e.target.value)}
-                  placeholder="International Poker Style"
+                  placeholder="International Poker Club"
                 />
               </div>
               

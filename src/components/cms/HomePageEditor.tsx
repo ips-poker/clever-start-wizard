@@ -96,7 +96,7 @@ export function HomePageEditor() {
   const [content, setContent] = useState<HomeContent>({
     // Hero Section
     hero_badge: "IPS",
-    hero_title: "International Poker Style",
+    hero_title: "International Poker Club",
     hero_subtitle: "Премиальный покерный клуб",
     hero_description: "Элитные турниры и профессиональный покер в Санкт-Петербурге с рейтинговой системой ELO",
     hero_cta_text: "Записаться на турнир",
@@ -392,7 +392,7 @@ export function HomePageEditor() {
                   id="hero_title"
                   value={content.hero_title}
                   onChange={(e) => updateContent('hero_title', e.target.value)}
-                  placeholder="International Poker Style"
+                  placeholder="International Poker Club"
                 />
               </div>
               
