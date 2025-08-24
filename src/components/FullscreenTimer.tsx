@@ -18,7 +18,7 @@ import {
   Mic,
   MicOff
 } from "lucide-react";
-import epcLogo from "/lovable-uploads/30d01ad9-7079-44b2-b8ef-44eb90d9e715.png";
+import { LogoProcessor } from "@/components/LogoProcessor";
 import telegramQr from "@/assets/telegram-qr.png";
 import { useVoiceAnnouncements } from "@/hooks/useVoiceAnnouncements";
 
@@ -238,10 +238,12 @@ const FullscreenTimer = ({
         {/* Left - Logo and Company */}
         <div className="flex items-center space-x-3">
           <div className="w-20 h-20 bg-white rounded-lg flex items-center justify-center shadow-md border border-gray-200">
-            <img 
-              src={epcLogo} 
+            <LogoProcessor 
+              originalSrc="/lovable-uploads/30d01ad9-7079-44b2-b8ef-44eb90d9e715.png"
               alt="EPC Logo" 
               className="w-12 h-12 object-contain"
+              rounded={true}
+              radius={12}
             />
           </div>
           <div className="flex flex-col">
