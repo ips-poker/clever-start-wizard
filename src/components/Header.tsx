@@ -3,7 +3,6 @@ import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Menu, X, Spade, LogIn, Settings, LogOut, User, Trophy } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-import { LogoProcessor } from "./LogoProcessor";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -40,12 +39,10 @@ export function Header() {
             <div className="relative">
               {/* Custom logo with brand colors */}
               <div className="w-12 h-12 bg-white rounded-lg flex items-center justify-center shadow-elegant group-hover:shadow-gold transition-all duration-500 border border-poker-platinum/20 group-hover:border-poker-gold/40">
-                <LogoProcessor 
-                  originalSrc="/lovable-uploads/30d01ad9-7079-44b2-b8ef-44eb90d9e715.png"
+                <img 
+                  src="/lovable-uploads/30d01ad9-7079-44b2-b8ef-44eb90d9e715.png" 
                   alt="EPC Logo" 
                   className="w-8 h-8 object-contain group-hover:scale-110 transition-transform duration-300"
-                  rounded={true}
-                  radius={12}
                 />
               </div>
             </div>
