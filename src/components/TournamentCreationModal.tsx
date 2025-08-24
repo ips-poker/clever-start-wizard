@@ -259,48 +259,6 @@ export function TournamentCreationModal({ open, onOpenChange, tournament, onTour
     }));
   };
 
-  const addBlindLevel = () => {
-    const lastLevel = blindStructure[blindStructure.length - 1];
-    const newLevel = {
-      level: (lastLevel?.level || 0) + 1,
-      small_blind: Math.round((lastLevel?.small_blind || 100) * 1.5),
-      big_blind: Math.round((lastLevel?.big_blind || 200) * 1.5),
-      ante: Math.round((lastLevel?.ante || 0) * 1.5),
-      duration: formData.timer_duration,
-      is_break: false
-    };
-    setBlindStructure(prev => [...prev, newLevel]);
-  };
-
-  const removeBlindLevel = (index: number) => {
-    setBlindStructure(prev => prev.filter((_, i) => i !== index));
-  };
-
-  const updateBlindLevel = (index: number, field: keyof BlindLevel, value: number | boolean) => {
-    setBlindStructure(prev => {
-      const updated = [...prev];
-      updated[index] = { ...updated[index], [field]: value };
-      return updated;
-    });
-  };
-
-  const addBreakLevel = () => {
-    const nextBreak = Math.max(...breakLevels, 0) + 4;
-    setBreakLevels(prev => [...prev, nextBreak].sort((a, b) => a - b));
-  };
-
-  const removeBreakLevel = (level: number) => {
-    setBreakLevels(prev => prev.filter(l => l !== level));
-  };
-
-  const updateBreakLevel = (index: number, newLevel: number) => {
-    setBreakLevels(prev => {
-      const updated = [...prev];
-      updated[index] = newLevel;
-      return updated.sort((a, b) => a - b);
-    });
-  };
-
   const calculateEstimatedDuration = () => {
     const totalLevels = blindStructure.length + breakLevels.length;
     const breakDuration = breakLevels.length * 15; // 15 minutes per break
@@ -318,7 +276,6 @@ export function TournamentCreationModal({ open, onOpenChange, tournament, onTour
       return;
     }
 
-    // Двойная защита от множественных кликов
     if (loading || isCreating) return;
     
     setLoading(true);
@@ -385,68 +342,6 @@ export function TournamentCreationModal({ open, onOpenChange, tournament, onTour
 
         if (error) throw error;
         tournamentId = data.id;
-      }
-
-      // Save blind structure
-      if (tournamentId) {
-        // Delete existing blind levels
-        await supabase
-          .from('blind_levels')
-          .delete()
-          .eq('tournament_id', tournamentId);
-
-        // Create combined structure with proper level numbering
-        const combinedLevels: Array<{
-          tournament_id: string;
-          level: number;
-          small_blind: number;
-          big_blind: number;
-          ante: number;
-          duration: number;
-          is_break: boolean;
-        }> = [];
-
-        let currentLevel = 1;
-
-        // Add regular blind levels and breaks in correct order
-        const maxBlindLevel = Math.max(...blindStructure.map(b => b.level), 0);
-        
-        for (let i = 1; i <= maxBlindLevel; i++) {
-          // Add regular blind level if it exists
-          const blindLevel = blindStructure.find(b => b.level === i);
-          if (blindLevel) {
-            combinedLevels.push({
-              tournament_id: tournamentId,
-              level: currentLevel++,
-              small_blind: blindLevel.small_blind,
-              big_blind: blindLevel.big_blind,
-              ante: blindLevel.ante,
-              duration: blindLevel.duration,
-              is_break: false
-            });
-          }
-
-          // Add break if scheduled for this level
-          if (breakLevels.includes(i)) {
-            combinedLevels.push({
-              tournament_id: tournamentId,
-              level: currentLevel++,
-              small_blind: 0,
-              big_blind: 0,
-              ante: 0,
-              duration: 900, // 15 minutes
-              is_break: true
-            });
-          }
-        }
-
-        if (combinedLevels.length > 0) {
-          const { error: blindError } = await supabase
-            .from('blind_levels')
-            .insert(combinedLevels);
-
-          if (blindError) throw blindError;
-        }
       }
 
       toast({
@@ -543,11 +438,23 @@ export function TournamentCreationModal({ open, onOpenChange, tournament, onTour
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {TOURNAMENT_FORMATS.map(format => (
+                        {TOURNAMENT_FORMATS.map((format) => (
                           <SelectItem key={format.value} value={format.value}>
-                            <div>
-                              <div className="font-medium">{format.label}</div>
-                              <div className="text-xs text-muted-foreground">{format.description}</div>
+                            <div className="flex flex-col items-start">
+                              <div className="flex items-center gap-2">
+                                <span>{format.label}</span>
+                                <Badge 
+                                  className={
+                                    format.difficulty === 'medium' ? 'bg-blue-100 text-blue-800' :
+                                    format.difficulty === 'high' ? 'bg-orange-100 text-orange-800' :
+                                    format.difficulty === 'extreme' ? 'bg-red-100 text-red-800' :
+                                    'bg-green-100 text-green-800'
+                                  }
+                                >
+                                  {format.category}
+                                </Badge>
+                              </div>
+                              <span className="text-xs text-muted-foreground">{format.description}</span>
                             </div>
                           </SelectItem>
                         ))}
@@ -557,56 +464,14 @@ export function TournamentCreationModal({ open, onOpenChange, tournament, onTour
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="description">Описание</Label>
+                  <Label htmlFor="description">Описание турнира</Label>
                   <Textarea
                     id="description"
                     value={formData.description}
                     onChange={(e) => updateFormData('description', e.target.value)}
-                    placeholder="Краткое описание турнира..."
+                    placeholder="Описание турнира, правила, особенности..."
                     rows={3}
                   />
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="start-time">Дата и время начала *</Label>
-                    <Input
-                      id="start-time"
-                      type="datetime-local"
-                      value={formData.start_time}
-                      onChange={(e) => updateFormData('start_time', e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="max-players">Максимум игроков</Label>
-                    <Input
-                      id="max-players"
-                      type="number"
-                      value={formData.max_players}
-                      onChange={(e) => updateFormData('max_players', parseInt(e.target.value) || 0)}
-                      min="2"
-                      max="500"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="starting-chips">Стартовые фишки</Label>
-                    <Input
-                      id="starting-chips"
-                      type="number"
-                      value={formData.starting_chips}
-                      onChange={(e) => updateFormData('starting_chips', parseInt(e.target.value) || 0)}
-                      min="1000"
-                    />
-                  </div>
-                </div>
-
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    id="published"
-                    checked={formData.is_published}
-                    onCheckedChange={(checked) => updateFormData('is_published', checked)}
-                  />
-                  <Label htmlFor="published">Опубликовать турнир на сайте</Label>
                 </div>
               </CardContent>
             </Card>
@@ -693,336 +558,163 @@ export function TournamentCreationModal({ open, onOpenChange, tournament, onTour
           </TabsContent>
 
           <TabsContent value="structure" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <DollarSign className="w-5 h-5" />
-                  Стоимость участия
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="buy-in">Бай-ин (₽)</Label>
-                    <Input
-                      id="buy-in"
-                      type="number"
-                      value={formData.buy_in}
-                      onChange={(e) => updateFormData('buy_in', parseInt(e.target.value) || 0)}
-                      min="0"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="timer-duration">Время уровня (секунды)</Label>
-                    <Input
-                      id="timer-duration"
-                      type="number"
-                      value={formData.timer_duration}
-                      onChange={(e) => updateFormData('timer_duration', parseInt(e.target.value) || 0)}
-                      min="300"
-                      max="3600"
-                    />
-                  </div>
-                </div>
-
-                {(formData.tournament_format.includes('rebuy') || formData.tournament_format === 'rebuy') && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <DollarSign className="w-5 h-5" />
+                    Финансовые параметры
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="rebuy-cost">Стоимость ребая (₽)</Label>
+                      <Label htmlFor="buy-in">Бай-ин (₽)</Label>
                       <Input
-                        id="rebuy-cost"
+                        id="buy-in"
                         type="number"
-                        value={formData.rebuy_cost}
-                        onChange={(e) => updateFormData('rebuy_cost', parseInt(e.target.value) || 0)}
+                        value={formData.buy_in}
+                        onChange={(e) => updateFormData('buy_in', parseInt(e.target.value) || 0)}
                         min="0"
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="rebuy-chips">Фишки за ребай</Label>
+                      <Label htmlFor="starting-chips">Стартовый стек</Label>
                       <Input
-                        id="rebuy-chips"
+                        id="starting-chips"
                         type="number"
-                        value={formData.rebuy_chips}
-                        onChange={(e) => updateFormData('rebuy_chips', parseInt(e.target.value) || 0)}
+                        value={formData.starting_chips}
+                        onChange={(e) => updateFormData('starting_chips', parseInt(e.target.value) || 0)}
                         min="0"
                       />
                     </div>
                   </div>
-                )}
 
-                {(formData.tournament_format.includes('addon') || formData.tournament_format === 'addon') && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {(formData.tournament_format.includes('rebuy') || formData.tournament_format === 'rebuy-addon') && (
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="rebuy-cost">Стоимость ребая (₽)</Label>
+                        <Input
+                          id="rebuy-cost"
+                          type="number"
+                          value={formData.rebuy_cost}
+                          onChange={(e) => updateFormData('rebuy_cost', parseInt(e.target.value) || 0)}
+                          min="0"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="rebuy-chips">Фишки за ребай</Label>
+                        <Input
+                          id="rebuy-chips"
+                          type="number"
+                          value={formData.rebuy_chips}
+                          onChange={(e) => updateFormData('rebuy_chips', parseInt(e.target.value) || 0)}
+                          min="0"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {(formData.tournament_format === 'addon' || formData.tournament_format === 'rebuy-addon') && (
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="addon-cost">Стоимость аддона (₽)</Label>
+                        <Input
+                          id="addon-cost"
+                          type="number"
+                          value={formData.addon_cost}
+                          onChange={(e) => updateFormData('addon_cost', parseInt(e.target.value) || 0)}
+                          min="0"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="addon-chips">Фишки за аддон</Label>
+                        <Input
+                          id="addon-chips"
+                          type="number"
+                          value={formData.addon_chips}
+                          onChange={(e) => updateFormData('addon_chips', parseInt(e.target.value) || 0)}
+                          min="0"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Users className="w-5 h-5" />
+                    Игровые параметры
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="addon-cost">Стоимость аддона (₽)</Label>
+                      <Label htmlFor="max-players">Максимум игроков</Label>
                       <Input
-                        id="addon-cost"
+                        id="max-players"
                         type="number"
-                        value={formData.addon_cost}
-                        onChange={(e) => updateFormData('addon_cost', parseInt(e.target.value) || 0)}
-                        min="0"
+                        value={formData.max_players}
+                        onChange={(e) => updateFormData('max_players', parseInt(e.target.value) || 0)}
+                        min="2"
+                        max="200"
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="addon-chips">Фишки за аддон</Label>
+                      <Label htmlFor="timer-duration">Время уровня (сек)</Label>
                       <Input
-                        id="addon-chips"
+                        id="timer-duration"
                         type="number"
-                        value={formData.addon_chips}
-                        onChange={(e) => updateFormData('addon_chips', parseInt(e.target.value) || 0)}
-                        min="0"
+                        value={formData.timer_duration}
+                        onChange={(e) => updateFormData('timer_duration', parseInt(e.target.value) || 0)}
+                        min="60"
+                        max="7200"
                       />
                     </div>
                   </div>
-                )}
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="rebuy-end-level">Ребай до уровня</Label>
+                    <Label htmlFor="start-time">Время начала</Label>
                     <Input
-                      id="rebuy-end-level"
-                      type="number"
-                      value={formData.rebuy_end_level}
-                      onChange={(e) => updateFormData('rebuy_end_level', parseInt(e.target.value) || 0)}
-                      min="0"
-                      max="20"
+                      id="start-time"
+                      type="datetime-local"
+                      value={formData.start_time}
+                      onChange={(e) => updateFormData('start_time', e.target.value)}
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="addon-level">Аддон на уровне</Label>
-                    <Input
-                      id="addon-level"
-                      type="number"
-                      value={formData.addon_level}
-                      onChange={(e) => updateFormData('addon_level', parseInt(e.target.value) || 0)}
-                      min="0"
-                      max="20"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="break-start-level">Первый перерыв</Label>
-                    <Input
-                      id="break-start-level"
-                      type="number"
-                      value={formData.break_start_level}
-                      onChange={(e) => updateFormData('break_start_level', parseInt(e.target.value) || 0)}
-                      min="0"
-                      max="20"
-                    />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Timer className="w-5 h-5" />
-                  Настройка перерывов
-                </CardTitle>
-                <CardDescription>
-                  Перерывы автоматически добавляются в структуру блайндов
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  {breakLevels.map((level, index) => (
-                    <div key={`break-${level}-${index}`} className="flex items-center gap-2">
-                      <Label className="text-sm min-w-[140px]">Перерыв после уровня:</Label>
-                      <Input
-                        type="number"
-                        value={level}
-                        onChange={(e) => updateBreakLevel(index, parseInt(e.target.value) || 0)}
-                        min="1"
-                        max="50"
-                        className="w-20"
-                      />
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => removeBreakLevel(level)}
-                        className="text-red-600 hover:bg-red-50"
-                      >
-                        <X className="w-4 h-4" />
-                      </Button>
+                  <Separator />
+                  
+                  <div className="bg-blue-50 p-4 rounded-lg space-y-2">
+                    <h4 className="font-medium">Текущие настройки</h4>
+                    <div className="grid grid-cols-2 gap-2 text-sm">
+                      <div>Чипы/Бай-ин: <strong>{Math.round(formData.starting_chips / formData.buy_in)}</strong></div>
+                      <div>Время уровня: <strong>{Math.floor(formData.timer_duration / 60)} мин</strong></div>
                     </div>
-                  ))}
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={addBreakLevel}
-                    className="text-green-600 hover:bg-green-50"
-                  >
-                    <Plus className="w-4 h-4 mr-1" />
-                    Добавить перерыв
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
 
           <TabsContent value="blinds" className="space-y-6">
             <Card>
               <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="flex items-center gap-2">
-                      <Target className="w-5 h-5" />
-                      Структура блайндов
-                    </CardTitle>
-                    <CardDescription>
-                      Предполагаемая продолжительность: {calculateEstimatedDuration()} часов
-                    </CardDescription>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => generateDefaultBlindStructure('standard')}
-                    >
-                      Стандарт
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => generateDefaultBlindStructure('turbo')}
-                    >
-                      Турбо
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => generateDefaultBlindStructure('hyperTurbo')}
-                    >
-                      Гипер
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setActiveTab('advanced')}
-                      className="text-blue-600 border-blue-200"
-                    >
-                      <Settings className="w-4 h-4 mr-1" />
-                      Детальная настройка
-                    </Button>
-                  </div>
-                </div>
+                <CardTitle className="flex items-center gap-2">
+                  <Target className="w-5 h-5" />
+                  Структура блайндов
+                </CardTitle>
+                <CardDescription>
+                  Предполагаемая продолжительность: {calculateEstimatedDuration()} часов
+                </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  <div className="max-h-96 overflow-y-auto space-y-2">
-                    {(() => {
-                      // Создаем объединенный массив уровней и перерывов
-                      const allLevels = [];
-                      blindStructure.forEach(level => {
-                        allLevels.push({ ...level, type: 'game' });
-                        // Проверяем, есть ли перерыв после этого уровня
-                        if (breakLevels.includes(level.level)) {
-                          allLevels.push({ 
-                            level: level.level + 0.5, 
-                            type: 'break',
-                            duration: 900 // 15 минут 
-                          });
-                        }
-                      });
-                      
-                      return allLevels.map((item, index) => (
-                        item.type === 'break' ? (
-                          <div key={`break-${item.level}-${index}`} className="flex items-center gap-2 p-3 bg-orange-50 border border-orange-200 rounded-lg">
-                            <div className="text-sm font-medium min-w-[60px] text-orange-600">
-                              ☕ Перерыв
-                            </div>
-                            <div className="text-sm text-orange-600">
-                              15 минут после уровня {Math.floor(item.level)}
-                            </div>
-                          </div>
-                        ) : (
-                          <div key={`blind-level-${item.level}-${index}`} className="flex items-center gap-2 p-3 bg-background border rounded-lg">
-                            <div className="text-sm font-medium min-w-[60px]">
-                              Ур. {item.level}
-                            </div>
-                            <div className="flex items-center gap-2 flex-1">
-                              <Input
-                                type="number"
-                                value={item.small_blind}
-                                onChange={(e) => {
-                                  const gameIndex = blindStructure.findIndex(level => level.level === item.level);
-                                  if (gameIndex !== -1) {
-                                    updateBlindLevel(gameIndex, 'small_blind', parseInt(e.target.value) || 0);
-                                  }
-                                }}
-                                className="w-20"
-                                min="0"
-                              />
-                              <span>/</span>
-                              <Input
-                                type="number"
-                                value={item.big_blind}
-                                onChange={(e) => {
-                                  const gameIndex = blindStructure.findIndex(level => level.level === item.level);
-                                  if (gameIndex !== -1) {
-                                    updateBlindLevel(gameIndex, 'big_blind', parseInt(e.target.value) || 0);
-                                  }
-                                }}
-                                className="w-20"
-                                min="0"
-                              />
-                              <span className="text-xs text-muted-foreground">Анте:</span>
-                              <Input
-                                type="number"
-                                value={item.ante}
-                                onChange={(e) => {
-                                  const gameIndex = blindStructure.findIndex(level => level.level === item.level);
-                                  if (gameIndex !== -1) {
-                                    updateBlindLevel(gameIndex, 'ante', parseInt(e.target.value) || 0);
-                                  }
-                                }}
-                                className="w-16"
-                                min="0"
-                              />
-                              <span className="text-xs text-muted-foreground">Время:</span>
-                              <Input
-                                type="number"
-                                value={item.duration}
-                                onChange={(e) => {
-                                  const gameIndex = blindStructure.findIndex(level => level.level === item.level);
-                                  if (gameIndex !== -1) {
-                                    updateBlindLevel(gameIndex, 'duration', parseInt(e.target.value) || 0);
-                                  }
-                                }}
-                                className="w-20"
-                                min="300"
-                              />
-                              <span className="text-xs text-muted-foreground">сек</span>
-                            </div>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => {
-                                const gameIndex = blindStructure.findIndex(level => level.level === item.level);
-                                if (gameIndex !== -1) {
-                                  removeBlindLevel(gameIndex);
-                                }
-                              }}
-                              className="text-red-600 hover:bg-red-50"
-                            >
-                              <Minus className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        )
-                      ));
-                    })()}
-                  </div>
-                  <Button
-                    variant="outline"
-                    onClick={addBlindLevel}
-                    className="w-full"
-                  >
-                    <Plus className="w-4 h-4 mr-2" />
-                    Добавить уровень
-                  </Button>
-                </div>
+                <p className="text-sm text-muted-foreground">
+                  Структура блайндов автоматически генерируется на основе выбранного формата турнира.
+                  Для детальной настройки используйте продвинутые инструменты турнирного директора.
+                </p>
               </CardContent>
             </Card>
           </TabsContent>
@@ -1054,133 +746,33 @@ export function TournamentCreationModal({ open, onOpenChange, tournament, onTour
               </Alert>
             )}
           </TabsContent>
+
+          <TabsContent value="advanced" className="space-y-6">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Settings className="w-5 h-5" />
-                  Расширенные настройки
+                  Дополнительные настройки
                 </CardTitle>
-                <CardDescription>
-                  Детальная настройка турнира и предпросмотр результата
-                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label className="text-base font-medium">Публикация турнира</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Опубликованные турниры отображаются на главной странице сайта
-                    </p>
-                  </div>
+                <div className="flex items-center space-x-2">
                   <Switch
+                    id="is-published"
                     checked={formData.is_published}
                     onCheckedChange={(checked) => updateFormData('is_published', checked)}
                   />
+                  <Label htmlFor="is-published">Опубликовать турнир сразу после создания</Label>
                 </div>
-
+                
                 <Separator />
-
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <Label className="text-base font-medium">Расчет призового фонда</Label>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => {
-                        // Здесь можно добавить предпросмотр призового фонда
-                        toast({
-                          title: "Расчет призового фонда",
-                          description: `Базовый призовой фонд: ${(formData.buy_in * formData.max_players).toLocaleString()} ₽`
-                        });
-                      }}
-                    >
-                      <Calculator className="w-4 h-4 mr-2" />
-                      Предпросмотр
-                    </Button>
-                  </div>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm bg-muted/30 rounded-lg p-4">
-                    <div>
-                      <span className="text-muted-foreground">Бай-ин:</span>
-                      <p className="font-medium">{formData.buy_in.toLocaleString()} ₽</p>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">Макс. игроков:</span>
-                      <p className="font-medium">{formData.max_players}</p>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">Базовый призовой фонд:</span>
-                      <p className="font-medium">{(formData.buy_in * formData.max_players).toLocaleString()} ₽</p>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">+ Ребаи/Адоны:</span>
-                      <p className="font-medium text-green-600">Дополнительно</p>
-                    </div>
-                  </div>
-                </div>
-
-                <Separator />
-
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <Label className="text-base font-medium">Быстрый доступ к управлению</Label>
-                    <div className="flex gap-2">
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        disabled
-                        className="opacity-50"
-                      >
-                        Структура блайндов
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        disabled
-                        className="opacity-50"
-                      >
-                        Призовой фонд
-                      </Button>
-                    </div>
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    После создания турнира эти функции будут доступны во вкладке "Управление" турнирного директора
-                  </p>
-                </div>
-
-                <Separator />
-
-                <div className="space-y-4">
-                  <Label className="text-base font-medium">Превью турнира</Label>
-                  <div className="bg-gradient-card rounded-lg p-4 border border-border">
-                    <div className="flex items-start justify-between mb-3">
-                      <div>
-                        <h3 className="font-semibold text-lg">{formData.name || 'Название турнира'}</h3>
-                        <p className="text-sm text-muted-foreground">
-                          {formData.description || 'Описание турнира'}
-                        </p>
-                      </div>
-                      <Badge variant="default">
-                        {TOURNAMENT_FORMATS.find(f => f.value === formData.tournament_format)?.label}
-                      </Badge>
-                    </div>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                      <div>
-                        <span className="text-muted-foreground">Бай-ин:</span>
-                        <p className="font-medium">{formData.buy_in.toLocaleString()} ₽</p>
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground">Игроки:</span>
-                        <p className="font-medium">0 / {formData.max_players}</p>
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground">Стек:</span>
-                        <p className="font-medium">{formData.starting_chips.toLocaleString()}</p>
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground">Время:</span>
-                        <p className="font-medium">{Math.floor(formData.timer_duration / 60)} мин</p>
-                      </div>
-                    </div>
+                
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <h4 className="font-medium mb-2">Предварительный расчёт</h4>
+                  <div className="text-sm space-y-1">
+                    <div>Ожидаемый призовой фонд: <strong>{(formData.buy_in * Math.floor(formData.max_players * 0.7)).toLocaleString()} ₽</strong></div>
+                    <div>Соотношение чипы/бай-ин: <strong>{Math.round(formData.starting_chips / formData.buy_in)}</strong></div>
+                    <div>Примерная длительность: <strong>{calculateEstimatedDuration()} часов</strong></div>
                   </div>
                 </div>
               </CardContent>
