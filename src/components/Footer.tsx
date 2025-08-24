@@ -15,8 +15,8 @@ export function Footer() {
             <div className="flex items-center justify-center sm:justify-start space-x-2">
               <Spade className="w-5 h-5 lg:w-6 lg:h-6" />
               <div>
-                <div className="font-bold text-base lg:text-lg">{getContent('brand_name', 'IPS')}</div>
-                <div className="text-xs lg:text-sm opacity-80">{getContent('brand_subtitle', 'International Poker Style')}</div>
+                <div className="font-bold text-base lg:text-lg">{getContent('brand_name', 'EPC')}</div>
+                <div className="text-xs lg:text-sm opacity-80">{getContent('brand_subtitle', 'Event Poker Club')}</div>
               </div>
             </div>
             <p className="text-xs lg:text-sm opacity-80 leading-relaxed">
@@ -66,8 +66,8 @@ export function Footer() {
               </li>
               <li className="opacity-80">
                 <strong>Email:</strong><br />
-                <a href="mailto:info@ipspoker.ru" className="hover:text-poker-gold transition-colors touch-target">
-                  {getContactContent('email', 'info@ipspoker.ru')}
+                <a href="mailto:info@epcpoker.ru" className="hover:text-poker-gold transition-colors touch-target">
+                  {getContactContent('email', 'info@epcpoker.ru')}
                 </a>
               </li>
             </ul>
@@ -75,7 +75,7 @@ export function Footer() {
         </div>
 
         <div className="border-t border-primary-foreground/20 mt-6 lg:mt-8 pt-6 lg:pt-8 text-center text-xs lg:text-sm opacity-80">
-          <p>{getContent('copyright', '© 2024 IPS International Poker Style. Все права защищены.')}</p>
+          <p>{getContent('copyright', '© 2024 EPC Event Poker Club. Все права защищены.')}</p>
           <p className="mt-2 px-4">{getContent('legal_notice', 'Игра проходит в рамках действующего законодательства без денежных призов.')}</p>
         </div>
       </div>

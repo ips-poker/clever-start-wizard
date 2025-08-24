@@ -78,7 +78,7 @@ export function Gallery() {
             title: 'Главный покерный зал',
             description: 'Просторный зал с профессиональными столами',
             image_url: 'https://images.unsplash.com/photo-1542829257-5b7bb9b6e08b?w=800&h=600&fit=crop',
-            alt_text: 'Главный покерный зал IPS',
+            alt_text: 'Главный покерный зал EPC',
             category: 'tournament',
             is_featured: true,
             is_active: true
@@ -156,13 +156,13 @@ export function Gallery() {
         {/* Header */}
         <div className="text-center mb-8 lg:mb-12">
           <Badge variant="outline" className="mb-4 border-poker-gold text-poker-gold text-xs lg:text-sm">
-            Галерея IPS
+            Галерея EPC
           </Badge>
           <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground mb-4">
             Наш покерный клуб
           </h2>
           <p className="text-base lg:text-xl text-muted-foreground max-w-2xl mx-auto px-4 leading-relaxed">
-            Познакомьтесь с атмосферой премиального покерного клуба IPS
+            Познакомьтесь с атмосферой премиального покерного клуба EPC
           </p>
         </div>
 
