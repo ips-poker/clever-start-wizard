@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { 
   Plus, 
   Minus, 
@@ -25,10 +26,16 @@ import {
   Calendar,
   Info,
   Save,
-  X
+  X,
+  Brain,
+  Zap,
+  Eye,
+  CheckCircle,
+  XCircle
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import AutomatedTournamentProcessor from "./AutomatedTournamentProcessor";
 
 interface BlindLevel {
   level: number;
@@ -69,14 +76,17 @@ interface TournamentCreationModalProps {
 }
 
 const TOURNAMENT_FORMATS = [
-  { value: 'freezeout', label: 'Freezeout', description: 'Без ребаев и аддонов' },
-  { value: 'rebuy', label: 'Rebuy', description: 'С возможностью ребая' },
-  { value: 'addon', label: 'Addon', description: 'С аддоном' },
-  { value: 'rebuy-addon', label: 'Rebuy + Addon', description: 'С ребаями и аддоном' },
-  { value: 'turbo', label: 'Turbo', description: 'Быстрые блайнды' },
-  { value: 'hyper-turbo', label: 'Hyper Turbo', description: 'Очень быстрые блайнды' },
-  { value: 'bounty', label: 'Bounty', description: 'С наградами за выбывание' },
-  { value: 'mystery-bounty', label: 'Mystery Bounty', description: 'Случайные награды' }
+  { value: 'freezeout', label: 'Freezeout', description: 'Без ребаев и аддонов', category: 'standard', difficulty: 'medium' },
+  { value: 'rebuy', label: 'Rebuy', description: 'С возможностью ребая', category: 'standard', difficulty: 'high' },
+  { value: 'addon', label: 'Addon', description: 'С аддоном', category: 'standard', difficulty: 'medium' },
+  { value: 'rebuy-addon', label: 'Rebuy + Addon', description: 'С ребаями и аддоном', category: 'standard', difficulty: 'high' },
+  { value: 'turbo', label: 'Turbo', description: 'Быстрые блайнды (10мин)', category: 'turbo', difficulty: 'high' },
+  { value: 'hyper-turbo', label: 'Hyper Turbo', description: 'Очень быстрые блайнды (5мин)', category: 'turbo', difficulty: 'extreme' },
+  { value: 'bounty', label: 'Bounty', description: 'С наградами за выбывание', category: 'special', difficulty: 'high' },
+  { value: 'mystery-bounty', label: 'Mystery Bounty', description: 'Случайные награды', category: 'special', difficulty: 'extreme' },
+  { value: 'deepstack', label: 'Deepstack', description: 'Глубокие стеки (200+ BB)', category: 'standard', difficulty: 'medium' },
+  { value: 'satellite', label: 'Satellite', description: 'Сателлит турнир', category: 'special', difficulty: 'medium' },
+  { value: 'shootout', label: 'Shootout', description: 'Турнир на выбывание столов', category: 'special', difficulty: 'high' }
 ];
 
 const DEFAULT_BLIND_STRUCTURES = {
@@ -121,7 +131,10 @@ const DEFAULT_BLIND_STRUCTURES = {
 export function TournamentCreationModal({ open, onOpenChange, tournament, onTournamentUpdate }: TournamentCreationModalProps) {
   const [activeTab, setActiveTab] = useState('basic');
   const [loading, setLoading] = useState(false);
-  const [isCreating, setIsCreating] = useState(false); // Дополнительная защита от дублей
+  const [isCreating, setIsCreating] = useState(false);
+  const [analysisResult, setAnalysisResult] = useState<any>(null);
+  const [showAnalysis, setShowAnalysis] = useState(false);
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const [formData, setFormData] = useState<Tournament>({
     name: '',
     description: '',
@@ -146,6 +159,49 @@ export function TournamentCreationModal({ open, onOpenChange, tournament, onTour
   const [blindStructure, setBlindStructure] = useState<BlindLevel[]>([]);
   const [breakLevels, setBreakLevels] = useState<number[]>([4, 8, 12]);
   const { toast } = useToast();
+
+  // Валидация в реальном времени
+  useEffect(() => {
+    validateTournamentSettings();
+  }, [formData, blindStructure]);
+
+  const validateTournamentSettings = () => {
+    const errors = [];
+    
+    // Валидация чип-стека
+    const chipRatio = formData.starting_chips / formData.buy_in;
+    if (chipRatio < 50) {
+      errors.push('Стартовый стек слишком мал (рекомендуется 50+ бай-инов)');
+    }
+    if (chipRatio > 300) {
+      errors.push('Стартовый стек очень большой (может затянуть турнир)');
+    }
+    
+    // Валидация времени блайндов для формата
+    if (formData.tournament_format === 'turbo' && formData.timer_duration > 900) {
+      errors.push('Для турбо формата рекомендуется время блайндов не более 15 минут');
+    }
+    if (formData.tournament_format === 'hyper-turbo' && formData.timer_duration > 600) {
+      errors.push('Для гипер-турбо формата рекомендуется время блайндов не более 10 минут');
+    }
+    
+    // Валидация ребаев
+    if ((formData.tournament_format === 'rebuy' || formData.tournament_format === 'rebuy-addon') 
+        && formData.rebuy_cost === 0) {
+      errors.push('Для турниров с ребаями необходимо указать стоимость ребая');
+    }
+    
+    // Валидация максимального количества игроков
+    if (formData.max_players < 6) {
+      errors.push('Минимальное количество игроков: 6');
+    }
+    
+    setValidationErrors(errors);
+  };
+
+  const handleAnalysisComplete = (result: any) => {
+    setAnalysisResult(result);
+  };
 
   // Initialize form data
   useEffect(() => {
@@ -426,7 +482,7 @@ export function TournamentCreationModal({ open, onOpenChange, tournament, onTour
         </DialogHeader>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="basic" className="flex items-center gap-2">
               <Info className="w-4 h-4" />
               Основное
@@ -438,6 +494,10 @@ export function TournamentCreationModal({ open, onOpenChange, tournament, onTour
             <TabsTrigger value="blinds" className="flex items-center gap-2">
               <Target className="w-4 h-4" />
               Блайнды
+            </TabsTrigger>
+            <TabsTrigger value="analysis" className="flex items-center gap-2">
+              <Brain className="w-4 h-4" />
+              Анализ
             </TabsTrigger>
             <TabsTrigger value="advanced" className="flex items-center gap-2">
               <Settings className="w-4 h-4" />
@@ -466,7 +526,19 @@ export function TournamentCreationModal({ open, onOpenChange, tournament, onTour
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="format">Формат турнира</Label>
-                    <Select value={formData.tournament_format} onValueChange={(value) => updateFormData('tournament_format', value)}>
+                    <Select value={formData.tournament_format} onValueChange={(value) => {
+                      updateFormData('tournament_format', value);
+                      // Автоматическое обновление настроек на основе формата
+                      const format = TOURNAMENT_FORMATS.find(f => f.value === value);
+                      if (format) {
+                        if (format.category === 'turbo') {
+                          updateFormData('timer_duration', format.value === 'hyper-turbo' ? 300 : 600);
+                        }
+                        if (format.value === 'deepstack') {
+                          updateFormData('starting_chips', formData.buy_in * 200);
+                        }
+                      }
+                    }}>
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
@@ -535,6 +607,86 @@ export function TournamentCreationModal({ open, onOpenChange, tournament, onTour
                     onCheckedChange={(checked) => updateFormData('is_published', checked)}
                   />
                   <Label htmlFor="published">Опубликовать турнир на сайте</Label>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Предупреждения валидации */}
+            {validationErrors.length > 0 && (
+              <Alert className="border-yellow-200 bg-yellow-50">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertDescription>
+                  <div className="space-y-1">
+                    <strong>Обнаружены проблемы в настройках:</strong>
+                    <ul className="list-disc list-inside space-y-1">
+                      {validationErrors.map((error, index) => (
+                        <li key={index} className="text-sm">{error}</li>
+                      ))}
+                    </ul>
+                  </div>
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {/* Быстрые настройки для популярных форматов */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Zap className="w-5 w-5" />
+                  Быстрые настройки
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => {
+                      updateFormData('buy_in', 1000);
+                      updateFormData('starting_chips', 10000);
+                      updateFormData('tournament_format', 'freezeout');
+                      updateFormData('timer_duration', 1200);
+                    }}
+                  >
+                    Стандартный
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => {
+                      updateFormData('buy_in', 500);
+                      updateFormData('starting_chips', 5000);
+                      updateFormData('tournament_format', 'turbo');
+                      updateFormData('timer_duration', 600);
+                    }}
+                  >
+                    Быстрый
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => {
+                      updateFormData('buy_in', 2000);
+                      updateFormData('starting_chips', 40000);
+                      updateFormData('tournament_format', 'deepstack');
+                      updateFormData('timer_duration', 1800);
+                    }}
+                  >
+                    Глубокий
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => {
+                      updateFormData('buy_in', 1000);
+                      updateFormData('starting_chips', 10000);
+                      updateFormData('tournament_format', 'rebuy');
+                      updateFormData('rebuy_cost', 1000);
+                      updateFormData('rebuy_end_level', 6);
+                    }}
+                  >
+                    Ребай
+                  </Button>
                 </div>
               </CardContent>
             </Card>
@@ -875,7 +1027,33 @@ export function TournamentCreationModal({ open, onOpenChange, tournament, onTour
             </Card>
           </TabsContent>
 
-          <TabsContent value="advanced" className="space-y-6">
+          <TabsContent value="analysis" className="space-y-6">
+            <AutomatedTournamentProcessor 
+              tournamentData={formData}
+              onAnalysisComplete={handleAnalysisComplete}
+              realTimeMode={true}
+            />
+            
+            {analysisResult && (
+              <Alert className={
+                analysisResult.risk_level === 'low' ? 'border-green-200 bg-green-50' :
+                analysisResult.risk_level === 'medium' ? 'border-yellow-200 bg-yellow-50' :
+                analysisResult.risk_level === 'high' ? 'border-orange-200 bg-orange-50' :
+                'border-red-200 bg-red-50'
+              }>
+                <Brain className="h-4 w-4" />
+                <AlertDescription>
+                  <strong>Оценка турнира: {analysisResult.overall_score}/100</strong>
+                  <br />
+                  {analysisResult.recommendations.length > 0 && (
+                    <span className="text-sm">
+                      Основные рекомендации: {analysisResult.recommendations.slice(0, 2).join(', ')}
+                    </span>
+                  )}
+                </AlertDescription>
+              </Alert>
+            )}
+          </TabsContent>
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
