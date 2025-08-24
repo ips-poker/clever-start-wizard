@@ -1,173 +1,150 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Trophy, Users, Calendar, Star, TrendingUp, Shield, Award, Play } from "lucide-react";
+import { Trophy, Users, Calendar, Star, Play, Phone, Diamond, CheckCircle, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
-import luxuryPokerHero from "@/assets/luxury-poker-hero.jpg";
-import pokerChipsBg from "@/assets/poker-chips-bg.jpg";
 import pokerLogo from "/lovable-uploads/a689ff05-9338-4573-bd08-aa9486811d3f.png";
 import { useCMSContent } from "@/hooks/useCMSContent";
+
 export function Hero() {
-  const {
-    getContent,
-    loading
-  } = useCMSContent('home');
-  return <section className="relative min-h-screen flex items-center overflow-hidden">
-      {/* Optimized Background - Removed expensive blur filter */}
-      <div className="absolute inset-0 bg-cover bg-center bg-no-repeat" style={{
-      backgroundImage: `url(${luxuryPokerHero})`
-    }}>
-        <div className="absolute inset-0 bg-slate-900/70"></div>
-        <div className="absolute inset-0 bg-gradient-to-br from-slate-900/40 via-slate-800/30 to-slate-900/60"></div>
-      </div>
-      {/* Reduced floating elements for better performance */}
-      <div className="absolute inset-0 opacity-10 overflow-hidden motion-reduce:hidden">
-        <div className="absolute top-20 left-10 text-6xl text-white/20">♠</div>
-        <div className="absolute bottom-20 right-10 text-5xl text-white/15">♣</div>
+  const { getContent, loading } = useCMSContent('home');
+
+  return (
+    <section className="relative min-h-screen bg-gradient-to-br from-background via-card to-background/90 overflow-hidden">
+      {/* Subtle background pattern */}
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,hsl(var(--primary)/0.1),transparent_60%)]"></div>
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,hsl(var(--accent)/0.08),transparent_50%)]"></div>
+      
+      {/* Floating elements */}
+      <div className="absolute inset-0 overflow-hidden opacity-10">
+        <div className="absolute top-20 left-10 text-4xl text-primary/30">♠</div>
+        <div className="absolute bottom-20 right-10 text-3xl text-primary/25">♣</div>
+        <div className="absolute top-1/2 left-1/4 text-2xl text-accent/20">♥</div>
+        <div className="absolute top-1/3 right-1/4 text-2xl text-accent/20">♦</div>
       </div>
 
-      <div className="container mx-auto px-4 lg:px-8 relative z-10">
-        <div className="grid lg:grid-cols-2 gap-8 lg:gap-16 items-center min-h-[70vh] lg:min-h-screen py-12 lg:py-20">
-          {/* Left Column - Content */}
-          <div className="text-white space-y-10 animate-fade-in order-2 lg:order-1">
-            <div className="space-y-8 animate-slide-up [animation-delay:0.2s]">
-              <div className="flex justify-center lg:justify-start">
-                <Badge className="bg-white/10 border border-white/30 text-white font-semibold px-6 py-3 rounded-full shadow-subtle backdrop-blur-md animate-scale-in [animation-delay:0.4s]">
-                  {getContent('hero_badge', 'Премиальный покерный клуб')}
-                </Badge>
+      <div className="container mx-auto px-4 relative z-10 min-h-screen flex items-center">
+        {/* Center content */}
+        <div className="w-full text-center py-16 lg:py-20">
+          {/* Premium badge */}
+          <div className="flex justify-center mb-8">
+            <Badge className="bg-primary/15 border border-primary/30 text-primary font-semibold px-6 py-3 rounded-full shadow-lg animate-fade-in">
+              ✨ Премиум-сервис для VIP клиентов
+            </Badge>
+          </div>
+
+          {/* Main heading */}
+          <div className="space-y-6 mb-12">
+            <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold leading-tight">
+              <span className="block text-foreground">Выездной</span>
+              <span className="block bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">покер</span>
+              <span className="block text-muted-foreground text-2xl sm:text-3xl lg:text-4xl font-normal mt-2">премиум-класса</span>
+            </h1>
+            <p className="text-lg sm:text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed font-medium">
+              Организация корпоративных покерных турниров с профессиональными дилерами и премиум оборудованием
+            </p>
+          </div>
+
+          {/* Service cards grid */}
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto mb-12">
+            {/* Main CTA card */}
+            <Card className="lg:col-span-1 p-6 bg-primary text-primary-foreground shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
+              <div className="text-center space-y-4">
+                <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center mx-auto">
+                  <Phone className="w-6 h-6" />
+                </div>
+                <h3 className="text-xl font-bold">Заказать мероприятие</h3>
+                <p className="text-sm opacity-90">Бесплатная консультация и расчет стоимости за 15 минут</p>
+                <Button 
+                  variant="secondary" 
+                  className="w-full bg-white text-primary hover:bg-white/90"
+                >
+                  Получить расчет <ArrowRight className="w-4 h-4 ml-2" />
+                </Button>
+                <div className="flex items-center justify-center gap-2 text-xs opacity-75">
+                  <CheckCircle className="w-4 h-4" />
+                  Гарантия качества
+                </div>
               </div>
-              
-               {/* Logo and Title Section */}
-               <div className="flex flex-col lg:flex-row items-center lg:items-start text-center lg:text-left space-y-4 lg:space-y-0 lg:space-x-8 animate-slide-right [animation-delay:0.6s]">
-                 <div className="w-24 h-24 lg:w-28 lg:h-28 bg-white/80 rounded-2xl border border-white/40 shadow-lg flex items-center justify-center p-3 lg:p-4 flex-shrink-0">
-                  <img src={pokerLogo} alt="Poker Club Logo" className="w-full h-full object-contain filter drop-shadow-xl" />
+            </Card>
+
+            {/* Premium equipment */}
+            <Card className="p-6 bg-card hover:bg-accent/5 transition-all duration-300 hover:scale-105 shadow-md hover:shadow-lg">
+              <div className="text-center space-y-4">
+                <div className="w-12 h-12 bg-accent/20 rounded-xl flex items-center justify-center mx-auto">
+                  <Diamond className="w-6 h-6 text-accent" />
                 </div>
-                 <div className="flex-1">
-                   <h1 className="text-3xl sm:text-4xl lg:text-6xl font-sinkin leading-tight tracking-tight">
-                     <span className="text-white block leading-none">
-                       {getContent('hero_title', 'EPC')}
-                     </span>
-                      <span className="block text-poker-accent-light text-xl sm:text-2xl lg:text-4xl mt-1 lg:mt-2 font-sinkin leading-tight">
-                        {getContent('hero_subtitle', 'Event Poker Club')}
-                      </span>
-                     
-                   </h1>
-                 </div>
+                <h3 className="text-lg font-semibold">Премиум оборудование</h3>
+                <p className="text-sm text-muted-foreground">Профессиональные столы казино-класса от ведущих производителей</p>
               </div>
-               
-               <div className="text-center lg:text-left">
-                 <p className="text-lg text-white/90 max-w-2xl mx-auto lg:mx-0 leading-relaxed font-medium animate-fade-in [animation-delay:0.8s]">
-                   {getContent('hero_description', 'Премиальный покерный клуб с уникальной рейтинговой системой RPS. Развивайте навыки в элегантной атмосфере среди профессиональных игроков.')}
-                 </p>
-               </div>
+            </Card>
 
-                 {/* Key Benefits */}
-                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 lg:gap-4 animate-slide-up [animation-delay:1s] max-w-2xl mx-auto lg:mx-0">
-                    <div className="flex items-center justify-center lg:justify-start space-x-3 text-sm bg-white/8 px-3 py-3 lg:px-4 lg:py-3 rounded-xl backdrop-blur-md border border-white/20 text-white font-medium shadow-subtle touch-target">
-                     <Shield className="w-5 h-5 text-poker-accent-light flex-shrink-0" />
-                     <span>{getContent('feature_1', 'Честная игра')}</span>
-                   </div>
-                   <div className="flex items-center justify-center lg:justify-start space-x-3 text-sm bg-white/8 px-4 py-3 rounded-xl backdrop-blur-md border border-white/20 text-white font-medium shadow-subtle">
-                     <TrendingUp className="w-5 h-5 text-poker-accent-light flex-shrink-0" />
-                     <span>{getContent('feature_2', 'Рост навыков')}</span>
-                   </div>
-                   <div className="flex items-center justify-center lg:justify-start space-x-3 text-sm bg-white/8 px-4 py-3 rounded-xl backdrop-blur-md border border-white/20 text-white font-medium shadow-subtle">
-                     <Award className="w-5 h-5 text-poker-accent-light flex-shrink-0" />
-                     <span>{getContent('feature_3', 'Рейтинг RPS')}</span>
-                   </div>
-                   <div className="flex items-center justify-center lg:justify-start space-x-3 text-sm bg-white/8 px-4 py-3 rounded-xl backdrop-blur-md border border-white/20 text-white font-medium shadow-subtle">
-                     <Users className="w-5 h-5 text-poker-accent-light flex-shrink-0" />
-                     <span>{getContent('feature_4', 'Сообщество')}</span>
-                   </div>
+            {/* Portfolio */}
+            <Card className="p-6 bg-card hover:bg-accent/5 transition-all duration-300 hover:scale-105 shadow-md hover:shadow-lg">
+              <div className="text-center space-y-4">
+                <div className="w-12 h-12 bg-secondary/80 rounded-xl flex items-center justify-center mx-auto">
+                  <Trophy className="w-6 h-6 text-secondary-foreground" />
                 </div>
-             </div>
-
-              <div className="flex flex-col sm:flex-row gap-3 lg:gap-4 justify-center lg:justify-start animate-scale-in [animation-delay:1.2s] max-w-lg mx-auto lg:mx-0">
-                 <Link to="/tournaments" className="w-full sm:w-auto">
-                   <Button size="lg" className="w-full bg-poker-accent text-white hover:bg-poker-accent/90 transition-all duration-300 font-semibold px-6 lg:px-8 py-4 text-base lg:text-lg rounded-xl shadow-card hover:scale-105 hover:shadow-elegant min-h-[48px]">
-                     <Play className="w-5 h-5 lg:w-6 lg:h-6 mr-2 lg:mr-3" />
-                     {getContent('cta_primary', 'Начать играть')}
-                   </Button>
-                 </Link>
-                 <Link to="/rating" className="w-full sm:w-auto">
-                   <Button size="lg" variant="outline" className="w-full border-2 border-white/50 text-white bg-white/10 hover:bg-white/20 hover:text-white transition-all duration-300 font-semibold px-6 lg:px-8 py-4 text-base lg:text-lg rounded-xl backdrop-blur-md shadow-card hover:scale-105 hover:border-white/70 min-h-[48px]">
-                     {getContent('cta_secondary', 'Рейтинг игроков')}
-                   </Button>
-                 </Link>
+                <h3 className="text-lg font-semibold">Портфолио работ</h3>
+                <p className="text-sm text-muted-foreground">Более 200 успешно проведенных мероприятий премиум-класса</p>
               </div>
+            </Card>
 
-             {/* Stats */}
-             <div className="grid grid-cols-3 gap-4 md:gap-6 pt-8 animate-slide-up [animation-delay:1.4s] max-w-2xl mx-auto lg:mx-0">
-                <div className="text-center p-4 md:p-5 bg-white/8 backdrop-blur-xl rounded-xl border border-white/20 shadow-card transition-all duration-300 hover:scale-105 hover:bg-white/12">
-                  <div className="text-3xl md:text-4xl font-bold text-poker-accent-light mb-2 md:mb-3">500+</div>
-                  <div className="text-xs md:text-sm text-white font-medium">Игроков</div>
+            {/* Calculator */}
+            <Card className="p-6 bg-card hover:bg-accent/5 transition-all duration-300 hover:scale-105 shadow-md hover:shadow-lg">
+              <div className="text-center space-y-4">
+                <div className="w-12 h-12 bg-green-500/20 rounded-xl flex items-center justify-center mx-auto">
+                  <CheckCircle className="w-6 h-6 text-green-600" />
                 </div>
-                <div className="text-center p-4 md:p-5 bg-white/8 backdrop-blur-xl rounded-xl border border-white/20 shadow-card transition-all duration-300 hover:scale-105 hover:bg-white/12">
-                  <div className="text-3xl md:text-4xl font-bold text-poker-accent-light mb-2 md:mb-3">150+</div>
-                  <div className="text-xs md:text-sm text-white font-medium">Турниров</div>
-                </div>
-                <div className="text-center p-4 md:p-5 bg-white/8 backdrop-blur-xl rounded-xl border border-white/20 shadow-card transition-all duration-300 hover:scale-105 hover:bg-white/12">
-                  <div className="text-3xl md:text-4xl font-bold text-poker-accent-light mb-2 md:mb-3">4.9</div>
-                  <div className="text-xs md:text-sm text-white font-medium">Рейтинг</div>
-                </div>
-             </div>
-           </div>
+                <h3 className="text-lg font-semibold">Калькулятор стоимости</h3>
+                <p className="text-sm text-muted-foreground">Рассчитайте точную стоимость мероприятия онлайн</p>
+              </div>
+            </Card>
+          </div>
 
-           {/* Right Column - Cards */}
-           <div className="space-y-6 animate-slide-right [animation-delay:0.4s] order-1 lg:order-2">
-              {/* Main Feature Card */}
-              <Card className="p-8 bg-white/15 border border-white/30 shadow-lg">
-                <div className="text-center space-y-6">
-                  <div className="w-20 h-20 bg-poker-accent rounded-2xl flex items-center justify-center mx-auto shadow-card text-white">
-                    <Trophy className="w-10 h-10" />
-                  </div>
-                   <h3 className="text-2xl lg:text-3xl font-bold text-white">{getContent('main_feature_title', 'Рейтинговая система RPS')}</h3>
-                   <p className="text-white/90 text-base lg:text-lg font-medium">{getContent('main_feature_description', 'Уникальная система Rating Points System для справедливой оценки мастерства')}</p>
-                  <Badge className="bg-poker-accent-light text-white px-6 py-3 font-semibold text-sm lg:text-base shadow-card">
-                    Главная особенность
-                  </Badge>
-                </div>
-              </Card>
+          {/* CTA Buttons */}
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-16 max-w-lg mx-auto">
+            <Link to="/tournaments" className="w-full sm:w-auto">
+              <Button size="lg" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold px-8 py-4 text-lg rounded-xl shadow-lg hover:scale-105 transition-all duration-300">
+                <Play className="w-5 h-5 mr-3" />
+                Начать играть
+              </Button>
+            </Link>
+            <Link to="/rating" className="w-full sm:w-auto">
+              <Button size="lg" variant="outline" className="w-full border-2 border-primary/30 hover:bg-primary/10 font-semibold px-8 py-4 text-lg rounded-xl hover:scale-105 transition-all duration-300">
+                Рейтинг игроков
+              </Button>
+            </Link>
+          </div>
 
-             <div className="grid gap-4 md:gap-6">
-              <Card className="p-6 bg-white/8 backdrop-blur-xl border border-white/20 hover:border-white/30 transition-all duration-300 shadow-card hover:scale-105 hover:shadow-elegant animate-fade-in [animation-delay:0.8s]">
-                <div className="flex items-center space-x-4">
-                  <div className="p-3 lg:p-4 bg-poker-accent rounded-xl shadow-card flex-shrink-0">
-                    <Users className="w-5 h-5 lg:w-6 lg:h-6 text-white" />
-                  </div>
-                  <div className="text-white min-w-0">
-                    <h3 className="font-bold text-base lg:text-lg">Элитное сообщество</h3>
-                    <p className="text-sm lg:text-base text-white/80 font-medium">Игра с опытными покеристами</p>
-                  </div>
-                </div>
-              </Card>
+          {/* Stats */}
+          <div className="grid grid-cols-4 gap-6 max-w-2xl mx-auto">
+            <div className="text-center p-4 bg-card/50 rounded-xl border border-border/50 hover:bg-accent/5 transition-all duration-300">
+              <div className="text-2xl sm:text-3xl font-bold text-accent mb-1">⭐ 4.9</div>
+              <div className="text-xs text-muted-foreground">Рейтинг</div>
+            </div>
+            <div className="text-center p-4 bg-card/50 rounded-xl border border-border/50 hover:bg-accent/5 transition-all duration-300">
+              <div className="text-2xl sm:text-3xl font-bold text-secondary mb-1">🏆 200+</div>
+              <div className="text-xs text-muted-foreground">Событий</div>
+            </div>
+            <div className="text-center p-4 bg-card/50 rounded-xl border border-border/50 hover:bg-accent/5 transition-all duration-300">
+              <div className="text-2xl sm:text-3xl font-bold text-primary mb-1">⚡ 15+</div>
+              <div className="text-xs text-muted-foreground">Лет опыта</div>
+            </div>
+            <div className="text-center p-4 bg-card/50 rounded-xl border border-border/50 hover:bg-accent/5 transition-all duration-300">
+              <div className="text-2xl sm:text-3xl font-bold text-blue-600 mb-1">👥 2000+</div>
+              <div className="text-xs text-muted-foreground">Клиентов</div>
+            </div>
+          </div>
 
-              <Card className="p-6 bg-white/8 backdrop-blur-xl border border-white/20 hover:border-white/30 transition-all duration-300 shadow-card hover:scale-105 hover:shadow-elegant animate-fade-in [animation-delay:1s]">
-                <div className="flex items-center space-x-4">
-                  <div className="p-3 lg:p-4 bg-poker-accent rounded-xl shadow-card flex-shrink-0">
-                    <Calendar className="w-5 h-5 lg:w-6 lg:h-6 text-white" />
-                  </div>
-                  <div className="text-white min-w-0">
-                    <h3 className="font-bold text-base lg:text-lg">Регулярные турниры</h3>
-                    <p className="text-sm lg:text-base text-white/80 font-medium">Еженедельные соревнования</p>
-                  </div>
-                </div>
-              </Card>
-
-              <Card className="p-6 bg-white/8 backdrop-blur-xl border border-white/20 hover:border-white/30 transition-all duration-300 shadow-card hover:scale-105 hover:shadow-elegant animate-fade-in [animation-delay:1.2s]">
-                <div className="flex items-center space-x-4">
-                  <div className="p-3 lg:p-4 bg-poker-accent rounded-xl shadow-card flex-shrink-0">
-                    <Star className="w-5 h-5 lg:w-6 lg:h-6 text-white" />
-                  </div>
-                  <div className="text-white min-w-0">
-                    <h3 className="font-bold text-base lg:text-lg">Награды и достижения</h3>
-                    <p className="text-sm lg:text-base text-white/80 font-medium">Система признания успехов</p>
-                  </div>
-                </div>
-              </Card>
-             </div>
-           </div>
-         </div>
-       </div>
-     </section>;
+          {/* Special offer badge */}
+          <div className="mt-12 flex justify-center">
+            <Badge className="bg-accent/15 border border-accent/30 text-accent font-semibold px-6 py-2 rounded-full shadow-lg animate-pulse">
+              Скидка 15% при заказе до конца месяца
+            </Badge>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
 }
