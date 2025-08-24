@@ -967,6 +967,20 @@ export type Database = {
           wins: number
         }[]
       }
+      get_players_public: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          avatar_url: string
+          created_at: string
+          elo_rating: number
+          games_played: number
+          id: string
+          name: string
+          updated_at: string
+          user_id: string
+          wins: number
+        }[]
+      }
       get_tournament_voice_stats: {
         Args: { tournament_id_param: string }
         Returns: Json
