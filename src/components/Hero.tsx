@@ -5,7 +5,7 @@ import { Trophy, Users, Calendar, Star, TrendingUp, Shield, Award, Play } from "
 import { Link } from "react-router-dom";
 import luxuryPokerHero from "@/assets/luxury-poker-hero.jpg";
 import pokerChipsBg from "@/assets/poker-chips-bg.jpg";
-import ipsLogo from "/lovable-uploads/c77304bf-5309-4bdc-afcc-a81c8d3ff6c2.png";
+import pokerLogo from "/lovable-uploads/a689ff05-9338-4573-bd08-aa9486811d3f.png";
 import { useCMSContent } from "@/hooks/useCMSContent";
 
 export function Hero() {
@@ -43,8 +43,8 @@ export function Hero() {
                <div className="flex flex-col lg:flex-row items-center lg:items-start text-center lg:text-left space-y-4 lg:space-y-0 lg:space-x-8 animate-slide-right [animation-delay:0.6s]">
                  <div className="w-20 h-20 lg:w-24 lg:h-24 bg-white/20 rounded-2xl border border-white/40 shadow-lg flex items-center justify-center p-3 lg:p-4 flex-shrink-0">
                   <img 
-                    src={ipsLogo} 
-                    alt="IPS Logo" 
+                    src={pokerLogo} 
+                    alt="Poker Club Logo" 
                     className="w-full h-full object-contain filter drop-shadow-xl"
                   />
                 </div>

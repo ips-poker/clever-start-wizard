@@ -40,8 +40,8 @@ export function Header() {
               {/* Custom logo with brand colors */}
               <div className="w-12 h-12 bg-white rounded-lg flex items-center justify-center shadow-elegant group-hover:shadow-gold transition-all duration-500 border border-poker-platinum/20 group-hover:border-poker-gold/40">
                 <img 
-                  src="/lovable-uploads/c77304bf-5309-4bdc-afcc-a81c8d3ff6c2.png" 
-                  alt="IPS Logo" 
+                  src="/lovable-uploads/a689ff05-9338-4573-bd08-aa9486811d3f.png" 
+                  alt="Poker Club Logo" 
                   className="w-8 h-8 object-contain group-hover:scale-110 transition-transform duration-300"
                 />
               </div>
