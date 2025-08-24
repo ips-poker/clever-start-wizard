@@ -76,8 +76,7 @@ export default function Rating() {
     try {
       // Load all players
       const { data: playersData, error: playersError } = await supabase
-        .from('players_public')
-        .select('*')
+        .rpc('get_players_public')
         .order('elo_rating', { ascending: false });
 
       if (playersError) throw playersError;
