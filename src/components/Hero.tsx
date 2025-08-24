@@ -37,19 +37,16 @@ export function Hero() {
                 </Badge>
               </div>
               
-               {/* Logo and Title Section */}
-               <div className="flex flex-col lg:flex-row items-center lg:items-start text-center lg:text-left space-y-6 lg:space-y-0 lg:space-x-8 animate-slide-right [animation-delay:0.6s]">
+               {/* Logo and Title Section - Logo without background */}
+               <div className="flex flex-col lg:flex-row items-center lg:items-start text-center lg:text-left space-y-4 lg:space-y-0 lg:space-x-8 animate-slide-right [animation-delay:0.6s]">
                  <div className="flex-shrink-0">
-                   <img 
-                     src={pokerLogo} 
-                     alt="IPS Poker Club" 
-                     className="w-20 h-20 lg:w-24 lg:h-24 rounded-2xl shadow-elegant bg-white/10 backdrop-blur-md border border-white/20 p-2"
-                   />
+                   
                  </div>
-                 <div className="flex-1 space-y-4">
-                   <h1 className="text-4xl sm:text-5xl lg:text-7xl font-sinkin leading-tight tracking-tight text-white">
-                     <span className="block text-poker-accent-light">IPS</span>
-                     <span className="block text-2xl sm:text-3xl lg:text-4xl font-light text-white/90">Poker Club</span>
+                 <div className="flex-1">
+                   <h1 className="text-3xl sm:text-4xl lg:text-6xl font-sinkin leading-tight tracking-tight">
+                     
+                      
+                     
                    </h1>
                  </div>
               </div>
