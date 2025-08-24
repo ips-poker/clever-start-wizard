@@ -47,7 +47,7 @@ export function Hero() {
               
                {/* Logo and Title Section */}
                <div className="flex flex-col lg:flex-row items-center lg:items-start text-center lg:text-left space-y-4 lg:space-y-0 lg:space-x-8 animate-slide-right [animation-delay:0.6s]">
-                  <div className="w-20 h-20 lg:w-24 lg:h-24 bg-white/10 backdrop-blur-xl rounded-2xl border border-white/30 shadow-elegant flex items-center justify-center p-3 lg:p-4 animate-scale-in [animation-delay:0.3s] flex-shrink-0">
+                  <div className="w-20 h-20 lg:w-24 lg:h-24 backdrop-blur-xl rounded-2xl flex items-center justify-center p-3 lg:p-4 animate-scale-in [animation-delay:0.3s] flex-shrink-0">
                    <img 
                      src={epcLogo} 
                      alt="EPC Logo" 
