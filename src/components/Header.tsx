@@ -36,21 +36,17 @@ export function Header() {
         <div className="flex items-center justify-between h-16">
           {/* Custom Logo */}
           <Link to="/" className="flex items-center space-x-3 group">
-            <div className="relative">
-              {/* Custom logo with brand colors */}
-              <div className="w-16 h-16 flex items-center justify-center group-hover:scale-110 transition-all duration-500">
-                <img 
-                  src="/lovable-uploads/a689ff05-9338-4573-bd08-aa9486811d3f.png" 
-                  alt="Poker Club Logo" 
-                  className="w-12 h-12 object-contain transition-transform duration-300"
-                />
+            <div className="relative w-12 h-12 rounded-full bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center shadow-lg group-hover:shadow-xl transition-all duration-300 border-2 border-white/20">
+              <div className="w-7 h-7 bg-white rounded-full flex items-center justify-center relative">
+                <div className="w-4 h-4 bg-red-500 rounded-full"></div>
+                <div className="absolute inset-0 rounded-full border border-red-200/30"></div>
               </div>
             </div>
             <div className="flex flex-col">
-              <span className="text-2xl font-sinkin text-poker-gold tracking-tight">
+              <span className="text-2xl font-inter font-bold text-gray-900 tracking-tight">
                 EPC
               </span>
-              <span className="text-sm text-muted-foreground -mt-1 font-sinkin font-medium tracking-wide">
+              <span className="text-xs text-gray-500 -mt-1 font-inter font-medium tracking-widest uppercase">
                 Event Poker Club
               </span>
             </div>
