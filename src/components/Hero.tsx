@@ -13,12 +13,12 @@ export function Hero() {
     loading
   } = useCMSContent('home');
   return <section className="relative min-h-screen flex items-center overflow-hidden">
-      {/* Optimized Background - Reduced opacity by 30% */}
+      {/* Optimized Background - Significantly reduced opacity */}
       <div className="absolute inset-0 bg-cover bg-center bg-no-repeat" style={{
       backgroundImage: `url(${luxuryPokerHero})`
     }}>
-        <div className="absolute inset-0 bg-slate-900/49"></div>
-        <div className="absolute inset-0 bg-gradient-to-br from-slate-900/28 via-slate-800/21 to-slate-900/42"></div>
+        <div className="absolute inset-0 bg-slate-900/35"></div>
+        <div className="absolute inset-0 bg-gradient-to-br from-slate-900/20 via-slate-800/15 to-slate-900/30"></div>
       </div>
       {/* Reduced floating elements for better performance */}
       <div className="absolute inset-0 opacity-10 overflow-hidden motion-reduce:hidden">
@@ -37,10 +37,10 @@ export function Hero() {
                 </Badge>
               </div>
               
-               {/* Logo and Title Section */}
+               {/* Logo and Title Section - Logo without background */}
                <div className="flex flex-col lg:flex-row items-center lg:items-start text-center lg:text-left space-y-4 lg:space-y-0 lg:space-x-8 animate-slide-right [animation-delay:0.6s]">
                  <div className="flex-shrink-0">
-                   <img src={pokerLogo} alt="Poker Club Logo" className="w-24 h-24 lg:w-28 lg:h-28 object-contain filter drop-shadow-2xl" />
+                   <img src={pokerLogo} alt="Poker Club Logo" className="w-32 h-32 lg:w-36 lg:h-36 object-contain filter drop-shadow-2xl" />
                  </div>
                  <div className="flex-1">
                    <h1 className="text-3xl sm:text-4xl lg:text-6xl font-sinkin leading-tight tracking-tight">
