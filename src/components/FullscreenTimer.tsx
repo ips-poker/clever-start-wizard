@@ -99,6 +99,10 @@ const FullscreenTimer = ({
     volume: 0.8
   });
 
+  // Debug toggle: set localStorage.DEBUG = 'true' to enable verbose logs
+  const DEBUG = localStorage.getItem('DEBUG') === 'true';
+  const dlog = (...args: any[]) => { if (DEBUG) console.log(...args); };
+
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -192,7 +196,7 @@ const FullscreenTimer = ({
   const levelsUntilBreak = nextBreakLevel ? nextBreakLevel.level - tournament.current_level : null;
   
   // Отладка для понимания проблемы
-  console.log('🔍 FullscreenTimer Debug:', {
+  dlog('🔍 FullscreenTimer Debug:', {
     blindLevelsCount: blindLevels.length,
     currentLevel: tournament.current_level,
     nextBreakLevel: nextBreakLevel?.level,
@@ -203,7 +207,7 @@ const FullscreenTimer = ({
   // Примерное время до перерыва (текущий таймер + время оставшихся уровней)
   const calculateTimeToBreak = () => {
     if (!nextBreakLevel || !levelsUntilBreak || blindLevels.length === 0) {
-      console.log('⚠️ Не могу рассчитать время до перерыва:', { nextBreakLevel: !!nextBreakLevel, levelsUntilBreak, blindLevelsCount: blindLevels.length });
+      dlog('⚠️ Не могу рассчитать время до перерыва:', { nextBreakLevel: !!nextBreakLevel, levelsUntilBreak, blindLevelsCount: blindLevels.length });
       return null;
     }
     
@@ -213,10 +217,10 @@ const FullscreenTimer = ({
       const levelInfo = blindLevels.find(l => l.level === tournament.current_level + i);
       const levelDuration = levelInfo?.duration || 1200; // по умолчанию 20 минут
       timeToBreak += levelDuration;
-      console.log(`📊 Уровень ${tournament.current_level + i}: +${levelDuration}с`);
+      dlog(`📊 Уровень ${tournament.current_level + i}: +${levelDuration}с`);
     }
     
-    console.log('⏰ Время до перерыва рассчитано:', timeToBreak);
+    dlog('⏰ Время до перерыва рассчитано:', timeToBreak);
     return timeToBreak;
   };
   
