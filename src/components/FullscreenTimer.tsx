@@ -18,7 +18,7 @@ import {
   Mic,
   MicOff
 } from "lucide-react";
-import ipsLogo from "/lovable-uploads/c77304bf-5309-4bdc-afcc-a81c8d3ff6c2.png";
+import ipsLogo from "/lovable-uploads/a689ff05-9338-4573-bd08-aa9486811d3f.png";
 import telegramQr from "@/assets/telegram-qr.png";
 import { useVoiceAnnouncements } from "@/hooks/useVoiceAnnouncements";
 
