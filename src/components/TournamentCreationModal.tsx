@@ -158,6 +158,7 @@ export function TournamentCreationModal({ open, onOpenChange, tournament, onTour
 
   const [blindStructure, setBlindStructure] = useState<BlindLevel[]>([]);
   const [breakLevels, setBreakLevels] = useState<number[]>([4, 8, 12]);
+  const [autoBlindStructure, setAutoBlindStructure] = useState(true);
   const { toast } = useToast();
 
   // Валидация в реальном времени
@@ -220,6 +221,7 @@ export function TournamentCreationModal({ open, onOpenChange, tournament, onTour
         start_time: nextHour.toISOString().slice(0, 16)
       }));
       generateDefaultBlindStructure('standard');
+      setAutoBlindStructure(true);
     }
   }, [tournament, open]);
 
@@ -257,6 +259,50 @@ export function TournamentCreationModal({ open, onOpenChange, tournament, onTour
       ...prev,
       [field]: value
     }));
+  };
+
+  const createDefaultBlindStructure = async (tournamentId: string) => {
+    const defaultLevels = [
+      { level: 1, small_blind: 100, big_blind: 200, ante: 200, duration: 1200, is_break: false },
+      { level: 2, small_blind: 200, big_blind: 400, ante: 400, duration: 1200, is_break: false },
+      { level: 3, small_blind: 300, big_blind: 600, ante: 600, duration: 1200, is_break: false },
+      { level: 4, small_blind: 400, big_blind: 800, ante: 800, duration: 900, is_break: true }, // Break
+      { level: 5, small_blind: 500, big_blind: 1000, ante: 1000, duration: 1200, is_break: false },
+      { level: 6, small_blind: 600, big_blind: 1200, ante: 1200, duration: 1200, is_break: false },
+      { level: 7, small_blind: 800, big_blind: 1600, ante: 1600, duration: 1200, is_break: false },
+      { level: 8, small_blind: 1000, big_blind: 2000, ante: 2000, duration: 900, is_break: true }, // Break
+      { level: 9, small_blind: 1200, big_blind: 2400, ante: 2400, duration: 1200, is_break: false },
+      { level: 10, small_blind: 1500, big_blind: 3000, ante: 3000, duration: 1200, is_break: false },
+      { level: 11, small_blind: 2000, big_blind: 4000, ante: 4000, duration: 1200, is_break: false },
+      { level: 12, small_blind: 2500, big_blind: 5000, ante: 5000, duration: 900, is_break: true }, // Break
+      { level: 13, small_blind: 3000, big_blind: 6000, ante: 6000, duration: 1200, is_break: false },
+      { level: 14, small_blind: 4000, big_blind: 8000, ante: 8000, duration: 1200, is_break: false },
+      { level: 15, small_blind: 5000, big_blind: 10000, ante: 10000, duration: 1200, is_break: false }
+    ];
+
+    // Adjust structure based on tournament format
+    const structureForFormat = defaultLevels.map(level => {
+      let adjustedLevel = { ...level, tournament_id: tournamentId };
+      
+      if (formData.tournament_format === 'turbo') {
+        adjustedLevel.duration = level.is_break ? 600 : 600; // 10 min levels, 10 min breaks
+      } else if (formData.tournament_format === 'hyper-turbo') {
+        adjustedLevel.duration = level.is_break ? 300 : 300; // 5 min levels, 5 min breaks
+      } else if (formData.tournament_format === 'deepstack') {
+        adjustedLevel.duration = level.is_break ? 900 : 1800; // 30 min levels, 15 min breaks
+      }
+      
+      return adjustedLevel;
+    });
+
+    // Insert all levels at once
+    const { error } = await supabase
+      .from('blind_levels')
+      .insert(structureForFormat);
+
+    if (error) {
+      throw error;
+    }
   };
 
   const calculateEstimatedDuration = () => {
@@ -342,6 +388,11 @@ export function TournamentCreationModal({ open, onOpenChange, tournament, onTour
 
         if (error) throw error;
         tournamentId = data.id;
+
+        // Create automatic blind structure if option is enabled
+        if (autoBlindStructure) {
+          await createDefaultBlindStructure(tournamentId);
+        }
       }
 
       toast({
@@ -472,6 +523,42 @@ export function TournamentCreationModal({ open, onOpenChange, tournament, onTour
                     placeholder="Описание турнира, правила, особенности..."
                     rows={3}
                   />
+                </div>
+
+                {/* Опция автоматической структуры блайндов */}
+                <div className="space-y-4 border border-gray-200/60 rounded-lg p-4 bg-gray-50/30">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-1">
+                      <Label className="text-sm font-medium">Структура блайндов</Label>
+                      <p className="text-xs text-gray-500">
+                        {autoBlindStructure 
+                          ? 'Автоматически создать стандартную структуру блайндов' 
+                          : 'Настроить структуру блайндов вручную после создания турнира'
+                        }
+                      </p>
+                    </div>
+                    <Switch
+                      checked={autoBlindStructure}
+                      onCheckedChange={setAutoBlindStructure}
+                    />
+                  </div>
+                  
+                  {!autoBlindStructure && (
+                    <Alert className="border-blue-200 bg-blue-50">
+                      <Info className="h-4 w-4" />
+                      <AlertDescription className="text-sm">
+                        После создания турнира перейдите на вкладку "Управление" → "Структура блайндов" для настройки уровней вручную.
+                      </AlertDescription>
+                    </Alert>
+                  )}
+
+                  {autoBlindStructure && (
+                    <div className="text-xs text-gray-600 space-y-1">
+                      <p>✅ Будет создана структура из 15 уровней</p>
+                      <p>✅ Перерывы на 4, 8, 12 уровнях</p>
+                      <p>✅ Автоматическая адаптация под формат турнира</p>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
