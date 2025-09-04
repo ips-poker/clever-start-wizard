@@ -104,17 +104,19 @@ export function TestimonialsEditor() {
       const fileExt = file.name.split('.').pop();
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
       
-      // Upload file to Supabase storage
+      // Upload file to Supabase storage (gallery bucket, testimonials folder)
+      const folder = 'testimonials';
+      const objectPath = `${folder}/${fileName}`;
       const { data, error } = await supabase.storage
-        .from('testimonials')
-        .upload(fileName, file);
+        .from('gallery')
+        .upload(objectPath, file);
 
       if (error) throw error;
 
       // Get public URL
       const { data: { publicUrl } } = supabase.storage
-        .from('testimonials')
-        .getPublicUrl(fileName);
+        .from('gallery')
+        .getPublicUrl(objectPath);
 
       // Update testimonial image URL
       setNewTestimonial(prev => ({ ...prev, image: publicUrl }));
@@ -137,18 +139,23 @@ export function TestimonialsEditor() {
 
   const removeUploadedImage = async (imageUrl: string) => {
     try {
-      if (imageUrl && imageUrl.includes('supabase')) {
-        // Extract filename from URL
-        const urlParts = imageUrl.split('/');
-        const fileName = urlParts[urlParts.length - 1];
-        
-        // Delete from storage
-        const { error } = await supabase.storage
-          .from('testimonials')
-          .remove([fileName]);
-
-        if (error) {
-          console.error('Error removing file from storage:', error);
+      if (imageUrl && imageUrl.includes('/storage/v1/object/public/')) {
+        try {
+          const publicPrefix = '/storage/v1/object/public/';
+          const idx = imageUrl.indexOf(publicPrefix);
+          const pathWithBucket = imageUrl.substring(idx + publicPrefix.length).split('?')[0]; // e.g. 'gallery/testimonials/file.jpg'
+          const [bucket, ...pathParts] = pathWithBucket.split('/');
+          const objectPath = pathParts.join('/');
+          if (bucket && objectPath) {
+            const { error } = await supabase.storage
+              .from(bucket)
+              .remove([objectPath]);
+            if (error) {
+              console.error('Error removing file from storage:', error);
+            }
+          }
+        } catch (e) {
+          console.error('Error parsing image URL for deletion:', e);
         }
       }
 
@@ -178,11 +185,18 @@ export function TestimonialsEditor() {
       if (editingTestimonial && editingTestimonial.image && editingTestimonial.image !== testimonialData.image) {
         if (editingTestimonial.image.includes('supabase')) {
           try {
-            const urlParts = editingTestimonial.image.split('/');
-            const fileName = urlParts[urlParts.length - 1];
-            await supabase.storage
-              .from('testimonials')
-              .remove([fileName]);
+            const publicPrefix = '/storage/v1/object/public/';
+            const idx = editingTestimonial.image.indexOf(publicPrefix);
+            if (idx !== -1) {
+              const pathWithBucket = editingTestimonial.image.substring(idx + publicPrefix.length).split('?')[0];
+              const [bucket, ...pathParts] = pathWithBucket.split('/');
+              const objectPath = pathParts.join('/');
+              if (bucket && objectPath) {
+                await supabase.storage
+                  .from(bucket)
+                  .remove([objectPath]);
+              }
+            }
           } catch (error) {
             console.error('Error removing old image:', error);
           }
