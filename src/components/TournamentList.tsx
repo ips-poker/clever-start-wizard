@@ -171,11 +171,11 @@ export function TournamentList() {
   return (
     <section id="tournaments" className="py-20 bg-muted/30">
       <div className="container mx-auto px-4">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold mb-4 bg-gradient-to-r from-poker-gold to-poker-steel bg-clip-text text-transparent">
+        <div className="text-center mb-12 px-4">
+          <h2 className="text-2xl sm:text-3xl font-bold mb-4 bg-gradient-to-r from-poker-gold to-poker-steel bg-clip-text text-transparent">
             Предстоящие турниры
           </h2>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto">
             Присоединяйтесь к нашим рейтинговым турнирам и поднимайтесь в таблице лидеров
           </p>
         </div>
@@ -187,7 +187,7 @@ export function TournamentList() {
             <p className="text-muted-foreground">Новые турниры будут добавлены в ближайшее время</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
             {tournaments.map((tournament) => (
               <Card 
                 key={tournament.id} 

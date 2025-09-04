@@ -108,10 +108,10 @@ export default function Gallery() {
               <Tag className="w-4 h-4 mr-2" />
               Галерея
             </Badge>
-            <h1 className="text-5xl font-bold mb-6 bg-gradient-to-r from-poker-primary to-poker-accent bg-clip-text text-transparent animate-fade-in">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-6 bg-gradient-to-r from-poker-primary to-poker-accent bg-clip-text text-transparent animate-fade-in">
               Атмосфера IPS
             </h1>
-            <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed animate-fade-in">
+            <p className="text-lg sm:text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed animate-fade-in px-4">
               Окунитесь в атмосферу профессионального покера. Наши залы, турниры, события и моменты триумфа в одной коллекции.
             </p>
           </div>
@@ -123,7 +123,7 @@ export default function Gallery() {
                 <Star className="w-6 h-6 text-amber-500" />
                 <h2 className="text-2xl font-bold text-poker-primary">Рекомендуемые</h2>
               </div>
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
                 {featuredImages.map((image) => (
                   <Dialog key={`featured-${image.id}`}>
                     <DialogTrigger asChild>
@@ -185,36 +185,41 @@ export default function Gallery() {
           )}
 
           {/* Filters */}
-          <div className="flex flex-wrap items-center justify-between gap-4 mb-8 p-6 bg-background/50 backdrop-blur-sm rounded-2xl border border-border/50">
-            <div className="flex flex-wrap gap-2">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8 p-4 sm:p-6 bg-background/50 backdrop-blur-sm rounded-2xl border border-border/50">
+            <div className="flex flex-wrap gap-2 w-full sm:w-auto">
               {categoriesWithCounts.map((category) => (
                 <Button
                   key={category.value}
                   variant={selectedCategory === category.value ? "default" : "outline"}
                   size="sm"
                   onClick={() => setSelectedCategory(category.value)}
-                  className={selectedCategory === category.value ? "bg-poker-primary hover:bg-poker-primary/90" : ""}
+                  className={`text-xs sm:text-sm ${selectedCategory === category.value ? "bg-poker-primary hover:bg-poker-primary/90" : ""}`}
                 >
-                  <Filter className="w-4 h-4 mr-2" />
-                  {category.label} ({category.count})
+                  <Filter className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                  <span className="hidden sm:inline">{category.label} ({category.count})</span>
+                  <span className="sm:hidden">{category.label.slice(0, 3)} ({category.count})</span>
                 </Button>
               ))}
             </div>
             
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 w-full sm:w-auto justify-center sm:justify-end">
               <Button
                 variant={viewMode === 'grid' ? "default" : "outline"}
                 size="sm"
                 onClick={() => setViewMode('grid')}
+                className="flex-1 sm:flex-none"
               >
-                <Grid3X3 className="w-4 h-4" />
+                <Grid3X3 className="w-4 h-4 mr-2 sm:mr-0" />
+                <span className="sm:hidden">Сетка</span>
               </Button>
               <Button
                 variant={viewMode === 'masonry' ? "default" : "outline"}
                 size="sm"
                 onClick={() => setViewMode('masonry')}
+                className="flex-1 sm:flex-none"
               >
-                <Grid2X2 className="w-4 h-4" />
+                <Grid2X2 className="w-4 h-4 mr-2 sm:mr-0" />
+                <span className="sm:hidden">Колонки</span>
               </Button>
             </div>
           </div>
@@ -235,7 +240,7 @@ export default function Gallery() {
               </div>
             </div>
           ) : (
-            <div className={`grid gap-6 ${viewMode === 'grid' ? 'md:grid-cols-2 lg:grid-cols-3' : 'columns-1 md:columns-2 lg:columns-3'}`}>
+            <div className={`grid gap-4 md:gap-6 ${viewMode === 'grid' ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3' : 'columns-1 sm:columns-2 lg:columns-3'}`}>
               {filteredImages.map((image) => (
                 <Dialog key={image.id}>
                   <DialogTrigger asChild>
@@ -265,31 +270,31 @@ export default function Gallery() {
                       </div>
                     </Card>
                   </DialogTrigger>
-                  <DialogContent className="max-w-4xl max-h-[90vh] p-0">
-                    <div className="relative">
-                      <img 
-                        src={image.image_url} 
-                        alt={image.alt_text || image.title}
-                        className="w-full h-auto max-h-[80vh] object-contain"
-                      />
-                      <div className="p-6 bg-background">
-                        <h3 className="text-2xl font-bold mb-2 text-poker-primary">{image.title}</h3>
-                        {image.description && (
-                          <p className="text-muted-foreground mb-4">{image.description}</p>
-                        )}
-                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                          <div className="flex items-center gap-2">
-                            <Calendar className="w-4 h-4" />
-                            {new Date(image.created_at).toLocaleDateString('ru-RU')}
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Tag className="w-4 h-4" />
-                            {categoriesWithCounts.find(c => c.value === image.category)?.label}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </DialogContent>
+                   <DialogContent className="max-w-4xl max-h-[90vh] p-0 mx-4">
+                     <div className="relative">
+                       <img 
+                         src={image.image_url} 
+                         alt={image.alt_text || image.title}
+                         className="w-full h-auto max-h-[70vh] sm:max-h-[80vh] object-contain"
+                       />
+                       <div className="p-4 sm:p-6 bg-background">
+                         <h3 className="text-lg sm:text-2xl font-bold mb-2 text-poker-primary">{image.title}</h3>
+                         {image.description && (
+                           <p className="text-sm sm:text-base text-muted-foreground mb-4">{image.description}</p>
+                         )}
+                         <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-xs sm:text-sm text-muted-foreground">
+                           <div className="flex items-center gap-2">
+                             <Calendar className="w-3 h-3 sm:w-4 sm:h-4" />
+                             {new Date(image.created_at).toLocaleDateString('ru-RU')}
+                           </div>
+                           <div className="flex items-center gap-2">
+                             <Tag className="w-3 h-3 sm:w-4 sm:h-4" />
+                             {categoriesWithCounts.find(c => c.value === image.category)?.label}
+                           </div>
+                         </div>
+                       </div>
+                     </div>
+                   </DialogContent>
                 </Dialog>
               ))}
             </div>
