@@ -152,36 +152,8 @@ export default function Blog() {
   const heroTitle = cmsContent['hero_title'] || 'Покерная мудрость и аналитика';
   const heroSubtitle = cmsContent['hero_subtitle'] || 'Блог IPS';
   const heroDescription = cmsContent['hero_description'] || 'Экспертные статьи, анализ раздач, стратегии и инсайты от профессионалов IPS';
-  const heroImage = cmsContent['hero_image'] || 'https://images.unsplash.com/photo-1606092195730-5d7b9af1efc5?w=1200&h=800&fit=crop';
 
   const featuredPost = posts.find(post => post.is_featured) || posts[0];
-
-  // SEO: заголовок, описание и каноническая ссылка
-  useEffect(() => {
-    document.title = `${heroSubtitle} — ${heroTitle}`;
-
-    const heroDesc = heroDescription;
-    let metaDesc = document.querySelector('meta[name="description"]') as HTMLMetaElement | null;
-    if (metaDesc) {
-      metaDesc.setAttribute('content', heroDesc);
-    } else {
-      metaDesc = document.createElement('meta');
-      metaDesc.name = 'description';
-      metaDesc.content = heroDesc;
-      document.head.appendChild(metaDesc);
-    }
-
-    const canonicalUrl = `${window.location.origin}/blog`;
-    let canonical = document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
-    if (canonical) {
-      canonical.setAttribute('href', canonicalUrl);
-    } else {
-      canonical = document.createElement('link');
-      canonical.rel = 'canonical';
-      canonical.href = canonicalUrl;
-      document.head.appendChild(canonical);
-    }
-  }, [heroTitle, heroSubtitle, heroDescription]);
   
   // Фильтрация постов
   const filteredPosts = posts.filter(post => {
@@ -204,7 +176,7 @@ export default function Blog() {
 
   if (loading || cmsLoading) {
     return (
-    <div className="min-h-screen overflow-x-hidden">
+      <div className="min-h-screen">
         <Header />
         <div className="flex items-center justify-center py-20">
           <Loader2 className="w-8 h-8 animate-spin text-poker-primary" />
@@ -219,30 +191,19 @@ export default function Blog() {
       <Header />
       
       <main>
-        <section className="py-20 bg-gradient-surface relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-poker-accent/5 to-poker-primary/5"></div>
-          <div className="container mx-auto px-4 relative">
-            <div className="grid lg:grid-cols-2 gap-12 items-center">
-              <div className="max-w-2xl">
-                <Badge variant="outline" className="mb-6 border-poker-accent text-poker-accent">
-                  {heroSubtitle}
-                </Badge>
-                <h1 className="text-5xl font-bold mb-6 bg-gradient-to-r from-poker-primary to-poker-accent bg-clip-text text-transparent">
-                  {heroTitle}
-                </h1>
-                <p className="text-xl text-muted-foreground leading-relaxed mb-0 lg:mb-8">
-                  {heroDescription}
-                </p>
-              </div>
-              <div className="relative">
-                <img 
-                  src={heroImage}
-                  alt="Блог IPS — покерные статьи и аналитика"
-                  className="rounded-2xl shadow-floating w-full"
-                  loading="lazy"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-poker-primary/20 to-transparent rounded-2xl"></div>
-              </div>
+        {/* Hero Section */}
+        <section className="py-12 md:py-16 lg:py-20 bg-gradient-surface">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="max-w-4xl mx-auto text-center">
+              <Badge variant="outline" className="mb-4 md:mb-6 border-poker-accent text-poker-accent">
+                {heroSubtitle}
+              </Badge>
+              <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 md:mb-6 bg-gradient-to-r from-poker-primary to-poker-accent bg-clip-text text-transparent">
+                {heroTitle}
+              </h1>
+              <p className="text-base md:text-lg lg:text-xl text-muted-foreground leading-relaxed px-4 sm:px-0">
+                {heroDescription}
+              </p>
             </div>
           </div>
         </section>
@@ -259,7 +220,6 @@ export default function Blog() {
                       src={featuredPost.image}
                       alt={featuredPost.title}
                       className="w-full h-48 sm:h-56 md:h-64 object-cover"
-                      loading="lazy"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-poker-primary/60 via-transparent to-transparent"></div>
                     <Badge className="absolute top-3 left-3 md:top-4 md:left-4 bg-poker-accent text-white border-0 text-xs md:text-sm">
@@ -398,7 +358,6 @@ export default function Blog() {
                             src={post.image}
                             alt={post.title}
                             className="w-full h-40 md:h-48 object-cover group-hover:scale-110 transition-transform duration-700"
-                            loading="lazy"
                           />
                           <div className="absolute inset-0 bg-gradient-to-t from-poker-primary/60 via-transparent to-transparent"></div>
                           <div className="absolute top-2 left-2 md:top-3 md:left-3">
@@ -411,16 +370,16 @@ export default function Blog() {
                         </div>
                         
                         <CardContent className="p-4 md:p-6">
-                          <h4 className="text-base md:text-lg font-bold mb-2 md:mb-3 text-poker-primary group-hover:text-poker-accent transition-colors line-clamp-2 break-words">
+                          <h4 className="text-base md:text-lg font-bold mb-2 md:mb-3 text-poker-primary group-hover:text-poker-accent transition-colors line-clamp-2">
                             {post.title}
                           </h4>
                           
-                          <p className="text-muted-foreground mb-3 md:mb-4 text-xs md:text-sm leading-relaxed line-clamp-3 break-words">
+                          <p className="text-muted-foreground mb-3 md:mb-4 text-xs md:text-sm leading-relaxed line-clamp-3">
                             {post.excerpt}
                           </p>
                           
-                          <div className="flex flex-col sm:flex-row sm:items-center justify-between text-xs text-muted-foreground mb-3 md:mb-4 gap-2 min-w-0">
-                            <div className="flex items-center gap-2 min-w-0">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between text-xs text-muted-foreground mb-3 md:mb-4 gap-2">
+                            <div className="flex items-center gap-2">
                               <User className="w-3 h-3" />
                               <span className="truncate">{post.author}</span>
                             </div>
@@ -483,7 +442,7 @@ export default function Blog() {
             </div>
 
             {/* Sidebar */}
-            <div className="space-y-6 hidden lg:block">
+            <div className="space-y-6">
               {/* Categories */}
               <Card className="border border-border/50 bg-gradient-card">
                 <CardHeader>
@@ -575,22 +534,29 @@ export default function Blog() {
       
       {/* Article Modal */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="w-[95vw] sm:w-auto max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           {selectedPost && (
             <>
               <DialogHeader>
-                <div className="flex flex-wrap gap-2 mb-4">
+                <div className="flex items-center gap-2 mb-2">
                   {selectedPost.tags.map((tag) => (
-                    <Badge key={tag} variant="secondary">
+                    <Badge key={tag} variant="outline" className="text-xs">
                       {tag}
                     </Badge>
                   ))}
                 </div>
-                <DialogTitle className="text-3xl font-bold text-poker-primary leading-tight">
+                <DialogTitle className="text-2xl font-bold text-poker-primary">
                   {selectedPost.title}
                 </DialogTitle>
-                <div className="flex items-center gap-4 pt-4">
-                  <div className="flex items-center gap-3">
+                <DialogDescription className="text-lg text-muted-foreground">
+                  {selectedPost.excerpt.replace('...', '')}
+                </DialogDescription>
+              </DialogHeader>
+              
+              <div className="space-y-6">
+                {/* Author and Meta Info */}
+                <div className="flex items-center justify-between border-b border-border pb-4">
+                  <div className="flex items-center gap-4">
                     <img 
                       src={selectedPost.author_avatar}
                       alt={selectedPost.author}
@@ -601,6 +567,7 @@ export default function Blog() {
                       <p className="text-sm text-muted-foreground">{selectedPost.author_role}</p>
                     </div>
                   </div>
+                  
                   <div className="flex items-center gap-4 text-sm text-muted-foreground">
                     <div className="flex items-center gap-1">
                       <Calendar className="w-4 h-4" />
@@ -610,23 +577,46 @@ export default function Blog() {
                       <Clock className="w-4 h-4" />
                       {selectedPost.read_time}
                     </div>
+                    <div className="flex items-center gap-1">
+                      <Eye className="w-4 h-4" />
+                      {selectedPost.views}
+                    </div>
                   </div>
                 </div>
-              </DialogHeader>
-              
-              <div className="mt-8">
-                {selectedPost.image && (
-                  <img 
-                    src={selectedPost.image} 
-                    alt={selectedPost.title}
-                    className="w-full h-64 md:h-96 object-cover rounded-lg mb-8"
-                  />
-                )}
                 
-                <div 
-                  className="prose prose-lg max-w-none dark:prose-invert prose-headings:text-poker-primary prose-a:text-poker-accent hover:prose-a:text-poker-accent/80"
-                  dangerouslySetInnerHTML={{ __html: selectedPost.content }}
-                />
+                {/* Article Image */}
+                <div className="relative rounded-lg overflow-hidden">
+                  <img 
+                    src={selectedPost.image}
+                    alt={selectedPost.title}
+                    className="w-full h-64 object-cover"
+                  />
+                </div>
+                
+                {/* Article Content */}
+                <div className="prose prose-lg max-w-none text-foreground">
+                  <div dangerouslySetInnerHTML={{ __html: selectedPost.content }} />
+                </div>
+                
+                {/* Actions */}
+                <div className="flex items-center justify-between pt-6 border-t border-border">
+                  <div className="flex items-center gap-4">
+                    <Button variant="outline" size="sm">
+                      <Heart className="w-4 h-4 mr-2" />
+                      {selectedPost.likes}
+                    </Button>
+                    <Button variant="outline" size="sm">
+                      <Share2 className="w-4 h-4 mr-2" />
+                      Поделиться
+                    </Button>
+                  </div>
+                  
+                  <DialogClose asChild>
+                    <Button variant="ghost">
+                      Закрыть
+                    </Button>
+                  </DialogClose>
+                </div>
               </div>
             </>
           )}
