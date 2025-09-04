@@ -192,26 +192,26 @@ export default function Blog() {
       
       <main>
         {/* Hero Section */}
-        <section className="py-20 bg-gradient-surface">
-          <div className="container mx-auto px-4">
+        <section className="py-12 md:py-16 lg:py-20 bg-gradient-surface">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
             <div className="max-w-4xl mx-auto text-center">
-              <Badge variant="outline" className="mb-6 border-poker-accent text-poker-accent">
+              <Badge variant="outline" className="mb-4 md:mb-6 border-poker-accent text-poker-accent">
                 {heroSubtitle}
               </Badge>
-              <h1 className="text-5xl font-bold mb-6 bg-gradient-to-r from-poker-primary to-poker-accent bg-clip-text text-transparent">
+              <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 md:mb-6 bg-gradient-to-r from-poker-primary to-poker-accent bg-clip-text text-transparent">
                 {heroTitle}
               </h1>
-              <p className="text-xl text-muted-foreground leading-relaxed">
+              <p className="text-base md:text-lg lg:text-xl text-muted-foreground leading-relaxed px-4 sm:px-0">
                 {heroDescription}
               </p>
             </div>
           </div>
         </section>
 
-        <div className="container mx-auto px-4 py-16">
-          <div className="grid lg:grid-cols-4 gap-8">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12 lg:py-16">
+          <div className="grid lg:grid-cols-4 gap-6 md:gap-8">
             {/* Main Content */}
-            <div className="lg:col-span-3 space-y-12">
+            <div className="lg:col-span-3 space-y-8 md:space-y-10 lg:space-y-12">
               {/* Featured Article */}
               {featuredPost && (
                 <article className="bg-gradient-card rounded-2xl overflow-hidden shadow-floating border border-border/50">
@@ -219,15 +219,15 @@ export default function Blog() {
                     <img 
                       src={featuredPost.image}
                       alt={featuredPost.title}
-                      className="w-full h-64 object-cover"
+                      className="w-full h-48 sm:h-56 md:h-64 object-cover"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-poker-primary/60 via-transparent to-transparent"></div>
-                    <Badge className="absolute top-4 left-4 bg-poker-accent text-white border-0">
+                    <Badge className="absolute top-3 left-3 md:top-4 md:left-4 bg-poker-accent text-white border-0 text-xs md:text-sm">
                       Рекомендуем
                     </Badge>
                   </div>
                   
-                  <div className="p-8">
+                  <div className="p-4 sm:p-6 lg:p-8">
                     <div className="flex flex-wrap gap-2 mb-4">
                       {featuredPost.tags.map((tag) => (
                         <Badge key={tag} variant="outline" className="text-xs">
@@ -236,68 +236,71 @@ export default function Blog() {
                       ))}
                     </div>
                     
-                    <h2 className="text-3xl font-bold mb-4 text-poker-primary">
+                    <h2 className="text-xl sm:text-2xl md:text-3xl font-bold mb-3 md:mb-4 text-poker-primary">
                       {featuredPost.title}
                     </h2>
                     
-                    <p className="text-muted-foreground mb-6 text-lg leading-relaxed">
+                    <p className="text-muted-foreground mb-4 md:mb-6 text-sm md:text-base lg:text-lg leading-relaxed">
                       {featuredPost.excerpt}
                     </p>
                     
-                    <div className="flex items-center justify-between mb-6">
-                      <div className="flex items-center gap-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 md:mb-6 gap-3">
+                      <div className="flex items-center gap-3 md:gap-4">
                         <img 
                           src={featuredPost.author_avatar}
                           alt={featuredPost.author}
-                          className="w-10 h-10 rounded-full"
+                          className="w-8 h-8 md:w-10 md:h-10 rounded-full"
                         />
                         <div>
-                          <p className="font-medium text-poker-primary">{featuredPost.author}</p>
-                          <p className="text-sm text-muted-foreground">{featuredPost.author_role}</p>
+                          <p className="font-medium text-poker-primary text-sm md:text-base">{featuredPost.author}</p>
+                          <p className="text-xs md:text-sm text-muted-foreground">{featuredPost.author_role}</p>
                         </div>
                       </div>
                       
-                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                      <div className="flex items-center gap-2 md:gap-4 text-xs md:text-sm text-muted-foreground flex-wrap">
                         <div className="flex items-center gap-1">
-                          <Calendar className="w-4 h-4" />
-                          {new Date(featuredPost.published_at).toLocaleDateString('ru-RU')}
+                          <Calendar className="w-3 h-3 md:w-4 md:h-4" />
+                          <span className="hidden sm:inline">{new Date(featuredPost.published_at).toLocaleDateString('ru-RU')}</span>
+                          <span className="sm:hidden">{new Date(featuredPost.published_at).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })}</span>
                         </div>
                         <div className="flex items-center gap-1">
-                          <Clock className="w-4 h-4" />
+                          <Clock className="w-3 h-3 md:w-4 md:h-4" />
                           {featuredPost.read_time}
                         </div>
                         <div className="flex items-center gap-1">
-                          <Eye className="w-4 h-4" />
+                          <Eye className="w-3 h-3 md:w-4 md:h-4" />
                           {featuredPost.views}
                         </div>
                       </div>
                     </div>
                     
                     {/* Article Content Preview */}
-                    <div className="prose prose-lg max-w-none text-muted-foreground">
+                    <div className="prose prose-sm md:prose-lg max-w-none text-muted-foreground">
                       <div dangerouslySetInnerHTML={{ 
-                        __html: featuredPost.content.substring(0, 500) + "..." 
+                        __html: featuredPost.content.substring(0, 400) + "..." 
                       }} />
                     </div>
                     
-                    <div className="flex items-center justify-between mt-8 pt-6 border-t border-border">
-                      <div className="flex items-center gap-4">
-                        <Button variant="outline" size="sm">
-                          <Heart className="w-4 h-4 mr-2" />
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between mt-6 md:mt-8 pt-4 md:pt-6 border-t border-border gap-4">
+                      <div className="flex items-center gap-2 md:gap-4">
+                        <Button variant="outline" size="sm" className="text-xs md:text-sm">
+                          <Heart className="w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-2" />
                           {featuredPost.likes}
                         </Button>
-                        <Button variant="outline" size="sm">
-                          <Share2 className="w-4 h-4 mr-2" />
-                          Поделиться
+                        <Button variant="outline" size="sm" className="text-xs md:text-sm">
+                          <Share2 className="w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-2" />
+                          <span className="hidden sm:inline">Поделиться</span>
+                          <span className="sm:hidden">Share</span>
                         </Button>
                       </div>
                       
                       <Button 
-                        className="bg-gradient-button"
+                        className="bg-gradient-button text-sm md:text-base"
                         onClick={() => openPostModal(featuredPost)}
                       >
-                        Читать полностью
-                        <ChevronRight className="w-4 h-4 ml-2" />
+                        <span className="hidden sm:inline">Читать полностью</span>
+                        <span className="sm:hidden">Читать</span>
+                        <ChevronRight className="w-3 h-3 md:w-4 md:h-4 ml-1 md:ml-2" />
                       </Button>
                     </div>
                   </div>
@@ -305,9 +308,9 @@ export default function Blog() {
               )}
 
               {/* Search and Filter */}
-              <div className="bg-gradient-card rounded-2xl p-6 border border-border/50 mb-8">
-                <div className="flex flex-col md:flex-row gap-4">
-                  <div className="relative flex-1">
+              <div className="bg-gradient-card rounded-2xl p-4 md:p-6 border border-border/50 mb-6 md:mb-8">
+                <div className="flex flex-col gap-4">
+                  <div className="relative">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
                     <Input
                       placeholder="Поиск статей..."
@@ -316,17 +319,18 @@ export default function Blog() {
                       className="pl-10 border-border/50"
                     />
                   </div>
-                  <div className="flex gap-2 overflow-x-auto">
+                  <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
                     {categories.map((category) => (
                       <Button
                         key={category.name}
                         variant={selectedCategory === category.name ? "default" : "outline"}
                         size="sm"
                         onClick={() => setSelectedCategory(category.name)}
-                        className="whitespace-nowrap"
+                        className="whitespace-nowrap text-xs md:text-sm flex-shrink-0"
                       >
-                        <category.icon className="w-4 h-4 mr-2" />
-                        {category.name} ({category.count})
+                        <category.icon className="w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-2" />
+                        <span className="hidden sm:inline">{category.name} ({category.count})</span>
+                        <span className="sm:hidden">{category.name}</span>
                       </Button>
                     ))}
                   </div>
@@ -336,26 +340,27 @@ export default function Blog() {
               {/* Other Articles */}
               {filteredPosts.length > 0 ? (
                 <div className="space-y-8">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-2xl font-bold text-poker-primary">
-                      {selectedCategory === "Все" ? "Все статьи" : `Категория: ${selectedCategory}`}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <h3 className="text-lg md:text-xl lg:text-2xl font-bold text-poker-primary">
+                      <span className="hidden sm:inline">{selectedCategory === "Все" ? "Все статьи" : `Категория: ${selectedCategory}`}</span>
+                      <span className="sm:hidden">{selectedCategory === "Все" ? "Статьи" : selectedCategory}</span>
                     </h3>
-                    <Badge variant="outline" className="text-sm">
+                    <Badge variant="outline" className="text-xs md:text-sm">
                       {filteredPosts.length} {filteredPosts.length === 1 ? 'статья' : 'статей'}
                     </Badge>
                   </div>
                   
-                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
                     {filteredPosts.map((post) => (
-                      <Card key={post.id} className="group hover:shadow-elegant hover:-translate-y-2 transition-all duration-500 border border-border/50 overflow-hidden bg-gradient-card">
+                      <Card key={post.id} className="group hover:shadow-elegant hover:-translate-y-1 md:hover:-translate-y-2 transition-all duration-500 border border-border/50 overflow-hidden bg-gradient-card">
                         <div className="relative overflow-hidden">
                           <img 
                             src={post.image}
                             alt={post.title}
-                            className="w-full h-48 object-cover group-hover:scale-110 transition-transform duration-700"
+                            className="w-full h-40 md:h-48 object-cover group-hover:scale-110 transition-transform duration-700"
                           />
                           <div className="absolute inset-0 bg-gradient-to-t from-poker-primary/60 via-transparent to-transparent"></div>
-                          <div className="absolute top-3 left-3">
+                          <div className="absolute top-2 left-2 md:top-3 md:left-3">
                             {post.tags.slice(0, 2).map((tag) => (
                               <Badge key={tag} className="bg-poker-accent/90 text-white border-0 mb-1 mr-1 text-xs">
                                 {tag}
@@ -364,21 +369,21 @@ export default function Blog() {
                           </div>
                         </div>
                         
-                        <CardContent className="p-6">
-                          <h4 className="text-lg font-bold mb-3 text-poker-primary group-hover:text-poker-accent transition-colors line-clamp-2">
+                        <CardContent className="p-4 md:p-6">
+                          <h4 className="text-base md:text-lg font-bold mb-2 md:mb-3 text-poker-primary group-hover:text-poker-accent transition-colors line-clamp-2">
                             {post.title}
                           </h4>
                           
-                          <p className="text-muted-foreground mb-4 text-sm leading-relaxed line-clamp-3">
+                          <p className="text-muted-foreground mb-3 md:mb-4 text-xs md:text-sm leading-relaxed line-clamp-3">
                             {post.excerpt}
                           </p>
                           
-                          <div className="flex items-center justify-between text-xs text-muted-foreground mb-4">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between text-xs text-muted-foreground mb-3 md:mb-4 gap-2">
                             <div className="flex items-center gap-2">
                               <User className="w-3 h-3" />
-                              <span>{post.author}</span>
+                              <span className="truncate">{post.author}</span>
                             </div>
-                            <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-2 md:gap-3">
                               <div className="flex items-center gap-1">
                                 <Clock className="w-3 h-3" />
                                 {post.read_time}
@@ -392,11 +397,12 @@ export default function Blog() {
                           
                           <Button 
                             variant="ghost" 
-                            className="w-full group-hover:bg-poker-accent/10 transition-colors"
+                            className="w-full group-hover:bg-poker-accent/10 transition-colors text-sm"
                             onClick={() => openPostModal(post)}
                           >
-                            Читать далее
-                            <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
+                            <span className="hidden sm:inline">Читать далее</span>
+                            <span className="sm:hidden">Читать</span>
+                            <ArrowRight className="w-3 h-3 md:w-4 md:h-4 ml-1 md:ml-2 group-hover:translate-x-1 transition-transform" />
                           </Button>
                         </CardContent>
                       </Card>
