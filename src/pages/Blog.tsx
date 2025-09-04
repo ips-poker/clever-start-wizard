@@ -204,7 +204,7 @@ export default function Blog() {
 
   if (loading || cmsLoading) {
     return (
-      <div className="min-h-screen">
+    <div className="min-h-screen overflow-x-hidden">
         <Header />
         <div className="flex items-center justify-center py-20">
           <Loader2 className="w-8 h-8 animate-spin text-poker-primary" />
@@ -259,6 +259,7 @@ export default function Blog() {
                       src={featuredPost.image}
                       alt={featuredPost.title}
                       className="w-full h-48 sm:h-56 md:h-64 object-cover"
+                      loading="lazy"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-poker-primary/60 via-transparent to-transparent"></div>
                     <Badge className="absolute top-3 left-3 md:top-4 md:left-4 bg-poker-accent text-white border-0 text-xs md:text-sm">
@@ -397,6 +398,7 @@ export default function Blog() {
                             src={post.image}
                             alt={post.title}
                             className="w-full h-40 md:h-48 object-cover group-hover:scale-110 transition-transform duration-700"
+                            loading="lazy"
                           />
                           <div className="absolute inset-0 bg-gradient-to-t from-poker-primary/60 via-transparent to-transparent"></div>
                           <div className="absolute top-2 left-2 md:top-3 md:left-3">
@@ -409,16 +411,16 @@ export default function Blog() {
                         </div>
                         
                         <CardContent className="p-4 md:p-6">
-                          <h4 className="text-base md:text-lg font-bold mb-2 md:mb-3 text-poker-primary group-hover:text-poker-accent transition-colors line-clamp-2">
+                          <h4 className="text-base md:text-lg font-bold mb-2 md:mb-3 text-poker-primary group-hover:text-poker-accent transition-colors line-clamp-2 break-words">
                             {post.title}
                           </h4>
                           
-                          <p className="text-muted-foreground mb-3 md:mb-4 text-xs md:text-sm leading-relaxed line-clamp-3">
+                          <p className="text-muted-foreground mb-3 md:mb-4 text-xs md:text-sm leading-relaxed line-clamp-3 break-words">
                             {post.excerpt}
                           </p>
                           
-                          <div className="flex flex-col sm:flex-row sm:items-center justify-between text-xs text-muted-foreground mb-3 md:mb-4 gap-2">
-                            <div className="flex items-center gap-2">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between text-xs text-muted-foreground mb-3 md:mb-4 gap-2 min-w-0">
+                            <div className="flex items-center gap-2 min-w-0">
                               <User className="w-3 h-3" />
                               <span className="truncate">{post.author}</span>
                             </div>
@@ -573,7 +575,7 @@ export default function Blog() {
       
       {/* Article Modal */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="w-[95vw] sm:w-auto max-w-4xl max-h-[90vh] overflow-y-auto">
           {selectedPost && (
             <>
               <DialogHeader>
