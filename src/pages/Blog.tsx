@@ -192,16 +192,17 @@ export default function Blog() {
       
       <main>
         {/* Hero Section */}
-        <section className="py-8 md:py-14 lg:py-20 bg-gradient-surface">
-          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+        <section className="py-20 bg-gradient-surface relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-poker-accent/5 to-poker-primary/5"></div>
+          <div className="container mx-auto px-4 relative">
             <div className="max-w-4xl mx-auto text-center">
-              <Badge variant="outline" className="mb-4 md:mb-6 border-poker-accent text-poker-accent">
+              <Badge variant="outline" className="mb-6 border-poker-accent text-poker-accent">
                 {heroSubtitle}
               </Badge>
-              <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 md:mb-6 bg-gradient-to-r from-poker-primary to-poker-accent bg-clip-text text-transparent">
+              <h1 className="text-5xl font-bold mb-6 bg-gradient-to-r from-poker-primary to-poker-accent bg-clip-text text-transparent">
                 {heroTitle}
               </h1>
-              <p className="hidden sm:block text-base md:text-lg lg:text-xl text-muted-foreground leading-relaxed px-4 sm:px-0">
+              <p className="text-xl text-muted-foreground leading-relaxed mb-8">
                 {heroDescription}
               </p>
             </div>
@@ -534,29 +535,22 @@ export default function Blog() {
       
       {/* Article Modal */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="w-[95vw] sm:w-full sm:max-w-3xl lg:max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           {selectedPost && (
             <>
               <DialogHeader>
-                <div className="flex items-center gap-2 mb-2">
+                <div className="flex flex-wrap gap-2 mb-4">
                   {selectedPost.tags.map((tag) => (
-                    <Badge key={tag} variant="outline" className="text-xs">
+                    <Badge key={tag} variant="secondary">
                       {tag}
                     </Badge>
                   ))}
                 </div>
-                <DialogTitle className="text-2xl font-bold text-poker-primary">
+                <DialogTitle className="text-3xl font-bold text-poker-primary leading-tight">
                   {selectedPost.title}
                 </DialogTitle>
-                <DialogDescription className="text-lg text-muted-foreground">
-                  {selectedPost.excerpt.replace('...', '')}
-                </DialogDescription>
-              </DialogHeader>
-              
-              <div className="space-y-6">
-                {/* Author and Meta Info */}
-                <div className="flex items-center justify-between border-b border-border pb-4">
-                  <div className="flex items-center gap-4">
+                <div className="flex items-center gap-4 pt-4">
+                  <div className="flex items-center gap-3">
                     <img 
                       src={selectedPost.author_avatar}
                       alt={selectedPost.author}
@@ -567,7 +561,6 @@ export default function Blog() {
                       <p className="text-sm text-muted-foreground">{selectedPost.author_role}</p>
                     </div>
                   </div>
-                  
                   <div className="flex items-center gap-4 text-sm text-muted-foreground">
                     <div className="flex items-center gap-1">
                       <Calendar className="w-4 h-4" />
@@ -577,46 +570,23 @@ export default function Blog() {
                       <Clock className="w-4 h-4" />
                       {selectedPost.read_time}
                     </div>
-                    <div className="flex items-center gap-1">
-                      <Eye className="w-4 h-4" />
-                      {selectedPost.views}
-                    </div>
                   </div>
                 </div>
-                
-                {/* Article Image */}
-                <div className="relative rounded-lg overflow-hidden">
+              </DialogHeader>
+              
+              <div className="mt-8">
+                {selectedPost.image && (
                   <img 
-                    src={selectedPost.image}
+                    src={selectedPost.image} 
                     alt={selectedPost.title}
-                    className="w-full h-64 object-cover"
+                    className="w-full h-64 md:h-96 object-cover rounded-lg mb-8"
                   />
-                </div>
+                )}
                 
-                {/* Article Content */}
-                <div className="prose prose-lg max-w-none text-foreground">
-                  <div dangerouslySetInnerHTML={{ __html: selectedPost.content }} />
-                </div>
-                
-                {/* Actions */}
-                <div className="flex items-center justify-between pt-6 border-t border-border">
-                  <div className="flex items-center gap-4">
-                    <Button variant="outline" size="sm">
-                      <Heart className="w-4 h-4 mr-2" />
-                      {selectedPost.likes}
-                    </Button>
-                    <Button variant="outline" size="sm">
-                      <Share2 className="w-4 h-4 mr-2" />
-                      Поделиться
-                    </Button>
-                  </div>
-                  
-                  <DialogClose asChild>
-                    <Button variant="ghost">
-                      Закрыть
-                    </Button>
-                  </DialogClose>
-                </div>
+                <div 
+                  className="prose prose-lg max-w-none dark:prose-invert prose-headings:text-poker-primary prose-a:text-poker-accent hover:prose-a:text-poker-accent/80"
+                  dangerouslySetInnerHTML={{ __html: selectedPost.content }}
+                />
               </div>
             </>
           )}
