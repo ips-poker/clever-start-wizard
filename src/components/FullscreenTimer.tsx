@@ -181,11 +181,11 @@ const FullscreenTimer = ({
   const totalChips = registrations.reduce((sum, r) => sum + (r.chips || tournament.starting_chips), 0);
   const averageStack = activePlayers.length > 0 ? Math.round(totalChips / activePlayers.length) : 0;
 
-  const timerProgress = ((tournament.timer_duration - currentTime) / tournament.timer_duration) * 100;
-  
   // Определяем текущий уровень из слепых структур
   const currentLevel = blindLevels.find(l => l.level === tournament.current_level);
   const isBreakLevel = currentLevel?.is_break || false;
+  
+  const timerProgress = (((currentLevel?.duration ?? tournament.timer_duration) - currentTime) / (currentLevel?.duration ?? tournament.timer_duration)) * 100;
   
   // Находим следующий перерыв и считаем время до него
   const nextBreakLevel = blindLevels.find(l => l.is_break && l.level > tournament.current_level);

@@ -282,7 +282,7 @@ const TournamentOverview = ({
   const nextBigBlind = nextBlindLevel ? nextBlindLevel.big_blind : Math.round(tournament.current_big_blind * 1.5);
   const isNextLevelBreak = nextBlindLevel?.is_break || false;
 
-  const timerProgress = ((tournament.timer_duration - currentTime) / tournament.timer_duration) * 100;
+  const timerProgress = (((currentBlindLevel?.duration ?? tournament.timer_duration) - currentTime) / (currentBlindLevel?.duration ?? tournament.timer_duration)) * 100;
 
   // Звуковые оповещения
   useEffect(() => {
