@@ -103,19 +103,18 @@ export function TestimonialsEditor() {
       // Generate unique filename
       const fileExt = file.name.split('.').pop();
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-      const filePath = `testimonials/${fileName}`;
       
-      // Upload file to Supabase storage (use existing 'gallery' bucket)
+      // Upload file to Supabase storage
       const { data, error } = await supabase.storage
-        .from('gallery')
-        .upload(filePath, file);
+        .from('testimonials')
+        .upload(fileName, file);
 
       if (error) throw error;
 
       // Get public URL
       const { data: { publicUrl } } = supabase.storage
-        .from('gallery')
-        .getPublicUrl(filePath);
+        .from('testimonials')
+        .getPublicUrl(fileName);
 
       // Update testimonial image URL
       setNewTestimonial(prev => ({ ...prev, image: publicUrl }));
@@ -139,19 +138,17 @@ export function TestimonialsEditor() {
   const removeUploadedImage = async (imageUrl: string) => {
     try {
       if (imageUrl && imageUrl.includes('supabase')) {
-        // Extract file path from public URL: /object/public/<bucket>/<path>
-        const match = imageUrl.match(/\/object\/public\/[^/]+\/(.+)$/);
-        const filePath = match ? match[1] : '';
+        // Extract filename from URL
+        const urlParts = imageUrl.split('/');
+        const fileName = urlParts[urlParts.length - 1];
         
-        if (filePath) {
-          // Delete from storage (gallery bucket)
-          const { error } = await supabase.storage
-            .from('gallery')
-            .remove([filePath]);
+        // Delete from storage
+        const { error } = await supabase.storage
+          .from('testimonials')
+          .remove([fileName]);
 
-          if (error) {
-            console.error('Error removing file from storage:', error);
-          }
+        if (error) {
+          console.error('Error removing file from storage:', error);
         }
       }
 
@@ -181,13 +178,11 @@ export function TestimonialsEditor() {
       if (editingTestimonial && editingTestimonial.image && editingTestimonial.image !== testimonialData.image) {
         if (editingTestimonial.image.includes('supabase')) {
           try {
-            const match = editingTestimonial.image.match(/\/object\/public\/[^/]+\/(.+)$/);
-            const filePath = match ? match[1] : '';
-            if (filePath) {
-              await supabase.storage
-                .from('gallery')
-                .remove([filePath]);
-            }
+            const urlParts = editingTestimonial.image.split('/');
+            const fileName = urlParts[urlParts.length - 1];
+            await supabase.storage
+              .from('testimonials')
+              .remove([fileName]);
           } catch (error) {
             console.error('Error removing old image:', error);
           }
