@@ -178,8 +178,8 @@ export function TestimonialsEditor() {
 
   const handleSave = async () => {
     try {
-      const testimonialData = editingTestimonial || newTestimonial;
       const position = editingTestimonial ? editingTestimonial.position : (Math.max(...testimonials.map(t => t.position), 0) + 1);
+      const testimonialData = { ...newTestimonial, position };
 
       // If editing and image changed, delete old image from storage
       if (editingTestimonial && editingTestimonial.image && editingTestimonial.image !== testimonialData.image) {
