@@ -442,7 +442,7 @@ export default function Blog() {
             </div>
 
             {/* Sidebar */}
-            <div className="space-y-6">
+            <div className="space-y-6 hidden lg:block">
               {/* Categories */}
               <Card className="border border-border/50 bg-gradient-card">
                 <CardHeader>
@@ -534,7 +534,7 @@ export default function Blog() {
       
       {/* Article Modal */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="w-[95vw] sm:w-full sm:max-w-3xl lg:max-w-4xl max-h-[90vh] overflow-y-auto">
           {selectedPost && (
             <>
               <DialogHeader>
