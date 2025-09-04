@@ -152,8 +152,36 @@ export default function Blog() {
   const heroTitle = cmsContent['hero_title'] || 'Покерная мудрость и аналитика';
   const heroSubtitle = cmsContent['hero_subtitle'] || 'Блог IPS';
   const heroDescription = cmsContent['hero_description'] || 'Экспертные статьи, анализ раздач, стратегии и инсайты от профессионалов IPS';
+  const heroImage = cmsContent['hero_image'] || 'https://images.unsplash.com/photo-1606092195730-5d7b9af1efc5?w=1200&h=800&fit=crop';
 
   const featuredPost = posts.find(post => post.is_featured) || posts[0];
+
+  // SEO: заголовок, описание и каноническая ссылка
+  useEffect(() => {
+    document.title = `${heroSubtitle} — ${heroTitle}`;
+
+    const heroDesc = heroDescription;
+    let metaDesc = document.querySelector('meta[name="description"]') as HTMLMetaElement | null;
+    if (metaDesc) {
+      metaDesc.setAttribute('content', heroDesc);
+    } else {
+      metaDesc = document.createElement('meta');
+      metaDesc.name = 'description';
+      metaDesc.content = heroDesc;
+      document.head.appendChild(metaDesc);
+    }
+
+    const canonicalUrl = `${window.location.origin}/blog`;
+    let canonical = document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
+    if (canonical) {
+      canonical.setAttribute('href', canonicalUrl);
+    } else {
+      canonical = document.createElement('link');
+      canonical.rel = 'canonical';
+      canonical.href = canonicalUrl;
+      document.head.appendChild(canonical);
+    }
+  }, [heroTitle, heroSubtitle, heroDescription]);
   
   // Фильтрация постов
   const filteredPosts = posts.filter(post => {
@@ -191,20 +219,30 @@ export default function Blog() {
       <Header />
       
       <main>
-        {/* Hero Section */}
         <section className="py-20 bg-gradient-surface relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-br from-poker-accent/5 to-poker-primary/5"></div>
           <div className="container mx-auto px-4 relative">
-            <div className="max-w-4xl mx-auto text-center">
-              <Badge variant="outline" className="mb-6 border-poker-accent text-poker-accent">
-                {heroSubtitle}
-              </Badge>
-              <h1 className="text-5xl font-bold mb-6 bg-gradient-to-r from-poker-primary to-poker-accent bg-clip-text text-transparent">
-                {heroTitle}
-              </h1>
-              <p className="text-xl text-muted-foreground leading-relaxed mb-8">
-                {heroDescription}
-              </p>
+            <div className="grid lg:grid-cols-2 gap-12 items-center">
+              <div className="max-w-2xl">
+                <Badge variant="outline" className="mb-6 border-poker-accent text-poker-accent">
+                  {heroSubtitle}
+                </Badge>
+                <h1 className="text-5xl font-bold mb-6 bg-gradient-to-r from-poker-primary to-poker-accent bg-clip-text text-transparent">
+                  {heroTitle}
+                </h1>
+                <p className="text-xl text-muted-foreground leading-relaxed mb-0 lg:mb-8">
+                  {heroDescription}
+                </p>
+              </div>
+              <div className="relative">
+                <img 
+                  src={heroImage}
+                  alt="Блог IPS — покерные статьи и аналитика"
+                  className="rounded-2xl shadow-floating w-full"
+                  loading="lazy"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-poker-primary/20 to-transparent rounded-2xl"></div>
+              </div>
             </div>
           </div>
         </section>
