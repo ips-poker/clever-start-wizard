@@ -226,12 +226,12 @@ const FullscreenTimer = ({
   const nextLevel = blindLevels.find(l => l.level === tournament.current_level + 1);
   const nextSmallBlind = nextLevel?.small_blind || tournament.current_small_blind * 2;
   const nextBigBlind = nextLevel?.big_blind || tournament.current_big_blind * 2;
-  const nextAnte = nextLevel?.ante || nextBigBlind;
+  const nextAnte = nextLevel?.ante ?? 0;
 
   // Текущие блайнды и анте из структуры (если доступны)
   const currentSmallBlind = currentLevel?.small_blind || tournament.current_small_blind;
   const currentBigBlind = currentLevel?.big_blind || tournament.current_big_blind;
-  const currentAnte = currentLevel?.ante || tournament.current_big_blind;
+  const currentAnte = currentLevel?.ante ?? 0;
 
   return (
     <div className="fixed inset-0 bg-white text-gray-800 z-50 flex flex-col">

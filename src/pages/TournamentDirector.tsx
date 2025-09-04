@@ -744,6 +744,58 @@ const TournamentDirector = () => {
     }
   };
 
+  // Realtime subscription for blind_levels to sync current level changes
+  useEffect(() => {
+    if (!selectedTournament?.id) return;
+    const channel = supabase
+      .channel(`td_blinds_${selectedTournament.id}`)
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'blind_levels',
+        filter: `tournament_id=eq.${selectedTournament.id}`
+      }, async () => {
+        try {
+          const { data: level } = await supabase
+            .from('blind_levels')
+            .select('*')
+            .eq('tournament_id', selectedTournament.id)
+            .eq('level', selectedTournament.current_level)
+            .single();
+          if (level) {
+            // Update local tournament state
+            setSelectedTournament(prev => prev ? ({
+              ...prev,
+              current_small_blind: level.small_blind,
+              current_big_blind: level.big_blind,
+              timer_duration: level.duration
+            }) : prev);
+
+            // Adjust remaining time if it exceeds new duration
+            const newRemaining = Math.min(currentTime, level.duration || 1200);
+            setCurrentTime(newRemaining);
+
+            // Persist timer changes
+            localStorage.setItem(`timer_${selectedTournament.id}`, JSON.stringify({
+              currentTime: newRemaining,
+              timerActive,
+              lastUpdate: Date.now()
+            }));
+
+            // Update DB timer fields and duration
+            await supabase.from('tournaments')
+              .update({ timer_duration: level.duration, timer_remaining: newRemaining })
+              .eq('id', selectedTournament.id);
+          }
+        } catch (e) {
+          console.error('Ошибка синхронизации блайндов:', e);
+        }
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [selectedTournament?.id, selectedTournament?.current_level, currentTime, timerActive]);
+
   return (
     <AuthGuard>
       <SidebarProvider>
