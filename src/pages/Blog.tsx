@@ -192,7 +192,7 @@ export default function Blog() {
       
       <main>
         {/* Hero Section */}
-        <section className="py-12 md:py-16 lg:py-20 bg-gradient-surface">
+        <section className="py-8 md:py-14 lg:py-20 bg-gradient-surface">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
             <div className="max-w-4xl mx-auto text-center">
               <Badge variant="outline" className="mb-4 md:mb-6 border-poker-accent text-poker-accent">
@@ -201,7 +201,7 @@ export default function Blog() {
               <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 md:mb-6 bg-gradient-to-r from-poker-primary to-poker-accent bg-clip-text text-transparent">
                 {heroTitle}
               </h1>
-              <p className="text-base md:text-lg lg:text-xl text-muted-foreground leading-relaxed px-4 sm:px-0">
+              <p className="hidden sm:block text-base md:text-lg lg:text-xl text-muted-foreground leading-relaxed px-4 sm:px-0">
                 {heroDescription}
               </p>
             </div>
