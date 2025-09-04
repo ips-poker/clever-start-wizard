@@ -190,13 +190,15 @@ export function BlogPageEditor() {
           page_slug: 'blog',
           content_key: key,
           content_value: value,
-          content_type: 'text'
+          content_type: 'text',
+          is_active: true
         })),
         {
           page_slug: 'blog',
           content_key: 'posts',
           content_value: JSON.stringify(posts),
-          content_type: 'json'
+          content_type: 'json',
+          is_active: true
         }
       ];
 
@@ -229,7 +231,7 @@ export function BlogPageEditor() {
     }
   };
 
-  const addPost = () => {
+  const addPost = async () => {
     const post: BlogPost = {
       id: Date.now().toString(),
       title: newPost.title || "",
@@ -248,7 +250,57 @@ export function BlogPageEditor() {
       is_published: newPost.is_published || true
     };
 
-    setPosts([...posts, post]);
+    const updatedPosts = [...posts, post];
+    setPosts(updatedPosts);
+    
+    // Автоматически сохраняем в базу данных
+    try {
+      setSaving(true);
+      const contentItems = [
+        ...Object.entries(content).map(([key, value]) => ({
+          page_slug: 'blog',
+          content_key: key,
+          content_value: value,
+          content_type: 'text',
+          is_active: true
+        })),
+        {
+          page_slug: 'blog',
+          content_key: 'posts',
+          content_value: JSON.stringify(updatedPosts),
+          content_type: 'json',
+          is_active: true
+        }
+      ];
+
+      // Удаляем существующий контент для этой страницы
+      await supabase
+        .from('cms_content')
+        .delete()
+        .eq('page_slug', 'blog');
+
+      // Вставляем новый контент
+      const { error } = await supabase
+        .from('cms_content')
+        .insert(contentItems);
+
+      if (error) throw error;
+
+      toast({
+        title: "Успешно",
+        description: "Новая статья добавлена и сохранена"
+      });
+    } catch (error) {
+      console.error('Error saving blog content:', error);
+      toast({
+        title: "Ошибка",
+        description: "Не удалось сохранить новую статью",
+        variant: "destructive"
+      });
+    } finally {
+      setSaving(false);
+    }
+    
     resetNewPost();
   };
 
@@ -269,8 +321,57 @@ export function BlogPageEditor() {
     setEditingPost(null);
   };
 
-  const removePost = (id: string) => {
-    setPosts(posts.filter(post => post.id !== id));
+  const removePost = async (id: string) => {
+    const updatedPosts = posts.filter(post => post.id !== id);
+    setPosts(updatedPosts);
+    
+    // Автоматически сохраняем в базу данных
+    try {
+      setSaving(true);
+      const contentItems = [
+        ...Object.entries(content).map(([key, value]) => ({
+          page_slug: 'blog',
+          content_key: key,
+          content_value: value,
+          content_type: 'text',
+          is_active: true
+        })),
+        {
+          page_slug: 'blog',
+          content_key: 'posts',
+          content_value: JSON.stringify(updatedPosts),
+          content_type: 'json',
+          is_active: true
+        }
+      ];
+
+      // Удаляем существующий контент для этой страницы
+      await supabase
+        .from('cms_content')
+        .delete()
+        .eq('page_slug', 'blog');
+
+      // Вставляем новый контент
+      const { error } = await supabase
+        .from('cms_content')
+        .insert(contentItems);
+
+      if (error) throw error;
+
+      toast({
+        title: "Успешно",
+        description: "Статья удалена"
+      });
+    } catch (error) {
+      console.error('Error saving blog content:', error);
+      toast({
+        title: "Ошибка",
+        description: "Не удалось удалить статью",
+        variant: "destructive"
+      });
+    } finally {
+      setSaving(false);
+    }
   };
 
   const startEditPost = (post: BlogPost) => {
@@ -278,11 +379,61 @@ export function BlogPageEditor() {
     setEditingPost(post.id);
   };
 
-  const saveEditPost = () => {
+  const saveEditPost = async () => {
     if (editingPost && newPost) {
-      setPosts(posts.map(post => 
+      const updatedPosts = posts.map(post => 
         post.id === editingPost ? { ...post, ...newPost } as BlogPost : post
-      ));
+      );
+      setPosts(updatedPosts);
+      
+      // Автоматически сохраняем в базу данных
+      try {
+        setSaving(true);
+        const contentItems = [
+          ...Object.entries(content).map(([key, value]) => ({
+            page_slug: 'blog',
+            content_key: key,
+            content_value: value,
+            content_type: 'text',
+            is_active: true
+          })),
+          {
+            page_slug: 'blog',
+            content_key: 'posts',
+            content_value: JSON.stringify(updatedPosts),
+            content_type: 'json',
+            is_active: true
+          }
+        ];
+
+        // Удаляем существующий контент для этой страницы
+        await supabase
+          .from('cms_content')
+          .delete()
+          .eq('page_slug', 'blog');
+
+        // Вставляем новый контент
+        const { error } = await supabase
+          .from('cms_content')
+          .insert(contentItems);
+
+        if (error) throw error;
+
+        toast({
+          title: "Успешно",
+          description: "Статья обновлена и сохранена"
+        });
+      } catch (error) {
+        console.error('Error saving blog content:', error);
+        toast({
+          title: "Ошибка",
+          description: "Не удалось сохранить изменения",
+          variant: "destructive"
+        });
+      } finally {
+        setSaving(false);
+      }
+      
       resetNewPost();
     }
   };
