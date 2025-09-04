@@ -219,7 +219,7 @@ export default function Blog() {
                     <img 
                       src={featuredPost.image}
                       alt={featuredPost.title}
-                      className="w-full h-48 sm:h-64 md:h-72 object-cover"
+                      className="w-full h-64 object-cover"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-poker-primary/60 via-transparent to-transparent"></div>
                     <Badge className="absolute top-4 left-4 bg-poker-accent text-white border-0">
@@ -275,7 +275,7 @@ export default function Blog() {
                     </div>
                     
                     {/* Article Content Preview */}
-                    <div className="prose prose-base sm:prose-lg max-w-none text-muted-foreground break-words text-sm sm:text-base [&_img]:max-w-full [&_img]:h-auto [&_table]:w-full [&_pre]:whitespace-pre-wrap">
+                    <div className="prose prose-base sm:prose-lg max-w-none text-muted-foreground">
                       <div dangerouslySetInnerHTML={{ 
                         __html: featuredPost.content.substring(0, 500) + "..." 
                       }} />
@@ -337,7 +337,7 @@ export default function Blog() {
               {/* Other Articles */}
               {filteredPosts.length > 0 ? (
                 <div className="space-y-8">
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+                  <div className="flex items-center justify-between">
                     <h3 className="text-2xl font-bold text-poker-primary">
                       {selectedCategory === "Все" ? "Все статьи" : `Категория: ${selectedCategory}`}
                     </h3>
@@ -590,7 +590,7 @@ export default function Blog() {
                 </div>
                 
                 {/* Article Content */}
-                <div className="prose prose-sm sm:prose-base max-w-none text-foreground break-words [&_img]:max-w-full [&_img]:h-auto [&_table]:w-full [&_pre]:whitespace-pre-wrap">
+                <div className="prose prose-sm sm:prose-base max-w-none text-foreground">
                   <div dangerouslySetInnerHTML={{ __html: selectedPost.content }} />
                 </div>
                 
