@@ -145,6 +145,26 @@ const TournamentOverview = ({
     }
   }, [tournament?.id]);
 
+  // Realtime: обновляем структуру блайндов при любых изменениях в БД
+  useEffect(() => {
+    if (!tournament?.id) return;
+    const channel = supabase
+      .channel(`blinds_${tournament.id}`)
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'blind_levels',
+        filter: `tournament_id=eq.${tournament.id}`
+      }, () => {
+        loadBlindLevels();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [tournament?.id]);
+
   const loadBlindLevels = async () => {
     if (!tournament?.id || !isMountedRef.current) return;
     
@@ -230,9 +250,13 @@ const TournamentOverview = ({
   const totalChips = registrations.reduce((sum, r) => sum + (r.chips || tournament.starting_chips), 0);
   const averageStack = activePlayers.length > 0 ? Math.round(totalChips / activePlayers.length) : 0;
 
-  // Найти следующий уровень из структуры блайндов
+  // Найти текущий и следующий уровни из структуры блайндов
   const currentBlindLevel = blindLevels.find(level => level.level === tournament.current_level);
   const nextBlindLevel = blindLevels.find(level => level.level === tournament.current_level + 1);
+
+  // Используем значения из структуры для текущего уровня (если доступны)
+  const currentSmallBlind = currentBlindLevel?.small_blind ?? tournament.current_small_blind;
+  const currentBigBlind = currentBlindLevel?.big_blind ?? tournament.current_big_blind;
   
   // Найти следующий перерыв и время до него
   const nextBreakLevel = blindLevels.find(l => l.is_break && l.level > tournament.current_level);
@@ -317,11 +341,11 @@ const TournamentOverview = ({
             <div className="grid grid-cols-2 gap-4">
               <div className="text-center p-4 border border-gray-200/30 rounded-lg bg-white/50">
                 <p className="text-xs text-gray-500 font-medium mb-1">Малый блайнд</p>
-                <p className="text-2xl font-light text-gray-800">{tournament.current_small_blind}</p>
+                <p className="text-2xl font-light text-gray-800">{currentSmallBlind}</p>
               </div>
               <div className="text-center p-4 border border-gray-200/30 rounded-lg bg-white/50">
                 <p className="text-xs text-gray-500 font-medium mb-1">Большой блайнд</p>
-                <p className="text-2xl font-light text-gray-800">{tournament.current_big_blind}</p>
+                <p className="text-2xl font-light text-gray-800">{currentBigBlind}</p>
               </div>
             </div>
           </CardContent>

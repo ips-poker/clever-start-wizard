@@ -228,7 +228,9 @@ const FullscreenTimer = ({
   const nextBigBlind = nextLevel?.big_blind || tournament.current_big_blind * 2;
   const nextAnte = nextLevel?.ante || nextBigBlind;
 
-  // Текущий анте
+  // Текущие блайнды и анте из структуры (если доступны)
+  const currentSmallBlind = currentLevel?.small_blind || tournament.current_small_blind;
+  const currentBigBlind = currentLevel?.big_blind || tournament.current_big_blind;
   const currentAnte = currentLevel?.ante || tournament.current_big_blind;
 
   return (
@@ -344,11 +346,11 @@ const FullscreenTimer = ({
             <p className="text-sm text-gray-800 font-bold mb-2">ТЕКУЩИЙ УРОВЕНЬ</p>
             <div className="grid grid-cols-3 gap-2">
               <div className="space-y-1">
-                <p className="text-3xl font-bold text-gray-900">{tournament.current_small_blind}</p>
+                <p className="text-3xl font-bold text-gray-900">{currentSmallBlind}</p>
                 <p className="text-xs text-gray-600">МАЛЫЙ БЛАЙНД</p>
               </div>
               <div className="space-y-1">
-                <p className="text-3xl font-bold text-gray-900">{tournament.current_big_blind}</p>
+                <p className="text-3xl font-bold text-gray-900">{currentBigBlind}</p>
                 <p className="text-xs text-gray-600">БОЛЬШОЙ БЛАЙНД</p>
               </div>
               <div className="space-y-1">
