@@ -117,21 +117,21 @@ export default function About() {
       
       <main>
         {/* Hero Section */}
-        <section className="py-20 bg-gradient-surface relative overflow-hidden">
+        <section className="py-12 sm:py-16 md:py-20 bg-gradient-surface relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-br from-poker-accent/5 to-poker-primary/5"></div>
           <div className="container mx-auto px-4 relative">
-            <div className="grid lg:grid-cols-2 gap-12 items-center">
+            <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
               <div className="max-w-2xl">
-                <Badge variant="outline" className="mb-6 border-poker-accent text-poker-accent">
+                <Badge variant="outline" className="mb-4 sm:mb-6 border-poker-accent text-poker-accent">
                   {getContent('hero_badge', 'О компании')}
                 </Badge>
-                <h1 className="text-5xl font-bold mb-6 bg-gradient-to-r from-poker-primary to-poker-accent bg-clip-text text-transparent">
+                <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 sm:mb-6 bg-gradient-to-r from-poker-primary to-poker-accent bg-clip-text text-transparent">
                   {getContent('hero_title', 'International Poker Style')}
                 </h1>
-                <p className="text-xl text-muted-foreground leading-relaxed mb-8">
+                <p className="text-base sm:text-lg md:text-xl text-muted-foreground leading-relaxed mb-6 sm:mb-8">
                   {getContent('hero_description', 'Мы создали уникальное пространство для любителей покера, где каждый может развивать свои навыки, участвовать в честных турнирах и расти в профессиональной рейтинговой системе.')}
                 </p>
-                <div className="flex flex-wrap gap-4">
+                <div className="flex flex-col sm:flex-row flex-wrap gap-4">
                   <Button size="lg" className="bg-gradient-button hover:shadow-elevated">
                     <Users className="w-5 h-5 mr-2" />
                     Присоединиться
@@ -142,7 +142,7 @@ export default function About() {
                   </Button>
                 </div>
               </div>
-              <div className="relative">
+              <div className="relative order-first lg:order-last">
                 <img 
                   src={getContent('hero_image', 'https://images.unsplash.com/photo-1606092195730-5d7b9af1efc5?w=600&h=600&fit=crop')}
                   alt="IPS Poker Club"
@@ -155,21 +155,21 @@ export default function About() {
         </section>
 
         {/* Achievements */}
-        <section className="py-16 bg-background">
+        <section className="py-12 sm:py-16 bg-background">
           <div className="container mx-auto px-4">
-            <div className="grid md:grid-cols-4 gap-6">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
               {achievements.map((achievement, index) => {
                 const IconComponent = achievement.icon;
                 return (
-                  <Card key={`achievement-${index}-${achievement.title}`} className="text-center border border-border/50 hover:shadow-card transition-all duration-300">
-                    <CardContent className="p-8">
-                      <div className="w-16 h-16 bg-gradient-to-br from-poker-accent/10 to-poker-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <IconComponent className="w-8 h-8 text-poker-accent" />
-                      </div>
-                      <h3 className="text-2xl font-bold text-poker-primary mb-2">{achievement.title}</h3>
-                      <p className="text-muted-foreground">{achievement.desc}</p>
-                    </CardContent>
-                  </Card>
+                <Card key={`achievement-${index}-${achievement.title}`} className="text-center border border-border/50 hover:shadow-card transition-all duration-300">
+                  <CardContent className="p-4 sm:p-6 md:p-8">
+                    <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br from-poker-accent/10 to-poker-primary/10 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+                      <IconComponent className="w-6 h-6 sm:w-8 sm:h-8 text-poker-accent" />
+                    </div>
+                    <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-poker-primary mb-2">{achievement.title}</h3>
+                    <p className="text-sm sm:text-base text-muted-foreground">{achievement.desc}</p>
+                  </CardContent>
+                </Card>
                 );
               })}
             </div>
@@ -177,17 +177,17 @@ export default function About() {
         </section>
 
         {/* Our Story */}
-        <section className="py-20 bg-gradient-surface">
+        <section className="py-12 sm:py-16 md:py-20 bg-gradient-surface">
           <div className="container mx-auto px-4">
-            <div className="grid lg:grid-cols-2 gap-12 items-center">
+            <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
               <div>
                 <Badge variant="outline" className="mb-4 border-poker-accent text-poker-accent">
                   {getContent('story_badge', 'Наша история')}
                 </Badge>
-                <h2 className="text-4xl font-bold mb-6 text-poker-primary">
+                <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4 sm:mb-6 text-poker-primary">
                   {getContent('story_title', 'Как всё начиналось')}
                 </h2>
-                <div className="space-y-6 text-lg text-muted-foreground leading-relaxed">
+                <div className="space-y-4 sm:space-y-6 text-base sm:text-lg text-muted-foreground leading-relaxed">
                   <p>
                     {getContent('story_paragraph1', 'В 2021 году группа энтузиастов покера решила создать нечто большее, чем просто игровой клуб. Мы хотели построить настоящее сообщество, где каждый игрок мог бы отслеживать свой прогресс и развиваться в профессиональной среде.')}
                   </p>
@@ -198,7 +198,7 @@ export default function About() {
                     {getContent('story_paragraph3', 'Сегодня IPS - это не просто покерный клуб, а целая экосистема для развития покерных навыков, включающая регулярные турниры, обучающие программы и дружелюбное сообщество игроков всех уровней.')}
                   </p>
                 </div>
-                <div className="flex items-center gap-4 mt-8">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 mt-6 sm:mt-8">
                   <div className="flex items-center gap-2">
                     <CheckCircle className="w-5 h-5 text-poker-success" />
                     <span className="text-sm font-medium">Лицензированная деятельность</span>
@@ -223,21 +223,21 @@ export default function About() {
         </section>
 
         {/* Values */}
-        <section className="py-20 bg-background">
+        <section className="py-12 sm:py-16 md:py-20 bg-background">
           <div className="container mx-auto px-4">
-            <div className="text-center mb-16">
+            <div className="text-center mb-12 sm:mb-16">
               <Badge variant="outline" className="mb-4 border-poker-accent text-poker-accent">
                 {getContent('values_badge', 'Наши ценности')}
               </Badge>
-              <h2 className="text-4xl font-bold mb-6 text-poker-primary">
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4 sm:mb-6 text-poker-primary">
                 {getContent('values_title', 'Во что мы верим')}
               </h2>
-              <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
+              <p className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto">
                 {getContent('values_description', 'Наши принципы определяют каждое решение и создают уникальную атмосферу в IPS')}
               </p>
             </div>
 
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
               {values.map((value, index) => {
                 const IconComponent = value.icon;
                 return (
@@ -259,21 +259,21 @@ export default function About() {
         </section>
 
         {/* Team */}
-        <section className="py-20 bg-gradient-surface">
+        <section className="py-12 sm:py-16 md:py-20 bg-gradient-surface">
           <div className="container mx-auto px-4">
-            <div className="text-center mb-16">
+            <div className="text-center mb-12 sm:mb-16">
               <Badge variant="outline" className="mb-4 border-poker-accent text-poker-accent">
                 {getContent('team_badge', 'Команда')}
               </Badge>
-              <h2 className="text-4xl font-bold mb-6 text-poker-primary">
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4 sm:mb-6 text-poker-primary">
                 {getContent('team_title', 'Познакомьтесь с нашей командой')}
               </h2>
-              <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
+              <p className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto">
                 {getContent('team_description', 'Профессионалы своего дела, объединенные страстью к покеру и стремлением к совершенству')}
               </p>
             </div>
 
-            <div className="grid md:grid-cols-3 gap-8">
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
               {team.map((member, index) => (
                 <Card key={`member-${index}-${member.name}`} className="border border-border/50 hover:shadow-floating hover:-translate-y-2 transition-all duration-500 overflow-hidden">
                   <div className="relative">
@@ -289,14 +289,14 @@ export default function About() {
                       </Badge>
                     </div>
                   </div>
-                  <CardContent className="p-6">
-                    <h3 className="text-xl font-bold text-poker-primary mb-2">{member.name}</h3>
-                    <p className="text-poker-accent font-medium mb-4">{member.role}</p>
+                  <CardContent className="p-4 sm:p-6">
+                    <h3 className="text-lg sm:text-xl font-bold text-poker-primary mb-2">{member.name}</h3>
+                    <p className="text-poker-accent font-medium mb-3 sm:mb-4 text-sm sm:text-base">{member.role}</p>
                     <div className="space-y-2">
                       {member.achievements.map((achievement, achIndex) => (
-                        <div key={achIndex} className="flex items-center gap-2">
-                          <Award className="w-4 h-4 text-poker-success" />
-                          <span className="text-sm text-muted-foreground">{achievement}</span>
+                        <div key={achIndex} className="flex items-start gap-2">
+                          <Award className="w-4 h-4 text-poker-success mt-0.5 flex-shrink-0" />
+                          <span className="text-xs sm:text-sm text-muted-foreground leading-relaxed">{achievement}</span>
                         </div>
                       ))}
                     </div>
@@ -308,16 +308,16 @@ export default function About() {
         </section>
 
         {/* CTA */}
-        <section className="py-20 bg-background">
+        <section className="py-12 sm:py-16 md:py-20 bg-background">
           <div className="container mx-auto px-4">
             <div className="max-w-4xl mx-auto text-center">
-              <h2 className="text-4xl font-bold mb-6 text-poker-primary">
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4 sm:mb-6 text-poker-primary">
                 Готовы стать частью IPS?
               </h2>
-              <p className="text-xl text-muted-foreground mb-8 leading-relaxed">
+              <p className="text-base sm:text-lg md:text-xl text-muted-foreground mb-6 sm:mb-8 leading-relaxed">
                 Присоединяйтесь к нашему сообществу и начните свой путь к покерному мастерству уже сегодня
               </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <div className="flex flex-col sm:flex-row gap-4 justify-center max-w-md sm:max-w-none mx-auto">
                 <Button size="lg" className="bg-gradient-button hover:shadow-elevated">
                   <Users className="w-5 h-5 mr-2" />
                   Стать игроком

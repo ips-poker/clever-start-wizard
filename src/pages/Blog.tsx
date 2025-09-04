@@ -192,26 +192,26 @@ export default function Blog() {
       
       <main>
         {/* Hero Section */}
-        <section className="py-20 bg-gradient-surface">
+        <section className="py-12 sm:py-16 md:py-20 bg-gradient-surface">
           <div className="container mx-auto px-4">
             <div className="max-w-4xl mx-auto text-center">
-              <Badge variant="outline" className="mb-6 border-poker-accent text-poker-accent">
+              <Badge variant="outline" className="mb-4 sm:mb-6 border-poker-accent text-poker-accent">
                 {heroSubtitle}
               </Badge>
-              <h1 className="text-5xl font-bold mb-6 bg-gradient-to-r from-poker-primary to-poker-accent bg-clip-text text-transparent">
+              <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 sm:mb-6 bg-gradient-to-r from-poker-primary to-poker-accent bg-clip-text text-transparent">
                 {heroTitle}
               </h1>
-              <p className="text-xl text-muted-foreground leading-relaxed">
+              <p className="text-lg sm:text-xl text-muted-foreground leading-relaxed">
                 {heroDescription}
               </p>
             </div>
           </div>
         </section>
 
-        <div className="container mx-auto px-4 py-16">
-          <div className="grid lg:grid-cols-4 gap-8">
+        <div className="container mx-auto px-4 py-8 sm:py-12 md:py-16">
+          <div className="grid lg:grid-cols-4 gap-6 lg:gap-8">
             {/* Main Content */}
-            <div className="lg:col-span-3 space-y-12">
+            <div className="lg:col-span-3 space-y-8 sm:space-y-12">
               {/* Featured Article */}
               {featuredPost && (
                 <article className="bg-gradient-card rounded-2xl overflow-hidden shadow-floating border border-border/50">
@@ -227,7 +227,7 @@ export default function Blog() {
                     </Badge>
                   </div>
                   
-                  <div className="p-8">
+                  <div className="p-4 sm:p-6 md:p-8">
                     <div className="flex flex-wrap gap-2 mb-4">
                       {featuredPost.tags.map((tag) => (
                         <Badge key={tag} variant="outline" className="text-xs">
@@ -236,15 +236,15 @@ export default function Blog() {
                       ))}
                     </div>
                     
-                    <h2 className="text-3xl font-bold mb-4 text-poker-primary">
+                    <h2 className="text-xl sm:text-2xl md:text-3xl font-bold mb-4 text-poker-primary">
                       {featuredPost.title}
                     </h2>
                     
-                    <p className="text-muted-foreground mb-6 text-lg leading-relaxed">
+                    <p className="text-muted-foreground mb-6 text-base sm:text-lg leading-relaxed">
                       {featuredPost.excerpt}
                     </p>
                     
-                    <div className="flex items-center justify-between mb-6">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4">
                       <div className="flex items-center gap-4">
                         <img 
                           src={featuredPost.author_avatar}
@@ -257,10 +257,11 @@ export default function Blog() {
                         </div>
                       </div>
                       
-                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                      <div className="flex items-center gap-3 sm:gap-4 text-sm text-muted-foreground">
                         <div className="flex items-center gap-1">
                           <Calendar className="w-4 h-4" />
-                          {new Date(featuredPost.published_at).toLocaleDateString('ru-RU')}
+                          <span className="hidden sm:inline">{new Date(featuredPost.published_at).toLocaleDateString('ru-RU')}</span>
+                          <span className="sm:hidden">{new Date(featuredPost.published_at).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit' })}</span>
                         </div>
                         <div className="flex items-center gap-1">
                           <Clock className="w-4 h-4" />
@@ -274,13 +275,13 @@ export default function Blog() {
                     </div>
                     
                     {/* Article Content Preview */}
-                    <div className="prose prose-lg max-w-none text-muted-foreground">
+                    <div className="prose prose-base sm:prose-lg max-w-none text-muted-foreground">
                       <div dangerouslySetInnerHTML={{ 
                         __html: featuredPost.content.substring(0, 500) + "..." 
                       }} />
                     </div>
                     
-                    <div className="flex items-center justify-between mt-8 pt-6 border-t border-border">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mt-8 pt-6 border-t border-border gap-4">
                       <div className="flex items-center gap-4">
                         <Button variant="outline" size="sm">
                           <Heart className="w-4 h-4 mr-2" />
@@ -293,7 +294,7 @@ export default function Blog() {
                       </div>
                       
                       <Button 
-                        className="bg-gradient-button"
+                        className="bg-gradient-button w-full sm:w-auto"
                         onClick={() => openPostModal(featuredPost)}
                       >
                         Читать полностью
@@ -345,7 +346,7 @@ export default function Blog() {
                     </Badge>
                   </div>
                   
-                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                     {filteredPosts.map((post) => (
                       <Card key={post.id} className="group hover:shadow-elegant hover:-translate-y-2 transition-all duration-500 border border-border/50 overflow-hidden bg-gradient-card">
                         <div className="relative overflow-hidden">
@@ -435,8 +436,8 @@ export default function Blog() {
               )}
             </div>
 
-            {/* Sidebar */}
-            <div className="space-y-6">
+            {/* Sidebar - Hide on small screens, show as modal or horizontal scroll on mobile */}
+            <div className="hidden lg:block space-y-6">
               {/* Categories */}
               <Card className="border border-border/50 bg-gradient-card">
                 <CardHeader>
@@ -528,28 +529,28 @@ export default function Blog() {
       
       {/* Article Modal */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto mx-4">
           {selectedPost && (
             <>
               <DialogHeader>
-                <div className="flex items-center gap-2 mb-2">
+                <div className="flex flex-wrap items-center gap-2 mb-2">
                   {selectedPost.tags.map((tag) => (
                     <Badge key={tag} variant="outline" className="text-xs">
                       {tag}
                     </Badge>
                   ))}
                 </div>
-                <DialogTitle className="text-2xl font-bold text-poker-primary">
+                <DialogTitle className="text-xl sm:text-2xl font-bold text-poker-primary pr-8">
                   {selectedPost.title}
                 </DialogTitle>
-                <DialogDescription className="text-lg text-muted-foreground">
+                <DialogDescription className="text-base sm:text-lg text-muted-foreground">
                   {selectedPost.excerpt.replace('...', '')}
                 </DialogDescription>
               </DialogHeader>
               
-              <div className="space-y-6">
+              <div className="space-y-4 sm:space-y-6">
                 {/* Author and Meta Info */}
-                <div className="flex items-center justify-between border-b border-border pb-4">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between border-b border-border pb-4 gap-4">
                   <div className="flex items-center gap-4">
                     <img 
                       src={selectedPost.author_avatar}
@@ -562,10 +563,11 @@ export default function Blog() {
                     </div>
                   </div>
                   
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                  <div className="flex items-center gap-3 sm:gap-4 text-sm text-muted-foreground">
                     <div className="flex items-center gap-1">
                       <Calendar className="w-4 h-4" />
-                      {new Date(selectedPost.published_at).toLocaleDateString('ru-RU')}
+                      <span className="hidden sm:inline">{new Date(selectedPost.published_at).toLocaleDateString('ru-RU')}</span>
+                      <span className="sm:hidden">{new Date(selectedPost.published_at).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit' })}</span>
                     </div>
                     <div className="flex items-center gap-1">
                       <Clock className="w-4 h-4" />
@@ -583,17 +585,17 @@ export default function Blog() {
                   <img 
                     src={selectedPost.image}
                     alt={selectedPost.title}
-                    className="w-full h-64 object-cover"
+                    className="w-full h-48 sm:h-64 object-cover"
                   />
                 </div>
                 
                 {/* Article Content */}
-                <div className="prose prose-lg max-w-none text-foreground">
+                <div className="prose prose-sm sm:prose-base max-w-none text-foreground">
                   <div dangerouslySetInnerHTML={{ __html: selectedPost.content }} />
                 </div>
                 
                 {/* Actions */}
-                <div className="flex items-center justify-between pt-6 border-t border-border">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between pt-6 border-t border-border gap-4">
                   <div className="flex items-center gap-4">
                     <Button variant="outline" size="sm">
                       <Heart className="w-4 h-4 mr-2" />
@@ -606,7 +608,7 @@ export default function Blog() {
                   </div>
                   
                   <DialogClose asChild>
-                    <Button variant="ghost">
+                    <Button variant="ghost" className="w-full sm:w-auto">
                       Закрыть
                     </Button>
                   </DialogClose>
