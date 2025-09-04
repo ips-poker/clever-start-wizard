@@ -42,6 +42,13 @@ interface SystemStatus {
   last_updated: string;
 }
 
+interface SystemStatistics {
+  players_count: number;
+  tournaments_count: number;
+  game_results_count: number;
+  last_updated: string;
+}
+
 interface SystemCheckProps {
   onRefresh: () => void;
 }
@@ -66,29 +73,27 @@ const SystemCheck = ({ onRefresh }: SystemCheckProps) => {
   const checkSystemStatus = async () => {
     setLoading(true);
     try {
-      // Check database connection and get counts
-      const [playersResult, tournamentsResult, resultsResult] = await Promise.all([
-        supabase.from('players').select('*', { count: 'exact' }),
-        supabase.from('tournaments').select('*', { count: 'exact' }),
-        supabase.from('game_results').select('*', { count: 'exact' })
-      ]);
-
-      const newStatus: SystemStatus = {
-        database_connection: !playersResult.error && !tournamentsResult.error && !resultsResult.error,
-        players_count: playersResult.count || 0,
-        tournaments_count: tournamentsResult.count || 0,
-        game_results_count: resultsResult.count || 0,
-        last_updated: new Date().toLocaleString('ru-RU')
-      };
-
-      setStatus(newStatus);
-
-      if (newStatus.database_connection) {
-        toast({
-          title: 'Система работает корректно',
-          description: 'Все соединения с базой данных активны',
-        });
+      // Use secure function to get system statistics without exposing sensitive data
+      const { data: systemStats, error: statsError } = await supabase.rpc('get_system_statistics');
+      
+      if (statsError) {
+        throw statsError;
       }
+
+      const stats = systemStats as unknown as SystemStatistics;
+
+      setStatus({
+        database_connection: true,
+        players_count: stats.players_count || 0,
+        tournaments_count: stats.tournaments_count || 0,
+        game_results_count: stats.game_results_count || 0,
+        last_updated: new Date(stats.last_updated).toLocaleString('ru-RU')
+      });
+
+      toast({
+        title: 'Система работает корректно',
+        description: 'Все соединения с базой данных активны',
+      });
     } catch (error) {
       console.error('Error checking system status:', error);
       setStatus(prev => ({

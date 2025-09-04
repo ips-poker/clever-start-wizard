@@ -915,6 +915,10 @@ export type Database = {
           wins: number
         }[]
       }
+      get_players_count: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
       get_players_public: {
         Args: Record<PropertyKey, never>
         Returns: {
@@ -928,6 +932,10 @@ export type Database = {
           user_id: string
           wins: number
         }[]
+      }
+      get_system_statistics: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
       }
       get_tournament_voice_stats: {
         Args: { tournament_id_param: string }
