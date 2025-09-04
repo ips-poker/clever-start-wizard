@@ -237,11 +237,11 @@ const FullscreenTimer = ({
       <div className="flex justify-between items-center p-4 border-b border-gray-200">
         {/* Left - Logo and Company */}
         <div className="flex items-center space-x-3">
-          <div className="w-20 h-20 bg-white rounded-lg flex items-center justify-center shadow-md border border-gray-200">
+          <div className="w-20 h-20 flex items-center justify-center">
             <img 
               src={ipsLogo} 
-              alt="IPS Logo" 
-              className="w-12 h-12 object-contain"
+              alt="EPC Logo" 
+              className="w-16 h-16 object-contain"
             />
           </div>
           <div className="flex flex-col">

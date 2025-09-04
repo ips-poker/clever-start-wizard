@@ -3,7 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Progress } from "@/components/ui/progress";
 import { Coffee, Clock, Users, Trophy } from "lucide-react";
-import ipsLogo from "/lovable-uploads/c77304bf-5309-4bdc-afcc-a81c8d3ff6c2.png";
+import ipsLogo from "/lovable-uploads/3d3f89dd-02a1-4e23-845c-641c0ee0956b.png";
 import telegramQr from "@/assets/telegram-qr.png";
 
 interface Tournament {
@@ -201,16 +201,16 @@ const ExternalTimer = () => {
       <div className="flex justify-between items-center p-6 border-b border-gray-200 bg-white shadow-sm">
         {/* Left - Logo and Company */}
         <div className="flex items-center space-x-4">
-          <div className="w-24 h-24 bg-white rounded-lg flex items-center justify-center shadow-md border border-gray-200">
+          <div className="w-24 h-24 flex items-center justify-center">
             <img 
               src={ipsLogo} 
-              alt="IPS Logo" 
-              className="w-16 h-16 object-contain"
+              alt="EPC Logo" 
+              className="w-20 h-20 object-contain"
             />
           </div>
           <div className="flex flex-col">
-            <span className="text-2xl font-bold text-gray-800">IPS</span>
-            <span className="text-sm text-gray-500">International Poker Series</span>
+            <span className="text-2xl font-sinkin text-poker-gold tracking-tight">EPC</span>
+            <span className="text-sm text-muted-foreground -mt-1 font-sinkin font-medium tracking-widest uppercase">EVENT POKER CLUB</span>
           </div>
         </div>
 
