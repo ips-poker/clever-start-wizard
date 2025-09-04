@@ -303,7 +303,7 @@ export function TestimonialsEditor() {
     }
   };
 
-  const handleEdit = (testimonial: any) => {
+  const handleEdit = async (testimonial: any) => {
     setEditingTestimonial(testimonial);
     setNewTestimonial({
       name: testimonial.name || '',
