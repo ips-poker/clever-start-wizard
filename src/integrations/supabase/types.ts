@@ -525,53 +525,6 @@ export type Database = {
           },
         ]
       }
-      tournament_state: {
-        Row: {
-          created_at: string | null
-          id: string
-          last_sync_at: string | null
-          sync_source: string | null
-          timer_active: boolean | null
-          timer_paused_at: string | null
-          timer_remaining: number | null
-          timer_started_at: string | null
-          tournament_id: string
-          updated_at: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          id?: string
-          last_sync_at?: string | null
-          sync_source?: string | null
-          timer_active?: boolean | null
-          timer_paused_at?: string | null
-          timer_remaining?: number | null
-          timer_started_at?: string | null
-          tournament_id: string
-          updated_at?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          id?: string
-          last_sync_at?: string | null
-          sync_source?: string | null
-          timer_active?: boolean | null
-          timer_paused_at?: string | null
-          timer_remaining?: number | null
-          timer_started_at?: string | null
-          tournament_id?: string
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "tournament_state_tournament_id_fkey"
-            columns: ["tournament_id"]
-            isOneToOne: true
-            referencedRelation: "tournaments"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       tournaments: {
         Row: {
           addon_chips: number | null

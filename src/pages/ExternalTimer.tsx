@@ -1,53 +1,162 @@
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 import { Progress } from "@/components/ui/progress";
-import { Coffee, Clock, Users, Trophy, TrendingUp, DollarSign, Layers } from "lucide-react";
+import { Coffee, Clock, Users, Trophy } from "lucide-react";
 import ipsLogo from "/lovable-uploads/3d3f89dd-02a1-4e23-845c-641c0ee0956b.png";
 import telegramQr from "@/assets/telegram-qr.png";
-import { useTournamentSync } from "@/hooks/useTournamentSync";
-import { useRealtimeTournamentData } from "@/hooks/useRealtimeTournamentData";
+
+interface Tournament {
+  id: string;
+  name: string;
+  current_level: number;
+  current_small_blind: number;
+  current_big_blind: number;
+  timer_duration: number;
+  timer_remaining: number;
+  buy_in: number;
+  starting_chips: number;
+}
+
+interface BlindLevel {
+  level: number;
+  small_blind: number;
+  big_blind: number;
+  ante: number;
+  duration: number;
+  is_break: boolean;
+}
+
+interface Registration {
+  id: string;
+  status: string;
+  rebuys: number;
+  addons: number;
+  chips?: number;
+}
 
 const ExternalTimer = () => {
   const [searchParams] = useSearchParams();
   const tournamentId = searchParams.get('tournamentId');
   
+  const [tournament, setTournament] = useState<Tournament | null>(null);
+  const [blindLevels, setBlindLevels] = useState<BlindLevel[]>([]);
+  const [registrations, setRegistrations] = useState<Registration[]>([]);
   const [currentTime, setCurrentTime] = useState(0);
   const [timerActive, setTimerActive] = useState(false);
   const [slogan, setSlogan] = useState("Престижные турниры. Высокие стандарты.");
 
-  // Используем новые хуки для синхронизации
-  const { tournament, registrations, blindLevels, loading } = useRealtimeTournamentData({
-    tournamentId: tournamentId || ''
-  });
-
-  const { tournamentState, syncTimeWithServer } = useTournamentSync({
-    tournamentId: tournamentId || '',
-    onTimerUpdate: (remaining, active) => {
-      setCurrentTime(remaining);
-      setTimerActive(active);
-    }
-  });
-
-  // Синхронизация времени каждую секунду для активного таймера
   useEffect(() => {
-    if (!timerActive || !tournamentState) return;
+    if (!tournamentId) return;
 
-    const interval = setInterval(() => {
-      const syncedTime = syncTimeWithServer();
-      setCurrentTime(syncedTime);
+    loadTournamentData();
+    setupRealtimeSubscription();
+  }, [tournamentId]);
+
+  // Синхронизация с localStorage
+  useEffect(() => {
+    if (!tournament) return;
+
+    const syncInterval = setInterval(() => {
+      const savedTimerState = localStorage.getItem(`timer_${tournament.id}`);
+      if (savedTimerState) {
+        const { currentTime: savedTime, timerActive: savedActive, lastUpdate } = JSON.parse(savedTimerState);
+        const timePassed = Math.floor((Date.now() - lastUpdate) / 1000);
+        
+        if (savedActive && savedTime > timePassed) {
+          setCurrentTime(savedTime - timePassed);
+          setTimerActive(true);
+        } else {
+          setCurrentTime(savedTime);
+          setTimerActive(savedActive);
+        }
+      }
     }, 1000);
 
-    return () => clearInterval(interval);
-  }, [timerActive, tournamentState, syncTimeWithServer]);
+    return () => clearInterval(syncInterval);
+  }, [tournament]);
 
-  // Синхронизация с real-time системой
-  useEffect(() => {
-    if (!tournament || !tournamentState) return;
+  const loadTournamentData = async () => {
+    if (!tournamentId) return;
 
-    // Инициализируем текущее время из синхронизированного состояния
-    const syncedTime = syncTimeWithServer();
-    setCurrentTime(syncedTime);
-  }, [tournament, tournamentState, syncTimeWithServer]);
+    // Загружаем данные турнира
+    const { data: tournamentData } = await supabase
+      .from('tournaments')
+      .select('*')
+      .eq('id', tournamentId)
+      .single();
+
+    if (tournamentData) {
+      setTournament(tournamentData);
+      setCurrentTime(tournamentData.timer_remaining || tournamentData.timer_duration || 1200);
+    }
+
+    // Загружаем структуру блайндов
+    const { data: blindData } = await supabase
+      .from('blind_levels')
+      .select('*')
+      .eq('tournament_id', tournamentId)
+      .order('level', { ascending: true });
+
+    if (blindData) {
+      setBlindLevels(blindData);
+    }
+
+    // Загружаем регистрации
+    const { data: registrationData } = await supabase
+      .from('tournament_registrations')
+      .select('*')
+      .eq('tournament_id', tournamentId);
+
+    if (registrationData) {
+      setRegistrations(registrationData);
+    }
+  };
+
+  const setupRealtimeSubscription = () => {
+    if (!tournamentId) return;
+
+    // Подписка на изменения турнира
+    const tournamentChannel = supabase
+      .channel('tournament-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'tournaments',
+          filter: `id=eq.${tournamentId}`
+        },
+        (payload) => {
+          if (payload.new) {
+            setTournament(payload.new as Tournament);
+          }
+        }
+      )
+      .subscribe();
+
+    // Подписка на изменения регистраций
+    const registrationChannel = supabase
+      .channel('registration-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'tournament_registrations',
+          filter: `tournament_id=eq.${tournamentId}`
+        },
+        () => {
+          loadTournamentData();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(tournamentChannel);
+      supabase.removeChannel(registrationChannel);
+    };
+  };
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -55,7 +164,7 @@ const ExternalTimer = () => {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  if (loading) {
+  if (!tournament) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white flex items-center justify-center">
         <div className="text-center">
@@ -66,19 +175,9 @@ const ExternalTimer = () => {
     );
   }
 
-  if (!tournament) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-xl text-gray-600">Турнир не найден</p>
-        </div>
-      </div>
-    );
-  }
-
-  const activePlayers = registrations.filter(r => r.status === 'registered' || r.status === 'playing' || r.status === 'confirmed');
-  const totalRebuys = registrations.reduce((sum, r) => sum + (r.rebuys || 0), 0);
-  const totalAddons = registrations.reduce((sum, r) => sum + (r.addons || 0), 0);
+  const activePlayers = registrations.filter(r => r.status === 'registered' || r.status === 'playing');
+  const totalRebuys = registrations.reduce((sum, r) => sum + r.rebuys, 0);
+  const totalAddons = registrations.reduce((sum, r) => sum + r.addons, 0);
   const prizePool = (registrations.length * tournament.buy_in) + (totalRebuys * tournament.buy_in) + (totalAddons * tournament.buy_in);
   
   const totalChips = registrations.reduce((sum, r) => sum + (r.chips || tournament.starting_chips), 0);
@@ -89,7 +188,7 @@ const ExternalTimer = () => {
   
   // Используем длительность из структуры блайндов для правильного прогресса
   const levelDuration = currentLevel?.duration ?? tournament.timer_duration;
-  const timerProgress = levelDuration > 0 ? ((levelDuration - currentTime) / levelDuration) * 100 : 0;
+  const timerProgress = ((levelDuration - currentTime) / levelDuration) * 100;
   
   const nextLevel = blindLevels.find(l => l.level === tournament.current_level + 1);
   const isNextBreakLevel = nextLevel?.is_break || false;
@@ -151,83 +250,72 @@ const ExternalTimer = () => {
               </>
             )}
           </div>
-
-          {/* Timer */}
-          <div className="text-8xl font-bold text-gray-900 mb-4 font-mono">
+          
+          {/* Timer Display */}
+          <div className={`text-[20rem] md:text-[24rem] font-mono font-light transition-all duration-500 leading-none ${
+            currentTime <= 60 ? 'text-red-500 animate-pulse' : 
+            currentTime <= 300 ? 'text-amber-500' : 
+            'text-gray-800'
+          }`}>
             {formatTime(currentTime)}
           </div>
-
+          
           {/* Progress Bar */}
-          <div className="w-96 mx-auto mb-8">
+          <div className="w-96 max-w-full mt-8">
             <Progress 
-              value={Math.max(0, Math.min(100, timerProgress))} 
+              value={timerProgress} 
               className="h-4 bg-gray-200"
             />
-            <div className="flex justify-between text-sm text-gray-500 mt-2">
-              <span>0:00</span>
-              <span>{formatTime(levelDuration || 1200)}</span>
-            </div>
           </div>
         </div>
 
-        {/* Blinds Display */}
+        {/* Current and Next Blinds */}
         <div className="grid grid-cols-2 gap-8 max-w-4xl w-full">
           {/* Current Blinds */}
-          <div className="bg-white rounded-2xl p-8 shadow-lg border border-gray-100">
-            <h3 className="text-2xl font-semibold text-gray-800 mb-6 text-center">
-              {isBreakLevel ? 'Перерыв' : 'Текущие блайнды'}
-            </h3>
-            {!isBreakLevel && (
-              <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <span className="text-lg text-gray-600">Малый блайнд:</span>
-                  <span className="text-2xl font-bold text-gray-900">
-                    {tournament.current_small_blind.toLocaleString()}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-lg text-gray-600">Большой блайнд:</span>
-                  <span className="text-2xl font-bold text-gray-900">
-                    {tournament.current_big_blind.toLocaleString()}
-                  </span>
-                </div>
-                {currentAnte > 0 && (
-                  <div className="flex justify-between items-center">
-                    <span className="text-lg text-gray-600">Анте:</span>
-                    <span className="text-2xl font-bold text-gray-900">
-                      {currentAnte.toLocaleString()}
-                    </span>
-                  </div>
-                )}
+          <div className="text-center p-8 border-4 border-gray-800 rounded-xl bg-white shadow-xl">
+            <p className="text-lg text-gray-800 font-bold mb-4">ТЕКУЩИЙ УРОВЕНЬ</p>
+            <div className={`grid gap-4 ${currentLevel?.ante > 0 ? 'grid-cols-3' : 'grid-cols-2'}`}>
+              <div className="space-y-2">
+                <p className="text-5xl font-bold text-gray-900">{isBreakLevel ? '—' : (currentLevel?.small_blind || tournament.current_small_blind)}</p>
+                <p className="text-sm text-gray-600">МАЛЫЙ БЛАЙНД</p>
               </div>
-            )}
+              <div className="space-y-2">
+                <p className="text-5xl font-bold text-gray-900">{isBreakLevel ? '—' : (currentLevel?.big_blind || tournament.current_big_blind)}</p>
+                <p className="text-sm text-gray-600">БОЛЬШОЙ БЛАЙНД</p>
+              </div>
+              {currentLevel?.ante > 0 && (
+                <div className="space-y-2">
+                  <p className="text-5xl font-bold text-amber-600">{isBreakLevel ? '—' : currentLevel.ante}</p>
+                  <p className="text-sm text-gray-600">АНТЕ</p>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Next Blinds */}
-          <div className="bg-gray-50 rounded-2xl p-8 shadow-lg border border-gray-200">
-            <h3 className="text-2xl font-semibold text-gray-800 mb-6 text-center">
-              {isNextBreakLevel ? 'Следующий: Перерыв' : 'Следующие блайнды'}
-            </h3>
-            {!isNextBreakLevel && nextLevel && (
-              <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <span className="text-lg text-gray-600">Малый блайнд:</span>
-                  <span className="text-2xl font-bold text-gray-900">
-                    {nextSmallBlind.toLocaleString()}
-                  </span>
+          <div className="text-center p-8 border-2 border-gray-300 rounded-xl bg-gray-50">
+            <p className="text-lg text-gray-500 font-medium mb-4">
+              {isBreakLevel ? 'ПОСЛЕ ПЕРЕРЫВА' : (isNextBreakLevel ? 'ПЕРЕРЫВ' : 'СЛЕДУЮЩИЙ УРОВЕНЬ')}
+            </p>
+            {isNextBreakLevel ? (
+              <div className="flex items-center justify-center py-8">
+                <Coffee className="w-16 h-16 text-amber-600 mr-4" />
+                <span className="text-4xl font-medium text-gray-700">ПЕРЕРЫВ</span>
+              </div>
+            ) : (
+              <div className={`grid gap-4 ${nextLevel?.ante > 0 ? 'grid-cols-3' : 'grid-cols-2'}`}>
+                <div className="space-y-2">
+                  <p className="text-3xl font-medium text-gray-700">{nextSmallBlind}</p>
+                  <p className="text-sm text-gray-500">МАЛЫЙ БЛАЙНД</p>
                 </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-lg text-gray-600">Большой блайнд:</span>
-                  <span className="text-2xl font-bold text-gray-900">
-                    {nextBigBlind.toLocaleString()}
-                  </span>
+                <div className="space-y-2">
+                  <p className="text-3xl font-medium text-gray-700">{nextBigBlind}</p>
+                  <p className="text-sm text-gray-500">БОЛЬШОЙ БЛАЙНД</p>
                 </div>
-                {nextAnte > 0 && (
-                  <div className="flex justify-between items-center">
-                    <span className="text-lg text-gray-600">Анте:</span>
-                    <span className="text-2xl font-bold text-gray-900">
-                      {nextAnte.toLocaleString()}
-                    </span>
+                {nextLevel?.ante > 0 && (
+                  <div className="space-y-2">
+                    <p className="text-3xl font-medium text-amber-500">{nextLevel.ante}</p>
+                    <p className="text-sm text-gray-500">АНТЕ</p>
                   </div>
                 )}
               </div>
@@ -235,45 +323,44 @@ const ExternalTimer = () => {
           </div>
         </div>
 
-        {/* Tournament Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-6xl w-full">
-          <div className="bg-white rounded-xl p-6 shadow-md border border-gray-100 text-center">
-            <Users className="w-8 h-8 text-blue-500 mx-auto mb-3" />
-            <div className="text-2xl font-bold text-gray-900">{activePlayers.length}</div>
-            <div className="text-sm text-gray-600">Активных игроков</div>
-          </div>
-
-          <div className="bg-white rounded-xl p-6 shadow-md border border-gray-100 text-center">
-            <Trophy className="w-8 h-8 text-amber-500 mx-auto mb-3" />
-            <div className="text-2xl font-bold text-gray-900">{prizePool.toLocaleString()}₽</div>
-            <div className="text-sm text-gray-600">Призовой фонд</div>
-          </div>
-
-          <div className="bg-white rounded-xl p-6 shadow-md border border-gray-100 text-center">
-            <TrendingUp className="w-8 h-8 text-green-500 mx-auto mb-3" />
-            <div className="text-2xl font-bold text-gray-900">{averageStack.toLocaleString()}</div>
-            <div className="text-sm text-gray-600">Средний стек</div>
-          </div>
-
-          <div className="bg-white rounded-xl p-6 shadow-md border border-gray-100 text-center">
-            <Layers className="w-8 h-8 text-purple-500 mx-auto mb-3" />
-            <div className="text-2xl font-bold text-gray-900">{totalRebuys + totalAddons}</div>
-            <div className="text-sm text-gray-600">Ребаи + Аддоны</div>
+        {/* Statistics */}
+        <div className="bg-white border border-gray-200 rounded-xl p-6 max-w-6xl w-full shadow-lg">
+          <div className="grid grid-cols-4 gap-8 text-center">
+            <div>
+              <div className="flex items-center justify-center mb-2">
+                <Users className="w-6 h-6 text-gray-600 mr-3" />
+                <span className="text-lg text-gray-600">Игроки</span>
+              </div>
+              <p className="text-3xl font-medium text-gray-800">{activePlayers.length}</p>
+            </div>
+            <div>
+              <div className="flex items-center justify-center mb-2">
+                <Trophy className="w-6 h-6 text-amber-600 mr-3" />
+                <span className="text-lg text-gray-600">Призовой (₽)</span>
+              </div>
+              <p className="text-3xl font-medium text-gray-800">{prizePool.toLocaleString()}</p>
+            </div>
+            <div>
+              <div className="flex items-center justify-center mb-2">
+                <span className="text-lg text-gray-600">Средний стек</span>
+              </div>
+              <p className="text-3xl font-medium text-gray-800">{averageStack.toLocaleString()}</p>
+            </div>
+            <div>
+              <div className="flex items-center justify-center mb-2">
+                <span className="text-lg text-gray-600">Ребаи / Адоны</span>
+              </div>
+              <p className="text-3xl font-medium text-gray-800">{totalRebuys} / {totalAddons}</p>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Status Indicator */}
-      <div className="p-4 bg-white border-t border-gray-200">
-        <div className="flex items-center justify-center space-x-4">
-          <div className={`w-3 h-3 rounded-full ${timerActive ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`}></div>
-          <span className="text-sm text-gray-600">
-            {tournamentState ? 
-              `Синхронизировано с ${tournamentState.sync_source || 'сервером'}` : 
-              'Подключение...'
-            }
-          </span>
-        </div>
+      {/* Footer */}
+      <div className="bg-gray-100 border-t border-gray-200 p-4 text-center">
+        <p className="text-gray-500 text-sm">
+          Внешний дисплей турнира • Обновляется автоматически
+        </p>
       </div>
     </div>
   );

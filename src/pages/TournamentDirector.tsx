@@ -11,7 +11,6 @@ import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { TournamentDirectorSidebar } from '@/components/TournamentDirectorSidebar';
-import { useTournamentSync } from "@/hooks/useTournamentSync";
 import { 
   Trophy, 
   Users, 
