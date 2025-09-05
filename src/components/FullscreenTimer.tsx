@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { 
@@ -172,39 +172,44 @@ const FullscreenTimer = ({
     }
   }, [currentTime, twoMinuteWarning, fiveSecondWarning, tenSecondAnnouncement, voiceAnnouncementsEnabled, announceNextLevel, blindLevels, tournament.current_level, timerActive, onNextLevel]);
 
-  const activePlayers = registrations.filter(r => r.status === 'registered' || r.status === 'playing');
-  const totalRebuys = registrations.reduce((sum, r) => sum + r.rebuys, 0);
-  const totalAddons = registrations.reduce((sum, r) => sum + r.addons, 0);
-  const prizePool = (registrations.length * tournament.buy_in) + (totalRebuys * tournament.buy_in) + (totalAddons * tournament.buy_in);
-  
-  // Расчет среднего стека
-  const totalChips = registrations.reduce((sum, r) => sum + (r.chips || tournament.starting_chips), 0);
-  const averageStack = activePlayers.length > 0 ? Math.round(totalChips / activePlayers.length) : 0;
+  // Мемоизированные вычисления статистики
+  const statisticsData = useMemo(() => {
+    const activePlayers = registrations.filter(r => r.status === 'registered' || r.status === 'playing');
+    const totalRebuys = registrations.reduce((sum, r) => sum + r.rebuys, 0);
+    const totalAddons = registrations.reduce((sum, r) => sum + r.addons, 0);
+    const prizePool = (registrations.length * tournament.buy_in) + (totalRebuys * tournament.buy_in) + (totalAddons * tournament.buy_in);
+    
+    const totalChips = registrations.reduce((sum, r) => sum + (r.chips || tournament.starting_chips), 0);
+    const averageStack = activePlayers.length > 0 ? Math.round(totalChips / activePlayers.length) : 0;
+
+    return {
+      activePlayers,
+      totalRebuys,
+      totalAddons,
+      prizePool,
+      averageStack
+    };
+  }, [registrations, tournament.buy_in, tournament.starting_chips]);
 
   // Определяем текущий уровень из слепых структур
-  const currentLevel = blindLevels.find(l => l.level === tournament.current_level);
+  const currentLevel = useMemo(() => {
+    return blindLevels.find(l => l.level === tournament.current_level);
+  }, [blindLevels, tournament.current_level]);
+  
   const isBreakLevel = currentLevel?.is_break || false;
   
-  const timerProgress = (((currentLevel?.duration ?? tournament.timer_duration) - currentTime) / (currentLevel?.duration ?? tournament.timer_duration)) * 100;
+  const timerProgress = useMemo(() => {
+    const levelDuration = currentLevel?.duration ?? tournament.timer_duration;
+    return ((levelDuration - currentTime) / levelDuration) * 100;
+  }, [currentLevel?.duration, tournament.timer_duration, currentTime]);
   
-  // Находим следующий перерыв и считаем время до него
-  const nextBreakLevel = blindLevels.find(l => l.is_break && l.level > tournament.current_level);
-  const levelsUntilBreak = nextBreakLevel ? nextBreakLevel.level - tournament.current_level : null;
-  
-  // Отладка для понимания проблемы
-  console.log('🔍 FullscreenTimer Debug:', {
-    blindLevelsCount: blindLevels.length,
-    currentLevel: tournament.current_level,
-    nextBreakLevel: nextBreakLevel?.level,
-    levelsUntilBreak,
-    isBreakLevel
-  });
-  
-  // Примерное время до перерыва (текущий таймер + время оставшихся уровней)
-  const calculateTimeToBreak = () => {
+  // Мемоизированный расчет времени до перерыва
+  const timeToBreakData = useMemo(() => {
+    const nextBreakLevel = blindLevels.find(l => l.is_break && l.level > tournament.current_level);
+    const levelsUntilBreak = nextBreakLevel ? nextBreakLevel.level - tournament.current_level : null;
+    
     if (!nextBreakLevel || !levelsUntilBreak || blindLevels.length === 0) {
-      console.log('⚠️ Не могу рассчитать время до перерыва:', { nextBreakLevel: !!nextBreakLevel, levelsUntilBreak, blindLevelsCount: blindLevels.length });
-      return null;
+      return { timeToBreak: null, levelsUntilBreak: null };
     }
     
     // Время текущего уровня + время промежуточных уровней
@@ -213,17 +218,16 @@ const FullscreenTimer = ({
       const levelInfo = blindLevels.find(l => l.level === tournament.current_level + i);
       const levelDuration = levelInfo?.duration || 1200; // по умолчанию 20 минут
       timeToBreak += levelDuration;
-      console.log(`📊 Уровень ${tournament.current_level + i}: +${levelDuration}с`);
     }
     
-    console.log('⏰ Время до перерыва рассчитано:', timeToBreak);
-    return timeToBreak;
-  };
-  
-  const timeToBreak = calculateTimeToBreak();
+    return { timeToBreak, levelsUntilBreak };
+  }, [blindLevels, tournament.current_level, currentTime]);
 
   // Calculate next level blinds
-  const nextLevel = blindLevels.find(l => l.level === tournament.current_level + 1);
+  const nextLevel = useMemo(() => {
+    return blindLevels.find(l => l.level === tournament.current_level + 1);
+  }, [blindLevels, tournament.current_level]);
+  
   const nextSmallBlind = nextLevel?.small_blind || tournament.current_small_blind * 2;
   const nextBigBlind = nextLevel?.big_blind || tournament.current_big_blind * 2;
   const nextAnte = nextLevel?.ante ?? 0;
@@ -391,26 +395,26 @@ const FullscreenTimer = ({
                 <Users className="w-4 h-4 text-gray-600 mr-2" />
                 <span className="text-sm text-gray-600">Игроки</span>
               </div>
-              <p className="text-xl font-medium text-gray-800">{activePlayers.length}</p>
+              <p className="text-xl font-medium text-gray-800">{statisticsData.activePlayers.length}</p>
             </div>
             <div>
               <div className="flex items-center justify-center mb-1">
                 <Trophy className="w-4 h-4 text-amber-600 mr-2" />
                 <span className="text-sm text-gray-600">Призовой (₽)</span>
               </div>
-              <p className="text-xl font-medium text-gray-800">{prizePool.toLocaleString()}</p>
+              <p className="text-xl font-medium text-gray-800">{statisticsData.prizePool.toLocaleString()}</p>
             </div>
             <div>
               <div className="flex items-center justify-center mb-1">
                 <span className="text-sm text-gray-600">Средний стек</span>
               </div>
-              <p className="text-xl font-medium text-gray-800">{averageStack.toLocaleString()}</p>
+              <p className="text-xl font-medium text-gray-800">{statisticsData.averageStack.toLocaleString()}</p>
             </div>
             <div>
               <div className="flex items-center justify-center mb-1">
                 <span className="text-sm text-gray-600">Ребаи / Адоны</span>
               </div>
-              <p className="text-xl font-medium text-gray-800">{totalRebuys} / {totalAddons}</p>
+              <p className="text-xl font-medium text-gray-800">{statisticsData.totalRebuys} / {statisticsData.totalAddons}</p>
             </div>
             <div>
               <div className="flex items-center justify-center mb-1">
@@ -419,10 +423,10 @@ const FullscreenTimer = ({
               </div>
               {isBreakLevel ? (
                 <p className="text-xl font-medium text-amber-600">СЕЙЧАС</p>
-              ) : timeToBreak ? (
+              ) : timeToBreakData.timeToBreak ? (
                 <div>
-                  <p className="text-lg font-medium text-gray-800">{formatTime(timeToBreak)}</p>
-                  <p className="text-xs text-gray-500">({levelsUntilBreak} ур.)</p>
+                  <p className="text-lg font-medium text-gray-800">{formatTime(timeToBreakData.timeToBreak)}</p>
+                  <p className="text-xs text-gray-500">({timeToBreakData.levelsUntilBreak} ур.)</p>
                 </div>
               ) : blindLevels.length === 0 ? (
                 <div>
