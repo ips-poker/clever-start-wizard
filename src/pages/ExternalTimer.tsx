@@ -275,16 +275,16 @@ const ExternalTimer = () => {
             <p className="text-lg text-gray-800 font-bold mb-4">ТЕКУЩИЙ УРОВЕНЬ</p>
             <div className={`grid gap-4 ${currentLevel?.ante > 0 ? 'grid-cols-3' : 'grid-cols-2'}`}>
               <div className="space-y-2">
-                <p className="text-5xl font-bold text-gray-900">{currentLevel?.small_blind || tournament.current_small_blind}</p>
+                <p className="text-5xl font-bold text-gray-900">{isBreakLevel ? '—' : (currentLevel?.small_blind || tournament.current_small_blind)}</p>
                 <p className="text-sm text-gray-600">МАЛЫЙ БЛАЙНД</p>
               </div>
               <div className="space-y-2">
-                <p className="text-5xl font-bold text-gray-900">{currentLevel?.big_blind || tournament.current_big_blind}</p>
+                <p className="text-5xl font-bold text-gray-900">{isBreakLevel ? '—' : (currentLevel?.big_blind || tournament.current_big_blind)}</p>
                 <p className="text-sm text-gray-600">БОЛЬШОЙ БЛАЙНД</p>
               </div>
               {currentLevel?.ante > 0 && (
                 <div className="space-y-2">
-                  <p className="text-5xl font-bold text-amber-600">{currentLevel.ante}</p>
+                  <p className="text-5xl font-bold text-amber-600">{isBreakLevel ? '—' : currentLevel.ante}</p>
                   <p className="text-sm text-gray-600">АНТЕ</p>
                 </div>
               )}
@@ -293,7 +293,9 @@ const ExternalTimer = () => {
 
           {/* Next Blinds */}
           <div className="text-center p-8 border-2 border-gray-300 rounded-xl bg-gray-50">
-            <p className="text-lg text-gray-500 font-medium mb-4">СЛЕДУЮЩИЙ УРОВЕНЬ</p>
+            <p className="text-lg text-gray-500 font-medium mb-4">
+              {isBreakLevel ? 'ПОСЛЕ ПЕРЕРЫВА' : 'СЛЕДУЮЩИЙ УРОВЕНЬ'}
+            </p>
             <div className={`grid gap-4 ${nextLevel?.ante > 0 ? 'grid-cols-3' : 'grid-cols-2'}`}>
               <div className="space-y-2">
                 <p className="text-3xl font-medium text-gray-700">{nextSmallBlind}</p>

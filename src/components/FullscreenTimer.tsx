@@ -345,16 +345,16 @@ const FullscreenTimer = ({
             <p className="text-sm text-gray-800 font-bold mb-2">ТЕКУЩИЙ УРОВЕНЬ</p>
             <div className={`grid gap-2 ${currentAnte > 0 ? 'grid-cols-3' : 'grid-cols-2'}`}>
               <div className="space-y-1">
-                <p className="text-3xl font-bold text-gray-900">{currentSmallBlind}</p>
+                <p className="text-3xl font-bold text-gray-900">{isBreakLevel ? '—' : currentSmallBlind}</p>
                 <p className="text-xs text-gray-600">МАЛЫЙ БЛАЙНД</p>
               </div>
               <div className="space-y-1">
-                <p className="text-3xl font-bold text-gray-900">{currentBigBlind}</p>
+                <p className="text-3xl font-bold text-gray-900">{isBreakLevel ? '—' : currentBigBlind}</p>
                 <p className="text-xs text-gray-600">БОЛЬШОЙ БЛАЙНД</p>
               </div>
               {currentAnte > 0 && (
                 <div className="space-y-1">
-                  <p className="text-3xl font-bold text-amber-600">{currentAnte}</p>
+                  <p className="text-3xl font-bold text-amber-600">{isBreakLevel ? '—' : currentAnte}</p>
                   <p className="text-xs text-gray-600">АНТЕ</p>
                 </div>
               )}
@@ -365,7 +365,7 @@ const FullscreenTimer = ({
           <div className="text-center p-6 border border-gray-300 rounded-lg bg-gray-50">
             <p className="text-sm text-gray-500 font-medium mb-2 flex items-center justify-center">
               <ChevronUp className="w-4 h-4 mr-1" />
-              СЛЕДУЮЩИЙ УРОВЕНЬ
+              {isBreakLevel ? 'ПОСЛЕ ПЕРЕРЫВА' : 'СЛЕДУЮЩИЙ УРОВЕНЬ'}
             </p>
             <div className={`grid gap-2 ${nextAnte > 0 ? 'grid-cols-3' : 'grid-cols-2'}`}>
               <div className="space-y-1">
