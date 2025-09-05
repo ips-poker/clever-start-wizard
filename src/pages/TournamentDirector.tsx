@@ -224,11 +224,8 @@ const TournamentDirector = () => {
               updateTimerInDatabase(0);
             }
             
-            // Автоматический переход к следующему уровню без задержки
-            (async () => {
-              await nextLevel();
-              setTimerActive(true);
-            })();
+            // Автоматический мгновенный переход к следующему уровню (без ожидания БД)
+            nextLevel({ autoResume: true });
             
             return 0;
           }
@@ -386,7 +383,7 @@ const TournamentDirector = () => {
     }
   };
 
-  const nextLevel = async () => {
+  const nextLevel = async (opts?: { autoResume?: boolean }) => {
     if (!selectedTournament) return;
 
     const newLevel = selectedTournament.current_level + 1;
@@ -410,7 +407,29 @@ const TournamentDirector = () => {
 
     const resetTime = nextBlindLevel.duration || 1200;
 
-    const { error } = await supabase
+    // МГНОВЕННОЕ локальное обновление без ожидания БД
+    setSelectedTournament(prev => prev ? ({
+      ...prev,
+      current_level: newLevel,
+      current_small_blind: nextBlindLevel.small_blind,
+      current_big_blind: nextBlindLevel.big_blind,
+      timer_duration: resetTime
+    }) : prev);
+    setCurrentTime(resetTime);
+
+    const willBeActive = opts?.autoResume ? true : timerActive;
+    if (opts?.autoResume) {
+      setTimerActive(true);
+    }
+
+    localStorage.setItem(`timer_${selectedTournament.id}`, JSON.stringify({
+      currentTime: resetTime,
+      timerActive: willBeActive,
+      lastUpdate: Date.now()
+    }));
+
+    // Обновление БД — фоново, без await
+    supabase
       .from('tournaments')
       .update({
         current_level: newLevel,
@@ -419,39 +438,28 @@ const TournamentDirector = () => {
         timer_remaining: resetTime,
         timer_duration: resetTime
       })
-      .eq('id', selectedTournament.id);
-
-    if (!error) {
-      setSelectedTournament({
-        ...selectedTournament,
-        current_level: newLevel,
-        current_small_blind: nextBlindLevel.small_blind,
-        current_big_blind: nextBlindLevel.big_blind,
-        timer_duration: resetTime
-      });
-      setCurrentTime(resetTime);
-
-      localStorage.setItem(`timer_${selectedTournament.id}`, JSON.stringify({
-        currentTime: resetTime,
-        timerActive: false,
-        lastUpdate: Date.now()
-      }));
-
-      setTimeout(() => {
-        if (nextBlindLevel.is_break) {
-          voiceAnnouncements.announceBreakStart(Math.floor(resetTime / 60));
-        } else {
-          voiceAnnouncements.announceLevelStart(nextBlindLevel);
+      .eq('id', selectedTournament.id)
+      .then(({ error }) => {
+        if (error) {
+          console.error('Ошибка обновления уровня в БД:', error);
         }
-      }, 300);
-
-      toast({ 
-        title: nextBlindLevel.is_break ? "Перерыв" : `Уровень ${newLevel}`, 
-        description: nextBlindLevel.is_break 
-          ? `Перерыв ${Math.floor(resetTime / 60)} минут`
-          : `Блайнды: ${nextBlindLevel.small_blind}/${nextBlindLevel.big_blind}${nextBlindLevel.ante ? ` (анте ${nextBlindLevel.ante})` : ''}`
       });
-    }
+
+    // Голосовые оповещения с небольшой задержкой для плавности
+    setTimeout(() => {
+      if (nextBlindLevel.is_break) {
+        voiceAnnouncements.announceBreakStart(Math.floor(resetTime / 60));
+      } else {
+        voiceAnnouncements.announceLevelStart(nextBlindLevel);
+      }
+    }, 300);
+
+    toast({ 
+      title: nextBlindLevel.is_break ? "Перерыв" : `Уровень ${newLevel}`, 
+      description: nextBlindLevel.is_break 
+        ? `Перерыв ${Math.floor(resetTime / 60)} минут`
+        : `Блайнды: ${nextBlindLevel.small_blind}/${nextBlindLevel.big_blind}${nextBlindLevel.ante ? ` (анте ${nextBlindLevel.ante})` : ''}`
+    });
   };
 
   const prevLevel = async () => {
@@ -477,7 +485,24 @@ const TournamentDirector = () => {
 
     const resetTime = prevBlindLevel.duration || 1200;
 
-    const { error } = await supabase
+    // МГНОВЕННОЕ локальное обновление без ожидания БД
+    setSelectedTournament(prev => prev ? ({
+      ...prev,
+      current_level: newLevel,
+      current_small_blind: prevBlindLevel.small_blind,
+      current_big_blind: prevBlindLevel.big_blind,
+      timer_duration: resetTime
+    }) : prev);
+    setCurrentTime(resetTime);
+
+    localStorage.setItem(`timer_${selectedTournament.id}`, JSON.stringify({
+      currentTime: resetTime,
+      timerActive, // сохраняем текущее состояние таймера
+      lastUpdate: Date.now()
+    }));
+
+    // Обновление БД — фоново, без await
+    supabase
       .from('tournaments')
       .update({
         current_level: newLevel,
@@ -486,32 +511,19 @@ const TournamentDirector = () => {
         timer_remaining: resetTime,
         timer_duration: resetTime
       })
-      .eq('id', selectedTournament.id);
-
-    if (!error) {
-      setSelectedTournament({
-        ...selectedTournament,
-        current_level: newLevel,
-        current_small_blind: prevBlindLevel.small_blind,
-        current_big_blind: prevBlindLevel.big_blind,
-        timer_duration: resetTime
+      .eq('id', selectedTournament.id)
+      .then(({ error }) => {
+        if (error) {
+          console.error('Ошибка обновления уровня в БД:', error);
+        }
       });
-      setCurrentTime(resetTime);
-      setTimerActive(false);
-      
-      localStorage.setItem(`timer_${selectedTournament.id}`, JSON.stringify({
-        currentTime: resetTime,
-        timerActive: false,
-        lastUpdate: Date.now()
-      }));
 
-      toast({ 
-        title: prevBlindLevel.is_break ? "Перерыв" : `Уровень ${newLevel}`, 
-        description: prevBlindLevel.is_break 
-          ? `Перерыв ${Math.floor(resetTime / 60)} минут`
-          : `Блайнды: ${prevBlindLevel.small_blind}/${prevBlindLevel.big_blind}${prevBlindLevel.ante ? ` (анте ${prevBlindLevel.ante})` : ''}`
-      });
-    }
+    toast({ 
+      title: prevBlindLevel.is_break ? "Перерыв" : `Уровень ${newLevel}`, 
+      description: prevBlindLevel.is_break 
+        ? `Перерыв ${Math.floor(resetTime / 60)} минут`
+        : `Блайнды: ${prevBlindLevel.small_blind}/${prevBlindLevel.big_blind}${prevBlindLevel.ante ? ` (анте ${prevBlindLevel.ante})` : ''}`
+    });
   };
 
   const stopTournament = async () => {
