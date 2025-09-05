@@ -142,6 +142,31 @@ const TournamentOverview = ({
     if (savedMobileControl === 'true') {
       setMobileControlEnabled(true);
     }
+
+    // Подписка на изменения состояния таймера для синхронизации
+    if (tournament?.id) {
+      const timerChannel = supabase
+        .channel(`tournament_timer_${tournament.id}`)
+        .on('postgres_changes', {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'tournaments',
+          filter: `id=eq.${tournament.id}`
+        }, async (payload) => {
+          console.log('Tournament updated:', payload);
+          // Обновляем локальное состояние если изменение пришло с другого устройства
+          if (payload.new && payload.new.timer_remaining !== undefined) {
+            await syncTimerFromDB();
+          }
+        })
+        .subscribe();
+
+      return () => {
+        console.log('TournamentOverview unmounting');
+        isMountedRef.current = false;
+        supabase.removeChannel(timerChannel);
+      };
+    }
     
     return () => {
       console.log('TournamentOverview unmounting');
@@ -223,6 +248,52 @@ const TournamentOverview = ({
       }
     } catch (error) {
       console.error('Error loading system stats:', error);
+    }
+  };
+
+  // Синхронизация состояния таймера с БД
+  const syncTimerToDB = async (timerActive: boolean, timerRemaining: number) => {
+    if (!tournament?.id) return;
+
+    try {
+      // Обновляем основную таблицу турниров
+      await supabase
+        .from('tournaments')
+        .update({
+          timer_remaining: timerRemaining,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', tournament.id);
+
+      console.log('Timer synced to DB:', { timerActive, timerRemaining });
+    } catch (error) {
+      console.error('Error syncing timer to DB:', error);
+    }
+  };
+
+  // Загрузка состояния таймера из БД
+  const syncTimerFromDB = async () => {
+    if (!tournament?.id) return;
+
+    try {
+      const { data: tournamentData } = await supabase
+        .from('tournaments')
+        .select('timer_remaining, current_level')
+        .eq('id', tournament.id)
+        .single();
+
+      if (tournamentData) {
+        console.log('Synced timer state from DB:', tournamentData);
+        // Отправляем событие для обновления состояния
+        window.dispatchEvent(new CustomEvent('timerSync', {
+          detail: {
+            timerRemaining: tournamentData.timer_remaining,
+            currentLevel: tournamentData.current_level
+          }
+        }));
+      }
+    } catch (error) {
+      console.error('Error syncing timer from DB:', error);
     }
   };
 
@@ -461,7 +532,11 @@ const TournamentOverview = ({
                 <div className="grid grid-cols-3 gap-3">
                   <Button
                     variant={timerActive ? "destructive" : "default"}
-                    onClick={onToggleTimer}
+                    onClick={async () => {
+                      onToggleTimer();
+                      // Синхронизируем с БД
+                      await syncTimerToDB(!timerActive, currentTime);
+                    }}
                     className="h-14 text-base font-medium shadow-md hover:shadow-lg transition-all"
                   >
                     {timerActive ? <Pause className="w-6 h-6" /> : <Play className="w-6 h-6" />}
@@ -469,7 +544,11 @@ const TournamentOverview = ({
                   
                   <Button 
                     variant="outline" 
-                    onClick={onResetTimer} 
+                    onClick={async () => {
+                      onResetTimer();
+                      // Синхронизируем с БД
+                      await syncTimerToDB(false, tournament.timer_duration);
+                    }} 
                     className="h-14 shadow-md hover:shadow-lg transition-all"
                   >
                     <RotateCcw className="w-6 h-6" />
@@ -477,7 +556,11 @@ const TournamentOverview = ({
 
                   <Button 
                     variant="outline" 
-                    onClick={onNextLevel} 
+                    onClick={async () => {
+                      onNextLevel();
+                      // Синхронизируем с БД
+                      await syncTimerToDB(timerActive, currentTime);
+                    }} 
                     className="h-14 shadow-md hover:shadow-lg transition-all"
                   >
                     <ChevronRight className="w-6 h-6" />
@@ -488,7 +571,11 @@ const TournamentOverview = ({
                   <Button 
                     variant="outline" 
                     size="sm" 
-                    onClick={() => onTimerAdjust?.(-60)}
+                    onClick={async () => {
+                      onTimerAdjust?.(-60);
+                      // Синхронизируем с БД
+                      await syncTimerToDB(timerActive, currentTime - 60);
+                    }}
                     className="h-12 shadow-sm hover:shadow-md transition-all"
                     title="Перемотать назад на 1 минуту"
                   >
@@ -498,7 +585,11 @@ const TournamentOverview = ({
                   <Button 
                     variant="outline" 
                     size="sm" 
-                    onClick={() => onTimerAdjust?.(60)}
+                    onClick={async () => {
+                      onTimerAdjust?.(60);
+                      // Синхронизируем с БД
+                      await syncTimerToDB(timerActive, currentTime + 60);
+                    }}
                     className="h-12 shadow-sm hover:shadow-md transition-all"
                     title="Перемотать вперед на 1 минуту"
                   >
@@ -508,7 +599,11 @@ const TournamentOverview = ({
                   <Button 
                     variant="outline" 
                     size="sm" 
-                    onClick={onPrevLevel} 
+                    onClick={async () => {
+                      onPrevLevel();
+                      // Синхронизируем с БД
+                      await syncTimerToDB(timerActive, currentTime);
+                    }} 
                     className="h-12 shadow-sm hover:shadow-md transition-all"
                     disabled={tournament.current_level <= 1}
                   >
@@ -518,7 +613,11 @@ const TournamentOverview = ({
                   <Button 
                     variant="outline" 
                     size="sm" 
-                    onClick={onNextLevel} 
+                    onClick={async () => {
+                      onNextLevel();
+                      // Синхронизируем с БД
+                      await syncTimerToDB(timerActive, currentTime);
+                    }} 
                     className="h-12 shadow-sm hover:shadow-md transition-all"
                   >
                     <ChevronRight className="w-5 h-5" />
