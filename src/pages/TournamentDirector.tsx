@@ -117,7 +117,7 @@ const TournamentDirector = () => {
   const navigate = useNavigate();
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const [lastAnnouncedTime, setLastAnnouncedTime] = useState<number | null>(null);
-  
+  const [blindLevelsCache, setBlindLevelsCache] = useState<any[]>([]);
   // Инициализация голосовых объявлений
   const voiceAnnouncements = useVoiceAnnouncements();
 
@@ -176,6 +176,36 @@ const TournamentDirector = () => {
     }
   }, [selectedTournament]);
 
+  // Кэшируем структуру блайндов для мгновенного переключения уровней
+  useEffect(() => {
+    const load = async () => {
+      if (!selectedTournament?.id) return;
+      const { data } = await supabase
+        .from('blind_levels')
+        .select('*')
+        .eq('tournament_id', selectedTournament.id)
+        .order('level', { ascending: true });
+      setBlindLevelsCache(data || []);
+    };
+
+    load();
+
+    if (!selectedTournament?.id) return;
+    const channel = supabase
+      .channel(`td_blinds_cache_${selectedTournament.id}`)
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'blind_levels',
+        filter: `tournament_id=eq.${selectedTournament.id}`
+      }, () => {
+        load();
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [selectedTournament?.id]);
+
   // Timer effect with voice announcements
   useEffect(() => {
     if (timerActive && currentTime > 0) {
@@ -194,14 +224,11 @@ const TournamentDirector = () => {
               updateTimerInDatabase(0);
             }
             
-            // Автоматический переход к следующему уровню
-            setTimeout(async () => {
+            // Автоматический переход к следующему уровню без задержки
+            (async () => {
               await nextLevel();
-              // Автоматически запустить таймер после смены уровня
-              setTimeout(() => {
-                setTimerActive(true);
-              }, 1000); // Увеличили задержку до 1 секунды
-            }, 1000);
+              setTimerActive(true);
+            })();
             
             return 0;
           }
@@ -362,21 +389,20 @@ const TournamentDirector = () => {
   const nextLevel = async () => {
     if (!selectedTournament) return;
 
-    // Получаем структуру блайндов из базы данных
-    const { data: blindLevels, error: blindError } = await supabase
-      .from('blind_levels')
-      .select('*')
-      .eq('tournament_id', selectedTournament.id)
-      .order('level', { ascending: true });
+    const newLevel = selectedTournament.current_level + 1;
 
-    if (blindError || !blindLevels) {
-      toast({ title: "Ошибка", description: "Не удалось загрузить структуру блайндов", variant: "destructive" });
-      return;
+    let nextBlindLevel: any = blindLevelsCache.find((bl: any) => bl.level === newLevel);
+
+    if (!nextBlindLevel) {
+      const { data: blindData } = await supabase
+        .from('blind_levels')
+        .select('*')
+        .eq('tournament_id', selectedTournament.id)
+        .order('level', { ascending: true });
+      setBlindLevelsCache(blindData || []);
+      nextBlindLevel = blindData?.find((bl: any) => bl.level === newLevel);
     }
 
-    const newLevel = selectedTournament.current_level + 1;
-    const nextBlindLevel = blindLevels.find(bl => bl.level === newLevel);
-    
     if (!nextBlindLevel) {
       toast({ title: "Предупреждение", description: "Достигнут максимальный уровень", variant: "destructive" });
       return;
@@ -404,23 +430,20 @@ const TournamentDirector = () => {
         timer_duration: resetTime
       });
       setCurrentTime(resetTime);
-      // При автоматическом переходе не останавливаем таймер навсегда
-      
-      // Сохранить новое состояние таймера
+
       localStorage.setItem(`timer_${selectedTournament.id}`, JSON.stringify({
         currentTime: resetTime,
-        timerActive: false, // Временно останавливаем, но автоматически запустится
+        timerActive: false,
         lastUpdate: Date.now()
       }));
 
-      // Голосовое объявление о новом уровне (увеличена задержка для избежания дублирования)
       setTimeout(() => {
         if (nextBlindLevel.is_break) {
           voiceAnnouncements.announceBreakStart(Math.floor(resetTime / 60));
         } else {
           voiceAnnouncements.announceLevelStart(nextBlindLevel);
         }
-      }, 2000);
+      }, 300);
 
       toast({ 
         title: nextBlindLevel.is_break ? "Перерыв" : `Уровень ${newLevel}`, 
@@ -434,21 +457,19 @@ const TournamentDirector = () => {
   const prevLevel = async () => {
     if (!selectedTournament || selectedTournament.current_level <= 1) return;
 
-    // Получаем структуру блайндов из базы данных
-    const { data: blindLevels, error: blindError } = await supabase
-      .from('blind_levels')
-      .select('*')
-      .eq('tournament_id', selectedTournament.id)
-      .order('level', { ascending: true });
+    const newLevel = selectedTournament.current_level - 1;
 
-    if (blindError || !blindLevels) {
-      toast({ title: "Ошибка", description: "Не удалось загрузить структуру блайндов", variant: "destructive" });
-      return;
+    let prevBlindLevel: any = blindLevelsCache.find((bl: any) => bl.level === newLevel);
+    if (!prevBlindLevel) {
+      const { data: blindData } = await supabase
+        .from('blind_levels')
+        .select('*')
+        .eq('tournament_id', selectedTournament.id)
+        .order('level', { ascending: true });
+      setBlindLevelsCache(blindData || []);
+      prevBlindLevel = blindData?.find((bl: any) => bl.level === newLevel);
     }
 
-    const newLevel = selectedTournament.current_level - 1;
-    const prevBlindLevel = blindLevels.find(bl => bl.level === newLevel);
-    
     if (!prevBlindLevel) {
       toast({ title: "Предупреждение", description: "Нельзя вернуться ниже 1-го уровня", variant: "destructive" });
       return;
@@ -478,7 +499,6 @@ const TournamentDirector = () => {
       setCurrentTime(resetTime);
       setTimerActive(false);
       
-      // Сохранить новое состояние таймера
       localStorage.setItem(`timer_${selectedTournament.id}`, JSON.stringify({
         currentTime: resetTime,
         timerActive: false,
