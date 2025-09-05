@@ -451,11 +451,80 @@ const TournamentOverview = ({
         </CardHeader>
         <CardContent>
           {mobileControlEnabled && (
-            <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-              <p className="text-sm text-blue-700 flex items-center gap-2">
-                <Smartphone className="w-4 h-4" />
-                Включено управление с мобильного устройства. Для управления турниром используйте мобильный интерфейс по адресу: <code className="px-1 py-0.5 bg-blue-100 rounded text-blue-800">/mobile-director?tournament={tournament.id}</code>
-              </p>
+            <div className="mb-6 p-4 bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-xl">
+              <div className="flex items-center gap-2 mb-4">
+                <Smartphone className="w-5 h-5 text-blue-600" />
+                <span className="font-medium text-blue-800">Мобильное управление</span>
+              </div>
+              
+              <div className="space-y-3">
+                <div className="grid grid-cols-3 gap-3">
+                  <Button
+                    variant={timerActive ? "destructive" : "default"}
+                    onClick={onToggleTimer}
+                    className="h-14 text-base font-medium shadow-md hover:shadow-lg transition-all"
+                  >
+                    {timerActive ? <Pause className="w-6 h-6" /> : <Play className="w-6 h-6" />}
+                  </Button>
+                  
+                  <Button 
+                    variant="outline" 
+                    onClick={onResetTimer} 
+                    className="h-14 shadow-md hover:shadow-lg transition-all"
+                  >
+                    <RotateCcw className="w-6 h-6" />
+                  </Button>
+
+                  <Button 
+                    variant="outline" 
+                    onClick={onNextLevel} 
+                    className="h-14 shadow-md hover:shadow-lg transition-all"
+                  >
+                    <ChevronRight className="w-6 h-6" />
+                  </Button>
+                </div>
+
+                <div className="grid grid-cols-4 gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => onTimerAdjust?.(-60)}
+                    className="h-12 shadow-sm hover:shadow-md transition-all"
+                    title="Перемотать назад на 1 минуту"
+                  >
+                    <Rewind className="w-5 h-5" />
+                  </Button>
+                  
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => onTimerAdjust?.(60)}
+                    className="h-12 shadow-sm hover:shadow-md transition-all"
+                    title="Перемотать вперед на 1 минуту"
+                  >
+                    <FastForward className="w-5 h-5" />
+                  </Button>
+
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={onPrevLevel} 
+                    className="h-12 shadow-sm hover:shadow-md transition-all"
+                    disabled={tournament.current_level <= 1}
+                  >
+                    <ChevronLeft className="w-5 h-5" />
+                  </Button>
+
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={onNextLevel} 
+                    className="h-12 shadow-sm hover:shadow-md transition-all"
+                  >
+                    <ChevronRight className="w-5 h-5" />
+                  </Button>
+                </div>
+              </div>
             </div>
           )}
           <div className="grid grid-cols-4 md:grid-cols-10 gap-2">
