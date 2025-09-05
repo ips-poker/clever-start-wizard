@@ -828,6 +828,44 @@ const TournamentDirector = () => {
     return () => { supabase.removeChannel(channel); };
   }, [selectedTournament?.id, selectedTournament?.current_level, currentTime, timerActive]);
 
+  // Realtime sync: listen to tournaments and tournament_state updates (mobile remote)
+  useEffect(() => {
+    if (!selectedTournament?.id) return;
+    const channel = supabase
+      .channel(`td_tournament_sync_${selectedTournament.id}`)
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'tournaments',
+        filter: `id=eq.${selectedTournament.id}`
+      }, (payload) => {
+        const t: any = payload.new;
+        if (!t) return;
+        setSelectedTournament(prev => prev ? ({ ...prev, ...t }) : t);
+        if (typeof t.timer_remaining === 'number') {
+          setCurrentTime(t.timer_remaining);
+        }
+      })
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'tournament_state',
+        filter: `tournament_id=eq.${selectedTournament.id}`
+      }, (payload) => {
+        const s: any = payload.new;
+        if (!s) return;
+        if (typeof s.timer_remaining === 'number') {
+          setCurrentTime(s.timer_remaining);
+        }
+        if (typeof s.timer_active === 'boolean') {
+          setTimerActive(s.timer_active);
+        }
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [selectedTournament?.id]);
+
   return (
     <AuthGuard>
       <SidebarProvider>

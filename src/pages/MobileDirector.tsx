@@ -252,6 +252,21 @@ const MobileDirector = () => {
     }
   };
 
+  const setRemoteTimerState = async (patch: { timer_active?: boolean; timer_started_at?: string | null; timer_paused_at?: string | null; timer_remaining?: number }) => {
+    if (!tournament) return;
+    await (supabase as any)
+      .from('tournament_state')
+      .upsert(
+        {
+          tournament_id: tournament.id,
+          ...patch,
+          last_sync_at: new Date().toISOString(),
+          sync_source: 'mobile',
+        },
+        { onConflict: 'tournament_id' }
+      );
+  };
+
   const updateTimerInDatabase = async (timeRemaining: number) => {
     if (!tournament) return;
     
@@ -259,23 +274,47 @@ const MobileDirector = () => {
       .from('tournaments')
       .update({ timer_remaining: timeRemaining })
       .eq('id', tournament.id);
+
+    // Mirror to tournament_state for realtime control
+    await setRemoteTimerState({ timer_remaining: timeRemaining });
   };
 
-  const toggleTimer = () => {
+
+  const toggleTimer = async () => {
     const newTimerActive = !timerActive;
     setTimerActive(newTimerActive);
     
     if (tournament) {
+      if (newTimerActive) {
+        await setRemoteTimerState({
+          timer_active: true,
+          timer_started_at: new Date().toISOString(),
+          timer_paused_at: null,
+          timer_remaining: currentTime,
+        });
+      } else {
+        await setRemoteTimerState({
+          timer_active: false,
+          timer_paused_at: new Date().toISOString(),
+          timer_remaining: currentTime,
+        });
+      }
       updateTimerInDatabase(currentTime);
     }
   };
 
-  const resetTimer = () => {
+  const resetTimer = async () => {
     if (tournament) {
       const resetTime = tournament.timer_duration || 1200;
       setCurrentTime(resetTime);
       setTimerActive(false);
       updateTimerInDatabase(resetTime);
+      await setRemoteTimerState({
+        timer_active: false,
+        timer_started_at: null,
+        timer_paused_at: new Date().toISOString(),
+        timer_remaining: resetTime,
+      });
     }
   };
 
@@ -317,6 +356,14 @@ const MobileDirector = () => {
         timer_duration: resetTime
       })
       .eq('id', tournament.id);
+
+    // Reflect to realtime state
+    await setRemoteTimerState({
+      timer_remaining: resetTime,
+      timer_active: opts?.autoResume ? true : timerActive,
+      timer_started_at: (opts?.autoResume ? true : timerActive) ? new Date().toISOString() : null,
+      timer_paused_at: (opts?.autoResume ? true : timerActive) ? null : new Date().toISOString(),
+    });
 
     toast({ 
       title: nextBlindLevel.is_break ? "Перерыв" : `Уровень ${newLevel}`, 
