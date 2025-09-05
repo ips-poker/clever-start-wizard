@@ -117,6 +117,7 @@ const TournamentDirector = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const remoteStateRef = useRef<any>(null);
   const [lastAnnouncedTime, setLastAnnouncedTime] = useState<number | null>(null);
   const [blindLevelsCache, setBlindLevelsCache] = useState<any[]>([]);
   // Инициализация голосовых объявлений
@@ -212,8 +213,14 @@ const TournamentDirector = () => {
         filter: `tournament_id=eq.${selectedTournament.id}`
       }, (payload) => {
         const state: any = payload.new;
+        remoteStateRef.current = state;
         if (typeof state?.timer_active === 'boolean') setTimerActive(state.timer_active);
-        if (typeof state?.timer_remaining === 'number') setCurrentTime(state.timer_remaining);
+        if (state) {
+          const remaining = state.timer_active && state.timer_started_at
+            ? Math.max(0, (state.timer_remaining || 0) - Math.floor((Date.now() - new Date(state.timer_started_at).getTime()) / 1000))
+            : (state.timer_remaining || 0);
+          setCurrentTime(remaining);
+        }
       })
       .subscribe();
 
@@ -226,8 +233,12 @@ const TournamentDirector = () => {
           .eq('tournament_id', selectedTournament.id)
           .maybeSingle();
         if (state) {
+          remoteStateRef.current = state;
           if (typeof state.timer_active === 'boolean') setTimerActive(state.timer_active);
-          if (typeof state.timer_remaining === 'number') setCurrentTime(state.timer_remaining);
+          const remaining = state.timer_active && state.timer_started_at
+            ? Math.max(0, (state.timer_remaining || 0) - Math.floor((Date.now() - new Date(state.timer_started_at).getTime()) / 1000))
+            : (state.timer_remaining || 0);
+          setCurrentTime(remaining);
         }
       } catch (e) {
         console.warn('tournament_state not found yet');
@@ -270,19 +281,28 @@ const TournamentDirector = () => {
     return () => { supabase.removeChannel(channel); };
   }, [selectedTournament?.id]);
 
-  // Timer effect with voice announcements
+  // Timer effect with voice announcements and DB-derived ticking when mobilePriority
   useEffect(() => {
-    // Если мобильный приоритет включен, не запускаем локальный счетчик — только слушаем БД
+    // When mobile controls are primary, compute time from DB state to avoid drift and lag
     if (mobilePriority) {
       if (timerRef.current) {
         clearInterval(timerRef.current);
         timerRef.current = null;
       }
-      return () => {
-        if (timerRef.current) {
-          clearInterval(timerRef.current);
-          timerRef.current = null;
+      const interval = setInterval(() => {
+        const s = remoteStateRef.current;
+        if (!s) return;
+        if (s.timer_active && s.timer_started_at) {
+          const startedAt = new Date(s.timer_started_at).getTime();
+          const elapsed = Math.floor((Date.now() - startedAt) / 1000);
+          const remaining = Math.max(0, (s.timer_remaining || 0) - elapsed);
+          setCurrentTime(remaining);
+        } else if (typeof s?.timer_remaining === 'number') {
+          setCurrentTime(s.timer_remaining);
         }
+      }, 1000);
+      return () => {
+        clearInterval(interval);
       };
     }
 
