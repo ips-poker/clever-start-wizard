@@ -565,6 +565,14 @@ const TableSeating = ({
       !seatedPlayerIds.has(player.player.id)
     );
 
+    console.log('Авто-рассадка:', {
+      totalActivePlayers: getActivePlayers().length,
+      seatedPlayerIds: Array.from(seatedPlayerIds),
+      unseatedPlayers: unseatedPlayers.map(p => p.player?.name),
+      unseatedCount: unseatedPlayers.length,
+      currentTables: tables.length
+    });
+
     if (unseatedPlayers.length === 0) {
       toast({
         title: "Все игроки рассажены",
@@ -574,9 +582,10 @@ const TableSeating = ({
       return;
     }
 
-    const newTables = [...tables];
+    let newTables = [...tables];
     let playersSeated = 0;
 
+    // Сначала пытаемся рассадить в существующие столы
     for (const player of unseatedPlayers) {
       let placed = false;
       
@@ -601,8 +610,62 @@ const TableSeating = ({
           break;
         }
       }
+      
+      // Если не удалось разместить в существующие столы, создаем новые
+      if (!placed) {
+        const remainingUnseated = unseatedPlayers.slice(unseatedPlayers.indexOf(player));
+        const newTablesNeeded = Math.ceil(remainingUnseated.length / maxPlayersPerTable);
+        
+        for (let i = 0; i < newTablesNeeded; i++) {
+          const newTableNumber = Math.max(...newTables.map(t => t.table_number)) + 1;
+          const seats: TableSeat[] = [];
+          
+          for (let seatNum = 1; seatNum <= maxPlayersPerTable; seatNum++) {
+            seats.push({
+              seat_number: seatNum,
+              stack_bb: 0
+            });
+          }
+
+          const newTable: Table = {
+            table_number: newTableNumber,
+            seats,
+            active_players: 0,
+            max_seats: maxPlayersPerTable,
+            dealer_position: Math.floor(Math.random() * maxPlayersPerTable) + 1,
+            table_status: 'active',
+            average_stack: 0
+          };
+
+          newTables.push(newTable);
+        }
+        
+        // Рассаживаем оставшихся игроков по новым столам
+        let tableIndex = newTables.length - newTablesNeeded;
+        for (let i = 0; i < remainingUnseated.length; i++) {
+          const currentPlayer = remainingUnseated[i];
+          const currentTable = newTables[tableIndex];
+          const seatIndex = i % maxPlayersPerTable;
+          
+          if (seatIndex === 0 && i > 0) {
+            tableIndex++;
+          }
+          
+          currentTable.seats[seatIndex].player_id = currentPlayer.player.id;
+          currentTable.seats[seatIndex].player_name = currentPlayer.player.name;
+          currentTable.seats[seatIndex].chips = currentPlayer.chips;
+          currentTable.seats[seatIndex].status = currentPlayer.status;
+          currentTable.seats[seatIndex].stack_bb = Math.round((currentPlayer.chips || 0) / bigBlind);
+          
+          currentTable.active_players++;
+          playersSeated++;
+        }
+        
+        break; // Выходим из цикла, так как уже обработали всех оставшихся игроков
+      }
     }
 
+    // Пересчитываем средние стеки
     newTables.forEach(table => {
       const activeSeats = table.seats.filter(s => s.player_id);
       if (activeSeats.length > 0) {
@@ -617,7 +680,7 @@ const TableSeating = ({
 
     toast({
       title: "Авто-рассадка завершена",
-      description: `${playersSeated} игроков рассажено за столы`,
+      description: `${playersSeated} игроков рассажено. Всего столов: ${newTables.length}`,
       className: "font-medium"
     });
   };
