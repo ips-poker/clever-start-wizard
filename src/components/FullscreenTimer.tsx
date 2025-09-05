@@ -194,8 +194,8 @@ const FullscreenTimer = ({
   const isBreakLevel = currentLevel?.is_break || false;
   
   const timerProgress = useMemo(() => {
-    const levelDuration = currentLevel?.duration ?? tournament.timer_duration;
-    return ((levelDuration - currentTime) / levelDuration) * 100;
+    const levelDuration = currentLevel?.duration ?? tournament.timer_duration ?? 1200;
+    return levelDuration > 0 ? ((levelDuration - currentTime) / levelDuration) * 100 : 0;
   }, [currentLevel?.duration, tournament.timer_duration, currentTime]);
   
   // Мемоизированный расчет времени до перерыва
@@ -228,8 +228,8 @@ const FullscreenTimer = ({
   const nextAnte = nextLevel?.ante ?? 0;
 
   // Текущие блайнды и анте из структуры (если доступны)
-  const currentSmallBlind = currentLevel?.small_blind || tournament.current_small_blind;
-  const currentBigBlind = currentLevel?.big_blind || tournament.current_big_blind;
+  const currentSmallBlind = currentLevel?.small_blind ?? tournament.current_small_blind ?? 0;
+  const currentBigBlind = currentLevel?.big_blind ?? tournament.current_big_blind ?? 0;
   const currentAnte = currentLevel?.ante ?? 0;
 
   return (
