@@ -90,7 +90,13 @@ const TableSeating = ({
   };
 
   const getActivePlayers = () => {
-    return registrations.filter(r => r.status === 'registered' || r.status === 'playing');
+    // Проверяем все возможные статусы активных игроков
+    return registrations.filter(r => 
+      r.status === 'registered' || 
+      r.status === 'playing' || 
+      r.status === 'confirmed' ||
+      (!r.status || r.status === 'active')  // На случай если статус не установлен
+    );
   };
 
   const getEliminatedPlayers = () => {
@@ -178,7 +184,20 @@ const TableSeating = ({
 
   const initializeTablesStructure = () => {
     const activePlayers = getActivePlayers();
+    console.log('Инициализация столов:', {
+      totalRegistrations: registrations.length,
+      activePlayers: activePlayers.length,
+      maxPlayersPerTable,
+      registrationStatuses: registrations.map(r => ({name: r.player?.name, status: r.status}))
+    });
+    
+    if (activePlayers.length === 0) {
+      console.log('Нет активных игроков для инициализации столов');
+      return;
+    }
+    
     const totalTables = Math.ceil(activePlayers.length / maxPlayersPerTable);
+    console.log(`Создаем ${totalTables} столов для ${activePlayers.length} игроков`);
     
     const newTables: Table[] = [];
     
@@ -203,6 +222,7 @@ const TableSeating = ({
       });
     }
     
+    console.log('Созданные столы:', newTables);
     setTables(newTables);
   };
 
