@@ -341,6 +341,11 @@ const TournamentOverview = ({
         description: "Управление турниром с компьютера восстановлено.",
       });
     }
+
+    // Сообщаем странице директора о смене приоритета
+    window.dispatchEvent(new CustomEvent('mobileControlChanged', {
+      detail: { tournamentId: tournament?.id, enabled: newValue }
+    }));
   };
 
   const activePlayers = registrations.filter(r => r.status === 'registered' || r.status === 'playing');
