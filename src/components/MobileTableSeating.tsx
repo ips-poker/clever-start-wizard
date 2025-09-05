@@ -11,8 +11,11 @@ import {
   ArrowUpDown,
   Trophy,
   Target,
-  RotateCcw
+  RotateCcw,
+  UserMinus,
+  Move
 } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 interface Tournament {
   id: string;
@@ -79,6 +82,8 @@ export const MobileTableSeating = ({
   const [maxPlayersPerTable] = useState(9);
   const [finalTableSize] = useState(9);
   const [bigBlind] = useState(20);
+  const [selectedPlayer, setSelectedPlayer] = useState<Registration | null>(null);
+  const [targetSeat, setTargetSeat] = useState<{tableNumber: number, seatNumber: number} | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -345,6 +350,67 @@ export const MobileTableSeating = ({
     }
   };
 
+  const movePlayerToSeat = async (playerId: string, newTableNumber: number, newSeatNumber: number) => {
+    try {
+      // Освобождаем старое место
+      await supabase
+        .from('tournament_registrations')
+        .update({ seat_number: null })
+        .eq('player_id', playerId)
+        .eq('tournament_id', tournament.id);
+
+      // Занимаем новое место
+      const newSeatNumberDb = (newTableNumber - 1) * maxPlayersPerTable + newSeatNumber;
+      
+      await supabase
+        .from('tournament_registrations')
+        .update({ seat_number: newSeatNumberDb })
+        .eq('player_id', playerId)
+        .eq('tournament_id', tournament.id);
+
+      // Обновляем локальные данные
+      loadSavedSeating();
+      onSeatingUpdate();
+      
+      toast({
+        title: "Игрок пересажен",
+        description: `Игрок пересажен за стол ${newTableNumber}, место ${newSeatNumber}`
+      });
+    } catch (error) {
+      console.error('Error moving player:', error);
+      toast({
+        title: "Ошибка",
+        description: "Не удалось пересадить игрока",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const removePlayerFromSeat = async (playerId: string) => {
+    try {
+      await supabase
+        .from('tournament_registrations')
+        .update({ seat_number: null })
+        .eq('player_id', playerId)
+        .eq('tournament_id', tournament.id);
+
+      loadSavedSeating();
+      onSeatingUpdate();
+      
+      toast({
+        title: "Игрок убран со места",
+        description: "Игрок убран с текущего места"
+      });
+    } catch (error) {
+      console.error('Error removing player:', error);
+      toast({
+        title: "Ошибка",
+        description: "Не удалось убрать игрока с места",
+        variant: "destructive"
+      });
+    }
+  };
+
   const activePlayers = getActivePlayers();
   const isFinalTableReady = activePlayers.length <= finalTableSize && activePlayers.length > 1;
 
@@ -459,7 +525,13 @@ export const MobileTableSeating = ({
                       }`}
                     >
                       {seat.player_id ? (
-                        <div className="flex items-center gap-2">
+                        <div 
+                          className="flex items-center gap-1"
+                          onClick={() => {
+                            const player = registrations.find(r => r.player.id === seat.player_id);
+                            if (player) setSelectedPlayer(player);
+                          }}
+                        >
                           <Avatar className="h-6 w-6">
                             <AvatarImage src={getPlayerAvatar(seat.player_id)} />
                             <AvatarFallback className="text-xs">
@@ -476,7 +548,10 @@ export const MobileTableSeating = ({
                           </div>
                         </div>
                       ) : (
-                        <div className="text-center text-xs text-muted-foreground py-1">
+                        <div 
+                          className="text-center text-xs text-muted-foreground py-1 cursor-pointer hover:bg-primary/10 rounded"
+                          onClick={() => setTargetSeat({tableNumber: table.table_number, seatNumber: seat.seat_number})}
+                        >
                           Место {seat.seat_number}
                         </div>
                       )}
@@ -495,6 +570,109 @@ export const MobileTableSeating = ({
           <p>Нажмите "Начать рассадку" чтобы разместить игроков за столами</p>
         </div>
       )}
+
+      {/* Player Move Dialog */}
+      <Dialog open={!!selectedPlayer} onOpenChange={() => setSelectedPlayer(null)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Avatar className="h-8 w-8">
+                <AvatarImage src={selectedPlayer ? getPlayerAvatar(selectedPlayer.player.id) : undefined} />
+                <AvatarFallback>
+                  {selectedPlayer?.player.name.charAt(0)}
+                </AvatarFallback>
+              </Avatar>
+              {selectedPlayer?.player.name}
+            </DialogTitle>
+            <DialogDescription>
+              Управление игроком
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedPlayer && (
+            <div className="space-y-3">
+              <div className="text-sm space-y-1">
+                <div>Фишки: {selectedPlayer.chips.toLocaleString()}</div>
+                {selectedPlayer.seat_number && (
+                  <div>Текущее место: {selectedPlayer.seat_number}</div>
+                )}
+              </div>
+              
+              <div className="space-y-2">
+                <Button
+                  onClick={() => {
+                    removePlayerFromSeat(selectedPlayer.player.id);
+                    setSelectedPlayer(null);
+                  }}
+                  className="w-full"
+                  variant="destructive"
+                >
+                  <UserMinus className="h-4 w-4 mr-2" />
+                  Убрать с места
+                </Button>
+                
+                <Button
+                  onClick={() => {
+                    setSelectedPlayer(null);
+                    setTargetSeat(null);
+                  }}
+                  className="w-full"
+                  variant="outline"
+                >
+                  <Move className="h-4 w-4 mr-2" />
+                  Выбрать новое место
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Seat Selection Dialog */}
+      <Dialog open={!!targetSeat} onOpenChange={() => setTargetSeat(null)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Выбор игрока</DialogTitle>
+            <DialogDescription>
+              Выберите игрока для места {targetSeat?.seatNumber} за столом {targetSeat?.tableNumber}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-2 max-h-64 overflow-y-auto">
+            {activePlayers.filter(p => !p.seat_number).map((registration) => (
+              <div 
+                key={registration.id}
+                className="flex items-center gap-2 p-2 border rounded-lg cursor-pointer hover:bg-secondary/50"
+                onClick={() => {
+                  if (targetSeat) {
+                    movePlayerToSeat(registration.player.id, targetSeat.tableNumber, targetSeat.seatNumber);
+                  }
+                  setTargetSeat(null);
+                }}
+              >
+                <Avatar className="h-8 w-8">
+                  <AvatarImage src={getPlayerAvatar(registration.player.id)} />
+                  <AvatarFallback>
+                    {registration.player.name.charAt(0)}
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <div className="font-medium text-sm">{registration.player.name}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {registration.chips.toLocaleString()} фишек
+                  </div>
+                </div>
+              </div>
+            ))}
+            
+            {activePlayers.filter(p => !p.seat_number).length === 0 && (
+              <div className="text-center text-muted-foreground py-4">
+                Все игроки уже рассажены
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

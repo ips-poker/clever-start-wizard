@@ -33,30 +33,66 @@ interface MobileTournamentTimerProps {
   onTournamentUpdate: (tournament: Tournament) => void;
 }
 
-// Базовая структура блайндов
-const defaultBlindLevels = [
-  { level: 1, small_blind: 10, big_blind: 20, ante: 0, duration: 1200 },
-  { level: 2, small_blind: 15, big_blind: 30, ante: 0, duration: 1200 },
-  { level: 3, small_blind: 25, big_blind: 50, ante: 0, duration: 1200 },
-  { level: 4, small_blind: 50, big_blind: 100, ante: 0, duration: 1200, is_break: true },
-  { level: 5, small_blind: 75, big_blind: 150, ante: 0, duration: 1200 },
-  { level: 6, small_blind: 100, big_blind: 200, ante: 25, duration: 1200 },
-  { level: 7, small_blind: 150, big_blind: 300, ante: 25, duration: 1200 },
-  { level: 8, small_blind: 200, big_blind: 400, ante: 50, duration: 1200, is_break: true },
-  { level: 9, small_blind: 300, big_blind: 600, ante: 50, duration: 1200 },
-  { level: 10, small_blind: 400, big_blind: 800, ante: 75, duration: 1200 },
-];
+interface BlindLevel {
+  level: number;
+  small_blind: number;
+  big_blind: number;
+  ante: number;
+  duration: number;
+  is_break?: boolean;
+}
 
 export const MobileTournamentTimer = ({ tournament, onTournamentUpdate }: MobileTournamentTimerProps) => {
   const [timeRemaining, setTimeRemaining] = useState(tournament.timer_remaining || 1200);
   const [isRunning, setIsRunning] = useState(tournament.status === 'running');
   const [adjustMinutes, setAdjustMinutes] = useState('');
+  const [blindLevels, setBlindLevels] = useState<BlindLevel[]>([]);
   const { toast } = useToast();
 
   useEffect(() => {
     setTimeRemaining(tournament.timer_remaining || 1200);
     setIsRunning(tournament.status === 'running');
+    loadBlindLevels();
   }, [tournament]);
+
+  const loadBlindLevels = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('blind_levels')
+        .select('*')
+        .eq('tournament_id', tournament.id)
+        .order('level');
+
+      if (error) {
+        console.error('Error loading blind levels:', error);
+        // Используем дефолтную структуру если нет в БД
+        setBlindLevels([
+          { level: 1, small_blind: 10, big_blind: 20, ante: 0, duration: 1200 },
+          { level: 2, small_blind: 15, big_blind: 30, ante: 0, duration: 1200 },
+          { level: 3, small_blind: 25, big_blind: 50, ante: 0, duration: 1200 },
+          { level: 4, small_blind: 50, big_blind: 100, ante: 0, duration: 1200, is_break: true },
+          { level: 5, small_blind: 75, big_blind: 150, ante: 0, duration: 1200 }
+        ]);
+        return;
+      }
+
+      if (data && data.length > 0) {
+        setBlindLevels(data);
+      } else {
+        // Создаем дефолтную структуру если пусто
+        const defaultLevels = [
+          { level: 1, small_blind: 10, big_blind: 20, ante: 0, duration: 1200 },
+          { level: 2, small_blind: 15, big_blind: 30, ante: 0, duration: 1200 },
+          { level: 3, small_blind: 25, big_blind: 50, ante: 0, duration: 1200 },
+          { level: 4, small_blind: 50, big_blind: 100, ante: 0, duration: 1200, is_break: true },
+          { level: 5, small_blind: 75, big_blind: 150, ante: 0, duration: 1200 }
+        ];
+        setBlindLevels(defaultLevels);
+      }
+    } catch (error) {
+      console.error('Error loading blind levels:', error);
+    }
+  };
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -101,11 +137,11 @@ export const MobileTournamentTimer = ({ tournament, onTournamentUpdate }: Mobile
   };
 
   const getCurrentLevel = () => {
-    return defaultBlindLevels.find(level => level.level === tournament.current_level) || defaultBlindLevels[0];
+    return blindLevels.find(level => level.level === tournament.current_level) || blindLevels[0];
   };
 
   const getNextLevel = () => {
-    return defaultBlindLevels.find(level => level.level === tournament.current_level + 1);
+    return blindLevels.find(level => level.level === tournament.current_level + 1);
   };
 
   const startPauseTournament = async () => {
@@ -193,10 +229,10 @@ export const MobileTournamentTimer = ({ tournament, onTournamentUpdate }: Mobile
 
   const changeLevel = async (direction: 'next' | 'prev') => {
     const newLevel = direction === 'next' 
-      ? Math.min(tournament.current_level + 1, defaultBlindLevels.length)
+      ? Math.min(tournament.current_level + 1, blindLevels.length)
       : Math.max(tournament.current_level - 1, 1);
     
-    const levelData = defaultBlindLevels.find(l => l.level === newLevel);
+    const levelData = blindLevels.find(l => l.level === newLevel);
     if (!levelData) return;
 
     try {
@@ -343,7 +379,7 @@ export const MobileTournamentTimer = ({ tournament, onTournamentUpdate }: Mobile
             
             <Button
               onClick={() => changeLevel('next')}
-              disabled={tournament.current_level >= defaultBlindLevels.length}
+              disabled={tournament.current_level >= blindLevels.length}
               size="sm"
               variant="outline"
               className="flex-1"

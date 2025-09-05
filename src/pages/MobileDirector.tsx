@@ -174,7 +174,16 @@ const MobileDirector = () => {
         (payload) => {
           console.log('Tournament updated:', payload);
           if (payload.new && typeof payload.new === 'object' && 'id' in payload.new && payload.new.id === selectedTournament.id) {
-            setSelectedTournament(prev => ({ ...prev, ...payload.new }));
+            const updatedTournament = payload.new as any;
+            setSelectedTournament(prev => ({ 
+              ...prev, 
+              ...updatedTournament,
+              timer_remaining: updatedTournament.timer_remaining || prev?.timer_remaining,
+              current_level: updatedTournament.current_level || prev?.current_level,
+              current_small_blind: updatedTournament.current_small_blind || prev?.current_small_blind,
+              current_big_blind: updatedTournament.current_big_blind || prev?.current_big_blind,
+              status: updatedTournament.status || prev?.status
+            }));
           }
         }
       )
