@@ -1287,7 +1287,6 @@ const TableSeating = ({
                             <div className="text-xs font-light text-slate-900 truncate">{seat.player_name}</div>
                             <div className="text-xs text-slate-600 mb-2 font-light">{seat.stack_bb} BB</div>
                             
-                            {/* Кнопки управления игроком */}
                             <div className="flex gap-1">
                               <Dialog>
                                 <DialogTrigger asChild>
@@ -1295,7 +1294,20 @@ const TableSeating = ({
                                     size="sm"
                                     variant="outline"
                                     className="flex-1 h-6 px-1 text-xs bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
-                                    onClick={() => setSelectedPlayer(seat.player_id!)}
+                                    onClick={() => {
+                                      setSelectedPlayer(seat.player_id!);
+                                      // Найдем первый доступный стол и место
+                                      const tablesWithFreeSeats = tables.filter(t => 
+                                        t.table_number !== table.table_number && 
+                                        t.seats.some(s => !s.player_id)
+                                      );
+                                      if (tablesWithFreeSeats.length > 0) {
+                                        const firstTable = tablesWithFreeSeats[0];
+                                        const firstFreeSeat = firstTable.seats.find(s => !s.player_id);
+                                        setTargetTable(firstTable.table_number);
+                                        setTargetSeat(firstFreeSeat?.seat_number || 1);
+                                      }
+                                    }}
                                   >
                                     <ArrowUpDown className="w-3 h-3" />
                                   </Button>
@@ -1306,31 +1318,48 @@ const TableSeating = ({
                                   </DialogHeader>
                                   <div className="space-y-4">
                                     <div className="grid grid-cols-2 gap-2">
-                                      <Select value={targetTable.toString()} onValueChange={(v) => setTargetTable(Number(v))}>
+                                      <Select value={targetTable.toString()} onValueChange={(v) => {
+                                        const newTable = Number(v);
+                                        setTargetTable(newTable);
+                                        // Автоматически выберем первое свободное место на новом столе
+                                        const availableSeats = getAvailableSeats(newTable);
+                                        if (availableSeats.length > 0) {
+                                          setTargetSeat(availableSeats[0]);
+                                        }
+                                      }}>
                                         <SelectTrigger>
-                                          <SelectValue placeholder="Стол" />
+                                          <SelectValue placeholder="Выберите стол" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                          {tables.map(t => (
-                                            <SelectItem key={t.table_number} value={t.table_number.toString()}>
-                                              Стол {t.table_number}
-                                            </SelectItem>
-                                          ))}
+                                          {tables
+                                            .filter(t => t.table_number !== table.table_number)
+                                            .map(t => {
+                                              const freeSeats = getAvailableSeats(t.table_number);
+                                              return (
+                                                <SelectItem key={t.table_number} value={t.table_number.toString()}>
+                                                  Стол {t.table_number} ({freeSeats.length} свободных мест)
+                                                </SelectItem>
+                                              );
+                                            })}
                                         </SelectContent>
                                       </Select>
                                       
                                       <Select value={targetSeat.toString()} onValueChange={(v) => setTargetSeat(Number(v))}>
                                         <SelectTrigger>
-                                          <SelectValue placeholder="Место" />
+                                          <SelectValue placeholder="Выберите место" />
                                         </SelectTrigger>
                                         <SelectContent>
                                           {getAvailableSeats(targetTable).map(seatNum => (
                                             <SelectItem key={seatNum} value={seatNum.toString()}>
-                                              Место {seatNum} (Свободно)
+                                              Место {seatNum}
                                             </SelectItem>
                                           ))}
                                         </SelectContent>
                                       </Select>
+                                    </div>
+                                    
+                                    <div className="text-sm text-slate-600">
+                                      Доступно мест: {getAvailableSeats(targetTable).length}
                                     </div>
                                     
                                     <div className="flex gap-2">
