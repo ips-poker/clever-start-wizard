@@ -193,9 +193,9 @@ const ExternalTimer = () => {
   const nextLevel = blindLevels.find(l => l.level === tournament.current_level + 1);
   const nextSmallBlind = nextLevel?.small_blind || tournament.current_small_blind * 2;
   const nextBigBlind = nextLevel?.big_blind || tournament.current_big_blind * 2;
-  const nextAnte = nextLevel?.ante || nextBigBlind;
+  const nextAnte = nextLevel?.ante || 0;
 
-  const currentAnte = currentLevel?.ante || tournament.current_big_blind;
+  const currentAnte = currentLevel?.ante || 0;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white text-gray-800 flex flex-col">
@@ -273,26 +273,28 @@ const ExternalTimer = () => {
           {/* Current Blinds */}
           <div className="text-center p-8 border-4 border-gray-800 rounded-xl bg-white shadow-xl">
             <p className="text-lg text-gray-800 font-bold mb-4">ТЕКУЩИЙ УРОВЕНЬ</p>
-            <div className="grid grid-cols-3 gap-4">
+            <div className={`grid gap-4 ${currentLevel?.ante > 0 ? 'grid-cols-3' : 'grid-cols-2'}`}>
               <div className="space-y-2">
-                <p className="text-5xl font-bold text-gray-900">{tournament.current_small_blind}</p>
+                <p className="text-5xl font-bold text-gray-900">{currentLevel?.small_blind || tournament.current_small_blind}</p>
                 <p className="text-sm text-gray-600">МАЛЫЙ БЛАЙНД</p>
               </div>
               <div className="space-y-2">
-                <p className="text-5xl font-bold text-gray-900">{tournament.current_big_blind}</p>
+                <p className="text-5xl font-bold text-gray-900">{currentLevel?.big_blind || tournament.current_big_blind}</p>
                 <p className="text-sm text-gray-600">БОЛЬШОЙ БЛАЙНД</p>
               </div>
-              <div className="space-y-2">
-                <p className="text-5xl font-bold text-amber-600">{currentAnte}</p>
-                <p className="text-sm text-gray-600">АНТЕ</p>
-              </div>
+              {currentLevel?.ante > 0 && (
+                <div className="space-y-2">
+                  <p className="text-5xl font-bold text-amber-600">{currentLevel.ante}</p>
+                  <p className="text-sm text-gray-600">АНТЕ</p>
+                </div>
+              )}
             </div>
           </div>
 
           {/* Next Blinds */}
           <div className="text-center p-8 border-2 border-gray-300 rounded-xl bg-gray-50">
             <p className="text-lg text-gray-500 font-medium mb-4">СЛЕДУЮЩИЙ УРОВЕНЬ</p>
-            <div className="grid grid-cols-3 gap-4">
+            <div className={`grid gap-4 ${nextLevel?.ante > 0 ? 'grid-cols-3' : 'grid-cols-2'}`}>
               <div className="space-y-2">
                 <p className="text-3xl font-medium text-gray-700">{nextSmallBlind}</p>
                 <p className="text-sm text-gray-500">МАЛЫЙ БЛАЙНД</p>
@@ -301,10 +303,12 @@ const ExternalTimer = () => {
                 <p className="text-3xl font-medium text-gray-700">{nextBigBlind}</p>
                 <p className="text-sm text-gray-500">БОЛЬШОЙ БЛАЙНД</p>
               </div>
-              <div className="space-y-2">
-                <p className="text-3xl font-medium text-amber-500">{nextAnte}</p>
-                <p className="text-sm text-gray-500">АНТЕ</p>
-              </div>
+              {nextLevel?.ante > 0 && (
+                <div className="space-y-2">
+                  <p className="text-3xl font-medium text-amber-500">{nextLevel.ante}</p>
+                  <p className="text-sm text-gray-500">АНТЕ</p>
+                </div>
+              )}
             </div>
           </div>
         </div>

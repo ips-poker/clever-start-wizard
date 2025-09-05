@@ -338,7 +338,7 @@ const TournamentOverview = ({
                 className="mt-4 h-2 bg-gray-100/50"
               />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className={`grid gap-4 ${currentBlindLevel?.ante > 0 ? 'grid-cols-3' : 'grid-cols-2'}`}>
               <div className="text-center p-4 border border-gray-200/30 rounded-lg bg-white/50">
                 <p className="text-xs text-gray-500 font-medium mb-1">Малый блайнд</p>
                 <p className="text-2xl font-light text-gray-800">{currentSmallBlind}</p>
@@ -347,6 +347,12 @@ const TournamentOverview = ({
                 <p className="text-xs text-gray-500 font-medium mb-1">Большой блайнд</p>
                 <p className="text-2xl font-light text-gray-800">{currentBigBlind}</p>
               </div>
+              {currentBlindLevel?.ante > 0 && (
+                <div className="text-center p-4 border border-gray-200/30 rounded-lg bg-white/50">
+                  <p className="text-xs text-gray-500 font-medium mb-1">Анте</p>
+                  <p className="text-2xl font-light text-amber-600">{currentBlindLevel.ante}</p>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -369,7 +375,7 @@ const TournamentOverview = ({
                 <p className="text-sm text-gray-600">{nextBlindLevel ? Math.floor(nextBlindLevel.duration / 60) : 15} минут</p>
               </div>
             ) : (
-              <div className="grid grid-cols-2 gap-3">
+              <div className={`grid gap-3 ${nextBlindLevel?.ante > 0 ? 'grid-cols-3' : 'grid-cols-2'}`}>
                 <div className="text-center p-3 border border-gray-200/20 rounded-lg bg-white/30">
                   <p className="text-xs text-gray-500">Малый блайнд</p>
                   <p className="text-xl font-light text-gray-700">{Math.round(nextSmallBlind)}</p>
@@ -378,6 +384,12 @@ const TournamentOverview = ({
                   <p className="text-xs text-gray-500">Большой блайнд</p>
                   <p className="text-xl font-light text-gray-700">{Math.round(nextBigBlind)}</p>
                 </div>
+                {nextBlindLevel?.ante > 0 && (
+                  <div className="text-center p-3 border border-gray-200/20 rounded-lg bg-white/30">
+                    <p className="text-xs text-gray-500">Анте</p>
+                    <p className="text-xl font-light text-amber-600">{nextBlindLevel.ante}</p>
+                  </div>
+                )}
               </div>
             )}
           </CardContent>
