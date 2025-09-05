@@ -155,12 +155,7 @@ const FullscreenTimer = ({
       setTenSecondAnnouncement(true);
     }
     
-    // Автоматический переход к следующему уровню при достижении 0
-    if (currentTime === 0 && timerActive === false) {
-      setTimeout(() => {
-        onNextLevel();
-      }, 2000); // Задержка 2 секунды для лучшего UX
-    }
+    // Автопереход выполняется в контроллере (TournamentDirector); убрано здесь для предотвращения дублирования
     
     // Сброс флагов при новом уровне
     if (currentTime > 120) {
