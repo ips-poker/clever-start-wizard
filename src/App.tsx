@@ -16,7 +16,6 @@ import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 import ExternalTimer from "./pages/ExternalTimer";
 import InvitationCard from "./pages/InvitationCard";
-import MobileDirector from "./pages/MobileDirector";
 
 const queryClient = new QueryClient();
 
@@ -41,7 +40,6 @@ function App() {
           <Route path="/rating" element={<Rating />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/external-timer" element={<ExternalTimer />} />
-          <Route path="/mobile-director" element={<MobileDirector />} />
           <Route path="/invitation/:id" element={<InvitationCard />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
