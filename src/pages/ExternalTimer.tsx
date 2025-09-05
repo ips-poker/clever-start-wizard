@@ -191,6 +191,7 @@ const ExternalTimer = () => {
   const timerProgress = ((levelDuration - currentTime) / levelDuration) * 100;
   
   const nextLevel = blindLevels.find(l => l.level === tournament.current_level + 1);
+  const isNextBreakLevel = nextLevel?.is_break || false;
   const nextSmallBlind = nextLevel?.small_blind || tournament.current_small_blind * 2;
   const nextBigBlind = nextLevel?.big_blind || tournament.current_big_blind * 2;
   const nextAnte = nextLevel?.ante || 0;
@@ -294,24 +295,31 @@ const ExternalTimer = () => {
           {/* Next Blinds */}
           <div className="text-center p-8 border-2 border-gray-300 rounded-xl bg-gray-50">
             <p className="text-lg text-gray-500 font-medium mb-4">
-              {isBreakLevel ? 'ПОСЛЕ ПЕРЕРЫВА' : 'СЛЕДУЮЩИЙ УРОВЕНЬ'}
+              {isBreakLevel ? 'ПОСЛЕ ПЕРЕРЫВА' : (isNextBreakLevel ? 'ПЕРЕРЫВ' : 'СЛЕДУЮЩИЙ УРОВЕНЬ')}
             </p>
-            <div className={`grid gap-4 ${nextLevel?.ante > 0 ? 'grid-cols-3' : 'grid-cols-2'}`}>
-              <div className="space-y-2">
-                <p className="text-3xl font-medium text-gray-700">{nextSmallBlind}</p>
-                <p className="text-sm text-gray-500">МАЛЫЙ БЛАЙНД</p>
+            {isNextBreakLevel ? (
+              <div className="flex items-center justify-center py-8">
+                <Coffee className="w-16 h-16 text-amber-600 mr-4" />
+                <span className="text-4xl font-medium text-gray-700">ПЕРЕРЫВ</span>
               </div>
-              <div className="space-y-2">
-                <p className="text-3xl font-medium text-gray-700">{nextBigBlind}</p>
-                <p className="text-sm text-gray-500">БОЛЬШОЙ БЛАЙНД</p>
-              </div>
-              {nextLevel?.ante > 0 && (
+            ) : (
+              <div className={`grid gap-4 ${nextLevel?.ante > 0 ? 'grid-cols-3' : 'grid-cols-2'}`}>
                 <div className="space-y-2">
-                  <p className="text-3xl font-medium text-amber-500">{nextLevel.ante}</p>
-                  <p className="text-sm text-gray-500">АНТЕ</p>
+                  <p className="text-3xl font-medium text-gray-700">{nextSmallBlind}</p>
+                  <p className="text-sm text-gray-500">МАЛЫЙ БЛАЙНД</p>
                 </div>
-              )}
-            </div>
+                <div className="space-y-2">
+                  <p className="text-3xl font-medium text-gray-700">{nextBigBlind}</p>
+                  <p className="text-sm text-gray-500">БОЛЬШОЙ БЛАЙНД</p>
+                </div>
+                {nextLevel?.ante > 0 && (
+                  <div className="space-y-2">
+                    <p className="text-3xl font-medium text-amber-500">{nextLevel.ante}</p>
+                    <p className="text-sm text-gray-500">АНТЕ</p>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
