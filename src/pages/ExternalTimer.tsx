@@ -183,10 +183,12 @@ const ExternalTimer = () => {
   const totalChips = registrations.reduce((sum, r) => sum + (r.chips || tournament.starting_chips), 0);
   const averageStack = activePlayers.length > 0 ? Math.round(totalChips / activePlayers.length) : 0;
 
-  const timerProgress = ((tournament.timer_duration - currentTime) / tournament.timer_duration) * 100;
-  
   const currentLevel = blindLevels.find(l => l.level === tournament.current_level);
   const isBreakLevel = currentLevel?.is_break || false;
+  
+  // Используем длительность из структуры блайндов для правильного прогресса
+  const levelDuration = currentLevel?.duration ?? tournament.timer_duration;
+  const timerProgress = ((levelDuration - currentTime) / levelDuration) * 100;
   
   const nextLevel = blindLevels.find(l => l.level === tournament.current_level + 1);
   const nextSmallBlind = nextLevel?.small_blind || tournament.current_small_blind * 2;
