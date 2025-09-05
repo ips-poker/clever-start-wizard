@@ -4,6 +4,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { 
   Volume2,
   FastForward,
@@ -27,7 +29,8 @@ import {
   Play,
   Pause,
   Coffee,
-  Mic
+  Mic,
+  Smartphone
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import PlayerManagement from "./PlayerManagement";
@@ -119,6 +122,7 @@ const TournamentOverview = ({
   const [selectedSound, setSelectedSound] = useState('beep');
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showFullscreenTimer, setShowFullscreenTimer] = useState(false);
+  const [mobileControlEnabled, setMobileControlEnabled] = useState(false);
   const { toast } = useToast();
   const isMountedRef = useRef(true);
 
@@ -133,11 +137,17 @@ const TournamentOverview = ({
     loadSystemStats();
     loadBlindLevels();
     
+    // Загружаем состояние мобильного управления из localStorage
+    const savedMobileControl = localStorage.getItem(`mobile_control_${tournament?.id}`);
+    if (savedMobileControl === 'true') {
+      setMobileControlEnabled(true);
+    }
+    
     return () => {
       console.log('TournamentOverview unmounting');
       isMountedRef.current = false;
     };
-  }, []);
+  }, [tournament?.id]);
 
   useEffect(() => {
     if (tournament?.id) {
@@ -238,6 +248,28 @@ const TournamentOverview = ({
 
   const closeFullscreenTimer = () => {
     setShowFullscreenTimer(false);
+  };
+
+  const toggleMobileControl = () => {
+    const newValue = !mobileControlEnabled;
+    setMobileControlEnabled(newValue);
+    
+    // Сохраняем в localStorage
+    if (tournament?.id) {
+      localStorage.setItem(`mobile_control_${tournament.id}`, newValue.toString());
+    }
+    
+    if (newValue) {
+      toast({
+        title: "Управление с мобильного включено",
+        description: "Теперь турниром можно управлять с мобильного устройства. Кнопки на компьютере заблокированы.",
+      });
+    } else {
+      toast({
+        title: "Управление с мобильного отключено", 
+        description: "Управление турниром с компьютера восстановлено.",
+      });
+    }
   };
 
   const activePlayers = registrations.filter(r => r.status === 'registered' || r.status === 'playing');
@@ -399,25 +431,53 @@ const TournamentOverview = ({
       {/* Quick Control Buttons */}
       <Card className="bg-white/60 backdrop-blur-sm border border-gray-200/40 shadow-minimal">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-gray-700 font-light">
-            <Target className="w-4 h-4" />
-            Управление
+          <CardTitle className="flex items-center justify-between text-gray-700 font-light">
+            <div className="flex items-center gap-2">
+              <Target className="w-4 h-4" />
+              Управление
+            </div>
+            <div className="flex items-center gap-3">
+              <Label htmlFor="mobile-control" className="text-sm text-gray-600 flex items-center gap-2">
+                <Smartphone className="w-4 h-4" />
+                Управление с мобильного
+              </Label>
+              <Switch
+                id="mobile-control"
+                checked={mobileControlEnabled}
+                onCheckedChange={toggleMobileControl}
+              />
+            </div>
           </CardTitle>
         </CardHeader>
         <CardContent>
+          {mobileControlEnabled && (
+            <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-sm text-blue-700 flex items-center gap-2">
+                <Smartphone className="w-4 h-4" />
+                Включено управление с мобильного устройства. Для управления турниром используйте мобильный интерфейс по адресу: <code className="px-1 py-0.5 bg-blue-100 rounded text-blue-800">/mobile-director?tournament={tournament.id}</code>
+              </p>
+            </div>
+          )}
           <div className="grid grid-cols-4 md:grid-cols-10 gap-2">
             <Button
               variant="outline"
               size="sm"
               onClick={onToggleTimer}
+              disabled={mobileControlEnabled}
               className={`h-12 border-gray-200/50 hover:shadow-subtle transition-all ${
                 timerActive ? 'bg-red-50 text-red-600 hover:bg-red-100' : 'bg-green-50 text-green-600 hover:bg-green-100'
-              }`}
+              } ${mobileControlEnabled ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               {timerActive ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
             </Button>
             
-            <Button variant="outline" size="sm" onClick={onResetTimer} className="h-12 border-gray-200/50 hover:shadow-subtle">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={onResetTimer} 
+              disabled={mobileControlEnabled}
+              className={`h-12 border-gray-200/50 hover:shadow-subtle ${mobileControlEnabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+            >
               <RotateCcw className="w-4 h-4" />
             </Button>
             
@@ -426,7 +486,8 @@ const TournamentOverview = ({
               variant="outline" 
               size="sm" 
               onClick={() => onTimerAdjust?.(-60)}
-              className="h-12 border-gray-200/50 hover:shadow-subtle"
+              disabled={mobileControlEnabled}
+              className={`h-12 border-gray-200/50 hover:shadow-subtle ${mobileControlEnabled ? 'opacity-50 cursor-not-allowed' : ''}`}
               title="Перемотать назад на 1 минуту"
             >
               <Rewind className="w-4 h-4" />
@@ -436,17 +497,30 @@ const TournamentOverview = ({
               variant="outline" 
               size="sm" 
               onClick={() => onTimerAdjust?.(60)}
-              className="h-12 border-gray-200/50 hover:shadow-subtle"
+              disabled={mobileControlEnabled}
+              className={`h-12 border-gray-200/50 hover:shadow-subtle ${mobileControlEnabled ? 'opacity-50 cursor-not-allowed' : ''}`}
               title="Перемотать вперед на 1 минуту"
             >
               <FastForward className="w-4 h-4" />
             </Button>
             
-            <Button variant="outline" size="sm" onClick={onPrevLevel} className="h-12 border-gray-200/50 hover:shadow-subtle">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={onPrevLevel} 
+              disabled={mobileControlEnabled}
+              className={`h-12 border-gray-200/50 hover:shadow-subtle ${mobileControlEnabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+            >
               <ChevronLeft className="w-4 h-4" />
             </Button>
             
-            <Button variant="outline" size="sm" onClick={onNextLevel} className="h-12 border-gray-200/50 hover:shadow-subtle">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={onNextLevel} 
+              disabled={mobileControlEnabled}
+              className={`h-12 border-gray-200/50 hover:shadow-subtle ${mobileControlEnabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+            >
               <ChevronRight className="w-4 h-4" />
             </Button>
             
@@ -464,7 +538,13 @@ const TournamentOverview = ({
               <Maximize className="w-4 h-4" />
             </Button>
             
-            <Button variant="outline" size="sm" onClick={onStopTournament} className="h-12 text-red-500 border-red-200/50 hover:bg-red-50 hover:shadow-subtle">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={onStopTournament} 
+              disabled={mobileControlEnabled}
+              className={`h-12 text-red-500 border-red-200/50 hover:bg-red-50 hover:shadow-subtle ${mobileControlEnabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+            >
               <StopCircle className="w-4 h-4" />
             </Button>
             
@@ -477,7 +557,8 @@ const TournamentOverview = ({
                 variant="outline" 
                 size="sm" 
                 onClick={onFinishTournament} 
-                className="h-12 text-green-600 border-green-200/50 hover:bg-green-50 hover:shadow-subtle"
+                disabled={mobileControlEnabled}
+                className={`h-12 text-green-600 border-green-200/50 hover:bg-green-50 hover:shadow-subtle ${mobileControlEnabled ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
                 <CheckCircle className="w-4 h-4" />
               </Button>
