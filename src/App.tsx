@@ -16,7 +16,6 @@ import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 import ExternalTimer from "./pages/ExternalTimer";
 import InvitationCard from "./pages/InvitationCard";
-import MobileDirector from "./pages/MobileDirector";
 
 const queryClient = new QueryClient();
 
@@ -32,7 +31,6 @@ function App() {
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/director" element={<TournamentDirector />} />
-          <Route path="/mobile-director" element={<MobileDirector />} />
           <Route path="/admin" element={<Admin />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/about" element={<About />} />

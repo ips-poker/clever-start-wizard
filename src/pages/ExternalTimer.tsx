@@ -53,58 +53,28 @@ const ExternalTimer = () => {
     setupRealtimeSubscription();
   }, [tournamentId]);
 
-  // Реалтайм: читаем состояние таймера из БД и считаем время локально без лагов
+  // Синхронизация с localStorage
   useEffect(() => {
-    if (!tournamentId) return;
-    let interval: any;
-    let stateRef: any = { timer_active: false, timer_remaining: 0, timer_started_at: null };
+    if (!tournament) return;
 
-    const compute = () => {
-      if (!stateRef) return;
-      if (stateRef.timer_active && stateRef.timer_started_at) {
-        const startedAt = new Date(stateRef.timer_started_at).getTime();
-        const elapsed = Math.floor((Date.now() - startedAt) / 1000);
-        const remaining = Math.max(0, (stateRef.timer_remaining || 0) - elapsed);
-        setCurrentTime(remaining);
-        setTimerActive(true);
-      } else {
-        setCurrentTime(stateRef.timer_remaining || 0);
-        setTimerActive(false);
+    const syncInterval = setInterval(() => {
+      const savedTimerState = localStorage.getItem(`timer_${tournament.id}`);
+      if (savedTimerState) {
+        const { currentTime: savedTime, timerActive: savedActive, lastUpdate } = JSON.parse(savedTimerState);
+        const timePassed = Math.floor((Date.now() - lastUpdate) / 1000);
+        
+        if (savedActive && savedTime > timePassed) {
+          setCurrentTime(savedTime - timePassed);
+          setTimerActive(true);
+        } else {
+          setCurrentTime(savedTime);
+          setTimerActive(savedActive);
+        }
       }
-    };
+    }, 1000);
 
-    (async () => {
-      const { data } = await supabase
-        .from('tournament_state')
-        .select('*')
-        .eq('tournament_id', tournamentId)
-        .maybeSingle();
-      if (data) {
-        stateRef = data;
-        compute();
-      }
-    })();
-
-    const stateChannel = supabase
-      .channel(`external_state_${tournamentId}`)
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'tournament_state',
-        filter: `tournament_id=eq.${tournamentId}`
-      }, (payload) => {
-        stateRef = payload.new as any;
-        compute();
-      })
-      .subscribe();
-
-    interval = setInterval(compute, 1000);
-
-    return () => {
-      clearInterval(interval);
-      supabase.removeChannel(stateChannel);
-    };
-  }, [tournamentId]);
+    return () => clearInterval(syncInterval);
+  }, [tournament]);
 
   const loadTournamentData = async () => {
     if (!tournamentId) return;

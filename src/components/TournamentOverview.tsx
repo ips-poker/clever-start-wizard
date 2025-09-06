@@ -4,8 +4,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
 import { 
   Volume2,
   FastForward,
@@ -29,8 +27,7 @@ import {
   Play,
   Pause,
   Coffee,
-  Mic,
-  Smartphone
+  Mic
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import PlayerManagement from "./PlayerManagement";
@@ -122,7 +119,6 @@ const TournamentOverview = ({
   const [selectedSound, setSelectedSound] = useState('beep');
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showFullscreenTimer, setShowFullscreenTimer] = useState(false);
-  const [mobileControlEnabled, setMobileControlEnabled] = useState(false);
   const { toast } = useToast();
   const isMountedRef = useRef(true);
 
@@ -137,42 +133,11 @@ const TournamentOverview = ({
     loadSystemStats();
     loadBlindLevels();
     
-    // Загружаем состояние мобильного управления из localStorage
-    const savedMobileControl = localStorage.getItem(`mobile_control_${tournament?.id}`);
-    if (savedMobileControl === 'true') {
-      setMobileControlEnabled(true);
-    }
-
-    // Подписка на изменения состояния таймера для синхронизации
-    if (tournament?.id) {
-      const timerChannel = supabase
-        .channel(`tournament_timer_${tournament.id}`)
-        .on('postgres_changes', {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'tournaments',
-          filter: `id=eq.${tournament.id}`
-        }, async (payload) => {
-          console.log('Tournament updated:', payload);
-          // Обновляем локальное состояние если изменение пришло с другого устройства
-          if (payload.new && payload.new.timer_remaining !== undefined) {
-            await syncTimerFromDB();
-          }
-        })
-        .subscribe();
-
-      return () => {
-        console.log('TournamentOverview unmounting');
-        isMountedRef.current = false;
-        supabase.removeChannel(timerChannel);
-      };
-    }
-    
     return () => {
       console.log('TournamentOverview unmounting');
       isMountedRef.current = false;
     };
-  }, [tournament?.id]);
+  }, []);
 
   useEffect(() => {
     if (tournament?.id) {
@@ -251,52 +216,6 @@ const TournamentOverview = ({
     }
   };
 
-  // Синхронизация состояния таймера с БД
-  const syncTimerToDB = async (timerActive: boolean, timerRemaining: number) => {
-    if (!tournament?.id) return;
-
-    try {
-      // Обновляем основную таблицу турниров
-      await supabase
-        .from('tournaments')
-        .update({
-          timer_remaining: timerRemaining,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', tournament.id);
-
-      console.log('Timer synced to DB:', { timerActive, timerRemaining });
-    } catch (error) {
-      console.error('Error syncing timer to DB:', error);
-    }
-  };
-
-  // Загрузка состояния таймера из БД
-  const syncTimerFromDB = async () => {
-    if (!tournament?.id) return;
-
-    try {
-      const { data: tournamentData } = await supabase
-        .from('tournaments')
-        .select('timer_remaining, current_level')
-        .eq('id', tournament.id)
-        .single();
-
-      if (tournamentData) {
-        console.log('Synced timer state from DB:', tournamentData);
-        // Отправляем событие для обновления состояния
-        window.dispatchEvent(new CustomEvent('timerSync', {
-          detail: {
-            timerRemaining: tournamentData.timer_remaining,
-            currentLevel: tournamentData.current_level
-          }
-        }));
-      }
-    } catch (error) {
-      console.error('Error syncing timer from DB:', error);
-    }
-  };
-
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -319,33 +238,6 @@ const TournamentOverview = ({
 
   const closeFullscreenTimer = () => {
     setShowFullscreenTimer(false);
-  };
-
-  const toggleMobileControl = () => {
-    const newValue = !mobileControlEnabled;
-    setMobileControlEnabled(newValue);
-    
-    // Сохраняем в localStorage
-    if (tournament?.id) {
-      localStorage.setItem(`mobile_control_${tournament.id}`, newValue.toString());
-    }
-    
-    if (newValue) {
-      toast({
-        title: "Управление с мобильного включено",
-        description: "Теперь турниром можно управлять с мобильного устройства. Кнопки на компьютере заблокированы.",
-      });
-    } else {
-      toast({
-        title: "Управление с мобильного отключено", 
-        description: "Управление турниром с компьютера восстановлено.",
-      });
-    }
-
-    // Сообщаем странице директора о смене приоритета
-    window.dispatchEvent(new CustomEvent('mobileControlChanged', {
-      detail: { tournamentId: tournament?.id, enabled: newValue }
-    }));
   };
 
   const activePlayers = registrations.filter(r => r.status === 'registered' || r.status === 'playing');
@@ -507,150 +399,25 @@ const TournamentOverview = ({
       {/* Quick Control Buttons */}
       <Card className="bg-white/60 backdrop-blur-sm border border-gray-200/40 shadow-minimal">
         <CardHeader>
-          <CardTitle className="flex items-center justify-between text-gray-700 font-light">
-            <div className="flex items-center gap-2">
-              <Target className="w-4 h-4" />
-              Управление
-            </div>
-            <div className="flex items-center gap-3">
-              <Label htmlFor="mobile-control" className="text-sm text-gray-600 flex items-center gap-2">
-                <Smartphone className="w-4 h-4" />
-                Управление с мобильного
-              </Label>
-              <Switch
-                id="mobile-control"
-                checked={mobileControlEnabled}
-                onCheckedChange={toggleMobileControl}
-              />
-            </div>
+          <CardTitle className="flex items-center gap-2 text-gray-700 font-light">
+            <Target className="w-4 h-4" />
+            Управление
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {mobileControlEnabled && (
-            <div className="mb-6 p-4 bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-xl">
-              <div className="flex items-center gap-2 mb-4">
-                <Smartphone className="w-5 h-5 text-blue-600" />
-                <span className="font-medium text-blue-800">Мобильное управление</span>
-              </div>
-              
-              <div className="space-y-3">
-                <div className="grid grid-cols-3 gap-3">
-                  <Button
-                    variant={timerActive ? "destructive" : "default"}
-                    onClick={async () => {
-                      onToggleTimer();
-                      // Синхронизируем с БД
-                      await syncTimerToDB(!timerActive, currentTime);
-                    }}
-                    className="h-14 text-base font-medium shadow-md hover:shadow-lg transition-all"
-                  >
-                    {timerActive ? <Pause className="w-6 h-6" /> : <Play className="w-6 h-6" />}
-                  </Button>
-                  
-                  <Button 
-                    variant="outline" 
-                    onClick={async () => {
-                      onResetTimer();
-                      // Синхронизируем с БД
-                      await syncTimerToDB(false, tournament.timer_duration);
-                    }} 
-                    className="h-14 shadow-md hover:shadow-lg transition-all"
-                  >
-                    <RotateCcw className="w-6 h-6" />
-                  </Button>
-
-                  <Button 
-                    variant="outline" 
-                    onClick={async () => {
-                      onNextLevel();
-                      // Синхронизируем с БД
-                      await syncTimerToDB(timerActive, currentTime);
-                    }} 
-                    className="h-14 shadow-md hover:shadow-lg transition-all"
-                  >
-                    <ChevronRight className="w-6 h-6" />
-                  </Button>
-                </div>
-
-                <div className="grid grid-cols-4 gap-2">
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={async () => {
-                      onTimerAdjust?.(-60);
-                      // Синхронизируем с БД
-                      await syncTimerToDB(timerActive, currentTime - 60);
-                    }}
-                    className="h-12 shadow-sm hover:shadow-md transition-all"
-                    title="Перемотать назад на 1 минуту"
-                  >
-                    <Rewind className="w-5 h-5" />
-                  </Button>
-                  
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={async () => {
-                      onTimerAdjust?.(60);
-                      // Синхронизируем с БД
-                      await syncTimerToDB(timerActive, currentTime + 60);
-                    }}
-                    className="h-12 shadow-sm hover:shadow-md transition-all"
-                    title="Перемотать вперед на 1 минуту"
-                  >
-                    <FastForward className="w-5 h-5" />
-                  </Button>
-
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={async () => {
-                      onPrevLevel();
-                      // Синхронизируем с БД
-                      await syncTimerToDB(timerActive, currentTime);
-                    }} 
-                    className="h-12 shadow-sm hover:shadow-md transition-all"
-                    disabled={tournament.current_level <= 1}
-                  >
-                    <ChevronLeft className="w-5 h-5" />
-                  </Button>
-
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={async () => {
-                      onNextLevel();
-                      // Синхронизируем с БД
-                      await syncTimerToDB(timerActive, currentTime);
-                    }} 
-                    className="h-12 shadow-sm hover:shadow-md transition-all"
-                  >
-                    <ChevronRight className="w-5 h-5" />
-                  </Button>
-                </div>
-              </div>
-            </div>
-          )}
           <div className="grid grid-cols-4 md:grid-cols-10 gap-2">
             <Button
               variant="outline"
               size="sm"
               onClick={onToggleTimer}
-              disabled={mobileControlEnabled}
               className={`h-12 border-gray-200/50 hover:shadow-subtle transition-all ${
                 timerActive ? 'bg-red-50 text-red-600 hover:bg-red-100' : 'bg-green-50 text-green-600 hover:bg-green-100'
-              } ${mobileControlEnabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+              }`}
             >
               {timerActive ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
             </Button>
             
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={onResetTimer} 
-              disabled={mobileControlEnabled}
-              className={`h-12 border-gray-200/50 hover:shadow-subtle ${mobileControlEnabled ? 'opacity-50 cursor-not-allowed' : ''}`}
-            >
+            <Button variant="outline" size="sm" onClick={onResetTimer} className="h-12 border-gray-200/50 hover:shadow-subtle">
               <RotateCcw className="w-4 h-4" />
             </Button>
             
@@ -659,8 +426,7 @@ const TournamentOverview = ({
               variant="outline" 
               size="sm" 
               onClick={() => onTimerAdjust?.(-60)}
-              disabled={mobileControlEnabled}
-              className={`h-12 border-gray-200/50 hover:shadow-subtle ${mobileControlEnabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+              className="h-12 border-gray-200/50 hover:shadow-subtle"
               title="Перемотать назад на 1 минуту"
             >
               <Rewind className="w-4 h-4" />
@@ -670,30 +436,17 @@ const TournamentOverview = ({
               variant="outline" 
               size="sm" 
               onClick={() => onTimerAdjust?.(60)}
-              disabled={mobileControlEnabled}
-              className={`h-12 border-gray-200/50 hover:shadow-subtle ${mobileControlEnabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+              className="h-12 border-gray-200/50 hover:shadow-subtle"
               title="Перемотать вперед на 1 минуту"
             >
               <FastForward className="w-4 h-4" />
             </Button>
             
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={onPrevLevel} 
-              disabled={mobileControlEnabled}
-              className={`h-12 border-gray-200/50 hover:shadow-subtle ${mobileControlEnabled ? 'opacity-50 cursor-not-allowed' : ''}`}
-            >
+            <Button variant="outline" size="sm" onClick={onPrevLevel} className="h-12 border-gray-200/50 hover:shadow-subtle">
               <ChevronLeft className="w-4 h-4" />
             </Button>
             
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={onNextLevel} 
-              disabled={mobileControlEnabled}
-              className={`h-12 border-gray-200/50 hover:shadow-subtle ${mobileControlEnabled ? 'opacity-50 cursor-not-allowed' : ''}`}
-            >
+            <Button variant="outline" size="sm" onClick={onNextLevel} className="h-12 border-gray-200/50 hover:shadow-subtle">
               <ChevronRight className="w-4 h-4" />
             </Button>
             
@@ -711,13 +464,7 @@ const TournamentOverview = ({
               <Maximize className="w-4 h-4" />
             </Button>
             
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={onStopTournament} 
-              disabled={mobileControlEnabled}
-              className={`h-12 text-red-500 border-red-200/50 hover:bg-red-50 hover:shadow-subtle ${mobileControlEnabled ? 'opacity-50 cursor-not-allowed' : ''}`}
-            >
+            <Button variant="outline" size="sm" onClick={onStopTournament} className="h-12 text-red-500 border-red-200/50 hover:bg-red-50 hover:shadow-subtle">
               <StopCircle className="w-4 h-4" />
             </Button>
             
@@ -730,8 +477,7 @@ const TournamentOverview = ({
                 variant="outline" 
                 size="sm" 
                 onClick={onFinishTournament} 
-                disabled={mobileControlEnabled}
-                className={`h-12 text-green-600 border-green-200/50 hover:bg-green-50 hover:shadow-subtle ${mobileControlEnabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+                className="h-12 text-green-600 border-green-200/50 hover:bg-green-50 hover:shadow-subtle"
               >
                 <CheckCircle className="w-4 h-4" />
               </Button>

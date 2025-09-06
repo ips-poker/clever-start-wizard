@@ -113,11 +113,9 @@ const TournamentDirector = () => {
   const [editingTournament, setEditingTournament] = useState<Tournament | null>(null);
   const [currentTime, setCurrentTime] = useState(0);
   const [timerActive, setTimerActive] = useState(false);
-  const [mobilePriority, setMobilePriority] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
   const timerRef = useRef<NodeJS.Timeout | null>(null);
-  const remoteStateRef = useRef<any>(null);
   const [lastAnnouncedTime, setLastAnnouncedTime] = useState<number | null>(null);
   const [blindLevelsCache, setBlindLevelsCache] = useState<any[]>([]);
   // Инициализация голосовых объявлений
@@ -178,79 +176,6 @@ const TournamentDirector = () => {
     }
   }, [selectedTournament]);
 
-  // Realtime синхронизация таймера и мобильного приоритета
-  useEffect(() => {
-    if (!selectedTournament?.id) return;
-
-    // Инициализируем приоритет мобильного из localStorage
-    const stored = localStorage.getItem(`mobile_control_${selectedTournament.id}`);
-    setMobilePriority(stored === 'true');
-
-    const onMobileControlChanged = (e: any) => {
-      if (e?.detail?.tournamentId === selectedTournament.id) {
-        setMobilePriority(!!e.detail.enabled);
-      }
-    };
-    window.addEventListener('mobileControlChanged' as any, onMobileControlChanged);
-
-    // Подписка на обновления турнира и состояния таймера
-    const channel = supabase
-      .channel(`td_sync_${selectedTournament.id}`)
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'tournaments',
-        filter: `id=eq.${selectedTournament.id}`
-      }, (payload) => {
-        const newData: any = payload.new;
-        if (newData?.timer_remaining != null) setCurrentTime(newData.timer_remaining);
-        setSelectedTournament(prev => prev ? ({ ...prev, ...newData }) : prev);
-      })
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'tournament_state',
-        filter: `tournament_id=eq.${selectedTournament.id}`
-      }, (payload) => {
-        const state: any = payload.new;
-        remoteStateRef.current = state;
-        if (typeof state?.timer_active === 'boolean') setTimerActive(state.timer_active);
-        if (state) {
-          const remaining = state.timer_active && state.timer_started_at
-            ? Math.max(0, (state.timer_remaining || 0) - Math.floor((Date.now() - new Date(state.timer_started_at).getTime()) / 1000))
-            : (state.timer_remaining || 0);
-          setCurrentTime(remaining);
-        }
-      })
-      .subscribe();
-
-    // Начальная загрузка tournament_state
-    (async () => {
-      try {
-        const { data: state } = await (supabase as any)
-          .from('tournament_state')
-          .select('*')
-          .eq('tournament_id', selectedTournament.id)
-          .maybeSingle();
-        if (state) {
-          remoteStateRef.current = state;
-          if (typeof state.timer_active === 'boolean') setTimerActive(state.timer_active);
-          const remaining = state.timer_active && state.timer_started_at
-            ? Math.max(0, (state.timer_remaining || 0) - Math.floor((Date.now() - new Date(state.timer_started_at).getTime()) / 1000))
-            : (state.timer_remaining || 0);
-          setCurrentTime(remaining);
-        }
-      } catch (e) {
-        console.warn('tournament_state not found yet');
-      }
-    })();
-
-    return () => {
-      window.removeEventListener('mobileControlChanged' as any, onMobileControlChanged);
-      supabase.removeChannel(channel);
-    };
-  }, [selectedTournament?.id]);
-
   // Кэшируем структуру блайндов для мгновенного переключения уровней
   useEffect(() => {
     const load = async () => {
@@ -281,31 +206,8 @@ const TournamentDirector = () => {
     return () => { supabase.removeChannel(channel); };
   }, [selectedTournament?.id]);
 
-  // Timer effect with voice announcements and DB-derived ticking when mobilePriority
+  // Timer effect with voice announcements
   useEffect(() => {
-    // When mobile controls are primary, compute time from DB state to avoid drift and lag
-    if (mobilePriority) {
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-        timerRef.current = null;
-      }
-      const interval = setInterval(() => {
-        const s = remoteStateRef.current;
-        if (!s) return;
-        if (s.timer_active && s.timer_started_at) {
-          const startedAt = new Date(s.timer_started_at).getTime();
-          const elapsed = Math.floor((Date.now() - startedAt) / 1000);
-          const remaining = Math.max(0, (s.timer_remaining || 0) - elapsed);
-          setCurrentTime(remaining);
-        } else if (typeof s?.timer_remaining === 'number') {
-          setCurrentTime(s.timer_remaining);
-        }
-      }, 1000);
-      return () => {
-        clearInterval(interval);
-      };
-    }
-
     if (timerActive && currentTime > 0) {
       timerRef.current = setInterval(() => {
         setCurrentTime(prev => {
@@ -321,10 +223,13 @@ const TournamentDirector = () => {
               }));
               updateTimerInDatabase(0);
             }
+            
             // Автоматический мгновенный переход к следующему уровню (без ожидания БД)
             nextLevel({ autoResume: true });
+            
             return 0;
           }
+          
           // Сохранить текущее состояние каждые 10 секунд
           if (newTime % 10 === 0 && selectedTournament) {
             localStorage.setItem(`timer_${selectedTournament.id}`, JSON.stringify({
@@ -334,6 +239,7 @@ const TournamentDirector = () => {
             }));
             updateTimerInDatabase(newTime);
           }
+          
           return newTime;
         });
       }, 1000);
@@ -342,6 +248,7 @@ const TournamentDirector = () => {
         clearInterval(timerRef.current);
         timerRef.current = null;
       }
+      
       // Сохранить состояние при остановке таймера
       if (selectedTournament) {
         localStorage.setItem(`timer_${selectedTournament.id}`, JSON.stringify({
@@ -359,7 +266,7 @@ const TournamentDirector = () => {
         timerRef.current = null;
       }
     };
-  }, [timerActive, currentTime, selectedTournament, mobilePriority]);
+  }, [timerActive, currentTime, selectedTournament]);
 
   // Голосовые объявления на основе времени таймера
   useEffect(() => {
@@ -425,32 +332,13 @@ const TournamentDirector = () => {
     }
   };
 
-  const setRemoteTimerState = async (patch: { timer_active?: boolean; timer_started_at?: string | null; timer_paused_at?: string | null; timer_remaining?: number }) => {
-    if (!selectedTournament) return;
-    try {
-      await (supabase as any)
-        .from('tournament_state')
-        .upsert(
-          {
-            tournament_id: selectedTournament.id,
-            ...patch,
-            last_sync_at: new Date().toISOString(),
-            sync_source: 'desktop',
-          },
-          { onConflict: 'tournament_id' }
-        );
-    } catch (e) {
-      console.error('Error updating tournament_state:', e);
-    }
-  };
-
   const updateTimerInDatabase = async (timeRemaining: number) => {
     if (!selectedTournament) return;
+    
     await supabase
       .from('tournaments')
       .update({ timer_remaining: timeRemaining })
       .eq('id', selectedTournament.id);
-    await setRemoteTimerState({ timer_remaining: timeRemaining });
   };
 
   const handleTournamentSelect = (tournament: Tournament) => {
@@ -465,7 +353,7 @@ const TournamentDirector = () => {
     }
   };
 
-  const toggleTimer = async () => {
+  const toggleTimer = () => {
     const newTimerActive = !timerActive;
     setTimerActive(newTimerActive);
     
@@ -476,17 +364,10 @@ const TournamentDirector = () => {
         timerActive: newTimerActive,
         lastUpdate: Date.now()
       }));
-      await setRemoteTimerState({
-        timer_active: newTimerActive,
-        timer_started_at: newTimerActive ? new Date().toISOString() : null,
-        timer_paused_at: newTimerActive ? null : new Date().toISOString(),
-        timer_remaining: currentTime,
-      });
-      await updateTimerInDatabase(currentTime);
     }
   };
 
-  const resetTimer = async () => {
+  const resetTimer = () => {
     if (selectedTournament) {
       const resetTime = selectedTournament.timer_duration || 1200;
       setCurrentTime(resetTime);
@@ -498,13 +379,7 @@ const TournamentDirector = () => {
         timerActive: false,
         lastUpdate: Date.now()
       }));
-      await updateTimerInDatabase(resetTime);
-      await setRemoteTimerState({
-        timer_active: false,
-        timer_started_at: null,
-        timer_paused_at: new Date().toISOString(),
-        timer_remaining: resetTime,
-      });
+      updateTimerInDatabase(resetTime);
     }
   };
 
@@ -564,16 +439,10 @@ const TournamentDirector = () => {
         timer_duration: resetTime
       })
       .eq('id', selectedTournament.id)
-      .then(async ({ error }) => {
+      .then(({ error }) => {
         if (error) {
           console.error('Ошибка обновления уровня в БД:', error);
         }
-        await setRemoteTimerState({
-          timer_remaining: resetTime,
-          timer_active: willBeActive,
-          timer_started_at: willBeActive ? new Date().toISOString() : null,
-          timer_paused_at: willBeActive ? null : new Date().toISOString(),
-        });
       });
 
     // Голосовые оповещения с небольшой задержкой для плавности
@@ -643,16 +512,10 @@ const TournamentDirector = () => {
         timer_duration: resetTime
       })
       .eq('id', selectedTournament.id)
-      .then(async ({ error }) => {
+      .then(({ error }) => {
         if (error) {
           console.error('Ошибка обновления уровня в БД:', error);
         }
-        await setRemoteTimerState({
-          timer_remaining: resetTime,
-          timer_active: timerActive,
-          timer_started_at: timerActive ? new Date().toISOString() : null,
-          timer_paused_at: timerActive ? null : new Date().toISOString(),
-        });
       });
 
     toast({ 
@@ -690,7 +553,6 @@ const TournamentDirector = () => {
         lastUpdate: Date.now()
       }));
       updateTimerInDatabase(newTime);
-      setRemoteTimerState({ timer_remaining: newTime });
     }
   };
 
@@ -965,44 +827,6 @@ const TournamentDirector = () => {
 
     return () => { supabase.removeChannel(channel); };
   }, [selectedTournament?.id, selectedTournament?.current_level, currentTime, timerActive]);
-
-  // Realtime sync: listen to tournaments and tournament_state updates (mobile remote)
-  useEffect(() => {
-    if (!selectedTournament?.id) return;
-    const channel = supabase
-      .channel(`td_tournament_sync_${selectedTournament.id}`)
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'tournaments',
-        filter: `id=eq.${selectedTournament.id}`
-      }, (payload) => {
-        const t: any = payload.new;
-        if (!t) return;
-        setSelectedTournament(prev => prev ? ({ ...prev, ...t }) : t);
-        if (typeof t.timer_remaining === 'number') {
-          setCurrentTime(t.timer_remaining);
-        }
-      })
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'tournament_state',
-        filter: `tournament_id=eq.${selectedTournament.id}`
-      }, (payload) => {
-        const s: any = payload.new;
-        if (!s) return;
-        if (typeof s.timer_remaining === 'number') {
-          setCurrentTime(s.timer_remaining);
-        }
-        if (typeof s.timer_active === 'boolean') {
-          setTimerActive(s.timer_active);
-        }
-      })
-      .subscribe();
-
-    return () => { supabase.removeChannel(channel); };
-  }, [selectedTournament?.id]);
 
   return (
     <AuthGuard>
