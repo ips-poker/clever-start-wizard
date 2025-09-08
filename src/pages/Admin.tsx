@@ -28,6 +28,7 @@ import { SecurityDashboard } from "@/components/cms/SecurityDashboard";
 import { AdvancedContentManager } from "@/components/cms/AdvancedContentManager";
 import { SmartBackupSystem } from "@/components/cms/SmartBackupSystem";
 import { EnhancedPerformanceMonitor } from "@/components/cms/EnhancedPerformanceMonitor";
+import PlayersManager from "@/components/cms/PlayersManager";
 import { OrangeDataIntegration } from "@/components/cms/OrangeDataIntegration";
 import { ImageOptimizer } from "@/components/cms/ImageOptimizer";
 
@@ -96,14 +97,7 @@ export default function Admin() {
           </div>
         );
       case "players":
-        return (
-          <div className="p-8">
-            <h2 className="text-2xl font-bold mb-4">Управление игроками</h2>
-            <p className="text-muted-foreground">
-              Функционал управления игроками будет добавлен в следующих обновлениях.
-            </p>
-          </div>
-        );
+        return <PlayersManager />;
       default:
         return <AdminDashboard />;
     }
