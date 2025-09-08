@@ -30,7 +30,7 @@ import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
 import html2canvas from 'html2canvas';
-import ipsLogo from "/lovable-uploads/c77304bf-5309-4bdc-afcc-a81c8d3ff6c2.png";
+import epcLogo from "/lovable-uploads/84d7799c-d9ab-4819-8831-7e2ba28051e8.png";
 
 interface TournamentData {
   title: string;
@@ -672,7 +672,7 @@ ${data.description}
                     <div className="flex items-center justify-between mb-12 px-8 pt-8">
                       <div className="flex items-center gap-6">
                         <div className="w-14 h-14 bg-slate-900 rounded-2xl flex items-center justify-center">
-                          <img src={ipsLogo} alt="EPC" className="w-8 h-8" />
+                          <img src={epcLogo} alt="EPC" className="w-8 h-8" />
                         </div>
                         <div>
                           <div className="font-semibold text-xl tracking-tight text-slate-900">EPC POKER</div>
@@ -842,7 +842,7 @@ ${data.description}
                     {/* Header */}
                     <div className="text-center mb-8">
                       <div className="w-16 h-16 bg-slate-900 rounded-2xl mx-auto mb-4 flex items-center justify-center">
-                        <img src={ipsLogo} alt="EPC" className="w-10 h-10" />
+                        <img src={epcLogo} alt="EPC" className="w-10 h-10" />
                       </div>
                       <div className="font-semibold text-lg tracking-tight text-slate-900">
                         EPC POKER
