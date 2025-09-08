@@ -27,6 +27,8 @@ interface Player {
   id: string;
   name: string;
   email: string | null;
+  phone: string | null;
+  telegram: string | null;
   elo_rating: number;
   games_played: number;
   wins: number;
@@ -136,6 +138,8 @@ const PlayersManager = () => {
       return (
         player.name.toLowerCase().includes(searchLower) ||
         player.email?.toLowerCase().includes(searchLower) ||
+        player.phone?.toLowerCase().includes(searchLower) ||
+        player.telegram?.toLowerCase().includes(searchLower) ||
         player.profile?.full_name?.toLowerCase().includes(searchLower) ||
         player.profile?.email?.toLowerCase().includes(searchLower)
       );
@@ -280,7 +284,7 @@ const PlayersManager = () => {
           <div className="flex gap-4">
             <div className="flex-1">
               <Input
-                placeholder="Поиск по имени или email..."
+                placeholder="Поиск по имени, email, телефону или Telegram..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full"
@@ -355,12 +359,26 @@ const PlayersManager = () => {
                       </Avatar>
                       <div>
                         <p className="font-medium">{player.name}</p>
-                        <p className="text-sm text-muted-foreground">
+                         <p className="text-sm text-muted-foreground">
                           {player.profile?.full_name && player.profile.full_name !== player.name 
                             ? player.profile.full_name 
                             : (player.email || player.profile?.email || 'Нет email')
                           }
                         </p>
+                        {(player.phone || player.profile?.user_id) && (
+                          <div className="flex flex-wrap gap-2 mt-1">
+                            {player.phone && (
+                              <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
+                                📞 {player.phone}
+                              </span>
+                            )}
+                            {player.telegram && (
+                              <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
+                                📱 {player.telegram}
+                              </span>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </TableCell>

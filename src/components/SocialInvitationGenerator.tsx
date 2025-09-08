@@ -84,14 +84,14 @@ export function SocialInvitationGenerator() {
   const { toast } = useToast();
   
   const [tournamentData, setTournamentData] = useState<TournamentData>({
-    title: "🏆 Покерный турнир IPS",
+    title: "🏆 Покерный турнир EPC",
     date: "30.07.2025",
     time: "18:00",
     location: "TNG Lounge",
     buyIn: "2000₽",
     format: "Rebuy",
     description: "Эксклюзивный рейтинговый турнир",
-    contactInfo: "@ips_poker",
+    contactInfo: "@epc_poker",
     prizePool: "100 000₽",
     maxPlayers: "50",
     startingChips: "10 000",
@@ -159,7 +159,7 @@ export function SocialInvitationGenerator() {
       buyIn: `${tournament.buy_in.toLocaleString()}₽`,
       format: tournament.tournament_format === 'rebuy' ? 'Rebuy' : 'Freezeout',
       description: tournament.description || "Эксклюзивный рейтинговый турнир",
-      contactInfo: "@ips_poker",
+      contactInfo: "@epc_poker",
       prizePool: `${(tournament.buy_in * tournament.max_players * 0.9).toLocaleString()}₽`,
       maxPlayers: tournament.max_players.toString(),
       startingChips: tournament.starting_chips.toLocaleString(),
@@ -224,7 +224,7 @@ ${tournamentData.description}
     
 📞 Регистрация: ${tournamentData.contactInfo}
 
-#IPS #покер #турнир #poker`;
+#EPC #EventPokerClub #покер #турнир #poker`;
 
     return text;
   };
@@ -266,7 +266,7 @@ ${tournamentData.description}
 
 <b>📞 Регистрация:</b> ${tournamentData.contactInfo}
 
-#IPS #покер #турнир #poker #ELO`;
+#EPC #EventPokerClub #покер #турнир #poker #ELO`;
 
     return text;
   };
@@ -297,7 +297,7 @@ ${tournamentData.description}
     };
 
     const formattedText = `
-IPS POKER TOURNAMENT
+EPC EVENT POKER CLUB
 
 ${data.title}
 ${data.description}
@@ -312,7 +312,7 @@ ${data.description}
 
 📞 Registration: ${data.contactInfo}
 
-#IPS #poker #tournament
+#EPC #EventPokerClub #poker #tournament
     `.trim();
 
     // Копируем в буфер обмена
@@ -672,11 +672,11 @@ ${data.description}
                     <div className="flex items-center justify-between mb-12 px-8 pt-8">
                       <div className="flex items-center gap-6">
                         <div className="w-14 h-14 bg-slate-900 rounded-2xl flex items-center justify-center">
-                          <img src={ipsLogo} alt="IPS" className="w-8 h-8" />
+                          <img src={ipsLogo} alt="EPC" className="w-8 h-8" />
                         </div>
                         <div>
-                          <div className="font-semibold text-xl tracking-tight text-slate-900">IPS POKER</div>
-                          <div className="text-sm text-slate-500 font-medium">International Style</div>
+                          <div className="font-semibold text-xl tracking-tight text-slate-900">EPC POKER</div>
+                          <div className="text-sm text-slate-500 font-medium">Event Poker Club</div>
                         </div>
                       </div>
                       <div className="text-right">
@@ -842,12 +842,12 @@ ${data.description}
                     {/* Header */}
                     <div className="text-center mb-8">
                       <div className="w-16 h-16 bg-slate-900 rounded-2xl mx-auto mb-4 flex items-center justify-center">
-                        <img src={ipsLogo} alt="IPS" className="w-10 h-10" />
+                        <img src={ipsLogo} alt="EPC" className="w-10 h-10" />
                       </div>
                       <div className="font-semibold text-lg tracking-tight text-slate-900">
-                        IPS POKER
+                        EPC POKER
                       </div>
-                      <div className="text-xs text-slate-500 font-medium mt-1">International Style</div>
+                      <div className="text-xs text-slate-500 font-medium mt-1">Event Poker Club</div>
                     </div>
 
                     {/* Title */}

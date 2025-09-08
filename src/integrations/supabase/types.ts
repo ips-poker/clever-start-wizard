@@ -364,6 +364,8 @@ export type Database = {
           games_played: number
           id: string
           name: string
+          phone: string | null
+          telegram: string | null
           updated_at: string
           user_id: string | null
           wins: number
@@ -376,6 +378,8 @@ export type Database = {
           games_played?: number
           id?: string
           name: string
+          phone?: string | null
+          telegram?: string | null
           updated_at?: string
           user_id?: string | null
           wins?: number
@@ -388,6 +392,8 @@ export type Database = {
           games_played?: number
           id?: string
           name?: string
+          phone?: string | null
+          telegram?: string | null
           updated_at?: string
           user_id?: string | null
           wins?: number

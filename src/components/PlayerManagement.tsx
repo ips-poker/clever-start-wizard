@@ -75,6 +75,8 @@ interface PlayerManagementProps {
 const PlayerManagement = ({ tournament, players, registrations, onRegistrationUpdate }: PlayerManagementProps) => {
   const [selectedPlayerId, setSelectedPlayerId] = useState("");
   const [playerName, setPlayerName] = useState("");
+  const [playerPhone, setPlayerPhone] = useState("");
+  const [playerTelegram, setPlayerTelegram] = useState("");
   const [seatNumber, setSeatNumber] = useState("");
   const [startingChips, setStartingChips] = useState(tournament.starting_chips || 10000);
   const [bulkPlayersList, setBulkPlayersList] = useState("");
@@ -149,6 +151,8 @@ const PlayerManagement = ({ tournament, players, registrations, onRegistrationUp
           .insert([{
             name: playerName.trim(),
             email: `${playerName.trim().toLowerCase().replace(/\s+/g, '.')}@placeholder.com`,
+            phone: playerPhone.trim() || null,
+            telegram: playerTelegram.trim() || null,
             elo_rating: 100
           }])
           .select()
@@ -188,6 +192,8 @@ const PlayerManagement = ({ tournament, players, registrations, onRegistrationUp
       } else {
         toast({ title: "Успех", description: "Игрок зарегистрирован на турнир" });
         setPlayerName("");
+        setPlayerPhone("");
+        setPlayerTelegram("");
         setSeatNumber("");
         onRegistrationUpdate();
       }
@@ -228,6 +234,8 @@ const PlayerManagement = ({ tournament, players, registrations, onRegistrationUp
             .insert([{
               name: name,
               email: `${name.toLowerCase().replace(/\s+/g, '.')}@placeholder.com`,
+              phone: null, // При массовой регистрации контакты не заполняем
+              telegram: null,
               elo_rating: 100
             }])
             .select()
@@ -525,7 +533,7 @@ const PlayerManagement = ({ tournament, players, registrations, onRegistrationUp
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-6 space-y-5">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4">
                   <div className="space-y-2">
                     <Label className="text-slate-600 font-light text-sm">Имя игрока</Label>
                     <Input
@@ -534,6 +542,26 @@ const PlayerManagement = ({ tournament, players, registrations, onRegistrationUp
                       placeholder="Введите имя игрока"
                       className="border-slate-200 focus:border-blue-400 focus:ring-blue-400/20 rounded-xl h-11 font-light"
                     />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label className="text-slate-600 font-light text-sm">Телефон</Label>
+                      <Input
+                        value={playerPhone}
+                        onChange={(e) => setPlayerPhone(e.target.value)}
+                        placeholder="+7 (999) 123-45-67"
+                        className="border-slate-200 focus:border-blue-400 focus:ring-blue-400/20 rounded-xl h-11 font-light"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-slate-600 font-light text-sm">Telegram</Label>
+                      <Input
+                        value={playerTelegram}
+                        onChange={(e) => setPlayerTelegram(e.target.value)}
+                        placeholder="@username"
+                        className="border-slate-200 focus:border-blue-400 focus:ring-blue-400/20 rounded-xl h-11 font-light"
+                      />
+                    </div>
                   </div>
                   <div className="space-y-2">
                     <Label className="text-slate-600 font-light text-sm">Место</Label>

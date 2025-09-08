@@ -156,6 +156,8 @@ const ImprovedPlayerManagement = ({ tournament, players, registrations, onRegist
             .insert([{
               name: name,
               email: `${name.toLowerCase().replace(/\s+/g, '.')}@placeholder.com`,
+              phone: null, // При массовой регистрации контакты не заполняем
+              telegram: null,
               elo_rating: 100
             }])
             .select()
