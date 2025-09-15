@@ -72,19 +72,45 @@ export function AutoSEOGenerator() {
     try {
       setLoading(true);
       
-      const { error } = await supabase
+      // Сначала проверяем, существует ли запись для данной страницы
+      const { data: existingRecord } = await supabase
         .from('cms_seo')
-        .upsert({
-          page_slug: formData.pageSlug,
-          meta_title: analysis.recommendations.title,
-          meta_description: analysis.recommendations.description,
-          meta_keywords: analysis.recommendations.keywords,
-          canonical_url: formData.url,
-          robots_meta: 'index, follow',
-          schema_markup: analysis.recommendations.schema
-        }, {
-          onConflict: 'page_slug'
-        });
+        .select('id')
+        .eq('page_slug', formData.pageSlug)
+        .maybeSingle();
+
+      let error;
+      
+      if (existingRecord) {
+        // Обновляем существующую запись
+        const result = await supabase
+          .from('cms_seo')
+          .update({
+            meta_title: analysis.recommendations.title,
+            meta_description: analysis.recommendations.description,
+            meta_keywords: analysis.recommendations.keywords,
+            canonical_url: formData.url,
+            robots_meta: 'index, follow',
+            schema_markup: analysis.recommendations.schema,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', existingRecord.id);
+        error = result.error;
+      } else {
+        // Создаем новую запись
+        const result = await supabase
+          .from('cms_seo')
+          .insert({
+            page_slug: formData.pageSlug,
+            meta_title: analysis.recommendations.title,
+            meta_description: analysis.recommendations.description,
+            meta_keywords: analysis.recommendations.keywords,
+            canonical_url: formData.url,
+            robots_meta: 'index, follow',
+            schema_markup: analysis.recommendations.schema
+          });
+        error = result.error;
+      }
 
       if (error) throw error;
 
