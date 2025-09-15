@@ -52,7 +52,7 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'llama-3.1-sonar-small-128k-online',
+        model: 'sonar-pro',
         messages: [
           {
             role: 'system',
@@ -69,9 +69,7 @@ serve(async (req) => {
         return_images: false,
         return_related_questions: false,
         search_domain_filter: ['ya.ru', 'yandex.ru'],
-        search_recency_filter: 'month',
-        frequency_penalty: 1,
-        presence_penalty: 0
+        search_recency_filter: 'month'
       }),
     });
 
