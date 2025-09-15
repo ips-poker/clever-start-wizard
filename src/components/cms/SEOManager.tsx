@@ -7,9 +7,10 @@ import { useToast } from "@/hooks/use-toast";
 import { useSEOManager } from "@/hooks/useSEOManager";
 import { SEOForm } from "@/components/cms/content/SEOForm";
 import { SEOPreview } from "@/components/cms/seo/SEOPreview";
-import { SEOAnalyzer } from "@/components/cms/seo/SEOAnalyzer";
+import { AutoSEOGenerator } from "@/components/cms/seo/AutoSEOGenerator";
 import { SchemaMarkupGenerator } from "@/components/cms/seo/SchemaMarkupGenerator";
 import { SEOTracking } from "@/components/cms/seo/SEOTracking";
+import { YandexSEOOptimizer } from "@/components/cms/seo/YandexSEOOptimizer";
 import { 
   Search, 
   Plus, 
@@ -268,7 +269,7 @@ export function SEOManager() {
         </TabsContent>
 
         <TabsContent value="analyzer">
-          <SEOAnalyzer />
+          <AutoSEOGenerator />
         </TabsContent>
 
         <TabsContent value="schema">
@@ -291,28 +292,7 @@ export function SEOManager() {
         </TabsContent>
 
         <TabsContent value="settings" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Settings className="w-5 h-5" />
-                Общие настройки SEO
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="p-4 bg-muted rounded-lg">
-                  <h4 className="font-semibold mb-2">Следующие обновления:</h4>
-                  <ul className="text-sm text-muted-foreground space-y-1">
-                    <li>• Автоматическая генерация sitemap.xml</li>
-                    <li>• Интеграция с Google Search Console API</li>
-                    <li>• Мониторинг позиций в реальном времени</li>
-                    <li>• Анализ конкурентов</li>
-                    <li>• Автоматические рекомендации по улучшению</li>
-                  </ul>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <YandexSEOOptimizer />
         </TabsContent>
       </Tabs>
     </div>

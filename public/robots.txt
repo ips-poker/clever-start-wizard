@@ -1,14 +1,28 @@
-User-agent: Googlebot
-Allow: /
-
-User-agent: Bingbot
-Allow: /
-
-User-agent: Twitterbot
-Allow: /
-
-User-agent: facebookexternalhit
-Allow: /
-
 User-agent: *
 Allow: /
+
+User-agent: Yandex
+Allow: /
+
+# Sitemap
+Sitemap: https://epc-poker.ru/sitemap.xml
+
+# Crawl-delay for better server performance
+Crawl-delay: 1
+
+# Disallow admin and api routes
+Disallow: /admin
+Disallow: /api
+Disallow: /auth
+
+# Allow important pages
+Allow: /tournaments
+Allow: /rating
+Allow: /gallery
+Allow: /about
+
+# Яндекс-специфичные директивы
+Clean-param: utm_source&utm_medium&utm_campaign&utm_content&utm_term
+Clean-param: fbclid&gclid&yclid
+
+Host: epc-poker.ru
