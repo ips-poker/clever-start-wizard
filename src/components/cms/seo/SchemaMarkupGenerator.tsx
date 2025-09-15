@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { 
+  import { 
   Code, 
   Copy, 
   Save, 
@@ -20,7 +20,8 @@ import {
   Star,
   Users,
   Trophy,
-  Clock
+  Clock,
+  Wand2
 } from "lucide-react";
 
 interface SchemaTemplate {
@@ -37,6 +38,7 @@ export function SchemaMarkupGenerator() {
   const [schemaData, setSchemaData] = useState<any>({});
   const [generatedSchema, setGeneratedSchema] = useState<string>("");
   const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
   const schemaTemplates: SchemaTemplate[] = [
@@ -283,19 +285,59 @@ export function SchemaMarkupGenerator() {
     }
   };
 
-  const downloadSchema = () => {
-    if (!generatedSchema) return;
-    
-    const blob = new Blob([generatedSchema], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${selectedSchema}-schema.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  };
+      const generateAISchema = async () => {
+        if (!selectedSchema) return;
+        
+        try {
+          setLoading(true);
+          
+          const template = schemaTemplates.find(t => t.id === selectedSchema);
+          const prompt = `Generate schema markup for ${template?.name} with the following data: ${JSON.stringify(schemaData)}. Return only valid JSON schema.org markup.`;
+          
+          const { data, error } = await supabase.functions.invoke('seo-analyzer', {
+            body: {
+              pageSlug: `schema_${selectedSchema}`,
+              url: window.location.origin,
+              content: prompt,
+              keywords: `schema markup, ${template?.name}`,
+              competitors: ''
+            }
+          });
+
+          if (error) throw error;
+
+          if (data?.recommendations?.schema) {
+            setGeneratedSchema(JSON.stringify(data.recommendations.schema, null, 2));
+            toast({
+              title: "AI Schema сгенерирована!",
+              description: "Структурированные данные созданы с помощью AI",
+            });
+          }
+        } catch (error: any) {
+          console.error('Error generating AI schema:', error);
+          toast({
+            title: "Ошибка AI генерации",
+            description: error.message || "Не удалось сгенерировать schema с помощью AI",
+            variant: "destructive",
+          });
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      const downloadSchema = () => {
+        if (!generatedSchema) return;
+        
+        const blob = new Blob([generatedSchema], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${selectedSchema}-schema.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      };
 
   const renderSchemaForm = () => {
     const template = schemaTemplates.find(t => t.id === selectedSchema);
@@ -530,10 +572,23 @@ export function SchemaMarkupGenerator() {
                 {renderSchemaForm()}
                 
                 {selectedSchema && (
-                  <div className="mt-6 pt-6 border-t">
+                  <div className="mt-6 pt-6 border-t space-y-3">
                     <Button onClick={generateSchema} className="w-full">
                       <Code className="w-4 h-4 mr-2" />
                       Сгенерировать Schema
+                    </Button>
+                    <Button 
+                      onClick={generateAISchema} 
+                      disabled={loading}
+                      variant="outline" 
+                      className="w-full"
+                    >
+                      {loading ? (
+                        <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" />
+                      ) : (
+                        <Wand2 className="w-4 h-4 mr-2" />
+                      )}
+                      {loading ? 'Генерирую с AI...' : 'Сгенерировать с AI'}
                     </Button>
                   </div>
                 )}

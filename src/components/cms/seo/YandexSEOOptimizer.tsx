@@ -17,8 +17,10 @@ import {
   MapPin,
   Search,
   Globe,
-  Star
+  Star,
+  Wand2
 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 export function YandexSEOOptimizer() {
   const [loading, setLoading] = useState(false);
@@ -89,54 +91,111 @@ export function YandexSEOOptimizer() {
     }
   ];
 
-  const generateYandexOptimizedContent = () => {
+  const generateYandexOptimizedContent = async () => {
     setLoading(true);
     
-    // Симуляция генерации оптимизированного контента
-    setTimeout(() => {
-      const optimized = {
-        title: `${formData.businessType} в ${formData.region} - EPC Event Poker Club | Турниры и рейтинг RPS`,
-        description: `Премиальный ${formData.businessType.toLowerCase()} EPC в ${formData.region}. ${formData.uniqueFeatures}. Турниры по покеру каждый день. Присоединяйтесь к лучшему покер клубу города!`,
-        h1: `EPC Event Poker Club - Лучший ${formData.businessType.toLowerCase()} в ${formData.region}`,
-        keywords: `${formData.mainKeywords}, ${formData.businessType.toLowerCase()} ${formData.region.toLowerCase()}, лучший покер клуб ${formData.region.toLowerCase()}`,
-        geo_tags: {
-          region: 'RU-MOW',
-          placename: formData.region,
-          position: '55.7558;37.6176'
-        },
-        content_suggestions: [
-          `Создайте страницу "Покерные турниры в ${formData.region}"`,
-          `Добавьте раздел "Отзывы игроков ${formData.businessType.toLowerCase()}"`,
-          `Создайте календарь турниров с микроразметкой Event`,
-          `Добавьте страницу с рейтингом лучших игроков ${formData.region}`
-        ],
-        structured_data: {
-          "@context": "https://schema.org",
-          "@type": "Organization",
-          "name": "EPC Event Poker Club",
-          "description": `Премиальный ${formData.businessType.toLowerCase()} в ${formData.region}`,
-          "address": {
-            "@type": "PostalAddress",
-            "addressLocality": formData.region,
-            "addressCountry": "RU"
-          },
-          "geo": {
-            "@type": "GeoCoordinates",
-            "latitude": "55.7558",
-            "longitude": "37.6176"
-          }
+    try {
+      // Попытка генерации с AI
+      const businessData = JSON.stringify(formData);
+      
+      const { data, error } = await supabase.functions.invoke('seo-analyzer', {
+        body: {
+          pageSlug: 'yandex_optimization',
+          url: window.location.origin,
+          content: `Generate Yandex-optimized content for: ${businessData}`,
+          keywords: formData.mainKeywords,
+          competitors: formData.competitors
         }
-      };
-      
-      setOptimizedContent(optimized);
-      setLoading(false);
-      
-      toast({
-        title: "Контент оптимизирован",
-        description: "Сгенерированы рекомендации для Яндекса",
       });
-    }, 2000);
+
+      if (!error && data?.recommendations) {
+        // Используем AI рекомендации
+        const optimized = {
+          title: data.recommendations.title || generateFallbackTitle(),
+          description: data.recommendations.description || generateFallbackDescription(),
+          h1: data.recommendations.h1 || generateFallbackH1(),
+          keywords: data.recommendations.keywords || formData.mainKeywords,
+          geo_tags: {
+            region: 'RU-MOW',
+            placename: formData.region,
+            position: '55.7558;37.6176'
+          },
+          content_suggestions: data.analysis?.content_recommendations || generateFallbackSuggestions(),
+          structured_data: data.recommendations.schema || generateFallbackSchema()
+        };
+        
+        setOptimizedContent(optimized);
+        toast({
+          title: "AI оптимизация завершена",
+          description: "Контент оптимизирован с помощью искусственного интеллекта",
+        });
+      } else {
+        // Fallback к стандартной генерации
+        generateFallbackOptimization();
+      }
+    } catch (error: any) {
+      console.error('AI generation failed:', error);
+      // Fallback к стандартной генерации при ошибке
+      generateFallbackOptimization();
+    } finally {
+      setLoading(false);
+    }
   };
+
+  const generateFallbackOptimization = () => {
+    const optimized = {
+      title: generateFallbackTitle(),
+      description: generateFallbackDescription(),
+      h1: generateFallbackH1(),
+      keywords: `${formData.mainKeywords}, ${formData.businessType.toLowerCase()} ${formData.region.toLowerCase()}, лучший покер клуб ${formData.region.toLowerCase()}`,
+      geo_tags: {
+        region: 'RU-MOW',
+        placename: formData.region,
+        position: '55.7558;37.6176'
+      },
+      content_suggestions: generateFallbackSuggestions(),
+      structured_data: generateFallbackSchema()
+    };
+    
+    setOptimizedContent(optimized);
+    toast({
+      title: "Стандартная оптимизация",
+      description: "Контент оптимизирован базовыми алгоритмами",
+    });
+  };
+
+  const generateFallbackTitle = () => 
+    `${formData.businessType} в ${formData.region} - EPC Event Poker Club | Турниры и рейтинг RPS`;
+  
+  const generateFallbackDescription = () => 
+    `Премиальный ${formData.businessType.toLowerCase()} EPC в ${formData.region}. ${formData.uniqueFeatures}. Турниры по покеру каждый день. Присоединяйтесь к лучшему покер клубу города!`;
+  
+  const generateFallbackH1 = () => 
+    `EPC Event Poker Club - Лучший ${formData.businessType.toLowerCase()} в ${formData.region}`;
+  
+  const generateFallbackSuggestions = () => [
+    `Создайте страницу "Покерные турниры в ${formData.region}"`,
+    `Добавьте раздел "Отзывы игроков ${formData.businessType.toLowerCase()}"`,
+    `Создайте календарь турниров с микроразметкой Event`,
+    `Добавьте страницу с рейтингом лучших игроков ${formData.region}`
+  ];
+  
+  const generateFallbackSchema = () => ({
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": "EPC Event Poker Club",
+    "description": `Премиальный ${formData.businessType.toLowerCase()} в ${formData.region}`,
+    "address": {
+      "@type": "PostalAddress",
+      "addressLocality": formData.region,
+      "addressCountry": "RU"
+    },
+    "geo": {
+      "@type": "GeoCoordinates",
+      "latitude": "55.7558",
+      "longitude": "37.6176"
+    }
+  });
 
   const applyOptimizations = async () => {
     if (!optimizedContent) return;
@@ -226,32 +285,32 @@ export function YandexSEOOptimizer() {
             />
           </div>
 
-          <div className="flex gap-2">
-            <Button 
-              onClick={generateYandexOptimizedContent} 
-              disabled={loading}
-              className="flex items-center gap-2"
-            >
-              {loading ? (
-                <LoadingSpinner size="sm" />
-              ) : (
-                <Search className="w-4 h-4" />
-              )}
-              Оптимизировать для Яндекса
-            </Button>
-
-            {optimizedContent && (
+            <div className="flex gap-2">
               <Button 
-                onClick={applyOptimizations}
+                onClick={generateYandexOptimizedContent} 
                 disabled={loading}
-                variant="outline"
                 className="flex items-center gap-2"
               >
-                <CheckCircle className="w-4 h-4" />
-                Применить оптимизацию
+                {loading ? (
+                  <LoadingSpinner size="sm" />
+                ) : (
+                  <Wand2 className="w-4 h-4" />
+                )}
+                {loading ? 'Оптимизирую с AI...' : 'Оптимизировать с AI'}
               </Button>
-            )}
-          </div>
+
+              {optimizedContent && (
+                <Button 
+                  onClick={applyOptimizations}
+                  disabled={loading}
+                  variant="outline"
+                  className="flex items-center gap-2"
+                >
+                  <CheckCircle className="w-4 h-4" />
+                  Применить оптимизацию
+                </Button>
+              )}
+            </div>
         </CardContent>
       </Card>
 

@@ -1,7 +1,11 @@
+import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, Share, MessageSquare } from "lucide-react";
+import { Search, Share, MessageSquare, Wand2, Eye } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface SEOPreviewProps {
   metaTitle: string;
@@ -20,16 +24,77 @@ export function SEOPreview({
   ogDescription,
   ogImage,
 }: SEOPreviewProps) {
+  const [aiAnalyzing, setAiAnalyzing] = useState(false);
+  const [aiRecommendations, setAiRecommendations] = useState<any>(null);
+  const { toast } = useToast();
+
+  const analyzePreviewWithAI = async () => {
+    try {
+      setAiAnalyzing(true);
+      
+      const seoData = {
+        metaTitle,
+        metaDescription,
+        canonicalUrl,
+        ogTitle,
+        ogDescription,
+        ogImage
+      };
+      
+      const { data, error } = await supabase.functions.invoke('seo-analyzer', {
+        body: {
+          pageSlug: 'preview_analysis',
+          url: canonicalUrl || window.location.origin,
+          content: JSON.stringify(seoData),
+          keywords: 'meta tags, open graph, seo preview',
+          competitors: ''
+        }
+      });
+
+      if (error) throw error;
+
+      setAiRecommendations(data);
+      toast({
+        title: "AI анализ завершен",
+        description: "Получены рекомендации по улучшению SEO превью",
+      });
+    } catch (error: any) {
+      console.error('Error analyzing preview:', error);
+      toast({
+        title: "Ошибка AI анализа",
+        description: error.message || "Не удалось провести анализ превью",
+        variant: "destructive",
+      });
+    } finally {
+      setAiAnalyzing(false);
+    }
+  };
+
   const displayUrl = canonicalUrl || "https://example.com";
   const domain = new URL(displayUrl).hostname;
 
   return (
     <div className="space-y-6">
-      <div>
-        <h3 className="text-lg font-semibold mb-2">Предпросмотр в поисковой выдаче</h3>
-        <p className="text-sm text-muted-foreground">
-          Посмотрите, как ваша страница будет выглядеть в различных контекстах
-        </p>
+      <div className="flex justify-between items-center">
+        <div>
+          <h3 className="text-lg font-semibold mb-2">Предпросмотр в поисковой выдаче</h3>
+          <p className="text-sm text-muted-foreground">
+            Посмотрите, как ваша страница будет выглядеть в различных контекстах
+          </p>
+        </div>
+        <Button 
+          onClick={analyzePreviewWithAI} 
+          disabled={aiAnalyzing}
+          variant="outline" 
+          className="flex items-center gap-2"
+        >
+          {aiAnalyzing ? (
+            <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+          ) : (
+            <Wand2 className="w-4 h-4" />
+          )}
+          {aiAnalyzing ? 'Анализирую...' : 'Анализ превью с AI'}
+        </Button>
       </div>
 
       <Tabs defaultValue="google" className="space-y-4">
@@ -218,6 +283,49 @@ export function SEOPreview({
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* AI Recommendations */}
+      {aiRecommendations && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Wand2 className="w-5 h-5" />
+              AI Рекомендации по превью
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {aiRecommendations.analysis && (
+                <div>
+                  <h4 className="font-semibold mb-2">Анализ превью:</h4>
+                  <div className="p-3 bg-muted rounded-lg">
+                    <pre className="whitespace-pre-wrap text-sm">
+                      {typeof aiRecommendations.analysis === 'string' 
+                        ? aiRecommendations.analysis 
+                        : JSON.stringify(aiRecommendations.analysis, null, 2)
+                      }
+                    </pre>
+                  </div>
+                </div>
+              )}
+              
+              {aiRecommendations.recommendations && (
+                <div>
+                  <h4 className="font-semibold mb-2">Рекомендации по улучшению:</h4>
+                  <div className="grid grid-cols-1 gap-3">
+                    {Object.entries(aiRecommendations.recommendations).map(([key, value]: [string, any]) => (
+                      <div key={key} className="p-3 border rounded-lg">
+                        <h5 className="font-medium capitalize">{key.replace('_', ' ')}:</h5>
+                        <p className="text-sm text-muted-foreground mt-1">{value}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

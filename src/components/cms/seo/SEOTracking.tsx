@@ -17,7 +17,8 @@ import {
   Globe,
   Code,
   Settings,
-  AlertCircle
+  AlertCircle,
+  Wand2
 } from "lucide-react";
 
 interface TrackingSettings {
@@ -49,6 +50,8 @@ export function SEOTracking() {
   
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [aiAnalyzing, setAiAnalyzing] = useState(false);
+  const [aiRecommendations, setAiRecommendations] = useState<any>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -124,6 +127,44 @@ export function SEOTracking() {
       });
     } finally {
       setSaving(false);
+    }
+  };
+
+  const analyzeWithAI = async () => {
+    try {
+      setAiAnalyzing(true);
+      
+      const settingsText = Object.entries(settings)
+        .filter(([_, value]) => value)
+        .map(([key, value]) => `${key}: ${value}`)
+        .join('\n');
+      
+      const { data, error } = await supabase.functions.invoke('seo-analyzer', {
+        body: {
+          pageSlug: 'tracking_analysis',
+          url: window.location.origin,
+          content: `Analyze tracking setup: ${settingsText}`,
+          keywords: 'tracking, analytics, yandex metrica, google analytics',
+          competitors: ''
+        }
+      });
+
+      if (error) throw error;
+
+      setAiRecommendations(data);
+      toast({
+        title: "AI анализ завершен",
+        description: "Получены рекомендации по настройке трекинга",
+      });
+    } catch (error: any) {
+      console.error('Error analyzing tracking:', error);
+      toast({
+        title: "Ошибка AI анализа",
+        description: error.message || "Не удалось провести анализ трекинга",
+        variant: "destructive",
+      });
+    } finally {
+      setAiAnalyzing(false);
     }
   };
 
@@ -249,14 +290,29 @@ ${settings.custom_head_scripts}
             Настройка кодов отслеживания и верификации поисковых систем
           </p>
         </div>
-        <Button onClick={saveSettings} disabled={saving} className="flex items-center gap-2">
-          {saving ? (
-            <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-          ) : (
-            <Save className="w-4 h-4" />
-          )}
-          Сохранить настройки
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={saveSettings} disabled={saving} className="flex items-center gap-2">
+            {saving ? (
+              <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <Save className="w-4 h-4" />
+            )}
+            Сохранить настройки
+          </Button>
+          <Button 
+            onClick={analyzeWithAI} 
+            disabled={aiAnalyzing}
+            variant="outline" 
+            className="flex items-center gap-2"
+          >
+            {aiAnalyzing ? (
+              <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <Wand2 className="w-4 h-4" />
+            )}
+            {aiAnalyzing ? 'Анализирую...' : 'Анализ с AI'}
+          </Button>
+        </div>
       </div>
 
       <Tabs defaultValue="analytics" className="space-y-6">
@@ -523,6 +579,49 @@ ${settings.custom_head_scripts}
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* AI Recommendations */}
+      {aiRecommendations && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Wand2 className="w-5 h-5" />
+              AI Рекомендации по трекингу
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {aiRecommendations.analysis && (
+                <div>
+                  <h4 className="font-semibold mb-2">Анализ текущих настроек:</h4>
+                  <div className="p-3 bg-muted rounded-lg">
+                    <pre className="whitespace-pre-wrap text-sm">
+                      {typeof aiRecommendations.analysis === 'string' 
+                        ? aiRecommendations.analysis 
+                        : JSON.stringify(aiRecommendations.analysis, null, 2)
+                      }
+                    </pre>
+                  </div>
+                </div>
+              )}
+              
+              {aiRecommendations.recommendations && (
+                <div>
+                  <h4 className="font-semibold mb-2">Рекомендации:</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {Object.entries(aiRecommendations.recommendations).map(([key, value]: [string, any]) => (
+                      <div key={key} className="p-3 border rounded-lg">
+                        <h5 className="font-medium capitalize">{key.replace('_', ' ')}:</h5>
+                        <p className="text-sm text-muted-foreground mt-1">{value}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

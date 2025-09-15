@@ -121,6 +121,8 @@ serve(async (req) => {
           url: url,
           keywords: keywords
         }
+      }, {
+        onConflict: 'page_slug,content_key'
       });
 
     if (saveError) {
