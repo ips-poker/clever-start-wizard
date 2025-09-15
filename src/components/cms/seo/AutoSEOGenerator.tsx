@@ -82,6 +82,8 @@ export function AutoSEOGenerator() {
           canonical_url: formData.url,
           robots_meta: 'index, follow',
           schema_markup: analysis.recommendations.schema
+        }, {
+          onConflict: 'page_slug'
         });
 
       if (error) throw error;
