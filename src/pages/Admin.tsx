@@ -31,6 +31,8 @@ import { EnhancedPerformanceMonitor } from "@/components/cms/EnhancedPerformance
 import PlayersManager from "@/components/cms/PlayersManager";
 import { OrangeDataIntegration } from "@/components/cms/OrangeDataIntegration";
 import { ImageOptimizer } from "@/components/cms/ImageOptimizer";
+import { CacheDebugPanel } from "@/components/CacheDebugPanel";
+import { TournamentListCached } from "@/components/TournamentListCached";
 
 export default function Admin() {
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -98,6 +100,22 @@ export default function Admin() {
         );
       case "players":
         return <PlayersManager />;
+      case "cache-management":
+        return (
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-2xl font-bold mb-2">Управление кэшем</h2>
+              <p className="text-muted-foreground mb-6">
+                Мониторинг и управление системой кэширования данных
+              </p>
+            </div>
+            <CacheDebugPanel />
+            <div>
+              <h3 className="text-lg font-semibold mb-4">Пример: Турниры с кэшированием</h3>
+              <TournamentListCached />
+            </div>
+          </div>
+        );
       default:
         return <AdminDashboard />;
     }

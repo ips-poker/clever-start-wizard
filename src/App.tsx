@@ -1,5 +1,6 @@
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
+import { useGlobalDataSync } from "@/hooks/useGlobalDataSync";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
@@ -20,6 +21,11 @@ import InvitationCard from "./pages/InvitationCard";
 const queryClient = new QueryClient();
 
 function App() {
+  // Initialize global data sync
+  useGlobalDataSync({
+    enabled: true,
+    clearCacheOnStart: false
+  });
   return (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>

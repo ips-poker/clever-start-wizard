@@ -7,11 +7,17 @@ import luxuryPokerHero from "@/assets/luxury-poker-hero.jpg";
 import pokerChipsBg from "@/assets/poker-chips-bg.jpg";
 import pokerLogo from "/lovable-uploads/a689ff05-9338-4573-bd08-aa9486811d3f.png";
 import { useCMSContent } from "@/hooks/useCMSContent";
+import { HeroSkeleton } from "@/components/ui/hero-skeleton";
+
 export function Hero() {
   const {
     getContent,
     loading
   } = useCMSContent('home');
+
+  if (loading) {
+    return <HeroSkeleton />;
+  }
   return <section className="relative min-h-screen flex items-center overflow-hidden">
       {/* Optimized Background - Increased opacity by 50% */}
       <div className="absolute inset-0 bg-cover bg-center bg-no-repeat" style={{
