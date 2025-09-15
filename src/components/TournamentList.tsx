@@ -38,10 +38,34 @@ export function TournamentList() {
 
   useEffect(() => {
     loadTournaments();
+
+    // Добавляем realtime подписку для мгновенных обновлений
+    const channel = supabase
+      .channel('tournaments_realtime')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'tournaments'
+      }, () => {
+        loadTournaments();
+      })
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'tournament_registrations'
+      }, () => {
+        loadTournaments();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const loadTournaments = async () => {
     try {
+      setLoading(true);
       const { data, error } = await supabase
         .from('tournaments')
         .select(`
@@ -119,8 +143,8 @@ export function TournamentList() {
         variant: "default"
       });
 
-      // Обновляем список турниров
-      loadTournaments();
+      // Обновляем список турниров без кэширования
+      await loadTournaments();
       
     } catch (error) {
       console.error('Error registering for tournament:', error);

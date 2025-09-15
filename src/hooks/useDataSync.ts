@@ -7,6 +7,7 @@ interface DataSyncConfig {
   realtime?: boolean;
   filter?: string;
   select?: string;
+  disableCache?: boolean; // Опция для отключения кэширования
 }
 
 interface DataSyncResult<T = any> {
@@ -18,7 +19,7 @@ interface DataSyncResult<T = any> {
   clearCache: () => void;
 }
 
-const CACHE_EXPIRY = 5 * 60 * 1000; // 5 minutes
+const CACHE_EXPIRY = 30 * 1000; // 30 seconds - сокращено для критических данных
 const GLOBAL_CACHE_KEY = 'data_sync_global';
 
 export function useDataSync<T = any>(config: DataSyncConfig): DataSyncResult<T> {
@@ -28,7 +29,7 @@ export function useDataSync<T = any>(config: DataSyncConfig): DataSyncResult<T> 
   const [lastSync, setLastSync] = useState<Date | null>(null);
   
   const channelRef = useRef<any>(null);
-  const { table, cacheKey, realtime = true, filter, select = '*' } = config;
+  const { table, cacheKey, realtime = true, filter, select = '*', disableCache = false } = config;
 
   // Get cached data from localStorage
   const getCachedData = useCallback((): { data: T[], timestamp: number } | null => {
@@ -78,8 +79,8 @@ export function useDataSync<T = any>(config: DataSyncConfig): DataSyncResult<T> 
   // Fetch data from Supabase
   const fetchData = useCallback(async (useCache = true): Promise<void> => {
     try {
-      // Try to use cached data first
-      if (useCache) {
+      // Try to use cached data first (only if caching is enabled)
+      if (useCache && !disableCache) {
         const cached = getCachedData();
         if (cached) {
           setData(cached.data);
@@ -110,7 +111,11 @@ export function useDataSync<T = any>(config: DataSyncConfig): DataSyncResult<T> 
       const newData = (fetchedData || []) as T[];
       setData(newData);
       setLastSync(new Date());
-      setCachedData(newData);
+      
+      // Only cache if caching is enabled
+      if (!disableCache) {
+        setCachedData(newData);
+      }
       
     } catch (err: any) {
       console.error(`Error fetching ${table} data:`, err);

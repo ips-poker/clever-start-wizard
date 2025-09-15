@@ -21,11 +21,11 @@ import InvitationCard from "./pages/InvitationCard";
 const queryClient = new QueryClient();
 
 function App() {
-  // Initialize global data sync
-  useGlobalDataSync({
-    enabled: true,
-    clearCacheOnStart: false
-  });
+  // Отключаем глобальное кэширование для устранения проблем производительности
+  // useGlobalDataSync({
+  //   enabled: false,
+  //   clearCacheOnStart: true
+  // });
   return (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
