@@ -65,12 +65,11 @@ export function TournamentList() {
 
   const loadTournaments = async () => {
     try {
-      setLoading(true);
       const { data, error } = await supabase
         .from('tournaments')
         .select(`
           *,
-          tournament_registrations(count)
+          tournament_registrations!tournament_id(id)
         `)
         .eq('is_published', true)
         .not('is_archived', 'eq', true)

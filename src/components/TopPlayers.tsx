@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -22,14 +22,12 @@ const getPokerAvatar = (name: string, isChampion = false) => {
 export function TopPlayers() {
   const [topPlayers, setTopPlayers] = useState<Player[]>([]);
   const [allPlayers, setAllPlayers] = useState<Player[]>([]);
-  const [filteredPlayers, setFilteredPlayers] = useState<Player[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [showAll, setShowAll] = useState(false);
   const [showFirstPlaceOnly, setShowFirstPlaceOnly] = useState(false);
   useEffect(() => {
-    loadTopPlayers();
-    loadAllPlayers();
+    loadPlayers();
 
     // Set up real-time subscription for player updates
     const playersChannel = supabase.channel('players-changes').on('postgres_changes', {
@@ -37,39 +35,33 @@ export function TopPlayers() {
       schema: 'public',
       table: 'players'
     }, () => {
-      loadTopPlayers();
-      loadAllPlayers();
+      loadPlayers();
     }).subscribe();
     return () => {
       supabase.removeChannel(playersChannel);
     };
   }, []);
-  const loadTopPlayers = async () => {
+
+  const loadPlayers = async () => {
     try {
+      setLoading(true);
       const { data, error } = await supabase.rpc('get_players_public');
       if (error) throw error;
-      const sortedPlayers = (data || []).sort((a, b) => b.elo_rating - a.elo_rating).slice(0, 5);
-      setTopPlayers(sortedPlayers);
+      
+      const sortedPlayers = (data || []).sort((a, b) => b.elo_rating - a.elo_rating);
+      
+      // Устанавливаем все данные из одного запроса
+      setAllPlayers(sortedPlayers);
+      setTopPlayers(sortedPlayers.slice(0, 5));
     } catch (error) {
-      console.error('Error loading top players:', error);
+      console.error('Error loading players:', error);
     } finally {
       setLoading(false);
     }
   };
-  const loadAllPlayers = async () => {
-    try {
-      const { data, error } = await supabase.rpc('get_players_public');
-      if (error) throw error;
-      const sortedPlayers = (data || []).sort((a, b) => b.elo_rating - a.elo_rating);
-      setAllPlayers(sortedPlayers);
-      setFilteredPlayers(sortedPlayers);
-    } catch (error) {
-      console.error('Error loading all players:', error);
-    }
-  };
 
   // Filter players based on search and first place filter
-  useEffect(() => {
+  const filteredPlayers = useMemo(() => {
     let filtered = allPlayers;
     if (searchTerm) {
       filtered = filtered.filter(player => player.name.toLowerCase().includes(searchTerm.toLowerCase()));
@@ -77,12 +69,13 @@ export function TopPlayers() {
     if (showFirstPlaceOnly) {
       filtered = filtered.filter(player => player.wins > 0);
     }
-    setFilteredPlayers(filtered);
+    return filtered;
   }, [allPlayers, searchTerm, showFirstPlaceOnly]);
-  const getWinRate = (wins: number, games: number) => {
+
+  const getWinRate = useCallback((wins: number, games: number) => {
     if (games === 0) return 0;
     return Math.round(wins / games * 100);
-  };
+  }, []);
   if (loading) {
     return <section className="py-20">
         <div className="container mx-auto px-4">
