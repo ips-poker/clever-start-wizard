@@ -316,7 +316,15 @@ export function SEOPreview({
                     {Object.entries(aiRecommendations.recommendations).map(([key, value]: [string, any]) => (
                       <div key={key} className="p-3 border rounded-lg">
                         <h5 className="font-medium capitalize">{key.replace('_', ' ')}:</h5>
-                        <p className="text-sm text-muted-foreground mt-1">{value}</p>
+                        <div className="text-sm text-muted-foreground mt-1">
+                          {typeof value === 'string' ? (
+                            <p>{value}</p>
+                          ) : (
+                            <pre className="whitespace-pre-wrap text-xs bg-muted p-2 rounded">
+                              {JSON.stringify(value, null, 2)}
+                            </pre>
+                          )}
+                        </div>
                       </div>
                     ))}
                   </div>
