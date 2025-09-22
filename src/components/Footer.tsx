@@ -1,24 +1,24 @@
 import { Spade } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useCMSContent } from "@/hooks/useCMSContent";
-
 export function Footer() {
-  const { getContent } = useCMSContent('footer');
-  const { getContent: getContactContent } = useCMSContent('contact');
-  const { getContent: getServicesContent } = useCMSContent('services');
-  return (
-    <footer className="bg-primary text-primary-foreground">
+  const {
+    getContent
+  } = useCMSContent('footer');
+  const {
+    getContent: getContactContent
+  } = useCMSContent('contact');
+  const {
+    getContent: getServicesContent
+  } = useCMSContent('services');
+  return <footer className="bg-primary text-primary-foreground">
       <div className="container mx-auto px-6 py-12 lg:py-16">
         <div className="grid grid-cols-1 gap-12 md:grid-cols-2 md:gap-8 lg:grid-cols-4 lg:gap-8">
           {/* Brand - Mobile First, Full Width */}
           <div className="space-y-6 text-center md:text-left md:col-span-2 lg:col-span-1 order-1">
             <div className="flex items-center justify-center md:justify-start space-x-3">
-              <div className="w-14 h-14 flex items-center justify-center bg-primary-foreground/10 rounded-full">
-                <img 
-                  src="/lovable-uploads/a689ff05-9338-4573-bd08-aa9486811d3f.png" 
-                  alt="Poker Club Logo" 
-                  className="w-10 h-10 object-contain"
-                />
+              <div className="w-14 h-14 flex items-center justify-center rounded-full bg-slate-200">
+                <img src="/lovable-uploads/a689ff05-9338-4573-bd08-aa9486811d3f.png" alt="Poker Club Logo" className="w-10 h-10 object-contain" />
               </div>
               <div className="flex flex-col">
                 <div className="font-bold text-xl font-sinkin text-poker-gold tracking-tight">
@@ -98,6 +98,5 @@ export function Footer() {
           <p className="text-xs leading-relaxed max-w-2xl mx-auto px-4">{getContent('legal_notice', 'Игра проходит в рамках действующего законодательства без денежных призов.')}</p>
         </div>
       </div>
-    </footer>
-  );
+    </footer>;
 }
