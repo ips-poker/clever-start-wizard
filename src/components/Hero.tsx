@@ -35,7 +35,7 @@ export function Hero() {
       <div className="container mx-auto px-4 lg:px-8 relative z-10">
         <div className="grid lg:grid-cols-2 gap-8 lg:gap-16 items-center min-h-[70vh] lg:min-h-screen py-12 lg:py-20">
           {/* Left Column - Content */}
-          <div className="text-white space-y-6 md:space-y-10 animate-fade-in order-2 lg:order-1">
+          <div className="text-white space-y-6 md:space-y-10 animate-fade-in order-1 lg:order-1">
             <div className="flex flex-col space-y-6 md:space-y-8 animate-slide-up [animation-delay:0.2s]">
               {/* Mobile: Premium Badge First */}
               <div className="flex justify-center lg:justify-start order-1 lg:order-1">
@@ -121,7 +121,7 @@ export function Hero() {
            </div>
 
            {/* Right Column - Cards */}
-           <div className="space-y-6 animate-slide-right [animation-delay:0.4s] order-1 lg:order-2">
+           <div className="space-y-6 animate-slide-right [animation-delay:0.4s] order-2 lg:order-2">
               {/* Main Feature Card */}
               <Card className="p-8 bg-white/15 border border-white/30 shadow-lg">
                 <div className="text-center space-y-6">
