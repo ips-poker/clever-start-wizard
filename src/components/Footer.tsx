@@ -9,10 +9,10 @@ export function Footer() {
   return (
     <footer className="bg-primary text-primary-foreground">
       <div className="container mx-auto px-4 py-8 lg:py-12">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-8">
+        <div className="grid grid-cols-1 gap-8 md:grid-cols-2 md:gap-6 lg:grid-cols-4 lg:gap-8">
           {/* Brand */}
-          <div className="space-y-4 text-center sm:text-left">
-            <div className="flex items-center justify-center sm:justify-start space-x-3">
+          <div className="space-y-6 text-center md:text-left md:col-span-2 lg:col-span-1">
+            <div className="flex items-center justify-center md:justify-start space-x-3">
               <div className="w-12 h-12 flex items-center justify-center">
                 <img 
                   src="/lovable-uploads/a689ff05-9338-4573-bd08-aa9486811d3f.png" 
@@ -21,66 +21,66 @@ export function Footer() {
                 />
               </div>
               <div className="flex flex-col">
-                <div className="font-bold text-base lg:text-lg font-sinkin text-poker-gold tracking-tight">
+                <div className="font-bold text-lg font-sinkin text-poker-gold tracking-tight">
                   {getContent('brand_name', 'EPC')}
                 </div>
-                <div className="text-xs lg:text-sm opacity-80 font-sinkin font-medium tracking-widest uppercase">
+                <div className="text-sm opacity-80 font-sinkin font-medium tracking-widest uppercase">
                   {getContent('brand_subtitle', 'EVENT POKER CLUB')}
                 </div>
               </div>
             </div>
-            <p className="text-xs lg:text-sm opacity-80 leading-relaxed">
+            <p className="text-sm opacity-80 leading-relaxed max-w-md mx-auto md:mx-0">
               {getContent('brand_description', 'Элитный покерный клуб с рейтинговой системой. Профессиональные турниры и высокий уровень игры.')}
             </p>
           </div>
 
           {/* Navigation */}
           <div className="text-center md:text-left">
-            <h3 className="font-semibold mb-4 text-sm lg:text-base">Навигация</h3>
-            <ul className="space-y-3 text-xs lg:text-sm">
-              <li><Link to="/" className="hover:text-poker-gold transition-colors touch-target">Главная</Link></li>
-              <li><Link to="/tournaments" className="hover:text-poker-gold transition-colors touch-target">Турниры</Link></li>
-              <li><Link to="/rating" className="hover:text-poker-gold transition-colors touch-target">Рейтинг</Link></li>
-              <li><Link to="/gallery" className="hover:text-poker-gold transition-colors touch-target">Галерея</Link></li>
-              <li><Link to="/blog" className="hover:text-poker-gold transition-colors touch-target">Блог</Link></li>
-              <li><Link to="/about" className="hover:text-poker-gold transition-colors touch-target">О нас</Link></li>
-            </ul>
+            <h3 className="font-semibold mb-4 text-base">Навигация</h3>
+            <div className="grid grid-cols-2 gap-2 md:block md:space-y-3">
+              <Link to="/" className="block hover:text-poker-gold transition-colors touch-target py-2 text-sm">Главная</Link>
+              <Link to="/tournaments" className="block hover:text-poker-gold transition-colors touch-target py-2 text-sm">Турниры</Link>
+              <Link to="/rating" className="block hover:text-poker-gold transition-colors touch-target py-2 text-sm">Рейтинг</Link>
+              <Link to="/gallery" className="block hover:text-poker-gold transition-colors touch-target py-2 text-sm">Галерея</Link>
+              <Link to="/blog" className="block hover:text-poker-gold transition-colors touch-target py-2 text-sm">Блог</Link>
+              <Link to="/about" className="block hover:text-poker-gold transition-colors touch-target py-2 text-sm">О нас</Link>
+            </div>
           </div>
 
           {/* Services */}
           <div className="text-center md:text-left">
-            <h3 className="font-semibold mb-4 text-sm lg:text-base">Услуги</h3>
-            <ul className="space-y-3 text-xs lg:text-sm">
-              <li><span className="opacity-80">{getServicesContent('service_1', 'Турниры Texas Hold\'em')}</span></li>
-              <li><span className="opacity-80">{getServicesContent('service_2', 'Омаха турниры')}</span></li>
-              <li><span className="opacity-80">{getServicesContent('service_3', 'Sit & Go')}</span></li>
-              <li><span className="opacity-80">{getServicesContent('service_4', 'Кэш игры')}</span></li>
-              <li><span className="opacity-80">{getServicesContent('service_5', 'Обучение')}</span></li>
-              <li><span className="opacity-80">{getServicesContent('service_6', 'Корпоративные турниры')}</span></li>
-            </ul>
+            <h3 className="font-semibold mb-4 text-base">Услуги</h3>
+            <div className="grid grid-cols-1 gap-2 md:space-y-3">
+              <span className="opacity-80 text-sm py-1">{getServicesContent('service_1', 'Турниры Texas Hold\'em')}</span>
+              <span className="opacity-80 text-sm py-1">{getServicesContent('service_2', 'Омаха турниры')}</span>
+              <span className="opacity-80 text-sm py-1">{getServicesContent('service_3', 'Sit & Go')}</span>
+              <span className="opacity-80 text-sm py-1">{getServicesContent('service_4', 'Кэш игры')}</span>
+              <span className="opacity-80 text-sm py-1">{getServicesContent('service_5', 'Обучение')}</span>
+              <span className="opacity-80 text-sm py-1">{getServicesContent('service_6', 'Корпоративные турниры')}</span>
+            </div>
           </div>
 
           {/* Contact */}
           <div className="text-center md:text-left">
-            <h3 className="font-semibold mb-4 text-sm lg:text-base">Контакты</h3>
-            <ul className="space-y-4 text-xs lg:text-sm">
-              <li className="opacity-80">
-                <strong>Адрес:</strong><br />
-                <span className="leading-relaxed">{getContactContent('address', 'Москва, ул. Примерная, 123')}</span>
-              </li>
-              <li className="opacity-80">
-                <strong>Телефон:</strong><br />
-                <a href="tel:+74951234567" className="hover:text-poker-gold transition-colors touch-target">
+            <h3 className="font-semibold mb-4 text-base">Контакты</h3>
+            <div className="space-y-4 text-sm">
+              <div className="opacity-80">
+                <div className="font-medium text-poker-gold mb-1">Адрес</div>
+                <div className="leading-relaxed">{getContactContent('address', 'Москва, ул. Примерная, 123')}</div>
+              </div>
+              <div className="opacity-80">
+                <div className="font-medium text-poker-gold mb-1">Телефон</div>
+                <a href="tel:+74951234567" className="hover:text-poker-gold transition-colors touch-target block">
                   {getContactContent('phone', '+7 (495) 123-45-67')}
                 </a>
-              </li>
-              <li className="opacity-80">
-                <strong>Email:</strong><br />
-                <a href="mailto:info@ipspoker.ru" className="hover:text-poker-gold transition-colors touch-target">
+              </div>
+              <div className="opacity-80">
+                <div className="font-medium text-poker-gold mb-1">Email</div>
+                <a href="mailto:info@ipspoker.ru" className="hover:text-poker-gold transition-colors touch-target block">
                   {getContactContent('email', 'info@ipspoker.ru')}
                 </a>
-              </li>
-            </ul>
+              </div>
+            </div>
           </div>
         </div>
 
