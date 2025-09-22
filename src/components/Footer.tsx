@@ -9,14 +9,24 @@ export function Footer() {
   return (
     <footer className="bg-primary text-primary-foreground">
       <div className="container mx-auto px-4 py-8 lg:py-12">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-8">
           {/* Brand */}
           <div className="space-y-4 text-center sm:text-left">
-            <div className="flex items-center justify-center sm:justify-start space-x-2">
-              <Spade className="w-5 h-5 lg:w-6 lg:h-6" />
-              <div>
-                <div className="font-bold text-base lg:text-lg">{getContent('brand_name', 'IPS')}</div>
-                <div className="text-xs lg:text-sm opacity-80">{getContent('brand_subtitle', 'International Poker Style')}</div>
+            <div className="flex items-center justify-center sm:justify-start space-x-3">
+              <div className="w-12 h-12 flex items-center justify-center">
+                <img 
+                  src="/lovable-uploads/a689ff05-9338-4573-bd08-aa9486811d3f.png" 
+                  alt="Poker Club Logo" 
+                  className="w-10 h-10 object-contain"
+                />
+              </div>
+              <div className="flex flex-col">
+                <div className="font-bold text-base lg:text-lg font-sinkin text-poker-gold tracking-tight">
+                  {getContent('brand_name', 'EPC')}
+                </div>
+                <div className="text-xs lg:text-sm opacity-80 font-sinkin font-medium tracking-widest uppercase">
+                  {getContent('brand_subtitle', 'EVENT POKER CLUB')}
+                </div>
               </div>
             </div>
             <p className="text-xs lg:text-sm opacity-80 leading-relaxed">
@@ -25,9 +35,9 @@ export function Footer() {
           </div>
 
           {/* Navigation */}
-          <div className="text-center sm:text-left">
-            <h3 className="font-semibold mb-3 lg:mb-4 text-sm lg:text-base">Навигация</h3>
-            <ul className="space-y-2 text-xs lg:text-sm">
+          <div className="text-center md:text-left">
+            <h3 className="font-semibold mb-4 text-sm lg:text-base">Навигация</h3>
+            <ul className="space-y-3 text-xs lg:text-sm">
               <li><Link to="/" className="hover:text-poker-gold transition-colors touch-target">Главная</Link></li>
               <li><Link to="/tournaments" className="hover:text-poker-gold transition-colors touch-target">Турниры</Link></li>
               <li><Link to="/rating" className="hover:text-poker-gold transition-colors touch-target">Рейтинг</Link></li>
@@ -38,9 +48,9 @@ export function Footer() {
           </div>
 
           {/* Services */}
-          <div className="text-center sm:text-left">
-            <h3 className="font-semibold mb-3 lg:mb-4 text-sm lg:text-base">Услуги</h3>
-            <ul className="space-y-2 text-xs lg:text-sm">
+          <div className="text-center md:text-left">
+            <h3 className="font-semibold mb-4 text-sm lg:text-base">Услуги</h3>
+            <ul className="space-y-3 text-xs lg:text-sm">
               <li><span className="opacity-80">{getServicesContent('service_1', 'Турниры Texas Hold\'em')}</span></li>
               <li><span className="opacity-80">{getServicesContent('service_2', 'Омаха турниры')}</span></li>
               <li><span className="opacity-80">{getServicesContent('service_3', 'Sit & Go')}</span></li>
@@ -51,9 +61,9 @@ export function Footer() {
           </div>
 
           {/* Contact */}
-          <div className="text-center sm:text-left">
-            <h3 className="font-semibold mb-3 lg:mb-4 text-sm lg:text-base">Контакты</h3>
-            <ul className="space-y-3 text-xs lg:text-sm">
+          <div className="text-center md:text-left">
+            <h3 className="font-semibold mb-4 text-sm lg:text-base">Контакты</h3>
+            <ul className="space-y-4 text-xs lg:text-sm">
               <li className="opacity-80">
                 <strong>Адрес:</strong><br />
                 <span className="leading-relaxed">{getContactContent('address', 'Москва, ул. Примерная, 123')}</span>
