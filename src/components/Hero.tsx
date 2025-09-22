@@ -36,16 +36,16 @@ export function Hero() {
         <div className="grid lg:grid-cols-2 gap-8 lg:gap-16 items-center min-h-[70vh] lg:min-h-screen py-12 lg:py-20">
           {/* Left Column - Content */}
           <div className="text-white space-y-6 md:space-y-10 animate-fade-in order-2 lg:order-1">
-            <div className="space-y-6 md:space-y-8 animate-slide-up [animation-delay:0.2s]">
+            <div className="flex flex-col space-y-6 md:space-y-8 animate-slide-up [animation-delay:0.2s]">
               {/* Mobile: Premium Badge First */}
-              <div className="flex justify-center lg:justify-start order-1">
+              <div className="flex justify-center lg:justify-start order-1 lg:order-1">
                 <Badge className="bg-white/10 border border-white/30 text-white font-semibold px-4 py-2 md:px-6 md:py-3 rounded-full shadow-subtle backdrop-blur-md animate-scale-in [animation-delay:0.4s] text-sm md:text-base">
                   {getContent('hero_badge', 'Премиальный покерный клуб')}
                 </Badge>
               </div>
               
                {/* Mobile: Logo and Title Second */}
-               <div className="flex flex-col lg:flex-row items-center lg:items-start text-center lg:text-left space-y-3 lg:space-y-0 lg:space-x-8 animate-slide-right [animation-delay:0.6s] order-2">
+               <div className="flex flex-col lg:flex-row items-center lg:items-start text-center lg:text-left space-y-3 lg:space-y-0 lg:space-x-8 animate-slide-right [animation-delay:0.6s] order-2 lg:order-2">
                  <div className="flex-shrink-0">
                    <img src={pokerLogo} alt="Poker Club Logo" className="w-14 h-14 md:w-16 md:h-16 lg:w-20 lg:h-20 object-contain bg-white/70 backdrop-blur-md rounded-xl p-2 shadow-elegant border border-white/40" />
                  </div>
@@ -62,7 +62,7 @@ export function Hero() {
               </div>
                
                {/* Mobile: Description Third */}
-               <div className="text-center lg:text-left order-3">
+               <div className="text-center lg:text-left order-3 lg:order-3">
                  <p className="text-base md:text-lg text-white/90 max-w-2xl mx-auto lg:mx-0 leading-relaxed font-medium animate-fade-in [animation-delay:0.8s]">
                    {getContent('hero_description', 'Премиальный покерный клуб с уникальной рейтинговой системой RPS. Развивайте навыки в элегантной атмосфере среди профессиональных игроков.')}
                  </p>
