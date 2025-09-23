@@ -534,52 +534,51 @@ export default function Blog() {
       
       {/* Article Modal */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="w-full max-w-4xl max-h-[90vh] overflow-y-auto mx-4 sm:mx-6">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           {selectedPost && (
             <>
-              <DialogHeader className="space-y-3">
-                <div className="flex flex-wrap items-center gap-2 mb-2">
+              <DialogHeader>
+                <div className="flex items-center gap-2 mb-2">
                   {selectedPost.tags.map((tag) => (
                     <Badge key={tag} variant="outline" className="text-xs">
                       {tag}
                     </Badge>
                   ))}
                 </div>
-                <DialogTitle className="text-xl sm:text-2xl font-bold text-poker-primary leading-tight">
+                <DialogTitle className="text-2xl font-bold text-poker-primary">
                   {selectedPost.title}
                 </DialogTitle>
-                <DialogDescription className="text-base sm:text-lg text-muted-foreground leading-relaxed">
+                <DialogDescription className="text-lg text-muted-foreground">
                   {selectedPost.excerpt.replace('...', '')}
                 </DialogDescription>
               </DialogHeader>
               
-              <div className="space-y-4 sm:space-y-6">
+              <div className="space-y-6">
                 {/* Author and Meta Info */}
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between border-b border-border pb-4 gap-4">
-                  <div className="flex items-center gap-3 sm:gap-4">
+                <div className="flex items-center justify-between border-b border-border pb-4">
+                  <div className="flex items-center gap-4">
                     <img 
                       src={selectedPost.author_avatar}
                       alt={selectedPost.author}
-                      className="w-10 h-10 sm:w-12 sm:h-12 rounded-full flex-shrink-0"
+                      className="w-12 h-12 rounded-full"
                     />
-                    <div className="min-w-0">
-                      <p className="font-medium text-poker-primary text-sm sm:text-base truncate">{selectedPost.author}</p>
-                      <p className="text-xs sm:text-sm text-muted-foreground truncate">{selectedPost.author_role}</p>
+                    <div>
+                      <p className="font-medium text-poker-primary">{selectedPost.author}</p>
+                      <p className="text-sm text-muted-foreground">{selectedPost.author_role}</p>
                     </div>
                   </div>
                   
-                  <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs sm:text-sm text-muted-foreground">
+                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
                     <div className="flex items-center gap-1">
-                      <Calendar className="w-3 h-3 sm:w-4 sm:h-4" />
-                      <span className="hidden sm:inline">{new Date(selectedPost.published_at).toLocaleDateString('ru-RU')}</span>
-                      <span className="sm:hidden">{new Date(selectedPost.published_at).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })}</span>
+                      <Calendar className="w-4 h-4" />
+                      {new Date(selectedPost.published_at).toLocaleDateString('ru-RU')}
                     </div>
                     <div className="flex items-center gap-1">
-                      <Clock className="w-3 h-3 sm:w-4 sm:h-4" />
+                      <Clock className="w-4 h-4" />
                       {selectedPost.read_time}
                     </div>
                     <div className="flex items-center gap-1">
-                      <Eye className="w-3 h-3 sm:w-4 sm:h-4" />
+                      <Eye className="w-4 h-4" />
                       {selectedPost.views}
                     </div>
                   </div>
@@ -590,35 +589,30 @@ export default function Blog() {
                   <img 
                     src={selectedPost.image}
                     alt={selectedPost.title}
-                    className="w-full h-48 sm:h-56 md:h-64 object-cover"
+                    className="w-full h-64 object-cover"
                   />
                 </div>
                 
                 {/* Article Content */}
-                <div className="prose prose-sm sm:prose-base lg:prose-lg w-full max-w-none text-foreground overflow-hidden">
-                  <div 
-                    className="break-words hyphens-auto"
-                    style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}
-                    dangerouslySetInnerHTML={{ __html: selectedPost.content }} 
-                  />
+                <div className="prose prose-lg max-w-none text-foreground">
+                  <div dangerouslySetInnerHTML={{ __html: selectedPost.content }} />
                 </div>
                 
                 {/* Actions */}
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between pt-4 sm:pt-6 border-t border-border gap-4">
-                  <div className="flex items-center gap-2 sm:gap-4">
-                    <Button variant="outline" size="sm" className="text-xs sm:text-sm">
-                      <Heart className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                <div className="flex items-center justify-between pt-6 border-t border-border">
+                  <div className="flex items-center gap-4">
+                    <Button variant="outline" size="sm">
+                      <Heart className="w-4 h-4 mr-2" />
                       {selectedPost.likes}
                     </Button>
-                    <Button variant="outline" size="sm" className="text-xs sm:text-sm">
-                      <Share2 className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-                      <span className="hidden sm:inline">Поделиться</span>
-                      <span className="sm:hidden">Share</span>
+                    <Button variant="outline" size="sm">
+                      <Share2 className="w-4 h-4 mr-2" />
+                      Поделиться
                     </Button>
                   </div>
                   
                   <DialogClose asChild>
-                    <Button variant="ghost" className="text-sm sm:text-base">
+                    <Button variant="ghost">
                       Закрыть
                     </Button>
                   </DialogClose>
