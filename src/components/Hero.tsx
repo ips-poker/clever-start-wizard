@@ -35,41 +35,60 @@ export function Hero() {
       <div className="container mx-auto px-4 lg:px-8 relative z-10">
         <div className="grid lg:grid-cols-2 gap-8 lg:gap-16 items-center min-h-[70vh] lg:min-h-screen py-12 lg:py-20">
           {/* Left Column - Content */}
-          <div className="text-white space-y-6 md:space-y-10 animate-fade-in order-1 lg:order-1">
-            <div className="flex flex-col space-y-6 md:space-y-8 animate-slide-up [animation-delay:0.2s]">
-              {/* Mobile: Premium Badge First */}
-              <div className="flex justify-center lg:justify-start order-1 lg:order-1">
-                <Badge className="bg-white/10 border border-white/30 text-white font-semibold px-4 py-2 md:px-6 md:py-3 rounded-full shadow-subtle backdrop-blur-md animate-scale-in [animation-delay:0.4s] text-sm md:text-base">
+          <div className="text-white space-y-10 animate-fade-in order-2 lg:order-1">
+            <div className="space-y-8 animate-slide-up [animation-delay:0.2s]">
+              <div className="flex justify-center lg:justify-start">
+                <Badge className="bg-white/10 border border-white/30 text-white font-semibold px-6 py-3 rounded-full shadow-subtle backdrop-blur-md animate-scale-in [animation-delay:0.4s]">
                   {getContent('hero_badge', 'Премиальный покерный клуб')}
                 </Badge>
               </div>
               
-               {/* Mobile: Logo and Title Second */}
-               <div className="flex flex-col lg:flex-row items-center lg:items-start text-center lg:text-left space-y-3 lg:space-y-0 lg:space-x-8 animate-slide-right [animation-delay:0.6s] order-2 lg:order-2">
+               {/* Logo and Title Section - Logo without background */}
+               <div className="flex flex-col lg:flex-row items-center lg:items-start text-center lg:text-left space-y-4 lg:space-y-0 lg:space-x-8 animate-slide-right [animation-delay:0.6s]">
                  <div className="flex-shrink-0">
-                   <img src={pokerLogo} alt="Poker Club Logo" className="w-14 h-14 md:w-16 md:h-16 lg:w-20 lg:h-20 object-contain bg-white/70 backdrop-blur-md rounded-xl p-2 shadow-elegant border border-white/40" />
+                   <img src={pokerLogo} alt="Poker Club Logo" className="w-16 h-16 lg:w-20 lg:h-20 object-contain bg-white/70 backdrop-blur-md rounded-xl p-2 shadow-elegant border border-white/40" />
                  </div>
                  <div className="flex-1">
-                   <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-6xl font-sinkin leading-tight tracking-tight">
+                   <h1 className="text-3xl sm:text-4xl lg:text-6xl font-sinkin leading-tight tracking-tight">
                      <span className="text-white block leading-none">
                        {getContent('hero_title', 'EPC')}
                      </span>
-                      <span className="block text-poker-accent-light text-lg sm:text-xl md:text-2xl lg:text-4xl mt-1 lg:mt-2 font-sinkin leading-tight">
+                      <span className="block text-poker-accent-light text-xl sm:text-2xl lg:text-4xl mt-1 lg:mt-2 font-sinkin leading-tight">
                         {getContent('hero_subtitle', 'Event Poker Club')}
                       </span>
+                     
                    </h1>
                  </div>
               </div>
                
-               {/* Mobile: Description Third */}
-               <div className="text-center lg:text-left order-3 lg:order-3">
-                 <p className="text-base md:text-lg text-white/90 max-w-2xl mx-auto lg:mx-0 leading-relaxed font-medium animate-fade-in [animation-delay:0.8s]">
+               <div className="text-center lg:text-left">
+                 <p className="text-lg text-white/90 max-w-2xl mx-auto lg:mx-0 leading-relaxed font-medium animate-fade-in [animation-delay:0.8s]">
                    {getContent('hero_description', 'Премиальный покерный клуб с уникальной рейтинговой системой RPS. Развивайте навыки в элегантной атмосфере среди профессиональных игроков.')}
                  </p>
                </div>
 
-              {/* CTA Buttons Fourth */}
-              <div className="flex flex-col sm:flex-row gap-3 lg:gap-4 justify-center lg:justify-start animate-scale-in [animation-delay:1.2s] max-w-lg mx-auto lg:mx-0 order-4">
+                 {/* Key Benefits */}
+                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 lg:gap-4 animate-slide-up [animation-delay:1s] max-w-2xl mx-auto lg:mx-0">
+                    <div className="flex items-center justify-center lg:justify-start space-x-3 text-sm bg-white/8 px-3 py-3 lg:px-4 lg:py-3 rounded-xl backdrop-blur-md border border-white/20 text-white font-medium shadow-subtle touch-target">
+                     <Shield className="w-5 h-5 text-poker-accent-light flex-shrink-0" />
+                     <span>{getContent('feature_1', 'Честная игра')}</span>
+                   </div>
+                   <div className="flex items-center justify-center lg:justify-start space-x-3 text-sm bg-white/8 px-4 py-3 rounded-xl backdrop-blur-md border border-white/20 text-white font-medium shadow-subtle">
+                     <TrendingUp className="w-5 h-5 text-poker-accent-light flex-shrink-0" />
+                     <span>{getContent('feature_2', 'Рост навыков')}</span>
+                   </div>
+                   <div className="flex items-center justify-center lg:justify-start space-x-3 text-sm bg-white/8 px-4 py-3 rounded-xl backdrop-blur-md border border-white/20 text-white font-medium shadow-subtle">
+                     <Award className="w-5 h-5 text-poker-accent-light flex-shrink-0" />
+                     <span>{getContent('feature_3', 'Рейтинг RPS')}</span>
+                   </div>
+                   <div className="flex items-center justify-center lg:justify-start space-x-3 text-sm bg-white/8 px-4 py-3 rounded-xl backdrop-blur-md border border-white/20 text-white font-medium shadow-subtle">
+                     <Users className="w-5 h-5 text-poker-accent-light flex-shrink-0" />
+                     <span>{getContent('feature_4', 'Сообщество')}</span>
+                   </div>
+                </div>
+             </div>
+
+              <div className="flex flex-col sm:flex-row gap-3 lg:gap-4 justify-center lg:justify-start animate-scale-in [animation-delay:1.2s] max-w-lg mx-auto lg:mx-0">
                  <Link to="/tournaments" className="w-full sm:w-auto">
                    <Button size="lg" className="w-full bg-poker-accent text-white hover:bg-poker-accent/90 transition-all duration-300 font-semibold px-6 lg:px-8 py-4 text-base lg:text-lg rounded-xl shadow-card hover:scale-105 hover:shadow-elegant min-h-[48px]">
                      <Play className="w-5 h-5 lg:w-6 lg:h-6 mr-2 lg:mr-3" />
@@ -83,28 +102,7 @@ export function Hero() {
                  </Link>
               </div>
 
-              {/* Key Benefits Fifth */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 lg:gap-4 animate-slide-up [animation-delay:1s] max-w-2xl mx-auto lg:mx-0 order-5">
-                 <div className="flex items-center justify-center lg:justify-start space-x-3 text-sm bg-white/8 px-3 py-3 lg:px-4 lg:py-3 rounded-xl backdrop-blur-md border border-white/20 text-white font-medium shadow-subtle touch-target">
-                  <Shield className="w-5 h-5 text-poker-accent-light flex-shrink-0" />
-                  <span>{getContent('feature_1', 'Честная игра')}</span>
-                </div>
-                <div className="flex items-center justify-center lg:justify-start space-x-3 text-sm bg-white/8 px-4 py-3 rounded-xl backdrop-blur-md border border-white/20 text-white font-medium shadow-subtle">
-                  <TrendingUp className="w-5 h-5 text-poker-accent-light flex-shrink-0" />
-                  <span>{getContent('feature_2', 'Рост навыков')}</span>
-                </div>
-                <div className="flex items-center justify-center lg:justify-start space-x-3 text-sm bg-white/8 px-4 py-3 rounded-xl backdrop-blur-md border border-white/20 text-white font-medium shadow-subtle">
-                  <Award className="w-5 h-5 text-poker-accent-light flex-shrink-0" />
-                  <span>{getContent('feature_3', 'Рейтинг RPS')}</span>
-                </div>
-                <div className="flex items-center justify-center lg:justify-start space-x-3 text-sm bg-white/8 px-4 py-3 rounded-xl backdrop-blur-md border border-white/20 text-white font-medium shadow-subtle">
-                  <Users className="w-5 h-5 text-poker-accent-light flex-shrink-0" />
-                  <span>{getContent('feature_4', 'Сообщество')}</span>
-                </div>
-             </div>
-             </div>
-
-              {/* Stats Last */}
+             {/* Stats */}
              <div className="grid grid-cols-3 gap-4 md:gap-6 pt-8 animate-slide-up [animation-delay:1.4s] max-w-2xl mx-auto lg:mx-0">
                 <div className="text-center p-4 md:p-5 bg-white/8 backdrop-blur-xl rounded-xl border border-white/20 shadow-card transition-all duration-300 hover:scale-105 hover:bg-white/12">
                   <div className="text-3xl md:text-4xl font-bold text-poker-accent-light mb-2 md:mb-3">500+</div>
@@ -122,7 +120,7 @@ export function Hero() {
            </div>
 
            {/* Right Column - Cards */}
-           <div className="space-y-6 animate-slide-right [animation-delay:0.4s] order-2 lg:order-2">
+           <div className="space-y-6 animate-slide-right [animation-delay:0.4s] order-1 lg:order-2">
               {/* Main Feature Card */}
               <Card className="p-8 bg-white/15 border border-white/30 shadow-lg">
                 <div className="text-center space-y-6">
