@@ -266,189 +266,152 @@ export const TelegramApp = () => {
 
   const renderHome = () => (
     <div className="space-y-6 pb-20 px-4 animate-f1-entrance">
-      {/* EPC Header - Ultra Aesthetic Design */}
-      <Card className="bg-gradient-crimson border-0 shadow-strong overflow-hidden relative animate-premium-pulse">
-        <div className="absolute inset-0 bg-gradient-to-br from-aesthetic-crimson/98 via-aesthetic-crimson to-aesthetic-crimson-dark opacity-95"></div>
+      {/* EPC Header - Formula 1 + Poker Premium Design */}
+      <Card className="bg-gradient-f1-red border-0 shadow-2xl overflow-hidden relative animate-racing-pulse">
+        <div className="absolute inset-0 bg-gradient-to-br from-f1-red/95 via-f1-red to-f1-red-dark opacity-98"></div>
         
-        {/* Luxury Shimmer Effect */}
+        {/* Speed Lines Animation */}
         <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-shimmer animate-shimmer-pass opacity-60"></div>
-          <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-royal animate-shimmer-pass opacity-40" style={{animationDelay: '1s'}}></div>
+          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-speed animate-speed-lines"></div>
+          <div className="absolute top-4 left-0 w-full h-0.5 bg-gradient-speed animate-speed-lines" style={{animationDelay: '0.2s'}}></div>
+          <div className="absolute bottom-4 left-0 w-full h-0.5 bg-gradient-speed animate-speed-lines" style={{animationDelay: '0.4s'}}></div>
         </div>
         
-        {/* Elegant Background Pattern */}
-        <div className="absolute top-0 right-0 opacity-5">
-          <div className="w-40 h-40 bg-gradient-royal rounded-full blur-3xl animate-elegant-float"></div>
+        {/* Carbon Fiber Pattern */}
+        <div className="absolute top-0 right-0 opacity-10">
+          <div className="w-32 h-32 bg-f1-carbon rounded-full"></div>
         </div>
         
-        <CardContent className="p-8 relative z-20">
-          <div className="flex items-center gap-6 mb-6">
-            <div className="w-24 h-24 bg-gradient-glass rounded-full flex items-center justify-center backdrop-blur-xl 
-                          border-2 border-aesthetic-pearl/30 shadow-gold relative overflow-hidden group">
-              <Trophy className="h-12 w-12 text-aesthetic-pearl drop-shadow-2xl animate-luxury-glow z-10" />
-              <div className="absolute inset-0 bg-gradient-shimmer opacity-0 group-hover:opacity-30 transition-opacity duration-300"></div>
+        <CardContent className="p-6 relative z-20">
+          <div className="flex items-center gap-4 mb-4">
+            <div className="w-20 h-20 bg-white/20 rounded-3xl flex items-center justify-center backdrop-blur-sm border-2 border-white/40 shadow-2xl">
+              <Trophy className="h-10 w-10 text-white drop-shadow-2xl animate-neon-glow" />
             </div>
             <div>
-              <h1 className="text-4xl font-black text-aesthetic-pearl tracking-[0.2em] drop-shadow-2xl animate-luxury-glow">
-                EPC
-              </h1>
-              <h2 className="text-xl font-bold text-aesthetic-pearl/95 -mt-1 tracking-[0.15em] drop-shadow-lg">
-                EVENT POKER CLUB
-              </h2>
-              <p className="text-aesthetic-pearl/90 text-sm font-semibold tracking-[0.1em] mt-1">
-                ✦ ЭСТЕТИКА ПРЕВОСХОДСТВА ✦
-              </p>
+              <h1 className="text-3xl font-black text-white tracking-widest drop-shadow-lg animate-neon-glow">EPC</h1>
+              <h2 className="text-lg font-bold text-white/95 -mt-1 tracking-wide">EVENT POKER CLUB</h2>
+              <p className="text-white/85 text-sm font-semibold tracking-wide">ФОРМУЛА ПОКЕРА</p>
             </div>
           </div>
           
-          <div className="bg-gradient-glass backdrop-blur-xl rounded-2xl p-4 mb-6 border border-aesthetic-pearl/20">
-            <p className="text-aesthetic-pearl/95 text-sm leading-relaxed font-medium text-center">
-              🎯 Где элегантность встречается с мастерством. Эксклюзивный покер для истинных ценителей.
-            </p>
-          </div>
+          <p className="text-white/95 text-sm leading-relaxed font-medium mb-6">
+            🏁 Скорость Формулы 1 встречается с элегантностью покера. Только лучшие игроки, только премиальный уровень.
+          </p>
           
-          {/* Luxury Stats Grid */}
-          <div className="grid grid-cols-3 gap-4">
-            <div className="text-center p-4 bg-gradient-glass rounded-xl border border-aesthetic-pearl/20 backdrop-blur-sm 
-                          hover:bg-aesthetic-pearl/10 transition-all duration-300 group">
-              <div className="text-3xl font-black text-aesthetic-pearl drop-shadow-lg group-hover:animate-luxury-glow">
-                {tournaments.length}
-              </div>
-              <div className="text-xs text-aesthetic-pearl/80 font-bold uppercase tracking-[0.15em]">СОБЫТИЯ</div>
+          {/* F1-Style Stats Grid */}
+          <div className="grid grid-cols-3 gap-4 pt-4 border-t-2 border-white/30">
+            <div className="text-center p-3 bg-white/10 rounded-xl border border-white/20 backdrop-blur-sm">
+              <div className="text-2xl font-black text-white drop-shadow-lg">{tournaments.length}</div>
+              <div className="text-xs text-white/80 font-bold uppercase tracking-widest">ГОНКИ</div>
             </div>
-            <div className="text-center p-4 bg-gradient-glass rounded-xl border border-aesthetic-pearl/20 backdrop-blur-sm 
-                          hover:bg-aesthetic-pearl/10 transition-all duration-300 group">
-              <div className="text-3xl font-black text-aesthetic-pearl drop-shadow-lg group-hover:animate-luxury-glow">
-                {players.length}+
-              </div>
-              <div className="text-xs text-aesthetic-pearl/80 font-bold uppercase tracking-[0.15em]">ЭЛИТА</div>
+            <div className="text-center p-3 bg-white/10 rounded-xl border border-white/20 backdrop-blur-sm">
+              <div className="text-2xl font-black text-white drop-shadow-lg">{players.length}+</div>
+              <div className="text-xs text-white/80 font-bold uppercase tracking-widest">ПИЛОТЫ</div>
             </div>
-            <div className="text-center p-4 bg-gradient-glass rounded-xl border border-aesthetic-pearl/20 backdrop-blur-sm 
-                          hover:bg-aesthetic-pearl/10 transition-all duration-300 group">
-              <div className="text-3xl font-black text-aesthetic-pearl drop-shadow-lg group-hover:animate-luxury-glow">
-                24/7
-              </div>
-              <div className="text-xs text-aesthetic-pearl/80 font-bold uppercase tracking-[0.15em]">ДОСТУП</div>
+            <div className="text-center p-3 bg-white/10 rounded-xl border border-white/20 backdrop-blur-sm">
+              <div className="text-2xl font-black text-white drop-shadow-lg">24/7</div>
+              <div className="text-xs text-white/80 font-bold uppercase tracking-widest">ТРЕК</div>
             </div>
           </div>
         </CardContent>
-        
-        {/* Luxury Border */}
-        <div className="absolute bottom-0 left-0 w-full h-0.5 bg-gradient-royal"></div>
       </Card>
 
-      {/* Action Cards - Ultra Aesthetic Design */}
+      {/* Action Cards - F1 + Poker Style */}
       <div className="space-y-4">
-        {/* Legends Championship */}
-        <Card className="bg-gradient-luxury border border-aesthetic-obsidian-light/80 overflow-hidden cursor-pointer 
-                       hover:scale-[1.02] hover:shadow-glow hover:border-aesthetic-crimson/50 transition-all duration-500 group relative" 
+        {/* Legends Leaderboard */}
+        <Card className="bg-gradient-carbon border border-f1-carbon-light/50 overflow-hidden cursor-pointer 
+                       hover:scale-[1.02] hover:shadow-2xl hover:border-f1-red/50 transition-all duration-300 group relative" 
               onClick={() => setActiveTab('rating')}>
           
-          {/* Elegant Glow Effect */}
-          <div className="absolute inset-0 bg-gradient-aurora opacity-0 group-hover:opacity-10 transition-opacity duration-500 blur-xl"></div>
+          {/* Neon Border Effect */}
+          <div className="absolute inset-0 bg-gradient-neon opacity-0 group-hover:opacity-20 transition-opacity duration-300 blur-sm"></div>
           
           <CardContent className="p-6 relative z-10">
             <div className="flex items-center gap-4">
-              <div className="w-18 h-18 bg-gradient-royal rounded-2xl flex items-center justify-center border-2 border-aesthetic-gold/50 
-                            group-hover:animate-premium-pulse shadow-gold relative overflow-hidden">
-                <Star className="h-10 w-10 text-aesthetic-pearl drop-shadow-xl animate-elegant-float" />
-                <div className="absolute inset-0 bg-gradient-shimmer opacity-0 group-hover:opacity-40 transition-opacity duration-300"></div>
+              <div className="w-16 h-16 bg-gradient-racing rounded-2xl flex items-center justify-center border-2 border-f1-gold/50 
+                            group-hover:animate-racing-pulse shadow-xl">
+                <Star className="h-8 w-8 text-white drop-shadow-lg" />
               </div>
               <div className="flex-1">
-                <h3 className="text-2xl font-black text-aesthetic-pearl tracking-[0.1em] drop-shadow-lg">
-                  LEGENDS
-                </h3>
-                <h3 className="text-2xl font-black text-aesthetic-gold tracking-[0.1em] -mt-1 animate-luxury-glow">
-                  CHAMPIONSHIP
-                </h3>
-                <p className="text-aesthetic-platinum text-sm mt-2 font-semibold tracking-wide">
-                  Элитная таблица лидеров
-                </p>
+                <h3 className="text-xl font-black text-white tracking-wider">LEGENDS</h3>
+                <h3 className="text-xl font-black text-f1-gold tracking-wider -mt-1 animate-neon-glow">CHAMPIONSHIP</h3>
+                <p className="text-f1-silver text-sm mt-2 font-semibold">Таблица лидеров пилотов</p>
               </div>
-              <div className="text-aesthetic-gold/60 group-hover:text-aesthetic-gold transition-colors">
-                <ChevronRight className="h-7 w-7" />
+              <div className="text-f1-gold/60 group-hover:text-f1-gold transition-colors">
+                <ChevronRight className="h-6 w-6" />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Support Grid - Elegant Design */}
+        {/* Support Grid - Racing Style */}
         <div className="grid grid-cols-2 gap-4">
-          <Card className="bg-gradient-luxury border border-aesthetic-obsidian-light/80 cursor-pointer 
-                         hover:scale-[1.02] hover:shadow-medium hover:border-aesthetic-sapphire/50 transition-all duration-400 group" 
+          <Card className="bg-gradient-carbon border border-f1-carbon-light/50 cursor-pointer 
+                         hover:scale-[1.02] hover:shadow-xl hover:border-neon-cyan/50 transition-all duration-300 group" 
                 onClick={() => setActiveTab('qa')}>
             <CardContent className="p-6 text-center relative overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-aurora opacity-0 group-hover:opacity-5 transition-opacity rounded-xl"></div>
+              <div className="absolute inset-0 bg-gradient-diamond opacity-0 group-hover:opacity-10 transition-opacity rounded-lg"></div>
               <div className="relative z-10">
-                <div className="w-14 h-14 bg-aesthetic-sapphire/20 rounded-2xl mx-auto mb-4 flex items-center justify-center 
-                              group-hover:bg-aesthetic-sapphire/30 border border-aesthetic-sapphire/40 transition-all duration-300
-                              group-hover:animate-elegant-float">
-                  <MessageSquare className="h-7 w-7 text-aesthetic-sapphire" />
+                <div className="w-12 h-12 bg-neon-cyan/20 rounded-xl mx-auto mb-3 flex items-center justify-center 
+                              group-hover:bg-neon-cyan/30 border border-neon-cyan/30 transition-colors">
+                  <MessageSquare className="h-6 w-6 text-neon-cyan" />
                 </div>
-                <h3 className="text-aesthetic-pearl font-black text-lg tracking-[0.1em]">ПОМОЩЬ</h3>
-                <p className="text-aesthetic-platinum/70 text-xs mt-1 font-medium">Поддержка экспертов</p>
+                <h3 className="text-white font-black text-lg tracking-wide">HELP</h3>
+                <p className="text-white/60 text-xs mt-1 font-medium">Техподдержка</p>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-luxury border border-aesthetic-obsidian-light/80 cursor-pointer 
-                         hover:scale-[1.02] hover:shadow-medium hover:border-aesthetic-amethyst/50 transition-all duration-400 group">
+          <Card className="bg-gradient-carbon border border-f1-carbon-light/50 cursor-pointer 
+                         hover:scale-[1.02] hover:shadow-xl hover:border-neon-purple/50 transition-all duration-300 group">
             <CardContent className="p-6 text-center relative overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-aurora opacity-0 group-hover:opacity-5 transition-opacity rounded-xl"></div>
+              <div className="absolute inset-0 bg-gradient-neon opacity-0 group-hover:opacity-10 transition-opacity rounded-lg"></div>
               <div className="relative z-10">
-                <div className="w-14 h-14 bg-aesthetic-amethyst/20 rounded-2xl mx-auto mb-4 flex items-center justify-center 
-                              group-hover:bg-aesthetic-amethyst/30 border border-aesthetic-amethyst/40 transition-all duration-300
-                              group-hover:animate-elegant-float">
-                  <Users className="h-7 w-7 text-aesthetic-amethyst" />
+                <div className="w-12 h-12 bg-neon-purple/20 rounded-xl mx-auto mb-3 flex items-center justify-center 
+                              group-hover:bg-neon-purple/30 border border-neon-purple/30 transition-colors">
+                  <Users className="h-6 w-6 text-neon-purple" />
                 </div>
-                <h3 className="text-aesthetic-pearl font-black text-lg tracking-[0.1em]">СООБЩЕСТВО</h3>
-                <p className="text-aesthetic-platinum/70 text-xs mt-1 font-medium">Элитный круг</p>
+                <h3 className="text-white font-black text-lg tracking-wide">CREW</h3>
+                <p className="text-white/60 text-xs mt-1 font-medium">Команда 24/7</p>
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Tournament Phoenix Championship */}
-        <Card className="bg-gradient-crimson border-0 overflow-hidden cursor-pointer 
-                       hover:scale-[1.02] hover:shadow-strong transition-all duration-500 group relative" 
+        {/* Tournament Grand Prix */}
+        <Card className="bg-gradient-f1-red border-0 overflow-hidden cursor-pointer 
+                       hover:scale-[1.02] hover:shadow-2xl transition-all duration-300 group relative" 
               onClick={() => setActiveTab('tournaments')}>
           
-          {/* Royal Background */}
-          <div className="absolute inset-0 bg-gradient-to-br from-aesthetic-crimson/98 via-aesthetic-crimson to-aesthetic-crimson-dark"></div>
-          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-royal"></div>
-          <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-royal"></div>
+          {/* Racing Stripes */}
+          <div className="absolute inset-0 bg-gradient-to-br from-f1-red/98 via-f1-red to-f1-red-dark"></div>
+          <div className="absolute top-0 left-0 w-full h-2 bg-f1-gold"></div>
+          <div className="absolute bottom-0 left-0 w-full h-2 bg-f1-gold"></div>
           
-          {/* Floating Decoration */}
-          <div className="absolute top-0 right-0 opacity-10 group-hover:opacity-20 transition-opacity">
-            <Coins className="h-32 w-32 animate-elegant-float" />
+          {/* Carbon Texture */}
+          <div className="absolute top-0 right-0 opacity-15 group-hover:opacity-20 transition-opacity">
+            <Coins className="h-24 w-24" />
           </div>
           
           <CardContent className="p-6 relative z-10">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <p className="text-aesthetic-pearl/90 text-sm mb-2 font-bold tracking-[0.1em]">
-                  ♦ ПРЕМИУМ СОБЫТИЕ ♦
-                </p>
-                <h3 className="text-3xl font-black text-aesthetic-pearl tracking-[0.15em] drop-shadow-xl">
-                  PHOENIX
-                </h3>
-                <h3 className="text-3xl font-black text-aesthetic-gold tracking-[0.15em] -mt-1 animate-luxury-glow">
-                  CHAMPIONSHIP
-                </h3>
+                <p className="text-white/90 text-sm mb-1 font-bold tracking-wide">🏁 ГРАНД ПРИ</p>
+                <h3 className="text-2xl font-black text-white tracking-widest drop-shadow-lg">PHOENIX</h3>
+                <h3 className="text-2xl font-black text-f1-gold tracking-widest -mt-1 animate-neon-glow">CHAMPIONSHIP</h3>
               </div>
-              <div className="text-aesthetic-pearl/70 group-hover:text-aesthetic-pearl transition-colors">
-                <ChevronRight className="h-8 w-8" />
+              <div className="text-white/70 group-hover:text-white transition-colors">
+                <ChevronRight className="h-6 w-6" />
               </div>
             </div>
             
-            <div className="grid grid-cols-2 gap-6 mt-6">
-              <div className="flex items-center gap-3 text-aesthetic-pearl/95 p-4 bg-gradient-glass rounded-2xl backdrop-blur-xl
-                            border border-aesthetic-pearl/20 hover:bg-aesthetic-pearl/10 transition-all duration-300">
-                <div className="w-10 h-10 bg-gradient-glass rounded-xl flex items-center justify-center border border-aesthetic-pearl/30">
-                  <Users className="h-5 w-5" />
+            <div className="grid grid-cols-2 gap-6 mt-4">
+              <div className="flex items-center gap-3 text-white/95 p-3 bg-white/10 rounded-xl backdrop-blur-sm">
+                <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
+                  <Users className="h-4 w-4" />
                 </div>
                 <div>
-                  <span className="text-sm font-bold block tracking-[0.05em]">УЧАСТНИКИ</span>
+                  <span className="text-sm font-bold block tracking-wide">ПИЛОТЫ</span>
                   <span className="text-lg font-black">
                     {tournaments.length > 0 ? 
                       `${tournaments[0]?.tournament_registrations?.[0]?.count || 0}/${tournaments[0]?.max_players}` : 
@@ -456,13 +419,12 @@ export const TelegramApp = () => {
                   </span>
                 </div>
               </div>
-              <div className="flex items-center gap-3 text-aesthetic-pearl/95 p-4 bg-gradient-glass rounded-2xl backdrop-blur-xl
-                            border border-aesthetic-pearl/20 hover:bg-aesthetic-pearl/10 transition-all duration-300">
-                <div className="w-10 h-10 bg-gradient-glass rounded-xl flex items-center justify-center border border-aesthetic-pearl/30">
-                  <Clock className="h-5 w-5" />
+              <div className="flex items-center gap-3 text-white/95 p-3 bg-white/10 rounded-xl backdrop-blur-sm">
+                <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
+                  <Clock className="h-4 w-4" />
                 </div>
                 <div>
-                  <span className="text-sm font-bold block tracking-[0.05em]">ВРЕМЯ</span>
+                  <span className="text-sm font-bold block tracking-wide">СТАРТ</span>
                   <span className="text-lg font-black">
                     {tournaments.length > 0 ? 
                       new Date(tournaments[0]?.start_time).toLocaleTimeString('ru-RU', {hour: '2-digit', minute: '2-digit'}) : 
@@ -475,61 +437,45 @@ export const TelegramApp = () => {
         </Card>
       </div>
 
-      {/* User Stats - Premium Aesthetic */}
+      {/* User Stats - Formula 1 Dashboard Style */}
       {userStats && (
-        <Card className="bg-gradient-luxury border border-aesthetic-obsidian-light/80 shadow-strong relative overflow-hidden">
-          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-royal"></div>
+        <Card className="bg-gradient-carbon border border-f1-carbon-light/50 shadow-2xl relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-racing"></div>
           
           <CardContent className="p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h4 className="text-aesthetic-pearl font-black text-xl flex items-center gap-3 tracking-[0.05em]">
-                <div className="w-8 h-8 bg-gradient-royal rounded-xl flex items-center justify-center border border-aesthetic-gold/50">
-                  <User className="h-5 w-5 text-aesthetic-pearl" />
+            <div className="flex items-center justify-between mb-4">
+              <h4 className="text-white font-black text-lg flex items-center gap-2 tracking-wide">
+                <div className="w-6 h-6 bg-f1-gold/30 rounded-lg flex items-center justify-center border border-f1-gold/50">
+                  <User className="h-4 w-4 text-f1-gold" />
                 </div>
-                ВАША СТАТИСТИКА
+                ТВОЯ СТАТИСТИКА
               </h4>
               <Button variant="ghost" size="sm" 
-                     className="text-aesthetic-gold hover:text-aesthetic-gold hover:bg-aesthetic-gold/10 text-sm h-10 px-4 font-bold tracking-wide
-                              border border-aesthetic-gold/30 hover:border-aesthetic-gold/50 transition-all duration-300">
+                     className="text-f1-gold hover:text-f1-gold hover:bg-f1-gold/10 text-xs h-8 px-3 font-bold tracking-wide">
                 ДЕТАЛИ
               </Button>
             </div>
             
             <div className="grid grid-cols-3 gap-4">
-              <div className="text-center p-5 bg-gradient-glass rounded-2xl border-2 border-aesthetic-gold/40 relative overflow-hidden group
-                            hover:shadow-gold transition-all duration-300 backdrop-blur-xl">
-                <div className="absolute inset-0 bg-gradient-shimmer opacity-0 group-hover:opacity-20 transition-opacity"></div>
+              <div className="text-center p-4 bg-f1-carbon/80 rounded-xl border-2 border-f1-gold/30 relative overflow-hidden group">
+                <div className="absolute inset-0 bg-gradient-racing opacity-0 group-hover:opacity-20 transition-opacity"></div>
                 <div className="relative z-10">
-                  <div className="text-3xl font-black text-aesthetic-gold drop-shadow-xl animate-luxury-glow">
-                    {userStats.elo_rating}
-                  </div>
-                  <div className="text-xs text-aesthetic-platinum/80 font-bold uppercase tracking-[0.15em] mt-1">
-                    РЕЙТИНГ
-                  </div>
+                  <div className="text-2xl font-black text-f1-gold drop-shadow-lg">{userStats.elo_rating}</div>
+                  <div className="text-xs text-white/80 font-bold uppercase tracking-widest">РЕЙТИНГ</div>
                 </div>
               </div>
-              <div className="text-center p-5 bg-gradient-glass rounded-2xl border-2 border-aesthetic-emerald/40 relative overflow-hidden group
-                            hover:shadow-medium transition-all duration-300 backdrop-blur-xl">
-                <div className="absolute inset-0 bg-gradient-shimmer opacity-0 group-hover:opacity-20 transition-opacity"></div>
+              <div className="text-center p-4 bg-f1-carbon/80 rounded-xl border-2 border-f1-gold/30 relative overflow-hidden group">
+                <div className="absolute inset-0 bg-gradient-racing opacity-0 group-hover:opacity-20 transition-opacity"></div>
                 <div className="relative z-10">
-                  <div className="text-3xl font-black text-aesthetic-emerald drop-shadow-xl">
-                    {userStats.wins}
-                  </div>
-                  <div className="text-xs text-aesthetic-platinum/80 font-bold uppercase tracking-[0.15em] mt-1">
-                    ПОБЕДЫ
-                  </div>
+                  <div className="text-2xl font-black text-f1-gold drop-shadow-lg">{userStats.wins}</div>
+                  <div className="text-xs text-white/80 font-bold uppercase tracking-widest">ПОБЕДЫ</div>
                 </div>
               </div>
-              <div className="text-center p-5 bg-gradient-glass rounded-2xl border-2 border-aesthetic-sapphire/40 relative overflow-hidden group
-                            hover:shadow-medium transition-all duration-300 backdrop-blur-xl">
-                <div className="absolute inset-0 bg-gradient-shimmer opacity-0 group-hover:opacity-20 transition-opacity"></div>
+              <div className="text-center p-4 bg-f1-carbon/80 rounded-xl border-2 border-f1-gold/30 relative overflow-hidden group">
+                <div className="absolute inset-0 bg-gradient-racing opacity-0 group-hover:opacity-20 transition-opacity"></div>
                 <div className="relative z-10">
-                  <div className="text-3xl font-black text-aesthetic-sapphire drop-shadow-xl">
-                    {userStats.games_played}
-                  </div>
-                  <div className="text-xs text-aesthetic-platinum/80 font-bold uppercase tracking-[0.15em] mt-1">
-                    СОБЫТИЯ
-                  </div>
+                  <div className="text-2xl font-black text-f1-gold drop-shadow-lg">{userStats.games_played}</div>
+                  <div className="text-xs text-white/80 font-bold uppercase tracking-widest">ГОНКИ</div>
                 </div>
               </div>
             </div>
@@ -1027,27 +973,23 @@ export const TelegramApp = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-black via-aesthetic-obsidian to-aesthetic-obsidian-light relative overflow-hidden">
-      {/* Luxury Pattern Background */}
-      <div className="absolute inset-0 opacity-3">
+    <div className="min-h-screen bg-gradient-to-br from-black via-f1-carbon to-f1-carbon-light relative overflow-hidden">
+      {/* Racing Grid Background Pattern */}
+      <div className="absolute inset-0 opacity-5">
         <div className="absolute inset-0" style={{
           backgroundImage: `
-            radial-gradient(circle at 20% 50%, hsl(var(--crimson)) 0%, transparent 50%),
-            radial-gradient(circle at 80% 50%, hsl(var(--gold)) 0%, transparent 50%),
-            radial-gradient(circle at 40% 20%, hsl(var(--sapphire)) 0%, transparent 50%)
+            linear-gradient(0deg, transparent 24%, hsl(var(--f1-red)) 25%, hsl(var(--f1-red)) 26%, transparent 27%, transparent 74%, hsl(var(--f1-red)) 75%, hsl(var(--f1-red)) 76%, transparent 77%, transparent),
+            linear-gradient(90deg, transparent 24%, hsl(var(--f1-red)) 25%, hsl(var(--f1-red)) 26%, transparent 27%, transparent 74%, hsl(var(--f1-red)) 75%, hsl(var(--f1-red)) 76%, transparent 77%, transparent)
           `,
-          backgroundSize: '300px 300px'
+          backgroundSize: '50px 50px'
         }}></div>
       </div>
       
-      {/* Aesthetic Floating Elements */}
-      <div className="absolute inset-0 overflow-hidden opacity-5">
-        <div className="absolute top-20 left-10 w-2 h-32 bg-gradient-shimmer animate-shimmer-pass" 
-             style={{animationDelay: '0s'}}></div>
-        <div className="absolute top-40 right-20 w-2 h-32 bg-gradient-shimmer animate-shimmer-pass" 
-             style={{animationDelay: '2s'}}></div>
-        <div className="absolute bottom-40 left-1/2 w-2 h-32 bg-gradient-shimmer animate-shimmer-pass" 
-             style={{animationDelay: '4s'}}></div>
+      {/* Speed Lines Animation Background */}
+      <div className="absolute inset-0 overflow-hidden opacity-10">
+        <div className="absolute top-10 left-0 w-full h-0.5 bg-gradient-speed animate-speed-lines"></div>
+        <div className="absolute top-32 left-0 w-full h-0.5 bg-gradient-speed animate-speed-lines" style={{animationDelay: '1s'}}></div>
+        <div className="absolute top-64 left-0 w-full h-0.5 bg-gradient-speed animate-speed-lines" style={{animationDelay: '2s'}}></div>
       </div>
 
       {!isAuthenticated ? (
@@ -1057,11 +999,10 @@ export const TelegramApp = () => {
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <div className="py-4">
               {loading ? (
-                <div className="flex items-center justify-center py-20">
+                <div className="flex items-center justify-center py-12">
                   <div className="relative">
-                    <div className="animate-spin rounded-full h-20 w-20 border-4 border-aesthetic-crimson border-t-transparent shadow-strong"></div>
-                    <div className="absolute inset-0 animate-premium-pulse rounded-full border-2 border-aesthetic-gold/50"></div>
-                    <div className="absolute inset-2 bg-gradient-luxury rounded-full"></div>
+                    <div className="animate-spin rounded-full h-16 w-16 border-4 border-f1-red border-t-transparent shadow-2xl"></div>
+                    <div className="absolute inset-0 animate-racing-pulse rounded-full border-2 border-f1-gold/50"></div>
                   </div>
                 </div>
               ) : (
@@ -1075,71 +1016,68 @@ export const TelegramApp = () => {
               )}
             </div>
             
-            {/* Ultra Aesthetic Navigation Bar */}
-            <TabsList className="fixed bottom-0 left-0 right-0 h-20 grid grid-cols-5 bg-gradient-luxury backdrop-blur-2xl 
-                              border-t-2 border-aesthetic-crimson/50 rounded-none shadow-strong relative overflow-hidden">
+            {/* F1 + Poker Navigation Bar */}
+            <TabsList className="fixed bottom-0 left-0 right-0 h-20 grid grid-cols-5 bg-gradient-carbon backdrop-blur-xl 
+                              border-t-2 border-f1-red/50 rounded-none shadow-2xl relative overflow-hidden">
               
-              {/* Luxury Top Border */}
-              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-royal"></div>
-              <div className="absolute top-1 left-0 w-full h-0.5 bg-gradient-shimmer animate-shimmer-pass"></div>
-              
-              {/* Aesthetic Glow Background */}
-              <div className="absolute inset-0 bg-gradient-aurora opacity-5 animate-elegant-float"></div>
+              {/* Racing Stripe */}
+              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-racing"></div>
+              <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-racing"></div>
               
               <TabsTrigger 
                 value="home" 
-                className="flex flex-col gap-2 data-[state=active]:bg-aesthetic-crimson/30 data-[state=active]:text-aesthetic-pearl 
-                         text-aesthetic-platinum/70 hover:text-aesthetic-pearl/90 border-0 rounded-none h-full transition-all duration-500 
-                         data-[state=active]:shadow-glow data-[state=active]:border-t-2 data-[state=active]:border-aesthetic-gold
+                className="flex flex-col gap-1 data-[state=active]:bg-f1-red/30 data-[state=active]:text-white 
+                         text-f1-silver/70 hover:text-white/90 border-0 rounded-none h-full transition-all duration-300 
+                         data-[state=active]:shadow-lg data-[state=active]:border-t-2 data-[state=active]:border-f1-gold
                          group relative overflow-hidden"
               >
-                <div className="absolute inset-0 bg-gradient-shimmer opacity-0 group-data-[state=active]:opacity-20 transition-opacity duration-300"></div>
-                <Home className="h-6 w-6 relative z-10 group-data-[state=active]:animate-elegant-float" />
-                <span className="text-xs font-bold tracking-[0.1em] relative z-10">ГЛАВНАЯ</span>
+                <div className="absolute inset-0 bg-gradient-neon opacity-0 group-data-[state=active]:opacity-20 transition-opacity"></div>
+                <Home className="h-5 w-5 relative z-10" />
+                <span className="text-xs font-bold tracking-wide relative z-10">БАЗА</span>
               </TabsTrigger>
               <TabsTrigger 
                 value="tournaments" 
-                className="flex flex-col gap-2 data-[state=active]:bg-aesthetic-crimson/30 data-[state=active]:text-aesthetic-pearl 
-                         text-aesthetic-platinum/70 hover:text-aesthetic-pearl/90 border-0 rounded-none h-full transition-all duration-500 
-                         data-[state=active]:shadow-glow data-[state=active]:border-t-2 data-[state=active]:border-aesthetic-gold
+                className="flex flex-col gap-1 data-[state=active]:bg-f1-red/30 data-[state=active]:text-white 
+                         text-f1-silver/70 hover:text-white/90 border-0 rounded-none h-full transition-all duration-300 
+                         data-[state=active]:shadow-lg data-[state=active]:border-t-2 data-[state=active]:border-f1-gold
                          group relative overflow-hidden"
               >
-                <div className="absolute inset-0 bg-gradient-shimmer opacity-0 group-data-[state=active]:opacity-20 transition-opacity duration-300"></div>
-                <Calendar className="h-6 w-6 relative z-10 group-data-[state=active]:animate-elegant-float" />
-                <span className="text-xs font-bold tracking-[0.1em] relative z-10">СОБЫТИЯ</span>
+                <div className="absolute inset-0 bg-gradient-neon opacity-0 group-data-[state=active]:opacity-20 transition-opacity"></div>
+                <Calendar className="h-5 w-5 relative z-10" />
+                <span className="text-xs font-bold tracking-wide relative z-10">ГОНКИ</span>
               </TabsTrigger>
               <TabsTrigger 
                 value="rating" 
-                className="flex flex-col gap-2 data-[state=active]:bg-aesthetic-crimson/30 data-[state=active]:text-aesthetic-pearl 
-                         text-aesthetic-platinum/70 hover:text-aesthetic-pearl/90 border-0 rounded-none h-full transition-all duration-500 
-                         data-[state=active]:shadow-glow data-[state=active]:border-t-2 data-[state=active]:border-aesthetic-gold
+                className="flex flex-col gap-1 data-[state=active]:bg-f1-red/30 data-[state=active]:text-white 
+                         text-f1-silver/70 hover:text-white/90 border-0 rounded-none h-full transition-all duration-300 
+                         data-[state=active]:shadow-lg data-[state=active]:border-t-2 data-[state=active]:border-f1-gold
                          group relative overflow-hidden"
               >
-                <div className="absolute inset-0 bg-gradient-shimmer opacity-0 group-data-[state=active]:opacity-20 transition-opacity duration-300"></div>
-                <TrendingUp className="h-6 w-6 relative z-10 group-data-[state=active]:animate-elegant-float" />
-                <span className="text-xs font-bold tracking-[0.1em] relative z-10">РЕЙТИНГ</span>
+                <div className="absolute inset-0 bg-gradient-neon opacity-0 group-data-[state=active]:opacity-20 transition-opacity"></div>
+                <TrendingUp className="h-5 w-5 relative z-10" />
+                <span className="text-xs font-bold tracking-wide relative z-10">ЧЕМПИОНАТ</span>
               </TabsTrigger>
               <TabsTrigger 
                 value="qa" 
-                className="flex flex-col gap-2 data-[state=active]:bg-aesthetic-crimson/30 data-[state=active]:text-aesthetic-pearl 
-                         text-aesthetic-platinum/70 hover:text-aesthetic-pearl/90 border-0 rounded-none h-full transition-all duration-500 
-                         data-[state=active]:shadow-glow data-[state=active]:border-t-2 data-[state=active]:border-aesthetic-gold
+                className="flex flex-col gap-1 data-[state=active]:bg-f1-red/30 data-[state=active]:text-white 
+                         text-f1-silver/70 hover:text-white/90 border-0 rounded-none h-full transition-all duration-300 
+                         data-[state=active]:shadow-lg data-[state=active]:border-t-2 data-[state=active]:border-f1-gold
                          group relative overflow-hidden"
               >
-                <div className="absolute inset-0 bg-gradient-shimmer opacity-0 group-data-[state=active]:opacity-20 transition-opacity duration-300"></div>
-                <MessageSquare className="h-6 w-6 relative z-10 group-data-[state=active]:animate-elegant-float" />
-                <span className="text-xs font-bold tracking-[0.1em] relative z-10">ПОМОЩЬ</span>
+                <div className="absolute inset-0 bg-gradient-neon opacity-0 group-data-[state=active]:opacity-20 transition-opacity"></div>
+                <MessageSquare className="h-5 w-5 relative z-10" />
+                <span className="text-xs font-bold tracking-wide relative z-10">ПОМОЩЬ</span>
               </TabsTrigger>
               <TabsTrigger 
                 value="profile" 
-                className="flex flex-col gap-2 data-[state=active]:bg-aesthetic-crimson/30 data-[state=active]:text-aesthetic-pearl 
-                         text-aesthetic-platinum/70 hover:text-aesthetic-pearl/90 border-0 rounded-none h-full transition-all duration-500 
-                         data-[state=active]:shadow-glow data-[state=active]:border-t-2 data-[state=active]:border-aesthetic-gold
+                className="flex flex-col gap-1 data-[state=active]:bg-f1-red/30 data-[state=active]:text-white 
+                         text-f1-silver/70 hover:text-white/90 border-0 rounded-none h-full transition-all duration-300 
+                         data-[state=active]:shadow-lg data-[state=active]:border-t-2 data-[state=active]:border-f1-gold
                          group relative overflow-hidden"
               >
-                <div className="absolute inset-0 bg-gradient-shimmer opacity-0 group-data-[state=active]:opacity-20 transition-opacity duration-300"></div>
-                <User className="h-6 w-6 relative z-10 group-data-[state=active]:animate-elegant-float" />
-                <span className="text-xs font-bold tracking-[0.1em] relative z-10">ПРОФИЛЬ</span>
+                <div className="absolute inset-0 bg-gradient-neon opacity-0 group-data-[state=active]:opacity-20 transition-opacity"></div>
+                <User className="h-5 w-5 relative z-10" />
+                <span className="text-xs font-bold tracking-wide relative z-10">ПИЛОТ</span>
               </TabsTrigger>
             </TabsList>
           </Tabs>
