@@ -111,59 +111,64 @@
   }
 
   .dark {
-    /* Modern Poker Dark Theme */
-    --background: 0 0% 6%;                    /* Deep black background */
+    /* Formula 1 + Poker Premium Theme */
+    --background: 0 0% 4%;                    /* Ultra deep black */
     --foreground: 0 0% 98%;                   /* Pure white text */
 
-    --card: 0 0% 10%;                         /* Dark card background */
+    --card: 0 0% 8%;                          /* Dark carbon fiber look */
     --card-foreground: 0 0% 98%;              /* White card text */
 
-    --popover: 0 0% 8%;
+    --popover: 0 0% 6%;
     --popover-foreground: 0 0% 98%;
 
-    --primary: 0 72% 51%;                     /* Poker red */
+    --primary: 0 84% 58%;                     /* Ferrari Racing Red */
     --primary-foreground: 0 0% 98%;
 
-    --secondary: 0 0% 15%;                    /* Dark gray */
+    --secondary: 0 0% 12%;                    /* Carbon fiber gray */
     --secondary-foreground: 0 0% 98%;
 
-    --muted: 0 0% 15%;
+    --muted: 0 0% 10%;
     --muted-foreground: 0 0% 65%;
 
-    --accent: 0 72% 51%;                      /* Poker red accent */
+    --accent: 0 84% 58%;                      /* Racing red accent */
     --accent-foreground: 0 0% 98%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 0 0% 20%;
-    --input: 0 0% 15%;
-    --ring: 0 72% 51%;
+    --border: 0 0% 15%;
+    --input: 0 0% 12%;
+    --ring: 0 84% 58%;
 
-    /* Poker-specific colors */
-    --poker-red: 0 72% 51%;                   /* Classic poker red */
-    --poker-red-dark: 0 72% 45%;              /* Darker red for gradients */
-    --poker-red-light: 0 72% 60%;             /* Lighter red */
-    --poker-gold: 45 100% 51%;                /* Gold accent */
-    --poker-green: 120 100% 25%;              /* Dark green */
-    --poker-gray: 0 0% 25%;                   /* Medium gray */
-    --poker-gray-light: 0 0% 35%;             /* Light gray */
-    --poker-gray-dark: 0 0% 12%;              /* Dark gray */
+    /* Formula 1 + Poker Color Palette */
+    --f1-red: 0 84% 58%;                      /* Ferrari Racing Red */
+    --f1-red-dark: 0 84% 48%;                 /* Darker red */
+    --f1-red-light: 0 84% 68%;                /* Lighter red */
+    --f1-silver: 210 20% 70%;                 /* Mercedes Silver */
+    --f1-gold: 45 100% 60%;                   /* Championship Gold */
+    --f1-carbon: 0 0% 8%;                     /* Carbon Fiber */
+    --f1-carbon-light: 0 0% 15%;              /* Light Carbon */
+    --poker-diamond: 180 100% 85%;            /* Diamond Blue */
+    --poker-emerald: 152 81% 96%;             /* Emerald Green */
+    --neon-cyan: 180 100% 50%;                /* Neon Cyan */
+    --neon-purple: 270 100% 70%;              /* Neon Purple */
 
-    /* Gradients for modern poker look */
-    --gradient-poker-red: linear-gradient(135deg, hsl(0 72% 51%) 0%, hsl(0 72% 45%) 100%);
-    --gradient-poker-dark: linear-gradient(135deg, hsl(0 0% 12%) 0%, hsl(0 0% 8%) 100%);
-    --gradient-poker-card: linear-gradient(135deg, hsl(0 0% 15%) 0%, hsl(0 0% 10%) 100%);
-    --gradient-poker-accent: linear-gradient(135deg, hsl(0 72% 51%) 0%, hsl(0 72% 60%) 100%);
+    /* Racing Gradients */
+    --gradient-f1-red: linear-gradient(135deg, hsl(0 84% 58%) 0%, hsl(0 84% 48%) 50%, hsl(0 60% 35%) 100%);
+    --gradient-carbon: linear-gradient(135deg, hsl(0 0% 12%) 0%, hsl(0 0% 8%) 50%, hsl(0 0% 4%) 100%);
+    --gradient-racing: linear-gradient(135deg, hsl(0 84% 58%) 0%, hsl(45 100% 60%) 100%);
+    --gradient-neon: linear-gradient(135deg, hsl(180 100% 50%) 0%, hsl(270 100% 70%) 100%);
+    --gradient-speed: linear-gradient(90deg, transparent 0%, hsl(0 84% 58% / 0.1) 50%, transparent 100%);
+    --gradient-diamond: linear-gradient(135deg, hsl(180 100% 85%) 0%, hsl(152 81% 96%) 100%);
     
-    --sidebar-background: 0 0% 8%;
+    --sidebar-background: 0 0% 6%;
     --sidebar-foreground: 0 0% 98%;
-    --sidebar-primary: 0 72% 51%;
+    --sidebar-primary: 0 84% 58%;
     --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 0 0% 15%;
+    --sidebar-accent: 0 0% 12%;
     --sidebar-accent-foreground: 0 0% 98%;
-    --sidebar-border: 0 0% 20%;
-    --sidebar-ring: 0 72% 51%;
+    --sidebar-border: 0 0% 15%;
+    --sidebar-ring: 0 84% 58%;
   }
 }
 
