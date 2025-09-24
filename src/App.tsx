@@ -17,6 +17,7 @@ import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 import ExternalTimer from "./pages/ExternalTimer";
 import TelegramMiniApp from "./pages/TelegramMiniApp";
+import InvitationCard from "./pages/InvitationCard";
 
 const queryClient = new QueryClient();
 
