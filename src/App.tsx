@@ -16,7 +16,7 @@ import Rating from "./pages/Rating";
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 import ExternalTimer from "./pages/ExternalTimer";
-import InvitationCard from "./pages/InvitationCard";
+import TelegramMiniApp from "./pages/TelegramMiniApp";
 
 const queryClient = new QueryClient();
 
@@ -47,6 +47,7 @@ function App() {
           <Route path="/profile" element={<Profile />} />
           <Route path="/external-timer" element={<ExternalTimer />} />
           <Route path="/invitation/:id" element={<InvitationCard />} />
+          <Route path="/telegram" element={<TelegramMiniApp />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
