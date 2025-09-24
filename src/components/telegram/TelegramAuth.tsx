@@ -186,46 +186,80 @@ export const TelegramAuth: React.FC<TelegramAuthProps> = ({ onAuthComplete }) =>
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 flex items-center justify-center">
-      <Card className="bg-slate-900/50 border-slate-700 max-w-sm mx-4">
-        <CardHeader className="text-center pb-3">
-          <div className="w-20 h-20 bg-amber-600/20 rounded-full flex items-center justify-center mx-auto mb-4 border-2 border-amber-600/30">
+    <div className="min-h-screen bg-gradient-to-br from-black via-f1-carbon to-f1-carbon-light flex items-center justify-center relative overflow-hidden">
+      
+      {/* F1 Grid Background */}
+      <div className="absolute inset-0 opacity-5">
+        <div className="absolute inset-0" style={{
+          backgroundImage: `
+            linear-gradient(0deg, transparent 24%, hsl(var(--f1-red)) 25%, hsl(var(--f1-red)) 26%, transparent 27%),
+            linear-gradient(90deg, transparent 24%, hsl(var(--f1-red)) 25%, hsl(var(--f1-red)) 26%, transparent 27%)
+          `,
+          backgroundSize: '40px 40px'
+        }}></div>
+      </div>
+
+      {/* Speed Lines */}
+      <div className="absolute inset-0 overflow-hidden opacity-10">
+        <div className="absolute top-20 left-0 w-full h-0.5 bg-gradient-speed animate-speed-lines"></div>
+        <div className="absolute top-40 left-0 w-full h-0.5 bg-gradient-speed animate-speed-lines" style={{animationDelay: '1s'}}></div>
+        <div className="absolute bottom-40 left-0 w-full h-0.5 bg-gradient-speed animate-speed-lines" style={{animationDelay: '2s'}}></div>
+      </div>
+
+      <Card className="bg-gradient-carbon border-2 border-f1-red/50 max-w-sm mx-4 shadow-2xl relative overflow-hidden">
+        {/* Racing Stripe */}
+        <div className="absolute top-0 left-0 w-full h-2 bg-gradient-racing"></div>
+        
+        <CardHeader className="text-center pb-3 relative">
+          <div className="w-24 h-24 bg-gradient-f1-red rounded-full flex items-center justify-center mx-auto mb-4 border-4 border-f1-gold/50 shadow-2xl relative">
             {telegramUser?.photoUrl ? (
               <img 
                 src={telegramUser.photoUrl} 
                 alt="Avatar" 
-                className="w-20 h-20 rounded-full object-cover"
+                className="w-24 h-24 rounded-full object-cover"
               />
             ) : (
-              <User className="w-10 h-10 text-amber-400" />
+              <User className="w-12 h-12 text-white animate-neon-glow" />
             )}
+            <div className="absolute inset-0 rounded-full border-2 border-f1-gold/30 animate-racing-pulse"></div>
           </div>
-          <CardTitle className="text-white text-xl">
-            Добро пожаловать в IPS Club!
+          <CardTitle className="text-white text-xl font-black tracking-wider">
+            🏁 ДОБРО ПОЖАЛОВАТЬ В
           </CardTitle>
+          <div className="text-center mt-2">
+            <h1 className="text-2xl font-black text-f1-red tracking-widest animate-neon-glow">EPC</h1>
+            <h2 className="text-lg font-bold text-f1-gold tracking-wide -mt-1">EVENT POKER CLUB</h2>
+            <p className="text-f1-silver text-sm mt-1 font-medium">ФОРМУЛА ПОКЕРА</p>
+          </div>
         </CardHeader>
-        <CardContent className="text-center">
-          <p className="text-slate-300 mb-2 font-medium">
+        <CardContent className="text-center relative">
+          <p className="text-white font-bold mb-2 text-lg">
             {telegramUser?.firstName} {telegramUser?.lastName}
           </p>
           {telegramUser?.username && (
-            <p className="text-slate-400 mb-4 text-sm">@{telegramUser.username}</p>
+            <p className="text-f1-gold mb-4 text-sm font-semibold">@{telegramUser.username}</p>
           )}
           <Button 
             onClick={() => telegramUser && onAuthComplete(telegramUser)}
             disabled={registering}
-            className="w-full bg-amber-600 hover:bg-amber-700 text-white border-0"
+            className="w-full bg-gradient-f1-red hover:bg-f1-red-dark text-white border-0 font-black text-lg py-3 shadow-xl
+                     hover:shadow-2xl transition-all duration-300 hover:scale-[1.02]" 
           >
             {registering ? (
               <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Создание профиля...
+                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                ПОДКЛЮЧЕНИЕ К ПИТУ...
               </>
             ) : (
-              'Войти в клуб'
+              <>
+                🏁 ВОЙТИ В КОМАНДУ
+              </>
             )}
           </Button>
         </CardContent>
+        
+        {/* Bottom Racing Stripe */}
+        <div className="absolute bottom-0 left-0 w-full h-2 bg-gradient-racing"></div>
       </Card>
     </div>
   );
