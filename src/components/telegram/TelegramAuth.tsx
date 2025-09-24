@@ -201,7 +201,7 @@ export const TelegramAuth: React.FC<TelegramAuthProps> = ({ onAuthComplete }) =>
             )}
           </div>
           <CardTitle className="text-white text-xl">
-            Добро пожаловать в IPS Club!
+            Добро пожаловать в EPC Event Poker Club!
           </CardTitle>
         </CardHeader>
         <CardContent className="text-center">
