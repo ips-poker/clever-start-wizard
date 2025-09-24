@@ -135,18 +135,22 @@ export const TelegramApp = () => {
     setIsAuthenticated(true);
   };
 
-  const fetchData = async () => {
-    await Promise.all([
-      fetchTournaments(),
-      fetchPlayers(), 
-      fetchUserStats()
-    ]);
+  const fetchData = async (): Promise<void> => {
+    try {
+      await Promise.all([
+        fetchTournaments(),
+        fetchPlayers(), 
+        fetchUserStats()
+      ]);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    }
     setLoading(false);
   };
 
-  const fetchTournaments = async () => {
+  const fetchTournaments = async (): Promise<void> => {
     try {
-      const { data: tournamentsData } = await supabase
+      const { data } = await supabase
         .from('tournaments')
         .select(`
           *,
@@ -155,42 +159,47 @@ export const TelegramApp = () => {
         .eq('is_published', true)
         .order('start_time', { ascending: true });
       
-      if (tournamentsData) {
-        setTournaments(tournamentsData);
+      if (data) {
+        setTournaments(data as Tournament[]);
       }
     } catch (error) {
       console.error('Error fetching tournaments:', error);
     }
   };
 
-  const fetchPlayers = async () => {
+  const fetchPlayers = async (): Promise<void> => {
     try {
-      const { data: playersData } = await supabase
+      const { data } = await supabase
         .from('players')
         .select('*')
         .order('elo_rating', { ascending: false })
         .limit(10);
       
-      if (playersData) {
-        setPlayers(playersData);
+      if (data) {
+        setPlayers(data as Player[]);
       }
     } catch (error) {
       console.error('Error fetching players:', error);
     }
   };
 
-  const fetchUserStats = async () => {
+  const fetchUserStats = async (): Promise<void> => {
     if (!telegramUser) return;
     
     try {
-      const { data: userPlayer } = await supabase
+      const { data, error } = await supabase
         .from('players')
         .select('*')
         .eq('telegram_id', telegramUser.id.toString())
-        .single();
+        .maybeSingle();
       
-      if (userPlayer) {
-        setUserStats(userPlayer);
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error fetching user stats:', error);
+        return;
+      }
+      
+      if (data) {
+        setUserStats(data as Player);
       }
     } catch (error) {
       console.error('Error fetching user stats:', error);
@@ -207,12 +216,16 @@ export const TelegramApp = () => {
     
     try {
       // Проверяем, не зарегистрирован ли уже пользователь
-      const { data: existingRegistration } = await supabase
+      const { data: existingRegistration, error: checkError } = await supabase
         .from('tournament_registrations')
         .select('id')
         .eq('tournament_id', tournamentId)
         .eq('player_id', userStats.id)
-        .single();
+        .maybeSingle();
+
+      if (checkError && checkError.code !== 'PGRST116') {
+        throw checkError;
+      }
 
       if (existingRegistration) {
         toast.info("Вы уже зарегистрированы на этот турнир");

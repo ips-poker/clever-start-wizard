@@ -58,48 +58,59 @@ export const TelegramAuth: React.FC<TelegramAuthProps> = ({ onAuthComplete }) =>
     try {
       setRegistering(true);
       
-      // Проверяем существует ли уже игрок с таким telegram_id
-      const { data: existingPlayer } = await supabase
-        .from('players')
-        .select('*')
-        .eq('telegram_id', telegramUserData.id.toString())
-        .single();
+      const telegramId = telegramUserData.id.toString();
+      const supabaseUrl = 'https://mokhssmnorrhohrowxvu.supabase.co';
+      const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1va2hzc21ub3JyaG9ocm93eHZ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMwODUzNDYsImV4cCI6MjA2ODY2MTM0Nn0.ZWYgSZFeidY0b_miC7IyfXVPh1EUR2WtxlEvt_fFmGc';
+      
+      // Простая проверка существования игрока
+      const checkResult = await fetch(`${supabaseUrl}/rest/v1/players?telegram_id=eq.${telegramId}&select=id,name`, {
+        headers: {
+          'apikey': supabaseKey,
+          'Authorization': `Bearer ${supabaseKey}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      const existingPlayers = await checkResult.json();
+      const existingPlayer = existingPlayers?.[0];
 
       if (existingPlayer) {
-        // Игрок уже существует, обновляем данные если нужно
-        const { error: updateError } = await supabase
-          .from('players')
-          .update({
+        // Игрок существует, обновляем данные
+        await fetch(`${supabaseUrl}/rest/v1/players?telegram_id=eq.${telegramId}`, {
+          method: 'PATCH',
+          headers: {
+            'apikey': supabaseKey,
+            'Authorization': `Bearer ${supabaseKey}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
             telegram_username: telegramUserData.username,
             updated_at: new Date().toISOString()
           })
-          .eq('telegram_id', telegramUserData.id.toString());
-
-        if (updateError) {
-          console.error('Error updating player:', updateError);
-        }
+        });
       } else {
         // Создаем нового игрока
         const playerName = [telegramUserData.firstName, telegramUserData.lastName]
           .filter(Boolean)
           .join(' ') || telegramUserData.username || `Player${telegramUserData.id}`;
 
-        const { error: insertError } = await supabase
-          .from('players')
-          .insert({
+        await fetch(`${supabaseUrl}/rest/v1/players`, {
+          method: 'POST',
+          headers: {
+            'apikey': supabaseKey,
+            'Authorization': `Bearer ${supabaseKey}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
             name: playerName,
-            telegram_id: telegramUserData.id.toString(),
+            telegram_id: telegramId,
             telegram_username: telegramUserData.username,
             avatar_url: telegramUserData.photoUrl,
-            elo_rating: 1000, // Начальный рейтинг
+            elo_rating: 1000,
             games_played: 0,
             wins: 0
-          });
-
-        if (insertError) {
-          console.error('Error creating player:', insertError);
-          throw insertError;
-        }
+          })
+        });
       }
 
       onAuthComplete(telegramUserData);
