@@ -29,8 +29,10 @@ export const TelegramAuth: React.FC<TelegramAuthProps> = ({ onAuthComplete }) =>
 
   const initializeTelegramAuth = async () => {
     try {
-      // Режим эмуляции для разработки
-      const isDevelopment = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+      // Проверяем режим эмуляции ПЕРЕД попыткой восстановления Telegram данных
+      const isDevelopment = window.location.hostname === 'localhost' || 
+                            window.location.hostname === '127.0.0.1' ||
+                            window.location.hostname.includes('.lovableproject.com');
       
       if (isDevelopment) {
         // Тестовый пользователь для разработки
@@ -47,7 +49,7 @@ export const TelegramAuth: React.FC<TelegramAuthProps> = ({ onAuthComplete }) =>
         return;
       }
       
-      // Обычная авторизация через Telegram
+      // Обычная авторизация через Telegram только если НЕ режим разработки
       await initData.restore();
       const user = initData.user();
       
