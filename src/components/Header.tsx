@@ -37,20 +37,19 @@ export function Header() {
           {/* Custom Logo */}
           <Link to="/" className="flex items-center space-x-3 group">
             <div className="relative">
-              {/* Custom logo with brand colors */}
-              <div className="w-16 h-16 flex items-center justify-center group-hover:scale-110 transition-all duration-500">
+              <div className="w-12 h-12 bg-primary rounded-xl flex items-center justify-center group-hover:scale-110 transition-all duration-300">
                 <img 
                   src="/lovable-uploads/a689ff05-9338-4573-bd08-aa9486811d3f.png" 
-                  alt="Poker Club Logo" 
-                  className="w-12 h-12 object-contain transition-transform duration-300"
+                  alt="EPC Logo" 
+                  className="w-8 h-8 object-contain filter brightness-0 invert"
                 />
               </div>
             </div>
             <div className="flex flex-col">
-              <span className="text-2xl font-sinkin text-poker-gold tracking-tight">
+              <span className="text-xl font-semibold text-foreground tracking-tight">
                 EPC
               </span>
-              <span className="text-sm text-muted-foreground -mt-1 font-sinkin font-medium tracking-widest uppercase">
+              <span className="text-xs text-muted-foreground -mt-1 font-medium tracking-widest uppercase">
                 EVENT POKER CLUB
               </span>
             </div>
@@ -62,10 +61,10 @@ export function Header() {
               <Link
                 key={item.name}
                 to={item.href}
-                className="text-sm font-medium text-foreground hover:text-poker-steel transition-colors duration-300 relative group py-2"
+                className="text-sm font-medium text-foreground hover:text-primary transition-colors duration-200 relative group py-2"
               >
                 {item.name}
-                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-gradient-steel transition-all duration-300 group-hover:w-full rounded-full"></span>
+                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary transition-all duration-200 group-hover:w-full rounded-full"></span>
               </Link>
             ))}
           </nav>
@@ -80,7 +79,7 @@ export function Header() {
                       <Button 
                         variant="ghost" 
                         size="sm" 
-                        className="hover:bg-primary/10 hover:text-primary transition-all duration-300 font-medium"
+                        className="hover:bg-accent/50 hover:text-primary transition-all duration-200 font-medium"
                       >
                         <Trophy className="w-4 h-4 mr-2" />
                         Турнирный директор
@@ -90,7 +89,7 @@ export function Header() {
                       <Button 
                         variant="outline" 
                         size="sm" 
-                        className="hover:bg-primary/10 hover:text-primary transition-all duration-300 font-medium"
+                        className="hover:bg-accent/50 hover:text-primary transition-all duration-200 font-medium border-border/50"
                       >
                         <Settings className="w-4 h-4 mr-2" />
                         Админ панель
@@ -128,13 +127,13 @@ export function Header() {
             ) : (
               <>
                 <Link to="/auth">
-                  <Button variant="ghost" size="sm" className="hover:bg-poker-steel/10 hover:text-poker-steel transition-all duration-300 font-medium">
+                  <Button variant="ghost" size="sm" className="hover:bg-accent/50 hover:text-primary transition-all duration-200 font-medium">
                     <LogIn className="w-4 h-4 mr-2" />
                     Войти
                   </Button>
                 </Link>
                 <Link to="/auth">
-                  <Button size="sm" className="bg-gradient-charcoal text-white hover:shadow-charcoal transition-all duration-300 font-semibold">
+                  <Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-subtle hover:shadow-card transition-all duration-200 font-medium">
                     Регистрация
                   </Button>
                 </Link>

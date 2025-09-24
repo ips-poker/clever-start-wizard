@@ -106,7 +106,8 @@ export default {
 				'inset': 'var(--shadow-inset)'
 			},
 			fontFamily: {
-				'sinkin': ['Work Sans', 'sans-serif'],
+				'inter': ['Inter', 'system-ui', 'sans-serif'],
+				'sans': ['Inter', 'system-ui', 'sans-serif'],
 			},
 			fontWeight: {
 				'light': 'var(--font-weight-light)',
