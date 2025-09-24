@@ -80,15 +80,7 @@ export default {
 					border: 'hsl(var(--poker-border))',
 					'text-primary': 'hsl(var(--poker-text-primary))',
 					'text-secondary': 'hsl(var(--poker-text-secondary))',
-					'text-muted': 'hsl(var(--poker-text-muted))',
-					'red': 'hsl(var(--poker-red))',
-					'red-dark': 'hsl(var(--poker-red-dark))',
-					'red-light': 'hsl(var(--poker-red-light))',
-					'gold': 'hsl(var(--poker-gold))',
-					'green': 'hsl(var(--poker-green))',
-					'gray': 'hsl(var(--poker-gray))',
-					'gray-light': 'hsl(var(--poker-gray-light))',
-					'gray-dark': 'hsl(var(--poker-gray-dark))'
+					'text-muted': 'hsl(var(--poker-text-muted))'
 				}
 			},
 			backgroundImage: {
@@ -100,11 +92,7 @@ export default {
 				'gradient-glass': 'var(--gradient-glass)',
 				'gradient-border': 'var(--gradient-border)',
 				'gradient-button': 'var(--gradient-button)',
-				'gradient-surface': 'var(--gradient-surface)',
-				'gradient-poker-red': 'var(--gradient-poker-red)',
-				'gradient-poker-dark': 'var(--gradient-poker-dark)',
-				'gradient-poker-card': 'var(--gradient-poker-card)',
-				'gradient-poker-accent': 'var(--gradient-poker-accent)'
+				'gradient-surface': 'var(--gradient-surface)'
 			},
 			boxShadow: {
 				'minimal': 'var(--shadow-minimal)',
