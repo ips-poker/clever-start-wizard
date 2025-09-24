@@ -67,47 +67,36 @@ export default {
 					ring: 'hsl(var(--sidebar-ring))'
 				},
 				poker: {
-					primary: 'hsl(var(--poker-primary))',
-					'primary-light': 'hsl(var(--poker-primary-light))',
-					secondary: 'hsl(var(--poker-secondary))',
-					accent: 'hsl(var(--poker-accent))',
-					'accent-light': 'hsl(var(--poker-accent-light))',
-					success: 'hsl(var(--poker-success))',
-					warning: 'hsl(var(--poker-warning))',
-					error: 'hsl(var(--poker-error))',
-					surface: 'hsl(var(--poker-surface))',
-					'surface-elevated': 'hsl(var(--poker-surface-elevated))',
-					border: 'hsl(var(--poker-border))',
-					'text-primary': 'hsl(var(--poker-text-primary))',
-					'text-secondary': 'hsl(var(--poker-text-secondary))',
-					'text-muted': 'hsl(var(--poker-text-muted))'
+					black: 'hsl(var(--poker-black))',
+					red: 'hsl(var(--poker-red))',
+					'red-dark': 'hsl(var(--poker-red-dark))',
+					'gray-900': 'hsl(var(--poker-gray-900))',
+					'gray-800': 'hsl(var(--poker-gray-800))',
+					'gray-700': 'hsl(var(--poker-gray-700))',
+					'gray-600': 'hsl(var(--poker-gray-600))',
+					'gray-500': 'hsl(var(--poker-gray-500))',
+					'gray-400': 'hsl(var(--poker-gray-400))',
+					white: 'hsl(var(--poker-white))',
+					silver: 'hsl(var(--poker-silver))',
+					gold: 'hsl(var(--poker-gold))',
+					blue: 'hsl(var(--poker-blue))'
 				}
 			},
 			backgroundImage: {
-				'gradient-primary': 'var(--gradient-primary)',
-				'gradient-hero': 'var(--gradient-hero)',
-				'gradient-card': 'var(--gradient-card)',
-				'gradient-accent': 'var(--gradient-accent)',
-				'gradient-success': 'var(--gradient-success)',
-				'gradient-glass': 'var(--gradient-glass)',
-				'gradient-border': 'var(--gradient-border)',
-				'gradient-button': 'var(--gradient-button)',
-				'gradient-surface': 'var(--gradient-surface)'
+				'gradient-red-card': 'var(--gradient-red-card)',
+				'gradient-dark-card': 'var(--gradient-dark-card)',
+				'gradient-chip': 'var(--gradient-chip)',
+				'gradient-gold': 'var(--gradient-gold)'
 			},
 			boxShadow: {
-				'minimal': 'var(--shadow-minimal)',
-				'subtle': 'var(--shadow-subtle)',
 				'card': 'var(--shadow-card)',
 				'elevated': 'var(--shadow-elevated)',
-				'floating': 'var(--shadow-floating)',
-				'dramatic': 'var(--shadow-dramatic)',
-				'accent': 'var(--shadow-accent)',
-				'success': 'var(--shadow-success)',
-				'inset': 'var(--shadow-inset)'
+				'red': 'var(--shadow-red)',
+				'subtle': 'var(--shadow-subtle)'
 			},
 			fontFamily: {
-				'inter': ['Inter', 'system-ui', 'sans-serif'],
-				'sans': ['Inter', 'system-ui', 'sans-serif'],
+				'inter': ['Inter', 'sans-serif'],
+				'sans': ['Inter', 'sans-serif'],
 			},
 			fontWeight: {
 				'light': 'var(--font-weight-light)',
