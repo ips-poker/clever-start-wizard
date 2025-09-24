@@ -18,10 +18,14 @@ import {
   Coins,
   ChevronRight,
   Award,
-  Target
+  Target,
+  CheckCircle,
+  UserPlus,
+  Loader2
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { TelegramAuth } from './TelegramAuth';
+import { toast } from 'sonner';
 
 interface Tournament {
   id: string;
@@ -46,6 +50,16 @@ interface Player {
   wins: number;
   avatar_url?: string;
   created_at?: string;
+  telegram_id?: string;
+  telegram_username?: string;
+}
+
+interface TelegramUser {
+  id: number;
+  firstName?: string;
+  lastName?: string;
+  username?: string;
+  photoUrl?: string;
 }
 
 export const TelegramApp = () => {
@@ -55,17 +69,83 @@ export const TelegramApp = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
   const [userStats, setUserStats] = useState<Player | null>(null);
-  const [clubInfo, setClubInfo] = useState(null);
+  const [telegramUser, setTelegramUser] = useState<TelegramUser | null>(null);
+  const [registering, setRegistering] = useState<string | null>(null);
 
   useEffect(() => {
-    if (isAuthenticated) {
+    if (isAuthenticated && telegramUser) {
       fetchData();
+      setupRealtimeSubscriptions();
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, telegramUser]);
+
+  const setupRealtimeSubscriptions = () => {
+    // Подписка на изменения турниров
+    const tournamentsChannel = supabase
+      .channel('tournaments-changes')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'tournaments' },
+        (payload) => {
+          console.log('Tournament update:', payload);
+          fetchTournaments();
+        }
+      )
+      .subscribe();
+
+    // Подписка на изменения игроков
+    const playersChannel = supabase
+      .channel('players-changes')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'players' },
+        (payload) => {
+          console.log('Player update:', payload);
+          fetchPlayers();
+          if (telegramUser && payload.new && (payload.new as any).telegram_id === telegramUser.id.toString()) {
+            setUserStats(payload.new as Player);
+          }
+        }
+      )
+      .subscribe();
+
+    // Подписка на изменения регистраций на турниры
+    const registrationsChannel = supabase
+      .channel('registrations-changes')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'tournament_registrations' },
+        (payload) => {
+          console.log('Registration update:', payload);
+          fetchTournaments();
+        }
+      )
+      .subscribe();
+
+    // Очистка подписок при размонтировании
+    return () => {
+      supabase.removeChannel(tournamentsChannel);
+      supabase.removeChannel(playersChannel);
+      supabase.removeChannel(registrationsChannel);
+    };
+  };
+
+  const handleAuthComplete = (user: TelegramUser) => {
+    setTelegramUser(user);
+    setIsAuthenticated(true);
+  };
 
   const fetchData = async () => {
+    await Promise.all([
+      fetchTournaments(),
+      fetchPlayers(), 
+      fetchUserStats()
+    ]);
+    setLoading(false);
+  };
+
+  const fetchTournaments = async () => {
     try {
-      // Fetch tournaments
       const { data: tournamentsData } = await supabase
         .from('tournaments')
         .select(`
@@ -78,8 +158,13 @@ export const TelegramApp = () => {
       if (tournamentsData) {
         setTournaments(tournamentsData);
       }
+    } catch (error) {
+      console.error('Error fetching tournaments:', error);
+    }
+  };
 
-      // Fetch top players
+  const fetchPlayers = async () => {
+    try {
       const { data: playersData } = await supabase
         .from('players')
         .select('*')
@@ -89,35 +174,73 @@ export const TelegramApp = () => {
       if (playersData) {
         setPlayers(playersData);
       }
+    } catch (error) {
+      console.error('Error fetching players:', error);
+    }
+  };
 
-      // Fetch club info from CMS
-      const { data: clubData } = await supabase
-        .from('cms_content')
+  const fetchUserStats = async () => {
+    if (!telegramUser) return;
+    
+    try {
+      const { data: userPlayer } = await supabase
+        .from('players')
         .select('*')
-        .eq('page_slug', 'club-info')
-        .eq('is_active', true);
+        .eq('telegram_id', telegramUser.id.toString())
+        .single();
       
-      if (clubData) {
-        setClubInfo(clubData);
-      }
-
-      // Fetch user stats if authenticated
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { data: userPlayer } = await supabase
-          .from('players')
-          .select('*')
-          .eq('user_id', user.id)
-          .single();
-        
-        if (userPlayer) {
-          setUserStats(userPlayer);
-        }
+      if (userPlayer) {
+        setUserStats(userPlayer);
       }
     } catch (error) {
-      console.error('Error fetching data:', error);
+      console.error('Error fetching user stats:', error);
+    }
+  };
+
+  const registerForTournament = async (tournamentId: string) => {
+    if (!telegramUser || !userStats) {
+      toast.error("Не удалось найти данные пользователя");
+      return;
+    }
+
+    setRegistering(tournamentId);
+    
+    try {
+      // Проверяем, не зарегистрирован ли уже пользователь
+      const { data: existingRegistration } = await supabase
+        .from('tournament_registrations')
+        .select('id')
+        .eq('tournament_id', tournamentId)
+        .eq('player_id', userStats.id)
+        .single();
+
+      if (existingRegistration) {
+        toast.info("Вы уже зарегистрированы на этот турнир");
+        return;
+      }
+
+      // Регистрируем пользователя на турнир
+      const { error } = await supabase
+        .from('tournament_registrations')
+        .insert({
+          tournament_id: tournamentId,
+          player_id: userStats.id,
+          status: 'registered'
+        });
+
+      if (error) {
+        throw error;
+      }
+
+      toast.success("Вы успешно зарегистрированы на турнир");
+
+      // Обновляем данные турниров
+      fetchTournaments();
+    } catch (error) {
+      console.error('Error registering for tournament:', error);
+      toast.error("Не удалось зарегистрироваться на турнир");
     } finally {
-      setLoading(false);
+      setRegistering(null);
     }
   };
 
@@ -322,12 +445,12 @@ export const TelegramApp = () => {
               <Badge variant="outline" className="border-slate-600 text-slate-300 text-xs">
                 {tournament.tournament_format || 'Freezeout'}
               </Badge>
-              {tournament.rebuy_cost > 0 && (
+              {tournament.rebuy_cost && tournament.rebuy_cost > 0 && (
                 <Badge variant="outline" className="border-slate-600 text-slate-300 text-xs">
                   Ребай {tournament.rebuy_cost}₽
                 </Badge>
               )}
-              {tournament.addon_cost > 0 && (
+              {tournament.addon_cost && tournament.addon_cost > 0 && (
                 <Badge variant="outline" className="border-slate-600 text-slate-300 text-xs">
                   Аддон {tournament.addon_cost}₽
                 </Badge>
@@ -335,9 +458,23 @@ export const TelegramApp = () => {
             </div>
             
             {tournament.status === 'scheduled' && (
-              <Button className="w-full bg-amber-600 hover:bg-amber-700 text-white border-0" size="sm">
-                <Users className="h-4 w-4 mr-2" />
-                Записаться на турнир
+              <Button 
+                onClick={() => registerForTournament(tournament.id)}
+                disabled={registering === tournament.id}
+                className="w-full bg-amber-600 hover:bg-amber-700 text-white border-0" 
+                size="sm"
+              >
+                {registering === tournament.id ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Регистрируем...
+                  </>
+                ) : (
+                  <>
+                    <Users className="h-4 w-4 mr-2" />
+                    Записаться на турнир
+                  </>
+                )}
               </Button>
             )}
             
@@ -604,17 +741,19 @@ export const TelegramApp = () => {
           <CardContent className="p-6">
             <div className="flex items-center gap-4 mb-6">
               <Avatar className="w-16 h-16 border-2 border-amber-600/30">
-                <AvatarImage src={userStats?.avatar_url} />
+                <AvatarImage src={userStats?.avatar_url || telegramUser?.photoUrl} />
                 <AvatarFallback className="bg-amber-600/20 text-amber-400 text-lg font-bold">
-                  {userStats?.name?.[0] || 'P'}
+                  {userStats?.name?.[0] || telegramUser?.firstName?.[0] || 'P'}
                 </AvatarFallback>
               </Avatar>
               <div>
                 <h3 className="text-lg font-semibold text-white">
-                  {userStats?.name || 'Игрок'}
+                  {userStats?.name || [telegramUser?.firstName, telegramUser?.lastName].filter(Boolean).join(' ') || 'Игрок'}
                 </h3>
-                <p className="text-slate-400">@telegram_user</p>
-                {userStats && (
+                <p className="text-slate-400">
+                  @{userStats?.telegram_username || telegramUser?.username || 'telegram_user'}
+                </p>
+                {userStats?.created_at && (
                   <p className="text-xs text-amber-400 mt-1">
                     Участник с {new Date(userStats.created_at).toLocaleDateString('ru-RU')}
                   </p>
@@ -659,25 +798,25 @@ export const TelegramApp = () => {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 gap-3">
-              {userStats?.games_played >= 1 && (
+              {userStats?.games_played && userStats.games_played >= 1 && (
                 <div className="p-3 bg-slate-800/30 rounded-lg border border-slate-700 text-center">
                   <Target className="h-6 w-6 mx-auto mb-1 text-blue-400" />
                   <p className="text-xs text-white font-medium">Первый турнир</p>
                 </div>
               )}
-              {userStats?.wins >= 1 && (
+              {userStats?.wins && userStats.wins >= 1 && (
                 <div className="p-3 bg-slate-800/30 rounded-lg border border-slate-700 text-center">
                   <Trophy className="h-6 w-6 mx-auto mb-1 text-amber-400" />
                   <p className="text-xs text-white font-medium">Первая победа</p>
                 </div>
               )}
-              {userStats?.games_played >= 10 && (
+              {userStats?.games_played && userStats.games_played >= 10 && (
                 <div className="p-3 bg-slate-800/30 rounded-lg border border-slate-700 text-center">
                   <Star className="h-6 w-6 mx-auto mb-1 text-purple-400" />
                   <p className="text-xs text-white font-medium">Ветеран</p>
                 </div>
               )}
-              {userStats?.elo_rating >= 1500 && (
+              {userStats?.elo_rating && userStats.elo_rating >= 1500 && (
                 <div className="p-3 bg-slate-800/30 rounded-lg border border-slate-700 text-center">
                   <Award className="h-6 w-6 mx-auto mb-1 text-green-400" />
                   <p className="text-xs text-white font-medium">Мастер</p>
@@ -712,7 +851,7 @@ export const TelegramApp = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800">
       {!isAuthenticated ? (
-        <TelegramAuth onAuthComplete={() => setIsAuthenticated(true)} />
+        <TelegramAuth onAuthComplete={handleAuthComplete} />
       ) : (
         <div className="max-w-md mx-auto">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
