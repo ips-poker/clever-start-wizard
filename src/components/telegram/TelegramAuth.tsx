@@ -44,11 +44,11 @@ export const TelegramAuth: React.FC<TelegramAuthProps> = ({ onAuthComplete }) =>
         setTelegramUser(telegramUserData);
         await authenticateWithSupabase(telegramUserData);
       } else {
-        setAuthError('Не удалось получить данные Telegram пользователя');
+        setAuthError('Приложение должно быть открыто через Telegram бота');
       }
     } catch (error) {
       console.error('Telegram auth error:', error);
-      setAuthError('Ошибка авторизации через Telegram');
+      setAuthError('Приложение должно быть открыто через Telegram бота');
     } finally {
       setLoading(false);
     }
