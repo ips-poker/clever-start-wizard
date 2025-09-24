@@ -29,6 +29,25 @@ export const TelegramAuth: React.FC<TelegramAuthProps> = ({ onAuthComplete }) =>
 
   const initializeTelegramAuth = async () => {
     try {
+      // Режим эмуляции для разработки
+      const isDevelopment = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+      
+      if (isDevelopment) {
+        // Тестовый пользователь для разработки
+        const testUser: TelegramUser = {
+          id: 123456789,
+          firstName: 'Тестовый',
+          lastName: 'Пользователь',
+          username: 'test_user',
+          photoUrl: undefined,
+        };
+        
+        setTelegramUser(testUser);
+        await authenticateWithSupabase(testUser);
+        return;
+      }
+      
+      // Обычная авторизация через Telegram
       await initData.restore();
       const user = initData.user();
       

@@ -183,23 +183,30 @@ export const TelegramApp = () => {
     }
   };
 
-  const fetchUserStats = async (): Promise<void> => {
+  const fetchUserStats = async () => {
     if (!telegramUser) return;
     
     try {
-      const { data, error } = await supabase
-        .from('players')
-        .select('*')
-        .eq('telegram_id', telegramUser.id.toString())
-        .maybeSingle();
+      // Используем простой fetch для избежания проблем с типизацией
+      const telegramId = telegramUser.id.toString();
+      const supabaseUrl = 'https://mokhssmnorrhohrowxvu.supabase.co';
+      const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1va2hzc21ub3JyaG9ocm93eHZ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMwODUzNDYsImV4cCI6MjA2ODY2MTM0Nn0.ZWYgSZFeidY0b_miC7IyfXVPh1EUR2WtxlEvt_fFmGc';
       
-      if (error && error.code !== 'PGRST116') {
-        console.error('Error fetching user stats:', error);
-        return;
-      }
+      const response = await fetch(`${supabaseUrl}/rest/v1/players?telegram_id=eq.${telegramId}&select=*`, {
+        headers: {
+          'apikey': supabaseKey,
+          'Authorization': `Bearer ${supabaseKey}`,
+          'Content-Type': 'application/json'
+        }
+      });
       
-      if (data) {
-        setUserStats(data as Player);
+      if (response.ok) {
+        const players = await response.json();
+        const playerData = players?.[0];
+        
+        if (playerData) {
+          setUserStats(playerData);
+        }
       }
     } catch (error) {
       console.error('Error fetching user stats:', error);
