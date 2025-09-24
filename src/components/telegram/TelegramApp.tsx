@@ -712,7 +712,7 @@ export const TelegramApp = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800">
       {!isAuthenticated ? (
-        <TelegramAuth onAuthSuccess={() => setIsAuthenticated(true)} />
+        <TelegramAuth onAuthComplete={() => setIsAuthenticated(true)} />
       ) : (
         <div className="max-w-md mx-auto">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
