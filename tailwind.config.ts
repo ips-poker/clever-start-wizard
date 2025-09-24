@@ -160,9 +160,7 @@ export default {
 				'glow': 'var(--shadow-glow)'
 			},
 			fontFamily: {
-				'inter': ['Inter', 'system-ui', 'sans-serif'],
-				'mono': ['JetBrains Mono', 'Courier New', 'monospace'],
-				'sans': ['Inter', 'system-ui', 'sans-serif'],
+				'sinkin': ['Work Sans', 'sans-serif'],
 			},
 			fontWeight: {
 				'light': 'var(--font-weight-light)',
