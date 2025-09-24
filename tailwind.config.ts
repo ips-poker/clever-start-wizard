@@ -88,22 +88,7 @@ export default {
 					'green': 'hsl(var(--poker-green))',
 					'gray': 'hsl(var(--poker-gray))',
 					'gray-light': 'hsl(var(--poker-gray-light))',
-					'gray-dark': 'hsl(var(--poker-gray-dark))',
-					'diamond': 'hsl(var(--poker-diamond))',
-					'emerald': 'hsl(var(--poker-emerald))'
-				},
-				f1: {
-					'red': 'hsl(var(--f1-red))',
-					'red-dark': 'hsl(var(--f1-red-dark))',
-					'red-light': 'hsl(var(--f1-red-light))',
-					'silver': 'hsl(var(--f1-silver))',
-					'gold': 'hsl(var(--f1-gold))',
-					'carbon': 'hsl(var(--f1-carbon))',
-					'carbon-light': 'hsl(var(--f1-carbon-light))'
-				},
-				neon: {
-					'cyan': 'hsl(var(--neon-cyan))',
-					'purple': 'hsl(var(--neon-purple))'
+					'gray-dark': 'hsl(var(--poker-gray-dark))'
 				}
 			},
 			backgroundImage: {
@@ -119,13 +104,7 @@ export default {
 				'gradient-poker-red': 'var(--gradient-poker-red)',
 				'gradient-poker-dark': 'var(--gradient-poker-dark)',
 				'gradient-poker-card': 'var(--gradient-poker-card)',
-				'gradient-poker-accent': 'var(--gradient-poker-accent)',
-				'gradient-f1-red': 'var(--gradient-f1-red)',
-				'gradient-carbon': 'var(--gradient-carbon)',
-				'gradient-racing': 'var(--gradient-racing)',
-				'gradient-neon': 'var(--gradient-neon)',
-				'gradient-speed': 'var(--gradient-speed)',
-				'gradient-diamond': 'var(--gradient-diamond)'
+				'gradient-poker-accent': 'var(--gradient-poker-accent)'
 			},
 			boxShadow: {
 				'minimal': 'var(--shadow-minimal)',
@@ -260,48 +239,6 @@ export default {
 						backdropFilter: 'blur(20px) saturate(250%)',
 						background: 'rgba(255, 255, 255, 0.15)'
 					}
-				},
-				'racing-pulse': {
-					'0%, 100%': {
-						transform: 'scale(1)',
-						boxShadow: '0 0 0 0 hsl(var(--f1-red) / 0.7)'
-					},
-					'50%': {
-						transform: 'scale(1.05)',
-						boxShadow: '0 0 20px 10px hsl(var(--f1-red) / 0)'
-					}
-				},
-				'neon-glow': {
-					'0%, 100%': {
-						textShadow: '0 0 5px hsl(var(--neon-cyan)), 0 0 10px hsl(var(--neon-cyan)), 0 0 15px hsl(var(--neon-cyan))'
-					},
-					'50%': {
-						textShadow: '0 0 10px hsl(var(--neon-purple)), 0 0 20px hsl(var(--neon-purple)), 0 0 30px hsl(var(--neon-purple))'
-					}
-				},
-				'speed-lines': {
-					'0%': {
-						transform: 'translateX(-100%) skewX(-15deg)',
-						opacity: '0'
-					},
-					'50%': {
-						transform: 'translateX(0%) skewX(-15deg)',
-						opacity: '1'
-					},
-					'100%': {
-						transform: 'translateX(100%) skewX(-15deg)',
-						opacity: '0'
-					}
-				},
-				'f1-entrance': {
-					'0%': {
-						transform: 'translateX(-100%) rotate(-5deg)',
-						opacity: '0'
-					},
-					'100%': {
-						transform: 'translateX(0%) rotate(0deg)',
-						opacity: '1'
-					}
 				}
 			},
 			animation: {
@@ -316,11 +253,7 @@ export default {
 				'pulse-glow': 'pulse-glow 2s ease-in-out infinite',
 				'bounce-subtle': 'bounce-subtle 2s ease-in-out infinite',
 				'shimmer': 'shimmer 2s ease-in-out infinite',
-				'glass-morph': 'glass-morph 4s ease-in-out infinite',
-				'racing-pulse': 'racing-pulse 1.5s ease-in-out infinite',
-				'neon-glow': 'neon-glow 2s ease-in-out infinite alternate',
-				'speed-lines': 'speed-lines 0.8s ease-out infinite',
-				'f1-entrance': 'f1-entrance 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94)'
+				'glass-morph': 'glass-morph 4s ease-in-out infinite'
 			}
 		}
 	},
