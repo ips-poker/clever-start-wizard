@@ -2,9 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* EPC Event Poker Club - Ultra Premium Design System */
-
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&family=JetBrains+Mono:wght@100;200;300;400;500;600;700;800&display=swap');
+/* IPS Poker Club Design System - Elegant Dark Theme */
 
 @layer base {
   :root {
@@ -113,75 +111,41 @@
   }
 
   .dark {
-    /* Ultra Premium Aesthetic Theme */
-    --background: 0 0% 2%;                    /* Deepest black */
-    --foreground: 0 0% 98%;                   /* Pure white text */
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
 
-    --card: 0 0% 6%;                          /* Rich dark cards */
-    --card-foreground: 0 0% 98%;              /* White card text */
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
 
-    --popover: 0 0% 4%;
-    --popover-foreground: 0 0% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
 
-    --primary: 0 84% 58%;                     /* Signature Red */
-    --primary-foreground: 0 0% 98%;
+    --primary: 210 40% 98%;
+    --primary-foreground: 222.2 47.4% 11.2%;
 
-    --secondary: 0 0% 8%;                     /* Elegant Dark */
-    --secondary-foreground: 0 0% 98%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
 
-    --muted: 0 0% 6%;
-    --muted-foreground: 0 0% 70%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
 
-    --accent: 0 84% 58%;                      /* Accent red */
-    --accent-foreground: 0 0% 98%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
 
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
 
-    --border: 0 0% 12%;
-    --input: 0 0% 8%;
-    --ring: 0 84% 58%;
-
-    /* Aesthetic Color Palette */
-    --crimson: 0 84% 58%;                     /* Deep Crimson */
-    --crimson-light: 0 84% 68%;               /* Light Crimson */
-    --crimson-dark: 0 84% 48%;                /* Dark Crimson */
-    --platinum: 240 8% 85%;                   /* Platinum Silver */
-    --gold: 45 100% 65%;                      /* Royal Gold */
-    --rose-gold: 15 80% 70%;                  /* Rose Gold */
-    --obsidian: 0 0% 6%;                      /* Obsidian Black */
-    --obsidian-light: 0 0% 12%;               /* Light Obsidian */
-    --pearl: 0 0% 95%;                        /* Pearl White */
-    --sapphire: 220 100% 60%;                 /* Sapphire Blue */
-    --emerald: 140 100% 45%;                  /* Emerald Green */
-    --amethyst: 270 100% 70%;                 /* Amethyst Purple */
-
-    /* Luxury Gradients */
-    --gradient-crimson: linear-gradient(135deg, hsl(0 84% 58%) 0%, hsl(0 84% 48%) 50%, hsl(0 60% 35%) 100%);
-    --gradient-luxury: linear-gradient(135deg, hsl(0 0% 8%) 0%, hsl(0 0% 4%) 50%, hsl(0 0% 2%) 100%);
-    --gradient-royal: linear-gradient(135deg, hsl(45 100% 65%) 0%, hsl(15 80% 70%) 50%, hsl(0 84% 58%) 100%);
-    --gradient-glass: linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.05) 100%);
-    --gradient-shimmer: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.2) 50%, transparent 100%);
-    --gradient-aurora: linear-gradient(135deg, hsl(220 100% 60%) 0%, hsl(270 100% 70%) 50%, hsl(0 84% 58%) 100%);
-    --gradient-diamond: linear-gradient(135deg, hsl(240 8% 85%) 0%, hsl(0 0% 95%) 50%, hsl(220 100% 95%) 100%);
-    
-    /* Premium Shadows */
-    --shadow-soft: 0 2px 8px rgba(0, 0, 0, 0.1);
-    --shadow-medium: 0 8px 32px rgba(0, 0, 0, 0.2);
-    --shadow-strong: 0 16px 64px rgba(0, 0, 0, 0.3);
-    --shadow-crimson: 0 8px 32px hsl(0 84% 58% / 0.3);
-    --shadow-gold: 0 8px 32px hsl(45 100% 65% / 0.3);
-    --shadow-inner: inset 0 2px 4px rgba(0, 0, 0, 0.1);
-    --shadow-glow: 0 0 20px hsl(0 84% 58% / 0.5);
-    
-    --sidebar-background: 0 0% 4%;
-    --sidebar-foreground: 0 0% 98%;
-    --sidebar-primary: 0 84% 58%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 0 0% 8%;
-    --sidebar-accent-foreground: 0 0% 98%;
-    --sidebar-border: 0 0% 12%;
-    --sidebar-ring: 0 84% 58%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 212.7 26.8% 83.9%;
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
   }
 }
 

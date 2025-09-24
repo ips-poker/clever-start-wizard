@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import TelegramApp from '@/components/telegram/TelegramApp';
+import { TelegramApp } from '@/components/telegram/TelegramApp';
 
 export default function TelegramMiniApp() {
   useEffect(() => {
