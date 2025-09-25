@@ -29,10 +29,14 @@ export const TelegramAuth: React.FC<TelegramAuthProps> = ({ onAuthComplete }) =>
 
   const initializeTelegramAuth = async () => {
     try {
+      console.log('🚀 Начинаем авторизацию Telegram...');
+      
       // Проверяем режим эмуляции ПЕРЕД попыткой восстановления Telegram данных
       const isDevelopment = window.location.hostname === 'localhost' || 
                             window.location.hostname === '127.0.0.1' ||
                             window.location.hostname.includes('.lovableproject.com');
+      
+      console.log('🔧 Режим разработки:', isDevelopment);
       
       if (isDevelopment) {
         // Тестовый пользователь для разработки
@@ -44,16 +48,19 @@ export const TelegramAuth: React.FC<TelegramAuthProps> = ({ onAuthComplete }) =>
           photoUrl: undefined,
         };
         
+        console.log('👤 Используем тестового пользователя:', testUser);
         setTelegramUser(testUser);
         await authenticateWithSupabase(testUser);
         return;
       }
       
       // Обычная авторизация через Telegram только если НЕ режим разработки
+      console.log('📱 Восстанавливаем данные Telegram...');
       await initData.restore();
       const user = initData.user();
       
       if (user) {
+        console.log('✅ Данные пользователя Telegram получены:', user);
         const telegramUserData: TelegramUser = {
           id: user.id,
           firstName: user.first_name,
@@ -65,11 +72,14 @@ export const TelegramAuth: React.FC<TelegramAuthProps> = ({ onAuthComplete }) =>
         setTelegramUser(telegramUserData);
         await authenticateWithSupabase(telegramUserData);
       } else {
+        console.error('❌ Нет данных пользователя Telegram');
         setAuthError('Приложение должно быть открыто через Telegram бота');
       }
     } catch (error) {
-      console.error('Telegram auth error:', error);
-      setAuthError('Приложение должно быть открыто через Telegram бота');
+      console.error('❌ Ошибка авторизации Telegram:', error);
+      // Более детальная информация об ошибке
+      const errorMessage = error instanceof Error ? error.message : 'Неизвестная ошибка';
+      setAuthError(`Ошибка подключения к Telegram: ${errorMessage}`);
     } finally {
       setLoading(false);
     }
@@ -77,14 +87,17 @@ export const TelegramAuth: React.FC<TelegramAuthProps> = ({ onAuthComplete }) =>
 
   const authenticateWithSupabase = async (telegramUserData: TelegramUser) => {
     try {
+      console.log('🔄 Создание/обновление профиля игрока...');
       setRegistering(true);
       
       const telegramId = telegramUserData.id.toString();
+      console.log('🆔 Telegram ID:', telegramId);
       
       // Используем Supabase клиент вместо прямых fetch запросов
       let playerData = null;
       
       // Проверяем существование игрока
+      console.log('🔍 Проверяем существующего игрока...');
       const { data: existingPlayers, error: checkError } = await supabase
         .from('players')
         .select('*')
@@ -92,10 +105,12 @@ export const TelegramAuth: React.FC<TelegramAuthProps> = ({ onAuthComplete }) =>
         .maybeSingle();
       
       if (checkError && checkError.code !== 'PGRST116') {
+        console.error('❌ Ошибка при проверке игрока:', checkError);
         throw checkError;
       }
 
       if (existingPlayers) {
+        console.log('✅ Игрок найден, обновляем данные...');
         // Игрок существует, обновляем данные
         const updateData: any = {
           updated_at: new Date().toISOString()
@@ -108,11 +123,13 @@ export const TelegramAuth: React.FC<TelegramAuthProps> = ({ onAuthComplete }) =>
           
         if (newName !== existingPlayers.name) {
           updateData.name = newName;
+          console.log('📝 Обновляем имя:', newName);
         }
         
         // Обновляем аватар если он изменился
         if (telegramUserData.photoUrl && telegramUserData.photoUrl !== existingPlayers.avatar_url) {
           updateData.avatar_url = telegramUserData.photoUrl;
+          console.log('🖼️ Обновляем аватар:', telegramUserData.photoUrl);
         }
         
         const { data: updatedPlayer, error: updateError } = await supabase
@@ -123,16 +140,20 @@ export const TelegramAuth: React.FC<TelegramAuthProps> = ({ onAuthComplete }) =>
           .single();
           
         if (updateError) {
+          console.error('❌ Ошибка при обновлении игрока:', updateError);
           throw updateError;
         }
         
         playerData = updatedPlayer;
-        console.log('Player updated:', playerData);
+        console.log('✅ Игрок обновлен:', playerData);
       } else {
+        console.log('➕ Создаем нового игрока...');
         // Создаем нового игрока
         const playerName = [telegramUserData.firstName, telegramUserData.lastName]
           .filter(Boolean)
           .join(' ') || telegramUserData.username || `Player${telegramUserData.id}`;
+
+        console.log('👤 Имя нового игрока:', playerName);
 
         const { data: newPlayer, error: createError } = await supabase
           .from('players')
@@ -148,20 +169,24 @@ export const TelegramAuth: React.FC<TelegramAuthProps> = ({ onAuthComplete }) =>
           .single();
           
         if (createError) {
+          console.error('❌ Ошибка при создании игрока:', createError);
           throw createError;
         }
         
         playerData = newPlayer;
-        console.log('New player created:', playerData);
+        console.log('✅ Новый игрок создан:', playerData);
       }
 
       // Небольшая задержка для обеспечения синхронизации
       await new Promise(resolve => setTimeout(resolve, 500));
       
+      console.log('🎉 Авторизация завершена успешно!');
       onAuthComplete(telegramUserData);
     } catch (error) {
-      console.error('Supabase auth error:', error);
-      setAuthError('Ошибка создания профиля игрока');
+      console.error('❌ Ошибка Supabase авторизации:', error);
+      // Более детальная информация об ошибке
+      const errorMessage = error instanceof Error ? error.message : 'Неизвестная ошибка';
+      setAuthError(`Ошибка создания профиля: ${errorMessage}`);
     } finally {
       setRegistering(false);
     }
