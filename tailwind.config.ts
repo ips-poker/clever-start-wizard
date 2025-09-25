@@ -85,7 +85,10 @@ export default {
 					'red-dark': 'hsl(var(--poker-red-dark))',
 					'red-light': 'hsl(var(--poker-red-light))',
 					'gold': 'hsl(var(--poker-gold))',
+					'gold-light': 'hsl(var(--poker-gold-light))',
 					'green': 'hsl(var(--poker-green))',
+					'green-dark': 'hsl(var(--poker-green-dark))',
+					'blue': 'hsl(var(--poker-blue))',
 					'gray': 'hsl(var(--poker-gray))',
 					'gray-light': 'hsl(var(--poker-gray-light))',
 					'gray-dark': 'hsl(var(--poker-gray-dark))'
@@ -102,9 +105,12 @@ export default {
 				'gradient-button': 'var(--gradient-button)',
 				'gradient-surface': 'var(--gradient-surface)',
 				'gradient-poker-red': 'var(--gradient-poker-red)',
+				'gradient-poker-gold': 'var(--gradient-poker-gold)',
 				'gradient-poker-dark': 'var(--gradient-poker-dark)',
 				'gradient-poker-card': 'var(--gradient-poker-card)',
-				'gradient-poker-accent': 'var(--gradient-poker-accent)'
+				'gradient-poker-accent': 'var(--gradient-poker-accent)',
+				'gradient-poker-surface': 'var(--gradient-poker-surface)',
+				'gradient-table-green': 'var(--gradient-table-green)'
 			},
 			boxShadow: {
 				'minimal': 'var(--shadow-minimal)',
@@ -115,7 +121,12 @@ export default {
 				'dramatic': 'var(--shadow-dramatic)',
 				'accent': 'var(--shadow-accent)',
 				'success': 'var(--shadow-success)',
-				'inset': 'var(--shadow-inset)'
+				'inset': 'var(--shadow-inset)',
+				'poker-red': 'var(--shadow-poker-red)',
+				'poker-gold': 'var(--shadow-poker-gold)',
+				'poker-card': 'var(--shadow-poker-card)',
+				'poker-elevated': 'var(--shadow-poker-elevated)',
+				'poker-glow': 'var(--shadow-poker-glow)'
 			},
 			fontFamily: {
 				'sinkin': ['Work Sans', 'sans-serif'],
