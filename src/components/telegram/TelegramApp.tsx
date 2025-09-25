@@ -613,8 +613,8 @@ export const TelegramApp = () => {
             </div>
             
             <div className="relative">
-              <ScrollArea className="w-full whitespace-nowrap rounded-lg">
-                <div className="flex gap-3 pb-2">
+              <div className="w-full overflow-x-auto scrollbar-hide">
+                <div className="flex gap-3 pb-2 min-w-max">
                   {galleryImages.map((image, index) => (
                     <div 
                       key={image.id}
@@ -638,7 +638,7 @@ export const TelegramApp = () => {
                     </div>
                   ))}
                 </div>
-              </ScrollArea>
+              </div>
             </div>
             
             <div className="text-center p-3 bg-gradient-to-r from-white/5 via-white/10 to-white/5 rounded-lg border border-white/10 backdrop-blur-sm mt-4">
@@ -1175,11 +1175,13 @@ export const TelegramApp = () => {
       )}
 
       {activeTab === 'profile' && (
-        <TelegramProfile 
-          telegramUser={telegramUser}
-          userStats={userStats}
-          onStatsUpdate={setUserStats}
-        />
+        <ScrollArea className="h-screen">
+          <TelegramProfile 
+            telegramUser={telegramUser}
+            userStats={userStats}
+            onStatsUpdate={setUserStats}
+          />
+        </ScrollArea>
       )}
 
       {activeTab === 'qa' && (

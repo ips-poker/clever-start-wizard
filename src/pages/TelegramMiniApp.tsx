@@ -29,13 +29,22 @@ export default function TelegramMiniApp() {
           // Request fullscreen mode to hide address bar
           tg.sendData = tg.sendData || (() => {});
           
-          // Use proper method to request fullscreen
-          window.parent.postMessage(
-            JSON.stringify({
-              eventType: 'web_app_request_fullscreen'
-            }), 
-            '*'
-          );
+          // Use multiple methods to hide address bar
+          tg.expand();
+          
+          // iOS Safari specific
+          if ((window.navigator as any).standalone === false) {
+            // Add to homescreen prompt for iOS
+            window.addEventListener('beforeinstallprompt', function(e) {
+              e.preventDefault();
+            });
+          }
+          
+          // Try different fullscreen methods
+          setTimeout(() => {
+            window.scrollTo(0, 1);
+            tg.expand();
+          }, 500);
           
           // Set header color
           window.parent.postMessage(
@@ -55,11 +64,16 @@ export default function TelegramMiniApp() {
           viewportMeta.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover');
         }
 
-        // Mobile optimizations - allow scrolling but prevent bounce
+        // Mobile optimizations - prevent app closing on pull-down
         document.body.style.overscrollBehavior = 'none';
         document.body.style.touchAction = 'pan-x pan-y';
         document.body.style.height = '100vh';
-        document.body.style.overflowX = 'hidden'; // Only block horizontal scroll
+        document.body.style.overflowX = 'hidden';
+        document.documentElement.style.overscrollBehavior = 'none';
+        
+        // Prevent pull-to-refresh and rubber band scrolling
+        document.addEventListener('touchstart', preventPullToRefresh, { passive: false });
+        document.addEventListener('touchmove', preventPullToRefresh, { passive: false });
         
         // Set dark theme
         document.documentElement.classList.add('dark');
@@ -74,6 +88,17 @@ export default function TelegramMiniApp() {
       console.error('Telegram initialization error:', error);
     }
   }, []);
+
+  // Function to prevent pull to refresh
+  const preventPullToRefresh = (e: TouchEvent) => {
+    const touch = e.touches[0];
+    const startY = touch.clientY;
+    
+    // If user is at the top and trying to scroll up, prevent it
+    if (window.scrollY === 0 && startY > 0) {
+      e.preventDefault();
+    }
+  };
 
   return <TelegramApp />;
 }
