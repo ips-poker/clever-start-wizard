@@ -193,9 +193,19 @@ export const TelegramApp = () => {
   const renderHome = () => <div className="space-y-4 pb-20 px-4 bg-transparent min-h-screen relative z-10">
       <Card className="bg-gradient-to-br from-red-600 to-red-800 border-0 overflow-hidden relative">
         <div className="absolute inset-0 opacity-15 overflow-hidden pointer-events-none z-0">
-          <div className="absolute top-2 right-2 text-8xl text-red-300/40 transform rotate-12" style={{WebkitTextStroke: '1px rgba(252,165,165,0.3)', WebkitTextFillColor: 'transparent'}}>♥</div>
-          <div className="absolute bottom-2 left-2 text-7xl text-red-300/40 transform -rotate-12" style={{WebkitTextStroke: '1px rgba(252,165,165,0.3)', WebkitTextFillColor: 'transparent'}}>♦</div>
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-9xl transform rotate-45" style={{WebkitTextStroke: '1px rgba(252,165,165,0.15)', WebkitTextFillColor: 'transparent', opacity: '0.2'}}>♥</div>
+          <div className="absolute top-2 right-2 text-8xl text-red-300/40 transform rotate-12" style={{
+          WebkitTextStroke: '1px rgba(252,165,165,0.3)',
+          WebkitTextFillColor: 'transparent'
+        }}>♥</div>
+          <div className="absolute bottom-2 left-2 text-7xl text-red-300/40 transform -rotate-12" style={{
+          WebkitTextStroke: '1px rgba(252,165,165,0.3)',
+          WebkitTextFillColor: 'transparent'
+        }}>♦</div>
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-9xl transform rotate-45" style={{
+          WebkitTextStroke: '1px rgba(252,165,165,0.15)',
+          WebkitTextFillColor: 'transparent',
+          opacity: '0.2'
+        }}>♥</div>
         </div>
         
         <div className="absolute inset-0 opacity-10">
@@ -211,7 +221,7 @@ export const TelegramApp = () => {
             </div>
             
             <div className="flex-1">
-              <h1 className="text-2xl font-light italic text-white tracking-wide">IVENT POKER CLUB</h1>
+              <h1 className="text-2xl font-light italic text-white tracking-wide">EVENT POKER CLUB</h1>
             </div>
           </div>
           
@@ -223,8 +233,14 @@ export const TelegramApp = () => {
 
       <Card className="bg-gradient-to-br from-gray-800 to-gray-900 border-0 overflow-hidden cursor-pointer hover:from-gray-700 hover:to-gray-800 transition-all duration-300 relative" onClick={() => setActiveTab('rating')}>
         <div className="absolute inset-0 opacity-15 overflow-hidden pointer-events-none z-0">
-          <div className="absolute top-2 right-2 text-8xl text-white/30 transform rotate-12" style={{WebkitTextStroke: '1px rgba(255,255,255,0.2)', WebkitTextFillColor: 'transparent'}}>♠</div>
-          <div className="absolute bottom-2 left-2 text-7xl text-white/30 transform -rotate-12" style={{WebkitTextStroke: '1px rgba(255,255,255,0.2)', WebkitTextFillColor: 'transparent'}}>♣</div>
+          <div className="absolute top-2 right-2 text-8xl text-white/30 transform rotate-12" style={{
+          WebkitTextStroke: '1px rgba(255,255,255,0.2)',
+          WebkitTextFillColor: 'transparent'
+        }}>♠</div>
+          <div className="absolute bottom-2 left-2 text-7xl text-white/30 transform -rotate-12" style={{
+          WebkitTextStroke: '1px rgba(255,255,255,0.2)',
+          WebkitTextFillColor: 'transparent'
+        }}>♣</div>
         </div>
         <CardContent className="p-6 relative z-10">
           <div className="flex items-center gap-4">
@@ -251,8 +267,14 @@ export const TelegramApp = () => {
       <div className="grid grid-cols-2 gap-4">
         <Card className="bg-gradient-to-br from-gray-800 to-gray-900 border-0 cursor-pointer hover:from-gray-700 hover:to-gray-800 transition-all duration-300 relative overflow-hidden" onClick={() => setActiveTab('qa')}>
           <div className="absolute inset-0 opacity-15 overflow-hidden pointer-events-none z-0">
-            <div className="absolute top-1 right-1 text-6xl text-white/30 transform rotate-12" style={{WebkitTextStroke: '1px rgba(255,255,255,0.2)', WebkitTextFillColor: 'transparent'}}>♠</div>
-            <div className="absolute bottom-1 left-1 text-5xl text-white/30 transform -rotate-12" style={{WebkitTextStroke: '1px rgba(255,255,255,0.2)', WebkitTextFillColor: 'transparent'}}>♣</div>
+            <div className="absolute top-1 right-1 text-6xl text-white/30 transform rotate-12" style={{
+            WebkitTextStroke: '1px rgba(255,255,255,0.2)',
+            WebkitTextFillColor: 'transparent'
+          }}>♠</div>
+            <div className="absolute bottom-1 left-1 text-5xl text-white/30 transform -rotate-12" style={{
+            WebkitTextStroke: '1px rgba(255,255,255,0.2)',
+            WebkitTextFillColor: 'transparent'
+          }}>♣</div>
           </div>
           <CardContent className="p-5 text-center relative z-10">
             <h3 className="text-white font-light italic text-lg tracking-wide">Q&A</h3>
@@ -261,8 +283,14 @@ export const TelegramApp = () => {
 
         <Card className="bg-gradient-to-br from-gray-800 to-gray-900 border-0 cursor-pointer hover:from-gray-700 hover:to-gray-800 transition-all duration-300 relative overflow-hidden">
           <div className="absolute inset-0 opacity-15 overflow-hidden pointer-events-none z-0">
-            <div className="absolute top-1 right-1 text-6xl text-white/30 transform rotate-12" style={{WebkitTextStroke: '1px rgba(255,255,255,0.2)', WebkitTextFillColor: 'transparent'}}>♣</div>
-            <div className="absolute bottom-1 left-1 text-5xl text-white/30 transform -rotate-12" style={{WebkitTextStroke: '1px rgba(255,255,255,0.2)', WebkitTextFillColor: 'transparent'}}>♠</div>
+            <div className="absolute top-1 right-1 text-6xl text-white/30 transform rotate-12" style={{
+            WebkitTextStroke: '1px rgba(255,255,255,0.2)',
+            WebkitTextFillColor: 'transparent'
+          }}>♣</div>
+            <div className="absolute bottom-1 left-1 text-5xl text-white/30 transform -rotate-12" style={{
+            WebkitTextStroke: '1px rgba(255,255,255,0.2)',
+            WebkitTextFillColor: 'transparent'
+          }}>♠</div>
           </div>
           <CardContent className="p-5 text-center relative z-10">
             <h3 className="text-white font-light italic text-lg tracking-wide">SUPPORT</h3>
@@ -275,9 +303,19 @@ export const TelegramApp = () => {
         
         <Card className="bg-gradient-to-br from-red-600 to-red-800 border-0 overflow-hidden cursor-pointer hover:from-red-500 hover:to-red-700 transition-all duration-300 relative" onClick={() => setActiveTab('tournaments')}>
           <div className="absolute inset-0 opacity-15 overflow-hidden pointer-events-none z-0">
-            <div className="absolute top-2 right-2 text-8xl text-red-300/40 transform rotate-12" style={{WebkitTextStroke: '1px rgba(252,165,165,0.3)', WebkitTextFillColor: 'transparent'}}>♥</div>
-            <div className="absolute bottom-2 left-2 text-7xl text-red-300/40 transform -rotate-12" style={{WebkitTextStroke: '1px rgba(252,165,165,0.3)', WebkitTextFillColor: 'transparent'}}>♦</div>
-            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-9xl transform rotate-45" style={{WebkitTextStroke: '1px rgba(252,165,165,0.15)', WebkitTextFillColor: 'transparent', opacity: '0.2'}}>♥</div>
+            <div className="absolute top-2 right-2 text-8xl text-red-300/40 transform rotate-12" style={{
+            WebkitTextStroke: '1px rgba(252,165,165,0.3)',
+            WebkitTextFillColor: 'transparent'
+          }}>♥</div>
+            <div className="absolute bottom-2 left-2 text-7xl text-red-300/40 transform -rotate-12" style={{
+            WebkitTextStroke: '1px rgba(252,165,165,0.3)',
+            WebkitTextFillColor: 'transparent'
+          }}>♦</div>
+            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-9xl transform rotate-45" style={{
+            WebkitTextStroke: '1px rgba(252,165,165,0.15)',
+            WebkitTextFillColor: 'transparent',
+            opacity: '0.2'
+          }}>♥</div>
           </div>
           <CardContent className="p-6 relative z-10">
             <div className="flex items-center justify-between mb-4">
@@ -432,8 +470,7 @@ export const TelegramApp = () => {
 
       {activeTab === 'profile' && <div className="space-y-6 pb-20 px-4 bg-transparent min-h-screen relative z-10">
           <h2 className="text-2xl font-light italic text-white tracking-wide p-4">ПРОФИЛЬ</h2>
-          {userStats ? (
-            <Card className="bg-gradient-to-br from-gray-800 to-gray-900 border-0">
+          {userStats ? <Card className="bg-gradient-to-br from-gray-800 to-gray-900 border-0">
               <CardContent className="p-6">
                 <div className="flex items-center gap-4 mb-6">
                   <div className="w-16 h-16 bg-white/10 rounded-full flex items-center justify-center">
@@ -466,14 +503,12 @@ export const TelegramApp = () => {
                   <div className="flex justify-between items-center p-3 bg-white/5 rounded-lg">
                     <span className="text-white/70">Процент побед</span>
                     <span className="text-white font-bold">
-                      {userStats.games_played > 0 ? Math.round((userStats.wins / userStats.games_played) * 100) : 0}%
+                      {userStats.games_played > 0 ? Math.round(userStats.wins / userStats.games_played * 100) : 0}%
                     </span>
                   </div>
                 </div>
               </CardContent>
-            </Card>
-          ) : (
-            <Card className="bg-gradient-to-br from-gray-800 to-gray-900 border-0">
+            </Card> : <Card className="bg-gradient-to-br from-gray-800 to-gray-900 border-0">
               <CardContent className="p-6 text-center">
                 <div className="w-16 h-16 bg-white/10 rounded-full flex items-center justify-center mx-auto mb-4">
                   <User className="h-8 w-8 text-white" />
@@ -483,39 +518,26 @@ export const TelegramApp = () => {
                 </h3>
                 <p className="text-white/60 text-sm">Зарегистрируйтесь на турнир, чтобы увидеть статистику</p>
               </CardContent>
-            </Card>
-          )}
+            </Card>}
         </div>}
 
       <div className="fixed bottom-0 left-0 right-0 bg-gradient-to-t from-gray-900 to-gray-800 border-t border-gray-700/50 backdrop-blur-sm z-50">
         <div className="max-w-lg mx-auto">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="grid w-full grid-cols-4 bg-transparent h-16 p-0">
-              <TabsTrigger 
-                value="home" 
-                className="flex flex-col gap-1 text-white/70 data-[state=active]:text-red-500 data-[state=active]:bg-transparent hover:text-white transition-colors border-0 rounded-none cursor-pointer"
-              >
+              <TabsTrigger value="home" className="flex flex-col gap-1 text-white/70 data-[state=active]:text-red-500 data-[state=active]:bg-transparent hover:text-white transition-colors border-0 rounded-none cursor-pointer">
                 <Home className="h-5 w-5" />
                 <span className="text-xs font-light italic tracking-wide uppercase">Главная</span>
               </TabsTrigger>
-              <TabsTrigger 
-                value="tournaments" 
-                className="flex flex-col gap-1 text-white/70 data-[state=active]:text-red-500 data-[state=active]:bg-transparent hover:text-white transition-colors border-0 rounded-none cursor-pointer"
-              >
+              <TabsTrigger value="tournaments" className="flex flex-col gap-1 text-white/70 data-[state=active]:text-red-500 data-[state=active]:bg-transparent hover:text-white transition-colors border-0 rounded-none cursor-pointer">
                 <Trophy className="h-5 w-5" />
                 <span className="text-xs font-light italic tracking-wide uppercase">Турниры</span>
               </TabsTrigger>
-              <TabsTrigger 
-                value="rating" 
-                className="flex flex-col gap-1 text-white/70 data-[state=active]:text-red-500 data-[state=active]:bg-transparent hover:text-white transition-colors border-0 rounded-none cursor-pointer"
-              >
+              <TabsTrigger value="rating" className="flex flex-col gap-1 text-white/70 data-[state=active]:text-red-500 data-[state=active]:bg-transparent hover:text-white transition-colors border-0 rounded-none cursor-pointer">
                 <Star className="h-5 w-5" />
                 <span className="text-xs font-light italic tracking-wide uppercase">Рейтинг</span>
               </TabsTrigger>
-              <TabsTrigger 
-                value="profile" 
-                className="flex flex-col gap-1 text-white/70 data-[state=active]:text-red-500 data-[state=active]:bg-transparent hover:text-white transition-colors border-0 rounded-none cursor-pointer"
-              >
+              <TabsTrigger value="profile" className="flex flex-col gap-1 text-white/70 data-[state=active]:text-red-500 data-[state=active]:bg-transparent hover:text-white transition-colors border-0 rounded-none cursor-pointer">
                 <User className="h-5 w-5" />
                 <span className="text-xs font-light italic tracking-wide uppercase">Профиль</span>
               </TabsTrigger>
