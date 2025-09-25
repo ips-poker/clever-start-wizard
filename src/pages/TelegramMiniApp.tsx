@@ -26,25 +26,34 @@ export default function TelegramMiniApp() {
           // Expand first
           tg.expand();
           
-          // Request fullscreen mode to hide address bar
-          tg.sendData = tg.sendData || (() => {});
-          
-          // Use multiple methods to hide address bar
+          // Use multiple methods to hide address bar more aggressively
           tg.expand();
           
-          // iOS Safari specific
-          if ((window.navigator as any).standalone === false) {
-            // Add to homescreen prompt for iOS
-            window.addEventListener('beforeinstallprompt', function(e) {
-              e.preventDefault();
-            });
-          }
+          // Request fullscreen via postMessage
+          window.parent.postMessage({
+            eventType: 'web_app_request_fullscreen'
+          }, '*');
           
-          // Try different fullscreen methods
-          setTimeout(() => {
-            window.scrollTo(0, 1);
-            tg.expand();
-          }, 500);
+          // iOS Safari specific - try to hide address bar
+          if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+            // Delay to ensure DOM is ready
+            setTimeout(() => {
+              window.scrollTo(0, 1);
+              tg.expand();
+              
+              // Try viewport manipulation
+              const viewport = document.querySelector('meta[name="viewport"]');
+              if (viewport) {
+                viewport.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, minimal-ui');
+              }
+            }, 100);
+            
+            // Try again after a longer delay
+            setTimeout(() => {
+              window.scrollTo(0, 1);
+              tg.expand();
+            }, 1000);
+          }
           
           // Set header color
           window.parent.postMessage(
@@ -64,14 +73,14 @@ export default function TelegramMiniApp() {
           viewportMeta.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover');
         }
 
-        // Mobile optimizations - prevent app closing on pull-down
+        // Mobile optimizations - prevent app closing on pull-down but allow interactions
         document.body.style.overscrollBehavior = 'none';
-        document.body.style.touchAction = 'pan-x pan-y';
+        document.body.style.touchAction = 'manipulation'; // Allow taps but prevent zoom
         document.body.style.height = '100vh';
         document.body.style.overflowX = 'hidden';
         document.documentElement.style.overscrollBehavior = 'none';
         
-        // Prevent pull-to-refresh and rubber band scrolling
+        // Add passive event listeners to prevent blocking interactions
         document.addEventListener('touchstart', preventPullToRefresh, { passive: false });
         document.addEventListener('touchmove', preventPullToRefresh, { passive: false });
         
@@ -89,13 +98,24 @@ export default function TelegramMiniApp() {
     }
   }, []);
 
-  // Function to prevent pull to refresh
+  // Function to prevent pull to refresh only at top
   const preventPullToRefresh = (e: TouchEvent) => {
-    const touch = e.touches[0];
-    const startY = touch.clientY;
-    
-    // If user is at the top and trying to scroll up, prevent it
-    if (window.scrollY === 0 && startY > 0) {
+    // Only prevent if user is at the very top and trying to pull down
+    if (window.scrollY === 0 && e.touches[0] && e.touches[0].clientY > 50) {
+      const touch = e.touches[0];
+      const element = document.elementFromPoint(touch.clientX, touch.clientY);
+      
+      // Don't prevent if touching interactive elements
+      if (element && (
+        element.tagName === 'BUTTON' || 
+        element.closest('button') ||
+        element.closest('[role="button"]') ||
+        element.closest('.clickable') ||
+        element.closest('a')
+      )) {
+        return;
+      }
+      
       e.preventDefault();
     }
   };
