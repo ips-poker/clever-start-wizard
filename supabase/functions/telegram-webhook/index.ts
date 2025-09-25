@@ -83,7 +83,7 @@ Deno.serve(async (req) => {
     const userName = `${message.from.first_name}${message.from.last_name ? ' ' + message.from.last_name : ''}`
 
     // Get app URL for Web App
-    const appUrl = `${SUPABASE_URL.replace('.supabase.co', '')}.lovable.app/telegram`
+    const appUrl = `https://epc-poker.ru/telegram`
 
     let responseMessage: TelegramMessage
 
