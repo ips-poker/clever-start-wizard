@@ -454,7 +454,7 @@ export const TelegramApp = () => {
                   <Trophy className="h-4 w-4 text-white" />
                 </div>
                 <div className="text-white font-bold text-lg">{userStats.elo_rating}</div>
-                <div className="text-white/60 text-xs">Рейтинг ELO</div>
+                <div className="text-white/60 text-xs">Рейтинг RPS</div>
               </div>
               <div className="text-center p-4 bg-gradient-to-br from-white/8 via-white/12 to-white/8 rounded-xl border border-white/10 group-hover:border-purple-400/20 transition-all duration-300 backdrop-blur-sm hover:scale-105">
                 <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-emerald-500 rounded-lg flex items-center justify-center mx-auto mb-2">
@@ -719,9 +719,9 @@ export const TelegramApp = () => {
                   <span className="text-white text-xs font-bold">4</span>
                 </div>
                 <div className="flex-1">
-                  <h4 className="text-white font-semibold text-sm mb-2">Рейтинговая система ELO</h4>
+                  <h4 className="text-white font-semibold text-sm mb-2">Рейтинговая система RPS</h4>
                   <p className="text-white/80 text-xs leading-relaxed">
-                    В клубе действует прозрачная рейтинговая система ELO. Участники получают рейтинговые очки за результаты в турнирах. Лучшие игроки месяца получают право участия в финальных турнирах.
+                    В клубе действует прозрачная рейтинговая система RPS. Участники получают рейтинговые очки за результаты в турнирах. Лучшие игроки месяца получают право участия в финальных турнирах.
                   </p>
                 </div>
               </div>
@@ -1030,7 +1030,7 @@ export const TelegramApp = () => {
                       } group-hover:scale-110 transition-transform duration-300`}>
                         {player.elo_rating}
                       </div>
-                      <p className="text-white/60 text-xs">ELO рейтинг</p>
+                      <p className="text-white/60 text-xs">RPS рейтинг</p>
                     </div>
                   </div>
                 </CardContent>
@@ -1112,7 +1112,7 @@ export const TelegramApp = () => {
                   </div>
                   <div className="flex-1">
                     <h3 className="text-white font-semibold text-lg mb-3 group-hover:text-amber-100 transition-colors duration-300">3. Как работает рейтинг EPC?</h3>
-                    <p className="text-white/80 text-sm leading-relaxed">В Event Poker Club действует продуманная ELO-система для честного ранжирования участников. Рейтинговые очки начисляются за результативные выступления в турнирах и отражают исключительно игровое мастерство. Система мотивирует на спортивное развитие и определяет лучших игроков клуба.</p>
+                    <p className="text-white/80 text-sm leading-relaxed">В Event Poker Club действует продуманная RPS-система для честного ранжирования участников. Рейтинговые очки начисляются за результативные выступления в турнирах и отражают исключительно игровое мастерство. Система мотивирует на спортивное развитие и определяет лучших игроков клуба.</p>
                   </div>
                 </div>
               </CardContent>

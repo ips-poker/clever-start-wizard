@@ -455,7 +455,7 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate }: Tele
             <div className="flex items-center justify-center gap-4 pt-3 border-t border-white/10">
               <div className="text-center">
                 <p className="text-lg font-light text-amber-400">{player.elo_rating}</p>
-                <p className="text-xs text-white/60">Рейтинг</p>
+                <p className="text-xs text-white/60">RPS Рейтинг</p>
               </div>
               <div className="w-px h-6 bg-white/20"></div>
               <div className="text-center">
