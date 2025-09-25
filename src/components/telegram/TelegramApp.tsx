@@ -4,7 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Trophy, Calendar, Users, Star, MessageSquare, User, Home, TrendingUp, Clock, MapPin, Coins, ChevronRight, Award, Target, CheckCircle, UserPlus, Loader2, Crown, Gem, Zap, Shield, Play, Pause, CircleDot, ArrowLeft, Heart, Globe, Camera } from 'lucide-react';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Trophy, Calendar, Users, Star, MessageSquare, User, Home, TrendingUp, Clock, MapPin, Coins, ChevronRight, Award, Target, CheckCircle, UserPlus, Loader2, Crown, Gem, Zap, Shield, Play, Pause, CircleDot, ArrowLeft, Heart, Globe, Camera, ChevronLeft } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { TelegramAuth } from './TelegramAuth';
 import { TelegramTournamentModal } from './TelegramTournamentModal';
@@ -57,6 +58,13 @@ interface TelegramUser {
   photoUrl?: string;
 }
 
+interface GalleryImage {
+  id: string;
+  title: string;
+  image_url: string;
+  description?: string;
+}
+
 export const TelegramApp = () => {
   const [activeTab, setActiveTab] = useState('home');
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
@@ -68,10 +76,14 @@ export const TelegramApp = () => {
   const [registering, setRegistering] = useState<string | null>(null);
   const [selectedTournament, setSelectedTournament] = useState<Tournament | null>(null);
   const [showTournamentModal, setShowTournamentModal] = useState(false);
+  const [galleryImages, setGalleryImages] = useState<GalleryImage[]>([]);
+  const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
+  const [currentRuleIndex, setCurrentRuleIndex] = useState(0);
 
   useEffect(() => {
     if (isAuthenticated && telegramUser) {
       fetchData();
+      fetchGalleryImages();
       setupRealtimeSubscriptions();
     }
   }, [isAuthenticated, telegramUser]);
@@ -126,6 +138,40 @@ export const TelegramApp = () => {
       console.error('Error fetching data:', error);
     }
     setLoading(false);
+  };
+
+  const fetchGalleryImages = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('cms_gallery')
+        .select('*')
+        .eq('is_active', true)
+        .order('created_at', { ascending: false });
+      
+      if (error) {
+        console.error('Error fetching gallery images:', error);
+        return;
+      }
+
+      const fallbackImages: GalleryImage[] = [
+        { id: '1', title: 'Турнирный стол', image_url: tournamentTable },
+        { id: '2', title: 'VIP зона', image_url: vipZone },
+        { id: '3', title: 'Зона отдыха', image_url: loungeArea },
+        { id: '4', title: 'Главный покерный зал', image_url: mainPokerRoom }
+      ];
+
+      setGalleryImages(data && data.length > 0 ? data : fallbackImages);
+    } catch (error) {
+      console.error('Error fetching gallery images:', error);
+      // Use fallback images
+      const fallbackImages: GalleryImage[] = [
+        { id: '1', title: 'Турнирный стол', image_url: tournamentTable },
+        { id: '2', title: 'VIP зона', image_url: vipZone },
+        { id: '3', title: 'Зона отдыха', image_url: loungeArea },
+        { id: '4', title: 'Главный покерный зал', image_url: mainPokerRoom }
+      ];
+      setGalleryImages(fallbackImages);
+    }
   };
 
   const fetchTournaments = async (): Promise<void> => {
@@ -483,304 +529,268 @@ export const TelegramApp = () => {
     </div>
   );
 
+  const rules = [
+    {
+      title: "Спортивно-развлекательный покер",
+      content: "Мы проводим турниры по спортивному покеру. Любая игра на деньги в нашем клубе запрещена. Никаких денежных призов, формирования призовых фондов или иных форм азартных игр с материальным вознаграждением мы не проводим.",
+      color: "from-amber-500 to-amber-600"
+    },
+    {
+      title: "Участие в турнирах",
+      content: "Участие в турнире осуществляется за фиксированную стоимость (бай-ин). Это взнос за организацию мероприятия и аренду оборудования. Участие завершается при выбывании игрока или его победе в турнире.",
+      color: "from-emerald-500 to-emerald-600"
+    },
+    {
+      title: "Взаимное уважение",
+      content: "Мы руководствуемся принципами взаимного уважения. Каждый игрок имеет право на комфортную игру, пока это не препятствует комфорту других участников. Наша свобода заканчивается там, где начинается свобода другого.",
+      color: "from-purple-500 to-purple-600"
+    },
+    {
+      title: "Рейтинговая система RPS",
+      content: "В клубе действует прозрачная рейтинговая система RPS. Участники получают рейтинговые очки за результаты в турнирах. Лучшие игроки месяца получают право участия в финальных турнирах.",
+      color: "from-red-500 to-red-600"
+    },
+    {
+      title: "Безопасность и конфиденциальность",
+      content: "Мы гарантируем безопасность всех участников и конфиденциальность их данных. Все турниры проводятся в соответствии с международными стандартами покерного спорта.",
+      color: "from-blue-500 to-blue-600"
+    }
+  ];
+
   const renderAbout = () => (
-    <div className="space-y-6 pb-20 px-4 bg-transparent min-h-screen relative z-10">
+    <div className="pb-20 px-4 bg-transparent min-h-screen relative z-10">
       {/* Header with back button */}
-      <div className="flex items-center gap-4 p-4">
+      <div className="flex items-center gap-3 p-4">
         <Button 
           variant="ghost" 
           size="sm" 
           onClick={() => setActiveTab('home')} 
-          className="text-white hover:bg-white/10 p-3 rounded-xl backdrop-blur-sm border border-white/10 hover:border-amber-400/30 transition-all duration-300 group"
+          className="text-white hover:bg-white/10 p-2 rounded-lg backdrop-blur-sm border border-white/10 hover:border-amber-400/30 transition-all duration-300 group"
         >
-          <ArrowLeft className="h-5 w-5 group-hover:-translate-x-0.5 transition-transform duration-300" />
+          <ArrowLeft className="h-4 w-4 group-hover:-translate-x-0.5 transition-transform duration-300" />
         </Button>
         <div>
-          <h2 className="text-3xl font-light text-white tracking-wider">О НАС</h2>
-          <div className="h-0.5 w-12 bg-gradient-to-r from-amber-400 to-amber-600 mt-2"></div>
+          <h2 className="text-2xl font-light text-white tracking-wider">О НАС</h2>
+          <div className="h-0.5 w-10 bg-gradient-to-r from-amber-400 to-amber-600 mt-1"></div>
         </div>
       </div>
 
-      {/* Hero Card - EPC Introduction */}
-      <Card className="bg-gradient-to-br from-slate-800/95 via-slate-900/95 to-black/90 border border-amber-400/20 overflow-hidden relative shadow-2xl backdrop-blur-xl group hover:shadow-2xl hover:shadow-amber-500/30 transition-all duration-500 hover:scale-[1.01]">
-        <div className="absolute inset-0 bg-gradient-to-br from-amber-500/8 via-transparent to-amber-600/12 opacity-60 group-hover:opacity-100 transition-opacity duration-500"></div>
-        <div className="absolute inset-0 opacity-10 group-hover:opacity-20 transition-opacity duration-500">
-          <div className="absolute top-6 right-6 text-amber-400/30 text-6xl animate-glow">♠</div>
-          <div className="absolute bottom-6 left-6 text-amber-400/20 text-4xl animate-bounce-subtle">♣</div>
-          <div className="absolute top-1/2 left-1/4 text-amber-400/15 text-3xl animate-pulse">♥</div>
-          <div className="absolute bottom-1/3 right-1/4 text-amber-400/25 text-5xl animate-glow">♦</div>
-        </div>
-        
-        <CardContent className="p-8 relative z-10">
-          <div className="flex items-center gap-6 mb-8">
-            <div className="w-20 h-20 bg-gradient-to-br from-white via-gray-50 to-gray-100 rounded-3xl flex items-center justify-center overflow-hidden shadow-2xl group-hover:shadow-3xl transition-shadow duration-300 ring-3 ring-amber-400/20 group-hover:ring-amber-400/40">
-              <img 
-                src={epcLogo} 
-                alt="EPC Logo" 
-                className="w-16 h-16 object-contain group-hover:scale-110 transition-transform duration-500" 
-              />
+      <div className="space-y-4">
+        {/* Hero Card - Compact Version */}
+        <Card className="bg-gradient-to-br from-slate-800/95 via-slate-900/95 to-black/90 border border-amber-400/20 overflow-hidden relative shadow-xl backdrop-blur-xl">
+          <CardContent className="p-5 relative z-10">
+            <div className="flex items-center gap-4 mb-4">
+              <div className="w-12 h-12 bg-gradient-to-br from-white via-gray-50 to-gray-100 rounded-2xl flex items-center justify-center overflow-hidden shadow-lg">
+                <img src={epcLogo} alt="EPC Logo" className="w-10 h-10 object-contain" />
+              </div>
+              <div className="flex-1">
+                <h1 className="text-xl font-light text-white tracking-wide">
+                  EVENT POKER CLUB
+                </h1>
+                <div className="h-0.5 w-16 bg-gradient-to-r from-amber-400 to-amber-600 mt-1 rounded-full"></div>
+                <p className="text-white/80 text-sm mt-2 leading-relaxed">
+                  Элитный покерный клуб с безупречной репутацией
+                </p>
+              </div>
             </div>
-            <div className="flex-1">
-              <h1 className="text-3xl font-light text-white tracking-widest drop-shadow-lg group-hover:text-amber-100 transition-colors duration-300">
-                EVENT POKER CLUB
-              </h1>
-              <div className="h-1 w-20 bg-gradient-to-r from-amber-400 to-amber-600 mt-3 rounded-full group-hover:w-32 transition-all duration-700"></div>
-              <p className="text-white/80 text-base mt-4 leading-relaxed font-light">
-                Элитный покерный клуб с безупречной репутацией и многолетней историей успешных турниров
+          </CardContent>
+        </Card>
+
+        {/* Photo Gallery with Scroll */}
+        <Card className="bg-gradient-to-br from-slate-800/90 via-slate-900/95 to-black/90 border border-white/10 overflow-hidden relative shadow-xl backdrop-blur-xl">
+          <CardContent className="p-4 relative z-10">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-lg flex items-center justify-center">
+                  <Camera className="h-4 w-4 text-white" />
+                </div>
+                <h3 className="text-white font-semibold text-lg">Наши залы</h3>
+              </div>
+              <div className="flex items-center gap-2 text-white/60 text-sm">
+                <span>{currentPhotoIndex + 1} / {galleryImages.length}</span>
+              </div>
+            </div>
+            
+            <div className="relative">
+              <ScrollArea className="w-full whitespace-nowrap rounded-lg">
+                <div className="flex gap-3 pb-2">
+                  {galleryImages.map((image, index) => (
+                    <div 
+                      key={image.id}
+                      className="flex-none w-40 h-32 bg-gradient-to-br from-gray-600 to-gray-800 rounded-xl overflow-hidden shadow-lg border border-white/10 cursor-pointer relative group"
+                      onClick={() => setCurrentPhotoIndex(index)}
+                    >
+                      <img 
+                        src={image.image_url} 
+                        alt={image.title} 
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" 
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
+                      <div className="absolute bottom-2 left-2 right-2">
+                        <p className="text-white text-xs font-medium drop-shadow-lg truncate">
+                          {image.title}
+                        </p>
+                      </div>
+                      {index === currentPhotoIndex && (
+                        <div className="absolute inset-0 border-2 border-amber-400 rounded-xl"></div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </ScrollArea>
+            </div>
+            
+            <div className="text-center p-3 bg-gradient-to-r from-white/5 via-white/10 to-white/5 rounded-lg border border-white/10 backdrop-blur-sm mt-4">
+              <p className="text-white/80 text-sm leading-relaxed">
+                Профессиональные покерные залы с современным оборудованием
               </p>
             </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Mission & Values */}
-      <div className="grid gap-4">
-        <Card className="bg-gradient-to-br from-emerald-600/90 via-emerald-700/95 to-emerald-800/90 border border-emerald-400/20 overflow-hidden relative shadow-xl backdrop-blur-xl group hover:shadow-2xl hover:shadow-emerald-500/20 transition-all duration-500 hover:scale-[1.02]">
-          <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 via-transparent to-emerald-600/15 opacity-60 group-hover:opacity-100 transition-opacity duration-500"></div>
-          <div className="absolute inset-0 opacity-10 group-hover:opacity-20 transition-opacity duration-500">
-            <div className="absolute top-4 right-4 text-emerald-300/30 text-4xl animate-pulse">♠</div>
-            <div className="absolute bottom-4 left-4 text-emerald-300/20 text-3xl animate-bounce-subtle">♣</div>
-          </div>
-          
-          <CardContent className="p-6 relative z-10">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-12 h-12 bg-gradient-to-br from-white/20 to-white/10 rounded-2xl flex items-center justify-center">
-                <Target className="h-6 w-6 text-white" />
-              </div>
-              <h3 className="text-white font-bold text-xl tracking-wide group-hover:text-emerald-100 transition-colors duration-300">Наша миссия</h3>
-            </div>
-            <p className="text-white/90 text-sm leading-relaxed">
-              Создавать профессиональную и честную игровую среду, где каждый игрок может развивать свои навыки и наслаждаться интеллектуальной игрой в покер
-            </p>
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-purple-600/90 via-purple-700/95 to-blue-600/90 border border-purple-400/20 overflow-hidden relative shadow-xl backdrop-blur-xl group hover:shadow-2xl hover:shadow-purple-500/20 transition-all duration-500 hover:scale-[1.02]">
-          <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 via-transparent to-blue-600/15 opacity-60 group-hover:opacity-100 transition-opacity duration-500"></div>
-          <div className="absolute inset-0 opacity-10 group-hover:opacity-20 transition-opacity duration-500">
-            <div className="absolute top-4 right-4 text-purple-300/30 text-4xl animate-pulse">♥</div>
-            <div className="absolute bottom-4 left-4 text-blue-300/20 text-3xl animate-bounce-subtle">♦</div>
-          </div>
-          
-          <CardContent className="p-6 relative z-10">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-12 h-12 bg-gradient-to-br from-white/20 to-white/10 rounded-2xl flex items-center justify-center">
-                <Heart className="h-6 w-6 text-white" />
+        {/* Club Rules - Swipeable */}
+        <Card className="bg-gradient-to-br from-blue-600/90 via-blue-700/95 to-indigo-700/90 border border-blue-400/20 backdrop-blur-xl shadow-xl relative overflow-hidden">
+          <CardContent className="p-5 relative z-10">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-white/20 to-white/10 rounded-xl flex items-center justify-center">
+                  <MessageSquare className="h-5 w-5 text-white" />
+                </div>
+                <h3 className="text-white font-bold text-xl tracking-wide">
+                  Наши правила
+                </h3>
               </div>
-              <h3 className="text-white font-bold text-xl tracking-wide group-hover:text-purple-100 transition-colors duration-300">Наши ценности</h3>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setCurrentRuleIndex(Math.max(0, currentRuleIndex - 1))}
+                  disabled={currentRuleIndex === 0}
+                  className="text-white/60 hover:text-white hover:bg-white/10 p-1 rounded-md disabled:opacity-30"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <span className="text-white/60 text-sm min-w-[3rem] text-center">
+                  {currentRuleIndex + 1} / {rules.length}
+                </span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setCurrentRuleIndex(Math.min(rules.length - 1, currentRuleIndex + 1))}
+                  disabled={currentRuleIndex === rules.length - 1}
+                  className="text-white/60 hover:text-white hover:bg-white/10 p-1 rounded-md disabled:opacity-30"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-white/60 rounded-full"></div>
-                <span className="text-white/90 text-sm">Честность и прозрачность</span>
+            
+            <div className="min-h-[120px]">
+              <div className="p-4 bg-gradient-to-r from-white/8 via-white/12 to-white/8 rounded-xl border border-white/15 backdrop-blur-sm">
+                <div className="flex items-start gap-3">
+                  <div className={`w-6 h-6 bg-gradient-to-br ${rules[currentRuleIndex].color} rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5`}>
+                    <span className="text-white text-xs font-bold">{currentRuleIndex + 1}</span>
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="text-white font-semibold text-sm mb-2">{rules[currentRuleIndex].title}</h4>
+                    <p className="text-white/80 text-xs leading-relaxed">
+                      {rules[currentRuleIndex].content}
+                    </p>
+                  </div>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-white/60 rounded-full"></div>
-                <span className="text-white/90 text-sm">Профессиональная организация</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-white/60 rounded-full"></div>
-                <span className="text-white/90 text-sm">Дружелюбная атмосфера</span>
+            </div>
+
+            <div className="mt-4 p-3 bg-gradient-to-r from-amber-500/10 via-amber-600/15 to-amber-500/10 rounded-lg border border-amber-400/30 backdrop-blur-sm">
+              <div className="flex items-start gap-2">
+                <div className="w-4 h-4 bg-gradient-to-br from-amber-500 to-amber-600 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <CheckCircle className="h-2.5 w-2.5 text-white" />
+                </div>
+                <p className="text-white/90 text-xs leading-relaxed">
+                  <span className="font-semibold">Важно:</span> Участвуя в турнирах EPC, вы автоматически соглашаетесь с данными правилами.
+                </p>
               </div>
             </div>
           </CardContent>
         </Card>
-      </div>
 
-      {/* Photo Gallery */}
-      <Card className="bg-gradient-to-br from-slate-800/90 via-slate-900/95 to-black/90 border border-white/10 overflow-hidden relative shadow-xl backdrop-blur-xl group hover:shadow-2xl hover:shadow-cyan-500/20 transition-all duration-500">
-        <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 via-transparent to-blue-600/8 opacity-60 group-hover:opacity-100 transition-opacity duration-500"></div>
-        
-        <CardContent className="p-6 relative z-10">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-12 h-12 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-2xl flex items-center justify-center">
-              <Camera className="h-6 w-6 text-white" />
-            </div>
-            <div>
-              <h3 className="text-white font-bold text-xl tracking-wide group-hover:text-cyan-100 transition-colors duration-300">Наши залы</h3>
-              <div className="h-0.5 w-16 bg-gradient-to-r from-cyan-400 to-blue-500 mt-1 rounded-full"></div>
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-2 gap-3 mb-6">
-            {[
-              { src: "https://mokhssmnorrhohrowxvu.supabase.co/storage/v1/object/public/gallery/gallery/1754322743066.jpg", alt: "Турнирный стол" },
-              { src: "https://mokhssmnorrhohrowxvu.supabase.co/storage/v1/object/public/gallery/gallery/1754322798457.jpg", alt: "VIP зона" },
-              { src: "https://mokhssmnorrhohrowxvu.supabase.co/storage/v1/object/public/gallery/gallery/1754322873019.jpg", alt: "Зона отдыха" },
-              { src: "https://mokhssmnorrhohrowxvu.supabase.co/storage/v1/object/public/gallery/gallery/1754322886855.jpg", alt: "Главный покерный зал" }
-            ].map((image, index) => (
-              <div 
-                key={index}
-                className="aspect-square bg-gradient-to-br from-gray-600 to-gray-800 rounded-2xl overflow-hidden group-hover:scale-105 transition-transform duration-300 shadow-lg hover:shadow-2xl border border-white/10 cursor-pointer relative group/image"
-              >
-                <img 
-                  src={image.src} 
-                  alt={image.alt} 
-                  className="w-full h-full object-cover group-hover/image:scale-110 transition-transform duration-700" 
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover/image:opacity-100 transition-opacity duration-300"></div>
-                <div className="absolute bottom-2 left-2 right-2">
-                  <p className="text-white text-xs font-medium opacity-0 group-hover/image:opacity-100 transition-opacity duration-300 drop-shadow-lg">
-                    {image.alt}
-                  </p>
+        {/* Mission & Values - Compact */}
+        <div className="grid grid-cols-2 gap-3">
+          <Card className="bg-gradient-to-br from-emerald-600/90 via-emerald-700/95 to-emerald-800/90 border border-emerald-400/20 overflow-hidden relative shadow-lg backdrop-blur-xl">
+            <CardContent className="p-4 relative z-10">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-8 h-8 bg-gradient-to-br from-white/20 to-white/10 rounded-lg flex items-center justify-center">
+                  <Target className="h-4 w-4 text-white" />
                 </div>
-              </div>
-            ))}
-          </div>
-          
-          <div className="text-center p-4 bg-gradient-to-r from-white/5 via-white/10 to-white/5 rounded-xl border border-white/10 backdrop-blur-sm">
-            <p className="text-white/80 text-sm leading-relaxed">
-              Профессиональные покерные залы с современным оборудованием и комфортной атмосферой для игроков всех уровней
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Club Rules */}
-      <Card className="bg-gradient-to-br from-blue-600/90 via-blue-700/95 to-indigo-700/90 border border-blue-400/20 backdrop-blur-xl shadow-2xl group hover:shadow-2xl hover:shadow-blue-500/30 transition-all duration-500 relative overflow-hidden hover:scale-[1.01]">
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 via-transparent to-indigo-600/15 opacity-60 group-hover:opacity-100 transition-opacity duration-500"></div>
-        <div className="absolute inset-0 opacity-10 group-hover:opacity-20 transition-opacity duration-500">
-          <div className="absolute top-4 right-4 text-blue-300/30 text-5xl animate-pulse">♣</div>
-          <div className="absolute bottom-4 left-4 text-indigo-300/20 text-4xl animate-bounce-subtle">♠</div>
-          <div className="absolute top-1/3 left-1/3 text-blue-300/15 text-3xl animate-glow">♦</div>
-        </div>
-        
-        <CardContent className="p-8 relative z-10">
-          <div className="flex items-center gap-4 mb-6">
-            <div className="w-14 h-14 bg-gradient-to-br from-white/20 to-white/10 rounded-2xl flex items-center justify-center">
-              <MessageSquare className="h-7 w-7 text-white" />
-            </div>
-            <div>
-              <h3 className="text-white font-bold text-2xl tracking-wide group-hover:text-blue-100 transition-colors duration-300">
-                Наши правила
-              </h3>
-              <div className="h-0.5 w-20 bg-gradient-to-r from-white/60 to-white/30 mt-2 rounded-full"></div>
-            </div>
-          </div>
-          
-          <p className="text-white/90 text-sm mb-6 leading-relaxed">
-            Правила обязательны к исполнению всеми участниками мероприятия
-          </p>
-          
-          <div className="space-y-4">
-            {/* Rule 1 */}
-            <div className="p-5 bg-gradient-to-r from-white/8 via-white/12 to-white/8 rounded-xl border border-white/15 backdrop-blur-sm group-hover:border-blue-400/30 transition-all duration-300">
-              <div className="flex items-start gap-3">
-                <div className="w-6 h-6 bg-gradient-to-br from-amber-500 to-amber-600 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <span className="text-white text-xs font-bold">1</span>
-                </div>
-                <div className="flex-1">
-                  <h4 className="text-white font-semibold text-sm mb-2">Спортивно-развлекательный покер</h4>
-                  <p className="text-white/80 text-xs leading-relaxed">
-                    Мы проводим турниры по спортивному покеру. Любая игра на деньги в нашем клубе запрещена. Никаких денежных призов, формирования призовых фондов или иных форм азартных игр с материальным вознаграждением мы не проводим.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Rule 2 */}
-            <div className="p-5 bg-gradient-to-r from-white/8 via-white/12 to-white/8 rounded-xl border border-white/15 backdrop-blur-sm group-hover:border-blue-400/30 transition-all duration-300">
-              <div className="flex items-start gap-3">
-                <div className="w-6 h-6 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <span className="text-white text-xs font-bold">2</span>
-                </div>
-                <div className="flex-1">
-                  <h4 className="text-white font-semibold text-sm mb-2">Участие в турнирах</h4>
-                  <p className="text-white/80 text-xs leading-relaxed">
-                    Участие в турнире осуществляется за фиксированную стоимость (бай-ин). Это взнос за организацию мероприятия и аренду оборудования. Участие завершается при выбывании игрока или его победе в турнире.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Rule 3 */}
-            <div className="p-5 bg-gradient-to-r from-white/8 via-white/12 to-white/8 rounded-xl border border-white/15 backdrop-blur-sm group-hover:border-blue-400/30 transition-all duration-300">
-              <div className="flex items-start gap-3">
-                <div className="w-6 h-6 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <span className="text-white text-xs font-bold">3</span>
-                </div>
-                <div className="flex-1">
-                  <h4 className="text-white font-semibold text-sm mb-2">Взаимное уважение</h4>
-                  <p className="text-white/80 text-xs leading-relaxed">
-                    Мы руководствуемся принципами взаимного уважения. Каждый игрок имеет право на комфортную игру, пока это не препятствует комфорту других участников. Наша свобода заканчивается там, где начинается свобода другого.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Rule 4 */}
-            <div className="p-5 bg-gradient-to-r from-white/8 via-white/12 to-white/8 rounded-xl border border-white/15 backdrop-blur-sm group-hover:border-blue-400/30 transition-all duration-300">
-              <div className="flex items-start gap-3">
-                <div className="w-6 h-6 bg-gradient-to-br from-red-500 to-red-600 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <span className="text-white text-xs font-bold">4</span>
-                </div>
-                <div className="flex-1">
-                  <h4 className="text-white font-semibold text-sm mb-2">Рейтинговая система RPS</h4>
-                  <p className="text-white/80 text-xs leading-relaxed">
-                    В клубе действует прозрачная рейтинговая система RPS. Участники получают рейтинговые очки за результаты в турнирах. Лучшие игроки месяца получают право участия в финальных турнирах.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="mt-6 p-4 bg-gradient-to-r from-amber-500/10 via-amber-600/15 to-amber-500/10 rounded-xl border border-amber-400/30 backdrop-blur-sm">
-            <div className="flex items-start gap-3">
-              <div className="w-5 h-5 bg-gradient-to-br from-amber-500 to-amber-600 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                <CheckCircle className="h-3 w-3 text-white" />
+                <h3 className="text-white font-semibold text-sm">Миссия</h3>
               </div>
               <p className="text-white/90 text-xs leading-relaxed">
-                <span className="font-semibold">Важно:</span> Участвуя в турнирах EPC, вы автоматически соглашаетесь с данными правилами. Игроки, не согласные с положениями правил, к участию не допускаются.
+                Создавать профессиональную игровую среду для развития навыков в покере
               </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+            </CardContent>
+          </Card>
 
-      {/* Legal & Contact */}
-      <Card className="bg-gradient-to-br from-green-600/90 via-green-700/95 to-emerald-700/90 border border-green-400/20 backdrop-blur-xl shadow-2xl group hover:shadow-2xl hover:shadow-green-500/30 transition-all duration-500 relative overflow-hidden hover:scale-[1.01]">
-        <div className="absolute inset-0 bg-gradient-to-br from-green-500/10 via-transparent to-emerald-600/15 opacity-60 group-hover:opacity-100 transition-opacity duration-500"></div>
-        <div className="absolute inset-0 opacity-10 group-hover:opacity-20 transition-opacity duration-500">
-          <div className="absolute top-4 right-4 text-green-300/30 text-5xl animate-pulse">♠</div>
-          <div className="absolute bottom-4 left-4 text-emerald-300/20 text-4xl animate-bounce-subtle">♥</div>
-          <div className="absolute top-1/2 right-1/3 text-green-300/15 text-3xl animate-glow">♦</div>
+          <Card className="bg-gradient-to-br from-purple-600/90 via-purple-700/95 to-blue-600/90 border border-purple-400/20 overflow-hidden relative shadow-lg backdrop-blur-xl">
+            <CardContent className="p-4 relative z-10">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-8 h-8 bg-gradient-to-br from-white/20 to-white/10 rounded-lg flex items-center justify-center">
+                  <Heart className="h-4 w-4 text-white" />
+                </div>
+                <h3 className="text-white font-semibold text-sm">Ценности</h3>
+              </div>
+              <div className="space-y-1.5">
+                <div className="flex items-center gap-1.5">
+                  <div className="w-1.5 h-1.5 bg-white/60 rounded-full"></div>
+                  <span className="text-white/90 text-xs">Честность</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-1.5 h-1.5 bg-white/60 rounded-full"></div>
+                  <span className="text-white/90 text-xs">Профессионализм</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-1.5 h-1.5 bg-white/60 rounded-full"></div>
+                  <span className="text-white/90 text-xs">Дружелюбие</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
-        
-        <CardContent className="p-8 relative z-10">
-          <div className="flex items-center gap-4 mb-6">
-            <div className="w-14 h-14 bg-gradient-to-br from-white/20 to-white/10 rounded-2xl flex items-center justify-center">
-              <Shield className="h-7 w-7 text-white" />
-            </div>
-            <div>
-              <h3 className="text-white font-bold text-2xl tracking-wide group-hover:text-green-100 transition-colors duration-300">
+
+        {/* Contact - Compact */}
+        <Card className="bg-gradient-to-br from-green-600/90 via-green-700/95 to-emerald-700/90 border border-green-400/20 backdrop-blur-xl shadow-lg relative overflow-hidden">
+          <CardContent className="p-4 relative z-10">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-white/20 to-white/10 rounded-lg flex items-center justify-center">
+                <Shield className="h-5 w-5 text-white" />
+              </div>
+              <h3 className="text-white font-bold text-lg tracking-wide">
                 Присоединяйтесь к EPC
               </h3>
-              <div className="h-0.5 w-24 bg-gradient-to-r from-white/60 to-white/30 mt-2 rounded-full"></div>
-            </div>
-          </div>
-          
-          <p className="text-white/90 text-base mb-6 leading-relaxed">
-            Станьте частью элитного покерного сообщества. Участвуйте в турнирах, развивайте навыки и находите новых друзей в мире покера.
-          </p>
-          
-          <div className="space-y-3">
-            <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-white/10 via-white/15 to-white/10 rounded-xl border border-white/20 backdrop-blur-sm group-hover:border-white/30 transition-all duration-300">
-              <CheckCircle className="h-5 w-5 text-green-300 flex-shrink-0" />
-              <span className="text-white text-sm font-medium">100% легальная деятельность</span>
             </div>
             
-            <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-white/10 via-white/15 to-white/10 rounded-xl border border-white/20 backdrop-blur-sm group-hover:border-white/30 transition-all duration-300">
-              <Globe className="h-5 w-5 text-blue-300 flex-shrink-0" />
-              <span className="text-white text-sm font-medium">Международные стандарты игры</span>
-            </div>
+            <p className="text-white/90 text-sm mb-4 leading-relaxed">
+              Станьте частью элитного покерного сообщества
+            </p>
             
-            <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-white/10 via-white/15 to-white/10 rounded-xl border border-white/20 backdrop-blur-sm group-hover:border-white/30 transition-all duration-300">
-              <Users className="h-5 w-5 text-amber-300 flex-shrink-0" />
-              <span className="text-white text-sm font-medium">Активное покерное сообщество</span>
+            <div className="grid grid-cols-1 gap-2">
+              <div className="flex items-center gap-2 p-2 bg-gradient-to-r from-white/10 via-white/15 to-white/10 rounded-lg border border-white/20 backdrop-blur-sm">
+                <CheckCircle className="h-4 w-4 text-green-300 flex-shrink-0" />
+                <span className="text-white text-xs font-medium">100% легальная деятельность</span>
+              </div>
+              
+              <div className="flex items-center gap-2 p-2 bg-gradient-to-r from-white/10 via-white/15 to-white/10 rounded-lg border border-white/20 backdrop-blur-sm">
+                <Globe className="h-4 w-4 text-blue-300 flex-shrink-0" />
+                <span className="text-white text-xs font-medium">Международные стандарты</span>
+              </div>
+              
+              <div className="flex items-center gap-2 p-2 bg-gradient-to-r from-white/10 via-white/15 to-white/10 rounded-lg border border-white/20 backdrop-blur-sm">
+                <Users className="h-4 w-4 text-amber-300 flex-shrink-0" />
+                <span className="text-white text-xs font-medium">Активное сообщество</span>
+              </div>
             </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 
