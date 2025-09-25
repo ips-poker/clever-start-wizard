@@ -56,8 +56,20 @@ Deno.serve(async (req) => {
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
     
-    // Parse incoming webhook data
-    const update: TelegramUpdate = await req.json()
+    // Parse incoming webhook data - handle empty body
+    let update: TelegramUpdate
+    try {
+      const text = await req.text()
+      if (!text || text.trim() === '') {
+        console.log('Empty request body, returning OK')
+        return new Response('OK', { status: 200, headers: corsHeaders })
+      }
+      update = JSON.parse(text)
+    } catch (parseError) {
+      console.error('Failed to parse request body:', parseError)
+      return new Response('OK', { status: 200, headers: corsHeaders })
+    }
+    
     console.log('Received update:', JSON.stringify(update, null, 2))
 
     if (!update.message || !update.message.text) {
@@ -225,8 +237,9 @@ Deno.serve(async (req) => {
 
   } catch (error) {
     console.error('Error processing webhook:', error)
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
     return new Response(
-      JSON.stringify({ error: 'Internal server error' }),
+      JSON.stringify({ error: errorMessage }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   }
