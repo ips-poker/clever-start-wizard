@@ -20,7 +20,12 @@ import {
   Zap,
   Shield,
   Camera,
-  History
+  History,
+  Clock,
+  MapPin,
+  Coins,
+  UserPlus,
+  CheckCircle
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { AvatarSelector } from '@/components/AvatarSelector';
@@ -48,6 +53,27 @@ interface GameResult {
   tournament: { name: string };
 }
 
+interface Tournament {
+  id: string;
+  name: string;
+  start_time: string;
+  buy_in: number;
+  max_players: number;
+  status: string;
+  starting_chips: number;
+  description?: string;
+  tournament_format?: string;
+  tournament_registrations?: Array<{ id: string }>;
+}
+
+interface TournamentRegistration {
+  id: string;
+  tournament_id: string;
+  status: string;
+  created_at: string;
+  tournament: Tournament;
+}
+
 interface TelegramUser {
   id: number;
   firstName?: string;
@@ -65,7 +91,10 @@ interface TelegramProfileProps {
 export function TelegramProfile({ telegramUser, userStats, onStatsUpdate }: TelegramProfileProps) {
   const [player, setPlayer] = useState<Player | null>(userStats);
   const [gameResults, setGameResults] = useState<GameResult[]>([]);
+  const [userTournaments, setUserTournaments] = useState<TournamentRegistration[]>([]);
+  const [availableTournaments, setAvailableTournaments] = useState<Tournament[]>([]);
   const [loading, setLoading] = useState(false);
+  const [registering, setRegistering] = useState<string | null>(null);
   const [showAvatarSelector, setShowAvatarSelector] = useState(false);
   const [editingName, setEditingName] = useState(false);
   const [newPlayerName, setNewPlayerName] = useState("");
@@ -74,6 +103,8 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate }: Tele
     if (userStats) {
       setPlayer(userStats);
       loadGameResults(userStats.id);
+      loadUserTournaments(userStats.id);
+      loadAvailableTournaments(userStats.id);
     }
   }, [userStats]);
 
@@ -95,6 +126,106 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate }: Tele
       setGameResults(data || []);
     } catch (error) {
       console.error('Error loading game results:', error);
+    }
+  };
+
+  const loadUserTournaments = async (playerId: string) => {
+    if (!playerId) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('tournament_registrations')
+        .select(`
+          *,
+          tournament:tournaments(*)
+        `)
+        .eq('player_id', playerId)
+        .eq('status', 'registered')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setUserTournaments(data || []);
+    } catch (error) {
+      console.error('Error loading user tournaments:', error);
+    }
+  };
+
+  const loadAvailableTournaments = async (playerId: string) => {
+    if (!playerId) return;
+
+    try {
+      // Получаем турниры на которые можно записаться
+      const { data: tournaments, error } = await supabase
+        .from('tournaments')
+        .select(`
+          *,
+          tournament_registrations(id)
+        `)
+        .eq('is_published', true)
+        .in('status', ['scheduled', 'registration'])
+        .order('start_time', { ascending: true })
+        .limit(5);
+
+      if (error) throw error;
+
+      // Получаем ID турниров на которые уже записан пользователь
+      const { data: registrations } = await supabase
+        .from('tournament_registrations')
+        .select('tournament_id')
+        .eq('player_id', playerId)
+        .eq('status', 'registered');
+
+      const registeredTournamentIds = registrations?.map(r => r.tournament_id) || [];
+      
+      // Фильтруем доступные турниры (исключаем те, на которые уже записан)
+      const availableTournaments = tournaments?.filter(
+        t => !registeredTournamentIds.includes(t.id)
+      ) || [];
+
+      setAvailableTournaments(availableTournaments);
+    } catch (error) {
+      console.error('Error loading available tournaments:', error);
+    }
+  };
+
+  const registerForTournament = async (tournamentId: string) => {
+    if (!player) return;
+
+    setRegistering(tournamentId);
+    try {
+      // Проверяем, не записан ли уже
+      const { data: existingRegistration } = await supabase
+        .from('tournament_registrations')
+        .select('id')
+        .eq('tournament_id', tournamentId)
+        .eq('player_id', player.id)
+        .maybeSingle();
+
+      if (existingRegistration) {
+        toast("Вы уже записаны на этот турнир");
+        return;
+      }
+
+      const { error } = await supabase
+        .from('tournament_registrations')
+        .insert({
+          tournament_id: tournamentId,
+          player_id: player.id,
+          status: 'registered'
+        });
+
+      if (error) throw error;
+
+      toast("Вы успешно записаны на турнир!");
+      
+      // Обновляем данные
+      loadUserTournaments(player.id);
+      loadAvailableTournaments(player.id);
+    } catch (error) {
+      console.error('Error registering for tournament:', error);
+      toast("Ошибка при записи на турнир");
+    } finally {
+      setRegistering(null);
     }
   };
 
@@ -157,6 +288,30 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate }: Tele
   const cancelNameEdit = () => {
     setEditingName(false);
     setNewPlayerName("");
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('ru-RU', {
+      day: '2-digit',
+      month: '2-digit',
+      year: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'scheduled':
+        return <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30">Запланирован</Badge>;
+      case 'registration':
+        return <Badge className="bg-green-500/20 text-green-400 border-green-500/30">Регистрация</Badge>;
+      case 'running':
+        return <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30">Идет</Badge>;
+      default:
+        return <Badge className="bg-gray-500/20 text-gray-400 border-gray-500/30">{status}</Badge>;
+    }
   };
 
   const getRankClass = (rating: number) => {
@@ -380,6 +535,98 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate }: Tele
           </CardContent>
         </Card>
       </div>
+
+      {/* My Tournaments */}
+      {userTournaments.length > 0 && (
+        <Card className="bg-gradient-to-br from-white/5 via-white/10 to-white/5 border border-white/10 backdrop-blur-sm">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-6 h-6 bg-gradient-to-br from-green-500 to-emerald-600 rounded-md flex items-center justify-center">
+                <CheckCircle className="h-3 w-3 text-white" />
+              </div>
+              <h3 className="text-white font-medium text-sm">Мои турниры</h3>
+            </div>
+            
+            <div className="space-y-3">
+              {userTournaments.slice(0, 3).map((registration) => (
+                <div key={registration.id} className="p-3 bg-gradient-to-r from-green-500/5 to-emerald-500/10 rounded-lg border border-green-500/20">
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="text-white text-sm font-medium truncate">{registration.tournament.name}</h4>
+                    {getStatusBadge(registration.tournament.status)}
+                  </div>
+                  <div className="flex items-center gap-4 text-xs text-white/60">
+                    <div className="flex items-center gap-1">
+                      <Calendar className="h-3 w-3" />
+                      <span>{formatDate(registration.tournament.start_time)}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Coins className="h-3 w-3" />
+                      <span>{registration.tournament.buy_in.toLocaleString()}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Users className="h-3 w-3" />
+                      <span>{registration.tournament.tournament_registrations?.length || 0}/{registration.tournament.max_players}</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Available Tournaments */}
+      {availableTournaments.length > 0 && (
+        <Card className="bg-gradient-to-br from-white/5 via-white/10 to-white/5 border border-white/10 backdrop-blur-sm">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-6 h-6 bg-gradient-to-br from-amber-500 to-orange-600 rounded-md flex items-center justify-center">
+                <UserPlus className="h-3 w-3 text-white" />
+              </div>
+              <h3 className="text-white font-medium text-sm">Доступные турниры</h3>
+            </div>
+            
+            <div className="space-y-3">
+              {availableTournaments.slice(0, 3).map((tournament) => (
+                <div key={tournament.id} className="p-3 bg-gradient-to-r from-amber-500/5 to-orange-500/10 rounded-lg border border-amber-500/20">
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="text-white text-sm font-medium truncate flex-1 mr-2">{tournament.name}</h4>
+                    <Button
+                      onClick={() => registerForTournament(tournament.id)}
+                      disabled={registering === tournament.id}
+                      size="sm"
+                      className="h-6 px-2 text-xs bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white border-0"
+                    >
+                      {registering === tournament.id ? (
+                        <div className="animate-spin rounded-full h-3 w-3 border-b border-white"></div>
+                      ) : (
+                        'Записаться'
+                      )}
+                    </Button>
+                  </div>
+                  <div className="flex items-center gap-4 text-xs text-white/60 mb-2">
+                    <div className="flex items-center gap-1">
+                      <Calendar className="h-3 w-3" />
+                      <span>{formatDate(tournament.start_time)}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Coins className="h-3 w-3" />
+                      <span>{tournament.buy_in.toLocaleString()}</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    {getStatusBadge(tournament.status)}
+                    <div className="flex items-center gap-1 text-xs text-white/60">
+                      <Users className="h-3 w-3" />
+                      <span>{tournament.tournament_registrations?.length || 0}/{tournament.max_players}</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Recent Games */}
       {gameResults.length > 0 && (
