@@ -93,18 +93,24 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate }: Tele
   const [gameResults, setGameResults] = useState<GameResult[]>([]);
   const [userTournaments, setUserTournaments] = useState<TournamentRegistration[]>([]);
   const [availableTournaments, setAvailableTournaments] = useState<Tournament[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(!userStats);
   const [registering, setRegistering] = useState<string | null>(null);
   const [showAvatarSelector, setShowAvatarSelector] = useState(false);
   const [editingName, setEditingName] = useState(false);
   const [newPlayerName, setNewPlayerName] = useState("");
 
   useEffect(() => {
+    console.log('TelegramProfile effect triggered, userStats:', userStats);
     if (userStats) {
       setPlayer(userStats);
-      loadGameResults(userStats.id);
-      loadUserTournaments(userStats.id);
-      loadAvailableTournaments(userStats.id);
+      setLoading(true);
+      Promise.all([
+        loadGameResults(userStats.id),
+        loadUserTournaments(userStats.id),
+        loadAvailableTournaments(userStats.id)
+      ]).finally(() => {
+        setLoading(false);
+      });
     }
   }, [userStats]);
 
@@ -338,13 +344,31 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate }: Tele
     return Shield;
   };
 
-  if (!player) {
+  // Показываем loading если данные загружаются или нет данных игрока
+  if (loading || !player) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-transparent">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-400 mx-auto mb-4"></div>
-          <p className="text-white/70 text-sm">Загрузка профиля...</p>
-        </div>
+        <Card className="bg-gradient-to-br from-slate-800/90 via-slate-900/95 to-black/90 border border-white/10 backdrop-blur-xl">
+          <CardContent className="text-center p-8">
+            <div className="animate-spin w-12 h-12 border-2 border-amber-600 border-t-transparent rounded-full mx-auto mb-4"></div>
+            <h3 className="text-white text-lg mb-2">
+              {!player ? 'Загрузка профиля' : 'Загрузка данных'}
+            </h3>
+            <p className="text-slate-400">
+              {!player ? 'Получение данных игрока...' : 'Загрузка турниров и результатов...'}
+            </p>
+            {!player && (
+              <Button 
+                onClick={() => window.location.reload()}
+                variant="outline"
+                size="sm"
+                className="mt-4 text-white border-white/20 hover:bg-white/10"
+              >
+                Обновить
+              </Button>
+            )}
+          </CardContent>
+        </Card>
       </div>
     );
   }

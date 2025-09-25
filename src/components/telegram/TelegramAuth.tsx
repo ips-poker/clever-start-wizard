@@ -78,61 +78,74 @@ export const TelegramAuth: React.FC<TelegramAuthProps> = ({ onAuthComplete }) =>
   const authenticateWithSupabase = async (telegramUserData: TelegramUser) => {
     try {
       setRegistering(true);
+      console.log('Starting authentication for user:', telegramUserData);
       
       const telegramId = telegramUserData.id.toString();
-      const supabaseUrl = 'https://mokhssmnorrhohrowxvu.supabase.co';
-      const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1va2hzc21ub3JyaG9ocm93eHZ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMwODUzNDYsImV4cCI6MjA2ODY2MTM0Nn0.ZWYgSZFeidY0b_miC7IyfXVPh1EUR2WtxlEvt_fFmGc';
       
-      // Простая проверка существования игрока
-      const checkResult = await fetch(`${supabaseUrl}/rest/v1/players?telegram=eq.${telegramId}&select=id,name`, {
-        headers: {
-          'apikey': supabaseKey,
-          'Authorization': `Bearer ${supabaseKey}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      const existingPlayers = await checkResult.json();
-      const existingPlayer = existingPlayers?.[0];
+      // Используем supabase client вместо прямых fetch запросов
+      let { data: existingPlayer, error: checkError } = await supabase
+        .from('players')
+        .select('*')
+        .eq('telegram', telegramId)
+        .maybeSingle();
+
+      if (checkError && checkError.code !== 'PGRST116') {
+        console.error('Error checking player:', checkError);
+        throw checkError;
+      }
 
       if (existingPlayer) {
+        console.log('Player exists, updating:', existingPlayer.id);
         // Игрок существует, обновляем данные
-        await fetch(`${supabaseUrl}/rest/v1/players?telegram=eq.${telegramId}`, {
-          method: 'PATCH',
-          headers: {
-            'apikey': supabaseKey,
-            'Authorization': `Bearer ${supabaseKey}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
+        const { error: updateError } = await supabase
+          .from('players')
+          .update({
+            name: [telegramUserData.firstName, telegramUserData.lastName]
+              .filter(Boolean)
+              .join(' ') || telegramUserData.username || existingPlayer.name,
+            avatar_url: telegramUserData.photoUrl || existingPlayer.avatar_url,
             updated_at: new Date().toISOString()
           })
-        });
+          .eq('telegram', telegramId);
+
+        if (updateError) {
+          console.error('Error updating player:', updateError);
+          throw updateError;
+        }
       } else {
+        console.log('Creating new player for telegram ID:', telegramId);
         // Создаем нового игрока
         const playerName = [telegramUserData.firstName, telegramUserData.lastName]
           .filter(Boolean)
           .join(' ') || telegramUserData.username || `Player${telegramUserData.id}`;
 
-        await fetch(`${supabaseUrl}/rest/v1/players`, {
-          method: 'POST',
-          headers: {
-            'apikey': supabaseKey,
-            'Authorization': `Bearer ${supabaseKey}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
+        const { data: newPlayer, error: createError } = await supabase
+          .from('players')
+          .insert({
             name: playerName,
             telegram: telegramId,
-            avatar_url: telegramUserData.photoUrl
+            avatar_url: telegramUserData.photoUrl,
+            elo_rating: 100,
+            games_played: 0,
+            wins: 0
           })
-        });
+          .select()
+          .single();
+
+        if (createError) {
+          console.error('Error creating player:', createError);
+          throw createError;
+        }
+
+        existingPlayer = newPlayer;
+        console.log('Created new player:', existingPlayer);
       }
 
+      console.log('Authentication completed successfully');
       onAuthComplete(telegramUserData);
     } catch (error) {
       console.error('Supabase auth error:', error);
-      setAuthError('Ошибка создания профиля игрока');
+      setAuthError('Ошибка создания профиля игрока. Попробуйте еще раз.');
     } finally {
       setRegistering(false);
     }

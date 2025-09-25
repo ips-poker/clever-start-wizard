@@ -82,6 +82,7 @@ export const TelegramApp = () => {
 
   useEffect(() => {
     if (isAuthenticated && telegramUser) {
+      console.log('TelegramApp: User authenticated, fetching data');
       fetchData();
       fetchGalleryImages();
       setupRealtimeSubscriptions();
@@ -127,15 +128,18 @@ export const TelegramApp = () => {
   };
 
   const handleAuthComplete = (user: TelegramUser) => {
+    console.log('Auth completed for user:', user);
     setTelegramUser(user);
     setIsAuthenticated(true);
   };
 
   const fetchData = async (): Promise<void> => {
     try {
+      console.log('Fetching all data...');
       await Promise.all([fetchTournaments(), fetchPlayers(), fetchUserStats()]);
     } catch (error) {
       console.error('Error fetching data:', error);
+      toast.error('Ошибка загрузки данных');
     }
     setLoading(false);
   };
@@ -200,9 +204,13 @@ export const TelegramApp = () => {
   };
 
   const fetchUserStats = async () => {
-    if (!telegramUser) return;
+    if (!telegramUser) {
+      console.log('No telegram user, skipping fetchUserStats');
+      return;
+    }
     
     try {
+      console.log('Fetching user stats for telegram user:', telegramUser.id);
       const telegramId = telegramUser.id.toString();
       
       // Сначала пытаемся найти игрока по telegram ID
@@ -214,12 +222,16 @@ export const TelegramApp = () => {
       
       if (error && error.code !== 'PGRST116') {
         console.error('Error fetching user stats:', error);
+        toast.error('Ошибка загрузки профиля игрока');
         return;
       }
       
-      // Если игрок не найден, создаем нового
+      // Если игрок не найден, это означает что авторизация не была завершена корректно
       if (!data) {
-        const playerName = telegramUser.firstName || telegramUser.username || `Player_${telegramId}`;
+        console.log('Player not found in database, creating new player');
+        const playerName = [telegramUser.firstName, telegramUser.lastName]
+          .filter(Boolean)
+          .join(' ') || telegramUser.username || `Player_${telegramId}`;
         
         const { data: newPlayer, error: createError } = await supabase
           .from('players')
@@ -228,7 +240,8 @@ export const TelegramApp = () => {
             telegram: telegramId,
             elo_rating: 100,
             games_played: 0,
-            wins: 0
+            wins: 0,
+            avatar_url: telegramUser.photoUrl
           })
           .select()
           .single();
@@ -240,14 +253,17 @@ export const TelegramApp = () => {
         }
         
         data = newPlayer;
+        console.log('Created new player:', data);
         toast.success('Профиль игрока создан!');
       }
       
       if (data) {
+        console.log('Setting user stats:', data);
         setUserStats(data);
       }
     } catch (error) {
       console.error('Error in fetchUserStats:', error);
+      toast.error('Произошла ошибка при загрузке профиля');
     }
   };
 
