@@ -200,17 +200,13 @@ export const TelegramApp = () => {
   };
 
   const fetchUserStats = async () => {
-    if (!telegramUser) {
-      console.log('No telegram user available');
-      return;
-    }
+    if (!telegramUser) return;
     
     try {
       const telegramId = telegramUser.id.toString();
-      console.log('Fetching user stats for telegram ID:', telegramId);
       
-      // Получаем данные игрока по telegram ID
-      const { data, error } = await supabase
+      // Сначала пытаемся найти игрока по telegram ID
+      let { data, error } = await supabase
         .from('players')
         .select('*')
         .eq('telegram', telegramId)
@@ -218,21 +214,40 @@ export const TelegramApp = () => {
       
       if (error && error.code !== 'PGRST116') {
         console.error('Error fetching user stats:', error);
-        toast.error('Ошибка загрузки профиля игрока');
         return;
       }
       
+      // Если игрок не найден, создаем нового
+      if (!data) {
+        const playerName = telegramUser.firstName || telegramUser.username || `Player_${telegramId}`;
+        
+        const { data: newPlayer, error: createError } = await supabase
+          .from('players')
+          .insert({
+            name: playerName,
+            telegram: telegramId,
+            elo_rating: 100,
+            games_played: 0,
+            wins: 0
+          })
+          .select()
+          .single();
+          
+        if (createError) {
+          console.error('Error creating player:', createError);
+          toast.error('Не удалось создать профиль игрока');
+          return;
+        }
+        
+        data = newPlayer;
+        toast.success('Профиль игрока создан!');
+      }
+      
       if (data) {
-        console.log('Player found:', data);
         setUserStats(data);
-        toast.success(`Добро пожаловать, ${data.name}!`);
-      } else {
-        console.log('Player not found in database');
-        toast.error('Профиль игрока не найден. Попробуйте перезагрузить приложение.');
       }
     } catch (error) {
       console.error('Error in fetchUserStats:', error);
-      toast.error('Ошибка загрузки данных');
     }
   };
 
