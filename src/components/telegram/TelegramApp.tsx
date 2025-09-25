@@ -199,8 +199,8 @@ export const TelegramApp = () => {
       setRegistering(null);
     }
   };
-  const renderHome = () => <div className="space-y-4 pb-20 px-4 bg-transparent min-h-screen relative z-10">
-      <Card className="bg-gradient-to-br from-slate-700 via-slate-800 to-slate-900 border-0 overflow-hidden relative cursor-pointer hover:from-slate-600 hover:to-slate-800 transition-all duration-300 shadow-2xl" onClick={() => setActiveTab('about')}>
+  const renderHome = () => <div className="space-y-6 pb-20 px-4 bg-transparent min-h-screen relative z-10">
+      <Card className="bg-gradient-to-br from-slate-700 via-slate-800 to-slate-900 border border-white/10 overflow-hidden relative cursor-pointer hover:from-slate-600 hover:to-slate-800 hover:border-amber-400/30 transition-all duration-500 shadow-2xl hover:shadow-amber-400/20" onClick={() => setActiveTab('about')}>
         <div className="absolute inset-0 opacity-10">
           <div className="absolute top-2 right-2 text-amber-400/40 text-6xl">♠</div>
           <div className="absolute top-8 left-2 text-amber-400/30 text-4xl">♣</div>
@@ -209,24 +209,29 @@ export const TelegramApp = () => {
           <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-amber-400/8 text-8xl">♠</div>
         </div>
         
-        <CardContent className="p-6 relative z-10">
-          <div className="flex items-center gap-4 mb-4">
-            <div className="w-14 h-14 bg-white rounded-full flex items-center justify-center overflow-hidden shadow-lg">
-              <img src={epcLogo} alt="EPC Logo" className="w-12 h-12 object-contain" />
+        <CardContent className="p-7 relative z-10">
+          <div className="flex items-center gap-4 mb-5">
+            <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center overflow-hidden shadow-2xl border-2 border-amber-400/30">
+              <img src={epcLogo} alt="EPC Logo" className="w-14 h-14 object-contain" />
             </div>
             
             <div className="flex-1">
               <h1 className="text-2xl font-light italic text-white tracking-wide drop-shadow-lg">EVENT POKER CLUB</h1>
+              <p className="text-amber-400/80 text-sm font-medium mt-1">Премиальный покерный клуб</p>
             </div>
           </div>
           
-          <div className="bg-white/15 rounded-xl p-4 backdrop-blur-sm border border-white/10">
-            <p className="text-white text-sm font-medium leading-relaxed">О нас</p>
+          <div className="bg-white/15 rounded-xl p-5 backdrop-blur-sm border border-white/10 hover:border-amber-400/20 transition-all duration-300">
+            <p className="text-white text-sm font-medium leading-relaxed">Познакомьтесь с нашим клубом</p>
+            <div className="flex items-center gap-2 mt-2">
+              <ChevronRight className="h-4 w-4 text-amber-400" />
+              <span className="text-amber-400 text-xs font-medium">Подробнее</span>
+            </div>
           </div>
         </CardContent>
       </Card>
 
-      <Card className="bg-gradient-to-br from-slate-800 via-gray-800 to-slate-900 border-0 overflow-hidden cursor-pointer hover:from-slate-700 hover:to-slate-800 transition-all duration-300 shadow-xl relative" onClick={() => setActiveTab('rating')}>
+      <Card className="bg-gradient-to-br from-slate-800 via-gray-800 to-slate-900 border border-white/10 overflow-hidden cursor-pointer hover:from-slate-700 hover:to-slate-800 hover:border-amber-400/30 transition-all duration-500 shadow-xl hover:shadow-amber-400/10 relative" onClick={() => setActiveTab('rating')}>
         <div className="absolute inset-0 opacity-10">
           <div className="absolute top-4 right-4 text-amber-400/40 text-4xl">♦</div>
           <div className="absolute bottom-4 left-4 text-amber-400/30 text-3xl">♥</div>
@@ -234,52 +239,61 @@ export const TelegramApp = () => {
         
         <CardContent className="p-6 relative z-10">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl flex items-center justify-center shadow-lg">
-              <Trophy className="h-6 w-6 text-white" />
+            <div className="w-14 h-14 bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl flex items-center justify-center shadow-xl border-2 border-amber-400/30">
+              <Trophy className="h-7 w-7 text-white" />
             </div>
             
             <div className="flex-1">
-              <h3 className="text-xl font-light italic text-white tracking-wide">REYTING POINTS</h3>
-              <h3 className="text-xl font-black text-white tracking-wide -mt-1"></h3>
+              <h3 className="text-xl font-light italic text-white tracking-wide">РЕЙТИНГОВАЯ</h3>
+              <h3 className="text-xl font-bold text-white tracking-wide -mt-1">СИСТЕМА</h3>
+              <p className="text-amber-400/80 text-sm font-medium mt-1">ELO Rating</p>
             </div>
             
-            <div className="text-white/60">
-              <ChevronRight className="h-5 w-5" />
+            <div className="text-amber-400 hover:text-amber-300 transition-colors">
+              <ChevronRight className="h-6 w-6" />
             </div>
           </div>
           
-          <div className="mt-4 bg-gradient-to-r from-white/5 to-white/10 rounded-lg p-3 border border-white/5">
-            <p className="text-white/70 text-sm font-medium">Общий рейтинг</p>
+          <div className="mt-5 bg-gradient-to-r from-white/5 to-white/10 rounded-xl p-4 border border-white/5 hover:border-amber-400/20 transition-all duration-300">
+            <p className="text-white/70 text-sm font-medium">Профессиональная система оценки игроков</p>
           </div>
         </CardContent>
       </Card>
 
       <div className="grid grid-cols-2 gap-4">
-        <Card className="bg-gradient-to-br from-slate-700 via-slate-800 to-slate-900 border-0 cursor-pointer hover:from-slate-600 hover:to-slate-800 transition-all duration-300 shadow-lg relative overflow-hidden" onClick={() => setActiveTab('qa')}>
+        <Card className="bg-gradient-to-br from-slate-700 via-slate-800 to-slate-900 border border-white/10 cursor-pointer hover:from-slate-600 hover:to-slate-800 hover:border-amber-400/30 transition-all duration-500 shadow-lg hover:shadow-amber-400/10 relative overflow-hidden" onClick={() => setActiveTab('qa')}>
           <div className="absolute inset-0 opacity-10">
             <div className="absolute top-2 right-2 text-amber-400/30 text-3xl">♣</div>
             <div className="absolute bottom-2 left-2 text-amber-400/20 text-2xl">♠</div>
           </div>
-          <CardContent className="p-5 text-center relative z-10">
+          <CardContent className="p-6 text-center relative z-10">
+            <div className="w-10 h-10 bg-amber-500/20 rounded-lg flex items-center justify-center mx-auto mb-3 border border-amber-400/30">
+              <MessageSquare className="h-5 w-5 text-amber-400" />
+            </div>
             <h3 className="text-white font-light italic text-lg tracking-wide">Q&A</h3>
+            <p className="text-white/60 text-xs mt-1">Вопросы и ответы</p>
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-slate-700 via-slate-800 to-slate-900 border-0 cursor-pointer hover:from-slate-600 hover:to-slate-800 transition-all duration-300 shadow-lg relative overflow-hidden">
+        <Card className="bg-gradient-to-br from-slate-700 via-slate-800 to-slate-900 border border-white/10 cursor-pointer hover:from-slate-600 hover:to-slate-800 hover:border-amber-400/30 transition-all duration-500 shadow-lg hover:shadow-amber-400/10 relative overflow-hidden">
           <div className="absolute inset-0 opacity-10">
             <div className="absolute top-2 left-2 text-amber-400/30 text-3xl">♥</div>
             <div className="absolute bottom-2 right-2 text-amber-400/20 text-2xl">♦</div>
           </div>
-          <CardContent className="p-5 text-center relative z-10">
-            <h3 className="text-white font-light italic text-lg tracking-wide">SUPPORT</h3>
+          <CardContent className="p-6 text-center relative z-10">
+            <div className="w-10 h-10 bg-amber-500/20 rounded-lg flex items-center justify-center mx-auto mb-3 border border-amber-400/30">
+              <Shield className="h-5 w-5 text-amber-400" />
+            </div>
+            <h3 className="text-white font-light italic text-lg tracking-wide">ПОДДЕРЖКА</h3>
+            <p className="text-white/60 text-xs mt-1">24/7 помощь</p>
           </CardContent>
         </Card>
       </div>
 
       <div>
-        <p className="text-white/70 text-sm font-medium mb-2 px-1">Ближайший турнир</p>
+        <p className="text-white/70 text-sm font-medium mb-3 px-1 tracking-wide">Ближайший турнир</p>
         
-        <Card className="bg-gradient-to-br from-slate-700 via-slate-800 to-slate-900 border-0 overflow-hidden cursor-pointer hover:from-slate-600 hover:to-slate-800 transition-all duration-300 relative shadow-2xl" onClick={() => setActiveTab('tournaments')}>
+        <Card className="bg-gradient-to-br from-slate-700 via-slate-800 to-slate-900 border border-white/10 overflow-hidden cursor-pointer hover:from-slate-600 hover:to-slate-800 hover:border-amber-400/30 transition-all duration-500 relative shadow-2xl hover:shadow-amber-400/20" onClick={() => setActiveTab('tournaments')}>
           <div className="absolute inset-0 opacity-12">
             <div className="absolute top-3 right-3 text-amber-400/40 text-5xl">♠</div>
             <div className="absolute top-12 left-3 text-amber-400/30 text-3xl">♣</div>
@@ -289,7 +303,7 @@ export const TelegramApp = () => {
           </div>
           
           <CardContent className="p-6 relative z-10">
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-5">
               <div>
                 {tournaments.length > 0 ? <div>
                     <h3 className="text-2xl font-light italic text-white tracking-wide uppercase drop-shadow-lg">
@@ -303,31 +317,52 @@ export const TelegramApp = () => {
                     <h3 className="text-2xl font-light italic text-white tracking-wide -mt-1 drop-shadow-lg">TOURNAMENT</h3>
                   </div>}
               </div>
+              
+              <div className="w-12 h-12 bg-amber-500/20 rounded-full flex items-center justify-center backdrop-blur-sm border border-amber-400/30">
+                <Calendar className="h-6 w-6 text-amber-400" />
+              </div>
             </div>
             
             <div className="grid grid-cols-2 gap-3 mt-4">
-              <div className="flex items-center gap-2 bg-white/15 rounded-lg p-3 backdrop-blur-sm border border-white/10">
-                <Users className="h-4 w-4 text-white" />
-                <span className="text-white text-sm font-medium">
-                  {tournaments.length > 0 ? `${tournaments[0]?.tournament_registrations?.[0]?.count || 0}/${tournaments[0]?.max_players}` : '509/500'}
-                </span>
+              <div className="flex items-center gap-3 bg-white/10 rounded-xl p-4 backdrop-blur-sm border border-white/10 hover:bg-white/15 transition-all duration-300">
+                <div className="w-8 h-8 bg-amber-500/30 rounded-lg flex items-center justify-center">
+                  <Users className="h-4 w-4 text-amber-400" />
+                </div>
+                <div>
+                  <span className="text-white text-sm font-semibold block">
+                    {tournaments.length > 0 ? `${tournaments[0]?.tournament_registrations?.[0]?.count || 0}/${tournaments[0]?.max_players}` : '509/500'}
+                  </span>
+                  <span className="text-white/60 text-xs">Игроков</span>
+                </div>
               </div>
               
-              <div className="flex items-center gap-2 bg-white/15 rounded-lg p-3 backdrop-blur-sm border border-white/10">
-                <Clock className="h-4 w-4 text-white" />
-                <span className="text-white text-sm font-medium">
-                  {tournaments.length > 0 ? new Date(tournaments[0]?.start_time).toLocaleTimeString('ru-RU', {
-                  hour: '2-digit',
-                  minute: '2-digit'
-                }) : '24:00/19:00'}
-                </span>
+              <div className="flex items-center gap-3 bg-white/10 rounded-xl p-4 backdrop-blur-sm border border-white/10 hover:bg-white/15 transition-all duration-300">
+                <div className="w-8 h-8 bg-amber-500/30 rounded-lg flex items-center justify-center">
+                  <Clock className="h-4 w-4 text-amber-400" />
+                </div>
+                <div>
+                  <span className="text-white text-sm font-semibold block">
+                    {tournaments.length > 0 ? new Date(tournaments[0]?.start_time).toLocaleTimeString('ru-RU', {
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  }) : '19:00'}
+                  </span>
+                  <span className="text-white/60 text-xs">Время</span>
+                </div>
+              </div>
+            </div>
+            
+            <div className="mt-5 p-4 bg-gradient-to-r from-amber-500/10 to-amber-600/5 rounded-xl border border-amber-400/20">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-amber-400 rounded-full animate-pulse"></div>
+                <span className="text-amber-400 text-sm font-medium">Регистрация открыта</span>
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {userStats && <Card className="bg-gradient-to-br from-slate-700 via-slate-800 to-slate-900 border-0 relative overflow-hidden shadow-xl">
+      {userStats && <Card className="bg-gradient-to-br from-slate-700 via-slate-800 to-slate-900 border border-white/10 relative overflow-hidden shadow-2xl hover:shadow-amber-400/10 transition-all duration-500">
           <div className="absolute inset-0 opacity-10">
             <div className="absolute top-4 right-4 text-amber-400/30 text-4xl">♠</div>
             <div className="absolute bottom-4 left-4 text-amber-400/20 text-3xl">♣</div>
@@ -336,35 +371,40 @@ export const TelegramApp = () => {
           
           <CardContent className="p-6 relative z-10">
             <div className="flex items-center gap-4 mb-6">
-              <div className="w-12 h-12 bg-gradient-to-br from-amber-500 to-amber-600 rounded-full flex items-center justify-center shadow-lg">
-                <User className="h-6 w-6 text-white" />
+              <div className="w-14 h-14 bg-gradient-to-br from-amber-500 to-amber-600 rounded-full flex items-center justify-center shadow-xl border-2 border-amber-400/30">
+                <User className="h-7 w-7 text-white" />
               </div>
               <div>
-                <h3 className="text-white font-bold text-lg">
+                <h3 className="text-white font-bold text-xl tracking-wide">
                   {telegramUser?.username || telegramUser?.firstName || 'Игрок'}
                 </h3>
-                <p className="text-white/60 text-sm">Мой рейтинг</p>
+                <p className="text-amber-400/80 text-sm font-medium">Профиль игрока</p>
               </div>
             </div>
             
-            <div className="grid grid-cols-3 gap-3">
-              <div className="text-center p-3 bg-gradient-to-br from-white/10 to-white/5 rounded-lg border border-white/10">
-                <div className="text-white font-bold text-lg">{userStats.elo_rating}</div>
-                <div className="text-white/60 text-xs">Месячно</div>
+            <div className="grid grid-cols-3 gap-4">
+              <div className="text-center p-4 bg-gradient-to-br from-white/10 to-white/5 rounded-xl border border-white/10 hover:border-amber-400/30 transition-all duration-300 group">
+                <div className="text-white font-bold text-xl group-hover:text-amber-400 transition-colors">{userStats.elo_rating}</div>
+                <div className="text-white/60 text-xs font-medium mt-1">Рейтинг ELO</div>
               </div>
-              <div className="text-center p-3 bg-gradient-to-br from-white/10 to-white/5 rounded-lg border border-white/10">
-                <div className="text-white font-bold text-lg">{userStats.wins}</div>
-                <div className="text-white/60 text-xs">Полугодие</div>
+              <div className="text-center p-4 bg-gradient-to-br from-white/10 to-white/5 rounded-xl border border-white/10 hover:border-amber-400/30 transition-all duration-300 group">
+                <div className="text-white font-bold text-xl group-hover:text-amber-400 transition-colors">{userStats.wins}</div>
+                <div className="text-white/60 text-xs font-medium mt-1">Победы</div>
               </div>
-              <div className="text-center p-3 bg-gradient-to-br from-white/10 to-white/5 rounded-lg border border-white/10">
-                <div className="text-white font-bold text-lg">{userStats.games_played}</div>
-                <div className="text-white/60 text-xs">Рейтинг</div>
+              <div className="text-center p-4 bg-gradient-to-br from-white/10 to-white/5 rounded-xl border border-white/10 hover:border-amber-400/30 transition-all duration-300 group">
+                <div className="text-white font-bold text-xl group-hover:text-amber-400 transition-colors">{userStats.games_played}</div>
+                <div className="text-white/60 text-xs font-medium mt-1">Игры</div>
               </div>
             </div>
             
-            <div className="mt-6 p-4 bg-gradient-to-r from-white/8 to-white/5 rounded-lg border border-white/10">
-              <h4 className="text-white font-bold mb-2">История игр</h4>
-              <p className="text-white/60 text-sm">Нет данных</p>
+            <div className="mt-6 p-5 bg-gradient-to-r from-white/8 to-white/5 rounded-xl border border-white/10 hover:border-amber-400/20 transition-all duration-300">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-8 h-8 bg-amber-500/30 rounded-lg flex items-center justify-center">
+                  <Trophy className="h-4 w-4 text-amber-400" />
+                </div>
+                <h4 className="text-white font-bold text-lg">История достижений</h4>
+              </div>
+              <p className="text-white/60 text-sm leading-relaxed">Здесь будет отображаться история ваших турниров и достижений</p>
             </div>
           </CardContent>
         </Card>}
