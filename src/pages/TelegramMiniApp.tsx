@@ -55,11 +55,11 @@ export default function TelegramMiniApp() {
           viewportMeta.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover');
         }
 
-        // Mobile optimizations
+        // Mobile optimizations - allow scrolling but prevent bounce
         document.body.style.overscrollBehavior = 'none';
         document.body.style.touchAction = 'pan-x pan-y';
         document.body.style.height = '100vh';
-        document.body.style.overflow = 'hidden';
+        document.body.style.overflowX = 'hidden'; // Only block horizontal scroll
         
         // Set dark theme
         document.documentElement.classList.add('dark');

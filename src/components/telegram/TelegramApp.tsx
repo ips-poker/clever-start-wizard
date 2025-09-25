@@ -558,7 +558,8 @@ export const TelegramApp = () => {
   ];
 
   const renderAbout = () => (
-    <div className="pb-20 px-4 bg-transparent min-h-screen relative z-10">
+    <ScrollArea className="h-screen">
+      <div className="pb-20 px-4 bg-transparent min-h-screen relative z-10">
       {/* Header with back button */}
       <div className="flex items-center gap-3 p-4">
         <Button 
@@ -792,6 +793,7 @@ export const TelegramApp = () => {
         </Card>
       </div>
     </div>
+    </ScrollArea>
   );
 
   if (!isAuthenticated) {
@@ -966,7 +968,8 @@ export const TelegramApp = () => {
       )}
 
       {activeTab === 'rating' && (
-        <div className="space-y-4 pb-20 px-4 bg-transparent min-h-screen relative z-10">
+        <ScrollArea className="h-screen">
+          <div className="space-y-4 pb-20 px-4 bg-transparent min-h-screen relative z-10">
           {/* Header */}
           <div className="flex items-center gap-3 p-4">
             <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl flex items-center justify-center shadow-lg">
@@ -1167,7 +1170,8 @@ export const TelegramApp = () => {
               </Card>
             ))}
           </div>
-        </div>
+          </div>
+        </ScrollArea>
       )}
 
       {activeTab === 'profile' && (
@@ -1179,7 +1183,8 @@ export const TelegramApp = () => {
       )}
 
       {activeTab === 'qa' && (
-        <div className="space-y-6 pb-20 px-4 bg-transparent min-h-screen relative z-10">
+        <ScrollArea className="h-screen">
+          <div className="space-y-6 pb-20 px-4 bg-transparent min-h-screen relative z-10">
           <div className="flex items-center gap-3 p-4">
             <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-blue-600 rounded-xl flex items-center justify-center">
               <MessageSquare className="h-5 w-5 text-white" />
@@ -1363,8 +1368,9 @@ export const TelegramApp = () => {
             </Card>
           </div>
         </div>
+        </ScrollArea>
       )}
-
+      
       <div className="fixed bottom-0 left-0 right-0 bg-gradient-to-t from-black/95 via-slate-900/95 to-slate-800/90 border-t border-amber-400/20 backdrop-blur-xl z-50 shadow-2xl">
         <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-amber-400/50 to-transparent"></div>
         <div className="max-w-lg mx-auto">
