@@ -18,6 +18,7 @@ import awardsCeremony from '@/assets/gallery/awards-ceremony.jpg';
 import masterclass from '@/assets/gallery/masterclass.jpg';
 import registration from '@/assets/gallery/registration.jpg';
 import pokerChips from '@/assets/gallery/poker-chips.jpg';
+
 interface Tournament {
   id: string;
   name: string;
@@ -34,6 +35,7 @@ interface Tournament {
     count: number;
   }>;
 }
+
 interface Player {
   id: string;
   name: string;
@@ -44,6 +46,7 @@ interface Player {
   created_at?: string;
   telegram?: string;
 }
+
 interface TelegramUser {
   id: number;
   firstName?: string;
@@ -51,6 +54,7 @@ interface TelegramUser {
   username?: string;
   photoUrl?: string;
 }
+
 export const TelegramApp = () => {
   const [activeTab, setActiveTab] = useState('home');
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
@@ -60,12 +64,14 @@ export const TelegramApp = () => {
   const [userStats, setUserStats] = useState<Player | null>(null);
   const [telegramUser, setTelegramUser] = useState<TelegramUser | null>(null);
   const [registering, setRegistering] = useState<string | null>(null);
+
   useEffect(() => {
     if (isAuthenticated && telegramUser) {
       fetchData();
       setupRealtimeSubscriptions();
     }
   }, [isAuthenticated, telegramUser]);
+
   const setupRealtimeSubscriptions = () => {
     const tournamentsChannel = supabase.channel('tournaments-changes').on('postgres_changes', {
       event: '*',
@@ -75,6 +81,7 @@ export const TelegramApp = () => {
       console.log('Tournament update:', payload);
       fetchTournaments();
     }).subscribe();
+
     const playersChannel = supabase.channel('players-changes').on('postgres_changes', {
       event: '*',
       schema: 'public',
@@ -86,6 +93,7 @@ export const TelegramApp = () => {
         setUserStats(payload.new as Player);
       }
     }).subscribe();
+
     const registrationsChannel = supabase.channel('registrations-changes').on('postgres_changes', {
       event: '*',
       schema: 'public',
@@ -94,16 +102,19 @@ export const TelegramApp = () => {
       console.log('Registration update:', payload);
       fetchTournaments();
     }).subscribe();
+
     return () => {
       supabase.removeChannel(tournamentsChannel);
       supabase.removeChannel(playersChannel);
       supabase.removeChannel(registrationsChannel);
     };
   };
+
   const handleAuthComplete = (user: TelegramUser) => {
     setTelegramUser(user);
     setIsAuthenticated(true);
   };
+
   const fetchData = async (): Promise<void> => {
     try {
       await Promise.all([fetchTournaments(), fetchPlayers(), fetchUserStats()]);
@@ -112,16 +123,13 @@ export const TelegramApp = () => {
     }
     setLoading(false);
   };
+
   const fetchTournaments = async (): Promise<void> => {
     try {
-      const {
-        data
-      } = await supabase.from('tournaments').select(`
+      const { data } = await supabase.from('tournaments').select(`
           *,
           tournament_registrations(count)
-        `).eq('is_published', true).order('start_time', {
-        ascending: true
-      });
+        `).eq('is_published', true).order('start_time', { ascending: true });
       if (data) {
         setTournaments(data as Tournament[]);
       }
@@ -129,13 +137,10 @@ export const TelegramApp = () => {
       console.error('Error fetching tournaments:', error);
     }
   };
+
   const fetchPlayers = async (): Promise<void> => {
     try {
-      const {
-        data
-      } = await supabase.from('players').select('*').order('elo_rating', {
-        ascending: false
-      }).limit(10);
+      const { data } = await supabase.from('players').select('*').order('elo_rating', { ascending: false }).limit(10);
       if (data) {
         setPlayers(data as Player[]);
       }
@@ -143,14 +148,12 @@ export const TelegramApp = () => {
       console.error('Error fetching players:', error);
     }
   };
+
   const fetchUserStats = async () => {
     if (!telegramUser) return;
     try {
       const telegramId = telegramUser.id.toString();
-      const {
-        data,
-        error
-      } = await supabase.from('players').select('*').eq('telegram', telegramId).maybeSingle();
+      const { data, error } = await supabase.from('players').select('*').eq('telegram', telegramId).maybeSingle();
       if (error) {
         console.error('Error fetching user stats:', error);
         return;
@@ -162,6 +165,7 @@ export const TelegramApp = () => {
       console.error('Error fetching user stats:', error);
     }
   };
+
   const registerForTournament = async (tournamentId: string) => {
     if (!telegramUser || !userStats) {
       toast.error("Не удалось найти данные пользователя");
@@ -169,10 +173,7 @@ export const TelegramApp = () => {
     }
     setRegistering(tournamentId);
     try {
-      const {
-        data: existingRegistration,
-        error: checkError
-      } = await supabase.from('tournament_registrations').select('id').eq('tournament_id', tournamentId).eq('player_id', userStats.id).maybeSingle();
+      const { data: existingRegistration, error: checkError } = await supabase.from('tournament_registrations').select('id').eq('tournament_id', tournamentId).eq('player_id', userStats.id).maybeSingle();
       if (checkError && checkError.code !== 'PGRST116') {
         throw checkError;
       }
@@ -180,9 +181,7 @@ export const TelegramApp = () => {
         toast.info("Вы уже зарегистрированы на этот турнир");
         return;
       }
-      const {
-        error
-      } = await supabase.from('tournament_registrations').insert({
+      const { error } = await supabase.from('tournament_registrations').insert({
         tournament_id: tournamentId,
         player_id: userStats.id,
         status: 'registered'
@@ -199,7 +198,9 @@ export const TelegramApp = () => {
       setRegistering(null);
     }
   };
-  const renderHome = () => <div className="space-y-6 pb-20 px-4 bg-transparent min-h-screen relative z-10">
+
+  const renderHome = () => (
+    <div className="space-y-6 pb-20 px-4 bg-transparent min-h-screen relative z-10">
       <Card className="bg-gradient-to-br from-slate-800/90 via-slate-900/95 to-black/90 border border-white/10 overflow-hidden relative cursor-pointer group transition-all duration-500 hover:scale-[1.02] hover:shadow-2xl hover:shadow-amber-500/20 backdrop-blur-xl" onClick={() => setActiveTab('about')}>
         <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 via-transparent to-amber-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
         <div className="absolute inset-0 opacity-8 group-hover:opacity-15 transition-opacity duration-500">
@@ -323,7 +324,8 @@ export const TelegramApp = () => {
           <CardContent className="p-8 relative z-10">
             <div className="flex items-center justify-between mb-6">
               <div>
-                {tournaments.length > 0 ? <div>
+                {tournaments.length > 0 ? (
+                  <div>
                     <h3 className="text-3xl font-light text-white tracking-wider uppercase drop-shadow-2xl group-hover:text-amber-100 transition-colors duration-300">
                       {tournaments[0].name.split(' ')[0] || 'PHOENIX'}
                     </h3>
@@ -331,11 +333,14 @@ export const TelegramApp = () => {
                       {tournaments[0].name.split(' ').slice(1).join(' ') || 'TOURNAMENT'}
                     </h3>
                     <div className="h-0.5 w-20 bg-gradient-to-r from-amber-400 to-amber-600 mt-3 group-hover:w-28 transition-all duration-500"></div>
-                  </div> : <div>
+                  </div>
+                ) : (
+                  <div>
                     <h3 className="text-3xl font-light text-white tracking-wider drop-shadow-2xl group-hover:text-amber-100 transition-colors duration-300">PHOENIX</h3>
                     <h3 className="text-3xl font-light text-white tracking-wider -mt-1 drop-shadow-2xl group-hover:text-amber-100 transition-colors duration-300">TOURNAMENT</h3>
                     <div className="h-0.5 w-20 bg-gradient-to-r from-amber-400 to-amber-600 mt-3 group-hover:w-28 transition-all duration-500"></div>
-                  </div>}
+                  </div>
+                )}
               </div>
               <div className="text-amber-400 group-hover:text-amber-300 transition-colors duration-300">
                 <Trophy className="h-8 w-8 group-hover:scale-110 transition-transform duration-300" />
@@ -381,7 +386,8 @@ export const TelegramApp = () => {
         </Card>
       </div>
 
-      {userStats && <Card className="bg-gradient-to-br from-slate-800/95 via-slate-900/95 to-black/90 border border-white/10 relative overflow-hidden backdrop-blur-xl group hover:shadow-2xl hover:shadow-purple-500/20 transition-all duration-500">
+      {userStats && (
+        <Card className="bg-gradient-to-br from-slate-800/95 via-slate-900/95 to-black/90 border border-white/10 relative overflow-hidden backdrop-blur-xl group hover:shadow-2xl hover:shadow-purple-500/20 transition-all duration-500">
           <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 via-transparent to-blue-600/5 opacity-60 group-hover:opacity-100 transition-opacity duration-500"></div>
           <div className="absolute inset-0 opacity-6 group-hover:opacity-15 transition-opacity duration-500">
             <div className="absolute top-6 right-6 text-purple-400/30 text-4xl animate-pulse">♠</div>
@@ -437,9 +443,13 @@ export const TelegramApp = () => {
               <p className="text-white/70 text-sm leading-relaxed">Статистика обновляется после каждого турнира. Продолжайте играть для улучшения рейтинга!</p>
             </div>
           </CardContent>
-        </Card>}
-    </div>;
-  const renderAbout = () => <div className="space-y-6 pb-20 px-4 bg-transparent min-h-screen relative z-10">
+        </Card>
+      )}
+    </div>
+  );
+
+  const renderAbout = () => (
+    <div className="space-y-6 pb-20 px-4 bg-transparent min-h-screen relative z-10">
       {/* Header with back button */}
       <div className="flex items-center gap-4 p-4">
         <Button variant="ghost" size="sm" onClick={() => setActiveTab('home')} className="text-white hover:bg-white/10 p-3 rounded-xl backdrop-blur-sm border border-white/10 hover:border-amber-400/30 transition-all duration-300">
@@ -485,173 +495,39 @@ export const TelegramApp = () => {
           </div>
         </CardContent>
       </Card>
-          <div className="absolute top-12 left-3 text-amber-400/30 text-4xl">♣</div>
-          <div className="absolute bottom-3 right-12 text-amber-400/35 text-5xl">♦</div>
-          <div className="absolute bottom-12 left-12 text-amber-400/25 text-3xl">♥</div>
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-amber-400/10 text-8xl rotate-12">♠</div>
-        </div>
-        
-        <CardContent className="p-6 relative z-10">
-          <div className="flex items-center gap-4 mb-4">
-            <div className="w-14 h-14 bg-white rounded-full flex items-center justify-center overflow-hidden">
-              <img src={epcLogo} alt="EPC Logo" className="w-12 h-12 object-contain" />
-            </div>
-            
-            <div className="flex-1">
-              <h1 className="text-2xl font-light italic text-white tracking-wide">EVENT POKER CLUB</h1>
-              <p className="text-white/80 text-sm">Международный покерный стиль</p>
-            </div>
-          </div>
-          
-          <div className="bg-white/10 rounded-xl p-4 backdrop-blur-sm">
-            <p className="text-white text-sm leading-relaxed">
-              Мы создали уникальное пространство для любителей покера, где каждый может развивать свои навыки, 
-              участвовать в честных турнирах и расти в профессиональной рейтинговой системе.
-            </p>
-          </div>
-        </CardContent>
-      </Card>
 
       {/* Photo Gallery */}
-      <Card className="bg-gradient-to-br from-gray-800 to-gray-900 border-0">
-        <CardContent className="p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center">
-              <Camera className="h-5 w-5 text-white" />
-            </div>
-            <h3 className="text-white font-bold text-lg">Познакомьтесь с атмосферой премиального покерного клуба IPS</h3>
-          </div>
-          
-          <div className="grid grid-cols-2 gap-3">
-            <div className="aspect-square bg-gray-700 rounded-lg overflow-hidden">
-              <img src="https://mokhssmnorrhohrowxvu.supabase.co/storage/v1/object/public/gallery/gallery/1754322902150.jpg" alt="Главный покерный зал IPS" className="w-full h-full object-cover" />
-            </div>
-            <div className="aspect-square bg-gray-700 rounded-lg overflow-hidden">
-              <img src="https://mokhssmnorrhohrowxvu.supabase.co/storage/v1/object/public/gallery/gallery/1754322816633.jpg" alt="Турнирный стол" className="w-full h-full object-cover" />
-            </div>
-            <div className="aspect-square bg-gray-700 rounded-lg overflow-hidden">
-              <img src="https://mokhssmnorrhohrowxvu.supabase.co/storage/v1/object/public/gallery/gallery/1754322798457.jpg" alt="VIP зона" className="w-full h-full object-cover" />
-            </div>
-            <div className="aspect-square bg-gray-700 rounded-lg overflow-hidden">
-              <img src="https://mokhssmnorrhohrowxvu.supabase.co/storage/v1/object/public/gallery/gallery/1754322873019.jpg" alt="Зона отдыха" className="w-full h-full object-cover" />
-            </div>
-            <div className="aspect-square bg-gray-700 rounded-lg overflow-hidden">
-              <img src="https://mokhssmnorrhohrowxvu.supabase.co/storage/v1/object/public/gallery/gallery/1754322886855.jpg" alt="Главный покерный зал IPS" className="w-full h-full object-cover" />
-            </div>
-            <div className="aspect-square bg-gray-700 rounded-lg overflow-hidden">
-              <img src="https://mokhssmnorrhohrowxvu.supabase.co/storage/v1/object/public/gallery/gallery/1754322830449.jpg" alt="Церемония награждения" className="w-full h-full object-cover" />
-            </div>
-          </div>
-          
-          <p className="text-white/70 text-sm text-center mt-4">
-            Наши покерные залы и мероприятия
-          </p>
-        </CardContent>
-      </Card>
-
-      {/* Achievements Grid */}
-      <div className="grid grid-cols-2 gap-4">
-        <Card className="bg-gradient-to-br from-slate-800/90 via-slate-900/95 to-black/90 border border-white/10 cursor-pointer group transition-all duration-500 hover:scale-105 hover:shadow-xl hover:shadow-amber-500/20 backdrop-blur-xl relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-amber-500/8 via-transparent to-amber-600/8 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-          <CardContent className="p-6 text-center relative z-10">
-            <div className="w-14 h-14 bg-gradient-to-br from-amber-500 to-amber-600 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300 shadow-lg group-hover:shadow-amber-500/30">
-              <Trophy className="h-7 w-7 text-white" />
-            </div>
-            <h3 className="text-white font-bold text-2xl mb-1 group-hover:text-amber-100 transition-colors duration-300">500+</h3>
-            <p className="text-white/70 text-sm font-medium">Турниров проведено</p>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-to-br from-slate-800/90 via-slate-900/95 to-black/90 border border-white/10 cursor-pointer group transition-all duration-500 hover:scale-105 hover:shadow-xl hover:shadow-blue-500/20 backdrop-blur-xl relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-500/8 via-transparent to-blue-600/8 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-          <CardContent className="p-6 text-center relative z-10">
-            <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300 shadow-lg group-hover:shadow-blue-500/30">
-              <Users className="h-7 w-7 text-white" />
-            </div>
-            <h3 className="text-white font-bold text-2xl mb-1 group-hover:text-blue-100 transition-colors duration-300">1000+</h3>
-            <p className="text-white/70 text-sm font-medium">Активных игроков</p>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-to-br from-slate-800/90 via-slate-900/95 to-black/90 border border-white/10 cursor-pointer group transition-all duration-500 hover:scale-105 hover:shadow-xl hover:shadow-green-500/20 backdrop-blur-xl relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-green-500/8 via-transparent to-green-600/8 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-          <CardContent className="p-6 text-center relative z-10">
-            <div className="w-14 h-14 bg-gradient-to-br from-green-500 to-green-600 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300 shadow-lg group-hover:shadow-green-500/30">
-              <Star className="h-7 w-7 text-white" />
-            </div>
-            <h3 className="text-white font-bold text-2xl mb-1 group-hover:text-green-100 transition-colors duration-300">4.9/5</h3>
-            <p className="text-white/70 text-sm font-medium">Рейтинг клуба</p>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-to-br from-slate-800/90 via-slate-900/95 to-black/90 border border-white/10 cursor-pointer group transition-all duration-500 hover:scale-105 hover:shadow-xl hover:shadow-purple-500/20 backdrop-blur-xl relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-purple-500/8 via-transparent to-purple-600/8 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-          <CardContent className="p-6 text-center relative z-10">
-            <div className="w-14 h-14 bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300 shadow-lg group-hover:shadow-purple-500/30">
-              <Shield className="h-7 w-7 text-white" />
-            </div>
-            <h3 className="text-white font-bold text-2xl mb-1 group-hover:text-purple-100 transition-colors duration-300">100%</h3>
-            <p className="text-white/70 text-sm font-medium">Безопасность данных</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Values */}
-      <Card className="bg-gradient-to-br from-slate-800/95 via-slate-900/95 to-black/90 border border-white/10 backdrop-blur-xl shadow-xl group hover:shadow-2xl hover:shadow-emerald-500/20 transition-all duration-500">
-        <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 via-transparent to-green-600/5 opacity-60 group-hover:opacity-100 transition-opacity duration-500"></div>
+      <Card className="bg-gradient-to-br from-slate-800/90 via-slate-900/95 to-black/90 border border-white/10 overflow-hidden relative shadow-xl backdrop-blur-xl group hover:shadow-2xl hover:shadow-purple-500/20 transition-all duration-500">
+        <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 via-transparent to-blue-600/5 opacity-60 group-hover:opacity-100 transition-opacity duration-500"></div>
         
         <CardContent className="p-8 relative z-10">
           <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-green-600 rounded-xl flex items-center justify-center">
-              <Heart className="h-5 w-5 text-white" />
+            <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-blue-600 rounded-xl flex items-center justify-center">
+              <Camera className="h-5 w-5 text-white" />
             </div>
-            <h3 className="text-white font-semibold text-xl tracking-wide group-hover:text-emerald-100 transition-colors duration-300">Наши ценности</h3>
+            <h3 className="text-white font-semibold text-xl tracking-wide group-hover:text-purple-100 transition-colors duration-300">Наши залы</h3>
           </div>
           
-          <div className="space-y-5">
-            <div className="flex items-start gap-4 p-4 bg-gradient-to-r from-white/5 via-white/8 to-white/5 rounded-xl border border-white/10 group-hover:border-emerald-400/20 transition-all duration-300 backdrop-blur-sm hover:scale-[1.02]">
-              <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-orange-500 rounded-xl flex items-center justify-center mt-1 shadow-lg">
-                <Target className="h-5 w-5 text-white" />
-              </div>
-              <div className="flex-1">
-                <h4 className="text-white font-semibold text-base mb-1">Честность</h4>
-                <p className="text-white/70 text-sm leading-relaxed">Прозрачная рейтинговая система и честная игра для всех участников</p>
-              </div>
+          <div className="grid grid-cols-2 gap-4 mb-6">
+            <div className="aspect-square bg-gradient-to-br from-gray-700 to-gray-800 rounded-xl overflow-hidden group-hover:scale-105 transition-transform duration-300 shadow-lg hover:shadow-xl">
+              <img src="https://mokhssmnorrhohrowxvu.supabase.co/storage/v1/object/public/gallery/gallery/1754322743066.jpg" alt="Турнирный стол" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
             </div>
-
-            <div className="flex items-start gap-4 p-4 bg-gradient-to-r from-white/5 via-white/8 to-white/5 rounded-xl border border-white/10 group-hover:border-emerald-400/20 transition-all duration-300 backdrop-blur-sm hover:scale-[1.02]">
-              <div className="w-10 h-10 bg-gradient-to-br from-pink-500 to-red-500 rounded-xl flex items-center justify-center mt-1 shadow-lg">
-                <Heart className="h-5 w-5 text-white" />
-              </div>
-              <div className="flex-1">
-                <h4 className="text-white font-semibold text-base mb-1">Сообщество</h4>
-                <p className="text-white/70 text-sm leading-relaxed">Дружелюбная атмосфера для игроков всех уровней подготовки</p>
-              </div>
+            <div className="aspect-square bg-gradient-to-br from-gray-700 to-gray-800 rounded-xl overflow-hidden group-hover:scale-105 transition-transform duration-300 shadow-lg hover:shadow-xl">
+              <img src="https://mokhssmnorrhohrowxvu.supabase.co/storage/v1/object/public/gallery/gallery/1754322798457.jpg" alt="VIP зона" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
             </div>
-
-            <div className="flex items-start gap-4 p-4 bg-gradient-to-r from-white/5 via-white/8 to-white/5 rounded-xl border border-white/10 group-hover:border-emerald-400/20 transition-all duration-300 backdrop-blur-sm hover:scale-[1.02]">
-              <div className="w-10 h-10 bg-gradient-to-br from-yellow-500 to-orange-500 rounded-xl flex items-center justify-center mt-1 shadow-lg">
-                <Zap className="h-5 w-5 text-white" />
-              </div>
-              <div className="flex-1">
-                <h4 className="text-white font-semibold text-base mb-1">Инновации</h4>
-                <p className="text-white/70 text-sm leading-relaxed">Современные технологии для лучшего игрового опыта</p>
-              </div>
+            <div className="aspect-square bg-gradient-to-br from-gray-700 to-gray-800 rounded-xl overflow-hidden group-hover:scale-105 transition-transform duration-300 shadow-lg hover:shadow-xl">
+              <img src="https://mokhssmnorrhohrowxvu.supabase.co/storage/v1/object/public/gallery/gallery/1754322873019.jpg" alt="Зона отдыха" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
             </div>
-
-            <div className="flex items-start gap-4 p-4 bg-gradient-to-r from-white/5 via-white/8 to-white/5 rounded-xl border border-white/10 group-hover:border-emerald-400/20 transition-all duration-300 backdrop-blur-sm hover:scale-[1.02]">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-500 rounded-xl flex items-center justify-center mt-1 shadow-lg">
-                <Globe className="h-5 w-5 text-white" />
-              </div>
-              <div className="flex-1">
-                <h4 className="text-white font-semibold text-base mb-1">Международный уровень</h4>
-                <p className="text-white/70 text-sm leading-relaxed">Соответствуем мировым стандартам проведения турниров</p>
-              </div>
+            <div className="aspect-square bg-gradient-to-br from-gray-700 to-gray-800 rounded-xl overflow-hidden group-hover:scale-105 transition-transform duration-300 shadow-lg hover:shadow-xl">
+              <img src="https://mokhssmnorrhohrowxvu.supabase.co/storage/v1/object/public/gallery/gallery/1754322886855.jpg" alt="Главный покерный зал IPS" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
             </div>
           </div>
+          
+          <p className="text-white/70 text-sm text-center leading-relaxed">
+            Профессиональные покерные залы с современным оборудованием и комфортной атмосферой
+          </p>
         </CardContent>
       </Card>
-    </div>;
 
       {/* Contact Info */}
       <Card className="bg-gradient-to-br from-red-600/90 via-red-700/95 to-red-800/90 border border-red-500/20 backdrop-blur-xl shadow-2xl group hover:shadow-2xl hover:shadow-red-500/30 transition-all duration-500 relative overflow-hidden">
@@ -679,16 +555,23 @@ export const TelegramApp = () => {
           </div>
         </CardContent>
       </Card>
-    </div>;
+    </div>
+  );
+
   if (!isAuthenticated) {
     return <TelegramAuth onAuthComplete={handleAuthComplete} />;
   }
+
   if (loading) {
-    return <div className="flex items-center justify-center min-h-screen bg-black">
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-black">
         <Loader2 className="h-8 w-8 animate-spin text-white" />
-      </div>;
+      </div>
+    );
   }
-  return <div className="max-w-lg mx-auto bg-black min-h-screen relative overflow-hidden">
+
+  return (
+    <div className="max-w-lg mx-auto bg-black min-h-screen relative overflow-hidden">
       {/* Покерные масти в фоне */}
       <div className="absolute inset-0 opacity-5 overflow-hidden pointer-events-none">
         <div className="absolute top-20 left-8 text-6xl text-red-500 transform rotate-12">♠</div>
@@ -700,8 +583,12 @@ export const TelegramApp = () => {
         <div className="absolute top-[40rem] left-20 text-7xl text-red-500 transform rotate-15">♦</div>
         <div className="absolute top-[44rem] right-6 text-5xl text-red-600 transform -rotate-60">♣</div>
       </div>
+
       {activeTab === 'home' && renderHome()}
-      {activeTab === 'tournaments' && <div className="space-y-6 pb-20 px-4 bg-transparent min-h-screen relative z-10">
+      {activeTab === 'about' && renderAbout()}
+      
+      {activeTab === 'tournaments' && (
+        <div className="space-y-6 pb-20 px-4 bg-transparent min-h-screen relative z-10">
           <div className="flex items-center gap-3 p-4">
             <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl flex items-center justify-center">
               <Trophy className="h-5 w-5 text-white" />
@@ -712,7 +599,8 @@ export const TelegramApp = () => {
             </div>
           </div>
           
-          {tournaments.map((tournament, index) => <Card key={tournament.id} className="bg-gradient-to-br from-slate-800/95 via-slate-900/95 to-black/90 border border-amber-400/20 backdrop-blur-xl shadow-xl group hover:shadow-2xl hover:shadow-amber-500/30 transition-all duration-500 relative overflow-hidden">
+          {tournaments.map((tournament, index) => (
+            <Card key={tournament.id} className="bg-gradient-to-br from-slate-800/95 via-slate-900/95 to-black/90 border border-amber-400/20 backdrop-blur-xl shadow-xl group hover:shadow-2xl hover:shadow-amber-500/30 transition-all duration-500 relative overflow-hidden">
               <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 via-transparent to-amber-600/8 opacity-60 group-hover:opacity-100 transition-opacity duration-500"></div>
               <div className="absolute inset-0 opacity-8 group-hover:opacity-15 transition-opacity duration-500">
                 <div className="absolute top-4 right-4 text-amber-400/30 text-4xl animate-pulse">♠</div>
@@ -754,7 +642,8 @@ export const TelegramApp = () => {
                   </div>
                 </div>
                 
-                {tournament.status === 'scheduled' && <Button 
+                {tournament.status === 'scheduled' && (
+                  <Button 
                     onClick={() => registerForTournament(tournament.id)} 
                     disabled={registering === tournament.id} 
                     className="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-semibold py-4 rounded-xl shadow-lg hover:shadow-amber-500/30 transition-all duration-300 group-hover:scale-[1.02] border-0"
@@ -770,11 +659,16 @@ export const TelegramApp = () => {
                         <span>Записаться на турнир</span>
                       </div>
                     )}
-                  </Button>}
+                  </Button>
+                )}
               </CardContent>
-            </Card>)}
-        </div>}
-      {activeTab === 'rating' && <div className="space-y-6 pb-20 px-4 bg-transparent min-h-screen relative z-10">
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {activeTab === 'rating' && (
+        <div className="space-y-6 pb-20 px-4 bg-transparent min-h-screen relative z-10">
           <div className="flex items-center gap-3 p-4">
             <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl flex items-center justify-center">
               <Crown className="h-5 w-5 text-white" />
@@ -786,12 +680,13 @@ export const TelegramApp = () => {
           </div>
           
           <div className="space-y-4">
-            {players.map((player, index) => <Card key={player.id} className={`bg-gradient-to-br backdrop-blur-xl shadow-xl group hover:shadow-2xl transition-all duration-500 relative overflow-hidden border ${
-                index === 0 ? 'from-amber-600/20 via-amber-700/30 to-amber-800/20 border-amber-400/30 hover:shadow-amber-500/30' :
-                index === 1 ? 'from-gray-400/20 via-gray-500/30 to-gray-600/20 border-gray-400/30 hover:shadow-gray-500/30' :
-                index === 2 ? 'from-orange-600/20 via-orange-700/30 to-orange-800/20 border-orange-400/30 hover:shadow-orange-500/30' :
-                'from-slate-800/90 via-slate-900/95 to-black/90 border-white/10 hover:shadow-purple-500/20'
-              } hover:scale-[1.02] cursor-pointer`}>
+            {players.map((player, index) => (
+              <Card key={player.id} className={`bg-gradient-to-br backdrop-blur-xl shadow-xl group hover:shadow-2xl transition-all duration-500 relative overflow-hidden border ${
+                  index === 0 ? 'from-amber-600/20 via-amber-700/30 to-amber-800/20 border-amber-400/30 hover:shadow-amber-500/30' :
+                  index === 1 ? 'from-gray-400/20 via-gray-500/30 to-gray-600/20 border-gray-400/30 hover:shadow-gray-500/30' :
+                  index === 2 ? 'from-orange-600/20 via-orange-700/30 to-orange-800/20 border-orange-400/30 hover:shadow-orange-500/30' :
+                  'from-slate-800/90 via-slate-900/95 to-black/90 border-white/10 hover:shadow-purple-500/20'
+                } hover:scale-[1.02] cursor-pointer`}>
                 <div className={`absolute inset-0 opacity-60 group-hover:opacity-100 transition-opacity duration-500 ${
                   index === 0 ? 'bg-gradient-to-br from-amber-500/10 via-transparent to-amber-600/15' :
                   index === 1 ? 'bg-gradient-to-br from-gray-400/10 via-transparent to-gray-600/15' :
@@ -847,13 +742,14 @@ export const TelegramApp = () => {
                     </div>
                   </div>
                 </CardContent>
-              </Card>)}
+              </Card>
+            ))}
           </div>
-      </div>}
-      
-      {activeTab === 'about' && renderAbout()}
-      
-      {activeTab === 'qa' && <div className="space-y-6 pb-20 px-4 bg-transparent min-h-screen relative z-10">
+        </div>
+      )}
+
+      {activeTab === 'qa' && (
+        <div className="space-y-6 pb-20 px-4 bg-transparent min-h-screen relative z-10">
           <div className="flex items-center gap-3 p-4">
             <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-blue-600 rounded-xl flex items-center justify-center">
               <MessageSquare className="h-5 w-5 text-white" />
@@ -941,61 +837,8 @@ export const TelegramApp = () => {
               </CardContent>
             </Card>
           </div>
-        </div>}
-        </div>}
-
-      {activeTab === 'profile' && <div className="space-y-6 pb-20 px-4 bg-transparent min-h-screen relative z-10">
-          <h2 className="text-2xl font-light italic text-white tracking-wide p-4">ПРОФИЛЬ</h2>
-          {userStats ? <Card className="bg-gradient-to-br from-gray-800 to-gray-900 border-0">
-              <CardContent className="p-6">
-                <div className="flex items-center gap-4 mb-6">
-                  <div className="w-16 h-16 bg-white/10 rounded-full flex items-center justify-center">
-                    <User className="h-8 w-8 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="text-white font-bold text-xl">
-                      {telegramUser?.username || telegramUser?.firstName || 'Игрок'}
-                    </h3>
-                    <p className="text-white/60 text-sm">Игрок клуба</p>
-                  </div>
-                </div>
-                
-                <div className="grid grid-cols-2 gap-4 mb-6">
-                  <div className="text-center p-4 bg-white/5 rounded-lg">
-                    <div className="text-white font-bold text-2xl">{userStats.elo_rating}</div>
-                    <div className="text-white/60 text-sm">Рейтинг</div>
-                  </div>
-                  <div className="text-center p-4 bg-white/5 rounded-lg">
-                    <div className="text-white font-bold text-2xl">{userStats.games_played}</div>
-                    <div className="text-white/60 text-sm">Игр сыграно</div>
-                  </div>
-                </div>
-                
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center p-3 bg-white/5 rounded-lg">
-                    <span className="text-white/70">Побед</span>
-                    <span className="text-white font-bold">{userStats.wins}</span>
-                  </div>
-                  <div className="flex justify-between items-center p-3 bg-white/5 rounded-lg">
-                    <span className="text-white/70">Процент побед</span>
-                    <span className="text-white font-bold">
-                      {userStats.games_played > 0 ? Math.round(userStats.wins / userStats.games_played * 100) : 0}%
-                    </span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card> : <Card className="bg-gradient-to-br from-gray-800 to-gray-900 border-0">
-              <CardContent className="p-6 text-center">
-                <div className="w-16 h-16 bg-white/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <User className="h-8 w-8 text-white" />
-                </div>
-                <h3 className="text-white font-bold text-xl mb-2">
-                  {telegramUser?.username || telegramUser?.firstName || 'Игрок'}
-                </h3>
-                <p className="text-white/60 text-sm">Зарегистрируйтесь на турнир, чтобы увидеть статистику</p>
-              </CardContent>
-            </Card>}
-        </div>}
+        </div>
+      )}
 
       <div className="fixed bottom-0 left-0 right-0 bg-gradient-to-t from-black/95 via-slate-900/95 to-slate-800/90 border-t border-amber-400/20 backdrop-blur-xl z-50 shadow-2xl">
         <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-amber-400/50 to-transparent"></div>
@@ -1043,5 +886,6 @@ export const TelegramApp = () => {
         </div>
         <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-32 h-1 bg-gradient-to-r from-transparent via-white/20 to-transparent rounded-full"></div>
       </div>
-    </div>;
+    </div>
+  );
 };
