@@ -13,11 +13,38 @@ interface Player {
   elo_rating: number;
   games_played: number;
   wins: number;
+  avatar_url: string | null;
 }
-const getPokerAvatar = (name: string, isChampion = false) => {
-  const avatars = ["♠️", "♥️", "♦️", "♣️", "🃏", "🎯", "🎲", "💎", "⭐", "🔥"];
-  const index = name.charCodeAt(0) % avatars.length;
-  return isChampion ? "👑" : avatars[index];
+const PlayerAvatar = ({ player, size = "w-12 h-12", isChampion = false }: {
+  player: Player;
+  size?: string;
+  isChampion?: boolean;
+}) => {
+  const fallbackAvatars = ["♠️", "♥️", "♦️", "♣️", "🃏", "🎯", "🎲", "💎", "⭐", "🔥"];
+  const fallbackIndex = player.name.charCodeAt(0) % fallbackAvatars.length;
+  const fallbackAvatar = isChampion ? "👑" : fallbackAvatars[fallbackIndex];
+
+  return player.avatar_url ? (
+    <div className={`${size} rounded-xl overflow-hidden flex-shrink-0`}>
+      <img 
+        src={player.avatar_url} 
+        alt={`${player.name} avatar`}
+        className="w-full h-full object-cover"
+        onError={(e) => {
+          const target = e.target as HTMLImageElement;
+          target.style.display = 'none';
+          const parent = target.parentElement;
+          if (parent) {
+            parent.innerHTML = `<div class="w-full h-full bg-gradient-to-br from-poker-accent/20 to-poker-primary/20 border border-poker-accent/30 rounded-xl flex items-center justify-center text-lg">${fallbackAvatar}</div>`;
+          }
+        }}
+      />
+    </div>
+  ) : (
+    <div className={`${size} bg-gradient-to-br from-poker-accent/20 to-poker-primary/20 border border-poker-accent/30 rounded-xl flex items-center justify-center text-lg`}>
+      {fallbackAvatar}
+    </div>
+  );
 };
 export function TopPlayers() {
   const [topPlayers, setTopPlayers] = useState<Player[]>([]);
@@ -135,9 +162,7 @@ export function TopPlayers() {
                     {/* Champion badge */}
                     <div className="flex-shrink-0">
                       <div className="relative">
-                        <div className="w-16 h-16 bg-gradient-to-br from-poker-accent to-poker-primary rounded-2xl flex items-center justify-center shadow-lg">
-                          <span className="text-2xl">{getPokerAvatar(topPlayers[0].name, true)}</span>
-                        </div>
+                        <PlayerAvatar player={topPlayers[0]} size="w-16 h-16" isChampion={true} />
                         <div className="absolute -top-2 -right-2 w-6 h-6 bg-poker-warning rounded-full flex items-center justify-center">
                           <Crown className="w-3 h-3 text-white" />
                         </div>
@@ -204,12 +229,7 @@ export function TopPlayers() {
                           </div>
 
                           {/* Player avatar */}
-                          <div className={`
-                            w-12 h-12 rounded-xl flex items-center justify-center shadow-sm text-lg
-                            ${isTopThree ? 'bg-gradient-to-br from-poker-accent/20 to-poker-primary/20 border border-poker-accent/30' : 'bg-poker-surface border border-poker-border/30'}
-                          `}>
-                            {getPokerAvatar(player.name)}
-                          </div>
+                          <PlayerAvatar player={player} size="w-12 h-12" />
 
                           {/* Player info */}
                           <div>
@@ -299,12 +319,7 @@ export function TopPlayers() {
                                 </div>
 
                                 {/* Player avatar */}
-                                <div className={`
-                                  w-8 h-8 rounded-lg flex items-center justify-center text-sm
-                                  ${isTopThree ? 'bg-gradient-to-br from-poker-accent/20 to-poker-primary/20 border border-poker-accent/30' : 'bg-poker-surface border border-poker-border/30'}
-                                `}>
-                                  {getPokerAvatar(player.name, position === 1)}
-                                </div>
+                                <PlayerAvatar player={player} size="w-8 h-8" isChampion={position === 1} />
 
                                 {/* Player info */}
                                 <div>
