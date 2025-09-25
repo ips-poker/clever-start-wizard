@@ -194,14 +194,14 @@ export const TelegramApp = () => {
       <Card className="bg-gradient-to-br from-red-600 to-red-800 border-0 overflow-hidden relative">
         <div className="absolute inset-0 opacity-10">
           <div className="absolute top-4 right-4">
-            <Crown className="h-24 w-24" />
+            <Coins className="h-24 w-24 animate-spin" />
           </div>
         </div>
         
         <CardContent className="p-6 relative z-10">
           <div className="flex items-center gap-4 mb-4">
-            <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center overflow-hidden">
-              <img src={epcLogo} alt="EPC Logo" className="w-10 h-10 object-contain" />
+            <div className="w-14 h-14 bg-white rounded-full flex items-center justify-center overflow-hidden">
+              <img src={epcLogo} alt="EPC Logo" className="w-12 h-12 object-contain" />
             </div>
             
             <div className="flex-1">
