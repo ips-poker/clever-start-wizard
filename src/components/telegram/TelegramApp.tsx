@@ -200,7 +200,7 @@ export const TelegramApp = () => {
     }
   };
   const renderHome = () => <div className="space-y-4 pb-20 px-4 bg-transparent min-h-screen relative z-10">
-      <Card className="bg-gradient-to-br from-amber-600 to-amber-800 border-0 overflow-hidden relative cursor-pointer hover:from-amber-500 hover:to-amber-700 transition-all duration-300" onClick={() => setActiveTab('about')}>
+      <Card className="bg-gradient-to-br from-red-600 to-red-800 border-0 overflow-hidden relative cursor-pointer hover:from-red-500 hover:to-red-700 transition-all duration-300" onClick={() => setActiveTab('about')}>
         <div className="absolute inset-0 opacity-10">
           <div className="absolute top-4 right-4">
             <CircleDot className="h-24 w-24 animate-[spin_4s_linear_infinite] text-white/20" />
@@ -264,7 +264,7 @@ export const TelegramApp = () => {
       <div>
         <p className="text-white/70 text-sm font-medium mb-2 px-1">Ближайший турнир</p>
         
-        <Card className="bg-gradient-to-br from-amber-600 to-amber-800 border-0 overflow-hidden cursor-pointer hover:from-amber-500 hover:to-amber-700 transition-all duration-300 relative" onClick={() => setActiveTab('tournaments')}>
+        <Card className="bg-gradient-to-br from-red-600 to-red-800 border-0 overflow-hidden cursor-pointer hover:from-red-500 hover:to-red-700 transition-all duration-300 relative" onClick={() => setActiveTab('tournaments')}>
           <CardContent className="p-6 relative z-10">
             <div className="flex items-center justify-between mb-4">
               <div>
@@ -350,7 +350,7 @@ export const TelegramApp = () => {
       </div>
 
       {/* Company Info Card */}
-      <Card className="bg-gradient-to-br from-amber-600 to-amber-800 border-0 overflow-hidden relative">
+      <Card className="bg-gradient-to-br from-red-600 to-red-800 border-0 overflow-hidden relative">
         <div className="absolute inset-0 opacity-10">
           <div className="absolute top-4 right-4">
             <CircleDot className="h-16 w-16 text-white/20" />
