@@ -33,6 +33,7 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { TelegramAuth } from './TelegramAuth';
 import { toast } from 'sonner';
+import epcLogo from '@/assets/epc-logo.png';
 
 interface Tournament {
   id: string;
@@ -289,11 +290,8 @@ export const TelegramApp = () => {
           <div className="flex items-center gap-5 mb-6">
             {/* Premium Logo */}
             <div className="relative">
-              <div className="w-24 h-24 bg-gradient-poker-gold rounded-2xl flex items-center justify-center poker-glass border border-poker-gold/30 glow-gold">
-                <div className="text-center">
-                  <Crown className="h-8 w-8 text-poker-gray-dark mx-auto mb-1" />
-                  <div className="text-xs font-black text-poker-gray-dark tracking-wider">EPC</div>
-                </div>
+              <div className="w-24 h-24 bg-gradient-poker-gold rounded-2xl flex items-center justify-center poker-glass border border-poker-gold/30 glow-gold overflow-hidden">
+                <img src={epcLogo} alt="EPC Logo" className="w-16 h-16 object-contain" />
               </div>
               {/* Shine effect */}
               <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/20 to-transparent rounded-2xl opacity-0 hover:opacity-100 transition-opacity duration-500"></div>
@@ -337,7 +335,7 @@ export const TelegramApp = () => {
 
       {/* Premium Action Cards */}
       <div className="space-y-4">
-        {/* Check Check Legends - Premium Design */}
+        {/* EPC Rating System - Premium Design */}
         <Card className="bg-gradient-poker-dark border border-poker-gold/20 overflow-hidden cursor-pointer 
                        hover:scale-[1.02] hover:shadow-poker-elevated transition-all duration-300 group poker-shine" 
               onClick={() => setActiveTab('rating')}>
@@ -361,11 +359,11 @@ export const TelegramApp = () => {
               
               <div className="flex-1">
                 <div className="flex items-center gap-2">
-                  <h3 className="text-xl font-black text-white tracking-wider text-shadow-poker">CHECK CHECK</h3>
+                  <h3 className="text-xl font-black text-white tracking-wider text-shadow-poker">EPC RATING</h3>
                   <Zap className="h-5 w-5 text-poker-gold animate-pulse" />
                 </div>
-                <h3 className="text-xl font-black text-poker-gold tracking-wider -mt-1 text-shadow-poker">LEGENDS</h3>
-                <p className="text-white/80 text-sm mt-2 font-semibold">Общий рейтинг игроков клуба</p>
+                <h3 className="text-xl font-black text-poker-gold tracking-wider -mt-1 text-shadow-poker">SYSTEM</h3>
+                <p className="text-white/80 text-sm mt-2 font-semibold">Рейтинговая система клуба</p>
               </div>
               
               <div className="text-poker-gold/60 group-hover:text-poker-gold transition-colors">
@@ -435,9 +433,9 @@ export const TelegramApp = () => {
                   <CircleDot className="h-3 w-3 text-poker-gold animate-pulse" />
                   <p className="text-white/90 text-sm font-semibold uppercase tracking-wide">Ближайший турнир</p>
                 </div>
-                <h3 className="text-3xl font-black text-white tracking-wider text-shadow-poker">PHOENIX</h3>
+                <h3 className="text-3xl font-black text-white tracking-wider text-shadow-poker">EPC MASTERS</h3>
                 <div className="flex items-center gap-2">
-                  <h3 className="text-3xl font-black text-poker-gold tracking-wider -mt-1 text-shadow-poker">TOURNAMENT</h3>
+                  <h3 className="text-3xl font-black text-poker-gold tracking-wider -mt-1 text-shadow-poker">CHAMPIONSHIP</h3>
                   <Crown className="h-6 w-6 text-poker-gold" />
                 </div>
               </div>
@@ -734,8 +732,8 @@ export const TelegramApp = () => {
     <div className="space-y-4 pb-20 px-4">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-white">ЛЕГЕНДЫ</h1>
-          <h2 className="text-2xl font-bold text-white">CHECK CHECK</h2>
+          <h1 className="text-2xl font-bold text-white">EPC RATING</h1>
+          <h2 className="text-2xl font-bold text-white">SYSTEM</h2>
         </div>
       </div>
 
