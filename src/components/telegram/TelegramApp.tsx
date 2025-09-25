@@ -340,17 +340,10 @@ export const TelegramApp = () => {
           </CardContent>
         </Card>}
     </div>;
-  
-  const renderAbout = () => (
-    <div className="space-y-4 pb-20 px-4 bg-transparent min-h-screen relative z-10">
+  const renderAbout = () => <div className="space-y-4 pb-20 px-4 bg-transparent min-h-screen relative z-10">
       {/* Header with back button */}
       <div className="flex items-center gap-4 p-4">
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          onClick={() => setActiveTab('home')}
-          className="text-white hover:bg-white/10 p-2"
-        >
+        <Button variant="ghost" size="sm" onClick={() => setActiveTab('home')} className="text-white hover:bg-white/10 p-2">
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <h2 className="text-2xl font-light italic text-white tracking-wide">О НАС</h2>
@@ -400,60 +393,28 @@ export const TelegramApp = () => {
           
           <div className="grid grid-cols-2 gap-3">
             <div className="aspect-square bg-gray-700 rounded-lg overflow-hidden">
-              <img 
-                src={mainPokerRoom} 
-                alt="Главный покерный зал" 
-                className="w-full h-full object-cover"
-              />
+              <img src={mainPokerRoom} alt="Главный покерный зал" className="w-full h-full object-cover" />
             </div>
             <div className="aspect-square bg-gray-700 rounded-lg overflow-hidden">
-              <img 
-                src={tournamentTable} 
-                alt="Профессиональный турнирный стол" 
-                className="w-full h-full object-cover"
-              />
+              <img src={tournamentTable} alt="Профессиональный турнирный стол" className="w-full h-full object-cover" />
             </div>
             <div className="aspect-square bg-gray-700 rounded-lg overflow-hidden">
-              <img 
-                src={vipZone} 
-                alt="Эксклюзивная VIP зона" 
-                className="w-full h-full object-cover"
-              />
+              <img src={vipZone} alt="Эксклюзивная VIP зона" className="w-full h-full object-cover" />
             </div>
             <div className="aspect-square bg-gray-700 rounded-lg overflow-hidden">
-              <img 
-                src={loungeArea} 
-                alt="Комфортная зона отдыха" 
-                className="w-full h-full object-cover"
-              />
+              <img src={loungeArea} alt="Комфортная зона отдыха" className="w-full h-full object-cover" />
             </div>
             <div className="aspect-square bg-gray-700 rounded-lg overflow-hidden">
-              <img 
-                src={teamTournament} 
-                alt="Командный турнир" 
-                className="w-full h-full object-cover"
-              />
+              <img src={teamTournament} alt="Командный турнир" className="w-full h-full object-cover" />
             </div>
             <div className="aspect-square bg-gray-700 rounded-lg overflow-hidden">
-              <img 
-                src={awardsCeremony} 
-                alt="Торжественная церемония награждения" 
-                className="w-full h-full object-cover"
-              />
+              <img src={awardsCeremony} alt="Торжественная церемония награждения" className="w-full h-full object-cover" />
             </div>
             <div className="aspect-square bg-gray-700 rounded-lg overflow-hidden">
-              <img 
-                src={masterclass} 
-                alt="Покерный мастер-класс" 
-                className="w-full h-full object-cover"
-              />
+              <img src={masterclass} alt="Покерный мастер-класс" className="w-full h-full object-cover" />
             </div>
             <div className="aspect-square bg-gray-700 rounded-lg overflow-hidden">
-              <img 
-                src={registration} 
-                alt="Регистрация участников турнира" 
-                className="w-full h-full object-cover"
-              />
+              <img src={registration} alt="Регистрация участников турнира" className="w-full h-full object-cover" />
             </div>
           </div>
           
@@ -567,9 +528,7 @@ export const TelegramApp = () => {
           </div>
         </CardContent>
       </Card>
-    </div>
-  );
-
+    </div>;
   if (!isAuthenticated) {
     return <TelegramAuth onAuthComplete={handleAuthComplete} />;
   }
@@ -615,7 +574,7 @@ export const TelegramApp = () => {
             </Card>)}
         </div>}
       {activeTab === 'rating' && <div className="space-y-6 pb-20 px-4 bg-transparent min-h-screen relative z-10">
-          <h1 className="text-2xl font-light italic text-white tracking-wide p-4">ЛЕГЕНДЫ CHECK CHECK</h1>
+          <h1 className="text-2xl font-light italic text-white tracking-wide p-4">ЛЕГЕНДЫ EPC</h1>
           <div className="space-y-3">
             {players.map((player, index) => <Card key={player.id} className="bg-gray-800 border-0">
                 <CardContent className="p-4">
@@ -651,8 +610,7 @@ export const TelegramApp = () => {
 
       {activeTab === 'profile' && <div className="space-y-6 pb-20 px-4 bg-transparent min-h-screen relative z-10">
           <h2 className="text-2xl font-light italic text-white tracking-wide p-4">ПРОФИЛЬ</h2>
-          {userStats ? (
-            <Card className="bg-gradient-to-br from-gray-800 to-gray-900 border-0">
+          {userStats ? <Card className="bg-gradient-to-br from-gray-800 to-gray-900 border-0">
               <CardContent className="p-6">
                 <div className="flex items-center gap-4 mb-6">
                   <div className="w-16 h-16 bg-white/10 rounded-full flex items-center justify-center">
@@ -685,14 +643,12 @@ export const TelegramApp = () => {
                   <div className="flex justify-between items-center p-3 bg-white/5 rounded-lg">
                     <span className="text-white/70">Процент побед</span>
                     <span className="text-white font-bold">
-                      {userStats.games_played > 0 ? Math.round((userStats.wins / userStats.games_played) * 100) : 0}%
+                      {userStats.games_played > 0 ? Math.round(userStats.wins / userStats.games_played * 100) : 0}%
                     </span>
                   </div>
                 </div>
               </CardContent>
-            </Card>
-          ) : (
-            <Card className="bg-gradient-to-br from-gray-800 to-gray-900 border-0">
+            </Card> : <Card className="bg-gradient-to-br from-gray-800 to-gray-900 border-0">
               <CardContent className="p-6 text-center">
                 <div className="w-16 h-16 bg-white/10 rounded-full flex items-center justify-center mx-auto mb-4">
                   <User className="h-8 w-8 text-white" />
@@ -702,39 +658,26 @@ export const TelegramApp = () => {
                 </h3>
                 <p className="text-white/60 text-sm">Зарегистрируйтесь на турнир, чтобы увидеть статистику</p>
               </CardContent>
-            </Card>
-          )}
+            </Card>}
         </div>}
 
       <div className="fixed bottom-0 left-0 right-0 bg-gradient-to-t from-gray-900 to-gray-800 border-t border-gray-700/50 backdrop-blur-sm z-50">
         <div className="max-w-lg mx-auto">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="grid w-full grid-cols-4 bg-transparent h-16 p-0">
-              <TabsTrigger 
-                value="home" 
-                className="flex flex-col gap-1 text-white/70 data-[state=active]:text-red-500 data-[state=active]:bg-transparent hover:text-white transition-colors border-0 rounded-none cursor-pointer"
-              >
+              <TabsTrigger value="home" className="flex flex-col gap-1 text-white/70 data-[state=active]:text-red-500 data-[state=active]:bg-transparent hover:text-white transition-colors border-0 rounded-none cursor-pointer">
                 <Home className="h-5 w-5" />
                 <span className="text-xs font-light italic tracking-wide uppercase">Главная</span>
               </TabsTrigger>
-              <TabsTrigger 
-                value="tournaments" 
-                className="flex flex-col gap-1 text-white/70 data-[state=active]:text-red-500 data-[state=active]:bg-transparent hover:text-white transition-colors border-0 rounded-none cursor-pointer"
-              >
+              <TabsTrigger value="tournaments" className="flex flex-col gap-1 text-white/70 data-[state=active]:text-red-500 data-[state=active]:bg-transparent hover:text-white transition-colors border-0 rounded-none cursor-pointer">
                 <Trophy className="h-5 w-5" />
                 <span className="text-xs font-light italic tracking-wide uppercase">Турниры</span>
               </TabsTrigger>
-              <TabsTrigger 
-                value="rating" 
-                className="flex flex-col gap-1 text-white/70 data-[state=active]:text-red-500 data-[state=active]:bg-transparent hover:text-white transition-colors border-0 rounded-none cursor-pointer"
-              >
+              <TabsTrigger value="rating" className="flex flex-col gap-1 text-white/70 data-[state=active]:text-red-500 data-[state=active]:bg-transparent hover:text-white transition-colors border-0 rounded-none cursor-pointer">
                 <Star className="h-5 w-5" />
                 <span className="text-xs font-light italic tracking-wide uppercase">Рейтинг</span>
               </TabsTrigger>
-              <TabsTrigger 
-                value="profile" 
-                className="flex flex-col gap-1 text-white/70 data-[state=active]:text-red-500 data-[state=active]:bg-transparent hover:text-white transition-colors border-0 rounded-none cursor-pointer"
-              >
+              <TabsTrigger value="profile" className="flex flex-col gap-1 text-white/70 data-[state=active]:text-red-500 data-[state=active]:bg-transparent hover:text-white transition-colors border-0 rounded-none cursor-pointer">
                 <User className="h-5 w-5" />
                 <span className="text-xs font-light italic tracking-wide uppercase">Профиль</span>
               </TabsTrigger>
