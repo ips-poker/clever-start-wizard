@@ -439,19 +439,52 @@ export const TelegramApp = () => {
           </CardContent>
         </Card>}
     </div>;
-  const renderAbout = () => <div className="space-y-4 pb-20 px-4 bg-transparent min-h-screen relative z-10">
+  const renderAbout = () => <div className="space-y-6 pb-20 px-4 bg-transparent min-h-screen relative z-10">
       {/* Header with back button */}
       <div className="flex items-center gap-4 p-4">
-        <Button variant="ghost" size="sm" onClick={() => setActiveTab('home')} className="text-white hover:bg-white/10 p-2">
+        <Button variant="ghost" size="sm" onClick={() => setActiveTab('home')} className="text-white hover:bg-white/10 p-3 rounded-xl backdrop-blur-sm border border-white/10 hover:border-amber-400/30 transition-all duration-300">
           <ArrowLeft className="h-5 w-5" />
         </Button>
-        <h2 className="text-2xl font-light italic text-white tracking-wide">О НАС</h2>
+        <div>
+          <h2 className="text-3xl font-light text-white tracking-wider">О НАС</h2>
+          <div className="h-0.5 w-12 bg-gradient-to-r from-amber-400 to-amber-600 mt-2"></div>
+        </div>
       </div>
 
       {/* Company Info Card */}
-      <Card className="bg-gradient-to-br from-slate-700 via-slate-800 to-slate-900 border-0 overflow-hidden relative shadow-2xl">
-        <div className="absolute inset-0 opacity-15">
-          <div className="absolute top-3 right-3 text-amber-400/40 text-6xl">♠</div>
+      <Card className="bg-gradient-to-br from-slate-800/95 via-slate-900/95 to-black/90 border border-white/10 overflow-hidden relative shadow-2xl backdrop-blur-xl group hover:shadow-2xl hover:shadow-amber-500/20 transition-all duration-500">
+        <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 via-transparent to-amber-600/8 opacity-60 group-hover:opacity-100 transition-opacity duration-500"></div>
+        <div className="absolute inset-0 opacity-8 group-hover:opacity-15 transition-opacity duration-500">
+          <div className="absolute top-6 right-6 text-amber-400/30 text-5xl animate-glow">♠</div>
+          <div className="absolute bottom-6 left-6 text-amber-400/20 text-3xl animate-bounce-subtle">♣</div>
+          <div className="absolute top-1/2 right-12 text-amber-400/15 text-2xl animate-pulse">♥</div>
+        </div>
+        
+        <CardContent className="p-8 relative z-10">
+          <div className="flex items-center gap-5 mb-6">
+            <div className="w-16 h-16 bg-gradient-to-br from-white via-gray-50 to-gray-100 rounded-2xl flex items-center justify-center overflow-hidden shadow-xl group-hover:shadow-2xl transition-shadow duration-300 ring-2 ring-white/20 group-hover:ring-amber-400/30">
+              <img src={epcLogo} alt="EPC Logo" className="w-14 h-14 object-contain group-hover:scale-110 transition-transform duration-300" />
+            </div>
+            <div className="flex-1">
+              <h1 className="text-2xl font-light text-white tracking-wider group-hover:text-amber-100 transition-colors duration-300">
+                EVENT POKER CLUB
+              </h1>
+              <p className="text-white/70 text-sm mt-2 leading-relaxed">
+                Ведущий покерный клуб с многолетней историей и профессиональным подходом к организации турниров.
+              </p>
+            </div>
+          </div>
+          
+          <div className="space-y-4">
+            <div className="bg-gradient-to-r from-white/8 via-white/12 to-white/8 rounded-xl p-5 backdrop-blur-md border border-white/10 group-hover:border-amber-400/20 transition-all duration-300">
+              <h3 className="text-white font-semibold text-lg mb-3">Наша миссия</h3>
+              <p className="text-white/80 text-sm leading-relaxed">
+                Создавать профессиональную и дружелюбную среду для развития покерного мастерства игроков всех уровней через честные и увлекательные турниры.
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
           <div className="absolute top-12 left-3 text-amber-400/30 text-4xl">♣</div>
           <div className="absolute bottom-3 right-12 text-amber-400/35 text-5xl">♦</div>
           <div className="absolute bottom-12 left-12 text-amber-400/25 text-3xl">♥</div>
@@ -518,105 +551,131 @@ export const TelegramApp = () => {
 
       {/* Achievements Grid */}
       <div className="grid grid-cols-2 gap-4">
-        <Card className="bg-gradient-to-br from-gray-800 to-gray-900 border-0">
-          <CardContent className="p-4 text-center">
-            <div className="w-12 h-12 bg-white/10 rounded-full flex items-center justify-center mx-auto mb-3">
-              <Trophy className="h-6 w-6 text-white" />
+        <Card className="bg-gradient-to-br from-slate-800/90 via-slate-900/95 to-black/90 border border-white/10 cursor-pointer group transition-all duration-500 hover:scale-105 hover:shadow-xl hover:shadow-amber-500/20 backdrop-blur-xl relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-amber-500/8 via-transparent to-amber-600/8 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+          <CardContent className="p-6 text-center relative z-10">
+            <div className="w-14 h-14 bg-gradient-to-br from-amber-500 to-amber-600 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300 shadow-lg group-hover:shadow-amber-500/30">
+              <Trophy className="h-7 w-7 text-white" />
             </div>
-            <h3 className="text-white font-bold text-lg">500+</h3>
-            <p className="text-white/60 text-xs">Турниров проведено</p>
+            <h3 className="text-white font-bold text-2xl mb-1 group-hover:text-amber-100 transition-colors duration-300">500+</h3>
+            <p className="text-white/70 text-sm font-medium">Турниров проведено</p>
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-gray-800 to-gray-900 border-0">
-          <CardContent className="p-4 text-center">
-            <div className="w-12 h-12 bg-white/10 rounded-full flex items-center justify-center mx-auto mb-3">
-              <Users className="h-6 w-6 text-white" />
+        <Card className="bg-gradient-to-br from-slate-800/90 via-slate-900/95 to-black/90 border border-white/10 cursor-pointer group transition-all duration-500 hover:scale-105 hover:shadow-xl hover:shadow-blue-500/20 backdrop-blur-xl relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-500/8 via-transparent to-blue-600/8 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+          <CardContent className="p-6 text-center relative z-10">
+            <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300 shadow-lg group-hover:shadow-blue-500/30">
+              <Users className="h-7 w-7 text-white" />
             </div>
-            <h3 className="text-white font-bold text-lg">1000+</h3>
-            <p className="text-white/60 text-xs">Активных игроков</p>
+            <h3 className="text-white font-bold text-2xl mb-1 group-hover:text-blue-100 transition-colors duration-300">1000+</h3>
+            <p className="text-white/70 text-sm font-medium">Активных игроков</p>
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-gray-800 to-gray-900 border-0">
-          <CardContent className="p-4 text-center">
-            <div className="w-12 h-12 bg-white/10 rounded-full flex items-center justify-center mx-auto mb-3">
-              <Star className="h-6 w-6 text-white" />
+        <Card className="bg-gradient-to-br from-slate-800/90 via-slate-900/95 to-black/90 border border-white/10 cursor-pointer group transition-all duration-500 hover:scale-105 hover:shadow-xl hover:shadow-green-500/20 backdrop-blur-xl relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-green-500/8 via-transparent to-green-600/8 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+          <CardContent className="p-6 text-center relative z-10">
+            <div className="w-14 h-14 bg-gradient-to-br from-green-500 to-green-600 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300 shadow-lg group-hover:shadow-green-500/30">
+              <Star className="h-7 w-7 text-white" />
             </div>
-            <h3 className="text-white font-bold text-lg">4.9/5</h3>
-            <p className="text-white/60 text-xs">Рейтинг клуба</p>
+            <h3 className="text-white font-bold text-2xl mb-1 group-hover:text-green-100 transition-colors duration-300">4.9/5</h3>
+            <p className="text-white/70 text-sm font-medium">Рейтинг клуба</p>
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-gray-800 to-gray-900 border-0">
-          <CardContent className="p-4 text-center">
-            <div className="w-12 h-12 bg-white/10 rounded-full flex items-center justify-center mx-auto mb-3">
-              <Shield className="h-6 w-6 text-white" />
+        <Card className="bg-gradient-to-br from-slate-800/90 via-slate-900/95 to-black/90 border border-white/10 cursor-pointer group transition-all duration-500 hover:scale-105 hover:shadow-xl hover:shadow-purple-500/20 backdrop-blur-xl relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-purple-500/8 via-transparent to-purple-600/8 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+          <CardContent className="p-6 text-center relative z-10">
+            <div className="w-14 h-14 bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300 shadow-lg group-hover:shadow-purple-500/30">
+              <Shield className="h-7 w-7 text-white" />
             </div>
-            <h3 className="text-white font-bold text-lg">100%</h3>
-            <p className="text-white/60 text-xs">Безопасность данных</p>
+            <h3 className="text-white font-bold text-2xl mb-1 group-hover:text-purple-100 transition-colors duration-300">100%</h3>
+            <p className="text-white/70 text-sm font-medium">Безопасность данных</p>
           </CardContent>
         </Card>
       </div>
 
       {/* Values */}
-      <Card className="bg-gradient-to-br from-gray-800 to-gray-900 border-0">
-        <CardContent className="p-6">
-          <h3 className="text-white font-bold text-lg mb-4">Наши ценности</h3>
-          <div className="space-y-4">
-            <div className="flex items-start gap-3">
-              <div className="w-8 h-8 bg-white/10 rounded-lg flex items-center justify-center mt-1">
-                <Target className="h-4 w-4 text-white" />
+      <Card className="bg-gradient-to-br from-slate-800/95 via-slate-900/95 to-black/90 border border-white/10 backdrop-blur-xl shadow-xl group hover:shadow-2xl hover:shadow-emerald-500/20 transition-all duration-500">
+        <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 via-transparent to-green-600/5 opacity-60 group-hover:opacity-100 transition-opacity duration-500"></div>
+        
+        <CardContent className="p-8 relative z-10">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-green-600 rounded-xl flex items-center justify-center">
+              <Heart className="h-5 w-5 text-white" />
+            </div>
+            <h3 className="text-white font-semibold text-xl tracking-wide group-hover:text-emerald-100 transition-colors duration-300">Наши ценности</h3>
+          </div>
+          
+          <div className="space-y-5">
+            <div className="flex items-start gap-4 p-4 bg-gradient-to-r from-white/5 via-white/8 to-white/5 rounded-xl border border-white/10 group-hover:border-emerald-400/20 transition-all duration-300 backdrop-blur-sm hover:scale-[1.02]">
+              <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-orange-500 rounded-xl flex items-center justify-center mt-1 shadow-lg">
+                <Target className="h-5 w-5 text-white" />
               </div>
-              <div>
-                <h4 className="text-white font-medium text-sm">Честность</h4>
-                <p className="text-white/70 text-xs">Прозрачная рейтинговая система и честная игра</p>
+              <div className="flex-1">
+                <h4 className="text-white font-semibold text-base mb-1">Честность</h4>
+                <p className="text-white/70 text-sm leading-relaxed">Прозрачная рейтинговая система и честная игра для всех участников</p>
               </div>
             </div>
 
-            <div className="flex items-start gap-3">
-              <div className="w-8 h-8 bg-white/10 rounded-lg flex items-center justify-center mt-1">
-                <Heart className="h-4 w-4 text-white" />
+            <div className="flex items-start gap-4 p-4 bg-gradient-to-r from-white/5 via-white/8 to-white/5 rounded-xl border border-white/10 group-hover:border-emerald-400/20 transition-all duration-300 backdrop-blur-sm hover:scale-[1.02]">
+              <div className="w-10 h-10 bg-gradient-to-br from-pink-500 to-red-500 rounded-xl flex items-center justify-center mt-1 shadow-lg">
+                <Heart className="h-5 w-5 text-white" />
               </div>
-              <div>
-                <h4 className="text-white font-medium text-sm">Сообщество</h4>
-                <p className="text-white/70 text-xs">Дружелюбная атмосфера для игроков всех уровней</p>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-3">
-              <div className="w-8 h-8 bg-white/10 rounded-lg flex items-center justify-center mt-1">
-                <Zap className="h-4 w-4 text-white" />
-              </div>
-              <div>
-                <h4 className="text-white font-medium text-sm">Инновации</h4>
-                <p className="text-white/70 text-xs">Современные технологии для лучшего опыта</p>
+              <div className="flex-1">
+                <h4 className="text-white font-semibold text-base mb-1">Сообщество</h4>
+                <p className="text-white/70 text-sm leading-relaxed">Дружелюбная атмосфера для игроков всех уровней подготовки</p>
               </div>
             </div>
 
-            <div className="flex items-start gap-3">
-              <div className="w-8 h-8 bg-white/10 rounded-lg flex items-center justify-center mt-1">
-                <Globe className="h-4 w-4 text-white" />
+            <div className="flex items-start gap-4 p-4 bg-gradient-to-r from-white/5 via-white/8 to-white/5 rounded-xl border border-white/10 group-hover:border-emerald-400/20 transition-all duration-300 backdrop-blur-sm hover:scale-[1.02]">
+              <div className="w-10 h-10 bg-gradient-to-br from-yellow-500 to-orange-500 rounded-xl flex items-center justify-center mt-1 shadow-lg">
+                <Zap className="h-5 w-5 text-white" />
               </div>
-              <div>
-                <h4 className="text-white font-medium text-sm">Международный уровень</h4>
-                <p className="text-white/70 text-xs">Соответствуем мировым стандартам</p>
+              <div className="flex-1">
+                <h4 className="text-white font-semibold text-base mb-1">Инновации</h4>
+                <p className="text-white/70 text-sm leading-relaxed">Современные технологии для лучшего игрового опыта</p>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-4 p-4 bg-gradient-to-r from-white/5 via-white/8 to-white/5 rounded-xl border border-white/10 group-hover:border-emerald-400/20 transition-all duration-300 backdrop-blur-sm hover:scale-[1.02]">
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-500 rounded-xl flex items-center justify-center mt-1 shadow-lg">
+                <Globe className="h-5 w-5 text-white" />
+              </div>
+              <div className="flex-1">
+                <h4 className="text-white font-semibold text-base mb-1">Международный уровень</h4>
+                <p className="text-white/70 text-sm leading-relaxed">Соответствуем мировым стандартам проведения турниров</p>
               </div>
             </div>
           </div>
         </CardContent>
       </Card>
+    </div>;
 
       {/* Contact Info */}
-      <Card className="bg-gradient-to-br from-red-600 to-red-800 border-0">
-        <CardContent className="p-6">
-          <h3 className="text-white font-bold text-lg mb-4">Присоединяйтесь к нам</h3>
-          <p className="text-white/80 text-sm mb-4">
-            Готовы стать частью нашего покерного сообщества? Свяжитесь с нами для получения дополнительной информации.
+      <Card className="bg-gradient-to-br from-red-600/90 via-red-700/95 to-red-800/90 border border-red-500/20 backdrop-blur-xl shadow-2xl group hover:shadow-2xl hover:shadow-red-500/30 transition-all duration-500 relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-red-500/10 via-transparent to-red-600/15 opacity-60 group-hover:opacity-100 transition-opacity duration-500"></div>
+        <div className="absolute inset-0 opacity-10 group-hover:opacity-20 transition-opacity duration-500">
+          <div className="absolute top-4 right-4 text-red-300/30 text-4xl animate-pulse">♠</div>
+          <div className="absolute bottom-4 left-4 text-red-300/20 text-3xl animate-bounce-subtle">♥</div>
+        </div>
+        
+        <CardContent className="p-8 relative z-10">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 bg-gradient-to-br from-white/20 to-white/10 rounded-xl flex items-center justify-center">
+              <UserPlus className="h-5 w-5 text-white" />
+            </div>
+            <h3 className="text-white font-bold text-xl tracking-wide group-hover:text-red-100 transition-colors duration-300">Присоединяйтесь к нам</h3>
+          </div>
+          
+          <p className="text-white/90 text-sm mb-6 leading-relaxed">
+            Готовы стать частью нашего покерного сообщества? Свяжитесь с нами для получения дополнительной информации о турнирах и мероприятиях.
           </p>
-          <div className="flex items-center gap-2">
-            <CheckCircle className="h-4 w-4 text-white" />
-            <span className="text-white text-sm">Лицензированная деятельность</span>
+          
+          <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-white/10 via-white/15 to-white/10 rounded-xl border border-white/20 backdrop-blur-sm">
+            <CheckCircle className="h-5 w-5 text-green-400 flex-shrink-0" />
+            <span className="text-white text-sm font-medium">Лицензированная деятельность с полным соблюдением законодательства</span>
           </div>
         </CardContent>
       </Card>
@@ -642,46 +701,150 @@ export const TelegramApp = () => {
         <div className="absolute top-[44rem] right-6 text-5xl text-red-600 transform -rotate-60">♣</div>
       </div>
       {activeTab === 'home' && renderHome()}
-      {activeTab === 'tournaments' && <div className="space-y-4 pb-20 px-4 bg-transparent min-h-screen relative z-10">
-          <h2 className="text-2xl font-light italic text-white tracking-wide p-4">ТУРНИРЫ</h2>
-          {tournaments.map((tournament, index) => <Card key={tournament.id} className="bg-gradient-to-br from-red-600 to-red-800 border-0">
-              <CardContent className="p-6">
-                <h3 className="text-xl font-light italic text-white tracking-wide uppercase mb-3">
-                  {tournament.name}
-                </h3>
-                <div className="flex items-center gap-4 text-white/80 mb-4">
-                  <div className="flex items-center gap-2">
-                    <Users className="h-4 w-4" />
-                    <span className="text-sm">{tournament.tournament_registrations?.[0]?.count || 0}/{tournament.max_players}</span>
+      {activeTab === 'tournaments' && <div className="space-y-6 pb-20 px-4 bg-transparent min-h-screen relative z-10">
+          <div className="flex items-center gap-3 p-4">
+            <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl flex items-center justify-center">
+              <Trophy className="h-5 w-5 text-white" />
+            </div>
+            <div>
+              <h2 className="text-3xl font-light text-white tracking-wider">ТУРНИРЫ</h2>
+              <div className="h-0.5 w-16 bg-gradient-to-r from-amber-400 to-amber-600 mt-2"></div>
+            </div>
+          </div>
+          
+          {tournaments.map((tournament, index) => <Card key={tournament.id} className="bg-gradient-to-br from-slate-800/95 via-slate-900/95 to-black/90 border border-amber-400/20 backdrop-blur-xl shadow-xl group hover:shadow-2xl hover:shadow-amber-500/30 transition-all duration-500 relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 via-transparent to-amber-600/8 opacity-60 group-hover:opacity-100 transition-opacity duration-500"></div>
+              <div className="absolute inset-0 opacity-8 group-hover:opacity-15 transition-opacity duration-500">
+                <div className="absolute top-4 right-4 text-amber-400/30 text-4xl animate-pulse">♠</div>
+                <div className="absolute bottom-4 left-4 text-amber-400/20 text-3xl animate-bounce-subtle">♣</div>
+              </div>
+              
+              <CardContent className="p-8 relative z-10">
+                <div className="flex items-start justify-between mb-6">
+                  <div className="flex-1">
+                    <h3 className="text-2xl font-light text-white tracking-wider uppercase mb-3 group-hover:text-amber-100 transition-colors duration-300">
+                      {tournament.name}
+                    </h3>
+                    <div className="h-0.5 w-12 bg-gradient-to-r from-amber-400 to-amber-600 group-hover:w-20 transition-all duration-500"></div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Clock className="h-4 w-4" />
-                    <span className="text-sm">{new Date(tournament.start_time).toLocaleString('ru-RU')}</span>
+                  <div className="w-12 h-12 bg-gradient-to-br from-amber-500/20 to-amber-600/20 rounded-xl flex items-center justify-center border border-amber-400/30 group-hover:scale-110 transition-transform duration-300">
+                    <Trophy className="h-6 w-6 text-amber-400" />
                   </div>
                 </div>
-                {tournament.status === 'scheduled' && <Button onClick={() => registerForTournament(tournament.id)} disabled={registering === tournament.id} className="w-full bg-black/30 hover:bg-black/50 text-white font-bold py-3 rounded-lg">
-                    {registering === tournament.id ? 'Регистрируем...' : 'В список ожидания'}
+                
+                <div className="grid grid-cols-2 gap-4 mb-6">
+                  <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-white/8 via-white/12 to-white/8 rounded-xl border border-white/10 group-hover:border-amber-400/20 transition-all duration-300 backdrop-blur-sm">
+                    <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
+                      <Users className="h-4 w-4 text-white" />
+                    </div>
+                    <div>
+                      <span className="text-white font-semibold text-base">{tournament.tournament_registrations?.[0]?.count || 0}/{tournament.max_players}</span>
+                      <p className="text-white/60 text-xs">участников</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-white/8 via-white/12 to-white/8 rounded-xl border border-white/10 group-hover:border-amber-400/20 transition-all duration-300 backdrop-blur-sm">
+                    <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-green-600 rounded-lg flex items-center justify-center">
+                      <Clock className="h-4 w-4 text-white" />
+                    </div>
+                    <div>
+                      <span className="text-white font-semibold text-base">{new Date(tournament.start_time).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}</span>
+                      <p className="text-white/60 text-xs">{new Date(tournament.start_time).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })}</p>
+                    </div>
+                  </div>
+                </div>
+                
+                {tournament.status === 'scheduled' && <Button 
+                    onClick={() => registerForTournament(tournament.id)} 
+                    disabled={registering === tournament.id} 
+                    className="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-semibold py-4 rounded-xl shadow-lg hover:shadow-amber-500/30 transition-all duration-300 group-hover:scale-[1.02] border-0"
+                  >
+                    {registering === tournament.id ? (
+                      <div className="flex items-center gap-2">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <span>Регистрируем...</span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <UserPlus className="h-4 w-4" />
+                        <span>Записаться на турнир</span>
+                      </div>
+                    )}
                   </Button>}
               </CardContent>
             </Card>)}
         </div>}
       {activeTab === 'rating' && <div className="space-y-6 pb-20 px-4 bg-transparent min-h-screen relative z-10">
-          <h1 className="text-2xl font-light italic text-white tracking-wide p-4">ЛЕГЕНДЫ EPC</h1>
-          <div className="space-y-3">
-            {players.map((player, index) => <Card key={player.id} className="bg-gray-800 border-0">
-                <CardContent className="p-4">
+          <div className="flex items-center gap-3 p-4">
+            <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl flex items-center justify-center">
+              <Crown className="h-5 w-5 text-white" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-light text-white tracking-wider">ЛЕГЕНДЫ EPC</h1>
+              <div className="h-0.5 w-20 bg-gradient-to-r from-amber-400 to-amber-600 mt-2"></div>
+            </div>
+          </div>
+          
+          <div className="space-y-4">
+            {players.map((player, index) => <Card key={player.id} className={`bg-gradient-to-br backdrop-blur-xl shadow-xl group hover:shadow-2xl transition-all duration-500 relative overflow-hidden border ${
+                index === 0 ? 'from-amber-600/20 via-amber-700/30 to-amber-800/20 border-amber-400/30 hover:shadow-amber-500/30' :
+                index === 1 ? 'from-gray-400/20 via-gray-500/30 to-gray-600/20 border-gray-400/30 hover:shadow-gray-500/30' :
+                index === 2 ? 'from-orange-600/20 via-orange-700/30 to-orange-800/20 border-orange-400/30 hover:shadow-orange-500/30' :
+                'from-slate-800/90 via-slate-900/95 to-black/90 border-white/10 hover:shadow-purple-500/20'
+              } hover:scale-[1.02] cursor-pointer`}>
+                <div className={`absolute inset-0 opacity-60 group-hover:opacity-100 transition-opacity duration-500 ${
+                  index === 0 ? 'bg-gradient-to-br from-amber-500/10 via-transparent to-amber-600/15' :
+                  index === 1 ? 'bg-gradient-to-br from-gray-400/10 via-transparent to-gray-600/15' :
+                  index === 2 ? 'bg-gradient-to-br from-orange-500/10 via-transparent to-orange-600/15' :
+                  'bg-gradient-to-br from-purple-500/5 via-transparent to-blue-600/5'
+                }`}></div>
+                
+                <div className="absolute inset-0 opacity-8 group-hover:opacity-15 transition-opacity duration-500">
+                  <div className={`absolute top-4 right-4 text-3xl animate-pulse ${
+                    index < 3 ? 'text-amber-400/30' : 'text-purple-400/30'
+                  }`}>
+                    {index === 0 ? '♠' : index === 1 ? '♥' : index === 2 ? '♦' : '♣'}
+                  </div>
+                </div>
+                
+                <CardContent className="p-6 relative z-10">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <Avatar className="w-12 h-12">
-                        <AvatarImage src={player.avatar_url} />
-                        <AvatarFallback className="bg-gray-600 text-white">{player.name?.[0] || 'P'}</AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <h3 className="text-white font-medium">{player.name}</h3>
-                        <p className="text-white/60 text-sm">{player.games_played} игр</p>
+                    <div className="flex items-center gap-4">
+                      <div className="relative">
+                        <Avatar className="w-14 h-14 ring-2 ring-white/20 group-hover:ring-amber-400/40 transition-all duration-300">
+                          <AvatarImage src={player.avatar_url} />
+                          <AvatarFallback className="bg-gradient-to-br from-gray-600 to-gray-700 text-white font-semibold text-lg">{player.name?.[0] || 'P'}</AvatarFallback>
+                        </Avatar>
+                        {index < 3 && (
+                          <div className={`absolute -top-2 -right-2 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white shadow-lg ${
+                            index === 0 ? 'bg-gradient-to-br from-amber-500 to-amber-600' :
+                            index === 1 ? 'bg-gradient-to-br from-gray-400 to-gray-500' :
+                            'bg-gradient-to-br from-orange-500 to-orange-600'
+                          }`}>
+                            {index === 0 ? '👑' : index === 1 ? '🥈' : '🥉'}
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="text-white font-semibold text-lg group-hover:text-amber-100 transition-colors duration-300">{player.name}</h3>
+                        <div className="flex items-center gap-3 mt-1">
+                          <p className="text-white/70 text-sm">{player.games_played} игр</p>
+                          <div className="w-1 h-1 bg-white/40 rounded-full"></div>
+                          <p className="text-white/70 text-sm">{player.wins} побед</p>
+                        </div>
                       </div>
                     </div>
-                    <div className="text-white font-bold text-xl">{player.elo_rating}</div>
+                    <div className="text-right">
+                      <div className={`text-2xl font-bold mb-1 ${
+                        index === 0 ? 'text-amber-400' :
+                        index === 1 ? 'text-gray-300' :
+                        index === 2 ? 'text-orange-400' :
+                        'text-white'
+                      } group-hover:scale-110 transition-transform duration-300`}>
+                        {player.elo_rating}
+                      </div>
+                      <p className="text-white/60 text-xs">ELO рейтинг</p>
+                    </div>
                   </div>
                 </CardContent>
               </Card>)}
@@ -691,13 +854,94 @@ export const TelegramApp = () => {
       {activeTab === 'about' && renderAbout()}
       
       {activeTab === 'qa' && <div className="space-y-6 pb-20 px-4 bg-transparent min-h-screen relative z-10">
-          <h2 className="text-2xl font-light italic text-white tracking-wide p-4">Q&A</h2>
-          <div className="space-y-4">
-            <div className="bg-gray-800 rounded-lg p-4">
-              <h3 className="text-white font-bold mb-2">1. Это законно?</h3>
-              <p className="text-white/70 text-sm">Да, совершенно законно! Мы проводим турниры по техасскому холдему как хобби.</p>
+          <div className="flex items-center gap-3 p-4">
+            <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-blue-600 rounded-xl flex items-center justify-center">
+              <MessageSquare className="h-5 w-5 text-white" />
+            </div>
+            <div>
+              <h2 className="text-3xl font-light text-white tracking-wider">Q&A</h2>
+              <div className="h-0.5 w-8 bg-gradient-to-r from-purple-400 to-blue-500 mt-2"></div>
             </div>
           </div>
+          
+          <div className="space-y-4">
+            <Card className="bg-gradient-to-br from-slate-800/95 via-slate-900/95 to-black/90 border border-white/10 backdrop-blur-xl shadow-xl group hover:shadow-2xl hover:shadow-purple-500/20 transition-all duration-500 relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 via-transparent to-blue-600/5 opacity-60 group-hover:opacity-100 transition-opacity duration-500"></div>
+              <div className="absolute inset-0 opacity-8 group-hover:opacity-15 transition-opacity duration-500">
+                <div className="absolute top-4 right-4 text-purple-400/30 text-3xl animate-pulse">♠</div>
+              </div>
+              
+              <CardContent className="p-6 relative z-10">
+                <div className="flex items-start gap-4">
+                  <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-emerald-500 rounded-lg flex items-center justify-center flex-shrink-0 mt-1">
+                    <CheckCircle className="h-4 w-4 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-white font-semibold text-lg mb-3 group-hover:text-purple-100 transition-colors duration-300">1. Это законно?</h3>
+                    <p className="text-white/80 text-sm leading-relaxed">Да, совершенно законно! Мы проводим турниры по техасскому холдему как хобби и развлечение. Все наши мероприятия соответствуют действующему законодательству.</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card className="bg-gradient-to-br from-slate-800/95 via-slate-900/95 to-black/90 border border-white/10 backdrop-blur-xl shadow-xl group hover:shadow-2xl hover:shadow-blue-500/20 transition-all duration-500 relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-transparent to-cyan-600/5 opacity-60 group-hover:opacity-100 transition-opacity duration-500"></div>
+              <div className="absolute inset-0 opacity-8 group-hover:opacity-15 transition-opacity duration-500">
+                <div className="absolute top-4 right-4 text-blue-400/30 text-3xl animate-bounce-subtle">♣</div>
+              </div>
+              
+              <CardContent className="p-6 relative z-10">
+                <div className="flex items-start gap-4">
+                  <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-lg flex items-center justify-center flex-shrink-0 mt-1">
+                    <Users className="h-4 w-4 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-white font-semibold text-lg mb-3 group-hover:text-blue-100 transition-colors duration-300">2. Как стать участником?</h3>
+                    <p className="text-white/80 text-sm leading-relaxed">Для участия в турнирах необходимо зарегистрироваться через наше приложение. Мы приветствуем игроков всех уровней подготовки.</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card className="bg-gradient-to-br from-slate-800/95 via-slate-900/95 to-black/90 border border-white/10 backdrop-blur-xl shadow-xl group hover:shadow-2xl hover:shadow-amber-500/20 transition-all duration-500 relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 via-transparent to-orange-600/5 opacity-60 group-hover:opacity-100 transition-opacity duration-500"></div>
+              <div className="absolute inset-0 opacity-8 group-hover:opacity-15 transition-opacity duration-500">
+                <div className="absolute top-4 right-4 text-amber-400/30 text-3xl animate-glow">♦</div>
+              </div>
+              
+              <CardContent className="p-6 relative z-10">
+                <div className="flex items-start gap-4">
+                  <div className="w-8 h-8 bg-gradient-to-br from-amber-500 to-orange-500 rounded-lg flex items-center justify-center flex-shrink-0 mt-1">
+                    <Trophy className="h-4 w-4 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-white font-semibold text-lg mb-3 group-hover:text-amber-100 transition-colors duration-300">3. Как работает рейтинговая система?</h3>
+                    <p className="text-white/80 text-sm leading-relaxed">Мы используем систему ELO для честного ранжирования игроков. Рейтинг обновляется после каждого турнира на основе результатов и уровня соперников.</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card className="bg-gradient-to-br from-slate-800/95 via-slate-900/95 to-black/90 border border-white/10 backdrop-blur-xl shadow-xl group hover:shadow-2xl hover:shadow-red-500/20 transition-all duration-500 relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-red-500/5 via-transparent to-pink-600/5 opacity-60 group-hover:opacity-100 transition-opacity duration-500"></div>
+              <div className="absolute inset-0 opacity-8 group-hover:opacity-15 transition-opacity duration-500">
+                <div className="absolute top-4 right-4 text-red-400/30 text-3xl animate-pulse">♥</div>
+              </div>
+              
+              <CardContent className="p-6 relative z-10">
+                <div className="flex items-start gap-4">
+                  <div className="w-8 h-8 bg-gradient-to-br from-red-500 to-pink-500 rounded-lg flex items-center justify-center flex-shrink-0 mt-1">
+                    <Shield className="h-4 w-4 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-white font-semibold text-lg mb-3 group-hover:text-red-100 transition-colors duration-300">4. Безопасность данных?</h3>
+                    <p className="text-white/80 text-sm leading-relaxed">Мы серьезно относимся к защите персональных данных. Вся информация шифруется и хранится в соответствии с современными стандартами безопасности.</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>}
         </div>}
 
       {activeTab === 'profile' && <div className="space-y-6 pb-20 px-4 bg-transparent min-h-screen relative z-10">
