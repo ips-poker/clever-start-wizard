@@ -130,7 +130,7 @@ serve(async (req) => {
       optimizedSize: 0,
       compressionRatio: 0,
       optimizedUrl: '',
-      error: error.message
+      error: error instanceof Error ? error.message : 'Unknown error'
     }
     
     return new Response(

@@ -134,8 +134,8 @@ serve(async (req) => {
     
     return new Response(JSON.stringify({
       success: false,
-      message: `Ошибка тестирования: ${error.message}`,
-      error: error.message
+      message: `Ошибка тестирования: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      error: error instanceof Error ? error.message : 'Unknown error'
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,

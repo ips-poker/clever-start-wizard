@@ -34,12 +34,7 @@ serve(async (req) => {
       
       // Connect to OpenAI Realtime API
       const openaiUrl = "wss://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview-2024-12-17";
-      openaiSocket = new WebSocket(openaiUrl, [], {
-        headers: {
-          "Authorization": `Bearer ${openAIApiKey}`,
-          "OpenAI-Beta": "realtime=v1"
-        }
-      });
+      openaiSocket = new WebSocket(openaiUrl);
 
       openaiSocket.onopen = () => {
         console.log("Connected to OpenAI Realtime API");
@@ -441,7 +436,8 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Error in realtime-voice-tournament function:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    return new Response(JSON.stringify({ error: errorMessage }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
@@ -532,7 +528,7 @@ async function handleTournamentFunction(functionName: string, args: any, callId:
         if (playersError) {
           result = { success: false, message: 'Ошибка получения списка игроков' };
         } else {
-          const playerNames = playersData?.map(p => p.players.name).join(', ') || 'Нет игроков';
+          const playerNames = playersData?.map(p => p.players?.[0]?.name || 'Неизвестный').join(', ') || 'Нет игроков';
           result = { 
             success: true, 
             message: `Зарегистрированные игроки: ${playerNames}` 
@@ -611,9 +607,18 @@ async function handleTournamentFunction(functionName: string, args: any, callId:
           .single();
         
         if (player) {
+          // Get current rebuys and increment
+          const { data: currentReg } = await supabase
+            .from('tournament_registrations')
+            .select('rebuys')
+            .eq('player_id', player.id)
+            .single();
+          
+          const currentRebuys = currentReg?.rebuys || 0;
+          
           await supabase
             .from('tournament_registrations')
-            .update({ rebuys: supabase.rpc('COALESCE', { value: 'rebuys', default: 0 }) + 1 })
+            .update({ rebuys: currentRebuys + 1 })
             .eq('player_id', player.id);
           result = { success: true, message: `Ребай добавлен игроку ${args.player_name}` };
         } else {
@@ -629,9 +634,18 @@ async function handleTournamentFunction(functionName: string, args: any, callId:
           .single();
         
         if (playerAddon) {
+          // Get current addons and increment
+          const { data: currentReg } = await supabase
+            .from('tournament_registrations')
+            .select('addons')
+            .eq('player_id', playerAddon.id)
+            .single();
+          
+          const currentAddons = currentReg?.addons || 0;
+          
           await supabase
             .from('tournament_registrations')
-            .update({ addons: supabase.rpc('COALESCE', { value: 'addons', default: 0 }) + 1 })
+            .update({ addons: currentAddons + 1 })
             .eq('player_id', playerAddon.id);
           result = { success: true, message: `Адон добавлен игроку ${args.player_name}` };
         } else {
@@ -729,7 +743,8 @@ async function handleTournamentFunction(functionName: string, args: any, callId:
       }]);
       
   } catch (error) {
-    result = { success: false, message: `Ошибка выполнения: ${error.message}` };
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    result = { success: false, message: `Ошибка выполнения: ${errorMessage}` };
   }
 
   // Send function result back to OpenAI

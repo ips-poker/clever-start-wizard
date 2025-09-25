@@ -184,10 +184,11 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Orange Data receipt error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
     
     return new Response(JSON.stringify({
       success: false,
-      error: error.message,
+      error: errorMessage,
       message: "Ошибка при отправке чека в Orange Data"
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

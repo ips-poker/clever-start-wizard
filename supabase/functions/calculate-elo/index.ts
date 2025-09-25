@@ -122,7 +122,7 @@ serve(async (req) => {
     }
 
     // Calculate new RPS ratings changes
-    const rpsChanges = calculateRPSChanges(players, results, tournament, payoutStructure, ratingConfig)
+    const rpsChanges = calculateRPSChanges(players, results, tournament, payoutStructure || [], ratingConfig)
 
     // Update players and create game results
     for (const change of rpsChanges) {
@@ -192,9 +192,10 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Error in calculate-elo function:', error)
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
     return new Response(
       JSON.stringify({ 
-        error: error.message,
+        error: errorMessage,
         success: false 
       }),
       { 

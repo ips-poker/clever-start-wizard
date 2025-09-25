@@ -169,7 +169,7 @@ serve(async (req) => {
     console.error('Error in SEO analyzer function:', error);
     return new Response(JSON.stringify({ 
       success: false,
-      error: error.message,
+      error: error instanceof Error ? error.message : 'Unknown error',
       timestamp: new Date().toISOString()
     }), {
       status: 500,
