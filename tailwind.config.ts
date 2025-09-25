@@ -131,6 +131,21 @@ export default {
 			fontFamily: {
 				'sinkin': ['Work Sans', 'sans-serif'],
 			},
+			fontSize: {
+				'xs': ['0.814rem', { lineHeight: '1.1rem' }], // 0.75rem * 1.1 ≈ 0.814rem
+				'sm': ['0.968rem', { lineHeight: '1.375rem' }], // 0.875rem * 1.1 ≈ 0.968rem
+				'base': ['1.1rem', { lineHeight: '1.65rem' }], // 1rem * 1.1 = 1.1rem
+				'lg': ['1.243rem', { lineHeight: '1.925rem' }], // 1.125rem * 1.1 ≈ 1.243rem
+				'xl': ['1.375rem', { lineHeight: '1.925rem' }], // 1.25rem * 1.1 = 1.375rem
+				'2xl': ['1.65rem', { lineHeight: '2.2rem' }], // 1.5rem * 1.1 = 1.65rem
+				'3xl': ['2.057rem', { lineHeight: '2.475rem' }], // 1.875rem * 1.1 ≈ 2.057rem
+				'4xl': ['2.75rem', { lineHeight: '2.75rem' }], // 2.25rem * 1.1 ≈ 2.75rem
+				'5xl': ['3.3rem', { lineHeight: '1' }], // 3rem * 1.1 = 3.3rem
+				'6xl': ['4.125rem', { lineHeight: '1' }], // 3.75rem * 1.1 = 4.125rem
+				'7xl': ['5.28rem', { lineHeight: '1' }], // 4.8rem * 1.1 = 5.28rem
+				'8xl': ['6.6rem', { lineHeight: '1' }], // 6rem * 1.1 = 6.6rem
+				'9xl': ['8.8rem', { lineHeight: '1' }], // 8rem * 1.1 = 8.8rem
+			},
 			fontWeight: {
 				'light': 'var(--font-weight-light)',
 				'normal': 'var(--font-weight-normal)',
