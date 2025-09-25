@@ -210,7 +210,7 @@ export const TelegramApp = () => {
           </div>
           
           <div className="bg-white/10 rounded-xl p-4 backdrop-blur-sm">
-            <p className="text-white text-sm font-medium leading-relaxed">Общий рейтинг</p>
+            <p className="text-white text-sm font-medium leading-relaxed">О нас</p>
           </div>
         </CardContent>
       </Card>
