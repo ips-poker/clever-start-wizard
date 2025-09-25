@@ -124,10 +124,7 @@ export const TelegramAuth: React.FC<TelegramAuthProps> = ({ onAuthComplete }) =>
           body: JSON.stringify({
             name: playerName,
             telegram: telegramId,
-            avatar_url: telegramUserData.photoUrl,
-            elo_rating: 1000,
-            games_played: 0,
-            wins: 0
+            avatar_url: telegramUserData.photoUrl
           })
         });
       }
