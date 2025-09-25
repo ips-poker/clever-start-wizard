@@ -640,6 +640,107 @@ export const TelegramApp = () => {
         </CardContent>
       </Card>
 
+      {/* Club Rules */}
+      <Card className="bg-gradient-to-br from-blue-600/90 via-blue-700/95 to-indigo-700/90 border border-blue-400/20 backdrop-blur-xl shadow-2xl group hover:shadow-2xl hover:shadow-blue-500/30 transition-all duration-500 relative overflow-hidden hover:scale-[1.01]">
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 via-transparent to-indigo-600/15 opacity-60 group-hover:opacity-100 transition-opacity duration-500"></div>
+        <div className="absolute inset-0 opacity-10 group-hover:opacity-20 transition-opacity duration-500">
+          <div className="absolute top-4 right-4 text-blue-300/30 text-5xl animate-pulse">♣</div>
+          <div className="absolute bottom-4 left-4 text-indigo-300/20 text-4xl animate-bounce-subtle">♠</div>
+          <div className="absolute top-1/3 left-1/3 text-blue-300/15 text-3xl animate-glow">♦</div>
+        </div>
+        
+        <CardContent className="p-8 relative z-10">
+          <div className="flex items-center gap-4 mb-6">
+            <div className="w-14 h-14 bg-gradient-to-br from-white/20 to-white/10 rounded-2xl flex items-center justify-center">
+              <MessageSquare className="h-7 w-7 text-white" />
+            </div>
+            <div>
+              <h3 className="text-white font-bold text-2xl tracking-wide group-hover:text-blue-100 transition-colors duration-300">
+                Наши правила
+              </h3>
+              <div className="h-0.5 w-20 bg-gradient-to-r from-white/60 to-white/30 mt-2 rounded-full"></div>
+            </div>
+          </div>
+          
+          <p className="text-white/90 text-sm mb-6 leading-relaxed">
+            Правила обязательны к исполнению всеми участниками мероприятия
+          </p>
+          
+          <div className="space-y-4">
+            {/* Rule 1 */}
+            <div className="p-5 bg-gradient-to-r from-white/8 via-white/12 to-white/8 rounded-xl border border-white/15 backdrop-blur-sm group-hover:border-blue-400/30 transition-all duration-300">
+              <div className="flex items-start gap-3">
+                <div className="w-6 h-6 bg-gradient-to-br from-amber-500 to-amber-600 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <span className="text-white text-xs font-bold">1</span>
+                </div>
+                <div className="flex-1">
+                  <h4 className="text-white font-semibold text-sm mb-2">Спортивно-развлекательный покер</h4>
+                  <p className="text-white/80 text-xs leading-relaxed">
+                    Мы проводим турниры по спортивному покеру. Любая игра на деньги в нашем клубе запрещена. Никаких денежных призов, формирования призовых фондов или иных форм азартных игр с материальным вознаграждением мы не проводим.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Rule 2 */}
+            <div className="p-5 bg-gradient-to-r from-white/8 via-white/12 to-white/8 rounded-xl border border-white/15 backdrop-blur-sm group-hover:border-blue-400/30 transition-all duration-300">
+              <div className="flex items-start gap-3">
+                <div className="w-6 h-6 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <span className="text-white text-xs font-bold">2</span>
+                </div>
+                <div className="flex-1">
+                  <h4 className="text-white font-semibold text-sm mb-2">Участие в турнирах</h4>
+                  <p className="text-white/80 text-xs leading-relaxed">
+                    Участие в турнире осуществляется за фиксированную стоимость (бай-ин). Это взнос за организацию мероприятия и аренду оборудования. Участие завершается при выбывании игрока или его победе в турнире.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Rule 3 */}
+            <div className="p-5 bg-gradient-to-r from-white/8 via-white/12 to-white/8 rounded-xl border border-white/15 backdrop-blur-sm group-hover:border-blue-400/30 transition-all duration-300">
+              <div className="flex items-start gap-3">
+                <div className="w-6 h-6 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <span className="text-white text-xs font-bold">3</span>
+                </div>
+                <div className="flex-1">
+                  <h4 className="text-white font-semibold text-sm mb-2">Взаимное уважение</h4>
+                  <p className="text-white/80 text-xs leading-relaxed">
+                    Мы руководствуемся принципами взаимного уважения. Каждый игрок имеет право на комфортную игру, пока это не препятствует комфорту других участников. Наша свобода заканчивается там, где начинается свобода другого.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Rule 4 */}
+            <div className="p-5 bg-gradient-to-r from-white/8 via-white/12 to-white/8 rounded-xl border border-white/15 backdrop-blur-sm group-hover:border-blue-400/30 transition-all duration-300">
+              <div className="flex items-start gap-3">
+                <div className="w-6 h-6 bg-gradient-to-br from-red-500 to-red-600 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <span className="text-white text-xs font-bold">4</span>
+                </div>
+                <div className="flex-1">
+                  <h4 className="text-white font-semibold text-sm mb-2">Рейтинговая система ELO</h4>
+                  <p className="text-white/80 text-xs leading-relaxed">
+                    В клубе действует прозрачная рейтинговая система ELO. Участники получают рейтинговые очки за результаты в турнирах. Лучшие игроки месяца получают право участия в финальных турнирах.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-6 p-4 bg-gradient-to-r from-amber-500/10 via-amber-600/15 to-amber-500/10 rounded-xl border border-amber-400/30 backdrop-blur-sm">
+            <div className="flex items-start gap-3">
+              <div className="w-5 h-5 bg-gradient-to-br from-amber-500 to-amber-600 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                <CheckCircle className="h-3 w-3 text-white" />
+              </div>
+              <p className="text-white/90 text-xs leading-relaxed">
+                <span className="font-semibold">Важно:</span> Участвуя в турнирах EPC, вы автоматически соглашаетесь с данными правилами. Игроки, не согласные с положениями правил, к участию не допускаются.
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Legal & Contact */}
       <Card className="bg-gradient-to-br from-green-600/90 via-green-700/95 to-emerald-700/90 border border-green-400/20 backdrop-blur-xl shadow-2xl group hover:shadow-2xl hover:shadow-green-500/30 transition-all duration-500 relative overflow-hidden hover:scale-[1.01]">
         <div className="absolute inset-0 bg-gradient-to-br from-green-500/10 via-transparent to-emerald-600/15 opacity-60 group-hover:opacity-100 transition-opacity duration-500"></div>
