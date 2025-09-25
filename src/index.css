@@ -36,50 +36,55 @@
 
     --radius: 0.75rem;
 
-    /* Enhanced Professional Poker Colors - Light Theme */
-    --poker-primary: 220 26% 14%;           /* Deep navy for excellent contrast */
-    --poker-primary-light: 220 26% 18%;     /* Slightly lighter navy */
-    --poker-secondary: 220 14% 96%;         /* Very light gray-blue */
-    --poker-accent: 260 100% 68%;           /* More vivid purple for better visibility */
-    --poker-accent-light: 260 100% 75%;     /* Lighter purple */
-    --poker-success: 142 76% 40%;           /* Deeper green for better contrast */
-    --poker-warning: 45 93% 47%;            /* Rich gold with better contrast */
-    --poker-error: 0 84% 55%;               /* Professional red */
-    --poker-surface: 220 14% 99%;           /* Almost white surface */
-    --poker-surface-elevated: 220 20% 98%;  /* Slightly elevated surface */
-    --poker-border: 220 14% 88%;            /* More visible border */
-    --poker-text-primary: 220 26% 14%;      /* Main text color - same as primary */
-    --poker-text-secondary: 220 16% 40%;    /* Darker secondary text for better readability */
-    --poker-text-muted: 220 14% 60%;        /* Better contrast muted text */
-    --poker-gold: 45 95% 50%;               /* Premium gold accent */
-    --poker-steel: 220 16% 40%;             /* Darker professional steel blue */
-    --poker-charcoal: 220 26% 14%;          /* Charcoal for premium feel */
-    --poker-cream: 45 20% 96%;              /* Cream background */
+    /* PokerStars-inspired Professional Colors - Light Theme */
+    --poker-primary: 0 0% 98%;              /* Light text */
+    --poker-primary-light: 0 0% 95%;        /* Slightly dimmed light text */
+    --poker-secondary: 120 100% 15%;        /* Dark poker table green */
+    --poker-accent: 120 60% 45%;            /* Poker table green */
+    --poker-accent-light: 120 50% 55%;      /* Lighter poker green */
+    --poker-success: 120 70% 40%;           /* Win green */
+    --poker-warning: 45 100% 55%;           /* Gold accent */
+    --poker-error: 0 85% 60%;               /* Danger red */
+    --poker-surface: 220 15% 8%;            /* Dark surface */
+    --poker-surface-elevated: 220 15% 12%;  /* Elevated dark surface */
+    --poker-border: 120 30% 25%;            /* Green border */
+    --poker-text-primary: 0 0% 98%;         /* Light text */
+    --poker-text-secondary: 0 0% 85%;       /* Secondary light text */
+    --poker-text-muted: 0 0% 65%;           /* Muted light text */
+    --poker-gold: 45 100% 60%;              /* Bright gold */
+    --poker-steel: 200 20% 60%;             /* Steel blue */
+    --poker-charcoal: 220 15% 8%;           /* Very dark charcoal */
+    --poker-cream: 45 30% 15%;              /* Dark cream */
     
-    /* Professional Gradients - Light Theme */
-    --gradient-primary: linear-gradient(135deg, hsl(220 14% 99%) 0%, hsl(220 20% 96%) 50%, hsl(220 14% 93%) 100%);
-    --gradient-hero: linear-gradient(135deg, hsl(220 14% 99% / 0.95) 0%, hsl(220 20% 96% / 0.90) 50%, hsl(220 14% 93% / 0.85) 100%);
-    --gradient-card: linear-gradient(135deg, hsl(220 20% 98% / 0.8) 0%, hsl(220 14% 96% / 0.9) 100%);
-    --gradient-tooltip: linear-gradient(135deg, hsl(220 20% 96% / 0.95) 0%, hsl(220 14% 94% / 0.98) 100%);
-    --gradient-accent: linear-gradient(135deg, hsl(260 100% 65%) 0%, hsl(260 100% 70%) 100%);
-    --gradient-success: linear-gradient(135deg, hsl(142 71% 45%) 0%, hsl(142 71% 50%) 100%);
-    --gradient-glass: linear-gradient(135deg, rgba(255, 255, 255, 0.25) 0%, rgba(255, 255, 255, 0.10) 100%);
-    --gradient-border: linear-gradient(135deg, hsl(220 14% 91%) 0%, hsl(220 20% 88%) 100%);
-    --gradient-button: linear-gradient(135deg, hsl(220 26% 14%) 0%, hsl(220 26% 18%) 100%);
-    --gradient-surface: linear-gradient(135deg, hsl(220 14% 99%) 0%, hsl(220 20% 97%) 100%);
-    --gradient-charcoal: linear-gradient(135deg, hsl(220 26% 14%) 0%, hsl(220 26% 18%) 100%);
-    --gradient-steel: linear-gradient(135deg, hsl(220 16% 46%) 0%, hsl(220 20% 50%) 100%);
+    /* PokerStars-style Professional Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(220 15% 8%) 0%, hsl(220 15% 12%) 50%, hsl(220 15% 6%) 100%);
+    --gradient-hero: linear-gradient(135deg, hsl(120 100% 8%) 0%, hsl(120 80% 10%) 50%, hsl(120 100% 6%) 100%);
+    --gradient-card: linear-gradient(135deg, hsl(220 15% 10% / 0.9) 0%, hsl(220 15% 8% / 0.95) 100%);
+    --gradient-tooltip: linear-gradient(135deg, hsl(220 15% 12% / 0.95) 0%, hsl(220 15% 10% / 0.98) 100%);
+    --gradient-accent: linear-gradient(135deg, hsl(120 60% 35%) 0%, hsl(120 70% 45%) 100%);
+    --gradient-success: linear-gradient(135deg, hsl(120 70% 40%) 0%, hsl(120 80% 50%) 100%);
+    --gradient-glass: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+    --gradient-border: linear-gradient(135deg, hsl(120 30% 25%) 0%, hsl(120 40% 30%) 100%);
+    --gradient-button: linear-gradient(135deg, hsl(120 60% 35%) 0%, hsl(120 70% 45%) 100%);
+    --gradient-surface: linear-gradient(135deg, hsl(220 15% 8%) 0%, hsl(220 15% 12%) 100%);
+    --gradient-charcoal: linear-gradient(135deg, hsl(220 15% 6%) 0%, hsl(220 15% 10%) 100%);
+    --gradient-steel: linear-gradient(135deg, hsl(200 20% 50%) 0%, hsl(200 30% 60%) 100%);
+    --gradient-gold: linear-gradient(135deg, hsl(45 100% 50%) 0%, hsl(45 100% 70%) 100%);
+    --gradient-table: linear-gradient(135deg, hsl(120 100% 8%) 0%, hsl(120 80% 15%) 50%, hsl(120 60% 12%) 100%);
     
-    /* Professional Shadows - Light Theme */
-    --shadow-minimal: 0 1px 3px hsl(220 26% 14% / 0.05);
-    --shadow-subtle: 0 2px 8px hsl(220 26% 14% / 0.08);
-    --shadow-card: 0 4px 16px hsl(220 26% 14% / 0.10);
-    --shadow-elevated: 0 8px 24px hsl(220 26% 14% / 0.12);
-    --shadow-floating: 0 12px 32px hsl(220 26% 14% / 0.15);
-    --shadow-dramatic: 0 16px 48px hsl(220 26% 14% / 0.18);
-    --shadow-accent: 0 4px 16px hsl(260 100% 65% / 0.25);
-    --shadow-success: 0 4px 16px hsl(142 71% 45% / 0.25);
-    --shadow-inset: inset 0 1px 3px hsl(220 26% 14% / 0.06);
+    /* PokerStars-style Professional Shadows */
+    --shadow-minimal: 0 2px 4px hsl(0 0% 0% / 0.3);
+    --shadow-subtle: 0 4px 8px hsl(0 0% 0% / 0.4);
+    --shadow-card: 0 8px 16px hsl(0 0% 0% / 0.5);
+    --shadow-elevated: 0 12px 24px hsl(0 0% 0% / 0.6);
+    --shadow-floating: 0 16px 32px hsl(0 0% 0% / 0.7);
+    --shadow-dramatic: 0 20px 48px hsl(0 0% 0% / 0.8);
+    --shadow-accent: 0 0 20px hsl(120 60% 45% / 0.4), 0 8px 16px hsl(0 0% 0% / 0.3);
+    --shadow-success: 0 0 20px hsl(120 70% 40% / 0.4), 0 8px 16px hsl(0 0% 0% / 0.3);
+    --shadow-gold: 0 0 30px hsl(45 100% 55% / 0.5), 0 8px 16px hsl(0 0% 0% / 0.4);
+    --shadow-inset: inset 0 2px 4px hsl(0 0% 0% / 0.2);
+    --shadow-glow: 0 0 40px hsl(120 60% 45% / 0.6);
+    --shadow-luxury: 0 32px 64px hsl(0 0% 0% / 0.8), 0 0 0 1px hsl(120 30% 25% / 0.3);
     
     /* Typography Enhancements */
     --font-weight-light: 300;
@@ -117,62 +122,62 @@
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
+    --background: 220 15% 6%;               /* Very dark background like PokerStars */
+    --foreground: 0 0% 98%;
 
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
+    --card: 220 15% 8%;                     /* Dark card background */
+    --card-foreground: 0 0% 98%;
 
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 220 15% 10%;
+    --popover-foreground: 0 0% 98%;
 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    --primary: 0 0% 98%;
+    --primary-foreground: 220 15% 8%;
 
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 220 15% 15%;
+    --secondary-foreground: 0 0% 98%;
 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --muted: 220 15% 12%;
+    --muted-foreground: 0 0% 65%;
 
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 120 60% 45%;                  /* Poker table green */
+    --accent-foreground: 0 0% 98%;
 
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 85% 60%;
+    --destructive-foreground: 0 0% 98%;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
+    --border: 120 30% 20%;                  /* Green border */
+    --input: 220 15% 15%;
+    --ring: 120 60% 45%;
     
-    /* Enhanced Professional Poker Colors - Dark Theme */
-    --poker-primary: 0 0% 98%;              /* Very light text for dark backgrounds */
+    /* PokerStars-inspired Professional Colors - Dark Theme */
+    --poker-primary: 0 0% 98%;              /* Light text for dark backgrounds */
     --poker-primary-light: 0 0% 90%;        /* Slightly dimmed light text */
-    --poker-secondary: 220 26% 8%;          /* Very dark surface */
-    --poker-accent: 260 100% 75%;           /* Brighter purple for dark theme */
-    --poker-accent-light: 260 85% 85%;      /* Light purple accent */
-    --poker-success: 142 76% 60%;           /* Brighter green for dark */
-    --poker-warning: 45 93% 70%;            /* Brighter gold for dark */
-    --poker-error: 0 84% 70%;               /* Brighter red for dark */
-    --poker-surface: 220 26% 6%;           /* Very dark surface */
-    --poker-surface-elevated: 220 26% 10%;  /* Elevated dark surface */
-    --poker-border: 220 16% 25%;            /* Visible dark border */
+    --poker-secondary: 120 100% 15%;        /* Dark poker table green */
+    --poker-accent: 120 60% 50%;            /* Poker table green */
+    --poker-accent-light: 120 50% 60%;      /* Lighter poker green */
+    --poker-success: 120 70% 50%;           /* Bright win green */
+    --poker-warning: 45 100% 65%;           /* Bright gold */
+    --poker-error: 0 85% 65%;               /* Bright red */
+    --poker-surface: 220 15% 8%;            /* Very dark surface */
+    --poker-surface-elevated: 220 15% 12%;  /* Elevated dark surface */
+    --poker-border: 120 30% 30%;            /* Visible green border */
     --poker-text-primary: 0 0% 98%;         /* Light text for dark theme */
-    --poker-text-secondary: 220 16% 80%;    /* Light secondary text */
-    --poker-text-muted: 220 14% 65%;        /* Muted light text */
-    --poker-gold: 45 93% 70%;               /* Bright gold for dark */
-    --poker-steel: 220 16% 75%;             /* Light steel for dark */
-    --poker-charcoal: 220 26% 6%;           /* Very dark charcoal */
-    --poker-cream: 45 25% 12%;              /* Dark cream */
+    --poker-text-secondary: 0 0% 85%;       /* Light secondary text */
+    --poker-text-muted: 0 0% 65%;           /* Muted light text */
+    --poker-gold: 45 100% 70%;              /* Bright gold for dark */
+    --poker-steel: 200 20% 70%;             /* Light steel for dark */
+    --poker-charcoal: 220 15% 6%;           /* Very dark charcoal */
+    --poker-cream: 45 30% 15%;              /* Dark cream */
     
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-background: 220 15% 8%;
+    --sidebar-foreground: 0 0% 98%;
+    --sidebar-primary: 120 60% 45%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 220 15% 12%;
+    --sidebar-accent-foreground: 0 0% 98%;
+    --sidebar-border: 120 30% 20%;
+    --sidebar-ring: 120 60% 45%;
   }
 }
 

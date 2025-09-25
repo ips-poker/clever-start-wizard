@@ -99,6 +99,8 @@ export default {
 				'gradient-surface': 'var(--gradient-surface)',
 				'gradient-charcoal': 'var(--gradient-charcoal)',
 				'gradient-steel': 'var(--gradient-steel)',
+				'gradient-gold': 'var(--gradient-gold)',
+				'gradient-table': 'var(--gradient-table)',
 				'gradient-radial': 'radial-gradient(circle, var(--tw-gradient-stops))'
 			},
 			boxShadow: {
