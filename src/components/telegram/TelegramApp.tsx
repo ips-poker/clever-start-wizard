@@ -241,6 +241,9 @@ export const TelegramApp = () => {
           WebkitTextStroke: '1px rgba(255,255,255,0.2)',
           WebkitTextFillColor: 'transparent'
         }}>♣</div>
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+            <Trophy className="h-24 w-24 text-white/10 transform rotate-12" />
+          </div>
         </div>
         <CardContent className="p-6 relative z-10">
           <div className="flex items-center gap-4">
