@@ -58,8 +58,7 @@ interface Player {
   wins: number;
   avatar_url?: string;
   created_at?: string;
-  telegram_id?: string;
-  telegram_username?: string;
+  telegram?: string;
 }
 
 interface TelegramUser {
@@ -110,7 +109,7 @@ export const TelegramApp = () => {
         (payload) => {
           console.log('Player update:', payload);
           fetchPlayers();
-          if (telegramUser && payload.new && (payload.new as any).telegram_id === telegramUser.id.toString()) {
+          if (telegramUser && payload.new && (payload.new as any).telegram === telegramUser.id.toString()) {
             setUserStats(payload.new as Player);
           }
         }
@@ -195,26 +194,22 @@ export const TelegramApp = () => {
     if (!telegramUser) return;
     
     try {
-      // Используем простой fetch для избежания проблем с типизацией
+      // Исправляем запрос - используем поле telegram вместо telegram_id
       const telegramId = telegramUser.id.toString();
-      const supabaseUrl = 'https://mokhssmnorrhohrowxvu.supabase.co';
-      const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1va2hzc21ub3JyaG9ocm93eHZ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMwODUzNDYsImV4cCI6MjA2ODY2MTM0Nn0.ZWYgSZFeidY0b_miC7IyfXVPh1EUR2WtxlEvt_fFmGc';
       
-      const response = await fetch(`${supabaseUrl}/rest/v1/players?telegram_id=eq.${telegramId}&select=*`, {
-        headers: {
-          'apikey': supabaseKey,
-          'Authorization': `Bearer ${supabaseKey}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      if (response.ok) {
-        const players = await response.json();
-        const playerData = players?.[0];
+      const { data, error } = await supabase
+        .from('players')
+        .select('*')
+        .eq('telegram', telegramId)
+        .maybeSingle();
         
-        if (playerData) {
-          setUserStats(playerData);
-        }
+      if (error) {
+        console.error('Error fetching user stats:', error);
+        return;
+      }
+      
+      if (data) {
+        setUserStats(data);
       }
     } catch (error) {
       console.error('Error fetching user stats:', error);
@@ -971,7 +966,7 @@ export const TelegramApp = () => {
                   {userStats?.name || [telegramUser?.firstName, telegramUser?.lastName].filter(Boolean).join(' ') || 'Игрок'}
                 </h3>
                 <p className="text-poker-gold font-medium">
-                  @{userStats?.telegram_username || telegramUser?.username || 'telegram_user'}
+                  @{telegramUser?.username || userStats?.telegram || 'telegram_user'}
                 </p>
                 {userStats?.created_at && (
                   <p className="text-xs text-white/60 mt-2 bg-poker-gray-dark/50 px-2 py-1 rounded-lg inline-block">
