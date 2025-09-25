@@ -192,6 +192,12 @@ export const TelegramApp = () => {
   };
   const renderHome = () => <div className="space-y-4 pb-20 px-4 bg-transparent min-h-screen relative z-10">
       <Card className="bg-gradient-to-br from-red-600 to-red-800 border-0 overflow-hidden relative">
+        <div className="absolute inset-0 opacity-15 overflow-hidden pointer-events-none z-0">
+          <div className="absolute top-2 right-2 text-8xl text-red-300/40 transform rotate-12" style={{WebkitTextStroke: '1px rgba(252,165,165,0.3)', WebkitTextFillColor: 'transparent'}}>♥</div>
+          <div className="absolute bottom-2 left-2 text-7xl text-red-300/40 transform -rotate-12" style={{WebkitTextStroke: '1px rgba(252,165,165,0.3)', WebkitTextFillColor: 'transparent'}}>♦</div>
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-9xl transform rotate-45" style={{WebkitTextStroke: '1px rgba(252,165,165,0.15)', WebkitTextFillColor: 'transparent', opacity: '0.2'}}>♥</div>
+        </div>
+        
         <div className="absolute inset-0 opacity-10">
           <div className="absolute top-4 right-4">
             <CircleDot className="h-24 w-24 animate-[spin_4s_linear_infinite] text-white/20" />
