@@ -4,11 +4,20 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Trophy, Calendar, Users, Star, MessageSquare, User, Home, TrendingUp, Clock, MapPin, Coins, ChevronRight, Award, Target, CheckCircle, UserPlus, Loader2, Crown, Gem, Zap, Shield, Play, Pause, CircleDot, ArrowLeft, Heart, Globe } from 'lucide-react';
+import { Trophy, Calendar, Users, Star, MessageSquare, User, Home, TrendingUp, Clock, MapPin, Coins, ChevronRight, Award, Target, CheckCircle, UserPlus, Loader2, Crown, Gem, Zap, Shield, Play, Pause, CircleDot, ArrowLeft, Heart, Globe, Camera } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { TelegramAuth } from './TelegramAuth';
 import { toast } from 'sonner';
 import epcLogo from '@/assets/epc-logo.png';
+import mainPokerRoom from '@/assets/gallery/main-poker-room.jpg';
+import tournamentTable from '@/assets/gallery/tournament-table.jpg';
+import vipZone from '@/assets/gallery/vip-zone.jpg';
+import loungeArea from '@/assets/gallery/lounge-area.jpg';
+import teamTournament from '@/assets/gallery/team-tournament.jpg';
+import awardsCeremony from '@/assets/gallery/awards-ceremony.jpg';
+import masterclass from '@/assets/gallery/masterclass.jpg';
+import registration from '@/assets/gallery/registration.jpg';
+import pokerChips from '@/assets/gallery/poker-chips.jpg';
 interface Tournament {
   id: string;
   name: string;
@@ -467,6 +476,81 @@ export const TelegramApp = () => {
               </div>
             </div>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Photo Gallery */}
+      <Card className="bg-gradient-to-br from-gray-800 to-gray-900 border-0">
+        <CardContent className="p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center">
+              <Camera className="h-5 w-5 text-white" />
+            </div>
+            <h3 className="text-white font-bold text-lg">Галерея клуба</h3>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-3">
+            <div className="aspect-square bg-gray-700 rounded-lg overflow-hidden">
+              <img 
+                src={mainPokerRoom} 
+                alt="Основной покерный зал" 
+                className="w-full h-full object-cover"
+              />
+            </div>
+            <div className="aspect-square bg-gray-700 rounded-lg overflow-hidden">
+              <img 
+                src={tournamentTable} 
+                alt="Турнирный стол" 
+                className="w-full h-full object-cover"
+              />
+            </div>
+            <div className="aspect-square bg-gray-700 rounded-lg overflow-hidden">
+              <img 
+                src={vipZone} 
+                alt="VIP зона" 
+                className="w-full h-full object-cover"
+              />
+            </div>
+            <div className="aspect-square bg-gray-700 rounded-lg overflow-hidden">
+              <img 
+                src={loungeArea} 
+                alt="Лаунж зона" 
+                className="w-full h-full object-cover"
+              />
+            </div>
+            <div className="aspect-square bg-gray-700 rounded-lg overflow-hidden">
+              <img 
+                src={teamTournament} 
+                alt="Командный турнир" 
+                className="w-full h-full object-cover"
+              />
+            </div>
+            <div className="aspect-square bg-gray-700 rounded-lg overflow-hidden">
+              <img 
+                src={awardsCeremony} 
+                alt="Церемония награждения" 
+                className="w-full h-full object-cover"
+              />
+            </div>
+            <div className="aspect-square bg-gray-700 rounded-lg overflow-hidden">
+              <img 
+                src={masterclass} 
+                alt="Мастер-класс" 
+                className="w-full h-full object-cover"
+              />
+            </div>
+            <div className="aspect-square bg-gray-700 rounded-lg overflow-hidden">
+              <img 
+                src={registration} 
+                alt="Регистрация игроков" 
+                className="w-full h-full object-cover"
+              />
+            </div>
+          </div>
+          
+          <p className="text-white/70 text-sm text-center mt-4">
+            Наши покерные залы и мероприятия
+          </p>
         </CardContent>
       </Card>
 
