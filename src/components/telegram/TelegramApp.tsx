@@ -190,7 +190,7 @@ export const TelegramApp = () => {
       setRegistering(null);
     }
   };
-  const renderHome = () => <div className="space-y-4 pb-20 px-4 bg-black min-h-screen">
+  const renderHome = () => <div className="space-y-4 pb-20 px-4 bg-transparent min-h-screen relative z-10">
       <Card className="bg-gradient-to-br from-red-600 to-red-800 border-0 overflow-hidden relative">
         <div className="absolute inset-0 opacity-10">
           <div className="absolute top-4 right-4">
@@ -339,9 +339,20 @@ export const TelegramApp = () => {
         <Loader2 className="h-8 w-8 animate-spin text-white" />
       </div>;
   }
-  return <div className="max-w-lg mx-auto bg-black min-h-screen">
+  return <div className="max-w-lg mx-auto bg-black min-h-screen relative overflow-hidden">
+      {/* Покерные масти в фоне */}
+      <div className="absolute inset-0 opacity-5 overflow-hidden pointer-events-none">
+        <div className="absolute top-20 left-8 text-6xl text-red-500 transform rotate-12">♠</div>
+        <div className="absolute top-40 right-12 text-5xl text-red-600 transform -rotate-12">♥</div>
+        <div className="absolute top-80 left-16 text-7xl text-red-400 transform rotate-45">♦</div>
+        <div className="absolute top-96 right-8 text-6xl text-red-500 transform -rotate-30">♣</div>
+        <div className="absolute top-[28rem] left-4 text-5xl text-red-600 transform rotate-60">♠</div>
+        <div className="absolute top-[32rem] right-16 text-6xl text-red-400 transform -rotate-45">♥</div>
+        <div className="absolute top-[40rem] left-20 text-7xl text-red-500 transform rotate-15">♦</div>
+        <div className="absolute top-[44rem] right-6 text-5xl text-red-600 transform -rotate-60">♣</div>
+      </div>
       {activeTab === 'home' && renderHome()}
-      {activeTab === 'tournaments' && <div className="space-y-4 pb-20 px-4 bg-black min-h-screen">
+      {activeTab === 'tournaments' && <div className="space-y-4 pb-20 px-4 bg-transparent min-h-screen relative z-10">
           <h2 className="text-2xl font-light italic text-white tracking-wide p-4">ТУРНИРЫ</h2>
           {tournaments.map((tournament, index) => <Card key={tournament.id} className="bg-gradient-to-br from-red-600 to-red-800 border-0">
               <CardContent className="p-6">
@@ -364,7 +375,7 @@ export const TelegramApp = () => {
               </CardContent>
             </Card>)}
         </div>}
-      {activeTab === 'rating' && <div className="space-y-6 pb-20 px-4 bg-black min-h-screen">
+      {activeTab === 'rating' && <div className="space-y-6 pb-20 px-4 bg-transparent min-h-screen relative z-10">
           <h1 className="text-2xl font-light italic text-white tracking-wide p-4">ЛЕГЕНДЫ CHECK CHECK</h1>
           <div className="space-y-3">
             {players.map((player, index) => <Card key={player.id} className="bg-gray-800 border-0">
@@ -386,7 +397,7 @@ export const TelegramApp = () => {
               </Card>)}
           </div>
         </div>}
-      {activeTab === 'qa' && <div className="space-y-6 pb-20 px-4 bg-black min-h-screen">
+      {activeTab === 'qa' && <div className="space-y-6 pb-20 px-4 bg-transparent min-h-screen relative z-10">
           <h2 className="text-2xl font-light italic text-white tracking-wide p-4">Q&A</h2>
           <div className="space-y-4">
             <div className="bg-gray-800 rounded-lg p-4">
