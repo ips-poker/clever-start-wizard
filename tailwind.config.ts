@@ -80,7 +80,11 @@ export default {
 					border: 'hsl(var(--poker-border))',
 					'text-primary': 'hsl(var(--poker-text-primary))',
 					'text-secondary': 'hsl(var(--poker-text-secondary))',
-					'text-muted': 'hsl(var(--poker-text-muted))'
+					'text-muted': 'hsl(var(--poker-text-muted))',
+					gold: 'hsl(var(--poker-gold))',
+					steel: 'hsl(var(--poker-steel))',
+					charcoal: 'hsl(var(--poker-charcoal))',
+					cream: 'hsl(var(--poker-cream))'
 				}
 			},
 			backgroundImage: {
@@ -92,7 +96,9 @@ export default {
 				'gradient-glass': 'var(--gradient-glass)',
 				'gradient-border': 'var(--gradient-border)',
 				'gradient-button': 'var(--gradient-button)',
-				'gradient-surface': 'var(--gradient-surface)'
+				'gradient-surface': 'var(--gradient-surface)',
+				'gradient-charcoal': 'var(--gradient-charcoal)',
+				'gradient-steel': 'var(--gradient-steel)'
 			},
 			boxShadow: {
 				'minimal': 'var(--shadow-minimal)',
@@ -191,15 +197,15 @@ export default {
 						filter: 'brightness(1) drop-shadow(0 0 0px transparent)'
 					},
 					'50%': {
-						filter: 'brightness(1.1) drop-shadow(0 0 20px hsl(var(--poker-gold) / 0.3))'
+						filter: 'brightness(1.1) drop-shadow(0 0 20px hsl(var(--poker-accent) / 0.3))'
 					}
 				},
 				'pulse-glow': {
 					'0%, 100%': {
-						boxShadow: '0 0 20px hsl(var(--poker-gold) / 0.2)'
+						boxShadow: '0 0 20px hsl(var(--poker-accent) / 0.2)'
 					},
 					'50%': {
-						boxShadow: '0 0 40px hsl(var(--poker-gold) / 0.4)'
+						boxShadow: '0 0 40px hsl(var(--poker-accent) / 0.4)'
 					}
 				},
 				'bounce-subtle': {

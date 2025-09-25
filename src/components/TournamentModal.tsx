@@ -298,76 +298,134 @@ export function TournamentModal({ tournament, open, onOpenChange, onTournamentUp
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <div className="flex items-start justify-between">
-            <div className="flex-1">
-              {isEditing ? (
-                <div className="space-y-4">
-                  <DialogTitle className="text-xl font-bold">
-                    Редактирование турнира
-                  </DialogTitle>
-                  <DialogDescription>
-                    Изменение параметров и настроек турнира
-                  </DialogDescription>
-                  <div>
-                    <Label htmlFor="tournament-name">Название турнира</Label>
-                    <Input
-                      id="tournament-name"
-                      value={editForm.name}
-                      onChange={(e) => handleEditFormChange('name', e.target.value)}
-                      className="text-xl font-bold"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="tournament-description">Описание</Label>
-                    <Textarea
-                      id="tournament-description"
-                      value={editForm.description}
-                      onChange={(e) => handleEditFormChange('description', e.target.value)}
-                      rows={2}
-                    />
-                  </div>
-                </div>
-              ) : (
-                <div>
-                  <DialogTitle className="text-2xl font-bold text-poker-primary mb-2">
-                    {tournament.name}
-                  </DialogTitle>
-                  <DialogDescription>
-                    {tournament.description || "Подробная информация о турнире"}
-                  </DialogDescription>
-                </div>
-              )}
-            </div>
-            <div className="flex items-center gap-2 ml-4">
-              <Badge variant={getStatusColor(tournament.status)}>
-                {getStatusLabel(tournament.status)}
-              </Badge>
-              {tournament.status !== 'finished' && isAdmin && (
-                <Button
-                  variant={isEditing ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setIsEditing(!isEditing)}
-                  disabled={loading}
-                  className="flex items-center gap-2"
-                >
-                  {isEditing ? (
-                    <>
-                      <X className="w-4 h-4" />
-                      Отмена
-                    </>
-                  ) : (
-                    <>
-                      <Edit className="w-4 h-4" />
-                      Редактировать
-                    </>
-                  )}
-                </Button>
-              )}
-            </div>
+      <DialogContent className="max-w-6xl max-h-[95vh] overflow-y-auto bg-gradient-card border-border/50">
+        {/* Enhanced Header with Visual Impact */}
+        <div className="relative">
+          <div className="absolute top-0 right-0 w-40 h-40 opacity-5 overflow-hidden">
+            <Trophy className="w-full h-full text-poker-accent rotate-12" />
           </div>
-        </DialogHeader>
+          
+          <DialogHeader className="relative pb-6">
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                {isEditing ? (
+                  <div className="space-y-6">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-12 h-12 bg-poker-accent/10 rounded-xl flex items-center justify-center">
+                        <Edit className="w-6 h-6 text-poker-accent" />
+                      </div>
+                      <div>
+                        <DialogTitle className="text-2xl font-bold text-poker-primary">
+                          Редактирование турнира
+                        </DialogTitle>
+                        <DialogDescription className="text-base text-muted-foreground">
+                          Изменение параметров и настроек турнира
+                        </DialogDescription>
+                      </div>
+                    </div>
+                    
+                    <div className="grid md:grid-cols-2 gap-6">
+                      <div className="space-y-2">
+                        <Label htmlFor="tournament-name" className="text-sm font-semibold text-poker-primary">Название турнира</Label>
+                        <Input
+                          id="tournament-name"
+                          value={editForm.name}
+                          onChange={(e) => handleEditFormChange('name', e.target.value)}
+                          className="text-lg font-semibold border-border/50 focus:border-poker-accent"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="tournament-description" className="text-sm font-semibold text-poker-primary">Описание</Label>
+                        <Textarea
+                          id="tournament-description"
+                          value={editForm.description}
+                          onChange={(e) => handleEditFormChange('description', e.target.value)}
+                          rows={3}
+                          className="border-border/50 focus:border-poker-accent resize-none"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="flex items-start gap-4">
+                      <div className="w-16 h-16 bg-gradient-to-br from-poker-accent/20 to-poker-primary/20 rounded-2xl flex items-center justify-center shadow-card">
+                        <Trophy className="w-8 h-8 text-poker-accent" />
+                      </div>
+                      <div className="flex-1">
+                        <DialogTitle className="text-3xl font-bold text-poker-primary mb-3 leading-tight">
+                          {tournament.name}
+                        </DialogTitle>
+                        <DialogDescription className="text-base text-muted-foreground leading-relaxed">
+                          {tournament.description || "Профессиональный рейтинговый турнир с современной структурой блайндов"}
+                        </DialogDescription>
+                        
+                        {/* Tournament Meta Info */}
+                        <div className="flex flex-wrap items-center gap-4 mt-4">
+                          <div className="flex items-center gap-2 text-sm">
+                            <Calendar className="w-4 h-4 text-poker-accent" />
+                            <span className="font-medium">
+                              {new Date(tournament.start_time).toLocaleDateString('ru-RU', { 
+                                weekday: 'long',
+                                year: 'numeric', 
+                                month: 'long', 
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })}
+                            </span>
+                          </div>
+                          
+                          {lateRegDeadline && (
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                              <Clock className="w-4 h-4" />
+                              <span>
+                                Поздняя регистрация до: {lateRegDeadline.toLocaleTimeString('ru-RU', { 
+                                  hour: '2-digit', 
+                                  minute: '2-digit' 
+                                })}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+              
+              <div className="flex items-center gap-3 ml-6">
+                <Badge 
+                  variant={getStatusColor(tournament.status)}
+                  className="px-4 py-2 text-sm font-semibold"
+                >
+                  {getStatusLabel(tournament.status)}
+                </Badge>
+                {tournament.status !== 'finished' && isAdmin && (
+                  <Button
+                    variant={isEditing ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setIsEditing(!isEditing)}
+                    disabled={loading}
+                    className="flex items-center gap-2 transition-all duration-300 hover:shadow-card"
+                  >
+                    {isEditing ? (
+                      <>
+                        <X className="w-4 h-4" />
+                        Отмена
+                      </>
+                    ) : (
+                      <>
+                        <Edit className="w-4 h-4" />
+                        Редактировать
+                      </>
+                    )}
+                  </Button>
+                )}
+              </div>
+            </div>
+          </DialogHeader>
+        </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Основная информация */}

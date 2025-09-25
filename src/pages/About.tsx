@@ -116,39 +116,66 @@ export default function About() {
       <Header />
       
       <main>
-        {/* Hero Section */}
-        <section className="py-20 bg-gradient-surface relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-poker-accent/5 to-poker-primary/5"></div>
+        {/* Enhanced Hero Section */}
+        <section className="py-24 bg-gradient-surface relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-poker-accent/8 to-poker-primary/8"></div>
+          <div className="absolute inset-0 opacity-5">
+            <div className="absolute top-20 left-10 w-72 h-72 bg-poker-accent rounded-full blur-3xl animate-pulse"></div>
+            <div className="absolute bottom-20 right-10 w-96 h-96 bg-poker-primary rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
+          </div>
+          
           <div className="container mx-auto px-4 relative">
-            <div className="grid lg:grid-cols-2 gap-12 items-center">
-              <div className="max-w-2xl">
-                <Badge variant="outline" className="mb-6 border-poker-accent text-poker-accent">
-                  {getContent('hero_badge', 'О компании')}
-                </Badge>
-                <h1 className="text-5xl font-bold mb-6 bg-gradient-to-r from-poker-primary to-poker-accent bg-clip-text text-transparent">
-                  {getContent('hero_title', 'International Poker Style')}
+            <div className="grid lg:grid-cols-2 gap-16 items-center">
+              <div className="max-w-2xl animate-fade-in">
+                <div className="flex items-center gap-3 mb-8">
+                  <div className="w-12 h-12 bg-poker-accent/10 rounded-xl flex items-center justify-center">
+                    <Trophy className="w-6 h-6 text-poker-accent" />
+                  </div>
+                  <Badge variant="outline" className="border-poker-accent text-poker-accent px-4 py-2 text-sm font-semibold">
+                    {getContent('hero_badge', 'О компании')}
+                  </Badge>
+                </div>
+                
+                <h1 className="text-6xl font-bold mb-8 bg-gradient-to-r from-poker-primary via-poker-accent to-poker-primary bg-clip-text text-transparent leading-tight animate-slide-up">
+                  {getContent('hero_title', 'EPC Event Poker Club')}
                 </h1>
-                <p className="text-xl text-muted-foreground leading-relaxed mb-8">
+                
+                <p className="text-xl text-muted-foreground leading-relaxed mb-10 animate-slide-up" style={{ animationDelay: '0.2s' }}>
                   {getContent('hero_description', 'Мы создали уникальное пространство для любителей покера, где каждый может развивать свои навыки, участвовать в честных турнирах и расти в профессиональной рейтинговой системе.')}
                 </p>
-                <div className="flex flex-wrap gap-4">
-                  <Button size="lg" className="bg-gradient-button hover:shadow-elevated">
-                    <Users className="w-5 h-5 mr-2" />
-                    Присоединиться
+                
+                <div className="flex flex-wrap gap-4 animate-slide-up" style={{ animationDelay: '0.4s' }}>
+                  <Button size="lg" className="bg-gradient-button hover:shadow-elevated transition-all duration-500 px-8 py-4 group">
+                    <Users className="w-5 h-5 mr-3 group-hover:scale-110 transition-transform" />
+                    Присоединиться к нам
                   </Button>
-                  <Button size="lg" variant="outline">
-                    <Trophy className="w-5 h-5 mr-2" />
+                  <Button size="lg" variant="outline" className="px-8 py-4 border-poker-accent/30 text-poker-accent hover:bg-poker-accent/10 hover:border-poker-accent transition-all duration-500 group">
+                    <Trophy className="w-5 h-5 mr-3 group-hover:scale-110 transition-transform" />
                     Наши турниры
                   </Button>
                 </div>
               </div>
-              <div className="relative">
-                <img 
-                  src={getContent('hero_image', 'https://images.unsplash.com/photo-1606092195730-5d7b9af1efc5?w=600&h=600&fit=crop')}
-                  alt="IPS Poker Club"
-                  className="rounded-2xl shadow-floating w-full"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-poker-primary/20 to-transparent rounded-2xl"></div>
+              
+              <div className="relative animate-slide-right" style={{ animationDelay: '0.3s' }}>
+                <div className="relative overflow-hidden rounded-3xl shadow-floating">
+                  <img 
+                    src={getContent('hero_image', 'https://images.unsplash.com/photo-1606092195730-5d7b9af1efc5?w=700&h=700&fit=crop')}
+                    alt="EPC Poker Club Interior"
+                    className="w-full h-[600px] object-cover transition-transform duration-700 hover:scale-105"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-poker-primary/30 via-transparent to-transparent"></div>
+                  
+                  {/* Floating Stats Cards */}
+                  <div className="absolute top-6 left-6 bg-white/90 backdrop-blur-md rounded-2xl p-4 shadow-card animate-bounce-subtle">
+                    <div className="text-2xl font-bold text-poker-primary">500+</div>
+                    <div className="text-sm text-muted-foreground">Игроков</div>
+                  </div>
+                  
+                  <div className="absolute bottom-6 right-6 bg-white/90 backdrop-blur-md rounded-2xl p-4 shadow-card animate-bounce-subtle" style={{ animationDelay: '1s' }}>
+                    <div className="text-2xl font-bold text-poker-accent">4.9★</div>
+                    <div className="text-sm text-muted-foreground">Рейтинг</div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

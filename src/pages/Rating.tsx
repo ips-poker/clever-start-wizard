@@ -227,53 +227,98 @@ export default function Rating() {
                 </div>
               ) : (
                 <>
-                  {/* Champion */}
+                  {/* Enhanced Champion Card */}
                   {topPlayers[0] && (
-                    <div className="mb-12">
-                      <Card className="bg-gradient-to-br from-background via-background/50 to-background border-2 border-poker-accent/30 rounded-3xl p-8 shadow-floating relative overflow-hidden animate-fade-in">
-                        <div className="absolute top-0 right-0 w-32 h-32 opacity-5">
-                          <Crown className="w-full h-full text-poker-accent" />
+                    <div className="mb-16">
+                      <Card className="relative overflow-hidden border-0 animate-fade-in">
+                        {/* Background Effects */}
+                        <div className="absolute inset-0 bg-gradient-to-br from-poker-accent/5 via-poker-primary/5 to-background"></div>
+                        <div className="absolute top-0 right-0 w-64 h-64 opacity-5">
+                          <Crown className="w-full h-full text-poker-accent animate-pulse" />
                         </div>
+                        <div className="absolute -top-20 -right-20 w-40 h-40 bg-poker-accent/10 rounded-full blur-3xl animate-pulse"></div>
+                        <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-poker-primary/10 rounded-full blur-2xl animate-pulse" style={{ animationDelay: '1s' }}></div>
 
-                        <div className="flex items-center gap-6 relative">
-                          <div className="flex-shrink-0">
-                            <div className="relative">
-                              <div className="w-20 h-20 bg-gradient-to-br from-poker-accent to-poker-primary rounded-2xl flex items-center justify-center shadow-lg">
-                                <span className="text-2xl">{getPokerAvatar(topPlayers[0].name, true)}</span>
+                        <div className="relative p-10 border-2 border-poker-accent/20 rounded-3xl bg-gradient-card backdrop-blur-sm">
+                          <div className="flex flex-col lg:flex-row items-center gap-8">
+                            {/* Champion Avatar Section */}
+                            <div className="flex-shrink-0 relative">
+                              <div className="relative">
+                                <div className="w-28 h-28 bg-gradient-to-br from-poker-accent via-poker-primary to-poker-accent-light rounded-3xl flex items-center justify-center shadow-floating animate-glow">
+                                  <span className="text-4xl animate-bounce-subtle">{getPokerAvatar(topPlayers[0].name, true)}</span>
+                                </div>
+                                <div className="absolute -top-3 -right-3 w-12 h-12 bg-gradient-to-br from-poker-warning to-yellow-500 rounded-full flex items-center justify-center shadow-card animate-bounce-subtle">
+                                  <Crown className="w-6 h-6 text-white" />
+                                </div>
+                                <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 px-3 py-1 bg-poker-accent text-white text-xs font-bold rounded-full shadow-card">
+                                  #1
+                                </div>
                               </div>
-                              <div className="absolute -top-2 -right-2 w-8 h-8 bg-poker-warning rounded-full flex items-center justify-center shadow-lg">
-                                <Crown className="w-4 h-4 text-white" />
+                            </div>
+
+                            {/* Champion Info */}
+                            <div className="flex-grow text-center lg:text-left">
+                              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
+                                <div>
+                                  <div className="flex items-center justify-center lg:justify-start gap-4 mb-3">
+                                    <h2 className="text-4xl font-bold text-poker-primary">
+                                      {topPlayers[0].name}
+                                    </h2>
+                                    <Badge className="bg-gradient-to-r from-poker-accent to-poker-primary text-white px-4 py-2 text-sm font-bold shadow-card animate-pulse">
+                                      Чемпион клуба
+                                    </Badge>
+                                  </div>
+                                  
+                                  <div className="flex flex-wrap items-center justify-center lg:justify-start gap-6 text-muted-foreground">
+                                    <div className="flex items-center gap-2 bg-background/50 px-4 py-2 rounded-xl border border-border/30">
+                                      <TrendingUp className="w-4 h-4 text-poker-accent" />
+                                      <span className="font-semibold">{topPlayers[0].games_played} игр</span>
+                                    </div>
+                                    <div className="flex items-center gap-2 bg-background/50 px-4 py-2 rounded-xl border border-border/30">
+                                      <Trophy className="w-4 h-4 text-poker-success" />
+                                      <span className="font-semibold">{getWinRate(topPlayers[0].wins, topPlayers[0].games_played)}% побед</span>
+                                    </div>
+                                    <div className="flex items-center gap-2 bg-background/50 px-4 py-2 rounded-xl border border-border/30">
+                                      <Star className="w-4 h-4 text-poker-warning" />
+                                      <span className="font-semibold">{topPlayers[0].wins} побед</span>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {/* Rating Display */}
+                                <div className="text-center lg:text-right">
+                                  <div className="relative inline-block">
+                                    <div className="text-6xl font-black text-transparent bg-gradient-to-br from-poker-accent to-poker-primary bg-clip-text mb-2 animate-pulse-glow">
+                                      {topPlayers[0].elo_rating}
+                                    </div>
+                                    <div className="text-sm text-muted-foreground uppercase tracking-widest font-bold">
+                                      RPS рейтинг
+                                    </div>
+                                  </div>
+                                </div>
                               </div>
-                            </div>
-                          </div>
 
-                          <div className="flex-grow">
-                            <div className="flex items-center gap-3 mb-2">
-                              <h2 className="text-3xl font-bold text-poker-primary">
-                                {topPlayers[0].name}
-                              </h2>
-                              <Badge className="bg-gradient-to-r from-poker-accent to-poker-primary text-white">
-                                Чемпион
-                              </Badge>
-                            </div>
-                            <div className="flex items-center gap-6 text-muted-foreground">
-                              <span className="flex items-center gap-2">
-                                <TrendingUp className="w-4 h-4" />
-                                {topPlayers[0].games_played} игр
-                              </span>
-                              <span className="flex items-center gap-2">
-                                <Trophy className="w-4 h-4" />
-                                {getWinRate(topPlayers[0].wins, topPlayers[0].games_played)}% побед
-                              </span>
-                            </div>
-                          </div>
-
-                          <div className="text-right">
-                            <div className="text-4xl font-bold text-poker-primary mb-1">
-                              {topPlayers[0].elo_rating}
-                            </div>
-                            <div className="text-sm text-muted-foreground uppercase tracking-widest">
-                              RPS
+                              {/* Achievement Indicators */}
+                              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-6 border-t border-border/20">
+                                <div className="text-center p-3 bg-poker-success/10 rounded-xl border border-poker-success/20">
+                                  <div className="text-lg font-bold text-poker-success mb-1">
+                                    {Math.round((topPlayers[0].wins / Math.max(topPlayers[0].games_played, 1)) * 100)}%
+                                  </div>
+                                  <div className="text-xs text-muted-foreground">Win Rate</div>
+                                </div>
+                                <div className="text-center p-3 bg-poker-accent/10 rounded-xl border border-poker-accent/20">
+                                  <div className="text-lg font-bold text-poker-accent mb-1">
+                                    {topPlayers[0].games_played}
+                                  </div>
+                                  <div className="text-xs text-muted-foreground">Игр сыграно</div>
+                                </div>
+                                <div className="text-center p-3 bg-poker-warning/10 rounded-xl border border-poker-warning/20">
+                                  <div className="text-lg font-bold text-poker-warning mb-1">
+                                    {topPlayers[0].wins}
+                                  </div>
+                                  <div className="text-xs text-muted-foreground">Побед</div>
+                                </div>
+                              </div>
                             </div>
                           </div>
                         </div>

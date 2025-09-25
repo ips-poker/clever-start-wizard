@@ -51,6 +51,10 @@
     --poker-text-primary: 220 26% 14%;      /* Main text color */
     --poker-text-secondary: 220 16% 46%;    /* Secondary text */
     --poker-text-muted: 220 14% 71%;        /* Muted text */
+    --poker-gold: 45 95% 55%;               /* Premium gold accent */
+    --poker-steel: 220 16% 46%;             /* Professional steel blue */
+    --poker-charcoal: 220 26% 14%;          /* Charcoal for premium feel */
+    --poker-cream: 45 20% 96%;              /* Cream background */
     
     /* Professional Gradients - Light Theme */
     --gradient-primary: linear-gradient(135deg, hsl(220 14% 99%) 0%, hsl(220 20% 96%) 50%, hsl(220 14% 93%) 100%);
@@ -63,6 +67,8 @@
     --gradient-border: linear-gradient(135deg, hsl(220 14% 91%) 0%, hsl(220 20% 88%) 100%);
     --gradient-button: linear-gradient(135deg, hsl(220 26% 14%) 0%, hsl(220 26% 18%) 100%);
     --gradient-surface: linear-gradient(135deg, hsl(220 14% 99%) 0%, hsl(220 20% 97%) 100%);
+    --gradient-charcoal: linear-gradient(135deg, hsl(220 26% 14%) 0%, hsl(220 26% 18%) 100%);
+    --gradient-steel: linear-gradient(135deg, hsl(220 16% 46%) 0%, hsl(220 20% 50%) 100%);
     
     /* Professional Shadows - Light Theme */
     --shadow-minimal: 0 1px 3px hsl(220 26% 14% / 0.05);
