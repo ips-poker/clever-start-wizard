@@ -761,10 +761,10 @@ export const TelegramApp = () => {
           </div>
           
           <div className="space-y-4">
-            <Card className="bg-gradient-to-br from-slate-800/95 via-slate-900/95 to-black/90 border border-white/10 backdrop-blur-xl shadow-xl group hover:shadow-2xl hover:shadow-purple-500/20 transition-all duration-500 relative overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 via-transparent to-blue-600/5 opacity-60 group-hover:opacity-100 transition-opacity duration-500"></div>
+            <Card className="bg-gradient-to-br from-slate-800/95 via-slate-900/95 to-black/90 border border-white/10 backdrop-blur-xl shadow-xl group hover:shadow-2xl hover:shadow-green-500/20 transition-all duration-500 relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 via-transparent to-emerald-600/5 opacity-60 group-hover:opacity-100 transition-opacity duration-500"></div>
               <div className="absolute inset-0 opacity-8 group-hover:opacity-15 transition-opacity duration-500">
-                <div className="absolute top-4 right-4 text-purple-400/30 text-3xl animate-pulse">♠</div>
+                <div className="absolute top-4 right-4 text-green-400/30 text-3xl animate-pulse">♠</div>
               </div>
               
               <CardContent className="p-6 relative z-10">
@@ -773,8 +773,8 @@ export const TelegramApp = () => {
                     <CheckCircle className="h-4 w-4 text-white" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="text-white font-semibold text-lg mb-3 group-hover:text-purple-100 transition-colors duration-300">1. Это законно?</h3>
-                    <p className="text-white/80 text-sm leading-relaxed">Да, совершенно законно! Мы проводим турниры по техасскому холдему как хобби и развлечение. Все наши мероприятия соответствуют действующему законодательству.</p>
+                    <h3 className="text-white font-semibold text-lg mb-3 group-hover:text-green-100 transition-colors duration-300">1. Это законно?</h3>
+                    <p className="text-white/80 text-sm leading-relaxed">Абсолютно! Мы проводим спортивные турниры без денежных призов, что полностью соответствует российскому законодательству. Согласно ФЗ №244, запрещены только азартные игры с материальными выигрышами. Event Poker Club — это спортивное сообщество для развития навыков и общения.</p>
                   </div>
                 </div>
               </CardContent>
@@ -792,8 +792,8 @@ export const TelegramApp = () => {
                     <Users className="h-4 w-4 text-white" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="text-white font-semibold text-lg mb-3 group-hover:text-blue-100 transition-colors duration-300">2. Как стать участником?</h3>
-                    <p className="text-white/80 text-sm leading-relaxed">Для участия в турнирах необходимо зарегистрироваться через наше приложение. Мы приветствуем игроков всех уровней подготовки.</p>
+                    <h3 className="text-white font-semibold text-lg mb-3 group-hover:text-blue-100 transition-colors duration-300">2. Зачем играть без призов?</h3>
+                    <p className="text-white/80 text-sm leading-relaxed">EPC — это уникальное комьюнити единомышленников! Где еще вы найдете профессиональное оборудование, отличный сервис и возможность развивать покерные навыки в безопасной среде? Мы создаем атмосферу спортивного соревнования и дружеского общения.</p>
                   </div>
                 </div>
               </CardContent>
@@ -811,27 +811,122 @@ export const TelegramApp = () => {
                     <Trophy className="h-4 w-4 text-white" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="text-white font-semibold text-lg mb-3 group-hover:text-amber-100 transition-colors duration-300">3. Как работает рейтинговая система?</h3>
-                    <p className="text-white/80 text-sm leading-relaxed">Мы используем систему ELO для честного ранжирования игроков. Рейтинг обновляется после каждого турнира на основе результатов и уровня соперников.</p>
+                    <h3 className="text-white font-semibold text-lg mb-3 group-hover:text-amber-100 transition-colors duration-300">3. Как работает рейтинг EPC?</h3>
+                    <p className="text-white/80 text-sm leading-relaxed">В Event Poker Club действует продуманная ELO-система для честного ранжирования участников. Рейтинговые очки начисляются за результативные выступления в турнирах и отражают исключительно игровое мастерство. Система мотивирует на спортивное развитие и определяет лучших игроков клуба.</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
             
-            <Card className="bg-gradient-to-br from-slate-800/95 via-slate-900/95 to-black/90 border border-white/10 backdrop-blur-xl shadow-xl group hover:shadow-2xl hover:shadow-red-500/20 transition-all duration-500 relative overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-br from-red-500/5 via-transparent to-pink-600/5 opacity-60 group-hover:opacity-100 transition-opacity duration-500"></div>
+            <Card className="bg-gradient-to-br from-slate-800/95 via-slate-900/95 to-black/90 border border-white/10 backdrop-blur-xl shadow-xl group hover:shadow-2xl hover:shadow-purple-500/20 transition-all duration-500 relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 via-transparent to-pink-600/5 opacity-60 group-hover:opacity-100 transition-opacity duration-500"></div>
               <div className="absolute inset-0 opacity-8 group-hover:opacity-15 transition-opacity duration-500">
-                <div className="absolute top-4 right-4 text-red-400/30 text-3xl animate-pulse">♥</div>
+                <div className="absolute top-4 right-4 text-purple-400/30 text-3xl animate-pulse">♥</div>
               </div>
               
               <CardContent className="p-6 relative z-10">
                 <div className="flex items-start gap-4">
-                  <div className="w-8 h-8 bg-gradient-to-br from-red-500 to-pink-500 rounded-lg flex items-center justify-center flex-shrink-0 mt-1">
-                    <Shield className="h-4 w-4 text-white" />
+                  <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center flex-shrink-0 mt-1">
+                    <Crown className="h-4 w-4 text-white" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="text-white font-semibold text-lg mb-3 group-hover:text-red-100 transition-colors duration-300">4. Безопасность данных?</h3>
-                    <p className="text-white/80 text-sm leading-relaxed">Мы серьезно относимся к защите персональных данных. Вся информация шифруется и хранится в соответствии с современными стандартами безопасности.</p>
+                    <h3 className="text-white font-semibold text-lg mb-3 group-hover:text-purple-100 transition-colors duration-300">4. Что такое VIP-турниры?</h3>
+                    <p className="text-white/80 text-sm leading-relaxed">Это эксклюзивные события для топовых игроков рейтинга EPC. Проводятся в особом формате с повышенным комфортом и сервисом. Участие строго по приглашениям на основе достижений в рейтинге. Место нельзя передать — только личное участие лучших игроков клуба.</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-gradient-to-br from-slate-800/95 via-slate-900/95 to-black/90 border border-white/10 backdrop-blur-xl shadow-xl group hover:shadow-2xl hover:shadow-cyan-500/20 transition-all duration-500 relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 via-transparent to-blue-600/5 opacity-60 group-hover:opacity-100 transition-opacity duration-500"></div>
+              <div className="absolute inset-0 opacity-8 group-hover:opacity-15 transition-opacity duration-500">
+                <div className="absolute top-4 right-4 text-cyan-400/30 text-3xl animate-bounce-subtle">♠</div>
+              </div>
+              
+              <CardContent className="p-6 relative z-10">
+                <div className="flex items-start gap-4">
+                  <div className="w-8 h-8 bg-gradient-to-br from-cyan-500 to-blue-500 rounded-lg flex items-center justify-center flex-shrink-0 mt-1">
+                    <UserPlus className="h-4 w-4 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-white font-semibold text-lg mb-3 group-hover:text-cyan-100 transition-colors duration-300">5. Как записаться на турнир?</h3>
+                    <p className="text-white/80 text-sm leading-relaxed">После первичной регистрации в нашем Telegram-боте, вы получаете доступ к удобному мини-приложению. В нем можно бронировать места на любые турниры. Внимание: количество мест ограничено! При частых пропусках без предупреждения возможность записи может быть временно ограничена.</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-gradient-to-br from-slate-800/95 via-slate-900/95 to-black/90 border border-white/10 backdrop-blur-xl shadow-xl group hover:shadow-2xl hover:shadow-orange-500/20 transition-all duration-500 relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-orange-500/5 via-transparent to-red-600/5 opacity-60 group-hover:opacity-100 transition-opacity duration-500"></div>
+              <div className="absolute inset-0 opacity-8 group-hover:opacity-15 transition-opacity duration-500">
+                <div className="absolute top-4 right-4 text-orange-400/30 text-3xl animate-glow">♣</div>
+              </div>
+              
+              <CardContent className="p-6 relative z-10">
+                <div className="flex items-start gap-4">
+                  <div className="w-8 h-8 bg-gradient-to-br from-orange-500 to-red-500 rounded-lg flex items-center justify-center flex-shrink-0 mt-1">
+                    <Coins className="h-4 w-4 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-white font-semibold text-lg mb-3 group-hover:text-orange-100 transition-colors duration-300">6. Что такое организационный взнос?</h3>
+                    <p className="text-white/80 text-sm leading-relaxed">Это плата за комплекс услуг: аренду профессионального оборудования, игровых фишек, зала и сервисное обслуживание. Фишки — исключительно игровое оборудование без денежной стоимости, их нельзя обменять или вывести. Повторный вход (re-entry) оплачивается отдельно.</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-gradient-to-br from-slate-800/95 via-slate-900/95 to-black/90 border border-white/10 backdrop-blur-xl shadow-xl group hover:shadow-2xl hover:shadow-teal-500/20 transition-all duration-500 relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-teal-500/5 via-transparent to-green-600/5 opacity-60 group-hover:opacity-100 transition-opacity duration-500"></div>
+              <div className="absolute inset-0 opacity-8 group-hover:opacity-15 transition-opacity duration-500">
+                <div className="absolute top-4 right-4 text-teal-400/30 text-3xl animate-pulse">♦</div>
+              </div>
+              
+              <CardContent className="p-6 relative z-10">
+                <div className="flex items-start gap-4">
+                  <div className="w-8 h-8 bg-gradient-to-br from-teal-500 to-green-500 rounded-lg flex items-center justify-center flex-shrink-0 mt-1">
+                    <Clock className="h-4 w-4 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-white font-semibold text-lg mb-3 group-hover:text-teal-100 transition-colors duration-300">7. Что такое поздняя регистрация?</h3>
+                    <p className="text-white/80 text-sm leading-relaxed">Это возможность присоединиться к турниру после официального старта — полезно, если вы опаздываете или хотите сделать повторный вход. Время поздней регистрации указывается для каждого турнира отдельно. После её завершения предусмотрен короткий перерыв для окончательного входа.</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-gradient-to-br from-slate-800/95 via-slate-900/95 to-black/90 border border-white/10 backdrop-blur-xl shadow-xl group hover:shadow-2xl hover:shadow-indigo-500/20 transition-all duration-500 relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 via-transparent to-purple-600/5 opacity-60 group-hover:opacity-100 transition-opacity duration-500"></div>
+              <div className="absolute inset-0 opacity-8 group-hover:opacity-15 transition-opacity duration-500">
+                <div className="absolute top-4 right-4 text-indigo-400/30 text-3xl animate-bounce-subtle">♥</div>
+              </div>
+              
+              <CardContent className="p-6 relative z-10">
+                <div className="flex items-start gap-4">
+                  <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-lg flex items-center justify-center flex-shrink-0 mt-1">
+                    <Target className="h-4 w-4 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-white font-semibold text-lg mb-3 group-hover:text-indigo-100 transition-colors duration-300">8. Что такое стартовый стек?</h3>
+                    <p className="text-white/80 text-sm leading-relaxed">Это набор игровых фишек, который получает каждый участник турнира. Фишки — развлекательное оборудование без денежной стоимости, их нельзя обменять или вывести. Стандартный стартовый стек в Event Poker Club составляет 30,000 фишек для всех участников.</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-gradient-to-br from-slate-800/95 via-slate-900/95 to-black/90 border border-white/10 backdrop-blur-xl shadow-xl group hover:shadow-2xl hover:shadow-pink-500/20 transition-all duration-500 relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-pink-500/5 via-transparent to-rose-600/5 opacity-60 group-hover:opacity-100 transition-opacity duration-500"></div>
+              <div className="absolute inset-0 opacity-8 group-hover:opacity-15 transition-opacity duration-500">
+                <div className="absolute top-4 right-4 text-pink-400/30 text-3xl animate-glow">♠</div>
+              </div>
+              
+              <CardContent className="p-6 relative z-10">
+                <div className="flex items-start gap-4">
+                  <div className="w-8 h-8 bg-gradient-to-br from-pink-500 to-rose-500 rounded-lg flex items-center justify-center flex-shrink-0 mt-1">
+                    <Users className="h-4 w-4 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-white font-semibold text-lg mb-3 group-hover:text-pink-100 transition-colors duration-300">9. Как работает лист ожидания?</h3>
+                    <p className="text-white/80 text-sm leading-relaxed">Если турнир полностью забронирован, вы можете встать в лист ожидания. При освобождении мест участники переносятся в основной список в порядке очереди. Можно также приехать лично и занять живую очередь — это обсуждается с администратором индивидуально.</p>
                   </div>
                 </div>
               </CardContent>
