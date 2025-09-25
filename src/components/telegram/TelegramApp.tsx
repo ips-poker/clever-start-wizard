@@ -402,28 +402,28 @@ export const TelegramApp = () => {
             <div className="aspect-square bg-gray-700 rounded-lg overflow-hidden">
               <img 
                 src={mainPokerRoom} 
-                alt="Основной покерный зал" 
+                alt="Главный покерный зал" 
                 className="w-full h-full object-cover"
               />
             </div>
             <div className="aspect-square bg-gray-700 rounded-lg overflow-hidden">
               <img 
                 src={tournamentTable} 
-                alt="Турнирный стол" 
+                alt="Профессиональный турнирный стол" 
                 className="w-full h-full object-cover"
               />
             </div>
             <div className="aspect-square bg-gray-700 rounded-lg overflow-hidden">
               <img 
                 src={vipZone} 
-                alt="VIP зона" 
+                alt="Эксклюзивная VIP зона" 
                 className="w-full h-full object-cover"
               />
             </div>
             <div className="aspect-square bg-gray-700 rounded-lg overflow-hidden">
               <img 
                 src={loungeArea} 
-                alt="Лаунж зона" 
+                alt="Комфортная зона отдыха" 
                 className="w-full h-full object-cover"
               />
             </div>
@@ -437,21 +437,21 @@ export const TelegramApp = () => {
             <div className="aspect-square bg-gray-700 rounded-lg overflow-hidden">
               <img 
                 src={awardsCeremony} 
-                alt="Церемония награждения" 
+                alt="Торжественная церемония награждения" 
                 className="w-full h-full object-cover"
               />
             </div>
             <div className="aspect-square bg-gray-700 rounded-lg overflow-hidden">
               <img 
                 src={masterclass} 
-                alt="Мастер-класс" 
+                alt="Покерный мастер-класс" 
                 className="w-full h-full object-cover"
               />
             </div>
             <div className="aspect-square bg-gray-700 rounded-lg overflow-hidden">
               <img 
-                src={pokerChips} 
-                alt="Покерные фишки" 
+                src={registration} 
+                alt="Регистрация участников турнира" 
                 className="w-full h-full object-cover"
               />
             </div>
