@@ -956,69 +956,193 @@ export const TelegramApp = () => {
       )}
 
       {activeTab === 'rating' && (
-        <div className="space-y-6 pb-20 px-4 bg-transparent min-h-screen relative z-10">
+        <div className="space-y-4 pb-20 px-4 bg-transparent min-h-screen relative z-10">
+          {/* Header */}
           <div className="flex items-center gap-3 p-4">
-            <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl flex items-center justify-center">
+            <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl flex items-center justify-center shadow-lg">
               <Crown className="h-5 w-5 text-white" />
             </div>
             <div>
-              <h1 className="text-3xl font-light text-white tracking-wider">ЛЕГЕНДЫ EPC</h1>
-              <div className="h-0.5 w-20 bg-gradient-to-r from-amber-400 to-amber-600 mt-2"></div>
+              <h1 className="text-2xl font-light text-white tracking-wider">ЛЕГЕНДЫ EPC</h1>
+              <div className="h-0.5 w-16 bg-gradient-to-r from-amber-400 to-amber-600 mt-1"></div>
             </div>
           </div>
-          
-          <div className="space-y-4">
+
+          {/* Stats Overview */}
+          <div className="grid grid-cols-2 gap-3">
+            <Card className="bg-gradient-to-br from-emerald-600/90 via-emerald-700/95 to-emerald-800/90 border border-emerald-400/20 backdrop-blur-xl shadow-lg group hover:shadow-emerald-500/20 transition-all duration-500 relative overflow-hidden hover:scale-[1.02]">
+              <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 via-transparent to-emerald-600/15 opacity-60 group-hover:opacity-100 transition-opacity duration-500"></div>
+              <div className="absolute top-2 right-2 text-emerald-300/30 text-2xl animate-pulse">♠</div>
+              
+              <CardContent className="p-4 relative z-10">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-gradient-to-br from-white/20 to-white/10 rounded-lg flex items-center justify-center">
+                    <Users className="h-4 w-4 text-white" />
+                  </div>
+                  <div>
+                    <div className="text-white font-bold text-lg">{players.length}</div>
+                    <div className="text-white/80 text-xs">Активных игроков</div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-gradient-to-br from-purple-600/90 via-purple-700/95 to-indigo-700/90 border border-purple-400/20 backdrop-blur-xl shadow-lg group hover:shadow-purple-500/20 transition-all duration-500 relative overflow-hidden hover:scale-[1.02]">
+              <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 via-transparent to-indigo-600/15 opacity-60 group-hover:opacity-100 transition-opacity duration-500"></div>
+              <div className="absolute top-2 right-2 text-purple-300/30 text-2xl animate-pulse">♥</div>
+              
+              <CardContent className="p-4 relative z-10">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-gradient-to-br from-white/20 to-white/10 rounded-lg flex items-center justify-center">
+                    <Trophy className="h-4 w-4 text-white" />
+                  </div>
+                  <div>
+                    <div className="text-white font-bold text-lg">{players[0]?.elo_rating || 0}</div>
+                    <div className="text-white/80 text-xs">Лучший рейтинг</div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Top 3 Podium */}
+          {players.length >= 3 && (
+            <Card className="bg-gradient-to-br from-slate-800/95 via-slate-900/95 to-black/90 border border-amber-400/20 backdrop-blur-xl shadow-xl group hover:shadow-amber-500/20 transition-all duration-500 relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 via-transparent to-amber-600/8 opacity-60 group-hover:opacity-100 transition-opacity duration-500"></div>
+              <div className="absolute inset-0 opacity-8 group-hover:opacity-15 transition-opacity duration-500">
+                <div className="absolute top-3 right-3 text-amber-400/30 text-3xl animate-glow">♠</div>
+                <div className="absolute bottom-3 left-3 text-amber-400/20 text-2xl animate-bounce-subtle">♦</div>
+              </div>
+              
+              <CardContent className="p-5 relative z-10">
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="w-1 h-4 bg-gradient-to-b from-amber-400 to-amber-600 rounded-full"></div>
+                  <h3 className="text-white font-semibold text-base tracking-wide">ТОП-3 ИГРОКОВ</h3>
+                </div>
+                
+                <div className="flex items-end justify-center gap-2">
+                  {/* 2nd Place */}
+                  <div className="flex flex-col items-center">
+                    <div className="relative mb-2">
+                      <Avatar className="w-10 h-10 ring-2 ring-gray-400/40">
+                        <AvatarImage src={players[1]?.avatar_url} />
+                        <AvatarFallback className="bg-gradient-to-br from-gray-500 to-gray-600 text-white text-xs">{players[1]?.name?.[0] || 'P'}</AvatarFallback>
+                      </Avatar>
+                      <div className="absolute -top-1 -right-1 w-5 h-5 bg-gradient-to-br from-gray-400 to-gray-500 rounded-full flex items-center justify-center text-xs">
+                        🥈
+                      </div>
+                    </div>
+                    <div className="w-12 h-16 bg-gradient-to-t from-gray-400/30 to-gray-500/20 rounded-t-lg border border-gray-400/20 flex flex-col items-center justify-end pb-2">
+                      <span className="text-gray-300 text-xs font-bold">{players[1]?.elo_rating}</span>
+                    </div>
+                    <p className="text-white/80 text-xs mt-1 text-center truncate w-12">{players[1]?.name}</p>
+                  </div>
+
+                  {/* 1st Place */}
+                  <div className="flex flex-col items-center">
+                    <div className="relative mb-2">
+                      <Avatar className="w-12 h-12 ring-2 ring-amber-400/50">
+                        <AvatarImage src={players[0]?.avatar_url} />
+                        <AvatarFallback className="bg-gradient-to-br from-amber-500 to-amber-600 text-white text-sm">{players[0]?.name?.[0] || 'P'}</AvatarFallback>
+                      </Avatar>
+                      <div className="absolute -top-1 -right-1 w-6 h-6 bg-gradient-to-br from-amber-500 to-amber-600 rounded-full flex items-center justify-center">
+                        👑
+                      </div>
+                    </div>
+                    <div className="w-14 h-20 bg-gradient-to-t from-amber-500/30 to-amber-400/20 rounded-t-lg border border-amber-400/30 flex flex-col items-center justify-end pb-2">
+                      <span className="text-amber-400 text-sm font-bold">{players[0]?.elo_rating}</span>
+                    </div>
+                    <p className="text-white text-xs mt-1 text-center font-medium truncate w-14">{players[0]?.name}</p>
+                  </div>
+
+                  {/* 3rd Place */}
+                  <div className="flex flex-col items-center">
+                    <div className="relative mb-2">
+                      <Avatar className="w-10 h-10 ring-2 ring-orange-400/40">
+                        <AvatarImage src={players[2]?.avatar_url} />
+                        <AvatarFallback className="bg-gradient-to-br from-orange-500 to-orange-600 text-white text-xs">{players[2]?.name?.[0] || 'P'}</AvatarFallback>
+                      </Avatar>
+                      <div className="absolute -top-1 -right-1 w-5 h-5 bg-gradient-to-br from-orange-500 to-orange-600 rounded-full flex items-center justify-center text-xs">
+                        🥉
+                      </div>
+                    </div>
+                    <div className="w-12 h-12 bg-gradient-to-t from-orange-500/30 to-orange-400/20 rounded-t-lg border border-orange-400/20 flex flex-col items-center justify-end pb-2">
+                      <span className="text-orange-400 text-xs font-bold">{players[2]?.elo_rating}</span>
+                    </div>
+                    <p className="text-white/80 text-xs mt-1 text-center truncate w-12">{players[2]?.name}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Players List */}
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 mb-3 px-1">
+              <div className="w-0.5 h-4 bg-gradient-to-b from-purple-400 to-purple-600 rounded-full"></div>
+              <p className="text-white/80 text-sm font-semibold tracking-wide">Полный рейтинг</p>
+              <div className="flex-1 h-px bg-gradient-to-r from-white/20 to-transparent"></div>
+            </div>
+            
             {players.map((player, index) => (
-              <Card key={player.id} className={`bg-gradient-to-br backdrop-blur-xl shadow-xl group hover:shadow-2xl transition-all duration-500 relative overflow-hidden border ${
-                  index === 0 ? 'from-amber-600/20 via-amber-700/30 to-amber-800/20 border-amber-400/30 hover:shadow-amber-500/30' :
-                  index === 1 ? 'from-gray-400/20 via-gray-500/30 to-gray-600/20 border-gray-400/30 hover:shadow-gray-500/30' :
-                  index === 2 ? 'from-orange-600/20 via-orange-700/30 to-orange-800/20 border-orange-400/30 hover:shadow-orange-500/30' :
-                  'from-slate-800/90 via-slate-900/95 to-black/90 border-white/10 hover:shadow-purple-500/20'
-                } hover:scale-[1.02] cursor-pointer`}>
+              <Card key={player.id} className={`backdrop-blur-xl shadow-lg group hover:shadow-xl transition-all duration-500 relative overflow-hidden border ${
+                  index === 0 ? 'bg-gradient-to-r from-amber-600/20 to-amber-700/10 border-amber-400/30 hover:shadow-amber-500/20' :
+                  index === 1 ? 'bg-gradient-to-r from-gray-400/20 to-gray-500/10 border-gray-400/30 hover:shadow-gray-500/20' :
+                  index === 2 ? 'bg-gradient-to-r from-orange-600/20 to-orange-700/10 border-orange-400/30 hover:shadow-orange-500/20' :
+                  'bg-gradient-to-r from-slate-800/90 to-slate-900/80 border-white/10 hover:shadow-purple-500/20'
+                } hover:scale-[1.01] cursor-pointer`}>
                 <div className={`absolute inset-0 opacity-60 group-hover:opacity-100 transition-opacity duration-500 ${
-                  index === 0 ? 'bg-gradient-to-br from-amber-500/10 via-transparent to-amber-600/15' :
-                  index === 1 ? 'bg-gradient-to-br from-gray-400/10 via-transparent to-gray-600/15' :
-                  index === 2 ? 'bg-gradient-to-br from-orange-500/10 via-transparent to-orange-600/15' :
-                  'bg-gradient-to-br from-purple-500/5 via-transparent to-blue-600/5'
+                  index === 0 ? 'bg-gradient-to-r from-amber-500/8 to-transparent' :
+                  index === 1 ? 'bg-gradient-to-r from-gray-400/8 to-transparent' :
+                  index === 2 ? 'bg-gradient-to-r from-orange-500/8 to-transparent' :
+                  'bg-gradient-to-r from-purple-500/5 to-transparent'
                 }`}></div>
                 
-                <div className="absolute inset-0 opacity-8 group-hover:opacity-15 transition-opacity duration-500">
-                  <div className={`absolute top-4 right-4 text-3xl animate-pulse ${
+                <div className="absolute top-2 right-2 opacity-8 group-hover:opacity-15 transition-opacity duration-500">
+                  <div className={`text-2xl animate-pulse ${
                     index < 3 ? 'text-amber-400/30' : 'text-purple-400/30'
                   }`}>
                     {index === 0 ? '♠' : index === 1 ? '♥' : index === 2 ? '♦' : '♣'}
                   </div>
                 </div>
                 
-                <CardContent className="p-6 relative z-10">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <div className="relative">
-                        <Avatar className="w-14 h-14 ring-2 ring-white/20 group-hover:ring-amber-400/40 transition-all duration-300">
-                          <AvatarImage src={player.avatar_url} />
-                          <AvatarFallback className="bg-gradient-to-br from-gray-600 to-gray-700 text-white font-semibold text-lg">{player.name?.[0] || 'P'}</AvatarFallback>
-                        </Avatar>
-                        {index < 3 && (
-                          <div className={`absolute -top-2 -right-2 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white shadow-lg ${
-                            index === 0 ? 'bg-gradient-to-br from-amber-500 to-amber-600' :
-                            index === 1 ? 'bg-gradient-to-br from-gray-400 to-gray-500' :
-                            'bg-gradient-to-br from-orange-500 to-orange-600'
-                          }`}>
-                            {index === 0 ? '👑' : index === 1 ? '🥈' : '🥉'}
-                          </div>
-                        )}
-                      </div>
-                      <div className="flex-1">
-                        <h3 className="text-white font-semibold text-lg group-hover:text-amber-100 transition-colors duration-300">{player.name}</h3>
-                        <div className="flex items-center gap-3 mt-1">
-                          <p className="text-white/70 text-sm">{player.games_played} игр</p>
-                          <div className="w-1 h-1 bg-white/40 rounded-full"></div>
-                          <p className="text-white/70 text-sm">{player.wins} побед</p>
+                <CardContent className="p-4 relative z-10">
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-1 min-w-[1.5rem]">
+                      <span className={`text-sm font-bold ${
+                        index < 3 ? 'text-amber-400' : 'text-white/60'
+                      }`}>
+                        #{index + 1}
+                      </span>
+                    </div>
+                    
+                    <div className="relative">
+                      <Avatar className="w-10 h-10 ring-1 ring-white/20 group-hover:ring-amber-400/30 transition-all duration-300">
+                        <AvatarImage src={player.avatar_url} />
+                        <AvatarFallback className="bg-gradient-to-br from-gray-600 to-gray-700 text-white font-semibold text-sm">{player.name?.[0] || 'P'}</AvatarFallback>
+                      </Avatar>
+                      {index < 3 && (
+                        <div className={`absolute -top-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center text-xs font-bold text-white shadow-md ${
+                          index === 0 ? 'bg-gradient-to-br from-amber-500 to-amber-600' :
+                          index === 1 ? 'bg-gradient-to-br from-gray-400 to-gray-500' :
+                          'bg-gradient-to-br from-orange-500 to-orange-600'
+                        }`}>
+                          {index === 0 ? '👑' : index === 1 ? '🥈' : '🥉'}
                         </div>
+                      )}
+                    </div>
+                    
+                    <div className="flex-1">
+                      <h3 className="text-white font-medium text-sm group-hover:text-amber-100 transition-colors duration-300">{player.name}</h3>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <p className="text-white/60 text-xs">{player.games_played} игр</p>
+                        <div className="w-1 h-1 bg-white/40 rounded-full"></div>
+                        <p className="text-white/60 text-xs">{player.wins} побед</p>
                       </div>
                     </div>
+                    
                     <div className="text-right">
-                      <div className={`text-2xl font-bold mb-1 ${
+                      <div className={`text-lg font-bold ${
                         index === 0 ? 'text-amber-400' :
                         index === 1 ? 'text-gray-300' :
                         index === 2 ? 'text-orange-400' :
@@ -1026,7 +1150,7 @@ export const TelegramApp = () => {
                       } group-hover:scale-110 transition-transform duration-300`}>
                         {player.elo_rating}
                       </div>
-                      <p className="text-white/60 text-xs">RPS рейтинг</p>
+                      <p className="text-white/60 text-xs">RPS</p>
                     </div>
                   </div>
                 </CardContent>
