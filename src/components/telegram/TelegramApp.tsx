@@ -214,7 +214,7 @@ export const TelegramApp = () => {
             </div>
             
             <div className="flex-1">
-              <h1 className="text-2xl font-light italic text-white tracking-wide">IVENT POKER CLUB</h1>
+              <h1 className="text-2xl font-light italic text-white tracking-wide">EVENT POKER CLUB</h1>
             </div>
           </div>
           
