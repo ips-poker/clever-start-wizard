@@ -223,7 +223,7 @@ export const TelegramApp = () => {
             </div>
             
             <div className="flex-1">
-              <h3 className="text-xl font-black text-white tracking-wide">REYTING POINTS</h3>
+              <h3 className="text-xl font-light italic text-white tracking-wide">REYTING POINTS</h3>
               <h3 className="text-xl font-black text-white tracking-wide -mt-1"></h3>
             </div>
             
@@ -241,13 +241,13 @@ export const TelegramApp = () => {
       <div className="grid grid-cols-2 gap-4">
         <Card className="bg-gradient-to-br from-gray-800 to-gray-900 border-0 cursor-pointer hover:from-gray-700 hover:to-gray-800 transition-all duration-300" onClick={() => setActiveTab('qa')}>
           <CardContent className="p-5 text-center">
-            <h3 className="text-white font-black text-lg tracking-wide">Q&A</h3>
+            <h3 className="text-white font-light italic text-lg tracking-wide">Q&A</h3>
           </CardContent>
         </Card>
 
         <Card className="bg-gradient-to-br from-gray-800 to-gray-900 border-0 cursor-pointer hover:from-gray-700 hover:to-gray-800 transition-all duration-300">
           <CardContent className="p-5 text-center">
-            <h3 className="text-white font-black text-lg tracking-wide">SUPPORT</h3>
+            <h3 className="text-white font-light italic text-lg tracking-wide">SUPPORT</h3>
           </CardContent>
         </Card>
       </div>
@@ -260,15 +260,15 @@ export const TelegramApp = () => {
             <div className="flex items-center justify-between mb-4">
               <div>
                 {tournaments.length > 0 ? <div>
-                    <h3 className="text-2xl font-black text-white tracking-wide uppercase">
+                    <h3 className="text-2xl font-light italic text-white tracking-wide uppercase">
                       {tournaments[0].name.split(' ')[0] || 'PHOENIX'}
                     </h3>
-                    <h3 className="text-2xl font-black text-white tracking-wide uppercase -mt-1">
+                    <h3 className="text-2xl font-light italic text-white tracking-wide uppercase -mt-1">
                       {tournaments[0].name.split(' ').slice(1).join(' ') || 'TOURNAMENT'}
                     </h3>
                   </div> : <div>
-                    <h3 className="text-2xl font-black text-white tracking-wide">PHOENIX</h3>
-                    <h3 className="text-2xl font-black text-white tracking-wide -mt-1">TOURNAMENT</h3>
+                    <h3 className="text-2xl font-light italic text-white tracking-wide">PHOENIX</h3>
+                    <h3 className="text-2xl font-light italic text-white tracking-wide -mt-1">TOURNAMENT</h3>
                   </div>}
               </div>
             </div>
@@ -342,10 +342,10 @@ export const TelegramApp = () => {
   return <div className="max-w-lg mx-auto bg-black min-h-screen">
       {activeTab === 'home' && renderHome()}
       {activeTab === 'tournaments' && <div className="space-y-4 pb-20 px-4 bg-black min-h-screen">
-          <h2 className="text-2xl font-black text-white tracking-wide p-4">ТУРНИРЫ</h2>
+          <h2 className="text-2xl font-light italic text-white tracking-wide p-4">ТУРНИРЫ</h2>
           {tournaments.map((tournament, index) => <Card key={tournament.id} className="bg-gradient-to-br from-red-600 to-red-800 border-0">
               <CardContent className="p-6">
-                <h3 className="text-xl font-black text-white tracking-wide uppercase mb-3">
+                <h3 className="text-xl font-light italic text-white tracking-wide uppercase mb-3">
                   {tournament.name}
                 </h3>
                 <div className="flex items-center gap-4 text-white/80 mb-4">
@@ -365,7 +365,7 @@ export const TelegramApp = () => {
             </Card>)}
         </div>}
       {activeTab === 'rating' && <div className="space-y-6 pb-20 px-4 bg-black min-h-screen">
-          <h1 className="text-2xl font-black text-white tracking-wide p-4">ЛЕГЕНДЫ CHECK CHECK</h1>
+          <h1 className="text-2xl font-light italic text-white tracking-wide p-4">ЛЕГЕНДЫ CHECK CHECK</h1>
           <div className="space-y-3">
             {players.map((player, index) => <Card key={player.id} className="bg-gray-800 border-0">
                 <CardContent className="p-4">
@@ -387,7 +387,7 @@ export const TelegramApp = () => {
           </div>
         </div>}
       {activeTab === 'qa' && <div className="space-y-6 pb-20 px-4 bg-black min-h-screen">
-          <h2 className="text-2xl font-black text-white tracking-wide p-4">Q&A</h2>
+          <h2 className="text-2xl font-light italic text-white tracking-wide p-4">Q&A</h2>
           <div className="space-y-4">
             <div className="bg-gray-800 rounded-lg p-4">
               <h3 className="text-white font-bold mb-2">1. Это законно?</h3>
