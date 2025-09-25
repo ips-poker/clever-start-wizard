@@ -7,9 +7,8 @@ declare global {
     Telegram?: {
       WebApp: {
         expand: () => void;
-        disableVerticalSwipes: () => void;
-        setHeaderColor: (color: string) => void;
         ready: () => void;
+        sendData?: (data: string) => void;
       };
     };
   }
@@ -18,36 +17,57 @@ declare global {
 export default function TelegramMiniApp() {
   useEffect(() => {
     try {
-      // Initialize Telegram Mini App
+      // Initialize Telegram Mini App with proper API
       const initTelegramApp = async () => {
-        // Expand the Mini App to fullscreen
+        // Use proper Telegram WebApp API
         if (window.Telegram?.WebApp) {
-          window.Telegram.WebApp.expand();
-          window.Telegram.WebApp.disableVerticalSwipes();
-          window.Telegram.WebApp.setHeaderColor('#0f172a'); // Dark header
-          window.Telegram.WebApp.ready();
+          const tg = window.Telegram.WebApp;
+          
+          // Expand first
+          tg.expand();
+          
+          // Request fullscreen mode to hide address bar
+          tg.sendData = tg.sendData || (() => {});
+          
+          // Use proper method to request fullscreen
+          window.parent.postMessage(
+            JSON.stringify({
+              eventType: 'web_app_request_fullscreen'
+            }), 
+            '*'
+          );
+          
+          // Set header color
+          window.parent.postMessage(
+            JSON.stringify({
+              eventType: 'web_app_set_header_color',
+              eventData: { color: '#0f172a' }
+            }), 
+            '*'
+          );
+          
+          tg.ready();
         }
         
-        // Set viewport for Telegram Mini App
+        // Set viewport for better mobile experience
         const viewportMeta = document.querySelector('meta[name="viewport"]');
         if (viewportMeta) {
           viewportMeta.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover');
         }
 
-        // Disable zoom and scroll behaviors
+        // Mobile optimizations
         document.body.style.overscrollBehavior = 'none';
         document.body.style.touchAction = 'pan-x pan-y';
         document.body.style.height = '100vh';
         document.body.style.overflow = 'hidden';
         
-        // Set dark theme by default
+        // Set dark theme
         document.documentElement.classList.add('dark');
-        
-        // Hide address bar on mobile
-        setTimeout(() => {
-          window.scrollTo(0, 1);
-        }, 100);
       };
+      
+      // Add console logging for debugging authentication
+      console.log('Telegram WebApp available:', !!window.Telegram?.WebApp);
+      console.log('Current URL:', window.location.href);
       
       initTelegramApp();
     } catch (error) {
