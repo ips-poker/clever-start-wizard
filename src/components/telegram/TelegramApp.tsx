@@ -206,7 +206,7 @@ export const TelegramApp = () => {
         
         <CardContent className="p-6 relative z-10">
           <div className="flex items-center gap-4 mb-4">
-            <div className="w-16 h-16 bg-black/20 rounded-2xl flex items-center justify-center overflow-hidden backdrop-blur-sm">
+            <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center overflow-hidden">
               <img src={epcLogo} alt="EPC Logo" className="w-12 h-12 object-contain" />
             </div>
             
