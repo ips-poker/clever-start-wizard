@@ -585,59 +585,6 @@ export const TelegramApp = () => {
       </Card>
     </div>
   );
-                <span className="font-semibold">Важно:</span> Участвуя в турнирах EPC, вы автоматически соглашаетесь с данными правилами. Игроки, не согласные с положениями правил, к участию не допускаются.
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Legal & Contact */}
-      <Card className="bg-gradient-to-br from-green-600/90 via-green-700/95 to-emerald-700/90 border border-green-400/20 backdrop-blur-xl shadow-2xl group hover:shadow-2xl hover:shadow-green-500/30 transition-all duration-500 relative overflow-hidden hover:scale-[1.01]">
-        <div className="absolute inset-0 bg-gradient-to-br from-green-500/10 via-transparent to-emerald-600/15 opacity-60 group-hover:opacity-100 transition-opacity duration-500"></div>
-        <div className="absolute inset-0 opacity-10 group-hover:opacity-20 transition-opacity duration-500">
-          <div className="absolute top-4 right-4 text-green-300/30 text-5xl animate-pulse">♠</div>
-          <div className="absolute bottom-4 left-4 text-emerald-300/20 text-4xl animate-bounce-subtle">♥</div>
-          <div className="absolute top-1/2 right-1/3 text-green-300/15 text-3xl animate-glow">♦</div>
-        </div>
-        
-        <CardContent className="p-8 relative z-10">
-          <div className="flex items-center gap-4 mb-6">
-            <div className="w-14 h-14 bg-gradient-to-br from-white/20 to-white/10 rounded-2xl flex items-center justify-center">
-              <Shield className="h-7 w-7 text-white" />
-            </div>
-            <div>
-              <h3 className="text-white font-bold text-2xl tracking-wide group-hover:text-green-100 transition-colors duration-300">
-                Присоединяйтесь к EPC
-              </h3>
-              <div className="h-0.5 w-24 bg-gradient-to-r from-white/60 to-white/30 mt-2 rounded-full"></div>
-            </div>
-          </div>
-          
-          <p className="text-white/90 text-base mb-6 leading-relaxed">
-            Станьте частью элитного покерного сообщества. Участвуйте в турнирах, развивайте навыки и находите новых друзей в мире покера.
-          </p>
-          
-          <div className="space-y-3">
-            <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-white/10 via-white/15 to-white/10 rounded-xl border border-white/20 backdrop-blur-sm group-hover:border-white/30 transition-all duration-300">
-              <CheckCircle className="h-5 w-5 text-green-300 flex-shrink-0" />
-              <span className="text-white text-sm font-medium">100% легальная деятельность</span>
-            </div>
-            
-            <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-white/10 via-white/15 to-white/10 rounded-xl border border-white/20 backdrop-blur-sm group-hover:border-white/30 transition-all duration-300">
-              <Globe className="h-5 w-5 text-blue-300 flex-shrink-0" />
-              <span className="text-white text-sm font-medium">Международные стандарты игры</span>
-            </div>
-            
-            <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-white/10 via-white/15 to-white/10 rounded-xl border border-white/20 backdrop-blur-sm group-hover:border-white/30 transition-all duration-300">
-              <Users className="h-5 w-5 text-amber-300 flex-shrink-0" />
-              <span className="text-white text-sm font-medium">Активное покерное сообщество</span>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  );
 
   if (!isAuthenticated) {
     return <TelegramAuth onAuthComplete={handleAuthComplete} />;
