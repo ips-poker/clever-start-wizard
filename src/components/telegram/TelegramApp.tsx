@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Trophy, Calendar, Users, Star, MessageSquare, User, Home, TrendingUp, Clock, MapPin, Coins, ChevronRight, Award, Target, CheckCircle, UserPlus, Loader2, Crown, Gem, Zap, Shield, Play, Pause, CircleDot, ArrowLeft, Heart, Globe, Camera } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { TelegramAuth } from './TelegramAuth';
+import { TournamentModal } from '@/components/TournamentModal';
 import { toast } from 'sonner';
 import epcLogo from '@/assets/epc-logo.png';
 import mainPokerRoom from '@/assets/gallery/main-poker-room.jpg';
@@ -64,6 +65,8 @@ export const TelegramApp = () => {
   const [userStats, setUserStats] = useState<Player | null>(null);
   const [telegramUser, setTelegramUser] = useState<TelegramUser | null>(null);
   const [registering, setRegistering] = useState<string | null>(null);
+  const [selectedTournament, setSelectedTournament] = useState<Tournament | null>(null);
+  const [showTournamentModal, setShowTournamentModal] = useState(false);
 
   useEffect(() => {
     if (isAuthenticated && telegramUser) {
@@ -600,7 +603,11 @@ export const TelegramApp = () => {
           </div>
           
           {tournaments.map((tournament, index) => (
-            <Card key={tournament.id} className="bg-gradient-to-br from-slate-800/95 via-slate-900/95 to-black/90 border border-amber-400/20 backdrop-blur-xl shadow-xl group hover:shadow-2xl hover:shadow-amber-500/30 transition-all duration-500 relative overflow-hidden">
+            <Card key={tournament.id} className="bg-gradient-to-br from-slate-800/95 via-slate-900/95 to-black/90 border border-amber-400/20 backdrop-blur-xl shadow-xl group hover:shadow-2xl hover:shadow-amber-500/30 transition-all duration-500 relative overflow-hidden cursor-pointer"
+                  onClick={() => {
+                    setSelectedTournament(tournament);
+                    setShowTournamentModal(true);
+                  }}>
               <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 via-transparent to-amber-600/8 opacity-60 group-hover:opacity-100 transition-opacity duration-500"></div>
               <div className="absolute inset-0 opacity-8 group-hover:opacity-15 transition-opacity duration-500">
                 <div className="absolute top-4 right-4 text-amber-400/30 text-4xl animate-pulse">♠</div>
@@ -614,12 +621,15 @@ export const TelegramApp = () => {
                       {tournament.name}
                     </h3>
                     <div className="h-0.5 w-12 bg-gradient-to-r from-amber-400 to-amber-600 group-hover:w-20 transition-all duration-500"></div>
+                    {tournament.description && (
+                      <p className="text-white/70 text-sm mt-2 line-clamp-2">{tournament.description}</p>
+                    )}
                   </div>
                   <div className="w-12 h-12 bg-gradient-to-br from-amber-500/20 to-amber-600/20 rounded-xl flex items-center justify-center border border-amber-400/30 group-hover:scale-110 transition-transform duration-300">
                     <Trophy className="h-6 w-6 text-amber-400" />
                   </div>
                 </div>
-                
+
                 <div className="grid grid-cols-2 gap-4 mb-6">
                   <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-white/8 via-white/12 to-white/8 rounded-xl border border-white/10 group-hover:border-amber-400/20 transition-all duration-300 backdrop-blur-sm">
                     <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
@@ -641,12 +651,67 @@ export const TelegramApp = () => {
                     </div>
                   </div>
                 </div>
-                
-                {tournament.status === 'scheduled' && (
+
+                <div className="grid grid-cols-2 gap-4 mb-6">
+                  <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-white/8 via-white/12 to-white/8 rounded-xl border border-white/10 group-hover:border-amber-400/20 transition-all duration-300 backdrop-blur-sm">
+                    <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg flex items-center justify-center">
+                      <Coins className="h-4 w-4 text-white" />
+                    </div>
+                    <div>
+                      <span className="text-white font-semibold text-base">{tournament.buy_in.toLocaleString()} ₽</span>
+                      <p className="text-white/60 text-xs">бай-ин</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-white/8 via-white/12 to-white/8 rounded-xl border border-white/10 group-hover:border-amber-400/20 transition-all duration-300 backdrop-blur-sm">
+                    <div className="w-8 h-8 bg-gradient-to-br from-red-500 to-red-600 rounded-lg flex items-center justify-center">
+                      <Target className="h-4 w-4 text-white" />
+                    </div>
+                    <div>
+                      <span className="text-white font-semibold text-base">{tournament.starting_chips?.toLocaleString() || 'N/A'}</span>
+                      <p className="text-white/60 text-xs">стартовый стек</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between gap-3">
+                  <Badge 
+                    className={`px-3 py-1 rounded-full text-xs font-medium ${
+                      tournament.status === 'registration' ? 'bg-green-500/20 text-green-400 border-green-500/30' :
+                      tournament.status === 'running' ? 'bg-red-500/20 text-red-400 border-red-500/30' :
+                      tournament.status === 'scheduled' ? 'bg-blue-500/20 text-blue-400 border-blue-500/30' :
+                      'bg-gray-500/20 text-gray-400 border-gray-500/30'
+                    }`}
+                  >
+                    {tournament.status === 'registration' ? 'Регистрация открыта' :
+                     tournament.status === 'running' ? 'Турнир проходит' :
+                     tournament.status === 'scheduled' ? 'Запланирован' :
+                     tournament.status}
+                  </Badge>
+
                   <Button 
-                    onClick={() => registerForTournament(tournament.id)} 
+                    variant="ghost"
+                    size="sm"
+                    className="text-amber-400 hover:text-amber-300 hover:bg-amber-500/10 border border-amber-400/30 hover:border-amber-400/50 backdrop-blur-sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedTournament(tournament);
+                      setShowTournamentModal(true);
+                    }}
+                  >
+                    Подробнее
+                    <ChevronRight className="h-4 w-4 ml-1" />
+                  </Button>
+                </div>
+                
+                {tournament.status === 'registration' && (
+                  <Button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      registerForTournament(tournament.id);
+                    }} 
                     disabled={registering === tournament.id} 
-                    className="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-semibold py-4 rounded-xl shadow-lg hover:shadow-amber-500/30 transition-all duration-300 group-hover:scale-[1.02] border-0"
+                    className="w-full mt-4 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-semibold py-4 rounded-xl shadow-lg hover:shadow-amber-500/30 transition-all duration-300 group-hover:scale-[1.02] border-0"
                   >
                     {registering === tournament.id ? (
                       <div className="flex items-center gap-2">
@@ -981,6 +1046,16 @@ export const TelegramApp = () => {
         </div>
         <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-32 h-1 bg-gradient-to-r from-transparent via-white/20 to-transparent rounded-full"></div>
       </div>
+
+      <TournamentModal
+        tournament={selectedTournament as any}
+        open={showTournamentModal}
+        onOpenChange={setShowTournamentModal}
+        onTournamentUpdate={() => {
+          fetchTournaments();
+          setShowTournamentModal(false);
+        }}
+      />
     </div>
   );
 };
