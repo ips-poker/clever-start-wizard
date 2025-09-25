@@ -1,0 +1,58 @@
+{
+  "name": "Event Poker Club",
+  "short_name": "EPC Poker",
+  "description": "Приложение Event Poker Club для управления турнирами и рейтингом игроков",
+  "start_url": "/telegram",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#d97706",
+  "orientation": "portrait",
+  "categories": ["games", "sports"],
+  "lang": "ru",
+  "icons": [
+    {
+      "src": "/lovable-uploads/3d3f89dd-02a1-4e23-845c-641c0ee0956b.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/lovable-uploads/84d7799c-d9ab-4819-8831-7e2ba28051e8.png",
+      "sizes": "512x512", 
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Турниры",
+      "short_name": "Турниры",
+      "description": "Просмотр турниров",
+      "url": "/telegram?tab=tournaments",
+      "icons": [
+        {
+          "src": "/lovable-uploads/3d3f89dd-02a1-4e23-845c-641c0ee0956b.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Рейтинг",
+      "short_name": "Рейтинг", 
+      "description": "Рейтинг игроков",
+      "url": "/telegram?tab=rating",
+      "icons": [
+        {
+          "src": "/lovable-uploads/3d3f89dd-02a1-4e23-845c-641c0ee0956b.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
+  ],
+  "related_applications": [
+    {
+      "platform": "webapp",
+      "url": "https://epc-poker.ru/telegram"
+    }
+  ]
+}

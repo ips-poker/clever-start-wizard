@@ -5,7 +5,7 @@ const config: CapacitorConfig = {
   appName: 'epc-poker',
   webDir: 'dist',
   server: {
-    url: 'https://a391e581-510e-4cfc-905a-60ff6b51b1e6.lovableproject.com?forceHideBadge=true',
+    url: 'https://epc-poker.ru/telegram',
     cleartext: true
   },
   plugins: {
@@ -15,6 +15,9 @@ const config: CapacitorConfig = {
       showSpinner: false,
       androidSpinnerStyle: "small",
       iosSpinnerStyle: "small"
+    },
+    App: {
+      launchUrl: "https://epc-poker.ru/telegram"
     }
   }
 };
