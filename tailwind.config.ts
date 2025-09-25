@@ -130,6 +130,7 @@ export default {
 			},
 			fontFamily: {
 				'sinkin': ['Work Sans', 'sans-serif'],
+				'playfair': ['Playfair Display', 'serif'],
 			},
 			fontWeight: {
 				'light': 'var(--font-weight-light)',
