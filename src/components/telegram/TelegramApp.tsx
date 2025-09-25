@@ -8,6 +8,7 @@ import { Trophy, Calendar, Users, Star, MessageSquare, User, Home, TrendingUp, C
 import { supabase } from '@/integrations/supabase/client';
 import { TelegramAuth } from './TelegramAuth';
 import { TelegramTournamentModal } from './TelegramTournamentModal';
+import { TelegramProfile } from './TelegramProfile';
 import { toast } from 'sonner';
 import epcLogo from '@/assets/epc-logo.png';
 import mainPokerRoom from '@/assets/gallery/main-poker-room.jpg';
@@ -811,6 +812,14 @@ export const TelegramApp = () => {
             ))}
           </div>
         </div>
+      )}
+
+      {activeTab === 'profile' && (
+        <TelegramProfile 
+          telegramUser={telegramUser}
+          userStats={userStats}
+          onStatsUpdate={setUserStats}
+        />
       )}
 
       {activeTab === 'qa' && (
