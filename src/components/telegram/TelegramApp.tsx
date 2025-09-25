@@ -433,11 +433,27 @@ export const TelegramApp = () => {
                   <CircleDot className="h-3 w-3 text-poker-gold animate-pulse" />
                   <p className="text-white/90 text-sm font-semibold uppercase tracking-wide">Ближайший турнир</p>
                 </div>
-                <h3 className="text-3xl font-black text-white tracking-wider text-shadow-poker">EPC MASTERS</h3>
-                <div className="flex items-center gap-2">
-                  <h3 className="text-3xl font-black text-poker-gold tracking-wider -mt-1 text-shadow-poker">CHAMPIONSHIP</h3>
-                  <Crown className="h-6 w-6 text-poker-gold" />
-                </div>
+                {tournaments.length > 0 ? (
+                  <>
+                    <h3 className="text-3xl font-black text-white tracking-wider text-shadow-poker">
+                      {tournaments[0].name.split(' ')[0] || 'EPC'}
+                    </h3>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-3xl font-black text-poker-gold tracking-wider -mt-1 text-shadow-poker">
+                        {tournaments[0].name.split(' ').slice(1).join(' ') || 'TOURNAMENT'}
+                      </h3>
+                      <Crown className="h-6 w-6 text-poker-gold" />
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <h3 className="text-3xl font-black text-white tracking-wider text-shadow-poker">СКОРО</h3>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-3xl font-black text-poker-gold tracking-wider -mt-1 text-shadow-poker">НОВЫЙ ТУРНИР</h3>
+                      <Crown className="h-6 w-6 text-poker-gold" />
+                    </div>
+                  </>
+                )}
               </div>
               <div className="text-white/60 group-hover:text-white transition-colors">
                 <ChevronRight className="h-8 w-8" />
