@@ -388,6 +388,81 @@ export const TelegramApp = () => {
         </CardContent>
       </Card>
 
+      {/* Photo Gallery */}
+      <Card className="bg-gradient-to-br from-gray-800 to-gray-900 border-0">
+        <CardContent className="p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center">
+              <Camera className="h-5 w-5 text-white" />
+            </div>
+            <h3 className="text-white font-bold text-lg">Познакомьтесь с атмосферой премиального покерного клуба IPS</h3>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-3">
+            <div className="aspect-square bg-gray-700 rounded-lg overflow-hidden">
+              <img 
+                src={mainPokerRoom} 
+                alt="Основной покерный зал" 
+                className="w-full h-full object-cover"
+              />
+            </div>
+            <div className="aspect-square bg-gray-700 rounded-lg overflow-hidden">
+              <img 
+                src={tournamentTable} 
+                alt="Турнирный стол" 
+                className="w-full h-full object-cover"
+              />
+            </div>
+            <div className="aspect-square bg-gray-700 rounded-lg overflow-hidden">
+              <img 
+                src={vipZone} 
+                alt="VIP зона" 
+                className="w-full h-full object-cover"
+              />
+            </div>
+            <div className="aspect-square bg-gray-700 rounded-lg overflow-hidden">
+              <img 
+                src={loungeArea} 
+                alt="Лаунж зона" 
+                className="w-full h-full object-cover"
+              />
+            </div>
+            <div className="aspect-square bg-gray-700 rounded-lg overflow-hidden">
+              <img 
+                src={teamTournament} 
+                alt="Командный турнир" 
+                className="w-full h-full object-cover"
+              />
+            </div>
+            <div className="aspect-square bg-gray-700 rounded-lg overflow-hidden">
+              <img 
+                src={awardsCeremony} 
+                alt="Церемония награждения" 
+                className="w-full h-full object-cover"
+              />
+            </div>
+            <div className="aspect-square bg-gray-700 rounded-lg overflow-hidden">
+              <img 
+                src={masterclass} 
+                alt="Мастер-класс" 
+                className="w-full h-full object-cover"
+              />
+            </div>
+            <div className="aspect-square bg-gray-700 rounded-lg overflow-hidden">
+              <img 
+                src={pokerChips} 
+                alt="Покерные фишки" 
+                className="w-full h-full object-cover"
+              />
+            </div>
+          </div>
+          
+          <p className="text-white/70 text-sm text-center mt-4">
+            Наши покерные залы и мероприятия
+          </p>
+        </CardContent>
+      </Card>
+
       {/* Achievements Grid */}
       <div className="grid grid-cols-2 gap-4">
         <Card className="bg-gradient-to-br from-gray-800 to-gray-900 border-0">
@@ -476,81 +551,6 @@ export const TelegramApp = () => {
               </div>
             </div>
           </div>
-        </CardContent>
-      </Card>
-
-      {/* Photo Gallery */}
-      <Card className="bg-gradient-to-br from-gray-800 to-gray-900 border-0">
-        <CardContent className="p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center">
-              <Camera className="h-5 w-5 text-white" />
-            </div>
-            <h3 className="text-white font-bold text-lg">Галерея клуба</h3>
-          </div>
-          
-          <div className="grid grid-cols-2 gap-3">
-            <div className="aspect-square bg-gray-700 rounded-lg overflow-hidden">
-              <img 
-                src={mainPokerRoom} 
-                alt="Основной покерный зал" 
-                className="w-full h-full object-cover"
-              />
-            </div>
-            <div className="aspect-square bg-gray-700 rounded-lg overflow-hidden">
-              <img 
-                src={tournamentTable} 
-                alt="Турнирный стол" 
-                className="w-full h-full object-cover"
-              />
-            </div>
-            <div className="aspect-square bg-gray-700 rounded-lg overflow-hidden">
-              <img 
-                src={vipZone} 
-                alt="VIP зона" 
-                className="w-full h-full object-cover"
-              />
-            </div>
-            <div className="aspect-square bg-gray-700 rounded-lg overflow-hidden">
-              <img 
-                src={loungeArea} 
-                alt="Лаунж зона" 
-                className="w-full h-full object-cover"
-              />
-            </div>
-            <div className="aspect-square bg-gray-700 rounded-lg overflow-hidden">
-              <img 
-                src={teamTournament} 
-                alt="Командный турнир" 
-                className="w-full h-full object-cover"
-              />
-            </div>
-            <div className="aspect-square bg-gray-700 rounded-lg overflow-hidden">
-              <img 
-                src={awardsCeremony} 
-                alt="Церемония награждения" 
-                className="w-full h-full object-cover"
-              />
-            </div>
-            <div className="aspect-square bg-gray-700 rounded-lg overflow-hidden">
-              <img 
-                src={masterclass} 
-                alt="Мастер-класс" 
-                className="w-full h-full object-cover"
-              />
-            </div>
-            <div className="aspect-square bg-gray-700 rounded-lg overflow-hidden">
-              <img 
-                src={registration} 
-                alt="Регистрация игроков" 
-                className="w-full h-full object-cover"
-              />
-            </div>
-          </div>
-          
-          <p className="text-white/70 text-sm text-center mt-4">
-            Наши покерные залы и мероприятия
-          </p>
         </CardContent>
       </Card>
 
