@@ -84,7 +84,7 @@ export const TelegramAuth: React.FC<TelegramAuthProps> = ({ onAuthComplete }) =>
       const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1va2hzc21ub3JyaG9ocm93eHZ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMwODUzNDYsImV4cCI6MjA2ODY2MTM0Nn0.ZWYgSZFeidY0b_miC7IyfXVPh1EUR2WtxlEvt_fFmGc';
       
       // Простая проверка существования игрока
-      const checkResult = await fetch(`${supabaseUrl}/rest/v1/players?telegram_id=eq.${telegramId}&select=id,name`, {
+      const checkResult = await fetch(`${supabaseUrl}/rest/v1/players?telegram=eq.${telegramId}&select=id,name`, {
         headers: {
           'apikey': supabaseKey,
           'Authorization': `Bearer ${supabaseKey}`,
@@ -97,7 +97,7 @@ export const TelegramAuth: React.FC<TelegramAuthProps> = ({ onAuthComplete }) =>
 
       if (existingPlayer) {
         // Игрок существует, обновляем данные
-        await fetch(`${supabaseUrl}/rest/v1/players?telegram_id=eq.${telegramId}`, {
+        await fetch(`${supabaseUrl}/rest/v1/players?telegram=eq.${telegramId}`, {
           method: 'PATCH',
           headers: {
             'apikey': supabaseKey,
@@ -105,7 +105,6 @@ export const TelegramAuth: React.FC<TelegramAuthProps> = ({ onAuthComplete }) =>
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
-            telegram_username: telegramUserData.username,
             updated_at: new Date().toISOString()
           })
         });
@@ -124,8 +123,7 @@ export const TelegramAuth: React.FC<TelegramAuthProps> = ({ onAuthComplete }) =>
           },
           body: JSON.stringify({
             name: playerName,
-            telegram_id: telegramId,
-            telegram_username: telegramUserData.username,
+            telegram: telegramId,
             avatar_url: telegramUserData.photoUrl,
             elo_rating: 1000,
             games_played: 0,
