@@ -266,126 +266,205 @@ export const TelegramApp = () => {
 
   const renderHome = () => (
     <div className="space-y-6 pb-20">
-      {/* Enhanced Club Header */}
-      <Card className="relative overflow-hidden border-0 shadow-floating animate-fade-in">
-        <div className="absolute inset-0 bg-gradient-to-br from-poker-primary/90 via-poker-accent/80 to-poker-primary/90"></div>
-        <div className="absolute top-0 right-0 w-32 h-32 opacity-10">
-          <Trophy className="w-full h-full text-white rotate-12" />
-        </div>
-        <div className="absolute -top-10 -right-10 w-20 h-20 bg-white/10 rounded-full blur-xl animate-pulse"></div>
-        <div className="absolute -bottom-5 -left-5 w-16 h-16 bg-poker-accent/20 rounded-full blur-lg animate-pulse" style={{ animationDelay: '1s' }}></div>
+      {/* Luxury Club Header */}
+      <Card className="relative overflow-hidden border-0 shadow-2xl animate-fade-in">
+        <div className="absolute inset-0 bg-gradient-to-br from-poker-primary via-poker-accent/90 to-purple-900/80"></div>
         
-        <CardHeader className="relative pb-4">
-          <div className="flex items-center gap-4">
-            <div className="w-16 h-16 bg-white/15 backdrop-blur-md rounded-2xl flex items-center justify-center shadow-card border border-white/20">
-              <Trophy className="h-8 w-8 text-white" />
+        {/* Animated Background Elements */}
+        <div className="absolute top-0 right-0 w-40 h-40 opacity-8">
+          <Trophy className="w-full h-full text-white/20 rotate-12 animate-float" />
+        </div>
+        <div className="absolute -top-12 -right-12 w-24 h-24 bg-gradient-radial from-white/15 to-transparent rounded-full animate-pulse"></div>
+        <div className="absolute -bottom-6 -left-6 w-20 h-20 bg-gradient-radial from-poker-accent/30 to-transparent rounded-full animate-pulse" style={{ animationDelay: '1s' }}></div>
+        
+        {/* Floating Particles */}
+        <div className="absolute top-1/4 left-1/4 w-2 h-2 bg-white/40 rounded-full animate-float" style={{ animationDelay: '0.5s' }}></div>
+        <div className="absolute top-3/4 right-1/3 w-1.5 h-1.5 bg-poker-accent/60 rounded-full animate-float" style={{ animationDelay: '1.5s' }}></div>
+        <div className="absolute top-1/2 left-3/4 w-1 h-1 bg-white/60 rounded-full animate-float" style={{ animationDelay: '2s' }}></div>
+        
+        <CardHeader className="relative pb-6">
+          <div className="flex items-center gap-5">
+            <div className="relative group">
+              <div className="w-20 h-20 bg-gradient-to-br from-white/20 to-white/5 backdrop-blur-xl rounded-3xl flex items-center justify-center shadow-2xl border border-white/30 group-hover:scale-110 transition-all duration-500">
+                <Trophy className="h-10 w-10 text-white group-hover:rotate-12 transition-transform duration-500" />
+              </div>
+              <div className="absolute -inset-1 bg-gradient-to-r from-poker-accent/30 to-poker-primary/30 rounded-3xl blur opacity-75 group-hover:opacity-100 transition-opacity duration-500"></div>
             </div>
             <div className="flex-1">
-              <CardTitle className="text-2xl text-white font-bold">EPC Poker Club</CardTitle>
-              <CardDescription className="text-white/80 text-base font-medium">
-                Премиальный покерный клуб в Телеграм
+              <CardTitle className="text-3xl text-white font-black tracking-tight mb-2 bg-gradient-to-r from-white to-white/90 bg-clip-text">
+                EPC Poker Club
+              </CardTitle>
+              <CardDescription className="text-white/90 text-lg font-semibold leading-relaxed">
+                🏆 Премиальный покерный клуб в Telegram
               </CardDescription>
+              <div className="flex items-center gap-2 mt-2">
+                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                <span className="text-white/80 text-sm font-medium">Online • Активных игроков: {players.length}+</span>
+              </div>
             </div>
           </div>
         </CardHeader>
         
-        <CardContent className="relative pt-0">
+        <CardContent className="relative pt-0 pb-8">
           <div className="grid grid-cols-3 gap-4">
-            <div className="text-center p-4 bg-white/10 backdrop-blur-md rounded-xl border border-white/20 hover:bg-white/15 transition-all duration-300">
-              <div className="text-2xl font-bold text-white mb-1">{tournaments.length}</div>
-              <div className="text-xs text-white/80 font-medium">Активных турниров</div>
+            <div className="group text-center p-5 bg-gradient-to-br from-white/15 to-white/5 backdrop-blur-xl rounded-2xl border border-white/25 hover:border-white/40 hover:bg-white/20 transform hover:-translate-y-1 transition-all duration-500 shadow-lg">
+              <div className="relative">
+                <div className="text-3xl font-black text-white mb-2 group-hover:scale-110 transition-transform duration-300">{tournaments.length}</div>
+                <div className="absolute inset-0 bg-gradient-to-t from-poker-accent/20 to-transparent rounded-lg blur-sm opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              </div>
+              <div className="text-xs text-white/90 font-bold uppercase tracking-wider">Турниров</div>
             </div>
-            <div className="text-center p-4 bg-white/10 backdrop-blur-md rounded-xl border border-white/20 hover:bg-white/15 transition-all duration-300">
-              <div className="text-2xl font-bold text-white mb-1">{players.length}+</div>
-              <div className="text-xs text-white/80 font-medium">Игроков в клубе</div>
+            <div className="group text-center p-5 bg-gradient-to-br from-white/15 to-white/5 backdrop-blur-xl rounded-2xl border border-white/25 hover:border-white/40 hover:bg-white/20 transform hover:-translate-y-1 transition-all duration-500 shadow-lg">
+              <div className="relative">
+                <div className="text-3xl font-black text-white mb-2 group-hover:scale-110 transition-transform duration-300">{players.length}+</div>
+                <div className="absolute inset-0 bg-gradient-to-t from-poker-success/20 to-transparent rounded-lg blur-sm opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              </div>
+              <div className="text-xs text-white/90 font-bold uppercase tracking-wider">Игроков</div>
             </div>
-            <div className="text-center p-4 bg-white/10 backdrop-blur-md rounded-xl border border-white/20 hover:bg-white/15 transition-all duration-300">
-              <div className="text-2xl font-bold text-white mb-1">24/7</div>
-              <div className="text-xs text-white/80 font-medium">Всегда открыт</div>
+            <div className="group text-center p-5 bg-gradient-to-br from-white/15 to-white/5 backdrop-blur-xl rounded-2xl border border-white/25 hover:border-white/40 hover:bg-white/20 transform hover:-translate-y-1 transition-all duration-500 shadow-lg">
+              <div className="relative">
+                <div className="text-3xl font-black text-white mb-2 group-hover:scale-110 transition-transform duration-300">24/7</div>
+                <div className="absolute inset-0 bg-gradient-to-t from-blue-500/20 to-transparent rounded-lg blur-sm opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              </div>
+              <div className="text-xs text-white/90 font-bold uppercase tracking-wider">Доступ</div>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Enhanced Quick Actions */}
-      <div className="grid grid-cols-2 gap-4">
-        <Card className="group cursor-pointer border-border/30 bg-gradient-card backdrop-blur-sm hover:shadow-floating hover:-translate-y-1 transition-all duration-500 animate-slide-up" 
+      {/* Luxury Quick Actions */}
+      <div className="grid grid-cols-2 gap-5">
+        <Card className="group cursor-pointer border-0 bg-gradient-to-br from-background via-background/95 to-poker-accent/5 backdrop-blur-lg hover:shadow-2xl hover:-translate-y-2 hover:rotate-1 transition-all duration-700 animate-slide-up overflow-hidden" 
               onClick={() => setActiveTab('tournaments')}
               style={{ animationDelay: '0.1s' }}>
-          <CardContent className="p-6 text-center relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-16 h-16 opacity-5">
-              <Calendar className="w-full h-full text-poker-accent" />
+          <div className="absolute inset-0 bg-gradient-to-br from-poker-accent/10 via-transparent to-poker-primary/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+          <div className="absolute top-0 right-0 w-20 h-20 opacity-5 group-hover:opacity-10 transition-opacity duration-500">
+            <Calendar className="w-full h-full text-poker-accent rotate-12 group-hover:rotate-45 transition-transform duration-700" />
+          </div>
+          
+          <CardContent className="relative p-8 text-center">
+            <div className="relative group/icon mb-6">
+              <div className="w-16 h-16 bg-gradient-to-br from-poker-accent/20 via-poker-accent/15 to-poker-primary/20 rounded-3xl mx-auto flex items-center justify-center shadow-2xl border border-poker-accent/30 group-hover:scale-125 group-hover:rotate-6 transition-all duration-500">
+                <Calendar className="h-8 w-8 text-poker-accent group-hover:text-poker-primary transition-colors duration-300" />
+              </div>
+              <div className="absolute -inset-2 bg-gradient-to-r from-poker-accent/20 to-poker-primary/20 rounded-3xl blur opacity-0 group-hover:opacity-75 transition-opacity duration-500"></div>
             </div>
-            <div className="w-14 h-14 bg-gradient-to-br from-poker-accent/20 to-poker-primary/20 rounded-2xl mx-auto mb-4 flex items-center justify-center shadow-card border border-poker-accent/20 group-hover:scale-110 transition-transform duration-300">
-              <Calendar className="h-7 w-7 text-poker-accent" />
+            
+            <h3 className="font-black text-poker-primary text-lg mb-3 group-hover:text-poker-accent transition-colors duration-300">Турниры</h3>
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <div className="w-2 h-2 bg-poker-accent/60 rounded-full animate-pulse"></div>
+              <span className="font-bold text-poker-accent text-xl">{tournaments.length}</span>
+              <span className="text-sm text-muted-foreground font-medium">активных</span>
             </div>
-            <h3 className="font-bold text-poker-primary text-base mb-2 group-hover:text-poker-accent transition-colors">Турниры</h3>
-            <p className="text-sm text-muted-foreground">
-              <span className="font-semibold text-poker-accent">{tournaments.length}</span> активных
-            </p>
-            <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-poker-accent/30 to-poker-primary/30 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></div>
+            
+            <div className="absolute bottom-0 left-0 right-0 h-1.5 bg-gradient-to-r from-poker-accent via-poker-primary to-poker-accent transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 rounded-full"></div>
           </CardContent>
         </Card>
         
-        <Card className="group cursor-pointer border-border/30 bg-gradient-card backdrop-blur-sm hover:shadow-floating hover:-translate-y-1 transition-all duration-500 animate-slide-up" 
+        <Card className="group cursor-pointer border-0 bg-gradient-to-br from-background via-background/95 to-poker-success/5 backdrop-blur-lg hover:shadow-2xl hover:-translate-y-2 hover:-rotate-1 transition-all duration-700 animate-slide-up overflow-hidden" 
               onClick={() => setActiveTab('rating')}
               style={{ animationDelay: '0.2s' }}>
-          <CardContent className="p-6 text-center relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-16 h-16 opacity-5">
-              <TrendingUp className="w-full h-full text-poker-accent" />
+          <div className="absolute inset-0 bg-gradient-to-br from-poker-success/10 via-transparent to-poker-accent/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+          <div className="absolute top-0 right-0 w-20 h-20 opacity-5 group-hover:opacity-10 transition-opacity duration-500">
+            <TrendingUp className="w-full h-full text-poker-success rotate-12 group-hover:rotate-45 transition-transform duration-700" />
+          </div>
+          
+          <CardContent className="relative p-8 text-center">
+            <div className="relative group/icon mb-6">
+              <div className="w-16 h-16 bg-gradient-to-br from-poker-success/20 via-poker-success/15 to-poker-accent/20 rounded-3xl mx-auto flex items-center justify-center shadow-2xl border border-poker-success/30 group-hover:scale-125 group-hover:rotate-6 transition-all duration-500">
+                <TrendingUp className="h-8 w-8 text-poker-success group-hover:text-poker-accent transition-colors duration-300" />
+              </div>
+              <div className="absolute -inset-2 bg-gradient-to-r from-poker-success/20 to-poker-accent/20 rounded-3xl blur opacity-0 group-hover:opacity-75 transition-opacity duration-500"></div>
             </div>
-            <div className="w-14 h-14 bg-gradient-to-br from-poker-success/20 to-poker-accent/20 rounded-2xl mx-auto mb-4 flex items-center justify-center shadow-card border border-poker-success/20 group-hover:scale-110 transition-transform duration-300">
-              <TrendingUp className="h-7 w-7 text-poker-success" />
+            
+            <h3 className="font-black text-poker-primary text-lg mb-3 group-hover:text-poker-success transition-colors duration-300">Рейтинг</h3>
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <Trophy className="h-4 w-4 text-poker-warning animate-pulse" />
+              <span className="text-sm text-muted-foreground font-medium">Топ игроков</span>
             </div>
-            <h3 className="font-bold text-poker-primary text-base mb-2 group-hover:text-poker-accent transition-colors">Рейтинг</h3>
-            <p className="text-sm text-muted-foreground">Топ игроков клуба</p>
-            <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-poker-success/30 to-poker-accent/30 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></div>
+            
+            <div className="absolute bottom-0 left-0 right-0 h-1.5 bg-gradient-to-r from-poker-success via-poker-accent to-poker-success transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 rounded-full"></div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Enhanced User Stats */}
+      {/* Luxury User Stats */}
       {userStats && (
-        <Card className="border-border/30 bg-gradient-card backdrop-blur-sm shadow-card animate-fade-in" style={{ animationDelay: '0.3s' }}>
-          <CardHeader className="pb-4">
-            <CardTitle className="text-lg text-poker-primary flex items-center gap-3">
-              <div className="w-10 h-10 bg-poker-primary/10 rounded-xl flex items-center justify-center">
-                <User className="h-5 w-5 text-poker-primary" />
+        <Card className="relative border-0 bg-gradient-to-br from-background via-background/95 to-poker-primary/5 backdrop-blur-xl shadow-2xl animate-fade-in overflow-hidden" style={{ animationDelay: '0.3s' }}>
+          <div className="absolute top-0 right-0 w-32 h-32 opacity-5">
+            <User className="w-full h-full text-poker-primary rotate-12" />
+          </div>
+          
+          <CardHeader className="pb-6 relative">
+            <CardTitle className="text-xl text-poker-primary flex items-center gap-4">
+              <div className="relative">
+                <div className="w-12 h-12 bg-gradient-to-br from-poker-primary/20 to-poker-accent/20 rounded-2xl flex items-center justify-center shadow-lg border border-poker-primary/30">
+                  <User className="h-6 w-6 text-poker-primary" />
+                </div>
+                <div className="absolute -inset-1 bg-gradient-to-r from-poker-primary/20 to-poker-accent/20 rounded-2xl blur opacity-75"></div>
               </div>
-              Ваша игровая статистика
+              <div>
+                <span className="font-black text-2xl">Ваша статистика</span>
+                <div className="flex items-center gap-2 mt-1">
+                  <div className="w-2 h-2 bg-poker-success rounded-full animate-pulse"></div>
+                  <span className="text-sm text-muted-foreground font-semibold">Профиль активен</span>
+                </div>
+              </div>
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-3 gap-4">
-              <div className="text-center p-4 bg-gradient-to-br from-poker-accent/10 to-poker-primary/10 rounded-xl border border-poker-accent/20 hover:shadow-accent transition-all duration-300">
-                <div className="text-2xl font-bold text-poker-accent mb-2">{userStats.elo_rating}</div>
-                <div className="text-xs text-muted-foreground font-semibold">ELO Рейтинг</div>
+          
+          <CardContent className="space-y-6">
+            <div className="grid grid-cols-3 gap-5">
+              <div className="group text-center p-6 bg-gradient-to-br from-poker-accent/10 via-poker-accent/5 to-poker-primary/10 rounded-2xl border border-poker-accent/25 hover:border-poker-accent/50 hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-t from-poker-accent/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <div className="relative">
+                  <div className="text-3xl font-black text-poker-accent mb-3 group-hover:scale-110 transition-transform duration-300">{userStats.elo_rating}</div>
+                  <div className="text-xs text-muted-foreground font-bold uppercase tracking-widest">ELO Rating</div>
+                </div>
               </div>
-              <div className="text-center p-4 bg-gradient-to-br from-poker-success/10 to-green-500/10 rounded-xl border border-poker-success/20 hover:shadow-success transition-all duration-300">
-                <div className="text-2xl font-bold text-poker-success mb-2">{userStats.wins}</div>
-                <div className="text-xs text-muted-foreground font-semibold">Побед</div>
+              
+              <div className="group text-center p-6 bg-gradient-to-br from-poker-success/10 via-poker-success/5 to-green-500/10 rounded-2xl border border-poker-success/25 hover:border-poker-success/50 hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-t from-poker-success/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <div className="relative">
+                  <div className="text-3xl font-black text-poker-success mb-3 group-hover:scale-110 transition-transform duration-300">{userStats.wins}</div>
+                  <div className="text-xs text-muted-foreground font-bold uppercase tracking-widest">Побед</div>
+                </div>
               </div>
-              <div className="text-center p-4 bg-gradient-to-br from-blue-500/10 to-poker-accent/10 rounded-xl border border-blue-500/20 hover:shadow-card transition-all duration-300">
-                <div className="text-2xl font-bold text-blue-500 mb-2">{userStats.games_played}</div>
-                <div className="text-xs text-muted-foreground font-semibold">Турниров</div>
+              
+              <div className="group text-center p-6 bg-gradient-to-br from-blue-500/10 via-blue-500/5 to-poker-accent/10 rounded-2xl border border-blue-500/25 hover:border-blue-500/50 hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-t from-blue-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <div className="relative">
+                  <div className="text-3xl font-black text-blue-500 mb-3 group-hover:scale-110 transition-transform duration-300">{userStats.games_played}</div>
+                  <div className="text-xs text-muted-foreground font-bold uppercase tracking-widest">Турниров</div>
+                </div>
               </div>
             </div>
             
-            {/* Win Rate Progress */}
+            {/* Enhanced Win Rate Progress */}
             {userStats.games_played > 0 && (
-              <div className="mt-6 p-4 bg-background/50 rounded-xl border border-border/30">
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-sm font-medium text-muted-foreground">Процент побед</span>
-                  <span className="text-sm font-bold text-poker-success">
+              <div className="p-6 bg-gradient-to-br from-background/80 to-background/60 rounded-2xl border border-border/30 backdrop-blur-sm">
+                <div className="flex items-center justify-between mb-4">
+                  <span className="text-base font-bold text-muted-foreground flex items-center gap-2">
+                    <Target className="h-4 w-4 text-poker-success" />
+                    Процент побед
+                  </span>
+                  <span className="text-xl font-black text-poker-success">
                     {Math.round((userStats.wins / userStats.games_played) * 100)}%
                   </span>
                 </div>
-                <div className="w-full bg-border/30 rounded-full h-2">
-                  <div 
-                    className="bg-gradient-to-r from-poker-success to-green-500 h-2 rounded-full transition-all duration-1000 relative overflow-hidden"
-                    style={{ width: `${Math.round((userStats.wins / userStats.games_played) * 100)}%` }}
-                  >
-                    <div className="absolute inset-0 bg-white/20 animate-shimmer"></div>
+                <div className="relative">
+                  <div className="w-full bg-gradient-to-r from-border/50 to-border/30 rounded-full h-3 overflow-hidden">
+                    <div 
+                      className="bg-gradient-to-r from-poker-success via-green-500 to-poker-success h-3 rounded-full transition-all duration-2000 relative overflow-hidden"
+                      style={{ width: `${Math.round((userStats.wins / userStats.games_played) * 100)}%` }}
+                    >
+                      <div className="absolute inset-0 bg-gradient-to-r from-white/30 via-white/50 to-white/30 animate-shimmer"></div>
+                    </div>
+                  </div>
+                  <div className="absolute top-0 right-0 w-full h-full flex items-center justify-end pr-2">
+                    {Math.round((userStats.wins / userStats.games_played) * 100) >= 70 && (
+                      <Trophy className="h-3 w-3 text-poker-warning animate-bounce" />
+                    )}
                   </div>
                 </div>
               </div>
