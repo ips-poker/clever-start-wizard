@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Trophy, Calendar, Users, Star, MessageSquare, User, Home, TrendingUp, Clock, MapPin, Coins, ChevronRight, Award, Target, CheckCircle, UserPlus, Loader2, Crown, Gem, Zap, Shield, Play, Pause, CircleDot, ArrowLeft, Heart, Globe, Camera } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { TelegramAuth } from './TelegramAuth';
-import { TournamentModal } from '@/components/TournamentModal';
+import { TelegramTournamentModal } from './TelegramTournamentModal';
 import { toast } from 'sonner';
 import epcLogo from '@/assets/epc-logo.png';
 import mainPokerRoom from '@/assets/gallery/main-poker-room.jpg';
@@ -1047,14 +1047,12 @@ export const TelegramApp = () => {
         <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-32 h-1 bg-gradient-to-r from-transparent via-white/20 to-transparent rounded-full"></div>
       </div>
 
-      <TournamentModal
-        tournament={selectedTournament as any}
+      <TelegramTournamentModal
+        tournament={selectedTournament}
         open={showTournamentModal}
         onOpenChange={setShowTournamentModal}
-        onTournamentUpdate={() => {
-          fetchTournaments();
-          setShowTournamentModal(false);
-        }}
+        onRegister={registerForTournament}
+        registering={registering !== null}
       />
     </div>
   );
