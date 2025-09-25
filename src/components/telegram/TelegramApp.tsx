@@ -407,34 +407,91 @@ export const TelegramApp = () => {
           </div>
         </div>}
 
-      <div className="fixed bottom-0 left-0 right-0 bg-gradient-to-t from-gray-900 to-gray-800 border-t border-gray-700/50 backdrop-blur-sm">
+      {activeTab === 'profile' && <div className="space-y-6 pb-20 px-4 bg-transparent min-h-screen relative z-10">
+          <h2 className="text-2xl font-light italic text-white tracking-wide p-4">ПРОФИЛЬ</h2>
+          {userStats ? (
+            <Card className="bg-gradient-to-br from-gray-800 to-gray-900 border-0">
+              <CardContent className="p-6">
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="w-16 h-16 bg-white/10 rounded-full flex items-center justify-center">
+                    <User className="h-8 w-8 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-white font-bold text-xl">
+                      {telegramUser?.username || telegramUser?.firstName || 'Игрок'}
+                    </h3>
+                    <p className="text-white/60 text-sm">Игрок клуба</p>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4 mb-6">
+                  <div className="text-center p-4 bg-white/5 rounded-lg">
+                    <div className="text-white font-bold text-2xl">{userStats.elo_rating}</div>
+                    <div className="text-white/60 text-sm">Рейтинг</div>
+                  </div>
+                  <div className="text-center p-4 bg-white/5 rounded-lg">
+                    <div className="text-white font-bold text-2xl">{userStats.games_played}</div>
+                    <div className="text-white/60 text-sm">Игр сыграно</div>
+                  </div>
+                </div>
+                
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center p-3 bg-white/5 rounded-lg">
+                    <span className="text-white/70">Побед</span>
+                    <span className="text-white font-bold">{userStats.wins}</span>
+                  </div>
+                  <div className="flex justify-between items-center p-3 bg-white/5 rounded-lg">
+                    <span className="text-white/70">Процент побед</span>
+                    <span className="text-white font-bold">
+                      {userStats.games_played > 0 ? Math.round((userStats.wins / userStats.games_played) * 100) : 0}%
+                    </span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card className="bg-gradient-to-br from-gray-800 to-gray-900 border-0">
+              <CardContent className="p-6 text-center">
+                <div className="w-16 h-16 bg-white/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <User className="h-8 w-8 text-white" />
+                </div>
+                <h3 className="text-white font-bold text-xl mb-2">
+                  {telegramUser?.username || telegramUser?.firstName || 'Игрок'}
+                </h3>
+                <p className="text-white/60 text-sm">Зарегистрируйтесь на турнир, чтобы увидеть статистику</p>
+              </CardContent>
+            </Card>
+          )}
+        </div>}
+
+      <div className="fixed bottom-0 left-0 right-0 bg-gradient-to-t from-gray-900 to-gray-800 border-t border-gray-700/50 backdrop-blur-sm z-50">
         <div className="max-w-lg mx-auto">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="grid w-full grid-cols-4 bg-transparent h-16 p-0">
               <TabsTrigger 
                 value="home" 
-                className="flex flex-col gap-1 text-white/70 data-[state=active]:text-red-500 data-[state=active]:bg-transparent hover:text-white transition-colors border-0 rounded-none"
+                className="flex flex-col gap-1 text-white/70 data-[state=active]:text-red-500 data-[state=active]:bg-transparent hover:text-white transition-colors border-0 rounded-none cursor-pointer"
               >
                 <Home className="h-5 w-5" />
                 <span className="text-xs font-light italic tracking-wide uppercase">Главная</span>
               </TabsTrigger>
               <TabsTrigger 
                 value="tournaments" 
-                className="flex flex-col gap-1 text-white/70 data-[state=active]:text-red-500 data-[state=active]:bg-transparent hover:text-white transition-colors border-0 rounded-none"
+                className="flex flex-col gap-1 text-white/70 data-[state=active]:text-red-500 data-[state=active]:bg-transparent hover:text-white transition-colors border-0 rounded-none cursor-pointer"
               >
                 <Trophy className="h-5 w-5" />
                 <span className="text-xs font-light italic tracking-wide uppercase">Турниры</span>
               </TabsTrigger>
               <TabsTrigger 
                 value="rating" 
-                className="flex flex-col gap-1 text-white/70 data-[state=active]:text-red-500 data-[state=active]:bg-transparent hover:text-white transition-colors border-0 rounded-none"
+                className="flex flex-col gap-1 text-white/70 data-[state=active]:text-red-500 data-[state=active]:bg-transparent hover:text-white transition-colors border-0 rounded-none cursor-pointer"
               >
                 <Star className="h-5 w-5" />
                 <span className="text-xs font-light italic tracking-wide uppercase">Рейтинг</span>
               </TabsTrigger>
               <TabsTrigger 
                 value="profile" 
-                className="flex flex-col gap-1 text-white/70 data-[state=active]:text-red-500 data-[state=active]:bg-transparent hover:text-white transition-colors border-0 rounded-none"
+                className="flex flex-col gap-1 text-white/70 data-[state=active]:text-red-500 data-[state=active]:bg-transparent hover:text-white transition-colors border-0 rounded-none cursor-pointer"
               >
                 <User className="h-5 w-5" />
                 <span className="text-xs font-light italic tracking-wide uppercase">Профиль</span>
