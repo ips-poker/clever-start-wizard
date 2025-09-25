@@ -216,9 +216,9 @@ export const TelegramApp = () => {
       </Card>
 
       <Card className="bg-gradient-to-br from-gray-800 to-gray-900 border-0 overflow-hidden cursor-pointer hover:from-gray-700 hover:to-gray-800 transition-all duration-300 relative" onClick={() => setActiveTab('rating')}>
-        <div className="absolute inset-0 opacity-5 overflow-hidden pointer-events-none">
-          <div className="absolute top-2 right-2 text-4xl text-white transform rotate-12">♠</div>
-          <div className="absolute bottom-2 left-2 text-3xl text-white transform -rotate-12">♣</div>
+        <div className="absolute inset-0 opacity-8 overflow-hidden pointer-events-none">
+          <div className="absolute top-2 right-2 text-6xl text-white transform rotate-12" style={{WebkitTextStroke: '2px white', WebkitTextFillColor: 'transparent'}}>♠</div>
+          <div className="absolute bottom-2 left-2 text-5xl text-white transform -rotate-12" style={{WebkitTextStroke: '2px white', WebkitTextFillColor: 'transparent'}}>♣</div>
         </div>
         <CardContent className="p-6 relative z-10">
           <div className="flex items-center gap-4">
@@ -244,9 +244,9 @@ export const TelegramApp = () => {
 
       <div className="grid grid-cols-2 gap-4">
         <Card className="bg-gradient-to-br from-gray-800 to-gray-900 border-0 cursor-pointer hover:from-gray-700 hover:to-gray-800 transition-all duration-300 relative overflow-hidden" onClick={() => setActiveTab('qa')}>
-          <div className="absolute inset-0 opacity-5 overflow-hidden pointer-events-none">
-            <div className="absolute top-1 right-1 text-3xl text-white transform rotate-12">♠</div>
-            <div className="absolute bottom-1 left-1 text-2xl text-white transform -rotate-12">♣</div>
+          <div className="absolute inset-0 opacity-8 overflow-hidden pointer-events-none">
+            <div className="absolute top-1 right-1 text-5xl text-white transform rotate-12" style={{WebkitTextStroke: '2px white', WebkitTextFillColor: 'transparent'}}>♠</div>
+            <div className="absolute bottom-1 left-1 text-4xl text-white transform -rotate-12" style={{WebkitTextStroke: '2px white', WebkitTextFillColor: 'transparent'}}>♣</div>
           </div>
           <CardContent className="p-5 text-center relative z-10">
             <h3 className="text-white font-light italic text-lg tracking-wide">Q&A</h3>
@@ -254,9 +254,9 @@ export const TelegramApp = () => {
         </Card>
 
         <Card className="bg-gradient-to-br from-gray-800 to-gray-900 border-0 cursor-pointer hover:from-gray-700 hover:to-gray-800 transition-all duration-300 relative overflow-hidden">
-          <div className="absolute inset-0 opacity-5 overflow-hidden pointer-events-none">
-            <div className="absolute top-1 right-1 text-3xl text-white transform rotate-12">♣</div>
-            <div className="absolute bottom-1 left-1 text-2xl text-white transform -rotate-12">♠</div>
+          <div className="absolute inset-0 opacity-8 overflow-hidden pointer-events-none">
+            <div className="absolute top-1 right-1 text-5xl text-white transform rotate-12" style={{WebkitTextStroke: '2px white', WebkitTextFillColor: 'transparent'}}>♣</div>
+            <div className="absolute bottom-1 left-1 text-4xl text-white transform -rotate-12" style={{WebkitTextStroke: '2px white', WebkitTextFillColor: 'transparent'}}>♠</div>
           </div>
           <CardContent className="p-5 text-center relative z-10">
             <h3 className="text-white font-light italic text-lg tracking-wide">SUPPORT</h3>
@@ -268,10 +268,10 @@ export const TelegramApp = () => {
         <p className="text-white/70 text-sm font-medium mb-2 px-1">Ближайший турнир</p>
         
         <Card className="bg-gradient-to-br from-red-600 to-red-800 border-0 overflow-hidden cursor-pointer hover:from-red-500 hover:to-red-700 transition-all duration-300 relative" onClick={() => setActiveTab('tournaments')}>
-          <div className="absolute inset-0 opacity-5 overflow-hidden pointer-events-none">
-            <div className="absolute top-2 right-2 text-5xl text-red-300 transform rotate-12">♥</div>
-            <div className="absolute bottom-2 left-2 text-4xl text-red-300 transform -rotate-12">♦</div>
-            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-6xl text-red-300/30 rotate-45">♥</div>
+          <div className="absolute inset-0 opacity-10 overflow-hidden pointer-events-none">
+            <div className="absolute top-2 right-2 text-7xl text-red-300 transform rotate-12" style={{WebkitTextStroke: '2px #fca5a5', WebkitTextFillColor: 'transparent'}}>♥</div>
+            <div className="absolute bottom-2 left-2 text-6xl text-red-300 transform -rotate-12" style={{WebkitTextStroke: '2px #fca5a5', WebkitTextFillColor: 'transparent'}}>♦</div>
+            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-8xl transform rotate-45" style={{WebkitTextStroke: '1px #fca5a5', WebkitTextFillColor: 'transparent', opacity: '0.15'}}>♥</div>
           </div>
           <CardContent className="p-6 relative z-10">
             <div className="flex items-center justify-between mb-4">
