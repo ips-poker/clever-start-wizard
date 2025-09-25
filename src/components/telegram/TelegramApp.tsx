@@ -393,28 +393,22 @@ export const TelegramApp = () => {
           
           <div className="grid grid-cols-2 gap-3">
             <div className="aspect-square bg-gray-700 rounded-lg overflow-hidden">
-              <img src={mainPokerRoom} alt="Главный покерный зал" className="w-full h-full object-cover" />
+              <img src="https://mokhssmnorrhohrowxvu.supabase.co/storage/v1/object/public/gallery/gallery/1754322902150.jpg" alt="Главный покерный зал IPS" className="w-full h-full object-cover" />
             </div>
             <div className="aspect-square bg-gray-700 rounded-lg overflow-hidden">
-              <img src={tournamentTable} alt="Профессиональный турнирный стол" className="w-full h-full object-cover" />
+              <img src="https://mokhssmnorrhohrowxvu.supabase.co/storage/v1/object/public/gallery/gallery/1754322816633.jpg" alt="Турнирный стол" className="w-full h-full object-cover" />
             </div>
             <div className="aspect-square bg-gray-700 rounded-lg overflow-hidden">
-              <img src={vipZone} alt="Эксклюзивная VIP зона" className="w-full h-full object-cover" />
+              <img src="https://mokhssmnorrhohrowxvu.supabase.co/storage/v1/object/public/gallery/gallery/1754322798457.jpg" alt="VIP зона" className="w-full h-full object-cover" />
             </div>
             <div className="aspect-square bg-gray-700 rounded-lg overflow-hidden">
-              <img src={loungeArea} alt="Комфортная зона отдыха" className="w-full h-full object-cover" />
+              <img src="https://mokhssmnorrhohrowxvu.supabase.co/storage/v1/object/public/gallery/gallery/1754322873019.jpg" alt="Зона отдыха" className="w-full h-full object-cover" />
             </div>
             <div className="aspect-square bg-gray-700 rounded-lg overflow-hidden">
-              <img src={teamTournament} alt="Командный турнир" className="w-full h-full object-cover" />
+              <img src="https://mokhssmnorrhohrowxvu.supabase.co/storage/v1/object/public/gallery/gallery/1754322886855.jpg" alt="Главный покерный зал IPS" className="w-full h-full object-cover" />
             </div>
             <div className="aspect-square bg-gray-700 rounded-lg overflow-hidden">
-              <img src={awardsCeremony} alt="Торжественная церемония награждения" className="w-full h-full object-cover" />
-            </div>
-            <div className="aspect-square bg-gray-700 rounded-lg overflow-hidden">
-              <img src={masterclass} alt="Покерный мастер-класс" className="w-full h-full object-cover" />
-            </div>
-            <div className="aspect-square bg-gray-700 rounded-lg overflow-hidden">
-              <img src={registration} alt="Регистрация участников турнира" className="w-full h-full object-cover" />
+              <img src="https://mokhssmnorrhohrowxvu.supabase.co/storage/v1/object/public/gallery/gallery/1754322830449.jpg" alt="Церемония награждения" className="w-full h-full object-cover" />
             </div>
           </div>
           
