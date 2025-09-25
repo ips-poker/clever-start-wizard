@@ -407,25 +407,37 @@ export const TelegramApp = () => {
           </div>
         </div>}
 
-      <div className="fixed bottom-0 left-0 right-0 bg-gray-900 border-t border-gray-700">
+      <div className="fixed bottom-0 left-0 right-0 bg-gradient-to-t from-gray-900 to-gray-800 border-t border-gray-700/50 backdrop-blur-sm">
         <div className="max-w-lg mx-auto">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-4 bg-transparent h-16">
-              <TabsTrigger value="home" className="flex flex-col gap-1 text-white data-[state=active]:text-red-500">
+            <TabsList className="grid w-full grid-cols-4 bg-transparent h-16 p-0">
+              <TabsTrigger 
+                value="home" 
+                className="flex flex-col gap-1 text-white/70 data-[state=active]:text-red-500 data-[state=active]:bg-transparent hover:text-white transition-colors border-0 rounded-none"
+              >
                 <Home className="h-5 w-5" />
-                <span className="text-xs">Главная</span>
+                <span className="text-xs font-light italic tracking-wide uppercase">Главная</span>
               </TabsTrigger>
-              <TabsTrigger value="tournaments" className="flex flex-col gap-1 text-white data-[state=active]:text-red-500">
+              <TabsTrigger 
+                value="tournaments" 
+                className="flex flex-col gap-1 text-white/70 data-[state=active]:text-red-500 data-[state=active]:bg-transparent hover:text-white transition-colors border-0 rounded-none"
+              >
                 <Trophy className="h-5 w-5" />
-                <span className="text-xs">Турниры</span>
+                <span className="text-xs font-light italic tracking-wide uppercase">Турниры</span>
               </TabsTrigger>
-              <TabsTrigger value="rating" className="flex flex-col gap-1 text-white data-[state=active]:text-red-500">
+              <TabsTrigger 
+                value="rating" 
+                className="flex flex-col gap-1 text-white/70 data-[state=active]:text-red-500 data-[state=active]:bg-transparent hover:text-white transition-colors border-0 rounded-none"
+              >
                 <Star className="h-5 w-5" />
-                <span className="text-xs">Рейтинг</span>
+                <span className="text-xs font-light italic tracking-wide uppercase">Рейтинг</span>
               </TabsTrigger>
-              <TabsTrigger value="profile" className="flex flex-col gap-1 text-white data-[state=active]:text-red-500">
+              <TabsTrigger 
+                value="profile" 
+                className="flex flex-col gap-1 text-white/70 data-[state=active]:text-red-500 data-[state=active]:bg-transparent hover:text-white transition-colors border-0 rounded-none"
+              >
                 <User className="h-5 w-5" />
-                <span className="text-xs">Профиль</span>
+                <span className="text-xs font-light italic tracking-wide uppercase">Профиль</span>
               </TabsTrigger>
             </TabsList>
           </Tabs>
