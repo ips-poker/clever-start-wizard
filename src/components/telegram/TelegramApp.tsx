@@ -203,65 +203,50 @@ export const TelegramApp = () => {
       setRegistering(null);
     }
   };
-  const renderHome = () => <div className="space-y-6 pb-20 px-4">
-      {/* Premium Club Header - PokerStars Style */}
-      <Card className="bg-gradient-poker-red border-0 overflow-hidden relative poker-shine">
-        <div className="absolute inset-0 bg-gradient-poker-red"></div>
-        
-        {/* Decorative Elements */}
-        <div className="absolute top-4 right-4 opacity-10">
-          <Crown className="h-24 w-24" />
-        </div>
-        <div className="absolute bottom-4 left-4 opacity-5">
-          <Gem className="h-16 w-16" />
-        </div>
-        
-        <CardContent className="p-6 relative z-10 bg-[#f68b99]/[0.19]">
-          <div className="flex items-center gap-5 mb-6">
-            {/* Premium Logo */}
+  const renderHome = () => <div className="space-y-8 pb-20 px-4">
+      {/* Modern Club Header */}
+      <Card className="bg-gradient-to-br from-background to-muted border border-border/50 overflow-hidden relative">
+        <CardContent className="p-8 relative z-10">
+          <div className="flex items-center gap-6 mb-8">
+            {/* Clean Logo */}
             <div className="relative">
-              <div className="w-24 h-24 bg-gradient-poker-gold rounded-2xl flex items-center justify-center poker-glass border border-poker-gold/30 glow-gold overflow-hidden">
-                <img src={epcLogo} alt="EPC Logo" className="w-16 h-16 object-contain" />
+              <div className="w-20 h-20 bg-primary/10 rounded-3xl flex items-center justify-center border border-primary/20 overflow-hidden">
+                <img src={epcLogo} alt="EPC Logo" className="w-14 h-14 object-contain" />
               </div>
-              {/* Shine effect */}
-              <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/20 to-transparent rounded-2xl opacity-0 hover:opacity-100 transition-opacity duration-500"></div>
             </div>
             
             <div className="flex-1">
-              <div className="flex items-center gap-2 mb-1">
-                <h1 className="text-3xl font-black text-white tracking-wider text-shadow-poker">EPC</h1>
-                <Crown className="h-6 w-6 text-poker-gold animate-pulse" />
+              <div className="flex items-center gap-3 mb-2">
+                <h1 className="text-3xl font-bold text-foreground tracking-tight">EPC</h1>
+                <Crown className="h-5 w-5 text-primary" />
               </div>
-              <h2 className="text-lg font-bold text-white/95 -mt-1 tracking-wide">EVENT POKER CLUB</h2>
-              <div className="flex items-center gap-2 mt-2">
-                <Gem className="h-4 w-4 text-poker-gold" />
-                <p className="text-white/90 text-sm font-semibold">Премиальный покерный клуб</p>
-              </div>
+              <h2 className="text-lg font-medium text-muted-foreground -mt-1">Event Poker Club</h2>
+              <p className="text-muted-foreground text-sm mt-2">Премиальный покерный клуб</p>
             </div>
           </div>
           
-          <p className="text-white/95 text-sm leading-relaxed font-medium mb-6 text-shadow-poker">
-            Добро пожаловать в элитный мир покера. Профессиональная игра, честные турниры, крупные призы.
+          <p className="text-muted-foreground text-sm leading-relaxed mb-8 max-w-md">
+            Добро пожаловать в мир профессионального покера. Честные турниры, крупные призы, дружелюбное сообщество.
           </p>
           
-          {/* Enhanced Stats Grid */}
-          <div className="grid grid-cols-3 gap-4 pt-4 border-t border-white/20">
+          {/* Clean Stats Grid */}
+          <div className="grid grid-cols-3 gap-4 pt-6 border-t border-border">
             {[{
             value: tournaments.length,
-            label: "Активных турниров",
+            label: "Турниров",
             icon: Trophy
           }, {
             value: `${players.length}+`,
-            label: "Опытных игроков",
+            label: "Игроков",
             icon: Users
           }, {
             value: "24/7",
-            label: "Работаем",
+            label: "Онлайн",
             icon: Zap
-          }].map((stat, index) => <div key={index} className="text-center p-3 bg-white/10 rounded-xl poker-glass">
-                <stat.icon className="h-5 w-5 text-poker-gold mx-auto mb-2" />
-                <div className="text-xl font-black text-white text-shadow-poker">{stat.value}</div>
-                <div className="text-xs text-white/80 font-medium uppercase tracking-wide leading-tight">
+          }].map((stat, index) => <div key={index} className="text-center p-4 bg-muted/50 rounded-2xl">
+                <stat.icon className="h-5 w-5 text-primary mx-auto mb-3" />
+                <div className="text-2xl font-semibold text-foreground">{stat.value}</div>
+                <div className="text-xs text-muted-foreground font-medium mt-1">
                   {stat.label}
                 </div>
               </div>)}
@@ -269,147 +254,101 @@ export const TelegramApp = () => {
         </CardContent>
       </Card>
 
-      {/* Premium Action Cards */}
-      <div className="space-y-4">
-        {/* EPC Rating System - Premium Design */}
-        <Card className="bg-gradient-poker-dark border border-poker-gold/20 overflow-hidden cursor-pointer 
-                       hover:scale-[1.02] hover:shadow-poker-elevated transition-all duration-300 group poker-shine" onClick={() => setActiveTab('rating')}>
-          <CardContent className="p-6 relative">
-            <div className="absolute inset-0 bg-gradient-poker-surface"></div>
-            
-            {/* Decorative poker suits */}
-            <div className="absolute top-2 right-2 opacity-5 text-6xl">♠</div>
-            <div className="absolute bottom-2 left-2 opacity-5 text-4xl text-poker-red">♥</div>
-            
-            <div className="flex items-center gap-4 relative z-10">
-              <div className="relative">
-                <div className="w-16 h-16 bg-gradient-poker-gold rounded-2xl flex items-center justify-center 
-                              border border-poker-gold/40 group-hover:border-poker-gold transition-colors glow-gold">
-                  <Crown className="h-8 w-8 text-poker-gray-dark drop-shadow-lg" />
-                </div>
-                <div className="absolute -top-1 -right-1 w-4 h-4 bg-poker-red rounded-full flex items-center justify-center">
-                  <Star className="h-2 w-2 text-white" />
-                </div>
+      {/* Modern Action Cards */}
+      <div className="space-y-6">
+        {/* EPC Rating System - Clean Design */}
+        <Card className="bg-card border border-border hover:shadow-lg transition-all duration-300 cursor-pointer group" 
+              onClick={() => setActiveTab('rating')}>
+          <CardContent className="p-6">
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center border border-primary/20">
+                <Crown className="h-7 w-7 text-primary" />
               </div>
               
               <div className="flex-1">
-                <div className="flex items-center gap-2">
-                  <h3 className="text-xl font-black text-white tracking-wider text-shadow-poker">EPC RATING</h3>
-                  <Zap className="h-5 w-5 text-poker-gold animate-pulse" />
-                </div>
-                <h3 className="text-xl font-black text-poker-gold tracking-wider -mt-1 text-shadow-poker">SYSTEM</h3>
-                <p className="text-white/80 text-sm mt-2 font-semibold">Рейтинговая система клуба</p>
+                <h3 className="text-xl font-semibold text-foreground mb-1">Рейтинг EPC</h3>
+                <p className="text-muted-foreground text-sm">Система рейтинга клуба</p>
               </div>
               
-              <div className="text-poker-gold/60 group-hover:text-poker-gold transition-colors">
-                <ChevronRight className="h-6 w-6" />
+              <div className="text-muted-foreground group-hover:text-foreground transition-colors">
+                <ChevronRight className="h-5 w-5" />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Quick Access Grid - Premium Design */}
+        {/* Quick Access Grid - Clean Design */}
         <div className="grid grid-cols-2 gap-4">
-          <Card className="bg-gradient-poker-surface border border-poker-blue/20 cursor-pointer 
-                         hover:scale-[1.02] hover:shadow-poker-card transition-all duration-300 group poker-shine" onClick={() => setActiveTab('qa')}>
-            <CardContent className="p-5 text-center relative">
-              <div className="absolute inset-0 bg-gradient-poker-surface rounded-lg"></div>
-              <div className="absolute top-1 right-1 text-2xl opacity-5">♣</div>
-              
-              <div className="relative z-10">
-                <div className="w-12 h-12 bg-poker-blue/20 rounded-xl mx-auto mb-3 flex items-center justify-center 
-                              group-hover:bg-poker-blue/30 transition-colors border border-poker-blue/30">
-                  <MessageSquare className="h-6 w-6 text-poker-blue" />
-                </div>
-                <h3 className="text-white font-black text-lg text-shadow-poker">Q&A</h3>
-                <p className="text-white/70 text-xs mt-1 font-medium">Вопросы и ответы</p>
+          <Card className="bg-card border border-border hover:shadow-md transition-all duration-300 cursor-pointer" 
+                onClick={() => setActiveTab('qa')}>
+            <CardContent className="p-5 text-center">
+              <div className="w-12 h-12 bg-blue-500/10 rounded-2xl mx-auto mb-4 flex items-center justify-center">
+                <MessageSquare className="h-6 w-6 text-blue-500" />
               </div>
+              <h3 className="text-foreground font-medium text-base mb-1">Вопросы</h3>
+              <p className="text-muted-foreground text-xs">Частые вопросы</p>
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-poker-surface border border-poker-green/20 cursor-pointer 
-                         hover:scale-[1.02] hover:shadow-poker-card transition-all duration-300 group poker-shine">
-            <CardContent className="p-5 text-center relative">
-              <div className="absolute inset-0 bg-gradient-poker-surface rounded-lg"></div>
-              <div className="absolute top-1 right-1 text-2xl opacity-5 text-poker-green">♦</div>
-              
-              <div className="relative z-10">
-                <div className="w-12 h-12 bg-poker-green/20 rounded-xl mx-auto mb-3 flex items-center justify-center 
-                              group-hover:bg-poker-green/30 transition-colors border border-poker-green/30">
-                  <Shield className="h-6 w-6 text-poker-green" />
-                </div>
-                <h3 className="text-white font-black text-lg text-shadow-poker">SUPPORT</h3>
-                <p className="text-white/70 text-xs mt-1 font-medium">Поддержка 24/7</p>
+          <Card className="bg-card border border-border hover:shadow-md transition-all duration-300 cursor-pointer">
+            <CardContent className="p-5 text-center">
+              <div className="w-12 h-12 bg-green-500/10 rounded-2xl mx-auto mb-4 flex items-center justify-center">
+                <Shield className="h-6 w-6 text-green-500" />
               </div>
+              <h3 className="text-foreground font-medium text-base mb-1">Поддержка</h3>
+              <p className="text-muted-foreground text-xs">Помощь 24/7</p>
             </CardContent>
           </Card>
         </div>
 
-        {/* Premium Tournament Section */}
-        <Card className="bg-gradient-poker-red border border-poker-gold/20 overflow-hidden cursor-pointer 
-                       hover:scale-[1.02] hover:shadow-poker-elevated transition-all duration-300 group relative poker-shine" onClick={() => setActiveTab('tournaments')}>
-          <div className="absolute inset-0 bg-gradient-poker-red"></div>
-          
-          {/* Decorative Elements */}
-          <div className="absolute top-2 right-2 opacity-10 group-hover:opacity-15 transition-opacity">
-            <Trophy className="h-20 w-20" />
-          </div>
-          <div className="absolute bottom-2 left-2 opacity-5">
-            <Coins className="h-16 w-16" />
-          </div>
-          <div className="absolute top-4 left-4 text-4xl opacity-5">♠</div>
-          
-          <CardContent className="p-6 relative z-10">
+        {/* Next Tournament Section - Clean Design */}
+        <Card className="bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20 cursor-pointer 
+                       hover:shadow-lg transition-all duration-300 group" onClick={() => setActiveTab('tournaments')}>
+          <CardContent className="p-6">
             <div className="flex items-center justify-between mb-6">
               <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <CircleDot className="h-3 w-3 text-poker-gold animate-pulse" />
-                  <p className="text-white/90 text-sm font-semibold uppercase tracking-wide">Ближайший турнир</p>
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="h-2 w-2 bg-primary rounded-full animate-pulse" />
+                  <p className="text-muted-foreground text-sm font-medium">Ближайший турнир</p>
                 </div>
-                {tournaments.length > 0 ? <>
-                    <h3 className="text-3xl font-black text-white tracking-wider text-shadow-poker">
-                      {tournaments[0].name.split(' ')[0] || 'EPC'}
+                {tournaments.length > 0 ? (
+                  <div>
+                    <h3 className="text-2xl font-semibold text-foreground mb-1">
+                      {tournaments[0].name}
                     </h3>
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-3xl font-black text-poker-gold tracking-wider -mt-1 text-shadow-poker">
-                        {tournaments[0].name.split(' ').slice(1).join(' ') || 'TOURNAMENT'}
-                      </h3>
-                      <Crown className="h-6 w-6 text-poker-gold" />
-                    </div>
-                  </> : <>
-                    <h3 className="text-3xl font-black text-white tracking-wider text-shadow-poker">СКОРО</h3>
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-3xl font-black text-poker-gold tracking-wider -mt-1 text-shadow-poker">НОВЫЙ ТУРНИР</h3>
-                      <Crown className="h-6 w-6 text-poker-gold" />
-                    </div>
-                  </>}
+                  </div>
+                ) : (
+                  <div>
+                    <h3 className="text-2xl font-semibold text-foreground mb-1">Скоро новый турнир</h3>
+                  </div>
+                )}
               </div>
-              <div className="text-white/60 group-hover:text-white transition-colors">
-                <ChevronRight className="h-8 w-8" />
+              <div className="text-muted-foreground group-hover:text-foreground transition-colors">
+                <ChevronRight className="h-6 w-6" />
               </div>
             </div>
             
-            {/* Enhanced Stats Grid */}
+            {/* Clean Stats Grid */}
             <div className="grid grid-cols-2 gap-4">
-              <div className="flex items-center gap-3 p-3 bg-white/15 rounded-xl poker-glass">
-                <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
-                  <Users className="h-5 w-5 text-white" />
+              <div className="flex items-center gap-3 p-4 bg-muted/50 rounded-xl">
+                <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
+                  <Users className="h-4 w-4 text-primary" />
                 </div>
                 <div>
-                  <span className="text-sm font-semibold text-white/90 block">Участники</span>
-                  <span className="text-xl font-black text-white text-shadow-poker">
+                  <span className="text-xs text-muted-foreground block">Участники</span>
+                  <span className="text-lg font-semibold text-foreground">
                     {tournaments.length > 0 ? `${tournaments[0]?.tournament_registrations?.[0]?.count || 0}/${tournaments[0]?.max_players}` : '0/100'}
                   </span>
                 </div>
               </div>
               
-              <div className="flex items-center gap-3 p-3 bg-white/15 rounded-xl poker-glass">
-                <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
-                  <Clock className="h-5 w-5 text-white" />
+              <div className="flex items-center gap-3 p-4 bg-muted/50 rounded-xl">
+                <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
+                  <Clock className="h-4 w-4 text-primary" />
                 </div>
                 <div>
-                  <span className="text-sm font-semibold text-white/90 block">Начало</span>
-                  <span className="text-xl font-black text-white text-shadow-poker">
+                  <span className="text-xs text-muted-foreground block">Начало</span>
+                  <span className="text-lg font-semibold text-foreground">
                     {tournaments.length > 0 ? new Date(tournaments[0]?.start_time).toLocaleTimeString('ru-RU', {
                     hour: '2-digit',
                     minute: '2-digit'
@@ -422,18 +361,18 @@ export const TelegramApp = () => {
         </Card>
       </div>
 
-      {/* Premium User Statistics */}
-      {userStats && <Card className="bg-gradient-poker-surface border border-poker-gold/20 poker-shine glow-gold">
+      {/* User Statistics - Clean Design */}
+      {userStats && <Card className="bg-card border border-border">
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-6">
-              <h4 className="text-white font-black text-xl flex items-center gap-3 text-shadow-poker">
-                <div className="w-10 h-10 bg-gradient-poker-gold rounded-xl flex items-center justify-center">
-                  <Crown className="h-5 w-5 text-poker-gray-dark" />
+              <h4 className="text-foreground font-semibold text-lg flex items-center gap-3">
+                <div className="w-8 h-8 bg-primary/10 rounded-xl flex items-center justify-center">
+                  <Crown className="h-4 w-4 text-primary" />
                 </div>
                 Ваша статистика
               </h4>
-              <Button variant="ghost" size="sm" className="text-poker-gold hover:text-poker-gold hover:bg-poker-gold/10 
-                               text-xs h-8 px-3 font-semibold border border-poker-gold/30 rounded-lg">
+              <Button variant="ghost" size="sm" className="text-primary hover:text-primary hover:bg-primary/10 
+                               text-xs h-8 px-3 font-medium">
                 Подробнее
               </Button>
             </div>
@@ -443,26 +382,25 @@ export const TelegramApp = () => {
             value: userStats.elo_rating,
             label: "Рейтинг",
             icon: Star,
-            color: "poker-gold"
+            color: "amber-500"
           }, {
             value: userStats.wins,
             label: "Побед",
             icon: Trophy,
-            color: "poker-green"
+            color: "green-500"
           }, {
             value: userStats.games_played,
             label: "Игр",
             icon: Target,
-            color: "poker-blue"
-          }].map((stat, index) => <div key={index} className="text-center p-4 bg-poker-gray-dark/50 rounded-xl 
-                                           border border-poker-gray-light/20 hover:border-poker-gold/30 
-                                           transition-all duration-300 group">
-                  <div className={`w-8 h-8 bg-${stat.color}/20 rounded-lg mx-auto mb-3 flex items-center justify-center 
-                                  border border-${stat.color}/30 group-hover:border-${stat.color}/50 transition-colors`}>
+            color: "blue-500"
+          }].map((stat, index) => <div key={index} className="text-center p-4 bg-muted/50 rounded-xl 
+                                           border border-border hover:border-primary/30 
+                                           transition-all duration-300">
+                  <div className={`w-8 h-8 bg-${stat.color}/10 rounded-lg mx-auto mb-3 flex items-center justify-center`}>
                     <stat.icon className={`h-4 w-4 text-${stat.color}`} />
                   </div>
-                  <div className={`text-2xl font-black text-${stat.color} text-shadow-poker`}>{stat.value}</div>
-                  <div className="text-xs text-white/70 font-medium uppercase tracking-wide mt-1">
+                  <div className={`text-xl font-semibold text-${stat.color}`}>{stat.value}</div>
+                  <div className="text-xs text-muted-foreground font-medium mt-1">
                     {stat.label}
                   </div>
                 </div>)}
@@ -470,60 +408,49 @@ export const TelegramApp = () => {
           </CardContent>
         </Card>}
     </div>;
-  const renderTournaments = () => <div className="space-y-5 pb-20 px-4">
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-gradient-poker-gold rounded-xl flex items-center justify-center glow-gold">
-            <Trophy className="h-6 w-6 text-poker-gray-dark" />
+  const renderTournaments = () => <div className="space-y-6 pb-20 px-4">
+      <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center gap-4">
+          <div className="w-10 h-10 bg-primary/10 rounded-2xl flex items-center justify-center">
+            <Trophy className="h-5 w-5 text-primary" />
           </div>
           <div>
-            <h2 className="text-2xl font-black text-white text-shadow-poker">Турниры</h2>
-            <p className="text-white/70 text-sm">Премиальные события</p>
+            <h2 className="text-2xl font-semibold text-foreground">Турниры</h2>
+            <p className="text-muted-foreground text-sm">Предстоящие события</p>
           </div>
         </div>
       </div>
       
-      {tournaments.map((tournament, index) => <Card key={tournament.id} className="bg-gradient-poker-surface border border-poker-gold/20 overflow-hidden relative 
-                                            hover:scale-[1.01] hover:border-poker-gold/40 transition-all duration-300 group poker-shine">
-          
-          {/* Premium Background Elements */}
-          <div className="absolute inset-0 bg-gradient-poker-surface"></div>
-          <div className="absolute top-2 right-2 opacity-5 text-6xl">
-            {index % 4 === 0 ? '♠' : index % 4 === 1 ? '♥' : index % 4 === 2 ? '♦' : '♣'}
-          </div>
-          <div className="absolute bottom-2 left-2 opacity-10 group-hover:opacity-15 transition-opacity">
-            <Coins className="h-16 w-16" />
-          </div>
-          
-          <CardContent className="p-6 relative z-10">
+      {tournaments.map((tournament, index) => <Card key={tournament.id} className="bg-card border border-border hover:shadow-lg transition-all duration-300">
+          <CardContent className="p-6">
             {/* Tournament Header */}
             <div className="flex items-start justify-between mb-6">
               <div className="flex-1">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="w-3 h-3 bg-poker-gold rounded-full animate-pulse"></div>
-                  <Badge variant={tournament.status === 'running' ? 'default' : 'secondary'} className={`${tournament.status === 'running' ? 'bg-poker-green text-white border-poker-green' : 'bg-poker-surface-elevated text-poker-gold border-poker-gold/30'} font-semibold uppercase tracking-wider`}>
-                    {tournament.status === 'scheduled' ? '🕐 Запланирован' : tournament.status === 'running' ? '🔴 В процессе' : tournament.status}
+                <div className="flex items-center gap-3 mb-4">
+                  <Badge variant={tournament.status === 'running' ? 'default' : 'secondary'} 
+                         className={`${tournament.status === 'running' ? 'bg-green-500 text-white' : 'bg-muted text-muted-foreground'} font-medium`}>
+                    {tournament.status === 'scheduled' ? '📅 Запланирован' : tournament.status === 'running' ? '🔴 В процессе' : tournament.status}
                   </Badge>
                 </div>
                 
-                <h3 className="text-2xl font-black text-white uppercase tracking-wide text-shadow-poker mb-2">
+                <h3 className="text-xl font-semibold text-foreground mb-4">
                   {tournament.name}
                 </h3>
                 
-                <div className="flex items-center gap-6 text-white/80">
+                <div className="flex items-center gap-6 text-muted-foreground">
                   <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 bg-poker-blue/20 rounded-lg flex items-center justify-center border border-poker-blue/30">
-                      <Users className="h-4 w-4 text-poker-blue" />
+                    <div className="w-8 h-8 bg-blue-500/10 rounded-lg flex items-center justify-center">
+                      <Users className="h-4 w-4 text-blue-500" />
                     </div>
-                    <span className="text-sm font-semibold">
+                    <span className="text-sm font-medium">
                       {tournament.tournament_registrations?.[0]?.count || 0}/{tournament.max_players}
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 bg-poker-red/20 rounded-lg flex items-center justify-center border border-poker-red/30">
-                      <Clock className="h-4 w-4 text-poker-red" />
+                    <div className="w-8 h-8 bg-orange-500/10 rounded-lg flex items-center justify-center">
+                      <Clock className="h-4 w-4 text-orange-500" />
                     </div>
-                    <span className="text-sm font-semibold">
+                    <span className="text-sm font-medium">
                       {new Date(tournament.start_time).toLocaleString('ru-RU', {
                     day: '2-digit',
                     month: '2-digit',
@@ -537,23 +464,23 @@ export const TelegramApp = () => {
             </div>
             
             {/* Tournament Details Grid */}
-            <div className="space-y-5">
+            <div className="space-y-4">
               {/* Location & Date Card */}
-              <div className="bg-poker-gray-dark/50 rounded-xl p-4 border border-poker-gray-light/20">
-                <h4 className="text-white font-black mb-3 flex items-center gap-2">
-                  <MapPin className="h-4 w-4 text-poker-gold" />
+              <div className="bg-muted/50 rounded-xl p-4">
+                <h4 className="text-foreground font-medium mb-3 flex items-center gap-2">
+                  <MapPin className="h-4 w-4 text-primary" />
                   Место и время
                 </h4>
-                <div className="space-y-2 text-white/80 text-sm">
+                <div className="space-y-2 text-muted-foreground text-sm">
                   <div className="flex items-center gap-3">
-                    <div className="w-6 h-6 bg-poker-red/20 rounded-lg flex items-center justify-center">
-                      <MapPin className="h-3 w-3 text-poker-red" />
+                    <div className="w-5 h-5 bg-red-500/10 rounded-lg flex items-center justify-center">
+                      <MapPin className="h-3 w-3 text-red-500" />
                     </div>
                     <span className="font-medium">г. Уфа, Российская Сутолочная перулок 5-1</span>
                   </div>
                   <div className="flex items-center gap-3">
-                    <div className="w-6 h-6 bg-poker-blue/20 rounded-lg flex items-center justify-center">
-                      <Calendar className="h-3 w-3 text-poker-blue" />
+                    <div className="w-5 h-5 bg-blue-500/10 rounded-lg flex items-center justify-center">
+                      <Calendar className="h-3 w-3 text-blue-500" />
                     </div>
                     <span className="font-medium capitalize">{new Date(tournament.start_time).toLocaleDateString('ru-RU', {
                     weekday: 'long',
@@ -565,120 +492,129 @@ export const TelegramApp = () => {
               </div>
 
               {/* Tournament Rules Card */}
-              <div className="bg-poker-gray-dark/50 rounded-xl p-4 border border-poker-gray-light/20">
-                <h4 className="text-white font-black mb-3 flex items-center gap-2">
-                  <Coins className="h-4 w-4 text-poker-gold" />
+              <div className="bg-muted/50 rounded-xl p-4">
+                <h4 className="text-foreground font-medium mb-3 flex items-center gap-2">
+                  <Coins className="h-4 w-4 text-primary" />
                   Правила турнира
                 </h4>
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div className="bg-poker-surface/50 rounded-lg p-3 border border-poker-gold/20">
-                    <span className="text-white/70 font-semibold block mb-1">Бай-ин</span>
-                    <div className="text-xl font-black text-poker-gold">{tournament.buy_in}₽</div>
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div className="bg-background rounded-lg p-3 border border-border">
+                    <span className="text-muted-foreground font-medium block mb-1">Бай-ин</span>
+                    <div className="text-lg font-semibold text-primary">{tournament.buy_in}₽</div>
                   </div>
-                  <div className="bg-poker-surface/50 rounded-lg p-3 border border-poker-blue/20">
-                    <span className="text-white/70 font-semibold block mb-1">Стартовые фишки</span>
-                    <div className="text-xl font-black text-poker-blue">{tournament.starting_chips?.toLocaleString() || '10,000'}</div>
+                  <div className="bg-background rounded-lg p-3 border border-border">
+                    <span className="text-muted-foreground font-medium block mb-1">Стартовые фишки</span>
+                    <div className="text-lg font-semibold text-blue-500">{tournament.starting_chips?.toLocaleString() || '10,000'}</div>
                   </div>
                 </div>
               </div>
 
               {/* Tournament Features */}
-              <div className="bg-poker-gray-dark/50 rounded-xl p-4 border border-poker-gray-light/20">
-                <h4 className="text-white font-black mb-3 flex items-center gap-2">
-                  <Star className="h-4 w-4 text-poker-gold" />
+              <div className="bg-muted/50 rounded-xl p-4">
+                <h4 className="text-foreground font-medium mb-3 flex items-center gap-2">
+                  <Star className="h-4 w-4 text-primary" />
                   Особенности
                 </h4>
                 <div className="flex flex-wrap gap-2">
-                  <Badge className="bg-poker-gold/20 text-poker-gold border-poker-gold/30 text-xs font-semibold">
+                  <Badge className="bg-primary/10 text-primary border-primary/20 text-xs font-medium">
                     {tournament.tournament_format || 'Freezeout'}
                   </Badge>
-                  {tournament.rebuy_cost && tournament.rebuy_cost > 0 && <Badge className="bg-poker-green/20 text-poker-green border-poker-green/30 text-xs font-semibold">
+                  {tournament.rebuy_cost && tournament.rebuy_cost > 0 && <Badge className="bg-green-500/10 text-green-500 border-green-500/20 text-xs font-medium">
                       Ребай {tournament.rebuy_cost}₽
                     </Badge>}
-                  {tournament.addon_cost && tournament.addon_cost > 0 && <Badge className="bg-poker-blue/20 text-poker-blue border-poker-blue/30 text-xs font-semibold">
+                  {tournament.addon_cost && tournament.addon_cost > 0 && <Badge className="bg-blue-500/10 text-blue-500 border-blue-500/20 text-xs font-medium">
                       Аддон {tournament.addon_cost}₽
                     </Badge>}
-                  <Badge className="bg-poker-red/20 text-poker-red border-poker-red/30 text-xs font-semibold">
-                    Начальный рейтинг = 1000₽
-                  </Badge>
                 </div>
               </div>
             </div>
 
             {/* Action Buttons */}
             <div className="mt-6 space-y-3">
-              {tournament.status === 'scheduled' && <Button onClick={() => registerForTournament(tournament.id)} disabled={registering === tournament.id} className="w-full bg-gradient-poker-gold hover:bg-poker-gold text-poker-gray-dark 
-                           font-black text-lg py-3 rounded-xl border border-poker-gold/30 
-                           hover:shadow-poker-gold transition-all duration-300 glow-gold" size="lg">
+              {tournament.status === 'scheduled' && <Button onClick={() => registerForTournament(tournament.id)} 
+                         disabled={registering === tournament.id} 
+                         className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-medium text-base py-3 rounded-xl" 
+                         size="lg">
                   {registering === tournament.id ? <>
-                      <Loader2 className="h-5 w-5 mr-3 animate-spin" />
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                       Регистрируем...
                     </> : <>
-                      <Crown className="h-5 w-5 mr-3" />
+                      <Crown className="h-4 w-4 mr-2" />
                       В список ожидания
                     </>}
                 </Button>}
               
-              {tournament.status === 'running' && <Button variant="outline" className="w-full border-poker-green/40 text-poker-green hover:bg-poker-green/10 
-                           font-black text-lg py-3 rounded-xl" size="lg">
-                  <Play className="h-5 w-5 mr-3" />
+              {tournament.status === 'running' && <Button variant="outline" 
+                         className="w-full border-green-500/40 text-green-500 hover:bg-green-500/10 font-medium text-base py-3 rounded-xl" 
+                         size="lg">
+                  <Play className="h-4 w-4 mr-2" />
                   Турнир в процессе
                 </Button>}
             </div>
           </CardContent>
         </Card>)}
       
-      {tournaments.length === 0 && <Card className="bg-gradient-poker-surface border border-poker-gray-light/20 poker-glass">
+      {tournaments.length === 0 && <Card className="bg-card border border-border">
           <CardContent className="text-center py-16">
-            <div className="w-20 h-20 bg-poker-gold/20 rounded-full mx-auto mb-6 flex items-center justify-center border border-poker-gold/30">
-              <Calendar className="h-10 w-10 text-poker-gold" />
+            <div className="w-16 h-16 bg-primary/10 rounded-full mx-auto mb-6 flex items-center justify-center">
+              <Calendar className="h-8 w-8 text-primary" />
             </div>
-            <h3 className="text-2xl font-black text-white mb-4 text-shadow-poker">Нет активных турниров</h3>
-            <p className="text-white/70 text-sm max-w-md mx-auto leading-relaxed">
+            <h3 className="text-xl font-semibold text-foreground mb-4">Нет активных турниров</h3>
+            <p className="text-muted-foreground text-sm max-w-md mx-auto leading-relaxed">
               Следите за обновлениями в нашем канале.<br />
               Новые турниры добавляются регулярно!
             </p>
           </CardContent>
         </Card>}
     </div>;
-  const renderRating = () => <div className="space-y-4 pb-20 px-4">
-      <div className="flex items-center justify-between mb-6">
+  const renderRating = () => <div className="space-y-6 pb-20 px-4">
+      <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-white">EPC RATING</h1>
-          <h2 className="text-2xl font-bold text-white">SYSTEM</h2>
+          <h1 className="text-2xl font-semibold text-foreground">Рейтинг EPC</h1>
+          <p className="text-muted-foreground text-sm">Система рейтинга клуба</p>
         </div>
       </div>
 
       {/* Tab Navigation */}
       <div className="flex justify-center mb-6">
-        <div className="flex bg-poker-gray-dark rounded-xl p-1">
-          <button className="px-4 py-2 text-white bg-poker-red rounded-lg text-sm font-medium">
+        <div className="flex bg-muted rounded-xl p-1">
+          <button className="px-4 py-2 text-primary-foreground bg-primary rounded-lg text-sm font-medium">
             Ежемесячно
           </button>
-          <button className="px-4 py-2 text-white/60 text-sm font-medium">
+          <button className="px-4 py-2 text-muted-foreground text-sm font-medium hover:text-foreground transition-colors">
             Полугодие
           </button>
-          <button className="px-4 py-2 text-white/60 text-sm font-medium">
-            Рейтинг
+          <button className="px-4 py-2 text-muted-foreground text-sm font-medium hover:text-foreground transition-colors">
+            Общий
           </button>
         </div>
       </div>
       
       {/* Players List */}
       <div className="space-y-3">
-        {players.map((player, index) => <Card key={player.id} className="bg-gradient-poker-dark border border-poker-gray-light/20">
+        {players.map((player, index) => <Card key={player.id} className="bg-card border border-border hover:shadow-md transition-all duration-300">
             <CardContent className="p-4">
               <div className="flex items-center gap-4">
                 {/* Position */}
                 <div className="flex items-center gap-3">
-                  <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold ${index === 0 ? 'bg-poker-gold text-black' : index === 1 ? 'bg-gray-300 text-black' : index === 2 ? 'bg-amber-600 text-white' : 'bg-transparent border border-poker-gray text-white'}`}>
+                  <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-semibold ${
+                    index === 0 ? 'bg-amber-500 text-white' : 
+                    index === 1 ? 'bg-slate-400 text-white' : 
+                    index === 2 ? 'bg-amber-600 text-white' : 
+                    'bg-muted text-muted-foreground border border-border'
+                  }`}>
                     {index + 1}
                   </div>
                   
                   {/* Avatar */}
                   <Avatar className="w-12 h-12">
                     <AvatarImage src={player.avatar_url} />
-                    <AvatarFallback className={`text-white text-sm font-semibold ${index === 0 ? 'bg-poker-gold' : index === 1 ? 'bg-gray-400' : index === 2 ? 'bg-amber-600' : 'bg-poker-gray'}`}>
+                    <AvatarFallback className={`text-white text-sm font-medium ${
+                      index === 0 ? 'bg-amber-500' : 
+                      index === 1 ? 'bg-slate-400' : 
+                      index === 2 ? 'bg-amber-600' : 
+                      'bg-muted-foreground'
+                    }`}>
                       {player.name?.[0] || 'P'}
                     </AvatarFallback>
                   </Avatar>
@@ -686,46 +622,49 @@ export const TelegramApp = () => {
 
                 {/* Player Info */}
                 <div className="flex-1">
-                  <h3 className="font-semibold text-white">{player.name}</h3>
-                  <div className="flex items-center gap-2 text-xs text-white/60">
+                  <h3 className="font-medium text-foreground">{player.name}</h3>
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
                     <span>{player.games_played} игр</span>
                     {player.games_played > 0 && <>
                         <span>•</span>
-                        <span className="text-green-400">{Math.round(player.wins / player.games_played * 100)}% побед</span>
+                        <span className="text-green-500">{Math.round(player.wins / player.games_played * 100)}% побед</span>
                       </>}
                   </div>
                 </div>
 
                 {/* Rating */}
                 <div className="text-right">
-                  <div className="font-bold text-xl text-poker-gold">{player.elo_rating}</div>
+                  <div className="font-semibold text-xl text-primary">{player.elo_rating}</div>
                 </div>
               </div>
             </CardContent>
           </Card>)}
       </div>
       
-      {players.length === 0 && <Card className="bg-gradient-poker-dark border border-poker-gray-light/20">
+      {players.length === 0 && <Card className="bg-card border border-border">
           <CardContent className="text-center py-12">
-            <TrendingUp className="h-12 w-12 mx-auto mb-4 text-poker-gray" />
-            <h3 className="text-lg font-medium text-white mb-2">Рейтинг пуст</h3>
-            <p className="text-white/60 text-sm">Сыграйте свой первый турнир!</p>
+            <TrendingUp className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+            <h3 className="text-lg font-medium text-foreground mb-2">Рейтинг пуст</h3>
+            <p className="text-muted-foreground text-sm">Сыграйте свой первый турнир!</p>
           </CardContent>
         </Card>}
     </div>;
-  const renderQA = () => <div className="space-y-4 pb-20">
-      <h2 className="text-xl font-bold text-white mb-4">Вопросы и ответы</h2>
+  const renderQA = () => <div className="space-y-6 pb-20 px-4">
+      <div className="mb-8">
+        <h2 className="text-2xl font-semibold text-foreground mb-2">Вопросы и ответы</h2>
+        <p className="text-muted-foreground text-sm">Часто задаваемые вопросы</p>
+      </div>
       
-      <Card className="border-slate-700 bg-slate-900/50">
+      <Card className="border border-border bg-card">
         <CardHeader className="pb-3">
-          <CardTitle className="text-base text-white flex items-center gap-2">
-            <MessageSquare className="h-4 w-4 text-amber-400" />
+          <CardTitle className="text-base text-foreground flex items-center gap-2">
+            <MessageSquare className="h-4 w-4 text-primary" />
             Как записаться на турнир?
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-slate-300 text-sm leading-relaxed">
-            Выберите турнир в разделе "Турниры" и нажмите кнопку "Записаться". 
+          <p className="text-muted-foreground text-sm leading-relaxed">
+            Выберите турнир в разделе "Турниры" и нажмите кнопку "В список ожидания". 
             Подтвердите участие через администратора клуба или напишите в чат.
           </p>
         </CardContent>
