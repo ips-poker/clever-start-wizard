@@ -21,7 +21,20 @@ import {
   Target,
   CheckCircle,
   UserPlus,
-  Loader2
+  Loader2,
+  Spade,
+  Heart,
+  Diamond,
+  Club,
+  Crown,
+  Zap,
+  Shield,
+  Gem,
+  Medal,
+  Sparkles,
+  Phone,
+  Mail,
+  Globe
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { TelegramAuth } from './TelegramAuth';
@@ -285,21 +298,31 @@ export const TelegramApp = () => {
         <CardHeader className="relative pb-6">
           <div className="flex items-center gap-5">
             <div className="relative group">
-              <div className="w-20 h-20 bg-gradient-to-br from-white/20 to-white/5 backdrop-blur-xl rounded-3xl flex items-center justify-center shadow-2xl border border-white/30 group-hover:scale-110 transition-all duration-500">
-                <Trophy className="h-10 w-10 text-white group-hover:rotate-12 transition-transform duration-500" />
+              <div className="w-20 h-20 bg-gradient-to-br from-white/25 to-white/10 backdrop-blur-xl rounded-3xl flex items-center justify-center shadow-2xl border border-white/40 group-hover:scale-110 transition-all duration-500">
+                <div className="relative">
+                  <Crown className="h-10 w-10 text-white group-hover:rotate-12 transition-transform duration-500 drop-shadow-lg" />
+                  <Spade className="absolute -top-1 -right-1 h-4 w-4 text-white/80 rotate-12" />
+                </div>
               </div>
-              <div className="absolute -inset-1 bg-gradient-to-r from-poker-accent/30 to-poker-primary/30 rounded-3xl blur opacity-75 group-hover:opacity-100 transition-opacity duration-500"></div>
+              <div className="absolute -inset-1 bg-gradient-to-r from-poker-accent/40 to-poker-primary/40 rounded-3xl blur opacity-75 group-hover:opacity-100 transition-opacity duration-500"></div>
             </div>
             <div className="flex-1">
-              <CardTitle className="text-3xl text-white font-black tracking-tight mb-2 bg-gradient-to-r from-white to-white/90 bg-clip-text">
+              <CardTitle className="text-3xl text-white font-black tracking-tight mb-2 drop-shadow-lg">
                 EPC Poker Club
               </CardTitle>
-              <CardDescription className="text-white/90 text-lg font-semibold leading-relaxed">
-                🏆 Премиальный покерный клуб в Telegram
+              <CardDescription className="text-white font-bold text-lg leading-relaxed drop-shadow-md flex items-center gap-2">
+                <Gem className="h-5 w-5 text-poker-warning animate-pulse" />
+                Премиальный покерный клуб
               </CardDescription>
-              <div className="flex items-center gap-2 mt-2">
-                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                <span className="text-white/80 text-sm font-medium">Online • Активных игроков: {players.length}+</span>
+              <div className="flex items-center gap-3 mt-3">
+                <div className="flex items-center gap-2 bg-white/20 backdrop-blur-md rounded-full px-3 py-1 border border-white/30">
+                  <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                  <span className="text-white font-semibold text-sm">Online</span>
+                </div>
+                <div className="flex items-center gap-2 bg-white/15 backdrop-blur-md rounded-full px-3 py-1 border border-white/25">
+                  <Users className="h-3 w-3 text-white/90" />
+                  <span className="text-white/90 font-semibold text-sm">{players.length}+ игроков</span>
+                </div>
               </div>
             </div>
           </div>
@@ -307,26 +330,29 @@ export const TelegramApp = () => {
         
         <CardContent className="relative pt-0 pb-8">
           <div className="grid grid-cols-3 gap-4">
-            <div className="group text-center p-5 bg-gradient-to-br from-white/15 to-white/5 backdrop-blur-xl rounded-2xl border border-white/25 hover:border-white/40 hover:bg-white/20 transform hover:-translate-y-1 transition-all duration-500 shadow-lg">
-              <div className="relative">
-                <div className="text-3xl font-black text-white mb-2 group-hover:scale-110 transition-transform duration-300">{tournaments.length}</div>
-                <div className="absolute inset-0 bg-gradient-to-t from-poker-accent/20 to-transparent rounded-lg blur-sm opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            <div className="group text-center p-5 bg-gradient-to-br from-white/20 to-white/10 backdrop-blur-xl rounded-2xl border border-white/30 hover:border-white/50 hover:bg-white/25 transform hover:-translate-y-2 transition-all duration-500 shadow-2xl">
+              <div className="relative mb-3">
+                <Spade className="h-6 w-6 text-white/80 mx-auto mb-2" />
+                <div className="text-4xl font-black text-white drop-shadow-lg group-hover:scale-110 transition-transform duration-300">{tournaments.length}</div>
+                <div className="absolute inset-0 bg-gradient-to-t from-poker-accent/30 to-transparent rounded-lg blur-sm opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
               </div>
-              <div className="text-xs text-white/90 font-bold uppercase tracking-wider">Турниров</div>
+              <div className="text-sm text-white font-bold uppercase tracking-wider drop-shadow-sm">Турниров</div>
             </div>
-            <div className="group text-center p-5 bg-gradient-to-br from-white/15 to-white/5 backdrop-blur-xl rounded-2xl border border-white/25 hover:border-white/40 hover:bg-white/20 transform hover:-translate-y-1 transition-all duration-500 shadow-lg">
-              <div className="relative">
-                <div className="text-3xl font-black text-white mb-2 group-hover:scale-110 transition-transform duration-300">{players.length}+</div>
-                <div className="absolute inset-0 bg-gradient-to-t from-poker-success/20 to-transparent rounded-lg blur-sm opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            <div className="group text-center p-5 bg-gradient-to-br from-white/20 to-white/10 backdrop-blur-xl rounded-2xl border border-white/30 hover:border-white/50 hover:bg-white/25 transform hover:-translate-y-2 transition-all duration-500 shadow-2xl">
+              <div className="relative mb-3">
+                <Heart className="h-6 w-6 text-red-400 mx-auto mb-2" />
+                <div className="text-4xl font-black text-white drop-shadow-lg group-hover:scale-110 transition-transform duration-300">{players.length}+</div>
+                <div className="absolute inset-0 bg-gradient-to-t from-poker-success/30 to-transparent rounded-lg blur-sm opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
               </div>
-              <div className="text-xs text-white/90 font-bold uppercase tracking-wider">Игроков</div>
+              <div className="text-sm text-white font-bold uppercase tracking-wider drop-shadow-sm">Игроков</div>
             </div>
-            <div className="group text-center p-5 bg-gradient-to-br from-white/15 to-white/5 backdrop-blur-xl rounded-2xl border border-white/25 hover:border-white/40 hover:bg-white/20 transform hover:-translate-y-1 transition-all duration-500 shadow-lg">
-              <div className="relative">
-                <div className="text-3xl font-black text-white mb-2 group-hover:scale-110 transition-transform duration-300">24/7</div>
-                <div className="absolute inset-0 bg-gradient-to-t from-blue-500/20 to-transparent rounded-lg blur-sm opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            <div className="group text-center p-5 bg-gradient-to-br from-white/20 to-white/10 backdrop-blur-xl rounded-2xl border border-white/30 hover:border-white/50 hover:bg-white/25 transform hover:-translate-y-2 transition-all duration-500 shadow-2xl">
+              <div className="relative mb-3">
+                <Diamond className="h-6 w-6 text-blue-400 mx-auto mb-2" />
+                <div className="text-4xl font-black text-white drop-shadow-lg group-hover:scale-110 transition-transform duration-300">24/7</div>
+                <div className="absolute inset-0 bg-gradient-to-t from-blue-500/30 to-transparent rounded-lg blur-sm opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
               </div>
-              <div className="text-xs text-white/90 font-bold uppercase tracking-wider">Доступ</div>
+              <div className="text-sm text-white font-bold uppercase tracking-wider drop-shadow-sm">Доступ</div>
             </div>
           </div>
         </CardContent>
@@ -344,20 +370,23 @@ export const TelegramApp = () => {
           
           <CardContent className="relative p-8 text-center">
             <div className="relative group/icon mb-6">
-              <div className="w-16 h-16 bg-gradient-to-br from-poker-accent/20 via-poker-accent/15 to-poker-primary/20 rounded-3xl mx-auto flex items-center justify-center shadow-2xl border border-poker-accent/30 group-hover:scale-125 group-hover:rotate-6 transition-all duration-500">
-                <Calendar className="h-8 w-8 text-poker-accent group-hover:text-poker-primary transition-colors duration-300" />
+              <div className="w-16 h-16 bg-gradient-to-br from-poker-accent/25 via-poker-accent/20 to-poker-primary/25 rounded-3xl mx-auto flex items-center justify-center shadow-2xl border border-poker-accent/40 group-hover:scale-125 group-hover:rotate-6 transition-all duration-500">
+                <div className="relative">
+                  <Spade className="h-8 w-8 text-poker-accent group-hover:text-poker-primary transition-colors duration-300 drop-shadow-md" />
+                  <Calendar className="absolute -bottom-2 -right-2 h-4 w-4 text-poker-primary/80" />
+                </div>
               </div>
-              <div className="absolute -inset-2 bg-gradient-to-r from-poker-accent/20 to-poker-primary/20 rounded-3xl blur opacity-0 group-hover:opacity-75 transition-opacity duration-500"></div>
+              <div className="absolute -inset-3 bg-gradient-to-r from-poker-accent/25 to-poker-primary/25 rounded-3xl blur opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
             </div>
             
-            <h3 className="font-black text-poker-primary text-lg mb-3 group-hover:text-poker-accent transition-colors duration-300">Турниры</h3>
+            <h3 className="font-black text-poker-primary text-xl mb-3 group-hover:text-poker-accent transition-colors duration-300 drop-shadow-sm">Турниры</h3>
             <div className="flex items-center justify-center gap-2 mb-2">
-              <div className="w-2 h-2 bg-poker-accent/60 rounded-full animate-pulse"></div>
-              <span className="font-bold text-poker-accent text-xl">{tournaments.length}</span>
-              <span className="text-sm text-muted-foreground font-medium">активных</span>
+              <Zap className="w-4 h-4 text-poker-accent animate-pulse" />
+              <span className="font-black text-poker-accent text-2xl drop-shadow-sm">{tournaments.length}</span>
+              <span className="text-sm text-foreground font-semibold">активных</span>
             </div>
             
-            <div className="absolute bottom-0 left-0 right-0 h-1.5 bg-gradient-to-r from-poker-accent via-poker-primary to-poker-accent transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 rounded-full"></div>
+            <div className="absolute bottom-0 left-0 right-0 h-2 bg-gradient-to-r from-poker-accent via-poker-primary to-poker-accent transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 rounded-full shadow-lg"></div>
           </CardContent>
         </Card>
         
@@ -371,19 +400,22 @@ export const TelegramApp = () => {
           
           <CardContent className="relative p-8 text-center">
             <div className="relative group/icon mb-6">
-              <div className="w-16 h-16 bg-gradient-to-br from-poker-success/20 via-poker-success/15 to-poker-accent/20 rounded-3xl mx-auto flex items-center justify-center shadow-2xl border border-poker-success/30 group-hover:scale-125 group-hover:rotate-6 transition-all duration-500">
-                <TrendingUp className="h-8 w-8 text-poker-success group-hover:text-poker-accent transition-colors duration-300" />
+              <div className="w-16 h-16 bg-gradient-to-br from-poker-success/25 via-poker-success/20 to-poker-accent/25 rounded-3xl mx-auto flex items-center justify-center shadow-2xl border border-poker-success/40 group-hover:scale-125 group-hover:rotate-6 transition-all duration-500">
+                <div className="relative">
+                  <Crown className="h-8 w-8 text-poker-warning group-hover:text-poker-accent transition-colors duration-300 drop-shadow-md" />
+                  <TrendingUp className="absolute -bottom-2 -right-2 h-4 w-4 text-poker-success" />
+                </div>
               </div>
-              <div className="absolute -inset-2 bg-gradient-to-r from-poker-success/20 to-poker-accent/20 rounded-3xl blur opacity-0 group-hover:opacity-75 transition-opacity duration-500"></div>
+              <div className="absolute -inset-3 bg-gradient-to-r from-poker-success/25 to-poker-accent/25 rounded-3xl blur opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
             </div>
             
-            <h3 className="font-black text-poker-primary text-lg mb-3 group-hover:text-poker-success transition-colors duration-300">Рейтинг</h3>
+            <h3 className="font-black text-poker-primary text-xl mb-3 group-hover:text-poker-success transition-colors duration-300 drop-shadow-sm">Рейтинг</h3>
             <div className="flex items-center justify-center gap-2 mb-2">
-              <Trophy className="h-4 w-4 text-poker-warning animate-pulse" />
-              <span className="text-sm text-muted-foreground font-medium">Топ игроков</span>
+              <Medal className="h-4 w-4 text-poker-warning animate-pulse" />
+              <span className="text-sm text-foreground font-semibold">Топ игроков клуба</span>
             </div>
             
-            <div className="absolute bottom-0 left-0 right-0 h-1.5 bg-gradient-to-r from-poker-success via-poker-accent to-poker-success transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 rounded-full"></div>
+            <div className="absolute bottom-0 left-0 right-0 h-2 bg-gradient-to-r from-poker-success via-poker-accent to-poker-success transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 rounded-full shadow-lg"></div>
           </CardContent>
         </Card>
       </div>
@@ -398,16 +430,19 @@ export const TelegramApp = () => {
           <CardHeader className="pb-6 relative">
             <CardTitle className="text-xl text-poker-primary flex items-center gap-4">
               <div className="relative">
-                <div className="w-12 h-12 bg-gradient-to-br from-poker-primary/20 to-poker-accent/20 rounded-2xl flex items-center justify-center shadow-lg border border-poker-primary/30">
-                  <User className="h-6 w-6 text-poker-primary" />
+                <div className="w-12 h-12 bg-gradient-to-br from-poker-primary/25 to-poker-accent/25 rounded-2xl flex items-center justify-center shadow-xl border border-poker-primary/40">
+                  <div className="relative">
+                    <Shield className="h-6 w-6 text-poker-primary drop-shadow-md" />
+                    <Sparkles className="absolute -top-1 -right-1 h-3 w-3 text-poker-accent animate-pulse" />
+                  </div>
                 </div>
-                <div className="absolute -inset-1 bg-gradient-to-r from-poker-primary/20 to-poker-accent/20 rounded-2xl blur opacity-75"></div>
+                <div className="absolute -inset-1 bg-gradient-to-r from-poker-primary/25 to-poker-accent/25 rounded-2xl blur opacity-100"></div>
               </div>
               <div>
-                <span className="font-black text-2xl">Ваша статистика</span>
+                <span className="font-black text-2xl drop-shadow-sm">Ваша статистика</span>
                 <div className="flex items-center gap-2 mt-1">
-                  <div className="w-2 h-2 bg-poker-success rounded-full animate-pulse"></div>
-                  <span className="text-sm text-muted-foreground font-semibold">Профиль активен</span>
+                  <div className="w-2 h-2 bg-poker-success rounded-full animate-pulse shadow-sm"></div>
+                  <span className="text-sm text-foreground font-bold">Профиль активен</span>
                 </div>
               </div>
             </CardTitle>
@@ -415,27 +450,30 @@ export const TelegramApp = () => {
           
           <CardContent className="space-y-6">
             <div className="grid grid-cols-3 gap-5">
-              <div className="group text-center p-6 bg-gradient-to-br from-poker-accent/10 via-poker-accent/5 to-poker-primary/10 rounded-2xl border border-poker-accent/25 hover:border-poker-accent/50 hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-t from-poker-accent/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              <div className="group text-center p-6 bg-gradient-to-br from-poker-accent/15 via-poker-accent/10 to-poker-primary/15 rounded-2xl border border-poker-accent/30 hover:border-poker-accent/60 hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-t from-poker-accent/15 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                 <div className="relative">
-                  <div className="text-3xl font-black text-poker-accent mb-3 group-hover:scale-110 transition-transform duration-300">{userStats.elo_rating}</div>
-                  <div className="text-xs text-muted-foreground font-bold uppercase tracking-widest">ELO Rating</div>
+                  <Zap className="h-6 w-6 text-poker-accent mx-auto mb-2 drop-shadow-md" />
+                  <div className="text-4xl font-black text-poker-accent mb-3 group-hover:scale-110 transition-transform duration-300 drop-shadow-sm">{userStats.elo_rating}</div>
+                  <div className="text-xs text-foreground font-bold uppercase tracking-widest">ELO Rating</div>
                 </div>
               </div>
               
-              <div className="group text-center p-6 bg-gradient-to-br from-poker-success/10 via-poker-success/5 to-green-500/10 rounded-2xl border border-poker-success/25 hover:border-poker-success/50 hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-t from-poker-success/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              <div className="group text-center p-6 bg-gradient-to-br from-poker-success/15 via-poker-success/10 to-green-500/15 rounded-2xl border border-poker-success/30 hover:border-poker-success/60 hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-t from-poker-success/15 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                 <div className="relative">
-                  <div className="text-3xl font-black text-poker-success mb-3 group-hover:scale-110 transition-transform duration-300">{userStats.wins}</div>
-                  <div className="text-xs text-muted-foreground font-bold uppercase tracking-widest">Побед</div>
+                  <Trophy className="h-6 w-6 text-poker-success mx-auto mb-2 drop-shadow-md" />
+                  <div className="text-4xl font-black text-poker-success mb-3 group-hover:scale-110 transition-transform duration-300 drop-shadow-sm">{userStats.wins}</div>
+                  <div className="text-xs text-foreground font-bold uppercase tracking-widest">Побед</div>
                 </div>
               </div>
               
-              <div className="group text-center p-6 bg-gradient-to-br from-blue-500/10 via-blue-500/5 to-poker-accent/10 rounded-2xl border border-blue-500/25 hover:border-blue-500/50 hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-t from-blue-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              <div className="group text-center p-6 bg-gradient-to-br from-blue-500/15 via-blue-500/10 to-poker-accent/15 rounded-2xl border border-blue-500/30 hover:border-blue-500/60 hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-t from-blue-500/15 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                 <div className="relative">
-                  <div className="text-3xl font-black text-blue-500 mb-3 group-hover:scale-110 transition-transform duration-300">{userStats.games_played}</div>
-                  <div className="text-xs text-muted-foreground font-bold uppercase tracking-widest">Турниров</div>
+                  <Star className="h-6 w-6 text-blue-500 mx-auto mb-2 drop-shadow-md" />
+                  <div className="text-4xl font-black text-blue-500 mb-3 group-hover:scale-110 transition-transform duration-300 drop-shadow-sm">{userStats.games_played}</div>
+                  <div className="text-xs text-foreground font-bold uppercase tracking-widest">Турниров</div>
                 </div>
               </div>
             </div>
@@ -474,19 +512,29 @@ export const TelegramApp = () => {
       )}
 
       {/* Enhanced Upcoming Tournaments */}
-      <Card className="border-border/30 bg-gradient-card backdrop-blur-sm shadow-card animate-fade-in" style={{ animationDelay: '0.4s' }}>
-        <CardHeader className="pb-4">
-          <CardTitle className="text-lg text-poker-primary flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-poker-accent/10 rounded-xl flex items-center justify-center">
-                <Clock className="h-5 w-5 text-poker-accent" />
+            <Card className="border-0 bg-gradient-to-br from-background via-background/95 to-poker-accent/5 backdrop-blur-xl shadow-2xl animate-fade-in overflow-hidden" style={{ animationDelay: '0.4s' }}>
+        <div className="absolute top-0 right-0 w-32 h-32 opacity-5">
+          <Spade className="w-full h-full text-poker-accent rotate-12" />
+        </div>
+        
+        <CardHeader className="pb-6 relative">
+          <CardTitle className="text-xl text-poker-primary flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="relative">
+                <div className="w-12 h-12 bg-gradient-to-br from-poker-accent/25 to-poker-primary/25 rounded-2xl flex items-center justify-center shadow-xl border border-poker-accent/40">
+                  <div className="relative">
+                    <Clock className="h-6 w-6 text-poker-accent drop-shadow-md" />
+                    <Zap className="absolute -top-1 -right-1 h-3 w-3 text-poker-primary animate-pulse" />
+                  </div>
+                </div>
+                <div className="absolute -inset-1 bg-gradient-to-r from-poker-accent/25 to-poker-primary/25 rounded-2xl blur opacity-100"></div>
               </div>
-              <span>Ближайшие турниры</span>
+              <span className="font-black text-2xl drop-shadow-sm">Ближайшие турниры</span>
             </div>
-            <Button variant="ghost" size="sm" className="text-poker-accent hover:text-poker-accent/80 hover:bg-poker-accent/10 text-sm h-8 px-3 rounded-lg font-semibold"
+            <Button variant="ghost" size="sm" className="text-poker-accent hover:text-poker-primary hover:bg-poker-accent/15 text-sm h-9 px-4 rounded-xl font-bold border border-poker-accent/20 hover:border-poker-accent/40 transition-all duration-300"
                     onClick={() => setActiveTab('tournaments')}>
               Все турниры
-              <ChevronRight className="h-4 w-4 ml-1" />
+              <ChevronRight className="h-4 w-4 ml-2" />
             </Button>
           </CardTitle>
         </CardHeader>

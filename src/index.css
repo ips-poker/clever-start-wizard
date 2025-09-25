@@ -36,23 +36,23 @@
 
     --radius: 0.75rem;
 
-    /* Professional Light Theme Design Tokens */
-    --poker-primary: 220 26% 14%;           /* Deep navy for main elements */
+    /* Enhanced Professional Poker Colors - Light Theme */
+    --poker-primary: 220 26% 14%;           /* Deep navy for excellent contrast */
     --poker-primary-light: 220 26% 18%;     /* Slightly lighter navy */
     --poker-secondary: 220 14% 96%;         /* Very light gray-blue */
-    --poker-accent: 260 100% 65%;           /* Vibrant purple accent */
-    --poker-accent-light: 260 100% 70%;     /* Lighter purple */
-    --poker-success: 142 71% 45%;           /* Professional green */
-    --poker-warning: 38 100% 50%;           /* Warm orange */
-    --poker-error: 0 84% 60%;               /* Professional red */
+    --poker-accent: 260 100% 68%;           /* More vivid purple for better visibility */
+    --poker-accent-light: 260 100% 75%;     /* Lighter purple */
+    --poker-success: 142 76% 40%;           /* Deeper green for better contrast */
+    --poker-warning: 45 93% 47%;            /* Rich gold with better contrast */
+    --poker-error: 0 84% 55%;               /* Professional red */
     --poker-surface: 220 14% 99%;           /* Almost white surface */
     --poker-surface-elevated: 220 20% 98%;  /* Slightly elevated surface */
-    --poker-border: 220 14% 91%;            /* Subtle border */
-    --poker-text-primary: 220 26% 14%;      /* Main text color */
-    --poker-text-secondary: 220 16% 46%;    /* Secondary text */
-    --poker-text-muted: 220 14% 71%;        /* Muted text */
-    --poker-gold: 45 95% 55%;               /* Premium gold accent */
-    --poker-steel: 220 16% 46%;             /* Professional steel blue */
+    --poker-border: 220 14% 88%;            /* More visible border */
+    --poker-text-primary: 220 26% 14%;      /* Main text color - same as primary */
+    --poker-text-secondary: 220 16% 40%;    /* Darker secondary text for better readability */
+    --poker-text-muted: 220 14% 60%;        /* Better contrast muted text */
+    --poker-gold: 45 95% 50%;               /* Premium gold accent */
+    --poker-steel: 220 16% 40%;             /* Darker professional steel blue */
     --poker-charcoal: 220 26% 14%;          /* Charcoal for premium feel */
     --poker-cream: 45 20% 96%;              /* Cream background */
     
@@ -144,6 +144,27 @@
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
     --ring: 212.7 26.8% 83.9%;
+    
+    /* Enhanced Professional Poker Colors - Dark Theme */
+    --poker-primary: 0 0% 98%;              /* Very light text for dark backgrounds */
+    --poker-primary-light: 0 0% 90%;        /* Slightly dimmed light text */
+    --poker-secondary: 220 26% 8%;          /* Very dark surface */
+    --poker-accent: 260 100% 75%;           /* Brighter purple for dark theme */
+    --poker-accent-light: 260 85% 85%;      /* Light purple accent */
+    --poker-success: 142 76% 60%;           /* Brighter green for dark */
+    --poker-warning: 45 93% 70%;            /* Brighter gold for dark */
+    --poker-error: 0 84% 70%;               /* Brighter red for dark */
+    --poker-surface: 220 26% 6%;           /* Very dark surface */
+    --poker-surface-elevated: 220 26% 10%;  /* Elevated dark surface */
+    --poker-border: 220 16% 25%;            /* Visible dark border */
+    --poker-text-primary: 0 0% 98%;         /* Light text for dark theme */
+    --poker-text-secondary: 220 16% 80%;    /* Light secondary text */
+    --poker-text-muted: 220 14% 65%;        /* Muted light text */
+    --poker-gold: 45 93% 70%;               /* Bright gold for dark */
+    --poker-steel: 220 16% 75%;             /* Light steel for dark */
+    --poker-charcoal: 220 26% 6%;           /* Very dark charcoal */
+    --poker-cream: 45 25% 12%;              /* Dark cream */
+    
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
     --sidebar-primary: 224.3 76.3% 48%;
@@ -165,13 +186,16 @@
   }
 }
 
-/* Touch target utility for mobile accessibility */
+/* Professional Typography & Enhanced Readability */
 .touch-target {
   min-height: 44px;
   min-width: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-/* Scrollbar utilities */
+/* Enhanced scrollbar styling */
 .scrollbar-hide {
   -ms-overflow-style: none;
   scrollbar-width: none;
@@ -181,12 +205,13 @@
   display: none;
 }
 
-/* Line clamp utilities */
+/* Improved text contrast utilities */
 .line-clamp-2 {
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;  
   overflow: hidden;
+  line-height: 1.5;
 }
 
 .line-clamp-3 {
@@ -194,4 +219,34 @@
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;  
   overflow: hidden;
+  line-height: 1.5;
+}
+
+/* Professional text shadows for better readability on gradients */
+.text-shadow-sm {
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.text-shadow-md {
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+}
+
+.text-shadow-lg {
+  text-shadow: 0 4px 8px rgba(0, 0, 0, 0.25);
+}
+
+/* High contrast focus states */
+.focus-visible {
+  outline: 2px solid hsl(var(--poker-accent));
+  outline-offset: 2px;
+}
+
+/* Professional button hover states */
+.btn-hover-lift {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.btn-hover-lift:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
