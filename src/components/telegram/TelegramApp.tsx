@@ -591,7 +591,7 @@ export const TelegramApp = () => {
       {activeTab === 'about' && renderAbout()}
       
       {activeTab === 'tournaments' && (
-        <div className="space-y-6 pb-20 px-4 bg-transparent min-h-screen relative z-10">
+        <div className="space-y-4 pb-20 px-4 bg-transparent min-h-screen relative z-10">
           <div className="flex items-center gap-3 p-4">
             <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl flex items-center justify-center">
               <Trophy className="h-5 w-5 text-white" />
@@ -610,73 +610,73 @@ export const TelegramApp = () => {
                   }}>
               <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 via-transparent to-amber-600/8 opacity-60 group-hover:opacity-100 transition-opacity duration-500"></div>
               <div className="absolute inset-0 opacity-8 group-hover:opacity-15 transition-opacity duration-500">
-                <div className="absolute top-4 right-4 text-amber-400/30 text-4xl animate-pulse">♠</div>
-                <div className="absolute bottom-4 left-4 text-amber-400/20 text-3xl animate-bounce-subtle">♣</div>
+                <div className="absolute top-3 right-3 text-2xl text-amber-400/30 animate-pulse">♠</div>
+                <div className="absolute bottom-3 left-3 text-xl text-amber-400/20 animate-bounce-subtle">♣</div>
               </div>
               
-              <CardContent className="p-8 relative z-10">
-                <div className="flex items-start justify-between mb-6">
+              <CardContent className="p-4 relative z-10">
+                <div className="flex items-start justify-between mb-3">
                   <div className="flex-1">
-                    <h3 className="text-2xl font-light text-white tracking-wider uppercase mb-3 group-hover:text-amber-100 transition-colors duration-300">
+                    <h3 className="text-lg font-light text-white tracking-wide uppercase mb-2 group-hover:text-amber-100 transition-colors duration-300">
                       {tournament.name}
                     </h3>
-                    <div className="h-0.5 w-12 bg-gradient-to-r from-amber-400 to-amber-600 group-hover:w-20 transition-all duration-500"></div>
+                    <div className="h-0.5 w-8 bg-gradient-to-r from-amber-400 to-amber-600 group-hover:w-12 transition-all duration-500"></div>
                     {tournament.description && (
-                      <p className="text-white/70 text-sm mt-2 line-clamp-2">{tournament.description}</p>
+                      <p className="text-white/60 text-xs mt-1 line-clamp-1">{tournament.description}</p>
                     )}
                   </div>
-                  <div className="w-12 h-12 bg-gradient-to-br from-amber-500/20 to-amber-600/20 rounded-xl flex items-center justify-center border border-amber-400/30 group-hover:scale-110 transition-transform duration-300">
-                    <Trophy className="h-6 w-6 text-amber-400" />
+                  <div className="w-8 h-8 bg-gradient-to-br from-amber-500/20 to-amber-600/20 rounded-lg flex items-center justify-center border border-amber-400/30 group-hover:scale-110 transition-transform duration-300">
+                    <Trophy className="h-4 w-4 text-amber-400" />
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4 mb-6">
-                  <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-white/8 via-white/12 to-white/8 rounded-xl border border-white/10 group-hover:border-amber-400/20 transition-all duration-300 backdrop-blur-sm">
-                    <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
-                      <Users className="h-4 w-4 text-white" />
+                <div className="grid grid-cols-2 gap-2 mb-3">
+                  <div className="flex items-center gap-2 p-2 bg-gradient-to-r from-white/8 via-white/12 to-white/8 rounded-lg border border-white/10 group-hover:border-amber-400/20 transition-all duration-300 backdrop-blur-sm">
+                    <div className="w-6 h-6 bg-gradient-to-br from-blue-500 to-blue-600 rounded-md flex items-center justify-center">
+                      <Users className="h-3 w-3 text-white" />
                     </div>
                     <div>
-                      <span className="text-white font-semibold text-base">{tournament.tournament_registrations?.[0]?.count || 0}/{tournament.max_players}</span>
+                      <span className="text-white font-semibold text-sm">{tournament.tournament_registrations?.[0]?.count || 0}/{tournament.max_players}</span>
                       <p className="text-white/60 text-xs">участников</p>
                     </div>
                   </div>
                   
-                  <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-white/8 via-white/12 to-white/8 rounded-xl border border-white/10 group-hover:border-amber-400/20 transition-all duration-300 backdrop-blur-sm">
-                    <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-green-600 rounded-lg flex items-center justify-center">
-                      <Clock className="h-4 w-4 text-white" />
+                  <div className="flex items-center gap-2 p-2 bg-gradient-to-r from-white/8 via-white/12 to-white/8 rounded-lg border border-white/10 group-hover:border-amber-400/20 transition-all duration-300 backdrop-blur-sm">
+                    <div className="w-6 h-6 bg-gradient-to-br from-green-500 to-green-600 rounded-md flex items-center justify-center">
+                      <Clock className="h-3 w-3 text-white" />
                     </div>
                     <div>
-                      <span className="text-white font-semibold text-base">{new Date(tournament.start_time).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}</span>
+                      <span className="text-white font-semibold text-sm">{new Date(tournament.start_time).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}</span>
                       <p className="text-white/60 text-xs">{new Date(tournament.start_time).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })}</p>
                     </div>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4 mb-6">
-                  <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-white/8 via-white/12 to-white/8 rounded-xl border border-white/10 group-hover:border-amber-400/20 transition-all duration-300 backdrop-blur-sm">
-                    <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg flex items-center justify-center">
-                      <Coins className="h-4 w-4 text-white" />
+                <div className="grid grid-cols-2 gap-2 mb-3">
+                  <div className="flex items-center gap-2 p-2 bg-gradient-to-r from-white/8 via-white/12 to-white/8 rounded-lg border border-white/10 group-hover:border-amber-400/20 transition-all duration-300 backdrop-blur-sm">
+                    <div className="w-6 h-6 bg-gradient-to-br from-purple-500 to-purple-600 rounded-md flex items-center justify-center">
+                      <Coins className="h-3 w-3 text-white" />
                     </div>
                     <div>
-                      <span className="text-white font-semibold text-base">{tournament.buy_in.toLocaleString()} ₽</span>
+                      <span className="text-white font-semibold text-sm">{tournament.buy_in.toLocaleString()} ₽</span>
                       <p className="text-white/60 text-xs">бай-ин</p>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-white/8 via-white/12 to-white/8 rounded-xl border border-white/10 group-hover:border-amber-400/20 transition-all duration-300 backdrop-blur-sm">
-                    <div className="w-8 h-8 bg-gradient-to-br from-red-500 to-red-600 rounded-lg flex items-center justify-center">
-                      <Target className="h-4 w-4 text-white" />
+                  <div className="flex items-center gap-2 p-2 bg-gradient-to-r from-white/8 via-white/12 to-white/8 rounded-lg border border-white/10 group-hover:border-amber-400/20 transition-all duration-300 backdrop-blur-sm">
+                    <div className="w-6 h-6 bg-gradient-to-br from-red-500 to-red-600 rounded-md flex items-center justify-center">
+                      <Target className="h-3 w-3 text-white" />
                     </div>
                     <div>
-                      <span className="text-white font-semibold text-base">{tournament.starting_chips?.toLocaleString() || 'N/A'}</span>
+                      <span className="text-white font-semibold text-sm">{tournament.starting_chips?.toLocaleString() || 'N/A'}</span>
                       <p className="text-white/60 text-xs">стартовый стек</p>
                     </div>
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center justify-between gap-2">
                   <Badge 
-                    className={`px-3 py-1 rounded-full text-xs font-medium ${
+                    className={`px-2 py-0.5 rounded-full text-xs font-medium ${
                       tournament.status === 'registration' ? 'bg-green-500/20 text-green-400 border-green-500/30' :
                       tournament.status === 'running' ? 'bg-red-500/20 text-red-400 border-red-500/30' :
                       tournament.status === 'scheduled' ? 'bg-blue-500/20 text-blue-400 border-blue-500/30' :
@@ -692,7 +692,7 @@ export const TelegramApp = () => {
                   <Button 
                     variant="ghost"
                     size="sm"
-                    className="text-amber-400 hover:text-amber-300 hover:bg-amber-500/10 border border-amber-400/30 hover:border-amber-400/50 backdrop-blur-sm"
+                    className="text-amber-400 hover:text-amber-300 hover:bg-amber-500/10 border border-amber-400/30 hover:border-amber-400/50 backdrop-blur-sm h-6 px-2 text-xs"
                     onClick={(e) => {
                       e.stopPropagation();
                       setSelectedTournament(tournament);
@@ -700,7 +700,7 @@ export const TelegramApp = () => {
                     }}
                   >
                     Подробнее
-                    <ChevronRight className="h-4 w-4 ml-1" />
+                    <ChevronRight className="h-3 w-3 ml-1" />
                   </Button>
                 </div>
                 
@@ -711,16 +711,16 @@ export const TelegramApp = () => {
                       registerForTournament(tournament.id);
                     }} 
                     disabled={registering === tournament.id} 
-                    className="w-full mt-4 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-semibold py-4 rounded-xl shadow-lg hover:shadow-amber-500/30 transition-all duration-300 group-hover:scale-[1.02] border-0"
+                    className="w-full mt-3 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-semibold py-2 rounded-lg shadow-lg hover:shadow-amber-500/30 transition-all duration-300 group-hover:scale-[1.02] border-0 text-sm"
                   >
                     {registering === tournament.id ? (
                       <div className="flex items-center gap-2">
-                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <Loader2 className="h-3 w-3 animate-spin" />
                         <span>Регистрируем...</span>
                       </div>
                     ) : (
                       <div className="flex items-center gap-2">
-                        <UserPlus className="h-4 w-4" />
+                        <UserPlus className="h-3 w-3" />
                         <span>Записаться на турнир</span>
                       </div>
                     )}
