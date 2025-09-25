@@ -155,18 +155,53 @@ export const TelegramApp = () => {
 
   const fetchUserStats = async () => {
     if (!telegramUser) return;
+    
     try {
       const telegramId = telegramUser.id.toString();
-      const { data, error } = await supabase.from('players').select('*').eq('telegram', telegramId).maybeSingle();
-      if (error) {
+      
+      // Сначала пытаемся найти игрока по telegram ID
+      let { data, error } = await supabase
+        .from('players')
+        .select('*')
+        .eq('telegram', telegramId)
+        .maybeSingle();
+      
+      if (error && error.code !== 'PGRST116') {
         console.error('Error fetching user stats:', error);
         return;
       }
+      
+      // Если игрок не найден, создаем нового
+      if (!data) {
+        const playerName = telegramUser.firstName || telegramUser.username || `Player_${telegramId}`;
+        
+        const { data: newPlayer, error: createError } = await supabase
+          .from('players')
+          .insert({
+            name: playerName,
+            telegram: telegramId,
+            elo_rating: 100,
+            games_played: 0,
+            wins: 0
+          })
+          .select()
+          .single();
+          
+        if (createError) {
+          console.error('Error creating player:', createError);
+          toast.error('Не удалось создать профиль игрока');
+          return;
+        }
+        
+        data = newPlayer;
+        toast.success('Профиль игрока создан!');
+      }
+      
       if (data) {
         setUserStats(data);
       }
     } catch (error) {
-      console.error('Error fetching user stats:', error);
+      console.error('Error in fetchUserStats:', error);
     }
   };
 
