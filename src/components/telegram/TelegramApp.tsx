@@ -9,6 +9,15 @@ import { supabase } from '@/integrations/supabase/client';
 import { TelegramAuth } from './TelegramAuth';
 import { toast } from 'sonner';
 import epcLogo from '@/assets/epc-logo.png';
+import mainPokerRoom from '@/assets/gallery/main-poker-room.jpg';
+import tournamentTable from '@/assets/gallery/tournament-table.jpg';
+import loungeArea from '@/assets/gallery/lounge-area.jpg';
+import vipZone from '@/assets/gallery/vip-zone.jpg';
+import teamTournament from '@/assets/gallery/team-tournament.jpg';
+import awardsCeremony from '@/assets/gallery/awards-ceremony.jpg';
+import masterclass from '@/assets/gallery/masterclass.jpg';
+import registration from '@/assets/gallery/registration.jpg';
+import pokerChips from '@/assets/gallery/poker-chips.jpg';
 interface Tournament {
   id: string;
   name: string;
@@ -480,6 +489,96 @@ export const TelegramApp = () => {
           <div className="flex items-center gap-2">
             <CheckCircle className="h-4 w-4 text-white" />
             <span className="text-white text-sm">Лицензированная деятельность</span>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Gallery */}
+      <Card className="bg-gradient-to-br from-gray-800 to-gray-900 border-0">
+        <CardContent className="p-6">
+          <h3 className="text-white font-bold text-lg mb-4">Наш клуб</h3>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="relative rounded-lg overflow-hidden">
+              <img 
+                src={mainPokerRoom} 
+                alt="Основной покерный зал" 
+                className="w-full h-24 object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end">
+                <span className="text-white text-xs p-2 font-medium">Основной зал</span>
+              </div>
+            </div>
+            
+            <div className="relative rounded-lg overflow-hidden">
+              <img 
+                src={tournamentTable} 
+                alt="Турнирный стол" 
+                className="w-full h-24 object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end">
+                <span className="text-white text-xs p-2 font-medium">Турнирный стол</span>
+              </div>
+            </div>
+            
+            <div className="relative rounded-lg overflow-hidden">
+              <img 
+                src={vipZone} 
+                alt="VIP зона" 
+                className="w-full h-24 object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end">
+                <span className="text-white text-xs p-2 font-medium">VIP зона</span>
+              </div>
+            </div>
+            
+            <div className="relative rounded-lg overflow-hidden">
+              <img 
+                src={loungeArea} 
+                alt="Лаунж зона" 
+                className="w-full h-24 object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end">
+                <span className="text-white text-xs p-2 font-medium">Лаунж зона</span>
+              </div>
+            </div>
+            
+            <div className="relative rounded-lg overflow-hidden">
+              <img 
+                src={teamTournament} 
+                alt="Командный турнир" 
+                className="w-full h-24 object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end">
+                <span className="text-white text-xs p-2 font-medium">Турниры</span>
+              </div>
+            </div>
+            
+            <div className="relative rounded-lg overflow-hidden">
+              <img 
+                src={awardsCeremony} 
+                alt="Церемония награждения" 
+                className="w-full h-24 object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end">
+                <span className="text-white text-xs p-2 font-medium">Награждения</span>
+              </div>
+            </div>
+          </div>
+          
+          <div className="mt-4 grid grid-cols-1 gap-3">
+            <div className="relative rounded-lg overflow-hidden">
+              <img 
+                src={masterclass} 
+                alt="Мастер-класс" 
+                className="w-full h-32 object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end">
+                <div className="p-3">
+                  <span className="text-white text-sm font-medium block">Мастер-классы и обучение</span>
+                  <span className="text-white/80 text-xs">Развивайте навыки с профессионалами</span>
+                </div>
+              </div>
+            </div>
           </div>
         </CardContent>
       </Card>
