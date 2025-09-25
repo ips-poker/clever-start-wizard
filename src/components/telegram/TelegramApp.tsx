@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Trophy, Calendar, Users, Star, MessageSquare, User, Home, TrendingUp, Clock, MapPin, Coins, ChevronRight, Award, Target, CheckCircle, UserPlus, Loader2, Crown, Gem, Zap, Shield, Play, Pause, CircleDot } from 'lucide-react';
+import { Trophy, Calendar, Users, Star, MessageSquare, User, Home, TrendingUp, Clock, MapPin, Coins, ChevronRight, Award, Target, CheckCircle, UserPlus, Loader2, Crown, Gem, Zap, Shield, Play, Pause, CircleDot, ArrowLeft, Heart, Globe } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { TelegramAuth } from './TelegramAuth';
 import { toast } from 'sonner';
@@ -191,7 +191,7 @@ export const TelegramApp = () => {
     }
   };
   const renderHome = () => <div className="space-y-4 pb-20 px-4 bg-transparent min-h-screen relative z-10">
-      <Card className="bg-gradient-to-br from-red-600 to-red-800 border-0 overflow-hidden relative">
+      <Card className="bg-gradient-to-br from-red-600 to-red-800 border-0 overflow-hidden relative cursor-pointer hover:from-red-500 hover:to-red-700 transition-all duration-300" onClick={() => setActiveTab('about')}>
         <div className="absolute inset-0 opacity-10">
           <div className="absolute top-4 right-4">
             <CircleDot className="h-24 w-24 animate-[spin_4s_linear_infinite] text-white/20" />
@@ -331,6 +331,161 @@ export const TelegramApp = () => {
           </CardContent>
         </Card>}
     </div>;
+  
+  const renderAbout = () => (
+    <div className="space-y-4 pb-20 px-4 bg-transparent min-h-screen relative z-10">
+      {/* Header with back button */}
+      <div className="flex items-center gap-4 p-4">
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          onClick={() => setActiveTab('home')}
+          className="text-white hover:bg-white/10 p-2"
+        >
+          <ArrowLeft className="h-5 w-5" />
+        </Button>
+        <h2 className="text-2xl font-light italic text-white tracking-wide">О НАС</h2>
+      </div>
+
+      {/* Company Info Card */}
+      <Card className="bg-gradient-to-br from-red-600 to-red-800 border-0 overflow-hidden relative">
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute top-4 right-4">
+            <CircleDot className="h-16 w-16 text-white/20" />
+          </div>
+          <div className="absolute bottom-4 left-4">
+            <Heart className="h-12 w-12 text-white/20" />
+          </div>
+        </div>
+        
+        <CardContent className="p-6 relative z-10">
+          <div className="flex items-center gap-4 mb-4">
+            <div className="w-14 h-14 bg-white rounded-full flex items-center justify-center overflow-hidden">
+              <img src={epcLogo} alt="EPC Logo" className="w-12 h-12 object-contain" />
+            </div>
+            
+            <div className="flex-1">
+              <h1 className="text-2xl font-light italic text-white tracking-wide">IVENT POKER CLUB</h1>
+              <p className="text-white/80 text-sm">Международный покерный стиль</p>
+            </div>
+          </div>
+          
+          <div className="bg-white/10 rounded-xl p-4 backdrop-blur-sm">
+            <p className="text-white text-sm leading-relaxed">
+              Мы создали уникальное пространство для любителей покера, где каждый может развивать свои навыки, 
+              участвовать в честных турнирах и расти в профессиональной рейтинговой системе.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Achievements Grid */}
+      <div className="grid grid-cols-2 gap-4">
+        <Card className="bg-gradient-to-br from-gray-800 to-gray-900 border-0">
+          <CardContent className="p-4 text-center">
+            <div className="w-12 h-12 bg-white/10 rounded-full flex items-center justify-center mx-auto mb-3">
+              <Trophy className="h-6 w-6 text-white" />
+            </div>
+            <h3 className="text-white font-bold text-lg">500+</h3>
+            <p className="text-white/60 text-xs">Турниров проведено</p>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-to-br from-gray-800 to-gray-900 border-0">
+          <CardContent className="p-4 text-center">
+            <div className="w-12 h-12 bg-white/10 rounded-full flex items-center justify-center mx-auto mb-3">
+              <Users className="h-6 w-6 text-white" />
+            </div>
+            <h3 className="text-white font-bold text-lg">1000+</h3>
+            <p className="text-white/60 text-xs">Активных игроков</p>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-to-br from-gray-800 to-gray-900 border-0">
+          <CardContent className="p-4 text-center">
+            <div className="w-12 h-12 bg-white/10 rounded-full flex items-center justify-center mx-auto mb-3">
+              <Star className="h-6 w-6 text-white" />
+            </div>
+            <h3 className="text-white font-bold text-lg">4.9/5</h3>
+            <p className="text-white/60 text-xs">Рейтинг клуба</p>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-to-br from-gray-800 to-gray-900 border-0">
+          <CardContent className="p-4 text-center">
+            <div className="w-12 h-12 bg-white/10 rounded-full flex items-center justify-center mx-auto mb-3">
+              <Shield className="h-6 w-6 text-white" />
+            </div>
+            <h3 className="text-white font-bold text-lg">100%</h3>
+            <p className="text-white/60 text-xs">Безопасность данных</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Values */}
+      <Card className="bg-gradient-to-br from-gray-800 to-gray-900 border-0">
+        <CardContent className="p-6">
+          <h3 className="text-white font-bold text-lg mb-4">Наши ценности</h3>
+          <div className="space-y-4">
+            <div className="flex items-start gap-3">
+              <div className="w-8 h-8 bg-white/10 rounded-lg flex items-center justify-center mt-1">
+                <Target className="h-4 w-4 text-white" />
+              </div>
+              <div>
+                <h4 className="text-white font-medium text-sm">Честность</h4>
+                <p className="text-white/70 text-xs">Прозрачная рейтинговая система и честная игра</p>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-3">
+              <div className="w-8 h-8 bg-white/10 rounded-lg flex items-center justify-center mt-1">
+                <Heart className="h-4 w-4 text-white" />
+              </div>
+              <div>
+                <h4 className="text-white font-medium text-sm">Сообщество</h4>
+                <p className="text-white/70 text-xs">Дружелюбная атмосфера для игроков всех уровней</p>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-3">
+              <div className="w-8 h-8 bg-white/10 rounded-lg flex items-center justify-center mt-1">
+                <Zap className="h-4 w-4 text-white" />
+              </div>
+              <div>
+                <h4 className="text-white font-medium text-sm">Инновации</h4>
+                <p className="text-white/70 text-xs">Современные технологии для лучшего опыта</p>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-3">
+              <div className="w-8 h-8 bg-white/10 rounded-lg flex items-center justify-center mt-1">
+                <Globe className="h-4 w-4 text-white" />
+              </div>
+              <div>
+                <h4 className="text-white font-medium text-sm">Международный уровень</h4>
+                <p className="text-white/70 text-xs">Соответствуем мировым стандартам</p>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Contact Info */}
+      <Card className="bg-gradient-to-br from-red-600 to-red-800 border-0">
+        <CardContent className="p-6">
+          <h3 className="text-white font-bold text-lg mb-4">Присоединяйтесь к нам</h3>
+          <p className="text-white/80 text-sm mb-4">
+            Готовы стать частью нашего покерного сообщества? Свяжитесь с нами для получения дополнительной информации.
+          </p>
+          <div className="flex items-center gap-2">
+            <CheckCircle className="h-4 w-4 text-white" />
+            <span className="text-white text-sm">Лицензированная деятельность</span>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+
   if (!isAuthenticated) {
     return <TelegramAuth onAuthComplete={handleAuthComplete} />;
   }
@@ -396,7 +551,10 @@ export const TelegramApp = () => {
                 </CardContent>
               </Card>)}
           </div>
-        </div>}
+      </div>}
+      
+      {activeTab === 'about' && renderAbout()}
+      
       {activeTab === 'qa' && <div className="space-y-6 pb-20 px-4 bg-transparent min-h-screen relative z-10">
           <h2 className="text-2xl font-light italic text-white tracking-wide p-4">Q&A</h2>
           <div className="space-y-4">
