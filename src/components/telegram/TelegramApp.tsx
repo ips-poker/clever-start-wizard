@@ -200,13 +200,13 @@ export const TelegramApp = () => {
     }
   };
   const renderHome = () => <div className="space-y-4 pb-20 px-4 bg-transparent min-h-screen relative z-10">
-      <Card className="bg-gradient-to-br from-amber-600 via-yellow-600 to-amber-800 border-0 overflow-hidden relative cursor-pointer hover:from-amber-500 hover:to-amber-700 transition-all duration-300 shadow-2xl" onClick={() => setActiveTab('about')}>
-        <div className="absolute inset-0 opacity-15">
-          <div className="absolute top-2 right-2 text-white/30 text-6xl">♠</div>
-          <div className="absolute top-8 left-2 text-white/20 text-4xl">♣</div>
-          <div className="absolute bottom-2 right-8 text-white/25 text-5xl">♦</div>
-          <div className="absolute bottom-8 left-8 text-white/20 text-3xl">♥</div>
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-white/10 text-8xl">♠</div>
+      <Card className="bg-gradient-to-br from-slate-700 via-slate-800 to-slate-900 border-0 overflow-hidden relative cursor-pointer hover:from-slate-600 hover:to-slate-800 transition-all duration-300 shadow-2xl" onClick={() => setActiveTab('about')}>
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute top-2 right-2 text-amber-400/40 text-6xl">♠</div>
+          <div className="absolute top-8 left-2 text-amber-400/30 text-4xl">♣</div>
+          <div className="absolute bottom-2 right-8 text-amber-400/35 text-5xl">♦</div>
+          <div className="absolute bottom-8 left-8 text-amber-400/25 text-3xl">♥</div>
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-amber-400/8 text-8xl">♠</div>
         </div>
         
         <CardContent className="p-6 relative z-10">
@@ -234,7 +234,7 @@ export const TelegramApp = () => {
         
         <CardContent className="p-6 relative z-10">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-gradient-to-br from-amber-400 to-amber-600 rounded-xl flex items-center justify-center shadow-lg">
+            <div className="w-12 h-12 bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl flex items-center justify-center shadow-lg">
               <Trophy className="h-6 w-6 text-white" />
             </div>
             
@@ -255,20 +255,20 @@ export const TelegramApp = () => {
       </Card>
 
       <div className="grid grid-cols-2 gap-4">
-        <Card className="bg-gradient-to-br from-emerald-800 via-teal-800 to-emerald-900 border-0 cursor-pointer hover:from-emerald-700 hover:to-emerald-800 transition-all duration-300 shadow-lg relative overflow-hidden" onClick={() => setActiveTab('qa')}>
-          <div className="absolute inset-0 opacity-15">
-            <div className="absolute top-2 right-2 text-white/30 text-3xl">♣</div>
-            <div className="absolute bottom-2 left-2 text-white/20 text-2xl">♠</div>
+        <Card className="bg-gradient-to-br from-slate-700 via-slate-800 to-slate-900 border-0 cursor-pointer hover:from-slate-600 hover:to-slate-800 transition-all duration-300 shadow-lg relative overflow-hidden" onClick={() => setActiveTab('qa')}>
+          <div className="absolute inset-0 opacity-10">
+            <div className="absolute top-2 right-2 text-amber-400/30 text-3xl">♣</div>
+            <div className="absolute bottom-2 left-2 text-amber-400/20 text-2xl">♠</div>
           </div>
           <CardContent className="p-5 text-center relative z-10">
             <h3 className="text-white font-light italic text-lg tracking-wide">Q&A</h3>
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-rose-800 via-pink-800 to-rose-900 border-0 cursor-pointer hover:from-rose-700 hover:to-rose-800 transition-all duration-300 shadow-lg relative overflow-hidden">
-          <div className="absolute inset-0 opacity-15">
-            <div className="absolute top-2 left-2 text-white/30 text-3xl">♥</div>
-            <div className="absolute bottom-2 right-2 text-white/20 text-2xl">♦</div>
+        <Card className="bg-gradient-to-br from-slate-700 via-slate-800 to-slate-900 border-0 cursor-pointer hover:from-slate-600 hover:to-slate-800 transition-all duration-300 shadow-lg relative overflow-hidden">
+          <div className="absolute inset-0 opacity-10">
+            <div className="absolute top-2 left-2 text-amber-400/30 text-3xl">♥</div>
+            <div className="absolute bottom-2 right-2 text-amber-400/20 text-2xl">♦</div>
           </div>
           <CardContent className="p-5 text-center relative z-10">
             <h3 className="text-white font-light italic text-lg tracking-wide">SUPPORT</h3>
@@ -279,13 +279,13 @@ export const TelegramApp = () => {
       <div>
         <p className="text-white/70 text-sm font-medium mb-2 px-1">Ближайший турнир</p>
         
-        <Card className="bg-gradient-to-br from-purple-700 via-indigo-700 to-purple-900 border-0 overflow-hidden cursor-pointer hover:from-purple-600 hover:to-purple-800 transition-all duration-300 relative shadow-2xl" onClick={() => setActiveTab('tournaments')}>
+        <Card className="bg-gradient-to-br from-slate-700 via-slate-800 to-slate-900 border-0 overflow-hidden cursor-pointer hover:from-slate-600 hover:to-slate-800 transition-all duration-300 relative shadow-2xl" onClick={() => setActiveTab('tournaments')}>
           <div className="absolute inset-0 opacity-12">
-            <div className="absolute top-3 right-3 text-white/40 text-5xl">♠</div>
-            <div className="absolute top-12 left-3 text-white/30 text-3xl">♣</div>
-            <div className="absolute bottom-3 right-12 text-white/35 text-4xl">♦</div>
-            <div className="absolute bottom-12 left-12 text-white/25 text-2xl">♥</div>
-            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-white/8 text-7xl rotate-12">♠</div>
+            <div className="absolute top-3 right-3 text-amber-400/40 text-5xl">♠</div>
+            <div className="absolute top-12 left-3 text-amber-400/30 text-3xl">♣</div>
+            <div className="absolute bottom-3 right-12 text-amber-400/35 text-4xl">♦</div>
+            <div className="absolute bottom-12 left-12 text-amber-400/25 text-2xl">♥</div>
+            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-amber-400/8 text-7xl rotate-12">♠</div>
           </div>
           
           <CardContent className="p-6 relative z-10">
@@ -327,16 +327,16 @@ export const TelegramApp = () => {
         </Card>
       </div>
 
-      {userStats && <Card className="bg-gradient-to-br from-cyan-800 via-blue-800 to-cyan-900 border-0 relative overflow-hidden shadow-xl">
+      {userStats && <Card className="bg-gradient-to-br from-slate-700 via-slate-800 to-slate-900 border-0 relative overflow-hidden shadow-xl">
           <div className="absolute inset-0 opacity-10">
-            <div className="absolute top-4 right-4 text-white/30 text-4xl">♠</div>
-            <div className="absolute bottom-4 left-4 text-white/20 text-3xl">♣</div>
-            <div className="absolute top-1/2 right-8 text-white/15 text-2xl">♥</div>
+            <div className="absolute top-4 right-4 text-amber-400/30 text-4xl">♠</div>
+            <div className="absolute bottom-4 left-4 text-amber-400/20 text-3xl">♣</div>
+            <div className="absolute top-1/2 right-8 text-amber-400/15 text-2xl">♥</div>
           </div>
           
           <CardContent className="p-6 relative z-10">
             <div className="flex items-center gap-4 mb-6">
-              <div className="w-12 h-12 bg-gradient-to-br from-cyan-400 to-blue-500 rounded-full flex items-center justify-center shadow-lg">
+              <div className="w-12 h-12 bg-gradient-to-br from-amber-500 to-amber-600 rounded-full flex items-center justify-center shadow-lg">
                 <User className="h-6 w-6 text-white" />
               </div>
               <div>
@@ -379,13 +379,13 @@ export const TelegramApp = () => {
       </div>
 
       {/* Company Info Card */}
-      <Card className="bg-gradient-to-br from-amber-600 via-yellow-600 to-amber-800 border-0 overflow-hidden relative shadow-2xl">
+      <Card className="bg-gradient-to-br from-slate-700 via-slate-800 to-slate-900 border-0 overflow-hidden relative shadow-2xl">
         <div className="absolute inset-0 opacity-15">
-          <div className="absolute top-3 right-3 text-white/40 text-6xl">♠</div>
-          <div className="absolute top-12 left-3 text-white/30 text-4xl">♣</div>
-          <div className="absolute bottom-3 right-12 text-white/35 text-5xl">♦</div>
-          <div className="absolute bottom-12 left-12 text-white/25 text-3xl">♥</div>
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-white/10 text-8xl rotate-12">♠</div>
+          <div className="absolute top-3 right-3 text-amber-400/40 text-6xl">♠</div>
+          <div className="absolute top-12 left-3 text-amber-400/30 text-4xl">♣</div>
+          <div className="absolute bottom-3 right-12 text-amber-400/35 text-5xl">♦</div>
+          <div className="absolute bottom-12 left-12 text-amber-400/25 text-3xl">♥</div>
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-amber-400/10 text-8xl rotate-12">♠</div>
         </div>
         
         <CardContent className="p-6 relative z-10">
