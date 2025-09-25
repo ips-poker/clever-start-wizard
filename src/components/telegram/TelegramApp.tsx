@@ -200,34 +200,41 @@ export const TelegramApp = () => {
     }
   };
   const renderHome = () => <div className="space-y-4 pb-20 px-4 bg-transparent min-h-screen relative z-10">
-      <Card className="bg-gradient-to-br from-red-600 to-red-800 border-0 overflow-hidden relative cursor-pointer hover:from-red-500 hover:to-red-700 transition-all duration-300" onClick={() => setActiveTab('about')}>
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-4 right-4">
-            <CircleDot className="h-24 w-24 animate-[spin_4s_linear_infinite] text-white/20" />
-          </div>
+      <Card className="bg-gradient-to-br from-amber-600 via-yellow-600 to-amber-800 border-0 overflow-hidden relative cursor-pointer hover:from-amber-500 hover:to-amber-700 transition-all duration-300 shadow-2xl" onClick={() => setActiveTab('about')}>
+        <div className="absolute inset-0 opacity-15">
+          <div className="absolute top-2 right-2 text-white/30 text-6xl">♠</div>
+          <div className="absolute top-8 left-2 text-white/20 text-4xl">♣</div>
+          <div className="absolute bottom-2 right-8 text-white/25 text-5xl">♦</div>
+          <div className="absolute bottom-8 left-8 text-white/20 text-3xl">♥</div>
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-white/10 text-8xl">♠</div>
         </div>
         
         <CardContent className="p-6 relative z-10">
           <div className="flex items-center gap-4 mb-4">
-            <div className="w-14 h-14 bg-white rounded-full flex items-center justify-center overflow-hidden">
+            <div className="w-14 h-14 bg-white rounded-full flex items-center justify-center overflow-hidden shadow-lg">
               <img src={epcLogo} alt="EPC Logo" className="w-12 h-12 object-contain" />
             </div>
             
             <div className="flex-1">
-              <h1 className="text-2xl font-light italic text-white tracking-wide">EVENT POKER CLUB</h1>
+              <h1 className="text-2xl font-light italic text-white tracking-wide drop-shadow-lg">EVENT POKER CLUB</h1>
             </div>
           </div>
           
-          <div className="bg-white/10 rounded-xl p-4 backdrop-blur-sm">
+          <div className="bg-white/15 rounded-xl p-4 backdrop-blur-sm border border-white/10">
             <p className="text-white text-sm font-medium leading-relaxed">О нас</p>
           </div>
         </CardContent>
       </Card>
 
-      <Card className="bg-gradient-to-br from-gray-800 to-gray-900 border-0 overflow-hidden cursor-pointer hover:from-gray-700 hover:to-gray-800 transition-all duration-300" onClick={() => setActiveTab('rating')}>
-        <CardContent className="p-6">
+      <Card className="bg-gradient-to-br from-slate-800 via-gray-800 to-slate-900 border-0 overflow-hidden cursor-pointer hover:from-slate-700 hover:to-slate-800 transition-all duration-300 shadow-xl relative" onClick={() => setActiveTab('rating')}>
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute top-4 right-4 text-amber-400/40 text-4xl">♦</div>
+          <div className="absolute bottom-4 left-4 text-amber-400/30 text-3xl">♥</div>
+        </div>
+        
+        <CardContent className="p-6 relative z-10">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center">
+            <div className="w-12 h-12 bg-gradient-to-br from-amber-400 to-amber-600 rounded-xl flex items-center justify-center shadow-lg">
               <Trophy className="h-6 w-6 text-white" />
             </div>
             
@@ -241,21 +248,29 @@ export const TelegramApp = () => {
             </div>
           </div>
           
-          <div className="mt-4 bg-white/5 rounded-lg p-3">
+          <div className="mt-4 bg-gradient-to-r from-white/5 to-white/10 rounded-lg p-3 border border-white/5">
             <p className="text-white/70 text-sm font-medium">Общий рейтинг</p>
           </div>
         </CardContent>
       </Card>
 
       <div className="grid grid-cols-2 gap-4">
-        <Card className="bg-gradient-to-br from-gray-800 to-gray-900 border-0 cursor-pointer hover:from-gray-700 hover:to-gray-800 transition-all duration-300" onClick={() => setActiveTab('qa')}>
-          <CardContent className="p-5 text-center">
+        <Card className="bg-gradient-to-br from-emerald-800 via-teal-800 to-emerald-900 border-0 cursor-pointer hover:from-emerald-700 hover:to-emerald-800 transition-all duration-300 shadow-lg relative overflow-hidden" onClick={() => setActiveTab('qa')}>
+          <div className="absolute inset-0 opacity-15">
+            <div className="absolute top-2 right-2 text-white/30 text-3xl">♣</div>
+            <div className="absolute bottom-2 left-2 text-white/20 text-2xl">♠</div>
+          </div>
+          <CardContent className="p-5 text-center relative z-10">
             <h3 className="text-white font-light italic text-lg tracking-wide">Q&A</h3>
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-gray-800 to-gray-900 border-0 cursor-pointer hover:from-gray-700 hover:to-gray-800 transition-all duration-300">
-          <CardContent className="p-5 text-center">
+        <Card className="bg-gradient-to-br from-rose-800 via-pink-800 to-rose-900 border-0 cursor-pointer hover:from-rose-700 hover:to-rose-800 transition-all duration-300 shadow-lg relative overflow-hidden">
+          <div className="absolute inset-0 opacity-15">
+            <div className="absolute top-2 left-2 text-white/30 text-3xl">♥</div>
+            <div className="absolute bottom-2 right-2 text-white/20 text-2xl">♦</div>
+          </div>
+          <CardContent className="p-5 text-center relative z-10">
             <h3 className="text-white font-light italic text-lg tracking-wide">SUPPORT</h3>
           </CardContent>
         </Card>
@@ -264,33 +279,41 @@ export const TelegramApp = () => {
       <div>
         <p className="text-white/70 text-sm font-medium mb-2 px-1">Ближайший турнир</p>
         
-        <Card className="bg-gradient-to-br from-red-600 to-red-800 border-0 overflow-hidden cursor-pointer hover:from-red-500 hover:to-red-700 transition-all duration-300 relative" onClick={() => setActiveTab('tournaments')}>
+        <Card className="bg-gradient-to-br from-purple-700 via-indigo-700 to-purple-900 border-0 overflow-hidden cursor-pointer hover:from-purple-600 hover:to-purple-800 transition-all duration-300 relative shadow-2xl" onClick={() => setActiveTab('tournaments')}>
+          <div className="absolute inset-0 opacity-12">
+            <div className="absolute top-3 right-3 text-white/40 text-5xl">♠</div>
+            <div className="absolute top-12 left-3 text-white/30 text-3xl">♣</div>
+            <div className="absolute bottom-3 right-12 text-white/35 text-4xl">♦</div>
+            <div className="absolute bottom-12 left-12 text-white/25 text-2xl">♥</div>
+            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-white/8 text-7xl rotate-12">♠</div>
+          </div>
+          
           <CardContent className="p-6 relative z-10">
             <div className="flex items-center justify-between mb-4">
               <div>
                 {tournaments.length > 0 ? <div>
-                    <h3 className="text-2xl font-light italic text-white tracking-wide uppercase">
+                    <h3 className="text-2xl font-light italic text-white tracking-wide uppercase drop-shadow-lg">
                       {tournaments[0].name.split(' ')[0] || 'PHOENIX'}
                     </h3>
-                    <h3 className="text-2xl font-light italic text-white tracking-wide uppercase -mt-1">
+                    <h3 className="text-2xl font-light italic text-white tracking-wide uppercase -mt-1 drop-shadow-lg">
                       {tournaments[0].name.split(' ').slice(1).join(' ') || 'TOURNAMENT'}
                     </h3>
                   </div> : <div>
-                    <h3 className="text-2xl font-light italic text-white tracking-wide">PHOENIX</h3>
-                    <h3 className="text-2xl font-light italic text-white tracking-wide -mt-1">TOURNAMENT</h3>
+                    <h3 className="text-2xl font-light italic text-white tracking-wide drop-shadow-lg">PHOENIX</h3>
+                    <h3 className="text-2xl font-light italic text-white tracking-wide -mt-1 drop-shadow-lg">TOURNAMENT</h3>
                   </div>}
               </div>
             </div>
             
             <div className="grid grid-cols-2 gap-3 mt-4">
-              <div className="flex items-center gap-2 bg-white/10 rounded-lg p-3 backdrop-blur-sm">
+              <div className="flex items-center gap-2 bg-white/15 rounded-lg p-3 backdrop-blur-sm border border-white/10">
                 <Users className="h-4 w-4 text-white" />
                 <span className="text-white text-sm font-medium">
                   {tournaments.length > 0 ? `${tournaments[0]?.tournament_registrations?.[0]?.count || 0}/${tournaments[0]?.max_players}` : '509/500'}
                 </span>
               </div>
               
-              <div className="flex items-center gap-2 bg-white/10 rounded-lg p-3 backdrop-blur-sm">
+              <div className="flex items-center gap-2 bg-white/15 rounded-lg p-3 backdrop-blur-sm border border-white/10">
                 <Clock className="h-4 w-4 text-white" />
                 <span className="text-white text-sm font-medium">
                   {tournaments.length > 0 ? new Date(tournaments[0]?.start_time).toLocaleTimeString('ru-RU', {
@@ -304,10 +327,16 @@ export const TelegramApp = () => {
         </Card>
       </div>
 
-      {userStats && <Card className="bg-gradient-to-br from-gray-800 to-gray-900 border-0">
-          <CardContent className="p-6">
+      {userStats && <Card className="bg-gradient-to-br from-cyan-800 via-blue-800 to-cyan-900 border-0 relative overflow-hidden shadow-xl">
+          <div className="absolute inset-0 opacity-10">
+            <div className="absolute top-4 right-4 text-white/30 text-4xl">♠</div>
+            <div className="absolute bottom-4 left-4 text-white/20 text-3xl">♣</div>
+            <div className="absolute top-1/2 right-8 text-white/15 text-2xl">♥</div>
+          </div>
+          
+          <CardContent className="p-6 relative z-10">
             <div className="flex items-center gap-4 mb-6">
-              <div className="w-12 h-12 bg-white/10 rounded-full flex items-center justify-center">
+              <div className="w-12 h-12 bg-gradient-to-br from-cyan-400 to-blue-500 rounded-full flex items-center justify-center shadow-lg">
                 <User className="h-6 w-6 text-white" />
               </div>
               <div>
@@ -319,21 +348,21 @@ export const TelegramApp = () => {
             </div>
             
             <div className="grid grid-cols-3 gap-3">
-              <div className="text-center p-3 bg-white/5 rounded-lg">
+              <div className="text-center p-3 bg-gradient-to-br from-white/10 to-white/5 rounded-lg border border-white/10">
                 <div className="text-white font-bold text-lg">{userStats.elo_rating}</div>
                 <div className="text-white/60 text-xs">Месячно</div>
               </div>
-              <div className="text-center p-3 bg-white/5 rounded-lg">
+              <div className="text-center p-3 bg-gradient-to-br from-white/10 to-white/5 rounded-lg border border-white/10">
                 <div className="text-white font-bold text-lg">{userStats.wins}</div>
                 <div className="text-white/60 text-xs">Полугодие</div>
               </div>
-              <div className="text-center p-3 bg-white/5 rounded-lg">
+              <div className="text-center p-3 bg-gradient-to-br from-white/10 to-white/5 rounded-lg border border-white/10">
                 <div className="text-white font-bold text-lg">{userStats.games_played}</div>
                 <div className="text-white/60 text-xs">Рейтинг</div>
               </div>
             </div>
             
-            <div className="mt-6 p-4 bg-white/5 rounded-lg">
+            <div className="mt-6 p-4 bg-gradient-to-r from-white/8 to-white/5 rounded-lg border border-white/10">
               <h4 className="text-white font-bold mb-2">История игр</h4>
               <p className="text-white/60 text-sm">Нет данных</p>
             </div>
@@ -350,14 +379,13 @@ export const TelegramApp = () => {
       </div>
 
       {/* Company Info Card */}
-      <Card className="bg-gradient-to-br from-red-600 to-red-800 border-0 overflow-hidden relative">
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-4 right-4">
-            <CircleDot className="h-16 w-16 text-white/20" />
-          </div>
-          <div className="absolute bottom-4 left-4">
-            <Heart className="h-12 w-12 text-white/20" />
-          </div>
+      <Card className="bg-gradient-to-br from-amber-600 via-yellow-600 to-amber-800 border-0 overflow-hidden relative shadow-2xl">
+        <div className="absolute inset-0 opacity-15">
+          <div className="absolute top-3 right-3 text-white/40 text-6xl">♠</div>
+          <div className="absolute top-12 left-3 text-white/30 text-4xl">♣</div>
+          <div className="absolute bottom-3 right-12 text-white/35 text-5xl">♦</div>
+          <div className="absolute bottom-12 left-12 text-white/25 text-3xl">♥</div>
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-white/10 text-8xl rotate-12">♠</div>
         </div>
         
         <CardContent className="p-6 relative z-10">
