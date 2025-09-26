@@ -20,6 +20,21 @@ interface TelegramUpdate {
     }
     text?: string
   }
+  callback_query?: {
+    id: string
+    from: {
+      id: number
+      first_name: string
+      last_name?: string
+      username?: string
+    }
+    message?: {
+      chat: {
+        id: number
+      }
+    }
+    data?: string
+  }
 }
 
 interface TelegramMessage {
@@ -71,6 +86,101 @@ Deno.serve(async (req) => {
     }
     
     console.log('Received update:', JSON.stringify(update, null, 2))
+
+    // Обработка нажатий кнопок (callback_query)
+    if (update.callback_query) {
+      const callbackQuery = update.callback_query;
+      const callbackData = callbackQuery.data;
+      const chatId = callbackQuery.message?.chat.id;
+      const userId = callbackQuery.from.id;
+
+      console.log('Processing callback query:', callbackData);
+
+      // Обрабатываем авторизацию через веб
+      if (callbackData && callbackData.startsWith('web_auth_')) {
+        try {
+          // Формируем данные пользователя для авторизации
+          const telegramAuthData = {
+            id: userId,
+            first_name: callbackQuery.from.first_name,
+            last_name: callbackQuery.from.last_name,
+            username: callbackQuery.from.username,
+            auth_date: Math.floor(Date.now() / 1000),
+            hash: 'telegram_bot_auth' // Упрощенная хеш для бота
+          };
+
+          console.log('Calling telegram-auth function with data:', telegramAuthData);
+
+          // Вызываем telegram-auth function
+          const { data: authResult, error: authError } = await supabase.functions.invoke('telegram-auth', {
+            body: telegramAuthData
+          });
+
+          if (authError) {
+            console.error('Auth function error:', authError);
+            
+            // Отправляем сообщение об ошибке
+            const errorMessage: TelegramMessage = {
+              chat_id: chatId!,
+              text: `❌ Ошибка авторизации: ${authError.message}\n\nПопробуйте позже или обратитесь в поддержку.`
+            };
+            
+            await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(errorMessage)
+            });
+          } else if (authResult && authResult.success) {
+            console.log('Auth successful, login URL:', authResult.login_url);
+            
+            // Отправляем ссылку для авторизации
+            const successMessage: TelegramMessage = {
+              chat_id: chatId!,
+              text: `✅ Авторизация прошла успешно!\n\n🔗 Нажмите кнопку ниже для входа на сайт:`,
+              reply_markup: {
+                inline_keyboard: [[
+                  {
+                    text: '🌐 Перейти на сайт',
+                    web_app: { url: authResult.login_url }
+                  }
+                ]]
+              }
+            };
+            
+            await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(successMessage)
+            });
+          }
+
+          // Отвечаем на callback query
+          await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/answerCallbackQuery`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              callback_query_id: callbackQuery.id,
+              text: authResult?.success ? '✅ Авторизация выполнена' : '❌ Ошибка авторизации'
+            })
+          });
+
+        } catch (error) {
+          console.error('Error processing web auth:', error);
+          
+          // Отвечаем на callback query с ошибкой
+          await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/answerCallbackQuery`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              callback_query_id: callbackQuery.id,
+              text: '❌ Произошла ошибка'
+            })
+          });
+        }
+      }
+
+      return new Response('OK', { status: 200, headers: corsHeaders });
+    }
 
     if (!update.message || !update.message.text) {
       return new Response('OK', { status: 200, headers: corsHeaders })
