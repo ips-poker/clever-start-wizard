@@ -215,6 +215,8 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate }: Tele
     if (!player) return;
 
     try {
+      console.log('Loading tournaments for player:', player.id);
+      
       const { data, error } = await supabase
         .from('tournament_registrations')
         .select(`
@@ -224,6 +226,8 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate }: Tele
         .eq('player_id', player.id)
         .in('status', ['registered', 'confirmed'])
         .order('created_at', { ascending: false });
+
+      console.log('Tournament registrations result:', { data, error });
 
       if (error) throw error;
       setUserTournaments(data || []);
@@ -552,15 +556,15 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate }: Tele
       </Card>
 
       {/* Registered Tournaments */}
-      {userTournaments.length > 0 && (
-        <Card className="bg-gradient-to-br from-blue-500/10 via-blue-600/15 to-blue-500/10 border border-blue-400/20 backdrop-blur-sm">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-white font-medium text-sm flex items-center gap-2">
-              <CheckCircle className="h-4 w-4 text-blue-400" />
-              Мои турниры ({userTournaments.length})
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-4 pt-0">
+      <Card className="bg-gradient-to-br from-blue-500/10 via-blue-600/15 to-blue-500/10 border border-blue-400/20 backdrop-blur-sm">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-white font-medium text-sm flex items-center gap-2">
+            <CheckCircle className="h-4 w-4 text-blue-400" />
+            Мои турниры ({userTournaments.length})
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-4 pt-0">
+          {userTournaments.length > 0 ? (
             <div className="space-y-3">
               {userTournaments.slice(0, 3).map((reg) => (
                 <div key={reg.id} className="p-3 bg-white/5 rounded-lg border border-white/10">
@@ -586,9 +590,17 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate }: Tele
                 </p>
               )}
             </div>
-          </CardContent>
-        </Card>
-      )}
+          ) : (
+            <div className="text-center py-6">
+              <AlertCircle className="h-8 w-8 text-blue-400/50 mx-auto mb-2" />
+              <p className="text-white/70 text-sm">Нет активных регистраций</p>
+              <p className="text-white/50 text-xs mt-1">
+                Зарегистрируйтесь на турниры на главной странице
+              </p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Game History */}
       {gameResults.length > 0 && (
