@@ -343,11 +343,10 @@ export default function RatingSystemAdvancedSettingsTooltips() {
   }
 
   return (
-    <TooltipProvider>
-      <div className="space-y-6">
-        {/* Статус подключения */}
-        <div className="flex justify-between items-center">
-          <ConnectionStatus isOnline={isOnline} lastSaved={lastSaved} />
+    <div className="space-y-6">
+      {/* Статус подключения */}
+      <div className="flex justify-between items-center">
+        <ConnectionStatus isOnline={isOnline} lastSaved={lastSaved} />
           <Button 
             onClick={handleSaveProfile} 
             disabled={isSaving}
@@ -945,10 +944,9 @@ export default function RatingSystemAdvancedSettingsTooltips() {
               </Card>
             </TabsContent>
 
-            {/* Остальные вкладки аналогично с TooltipField */}
-          </Tabs>
-        )}
-      </div>
-    </TooltipProvider>
-  );
+        {/* Остальные вкладки аналогично с TooltipField */}
+      </Tabs>
+    )}
+  </div>
+);
 }

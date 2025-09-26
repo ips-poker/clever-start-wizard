@@ -189,13 +189,12 @@ export default function ProfessionalRatingSettings() {
   };
 
   return (
-    <TooltipProvider>
-      <motion.div 
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
-        className="space-y-6"
-      >
+    <motion.div 
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+      className="space-y-6"
+    >
         {/* Header Card */}
         <motion.div variants={itemVariants}>
           <Card className="bg-gradient-to-r from-background/80 to-background/60 border-primary/20 shadow-xl backdrop-blur-sm hover:shadow-2xl transition-all duration-500">
@@ -1360,8 +1359,7 @@ export default function ProfessionalRatingSettings() {
               </Card>
             </motion.div>
           )}
-        </AnimatePresence>
-      </motion.div>
-    </TooltipProvider>
+      </AnimatePresence>
+    </motion.div>
   );
 }
