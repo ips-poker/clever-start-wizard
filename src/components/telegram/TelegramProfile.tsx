@@ -93,117 +93,20 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate }: Tele
   const [gameResults, setGameResults] = useState<GameResult[]>([]);
   const [userTournaments, setUserTournaments] = useState<TournamentRegistration[]>([]);
   const [availableTournaments, setAvailableTournaments] = useState<Tournament[]>([]);
-  const [loading, setLoading] = useState(!userStats);
+  const [loading, setLoading] = useState(false);
   const [registering, setRegistering] = useState<string | null>(null);
   const [showAvatarSelector, setShowAvatarSelector] = useState(false);
   const [editingName, setEditingName] = useState(false);
   const [newPlayerName, setNewPlayerName] = useState("");
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    console.log('TelegramProfile effect triggered');
-    console.log('telegramUser:', telegramUser);
-    console.log('userStats:', userStats);
-    
     if (userStats) {
       setPlayer(userStats);
-      setLoading(true);
-      Promise.all([
-        loadGameResults(userStats.id),
-        loadUserTournaments(userStats.id),
-        loadAvailableTournaments(userStats.id)
-      ]).finally(() => {
-        setLoading(false);
-      });
-    } else if (telegramUser) {
-      // Если нет userStats но есть telegramUser, попробуем найти/создать игрока
-      console.log('No userStats but telegramUser exists, trying to fetch/create player');
-      fetchUserStats();
+      loadGameResults(userStats.id);
+      loadUserTournaments(userStats.id);
+      loadAvailableTournaments(userStats.id);
     }
-  }, [userStats, telegramUser]);
-
-  const fetchUserStats = async (retryCount = 0) => {
-    if (!telegramUser) {
-      console.log('No telegram user provided');
-      setError('Нет данных пользователя Telegram');
-      return;
-    }
-    
-    setLoading(true);
-    setError(null);
-    
-    try {
-      console.log('Fetching user stats for telegram user:', telegramUser.id);
-      const telegramId = telegramUser.id.toString();
-      
-      // Ищем игрока по telegram ID
-      const { data: playerData, error: fetchError } = await supabase
-        .from('players')
-        .select('*')
-        .eq('telegram', telegramId)
-        .maybeSingle();
-      
-      if (fetchError && fetchError.code !== 'PGRST116') {
-        console.error('Error fetching player:', fetchError);
-        throw fetchError;
-      }
-      
-      if (playerData) {
-        console.log('Player found:', playerData);
-        setPlayer(playerData);
-        onStatsUpdate(playerData);
-        
-        // Загружаем дополнительные данные
-        await Promise.all([
-          loadGameResults(playerData.id),
-          loadUserTournaments(playerData.id),
-          loadAvailableTournaments(playerData.id)
-        ]);
-      } else {
-        console.log('Player not found, attempting to create...');
-        // Если игрок не найден, создаем его
-        const playerName = [telegramUser.firstName, telegramUser.lastName]
-          .filter(Boolean)
-          .join(' ') || telegramUser.username || `Player_${telegramId}`;
-        
-        const { data: newPlayer, error: createError } = await supabase
-          .from('players')
-          .insert({
-            name: playerName,
-            telegram: telegramId,
-            elo_rating: 100,
-            games_played: 0,
-            wins: 0,
-            avatar_url: telegramUser.photoUrl
-          })
-          .select()
-          .single();
-          
-        if (createError) {
-          console.error('Error creating player:', createError);
-          throw createError;
-        }
-        
-        console.log('Created new player:', newPlayer);
-        setPlayer(newPlayer);
-        onStatsUpdate(newPlayer);
-        setUserTournaments([]);
-        setAvailableTournaments([]);
-        toast.success('Профиль игрока создан!');
-      }
-    } catch (error) {
-      console.error('Error in fetchUserStats:', error);
-      setError('Не удалось загрузить профиль игрока');
-      
-      // Повторная попытка (максимум 2 раза)
-      if (retryCount < 2) {
-        console.log(`Retrying fetchUserStats (attempt ${retryCount + 1})`);
-        setTimeout(() => fetchUserStats(retryCount + 1), 2000);
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [userStats]);
 
   const loadGameResults = async (playerId: string) => {
     if (!playerId) return;
@@ -435,65 +338,13 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate }: Tele
     return Shield;
   };
 
-  // Показываем ошибку если есть
-  if (error && !loading) {
+  if (!player) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-transparent">
-        <Card className="bg-gradient-to-br from-slate-800/90 via-slate-900/95 to-black/90 border border-red-500/20 backdrop-blur-xl">
-          <CardContent className="text-center p-8">
-            <div className="w-12 h-12 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-              <X className="h-6 w-6 text-red-400" />
-            </div>
-            <h3 className="text-white text-lg mb-2">Ошибка загрузки профиля</h3>
-            <p className="text-slate-400 mb-4">{error}</p>
-            <div className="space-y-2">
-              <Button 
-                onClick={() => fetchUserStats()}
-                className="bg-amber-600 hover:bg-amber-700 text-white"
-                disabled={loading}
-              >
-                Попробовать снова
-              </Button>
-              <Button 
-                onClick={() => window.location.reload()}
-                variant="outline"
-                className="text-white border-white/20 hover:bg-white/10"
-              >
-                Перезагрузить приложение
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  // Показываем loading если данные загружаются или нет данных игрока
-  if (loading || !player) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-transparent">
-        <Card className="bg-gradient-to-br from-slate-800/90 via-slate-900/95 to-black/90 border border-white/10 backdrop-blur-xl">
-          <CardContent className="text-center p-8">
-            <div className="animate-spin w-12 h-12 border-2 border-amber-600 border-t-transparent rounded-full mx-auto mb-4"></div>
-            <h3 className="text-white text-lg mb-2">
-              {!player ? 'Загрузка профиля' : 'Загрузка данных'}
-            </h3>
-            <p className="text-slate-400">
-              {!player ? 'Получение данных игрока...' : 'Загрузка турниров и результатов...'}
-            </p>
-            {!player && (
-              <Button 
-                onClick={() => fetchUserStats()}
-                variant="outline"
-                size="sm"
-                className="mt-4 text-white border-white/20 hover:bg-white/10"
-                disabled={loading}
-              >
-                Обновить
-              </Button>
-            )}
-          </CardContent>
-        </Card>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-400 mx-auto mb-4"></div>
+          <p className="text-white/70 text-sm">Загрузка профиля...</p>
+        </div>
       </div>
     );
   }

@@ -5,27 +5,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { User, LogIn, Loader2 } from 'lucide-react';
 
-// Типы для Telegram WebApp
-declare global {
-  interface Window {
-    Telegram: {
-      WebApp: {
-        initDataUnsafe: {
-          user?: {
-            id: number;
-            first_name?: string;
-            last_name?: string;
-            username?: string;
-            photo_url?: string;
-          };
-        };
-        ready(): void;
-        expand(): void;
-      };
-    };
-  }
-}
-
 interface TelegramUser {
   id: number;
   firstName?: string;
@@ -50,71 +29,13 @@ export const TelegramAuth: React.FC<TelegramAuthProps> = ({ onAuthComplete }) =>
 
   const initializeTelegramAuth = async () => {
     try {
-      console.log('Starting Telegram auth initialization...');
-      console.log('Window location:', window.location);
-      
-      // Проверяем наличие Telegram WebApp
-      const hasTelegramWebApp = typeof window !== 'undefined' && 
-                               window.Telegram && 
-                               window.Telegram.WebApp;
-      
-      console.log('Has Telegram WebApp:', hasTelegramWebApp);
-      
-      if (hasTelegramWebApp) {
-        // Используем Telegram WebApp API
-        const webApp = window.Telegram.WebApp;
-        const initDataUnsafe = webApp.initDataUnsafe;
-        
-        console.log('WebApp initDataUnsafe:', initDataUnsafe);
-        
-        if (initDataUnsafe && initDataUnsafe.user) {
-          const user = initDataUnsafe.user;
-          const telegramUserData: TelegramUser = {
-            id: user.id,
-            firstName: user.first_name,
-            lastName: user.last_name,
-            username: user.username,
-            photoUrl: user.photo_url,
-          };
-          
-          console.log('Using WebApp user data:', telegramUserData);
-          setTelegramUser(telegramUserData);
-          await authenticateWithSupabase(telegramUserData);
-          return;
-        }
-      }
-      
-      // Попытка использовать SDK
-      try {
-        console.log('Trying SDK restore...');
-        await initData.restore();
-        const user = initData.user();
-        
-        if (user) {
-          const telegramUserData: TelegramUser = {
-            id: user.id,
-            firstName: user.first_name,
-            lastName: user.last_name,
-            username: user.username,
-            photoUrl: user.photo_url,
-          };
-          
-          console.log('Using SDK user data:', telegramUserData);
-          setTelegramUser(telegramUserData);
-          await authenticateWithSupabase(telegramUserData);
-          return;
-        }
-      } catch (sdkError) {
-        console.error('SDK restore error:', sdkError);
-      }
-      
-      // Режим разработки
+      // Проверяем режим эмуляции ПЕРЕД попыткой восстановления Telegram данных
       const isDevelopment = window.location.hostname === 'localhost' || 
                             window.location.hostname === '127.0.0.1' ||
                             window.location.hostname.includes('.lovableproject.com');
       
       if (isDevelopment) {
-        console.log('Development mode, using test user');
+        // Тестовый пользователь для разработки
         const testUser: TelegramUser = {
           id: 123456789,
           firstName: 'Тестовый',
@@ -128,10 +49,27 @@ export const TelegramAuth: React.FC<TelegramAuthProps> = ({ onAuthComplete }) =>
         return;
       }
       
-      setAuthError('Приложение должно быть открыто через Telegram бота');
+      // Обычная авторизация через Telegram только если НЕ режим разработки
+      await initData.restore();
+      const user = initData.user();
+      
+      if (user) {
+        const telegramUserData: TelegramUser = {
+          id: user.id,
+          firstName: user.first_name,
+          lastName: user.last_name,
+          username: user.username,
+          photoUrl: user.photo_url,
+        };
+        
+        setTelegramUser(telegramUserData);
+        await authenticateWithSupabase(telegramUserData);
+      } else {
+        setAuthError('Приложение должно быть открыто через Telegram бота');
+      }
     } catch (error) {
       console.error('Telegram auth error:', error);
-      setAuthError('Ошибка авторизации. Попробуйте перезапустить приложение.');
+      setAuthError('Приложение должно быть открыто через Telegram бота');
     } finally {
       setLoading(false);
     }
@@ -140,42 +78,57 @@ export const TelegramAuth: React.FC<TelegramAuthProps> = ({ onAuthComplete }) =>
   const authenticateWithSupabase = async (telegramUserData: TelegramUser) => {
     try {
       setRegistering(true);
-      console.log('Starting authentication for user:', telegramUserData);
       
       const telegramId = telegramUserData.id.toString();
       
-      // Используем supabase client вместо прямых fetch запросов
-      let { data: existingPlayer, error: checkError } = await supabase
+      // Используем Supabase клиент вместо прямых fetch запросов
+      let playerData = null;
+      
+      // Проверяем существование игрока
+      const { data: existingPlayers, error: checkError } = await supabase
         .from('players')
         .select('*')
         .eq('telegram', telegramId)
         .maybeSingle();
-
+      
       if (checkError && checkError.code !== 'PGRST116') {
-        console.error('Error checking player:', checkError);
         throw checkError;
       }
 
-      if (existingPlayer) {
-        console.log('Player exists, updating:', existingPlayer.id);
+      if (existingPlayers) {
         // Игрок существует, обновляем данные
-        const { error: updateError } = await supabase
+        const updateData: any = {
+          updated_at: new Date().toISOString()
+        };
+        
+        // Обновляем имя если оно изменилось
+        const newName = [telegramUserData.firstName, telegramUserData.lastName]
+          .filter(Boolean)
+          .join(' ') || telegramUserData.username || existingPlayers.name;
+          
+        if (newName !== existingPlayers.name) {
+          updateData.name = newName;
+        }
+        
+        // Обновляем аватар если он изменился
+        if (telegramUserData.photoUrl && telegramUserData.photoUrl !== existingPlayers.avatar_url) {
+          updateData.avatar_url = telegramUserData.photoUrl;
+        }
+        
+        const { data: updatedPlayer, error: updateError } = await supabase
           .from('players')
-          .update({
-            name: [telegramUserData.firstName, telegramUserData.lastName]
-              .filter(Boolean)
-              .join(' ') || telegramUserData.username || existingPlayer.name,
-            avatar_url: telegramUserData.photoUrl || existingPlayer.avatar_url,
-            updated_at: new Date().toISOString()
-          })
-          .eq('telegram', telegramId);
-
+          .update(updateData)
+          .eq('telegram', telegramId)
+          .select()
+          .single();
+          
         if (updateError) {
-          console.error('Error updating player:', updateError);
           throw updateError;
         }
+        
+        playerData = updatedPlayer;
+        console.log('Player updated:', playerData);
       } else {
-        console.log('Creating new player for telegram ID:', telegramId);
         // Создаем нового игрока
         const playerName = [telegramUserData.firstName, telegramUserData.lastName]
           .filter(Boolean)
@@ -193,21 +146,22 @@ export const TelegramAuth: React.FC<TelegramAuthProps> = ({ onAuthComplete }) =>
           })
           .select()
           .single();
-
+          
         if (createError) {
-          console.error('Error creating player:', createError);
           throw createError;
         }
-
-        existingPlayer = newPlayer;
-        console.log('Created new player:', existingPlayer);
+        
+        playerData = newPlayer;
+        console.log('New player created:', playerData);
       }
 
-      console.log('Authentication completed successfully');
+      // Небольшая задержка для обеспечения синхронизации
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
       onAuthComplete(telegramUserData);
     } catch (error) {
       console.error('Supabase auth error:', error);
-      setAuthError('Ошибка создания профиля игрока. Попробуйте еще раз.');
+      setAuthError('Ошибка создания профиля игрока');
     } finally {
       setRegistering(false);
     }

@@ -44,7 +44,7 @@ import {
   WifiOff
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { toast } from 'sonner';
 
 interface CalculationPreview {
@@ -343,10 +343,11 @@ export default function RatingSystemAdvancedSettingsTooltips() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Статус подключения */}
-      <div className="flex justify-between items-center">
-        <ConnectionStatus isOnline={isOnline} lastSaved={lastSaved} />
+    <TooltipProvider>
+      <div className="space-y-6">
+        {/* Статус подключения */}
+        <div className="flex justify-between items-center">
+          <ConnectionStatus isOnline={isOnline} lastSaved={lastSaved} />
           <Button 
             onClick={handleSaveProfile} 
             disabled={isSaving}
@@ -944,9 +945,10 @@ export default function RatingSystemAdvancedSettingsTooltips() {
               </Card>
             </TabsContent>
 
-        {/* Остальные вкладки аналогично с TooltipField */}
-      </Tabs>
-    )}
-  </div>
-);
+            {/* Остальные вкладки аналогично с TooltipField */}
+          </Tabs>
+        )}
+      </div>
+    </TooltipProvider>
+  );
 }

@@ -15,7 +15,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Progress } from '@/components/ui/progress';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { 
   Settings, 
   Calculator, 
@@ -189,12 +189,13 @@ export default function ProfessionalRatingSettings() {
   };
 
   return (
-    <motion.div 
-      variants={containerVariants}
-      initial="hidden"
-      animate="visible"
-      className="space-y-6"
-    >
+    <TooltipProvider>
+      <motion.div 
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+        className="space-y-6"
+      >
         {/* Header Card */}
         <motion.div variants={itemVariants}>
           <Card className="bg-gradient-to-r from-background/80 to-background/60 border-primary/20 shadow-xl backdrop-blur-sm hover:shadow-2xl transition-all duration-500">
@@ -1359,7 +1360,8 @@ export default function ProfessionalRatingSettings() {
               </Card>
             </motion.div>
           )}
-      </AnimatePresence>
-    </motion.div>
+        </AnimatePresence>
+      </motion.div>
+    </TooltipProvider>
   );
 }
