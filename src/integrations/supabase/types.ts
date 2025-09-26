@@ -967,6 +967,14 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      merge_player_profiles: {
+        Args: {
+          supabase_user_id: string
+          telegram_email: string
+          telegram_user_id: string
+        }
+        Returns: string
+      }
       pause_tournament: {
         Args: { tournament_id_param: string }
         Returns: boolean

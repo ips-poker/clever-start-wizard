@@ -186,19 +186,38 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Проверяем есть ли у пользователя профиль игрока
+    // Используем функцию для объединения игроков
     const telegramId = authData.id.toString();
-    let { data: player, error: playerError } = await supabase
-      .from('players')
-      .select('*')
-      .eq('telegram', telegramId)
-      .maybeSingle();
+    let player = null;
+    
+    try {
+      // Пытаемся объединить существующих игроков
+      const { data: mergedPlayerId, error: mergeError } = await supabase
+        .rpc('merge_player_profiles', {
+          telegram_user_id: telegramId,
+          telegram_email: telegramEmail,
+          supabase_user_id: existingUser.user?.id
+        });
 
-    if (playerError && playerError.code !== 'PGRST116') {
-      console.error('Error fetching player:', playerError);
+      if (mergeError) {
+        console.error('Error merging player profiles:', mergeError);
+      }
+
+      // Если функция вернула ID, получаем объединенного игрока
+      if (mergedPlayerId) {
+        const { data: existingPlayer } = await supabase
+          .from('players')
+          .select('*')
+          .eq('id', mergedPlayerId)
+          .single();
+        
+        player = existingPlayer;
+      }
+    } catch (error) {
+      console.error('Error in merge process:', error);
     }
 
-    // Если игрока нет, создаем его
+    // Если объединение не удалось или игрока нет, создаем нового
     if (!player) {
       const playerName = authData.username || fullName || `Player_${telegramId}`;
       
@@ -221,19 +240,6 @@ Deno.serve(async (req) => {
         console.error('Error creating player:', createPlayerError);
       } else {
         player = newPlayer;
-      }
-    } else {
-      // Обновляем существующего игрока
-      const { error: updatePlayerError } = await supabase
-        .from('players')
-        .update({
-          user_id: existingUser.user?.id,
-          avatar_url: authData.photo_url || player.avatar_url
-        })
-        .eq('id', player.id);
-
-      if (updatePlayerError) {
-        console.error('Error updating player:', updatePlayerError);
       }
     }
 
