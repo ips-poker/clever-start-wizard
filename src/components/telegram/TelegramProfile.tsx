@@ -224,7 +224,7 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate }: Tele
           tournament:tournaments(*)
         `)
         .eq('player_id', player.id)
-        .in('status', ['registered', 'confirmed'])
+        .in('status', ['registered', 'confirmed', 'playing', 'eliminated'])
         .order('created_at', { ascending: false });
 
       console.log('Tournament registrations result:', { data, error });
