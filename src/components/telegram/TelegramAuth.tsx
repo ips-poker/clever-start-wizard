@@ -5,6 +5,27 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { User, LogIn, Loader2 } from 'lucide-react';
 
+// Типы для Telegram WebApp
+declare global {
+  interface Window {
+    Telegram: {
+      WebApp: {
+        initDataUnsafe: {
+          user?: {
+            id: number;
+            first_name?: string;
+            last_name?: string;
+            username?: string;
+            photo_url?: string;
+          };
+        };
+        ready(): void;
+        expand(): void;
+      };
+    };
+  }
+}
+
 interface TelegramUser {
   id: number;
   firstName?: string;
@@ -29,13 +50,71 @@ export const TelegramAuth: React.FC<TelegramAuthProps> = ({ onAuthComplete }) =>
 
   const initializeTelegramAuth = async () => {
     try {
-      // Проверяем режим эмуляции ПЕРЕД попыткой восстановления Telegram данных
+      console.log('Starting Telegram auth initialization...');
+      console.log('Window location:', window.location);
+      
+      // Проверяем наличие Telegram WebApp
+      const hasTelegramWebApp = typeof window !== 'undefined' && 
+                               window.Telegram && 
+                               window.Telegram.WebApp;
+      
+      console.log('Has Telegram WebApp:', hasTelegramWebApp);
+      
+      if (hasTelegramWebApp) {
+        // Используем Telegram WebApp API
+        const webApp = window.Telegram.WebApp;
+        const initDataUnsafe = webApp.initDataUnsafe;
+        
+        console.log('WebApp initDataUnsafe:', initDataUnsafe);
+        
+        if (initDataUnsafe && initDataUnsafe.user) {
+          const user = initDataUnsafe.user;
+          const telegramUserData: TelegramUser = {
+            id: user.id,
+            firstName: user.first_name,
+            lastName: user.last_name,
+            username: user.username,
+            photoUrl: user.photo_url,
+          };
+          
+          console.log('Using WebApp user data:', telegramUserData);
+          setTelegramUser(telegramUserData);
+          await authenticateWithSupabase(telegramUserData);
+          return;
+        }
+      }
+      
+      // Попытка использовать SDK
+      try {
+        console.log('Trying SDK restore...');
+        await initData.restore();
+        const user = initData.user();
+        
+        if (user) {
+          const telegramUserData: TelegramUser = {
+            id: user.id,
+            firstName: user.first_name,
+            lastName: user.last_name,
+            username: user.username,
+            photoUrl: user.photo_url,
+          };
+          
+          console.log('Using SDK user data:', telegramUserData);
+          setTelegramUser(telegramUserData);
+          await authenticateWithSupabase(telegramUserData);
+          return;
+        }
+      } catch (sdkError) {
+        console.error('SDK restore error:', sdkError);
+      }
+      
+      // Режим разработки
       const isDevelopment = window.location.hostname === 'localhost' || 
                             window.location.hostname === '127.0.0.1' ||
                             window.location.hostname.includes('.lovableproject.com');
       
       if (isDevelopment) {
-        // Тестовый пользователь для разработки
+        console.log('Development mode, using test user');
         const testUser: TelegramUser = {
           id: 123456789,
           firstName: 'Тестовый',
@@ -49,27 +128,10 @@ export const TelegramAuth: React.FC<TelegramAuthProps> = ({ onAuthComplete }) =>
         return;
       }
       
-      // Обычная авторизация через Telegram только если НЕ режим разработки
-      await initData.restore();
-      const user = initData.user();
-      
-      if (user) {
-        const telegramUserData: TelegramUser = {
-          id: user.id,
-          firstName: user.first_name,
-          lastName: user.last_name,
-          username: user.username,
-          photoUrl: user.photo_url,
-        };
-        
-        setTelegramUser(telegramUserData);
-        await authenticateWithSupabase(telegramUserData);
-      } else {
-        setAuthError('Приложение должно быть открыто через Telegram бота');
-      }
+      setAuthError('Приложение должно быть открыто через Telegram бота');
     } catch (error) {
       console.error('Telegram auth error:', error);
-      setAuthError('Приложение должно быть открыто через Telegram бота');
+      setAuthError('Ошибка авторизации. Попробуйте перезапустить приложение.');
     } finally {
       setLoading(false);
     }
