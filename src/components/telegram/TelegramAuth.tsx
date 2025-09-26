@@ -80,84 +80,55 @@ export const TelegramAuth: React.FC<TelegramAuthProps> = ({ onAuthComplete }) =>
       setRegistering(true);
       
       const telegramId = telegramUserData.id.toString();
+      const supabaseUrl = 'https://mokhssmnorrhohrowxvu.supabase.co';
+      const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1va2hzc21ub3JyaG9ocm93eHZ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMwODUzNDYsImV4cCI6MjA2ODY2MTM0Nn0.ZWYgSZFeidY0b_miC7IyfXVPh1EUR2WtxlEvt_fFmGc';
       
-      // Используем Supabase клиент вместо прямых fetch запросов
-      let playerData = null;
+      // Простая проверка существования игрока
+      const checkResult = await fetch(`${supabaseUrl}/rest/v1/players?telegram=eq.${telegramId}&select=id,name`, {
+        headers: {
+          'apikey': supabaseKey,
+          'Authorization': `Bearer ${supabaseKey}`,
+          'Content-Type': 'application/json'
+        }
+      });
       
-      // Проверяем существование игрока
-      const { data: existingPlayers, error: checkError } = await supabase
-        .from('players')
-        .select('*')
-        .eq('telegram', telegramId)
-        .maybeSingle();
-      
-      if (checkError && checkError.code !== 'PGRST116') {
-        throw checkError;
-      }
+      const existingPlayers = await checkResult.json();
+      const existingPlayer = existingPlayers?.[0];
 
-      if (existingPlayers) {
+      if (existingPlayer) {
         // Игрок существует, обновляем данные
-        const updateData: any = {
-          updated_at: new Date().toISOString()
-        };
-        
-        // Обновляем имя если оно изменилось
-        const newName = [telegramUserData.firstName, telegramUserData.lastName]
-          .filter(Boolean)
-          .join(' ') || telegramUserData.username || existingPlayers.name;
-          
-        if (newName !== existingPlayers.name) {
-          updateData.name = newName;
-        }
-        
-        // Обновляем аватар если он изменился
-        if (telegramUserData.photoUrl && telegramUserData.photoUrl !== existingPlayers.avatar_url) {
-          updateData.avatar_url = telegramUserData.photoUrl;
-        }
-        
-        const { data: updatedPlayer, error: updateError } = await supabase
-          .from('players')
-          .update(updateData)
-          .eq('telegram', telegramId)
-          .select()
-          .single();
-          
-        if (updateError) {
-          throw updateError;
-        }
-        
-        playerData = updatedPlayer;
-        console.log('Player updated:', playerData);
+        await fetch(`${supabaseUrl}/rest/v1/players?telegram=eq.${telegramId}`, {
+          method: 'PATCH',
+          headers: {
+            'apikey': supabaseKey,
+            'Authorization': `Bearer ${supabaseKey}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            updated_at: new Date().toISOString()
+          })
+        });
       } else {
         // Создаем нового игрока
         const playerName = [telegramUserData.firstName, telegramUserData.lastName]
           .filter(Boolean)
           .join(' ') || telegramUserData.username || `Player${telegramUserData.id}`;
 
-        const { data: newPlayer, error: createError } = await supabase
-          .from('players')
-          .insert({
+        await fetch(`${supabaseUrl}/rest/v1/players`, {
+          method: 'POST',
+          headers: {
+            'apikey': supabaseKey,
+            'Authorization': `Bearer ${supabaseKey}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
             name: playerName,
             telegram: telegramId,
-            avatar_url: telegramUserData.photoUrl,
-            elo_rating: 100,
-            games_played: 0,
-            wins: 0
+            avatar_url: telegramUserData.photoUrl
           })
-          .select()
-          .single();
-          
-        if (createError) {
-          throw createError;
-        }
-        
-        playerData = newPlayer;
-        console.log('New player created:', playerData);
+        });
       }
 
-      // Небольшая задержка для обеспечения синхронизации
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
       onAuthComplete(telegramUserData);
     } catch (error) {
       console.error('Supabase auth error:', error);
