@@ -99,7 +99,7 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate }: Tele
         wins: 0
       });
       
-      // Создаем нового игрока
+      // Создаем нового игрока (без user_id для телеграм пользователей)
       const { data: newPlayer, error: createError } = await supabase
         .from('players')
         .insert({
@@ -108,6 +108,7 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate }: Tele
           elo_rating: 1000,
           games_played: 0,
           wins: 0
+          // user_id не устанавливается для телеграм пользователей
         })
         .select()
         .single();
