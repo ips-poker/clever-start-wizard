@@ -1,10 +1,10 @@
+import React, { Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { useGlobalDataSync } from "@/hooks/useGlobalDataSync";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { Suspense } from "react";
 import Index from "./pages/Index";
 import TournamentDirector from "./pages/TournamentDirector";
 import Admin from "./pages/Admin";
@@ -20,7 +20,14 @@ import ExternalTimer from "./pages/ExternalTimer";
 import TelegramMiniApp from "./pages/TelegramMiniApp";
 import InvitationCard from "./pages/InvitationCard";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 function App() {
   // Отключаем глобальное кэширование для устранения проблем производительности
