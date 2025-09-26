@@ -134,8 +134,8 @@ export default function Rating() {
     });
   };
 
-  const topPlayers = allPlayers.slice(0, 10);
-  const remainingPlayers = allPlayers.slice(10);
+  const topPlayers = allPlayers.slice(0, 5);
+  const remainingPlayers = allPlayers.slice(5);
 
   if (loading) {
     return (

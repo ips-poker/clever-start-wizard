@@ -79,7 +79,7 @@ export function TopPlayers() {
       
       // Устанавливаем все данные из одного запроса
       setAllPlayers(sortedPlayers);
-      setTopPlayers(sortedPlayers.slice(0, 10));
+      setTopPlayers(sortedPlayers.slice(0, 5));
     } catch (error) {
       console.error('Error loading players:', error);
     } finally {
