@@ -113,7 +113,11 @@ Deno.serve(async (req) => {
 
           // Вызываем telegram-auth function
           const { data: authResult, error: authError } = await supabase.functions.invoke('telegram-auth', {
-            body: telegramAuthData
+            body: telegramAuthData,
+            headers: {
+              'origin': 'https://a391e581-510e-4cfc-905a-60ff6b51b1e6.lovableproject.com',
+              'referer': 'https://a391e581-510e-4cfc-905a-60ff6b51b1e6.lovableproject.com'
+            }
           });
 
           if (authError) {

@@ -161,11 +161,17 @@ Deno.serve(async (req) => {
     }
 
     // Создаем сессию для пользователя
+    // Определяем правильный URL для редиректа
+    const origin = req.headers.get('origin') || req.headers.get('referer') || 'https://a391e581-510e-4cfc-905a-60ff6b51b1e6.lovableproject.com';
+    const redirectUrl = origin.includes('localhost') ? 'https://a391e581-510e-4cfc-905a-60ff6b51b1e6.lovableproject.com/' : `${origin}/`;
+    
+    console.log('Redirect URL will be:', redirectUrl);
+    
     const { data: sessionData, error: sessionError } = await supabase.auth.admin.generateLink({
       type: 'magiclink',
       email: telegramEmail,
       options: {
-        redirectTo: `${req.headers.get('origin') || 'http://localhost:3000'}/`
+        redirectTo: redirectUrl
       }
     });
 
