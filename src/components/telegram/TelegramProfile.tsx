@@ -73,6 +73,8 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate }: Tele
       const telegramId = telegramUser.id.toString();
       const playerName = telegramUser.firstName || telegramUser.username || `Player_${telegramId}`;
       
+      console.log('Creating player profile for:', { telegramId, playerName });
+      
       // Проверяем, не существует ли уже игрок
       const { data: existingPlayer } = await supabase
         .from('players')
@@ -80,11 +82,22 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate }: Tele
         .eq('telegram', telegramId)
         .maybeSingle();
       
+      console.log('Existing player check:', existingPlayer);
+      
       if (existingPlayer) {
+        console.log('Player already exists, using existing profile');
         setPlayer(existingPlayer);
         onStatsUpdate(existingPlayer);
         return;
       }
+      
+      console.log('Creating new player with data:', {
+        name: playerName,
+        telegram: telegramId,
+        elo_rating: 1000,
+        games_played: 0,
+        wins: 0
+      });
       
       // Создаем нового игрока
       const { data: newPlayer, error: createError } = await supabase
@@ -99,9 +112,11 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate }: Tele
         .select()
         .single();
         
+      console.log('Create player result:', { newPlayer, createError });
+        
       if (createError) {
         console.error('Error creating player:', createError);
-        toast.error('Ошибка создания профиля');
+        toast.error(`Ошибка создания профиля: ${createError.message}`);
         return;
       }
       
@@ -110,7 +125,7 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate }: Tele
       toast.success('Профиль успешно создан!');
     } catch (error) {
       console.error('Error in createPlayerProfile:', error);
-      toast.error('Ошибка создания профиля');
+      toast.error(`Ошибка создания профиля: ${error.message || 'Неизвестная ошибка'}`);
     } finally {
       setLoading(false);
     }
