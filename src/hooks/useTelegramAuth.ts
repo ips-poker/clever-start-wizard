@@ -70,7 +70,7 @@ export const useTelegramAuth = () => {
     }
   }, [toast]);
 
-  const openTelegramBot = useCallback((botUsername = 'EPC_Poker_Bot') => {
+  const openTelegramBot = useCallback((botUsername = 'epc777_bot') => {
     const currentUrl = encodeURIComponent(window.location.href);
     const telegramUrl = `https://t.me/${botUsername}?start=webauth_${Date.now()}`;
     

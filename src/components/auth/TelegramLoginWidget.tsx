@@ -24,7 +24,7 @@ export const TelegramLoginWidget: React.FC<TelegramLoginWidgetProps> = ({ onSucc
 
   const handleManualTelegramLogin = () => {
     if (disabled || loading) return;
-    openTelegramBot('EPC_Poker_Bot'); // Замените на имя вашего бота
+    openTelegramBot('epc777_bot'); // Ваш бот
   };
 
   return (
