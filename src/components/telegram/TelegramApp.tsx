@@ -190,7 +190,7 @@ export const TelegramApp = () => {
 
   const fetchPlayers = async (): Promise<void> => {
     try {
-      const { data } = await supabase.from('players').select('*').order('elo_rating', { ascending: false }).limit(10);
+      const { data } = await supabase.from('players').select('*').order('elo_rating', { ascending: false });
       if (data) {
         setPlayers(data as Player[]);
       }
