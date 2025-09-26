@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
+import { Progress } from '@/components/ui/progress';
 import { 
   Trophy, 
   TrendingUp, 
@@ -17,7 +18,21 @@ import {
   Crown,
   Shield,
   Camera,
-  User
+  User,
+  Calendar,
+  Clock,
+  Coins,
+  MapPin,
+  BarChart3,
+  TrendingDown,
+  Activity,
+  Zap,
+  CheckCircle,
+  AlertCircle,
+  Timer,
+  Medal,
+  Flame,
+  Brain
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { AvatarSelector } from '@/components/AvatarSelector';
@@ -33,6 +48,40 @@ interface Player {
   avatar_url?: string;
   telegram?: string;
   created_at?: string;
+}
+
+interface GameResult {
+  id: string;
+  position: number;
+  elo_change: number;
+  elo_after: number;
+  elo_before: number;
+  created_at: string;
+  tournament: { 
+    name: string;
+    buy_in: number;
+  };
+}
+
+interface Tournament {
+  id: string;
+  name: string;
+  start_time: string;
+  buy_in: number;
+  max_players: number;
+  status: string;
+  starting_chips: number;
+  description?: string;
+  tournament_format?: string;
+  tournament_registrations?: Array<{ count: number }>;
+}
+
+interface TournamentRegistration {
+  id: string;
+  tournament_id: string;
+  status: string;
+  created_at: string;
+  tournament: Tournament;
 }
 
 interface TelegramUser {
@@ -51,19 +100,28 @@ interface TelegramProfileProps {
 
 export function TelegramProfile({ telegramUser, userStats, onStatsUpdate }: TelegramProfileProps) {
   const [player, setPlayer] = useState<Player | null>(userStats);
+  const [gameResults, setGameResults] = useState<GameResult[]>([]);
+  const [userTournaments, setUserTournaments] = useState<TournamentRegistration[]>([]);
   const [loading, setLoading] = useState(false);
   const [showAvatarSelector, setShowAvatarSelector] = useState(false);
   const [editingName, setEditingName] = useState(false);
   const [newPlayerName, setNewPlayerName] = useState("");
 
   // Если нет игрока, но есть телеграм пользователь, создаем профиль
-  React.useEffect(() => {
+  useEffect(() => {
     if (!player && telegramUser) {
       createPlayerProfile();
     } else if (userStats) {
       setPlayer(userStats);
     }
   }, [userStats, telegramUser, player]);
+
+  useEffect(() => {
+    if (player) {
+      loadGameResults();
+      loadUserTournaments();
+    }
+  }, [player]);
 
   const createPlayerProfile = async () => {
     if (!telegramUser) return;
@@ -129,6 +187,48 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate }: Tele
       toast.error(`Ошибка создания профиля: ${error.message || 'Неизвестная ошибка'}`);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadGameResults = async () => {
+    if (!player) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('game_results')
+        .select(`
+          *,
+          tournament:tournaments(name, buy_in)
+        `)
+        .eq('player_id', player.id)
+        .order('created_at', { ascending: false })
+        .limit(10);
+
+      if (error) throw error;
+      setGameResults(data || []);
+    } catch (error) {
+      console.error('Error loading game results:', error);
+    }
+  };
+
+  const loadUserTournaments = async () => {
+    if (!player) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('tournament_registrations')
+        .select(`
+          *,
+          tournament:tournaments(*)
+        `)
+        .eq('player_id', player.id)
+        .in('status', ['registered', 'confirmed'])
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setUserTournaments(data || []);
+    } catch (error) {
+      console.error('Error loading user tournaments:', error);
     }
   };
 
@@ -217,6 +317,44 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate }: Tele
     return Shield;
   };
 
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'scheduled':
+        return <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30">Запланирован</Badge>;
+      case 'registration':
+        return <Badge className="bg-green-500/20 text-green-400 border-green-500/30">Регистрация</Badge>;
+      case 'running':
+        return <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30">Идет</Badge>;
+      default:
+        return <Badge className="bg-gray-500/20 text-gray-400 border-gray-500/30">{status}</Badge>;
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('ru-RU', {
+      day: '2-digit',
+      month: '2-digit',
+      year: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  const getPositionColor = (position: number) => {
+    if (position === 1) return "text-yellow-400";
+    if (position === 2) return "text-gray-300";
+    if (position === 3) return "text-orange-400";
+    return "text-white/70";
+  };
+
+  const getPositionIcon = (position: number) => {
+    if (position === 1) return "🥇";
+    if (position === 2) return "🥈";
+    if (position === 3) return "🥉";
+    return `${position}`;
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-transparent">
@@ -247,6 +385,15 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate }: Tele
 
   const RankIcon = getRankIcon(player.elo_rating);
   const winRate = player.games_played ? Math.round((player.wins / player.games_played) * 100) : 0;
+  const avgPosition = gameResults.length > 0 ? 
+    Math.round(gameResults.reduce((sum, result) => sum + result.position, 0) / gameResults.length * 10) / 10 : 0;
+  const totalEarnings = gameResults.reduce((sum, result) => {
+    if (result.position === 1) sum += result.tournament.buy_in * 0.5; // Примерный выигрыш
+    if (result.position === 2) sum += result.tournament.buy_in * 0.3;
+    if (result.position === 3) sum += result.tournament.buy_in * 0.2;
+    return sum;
+  }, 0);
+  const recentForm = gameResults.slice(0, 5).map(r => r.position <= 3 ? '✅' : '❌').join('');
 
   return (
     <div className="space-y-4 pb-20 px-4 bg-transparent min-h-screen relative z-10">
@@ -261,7 +408,7 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate }: Tele
         </div>
       </div>
 
-      {/* Profile Card */}
+      {/* Profile Header */}
       <Card className="bg-gradient-to-br from-slate-800/95 via-slate-900/95 to-black/90 border border-amber-400/20 backdrop-blur-xl shadow-xl">
         <CardContent className="p-6">
           <div className="text-center space-y-4">
@@ -332,7 +479,7 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate }: Tele
               </div>
             </div>
             
-            {/* Stats */}
+            {/* Main Stats */}
             <div className="flex items-center justify-center gap-4 pt-3 border-t border-white/10">
               <div className="text-center">
                 <p className="text-lg font-light text-amber-400">{player.elo_rating}</p>
@@ -358,6 +505,126 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate }: Tele
         </CardContent>
       </Card>
 
+      {/* Advanced Statistics */}
+      <div className="grid grid-cols-2 gap-3">
+        <Card className="bg-gradient-to-br from-purple-500/10 via-purple-600/15 to-purple-500/10 border border-purple-400/20 backdrop-blur-sm">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg flex items-center justify-center">
+                <BarChart3 className="h-4 w-4 text-white" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-white font-medium text-sm">Средняя позиция</h3>
+                <p className="text-purple-300 text-lg font-bold">{avgPosition || 'N/A'}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-to-br from-green-500/10 via-green-600/15 to-green-500/10 border border-green-400/20 backdrop-blur-sm">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-green-600 rounded-lg flex items-center justify-center">
+                <Coins className="h-4 w-4 text-white" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-white font-medium text-sm">Заработано</h3>
+                <p className="text-green-300 text-lg font-bold">{Math.round(totalEarnings)}₽</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Recent Form */}
+      <Card className="bg-gradient-to-br from-orange-500/10 via-orange-600/15 to-orange-500/10 border border-orange-400/20 backdrop-blur-sm">
+        <CardContent className="p-4">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg flex items-center justify-center">
+              <Flame className="h-4 w-4 text-white" />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-white font-medium text-sm">Последние результаты</h3>
+              <p className="text-orange-300 text-sm font-mono">{recentForm || 'Нет данных'}</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Registered Tournaments */}
+      {userTournaments.length > 0 && (
+        <Card className="bg-gradient-to-br from-blue-500/10 via-blue-600/15 to-blue-500/10 border border-blue-400/20 backdrop-blur-sm">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-white font-medium text-sm flex items-center gap-2">
+              <CheckCircle className="h-4 w-4 text-blue-400" />
+              Мои турниры ({userTournaments.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-4 pt-0">
+            <div className="space-y-3">
+              {userTournaments.slice(0, 3).map((reg) => (
+                <div key={reg.id} className="p-3 bg-white/5 rounded-lg border border-white/10">
+                  <div className="flex items-start justify-between mb-2">
+                    <h4 className="text-white font-medium text-sm">{reg.tournament.name}</h4>
+                    {getStatusBadge(reg.tournament.status)}
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div className="flex items-center gap-1 text-white/70">
+                      <Calendar className="h-3 w-3" />
+                      {formatDate(reg.tournament.start_time)}
+                    </div>
+                    <div className="flex items-center gap-1 text-white/70">
+                      <Coins className="h-3 w-3" />
+                      {reg.tournament.buy_in}₽
+                    </div>
+                  </div>
+                </div>
+              ))}
+              {userTournaments.length > 3 && (
+                <p className="text-white/60 text-xs text-center">
+                  +{userTournaments.length - 3} турниров
+                </p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Game History */}
+      {gameResults.length > 0 && (
+        <Card className="bg-gradient-to-br from-slate-500/10 via-slate-600/15 to-slate-500/10 border border-slate-400/20 backdrop-blur-sm">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-white font-medium text-sm flex items-center gap-2">
+              <Activity className="h-4 w-4 text-slate-400" />
+              История игр
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-4 pt-0">
+            <div className="space-y-2">
+              {gameResults.slice(0, 5).map((result) => (
+                <div key={result.id} className="flex items-center justify-between p-2 bg-white/5 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <div className={`text-lg ${getPositionColor(result.position)}`}>
+                      {getPositionIcon(result.position)}
+                    </div>
+                    <div>
+                      <p className="text-white text-xs font-medium">{result.tournament.name}</p>
+                      <p className="text-white/60 text-xs">{formatDate(result.created_at)}</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className={`text-sm font-bold ${result.elo_change >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                      {result.elo_change >= 0 ? '+' : ''}{result.elo_change}
+                    </p>
+                    <p className="text-white/60 text-xs">{result.elo_after}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Telegram Info */}
       <Card className="bg-gradient-to-br from-white/5 via-white/10 to-white/5 border border-white/10 backdrop-blur-sm">
         <CardContent className="p-4">
@@ -370,40 +637,6 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate }: Tele
               <p className="text-white/60 text-xs">
                 {telegramUser?.username ? `@${telegramUser.username}` : telegramUser?.firstName || 'Пользователь'}
               </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Performance Card */}
-      <Card className="bg-gradient-to-br from-white/5 via-white/10 to-white/5 border border-white/10 backdrop-blur-sm">
-        <CardContent className="p-4">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg flex items-center justify-center">
-              <TrendingUp className="h-4 w-4 text-white" />
-            </div>
-            <h3 className="text-white font-medium text-sm">Игровая статистика</h3>
-          </div>
-          
-          <div className="space-y-2">
-            <div className="flex justify-between items-center">
-              <span className="text-white/70 text-xs">Рейтинг ELO</span>
-              <span className="text-amber-400 font-medium text-sm">{player.elo_rating}</span>
-            </div>
-            
-            <div className="flex justify-between items-center">
-              <span className="text-white/70 text-xs">Процент побед</span>
-              <span className="text-green-400 font-medium text-sm">{winRate}%</span>
-            </div>
-            
-            <div className="flex justify-between items-center">
-              <span className="text-white/70 text-xs">Турниров сыграно</span>
-              <span className="text-blue-400 font-medium text-sm">{player.games_played}</span>
-            </div>
-            
-            <div className="flex justify-between items-center">
-              <span className="text-white/70 text-xs">Побед всего</span>
-              <span className="text-purple-400 font-medium text-sm">{player.wins}</span>
             </div>
           </div>
         </CardContent>
