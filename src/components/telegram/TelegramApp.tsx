@@ -79,14 +79,12 @@ export const TelegramApp = () => {
   const [galleryImages, setGalleryImages] = useState<GalleryImage[]>([]);
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
   const [currentRuleIndex, setCurrentRuleIndex] = useState(0);
-  const [userRegistrations, setUserRegistrations] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (isAuthenticated && telegramUser) {
       fetchData();
       fetchGalleryImages();
       setupRealtimeSubscriptions();
-      fetchUserRegistrations();
     }
   }, [isAuthenticated, telegramUser]);
 
@@ -119,7 +117,6 @@ export const TelegramApp = () => {
     }, payload => {
       console.log('Registration update:', payload);
       fetchTournaments();
-      fetchUserRegistrations();
     }).subscribe();
 
     return () => {
@@ -141,25 +138,6 @@ export const TelegramApp = () => {
       console.error('Error fetching data:', error);
     }
     setLoading(false);
-  };
-
-  const fetchUserRegistrations = async () => {
-    if (!userStats) return;
-    
-    try {
-      const { data, error } = await supabase
-        .from('tournament_registrations')
-        .select('tournament_id')
-        .eq('player_id', userStats.id)
-        .in('status', ['registered', 'confirmed', 'playing']);
-      
-      if (error) throw error;
-      
-      const registrationSet = new Set(data?.map(reg => reg.tournament_id) || []);
-      setUserRegistrations(registrationSet);
-    } catch (error) {
-      console.error('Error fetching user registrations:', error);
-    }
   };
 
   const fetchGalleryImages = async () => {
@@ -267,8 +245,6 @@ export const TelegramApp = () => {
       
       if (data) {
         setUserStats(data);
-        // После обновления userStats загружаем регистрации
-        setTimeout(() => fetchUserRegistrations(), 100);
       }
     } catch (error) {
       console.error('Error in fetchUserStats:', error);
@@ -282,59 +258,27 @@ export const TelegramApp = () => {
     }
     setRegistering(tournamentId);
     try {
-      const { data: existingRegistration, error: checkError } = await supabase
-        .from('tournament_registrations')
-        .select('id')
-        .eq('tournament_id', tournamentId)
-        .eq('player_id', userStats.id)
-        .maybeSingle();
-      
+      const { data: existingRegistration, error: checkError } = await supabase.from('tournament_registrations').select('id').eq('tournament_id', tournamentId).eq('player_id', userStats.id).maybeSingle();
       if (checkError && checkError.code !== 'PGRST116') {
         throw checkError;
       }
-      
       if (existingRegistration) {
-        // Отменяем регистрацию
-        const { error: deleteError } = await supabase
-          .from('tournament_registrations')
-          .delete()
-          .eq('id', existingRegistration.id);
-        
-        if (deleteError) throw deleteError;
-        
-        // Обновляем локальное состояние
-        setUserRegistrations(prev => {
-          const newSet = new Set(prev);
-          newSet.delete(tournamentId);
-          return newSet;
-        });
-        
-        toast.success("Регистрация на турнир отменена");
-        // Принудительно обновляем все данные
-        fetchTournaments();
-        fetchUserRegistrations();
+        toast.info("Вы уже зарегистрированы на этот турнир");
         return;
       }
-      
-      // Создаем новую регистрацию
       const { error } = await supabase.from('tournament_registrations').insert({
         tournament_id: tournamentId,
         player_id: userStats.id,
         status: 'registered'
       });
-      
-      if (error) throw error;
-      
-      // Обновляем локальное состояние
-      setUserRegistrations(prev => new Set([...prev, tournamentId]));
-      
+      if (error) {
+        throw error;
+      }
       toast.success("Вы успешно зарегистрированы на турнир");
-      // Принудительно обновляем все данные
       fetchTournaments();
-      fetchUserRegistrations();
     } catch (error) {
-      console.error('Error with tournament registration:', error);
-      toast.error("Не удалось изменить регистрацию на турнир");
+      console.error('Error registering for tournament:', error);
+      toast.error("Не удалось зарегистрироваться на турнир");
     } finally {
       setRegistering(null);
     }
@@ -1018,31 +962,23 @@ export const TelegramApp = () => {
                   </Badge>
                 </div>
                 
-                {(tournament.status === 'registration' || tournament.status === 'scheduled') && (
+                {tournament.status === 'registration' && (
                   <Button 
                     onClick={(e) => {
                       e.stopPropagation();
                       registerForTournament(tournament.id);
                     }} 
                     disabled={registering === tournament.id} 
-                    className={`w-full mt-4 font-bold py-3 rounded-xl shadow-lg transition-all duration-300 group-hover:scale-[1.02] border-0 text-sm uppercase tracking-wider ${
-                      userRegistrations.has(tournament.id) 
-                        ? 'bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 hover:shadow-red-500/40' 
-                        : 'bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 hover:shadow-amber-500/40'
-                    } text-white`}
+                    className="w-full mt-4 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-bold py-3 rounded-xl shadow-lg hover:shadow-amber-500/40 transition-all duration-300 group-hover:scale-[1.02] border-0 text-sm uppercase tracking-wider"
                   >
                     {registering === tournament.id ? (
                       <div className="flex items-center gap-2">
                         <Loader2 className="h-4 w-4 animate-spin" />
-                        <span>{userRegistrations.has(tournament.id) ? 'Отменяем...' : 'Регистрируем...'}</span>
+                        <span>Регистрируем...</span>
                       </div>
                     ) : (
                       <div className="flex items-center gap-2">
-                        {userRegistrations.has(tournament.id) ? (
-                          <span>❌ Отменить регистрацию</span>
-                        ) : (
-                          <span>🎫 Записаться на турнир</span>
-                        )}
+                        <span>🎫 Записаться на турнир</span>
                       </div>
                     )}
                   </Button>

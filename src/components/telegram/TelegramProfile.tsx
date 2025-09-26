@@ -224,7 +224,7 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate }: Tele
           tournament:tournaments(*)
         `)
         .eq('player_id', player.id)
-        .in('status', ['registered', 'confirmed', 'playing'])
+        .in('status', ['registered', 'confirmed', 'playing', 'eliminated'])
         .order('created_at', { ascending: false });
 
       console.log('Tournament registrations result:', { data, error });
@@ -235,28 +235,6 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate }: Tele
       console.error('Error loading user tournaments:', error);
     }
   };
-
-  // Добавляем эффект для обновления турниров при изменениях в realtime
-  useEffect(() => {
-    if (!player) return;
-
-    const channel = supabase
-      .channel('profile_tournaments_changes')
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'tournament_registrations',
-        filter: `player_id=eq.${player.id}`
-      }, () => {
-        console.log('Tournament registration changed for player:', player.id);
-        loadUserTournaments();
-      })
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [player]);
 
   const handleAvatarUpdate = async (avatarUrl: string) => {
     if (!player) return;
@@ -582,81 +560,40 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate }: Tele
         <CardHeader className="pb-3">
           <CardTitle className="text-white font-medium text-sm flex items-center gap-2">
             <CheckCircle className="h-4 w-4 text-blue-400" />
-            🎫 Мои билеты на турниры ({userTournaments.length})
+            Мои турниры ({userTournaments.length})
           </CardTitle>
         </CardHeader>
         <CardContent className="p-4 pt-0">
           {userTournaments.length > 0 ? (
-            <div className="space-y-4">
+            <div className="space-y-3">
               {userTournaments.slice(0, 3).map((reg) => (
-                <Card key={reg.id} className="bg-gradient-to-br from-slate-800/95 via-slate-900/95 to-black/90 border-2 border-dashed border-blue-400/40 overflow-hidden relative cursor-pointer group transition-all duration-500 hover:scale-[1.02] hover:shadow-xl hover:shadow-blue-500/30 backdrop-blur-xl rounded-2xl">
-                  {/* Перфорированные края */}
-                  <div className="absolute left-0 top-1/2 -translate-y-1/2 w-5 h-5 bg-black rounded-full -ml-2.5 shadow-inner border border-white/20"></div>
-                  <div className="absolute right-0 top-1/2 -translate-y-1/2 w-5 h-5 bg-black rounded-full -mr-2.5 shadow-inner border border-white/20"></div>
-                  
-                  {/* Номер билета */}
-                  <div className="absolute top-2 right-3 text-blue-400/80 text-xs font-mono tracking-wider bg-white/10 px-2 py-1 rounded backdrop-blur-sm">
-                    #{reg.tournament.id.slice(-6).toUpperCase()}
+                <div key={reg.id} className="p-3 bg-white/5 rounded-lg border border-white/10">
+                  <div className="flex items-start justify-between mb-2">
+                    <h4 className="text-white font-medium text-sm">{reg.tournament.name}</h4>
+                    {getStatusBadge(reg.tournament.status)}
                   </div>
-                  
-                  {/* Штрих-код */}
-                  <div className="absolute bottom-2 right-3 flex gap-0.5">
-                    {[...Array(6)].map((_, i) => (
-                      <div key={i} className={`bg-blue-400/60 ${i % 2 === 0 ? 'w-0.5 h-4' : 'w-1 h-5'}`}></div>
-                    ))}
-                  </div>
-                  
-                  <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-transparent to-blue-600/8 opacity-60 group-hover:opacity-100 transition-opacity duration-500"></div>
-                  <div className="absolute inset-0 opacity-8 group-hover:opacity-15 transition-opacity duration-500">
-                    <div className="absolute top-2 left-3 text-xl text-blue-400/30 animate-pulse">♠</div>
-                    <div className="absolute bottom-6 left-6 text-lg text-blue-400/20 animate-bounce-subtle">♣</div>
-                  </div>
-                  
-                  <CardContent className="p-4 relative z-10">
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="flex-1">
-                        <div className="text-blue-400/80 text-xs font-semibold uppercase tracking-widest mb-1">🎫 МОЙ БИЛЕТ</div>
-                        <h4 className="text-lg font-bold text-white tracking-wide group-hover:text-blue-100 transition-colors duration-300">{reg.tournament.name}</h4>
-                        <div className="h-0.5 w-10 bg-gradient-to-r from-blue-400 to-blue-600 mt-1 group-hover:w-14 transition-all duration-500 rounded-full"></div>
-                      </div>
-                      {getStatusBadge(reg.tournament.status)}
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div className="flex items-center gap-1 text-white/70">
+                      <Calendar className="h-3 w-3" />
+                      {formatDate(reg.tournament.start_time)}
                     </div>
-                    
-                    <div className="grid grid-cols-2 gap-2 text-xs">
-                      <div className="flex items-center gap-2 p-2 bg-gradient-to-r from-white/8 via-white/12 to-white/8 rounded-lg border border-white/10 group-hover:border-blue-400/20 transition-all duration-300 backdrop-blur-sm">
-                        <div className="w-5 h-5 bg-gradient-to-br from-green-500 to-green-600 rounded-md flex items-center justify-center">
-                          <Calendar className="h-3 w-3 text-white" />
-                        </div>
-                        <div>
-                          <span className="text-white font-semibold text-xs">{formatDate(reg.tournament.start_time)}</span>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2 p-2 bg-gradient-to-r from-white/8 via-white/12 to-white/8 rounded-lg border border-white/10 group-hover:border-blue-400/20 transition-all duration-300 backdrop-blur-sm">
-                        <div className="w-5 h-5 bg-gradient-to-br from-purple-500 to-purple-600 rounded-md flex items-center justify-center">
-                          <Coins className="h-3 w-3 text-white" />
-                        </div>
-                        <div>
-                          <span className="text-white font-semibold text-xs">{reg.tournament.buy_in}₽</span>
-                        </div>
-                      </div>
+                    <div className="flex items-center gap-1 text-white/70">
+                      <Coins className="h-3 w-3" />
+                      {reg.tournament.buy_in}₽
                     </div>
-                  </CardContent>
-                </Card>
+                  </div>
+                </div>
               ))}
               {userTournaments.length > 3 && (
-                <div className="text-center py-2 px-4 bg-gradient-to-r from-white/5 via-white/10 to-white/5 rounded-lg border border-white/10 backdrop-blur-sm">
-                  <p className="text-white/60 text-xs">
-                    +{userTournaments.length - 3} билетов на турниры
-                  </p>
-                </div>
+                <p className="text-white/60 text-xs text-center">
+                  +{userTournaments.length - 3} турниров
+                </p>
               )}
             </div>
           ) : (
-            <div className="text-center py-8">
-              <div className="w-16 h-12 bg-gradient-to-br from-blue-500/20 to-blue-600/20 rounded-lg border-2 border-dashed border-blue-400/30 mx-auto mb-3 flex items-center justify-center">
-                <CheckCircle className="h-6 w-6 text-blue-400/50" />
-              </div>
-              <p className="text-white/70 text-sm font-medium">Нет билетов на турниры</p>
+            <div className="text-center py-6">
+              <AlertCircle className="h-8 w-8 text-blue-400/50 mx-auto mb-2" />
+              <p className="text-white/70 text-sm">Нет активных регистраций</p>
               <p className="text-white/50 text-xs mt-1">
                 Зарегистрируйтесь на турниры на главной странице
               </p>
