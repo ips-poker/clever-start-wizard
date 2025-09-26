@@ -310,7 +310,9 @@ export const TelegramApp = () => {
         });
         
         toast.success("Регистрация на турнир отменена");
+        // Принудительно обновляем все данные
         fetchTournaments();
+        fetchUserRegistrations();
         return;
       }
       
@@ -327,7 +329,9 @@ export const TelegramApp = () => {
       setUserRegistrations(prev => new Set([...prev, tournamentId]));
       
       toast.success("Вы успешно зарегистрированы на турнир");
+      // Принудительно обновляем все данные
       fetchTournaments();
+      fetchUserRegistrations();
     } catch (error) {
       console.error('Error with tournament registration:', error);
       toast.error("Не удалось изменить регистрацию на турнир");

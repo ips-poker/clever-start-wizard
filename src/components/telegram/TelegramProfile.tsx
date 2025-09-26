@@ -224,7 +224,7 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate }: Tele
           tournament:tournaments(*)
         `)
         .eq('player_id', player.id)
-        .in('status', ['registered', 'confirmed', 'playing', 'eliminated'])
+        .in('status', ['registered', 'confirmed', 'playing'])
         .order('created_at', { ascending: false });
 
       console.log('Tournament registrations result:', { data, error });
@@ -235,6 +235,28 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate }: Tele
       console.error('Error loading user tournaments:', error);
     }
   };
+
+  // Добавляем эффект для обновления турниров при изменениях в realtime
+  useEffect(() => {
+    if (!player) return;
+
+    const channel = supabase
+      .channel('profile_tournaments_changes')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'tournament_registrations',
+        filter: `player_id=eq.${player.id}`
+      }, () => {
+        console.log('Tournament registration changed for player:', player.id);
+        loadUserTournaments();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [player]);
 
   const handleAvatarUpdate = async (avatarUrl: string) => {
     if (!player) return;
