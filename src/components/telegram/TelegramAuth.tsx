@@ -103,11 +103,16 @@ export const TelegramAuth: React.FC<TelegramAuthProps> = ({ onAuthComplete }) =>
         return;
       }
 
-      if (data?.success) {
-        console.log('Authentication successful');
+      if (data?.success && data?.login_url) {
+        console.log('Authentication successful, redirecting to:', data.login_url);
         
-        // Остаемся в Telegram приложении вместо перенаправления
-        onAuthComplete(telegramUserData);
+        // Перенаправляем на URL автоматического входа
+        setTimeout(() => {
+          window.location.href = data.login_url;
+        }, 1000);
+        
+        // Показываем пользователю что происходит
+        setAuthError('Перенаправление на сайт...');
         return;
       } else {
         console.error('Invalid response from auth function:', data);
