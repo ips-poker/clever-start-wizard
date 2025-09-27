@@ -79,57 +79,41 @@ export const TelegramAuth: React.FC<TelegramAuthProps> = ({ onAuthComplete }) =>
     try {
       setRegistering(true);
       
-      const telegramId = telegramUserData.id.toString();
-      const supabaseUrl = 'https://mokhssmnorrhohrowxvu.supabase.co';
-      const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1va2hzc21ub3JyaG9ocm93eHZ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMwODUzNDYsImV4cCI6MjA2ODY2MTM0Nn0.ZWYgSZFeidY0b_miC7IyfXVPh1EUR2WtxlEvt_fFmGc';
-      
-      // Простая проверка существования игрока
-      const checkResult = await fetch(`${supabaseUrl}/rest/v1/players?telegram=eq.${telegramId}&select=id,name`, {
-        headers: {
-          'apikey': supabaseKey,
-          'Authorization': `Bearer ${supabaseKey}`,
-          'Content-Type': 'application/json'
-        }
+      // Подготавливаем данные для Telegram авторизации через edge function
+      const telegramAuthData = {
+        id: telegramUserData.id,
+        first_name: telegramUserData.firstName,
+        last_name: telegramUserData.lastName,
+        username: telegramUserData.username,
+        photo_url: telegramUserData.photoUrl,
+        auth_date: Math.floor(Date.now() / 1000),
+        hash: 'mock-hash-for-development' // В продакшене должен быть настоящий hash
+      };
+
+      console.log('Authenticating with Telegram data:', telegramAuthData);
+
+      // Используем edge function для полной авторизации
+      const { data, error } = await supabase.functions.invoke('telegram-auth', {
+        body: telegramAuthData
       });
-      
-      const existingPlayers = await checkResult.json();
-      const existingPlayer = existingPlayers?.[0];
 
-      if (existingPlayer) {
-        // Игрок существует, обновляем данные
-        await fetch(`${supabaseUrl}/rest/v1/players?telegram=eq.${telegramId}`, {
-          method: 'PATCH',
-          headers: {
-            'apikey': supabaseKey,
-            'Authorization': `Bearer ${supabaseKey}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            updated_at: new Date().toISOString()
-          })
-        });
-      } else {
-        // Создаем нового игрока
-        const playerName = [telegramUserData.firstName, telegramUserData.lastName]
-          .filter(Boolean)
-          .join(' ') || telegramUserData.username || `Player${telegramUserData.id}`;
-
-        await fetch(`${supabaseUrl}/rest/v1/players`, {
-          method: 'POST',
-          headers: {
-            'apikey': supabaseKey,
-            'Authorization': `Bearer ${supabaseKey}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            name: playerName,
-            telegram: telegramId,
-            avatar_url: telegramUserData.photoUrl
-          })
-        });
+      if (error) {
+        console.error('Telegram auth edge function error:', error);
+        setAuthError('Ошибка авторизации через Telegram');
+        return;
       }
 
-      onAuthComplete(telegramUserData);
+      if (data?.success) {
+        console.log('Authentication successful');
+        
+        // Остаемся в Telegram приложении вместо перенаправления
+        onAuthComplete(telegramUserData);
+        return;
+      } else {
+        console.error('Invalid response from auth function:', data);
+        setAuthError('Неверный ответ от сервера авторизации');
+        return;
+      }
     } catch (error) {
       console.error('Supabase auth error:', error);
       setAuthError('Ошибка создания профиля игрока');
