@@ -138,7 +138,7 @@ Deno.serve(async (req) => {
 
       existingUser = { user: newUser.user };
     } else {
-      // Обновляем метаданные существующего пользователя с правильными данными из Telegram
+      // Обновляем метаданные существующего пользователя
       const { error: updateError } = await supabase.auth.admin.updateUserById(
         existingUser.user.id,
         {
@@ -157,24 +157,6 @@ Deno.serve(async (req) => {
 
       if (updateError) {
         console.error('Error updating user metadata:', updateError);
-      } else {
-        console.log('Successfully updated Supabase user metadata');
-      }
-      
-      // Также обновляем profiles таблицу с правильными данными
-      const { error: profileUpdateError } = await supabase
-        .from('profiles')
-        .update({
-          full_name: fullName,
-          avatar_url: authData.photo_url,
-          updated_at: new Date().toISOString()
-        })
-        .eq('user_id', existingUser.user.id);
-
-      if (profileUpdateError) {
-        console.error('Error updating profile:', profileUpdateError);
-      } else {
-        console.log('Successfully updated profile with Telegram data');
       }
     }
 
@@ -204,89 +186,62 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Для Telegram авторизации работаем ТОЛЬКО с Telegram ID
+    // Используем функцию для объединения игроков
     const telegramId = authData.id.toString();
     let player = null;
     
     try {
-      console.log('=== TELEGRAM AUTH PROCESS ===');
-      console.log('Looking for player with Telegram ID:', telegramId);
-      console.log('Supabase user ID:', existingUser.user?.id);
+      // Пытаемся объединить существующих игроков
+      const { data: mergedPlayerId, error: mergeError } = await supabase
+        .rpc('merge_player_profiles', {
+          telegram_user_id: telegramId,
+          telegram_email: telegramEmail,
+          supabase_user_id: existingUser.user?.id
+        });
 
-      // ПРИОРИТЕТ 1: Ищем игрока ТОЛЬКО по Telegram ID (основной идентификатор)
-      const { data: existingPlayer, error: playerError } = await supabase
-        .from('players')
-        .select('*')
-        .eq('telegram', telegramId)
-        .maybeSingle();
-
-      if (playerError && playerError.code !== 'PGRST116') {
-        console.error('Error searching for player:', playerError);
-        throw playerError;
+      if (mergeError) {
+        console.error('Error merging player profiles:', mergeError);
       }
 
-      if (existingPlayer) {
-        console.log('Found existing Telegram player:', existingPlayer.name, 'ID:', existingPlayer.id);
-        
-        // Обновляем данные игрока и ПРИВЯЗЫВАЕМ к Supabase пользователю
-        const playerName = authData.username || fullName || existingPlayer.name;
-        
-        const { data: updatedPlayer, error: updateError } = await supabase
+      // Если функция вернула ID, получаем объединенного игрока
+      if (mergedPlayerId) {
+        const { data: existingPlayer } = await supabase
           .from('players')
-          .update({
-            name: playerName,
-            user_id: existingUser.user?.id, // ВАЖНО: привязываем к Supabase пользователю
-            email: telegramEmail,
-            avatar_url: authData.photo_url || existingPlayer.avatar_url,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', existingPlayer.id)
-          .select()
+          .select('*')
+          .eq('id', mergedPlayerId)
           .single();
-
-        if (updateError) {
-          console.error('Error updating player:', updateError);
-          player = existingPlayer; // Используем старые данные
-        } else {
-          player = updatedPlayer;
-          console.log('Successfully updated and linked player to Supabase user:', player.name);
-        }
-      } else {
-        console.log('No existing Telegram player found, creating new one');
         
-        // Создаем нового игрока (это происходит только при первой регистрации)
-        const playerName = authData.username || fullName || `Player_${telegramId}`;
-        
-        const { data: newPlayer, error: createError } = await supabase
-          .from('players')
-          .insert({
-            name: playerName,
-            telegram: telegramId,
-            user_id: existingUser.user?.id, // Сразу привязываем к Supabase пользователю
-            email: telegramEmail,
-            elo_rating: 100,
-            games_played: 0,
-            wins: 0,
-            avatar_url: authData.photo_url
-          })
-          .select()
-          .single();
-
-        if (createError) {
-          console.error('Error creating player:', createError);
-          throw createError;
-        } else {
-          player = newPlayer;
-          console.log('Successfully created new player:', player.name);
-        }
+        player = existingPlayer;
       }
     } catch (error) {
-      console.error('Error in Telegram auth process:', error);
-      throw error;
+      console.error('Error in merge process:', error);
     }
 
-    console.log('=== TELEGRAM AUTH COMPLETE ===');
-    console.log('Final player:', { id: player?.id, name: player?.name, user_id: player?.user_id });
+    // Если объединение не удалось или игрока нет, создаем нового
+    if (!player) {
+      const playerName = authData.username || fullName || `Player_${telegramId}`;
+      
+      const { data: newPlayer, error: createPlayerError } = await supabase
+        .from('players')
+        .insert({
+          name: playerName,
+          telegram: telegramId,
+          user_id: existingUser.user?.id,
+          email: telegramEmail,
+          elo_rating: 100,
+          games_played: 0,
+          wins: 0,
+          avatar_url: authData.photo_url
+        })
+        .select()
+        .single();
+
+      if (createPlayerError) {
+        console.error('Error creating player:', createPlayerError);
+      } else {
+        player = newPlayer;
+      }
+    }
 
     console.log('Successfully authenticated Telegram user:', authData.id);
 

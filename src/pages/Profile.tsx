@@ -80,24 +80,24 @@ export default function Profile() {
   }, [player?.id]);
 
   const loadPlayerData = async () => {
-    if (!user?.id) return;
+    if (!user?.email) return;
 
     try {
-      // Сначала ищем игрока по user_id (основной способ)
       const { data, error } = await supabase
         .from('players')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('email', user.email)
         .single();
 
       if (error && error.code === 'PGRST116') {
         // Player doesn't exist, create one
         const playerName = userProfile?.full_name || user.email?.split('@')[0] || 'Player';
+        const uniqueName = `${playerName}_${Date.now()}`; // Make name unique
         
         const { data: newPlayer, error: createError } = await supabase
           .from('players')
           .insert([{ 
-            name: playerName,
+            name: uniqueName,
             email: user.email,
             elo_rating: 100,
             user_id: user.id,
