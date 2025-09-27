@@ -226,7 +226,7 @@ export const TelegramApp = () => {
           .insert({
             name: playerName,
             telegram: telegramId,
-            elo_rating: 1000,
+            elo_rating: 100,
             games_played: 0,
             wins: 0,
             avatar_url: telegramUser.photoUrl

@@ -584,7 +584,7 @@ export default function RatingSystemIntegrationTest() {
       const scenarios = [
         { name: 'Победа новичка', position: 1, rebuys: 0, addons: 0, startRating: 1000 },
         { name: 'Выбывание эксперта', position: 8, rebuys: 2, addons: 1, startRating: 2000 },
-        { name: 'Средний результат', position: 4, rebuys: 1, addons: 0, startRating: 1500 }
+        { name: 'Средний результат', position: 4, rebuys: 1, addons: 0, startRating: 100 }
       ];
 
       const calculations = scenarios.map(scenario => {
