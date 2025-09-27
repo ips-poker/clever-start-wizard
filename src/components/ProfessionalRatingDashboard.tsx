@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useAdvancedRatingSystem } from '@/hooks/useAdvancedRatingSystem';
 import { useRatingSystemConfig } from '@/hooks/useRatingSystemConfig';
 import { validateRatingConfig, getConfigurationHealthScore, suggestConfigImprovements } from '@/utils/ratingValidation';

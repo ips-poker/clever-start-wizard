@@ -253,28 +253,32 @@ export function Gallery() {
         {/* Lightbox Modal */}
         {selectedImage && (
           <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4" onClick={() => setSelectedImage(null)}>
-            <div className="relative max-w-5xl max-h-[90vh] w-full">
-              {/* Close Button */}
-              <Button
-                variant="secondary"
-                size="sm"
-                className="absolute top-4 right-4 z-10"
-                onClick={() => setSelectedImage(null)}
-              >
-                <X className="w-4 h-4" />
-              </Button>
-              
-              {/* Large Image */}
-              <img
-                src={selectedImage.image_url}
-                alt={selectedImage.alt_text || selectedImage.title}
-                className="w-full h-full object-contain rounded-lg"
-              />
-              
-              {/* Image Info */}
-              <div className="absolute bottom-0 left-0 right-0 bg-black/80 text-white p-6 rounded-b-lg">
-                <h3 className="text-2xl font-bold mb-2">{selectedImage.title}</h3>
-                <p className="text-white/80">{selectedImage.description}</p>
+            <div className="relative max-w-7xl max-h-full">
+              <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
+                <div className="relative max-w-5xl max-h-[90vh] w-full">
+                  {/* Close Button */}
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className="absolute top-4 right-4 z-10"
+                    onClick={() => setSelectedImage(null)}
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
+                  
+                  {/* Large Image */}
+                  <img
+                    src={selectedImage.image_url}
+                    alt={selectedImage.alt_text || selectedImage.title}
+                    className="w-full h-full object-contain rounded-lg"
+                  />
+                  
+                  {/* Image Info */}
+                  <div className="absolute bottom-0 left-0 right-0 bg-black/80 text-white p-6 rounded-b-lg">
+                    <h3 className="text-2xl font-bold mb-2">{selectedImage.title}</h3>
+                    <p className="text-white/80">{selectedImage.description}</p>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

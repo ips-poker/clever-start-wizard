@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useRatingProfiles } from '@/hooks/useRatingProfiles';
 import { RatingProfile, RatingSystemConfig } from '@/hooks/useRatingSystemConfig';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
