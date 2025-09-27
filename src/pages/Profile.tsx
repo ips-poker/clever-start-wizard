@@ -80,42 +80,24 @@ export default function Profile() {
   }, [player?.id]);
 
   const loadPlayerData = async () => {
-    if (!user) return;
+    if (!user?.email) return;
 
     try {
-      // Сначала ищем игрока по user_id, затем по email
-      let data, error;
-      
-      // Попытка найти по user_id
-      const userIdResult = await supabase
+      const { data, error } = await supabase
         .from('players')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('email', user.email)
         .single();
-
-      if (userIdResult.error && userIdResult.error.code === 'PGRST116') {
-        // Если не найден по user_id, ищем по email
-        const emailResult = await supabase
-          .from('players')
-          .select('*')
-          .eq('email', user.email)
-          .single();
-        
-        data = emailResult.data;
-        error = emailResult.error;
-      } else {
-        data = userIdResult.data;
-        error = userIdResult.error;
-      }
 
       if (error && error.code === 'PGRST116') {
         // Player doesn't exist, create one
         const playerName = userProfile?.full_name || user.email?.split('@')[0] || 'Player';
+        const uniqueName = `${playerName}_${Date.now()}`; // Make name unique
         
         const { data: newPlayer, error: createError } = await supabase
           .from('players')
           .insert([{ 
-            name: playerName,
+            name: uniqueName,
             email: user.email,
             elo_rating: 100,
             user_id: user.id,
@@ -351,7 +333,7 @@ export default function Profile() {
                     {getRankTitle(player?.elo_rating || 100)}
                   </Badge>
                 </div>
-                <p className="text-muted-foreground text-center">{userProfile?.full_name || player?.name}</p>
+                <p className="text-muted-foreground text-center">{user?.email}</p>
                 
                 {/* Quick Stats */}
                 <div className="flex items-center justify-center gap-6 mt-4 pt-4 border-t border-primary/10">

@@ -165,8 +165,7 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate }: Tele
           telegram: telegramId,
           elo_rating: 1000,
           games_played: 0,
-          wins: 0,
-          avatar_url: telegramUser.photoUrl
+          wins: 0
           // user_id не устанавливается для телеграм пользователей
         })
         .select()
