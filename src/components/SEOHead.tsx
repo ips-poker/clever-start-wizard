@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { useCMSContent } from '@/hooks/useCMSContent';
 import { useSEOData } from '@/hooks/useSEOData';
 

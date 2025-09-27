@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useRatingProfiles } from '@/hooks/useRatingProfiles';
 import { useRatingSystemIntegration } from '@/hooks/useRatingSystemIntegration';
 import { validateRatingConfig, getConfigurationHealthScore, suggestConfigImprovements } from '@/utils/ratingValidation';
