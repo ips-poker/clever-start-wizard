@@ -191,6 +191,12 @@ Deno.serve(async (req) => {
     let player = null;
     
     try {
+      console.log('Attempting to merge player profiles for:', {
+        telegram_user_id: telegramId,
+        telegram_email: telegramEmail,
+        supabase_user_id: existingUser.user?.id
+      });
+
       // Пытаемся объединить существующих игроков
       const { data: mergedPlayerId, error: mergeError } = await supabase
         .rpc('merge_player_profiles', {
@@ -201,17 +207,24 @@ Deno.serve(async (req) => {
 
       if (mergeError) {
         console.error('Error merging player profiles:', mergeError);
+      } else {
+        console.log('Merge function returned player ID:', mergedPlayerId);
       }
 
       // Если функция вернула ID, получаем объединенного игрока
       if (mergedPlayerId) {
-        const { data: existingPlayer } = await supabase
+        const { data: existingPlayer, error: fetchError } = await supabase
           .from('players')
           .select('*')
           .eq('id', mergedPlayerId)
           .single();
         
-        player = existingPlayer;
+        if (fetchError) {
+          console.error('Error fetching merged player:', fetchError);
+        } else {
+          player = existingPlayer;
+          console.log('Successfully fetched merged player:', player.name);
+        }
       }
     } catch (error) {
       console.error('Error in merge process:', error);
@@ -219,27 +232,75 @@ Deno.serve(async (req) => {
 
     // Если объединение не удалось или игрока нет, создаем нового
     if (!player) {
+      console.log('No merged player found, attempting to create new player');
+      
       const playerName = authData.username || fullName || `Player_${telegramId}`;
       
-      const { data: newPlayer, error: createPlayerError } = await supabase
+      // Проверяем, может ли пользователь уже существовать
+      const { data: existingPlayerByEmail } = await supabase
         .from('players')
-        .insert({
-          name: playerName,
-          telegram: telegramId,
-          user_id: existingUser.user?.id,
-          email: telegramEmail,
-          elo_rating: 100,
-          games_played: 0,
-          wins: 0,
-          avatar_url: authData.photo_url
-        })
-        .select()
-        .single();
+        .select('*')
+        .eq('email', telegramEmail)
+        .maybeSingle();
 
-      if (createPlayerError) {
-        console.error('Error creating player:', createPlayerError);
+      if (existingPlayerByEmail) {
+        console.log('Found existing player by email, updating with user_id and telegram');
+        
+        // Обновляем существующего игрока
+        const { data: updatedPlayer, error: updateError } = await supabase
+          .from('players')
+          .update({
+            user_id: existingUser.user?.id,
+            telegram: telegramId,
+            avatar_url: authData.photo_url || existingPlayerByEmail.avatar_url,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', existingPlayerByEmail.id)
+          .select()
+          .single();
+
+        if (updateError) {
+          console.error('Error updating existing player:', updateError);
+        } else {
+          player = updatedPlayer;
+          console.log('Successfully updated existing player:', player.name);
+        }
       } else {
-        player = newPlayer;
+        // Создаем нового игрока только если его действительно нет
+        const { data: newPlayer, error: createPlayerError } = await supabase
+          .from('players')
+          .insert({
+            name: playerName,
+            telegram: telegramId,
+            user_id: existingUser.user?.id,
+            email: telegramEmail,
+            elo_rating: 100,
+            games_played: 0,
+            wins: 0,
+            avatar_url: authData.photo_url
+          })
+          .select()
+          .single();
+
+        if (createPlayerError) {
+          console.error('Error creating player:', createPlayerError);
+          
+          // Возможно игрок уже существует, попробуем найти его
+          const { data: fallbackPlayer } = await supabase
+            .from('players')
+            .select('*')
+            .or(`telegram.eq.${telegramId},email.eq.${telegramEmail}`)
+            .limit(1)
+            .maybeSingle();
+            
+          if (fallbackPlayer) {
+            console.log('Found fallback player:', fallbackPlayer.name);
+            player = fallbackPlayer;
+          }
+        } else {
+          player = newPlayer;
+          console.log('Successfully created new player:', player.name);
+        }
       }
     }
 
