@@ -99,12 +99,28 @@ Deno.serve(async (req) => {
       // Обрабатываем авторизацию через веб
       if (callbackData && callbackData.startsWith('web_auth_')) {
         try {
-          // Формируем данные пользователя для авторизации
+          // Получаем полные данные пользователя через Telegram API
+          const getUserResponse = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getChat`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ chat_id: userId })
+          });
+          
+          let fullUserData = null;
+          if (getUserResponse.ok) {
+            const chatData = await getUserResponse.json();
+            fullUserData = chatData.result;
+          }
+
+          // Формируем данные пользователя для авторизации с полной информацией
           const telegramAuthData = {
             id: userId,
             first_name: callbackQuery.from.first_name,
-            last_name: callbackQuery.from.last_name,
+            last_name: callbackQuery.from.last_name || '',  // Обеспечиваем пустую строку вместо undefined
             username: callbackQuery.from.username,
+            photo_url: fullUserData?.photo?.big_file_id ? 
+              `https://api.telegram.org/file/bot${TELEGRAM_BOT_TOKEN}/${fullUserData.photo.big_file_id}` : 
+              undefined,
             auth_date: Math.floor(Date.now() / 1000),
             hash: 'telegram_bot_auth' // Упрощенная хеш для бота
           };
