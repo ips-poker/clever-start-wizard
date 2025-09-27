@@ -191,11 +191,20 @@ Deno.serve(async (req) => {
     let player = null;
     
     try {
+      console.log('=== MERGE PROCESS START ===');
       console.log('Attempting to merge player profiles for:', {
         telegram_user_id: telegramId,
         telegram_email: telegramEmail,
         supabase_user_id: existingUser.user?.id
       });
+
+      // Проверяем что уже существует в базе
+      const { data: existingPlayers, error: checkError } = await supabase
+        .from('players')
+        .select('id, name, telegram, user_id, email')
+        .or(`telegram.eq.${telegramId},user_id.eq.${existingUser.user?.id},email.eq.${telegramEmail}`);
+        
+      console.log('Found existing players before merge:', existingPlayers);
 
       // Пытаемся объединить существующих игроков
       const { data: mergedPlayerId, error: mergeError } = await supabase
@@ -210,6 +219,14 @@ Deno.serve(async (req) => {
       } else {
         console.log('Merge function returned player ID:', mergedPlayerId);
       }
+
+      // Проверяем что получилось после объединения
+      const { data: playersAfterMerge, error: checkAfterError } = await supabase
+        .from('players')
+        .select('id, name, telegram, user_id, email')
+        .or(`telegram.eq.${telegramId},user_id.eq.${existingUser.user?.id},email.eq.${telegramEmail}`);
+        
+      console.log('Players after merge attempt:', playersAfterMerge);
 
       // Если функция вернула ID, получаем объединенного игрока
       if (mergedPlayerId) {
@@ -303,6 +320,9 @@ Deno.serve(async (req) => {
         }
       }
     }
+
+    console.log('=== MERGE PROCESS END ===');
+    console.log('Final player result:', player);
 
     console.log('Successfully authenticated Telegram user:', authData.id);
 
