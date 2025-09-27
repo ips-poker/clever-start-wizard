@@ -193,8 +193,9 @@ Deno.serve(async (req) => {
     try {
       console.log('=== TELEGRAM AUTH PROCESS ===');
       console.log('Looking for player with Telegram ID:', telegramId);
+      console.log('Supabase user ID:', existingUser.user?.id);
 
-      // Ищем игрока ТОЛЬКО по Telegram ID
+      // ПРИОРИТЕТ 1: Ищем игрока ТОЛЬКО по Telegram ID (основной идентификатор)
       const { data: existingPlayer, error: playerError } = await supabase
         .from('players')
         .select('*')
@@ -207,17 +208,17 @@ Deno.serve(async (req) => {
       }
 
       if (existingPlayer) {
-        console.log('Found existing Telegram player:', existingPlayer.name);
+        console.log('Found existing Telegram player:', existingPlayer.name, 'ID:', existingPlayer.id);
         
-        // Обновляем данные игрока (имя, фото могли измениться)
+        // Обновляем данные игрока и ПРИВЯЗЫВАЕМ к Supabase пользователю
         const playerName = authData.username || fullName || existingPlayer.name;
         
         const { data: updatedPlayer, error: updateError } = await supabase
           .from('players')
           .update({
             name: playerName,
-            user_id: existingUser.user?.id, // Привязываем к Supabase пользователю
-            email: telegramEmail, // Обновляем email
+            user_id: existingUser.user?.id, // ВАЖНО: привязываем к Supabase пользователю
+            email: telegramEmail,
             avatar_url: authData.photo_url || existingPlayer.avatar_url,
             updated_at: new Date().toISOString()
           })
@@ -230,12 +231,12 @@ Deno.serve(async (req) => {
           player = existingPlayer; // Используем старые данные
         } else {
           player = updatedPlayer;
-          console.log('Successfully updated player:', player.name);
+          console.log('Successfully updated and linked player to Supabase user:', player.name);
         }
       } else {
         console.log('No existing Telegram player found, creating new one');
         
-        // Создаем нового игрока
+        // Создаем нового игрока (это происходит только при первой регистрации)
         const playerName = authData.username || fullName || `Player_${telegramId}`;
         
         const { data: newPlayer, error: createError } = await supabase
@@ -243,7 +244,7 @@ Deno.serve(async (req) => {
           .insert({
             name: playerName,
             telegram: telegramId,
-            user_id: existingUser.user?.id,
+            user_id: existingUser.user?.id, // Сразу привязываем к Supabase пользователю
             email: telegramEmail,
             elo_rating: 100,
             games_played: 0,
@@ -258,7 +259,7 @@ Deno.serve(async (req) => {
           throw createError;
         } else {
           player = newPlayer;
-          console.log('Successfully created player:', player.name);
+          console.log('Successfully created new player:', player.name);
         }
       }
     } catch (error) {
@@ -267,7 +268,7 @@ Deno.serve(async (req) => {
     }
 
     console.log('=== TELEGRAM AUTH COMPLETE ===');
-    console.log('Final player:', player);
+    console.log('Final player:', { id: player?.id, name: player?.name, user_id: player?.user_id });
 
     console.log('Successfully authenticated Telegram user:', authData.id);
 
