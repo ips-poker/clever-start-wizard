@@ -137,6 +137,24 @@ Deno.serve(async (req) => {
       }
 
       existingUser = { user: newUser.user };
+      
+      // Создаем профиль для нового пользователя с данными из Telegram
+      const displayName = authData.username || fullName || `User_${authData.id}`;
+      
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .insert({
+          user_id: newUser.user.id,
+          email: telegramEmail,
+          full_name: displayName,
+          avatar_url: authData.photo_url
+        });
+
+      if (profileError) {
+        console.error('Error creating profile:', profileError);
+      } else {
+        console.log('Successfully created profile with Telegram data');
+      }
     } else {
       // Обновляем метаданные существующего пользователя
       const { error: updateError } = await supabase.auth.admin.updateUserById(
@@ -157,7 +175,29 @@ Deno.serve(async (req) => {
 
       if (updateError) {
         console.error('Error updating user metadata:', updateError);
+      } else {
+        console.log('Successfully updated Supabase user metadata');
       }
+    }
+
+    // Обновляем/создаем профиль пользователя с данными из Telegram
+    const displayName = authData.username || fullName || `User_${authData.id}`;
+    
+    const { error: profileError } = await supabase
+      .from('profiles')
+      .upsert({
+        user_id: existingUser.user.id,
+        email: telegramEmail,
+        full_name: displayName,
+        avatar_url: authData.photo_url
+      }, {
+        onConflict: 'user_id'
+      });
+
+    if (profileError) {
+      console.error('Error updating profile:', profileError);
+    } else {
+      console.log('Successfully updated profile with Telegram data');
     }
 
     // Создаем сессию для пользователя
