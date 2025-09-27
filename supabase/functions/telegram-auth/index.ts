@@ -138,7 +138,7 @@ Deno.serve(async (req) => {
 
       existingUser = { user: newUser.user };
     } else {
-      // Обновляем метаданные существующего пользователя
+      // Обновляем метаданные существующего пользователя с правильными данными из Telegram
       const { error: updateError } = await supabase.auth.admin.updateUserById(
         existingUser.user.id,
         {
@@ -157,6 +157,24 @@ Deno.serve(async (req) => {
 
       if (updateError) {
         console.error('Error updating user metadata:', updateError);
+      } else {
+        console.log('Successfully updated Supabase user metadata');
+      }
+      
+      // Также обновляем profiles таблицу с правильными данными
+      const { error: profileUpdateError } = await supabase
+        .from('profiles')
+        .update({
+          full_name: fullName,
+          avatar_url: authData.photo_url,
+          updated_at: new Date().toISOString()
+        })
+        .eq('user_id', existingUser.user.id);
+
+      if (profileUpdateError) {
+        console.error('Error updating profile:', profileUpdateError);
+      } else {
+        console.log('Successfully updated profile with Telegram data');
       }
     }
 
