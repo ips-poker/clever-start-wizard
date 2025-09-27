@@ -241,7 +241,7 @@ export default function RatingSystemAdvancedSettingsTooltips() {
     scenarios.forEach(scenario => {
       scenario.totalPoints = scenario.basePoints + scenario.bonusPoints;
       scenario.ratingChange = scenario.totalPoints;
-      scenario.newRating = 100 + scenario.ratingChange; // Assuming 100 current rating
+      scenario.newRating = 1500 + scenario.ratingChange; // Assuming 1500 current rating
     });
 
     setCalculationPreviews(scenarios);

@@ -98,7 +98,7 @@ export function useAdvancedRatingSystem() {
         if (result.tournaments?.tournament_registrations) {
           const opponents = result.tournaments.tournament_registrations
             .filter(reg => reg.player_id !== playerId)
-            .map(reg => reg.players?.elo_rating || 100);
+            .map(reg => reg.players?.elo_rating || 1500);
           
           if (opponents.length > 0) {
             const avgOpponentRating = opponents.reduce((sum, rating) => sum + rating, 0) / opponents.length;
@@ -242,7 +242,7 @@ export function useAdvancedRatingSystem() {
     
     if (!history || !ratingSystem) {
       return {
-        predictedRating: 100,
+        predictedRating: 1500,
         confidence: 0.3,
         factors: ['Недостаточно данных для прогноза'],
         riskLevel: 'high'
@@ -256,7 +256,7 @@ export function useAdvancedRatingSystem() {
       .eq('id', playerId)
       .single();
 
-    const currentRating = player?.elo_rating || 100;
+    const currentRating = player?.elo_rating || 1500;
 
     // Симулируем результат
     const simulatedParams: AdvancedRatingParams = {
@@ -351,7 +351,7 @@ export function useAdvancedRatingSystem() {
             playerId: reg.player_id,
             position: reg.final_position || reg.position || registrations.length,
             totalPlayers: tournament?.max_players || registrations.length,
-            currentRating: reg.players?.elo_rating || 100,
+            currentRating: reg.players?.elo_rating || 1500,
             rebuys: reg.rebuys || 0,
             addons: reg.addons || 0,
             prizeAmount,
@@ -363,7 +363,7 @@ export function useAdvancedRatingSystem() {
 
           return {
             player_id: reg.player_id,
-            old_rating: reg.players?.elo_rating || 100,
+            old_rating: reg.players?.elo_rating || 1500,
             new_rating: result.newRating,
             rating_change: result.ratingChange,
             confidence: result.confidenceLevel

@@ -164,10 +164,10 @@ export default function IntegratedTournamentRatingSettings({
     if (!selectedTournament || !activeProfile) return;
 
     const scenarios = [
-      { name: 'Победа (1 место)', position: 1, rebuys: 0, startRating: 100 },
-      { name: 'Призовое место (3)', position: 3, rebuys: 1, startRating: 100 },
-      { name: 'Средний результат (10)', position: 10, rebuys: 0, startRating: 100 },
-      { name: 'Раннее выбывание', position: registeredPlayers - 2, rebuys: 2, startRating: 100 }
+      { name: 'Победа (1 место)', position: 1, rebuys: 0, startRating: 1500 },
+      { name: 'Призовое место (3)', position: 3, rebuys: 1, startRating: 1500 },
+      { name: 'Средний результат (10)', position: 10, rebuys: 0, startRating: 1500 },
+      { name: 'Раннее выбывание', position: registeredPlayers - 2, rebuys: 2, startRating: 1500 }
     ];
 
     const impacts = scenarios.map(scenario => {

@@ -152,7 +152,7 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate }: Tele
       console.log('Creating new player with data:', {
         name: playerName,
         telegram: telegramId,
-        elo_rating: 100,
+        elo_rating: 1000,
         games_played: 0,
         wins: 0
       });
@@ -163,7 +163,7 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate }: Tele
         .insert({
           name: playerName,
           telegram: telegramId,
-          elo_rating: 100,
+          elo_rating: 1000,
           games_played: 0,
           wins: 0,
           avatar_url: telegramUser.photoUrl
