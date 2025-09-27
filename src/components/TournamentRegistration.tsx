@@ -129,16 +129,12 @@ export function TournamentRegistration() {
 
     setLoading(true);
     try {
-      // Получаем текущего пользователя
-      const { data: { user } } = await supabase.auth.getUser();
-      
       const { data, error } = await supabase
         .from('players')
         .insert([{
           name: newPlayerName.trim(),
           email: newPlayerEmail.trim(),
-          elo_rating: 100,
-          user_id: user?.id // Привязываем к текущему пользователю
+          elo_rating: 100
         }])
         .select()
         .single();

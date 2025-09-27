@@ -10,7 +10,6 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
-import { TelegramLoginWidget } from "@/components/auth/TelegramLoginWidget";
 import { Eye, EyeOff, LogIn, UserPlus, Spade, AlertCircle } from "lucide-react";
 
 export default function Auth() {
@@ -297,17 +296,6 @@ export default function Auth() {
                 </form>
               </TabsContent>
             </Tabs>
-
-            {/* Telegram Login Widget */}
-            <TelegramLoginWidget 
-              disabled={loading}
-              onSuccess={() => {
-                toast({
-                  title: "Вход выполнен",
-                  description: "Добро пожаловать в систему!",
-                });
-              }}
-            />
 
             <div className="mt-6 text-center">
               <Link 
