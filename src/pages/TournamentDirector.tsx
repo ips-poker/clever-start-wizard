@@ -1,442 +1,1355 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
+import { Badge } from "@/components/ui/badge";
+import { SidebarProvider } from "@/components/ui/sidebar";
+import { TournamentDirectorSidebar } from '@/components/TournamentDirectorSidebar';
 import { 
   Trophy, 
   Users, 
+  Settings, 
+  BarChart3, 
+  TrendingUp, 
+  Target, 
+  CheckCircle, 
+  RefreshCw,
+  Plus,
+  Edit,
+  Trash2,
   Play,
   Pause,
   Square,
   Timer,
-  Plus,
-  RefreshCw,
-  Settings,
-  BarChart3
+  AlertTriangle,
+  Mic,
+  Volume2
 } from "lucide-react";
-import { AuthGuard } from "@/components/auth/AuthGuard";
 
+import { AuthGuard } from "@/components/auth/AuthGuard";
+import { TournamentCreationModal } from "@/components/TournamentCreationModal";
+import { VoiceControl } from "@/components/VoiceControl";
+import { TournamentDirectorMobileMenu } from "@/components/TournamentDirectorMobileMenu";
+import TournamentOverview from "@/components/TournamentOverview";
+import PlayerManagement from "@/components/PlayerManagement";
+import BlindStructure from "@/components/BlindStructure";
+import PrizeStructureManager from "@/components/PrizeStructureManager";
+import ManualAdjustments from "@/components/ManualAdjustments";
+import RatingManagement from "@/components/RatingManagement";
+import TournamentResults from "@/components/TournamentResults";
+import TournamentSyncManager from "@/components/TournamentSyncManager";
+import RatingSystemTest from "@/components/RatingSystemTest";
+import TournamentAnalysisAndRating from "@/components/TournamentAnalysisAndRating";
+import RatingSystemAdvancedSettingsTooltips from "@/components/RatingSystemAdvancedSettingsTooltips";
+import ProfessionalRatingSettings from '@/components/ProfessionalRatingSettings';
+import OfflinePokerRatingAnalyzer from '@/components/OfflinePokerRatingAnalyzer';
+import OfflinePokerProfileManager from '@/components/OfflinePokerProfileManager';
+import IntegratedTournamentRatingSettings from '@/components/IntegratedTournamentRatingSettings';
+import { useVoiceAnnouncements } from "@/hooks/useVoiceAnnouncements";
+
+// Используем типы из базы данных
 type Tournament = {
   id: string;
   name: string;
-  description?: string;
+  description: string | null;
+  status: string;
   buy_in: number;
   max_players: number;
-  start_time: string;
-  status: string;
-  current_level?: number;
-  timer_remaining?: number;
+  current_level: number;
+  current_small_blind: number;
+  current_big_blind: number;
+  timer_duration: number | null;
+  timer_remaining: number | null;
+  rebuy_cost: number | null;
+  addon_cost: number | null;
+  rebuy_chips: number | null;
+  addon_chips: number | null;
   starting_chips: number;
+  tournament_format: string | null;
+  addon_level: number | null;
+  break_start_level: number | null;
+  rebuy_end_level: number | null;
+  start_time: string;
   created_at: string;
+  finished_at: string | null;
+  is_published: boolean | null;
+  is_archived: boolean | null;
   updated_at: string;
-  [key: string]: any;
 };
+
+interface Player {
+  id: string;
+  name: string;
+  email: string;
+  elo_rating: number;
+  games_played: number;
+  wins: number;
+}
+
+interface Registration {
+  id: string;
+  player: Player;
+  seat_number: number;
+  chips: number;
+  status: string;
+  rebuys: number;
+  addons: number;
+  position?: number;
+}
 
 const TournamentDirector = () => {
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
   const [selectedTournament, setSelectedTournament] = useState<Tournament | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState("overview");
+  const [players, setPlayers] = useState<Player[]>([]);
+  const [registrations, setRegistrations] = useState<Registration[]>([]);
+  const [activeTab, setActiveTab] = useState('overview');
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingTournament, setEditingTournament] = useState<Tournament | null>(null);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [timerActive, setTimerActive] = useState(false);
   const { toast } = useToast();
+  const navigate = useNavigate();
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const [lastAnnouncedTime, setLastAnnouncedTime] = useState<number | null>(null);
+  const [blindLevelsCache, setBlindLevelsCache] = useState<any[]>([]);
+  // Инициализация голосовых объявлений
+  const voiceAnnouncements = useVoiceAnnouncements();
 
-  const fetchTournaments = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('tournaments')
-        .select('*')
-        .order('start_time', { ascending: false });
-
-      if (error) {
-        console.error('Error fetching tournaments:', error);
-        toast({
-          title: "Ошибка",
-          description: "Не удалось загрузить турниры",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      setTournaments(data as Tournament[] || []);
-      
-      if (!selectedTournament && data && data.length > 0) {
-        const activeTournament = data.find(t => t.status === 'running' || t.status === 'registration');
-        setSelectedTournament(activeTournament as Tournament || data[0] as Tournament);
-      }
-    } catch (error) {
-      console.error('Error in fetchTournaments:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  // Load data on component mount
   useEffect(() => {
-    fetchTournaments();
+    loadTournaments();
+    loadPlayers();
   }, []);
 
-  const startTournament = async () => {
-    if (!selectedTournament) return;
-
-    try {
-      const { error } = await supabase
-        .from('tournaments')
-        .update({ 
-          status: 'running',
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', selectedTournament.id);
-
-      if (error) {
-        console.error('Error starting tournament:', error);
-        return;
+  // Auto-select tournament logic
+  useEffect(() => {
+    if (tournaments.length > 0 && !selectedTournament) {
+      const savedTournamentId = localStorage.getItem('selectedTournamentId');
+      
+      let tournamentToSelect = null;
+      
+      if (savedTournamentId) {
+        tournamentToSelect = tournaments.find(t => t.id === savedTournamentId);
       }
-
-      setSelectedTournament(prev => prev ? { ...prev, status: 'running' } : null);
-      toast({
-        title: "Турнир запущен",
-        description: "Турнир успешно запущен"
-      });
-    } catch (error) {
-      console.error('Error in startTournament:', error);
-    }
-  };
-
-  const pauseTournament = async () => {
-    if (!selectedTournament) return;
-
-    try {
-      const { error } = await supabase
-        .from('tournaments')
-        .update({ 
-          status: 'paused',
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', selectedTournament.id);
-
-      if (error) {
-        console.error('Error pausing tournament:', error);
-        return;
+      
+      if (!tournamentToSelect) {
+        tournamentToSelect = tournaments.find(t => t.status === 'running') || tournaments[0];
       }
-
-      setSelectedTournament(prev => prev ? { ...prev, status: 'paused' } : null);
-      toast({
-        title: "Турнир приостановлен",
-        description: "Турнир поставлен на паузу"
-      });
-    } catch (error) {
-      console.error('Error in pauseTournament:', error);
-    }
-  };
-
-  const completeTournament = async () => {
-    if (!selectedTournament) return;
-
-    try {
-      const { error } = await supabase
-        .from('tournaments')
-        .update({ 
-          status: 'completed',
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', selectedTournament.id);
-
-      if (error) {
-        console.error('Error completing tournament:', error);
-        return;
+      
+      if (tournamentToSelect) {
+        setSelectedTournament(tournamentToSelect);
+        localStorage.setItem('selectedTournamentId', tournamentToSelect.id);
       }
-
-      setSelectedTournament(prev => prev ? { ...prev, status: 'completed' } : null);
-      toast({
-        title: "Турнир завершен",
-        description: "Турнир успешно завершен"
-      });
-    } catch (error) {
-      console.error('Error in completeTournament:', error);
     }
-  };
+  }, [tournaments, selectedTournament]);
 
-  const renderTournamentOverview = () => {
-    if (!selectedTournament) {
-      return (
-        <div className="flex items-center justify-center h-64">
-          <div className="text-center">
-            <Trophy className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-semibold mb-2">Выберите турнир</h3>
-            <p className="text-muted-foreground">Выберите турнир из списка для управления</p>
-          </div>
-        </div>
-      );
+  // Load registrations when tournament changes
+  useEffect(() => {
+    if (selectedTournament) {
+      loadRegistrations(selectedTournament.id);
+      
+      // Восстановить состояние таймера из localStorage
+      const savedTimerState = localStorage.getItem(`timer_${selectedTournament.id}`);
+      if (savedTimerState) {
+        const { currentTime: savedTime, timerActive: savedActive, lastUpdate } = JSON.parse(savedTimerState);
+        const timePassed = Math.floor((Date.now() - lastUpdate) / 1000);
+        
+        if (savedActive && savedTime > timePassed) {
+          setCurrentTime(savedTime - timePassed);
+          setTimerActive(true);
+        } else {
+          setCurrentTime(savedTime);
+          setTimerActive(false);
+        }
+      } else {
+        setCurrentTime(selectedTournament.timer_remaining || selectedTournament.timer_duration || 1200);
+        setTimerActive(false);
+      }
+      
+      localStorage.setItem('selectedTournamentId', selectedTournament.id);
     }
+  }, [selectedTournament]);
 
-    return (
-      <div className="p-6 space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Статус</CardTitle>
-              <Trophy className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                <Badge variant={
-                  selectedTournament.status === 'running' ? 'default' :
-                  selectedTournament.status === 'paused' ? 'secondary' :
-                  selectedTournament.status === 'completed' ? 'outline' : 'destructive'
-                }>
-                  {selectedTournament.status === 'running' && 'Идет'}
-                  {selectedTournament.status === 'paused' && 'Пауза'}
-                  {selectedTournament.status === 'completed' && 'Завершен'}
-                  {selectedTournament.status === 'registration' && 'Регистрация'}
-                  {selectedTournament.status === 'scheduled' && 'Запланирован'}
-                </Badge>
-              </div>
-            </CardContent>
-          </Card>
+  // Кэшируем структуру блайндов для мгновенного переключения уровней
+  useEffect(() => {
+    const load = async () => {
+      if (!selectedTournament?.id) return;
+      const { data } = await supabase
+        .from('blind_levels')
+        .select('*')
+        .eq('tournament_id', selectedTournament.id)
+        .order('level', { ascending: true });
+      setBlindLevelsCache(data || []);
+    };
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Бай-ин</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{selectedTournament.buy_in}₽</div>
-            </CardContent>
-          </Card>
+    load();
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Макс. игроков</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{selectedTournament.max_players}</div>
-            </CardContent>
-          </Card>
-        </div>
+    if (!selectedTournament?.id) return;
+    const channel = supabase
+      .channel(`td_blinds_cache_${selectedTournament.id}`)
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'blind_levels',
+        filter: `tournament_id=eq.${selectedTournament.id}`
+      }, () => {
+        load();
+      })
+      .subscribe();
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Информация о турнире</CardTitle>
-            <CardDescription>Основные детали турнира</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <h3 className="font-semibold">{selectedTournament.name}</h3>
-              {selectedTournament.description && (
-                <p className="text-muted-foreground">{selectedTournament.description}</p>
-              )}
-            </div>
+    return () => { supabase.removeChannel(channel); };
+  }, [selectedTournament?.id]);
+
+  // Timer effect with voice announcements
+  useEffect(() => {
+    if (timerActive && currentTime > 0) {
+      timerRef.current = setInterval(() => {
+        setCurrentTime(prev => {
+          const newTime = prev - 1;
+          if (newTime <= 0) {
+            setTimerActive(false);
+            // Сохранить завершенное состояние
+            if (selectedTournament) {
+              localStorage.setItem(`timer_${selectedTournament.id}`, JSON.stringify({
+                currentTime: 0,
+                timerActive: false,
+                lastUpdate: Date.now()
+              }));
+              updateTimerInDatabase(0);
+            }
             
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div>
-                <span className="font-medium">Время начала:</span>
-                <p>{new Date(selectedTournament.start_time).toLocaleString('ru-RU')}</p>
-              </div>
-              <div>
-                <span className="font-medium">Стартовые фишки:</span>
-                <p>{selectedTournament.starting_chips.toLocaleString()}</p>
-              </div>
-              <div>
-                <span className="font-medium">Текущий уровень:</span>
-                <p>{selectedTournament.current_level || 1}</p>
-              </div>
-              <div>
-                <span className="font-medium">Время на уровне:</span>
-                <p>
-                  {selectedTournament.timer_remaining 
-                    ? `${Math.floor(selectedTournament.timer_remaining / 60)}:${String(selectedTournament.timer_remaining % 60).padStart(2, '0')}`
-                    : 'Не задано'
-                  }
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
+            // Автоматический мгновенный переход к следующему уровню (без ожидания БД)
+            nextLevel({ autoResume: true });
+            
+            return 0;
+          }
+          
+          // Сохранить текущее состояние каждые 10 секунд
+          if (newTime % 10 === 0 && selectedTournament) {
+            localStorage.setItem(`timer_${selectedTournament.id}`, JSON.stringify({
+              currentTime: newTime,
+              timerActive: true,
+              lastUpdate: Date.now()
+            }));
+            updateTimerInDatabase(newTime);
+          }
+          
+          return newTime;
+        });
+      }, 1000);
+    } else {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+      
+      // Сохранить состояние при остановке таймера
+      if (selectedTournament) {
+        localStorage.setItem(`timer_${selectedTournament.id}`, JSON.stringify({
+          currentTime,
+          timerActive: false,
+          lastUpdate: Date.now()
+        }));
+        updateTimerInDatabase(currentTime);
+      }
+    }
+
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+    };
+  }, [timerActive, currentTime, selectedTournament]);
+
+  // Голосовые объявления на основе времени таймера
+  useEffect(() => {
+    if (!timerActive || !selectedTournament) return;
+
+    // Объявления по времени - передаем правильные значения в секундах
+    if (currentTime === 300 && lastAnnouncedTime !== 300) { // 5 минут
+      voiceAnnouncements.announceTimeWarning(300); // 300 секунд = 5 минут
+      setLastAnnouncedTime(300);
+    } else if (currentTime === 120 && lastAnnouncedTime !== 120) { // 2 минуты
+      voiceAnnouncements.announceTimeWarning(120); // 120 секунд = 2 минуты
+      setLastAnnouncedTime(120);
+    } else if (currentTime === 60 && lastAnnouncedTime !== 60) { // 1 минута
+      voiceAnnouncements.announceTimeWarning(60); // 60 секунд = 1 минута
+      setLastAnnouncedTime(60);
+    } else if (currentTime === 30 && lastAnnouncedTime !== 30) { // 30 секунд
+      voiceAnnouncements.announceTimeWarning(30); // 30 секунд
+      setLastAnnouncedTime(30);
+    } else if (currentTime === 10 && lastAnnouncedTime !== 10) { // 10 секунд
+      voiceAnnouncements.announceTimeWarning(10); // 10 секунд
+      setLastAnnouncedTime(10);
+    }
+
+    // Сброс при смене времени уровня
+    if (currentTime > (lastAnnouncedTime || 0) + 60) {
+      setLastAnnouncedTime(null);
+    }
+  }, [currentTime, timerActive, selectedTournament?.current_level, voiceAnnouncements, lastAnnouncedTime]);
+
+  const loadTournaments = async () => {
+    const { data, error } = await supabase
+      .from('tournaments')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (!error && data) {
+      setTournaments(data);
+    }
   };
 
-  if (loading) {
-    return (
-      <AuthGuard>
-        <div className="min-h-screen flex items-center justify-center">
-          <div className="text-center">
-            <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-4" />
-            <p>Загрузка турниров...</p>
-          </div>
-        </div>
-      </AuthGuard>
-    );
-  }
+  const loadPlayers = async () => {
+    const { data, error } = await supabase
+      .from('players')
+      .select('*')
+      .order('name');
+
+    if (!error && data) {
+      setPlayers(data);
+    }
+  };
+
+  const loadRegistrations = async (tournamentId: string) => {
+    const { data, error } = await supabase
+      .from('tournament_registrations')
+      .select(`
+        *,
+        player:players(id, name, email, avatar_url, elo_rating, games_played, wins)
+      `)
+      .eq('tournament_id', tournamentId);
+
+    if (!error && data) {
+      setRegistrations(data);
+    }
+  };
+
+  const updateTimerInDatabase = async (timeRemaining: number) => {
+    if (!selectedTournament) return;
+    
+    await supabase
+      .from('tournaments')
+      .update({ timer_remaining: timeRemaining })
+      .eq('id', selectedTournament.id);
+  };
+
+  const handleTournamentSelect = (tournament: Tournament) => {
+    console.log('Selecting tournament:', tournament.id);
+    setSelectedTournament(tournament);
+    
+    // Остановим таймер при смене турнира
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+      setTimerActive(false);
+    }
+  };
+
+  const toggleTimer = () => {
+    const newTimerActive = !timerActive;
+    setTimerActive(newTimerActive);
+    
+    // Сохранить состояние при переключении
+    if (selectedTournament) {
+      localStorage.setItem(`timer_${selectedTournament.id}`, JSON.stringify({
+        currentTime,
+        timerActive: newTimerActive,
+        lastUpdate: Date.now()
+      }));
+    }
+  };
+
+  const resetTimer = () => {
+    if (selectedTournament) {
+      const resetTime = selectedTournament.timer_duration || 1200;
+      setCurrentTime(resetTime);
+      setTimerActive(false);
+      
+      // Сохранить сброшенное состояние
+      localStorage.setItem(`timer_${selectedTournament.id}`, JSON.stringify({
+        currentTime: resetTime,
+        timerActive: false,
+        lastUpdate: Date.now()
+      }));
+      updateTimerInDatabase(resetTime);
+    }
+  };
+
+  const nextLevel = async (opts?: { autoResume?: boolean }) => {
+    if (!selectedTournament) return;
+
+    const newLevel = selectedTournament.current_level + 1;
+
+    let nextBlindLevel: any = blindLevelsCache.find((bl: any) => bl.level === newLevel);
+
+    if (!nextBlindLevel) {
+      const { data: blindData } = await supabase
+        .from('blind_levels')
+        .select('*')
+        .eq('tournament_id', selectedTournament.id)
+        .order('level', { ascending: true });
+      setBlindLevelsCache(blindData || []);
+      nextBlindLevel = blindData?.find((bl: any) => bl.level === newLevel);
+    }
+
+    if (!nextBlindLevel) {
+      toast({ title: "Предупреждение", description: "Достигнут максимальный уровень", variant: "destructive" });
+      return;
+    }
+
+    const resetTime = nextBlindLevel.duration || 1200;
+
+    // МГНОВЕННОЕ локальное обновление без ожидания БД
+    setSelectedTournament(prev => prev ? ({
+      ...prev,
+      current_level: newLevel,
+      current_small_blind: nextBlindLevel.small_blind,
+      current_big_blind: nextBlindLevel.big_blind,
+      timer_duration: resetTime
+    }) : prev);
+    setCurrentTime(resetTime);
+
+    const willBeActive = opts?.autoResume ? true : timerActive;
+    if (opts?.autoResume) {
+      setTimerActive(true);
+    }
+
+    localStorage.setItem(`timer_${selectedTournament.id}`, JSON.stringify({
+      currentTime: resetTime,
+      timerActive: willBeActive,
+      lastUpdate: Date.now()
+    }));
+
+    // Обновление БД — фоново, без await
+    supabase
+      .from('tournaments')
+      .update({
+        current_level: newLevel,
+        current_small_blind: nextBlindLevel.small_blind,
+        current_big_blind: nextBlindLevel.big_blind,
+        timer_remaining: resetTime,
+        timer_duration: resetTime
+      })
+      .eq('id', selectedTournament.id)
+      .then(({ error }) => {
+        if (error) {
+          console.error('Ошибка обновления уровня в БД:', error);
+        }
+      });
+
+    // Голосовые оповещения с небольшой задержкой для плавности
+    setTimeout(() => {
+      if (nextBlindLevel.is_break) {
+        voiceAnnouncements.announceBreakStart(Math.floor(resetTime / 60));
+      } else {
+        voiceAnnouncements.announceLevelStart(nextBlindLevel);
+      }
+    }, 300);
+
+    toast({ 
+      title: nextBlindLevel.is_break ? "Перерыв" : `Уровень ${newLevel}`, 
+      description: nextBlindLevel.is_break 
+        ? `Перерыв ${Math.floor(resetTime / 60)} минут`
+        : `Блайнды: ${nextBlindLevel.small_blind}/${nextBlindLevel.big_blind}${nextBlindLevel.ante ? ` (анте ${nextBlindLevel.ante})` : ''}`
+    });
+  };
+
+  const prevLevel = async () => {
+    if (!selectedTournament || selectedTournament.current_level <= 1) return;
+
+    const newLevel = selectedTournament.current_level - 1;
+
+    let prevBlindLevel: any = blindLevelsCache.find((bl: any) => bl.level === newLevel);
+    if (!prevBlindLevel) {
+      const { data: blindData } = await supabase
+        .from('blind_levels')
+        .select('*')
+        .eq('tournament_id', selectedTournament.id)
+        .order('level', { ascending: true });
+      setBlindLevelsCache(blindData || []);
+      prevBlindLevel = blindData?.find((bl: any) => bl.level === newLevel);
+    }
+
+    if (!prevBlindLevel) {
+      toast({ title: "Предупреждение", description: "Нельзя вернуться ниже 1-го уровня", variant: "destructive" });
+      return;
+    }
+
+    const resetTime = prevBlindLevel.duration || 1200;
+
+    // МГНОВЕННОЕ локальное обновление без ожидания БД
+    setSelectedTournament(prev => prev ? ({
+      ...prev,
+      current_level: newLevel,
+      current_small_blind: prevBlindLevel.small_blind,
+      current_big_blind: prevBlindLevel.big_blind,
+      timer_duration: resetTime
+    }) : prev);
+    setCurrentTime(resetTime);
+
+    localStorage.setItem(`timer_${selectedTournament.id}`, JSON.stringify({
+      currentTime: resetTime,
+      timerActive, // сохраняем текущее состояние таймера
+      lastUpdate: Date.now()
+    }));
+
+    // Обновление БД — фоново, без await
+    supabase
+      .from('tournaments')
+      .update({
+        current_level: newLevel,
+        current_small_blind: prevBlindLevel.small_blind,
+        current_big_blind: prevBlindLevel.big_blind,
+        timer_remaining: resetTime,
+        timer_duration: resetTime
+      })
+      .eq('id', selectedTournament.id)
+      .then(({ error }) => {
+        if (error) {
+          console.error('Ошибка обновления уровня в БД:', error);
+        }
+      });
+
+    toast({ 
+      title: prevBlindLevel.is_break ? "Перерыв" : `Уровень ${newLevel}`, 
+      description: prevBlindLevel.is_break 
+        ? `Перерыв ${Math.floor(resetTime / 60)} минут`
+        : `Блайнды: ${prevBlindLevel.small_blind}/${prevBlindLevel.big_blind}${prevBlindLevel.ante ? ` (анте ${prevBlindLevel.ante})` : ''}`
+    });
+  };
+
+  const stopTournament = async () => {
+    if (!selectedTournament) return;
+
+    const { data, error } = await supabase.rpc('complete_tournament', {
+      tournament_id_param: selectedTournament.id
+    });
+
+    if (!error) {
+      setSelectedTournament({ ...selectedTournament, status: 'completed' });
+      setTimerActive(false);
+      toast({ title: "Турнир завершен" });
+      loadTournaments();
+    }
+  };
+
+  const onTimerAdjust = (seconds: number) => {
+    const newTime = Math.max(0, currentTime + seconds);
+    setCurrentTime(newTime);
+    
+    // Сохранить изменение
+    if (selectedTournament) {
+      localStorage.setItem(`timer_${selectedTournament.id}`, JSON.stringify({
+        currentTime: newTime,
+        timerActive,
+        lastUpdate: Date.now()
+      }));
+      updateTimerInDatabase(newTime);
+    }
+  };
+
+  const onFinishTournament = async () => {
+    if (!selectedTournament) return;
+
+    const { data, error } = await supabase.rpc('complete_tournament', {
+      tournament_id_param: selectedTournament.id
+    });
+
+    if (!error) {
+      setSelectedTournament({ 
+        ...selectedTournament, 
+        status: 'completed',
+        finished_at: new Date().toISOString()
+      });
+      setTimerActive(false);
+      toast({ title: "Турнир завершен" });
+      loadTournaments();
+    }
+  };
+
+  // Обработчик голосовых команд
+  const handleVoiceAction = async (action: string, data?: any) => {
+    console.log('Voice action received:', action, data);
+    
+    try {
+      switch (action) {
+        // УПРАВЛЕНИЕ ТУРНИРОМ
+        case 'start_tournament':
+          if (selectedTournament) {
+            await supabase.rpc('start_tournament', { tournament_id_param: selectedTournament.id });
+            setTimerActive(true);
+            toast({ title: "✅ Турнир запущен", description: "Голосовая команда выполнена" });
+            loadTournaments();
+          }
+          break;
+          
+        case 'pause_tournament':
+          if (selectedTournament) {
+            await supabase.rpc('pause_tournament', { tournament_id_param: selectedTournament.id });
+            setTimerActive(false);
+            toast({ title: "⏸️ Турнир приостановлен", description: "Голосовая команда выполнена" });
+            loadTournaments();
+          }
+          break;
+          
+        case 'resume_tournament':
+          if (selectedTournament) {
+            await supabase.rpc('resume_tournament', { tournament_id_param: selectedTournament.id });
+            setTimerActive(true);
+            toast({ title: "▶️ Турнир возобновлен", description: "Голосовая команда выполнена" });
+            loadTournaments();
+          }
+          break;
+          
+        case 'complete_tournament':
+          if (selectedTournament) {
+            await supabase.rpc('complete_tournament', { tournament_id_param: selectedTournament.id });
+            setTimerActive(false);
+            toast({ title: "🏆 Турнир завершен", description: "Голосовая команда выполнена" });
+            loadTournaments();
+          }
+          break;
+
+        // УПРАВЛЕНИЕ БЛАЙНДАМИ  
+        case 'next_blind_level':
+          await nextLevel();
+          toast({ title: "⬆️ Следующий уровень", description: "Переход к следующему уровню блайндов" });
+          break;
+          
+        case 'previous_blind_level':
+          await prevLevel();
+          toast({ title: "⬇️ Предыдущий уровень", description: "Возврат к предыдущему уровню блайндов" });
+          break;
+
+        // УПРАВЛЕНИЕ ТАЙМЕРОМ
+        case 'set_timer':
+          if (data?.minutes && selectedTournament) {
+            const seconds = data.minutes * 60;
+            setCurrentTime(seconds);
+            localStorage.setItem(`timer_${selectedTournament.id}`, JSON.stringify({
+              currentTime: seconds,
+              timerActive,
+              lastUpdate: Date.now()
+            }));
+            updateTimerInDatabase(seconds);
+            toast({ title: "⏱️ Таймер установлен", description: `Время: ${data.minutes} минут` });
+          }
+          break;
+          
+        case 'add_time':
+          if (data?.minutes) {
+            onTimerAdjust(data.minutes * 60);
+            toast({ title: "➕ Время добавлено", description: `+${data.minutes} минут` });
+          }
+          break;
+          
+        case 'start_timer':
+          setTimerActive(true);
+          toast({ title: "▶️ Таймер запущен", description: "Голосовая команда выполнена" });
+          break;
+          
+        case 'stop_timer':
+          setTimerActive(false);
+          toast({ title: "⏹️ Таймер остановлен", description: "Голосовая команда выполнена" });
+          break;
+
+        // НАВИГАЦИЯ И ОТОБРАЖЕНИЕ
+        case 'show_stats':
+          setActiveTab('overview');
+          toast({ title: "📊 Статистика", description: "Отображение статистики турнира" });
+          break;
+          
+        case 'show_players':
+          setActiveTab('players');
+          toast({ title: "👥 Игроки", description: "Отображение списка игроков" });
+          break;
+          
+        case 'show_payouts':
+          setActiveTab('results');
+          toast({ title: "💰 Выплаты", description: "Отображение структуры выплат" });
+          break;
+          
+        case 'rebalance_tables':
+        case 'show_seating':
+          setActiveTab('seating');
+          toast({ title: "🎲 Рассадка", description: "Управление рассадкой игроков" });
+          break;
+
+        // ПЕРЕРЫВЫ
+        case 'break':
+          if (data?.duration && selectedTournament) {
+            const breakTime = data.duration * 60;
+            setCurrentTime(breakTime);
+            setTimerActive(true);
+            localStorage.setItem(`timer_${selectedTournament.id}`, JSON.stringify({
+              currentTime: breakTime,
+              timerActive: true,
+              lastUpdate: Date.now()
+            }));
+            updateTimerInDatabase(breakTime);
+            toast({ title: "☕ Перерыв", description: `Перерыв на ${data.duration} минут` });
+          }
+          break;
+
+        // СОВМЕСТИМОСТЬ
+        case 'timer_update':
+          if (data?.time) {
+            setCurrentTime(data.time);
+          }
+          break;
+          
+        case 'level_change':
+          if (data?.direction === 'next') {
+            await nextLevel();
+          } else if (data?.direction === 'prev') {
+            await prevLevel();
+          }
+          break;
+          
+        case 'tournament_control':
+          if (data?.status) {
+            loadTournaments();
+            if (selectedTournament) {
+              loadRegistrations(selectedTournament.id);
+            }
+          }
+          break;
+
+        case 'processed':
+          // Общее подтверждение обработки команды
+          break;
+
+        default:
+          console.log('Unknown voice action:', action);
+          toast({ title: "❓ Неизвестная команда", description: "Команда не распознана" });
+      }
+    } catch (error) {
+      console.error('Ошибка выполнения голосовой команды:', error);
+      toast({ 
+        title: "❌ Ошибка", 
+        description: "Не удалось выполнить голосовую команду",
+        variant: "destructive" 
+      });
+    }
+  };
+
+  const deleteTournament = async (id: string) => {
+    try {
+      // Удаляем только настройки турнира, НЕ затрагивая результаты игр и статистику
+      await supabase.from('tournament_payouts').delete().eq('tournament_id', id);
+      await supabase.from('blind_levels').delete().eq('tournament_id', id);
+      
+      // НЕ удаляем game_results и tournament_registrations - они нужны для статистики!
+      
+      // Теперь удаляем сам турнир
+      const { error } = await supabase
+        .from('tournaments')
+        .delete()
+        .eq('id', id);
+
+      if (!error) {
+        toast({ title: "Турнир удален", description: "Результаты игр и рейтинги сохранены" });
+        loadTournaments();
+        if (selectedTournament?.id === id) {
+          setSelectedTournament(null);
+          localStorage.removeItem('selectedTournamentId');
+          localStorage.removeItem(`timer_${id}`);
+        }
+      } else {
+        throw error;
+      }
+    } catch (error) {
+      console.error('Ошибка удаления турнира:', error);
+      toast({ 
+        title: "Ошибка", 
+        description: "Не удалось удалить турнир", 
+        variant: "destructive" 
+      });
+    }
+  };
+
+  // Realtime subscription for blind_levels to sync current level changes
+  useEffect(() => {
+    if (!selectedTournament?.id) return;
+    const channel = supabase
+      .channel(`td_blinds_${selectedTournament.id}`)
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'blind_levels',
+        filter: `tournament_id=eq.${selectedTournament.id}`
+      }, async () => {
+        try {
+          const { data: level } = await supabase
+            .from('blind_levels')
+            .select('*')
+            .eq('tournament_id', selectedTournament.id)
+            .eq('level', selectedTournament.current_level)
+            .single();
+          if (level) {
+            // Update local tournament state
+            setSelectedTournament(prev => prev ? ({
+              ...prev,
+              current_small_blind: level.small_blind,
+              current_big_blind: level.big_blind,
+              timer_duration: level.duration
+            }) : prev);
+
+            // Adjust remaining time if it exceeds new duration
+            const newRemaining = Math.min(currentTime, level.duration || 1200);
+            setCurrentTime(newRemaining);
+
+            // Persist timer changes
+            localStorage.setItem(`timer_${selectedTournament.id}`, JSON.stringify({
+              currentTime: newRemaining,
+              timerActive,
+              lastUpdate: Date.now()
+            }));
+
+            // Update DB timer fields and duration
+            await supabase.from('tournaments')
+              .update({ timer_duration: level.duration, timer_remaining: newRemaining })
+              .eq('id', selectedTournament.id);
+          }
+        } catch (e) {
+          console.error('Ошибка синхронизации блайндов:', e);
+        }
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [selectedTournament?.id, selectedTournament?.current_level, currentTime, timerActive]);
 
   return (
     <AuthGuard>
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100">
-        <div className="flex">
-          {/* Sidebar */}
-          <div className="w-80 bg-white border-r border-gray-200 min-h-screen">
-            <div className="p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h1 className="text-xl font-bold">Турнирный директор</h1>
-                <Button size="sm" onClick={fetchTournaments}>
-                  <RefreshCw className="h-4 w-4" />
-                </Button>
-              </div>
+      <SidebarProvider>
+        <div className="min-h-screen flex w-full bg-gradient-to-br from-gray-50 via-white to-gray-100">
+          <TournamentDirectorSidebar 
+            activeTab={activeTab} 
+            onTabChange={setActiveTab}
+            selectedTournament={selectedTournament}
+          />
+          <main className="flex-1">
+            <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-8 max-w-7xl">
 
-              {/* Tournament List */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between mb-3">
-                  <h2 className="text-sm font-medium text-gray-500 uppercase tracking-wide">
-                    Турниры
-                  </h2>
-                  <Button size="sm" variant="outline">
-                    <Plus className="h-4 w-4" />
-                  </Button>
+          {/* Custom Tab System заменяем обратно на Radix Tabs */}
+          <Tabs 
+            value={activeTab} 
+            onValueChange={(value) => {
+              console.log('Tab change:', activeTab, '->', value);
+              setActiveTab(value);
+            }} 
+            className="space-y-10"
+          >
+            <TabsList className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-10 gap-1 sm:gap-2 h-auto p-1 bg-gray-100/60 rounded-lg border border-gray-200/30 overflow-x-auto">
+              <TabsTrigger value="overview" className="flex items-center gap-1 sm:gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm text-xs sm:text-sm py-2 px-2 sm:px-3">
+                <BarChart3 className="w-3 h-3 sm:w-4 sm:h-4" />
+                <span className="hidden sm:inline">Обзор</span>
+                <span className="sm:hidden">Обзор</span>
+              </TabsTrigger>
+              <TabsTrigger value="tournaments" className="flex items-center gap-1 sm:gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm text-xs sm:text-sm py-2 px-2 sm:px-3">
+                <Trophy className="w-3 h-3 sm:w-4 sm:h-4" />
+                <span className="hidden sm:inline">Турниры</span>
+                <span className="sm:hidden">Турн</span>
+              </TabsTrigger>
+              <TabsTrigger value="control" className="flex items-center gap-1 sm:gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm text-xs sm:text-sm py-2 px-2 sm:px-3">
+                <Settings className="w-3 h-3 sm:w-4 sm:h-4" />
+                <span className="hidden sm:inline">Управление</span>
+                <span className="sm:hidden">Управ</span>
+              </TabsTrigger>
+              <TabsTrigger value="players" className="flex items-center gap-1 sm:gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm text-xs sm:text-sm py-2 px-2 sm:px-3 hidden sm:flex">
+                <Users className="w-3 h-3 sm:w-4 sm:h-4" />
+                <span className="hidden lg:inline">Игроки</span>
+                <span className="lg:hidden">Игр</span>
+              </TabsTrigger>
+              <TabsTrigger value="voice" className="flex items-center gap-1 sm:gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm text-xs sm:text-sm py-2 px-2 sm:px-3 hidden lg:flex">
+                <Mic className="w-3 h-3 sm:w-4 sm:h-4" />
+                <span>Голос</span>
+              </TabsTrigger>
+              <TabsTrigger value="ratings" className="flex items-center gap-1 sm:gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm text-xs sm:text-sm py-2 px-2 sm:px-3 hidden lg:flex">
+                <TrendingUp className="w-3 h-3 sm:w-4 sm:h-4" />
+                <span>Рейтинги</span>
+              </TabsTrigger>
+              <TabsTrigger value="results" className="flex items-center gap-1 sm:gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm text-xs sm:text-sm py-2 px-2 sm:px-3 hidden lg:flex">
+                <CheckCircle className="w-3 h-3 sm:w-4 sm:h-4" />
+                <span>Результаты</span>
+              </TabsTrigger>
+              <TabsTrigger value="sync" className="flex items-center gap-1 sm:gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm text-xs sm:text-sm py-2 px-2 sm:px-3 hidden lg:flex">
+                <RefreshCw className="w-3 h-3 sm:w-4 sm:h-4" />
+                <span>Синхронизация</span>
+               </TabsTrigger>
+               <TabsTrigger value="analysis" className="flex items-center gap-1 sm:gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm text-xs sm:text-sm py-2 px-2 sm:px-3 hidden lg:flex">
+                 <BarChart3 className="w-3 h-3 sm:w-4 sm:h-4" />
+                 <span>Анализ турнира</span>
+               </TabsTrigger>
+                <TabsTrigger value="rating-test" className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                  <Target className="w-4 h-4" />
+                  <span className="hidden sm:inline">Тест рейтинга</span>
+                </TabsTrigger>
+                <TabsTrigger value="rating-settings" className="flex items-center gap-1 sm:gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm text-xs sm:text-sm py-2 px-2 sm:px-3 hidden lg:flex">
+                  <Settings className="w-3 h-3 sm:w-4 sm:h-4" />
+                  <span>Настройки RPS</span>
+                </TabsTrigger>
+            </TabsList>
+            <TabsContent value="overview" className="space-y-8 animate-fade-in">
+              {selectedTournament ? (
+                <div className="space-y-8">
+                  <TournamentOverview
+                    tournament={selectedTournament}
+                    players={players}
+                    registrations={registrations}
+                    currentTime={currentTime}
+                    timerActive={timerActive}
+                    onToggleTimer={toggleTimer}
+                    onResetTimer={resetTimer}
+                    onNextLevel={nextLevel}
+                    onPrevLevel={prevLevel}
+                    onStopTournament={stopTournament}
+                    onRefresh={() => loadRegistrations(selectedTournament.id)}
+                    onTimerAdjust={onTimerAdjust}
+                    onFinishTournament={onFinishTournament}
+                    onOpenExternalTimer={() => {
+                      window.open(`/external-timer?tournamentId=${selectedTournament.id}`, '_blank', 'width=1920,height=1080,fullscreen=yes');
+                    }}
+                  />
                 </div>
-                
-                {tournaments.map((tournament) => (
-                  <div
-                    key={tournament.id}
-                    className={`p-3 rounded-lg cursor-pointer transition-colors ${
-                      selectedTournament?.id === tournament.id
-                        ? 'bg-primary text-primary-foreground'
-                        : 'hover:bg-gray-100'
-                    }`}
-                    onClick={() => setSelectedTournament(tournament)}
-                  >
-                    <div className="font-medium text-sm">{tournament.name}</div>
-                    <div className="text-xs opacity-75">
-                      {new Date(tournament.start_time).toLocaleDateString('ru-RU')}
-                    </div>
-                    <div className="mt-1">
-                      <Badge 
-                        variant={
-                          tournament.status === 'running' ? 'default' :
-                          tournament.status === 'paused' ? 'secondary' :
-                          tournament.status === 'completed' ? 'outline' : 'destructive'
-                        }
-                      >
-                        {tournament.status === 'running' && 'Идет'}
-                        {tournament.status === 'paused' && 'Пауза'}
-                        {tournament.status === 'completed' && 'Завершен'}
-                        {tournament.status === 'registration' && 'Регистрация'}
-                        {tournament.status === 'scheduled' && 'Запланирован'}
-                      </Badge>
-                    </div>
-                  </div>
-                ))}
-                
-                {tournaments.length === 0 && (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <Trophy className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                    <p>Нет турниров</p>
-                  </div>
-                )}
-              </div>
-
-              {/* Navigation */}
-              <div className="mt-8 space-y-1">
-                <h2 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-3">
-                  Управление
-                </h2>
-                
-                {[
-                  { id: 'overview', name: 'Обзор', icon: BarChart3 },
-                  { id: 'players', name: 'Игроки', icon: Users },
-                  { id: 'settings', name: 'Настройки', icon: Settings },
-                ].map((tab) => {
-                  const Icon = tab.icon;
-                  return (
-                    <button
-                      key={tab.id}
-                      onClick={() => setActiveTab(tab.id)}
-                      className={`w-full flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-colors ${
-                        activeTab === tab.id
-                          ? 'bg-primary text-primary-foreground'
-                          : 'hover:bg-gray-100'
-                      }`}
+              ) : (
+                <Card className="bg-white/50 backdrop-blur-sm border border-gray-200/30 shadow-minimal">
+                  <CardContent className="text-center py-16">
+                    <AlertTriangle className="h-16 w-16 mx-auto mb-4 text-gray-400" />
+                    <h3 className="text-lg font-medium text-gray-700 mb-2">Турнир не выбран</h3>
+                    <p className="text-gray-500 mb-6">Выберите турнир на вкладке "Турниры" для отображения информации</p>
+                    <Button
+                      onClick={() => setActiveTab('tournaments')}
+                      className="bg-blue-600 hover:bg-blue-700 text-white"
                     >
-                      <Icon className="h-4 w-4" />
-                      {tab.name}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
+                      Перейти к турнирам
+                    </Button>
+                  </CardContent>
+                </Card>
+              )}
+            </TabsContent>
 
-          {/* Main Content */}
-          <div className="flex-1">
-            {/* Header with controls */}
-            {selectedTournament && (
-              <div className="bg-white border-b border-gray-200 p-6">
-                <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-                  <div>
-                    <h1 className="text-2xl font-bold text-gray-900">{selectedTournament.name}</h1>
-                    <div className="flex items-center gap-2 mt-1">
-                      <Badge variant={
-                        selectedTournament.status === 'running' ? 'default' :
-                        selectedTournament.status === 'paused' ? 'secondary' :
-                        selectedTournament.status === 'completed' ? 'outline' : 'destructive'
-                      }>
-                        {selectedTournament.status === 'running' && 'Идет'}
-                        {selectedTournament.status === 'paused' && 'Пауза'}
-                        {selectedTournament.status === 'completed' && 'Завершен'}
-                        {selectedTournament.status === 'registration' && 'Регистрация'}
-                        {selectedTournament.status === 'scheduled' && 'Запланирован'}
-                      </Badge>
-                      {selectedTournament.timer_remaining !== undefined && (
-                        <Badge variant="outline">
-                          <Timer className="h-3 w-3 mr-1" />
-                          {Math.floor((selectedTournament.timer_remaining || 0) / 60)}:
-                          {String((selectedTournament.timer_remaining || 0) % 60).padStart(2, '0')}
-                        </Badge>
-                      )}
+            <TabsContent value="tournaments" className="space-y-10 animate-fade-in">
+              {/* Create Tournament Section */}
+              <Card className="bg-white/60 backdrop-blur-sm border border-gray-200/40 shadow-minimal hover:shadow-subtle transition-all duration-300 rounded-xl group">
+                <CardHeader className="pb-4">
+                  <CardTitle className="flex items-center gap-3 text-gray-800 text-xl font-light">
+                    <div className="p-2 bg-blue-100/80 rounded-lg group-hover:bg-blue-200/80 transition-colors">
+                      <Plus className="w-5 h-5 text-blue-600" />
                     </div>
-                  </div>
-                  
-                  <div className="flex flex-wrap items-center gap-2">
-                    {selectedTournament.status === 'scheduled' && (
-                      <Button onClick={startTournament} className="bg-green-600 hover:bg-green-700">
-                        <Play className="h-4 w-4 mr-2" />
-                        Запустить
-                      </Button>
-                    )}
+                    Создать турнир
+                  </CardTitle>
+                  <CardDescription className="text-gray-600">
+                    Настройте новый покерный турнир
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Button 
+                    onClick={() => setIsModalOpen(true)}
+                    className="bg-blue-600 hover:bg-blue-700 text-white shadow-subtle hover:shadow-lg transition-all duration-200"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Создать новый турнир
+                  </Button>
+                </CardContent>
+              </Card>
+
+              {/* Tournaments Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {tournaments.map((tournament) => (
+                  <Card 
+                    key={tournament.id} 
+                    className="bg-white/60 backdrop-blur-sm border border-gray-200/40 shadow-minimal hover:shadow-dramatic transition-all duration-500 rounded-xl group hover:-translate-y-2"
+                  >
+                    <CardHeader className="pb-4">
+                      <div className="flex items-start justify-between mb-3">
+                        <CardTitle className="text-lg font-medium text-gray-800 group-hover:text-blue-600 transition-colors">
+                          {tournament.name}
+                        </CardTitle>
+                        <Badge 
+                          variant={tournament.status === 'running' ? 'destructive' : 
+                                  tournament.status === 'scheduled' ? 'default' : 'secondary'}
+                          className="text-xs"
+                        >
+                          {tournament.status === 'running' ? 'Активен' : 
+                           tournament.status === 'scheduled' ? 'Запланирован' : 
+                           tournament.status === 'finished' ? 'Завершен' : tournament.status}
+                        </Badge>
+                      </div>
+                      <CardDescription className="text-gray-600 text-sm">
+                        {tournament.description || "Рейтинговый турнир"}
+                      </CardDescription>
+                    </CardHeader>
                     
-                    {selectedTournament.status === 'running' && (
-                      <>
-                        <Button onClick={pauseTournament} variant="outline">
-                          <Pause className="h-4 w-4 mr-2" />
-                          Пауза
-                        </Button>
-                        <Button onClick={completeTournament} variant="destructive">
-                          <Square className="h-4 w-4 mr-2" />
-                          Завершить
-                        </Button>
-                      </>
-                    )}
-                    
-                    {selectedTournament.status === 'paused' && (
-                      <Button onClick={startTournament} className="bg-green-600 hover:bg-green-700">
-                        <Play className="h-4 w-4 mr-2" />
-                        Возобновить
-                      </Button>
-                    )}
-                  </div>
+                    <CardContent className="space-y-4">
+                      {/* Tournament Info */}
+                      <div className="space-y-2 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-gray-500">Время начала:</span>
+                          <span className="font-medium">{new Date(tournament.start_time).toLocaleString('ru-RU')}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-500">Бай-ин:</span>
+                          <span className="font-medium text-green-600">{tournament.buy_in.toLocaleString()} ₽</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-500">Макс. игроков:</span>
+                          <span className="font-medium">{tournament.max_players}</span>
+                        </div>
+                         <div className="flex justify-between">
+                           <span className="text-gray-500">Стартовые фишки:</span>
+                           <span className="font-medium">{tournament.starting_chips.toLocaleString()}</span>
+                         </div>
+                         <div className="flex justify-between">
+                           <span className="text-gray-500">Фишки за бай-ин:</span>
+                           <span className="font-medium">{tournament.starting_chips.toLocaleString()}</span>
+                         </div>
+                         <div className="flex justify-between">
+                           <span className="text-gray-500">Текущий уровень:</span>
+                           <span className="font-medium">{tournament.current_level}</span>
+                         </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-500">Блайнды:</span>
+                          <span className="font-medium">{tournament.current_small_blind}/{tournament.current_big_blind}</span>
+                        </div>
+                      </div>
+
+                      {/* Action Buttons */}
+                      <div className="space-y-2 pt-4 border-t border-gray-200/50">
+                        <div className="grid grid-cols-2 gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleTournamentSelect(tournament)}
+                            className="text-blue-600 border-blue-200 hover:bg-blue-50 transition-colors"
+                          >
+                            <Trophy className="w-4 h-4 mr-1" />
+                            Выбрать
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setEditingTournament(tournament);
+                              setIsModalOpen(true);
+                            }}
+                            className="text-orange-600 border-orange-200 hover:bg-orange-50 transition-colors"
+                          >
+                            <Edit className="w-4 h-4 mr-1" />
+                            Редактировать
+                          </Button>
+                        </div>
+                        
+                        <div className="grid grid-cols-2 gap-2">
+                          {tournament.status === 'scheduled' && (
+                            <>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={async () => {
+                                  const { data, error } = await supabase.rpc('start_tournament_registration', {
+                                    tournament_id_param: tournament.id
+                                  });
+                                  
+                                  if (!error) {
+                                    loadTournaments();
+                                    toast({ title: "Регистрация открыта" });
+                                  }
+                                }}
+                                className="text-blue-600 border-blue-200 hover:bg-blue-50 transition-colors"
+                              >
+                                <Play className="w-4 h-4 mr-1" />
+                                Открыть регистрацию
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={async () => {
+                                  const { data, error } = await supabase.rpc('start_tournament', {
+                                    tournament_id_param: tournament.id
+                                  });
+                                  
+                                  if (!error) {
+                                    loadTournaments();
+                                    toast({ title: "Турнир запущен" });
+                                  }
+                                }}
+                                className="text-green-600 border-green-200 hover:bg-green-50 transition-colors"
+                              >
+                                <Play className="w-4 h-4 mr-1" />
+                                Запустить сразу
+                              </Button>
+                            </>
+                          )}
+                          
+                          {tournament.status === 'registration' && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={async () => {
+                                const { data, error } = await supabase.rpc('start_tournament', {
+                                  tournament_id_param: tournament.id
+                                });
+                                
+                                if (!error) {
+                                  loadTournaments();
+                                  toast({ title: "Турнир запущен" });
+                                }
+                              }}
+                              className="text-green-600 border-green-200 hover:bg-green-50 transition-colors"
+                            >
+                              <Play className="w-4 h-4 mr-1" />
+                              Запустить
+                            </Button>
+                          )}
+                          
+                          {tournament.status === 'running' && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={async () => {
+                                const { data, error } = await supabase.rpc('pause_tournament', {
+                                  tournament_id_param: tournament.id
+                                });
+                                
+                                if (!error) {
+                                  loadTournaments();
+                                  toast({ title: "Турнир приостановлен" });
+                                }
+                              }}
+                              className="text-yellow-600 border-yellow-200 hover:bg-yellow-50 transition-colors"
+                            >
+                              <Pause className="w-4 h-4 mr-1" />
+                              Пауза
+                            </Button>
+                          )}
+                          
+                          {tournament.status === 'paused' && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={async () => {
+                                const { data, error } = await supabase.rpc('resume_tournament', {
+                                  tournament_id_param: tournament.id
+                                });
+                                
+                                if (!error) {
+                                  loadTournaments();
+                                  toast({ title: "Турнир возобновлен" });
+                                }
+                              }}
+                              className="text-green-600 border-green-200 hover:bg-green-50 transition-colors"
+                            >
+                              <Play className="w-4 h-4 mr-1" />
+                              Возобновить
+                            </Button>
+                          )}
+                          
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              if (confirm('Вы уверены, что хотите удалить этот турнир?')) {
+                                deleteTournament(tournament.id);
+                              }
+                            }}
+                            className="text-red-600 border-red-200 hover:bg-red-50 transition-colors"
+                          >
+                            <Trash2 className="w-4 h-4 mr-1" />
+                            Удалить
+                          </Button>
+                        </div>
+
+                        {/* Additional Quick Actions */}
+                        <div className="grid grid-cols-3 gap-1 pt-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              handleTournamentSelect(tournament);
+                              setActiveTab('control');
+                            }}
+                            className="text-xs text-gray-500 hover:text-blue-600"
+                          >
+                            <Timer className="w-3 h-3 mr-1" />
+                            Таймер
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              handleTournamentSelect(tournament);
+                              setActiveTab('players');
+                            }}
+                            className="text-xs text-gray-500 hover:text-blue-600"
+                          >
+                            <Users className="w-3 h-3 mr-1" />
+                            Игроки
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              handleTournamentSelect(tournament);
+                              setActiveTab('results');
+                            }}
+                            className="text-xs text-gray-500 hover:text-blue-600"
+                          >
+                            <Trophy className="w-3 h-3 mr-1" />
+                            Результаты
+                          </Button>
+                        </div>
+                      </div>
+
+                      {/* Status Indicator */}
+                      {selectedTournament?.id === tournament.id && (
+                        <div className="absolute -top-2 -right-2">
+                          <div className="w-4 h-4 bg-blue-500 rounded-full border-2 border-white shadow-lg animate-pulse"></div>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+
+              {tournaments.length === 0 && (
+                <Card className="bg-white/50 backdrop-blur-sm border border-gray-200/30 shadow-minimal">
+                  <CardContent className="text-center py-16">
+                    <Trophy className="h-16 w-16 mx-auto mb-4 text-gray-400" />
+                    <h3 className="text-lg font-medium text-gray-700 mb-2">Нет созданных турниров</h3>
+                    <p className="text-gray-500 mb-6">Создайте первый турнир для начала работы</p>
+                    <Button
+                      onClick={() => setIsModalOpen(true)}
+                      className="bg-blue-600 hover:bg-blue-700 text-white"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Новый турнир
+                    </Button>
+                  </CardContent>
+                </Card>
+              )}
+            </TabsContent>
+
+            <TabsContent value="control" className="space-y-8 animate-fade-in">
+              {selectedTournament ? (
+                <div className="space-y-8">
+                  <BlindStructure tournamentId={selectedTournament.id} />
+                  <PrizeStructureManager tournamentId={selectedTournament.id} registeredPlayers={registrations.length} mode="management" />
+                  <ManualAdjustments tournaments={tournaments} selectedTournament={selectedTournament} onRefresh={loadTournaments} />
                 </div>
-              </div>
-            )}
-            
-            {/* Content */}
-            <div className="p-6">
-              <div className="bg-white rounded-lg shadow-sm border min-h-[600px]">
-                {renderTournamentOverview()}
-              </div>
+              ) : (
+                <Card className="bg-white/50 backdrop-blur-sm border border-gray-200/30 shadow-minimal">
+                  <CardContent className="text-center py-16">
+                    <AlertTriangle className="h-16 w-16 mx-auto mb-4 text-gray-400" />
+                    <h3 className="text-lg font-medium text-gray-700 mb-2">Турнир не выбран</h3>
+                    <p className="text-gray-500 mb-6">Выберите турнир для настройки управления</p>
+                    <Button
+                      onClick={() => setActiveTab('tournaments')}
+                      className="bg-blue-600 hover:bg-blue-700 text-white"
+                    >
+                      Выбрать турнир
+                    </Button>
+                  </CardContent>
+                </Card>
+              )}
+            </TabsContent>
+
+            <TabsContent value="players" className="space-y-8 animate-fade-in">
+              {selectedTournament && (
+                <PlayerManagement 
+                  tournament={selectedTournament}
+                  players={players}
+                  registrations={registrations}
+                  onRegistrationUpdate={() => selectedTournament && loadRegistrations(selectedTournament.id)}
+                />
+              )}
+            </TabsContent>
+
+            <TabsContent value="ratings" className="space-y-6 animate-fade-in">
+              <RatingManagement 
+                tournaments={tournaments} 
+                selectedTournament={selectedTournament}
+                onRefresh={loadTournaments}
+              />
+            </TabsContent>
+
+            <TabsContent value="results" className="space-y-6 animate-fade-in">
+              <TournamentResults selectedTournament={selectedTournament} />
+            </TabsContent>
+
+            <TabsContent value="sync" className="space-y-6 animate-fade-in">
+              <TournamentSyncManager 
+                tournaments={tournaments}
+                onRefresh={loadTournaments}
+              />
+            </TabsContent>
+
+            <TabsContent value="rating-test" className="space-y-6 animate-fade-in">
+              <RatingSystemTest />
+            </TabsContent>
+
+            <TabsContent value="rating-settings" className="space-y-6 animate-fade-in">
+              <IntegratedTournamentRatingSettings 
+                selectedTournament={selectedTournament}
+                onTournamentUpdate={loadTournaments}
+              />
+            </TabsContent>
+
+            <TabsContent value="analysis" className="space-y-6 animate-fade-in">
+              {selectedTournament ? (
+                <div className="space-y-8">
+                  <PrizeStructureManager tournamentId={selectedTournament.id} registeredPlayers={registrations.length} mode="analysis" />
+                  <TournamentAnalysisAndRating />
+                </div>
+              ) : (
+                <Card className="bg-white/50 backdrop-blur-sm border border-gray-200/30 shadow-minimal">
+                  <CardContent className="text-center py-16">
+                    <AlertTriangle className="h-16 w-16 mx-auto mb-4 text-gray-400" />
+                    <h3 className="text-lg font-medium text-gray-700 mb-2">Турнир не выбран</h3>
+                    <p className="text-gray-500">Выберите турнир для анализа</p>
+                  </CardContent>
+                </Card>
+              )}
+            </TabsContent>
+
+            <TabsContent value="voice" className="space-y-6 animate-fade-in">
+              <VoiceControl 
+                selectedTournament={selectedTournament} 
+                onVoiceAction={handleVoiceAction}
+              />
+            </TabsContent>
+          </Tabs>
+
+          {/* Tournament Creation/Edit Modal */}
+          <TournamentCreationModal
+            open={isModalOpen}
+            onOpenChange={setIsModalOpen}
+            tournament={editingTournament}
+            onTournamentUpdate={() => {
+              loadTournaments();
+              setIsModalOpen(false);
+              setEditingTournament(null);
+            }}
+          />
             </div>
-          </div>
+          </main>
+          
+          {/* Mobile Menu for hidden tabs */}
+          <TournamentDirectorMobileMenu 
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+          />
         </div>
-      </div>
+      </SidebarProvider>
     </AuthGuard>
   );
 };
