@@ -36,6 +36,7 @@ interface Tournament {
   is_published: boolean;
   is_archived: boolean;
   finished_at?: string;
+  buy_in?: number; // Добавляем поле для пул-системы
 }
 
 interface RatingSettings {
@@ -158,6 +159,14 @@ const RatingManagement = ({ tournaments, selectedTournament, onRefresh }: Rating
   const calculateRatings = async (tournamentId: string) => {
     setIsCalculating(true);
     try {
+      // Получаем информацию о турнире для пул-системы
+      const { data: tournament, error: tournamentError } = await supabase
+        .from('tournaments')
+        .select('buy_in, name')
+        .eq('id', tournamentId)
+        .single();
+
+      if (tournamentError) throw tournamentError;
       // Get tournament registrations to create results array, including rebuys/addons data
       const { data: registrations, error: regError } = await supabase
         .from('tournament_registrations')
@@ -172,12 +181,14 @@ const RatingManagement = ({ tournaments, selectedTournament, onRefresh }: Rating
         throw new Error('Нет результатов для расчета рейтингов');
       }
 
-      console.log('Отправка данных для расчета рейтингов:', {
+      console.log('Отправка данных для расчета рейтингов с пул-системой:', {
         tournament_id: tournamentId,
-        results: registrations
+        results: registrations,
+        use_pool_system: true,
+        buy_in: selectedTournament?.buy_in
       });
 
-      // Call the calculate-elo edge function with complete data including rebuys/addons
+      // Call the calculate-elo edge function with pool system settings
       const { data, error } = await supabase.functions.invoke('calculate-elo', {
         body: {
           tournament_id: tournamentId,
@@ -186,7 +197,10 @@ const RatingManagement = ({ tournaments, selectedTournament, onRefresh }: Rating
             position: reg.position,
             rebuys: reg.rebuys || 0,
             addons: reg.addons || 0
-          }))
+          })),
+          // Настройки для pool-based системы
+          use_pool_system: true,
+          buy_in: tournament?.buy_in || 1000
         }
       });
 
@@ -196,8 +210,8 @@ const RatingManagement = ({ tournaments, selectedTournament, onRefresh }: Rating
       }
 
       toast({
-        title: 'RPS рейтинги рассчитаны',
-        description: `Обновлены рейтинги для ${registrations.length} игроков`,
+        title: 'Pool RPS рейтинги рассчитаны',
+        description: `Обновлены рейтинги для ${registrations.length} игроков по пул-системе (${tournament?.buy_in}₽ = ${Math.floor((tournament?.buy_in || 1000) / 10)} очков)`,
       });
 
       // Auto-update leaderboard if enabled
@@ -342,8 +356,8 @@ const RatingManagement = ({ tournaments, selectedTournament, onRefresh }: Rating
                 <div className="flex items-center space-x-2">
                   <Activity className="h-4 w-4 text-poker-success" />
                   <div>
-                    <p className="text-2xl font-bold text-poker-text-primary">RPS</p>
-                    <p className="text-xs text-poker-text-muted">Система рейтинга</p>
+                    <p className="text-2xl font-bold text-poker-text-primary">Pool</p>
+                    <p className="text-xs text-poker-text-muted">Пул-система RPS</p>
                   </div>
                 </div>
               </CardContent>
@@ -355,10 +369,10 @@ const RatingManagement = ({ tournaments, selectedTournament, onRefresh }: Rating
             <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-poker-text-primary">
                 <Settings className="h-5 w-5 text-poker-accent" />
-                Система рейтинговых баллов RPS
+                Система рейтинговых очков RPS (Pool System)
               </CardTitle>
               <CardDescription className="text-poker-text-secondary">
-                Настройте автоматические процессы для обработки турниров RPS
+                Настройте автоматические процессы для обработки турниров с новой пул-системой RPS (1000₽ = 100 очков)
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -429,7 +443,7 @@ const RatingManagement = ({ tournaments, selectedTournament, onRefresh }: Rating
                   disabled={!selectedTournament || selectedTournament.status !== 'finished' || isCalculating}
                 >
                   <Calculator className="w-4 h-4 mr-1" />
-                  {isCalculating ? 'Расчет RPS...' : 'Расчет RPS рейтингов'}
+                  {isCalculating ? 'Расчет Pool RPS...' : 'Расчет Pool RPS рейтингов'}
                 </Button>
 
                 <Button

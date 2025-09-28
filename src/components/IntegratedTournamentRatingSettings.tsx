@@ -385,21 +385,21 @@ export default function IntegratedTournamentRatingSettings({
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center gap-2">
                   <Star className="h-5 w-5 text-yellow-600" />
-                  Рейтинговая система
+                  Pool-Based RPS система
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="flex justify-between">
-                  <span className="text-poker-text-muted">Базовые очки:</span>
-                  <span className="font-semibold">{localConfig.base_points}</span>
+                  <span className="text-poker-text-muted">Очков в фонде:</span>
+                  <span className="font-semibold">{Math.floor((selectedTournament?.buy_in || 1000) * registeredPlayers / 10)}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-poker-text-muted">Бонус за участие:</span>
-                  <span className="font-semibold">{localConfig.participation_bonus}</span>
+                  <span className="text-poker-text-muted">Коэффициент:</span>
+                  <span className="font-semibold">1000₽ = 100 очков</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-poker-text-muted">Призовой коэффициент:</span>
-                  <span className="font-semibold">{localConfig.prize_coefficient}%</span>
+                  <span className="text-poker-text-muted">Система:</span>
+                  <span className="font-semibold text-blue-600">Pool-Based</span>
                 </div>
               </CardContent>
             </Card>
@@ -434,13 +434,25 @@ export default function IntegratedTournamentRatingSettings({
               <Info className="h-4 w-4" />
               <AlertDescription>
                 <strong>Турнир активен:</strong> Изменения настроек рейтингов будут применены к текущему турниру "{selectedTournament.name}".
-                Призовая структура автоматически синхронизирована с настройками RPS.
+                Новая Pool-Based система автоматически рассчитывает очки на основе призового фонда турнира.
+                <br />
+                <strong>💡 Совет:</strong> Используйте кнопку "Пересчитать рейтинги" во вкладке "Анализ" для пересчета существующих турниров с новой системой.
               </AlertDescription>
             </Alert>
           )}
         </TabsContent>
 
         <TabsContent value="rating" className="space-y-6">
+          {/* Уведомление о новой системе */}
+          <Alert className="border-blue-200 bg-blue-50">
+            <Info className="h-4 w-4" />
+            <AlertDescription>
+              <strong>🎯 Новая Pool-Based RPS система:</strong> Теперь рейтинговые очки рассчитываются на основе призового фонда турнира. 
+              Каждые 1000₽ бай-ина = 100 очков в призовом фонде для распределения среди призёров. 
+              Бонусы за участие, ребаи и аддоны больше не начисляются.
+            </AlertDescription>
+          </Alert>
+          
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
             {/* Основные настройки рейтинга */}
             <Card className="bg-gradient-card border-poker-border shadow-elevated">
