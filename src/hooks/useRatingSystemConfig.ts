@@ -110,14 +110,14 @@ export const DEFAULT_CONFIG: RatingSystemConfig = {
   min_rating: 100,
   max_rating: 5000,
   
-  // Бонусные очки (настроены для баланса)
-  rebuy_multiplier: 1.2,
-  addon_multiplier: 1.1,
+  // Бонусные очки (отключены)
+  rebuy_multiplier: 0,
+  addon_multiplier: 0,
   double_rebuy_multiplier: 1.8,
   late_entry_penalty: 0.3,
   
-  // Призовые очки (оптимизированы)
-  prize_coefficient: 0.002,
+  // Призовые очки (увеличены)
+  prize_coefficient: 0.1,
   min_prize_points: 2,
   max_prize_points: 150,
   prize_distribution_weight: 1.2,
@@ -133,7 +133,7 @@ export const DEFAULT_CONFIG: RatingSystemConfig = {
   itm_bonus: 2,
   
   // Участие и время
-  participation_bonus: 1,
+  participation_bonus: 0,
   elimination_penalty: false,
   bubble_bonus: 2,
   heads_up_bonus: 3,
