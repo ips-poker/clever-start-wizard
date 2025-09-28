@@ -17,7 +17,6 @@ import NotFound from "./pages/NotFound";
 import ExternalTimer from "./pages/ExternalTimer";
 import TelegramMiniApp from "./pages/TelegramMiniApp";
 import InvitationCard from "./pages/InvitationCard";
-import RecalculateNow from "./pages/RecalculateNow";
 
 const queryClient = new QueryClient();
 
@@ -43,7 +42,7 @@ function App() {
           <Route path="/external-timer" element={<ExternalTimer />} />
           <Route path="/invitation/:id" element={<InvitationCard />} />
           <Route path="/telegram" element={<TelegramMiniApp />} />
-          <Route path="/recalculate" element={<RecalculateNow />} />
+          
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

@@ -11,36 +11,50 @@ export function RecalculateRatings() {
     setIsRecalculating(true);
     
     try {
-      // Найти последний турнир с результатами
+      // Найти последний завершенный турнир
       const { data: tournaments, error: tournamentsError } = await supabase
         .from('tournaments')
-        .select('id, name, status')
-        .or('status.eq.finished,status.eq.cancelled')
+        .select('id, name, status, buy_in')
+        .or('status.eq.completed,status.eq.finished')
         .order('created_at', { ascending: false })
         .limit(1);
 
       if (tournamentsError) throw tournamentsError;
 
       if (!tournaments || tournaments.length === 0) {
-        toast.error('Нет турниров для пересчета');
+        toast.error('Нет завершенных турниров для пересчета');
         return;
       }
 
       const tournament = tournaments[0];
 
-      // Получить результаты турнира
+      // Получить регистрации турнира (включая позиции)
       const { data: registrations, error: registrationsError } = await supabase
         .from('tournament_registrations')
-        .select('player_id, position, rebuys, addons')
-        .eq('tournament_id', tournament.id)
-        .not('position', 'is', null);
+        .select('player_id, position, final_position, rebuys, addons, status')
+        .eq('tournament_id', tournament.id);
 
       if (registrationsError) throw registrationsError;
 
       if (!registrations || registrations.length === 0) {
-        toast.error('Нет результатов для пересчета');
+        toast.error('Нет участников для пересчета');
         return;
       }
+
+      // Формируем результаты с корректными позициями
+      const results = registrations.map(reg => ({
+        player_id: reg.player_id,
+        position: reg.final_position || reg.position || null,
+        rebuys: reg.rebuys || 0,
+        addons: reg.addons || 0
+      })).filter(r => r.position !== null); // Только участники с позициями
+
+      if (results.length === 0) {
+        toast.error('Нет результатов с корректными позициями');
+        return;
+      }
+
+      toast.info('Удаляем старые результаты...');
 
       // Удалить существующие результаты перед пересчетом
       const { error: deleteError } = await supabase
@@ -54,9 +68,9 @@ export function RecalculateRatings() {
         return;
       }
 
-      // Сбросить статистику игроков (будет пересчитана триггером)
-      const playerIds = registrations.map(r => r.player_id);
-      const { error: resetError } = await supabase
+      // Сбросить статистику игроков
+      const playerIds = results.map(r => r.player_id);
+      await supabase
         .from('players')
         .update({ 
           games_played: 0,
@@ -64,36 +78,40 @@ export function RecalculateRatings() {
         })
         .in('id', playerIds);
 
-      if (resetError) {
-        console.error('Ошибка при сбросе статистики:', resetError);
-      }
-
-      // Сбросить статус турнира
+      // Сбросить статус турнира для пересчета
       await supabase
         .from('tournaments')
         .update({ status: 'registration' })
         .eq('id', tournament.id);
 
-      // Вызвать функцию пересчета
+      toast.info('Пересчитываем рейтинги с новой пул-системой...');
+
+      // Вызвать функцию пересчета с правильными параметрами
       const { data, error } = await supabase.functions.invoke('calculate-elo', {
         body: {
           tournament_id: tournament.id,
-          results: registrations
+          results: results,
+          // Настройки для pool-based системы
+          use_pool_system: true,
+          buy_in: tournament.buy_in
         }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Edge function error:', error);
+        throw new Error(`Ошибка функции пересчета: ${error.message}`);
+      }
 
-      toast.success(`Рейтинги пересчитаны для турнира "${tournament.name}"`);
+      toast.success(`Рейтинги успешно пересчитаны для турнира "${tournament.name}" с пул-системой!`);
       
-      // Обновить страницу через секунду
+      // Обновить страницу через 2 секунды
       setTimeout(() => {
         window.location.reload();
-      }, 1000);
+      }, 2000);
 
     } catch (error) {
       console.error('Ошибка пересчета:', error);
-      toast.error('Ошибка при пересчете рейтингов');
+      toast.error(`Ошибка при пересчете рейтингов: ${error.message}`);
     } finally {
       setIsRecalculating(false);
     }
