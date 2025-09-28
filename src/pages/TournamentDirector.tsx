@@ -51,6 +51,7 @@ import ProfessionalRatingSettings from '@/components/ProfessionalRatingSettings'
 import OfflinePokerRatingAnalyzer from '@/components/OfflinePokerRatingAnalyzer';
 import OfflinePokerProfileManager from '@/components/OfflinePokerProfileManager';
 import IntegratedTournamentRatingSettings from '@/components/IntegratedTournamentRatingSettings';
+import { RecalculateRatings } from '@/components/RecalculateRatings';
 import { useVoiceAnnouncements } from "@/hooks/useVoiceAnnouncements";
 
 // Используем типы из базы данных
@@ -1307,7 +1308,14 @@ const TournamentDirector = () => {
             <TabsContent value="analysis" className="space-y-6 animate-fade-in">
               {selectedTournament ? (
                 <div className="space-y-8">
-                  <PrizeStructureManager tournamentId={selectedTournament.id} registeredPlayers={registrations.length} mode="analysis" />
+                  <div className="flex flex-col sm:flex-row gap-4 items-start">
+                    <div className="flex-1">
+                      <PrizeStructureManager tournamentId={selectedTournament.id} registeredPlayers={registrations.length} mode="analysis" />
+                    </div>
+                    <div className="sm:w-auto">
+                      <RecalculateRatings />
+                    </div>
+                  </div>
                   <TournamentAnalysisAndRating />
                 </div>
               ) : (
