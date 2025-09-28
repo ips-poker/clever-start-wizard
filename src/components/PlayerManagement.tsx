@@ -89,9 +89,7 @@ const PlayerManagement = ({ tournament, players, registrations, onRegistrationUp
   const voiceAnnouncements = useVoiceAnnouncements({ enabled: true });
 
   useEffect(() => {
-    console.log('PlayerManagement mounted');
     return () => {
-      console.log('PlayerManagement unmounting');
       isMountedRef.current = false;
     };
   }, []);

@@ -306,15 +306,6 @@ const ImprovedPlayerManagement = ({ tournament, players, registrations, onRegist
       title: "Фишки перераспределены равномерно",
       description: `${eliminatedChips.toLocaleString()} фишек распределено поровну между ${remainingPlayers.length} игроками (по ${chipsPerPlayer.toLocaleString()}${remainderChips > 0 ? '+1 некоторым' : ''})`
     });
-
-    console.log('Перераспределение фишек:', {
-      eliminatedChips,
-      playersCount: remainingPlayers.length,
-      chipsPerPlayer,
-      remainderChips,
-      totalDistributed,
-      updates: updates.map(u => ({ playerId: u.id, added: u.additionalChips, newTotal: u.chips }))
-    });
   };
 
   const eliminatePlayer = async (registrationId: string) => {
@@ -329,16 +320,6 @@ const ImprovedPlayerManagement = ({ tournament, players, registrations, onRegist
     // - Второй исключенный получает позицию 9 (остается 8, позиция = 8+1 = 9)
     // - Последний исключенный получает позицию 1 (остается 0, позиция = 0+1 = 1) - ПОБЕДИТЕЛЬ!
     const position = remainingActive.length + 1;
-
-    // Логируем начальное состояние для диагностики
-    console.log('🔍 ИСКЛЮЧЕНИЕ ИГРОКА - начальные данные:', {
-      eliminatedPlayer: registration.player.name,
-      eliminatedChips,
-      position: position,
-      remainingPlayersCount: remainingActive.length,
-      remainingPlayersChips: remainingActive.map(p => ({ name: p.player.name, chips: p.chips })),
-      totalChipsBefore: remainingActive.reduce((sum, p) => sum + p.chips, 0) + eliminatedChips
-    });
 
     // Исключаем игрока
     const { error } = await supabase
@@ -421,12 +402,6 @@ const ImprovedPlayerManagement = ({ tournament, players, registrations, onRegist
         rebuys: reg.rebuys || 0,
         addons: reg.addons || 0
       }));
-
-      console.log('🏆 ОТПРАВКА РЕЗУЛЬТАТОВ В CALCULATE-ELO:', {
-        tournament_id: tournament.id,
-        results: results.map(r => `Player ${r.player_id}: position ${r.position}`),
-        total_players: results.length
-      });
 
       // Вызываем функцию расчета ELO
       const { error: eloError } = await supabase.functions.invoke('calculate-elo', {
