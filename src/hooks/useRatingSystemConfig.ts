@@ -12,6 +12,10 @@ export interface RatingSystemConfig {
   min_rating: number;
   max_rating: number;
   
+  // Система очков на основе пула
+  pool_based_system: boolean;  // Использовать систему распределения пула
+  pool_coefficient: number;    // Коэффициент конвертации денег в очки (1000₽ = 100 очков при 0.1)
+  
   // Бонусные очки
   rebuy_multiplier: number;
   addon_multiplier: number;
@@ -116,7 +120,11 @@ export const DEFAULT_CONFIG: RatingSystemConfig = {
   double_rebuy_multiplier: 1.8,
   late_entry_penalty: 0.3,
   
-  // Призовые очки (увеличены)
+  // Система очков на основе пула (pool-based system)
+  pool_based_system: true, // НОВАЯ СИСТЕМА: общий пул очков распределяется между призерами  
+  pool_coefficient: 0.1,   // 1000₽ = 100 очков в пул (коэффициент 0.1)
+  
+  // Призовые очки (для совместимости)
   prize_coefficient: 0.1,
   min_prize_points: 2,
   max_prize_points: 150,

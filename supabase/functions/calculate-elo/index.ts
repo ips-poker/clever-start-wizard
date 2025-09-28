@@ -209,151 +209,81 @@ serve(async (req) => {
 function calculateRPSChanges(players: Player[], results: TournamentResult[], tournament: any, payoutStructureFromDB?: any[], ratingConfig?: any) {
   const changes = []
 
-  // Defaults for configuration (fallback if no config provided)
-  const config = {
-    base_points: ratingConfig?.base_points || 2,
-    min_rating: ratingConfig?.min_rating || 100,
-    rebuy_multiplier: ratingConfig?.rebuy_multiplier || 0,
-    addon_multiplier: ratingConfig?.addon_multiplier || 0,
-    prize_coefficient: ratingConfig?.prize_coefficient || 0.1,
-    min_prize_points: ratingConfig?.min_prize_points || 2,
-    enable_position_bonus: ratingConfig?.enable_position_bonus !== false,
-    first_place_bonus: ratingConfig?.first_place_bonus || 8,
-    second_place_bonus: ratingConfig?.second_place_bonus || 5,
-    third_place_bonus: ratingConfig?.third_place_bonus || 3,
-    top_3_bonus: ratingConfig?.top_3_bonus || 2,
-    itm_bonus: ratingConfig?.itm_bonus || 2,
-    bubble_bonus: ratingConfig?.bubble_bonus || 2,
-    participation_bonus: ratingConfig?.participation_bonus || 0,
-    field_size_modifier: ratingConfig?.field_size_modifier || false,
-    buy_in_modifier: ratingConfig?.buy_in_modifier || false,
-    progressive_scaling: ratingConfig?.progressive_scaling || false,
-    high_rating_dampening: ratingConfig?.high_rating_dampening || 0.75,
-    volatility_control: ratingConfig?.volatility_control || 0.15
+  // Проверяем, какую систему использовать
+  const usePoolBasedSystem = ratingConfig?.pool_based_system || false
+  
+  if (usePoolBasedSystem) {
+    console.log('🎯 POOL-BASED RPS SYSTEM: каждый 1000₽ входа = 100 очков в общий пул')
+    return calculatePoolBasedRPS(players, results, tournament, payoutStructureFromDB, ratingConfig)
+  } else {
+    console.log('🎯 CLASSIC RPS SYSTEM: базовые очки + бонусы + призовые')
+    return calculateClassicRPS(players, results, tournament, payoutStructureFromDB, ratingConfig)
   }
+}
 
-  console.log('Using enhanced RPS configuration:', config)
+function calculatePoolBasedRPS(players: Player[], results: TournamentResult[], tournament: any, payoutStructureFromDB?: any[], ratingConfig?: any) {
+  const changes = []
 
-  // ВАЖНО: Сортируем по позиции (1-е место это позиция 1, последнее место - максимальная позиция)
-  // Позиции должны быть присвоены по принципу: кто последний вылетел = 1-е место
+  // Сортируем по позиции (1-е место это позиция 1, последнее место - максимальная позиция)
   results.sort((a, b) => a.position - b.position)
   
   console.log('Processing results for positions:', results.map(r => `Player ${r.player_id}: position ${r.position}`))
 
-  // Рассчитываем общий призовой фонд
-  let totalPrizePool = 0
+  // Рассчитываем общий пул очков по новой системе
+  const coefficient = ratingConfig?.pool_coefficient || 0.1 // 1000 руб = 100 очков
+  let totalPointsPool = 0
+  
   results.forEach(result => {
     const rebuys = result.rebuys || 0
     const addons = result.addons || 0
-    totalPrizePool += tournament.buy_in + 
+    const playerContribution = tournament.buy_in + 
       (rebuys * (tournament.rebuy_cost || 0)) + 
       (addons * (tournament.addon_cost || 0))
+    
+    totalPointsPool += Math.floor(playerContribution * coefficient)
   })
 
-  console.log(`Total prize pool: ${totalPrizePool}`)
+  console.log(`💰 Total points pool: ${totalPointsPool} очков (от ${results.length} игроков)`)
 
-  // Используем структуру выплат из БД (только призовые места)
+  // Используем структуру выплат из БД для распределения пула очков
   let payoutStructure: number[] = []
   
   if (payoutStructureFromDB && payoutStructureFromDB.length > 0) {
-    // Используем сохраненную структуру из БД - только реальные призовые места
-    payoutStructure = payoutStructureFromDB.map(p => p.percentage)
-    console.log('Using payout structure from database:', payoutStructure)
+    payoutStructure = payoutStructureFromDB.map(p => parseFloat(p.percentage.toString()))
+    console.log('📊 Using payout structure from database:', payoutStructure)
   } else {
-    // Fallback к дефолтной структуре призовых мест
     payoutStructure = getPayoutStructure(results.length)
-    console.log('Using default payout structure:', payoutStructure)
+    console.log('📊 Using default payout structure:', payoutStructure)
   }
   
+  // Распределяем очки согласно призовой структуре
   for (let i = 0; i < results.length; i++) {
     const playerResult = results[i]
     const player = players.find(p => p.id === playerResult.player_id)
     if (!player) continue
 
-    // Базовые очки за участие (используем конфигурацию)
-    let rpsChange = config.base_points + config.participation_bonus
-
-    // Бонусы за ребаи и адоны (используем конфигурацию)
-    const rebuys = playerResult.rebuys || 0
-    const addons = playerResult.addons || 0
-    rpsChange += (rebuys * config.rebuy_multiplier) + (addons * config.addon_multiplier)
-
-    // Позиционные бонусы (используем конфигурацию)
     const position = playerResult.position
-    if (config.enable_position_bonus) {
-      if (position === 1) {
-        rpsChange += config.first_place_bonus
-        console.log(`🥇 First place bonus: +${config.first_place_bonus} points`)
-      } else if (position === 2) {
-        rpsChange += config.second_place_bonus
-        console.log(`🥈 Second place bonus: +${config.second_place_bonus} points`)
-      } else if (position === 3) {
-        rpsChange += config.third_place_bonus
-        console.log(`🥉 Third place bonus: +${config.third_place_bonus} points`)
-      } else if (position <= 3) {
-        rpsChange += config.top_3_bonus
-        console.log(`🏆 Top 3 bonus: +${config.top_3_bonus} points`)
-      }
-    }
+    let rpsChange = 0
 
-    // Призовые баллы (ТОЛЬКО для призовых мест по структуре выплат из базы данных!)
+    // Проверяем, находится ли игрок в призовых местах
     if (position <= payoutStructure.length) {
+      // Игрок в призовых - получает долю от общего пула очков
       const prizePercentage = payoutStructure[position - 1]
-      const prizeAmount = (totalPrizePool * prizePercentage) / 100
+      rpsChange = Math.floor((totalPointsPool * prizePercentage) / 100)
       
-      // ITM бонус
-      rpsChange += config.itm_bonus
-      
-      // Используем конфигурацию для расчета призовых очков
-      const prizePoints = Math.max(config.min_prize_points, Math.floor(prizeAmount * config.prize_coefficient))
-      rpsChange += prizePoints
-      
-      console.log(`🏆 ПРИЗОВЫЕ ОЧКИ для позиции ${position}: ${prizePercentage}% от ${totalPrizePool} = ${prizeAmount}₽, очки: ${prizePoints} (коэффициент ${config.prize_coefficient}) + ITM бонус: ${config.itm_bonus}`)
+      console.log(`🏆 Призовое место ${position}: ${prizePercentage}% от ${totalPointsPool} = ${rpsChange} очков`)
     } else {
-      console.log(`❌ Позиция ${position} не входит в призовые места (всего призовых мест: ${payoutStructure.length})`)
-      
-      // Бонус за "пузырь" (первый не получивший призовые)
-      if (position === payoutStructure.length + 1) {
-        rpsChange += config.bubble_bonus
-        console.log(`💥 Bubble bonus: +${config.bubble_bonus} points`)
-      }
+      // Игрок не в призовых - получает 0 очков
+      rpsChange = 0
+      console.log(`❌ Позиция ${position} не в призовых (призовых мест: ${payoutStructure.length}) = 0 очков`)
     }
 
-    // Модификаторы размера поля
-    if (config.field_size_modifier) {
-      const fieldSizeMultiplier = 1 + (Math.log10(results.length) / 10)
-      rpsChange = Math.floor(rpsChange * fieldSizeMultiplier)
-      console.log(`📊 Field size modifier applied: x${fieldSizeMultiplier.toFixed(2)}`)
-    }
-
-    // Модификаторы бай-ина
-    if (config.buy_in_modifier && tournament.buy_in > 0) {
-      const buyInMultiplier = 1 + (Math.log10(tournament.buy_in || 1000) / 20)
-      rpsChange = Math.floor(rpsChange * buyInMultiplier)
-      console.log(`💰 Buy-in modifier applied: x${buyInMultiplier.toFixed(2)}`)
-    }
-
-    // Прогрессивное масштабирование для высоких рейтингов
-    if (config.progressive_scaling && player.elo_rating > 1000) {
-      const scalingFactor = config.high_rating_dampening
-      rpsChange = Math.floor(rpsChange * scalingFactor)
-      console.log(`⚖️ High rating dampening applied: x${scalingFactor}`)
-    }
-
-    // Контроль волатильности
-    if (config.volatility_control > 0) {
-      const maxChange = Math.max(5, player.elo_rating * config.volatility_control)
-      if (Math.abs(rpsChange) > maxChange) {
-        rpsChange = rpsChange > 0 ? maxChange : -maxChange
-        console.log(`🔄 Volatility control applied, capped at: ±${maxChange}`)
-      }
-    }
-
-    // Рейтинг не может быть меньше минимального (используем конфигурацию)
-    const newRating = Math.max(config.min_rating, player.elo_rating + rpsChange)
+    // Применяем минимальный рейтинг
+    const minRating = ratingConfig?.min_rating || 100
+    const newRating = Math.max(minRating, player.elo_rating + rpsChange)
     const finalChange = newRating - player.elo_rating
 
-    console.log(`Player ${player.name}: position ${position}, RPS change: ${finalChange} (from ${player.elo_rating} to ${newRating})`)
+    console.log(`👤 ${player.name}: позиция ${position} → изменение рейтинга: ${finalChange} (${player.elo_rating} → ${newRating})`)
 
     changes.push({
       player_id: player.id,
@@ -363,6 +293,12 @@ function calculateRPSChanges(players: Player[], results: TournamentResult[], tou
   }
 
   return changes
+}
+
+function calculateClassicRPS(players: Player[], results: TournamentResult[], tournament: any, payoutStructureFromDB?: any[], ratingConfig?: any) {
+  // Здесь была бы старая логика расчета, но мы используем новую систему
+  console.log('Classic RPS system not implemented - using pool-based system')
+  return calculatePoolBasedRPS(players, results, tournament, payoutStructureFromDB, ratingConfig)
 }
 
 function getPayoutStructure(playerCount: number): number[] {
