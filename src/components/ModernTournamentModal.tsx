@@ -242,22 +242,57 @@ export function ModernTournamentModal({ tournament, open, onOpenChange, onTourna
                 Основная информация
               </h3>
               
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div className="flex items-center gap-2">
-                  <Calendar className="w-4 h-4 text-muted-foreground" />
-                  <span>{new Date(tournament.start_time).toLocaleString('ru-RU')}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Users className="w-4 h-4 text-muted-foreground" />
-                  <span>{participantCount} из {tournament.max_players} участников</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <DollarSign className="w-4 h-4 text-muted-foreground" />
-                  <span>Организационный взнос: {formatParticipationFee(tournament.participation_fee)}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Target className="w-4 h-4 text-muted-foreground" />
-                  <span>Стартовый инвентарь: {tournament.starting_chips.toLocaleString()}</span>
+              <div className="space-y-4">
+                <div className="space-y-3">
+                  <div className="flex items-start justify-between">
+                    <span className="text-sm font-medium text-muted-foreground">Дата и время</span>
+                    <div className="flex items-center gap-2">
+                      <Calendar className="w-4 h-4 text-muted-foreground" />
+                      <span className="text-sm font-medium">{new Date(tournament.start_time).toLocaleString('ru-RU')}</span>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-start justify-between">
+                    <span className="text-sm font-medium text-muted-foreground">Игроки</span>
+                    <div className="flex items-center gap-2">
+                      <Users className="w-4 h-4 text-muted-foreground" />
+                      <span className="text-sm font-medium">{participantCount} из {tournament.max_players} участников</span>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-start justify-between">
+                    <span className="text-sm font-medium text-muted-foreground">Формат</span>
+                    <div className="flex items-center gap-2">
+                      <PlayCircle className="w-4 h-4 text-muted-foreground" />
+                      <span className="text-sm font-medium capitalize">{tournament.tournament_format}</span>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-start justify-between">
+                    <span className="text-sm font-medium text-muted-foreground">Стартовый стек</span>
+                    <div className="flex items-center gap-2">
+                      <Target className="w-4 h-4 text-muted-foreground" />
+                      <span className="text-sm font-medium">{tournament.starting_chips.toLocaleString()}</span>
+                    </div>
+                  </div>
+                  
+                  {lateRegDeadline && (
+                    <div className="flex items-start justify-between">
+                      <span className="text-sm font-medium text-muted-foreground">Поздняя регистрация до</span>
+                      <div className="flex items-center gap-2">
+                        <Clock className="w-4 h-4 text-muted-foreground" />
+                        <span className="text-sm font-medium">{lateRegDeadline.toLocaleString('ru-RU')}</span>
+                      </div>
+                    </div>
+                  )}
+                  
+                  <div className="flex items-start justify-between">
+                    <span className="text-sm font-medium text-muted-foreground">Организационный взнос</span>
+                    <div className="flex items-center gap-2">
+                      <DollarSign className="w-4 h-4 text-muted-foreground" />
+                      <span className="text-sm font-medium">{formatParticipationFee(tournament.participation_fee)}</span>
+                    </div>
+                  </div>
                 </div>
               </div>
 
