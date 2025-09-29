@@ -449,6 +449,60 @@ export function TournamentCreationModal({
                       </SelectContent>
                     </Select>
                   </div>
+
+                  {(formData.tournament_format === 'reentry' || formData.tournament_format === 'reentry-additional') && (
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="reentry_fee">Стоимость повторного входа</Label>
+                        <Input
+                          id="reentry_fee"
+                          type="number"
+                          min="0"
+                          step="100"
+                          value={formData.reentry_fee}
+                          onChange={(e) => updateFormData('reentry_fee', parseInt(e.target.value) || 1000)}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="reentry_chips">Фишки при повторном входе</Label>
+                        <Input
+                          id="reentry_chips"
+                          type="number"
+                          min="1000"
+                          step="1000"
+                          value={formData.reentry_chips}
+                          onChange={(e) => updateFormData('reentry_chips', parseInt(e.target.value) || 10000)}
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {(formData.tournament_format === 'additional' || formData.tournament_format === 'reentry-additional') && (
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="additional_fee">Стоимость дополнительного набора</Label>
+                        <Input
+                          id="additional_fee"
+                          type="number"
+                          min="0"
+                          step="100"
+                          value={formData.additional_fee}
+                          onChange={(e) => updateFormData('additional_fee', parseInt(e.target.value) || 1000)}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="additional_chips">Фишки дополнительного набора</Label>
+                        <Input
+                          id="additional_chips"
+                          type="number"
+                          min="1000"
+                          step="1000"
+                          value={formData.additional_chips}
+                          onChange={(e) => updateFormData('additional_chips', parseInt(e.target.value) || 15000)}
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
