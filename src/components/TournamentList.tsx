@@ -218,7 +218,7 @@ export function TournamentList() {
           </p>
         </div>
 
-        {tournaments.length === 0 ? (
+{tournaments.length === 0 ? (
           <div className="text-center py-12">
             <div className="bg-gradient-to-br from-slate-800/90 via-slate-900/95 to-black/90 border border-white/10 rounded-2xl p-8 backdrop-blur-xl max-w-md mx-auto">
               <div className="w-16 h-16 bg-gradient-to-br from-amber-500/20 to-amber-600/20 rounded-2xl flex items-center justify-center mx-auto mb-6">
@@ -231,75 +231,101 @@ export function TournamentList() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {tournaments.map((tournament) => (
-              <div key={tournament.id} className="group">
-                <div className="bg-gradient-to-br from-slate-800/90 via-slate-900/95 to-black/90 border border-white/10 rounded-2xl p-6 backdrop-blur-xl shadow-xl group-hover:scale-[1.02] transition-all duration-500 hover:shadow-2xl hover:shadow-amber-500/20 relative overflow-hidden">
-                  <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 via-transparent to-amber-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                  <div className="absolute inset-0 opacity-8 group-hover:opacity-15 transition-opacity duration-500">
-                    <div className="absolute top-3 right-3 text-amber-400/30 text-2xl animate-pulse">♠</div>
-                    <div className="absolute bottom-3 left-3 text-amber-400/20 text-xl animate-bounce-subtle">♣</div>
+              <div key={tournament.id} className="group relative">
+                {/* Ticket-style card inspired by Telegram app */}
+                <div className="bg-gradient-to-br from-slate-800/95 via-slate-900/98 to-black/95 border border-white/20 rounded-3xl overflow-hidden shadow-2xl group-hover:scale-[1.02] transition-all duration-700 hover:shadow-amber-500/30 backdrop-blur-2xl relative">
+                  {/* Ticket perforations */}
+                  <div className="absolute left-0 top-1/2 transform -translate-y-1/2 w-6 h-6 bg-slate-900 rounded-full -ml-3 border border-white/10"></div>
+                  <div className="absolute right-0 top-1/2 transform -translate-y-1/2 w-6 h-6 bg-slate-900 rounded-full -mr-3 border border-white/10"></div>
+                  
+                  {/* Dashed line */}
+                  <div className="absolute left-6 right-6 top-1/2 h-px border-t-2 border-dashed border-white/20 transform -translate-y-1/2"></div>
+                  
+                  {/* Top section */}
+                  <div className="p-6 pb-8 relative">
+                    <div className="absolute inset-0 bg-gradient-to-br from-amber-500/8 via-transparent to-amber-600/8 opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
+                    <div className="absolute inset-0 opacity-8 group-hover:opacity-20 transition-opacity duration-500">
+                      <div className="absolute top-4 right-4 text-amber-400/30 text-3xl animate-pulse">♠</div>
+                      <div className="absolute top-8 left-4 text-amber-400/20 text-2xl animate-bounce-subtle">♣</div>
+                    </div>
+                    
+                    <div className="relative z-10">
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-lg">
+                            <Trophy className="h-5 w-5 text-white" />
+                          </div>
+                          <div>
+                            <h3 className="text-lg font-semibold text-white group-hover:text-amber-100 transition-colors duration-300 leading-tight">
+                              {tournament.name}
+                            </h3>
+                            <p className="text-white/60 text-sm">ID: {tournament.id.slice(0, 8)}...</p>
+                          </div>
+                        </div>
+                        {getStatusBadge(tournament.status)}
+                      </div>
+
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-3">
+                          <Calendar className="h-4 w-4 text-amber-400" />
+                          <span className="text-white/80 text-sm">
+                            {new Date(tournament.start_time).toLocaleDateString('ru-RU', { 
+                              day: 'numeric', 
+                              month: 'long', 
+                              hour: '2-digit', 
+                              minute: '2-digit' 
+                            })}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <Users className="h-4 w-4 text-amber-400" />
+                          <span className="text-white/80 text-sm">
+                            {tournament._count?.tournament_registrations || 0} / {tournament.max_players} игроков
+                          </span>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                   
-                  <div className="relative z-10">
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="w-8 h-8 bg-gradient-to-br from-amber-500 to-amber-600 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                        <Trophy className="h-4 w-4 text-white" />
+                  {/* Bottom section */}
+                  <div className="p-6 pt-4 bg-gradient-to-br from-slate-900/50 to-black/50 relative">
+                    <div className="relative z-10">
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 bg-amber-400 rounded-full animate-pulse"></div>
+                          <span className="text-amber-400 text-lg font-bold">
+                            {tournament.participation_fee.toLocaleString()} ₽
+                          </span>
+                        </div>
+                        <div className="text-white/60 text-sm">
+                          Стартовый стек: {tournament.starting_chips.toLocaleString()}
+                        </div>
                       </div>
-                      <h3 className="text-lg font-medium text-white group-hover:text-amber-100 transition-colors duration-300 flex-1">
-                        {tournament.name}
-                      </h3>
-                      {getStatusBadge(tournament.status)}
-                    </div>
 
-                    <div className="space-y-3 mb-6">
-                      <div className="flex justify-between items-center">
-                        <span className="text-white/60 text-sm">Дата проведения:</span>
-                        <span className="text-white font-medium text-sm">
-                          {new Date(tournament.start_time).toLocaleDateString('ru-RU')}
-                        </span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-white/60 text-sm">Время:</span>
-                        <span className="text-white font-medium text-sm">
-                          {new Date(tournament.start_time).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}
-                        </span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-white/60 text-sm">Участников:</span>
-                        <span className="text-white font-medium text-sm">
-                          {tournament._count?.tournament_registrations || 0} / {tournament.max_players}
-                        </span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-white/60 text-sm">Взнос:</span>
-                        <span className="text-green-400 font-medium text-sm">
-                          {tournament.participation_fee.toLocaleString()} ₽
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="space-y-3">
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="w-full border-amber-400/50 text-amber-400 hover:bg-amber-400/10 transition-all duration-300"
-                        onClick={() => {
-                          setSelectedTournament(tournament);
-                          setModalOpen(true);
-                        }}
-                      >
-                        <Info className="h-4 w-4 mr-2" />
-                        Подробности
-                      </Button>
-                      
-                      {tournament.status === 'registration' && (
+                      <div className="space-y-2">
                         <Button 
+                          variant="outline" 
                           size="sm" 
-                          className="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-medium transition-all duration-300"
-                          onClick={() => registerForTournament(tournament.id)}
+                          className="w-full border-amber-400/40 text-amber-400 hover:bg-amber-400/15 transition-all duration-300 rounded-xl backdrop-blur-sm"
+                          onClick={() => {
+                            setSelectedTournament(tournament);
+                            setModalOpen(true);
+                          }}
                         >
-                          Регистрация
+                          <Info className="h-4 w-4 mr-2" />
+                          Подробная информация
                         </Button>
-                      )}
+                        
+                        {tournament.status === 'registration' && (
+                          <Button 
+                            size="sm" 
+                            className="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-semibold transition-all duration-300 rounded-xl shadow-lg hover:shadow-amber-500/30"
+                            onClick={() => registerForTournament(tournament.id)}
+                          >
+                            Зарегистрироваться
+                          </Button>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>

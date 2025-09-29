@@ -7,8 +7,15 @@ export function Footer() {
   const { getContent: getContactContent } = useCMSContent('contact');
   const { getContent: getServicesContent } = useCMSContent('services');
   return (
-    <footer className="bg-primary text-primary-foreground">
-      <div className="container mx-auto px-4 py-8 lg:py-12">
+    <footer className="bg-gradient-to-br from-slate-900 via-black to-slate-800 text-white relative overflow-hidden">
+      {/* Покерные символы декорация */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-5">
+        <div className="absolute top-10 left-10 text-amber-400/30 text-4xl animate-pulse">♠</div>
+        <div className="absolute top-20 right-20 text-amber-400/20 text-3xl animate-bounce-subtle">♣</div>
+        <div className="absolute bottom-10 left-20 text-amber-400/25 text-5xl animate-pulse">♥</div>
+        <div className="absolute bottom-20 right-10 text-amber-400/20 text-2xl animate-bounce-subtle">♦</div>
+      </div>
+      <div className="container mx-auto px-4 py-8 lg:py-12 relative z-10">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
           {/* Brand */}
           <div className="space-y-4 text-center sm:text-left">

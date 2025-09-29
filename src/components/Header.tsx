@@ -31,7 +31,7 @@ export function Header() {
   };
 
   return (
-    <header className="fixed top-0 w-full z-50 bg-background/95 backdrop-blur-sm border-b border-border/50">
+    <header className="fixed top-0 w-full z-50 bg-gradient-to-br from-slate-900/95 via-black/98 to-slate-800/95 backdrop-blur-xl border-b border-white/10">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {/* Custom Logo */}
