@@ -1,6 +1,6 @@
 // Типы турниров с обновленной терминологией согласно договору оферты
 
-export interface Tournament {
+export interface ModernTournament {
   id: string;
   name: string;
   description?: string;
@@ -45,10 +45,10 @@ export interface Tournament {
   voice_session_id?: string;
   
   // Формат мероприятия
-  tournament_format: 'freezeout' | 'rebuy' | 'knockout';
+  tournament_format: 'freezeout' | 'reentry' | 'additional';
 }
 
-export interface TournamentRegistration {
+export interface ModernRegistration {
   id: string;
   tournament_id: string;
   player_id: string;
@@ -67,32 +67,4 @@ export interface TournamentRegistration {
   // Время
   created_at: string;
   eliminated_at?: string;
-}
-
-export interface BlindLevel {
-  id: string;
-  tournament_id: string;
-  level: number;
-  small_blind: number;
-  big_blind: number;
-  ante: number;
-  duration: number;
-  is_break: boolean;
-}
-
-export interface TournamentPayout {
-  id: string;
-  tournament_id: string;
-  place: number;
-  percentage: number;
-  rps_points: number; // RPS баллы вместо денежной суммы
-}
-
-// Статистика турнира в RPS баллах
-export interface TournamentStats {
-  total_participants: number;
-  total_reentries: number;
-  total_additional_sets: number;
-  total_rps_points: number; // Общий фонд RPS баллов
-  average_chips_per_player: number;
 }
