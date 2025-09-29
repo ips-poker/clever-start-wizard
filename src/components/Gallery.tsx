@@ -21,7 +21,7 @@ export function Gallery() {
   const [loading, setLoading] = useState(true);
   const [selectedImage, setSelectedImage] = useState<GalleryImage | null>(null);
   const [selectedCategory, setSelectedCategory] = useState("all");
-  const [gridSize, setGridSize] = useState(3); // 2 or 3 columns
+  const [gridSize, setGridSize] = useState(3);
 
   const categories = [
     { value: "all", label: "Все фото" },
@@ -47,7 +47,6 @@ export function Gallery() {
       if (error) throw error;
       
       if (data && data.length > 0) {
-        // Replace broken local paths with working URLs
         const fixedImages = data.map(image => {
           if (image.image_url.startsWith('/src/assets/gallery/')) {
             const filename = image.image_url.split('/').pop();

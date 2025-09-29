@@ -33,7 +33,6 @@ export function SocialProof() {
   useEffect(() => {
     fetchTestimonials();
     
-    // Listen for testimonials updates from admin
     const handleTestimonialsUpdate = () => {
       fetchTestimonials();
     };

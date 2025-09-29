@@ -193,35 +193,117 @@ export function TournamentList() {
   }
 
   return (
-    <section id="tournaments" className="py-20 bg-muted/30">
-      <div className="container mx-auto px-4">
+    <section id="tournaments" className="py-20 bg-gradient-to-br from-slate-900 via-black to-slate-800 relative overflow-hidden">
+      {/* Покерные масти декорация */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-5">
+        <div className="absolute top-10 left-10 text-amber-400/30 text-5xl animate-pulse transform rotate-12">♠</div>
+        <div className="absolute top-20 right-20 text-amber-400/20 text-4xl animate-bounce-subtle transform -rotate-12">♣</div>
+        <div className="absolute bottom-10 left-20 text-amber-400/25 text-6xl animate-pulse transform rotate-45">♥</div>
+        <div className="absolute bottom-20 right-10 text-amber-400/20 text-3xl animate-bounce-subtle transform -rotate-30">♦</div>
+      </div>
+
+      <div className="container mx-auto px-4 relative z-10">
         <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold mb-4 bg-gradient-to-r from-poker-gold to-poker-steel bg-clip-text text-transparent">
-            Предстоящие турниры
-          </h2>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+          <div className="flex items-center gap-3 justify-center mb-6">
+            <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl flex items-center justify-center shadow-lg">
+              <Trophy className="h-5 w-5 text-white" />
+            </div>
+            <h2 className="text-3xl lg:text-4xl font-light text-white tracking-wide">
+              ПРЕДСТОЯЩИЕ ТУРНИРЫ
+            </h2>
+          </div>
+          <div className="h-0.5 w-20 bg-gradient-to-r from-amber-400 to-amber-600 mx-auto mb-6"></div>
+          <p className="text-lg text-white/70 max-w-2xl mx-auto font-light">
             Присоединяйтесь к нашим рейтинговым турнирам и поднимайтесь в таблице лидеров
           </p>
         </div>
 
         {tournaments.length === 0 ? (
           <div className="text-center py-12">
-            <Trophy className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
-            <h3 className="text-xl font-semibold mb-2">Нет доступных турниров</h3>
-            <p className="text-muted-foreground">Новые турниры будут добавлены в ближайшее время</p>
+            <div className="bg-gradient-to-br from-slate-800/90 via-slate-900/95 to-black/90 border border-white/10 rounded-2xl p-8 backdrop-blur-xl max-w-md mx-auto">
+              <div className="w-16 h-16 bg-gradient-to-br from-amber-500/20 to-amber-600/20 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                <Trophy className="w-8 h-8 text-amber-400" />
+              </div>
+              <h3 className="text-xl font-medium mb-3 text-white">Турниры готовятся</h3>
+              <p className="text-white/60">Новые турниры будут добавлены в ближайшее время</p>
+            </div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {tournaments.map((tournament) => (
-              <TournamentTicketCard
-                key={tournament.id}
-                tournament={tournament}
-                onViewDetails={(tournament) => {
-                  setSelectedTournament(tournament);
-                  setModalOpen(true);
-                }}
-                onRegister={registerForTournament}
-              />
+              <div key={tournament.id} className="group">
+                <div className="bg-gradient-to-br from-slate-800/90 via-slate-900/95 to-black/90 border border-white/10 rounded-2xl p-6 backdrop-blur-xl shadow-xl group-hover:scale-[1.02] transition-all duration-500 hover:shadow-2xl hover:shadow-amber-500/20 relative overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 via-transparent to-amber-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                  <div className="absolute inset-0 opacity-8 group-hover:opacity-15 transition-opacity duration-500">
+                    <div className="absolute top-3 right-3 text-amber-400/30 text-2xl animate-pulse">♠</div>
+                    <div className="absolute bottom-3 left-3 text-amber-400/20 text-xl animate-bounce-subtle">♣</div>
+                  </div>
+                  
+                  <div className="relative z-10">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-8 h-8 bg-gradient-to-br from-amber-500 to-amber-600 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                        <Trophy className="h-4 w-4 text-white" />
+                      </div>
+                      <h3 className="text-lg font-medium text-white group-hover:text-amber-100 transition-colors duration-300 flex-1">
+                        {tournament.name}
+                      </h3>
+                      {getStatusBadge(tournament.status)}
+                    </div>
+
+                    <div className="space-y-3 mb-6">
+                      <div className="flex justify-between items-center">
+                        <span className="text-white/60 text-sm">Дата проведения:</span>
+                        <span className="text-white font-medium text-sm">
+                          {new Date(tournament.start_time).toLocaleDateString('ru-RU')}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-white/60 text-sm">Время:</span>
+                        <span className="text-white font-medium text-sm">
+                          {new Date(tournament.start_time).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-white/60 text-sm">Участников:</span>
+                        <span className="text-white font-medium text-sm">
+                          {tournament._count?.tournament_registrations || 0} / {tournament.max_players}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-white/60 text-sm">Взнос:</span>
+                        <span className="text-green-400 font-medium text-sm">
+                          {tournament.participation_fee.toLocaleString()} ₽
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="space-y-3">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="w-full border-amber-400/50 text-amber-400 hover:bg-amber-400/10 transition-all duration-300"
+                        onClick={() => {
+                          setSelectedTournament(tournament);
+                          setModalOpen(true);
+                        }}
+                      >
+                        <Info className="h-4 w-4 mr-2" />
+                        Подробности
+                      </Button>
+                      
+                      {tournament.status === 'registration' && (
+                        <Button 
+                          size="sm" 
+                          className="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-medium transition-all duration-300"
+                          onClick={() => registerForTournament(tournament.id)}
+                        >
+                          Регистрация
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
             ))}
           </div>
         )}
@@ -230,9 +312,10 @@ export function TournamentList() {
           <Button 
             variant="outline" 
             size="lg" 
-            className="hover:bg-poker-primary/10 hover:text-poker-primary transition-all duration-300"
+            className="border-amber-400/50 text-amber-400 hover:bg-amber-400/10 px-8 py-4 font-medium rounded-lg transition-all duration-300"
             onClick={() => window.location.href = '/tournaments'}
           >
+            <ChevronRight className="h-5 w-5 mr-2" />
             Показать все турниры
           </Button>
         </div>
@@ -275,6 +358,16 @@ export function TournamentList() {
         onOpenChange={setModalOpen}
         onTournamentUpdate={loadTournaments}
       />
+      
+      <style>{`
+        .animate-bounce-subtle {
+          animation: bounce-subtle 3s ease-in-out infinite;
+        }
+        @keyframes bounce-subtle {
+          0%, 100% { transform: translateY(0px) rotate(var(--tw-rotate)); }
+          50% { transform: translateY(-10px) rotate(var(--tw-rotate)); }
+        }
+      `}</style>
     </section>
   );
 }
