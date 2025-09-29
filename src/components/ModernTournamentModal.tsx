@@ -212,33 +212,67 @@ export function ModernTournamentModal({ tournament, open, onOpenChange, onTourna
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <div className="flex items-start justify-between">
+      <DialogContent className="max-w-5xl max-h-[95vh] overflow-y-auto bg-gradient-card border-2 border-poker-border/30 rounded-3xl shadow-floating backdrop-blur-xl"
+                     style={{
+                       background: 'var(--gradient-card)',
+                       boxShadow: 'var(--shadow-floating), var(--shadow-accent)'
+                     }}>
+        
+        {/* Декоративная перфорация сверху */}
+        <div className="absolute top-0 left-0 right-0 h-6 bg-gradient-to-r from-transparent via-poker-border/30 to-transparent rounded-t-3xl">
+          <div className="flex justify-center items-center h-full space-x-2">
+            {Array.from({ length: 20 }).map((_, i) => (
+              <div 
+                key={i} 
+                className="w-1.5 h-1.5 rounded-full bg-poker-border/60"
+              />
+            ))}
+          </div>
+        </div>
+        
+        <DialogHeader className="pt-8">
+          <div className="flex items-start justify-between px-2">
             <div className="flex-1">
-              <div>
-                <DialogTitle className="text-2xl font-bold text-poker-primary mb-2">
+              <div className="relative">
+                <DialogTitle className="text-4xl font-black text-foreground mb-3 tracking-tight leading-tight">
                   {tournament.name}
+                  <div className="absolute -bottom-1 left-0 w-20 h-1 bg-gradient-accent rounded-full"></div>
                 </DialogTitle>
-                <DialogDescription>
-                  {tournament.description || "Подробная информация о мероприятии"}
+                <DialogDescription className="text-lg text-poker-text-secondary leading-relaxed">
+                  {tournament.description || "Подробная информация о турнире"}
                 </DialogDescription>
               </div>
             </div>
-            <div className="flex items-center gap-2 ml-4">
-              <Badge variant={getStatusColor(tournament.status)}>
-                {getStatusLabel(tournament.status)}
-              </Badge>
+            <div className="flex flex-col items-end gap-3 ml-6">
+              <div className="relative">
+                <Badge 
+                  variant={getStatusColor(tournament.status)}
+                  className="text-sm px-4 py-2 rounded-xl font-bold shadow-subtle"
+                >
+                  {getStatusLabel(tournament.status)}
+                </Badge>
+                <div className="absolute -top-1 -right-1 w-3 h-3 bg-poker-accent rounded-full animate-ping"></div>
+              </div>
+              <div className="text-right bg-poker-surface/50 rounded-xl px-4 py-3 backdrop-blur-sm border border-poker-border/30">
+                <div className="text-xs text-poker-text-muted uppercase tracking-widest">ID турнира</div>
+                <div className="text-sm font-mono text-poker-accent font-bold">{tournament.id.slice(-8).toUpperCase()}</div>
+              </div>
             </div>
           </div>
         </DialogHeader>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 px-2">
           {/* Основная информация */}
           <div className="space-y-6">
-            <div className="bg-gradient-card rounded-lg p-6 shadow-card">
-              <h3 className="text-lg font-semibold mb-4 flex items-center">
-                <Trophy className="w-5 h-5 mr-2 text-poker-accent" />
+            <div className="bg-gradient-surface rounded-2xl p-8 border border-poker-border/30 hover:border-poker-accent/40 transition-all duration-300 hover:shadow-elevated"
+                 style={{
+                   background: 'var(--gradient-surface)',
+                   boxShadow: 'var(--shadow-card)'
+                 }}>
+              <h3 className="text-2xl font-black mb-6 flex items-center text-foreground">
+                <div className="w-10 h-10 rounded-xl bg-gradient-accent flex items-center justify-center mr-4 shadow-accent">
+                  <Trophy className="w-6 h-6 text-white" />
+                </div>
                 Основная информация
               </h3>
               
@@ -330,28 +364,38 @@ export function ModernTournamentModal({ tournament, open, onOpenChange, onTourna
             </div>
 
             {/* Фонд RPS баллов */}
-            <div className="bg-gradient-card rounded-lg p-6 shadow-card">
-              <h3 className="text-lg font-semibold mb-4 flex items-center">
-                <Trophy className="w-5 h-5 mr-2 text-poker-accent" />
+            <div className="bg-gradient-surface rounded-2xl p-8 border border-poker-border/30 hover:border-poker-accent/40 transition-all duration-300 hover:shadow-elevated text-center"
+                 style={{
+                   background: 'var(--gradient-accent)',
+                   boxShadow: 'var(--shadow-accent)'
+                 }}>
+              <h3 className="text-2xl font-black mb-6 flex items-center justify-center text-white">
+                <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center mr-4 backdrop-blur-sm">
+                  <Trophy className="w-6 h-6 text-white" />
+                </div>
                 Фонд RPS баллов
               </h3>
               
-              <div className="text-center">
-                <div className="text-3xl font-light text-primary mb-3">
-                  {formatRPSPoints(rpsPool)}
-                </div>
-                <div className="text-sm text-muted-foreground">
-                  Рассчитывается автоматически на основе взносов участников
-                </div>
+              <div className="text-5xl font-black text-white mb-4 tracking-tight">
+                {formatRPSPoints(rpsPool)}
+              </div>
+              <div className="text-lg text-white/80 font-medium">
+                Рассчитывается автоматически на основе взносов участников
               </div>
             </div>
           </div>
 
           {/* Структура блайндов */}
           <div className="space-y-6">
-            <div className="bg-gradient-card rounded-lg p-6 shadow-card">
-              <h3 className="text-lg font-semibold mb-4 flex items-center">
-                <Clock className="w-5 h-5 mr-2 text-poker-accent" />
+            <div className="bg-gradient-surface rounded-2xl p-8 border border-poker-border/30 hover:border-poker-accent/40 transition-all duration-300 hover:shadow-elevated"
+                 style={{
+                   background: 'var(--gradient-surface)',
+                   boxShadow: 'var(--shadow-card)'
+                 }}>
+              <h3 className="text-2xl font-black mb-6 flex items-center text-foreground">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center mr-4 shadow-lg">
+                  <Clock className="w-6 h-6 text-white" />
+                </div>
                 Структура блайндов
               </h3>
               
@@ -393,8 +437,24 @@ export function ModernTournamentModal({ tournament, open, onOpenChange, onTourna
           </div>
         </div>
 
-        <div className="flex justify-end gap-4 pt-4 border-t">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+        {/* Декоративная перфорация снизу */}
+        <div className="absolute bottom-0 left-0 right-0 h-6 bg-gradient-to-r from-transparent via-poker-border/30 to-transparent">
+          <div className="flex justify-center items-center h-full space-x-2">
+            {Array.from({ length: 20 }).map((_, i) => (
+              <div 
+                key={i} 
+                className="w-1.5 h-1.5 rounded-full bg-poker-border/60"
+              />
+            ))}
+          </div>
+        </div>
+
+        <div className="flex justify-end gap-4 pt-8 pb-4 border-t border-poker-border/30 mt-8 px-2">
+          <Button 
+            variant="outline" 
+            onClick={() => onOpenChange(false)}
+            className="h-12 px-8 rounded-2xl border-2 border-poker-accent/30 text-poker-accent hover:bg-poker-accent/10 hover:border-poker-accent/60 transition-all duration-300 font-bold tracking-wide backdrop-blur-sm bg-white/5"
+          >
             Закрыть
           </Button>
         </div>
