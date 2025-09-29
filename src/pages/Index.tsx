@@ -9,10 +9,12 @@ import { Footer } from "@/components/Footer";
 import { LazyTournamentList } from "@/components/LazyTournamentList";
 import { TopPlayers } from "@/components/TopPlayers";
 import { SEOHead } from "@/components/SEOHead";
+import { ScrollProgress } from "@/components/ScrollProgress";
 
 const Index = () => {
   return (
     <>
+      <ScrollProgress />
       <SEOHead 
         pageSlug="home"
         defaultTitle="EPC Event Poker Club - Покерный клуб премиум-класса в Москве | Турниры и рейтинг RPS"
@@ -78,9 +80,18 @@ const Index = () => {
           ]
         }}
       />
-      <div className="min-h-screen">
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-black to-slate-800 relative overflow-hidden">
+        {/* Global decorative elements */}
+        <div className="fixed inset-0 pointer-events-none overflow-hidden opacity-3 z-0">
+          <div className="absolute top-20 left-10 text-amber-400/20 text-6xl animate-pulse">♠</div>
+          <div className="absolute top-40 right-20 text-amber-400/15 text-5xl animate-bounce-subtle">♣</div>
+          <div className="absolute bottom-40 left-20 text-amber-400/25 text-7xl animate-pulse">♥</div>
+          <div className="absolute bottom-20 right-10 text-amber-400/10 text-4xl animate-bounce-subtle">♦</div>
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-amber-400/5 text-9xl rotate-45 animate-glow">♠</div>
+        </div>
+        
         <Header />
-        <main role="main">
+        <main role="main" className="relative z-10">
           <Hero />
           <LazyTournamentList />
           <TopPlayers />
@@ -90,6 +101,24 @@ const Index = () => {
           <SocialProof />
         </main>
         <Footer />
+        
+        {/* Custom global animations */}
+        <style>{`
+          .animate-bounce-subtle {
+            animation: bounce-subtle 4s ease-in-out infinite;
+          }
+          .animate-glow {
+            animation: glow 6s ease-in-out infinite;
+          }
+          @keyframes bounce-subtle {
+            0%, 100% { transform: translateY(0px) rotate(var(--tw-rotate)); }
+            50% { transform: translateY(-15px) rotate(var(--tw-rotate)); }
+          }
+          @keyframes glow {
+            0%, 100% { opacity: 0.05; transform: translate(-50%, -50%) rotate(45deg) scale(1); }
+            50% { opacity: 0.1; transform: translate(-50%, -50%) rotate(45deg) scale(1.1); }
+          }
+        `}</style>
       </div>
     </>
   );
