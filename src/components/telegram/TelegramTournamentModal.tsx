@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from 'sonner';
+import { calculateTotalRPSPool, formatRPSPoints, formatParticipationFee } from "@/utils/rpsCalculations";
 
 interface BlindLevel {
   level: number;
@@ -39,21 +40,23 @@ interface Tournament {
   id: string;
   name: string;
   description?: string;
-  buy_in: number;
-  rebuy_cost?: number;
-  addon_cost?: number;
-  rebuy_chips?: number;
-  addon_chips?: number;
+  participation_fee: number;
+  reentry_fee?: number;
+  additional_fee?: number;
+  reentry_chips?: number;
+  additional_chips?: number;
   starting_chips: number;
   max_players: number;
   start_time: string;
   status: string;
   tournament_format?: string;
-  rebuy_end_level?: number;
-  addon_level?: number;
+  reentry_end_level?: number;
+  additional_level?: number;
   break_start_level?: number;
   tournament_registrations?: Array<{
     count: number;
+    reentries?: number;
+    additional_sets?: number;
   }>;
 }
 
@@ -102,7 +105,7 @@ export function TelegramTournamentModal({
   };
 
   const formatCurrency = (amount: number) => {
-    return `${amount.toLocaleString()} ₽`;
+    return formatParticipationFee(amount);
   };
 
   const getStatusBadge = (status: string) => {
@@ -141,7 +144,17 @@ export function TelegramTournamentModal({
 
   const dateTime = formatDateTime(tournament.start_time);
   const currentPlayers = tournament.tournament_registrations?.[0]?.count || 0;
-  const totalPrizePool = currentPlayers * tournament.buy_in;
+  const totalReentries = tournament.tournament_registrations?.[0]?.reentries || 0;
+  const totalAdditionalSets = tournament.tournament_registrations?.[0]?.additional_sets || 0;
+  
+  const totalRPSPool = calculateTotalRPSPool(
+    currentPlayers,
+    tournament.participation_fee,
+    totalReentries,
+    tournament.reentry_fee || 0,
+    totalAdditionalSets,
+    tournament.additional_fee || 0
+  );
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -217,11 +230,11 @@ export function TelegramTournamentModal({
                   <div className="w-6 h-6 bg-gradient-to-br from-green-500 to-green-600 rounded-md flex items-center justify-center">
                     <Coins className="h-3 w-3 text-white" />
                   </div>
-                  <h3 className="text-sm font-medium text-white">Бай-ин</h3>
+                  <h3 className="text-sm font-medium text-white">Орг. взнос</h3>
                 </div>
-                <p className="text-lg font-semibold text-white">{formatCurrency(tournament.buy_in)}</p>
-                {tournament.rebuy_cost && tournament.rebuy_cost > 0 && (
-                  <p className="text-xs text-white/60 mt-1">Ребай: {formatCurrency(tournament.rebuy_cost)}</p>
+                <p className="text-lg font-semibold text-white">{formatCurrency(tournament.participation_fee)}</p>
+                {tournament.reentry_fee && tournament.reentry_fee > 0 && (
+                  <p className="text-xs text-white/60 mt-1">Повторный вход: {formatCurrency(tournament.reentry_fee)}</p>
                 )}
               </div>
 
@@ -230,9 +243,9 @@ export function TelegramTournamentModal({
                   <div className="w-6 h-6 bg-gradient-to-br from-amber-500 to-amber-600 rounded-md flex items-center justify-center">
                     <Crown className="h-3 w-3 text-white" />
                   </div>
-                  <h3 className="text-sm font-medium text-white">Призовой фонд</h3>
+                  <h3 className="text-sm font-medium text-white">Фонд RPS баллов</h3>
                 </div>
-                <p className="text-lg font-semibold text-amber-400">{formatCurrency(totalPrizePool)}</p>
+                <p className="text-lg font-semibold text-amber-400">{formatRPSPoints(totalRPSPool)}</p>
               </div>
             </div>
 

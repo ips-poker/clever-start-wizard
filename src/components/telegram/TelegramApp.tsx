@@ -26,14 +26,14 @@ interface Tournament {
   id: string;
   name: string;
   start_time: string;
-  buy_in: number;
+  participation_fee: number;
   max_players: number;
   status: string;
   starting_chips: number;
   description?: string;
   tournament_format?: string;
-  rebuy_cost?: number;
-  addon_cost?: number;
+  reentry_fee?: number;
+  additional_fee?: number;
   tournament_registrations?: Array<{
     count: number;
   }>;
@@ -926,8 +926,8 @@ export const TelegramApp = () => {
                       <Coins className="h-4 w-4 text-white" />
                     </div>
                     <div>
-                      <span className="text-white font-bold text-sm">{tournament.buy_in.toLocaleString()} ₽</span>
-                      <p className="text-white/60 text-xs">бай-ин</p>
+                      <span className="text-white font-bold text-sm">{tournament.participation_fee.toLocaleString()} ₽</span>
+                      <p className="text-white/60 text-xs">орг. взнос</p>
                     </div>
                   </div>
 

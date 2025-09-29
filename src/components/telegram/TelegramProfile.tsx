@@ -59,7 +59,7 @@ interface GameResult {
   created_at: string;
   tournament: { 
     name: string;
-    buy_in: number;
+    participation_fee: number;
   };
 }
 
@@ -67,7 +67,7 @@ interface Tournament {
   id: string;
   name: string;
   start_time: string;
-  buy_in: number;
+  participation_fee: number;
   max_players: number;
   status: string;
   starting_chips: number;
@@ -199,7 +199,7 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate }: Tele
         .from('game_results')
         .select(`
           *,
-          tournament:tournaments(name, buy_in)
+          tournament:tournaments(name, participation_fee)
         `)
         .eq('player_id', player.id)
         .order('created_at', { ascending: false })
@@ -393,9 +393,9 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate }: Tele
   const avgPosition = gameResults.length > 0 ? 
     Math.round(gameResults.reduce((sum, result) => sum + result.position, 0) / gameResults.length * 10) / 10 : 0;
   const totalEarnings = gameResults.reduce((sum, result) => {
-    if (result.position === 1) sum += result.tournament.buy_in * 0.5; // Примерный выигрыш
-    if (result.position === 2) sum += result.tournament.buy_in * 0.3;
-    if (result.position === 3) sum += result.tournament.buy_in * 0.2;
+    if (result.position === 1) sum += result.tournament.participation_fee * 0.5; // Примерный выигрыш
+    if (result.position === 2) sum += result.tournament.participation_fee * 0.3;
+    if (result.position === 3) sum += result.tournament.participation_fee * 0.2;
     return sum;
   }, 0);
   const recentForm = gameResults.slice(0, 5).map(r => r.position <= 3 ? '✅' : '❌').join('');
@@ -618,8 +618,8 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate }: Tele
                         <Coins className="h-3 w-3 text-white" />
                       </div>
                       <div>
-                        <span className="text-white font-bold text-xs">{reg.tournament.buy_in.toLocaleString()} ₽</span>
-                        <p className="text-white/60 text-xs">бай-ин</p>
+                        <span className="text-white font-bold text-xs">{reg.tournament.participation_fee.toLocaleString()} ₽</span>
+                        <p className="text-white/60 text-xs">орг. взнос</p>
                       </div>
                     </div>
                   </div>
