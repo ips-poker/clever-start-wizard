@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Calculator, Loader2 } from "lucide-react";
@@ -116,6 +116,26 @@ export function RecalculateRatings() {
       setIsRecalculating(false);
     }
   };
+
+  // Автоматический пересчет при загрузке компонента
+  useEffect(() => {
+    const autoRecalculate = async () => {
+      // Проверяем, есть ли турнир EPC OPEN 2025 для пересчета
+      const { data: tournaments } = await supabase
+        .from('tournaments')
+        .select('id, name, status')
+        .eq('name', 'EPC OPEN 2025')
+        .eq('status', 'finished')
+        .limit(1);
+
+      if (tournaments && tournaments.length > 0) {
+        toast.info('Найден турнир для пересчета: EPC OPEN 2025');
+        setTimeout(() => handleRecalculate(), 1000);
+      }
+    };
+
+    autoRecalculate();
+  }, []);
 
   return (
     <Button
