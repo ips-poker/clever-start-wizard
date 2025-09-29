@@ -1000,7 +1000,7 @@ const TournamentDirector = () => {
                           <span className="font-medium">{new Date(tournament.start_time).toLocaleString('ru-RU')}</span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-gray-500">Бай-ин:</span>
+                          <span className="text-gray-500">Орг. взнос:</span>
                           <span className="font-medium text-green-600">{tournament.buy_in.toLocaleString()} ₽</span>
                         </div>
                         <div className="flex justify-between">
@@ -1008,11 +1008,7 @@ const TournamentDirector = () => {
                           <span className="font-medium">{tournament.max_players}</span>
                         </div>
                          <div className="flex justify-between">
-                           <span className="text-gray-500">Стартовые фишки:</span>
-                           <span className="font-medium">{tournament.starting_chips.toLocaleString()}</span>
-                         </div>
-                         <div className="flex justify-between">
-                           <span className="text-gray-500">Фишки за бай-ин:</span>
+                           <span className="text-gray-500">Стартовый стек:</span>
                            <span className="font-medium">{tournament.starting_chips.toLocaleString()}</span>
                          </div>
                          <div className="flex justify-between">
