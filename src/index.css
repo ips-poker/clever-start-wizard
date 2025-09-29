@@ -154,9 +154,6 @@
     --poker-gray-dark: 0 0% 8%;               /* Rich dark gray */
     --poker-surface: 0 0% 6%;                 /* Card surface */
     --poker-surface-elevated: 0 0% 10%;       /* Elevated surfaces */
-    
-    /* 3D Effects */
-    --perspective-1000: perspective(1000px);
 
     /* Premium Gradients */
     --gradient-poker-red: radial-gradient(ellipse at center, hsl(0 72% 55%) 0%, hsl(0 65% 45%) 70%);
@@ -263,28 +260,4 @@
 
 .glow-red {
   box-shadow: 0 0 20px hsl(var(--poker-red) / 0.3);
-}
-
-/* 3D Transform Utilities */
-.perspective-1000 {
-  perspective: 1000px;
-}
-
-.preserve-3d {
-  transform-style: preserve-3d;
-}
-
-.transform-gpu {
-  transform: translateZ(0);
-  backface-visibility: hidden;
-}
-
-/* Premium Button Animations */
-@keyframes shimmer {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(100%); }
-}
-
-.animate-shimmer {
-  animation: shimmer 2s infinite;
 }

@@ -212,54 +212,33 @@ export function ModernTournamentModal({ tournament, open, onOpenChange, onTourna
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-5xl max-h-[95vh] overflow-y-auto bg-gradient-to-br from-poker-surface via-poker-surface-elevated to-poker-surface border-2 border-poker-gray/30 shadow-poker-elevated">
-        {/* Премиальная перфорация сверху */}
-        <div className="absolute top-0 left-0 right-0 h-6 bg-gradient-to-r from-transparent via-poker-gray/30 to-transparent overflow-hidden">
-          <div className="flex justify-center items-center h-full space-x-3">
-            {Array.from({ length: 20 }).map((_, i) => (
-              <div key={i} className="w-1.5 h-1.5 rounded-full bg-poker-gray/60" />
-            ))}
-          </div>
-        </div>
-        
-        <DialogHeader className="pt-8 pb-6">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
           <div className="flex items-start justify-between">
             <div className="flex-1">
               <div>
-                <DialogTitle className="text-3xl font-black text-foreground mb-3 tracking-tight">
+                <DialogTitle className="text-2xl font-bold text-poker-primary mb-2">
                   {tournament.name}
                 </DialogTitle>
-                <DialogDescription className="text-base text-muted-foreground/80 leading-relaxed">
+                <DialogDescription>
                   {tournament.description || "Подробная информация о мероприятии"}
                 </DialogDescription>
               </div>
             </div>
-            <div className="flex items-center gap-3 ml-6">
-              <Badge 
-                variant={getStatusColor(tournament.status)}
-                className="text-sm px-4 py-2 font-semibold"
-              >
+            <div className="flex items-center gap-2 ml-4">
+              <Badge variant={getStatusColor(tournament.status)}>
                 {getStatusLabel(tournament.status)}
               </Badge>
             </div>
           </div>
-          
-          {/* Разделительная линия с перфорацией */}
-          <div className="relative mt-6">
-            <div className="border-t border-dashed border-poker-gray/40"></div>
-            <div className="absolute -left-6 top-0 w-4 h-4 bg-poker-surface rounded-full border-2 border-poker-gray/30 transform -translate-y-2"></div>
-            <div className="absolute -right-6 top-0 w-4 h-4 bg-poker-surface rounded-full border-2 border-poker-gray/30 transform -translate-y-2"></div>
-          </div>
         </DialogHeader>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Основная информация */}
-          <div className="space-y-8">
-            <div className="bg-gradient-to-br from-poker-surface-elevated/80 to-poker-surface/60 rounded-2xl p-8 border-2 border-poker-gray/20 shadow-poker-card backdrop-blur-sm">
-              <h3 className="text-xl font-black mb-6 flex items-center tracking-tight">
-                <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-poker-red/20 to-poker-red/10 flex items-center justify-center mr-3 border border-poker-red/30">
-                  <Trophy className="w-5 h-5 text-poker-red" />
-                </div>
+          <div className="space-y-6">
+            <div className="bg-gradient-card rounded-lg p-6 shadow-card">
+              <h3 className="text-lg font-semibold mb-4 flex items-center">
+                <Trophy className="w-5 h-5 mr-2 text-poker-accent" />
                 Основная информация
               </h3>
               
@@ -351,19 +330,17 @@ export function ModernTournamentModal({ tournament, open, onOpenChange, onTourna
             </div>
 
             {/* Фонд RPS баллов */}
-            <div className="bg-gradient-to-br from-poker-gold/10 via-poker-surface-elevated/80 to-poker-surface/60 rounded-2xl p-8 border-2 border-poker-gold/20 shadow-poker-card backdrop-blur-sm">
-              <h3 className="text-xl font-black mb-6 flex items-center tracking-tight">
-                <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-poker-gold/20 to-poker-gold/10 flex items-center justify-center mr-3 border border-poker-gold/30">
-                  <Trophy className="w-5 h-5 text-poker-gold" />
-                </div>
+            <div className="bg-gradient-card rounded-lg p-6 shadow-card">
+              <h3 className="text-lg font-semibold mb-4 flex items-center">
+                <Trophy className="w-5 h-5 mr-2 text-poker-accent" />
                 Фонд RPS баллов
               </h3>
               
-              <div className="text-center bg-gradient-to-br from-poker-gold/5 to-transparent rounded-xl p-6 border border-poker-gold/20">
-                <div className="text-4xl font-black text-poker-gold mb-4 tracking-tight">
+              <div className="text-center">
+                <div className="text-3xl font-light text-primary mb-3">
                   {formatRPSPoints(rpsPool)}
                 </div>
-                <div className="text-sm text-muted-foreground/80 font-medium">
+                <div className="text-sm text-muted-foreground">
                   Рассчитывается автоматически на основе взносов участников
                 </div>
               </div>
@@ -371,12 +348,10 @@ export function ModernTournamentModal({ tournament, open, onOpenChange, onTourna
           </div>
 
           {/* Структура блайндов */}
-          <div className="space-y-8">
-            <div className="bg-gradient-to-br from-poker-surface-elevated/80 to-poker-surface/60 rounded-2xl p-8 border-2 border-poker-gray/20 shadow-poker-card backdrop-blur-sm">
-              <h3 className="text-xl font-black mb-6 flex items-center tracking-tight">
-                <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-500/20 to-blue-500/10 flex items-center justify-center mr-3 border border-blue-500/30">
-                  <Clock className="w-5 h-5 text-blue-500" />
-                </div>
+          <div className="space-y-6">
+            <div className="bg-gradient-card rounded-lg p-6 shadow-card">
+              <h3 className="text-lg font-semibold mb-4 flex items-center">
+                <Clock className="w-5 h-5 mr-2 text-poker-accent" />
                 Структура блайндов
               </h3>
               
@@ -418,30 +393,10 @@ export function ModernTournamentModal({ tournament, open, onOpenChange, onTourna
           </div>
         </div>
 
-        {/* Разделительная линия и кнопки */}
-        <div className="relative mt-8">
-          <div className="border-t border-dashed border-poker-gray/40"></div>
-          <div className="absolute -left-6 top-0 w-4 h-4 bg-poker-surface rounded-full border-2 border-poker-gray/30 transform -translate-y-2"></div>
-          <div className="absolute -right-6 top-0 w-4 h-4 bg-poker-surface rounded-full border-2 border-poker-gray/30 transform -translate-y-2"></div>
-        </div>
-        
-        <div className="flex justify-end gap-4 pt-8">
-          <Button 
-            variant="outline" 
-            onClick={() => onOpenChange(false)}
-            className="h-12 px-8 rounded-xl border-2 border-poker-gray/30 hover:border-poker-red/50 font-semibold text-base transition-all duration-300"
-          >
+        <div className="flex justify-end gap-4 pt-4 border-t">
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
             Закрыть
           </Button>
-        </div>
-        
-        {/* Перфорация снизу */}
-        <div className="absolute bottom-0 left-0 right-0 h-6 bg-gradient-to-r from-transparent via-poker-gray/30 to-transparent overflow-hidden">
-          <div className="flex justify-center items-center h-full space-x-3">
-            {Array.from({ length: 20 }).map((_, i) => (
-              <div key={i} className="w-1.5 h-1.5 rounded-full bg-poker-gray/60" />
-            ))}
-          </div>
         </div>
       </DialogContent>
     </Dialog>
