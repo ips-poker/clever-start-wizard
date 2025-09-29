@@ -33,7 +33,7 @@ import {
 } from "lucide-react";
 
 import { AuthGuard } from "@/components/auth/AuthGuard";
-import { ModernTournamentCreationModal } from "@/components/ModernTournamentCreationModal";
+import { TournamentCreationModal } from "@/components/TournamentCreationModal";
 import { VoiceControl } from "@/components/VoiceControl";
 import { TournamentDirectorMobileMenu } from "@/components/TournamentDirectorMobileMenu";
 import TournamentOverview from "@/components/TournamentOverview";
@@ -1339,7 +1339,7 @@ const TournamentDirector = () => {
           </Tabs>
 
           {/* Tournament Creation/Edit Modal */}
-          <ModernTournamentCreationModal
+          <TournamentCreationModal
             open={isModalOpen}
             onOpenChange={setIsModalOpen}
             tournament={editingTournament ? {
@@ -1347,7 +1347,8 @@ const TournamentDirector = () => {
               description: editingTournament.description || '',
               reentry_end_level: editingTournament.rebuy_end_level || 6,
               additional_level: editingTournament.addon_level || 7,
-              break_start_level: editingTournament.break_start_level || 4
+              break_start_level: editingTournament.break_start_level || 4,
+              voice_control_enabled: (editingTournament as any).voice_control_enabled || false
             } : null}
             onTournamentUpdate={() => {
               loadTournaments();
