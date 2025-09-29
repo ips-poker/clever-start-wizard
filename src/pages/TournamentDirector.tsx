@@ -1342,7 +1342,13 @@ const TournamentDirector = () => {
           <ModernTournamentCreationModal
             open={isModalOpen}
             onOpenChange={setIsModalOpen}
-            tournament={editingTournament ? adaptTournamentToModern(editingTournament) : null}
+            tournament={editingTournament ? {
+              ...adaptTournamentToModern(editingTournament),
+              description: editingTournament.description || '',
+              reentry_end_level: editingTournament.rebuy_end_level || 6,
+              additional_level: editingTournament.addon_level || 7,
+              break_start_level: editingTournament.break_start_level || 4
+            } : null}
             onTournamentUpdate={() => {
               loadTournaments();
               setIsModalOpen(false);
