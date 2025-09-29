@@ -33,7 +33,7 @@ import {
 } from "lucide-react";
 
 import { AuthGuard } from "@/components/auth/AuthGuard";
-import { TournamentCreationModal } from "@/components/TournamentCreationModal";
+import { ModernTournamentCreationModal } from "@/components/ModernTournamentCreationModal";
 import { VoiceControl } from "@/components/VoiceControl";
 import { TournamentDirectorMobileMenu } from "@/components/TournamentDirectorMobileMenu";
 import TournamentOverview from "@/components/TournamentOverview";
@@ -1339,10 +1339,10 @@ const TournamentDirector = () => {
           </Tabs>
 
           {/* Tournament Creation/Edit Modal */}
-          <TournamentCreationModal
+          <ModernTournamentCreationModal
             open={isModalOpen}
             onOpenChange={setIsModalOpen}
-            tournament={editingTournament}
+            tournament={editingTournament ? adaptTournamentToModern(editingTournament) : null}
             onTournamentUpdate={() => {
               loadTournaments();
               setIsModalOpen(false);

@@ -1,0 +1,347 @@
+import React, { useState, useEffect } from "react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { 
+  Calendar, 
+  Clock, 
+  Users, 
+  Trophy, 
+  DollarSign, 
+  PlayCircle,
+  UserPlus,
+  Repeat,
+  Plus,
+  Timer,
+  Target,
+  AlertCircle,
+  Edit,
+  Save,
+  X,
+  Coffee
+} from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
+import { ModernTournament } from "@/types/tournament";
+import { calculateTotalRPSPool, formatRPSPoints, formatParticipationFee } from "@/utils/rpsCalculations";
+
+interface BlindLevel {
+  level: number;
+  small_blind: number;
+  big_blind: number;
+  ante: number;
+  duration: number;
+  is_break: boolean;
+}
+
+interface ModernTournamentModalProps {
+  tournament: ModernTournament | null;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onTournamentUpdate?: () => void;
+}
+
+export function ModernTournamentModal({ tournament, open, onOpenChange, onTournamentUpdate }: ModernTournamentModalProps) {
+  const [blindStructure, setBlindStructure] = useState<BlindLevel[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editForm, setEditForm] = useState({
+    name: '',
+    description: '',
+    participation_fee: 0,
+    reentry_fee: 0,
+    additional_fee: 0,
+    reentry_chips: 0,
+    additional_chips: 0,
+    starting_chips: 0,
+    max_players: 0,
+    start_time: '',
+    tournament_format: '',
+    reentry_end_level: 0,
+    additional_level: 0,
+    break_start_level: 0
+  });
+  const [breakLevels, setBreakLevels] = useState<number[]>([]);
+  const { toast } = useToast();
+  const { isAdmin } = useAuth();
+
+  useEffect(() => {
+    if (tournament && open) {
+      loadBlindStructure();
+      setEditForm({
+        name: tournament.name,
+        description: tournament.description || '',
+        participation_fee: tournament.participation_fee,
+        reentry_fee: tournament.reentry_fee,
+        additional_fee: tournament.additional_fee,
+        reentry_chips: tournament.reentry_chips,
+        additional_chips: tournament.additional_chips,
+        starting_chips: tournament.starting_chips,
+        max_players: tournament.max_players,
+        start_time: tournament.start_time.slice(0, 16), // Format for datetime-local input
+        tournament_format: tournament.tournament_format,
+        reentry_end_level: tournament.reentry_end_level || 0,
+        additional_level: tournament.additional_level || 0,
+        break_start_level: tournament.break_start_level || 0
+      });
+      // Загружаем существующие перерывы
+      loadBreakLevels();
+    }
+  }, [tournament, open]);
+
+  const loadBlindStructure = async () => {
+    if (!tournament) return;
+    
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('blind_levels')
+        .select('*')
+        .eq('tournament_id', tournament.id)
+        .order('level');
+
+      if (error) throw error;
+      setBlindStructure(data || []);
+    } catch (error) {
+      console.error('Error loading blind structure:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadBreakLevels = async () => {
+    if (!tournament) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('blind_levels')
+        .select('level')
+        .eq('tournament_id', tournament.id)
+        .eq('is_break', true)
+        .order('level');
+
+      if (error) throw error;
+      setBreakLevels(data?.map(b => b.level) || []);
+    } catch (error) {
+      console.error('Error loading break levels:', error);
+    }
+  };
+
+  const calculateLateRegistrationDeadline = () => {
+    if (!tournament || !blindStructure.length) return null;
+    
+    const startTime = new Date(tournament.start_time);
+    const reentryEndLevel = tournament.reentry_end_level || 6;
+    
+    let totalMinutes = 0;
+    for (let i = 0; i < reentryEndLevel && i < blindStructure.length; i++) {
+      totalMinutes += blindStructure[i].duration / 60; // convert seconds to minutes
+    }
+    
+    const deadline = new Date(startTime.getTime() + totalMinutes * 60000);
+    return deadline;
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'registration': return 'default';
+      case 'running': return 'destructive';
+      case 'scheduled': return 'secondary';
+      default: return 'outline';
+    }
+  };
+
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case 'registration': return 'Регистрация открыта';
+      case 'running': return 'Мероприятие идет';
+      case 'scheduled': return 'Запланирован';
+      case 'completed': return 'Завершен';
+      default: return status;
+    }
+  };
+
+  const handleEditFormChange = (field: string, value: any) => {
+    setEditForm(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  if (!tournament) return null;
+
+  const lateRegDeadline = calculateLateRegistrationDeadline();
+  
+  // Рассчитываем фонд RPS баллов
+  const rpsPool = calculateTotalRPSPool(
+    1, // Пока один участник для демонстрации
+    tournament.participation_fee,
+    0, // Повторные входы
+    tournament.reentry_fee,
+    0, // Дополнительные наборы  
+    tournament.additional_fee
+  );
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              <div>
+                <DialogTitle className="text-2xl font-bold text-poker-primary mb-2">
+                  {tournament.name}
+                </DialogTitle>
+                <DialogDescription>
+                  {tournament.description || "Подробная информация о мероприятии"}
+                </DialogDescription>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 ml-4">
+              <Badge variant={getStatusColor(tournament.status)}>
+                {getStatusLabel(tournament.status)}
+              </Badge>
+            </div>
+          </div>
+        </DialogHeader>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Основная информация */}
+          <div className="space-y-6">
+            <div className="bg-gradient-card rounded-lg p-6 shadow-card">
+              <h3 className="text-lg font-semibold mb-4 flex items-center">
+                <Trophy className="w-5 h-5 mr-2 text-poker-accent" />
+                Основная информация
+              </h3>
+              
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div className="flex items-center gap-2">
+                  <Calendar className="w-4 h-4 text-muted-foreground" />
+                  <span>{new Date(tournament.start_time).toLocaleString('ru-RU')}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Users className="w-4 h-4 text-muted-foreground" />
+                  <span>До {tournament.max_players} участников</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <DollarSign className="w-4 h-4 text-muted-foreground" />
+                  <span>Организационный взнос: {formatParticipationFee(tournament.participation_fee)}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Target className="w-4 h-4 text-muted-foreground" />
+                  <span>Стартовый инвентарь: {tournament.starting_chips.toLocaleString()}</span>
+                </div>
+              </div>
+
+              {tournament.tournament_format !== 'freezeout' && (
+                <Separator className="my-4" />
+              )}
+
+              {tournament.tournament_format.includes('reentry') && (
+                <div className="space-y-2">
+                  <h4 className="font-medium text-poker-primary">Повторные входы</h4>
+                  <div className="grid grid-cols-2 gap-4 text-sm text-muted-foreground">
+                    <div>Стоимость: {formatParticipationFee(tournament.reentry_fee)}</div>
+                    <div>Инвентарь: {tournament.reentry_chips.toLocaleString()}</div>
+                    <div>Доступно до: уровень {tournament.reentry_end_level}</div>
+                    {lateRegDeadline && (
+                      <div>До: {lateRegDeadline.toLocaleTimeString('ru-RU', { 
+                        hour: '2-digit', 
+                        minute: '2-digit' 
+                      })}</div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {tournament.tournament_format.includes('additional') && (
+                <div className="space-y-2">
+                  <h4 className="font-medium text-poker-primary">Дополнительные наборы</h4>
+                  <div className="grid grid-cols-2 gap-4 text-sm text-muted-foreground">
+                    <div>Стоимость: {formatParticipationFee(tournament.additional_fee)}</div>
+                    <div>Инвентарь: {tournament.additional_chips.toLocaleString()}</div>
+                    <div>Доступно на: уровень {tournament.additional_level}</div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Фонд RPS баллов */}
+            <div className="bg-gradient-card rounded-lg p-6 shadow-card">
+              <h3 className="text-lg font-semibold mb-4 flex items-center">
+                <Trophy className="w-5 h-5 mr-2 text-poker-accent" />
+                Фонд RPS баллов
+              </h3>
+              
+              <div className="text-center">
+                <div className="text-3xl font-light text-primary mb-3">
+                  {formatRPSPoints(rpsPool)}
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  Рассчитывается автоматически на основе взносов участников
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Структура блайндов */}
+          <div className="space-y-6">
+            <div className="bg-gradient-card rounded-lg p-6 shadow-card">
+              <h3 className="text-lg font-semibold mb-4 flex items-center">
+                <Clock className="w-5 h-5 mr-2 text-poker-accent" />
+                Структура блайндов
+              </h3>
+              
+              {loading ? (
+                <div className="text-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-poker-primary mx-auto"></div>
+                  <p className="mt-2 text-muted-foreground">Загрузка структуры...</p>
+                </div>
+              ) : blindStructure.length > 0 ? (
+                <div className="space-y-2 max-h-64 overflow-y-auto">
+                  {blindStructure.slice(0, 8).map((level) => (
+                    <div key={level.level} className="flex justify-between items-center py-2 px-3 bg-white/50 rounded">
+                      <span className="font-medium">Уровень {level.level}</span>
+                      {level.is_break ? (
+                        <Badge variant="secondary" className="text-xs">
+                          <Coffee className="w-3 h-3 mr-1" />
+                          Перерыв
+                        </Badge>
+                      ) : (
+                        <span className="text-sm text-muted-foreground">
+                          {level.small_blind}/{level.big_blind}
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                  {blindStructure.length > 8 && (
+                    <div className="text-center py-2 text-muted-foreground text-sm">
+                      ... и еще {blindStructure.length - 8} уровней
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Clock className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                  <p>Структура блайндов не создана</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="flex justify-end gap-4 pt-4 border-t">
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Закрыть
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}

@@ -17,8 +17,8 @@ interface PayoutStructureProps {
 
 interface TournamentRegistration {
   player_id: string;
-  rebuys: number;
-  addons: number;
+  reentries: number;
+  additional_sets: number;
 }
 
 interface PayoutPlace {
@@ -84,10 +84,10 @@ const PayoutStructure = ({ tournamentId, registeredPlayers }: PayoutStructurePro
       if (tournamentError) throw tournamentError;
       setTournament(tournamentData);
 
-      // Получаем регистрации с данными о ребаях и адонах
+      // Получаем регистрации с данными о повторных входах и дополнительных наборах
       const { data: registrationsData, error: registrationsError } = await supabase
         .from('tournament_registrations')
-        .select('player_id, rebuys, addons')
+        .select('player_id, reentries, additional_sets')
         .eq('tournament_id', tournamentId);
 
       if (registrationsError) throw registrationsError;
@@ -134,12 +134,12 @@ const PayoutStructure = ({ tournamentId, registeredPlayers }: PayoutStructurePro
 
     const percentages = getPayoutStructure(registeredPlayers);
 
-    // Расчет призового фонда с учетом ребаев и адонов
-    const buyInTotal = tournament.buy_in * registeredPlayers;
-    const rebuyTotal = registrations.reduce((sum, reg) => sum + (reg.rebuys * (tournament.rebuy_cost || 0)), 0);
-    const addonTotal = registrations.reduce((sum, reg) => sum + (reg.addons * (tournament.addon_cost || 0)), 0);
+    // Расчет призового фонда с учетом повторных входов и дополнительных наборов
+    const participationTotal = tournament.participation_fee * registeredPlayers;
+    const reentryTotal = registrations.reduce((sum, reg) => sum + (reg.reentries * (tournament.reentry_fee || 0)), 0);
+    const additionalTotal = registrations.reduce((sum, reg) => sum + (reg.additional_sets * (tournament.additional_fee || 0)), 0);
     
-    const totalPrizePool = buyInTotal + rebuyTotal + addonTotal;
+    const totalPrizePool = participationTotal + reentryTotal + additionalTotal;
     setTotalPrizePool(totalPrizePool);
 
     // Создаем структуру выплат (ПРАВИЛЬНАЯ логика для покера)
@@ -404,16 +404,16 @@ const PayoutStructure = ({ tournamentId, registeredPlayers }: PayoutStructurePro
               />
             </div>
             <div>
-              <Label htmlFor="rebuy_addon_info">Ребаи и Адоны</Label>
+              <Label htmlFor="reentry_additional_info">Повторные входы и дополнительные наборы</Label>
               <div className="text-sm text-gray-600 space-y-1">
-                <div>Ребаев: {registrations.reduce((sum, reg) => sum + reg.rebuys, 0)} × {tournament?.rebuy_cost || 0} = {registrations.reduce((sum, reg) => sum + (reg.rebuys * (tournament?.rebuy_cost || 0)), 0)}</div>
-                <div>Адонов: {registrations.reduce((sum, reg) => sum + reg.addons, 0)} × {tournament?.addon_cost || 0} = {registrations.reduce((sum, reg) => sum + (reg.addons * (tournament?.addon_cost || 0)), 0)}</div>
+                <div>Повторных входов: {registrations.reduce((sum, reg) => sum + reg.reentries, 0)} × {tournament?.reentry_fee || 0} = {registrations.reduce((sum, reg) => sum + (reg.reentries * (tournament?.reentry_fee || 0)), 0)}</div>
+                <div>Дополнительных наборов: {registrations.reduce((sum, reg) => sum + reg.additional_sets, 0)} × {tournament?.additional_fee || 0} = {registrations.reduce((sum, reg) => sum + (reg.additional_sets * (tournament?.additional_fee || 0)), 0)}</div>
               </div>
             </div>
             <div>
               <Label htmlFor="total_prize">Общий призовой фонд</Label>
               <div className="text-sm space-y-1">
-                <div>Бай-ин: {tournament?.buy_in || 0} × {registeredPlayers} = {(tournament?.buy_in || 0) * registeredPlayers}</div>
+                <div>Организационный взнос: {tournament?.participation_fee || 0} × {registeredPlayers} = {(tournament?.participation_fee || 0) * registeredPlayers}</div>
                 <div className="font-medium text-lg">Итого: {totalPrizePool}</div>
               </div>
             </div>

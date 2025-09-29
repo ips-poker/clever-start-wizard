@@ -5,24 +5,24 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, Users, Trophy, Clock, Info, ChevronRight, DollarSign } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { TournamentModal } from "./TournamentModal";
+import { ModernTournamentModal } from "./ModernTournamentModal";
 
 interface Tournament {
   id: string;
   name: string;
   description: string;
-  buy_in: number;
-  rebuy_cost: number;
-  addon_cost: number;
-  rebuy_chips: number;
-  addon_chips: number;
+  participation_fee: number;
+  reentry_fee: number;
+  additional_fee: number;
+  reentry_chips: number;
+  additional_chips: number;
   starting_chips: number;
   max_players: number;
   start_time: string;
   status: string;
   tournament_format: string;
-  rebuy_end_level: number;
-  addon_level: number;
+  reentry_end_level: number;
+  additional_level: number;
   break_start_level: number;
   _count?: {
     tournament_registrations: number;
@@ -246,7 +246,7 @@ export function TournamentList() {
 
                     <div className="flex items-center gap-3 text-sm text-muted-foreground">
                       <DollarSign className="w-4 h-4 text-poker-success" />
-                      <span>{tournament.buy_in.toLocaleString()} ₽</span>
+                      <span>Организационный взнос: {tournament.participation_fee.toLocaleString()} ₽</span>
                     </div>
 
                     <div className="flex items-center gap-3 text-sm text-muted-foreground">
@@ -299,8 +299,39 @@ export function TournamentList() {
         </div>
       </div>
       
-      <TournamentModal 
-        tournament={selectedTournament}
+      <ModernTournamentModal 
+        tournament={selectedTournament ? {
+          ...selectedTournament,
+          id: selectedTournament.id,
+          name: selectedTournament.name,
+          description: selectedTournament.description || '',
+          participation_fee: selectedTournament.participation_fee,
+          reentry_fee: selectedTournament.reentry_fee,
+          additional_fee: selectedTournament.additional_fee,
+          starting_chips: selectedTournament.starting_chips,
+          reentry_chips: selectedTournament.reentry_chips || selectedTournament.starting_chips,
+          additional_chips: selectedTournament.additional_chips || selectedTournament.starting_chips,
+          max_players: selectedTournament.max_players,
+          current_level: 1,
+          current_small_blind: 100,
+          current_big_blind: 200,
+          timer_duration: 1200,
+          timer_remaining: 1200,
+          reentry_end_level: selectedTournament.reentry_end_level || 6,
+          additional_level: selectedTournament.additional_level || 7,
+          break_start_level: selectedTournament.break_start_level || 4,
+          status: selectedTournament.status as any,
+          start_time: selectedTournament.start_time,
+          finished_at: undefined,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          is_published: true,
+          is_archived: false,
+          voice_control_enabled: false,
+          last_voice_command: undefined,
+          voice_session_id: undefined,
+          tournament_format: selectedTournament.tournament_format as any
+        } : null}
         open={modalOpen}
         onOpenChange={setModalOpen}
         onTournamentUpdate={loadTournaments}
