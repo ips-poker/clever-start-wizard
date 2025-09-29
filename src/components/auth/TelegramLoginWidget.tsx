@@ -1,16 +1,23 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { MessageCircle, ExternalLink } from 'lucide-react';
 import { useTelegramAuth } from '@/hooks/useTelegramAuth';
+import { PrivacyConsent } from '@/components/PrivacyConsent';
 
 interface TelegramLoginWidgetProps {
   onSuccess?: () => void;
   disabled?: boolean;
+  requirePrivacyConsent?: boolean;
 }
 
 // Telegram Login Widget component
-export const TelegramLoginWidget: React.FC<TelegramLoginWidgetProps> = ({ onSuccess, disabled }) => {
+export const TelegramLoginWidget: React.FC<TelegramLoginWidgetProps> = ({ 
+  onSuccess, 
+  disabled,
+  requirePrivacyConsent = false 
+}) => {
   const { loading, authenticateWithTelegram, openTelegramBot } = useTelegramAuth();
+  const [privacyConsent, setPrivacyConsent] = useState(false);
 
   const handleTelegramAuth = async (telegramData: any) => {
     if (disabled || loading) return;
@@ -24,7 +31,8 @@ export const TelegramLoginWidget: React.FC<TelegramLoginWidgetProps> = ({ onSucc
 
   const handleManualTelegramLogin = () => {
     if (disabled || loading) return;
-    openTelegramBot('epc777_bot'); // Ваш бот
+    if (requirePrivacyConsent && !privacyConsent) return;
+    openTelegramBot('epc777_bot');
   };
 
   return (
@@ -38,9 +46,18 @@ export const TelegramLoginWidget: React.FC<TelegramLoginWidgetProps> = ({ onSucc
         </div>
       </div>
       
+      {requirePrivacyConsent && (
+        <PrivacyConsent
+          checked={privacyConsent}
+          onCheckedChange={setPrivacyConsent}
+          disabled={disabled || loading}
+          className="mb-4"
+        />
+      )}
+      
       <Button
         onClick={handleManualTelegramLogin}
-        disabled={disabled || loading}
+        disabled={disabled || loading || (requirePrivacyConsent && !privacyConsent)}
         variant="outline"
         className="w-full bg-[#0088cc] hover:bg-[#0077b3] text-white border-[#0088cc] hover:border-[#0077b3]"
       >
@@ -60,6 +77,9 @@ export const TelegramLoginWidget: React.FC<TelegramLoginWidgetProps> = ({ onSucc
       
       <p className="text-xs text-muted-foreground text-center">
         При входе через Telegram будет создан аккаунт автоматически
+        {requirePrivacyConsent && (
+          <><br />Вход означает согласие с условиями обслуживания</>
+        )}
       </p>
     </div>
   );

@@ -3,6 +3,7 @@ import { initData } from '@telegram-apps/sdk-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { PrivacyConsent } from '@/components/PrivacyConsent';
 import { User, LogIn, Loader2 } from 'lucide-react';
 
 interface TelegramUser {
@@ -22,6 +23,7 @@ export const TelegramAuth: React.FC<TelegramAuthProps> = ({ onAuthComplete }) =>
   const [loading, setLoading] = useState(true);
   const [authError, setAuthError] = useState<string | null>(null);
   const [registering, setRegistering] = useState(false);
+  const [privacyConsent, setPrivacyConsent] = useState(false);
 
   useEffect(() => {
     initializeTelegramAuth();
@@ -190,9 +192,17 @@ export const TelegramAuth: React.FC<TelegramAuthProps> = ({ onAuthComplete }) =>
           {telegramUser?.username && (
             <p className="text-slate-400 mb-4 text-sm">@{telegramUser.username}</p>
           )}
+          
+          <PrivacyConsent
+            checked={privacyConsent}
+            onCheckedChange={setPrivacyConsent}
+            disabled={registering}
+            className="mb-4 text-left"
+          />
+          
           <Button 
             onClick={() => telegramUser && onAuthComplete(telegramUser)}
-            disabled={registering}
+            disabled={registering || !privacyConsent}
             className="w-full bg-amber-600 hover:bg-amber-700 text-white border-0"
           >
             {registering ? (

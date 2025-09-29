@@ -11,7 +11,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { TelegramLoginWidget } from "@/components/auth/TelegramLoginWidget";
+import { PrivacyConsent } from "@/components/PrivacyConsent";
 import { Eye, EyeOff, LogIn, UserPlus, Spade, AlertCircle } from "lucide-react";
+import { z } from "zod";
 
 export default function Auth() {
   const [email, setEmail] = useState("");
@@ -19,8 +21,16 @@ export default function Auth() {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
+  const [privacyConsent, setPrivacyConsent] = useState(false);
   const { toast } = useToast();
   const { user, loading: authLoading } = useAuth();
+
+  // Validation schema
+  const signUpSchema = z.object({
+    email: z.string().trim().email({ message: "Неверный формат email" }).max(255, { message: "Email слишком длинный" }),
+    password: z.string().min(6, { message: "Пароль должен содержать минимум 6 символов" }).max(128, { message: "Пароль слишком длинный" }),
+    privacyConsent: z.boolean().refine(val => val === true, { message: "Необходимо согласие с политикой конфиденциальности" })
+  });
 
   // Redirect if already authenticated
   if (authLoading) {
@@ -75,11 +85,24 @@ export default function Auth() {
     setError("");
 
     try {
+      // Validate input data
+      const validationResult = signUpSchema.safeParse({
+        email: email.trim(),
+        password,
+        privacyConsent
+      });
+
+      if (!validationResult.success) {
+        const errorMessage = validationResult.error.errors[0]?.message || "Ошибка валидации данных";
+        setError(errorMessage);
+        return;
+      }
+
       const redirectUrl = `${window.location.origin}/`;
       
       const { error } = await supabase.auth.signUp({
-        email,
-        password,
+        email: validationResult.data.email,
+        password: validationResult.data.password,
         options: {
           emailRedirectTo: redirectUrl
         }
@@ -103,6 +126,7 @@ export default function Auth() {
       
       setEmail("");
       setPassword("");
+      setPrivacyConsent(false);
     } catch (error) {
       console.error("Sign up error:", error);
       setError("Произошла ошибка при регистрации");
@@ -277,10 +301,18 @@ export default function Auth() {
                       Минимум 6 символов
                     </p>
                   </div>
+                  
+                  {/* Privacy Consent */}
+                  <PrivacyConsent
+                    checked={privacyConsent}
+                    onCheckedChange={setPrivacyConsent}
+                    disabled={loading}
+                  />
+                  
                   <Button 
                     type="submit" 
                     className="w-full" 
-                    disabled={loading}
+                    disabled={loading || !privacyConsent}
                   >
                     {loading ? (
                       <>
@@ -307,6 +339,7 @@ export default function Auth() {
                   description: "Добро пожаловать в систему!",
                 });
               }}
+              requirePrivacyConsent={true}
             />
 
             <div className="mt-6 text-center">
