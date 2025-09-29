@@ -72,7 +72,7 @@ const TournamentAnalysisAndRating = () => {
       if (existingResults && existingResults.length > 0) {
         toast({
           title: "Турнир уже проанализирован",
-          description: `Турнир "${tournament.name}" уже имеет результаты расчета рейтингов. Для пересчета используйте кнопку "Пересчитать рейтинги".`,
+          description: `Турнир "${tournament.name}" уже имеет результаты расчета рейтингов. Для пересчета используйте компонент "Пересчет рейтингов турнира".`,
           variant: "destructive"
         });
         setIsLoading(false);
@@ -323,7 +323,7 @@ const TournamentAnalysisAndRating = () => {
     if (existingResults && existingResults.length > 0) {
       toast({
         title: "Рейтинги уже применены",
-        description: `Для турнира "${analysis.tournament.name}" рейтинги уже были рассчитаны. Для пересчета используйте кнопку "Пересчитать рейтинги".`,
+        description: `Для турнира "${analysis.tournament.name}" рейтинги уже были рассчитаны. Для пересчета используйте компонент "Пересчет рейтингов турнира".`,
         variant: "destructive"
       });
       return;

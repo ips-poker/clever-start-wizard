@@ -117,25 +117,25 @@ export function RecalculateRatings() {
     }
   };
 
-  // Автоматический пересчет при загрузке компонента
-  useEffect(() => {
-    const autoRecalculate = async () => {
-      // Проверяем, есть ли турнир EPC OPEN 2025 для пересчета
-      const { data: tournaments } = await supabase
-        .from('tournaments')
-        .select('id, name, status')
-        .eq('name', 'EPC OPEN 2025')
-        .eq('status', 'finished')
-        .limit(1);
+  // Автоматический пересчет отключен для предотвращения множественных запусков
+  // useEffect(() => {
+  //   const autoRecalculate = async () => {
+  //     // Проверяем, есть ли турнир EPC OPEN 2025 для пересчета
+  //     const { data: tournaments } = await supabase
+  //       .from('tournaments')
+  //       .select('id, name, status')
+  //       .eq('name', 'EPC OPEN 2025')
+  //       .eq('status', 'finished')
+  //       .limit(1);
 
-      if (tournaments && tournaments.length > 0) {
-        toast.info('Найден турнир для пересчета: EPC OPEN 2025');
-        setTimeout(() => handleRecalculate(), 1000);
-      }
-    };
+  //     if (tournaments && tournaments.length > 0) {
+  //       toast.info('Найден турнир для пересчета: EPC OPEN 2025');
+  //       setTimeout(() => handleRecalculate(), 1000);
+  //     }
+  //   };
 
-    autoRecalculate();
-  }, []);
+  //   autoRecalculate();
+  // }, []);
 
   return (
     <Button
