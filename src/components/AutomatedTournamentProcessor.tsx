@@ -641,9 +641,9 @@ export default function AutomatedTournamentProcessor({
               </CardHeader>
               <CardContent className="space-y-2">
                 <div className="flex justify-between">
-                  <span className="text-poker-text-muted">Чипы/Бай-ин:</span>
+                  <span className="text-poker-text-muted">Стартовый стек:</span>
                   <span className="font-medium">
-                    {Math.round(tournamentData.starting_chips / tournamentData.buy_in)}
+                    {tournamentData.starting_chips.toLocaleString()} фишек
                   </span>
                 </div>
                 <div className="flex justify-between">
@@ -651,7 +651,7 @@ export default function AutomatedTournamentProcessor({
                   <span className="font-medium">{tournamentData.max_players}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-poker-text-muted">Бай-ин:</span>
+                  <span className="text-poker-text-muted">Орг. взнос:</span>
                   <span className="font-medium">{tournamentData.buy_in.toLocaleString()} ₽</span>
                 </div>
               </CardContent>
