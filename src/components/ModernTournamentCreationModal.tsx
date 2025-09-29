@@ -30,7 +30,10 @@ import {
   Zap,
   Eye,
   CheckCircle,
-  XCircle
+  XCircle,
+  Coffee,
+  Edit,
+  Trash2
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -347,10 +350,11 @@ export function ModernTournamentCreationModal({
         )}
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="basic">Основные</TabsTrigger>
             <TabsTrigger value="fees">Взносы</TabsTrigger>
             <TabsTrigger value="format">Формат</TabsTrigger>
+            <TabsTrigger value="structure">Структура</TabsTrigger>
             <TabsTrigger value="preview">Предпросмотр</TabsTrigger>
           </TabsList>
 
@@ -543,6 +547,237 @@ export function ModernTournamentCreationModal({
                 </div>
               </div>
             </div>
+          </TabsContent>
+
+          <TabsContent value="structure" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Timer className="w-5 h-5" />
+                  Структура блайндов
+                </CardTitle>
+                <CardDescription>
+                  Настройте структуру повышения ставок для турнира
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Быстрые шаблоны */}
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setBlindLevels(DEFAULT_BLIND_STRUCTURES.standard);
+                      toast({ title: "Шаблон применен", description: "Загружена стандартная структура блайндов" });
+                    }}
+                  >
+                    Стандарт (20 мин)
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setBlindLevels(DEFAULT_BLIND_STRUCTURES.turbo);
+                      toast({ title: "Шаблон применен", description: "Загружена турбо структура блайндов" });
+                    }}
+                  >
+                    Турбо (10 мин)
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const deepstack = DEFAULT_BLIND_STRUCTURES.standard.map(level => ({
+                        ...level,
+                        small_blind: Math.floor(level.small_blind * 0.5),
+                        big_blind: Math.floor(level.big_blind * 0.5),
+                        ante: Math.floor(level.ante * 0.5),
+                        duration: 1800 // 30 минут
+                      }));
+                      setBlindLevels(deepstack);
+                      toast({ title: "Шаблон применен", description: "Загружена структура с глубокими стеками" });
+                    }}
+                  >
+                    Глубокие стеки (30 мин)
+                  </Button>
+                </div>
+
+                {/* Управление уровнями */}
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="text-sm text-muted-foreground">
+                      Всего уровней: {blindLevels.length} • 
+                      Ожидаемая длительность: {Math.floor(blindLevels.reduce((acc, level) => acc + level.duration, 0) / 60)} мин
+                    </div>
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={() => {
+                        const newLevel: BlindLevel = {
+                          level: blindLevels.length + 1,
+                          small_blind: blindLevels.length > 0 
+                            ? Math.floor(blindLevels[blindLevels.length - 1].big_blind * 1.5)
+                            : 100,
+                          big_blind: blindLevels.length > 0 
+                            ? Math.floor(blindLevels[blindLevels.length - 1].big_blind * 2)
+                            : 200,
+                          ante: blindLevels.length > 0 
+                            ? Math.floor(blindLevels[blindLevels.length - 1].big_blind * 2)
+                            : 200,
+                          duration: formData.timer_duration,
+                          is_break: false
+                        };
+                        setBlindLevels([...blindLevels, newLevel]);
+                      }}
+                    >
+                      <Plus className="w-4 h-4 mr-1" />
+                      Добавить уровень
+                    </Button>
+                  </div>
+
+                  {/* Таблица уровней */}
+                  <div className="border rounded-lg overflow-hidden">
+                    <div className="max-h-96 overflow-y-auto">
+                      <table className="w-full text-sm">
+                        <thead className="bg-muted/50 sticky top-0">
+                          <tr>
+                            <th className="text-left p-3 font-medium">Уровень</th>
+                            <th className="text-left p-3 font-medium">Малый блайнд</th>
+                            <th className="text-left p-3 font-medium">Большой блайнд</th>
+                            <th className="text-left p-3 font-medium">Анте</th>
+                            <th className="text-left p-3 font-medium">Время</th>
+                            <th className="text-center p-3 font-medium">Действия</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {blindLevels.map((level, index) => (
+                            <tr key={index} className="border-t hover:bg-muted/25">
+                              <td className="p-3">
+                                {level.is_break ? (
+                                  <Badge variant="secondary" className="gap-1">
+                                    <Coffee className="w-3 h-3" />
+                                    Перерыв {level.level}
+                                  </Badge>
+                                ) : (
+                                  <Badge variant="outline">
+                                    Уровень {level.level}
+                                  </Badge>
+                                )}
+                              </td>
+                              <td className="p-3">{level.is_break ? '-' : level.small_blind.toLocaleString()}</td>
+                              <td className="p-3">{level.is_break ? '-' : level.big_blind.toLocaleString()}</td>
+                              <td className="p-3">{level.is_break ? '-' : level.ante.toLocaleString()}</td>
+                              <td className="p-3">{Math.floor(level.duration / 60)} мин</td>
+                              <td className="p-3">
+                                <div className="flex gap-1 justify-center">
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => {
+                                      // Открыть диалог редактирования уровня
+                                      const newSmallBlind = prompt(`Малый блайнд (текущий: ${level.small_blind})`, level.small_blind.toString());
+                                      const newBigBlind = prompt(`Большой блайнд (текущий: ${level.big_blind})`, level.big_blind.toString());
+                                      const newAnte = prompt(`Анте (текущий: ${level.ante})`, level.ante.toString());
+                                      const newDuration = prompt(`Длительность в секундах (текущая: ${level.duration})`, level.duration.toString());
+                                      
+                                      if (newSmallBlind && newBigBlind && newAnte && newDuration) {
+                                        const updatedLevels = [...blindLevels];
+                                        updatedLevels[index] = {
+                                          ...level,
+                                          small_blind: parseInt(newSmallBlind),
+                                          big_blind: parseInt(newBigBlind),
+                                          ante: parseInt(newAnte),
+                                          duration: parseInt(newDuration)
+                                        };
+                                        setBlindLevels(updatedLevels);
+                                      }
+                                    }}
+                                  >
+                                    <Edit className="w-3 h-3" />
+                                  </Button>
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => {
+                                      const updatedLevels = blindLevels.filter((_, i) => i !== index);
+                                      // Перенумеровать уровни
+                                      const renumberedLevels = updatedLevels.map((lvl, i) => ({
+                                        ...lvl,
+                                        level: i + 1
+                                      }));
+                                      setBlindLevels(renumberedLevels);
+                                    }}
+                                  >
+                                    <Trash2 className="w-3 h-3" />
+                                  </Button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                  {blindLevels.length === 0 && (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <Clock className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                      <p>Структура блайндов не задана</p>
+                      <p className="text-sm">Выберите шаблон или добавьте уровни вручную</p>
+                    </div>
+                  )}
+
+                  {/* Быстрые действия */}
+                  <div className="flex flex-wrap gap-2 pt-4 border-t">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        const breakLevel: BlindLevel = {
+                          level: blindLevels.length + 1,
+                          small_blind: 0,
+                          big_blind: 0,
+                          ante: 0,
+                          duration: 600, // 10 минут перерыв
+                          is_break: true
+                        };
+                        setBlindLevels([...blindLevels, breakLevel]);
+                      }}
+                    >
+                      <Coffee className="w-4 h-4 mr-1" />
+                      Добавить перерыв
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        if (blindLevels.length > 0) {
+                          const factor = parseFloat(prompt("Коэффициент увеличения (например, 1.5)", "1.5") || "1.5");
+                          const updatedLevels = blindLevels.map(level => ({
+                            ...level,
+                            small_blind: level.is_break ? 0 : Math.floor(level.small_blind * factor),
+                            big_blind: level.is_break ? 0 : Math.floor(level.big_blind * factor),
+                            ante: level.is_break ? 0 : Math.floor(level.ante * factor)
+                          }));
+                          setBlindLevels(updatedLevels);
+                          toast({ title: "Структура обновлена", description: `Все блайнды увеличены в ${factor} раз` });
+                        }
+                      }}
+                    >
+                      <Calculator className="w-4 h-4 mr-1" />
+                      Масштабировать блайнды
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="preview" className="space-y-4">
