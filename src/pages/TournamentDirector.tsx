@@ -62,6 +62,9 @@ type Tournament = {
   description: string | null;
   status: string;
   buy_in: number;
+  participation_fee?: number;
+  reentry_fee?: number;
+  additional_fee?: number;
   max_players: number;
   current_level: number;
   current_small_blind: number;
@@ -1001,8 +1004,20 @@ const TournamentDirector = () => {
                         </div>
                         <div className="flex justify-between">
                           <span className="text-gray-500">Орг. взнос:</span>
-                          <span className="font-medium text-green-600">{tournament.buy_in.toLocaleString()} ₽</span>
+                          <span className="font-medium text-green-600">{(tournament.participation_fee || tournament.buy_in).toLocaleString()} ₽</span>
                         </div>
+                        {(tournament.reentry_fee && tournament.reentry_fee > 0) && (
+                          <div className="flex justify-between">
+                            <span className="text-gray-500">Повторный вход:</span>
+                            <span className="font-medium text-blue-600">{tournament.reentry_fee.toLocaleString()} ₽</span>
+                          </div>
+                        )}
+                        {(tournament.additional_fee && tournament.additional_fee > 0) && (
+                          <div className="flex justify-between">
+                            <span className="text-gray-500">Доп. набор:</span>
+                            <span className="font-medium text-purple-600">{tournament.additional_fee.toLocaleString()} ₽</span>
+                          </div>
+                        )}
                         <div className="flex justify-between">
                           <span className="text-gray-500">Макс. игроков:</span>
                           <span className="font-medium">{tournament.max_players}</span>
