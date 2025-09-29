@@ -31,8 +31,7 @@ import { EnhancedPerformanceMonitor } from "@/components/cms/EnhancedPerformance
 import PlayersManager from "@/components/cms/PlayersManager";
 import { OrangeDataIntegration } from "@/components/cms/OrangeDataIntegration";
 import { ImageOptimizer } from "@/components/cms/ImageOptimizer";
-import { CacheDebugPanel } from "@/components/CacheDebugPanel";
-import { TournamentListCached } from "@/components/TournamentListCached";
+import { TerminologyMigrationGuide } from "@/components/TerminologyMigrationGuide";
 
 export default function Admin() {
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -100,6 +99,8 @@ export default function Admin() {
         );
       case "players":
         return <PlayersManager />;
+      case "terminology-migration":
+        return <TerminologyMigrationGuide />;
       case "cache-management":
         return (
           <div className="space-y-6">
@@ -109,10 +110,9 @@ export default function Admin() {
                 Мониторинг и управление системой кэширования данных
               </p>
             </div>
-            <CacheDebugPanel />
             <div>
               <h3 className="text-lg font-semibold mb-4">Пример: Турниры с кэшированием</h3>
-              <TournamentListCached />
+              <p className="text-muted-foreground">Компонент кэширования временно недоступен</p>
             </div>
           </div>
         );

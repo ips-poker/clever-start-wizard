@@ -37,7 +37,8 @@ import { TournamentCreationModal } from "@/components/TournamentCreationModal";
 import { VoiceControl } from "@/components/VoiceControl";
 import { TournamentDirectorMobileMenu } from "@/components/TournamentDirectorMobileMenu";
 import TournamentOverview from "@/components/TournamentOverview";
-import PlayerManagement from "@/components/PlayerManagement";
+import TournamentPlayerManagement from "@/components/TournamentPlayerManagement";
+import { adaptTournamentToModern, adaptRegistrationsToModern } from "@/utils/tournamentTypeAdapter";
 import BlindStructure from "@/components/BlindStructure";
 import PrizeStructureManager from "@/components/PrizeStructureManager";
 import ManualAdjustments from "@/components/ManualAdjustments";
@@ -1266,10 +1267,10 @@ const TournamentDirector = () => {
 
             <TabsContent value="players" className="space-y-8 animate-fade-in">
               {selectedTournament && (
-                <PlayerManagement 
-                  tournament={selectedTournament}
+                <TournamentPlayerManagement 
+                  tournament={adaptTournamentToModern(selectedTournament)}
                   players={players}
-                  registrations={registrations}
+                  registrations={adaptRegistrationsToModern(registrations)}
                   onRegistrationUpdate={() => selectedTournament && loadRegistrations(selectedTournament.id)}
                 />
               )}

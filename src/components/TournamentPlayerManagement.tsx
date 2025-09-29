@@ -501,6 +501,7 @@ const TournamentPlayerManagement = ({ tournament, players, registrations, onRegi
 
         <TabsContent value="seating">
           <TableSeating 
+            tournamentId={tournament.id}
             registrations={activePlayers}
             onSeatingUpdate={onRegistrationUpdate}
           />

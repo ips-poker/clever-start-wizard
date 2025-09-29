@@ -53,6 +53,13 @@ export type Database = {
             referencedRelation: "tournaments"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "blind_levels_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: false
+            referencedRelation: "tournaments_display"
+            referencedColumns: ["id"]
+          },
         ]
       }
       cms_content: {
@@ -353,6 +360,13 @@ export type Database = {
             referencedRelation: "tournaments"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "game_results_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: false
+            referencedRelation: "tournaments_display"
+            referencedColumns: ["id"]
+          },
         ]
       }
       players: {
@@ -440,6 +454,7 @@ export type Database = {
           id: string
           percentage: number
           place: number
+          rps_points: number | null
           tournament_id: string
           updated_at: string
         }
@@ -449,6 +464,7 @@ export type Database = {
           id?: string
           percentage: number
           place: number
+          rps_points?: number | null
           tournament_id: string
           updated_at?: string
         }
@@ -458,6 +474,7 @@ export type Database = {
           id?: string
           percentage?: number
           place?: number
+          rps_points?: number | null
           tournament_id?: string
           updated_at?: string
         }
@@ -469,10 +486,18 @@ export type Database = {
             referencedRelation: "tournaments"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "tournament_payouts_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: false
+            referencedRelation: "tournaments_display"
+            referencedColumns: ["id"]
+          },
         ]
       }
       tournament_registrations: {
         Row: {
+          additional_sets: number | null
           addons: number | null
           chips: number | null
           created_at: string
@@ -482,11 +507,13 @@ export type Database = {
           player_id: string
           position: number | null
           rebuys: number | null
+          reentries: number | null
           seat_number: number | null
           status: string
           tournament_id: string
         }
         Insert: {
+          additional_sets?: number | null
           addons?: number | null
           chips?: number | null
           created_at?: string
@@ -496,11 +523,13 @@ export type Database = {
           player_id: string
           position?: number | null
           rebuys?: number | null
+          reentries?: number | null
           seat_number?: number | null
           status?: string
           tournament_id: string
         }
         Update: {
+          additional_sets?: number | null
           addons?: number | null
           chips?: number | null
           created_at?: string
@@ -510,6 +539,7 @@ export type Database = {
           player_id?: string
           position?: number | null
           rebuys?: number | null
+          reentries?: number | null
           seat_number?: number | null
           status?: string
           tournament_id?: string
@@ -529,10 +559,20 @@ export type Database = {
             referencedRelation: "tournaments"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "tournament_registrations_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: false
+            referencedRelation: "tournaments_display"
+            referencedColumns: ["id"]
+          },
         ]
       }
       tournaments: {
         Row: {
+          additional_chips: number | null
+          additional_fee: number | null
+          additional_level: number | null
           addon_chips: number | null
           addon_cost: number | null
           addon_level: number | null
@@ -550,9 +590,13 @@ export type Database = {
           last_voice_command: string | null
           max_players: number
           name: string
+          participation_fee: number | null
           rebuy_chips: number | null
           rebuy_cost: number | null
           rebuy_end_level: number | null
+          reentry_chips: number | null
+          reentry_end_level: number | null
+          reentry_fee: number | null
           start_time: string
           starting_chips: number
           status: string
@@ -564,6 +608,9 @@ export type Database = {
           voice_session_id: string | null
         }
         Insert: {
+          additional_chips?: number | null
+          additional_fee?: number | null
+          additional_level?: number | null
           addon_chips?: number | null
           addon_cost?: number | null
           addon_level?: number | null
@@ -581,9 +628,13 @@ export type Database = {
           last_voice_command?: string | null
           max_players?: number
           name: string
+          participation_fee?: number | null
           rebuy_chips?: number | null
           rebuy_cost?: number | null
           rebuy_end_level?: number | null
+          reentry_chips?: number | null
+          reentry_end_level?: number | null
+          reentry_fee?: number | null
           start_time: string
           starting_chips?: number
           status?: string
@@ -595,6 +646,9 @@ export type Database = {
           voice_session_id?: string | null
         }
         Update: {
+          additional_chips?: number | null
+          additional_fee?: number | null
+          additional_level?: number | null
           addon_chips?: number | null
           addon_cost?: number | null
           addon_level?: number | null
@@ -612,9 +666,13 @@ export type Database = {
           last_voice_command?: string | null
           max_players?: number
           name?: string
+          participation_fee?: number | null
           rebuy_chips?: number | null
           rebuy_cost?: number | null
           rebuy_end_level?: number | null
+          reentry_chips?: number | null
+          reentry_end_level?: number | null
+          reentry_fee?: number | null
           start_time?: string
           starting_chips?: number
           status?: string
@@ -669,6 +727,13 @@ export type Database = {
             referencedRelation: "tournaments"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "voice_announcements_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: false
+            referencedRelation: "tournaments_display"
+            referencedColumns: ["id"]
+          },
         ]
       }
       voice_command_logs: {
@@ -714,6 +779,13 @@ export type Database = {
             columns: ["tournament_id"]
             isOneToOne: false
             referencedRelation: "tournaments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "voice_command_logs_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: false
+            referencedRelation: "tournaments_display"
             referencedColumns: ["id"]
           },
         ]
@@ -764,6 +836,13 @@ export type Database = {
             columns: ["tournament_id"]
             isOneToOne: false
             referencedRelation: "tournaments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "voice_commands_log_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: false
+            referencedRelation: "tournaments_display"
             referencedColumns: ["id"]
           },
         ]
@@ -887,7 +966,114 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      tournaments_display: {
+        Row: {
+          additional_chips: number | null
+          additional_fee: number | null
+          additional_level: number | null
+          break_start_level: number | null
+          created_at: string | null
+          current_big_blind: number | null
+          current_level: number | null
+          current_small_blind: number | null
+          description: string | null
+          finished_at: string | null
+          id: string | null
+          is_archived: boolean | null
+          is_published: boolean | null
+          last_voice_command: string | null
+          max_players: number | null
+          name: string | null
+          participant_count: number | null
+          participation_fee: number | null
+          reentry_chips: number | null
+          reentry_end_level: number | null
+          reentry_fee: number | null
+          start_time: string | null
+          starting_chips: number | null
+          status: string | null
+          timer_duration: number | null
+          timer_remaining: number | null
+          total_additional_sets: number | null
+          total_reentries: number | null
+          total_rps_pool: number | null
+          tournament_format: string | null
+          updated_at: string | null
+          voice_control_enabled: boolean | null
+          voice_session_id: string | null
+        }
+        Insert: {
+          additional_chips?: number | null
+          additional_fee?: number | null
+          additional_level?: number | null
+          break_start_level?: number | null
+          created_at?: string | null
+          current_big_blind?: number | null
+          current_level?: number | null
+          current_small_blind?: number | null
+          description?: string | null
+          finished_at?: string | null
+          id?: string | null
+          is_archived?: boolean | null
+          is_published?: boolean | null
+          last_voice_command?: string | null
+          max_players?: number | null
+          name?: string | null
+          participant_count?: never
+          participation_fee?: number | null
+          reentry_chips?: number | null
+          reentry_end_level?: number | null
+          reentry_fee?: number | null
+          start_time?: string | null
+          starting_chips?: number | null
+          status?: string | null
+          timer_duration?: number | null
+          timer_remaining?: number | null
+          total_additional_sets?: never
+          total_reentries?: never
+          total_rps_pool?: never
+          tournament_format?: string | null
+          updated_at?: string | null
+          voice_control_enabled?: boolean | null
+          voice_session_id?: string | null
+        }
+        Update: {
+          additional_chips?: number | null
+          additional_fee?: number | null
+          additional_level?: number | null
+          break_start_level?: number | null
+          created_at?: string | null
+          current_big_blind?: number | null
+          current_level?: number | null
+          current_small_blind?: number | null
+          description?: string | null
+          finished_at?: string | null
+          id?: string | null
+          is_archived?: boolean | null
+          is_published?: boolean | null
+          last_voice_command?: string | null
+          max_players?: number | null
+          name?: string | null
+          participant_count?: never
+          participation_fee?: number | null
+          reentry_chips?: number | null
+          reentry_end_level?: number | null
+          reentry_fee?: number | null
+          start_time?: string | null
+          starting_chips?: number | null
+          status?: string | null
+          timer_duration?: number | null
+          timer_remaining?: number | null
+          total_additional_sets?: never
+          total_reentries?: never
+          total_rps_pool?: never
+          tournament_format?: string | null
+          updated_at?: string | null
+          voice_control_enabled?: boolean | null
+          voice_session_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       archive_tournament: {
@@ -898,9 +1084,17 @@ export type Database = {
         Args: { tournament_id_param: string }
         Returns: undefined
       }
+      calculate_tournament_rps_pool: {
+        Args: { tournament_id_param: string }
+        Returns: number
+      }
       complete_tournament: {
         Args: { tournament_id_param: string }
         Returns: boolean
+      }
+      convert_amount_to_rps: {
+        Args: { amount_rubles: number }
+        Returns: number
       }
       create_first_admin: {
         Args: Record<PropertyKey, never>
