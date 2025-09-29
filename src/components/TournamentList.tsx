@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Calendar, Users, Trophy, Clock, Info, ChevronRight, DollarSign } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { ModernTournamentModal } from "./ModernTournamentModal";
+import { TournamentTicketCard } from "./TournamentTicketCard";
 
 interface Tournament {
   id: string;
@@ -210,79 +211,17 @@ export function TournamentList() {
             <p className="text-muted-foreground">Новые турниры будут добавлены в ближайшее время</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {tournaments.map((tournament) => (
-              <Card 
-                key={tournament.id} 
-                className="group overflow-hidden hover:shadow-dramatic transition-all duration-500 border-border/50 hover:border-poker-accent/40 hover:-translate-y-1 relative"
-              >
-                <CardHeader className="bg-gradient-card border-b border-border/50">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <CardTitle className="text-lg mb-2 text-poker-primary group-hover:text-poker-accent transition-colors">
-                        {tournament.name}
-                      </CardTitle>
-                      <CardDescription className="text-sm">
-                        {tournament.description || "Рейтинговый турнир"}
-                      </CardDescription>
-                    </div>
-                    {getStatusBadge(tournament.status)}
-                  </div>
-                </CardHeader>
-                
-                <CardContent className="p-6">
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                      <Calendar className="w-4 h-4 text-poker-accent" />
-                      <span>{new Date(tournament.start_time).toLocaleString('ru-RU')}</span>
-                    </div>
-                    
-                    <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                      <Users className="w-4 h-4 text-poker-primary" />
-                      <span>
-                        {tournament._count?.tournament_registrations || 0} / {tournament.max_players} игроков
-                      </span>
-                    </div>
-
-                    <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                      <DollarSign className="w-4 h-4 text-poker-success" />
-                      <span>Организационный взнос: {tournament.participation_fee.toLocaleString()} ₽</span>
-                    </div>
-
-                    <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                      <Trophy className="w-4 h-4 text-poker-accent" />
-                      <span>Рейтинговый турнир</span>
-                    </div>
-
-                    {/* Кнопка "Подробнее" появляется при наведении */}
-                    <div className="pt-4 space-y-2">
-                      <Button 
-                        variant="outline"
-                        onClick={() => {
-                          setSelectedTournament(tournament);
-                          setModalOpen(true);
-                        }}
-                        className="w-full transition-all duration-300 border-poker-accent/30 text-poker-accent hover:bg-poker-accent/10"
-                      >
-                        <Info className="w-4 h-4 mr-2" />
-                        Подробнее
-                        <ChevronRight className="w-4 h-4 ml-2" />
-                      </Button>
-                      
-                      <Button 
-                        onClick={() => registerForTournament(tournament.id)}
-                        className="w-full bg-gradient-button hover:shadow-elevated transition-all duration-300"
-                        disabled={tournament.status === 'running' || tournament.status === 'finished' || tournament.status === 'paused'}
-                      >
-                        {tournament.status === 'scheduled' ? 'Скоро откроется регистрация' :
-                         tournament.status === 'registration' ? 'Зарегистрироваться' : 
-                         tournament.status === 'running' ? 'Турнир идет' :
-                         tournament.status === 'paused' ? 'Турнир приостановлен' : 'Турнир завершен'}
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+              <TournamentTicketCard
+                key={tournament.id}
+                tournament={tournament}
+                onViewDetails={(tournament) => {
+                  setSelectedTournament(tournament);
+                  setModalOpen(true);
+                }}
+                onRegister={registerForTournament}
+              />
             ))}
           </div>
         )}
