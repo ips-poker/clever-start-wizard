@@ -48,6 +48,7 @@ interface ModernTournamentModalProps {
 }
 
 export function ModernTournamentModal({ tournament, open, onOpenChange, onTournamentUpdate }: ModernTournamentModalProps) {
+  const [registrations, setRegistrations] = useState<any[]>([]);
   const [blindStructure, setBlindStructure] = useState<BlindLevel[]>([]);
   const [loading, setLoading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -74,6 +75,7 @@ export function ModernTournamentModal({ tournament, open, onOpenChange, onTourna
   useEffect(() => {
     if (tournament && open) {
       loadBlindStructure();
+      loadRegistrations();
       setEditForm({
         name: tournament.name,
         description: tournament.description || '',
@@ -112,6 +114,22 @@ export function ModernTournamentModal({ tournament, open, onOpenChange, onTourna
       console.error('Error loading blind structure:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadRegistrations = async () => {
+    if (!tournament) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('tournament_registrations')
+        .select('*')
+        .eq('tournament_id', tournament.id);
+
+      if (error) throw error;
+      setRegistrations(data || []);
+    } catch (error) {
+      console.error('Error loading registrations:', error);
     }
   };
 
@@ -178,13 +196,17 @@ export function ModernTournamentModal({ tournament, open, onOpenChange, onTourna
 
   const lateRegDeadline = calculateLateRegistrationDeadline();
   
-  // Рассчитываем фонд RPS баллов
+  // Рассчитываем фонд RPS баллов на основе реальных участников
+  const participantCount = registrations.length;
+  const totalReentries = registrations.reduce((sum, reg) => sum + (reg.reentries || 0), 0);
+  const totalAdditionalSets = registrations.reduce((sum, reg) => sum + (reg.additional_sets || 0), 0);
+  
   const rpsPool = calculateTotalRPSPool(
-    1, // Пока один участник для демонстрации
+    participantCount,
     tournament.participation_fee,
-    0, // Повторные входы
+    totalReentries,
     tournament.reentry_fee,
-    0, // Дополнительные наборы  
+    totalAdditionalSets,
     tournament.additional_fee
   );
 
@@ -227,7 +249,7 @@ export function ModernTournamentModal({ tournament, open, onOpenChange, onTourna
                 </div>
                 <div className="flex items-center gap-2">
                   <Users className="w-4 h-4 text-muted-foreground" />
-                  <span>До {tournament.max_players} участников</span>
+                  <span>{participantCount} из {tournament.max_players} участников</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <DollarSign className="w-4 h-4 text-muted-foreground" />
