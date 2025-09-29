@@ -77,6 +77,11 @@ export function Footer() {
         <div className="border-t border-primary-foreground/20 mt-6 lg:mt-8 pt-6 lg:pt-8 text-center text-xs lg:text-sm opacity-80">
           <p>{getContent('copyright', '© 2024 IPS International Poker Style. Все права защищены.')}</p>
           <p className="mt-2 px-4">{getContent('legal_notice', 'Игра проходит в рамках действующего законодательства без денежных призов.')}</p>
+          <div className="mt-3 space-x-4">
+            <Link to="/terms" className="hover:text-poker-gold transition-colors touch-target">
+              Договор оферты
+            </Link>
+          </div>
         </div>
       </div>
     </footer>
