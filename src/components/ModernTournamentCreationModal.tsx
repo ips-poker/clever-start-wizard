@@ -60,6 +60,7 @@ interface ModernTournament {
   additional_chips: number;
   starting_chips: number;
   max_players: number;
+  expected_participants?: number;
   start_time: string;
   status: string;
   tournament_format: string;
@@ -314,12 +315,13 @@ export function ModernTournamentCreationModal({
     }
   };
 
+  const expectedParticipants = formData.expected_participants || formData.max_players;
   const expectedRPSPool = calculateTotalRPSPool(
-    Math.floor(formData.max_players * 0.7), // Ожидаемое количество участников
+    expectedParticipants, // Используем ожидаемое количество участников
     formData.participation_fee,
-    Math.floor(formData.max_players * 0.3), // Ожидаемые повторные входы
+    Math.floor(expectedParticipants * 0.2), // Ожидаемые повторные входы (20%)
     formData.reentry_fee,
-    Math.floor(formData.max_players * 0.5), // Ожидаемые дополнительные наборы
+    Math.floor(expectedParticipants * 0.3), // Ожидаемые дополнительные наборы (30%)
     formData.additional_fee
   );
 
@@ -391,17 +393,31 @@ export function ModernTournamentCreationModal({
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="max_players">Максимальное количество участников *</Label>
-                <Input
-                  id="max_players"
-                  type="number"
-                  min="2"
-                  max="200"
-                  value={formData.max_players}
-                  onChange={(e) => updateFormData('max_players', parseInt(e.target.value) || 9)}
-                />
-              </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="max_players">Максимальное количество участников *</Label>
+                    <Input
+                      id="max_players"
+                      type="number"
+                      min="2"
+                      max="200"
+                      value={formData.max_players}
+                      onChange={(e) => updateFormData('max_players', parseInt(e.target.value) || 9)}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="expected_participants">Ожидаемое количество участников</Label>
+                    <Input
+                      id="expected_participants"
+                      type="number"
+                      min="1"
+                      max={formData.max_players}
+                      value={formData.expected_participants || formData.max_players}
+                      onChange={(e) => updateFormData('expected_participants', parseInt(e.target.value) || formData.max_players)}
+                      placeholder={`До ${formData.max_players} участников`}
+                    />
+                    <p className="text-xs text-gray-500">Для расчета ожидаемого фонда RPS баллов</p>
+                  </div>
 
               <div className="space-y-2">
                 <Label htmlFor="starting_chips">Стартовый игровой инвентарь (фишки) *</Label>
