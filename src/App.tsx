@@ -18,6 +18,7 @@ import ExternalTimer from "./pages/ExternalTimer";
 import TelegramMiniApp from "./pages/TelegramMiniApp";
 import InvitationCard from "./pages/InvitationCard";
 import TermsOfService from "./pages/TermsOfService";
+import Privacy from "./pages/Privacy";
 
 const queryClient = new QueryClient();
 
@@ -44,6 +45,7 @@ function App() {
           <Route path="/invitation/:id" element={<InvitationCard />} />
           <Route path="/telegram" element={<TelegramMiniApp />} />
           <Route path="/terms" element={<TermsOfService />} />
+          <Route path="/privacy" element={<Privacy />} />
           
           <Route path="*" element={<NotFound />} />
         </Routes>

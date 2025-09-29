@@ -81,6 +81,10 @@ export function Footer() {
             <Link to="/terms" className="hover:text-poker-gold transition-colors touch-target">
               Договор оферты
             </Link>
+            <span className="opacity-50">•</span>
+            <Link to="/privacy" className="hover:text-poker-gold transition-colors touch-target">
+              Политика конфиденциальности
+            </Link>
           </div>
         </div>
       </div>
