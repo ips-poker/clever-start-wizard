@@ -112,32 +112,46 @@ export function Features() {
             return (
               <div 
                 key={`feature-${index}-${feature.title}`} 
-                className="bg-gradient-to-br from-slate-800/90 via-slate-900/95 to-black/90 border border-white/10 rounded-2xl p-6 backdrop-blur-xl group hover:scale-105 transition-all duration-500 hover:shadow-xl hover:shadow-amber-500/20 relative overflow-hidden"
+                className="relative group"
               >
-                <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 via-transparent to-amber-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                <div className="absolute inset-0 opacity-8 group-hover:opacity-15 transition-opacity duration-500">
-                  <div className="absolute top-3 right-3 text-amber-400/30 text-xl animate-pulse">♦</div>
-                  <div className="absolute bottom-3 left-3 text-amber-400/20 text-lg animate-bounce-subtle">♠</div>
-                </div>
+                {/* Outer glow */}
+                <div className="absolute inset-0 bg-gradient-to-br from-amber-500/0 via-amber-500/10 to-amber-600/0 rounded-3xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
                 
-                <div className="relative z-10">
-                  <div className="w-10 h-10 lg:w-12 lg:h-12 bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300 shadow-lg">
-                    <IconComponent className="w-5 h-5 lg:w-6 lg:h-6 text-white" />
+                {/* Main card */}
+                <div className="relative bg-gradient-to-br from-slate-800/80 via-slate-900/90 to-black/85 border-2 border-amber-400/10 rounded-3xl p-7 backdrop-blur-xl group-hover:scale-[1.03] group-hover:border-amber-400/30 transition-all duration-700 shadow-2xl overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-br from-amber-500/0 via-amber-500/8 to-amber-600/0 opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/3 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
+                  
+                  <div className="absolute inset-0 opacity-10 group-hover:opacity-25 transition-opacity duration-700 pointer-events-none">
+                    <div className="absolute top-4 right-4 text-amber-400/40 text-3xl animate-float">♦</div>
+                    <div className="absolute bottom-4 left-4 text-amber-400/30 text-2xl animate-float-delayed">♠</div>
                   </div>
-                  <h3 className="text-lg lg:text-xl font-medium text-white leading-tight mb-3 group-hover:text-amber-100 transition-colors duration-300">
-                    {feature.title}
-                  </h3>
-                  <p className="text-white/60 mb-4 text-sm lg:text-base leading-relaxed font-light">
-                    {feature.description}
-                  </p>
-                  <ul className="space-y-2">
-                    {feature.highlights.map((highlight, idx) => (
-                      <li key={idx} className="flex items-center text-xs lg:text-sm">
-                        <div className="w-1.5 h-1.5 rounded-full bg-amber-400 mr-3 flex-shrink-0"></div>
-                        <span className="leading-relaxed text-white/70 font-light">{highlight}</span>
-                      </li>
-                    ))}
-                  </ul>
+                  
+                  <div className="relative z-10">
+                    <div className="relative mb-5">
+                      <div className="absolute inset-0 bg-gradient-to-br from-amber-500 to-amber-600 rounded-2xl blur-lg opacity-50 group-hover:opacity-75 transition-opacity"></div>
+                      <div className="relative w-14 h-14 bg-gradient-to-br from-amber-500 via-amber-600 to-amber-500 rounded-2xl flex items-center justify-center group-hover:scale-110 group-hover:rotate-6 transition-all duration-500 shadow-2xl ring-2 ring-amber-400/30 group-hover:ring-amber-400/50">
+                        <IconComponent className="w-7 h-7 text-white drop-shadow-lg" />
+                      </div>
+                    </div>
+                    
+                    <h3 className="text-xl font-bold text-white leading-tight mb-3 group-hover:text-amber-50 transition-colors duration-300 drop-shadow-md">
+                      {feature.title}
+                    </h3>
+                    <p className="text-white/70 mb-5 text-sm leading-relaxed font-light">
+                      {feature.description}
+                    </p>
+                    <ul className="space-y-2.5">
+                      {feature.highlights.map((highlight, idx) => (
+                        <li key={idx} className="flex items-center text-sm">
+                          <div className="w-5 h-5 rounded-lg bg-gradient-to-br from-amber-500/20 to-amber-600/20 border border-amber-400/30 flex items-center justify-center mr-3 flex-shrink-0 group-hover:scale-110 transition-transform">
+                            <div className="w-1.5 h-1.5 rounded-full bg-amber-400"></div>
+                          </div>
+                          <span className="leading-relaxed text-white/80 font-light">{highlight}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 </div>
               </div>
             );
