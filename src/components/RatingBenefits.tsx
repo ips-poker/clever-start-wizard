@@ -1,8 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
-import {
+import { 
   Trophy, 
   BarChart3, 
   Users, 
@@ -141,15 +140,13 @@ export function RatingBenefits() {
             </div>
 
             <div className="pt-4">
-              <Link to="/rating" className="group/btn inline-block">
-                <Button 
-                  size="lg" 
-                  className="bg-gradient-to-r from-amber-500 via-amber-600 to-amber-500 hover:from-amber-600 hover:via-amber-500 hover:to-amber-600 text-white font-bold px-10 py-6 rounded-xl shadow-2xl hover:shadow-amber-500/50 transition-all duration-500 hover:scale-105 border-2 border-amber-400/30 group-hover/btn:border-amber-400/50"
-                >
-                  Узнать свой рейтинг
-                  <ChevronRight className="w-5 h-5 ml-2 group-hover/btn:translate-x-1 transition-transform" />
-                </Button>
-              </Link>
+              <Button 
+                size="lg" 
+                className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-medium px-8 py-4 rounded-lg shadow-lg hover:shadow-amber-500/30 transition-all duration-300"
+              >
+                Узнать свой рейтинг
+                <ChevronRight className="w-5 h-5 ml-2" />
+              </Button>
             </div>
           </div>
 

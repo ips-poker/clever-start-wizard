@@ -150,29 +150,18 @@ export function Gallery() {
   }
 
   return (
-    <section className="py-20 bg-gradient-to-br from-slate-900 via-black to-slate-800 relative overflow-hidden">
-      {/* Decorative elements */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-5">
-        <div className="absolute top-20 left-20 text-amber-400/30 text-6xl animate-float">♦</div>
-        <div className="absolute top-40 right-10 text-amber-400/20 text-4xl animate-float-delayed">♥</div>
-        <div className="absolute bottom-20 left-10 text-amber-400/25 text-5xl animate-float">♠</div>
-        <div className="absolute bottom-40 right-20 text-amber-400/20 text-3xl animate-float-delayed">♣</div>
-      </div>
-      
-      <div className="container mx-auto px-4 relative z-10">
-        {/* Enhanced Header */}
-        <div className="text-center mb-12">
-          <div className="flex items-center gap-3 justify-center mb-6">
-            <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl flex items-center justify-center shadow-lg">
-              <Grid3X3 className="h-5 w-5 text-white" />
-            </div>
-            <h2 className="text-3xl lg:text-4xl font-light text-white tracking-wide">
-              ГАЛЕРЕЯ КЛУБА
-            </h2>
-          </div>
-          <div className="h-0.5 w-20 bg-gradient-to-r from-amber-400 to-amber-600 mx-auto mb-6"></div>
-          <p className="text-lg text-white/70 max-w-2xl mx-auto font-light leading-relaxed">
-            Познакомьтесь с атмосферой премиального покерного клуба EPC
+    <section className="py-12 lg:py-20 bg-background">
+      <div className="container mx-auto px-4">
+        {/* Header */}
+        <div className="text-center mb-8 lg:mb-12">
+          <Badge variant="outline" className="mb-4 border-poker-gold text-poker-gold text-xs lg:text-sm">
+            Галерея IPS
+          </Badge>
+          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground mb-4">
+            Наш покерный клуб
+          </h2>
+          <p className="text-base lg:text-xl text-muted-foreground max-w-2xl mx-auto px-4 leading-relaxed">
+            Познакомьтесь с атмосферой премиального покерного клуба IPS
           </p>
         </div>
 
@@ -294,20 +283,6 @@ export function Gallery() {
           </div>
         )}
       </div>
-      
-      <style>{`
-        .animate-float {
-          animation: float 6s ease-in-out infinite;
-        }
-        .animate-float-delayed {
-          animation: float 6s ease-in-out 3s infinite;
-        }
-        @keyframes float {
-          0%, 100% { transform: translateY(0px) translateX(0px) rotate(var(--tw-rotate)); }
-          33% { transform: translateY(-20px) translateX(10px) rotate(var(--tw-rotate)); }
-          66% { transform: translateY(-10px) translateX(-10px) rotate(var(--tw-rotate)); }
-        }
-      `}</style>
     </section>
   );
 }

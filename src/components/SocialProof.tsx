@@ -1,8 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
-import {
+import { 
   Users, 
   Trophy, 
   Calendar,
@@ -146,57 +145,36 @@ export function SocialProof() {
   ];
 
   return (
-    <section className="py-20 bg-gradient-to-br from-slate-900 via-black to-slate-800 relative overflow-hidden">
-      {/* Decorative poker symbols */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-5">
-        <div className="absolute top-20 right-20 text-amber-400/30 text-6xl animate-float">♥</div>
-        <div className="absolute top-40 left-10 text-amber-400/20 text-4xl animate-float-delayed">♣</div>
-        <div className="absolute bottom-20 left-20 text-amber-400/25 text-5xl animate-float">♦</div>
-        <div className="absolute bottom-40 right-10 text-amber-400/20 text-3xl animate-float-delayed">♠</div>
-      </div>
-      
-      <div className="relative z-10">
+    <section className="py-12 lg:py-20 bg-accent/30">
       <div className="container mx-auto px-4">
-        {/* Enhanced Stats Section */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
+        {/* Stats Section */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 mb-12 lg:mb-16">
           {stats.map((stat, index) => {
             const IconComponent = stat.icon;
             return (
-              <div key={`stat-${index}-${stat.value}`} className="group relative">
-                <div className="absolute inset-0 bg-gradient-to-br from-amber-500/0 via-amber-500/10 to-amber-600/0 rounded-2xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                <div className="relative bg-gradient-to-br from-slate-800/80 via-slate-900/90 to-black/85 border-2 border-amber-400/10 rounded-2xl p-6 backdrop-blur-xl text-center group-hover:scale-105 group-hover:border-amber-400/30 transition-all duration-500 shadow-xl">
-                  <div className="absolute inset-0 bg-gradient-to-br from-amber-500/0 via-amber-500/5 to-amber-600/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-2xl"></div>
-                  <div className="relative z-10">
-                    <div className="flex justify-center mb-4">
-                      <div className="relative">
-                        <div className="absolute inset-0 bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl blur-md opacity-50 group-hover:opacity-75 transition-opacity"></div>
-                        <div className="relative w-12 h-12 bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl flex items-center justify-center group-hover:scale-110 group-hover:rotate-6 transition-all duration-300 shadow-lg">
-                          <IconComponent className="w-6 h-6 text-white" />
-                        </div>
-                      </div>
-                    </div>
-                    <div className="text-3xl font-bold bg-gradient-to-r from-amber-400 to-amber-600 bg-clip-text text-transparent mb-2 group-hover:scale-110 transition-transform">{stat.value}</div>
-                    <div className="text-sm text-white/70 leading-tight font-light">{stat.label}</div>
+              <Card key={`stat-${index}-${stat.value}`} className="text-center p-4 lg:p-6 hover:shadow-elegant transition-all duration-300 border-border/50">
+                <div className="flex justify-center mb-3 lg:mb-4">
+                  <div className="w-10 h-10 lg:w-12 lg:h-12 bg-poker-gold/10 rounded-full flex items-center justify-center">
+                    <IconComponent className="w-5 h-5 lg:w-6 lg:h-6 text-poker-gold" />
                   </div>
                 </div>
-              </div>
+                <div className="text-xl lg:text-3xl font-bold text-foreground mb-1 lg:mb-2">{stat.value}</div>
+                <div className="text-xs lg:text-sm text-muted-foreground leading-tight">{stat.label}</div>
+              </Card>
             );
           })}
         </div>
 
-        {/* Enhanced Testimonials Header */}
-        <div className="text-center mb-12">
-          <div className="flex items-center gap-3 justify-center mb-6">
-            <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl flex items-center justify-center shadow-lg">
-              <MessageCircle className="h-5 w-5 text-white" />
-            </div>
-            <h2 className="text-3xl lg:text-4xl font-light text-white tracking-wide">
-              ОТЗЫВЫ ИГРОКОВ
-            </h2>
-          </div>
-          <div className="h-0.5 w-20 bg-gradient-to-r from-amber-400 to-amber-600 mx-auto mb-6"></div>
-          <p className="text-lg text-white/70 max-w-2xl mx-auto font-light leading-relaxed">
-            Присоединяйтесь к сообществу довольных игроков, которые улучшили свои навыки с EPC
+        {/* Testimonials */}
+        <div className="text-center mb-8 lg:mb-12">
+          <Badge variant="outline" className="mb-4 border-poker-gold text-poker-gold text-xs lg:text-sm">
+            Отзывы игроков
+          </Badge>
+          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground mb-4">
+            Что говорят наши игроки?
+          </h2>
+          <p className="text-base lg:text-xl text-muted-foreground max-w-2xl mx-auto px-4 leading-relaxed">
+            Присоединяйтесь к сообществу довольных игроков, которые улучшили свои навыки с IPS
           </p>
         </div>
 
@@ -269,73 +247,48 @@ export function SocialProof() {
           )}
         </div>
 
-        {/* Enhanced Call to Action */}
-        <div className="relative overflow-hidden rounded-3xl shadow-2xl">
-          <div className="absolute inset-0 bg-gradient-to-br from-amber-500/10 via-amber-600/15 to-amber-500/10"></div>
-          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/3 to-transparent translate-x-[-100%] animate-shimmer"></div>
-          <div className="relative text-center p-12 border-2 border-amber-400/20 backdrop-blur-xl">
-            <div className="absolute inset-0 opacity-10 pointer-events-none">
-              <div className="absolute top-8 right-12 text-amber-400/40 text-5xl animate-float">♠</div>
-              <div className="absolute bottom-8 left-12 text-amber-400/30 text-4xl animate-float-delayed">♣</div>
-            </div>
+        {/* Call to Action - Enhanced readability */}
+        <div className="relative overflow-hidden rounded-2xl shadow-elevated">
+          <div className="absolute inset-0 bg-card"></div>
+          <div className="relative text-center p-8 lg:p-12 border border-border">
+            <h3 className="text-3xl lg:text-4xl font-bold mb-6 text-foreground">
+              Готовы начать свой путь к покерному мастерству?
+            </h3>
+            <p className="text-lg lg:text-xl mb-8 text-foreground/80 max-w-2xl mx-auto leading-relaxed">
+              Присоединяйтесь к IPS сегодня и получите доступ к профессиональной рейтинговой системе, 
+              регулярным турнирам и дружелюбному сообществу.
+            </p>
             
-            <div className="relative z-10">
-              <h3 className="text-4xl font-light text-white mb-6 tracking-wide">
-                Готовы начать свой путь к покерному мастерству?
-              </h3>
-              <p className="text-xl text-white/80 mb-10 max-w-2xl mx-auto leading-relaxed font-light">
-                Присоединяйтесь к EPC сегодня и получите доступ к профессиональной рейтинговой системе, 
-                регулярным турнирам и дружелюбному сообществу.
-              </p>
-            
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-8">
-              <Link to="/tournaments" className="group/btn w-full sm:w-auto">
-                <Button size="lg" className="w-full bg-gradient-to-r from-amber-500 via-amber-600 to-amber-500 hover:from-amber-600 hover:via-amber-500 hover:to-amber-600 text-white font-bold shadow-2xl hover:shadow-amber-500/50 transition-all duration-500 min-h-[56px] px-10 rounded-xl hover:scale-105 border-2 border-amber-400/30">
-                  <UserCheck className="w-5 h-5 mr-2 group-hover/btn:scale-110 transition-transform" />
-                  Присоединиться бесплатно
-                </Button>
-              </Link>
-              <Link to="/about" className="group/btn w-full sm:w-auto">
-                <Button size="lg" variant="outline" className="w-full border-2 border-amber-400/50 text-amber-400 hover:bg-amber-400/20 hover:border-amber-400 font-bold transition-all duration-500 min-h-[56px] px-10 rounded-xl hover:scale-105 backdrop-blur-sm">
-                  Подробнее о клубе
-                  <ArrowRight className="w-5 h-5 ml-2 group-hover/btn:translate-x-1 transition-transform" />
-                </Button>
-              </Link>
+            <div className="flex flex-col sm:flex-row gap-3 lg:gap-4 justify-center items-center mb-6 lg:mb-8">
+              <Button size="lg" className="w-full sm:w-auto bg-poker-accent hover:bg-poker-accent/90 text-white font-bold shadow-md hover:shadow-lg transition-all min-h-[48px] px-6 lg:px-8">
+                <UserCheck className="w-4 h-4 lg:w-5 lg:h-5 mr-2" />
+                Присоединиться бесплатно
+              </Button>
+              <Button size="lg" variant="outline" className="w-full sm:w-auto border-2 border-foreground/20 text-foreground hover:bg-foreground hover:text-background font-semibold transition-all min-h-[48px] px-6 lg:px-8">
+                Подробнее о клубе
+                <ArrowRight className="w-4 h-4 lg:w-5 lg:h-5 ml-2" />
+              </Button>
             </div>
 
-              <div className="flex flex-wrap items-center justify-center gap-4 text-sm">
-                <div className="flex items-center space-x-2 bg-gradient-to-r from-white/5 via-white/10 to-white/5 border border-white/10 rounded-xl px-5 py-3 backdrop-blur-sm">
-                  <Clock className="w-4 h-4 text-amber-400" />
-                  <span className="text-white font-medium">Регистрация 2 минуты</span>
-                </div>
-                <div className="flex items-center space-x-2 bg-gradient-to-r from-white/5 via-white/10 to-white/5 border border-white/10 rounded-xl px-5 py-3 backdrop-blur-sm">
-                  <MapPin className="w-4 h-4 text-amber-400" />
-                  <span className="text-white font-medium">Москва, центр города</span>
-                </div>
-                <div className="flex items-center space-x-2 bg-gradient-to-r from-white/5 via-white/10 to-white/5 border border-white/10 rounded-xl px-5 py-3 backdrop-blur-sm">
-                  <Star className="w-4 h-4 text-amber-400" />
-                  <span className="text-white font-medium">Без скрытых платежей</span>
-                </div>
+            <div className="flex flex-wrap items-center justify-center gap-3 lg:gap-6 text-xs lg:text-sm">
+              <div className="flex items-center space-x-2 bg-muted rounded-full px-3 lg:px-4 py-2 touch-target">
+                <Clock className="w-3 h-3 lg:w-4 lg:h-4 text-muted-foreground" />
+                <span className="text-foreground font-medium">Регистрация 2 минуты</span>
+              </div>
+              <div className="flex items-center space-x-2 bg-muted rounded-full px-3 lg:px-4 py-2 touch-target">
+                <MapPin className="w-3 h-3 lg:w-4 lg:h-4 text-muted-foreground" />
+                <span className="hidden sm:inline text-foreground font-medium">Москва, центр города</span>
+                <span className="sm:hidden text-foreground font-medium">Москва</span>
+              </div>
+              <div className="flex items-center space-x-2 bg-muted rounded-full px-3 lg:px-4 py-2 touch-target">
+                <Star className="w-3 h-3 lg:w-4 lg:h-4 text-muted-foreground" />
+                <span className="hidden sm:inline text-foreground font-medium">Без скрытых платежей</span>
+                <span className="sm:hidden text-foreground font-medium">Без доплат</span>
               </div>
             </div>
           </div>
         </div>
       </div>
-      </div>
-      
-      <style>{`
-        .animate-float {
-          animation: float 6s ease-in-out infinite;
-        }
-        .animate-float-delayed {
-          animation: float 6s ease-in-out 3s infinite;
-        }
-        @keyframes float {
-          0%, 100% { transform: translateY(0px) translateX(0px) rotate(var(--tw-rotate)); }
-          33% { transform: translateY(-20px) translateX(10px) rotate(var(--tw-rotate)); }
-          66% { transform: translateY(-10px) translateX(-10px) rotate(var(--tw-rotate)); }
-        }
-      `}</style>
     </section>
   );
 }
