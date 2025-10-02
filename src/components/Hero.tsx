@@ -160,24 +160,6 @@ export function Hero() {
                   </div>
                 </div>
               </div>
-
-              {/* Stats */}
-              <div className="bg-gradient-to-r from-white/8 via-white/12 to-white/8 rounded-lg p-4 border border-white/10 backdrop-blur-sm">
-                <div className="grid grid-cols-3 gap-6">
-                  <div className="text-center">
-                    <div className="text-2xl font-light text-amber-400 mb-1">500+</div>
-                    <div className="text-xs text-white/60">Игроков</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-light text-amber-400 mb-1">150+</div>
-                    <div className="text-xs text-white/60">Турниров</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-light text-amber-400 mb-1">4.9</div>
-                    <div className="text-xs text-white/60">Рейтинг</div>
-                  </div>
-                </div>
-              </div>
             </div>
 
             {/* Right Column - Feature Cards */}
