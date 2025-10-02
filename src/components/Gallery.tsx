@@ -150,18 +150,29 @@ export function Gallery() {
   }
 
   return (
-    <section className="py-12 lg:py-20 bg-background">
-      <div className="container mx-auto px-4">
+    <section className="py-20 bg-gradient-to-br from-slate-900 via-black to-slate-800 relative overflow-hidden">
+      {/* Покерные масти декорация */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-5">
+        <div className="absolute top-20 left-10 text-amber-400/30 text-6xl animate-pulse transform rotate-12">♣</div>
+        <div className="absolute top-40 right-20 text-amber-400/20 text-4xl animate-bounce-subtle transform -rotate-12">♥</div>
+        <div className="absolute bottom-20 left-20 text-amber-400/25 text-5xl animate-pulse transform rotate-45">♦</div>
+        <div className="absolute bottom-40 right-10 text-amber-400/20 text-3xl animate-bounce-subtle transform -rotate-30">♠</div>
+      </div>
+
+      <div className="container mx-auto px-4 relative z-10">
         {/* Header */}
-        <div className="text-center mb-8 lg:mb-12">
-          <Badge variant="outline" className="mb-4 border-poker-gold text-poker-gold text-xs lg:text-sm">
-            Галерея IPS
-          </Badge>
-          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground mb-4">
-            Наш покерный клуб
-          </h2>
-          <p className="text-base lg:text-xl text-muted-foreground max-w-2xl mx-auto px-4 leading-relaxed">
-            Познакомьтесь с атмосферой премиального покерного клуба IPS
+        <div className="text-center mb-12">
+          <div className="flex items-center gap-3 justify-center mb-6">
+            <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl flex items-center justify-center shadow-lg">
+              <Star className="h-5 w-5 text-white" />
+            </div>
+            <h2 className="text-3xl lg:text-4xl font-light text-white tracking-wide">
+              ГАЛЕРЕЯ КЛУБА
+            </h2>
+          </div>
+          <div className="h-0.5 w-20 bg-gradient-to-r from-amber-400 to-amber-600 mx-auto mb-6"></div>
+          <p className="text-lg text-white/70 max-w-2xl mx-auto font-light">
+            Познакомьтесь с атмосферой премиального покерного клуба
           </p>
         </div>
 
@@ -209,43 +220,44 @@ export function Gallery() {
         <div className={`grid gap-4 lg:gap-6 ${gridSize === 2 ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'}`}>
           {filteredImages.length === 0 ? (
             <div className="col-span-full text-center py-12">
-              <p className="text-muted-foreground">Нет изображений для отображения</p>
+              <p className="text-white/60">Нет изображений для отображения</p>
             </div>
           ) : (
             filteredImages.map((image) => (
-            <Card key={image.id} className="group cursor-pointer overflow-hidden hover:shadow-elegant transition-all duration-300 hover:-translate-y-1">
+            <div key={image.id} className="group cursor-pointer overflow-hidden rounded-2xl bg-gradient-to-br from-slate-800/90 via-slate-900/95 to-black/90 border border-white/10 backdrop-blur-xl hover:scale-[1.02] transition-all duration-500 hover:shadow-xl hover:shadow-amber-500/20 relative">
+              <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 via-transparent to-amber-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
               <div className="relative">
                 <img
                   src={image.image_url}
                   alt={image.alt_text || image.title}
-                  className="w-full h-48 lg:h-64 object-cover transition-transform duration-300 group-hover:scale-105"
+                  className="w-full h-64 object-cover transition-transform duration-500 group-hover:scale-110"
                   onClick={() => setSelectedImage(image)}
                 />
                 
                 {/* Featured Badge */}
                 {image.is_featured && (
-                  <div className="absolute top-2 lg:top-3 left-2 lg:left-3">
-                    <Badge className="bg-poker-gold text-background text-xs">
-                      <Star className="w-3 h-3 mr-1" />
-                      <span className="hidden sm:inline">Рекомендуемое</span>
-                    </Badge>
+                  <div className="absolute top-3 left-3">
+                    <div className="px-3 py-1 bg-gradient-to-r from-amber-500 to-amber-600 rounded-lg shadow-lg flex items-center gap-1.5">
+                      <Star className="w-3 h-3 text-white" />
+                      <span className="text-white text-xs font-medium">Избранное</span>
+                    </div>
                   </div>
                 )}
 
                 {/* Zoom Icon */}
-                <div className="absolute top-2 lg:top-3 right-2 lg:right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                  <div className="w-7 h-7 lg:w-8 lg:h-8 bg-background/80 rounded-full flex items-center justify-center touch-target">
-                    <ZoomIn className="w-3 h-3 lg:w-4 lg:h-4" />
+                <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                  <div className="w-9 h-9 bg-gradient-to-br from-white/20 to-white/10 backdrop-blur-md rounded-lg flex items-center justify-center border border-white/20">
+                    <ZoomIn className="w-4 h-4 text-white" />
                   </div>
                 </div>
 
                 {/* Image Info Overlay */}
-                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-3 lg:p-4 translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
-                  <h3 className="text-white font-semibold text-sm lg:text-lg mb-1">{image.title}</h3>
-                  <p className="text-white/80 text-xs lg:text-sm line-clamp-2">{image.description}</p>
+                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/60 to-transparent p-4 translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
+                  <h3 className="text-white font-medium text-base mb-1">{image.title}</h3>
+                  <p className="text-white/70 text-sm line-clamp-2">{image.description}</p>
                 </div>
               </div>
-            </Card>
+            </div>
           )))}
         </div>
 
@@ -283,6 +295,16 @@ export function Gallery() {
           </div>
         )}
       </div>
+      
+      <style>{`
+        .animate-bounce-subtle {
+          animation: bounce-subtle 3s ease-in-out infinite;
+        }
+        @keyframes bounce-subtle {
+          0%, 100% { transform: translateY(0px) rotate(var(--tw-rotate)); }
+          50% { transform: translateY(-10px) rotate(var(--tw-rotate)); }
+        }
+      `}</style>
     </section>
   );
 }

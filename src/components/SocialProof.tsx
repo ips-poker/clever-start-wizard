@@ -145,150 +145,174 @@ export function SocialProof() {
   ];
 
   return (
-    <section className="py-12 lg:py-20 bg-accent/30">
-      <div className="container mx-auto px-4">
+    <section className="py-20 bg-gradient-to-br from-slate-900 via-black to-slate-800 relative overflow-hidden">
+      {/* Покерные масти декорация */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-5">
+        <div className="absolute top-20 right-10 text-amber-400/30 text-6xl animate-pulse transform rotate-12">♦</div>
+        <div className="absolute top-40 left-20 text-amber-400/20 text-4xl animate-bounce-subtle transform -rotate-12">♥</div>
+        <div className="absolute bottom-20 right-20 text-amber-400/25 text-5xl animate-pulse transform rotate-45">♠</div>
+        <div className="absolute bottom-40 left-10 text-amber-400/20 text-3xl animate-bounce-subtle transform -rotate-30">♣</div>
+      </div>
+
+      <div className="container mx-auto px-4 relative z-10">
         {/* Stats Section */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 mb-12 lg:mb-16">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-16">
           {stats.map((stat, index) => {
             const IconComponent = stat.icon;
             return (
-              <Card key={`stat-${index}-${stat.value}`} className="text-center p-4 lg:p-6 hover:shadow-elegant transition-all duration-300 border-border/50">
-                <div className="flex justify-center mb-3 lg:mb-4">
-                  <div className="w-10 h-10 lg:w-12 lg:h-12 bg-poker-gold/10 rounded-full flex items-center justify-center">
-                    <IconComponent className="w-5 h-5 lg:w-6 lg:h-6 text-poker-gold" />
+              <div key={`stat-${index}-${stat.value}`} className="bg-gradient-to-br from-slate-800/90 via-slate-900/95 to-black/90 border border-white/10 rounded-2xl p-6 backdrop-blur-xl group hover:scale-105 transition-all duration-500 hover:shadow-xl hover:shadow-amber-500/20 relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 via-transparent to-amber-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                <div className="relative z-10 text-center">
+                  <div className="w-12 h-12 bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300 shadow-lg">
+                    <IconComponent className="w-6 h-6 text-white" />
                   </div>
+                  <div className="text-3xl font-light text-amber-400 mb-2">{stat.value}</div>
+                  <div className="text-sm text-white/70 font-light">{stat.label}</div>
                 </div>
-                <div className="text-xl lg:text-3xl font-bold text-foreground mb-1 lg:mb-2">{stat.value}</div>
-                <div className="text-xs lg:text-sm text-muted-foreground leading-tight">{stat.label}</div>
-              </Card>
+              </div>
             );
           })}
         </div>
 
         {/* Testimonials */}
-        <div className="text-center mb-8 lg:mb-12">
-          <Badge variant="outline" className="mb-4 border-poker-gold text-poker-gold text-xs lg:text-sm">
-            Отзывы игроков
-          </Badge>
-          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground mb-4">
-            Что говорят наши игроки?
-          </h2>
-          <p className="text-base lg:text-xl text-muted-foreground max-w-2xl mx-auto px-4 leading-relaxed">
-            Присоединяйтесь к сообществу довольных игроков, которые улучшили свои навыки с IPS
+        <div className="text-center mb-12">
+          <div className="flex items-center gap-3 justify-center mb-6">
+            <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl flex items-center justify-center shadow-lg">
+              <MessageCircle className="h-5 w-5 text-white" />
+            </div>
+            <h2 className="text-3xl lg:text-4xl font-light text-white tracking-wide">
+              ОТЗЫВЫ ИГРОКОВ
+            </h2>
+          </div>
+          <div className="h-0.5 w-20 bg-gradient-to-r from-amber-400 to-amber-600 mx-auto mb-6"></div>
+          <p className="text-lg text-white/70 max-w-2xl mx-auto font-light">
+            Присоединяйтесь к сообществу довольных игроков клуба
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6 mb-12 lg:mb-16">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-16">
           {loading ? (
             <div className="col-span-3 text-center py-8">
-              <div className="text-lg">Загрузка отзывов...</div>
+              <div className="text-lg text-white/70">Загрузка отзывов...</div>
             </div>
           ) : testimonials.length === 0 ? (
-            <div className="col-span-3 text-center py-8 text-muted-foreground">
+            <div className="col-span-3 text-center py-8 text-white/60">
               Пока нет отзывов для отображения.
             </div>
           ) : (
             testimonials.map((testimonial, index) => (
-            <Card key={`testimonial-${index}-${testimonial.name}`} className="group hover:shadow-floating transition-all duration-500 hover:-translate-y-2 border border-border/50 bg-gradient-surface overflow-hidden">
-              {/* Telegram-style header */}
-              <CardHeader className="pb-3 bg-gradient-to-r from-poker-accent/5 to-poker-primary/5">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center space-x-3">
-                    <div className="relative">
-                      <img 
-                        src={testimonial.avatar} 
-                        alt={testimonial.name}
-                        className="w-12 h-12 rounded-full border-2 border-poker-accent/20"
-                      />
-                      {testimonial.verified && (
-                        <CheckCircle className="w-4 h-4 text-poker-success absolute -bottom-1 -right-1 bg-background rounded-full" />
-                      )}
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <CardTitle className="text-base font-bold text-poker-primary">{testimonial.name}</CardTitle>
-                        {testimonial.verified && (
-                          <CheckCircle className="w-4 h-4 text-poker-success" />
-                        )}
+            <div key={`testimonial-${index}-${testimonial.name}`} className="bg-gradient-to-br from-slate-800/90 via-slate-900/95 to-black/90 border border-white/10 rounded-2xl p-6 backdrop-blur-xl group hover:scale-[1.02] transition-all duration-500 hover:shadow-xl hover:shadow-amber-500/20 relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 via-transparent to-amber-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+              <div className="absolute inset-0 opacity-8 group-hover:opacity-15 transition-opacity duration-500">
+                <div className="absolute top-3 right-3 text-amber-400/30 text-2xl animate-pulse">♥</div>
+                <div className="absolute bottom-3 left-3 text-amber-400/20 text-xl animate-bounce-subtle">♦</div>
+              </div>
+              
+              <div className="relative z-10">
+                {/* Header */}
+                <div className="flex items-start gap-4 mb-4">
+                  <div className="relative flex-shrink-0">
+                    <img 
+                      src={testimonial.avatar} 
+                      alt={testimonial.name}
+                      className="w-12 h-12 rounded-xl border-2 border-amber-400/20 object-cover"
+                    />
+                    {testimonial.verified && (
+                      <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-gradient-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center border-2 border-slate-900">
+                        <CheckCircle className="w-3 h-3 text-white" />
                       </div>
-                      <div className="flex items-center space-x-2 mt-1">
-                        <Badge className="bg-poker-accent/10 text-poker-accent border-poker-accent/20 text-xs">
-                          {testimonial.rating} ELO
-                        </Badge>
-                        <span className="text-xs text-muted-foreground">{testimonial.time}</span>
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h4 className="text-white font-medium text-base mb-1 truncate">{testimonial.name}</h4>
+                    <div className="flex items-center gap-2">
+                      <div className="px-2 py-0.5 bg-gradient-to-r from-amber-500/20 to-amber-600/20 rounded-md border border-amber-400/30">
+                        <span className="text-amber-400 text-xs font-medium">{testimonial.rating} RPS</span>
                       </div>
+                      <span className="text-white/50 text-xs">{testimonial.time}</span>
                     </div>
                   </div>
-                  <MessageCircle className="w-4 h-4 text-poker-accent/50" />
                 </div>
-              </CardHeader>
 
-              {/* Telegram-style message */}
-              <CardContent className="pt-0">
-                <div className="bg-poker-accent/5 rounded-2xl rounded-tl-sm p-4 mb-4 border-l-4 border-poker-accent/30">
-                  <p className="text-poker-primary leading-relaxed">
+                {/* Message */}
+                <div className="bg-gradient-to-r from-white/5 to-white/10 rounded-xl p-4 mb-4 border border-white/10">
+                  <p className="text-white/90 leading-relaxed text-sm">
                     {testimonial.text}
                   </p>
                 </div>
                 
+                {/* Footer */}
                 <div className="flex items-center justify-between">
-                  <Badge variant="outline" className="text-xs border-poker-primary/20 text-poker-primary">
-                    {testimonial.status}
-                  </Badge>
-                  <div className="flex space-x-1">
+                  <div className="px-3 py-1 bg-gradient-to-r from-white/5 to-white/10 rounded-lg border border-white/10">
+                    <span className="text-white/70 text-xs font-medium">{testimonial.status}</span>
+                  </div>
+                  <div className="flex gap-1">
                     {[...Array(5)].map((_, i) => (
-                      <Star key={i} className="w-3 h-3 text-poker-accent fill-current" />
+                      <Star key={i} className="w-3 h-3 text-amber-400 fill-amber-400" />
                     ))}
                   </div>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
             ))
           )}
         </div>
 
-        {/* Call to Action - Enhanced readability */}
-        <div className="relative overflow-hidden rounded-2xl shadow-elevated">
-          <div className="absolute inset-0 bg-card"></div>
-          <div className="relative text-center p-8 lg:p-12 border border-border">
-            <h3 className="text-3xl lg:text-4xl font-bold mb-6 text-foreground">
+        {/* Call to Action */}
+        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-amber-500/10 via-amber-600/15 to-amber-500/10 border border-amber-500/20 backdrop-blur-xl shadow-2xl">
+          <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 to-transparent"></div>
+          <div className="absolute inset-0 opacity-8">
+            <div className="absolute top-4 right-6 text-amber-400/30 text-4xl animate-pulse">♠</div>
+            <div className="absolute bottom-4 left-6 text-amber-400/20 text-3xl animate-bounce-subtle">♣</div>
+          </div>
+          
+          <div className="relative z-10 text-center p-12">
+            <h3 className="text-3xl lg:text-4xl font-light text-white mb-6 tracking-wide">
               Готовы начать свой путь к покерному мастерству?
             </h3>
-            <p className="text-lg lg:text-xl mb-8 text-foreground/80 max-w-2xl mx-auto leading-relaxed">
-              Присоединяйтесь к IPS сегодня и получите доступ к профессиональной рейтинговой системе, 
-              регулярным турнирам и дружелюбному сообществу.
+            <p className="text-lg text-white/80 mb-8 max-w-2xl mx-auto font-light leading-relaxed">
+              Присоединяйтесь к клубу сегодня и получите доступ к профессиональной рейтинговой системе, 
+              регулярным турнирам и элитному сообществу.
             </p>
             
-            <div className="flex flex-col sm:flex-row gap-3 lg:gap-4 justify-center items-center mb-6 lg:mb-8">
-              <Button size="lg" className="w-full sm:w-auto bg-poker-accent hover:bg-poker-accent/90 text-white font-bold shadow-md hover:shadow-lg transition-all min-h-[48px] px-6 lg:px-8">
-                <UserCheck className="w-4 h-4 lg:w-5 lg:h-5 mr-2" />
+            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-8">
+              <Button size="lg" className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-bold shadow-lg hover:shadow-amber-500/30 transition-all duration-300 px-8">
+                <UserCheck className="w-5 h-5 mr-2" />
                 Присоединиться бесплатно
               </Button>
-              <Button size="lg" variant="outline" className="w-full sm:w-auto border-2 border-foreground/20 text-foreground hover:bg-foreground hover:text-background font-semibold transition-all min-h-[48px] px-6 lg:px-8">
+              <Button size="lg" variant="outline" className="border-2 border-amber-400/50 text-amber-400 hover:bg-amber-400/20 hover:border-amber-400 font-medium transition-all duration-300 px-8">
                 Подробнее о клубе
-                <ArrowRight className="w-4 h-4 lg:w-5 lg:h-5 ml-2" />
+                <ArrowRight className="w-5 h-5 ml-2" />
               </Button>
             </div>
 
-            <div className="flex flex-wrap items-center justify-center gap-3 lg:gap-6 text-xs lg:text-sm">
-              <div className="flex items-center space-x-2 bg-muted rounded-full px-3 lg:px-4 py-2 touch-target">
-                <Clock className="w-3 h-3 lg:w-4 lg:h-4 text-muted-foreground" />
-                <span className="text-foreground font-medium">Регистрация 2 минуты</span>
+            <div className="flex flex-wrap items-center justify-center gap-4">
+              <div className="flex items-center gap-2 bg-gradient-to-r from-white/10 to-white/5 rounded-lg px-4 py-2 border border-white/20">
+                <Clock className="w-4 h-4 text-amber-400" />
+                <span className="text-white text-sm font-medium">Регистрация 2 минуты</span>
               </div>
-              <div className="flex items-center space-x-2 bg-muted rounded-full px-3 lg:px-4 py-2 touch-target">
-                <MapPin className="w-3 h-3 lg:w-4 lg:h-4 text-muted-foreground" />
-                <span className="hidden sm:inline text-foreground font-medium">Москва, центр города</span>
-                <span className="sm:hidden text-foreground font-medium">Москва</span>
+              <div className="flex items-center gap-2 bg-gradient-to-r from-white/10 to-white/5 rounded-lg px-4 py-2 border border-white/20">
+                <MapPin className="w-4 h-4 text-amber-400" />
+                <span className="text-white text-sm font-medium">Москва</span>
               </div>
-              <div className="flex items-center space-x-2 bg-muted rounded-full px-3 lg:px-4 py-2 touch-target">
-                <Star className="w-3 h-3 lg:w-4 lg:h-4 text-muted-foreground" />
-                <span className="hidden sm:inline text-foreground font-medium">Без скрытых платежей</span>
-                <span className="sm:hidden text-foreground font-medium">Без доплат</span>
+              <div className="flex items-center gap-2 bg-gradient-to-r from-white/10 to-white/5 rounded-lg px-4 py-2 border border-white/20">
+                <Star className="w-4 h-4 text-amber-400" />
+                <span className="text-white text-sm font-medium">Без доплат</span>
               </div>
             </div>
           </div>
         </div>
       </div>
+      
+      <style>{`
+        .animate-bounce-subtle {
+          animation: bounce-subtle 3s ease-in-out infinite;
+        }
+        @keyframes bounce-subtle {
+          0%, 100% { transform: translateY(0px) rotate(var(--tw-rotate)); }
+          50% { transform: translateY(-10px) rotate(var(--tw-rotate)); }
+        }
+      `}</style>
     </section>
   );
 }
