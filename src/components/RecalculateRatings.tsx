@@ -14,7 +14,7 @@ export function RecalculateRatings() {
       // Найти последний завершенный турнир
       const { data: tournaments, error: tournamentsError } = await supabase
         .from('tournaments')
-        .select('id, name, status, buy_in')
+        .select('id, name, status, participation_fee, buy_in')
         .or('status.eq.completed,status.eq.finished')
         .order('created_at', { ascending: false })
         .limit(1);
@@ -31,7 +31,7 @@ export function RecalculateRatings() {
       // Получить регистрации турнира (включая позиции)
       const { data: registrations, error: registrationsError } = await supabase
         .from('tournament_registrations')
-        .select('player_id, position, final_position, rebuys, addons, status')
+        .select('player_id, position, final_position, reentries, rebuys, additional_sets, addons, status')
         .eq('tournament_id', tournament.id);
 
       if (registrationsError) throw registrationsError;
@@ -45,8 +45,8 @@ export function RecalculateRatings() {
       const results = registrations.map(reg => ({
         player_id: reg.player_id,
         position: reg.final_position || reg.position || null,
-        rebuys: reg.rebuys || 0,
-        addons: reg.addons || 0
+        rebuys: reg.reentries || reg.rebuys || 0,
+        addons: reg.additional_sets || reg.addons || 0
       })).filter(r => r.position !== null); // Только участники с позициями
 
       if (results.length === 0) {
@@ -93,7 +93,7 @@ export function RecalculateRatings() {
           results: results,
           // Настройки для pool-based системы
           use_pool_system: true,
-          buy_in: tournament.buy_in
+          participation_fee: tournament.participation_fee || tournament.buy_in
         }
       });
 

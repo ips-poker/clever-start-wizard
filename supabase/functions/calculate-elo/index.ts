@@ -236,9 +236,14 @@ function calculatePoolBasedRPS(players: Player[], results: TournamentResult[], t
   results.forEach(result => {
     const rebuys = result.rebuys || 0
     const addons = result.addons || 0
-    const playerContribution = tournament.buy_in + 
-      (rebuys * (tournament.rebuy_cost || 0)) + 
-      (addons * (tournament.addon_cost || 0))
+    // Используем новые поля с fallback на старые для обратной совместимости
+    const participationFee = tournament.participation_fee || tournament.buy_in || 0
+    const reentryFee = tournament.reentry_fee || tournament.rebuy_cost || 0
+    const additionalFee = tournament.additional_fee || tournament.addon_cost || 0
+    
+    const playerContribution = participationFee + 
+      (rebuys * reentryFee) + 
+      (addons * additionalFee)
     
     totalPointsPool += Math.floor(playerContribution * coefficient)
   })

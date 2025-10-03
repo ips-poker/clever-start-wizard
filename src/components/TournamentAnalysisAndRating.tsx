@@ -99,14 +99,19 @@ const TournamentAnalysisAndRating = () => {
         throw new Error('Нет данных турнира');
       }
 
-      // Рассчитываем общий призовой фонд
+      // Рассчитываем общий призовой фонд в RPS баллах
       let totalPrizePool = 0;
       participants.forEach(p => {
-        const rebuys = p.rebuys || 0;
-        const addons = p.addons || 0;
-        totalPrizePool += tournament.buy_in + 
-          (rebuys * (tournament.rebuy_cost || 0)) + 
-          (addons * (tournament.addon_cost || 0));
+        const rebuys = p.reentries || p.rebuys || 0;
+        const addons = p.additional_sets || p.addons || 0;
+        // Используем новые поля с fallback на старые для обратной совместимости
+        const participationFee = tournament.participation_fee || tournament.buy_in || 0;
+        const reentryFee = tournament.reentry_fee || tournament.rebuy_cost || 0;
+        const additionalFee = tournament.additional_fee || tournament.addon_cost || 0;
+        
+        totalPrizePool += participationFee + 
+          (rebuys * reentryFee) + 
+          (addons * additionalFee);
       });
 
       // Проверяем позиции участников
@@ -249,8 +254,8 @@ const TournamentAnalysisAndRating = () => {
       // Рассчитываем рейтинговые очки для каждого участника
       const ratingCalculations = finalParticipants.map(participant => {
         const position = participant.corrected_position;
-        const rebuys = participant.rebuys || 0;
-        const addons = participant.addons || 0;
+        const rebuys = participant.reentries || participant.rebuys || 0;
+        const addons = participant.additional_sets || participant.addons || 0;
         
         let rpsChange = 1;
         rpsChange += rebuys + addons;
@@ -346,8 +351,8 @@ const TournamentAnalysisAndRating = () => {
       const results = analysis.ratingCalculations.map(calc => ({
         player_id: calc.player_id,
         position: calc.position,
-        rebuys: calc.rebuys,
-        addons: calc.addons
+        rebuys: calc.rebuys || 0,
+        addons: calc.addons || 0
       }));
 
       // Вызываем edge function для расчета рейтингов с учетом настроек RPS
