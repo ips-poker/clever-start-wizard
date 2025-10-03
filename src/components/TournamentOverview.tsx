@@ -242,12 +242,25 @@ const TournamentOverview = ({
 
   const activePlayers = registrations.filter(r => r.status === 'registered' || r.status === 'playing');
   const eliminatedPlayers = registrations.filter(r => r.status === 'eliminated');
-  const totalRebuys = registrations.reduce((sum, r) => sum + r.rebuys, 0);
-  const totalAddons = registrations.reduce((sum, r) => sum + r.addons, 0);
-  const prizePool = (registrations.length * tournament.buy_in) + (totalRebuys * tournament.buy_in) + (totalAddons * tournament.buy_in);
   
-  // Расчет среднего стека
-  const totalChips = registrations.reduce((sum, r) => sum + (r.chips || tournament.starting_chips), 0);
+  // Используем новую терминологию с fallback на старую для обратной совместимости
+  const totalReentries = registrations.reduce((sum, r) => sum + ((r as any).reentries || r.rebuys || 0), 0);
+  const totalAdditionalSets = registrations.reduce((sum, r) => sum + ((r as any).additional_sets || r.addons || 0), 0);
+  
+  // Рассчитываем фонд RPS баллов
+  const participationFee = (tournament as any).participation_fee || tournament.buy_in || 0;
+  const reentryFee = (tournament as any).reentry_fee || tournament.rebuy_cost || 0;
+  const additionalFee = (tournament as any).additional_fee || tournament.addon_cost || 0;
+  
+  // Расчет RPS баллов: каждые 1000₽ = 100 баллов
+  const rpsPool = Math.floor(
+    (registrations.length * participationFee + 
+     totalReentries * reentryFee + 
+     totalAdditionalSets * additionalFee) / 10
+  );
+  
+  // Расчет среднего стека (только для активных игроков)
+  const totalChips = activePlayers.reduce((sum, r) => sum + (r.chips || tournament.starting_chips), 0);
   const averageStack = activePlayers.length > 0 ? Math.round(totalChips / activePlayers.length) : 0;
 
   // Найти текущий и следующий уровни из структуры блайндов
@@ -522,8 +535,8 @@ const TournamentOverview = ({
               </div>
               <div className="text-center p-3 border border-gray-200/20 rounded-lg bg-white/30">
                 <RotateCcw className="w-5 h-5 mx-auto mb-1 text-blue-600" />
-                <p className="text-xl font-light text-blue-600">{totalRebuys}</p>
-                <p className="text-xs text-gray-500">Ребаев</p>
+                <p className="text-xl font-light text-blue-600">{totalReentries}</p>
+                <p className="text-xs text-gray-500">Повторных входов</p>
               </div>
             </div>
             
@@ -560,27 +573,27 @@ const TournamentOverview = ({
         <Card className="bg-white/50 backdrop-blur-sm border border-gray-200/30 shadow-minimal">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-gray-700 font-light">
-              <DollarSign className="w-4 h-4" />
-              Призовой фонд
+              <Trophy className="w-4 h-4" />
+              Фонд RPS баллов
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-center">
               <div className="text-3xl font-light text-gray-800 mb-3">
-                {prizePool.toLocaleString()} ₽
+                {rpsPool.toLocaleString()} RPS
               </div>
               <div className="grid grid-cols-3 gap-3 text-xs">
                 <div className="p-2 bg-white/30 rounded-lg border border-gray-200/20">
-                  <p className="text-gray-500">Бай-ины</p>
-                  <p className="font-medium text-gray-700">{(registrations.length * tournament.buy_in).toLocaleString()} ₽</p>
+                  <p className="text-gray-500">Организационные</p>
+                  <p className="font-medium text-gray-700">{Math.floor(registrations.length * participationFee / 10).toLocaleString()} RPS</p>
                 </div>
                 <div className="p-2 bg-white/30 rounded-lg border border-gray-200/20">
-                  <p className="text-gray-500">Ребаи</p>
-                  <p className="font-medium text-gray-700">{(totalRebuys * tournament.buy_in).toLocaleString()} ₽</p>
+                  <p className="text-gray-500">Повторные</p>
+                  <p className="font-medium text-gray-700">{Math.floor(totalReentries * reentryFee / 10).toLocaleString()} RPS</p>
                 </div>
                 <div className="p-2 bg-white/30 rounded-lg border border-gray-200/20">
-                  <p className="text-gray-500">Аддоны</p>
-                  <p className="font-medium text-gray-700">{(totalAddons * tournament.buy_in).toLocaleString()} ₽</p>
+                  <p className="text-gray-500">Дополнительные</p>
+                  <p className="font-medium text-gray-700">{Math.floor(totalAdditionalSets * additionalFee / 10).toLocaleString()} RPS</p>
                 </div>
               </div>
             </div>

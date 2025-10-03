@@ -102,21 +102,21 @@ const ModernTournamentOverview = ({
 
   const activePlayers = registrations.filter(r => r.status === 'registered' || r.status === 'playing');
   const eliminatedPlayers = registrations.filter(r => r.status === 'eliminated');
-  const totalReentries = registrations.reduce((sum, r) => sum + r.reentries, 0);
-  const totalAdditionalSets = registrations.reduce((sum, r) => sum + r.additional_sets, 0);
+  const totalReentries = registrations.reduce((sum, r) => sum + (r.reentries || 0), 0);
+  const totalAdditionalSets = registrations.reduce((sum, r) => sum + (r.additional_sets || 0), 0);
   
   // Рассчитываем фонд RPS баллов
   const rpsPool = calculateTotalRPSPool(
     registrations.length,
-    tournament.participation_fee,
+    tournament.participation_fee || 0,
     totalReentries,
-    tournament.reentry_fee,
+    tournament.reentry_fee || 0,
     totalAdditionalSets,
-    tournament.additional_fee
+    tournament.additional_fee || 0
   );
   
-  // Расчет среднего стека
-  const totalChips = registrations.reduce((sum, r) => sum + (r.chips || tournament.starting_chips), 0);
+  // Расчет среднего стека (только для активных игроков!)
+  const totalChips = activePlayers.reduce((sum, r) => sum + (r.chips || tournament.starting_chips), 0);
   const averageStack = activePlayers.length > 0 ? Math.round(totalChips / activePlayers.length) : 0;
 
   // Найти текущий и следующий уровни из структуры блайндов
