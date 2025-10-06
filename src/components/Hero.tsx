@@ -158,7 +158,7 @@ export function Hero() {
             {/* Top section - Logo and Main Info */}
             <div className="text-center mb-16">
               {/* Logo */}
-              <div className="mb-8 flex justify-center animate-fade-in">
+              <div className="mb-8 hidden md:flex justify-center animate-fade-in">
                 <div className="relative group">
                   <div className="absolute -inset-4 bg-gradient-to-r from-amber-500/20 via-amber-400/30 to-amber-500/20 rounded-full blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
                   <div className="relative bg-gradient-to-br from-white via-gray-50 to-gray-100 rounded-2xl p-3 shadow-2xl group-hover:shadow-amber-500/30 transition-all duration-500 ring-1 ring-white/20 group-hover:ring-amber-400/30">
@@ -172,7 +172,7 @@ export function Hero() {
               </div>
 
               {/* Premium Badge */}
-              <div className="inline-flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-amber-500/10 via-amber-400/15 to-amber-500/10 rounded-full border border-amber-400/30 mb-8 backdrop-blur-xl animate-fade-in animation-delay-100">
+              <div className="hidden md:inline-flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-amber-500/10 via-amber-400/15 to-amber-500/10 rounded-full border border-amber-400/30 mb-8 backdrop-blur-xl animate-fade-in animation-delay-100">
                 <Crown className="h-5 w-5 text-amber-400" />
                 <span className="text-amber-400 font-semibold text-sm tracking-wide">
                   {getContent('hero_badge', 'Премиальный покерный клуб')}
