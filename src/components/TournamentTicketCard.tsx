@@ -37,6 +37,7 @@ interface Tournament {
   reentry_end_level?: number;
   additional_level?: number;
   break_start_level?: number;
+  calculated_prize_pool?: number;
   _count?: {
     tournament_registrations: number;
   };
@@ -134,8 +135,8 @@ export function TournamentTicketCard({ tournament, onViewDetails, onRegister }: 
     return `через ${minutes}м`;
   };
   
-  // Calculate prize pool
-  const prizePool = tournament.participation_fee * registeredCount;
+  // Use calculated prize pool from backend or fallback to simple calculation
+  const prizePool = tournament.calculated_prize_pool ?? (tournament.participation_fee * registeredCount);
   
   // Get format icon
   const getFormatIcon = () => {

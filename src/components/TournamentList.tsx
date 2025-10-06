@@ -70,7 +70,7 @@ export function TournamentList() {
         .from('tournaments')
         .select(`
           *,
-          tournament_registrations!tournament_id(id)
+          tournament_registrations!tournament_id(id, reentries, additional_sets)
         `)
         .eq('is_published', true)
         .not('is_archived', 'eq', true)
@@ -80,13 +80,29 @@ export function TournamentList() {
 
       if (error) throw error;
 
-      // Transform the data to include registration count
-      const tournamentsWithCount = data?.map(tournament => ({
-        ...tournament,
-        _count: {
-          tournament_registrations: tournament.tournament_registrations?.length || 0
-        }
-      })) || [];
+      // Transform the data to include registration count and calculate prize pool
+      const tournamentsWithCount = data?.map(tournament => {
+        const registrations = tournament.tournament_registrations || [];
+        const registeredCount = registrations.length;
+        
+        // Calculate total reentries and additional sets
+        const totalReentries = registrations.reduce((sum, reg) => sum + (reg.reentries || 0), 0);
+        const totalAdditionalSets = registrations.reduce((sum, reg) => sum + (reg.additional_sets || 0), 0);
+        
+        // Calculate total prize pool
+        const prizePool = 
+          (tournament.participation_fee * registeredCount) +
+          (tournament.reentry_fee * totalReentries) +
+          (tournament.additional_fee * totalAdditionalSets);
+
+        return {
+          ...tournament,
+          _count: {
+            tournament_registrations: registeredCount
+          },
+          calculated_prize_pool: prizePool
+        };
+      }) || [];
 
       setTournaments(tournamentsWithCount);
     } catch (error) {
