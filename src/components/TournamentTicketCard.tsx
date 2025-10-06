@@ -78,11 +78,35 @@ export function TournamentTicketCard({ tournament, onViewDetails, onRegister }: 
   const registeredCount = tournament._count?.tournament_registrations || 0;
   const spotsLeft = tournament.max_players - registeredCount;
   const isFilling = spotsLeft <= 3 && spotsLeft > 0;
+  const ticketNumber = tournament.id.split('-')[0].toUpperCase();
+  const barcodeSegments = Array.from({ length: 35 }, (_, i) => Math.random() > 0.3);
 
   return (
     <div className="group relative w-full max-w-sm mx-auto">
-      {/* Main ticket container - Telegram style */}
-      <div className="relative bg-gradient-to-br from-slate-900/98 via-black/95 to-slate-800/98 border border-amber-400/20 rounded-2xl overflow-hidden shadow-2xl group-hover:shadow-amber-500/30 group-hover:border-amber-400/40 transition-all duration-500 backdrop-blur-2xl">
+      {/* Holographic glow effect */}
+      <div className="absolute -inset-0.5 bg-gradient-to-r from-amber-500 via-purple-500 to-blue-500 rounded-2xl opacity-0 group-hover:opacity-30 blur-xl transition-all duration-700 animate-pulse"></div>
+      
+      {/* Main ticket container */}
+      <div className="relative bg-gradient-to-br from-slate-900/98 via-black/95 to-slate-800/98 border border-amber-400/30 rounded-2xl overflow-hidden shadow-2xl group-hover:shadow-amber-500/40 group-hover:border-amber-400/50 group-hover:-translate-y-1 transition-all duration-500 backdrop-blur-2xl">
+        
+        {/* Ticket perforations */}
+        <div className="absolute left-0 top-1/2 transform -translate-y-1/2">
+          <div className="flex flex-col gap-3">
+            {[...Array(8)].map((_, i) => (
+              <div key={i} className="w-2 h-2 bg-slate-950 rounded-full -ml-1 border border-amber-400/20 group-hover:border-amber-400/40 transition-colors"></div>
+            ))}
+          </div>
+        </div>
+        <div className="absolute right-0 top-1/2 transform -translate-y-1/2">
+          <div className="flex flex-col gap-3">
+            {[...Array(8)].map((_, i) => (
+              <div key={i} className="w-2 h-2 bg-slate-950 rounded-full -mr-1 border border-amber-400/20 group-hover:border-amber-400/40 transition-colors"></div>
+            ))}
+          </div>
+        </div>
+        
+        {/* Holographic shine effect */}
+        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-out"></div>
         
         {/* Покерные масти декорация */}
         <div className="absolute inset-0 opacity-5 overflow-hidden pointer-events-none">
@@ -94,8 +118,19 @@ export function TournamentTicketCard({ tournament, onViewDetails, onRegister }: 
 
         {/* Top section - Tournament Info */}
         <div className="p-5 relative z-10">
+          {/* Ticket number badge - top right corner */}
+          <div className="absolute top-3 right-3 bg-gradient-to-br from-amber-500/20 to-amber-600/20 backdrop-blur-sm border border-amber-400/30 rounded-lg px-3 py-1.5 group-hover:border-amber-400/50 transition-colors">
+            <div className="flex items-center gap-2">
+              <div className="flex flex-col">
+                <span className="text-[8px] text-amber-400/80 font-mono uppercase tracking-wider">TICKET</span>
+                <span className="text-xs text-amber-300 font-bold font-mono tracking-wide">#{ticketNumber}</span>
+              </div>
+              <Trophy className="h-3 w-3 text-amber-400" />
+            </div>
+          </div>
+
           {/* Header with title and status */}
-          <div className="text-center mb-4">
+          <div className="text-center mb-4 pr-24">
             <h3 className="text-xl font-light text-white tracking-wider uppercase mb-2">
               {tournament.name}
             </h3>
@@ -193,27 +228,52 @@ export function TournamentTicketCard({ tournament, onViewDetails, onRegister }: 
         
         {/* Bottom section - Actions */}
         <div className="p-5 bg-gradient-to-br from-slate-900/60 to-black/60 relative backdrop-blur-md border-t border-white/5">
+          {/* Barcode */}
+          <div className="mb-4 flex justify-center">
+            <div className="bg-white/95 rounded px-3 py-2 flex items-center gap-0.5">
+              {barcodeSegments.map((tall, i) => (
+                <div 
+                  key={i} 
+                  className={`${tall ? 'h-8' : 'h-6'} w-[2px] bg-slate-900 transition-all duration-300`}
+                  style={{ opacity: 0.8 + Math.random() * 0.2 }}
+                />
+              ))}
+            </div>
+          </div>
+          
+          {/* Serial number */}
+          <div className="text-center mb-4">
+            <p className="text-[10px] text-white/40 font-mono tracking-widest">
+              {tournament.id.toUpperCase()}
+            </p>
+          </div>
+
           {/* Action buttons */}
           <div className="space-y-2">
             <Button 
               onClick={onRegister}
               disabled={tournament.status !== 'registration'}
-              className="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-semibold py-3 rounded-lg shadow-lg hover:shadow-amber-500/30 transition-all duration-300 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              className="relative w-full bg-gradient-to-r from-amber-500 via-amber-600 to-amber-500 hover:from-amber-600 hover:via-amber-500 hover:to-amber-600 text-white font-semibold py-3 rounded-lg shadow-xl hover:shadow-2xl hover:shadow-amber-500/50 transition-all duration-500 text-sm disabled:opacity-50 disabled:cursor-not-allowed overflow-hidden group/btn"
             >
-              <PlayCircle className="h-4 w-4 mr-2" />
-              {getButtonText(tournament.status)}
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover/btn:translate-x-full transition-transform duration-700"></div>
+              <PlayCircle className="relative h-4 w-4 mr-2 group-hover/btn:scale-110 transition-transform" />
+              <span className="relative">{getButtonText(tournament.status)}</span>
             </Button>
             
             <Button 
               variant="outline" 
               onClick={onViewDetails}
-              className="w-full border border-white/20 bg-white/5 text-white hover:bg-white/10 hover:border-white/30 transition-all duration-300 text-xs rounded-lg"
+              className="w-full border border-white/20 bg-white/5 text-white hover:bg-white/10 hover:border-amber-400/40 transition-all duration-300 text-xs rounded-lg group/info"
             >
               Подробная информация
-              <ChevronRight className="h-4 w-4 ml-auto" />
+              <ChevronRight className="h-4 w-4 ml-auto group-hover/info:translate-x-1 transition-transform" />
             </Button>
           </div>
         </div>
+        
+        {/* Corner decorations */}
+        <div className="absolute top-0 left-0 w-16 h-16 border-l-2 border-t-2 border-amber-400/20 rounded-tl-2xl group-hover:border-amber-400/40 transition-colors"></div>
+        <div className="absolute bottom-0 right-0 w-16 h-16 border-r-2 border-b-2 border-amber-400/20 rounded-br-2xl group-hover:border-amber-400/40 transition-colors"></div>
       </div>
 
       <style>{`
