@@ -327,34 +327,37 @@ export function TournamentTicketCard({ tournament, onViewDetails, onRegister }: 
         
         {/* Bottom section - Actions */}
         <div className="p-5 bg-gradient-to-br from-slate-900/80 to-black/80 relative backdrop-blur-md border-t border-amber-400/10">
-          <div className="flex items-start justify-between gap-4 mb-4">
+          {/* Barcode and QR Code section */}
+          <div className="mb-4 space-y-3">
             {/* Real Barcode with white background */}
-            <div className="flex-1">
-              <div className="bg-white rounded-md px-3 py-3 shadow-xl border-2 border-slate-300 flex justify-center">
+            <div className="w-full flex justify-center">
+              <div className="bg-white rounded-md px-4 py-3 shadow-xl border-2 border-slate-300">
                 <Barcode 
                   value={barcodeValue}
-                  height={50}
-                  width={1.8}
-                  fontSize={11}
+                  height={45}
+                  width={1.5}
+                  fontSize={10}
                   background="#ffffff"
                   lineColor="#000000"
                   displayValue={true}
-                  margin={2}
+                  margin={0}
                 />
               </div>
             </div>
             
-            {/* Real QR Code */}
-            <div className="bg-white rounded-md p-2.5 shadow-xl border-2 border-slate-300">
-              <QRCodeSVG 
-                value={qrCodeData}
-                size={70}
-                level="H"
-                includeMargin={false}
-                bgColor="#ffffff"
-                fgColor="#000000"
-              />
-              <p className="text-[7px] text-slate-700 text-center mt-1.5 font-bold">SCAN ME</p>
+            {/* Real QR Code - centered */}
+            <div className="flex justify-center">
+              <div className="bg-white rounded-md p-3 shadow-xl border-2 border-slate-300">
+                <QRCodeSVG 
+                  value={qrCodeData}
+                  size={80}
+                  level="H"
+                  includeMargin={false}
+                  bgColor="#ffffff"
+                  fgColor="#000000"
+                />
+                <p className="text-[8px] text-slate-700 text-center mt-2 font-bold tracking-wider">БЫСТРАЯ РЕГИСТРАЦИЯ</p>
+              </div>
             </div>
           </div>
           
