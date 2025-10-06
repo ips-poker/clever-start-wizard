@@ -283,7 +283,8 @@ const PrizeStructureManager = ({ tournamentId, registeredPlayers, mode = 'manage
           tournament_id: tournamentId,
           place: payout.place,
           percentage: payout.percentage,
-          amount: payout.amount
+          amount: payout.amount,
+          rps_points: payout.amount // Сохраняем RPS баллы (amount уже в RPS, так как calculatePrizePool возвращает RPS)
         }));
 
         const { error: insertError } = await supabase

@@ -70,10 +70,18 @@ serve(async (req) => {
 
     if (tournamentError) throw tournamentError
 
+    // Get all registrations to calculate correct prize pool
+    const { data: registrations, error: regError } = await supabaseClient
+      .from('tournament_registrations')
+      .select('player_id, rebuys, addons, reentries, additional_sets')
+      .eq('tournament_id', tournament_id)
+
+    if (regError) throw regError
+
     // Get tournament payout structure from database
     const { data: payoutStructure, error: payoutError } = await supabaseClient
       .from('tournament_payouts')
-      .select('place, percentage, amount')
+      .select('place, percentage, amount, rps_points')
       .eq('tournament_id', tournament_id)
       .order('place')
 
@@ -122,7 +130,7 @@ serve(async (req) => {
     }
 
     // Calculate new RPS ratings changes
-    const rpsChanges = calculateRPSChanges(players, results, tournament, payoutStructure || [], ratingConfig)
+    const rpsChanges = calculateRPSChanges(players, results, tournament, registrations || [], payoutStructure || [], ratingConfig)
 
     // Update players and create game results
     for (const change of rpsChanges) {
@@ -163,7 +171,7 @@ serve(async (req) => {
       }
     }
 
-    // Mark tournament as finished with timestamp (используем правильный статус)
+    // Mark tournament as finished with timestamp
     const { error: tournamentUpdateError } = await supabaseClient
       .from('tournaments')
       .update({ 
@@ -206,7 +214,14 @@ serve(async (req) => {
   }
 })
 
-function calculateRPSChanges(players: Player[], results: TournamentResult[], tournament: any, payoutStructureFromDB?: any[], ratingConfig?: any) {
+function calculateRPSChanges(
+  players: Player[], 
+  results: TournamentResult[], 
+  tournament: any, 
+  registrations: any[],
+  payoutStructureFromDB?: any[], 
+  ratingConfig?: any
+) {
   const changes = []
 
   // Проверяем, какую систему использовать
@@ -214,14 +229,21 @@ function calculateRPSChanges(players: Player[], results: TournamentResult[], tou
   
   if (usePoolBasedSystem) {
     console.log('🎯 POOL-BASED RPS SYSTEM: каждый 1000₽ входа = 100 очков в общий пул')
-    return calculatePoolBasedRPS(players, results, tournament, payoutStructureFromDB, ratingConfig)
+    return calculatePoolBasedRPS(players, results, tournament, registrations, payoutStructureFromDB, ratingConfig)
   } else {
     console.log('🎯 CLASSIC RPS SYSTEM: базовые очки + бонусы + призовые')
-    return calculateClassicRPS(players, results, tournament, payoutStructureFromDB, ratingConfig)
+    return calculatePoolBasedRPS(players, results, tournament, registrations, payoutStructureFromDB, ratingConfig)
   }
 }
 
-function calculatePoolBasedRPS(players: Player[], results: TournamentResult[], tournament: any, payoutStructureFromDB?: any[], ratingConfig?: any) {
+function calculatePoolBasedRPS(
+  players: Player[], 
+  results: TournamentResult[], 
+  tournament: any,
+  registrations: any[],
+  payoutStructureFromDB?: any[], 
+  ratingConfig?: any
+) {
   const changes = []
 
   // Сортируем по позиции (1-е место это позиция 1, последнее место - максимальная позиция)
@@ -230,25 +252,29 @@ function calculatePoolBasedRPS(players: Player[], results: TournamentResult[], t
   console.log('Processing results for positions:', results.map(r => `Player ${r.player_id}: position ${r.position}`))
 
   // Рассчитываем общий пул RPS баллов по ПРАВИЛЬНОЙ формуле: 1000₽ = 100 RPS
+  // ВАЖНО: берем данные из registrations БД, а не из параметра results
   let totalPointsPool = 0
   
-  results.forEach(result => {
-    const rebuys = result.rebuys || 0
-    const addons = result.addons || 0
+  registrations.forEach(reg => {
     // Используем новые поля с fallback на старые для обратной совместимости
+    const reentries = reg.reentries || 0
+    const rebuys = reg.rebuys || 0
+    const additionalSets = reg.additional_sets || 0
+    const addons = reg.addons || 0
+    
     const participationFee = tournament.participation_fee || tournament.buy_in || 0
     const reentryFee = tournament.reentry_fee || tournament.rebuy_cost || 0
     const additionalFee = tournament.additional_fee || tournament.addon_cost || 0
     
     const playerContribution = participationFee + 
-      (rebuys * reentryFee) + 
-      (addons * additionalFee)
+      ((reentries + rebuys) * reentryFee) + 
+      ((additionalSets + addons) * additionalFee)
     
     // ПРАВИЛЬНАЯ ФОРМУЛА: делим на 10, чтобы 1000₽ = 100 RPS
     totalPointsPool += Math.floor(playerContribution / 10)
   })
 
-  console.log(`💰 Total RPS pool: ${totalPointsPool} RPS баллов (от ${results.length} игроков)`)
+  console.log(`💰 Total RPS pool: ${totalPointsPool} RPS баллов (от ${registrations.length} игроков)`)
 
   // Используем структуру выплат из БД для распределения пула RPS баллов
   let payoutStructure: Array<{percentage: number, rps_points?: number}> = []
@@ -313,12 +339,6 @@ function calculatePoolBasedRPS(players: Player[], results: TournamentResult[], t
   }
 
   return changes
-}
-
-function calculateClassicRPS(players: Player[], results: TournamentResult[], tournament: any, payoutStructureFromDB?: any[], ratingConfig?: any) {
-  // Здесь была бы старая логика расчета, но мы используем новую систему
-  console.log('Classic RPS system not implemented - using pool-based system')
-  return calculatePoolBasedRPS(players, results, tournament, payoutStructureFromDB, ratingConfig)
 }
 
 function getPayoutStructure(playerCount: number): number[] {
