@@ -229,7 +229,7 @@ export function TournamentTicketCard({ tournament, onViewDetails, onRegister }: 
 
           {/* Header with title and status */}
           <div className="text-center mb-4 pr-20">
-            <h3 className="text-xl font-bold text-white tracking-wide mb-2 bg-gradient-to-r from-white via-amber-50 to-white bg-clip-text text-transparent">
+            <h3 className="text-2xl font-bold text-white tracking-wide mb-2 bg-gradient-to-r from-white via-amber-50 to-white bg-clip-text text-transparent">
               {tournament.name}
             </h3>
             <div className="h-0.5 w-16 bg-gradient-to-r from-transparent via-amber-400 to-transparent mx-auto mb-3"></div>
@@ -267,8 +267,8 @@ export function TournamentTicketCard({ tournament, onViewDetails, onRegister }: 
                     <Trophy className="h-3.5 w-3.5 text-white" />
                   </div>
                   <div>
-                    <p className="text-[9px] text-amber-300/80 font-semibold uppercase tracking-wider">Prize Pool</p>
-                    <p className="text-lg font-bold text-amber-200 tracking-tight">{prizePool.toLocaleString()} ₽</p>
+                    <p className="text-[10px] text-amber-300/80 font-semibold uppercase tracking-wider">Prize Pool</p>
+                    <p className="text-xl font-bold text-amber-200 tracking-tight">{prizePool.toLocaleString()} ₽</p>
                   </div>
                 </div>
                 <Crown className="h-7 w-7 text-amber-400/30" />
@@ -284,15 +284,15 @@ export function TournamentTicketCard({ tournament, onViewDetails, onRegister }: 
                 <div className="w-6 h-6 bg-gradient-to-br from-blue-500 to-blue-600 rounded-md flex items-center justify-center shadow-md">
                   <Calendar className="h-3.5 w-3.5 text-white" />
                 </div>
-                <h4 className="text-[10px] font-semibold text-white/90">Дата и время</h4>
+                <h4 className="text-xs font-semibold text-white/90">Дата и время</h4>
               </div>
-              <p className="text-xs font-light text-white mb-0.5">
+              <p className="text-sm font-light text-white mb-0.5">
                 {new Date(tournament.start_time).toLocaleDateString('ru-RU', { 
                   day: 'numeric', 
                   month: 'short'
                 })}
               </p>
-              <p className="text-xs text-amber-400 font-medium">
+              <p className="text-sm text-amber-400 font-medium">
                 {new Date(tournament.start_time).toLocaleTimeString('ru-RU', { 
                   hour: '2-digit', 
                   minute: '2-digit' 
@@ -306,7 +306,7 @@ export function TournamentTicketCard({ tournament, onViewDetails, onRegister }: 
                 <div className="w-6 h-6 bg-gradient-to-br from-purple-500 to-purple-600 rounded-md flex items-center justify-center shadow-md">
                   <Users className="h-3.5 w-3.5 text-white" />
                 </div>
-                <h4 className="text-[10px] font-semibold text-white/90">Участники</h4>
+                <h4 className="text-xs font-semibold text-white/90">Участники</h4>
               </div>
               <div className="flex items-center gap-1.5 mb-1.5">
                 <span className="text-base font-light text-white">{registeredCount}</span>
@@ -327,11 +327,11 @@ export function TournamentTicketCard({ tournament, onViewDetails, onRegister }: 
                 <div className="w-6 h-6 bg-gradient-to-br from-green-500 to-green-600 rounded-md flex items-center justify-center shadow-md">
                   <DollarSign className="h-3.5 w-3.5 text-white" />
                 </div>
-                <h4 className="text-[10px] font-semibold text-green-300">Орг. взнос</h4>
+                <h4 className="text-xs font-semibold text-green-300">Орг. взнос</h4>
               </div>
-              <p className="text-xl font-bold text-green-200">{tournament.participation_fee.toLocaleString()} ₽</p>
+              <p className="text-2xl font-bold text-green-200">{tournament.participation_fee.toLocaleString()} ₽</p>
               {(tournament.reentry_fee && tournament.reentry_fee > 0) && (
-                <p className="text-[9px] text-white/60 mt-0.5">Re-entry: {tournament.reentry_fee.toLocaleString()} ₽</p>
+                <p className="text-[10px] text-white/60 mt-0.5">Re-entry: {tournament.reentry_fee.toLocaleString()} ₽</p>
               )}
             </div>
 
@@ -341,9 +341,9 @@ export function TournamentTicketCard({ tournament, onViewDetails, onRegister }: 
                 <div className="w-6 h-6 bg-gradient-to-br from-red-500 to-red-600 rounded-md flex items-center justify-center shadow-md">
                   <Coins className="h-3.5 w-3.5 text-white" />
                 </div>
-                <h4 className="text-[10px] font-semibold text-white/90">Стартовый стек</h4>
+                <h4 className="text-xs font-semibold text-white/90">Стартовый стек</h4>
               </div>
-              <p className="text-sm font-light text-white">{tournament.starting_chips?.toLocaleString() || 'N/A'}</p>
+              <p className="text-base font-medium text-white">{tournament.starting_chips?.toLocaleString() || 'N/A'}</p>
             </div>
           </div>
         </div>
@@ -382,7 +382,7 @@ export function TournamentTicketCard({ tournament, onViewDetails, onRegister }: 
           </div>
           
           {/* Microtext security features */}
-          <div className="flex items-center justify-between mb-3 text-[7px] text-white/30 font-mono px-1">
+          <div className="flex items-center justify-between mb-3 text-[9px] text-white/40 font-mono px-1">
             <span>VALID • AUTHENTIC • SECURE</span>
             <span>ID:{ticketNumber}</span>
           </div>
@@ -396,9 +396,9 @@ export function TournamentTicketCard({ tournament, onViewDetails, onRegister }: 
             <div className="flex items-center justify-center gap-2">
               <PlayCircle className="h-5 w-5" />
               <div className="flex flex-col items-start">
-                <span className="text-xs font-semibold">{getButtonText(tournament.status)}</span>
+                <span className="text-sm font-semibold">{getButtonText(tournament.status)}</span>
                 {tournament.status === 'registration' && (
-                  <span className="text-[10px] font-normal text-amber-100">Взнос: {tournament.participation_fee.toLocaleString()} ₽</span>
+                  <span className="text-xs font-normal text-amber-100">Взнос: {tournament.participation_fee.toLocaleString()} ₽</span>
                 )}
               </div>
             </div>
@@ -407,7 +407,7 @@ export function TournamentTicketCard({ tournament, onViewDetails, onRegister }: 
           <Button 
             variant="outline" 
             onClick={onViewDetails}
-            className="w-full border-2 border-white/30 bg-white/5 text-white hover:bg-white/10 hover:border-amber-400/50 transition-all duration-300 text-xs rounded-lg group/info font-semibold py-2.5"
+            className="w-full border-2 border-white/30 bg-white/5 text-white hover:bg-white/10 hover:border-amber-400/50 transition-all duration-300 text-sm rounded-lg group/info font-semibold py-2.5"
           >
             Подробная информация
             <ChevronRight className="h-4 w-4 ml-auto group-hover/info:translate-x-1 transition-transform" />
