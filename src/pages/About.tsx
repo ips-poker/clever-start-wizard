@@ -101,10 +101,10 @@ export default function About() {
 
   if (cmsLoading) {
     return (
-      <div className="min-h-screen">
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
         <Header />
-        <div className="flex items-center justify-center py-20">
-          <Loader2 className="w-8 h-8 animate-spin text-poker-primary" />
+        <div className="flex items-center justify-center py-20 pt-24 md:pt-20">
+          <Loader2 className="w-8 h-8 animate-spin text-amber-400" />
         </div>
         <Footer />
       </div>
@@ -112,23 +112,37 @@ export default function About() {
   }
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
       <Header />
       
-      <main>
+      <main className="pt-24 md:pt-20">
         {/* Hero Section */}
-        <section className="py-20 bg-gradient-surface relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-poker-accent/5 to-poker-primary/5"></div>
+        <section className="py-12 md:py-20 relative overflow-hidden">
+          <div className="absolute inset-0 opacity-10">
+            <div className="absolute top-10 left-10 text-amber-400/40 text-5xl animate-pulse">♠</div>
+            <div className="absolute top-20 right-20 text-amber-400/30 text-4xl animate-bounce-subtle">♣</div>
+            <div className="absolute bottom-10 left-20 text-amber-400/35 text-6xl animate-pulse">♥</div>
+          </div>
+          <div className="absolute inset-0 pointer-events-none">
+            <div className="absolute top-0 left-1/4 w-96 h-96 bg-amber-500/5 rounded-full blur-3xl"></div>
+            <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-blue-500/5 rounded-full blur-3xl"></div>
+          </div>
           <div className="container mx-auto px-4 relative">
             <div className="grid lg:grid-cols-2 gap-12 items-center">
               <div className="max-w-2xl">
-                <Badge variant="outline" className="mb-6 border-poker-accent text-poker-accent">
-                  {getContent('hero_badge', 'О компании')}
-                </Badge>
-                <h1 className="text-5xl font-bold mb-6 bg-gradient-to-r from-poker-primary to-poker-accent bg-clip-text text-transparent">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl flex items-center justify-center shadow-lg">
+                    <Shield className="h-5 w-5 text-white" />
+                  </div>
+                  <Badge variant="outline" className="border-amber-400/50 text-amber-400">
+                    {getContent('hero_badge', 'О компании')}
+                  </Badge>
+                </div>
+                <h1 className="text-3xl md:text-5xl font-light mb-6 text-white tracking-wide">
                   {getContent('hero_title', 'International Poker Style')}
                 </h1>
-                <p className="text-xl text-muted-foreground leading-relaxed mb-8">
+                <div className="h-0.5 w-20 bg-gradient-to-r from-amber-400 to-amber-600 mb-6"></div>
+                <p className="text-lg md:text-xl text-white/70 leading-relaxed mb-8 font-light">
                   {getContent('hero_description', 'Мы создали уникальное пространство для любителей покера, где каждый может развивать свои навыки, участвовать в честных турнирах и расти в профессиональной рейтинговой системе.')}
                 </p>
                 <div className="flex flex-wrap gap-4">

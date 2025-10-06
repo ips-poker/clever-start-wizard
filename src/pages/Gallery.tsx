@@ -79,14 +79,14 @@ export default function Gallery() {
 
   if (loading) {
     return (
-      <div className="min-h-screen">
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
         <Header />
-        <main className="py-20">
+        <main className="pt-24 md:pt-20">
           <div className="container mx-auto px-4">
             <div className="flex items-center justify-center h-64">
               <div className="text-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-poker-primary mx-auto mb-4"></div>
-                <p className="text-muted-foreground">Загрузка галереи...</p>
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-400 mx-auto mb-4"></div>
+                <p className="text-white/70">Загрузка галереи...</p>
               </div>
             </div>
           </div>
@@ -97,21 +97,27 @@ export default function Gallery() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-surface">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
       <Header />
       
-      <main className="py-20">
+      <main className="pt-24 md:pt-20 pb-16">
         <div className="container mx-auto px-4">
           {/* Hero Section */}
-          <div className="text-center mb-16">
-            <Badge variant="outline" className="mb-4 border-poker-accent text-poker-accent animate-fade-in">
-              <Tag className="w-4 h-4 mr-2" />
-              Галерея
-            </Badge>
-            <h1 className="text-5xl font-bold mb-6 bg-gradient-to-r from-poker-primary to-poker-accent bg-clip-text text-transparent animate-fade-in">
-              Атмосфера IPS
-            </h1>
-            <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed animate-fade-in">
+          <div className="text-center mb-12 md:mb-16 relative">
+            <div className="absolute inset-0 opacity-10 -z-10">
+              <div className="absolute top-0 left-10 text-amber-400/40 text-4xl animate-pulse">♠</div>
+              <div className="absolute top-0 right-10 text-amber-400/30 text-3xl animate-bounce-subtle">♣</div>
+            </div>
+            <div className="flex items-center gap-3 justify-center mb-6">
+              <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl flex items-center justify-center shadow-lg">
+                <Tag className="h-5 w-5 text-white" />
+              </div>
+              <h1 className="text-3xl lg:text-4xl font-light text-white tracking-wide">
+                ГАЛЕРЕЯ
+              </h1>
+            </div>
+            <div className="h-0.5 w-20 bg-gradient-to-r from-amber-400 to-amber-600 mx-auto mb-6"></div>
+            <p className="text-base md:text-lg text-white/70 max-w-3xl mx-auto leading-relaxed font-light px-4">
               Окунитесь в атмосферу профессионального покера. Наши залы, турниры, события и моменты триумфа в одной коллекции.
             </p>
           </div>
