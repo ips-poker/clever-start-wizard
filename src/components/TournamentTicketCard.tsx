@@ -8,13 +8,11 @@ import {
   Trophy, 
   DollarSign, 
   PlayCircle,
-  Info,
   ChevronRight,
-  Target,
-  Coffee,
   Coins,
   Crown,
-  Gem
+  Gem,
+  Target
 } from "lucide-react";
 
 interface Tournament {
@@ -47,25 +45,19 @@ interface TournamentTicketCardProps {
 
 export function TournamentTicketCard({ tournament, onViewDetails, onRegister }: TournamentTicketCardProps) {
   const getStatusBadge = (status: string) => {
-    const variants = {
-      scheduled: "secondary",
-      registration: "default", 
-      running: "destructive",
-      completed: "outline",
-      paused: "outline"
-    } as const;
-
-    const labels = {
-      scheduled: "Запланирован",
-      registration: "Регистрация",
-      running: "Идет турнир",
-      completed: "Завершен",
-      paused: "Приостановлен"
+    const statusConfig = {
+      'registration': { label: 'Регистрация открыта', className: 'bg-green-500/20 text-green-400 border-green-500/30' },
+      'running': { label: 'Турнир проходит', className: 'bg-red-500/20 text-red-400 border-red-500/30' },
+      'scheduled': { label: 'Запланирован', className: 'bg-blue-500/20 text-blue-400 border-blue-500/30' },
+      'completed': { label: 'Завершен', className: 'bg-gray-500/20 text-gray-400 border-gray-500/30' },
+      'paused': { label: 'Приостановлен', className: 'bg-gray-500/20 text-gray-400 border-gray-500/30' }
     };
 
+    const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.scheduled;
+    
     return (
-      <Badge variant={variants[status as keyof typeof variants] || "default"}>
-        {labels[status as keyof typeof labels] || status}
+      <Badge className={`px-3 py-1 rounded-full text-xs font-medium border ${config.className}`}>
+        {config.label}
       </Badge>
     );
   };
@@ -86,78 +78,55 @@ export function TournamentTicketCard({ tournament, onViewDetails, onRegister }: 
   const registeredCount = tournament._count?.tournament_registrations || 0;
   const spotsLeft = tournament.max_players - registeredCount;
   const isFilling = spotsLeft <= 3 && spotsLeft > 0;
-  const ticketNumber = tournament.id.split('-')[0].toUpperCase();
 
   return (
-    <div className="group relative w-full max-w-sm mx-auto perspective-1000">
-      {/* Animated outer glow */}
-      <div className="absolute -inset-1 bg-gradient-to-r from-amber-500 via-purple-500 to-amber-500 rounded-[28px] opacity-0 group-hover:opacity-20 blur-xl transition-all duration-700 animate-pulse"></div>
-      
-      {/* Main ticket container */}
-      <div className="relative bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 border border-slate-700/50 rounded-3xl overflow-hidden shadow-2xl group-hover:shadow-amber-500/30 group-hover:border-amber-400/50 group-hover:-translate-y-2 transition-all duration-500 backdrop-blur-xl">
+    <div className="group relative w-full max-w-sm mx-auto">
+      {/* Main ticket container - Telegram style */}
+      <div className="relative bg-gradient-to-br from-slate-900/98 via-black/95 to-slate-800/98 border border-amber-400/20 rounded-2xl overflow-hidden shadow-2xl group-hover:shadow-amber-500/30 group-hover:border-amber-400/40 transition-all duration-500 backdrop-blur-2xl">
         
-        {/* Shimmer effect */}
-        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
-        
-        {/* Ticket perforations with glow */}
-        <div className="absolute left-0 top-[47%] transform -translate-y-1/2 w-7 h-7 bg-slate-950 rounded-full -ml-3.5 border-2 border-slate-700/50 shadow-inner group-hover:border-amber-400/30 transition-colors duration-500"></div>
-        <div className="absolute right-0 top-[47%] transform -translate-y-1/2 w-7 h-7 bg-slate-950 rounded-full -mr-3.5 border-2 border-slate-700/50 shadow-inner group-hover:border-amber-400/30 transition-colors duration-500"></div>
-        
-        {/* Dashed separation line with gradient */}
-        <div className="absolute left-8 right-8 top-[47%] transform -translate-y-1/2 overflow-hidden">
-          <div className="h-[2px] border-t-2 border-dashed border-slate-700/80 group-hover:border-amber-400/40 transition-colors duration-500"></div>
-        </div>
-        
-        {/* Background gradient overlay */}
-        <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 via-purple-500/5 to-blue-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
-
-        {/* Ticket number badge */}
-        <div className="absolute top-4 right-4 z-10">
-          <div className="bg-slate-800/80 backdrop-blur-sm border border-slate-700/50 rounded-lg px-3 py-1.5 group-hover:border-amber-400/30 transition-colors duration-300">
-            <p className="text-slate-400 text-xs font-mono">#{ticketNumber}</p>
-          </div>
+        {/* Покерные масти декорация */}
+        <div className="absolute inset-0 opacity-5 overflow-hidden pointer-events-none">
+          <div className="absolute top-4 right-6 text-3xl text-amber-400 transform rotate-12 animate-pulse">♠</div>
+          <div className="absolute top-16 left-4 text-2xl text-amber-500 transform -rotate-12 animate-bounce-subtle">♥</div>
+          <div className="absolute bottom-12 right-8 text-4xl text-amber-400 transform rotate-45 animate-pulse">♦</div>
+          <div className="absolute bottom-4 left-6 text-3xl text-amber-500 transform -rotate-30 animate-bounce-subtle">♣</div>
         </div>
 
         {/* Top section - Tournament Info */}
-        <div className="p-5 pb-7 relative">
-          {/* Header with trophy icon and title */}
-          <div className="flex items-start gap-3 mb-4">
-            <div className="relative flex-shrink-0">
-              <div className="absolute inset-0 bg-gradient-to-br from-amber-500 to-amber-600 rounded-2xl blur-md opacity-50 group-hover:opacity-75 transition-opacity duration-500"></div>
-              <div className="relative w-12 h-12 bg-gradient-to-br from-amber-500 via-amber-600 to-amber-500 rounded-2xl flex items-center justify-center shadow-lg ring-2 ring-amber-400/30 group-hover:ring-4 group-hover:ring-amber-400/50 group-hover:scale-110 group-hover:rotate-6 transition-all duration-500">
-                <Trophy className="h-6 w-6 text-white drop-shadow-lg" />
-              </div>
-            </div>
-            <div className="flex-1 min-w-0 pr-20">
-              <h3 className="text-base font-bold text-white group-hover:text-amber-50 transition-colors duration-300 leading-tight mb-2 line-clamp-2">
-                {tournament.name}
-              </h3>
-              <div className="flex items-center gap-2">
-                {getStatusBadge(tournament.status)}
-                {isFilling && (
-                  <Badge variant="destructive" className="animate-pulse">
-                    Осталось {spotsLeft}!
-                  </Badge>
-                )}
-              </div>
+        <div className="p-5 relative z-10">
+          {/* Header with title and status */}
+          <div className="text-center mb-4">
+            <h3 className="text-xl font-light text-white tracking-wider uppercase mb-2">
+              {tournament.name}
+            </h3>
+            <div className="h-0.5 w-12 bg-gradient-to-r from-amber-400 to-amber-600 mx-auto mb-3"></div>
+            <div className="flex justify-center gap-2">
+              {getStatusBadge(tournament.status)}
+              {isFilling && (
+                <Badge className="bg-red-500/20 text-red-400 border-red-500/30 px-3 py-1 rounded-full text-xs font-medium border animate-pulse">
+                  Осталось {spotsLeft}!
+                </Badge>
+              )}
             </div>
           </div>
 
-          {/* Date & Time - compact */}
-          <div className="bg-gradient-to-r from-slate-800/60 to-slate-800/40 rounded-xl p-3 mb-3 border border-slate-700/40 group-hover:border-slate-600/60 group-hover:bg-slate-800/80 transition-all duration-300">
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2 flex-1 min-w-0">
-                <Calendar className="h-4 w-4 text-blue-400 flex-shrink-0" />
-                <p className="text-white font-semibold text-sm truncate">
+          {/* Дата, время и участники */}
+          <div className="grid grid-cols-2 gap-3 mb-3">
+            <div className="bg-gradient-to-br from-white/5 via-white/10 to-white/5 rounded-lg p-3 border border-white/10 backdrop-blur-sm">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-6 h-6 bg-gradient-to-br from-blue-500 to-blue-600 rounded-md flex items-center justify-center">
+                  <Calendar className="h-3 w-3 text-white" />
+                </div>
+                <h4 className="text-xs font-medium text-white">Дата и время</h4>
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm font-light text-white">
                   {new Date(tournament.start_time).toLocaleDateString('ru-RU', { 
                     day: 'numeric', 
                     month: 'short'
                   })}
                 </p>
-              </div>
-              <div className="flex items-center gap-1.5 px-2.5 py-1 bg-slate-700/40 rounded-lg flex-shrink-0">
-                <Clock className="h-3.5 w-3.5 text-amber-400" />
-                <p className="text-white font-semibold text-xs">
+                <p className="text-sm text-amber-400 font-medium">
                   {new Date(tournament.start_time).toLocaleTimeString('ru-RU', { 
                     hour: '2-digit', 
                     minute: '2-digit' 
@@ -165,116 +134,97 @@ export function TournamentTicketCard({ tournament, onViewDetails, onRegister }: 
                 </p>
               </div>
             </div>
+
+            <div className="bg-gradient-to-br from-white/5 via-white/10 to-white/5 rounded-lg p-3 border border-white/10 backdrop-blur-sm">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-6 h-6 bg-gradient-to-br from-purple-500 to-purple-600 rounded-md flex items-center justify-center">
+                  <Users className="h-3 w-3 text-white" />
+                </div>
+                <h4 className="text-xs font-medium text-white">Участники</h4>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-lg font-light text-white">{registeredCount}</span>
+                <span className="text-white/40">/</span>
+                <span className="text-lg font-light text-white/80">{tournament.max_players}</span>
+              </div>
+              <div className="mt-2 bg-white/10 rounded-full h-1 overflow-hidden">
+                <div 
+                  className="h-full bg-gradient-to-r from-amber-400 to-amber-600 transition-all duration-500"
+                  style={{ width: `${Math.min((registeredCount / tournament.max_players) * 100, 100)}%` }}
+                ></div>
+              </div>
+            </div>
           </div>
 
-          {/* Players & Stack Grid - compact */}
-          <div className="grid grid-cols-2 gap-2.5">
-            <div className="relative overflow-hidden bg-gradient-to-br from-purple-500/20 to-purple-600/20 rounded-xl p-3 border border-purple-400/30 group-hover:border-purple-400/50 group-hover:shadow-lg group-hover:shadow-purple-500/20 transition-all duration-300">
-              <div className="absolute inset-0 bg-gradient-to-t from-purple-600/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-              <div className="relative flex items-center gap-2 mb-1.5">
-                <Users className="h-3.5 w-3.5 text-purple-400" />
-                <p className="text-purple-300 text-[10px] font-semibold uppercase tracking-wider">Игроки</p>
+          {/* Стартовый стек */}
+          <div className="bg-gradient-to-br from-white/5 via-white/10 to-white/5 rounded-lg p-3 border border-white/10 backdrop-blur-sm mb-3">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-6 h-6 bg-gradient-to-br from-red-500 to-red-600 rounded-md flex items-center justify-center">
+                <Coins className="h-3 w-3 text-white" />
               </div>
-              <p className="relative text-white font-bold text-lg leading-none">
-                {registeredCount}<span className="text-slate-400 text-sm">/{tournament.max_players}</span>
-              </p>
+              <h4 className="text-xs font-medium text-white">Стартовый стек</h4>
             </div>
-
-            <div className="relative overflow-hidden bg-gradient-to-br from-amber-500/20 to-amber-600/20 rounded-xl p-3 border border-amber-400/30 group-hover:border-amber-400/50 group-hover:shadow-lg group-hover:shadow-amber-500/20 transition-all duration-300">
-              <div className="absolute inset-0 bg-gradient-to-t from-amber-600/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-              <div className="relative flex items-center gap-2 mb-1.5">
-                <Coins className="h-3.5 w-3.5 text-amber-400" />
-                <p className="text-amber-300 text-[10px] font-semibold uppercase tracking-wider">Стек</p>
-              </div>
-              <p className="relative text-white font-bold text-lg leading-none">
-                {(tournament.starting_chips / 1000).toFixed(0)}K
-              </p>
-            </div>
+            <p className="text-sm font-light text-white">{tournament.starting_chips?.toLocaleString() || 'N/A'} фишек</p>
           </div>
-        </div>
-        
-        {/* Bottom section - Pricing & Actions */}
-        <div className="p-5 pt-7 bg-gradient-to-br from-slate-900/80 via-black/60 to-slate-900/80 relative backdrop-blur-md">
-          {/* Main Price - more prominent */}
-          <div className="mb-3">
-            <div className="relative group/price bg-gradient-to-r from-amber-500/25 via-amber-400/30 to-amber-500/25 rounded-2xl p-4 border-2 border-amber-400/40 backdrop-blur-sm overflow-hidden group-hover:border-amber-400/60 group-hover:shadow-xl group-hover:shadow-amber-500/30 transition-all duration-300">
-              {/* Animated background */}
-              <div className="absolute inset-0 bg-gradient-to-r from-amber-500/0 via-amber-400/20 to-amber-500/0 translate-x-[-100%] group-hover/price:translate-x-[100%] transition-transform duration-1000"></div>
-              
-              <div className="relative flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="relative">
-                    <div className="absolute inset-0 bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl blur-md opacity-50"></div>
-                    <div className="relative w-10 h-10 bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl flex items-center justify-center shadow-lg">
-                      <DollarSign className="h-5 w-5 text-white" />
-                    </div>
-                  </div>
-                  <div>
-                    <p className="text-amber-200/60 text-[10px] font-bold uppercase tracking-wider mb-0.5">Вступительный взнос</p>
-                    <span className="text-amber-300 text-2xl font-black tracking-tight drop-shadow-lg">
-                      {tournament.participation_fee.toLocaleString()}
-                      <span className="text-base ml-1">₽</span>
-                    </span>
-                  </div>
-                </div>
-                <div className="flex flex-col items-end gap-1">
-                  <div className="w-2 h-2 bg-amber-400 rounded-full animate-pulse shadow-lg shadow-amber-400/60"></div>
-                  <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse shadow-lg shadow-green-400/60" style={{ animationDelay: '0.3s' }}></div>
-                </div>
-              </div>
-            </div>
 
-            {/* Additional fees - compact */}
+          {/* Организационный взнос */}
+          <div className="bg-gradient-to-br from-white/5 via-white/10 to-white/5 rounded-lg p-3 border border-white/10 backdrop-blur-sm">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-6 h-6 bg-gradient-to-br from-green-500 to-green-600 rounded-md flex items-center justify-center">
+                <DollarSign className="h-3 w-3 text-white" />
+              </div>
+              <h4 className="text-xs font-medium text-white">Орг. взнос</h4>
+            </div>
+            <p className="text-lg font-semibold text-white">{tournament.participation_fee.toLocaleString()} ₽</p>
+            
+            {/* Additional fees */}
             {(tournament.reentry_fee && tournament.reentry_fee > 0) || (tournament.additional_fee && tournament.additional_fee > 0) ? (
-              <div className="grid grid-cols-2 gap-2 mt-2">
+              <div className="mt-2 space-y-1">
                 {tournament.reentry_fee && tournament.reentry_fee > 0 && (
-                  <div className="bg-gradient-to-br from-green-500/20 to-green-600/20 rounded-lg px-3 py-2 border border-green-400/30 group-hover:border-green-400/50 transition-all duration-300">
-                    <div className="flex items-center gap-1.5 mb-0.5">
-                      <Coffee className="h-3 w-3 text-green-400" />
-                      <span className="text-green-300 text-[9px] font-semibold uppercase tracking-wide">Ре-энтри</span>
-                    </div>
-                    <span className="text-white font-bold text-sm">{tournament.reentry_fee.toLocaleString()} ₽</span>
-                  </div>
+                  <p className="text-xs text-white/60">Повторный вход: {tournament.reentry_fee.toLocaleString()} ₽</p>
                 )}
-                
                 {tournament.additional_fee && tournament.additional_fee > 0 && (
-                  <div className="bg-gradient-to-br from-blue-500/20 to-blue-600/20 rounded-lg px-3 py-2 border border-blue-400/30 group-hover:border-blue-400/50 transition-all duration-300">
-                    <div className="flex items-center gap-1.5 mb-0.5">
-                      <Gem className="h-3 w-3 text-blue-400" />
-                      <span className="text-blue-300 text-[9px] font-semibold uppercase tracking-wide">Аддон</span>
-                    </div>
-                    <span className="text-white font-bold text-sm">{tournament.additional_fee.toLocaleString()} ₽</span>
-                  </div>
+                  <p className="text-xs text-white/60">Доп. набор: {tournament.additional_fee.toLocaleString()} ₽</p>
                 )}
               </div>
             ) : null}
           </div>
-
-          {/* Action buttons - more dynamic */}
+        </div>
+        
+        {/* Bottom section - Actions */}
+        <div className="p-5 bg-gradient-to-br from-slate-900/60 to-black/60 relative backdrop-blur-md border-t border-white/5">
+          {/* Action buttons */}
           <div className="space-y-2">
             <Button 
-              size="lg" 
-              className="relative w-full bg-gradient-to-r from-amber-500 via-amber-600 to-amber-500 hover:from-amber-600 hover:via-amber-500 hover:to-amber-600 text-white font-bold transition-all duration-500 rounded-xl shadow-xl hover:shadow-2xl hover:shadow-amber-500/50 disabled:opacity-50 disabled:cursor-not-allowed h-11 text-sm group/btn overflow-hidden"
               onClick={onRegister}
               disabled={tournament.status !== 'registration'}
+              className="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-semibold py-3 rounded-lg shadow-lg hover:shadow-amber-500/30 transition-all duration-300 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover/btn:translate-x-full transition-transform duration-700"></div>
-              <PlayCircle className="relative h-5 w-5 mr-2 group-hover/btn:scale-125 group-hover/btn:rotate-90 transition-all duration-500" />
-              <span className="relative">{getButtonText(tournament.status)}</span>
+              <PlayCircle className="h-4 w-4 mr-2" />
+              {getButtonText(tournament.status)}
             </Button>
             
             <Button 
               variant="outline" 
-              size="sm" 
-              className="w-full border-2 border-slate-600/60 bg-slate-800/30 text-slate-300 hover:bg-slate-800/60 hover:border-amber-400/40 hover:text-amber-100 transition-all duration-300 rounded-xl h-9 text-xs group/btn backdrop-blur-sm"
               onClick={onViewDetails}
+              className="w-full border border-white/20 bg-white/5 text-white hover:bg-white/10 hover:border-white/30 transition-all duration-300 text-xs rounded-lg"
             >
-              <span>Подробная информация</span>
-              <ChevronRight className="h-4 w-4 ml-auto group-hover/btn:translate-x-1 transition-transform duration-300" />
+              Подробная информация
+              <ChevronRight className="h-4 w-4 ml-auto" />
             </Button>
           </div>
         </div>
       </div>
+
+      <style>{`
+        .animate-bounce-subtle {
+          animation: bounce-subtle 3s ease-in-out infinite;
+        }
+        @keyframes bounce-subtle {
+          0%, 100% { transform: translateY(0px) rotate(var(--tw-rotate)); }
+          50% { transform: translateY(-10px) rotate(var(--tw-rotate)); }
+        }
+      `}</style>
     </div>
   );
 }
