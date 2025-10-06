@@ -248,138 +248,118 @@ const TournamentPlayerManagement = ({ tournament, players, registrations, onRegi
           <TabsTrigger value="seating">Рассадка</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="overview" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center space-x-2">
+        <TabsContent value="overview" className="space-y-6">
+          {/* Кнопка добавления участников */}
+          <div className="flex justify-end">
+            <Button
+              onClick={() => setIsAddModalOpen(true)}
+              disabled={registrations.length >= tournament.max_players}
+              size="default"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Добавить участников
+            </Button>
+          </div>
+
+          {/* Статистика участников */}
+          <Card className="bg-white/80 backdrop-blur-sm border border-slate-200/50 shadow-sm rounded-2xl overflow-hidden">
+            <CardHeader className="bg-gradient-to-r from-blue-50 to-blue-100/50 border-b border-blue-100">
+              <CardTitle className="flex items-center gap-3 text-slate-800 font-light text-xl">
+                <div className="p-2 bg-blue-500/10 rounded-xl">
                   <Users className="w-5 h-5 text-blue-600" />
-                  <div>
-                    <p className="text-sm text-muted-foreground">Участники</p>
-                    <p className="text-2xl font-bold">{registrations.length}/{tournament.max_players}</p>
-                  </div>
                 </div>
-              </CardContent>
-            </Card>
+                Статистика участников
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-6">
+              <div className="grid grid-cols-3 gap-4">
+                <div className="p-4 bg-blue-50/50 rounded-xl text-center">
+                  <div className="text-3xl font-light text-blue-600">{registrations.length}</div>
+                  <div className="text-sm text-slate-500 font-light mt-1">Всего игроков</div>
+                </div>
+                <div className="p-4 bg-green-50/50 rounded-xl text-center">
+                  <div className="text-3xl font-light text-green-600">{activePlayers.length}</div>
+                  <div className="text-sm text-slate-500 font-light mt-1">Активных</div>
+                </div>
+                <div className="p-4 bg-red-50/50 rounded-xl text-center">
+                  <div className="text-3xl font-light text-red-600">{eliminatedPlayers.length}</div>
+                  <div className="text-sm text-slate-500 font-light mt-1">Выбыло</div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center space-x-2">
-                  <Clock className="w-5 h-5 text-green-600" />
-                  <div>
-                    <p className="text-sm text-muted-foreground">Активные</p>
-                    <p className="text-2xl font-bold">{activePlayers.length}</p>
+          {/* Призовой фонд */}
+          <Card className="bg-white/80 backdrop-blur-sm border border-slate-200/50 shadow-sm rounded-2xl overflow-hidden">
+            <CardHeader className="bg-gradient-to-r from-emerald-50 to-emerald-100/50 border-b border-emerald-100">
+              <CardTitle className="flex items-center gap-3 text-slate-800 font-light text-xl">
+                <div className="p-2 bg-emerald-500/10 rounded-xl">
+                  <Trophy className="w-5 h-5 text-emerald-600" />
+                </div>
+                Призовой фонд
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-6">
+              <div className="space-y-3">
+                <div className="flex justify-between items-center p-3 bg-slate-50/50 rounded-xl">
+                  <span className="text-sm text-slate-600 font-light">Орг взносы</span>
+                  <span className="text-lg font-medium text-slate-800">
+                    {(tournament.participation_fee * registrations.length).toLocaleString()} ₽
+                  </span>
+                </div>
+                <div className="flex justify-between items-center p-3 bg-green-50/50 rounded-xl">
+                  <span className="text-sm text-slate-600 font-light">Повторные входы</span>
+                  <span className="text-lg font-medium text-green-600">
+                    {(tournament.reentry_fee * registrations.reduce((sum, reg) => sum + reg.reentries, 0)).toLocaleString()} ₽
+                  </span>
+                </div>
+                <div className="flex justify-between items-center p-3 bg-blue-50/50 rounded-xl">
+                  <span className="text-sm text-slate-600 font-light">Доп наборы</span>
+                  <span className="text-lg font-medium text-blue-600">
+                    {(tournament.additional_fee * registrations.reduce((sum, reg) => sum + reg.additional_sets, 0)).toLocaleString()} ₽
+                  </span>
+                </div>
+                <div className="border-t border-slate-200 pt-3">
+                  <div className="flex justify-between items-center p-3 bg-emerald-50/50 rounded-xl">
+                    <span className="text-base font-medium text-slate-800">Общий призовой в баллах RPS</span>
+                    <span className="text-2xl font-light text-emerald-600">
+                      {formatRPSPoints(totalRPSPool)}
+                    </span>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </CardContent>
+          </Card>
 
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center space-x-2">
-                  <UserX className="w-5 h-5 text-red-600" />
-                  <div>
-                    <p className="text-sm text-muted-foreground">Выбывшие</p>
-                    <p className="text-2xl font-bold">{eliminatedPlayers.length}</p>
-                  </div>
+          {/* Статистика фишек */}
+          <Card className="bg-white/80 backdrop-blur-sm border border-slate-200/50 shadow-sm rounded-2xl overflow-hidden">
+            <CardHeader className="bg-gradient-to-r from-indigo-50 to-indigo-100/50 border-b border-indigo-100">
+              <CardTitle className="flex items-center gap-3 text-slate-800 font-light text-xl">
+                <div className="p-2 bg-indigo-500/10 rounded-xl">
+                  <TrendingUp className="w-5 h-5 text-indigo-600" />
                 </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center space-x-2">
-                  <Trophy className="w-5 h-5 text-amber-600" />
-                  <div>
-                    <p className="text-sm text-muted-foreground">Фонд RPS</p>
-                    <p className="text-lg font-bold">{formatRPSPoints(totalRPSPool)}</p>
-                  </div>
+                Статистика фишек
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-6">
+              <div className="space-y-3">
+                <div className="flex justify-between items-center p-3 bg-indigo-50/50 rounded-xl">
+                  <span className="text-sm text-slate-600 font-light">Всего фишек в игре</span>
+                  <span className="text-lg font-medium text-indigo-600">
+                    {activePlayers.reduce((sum, player) => sum + player.chips, 0).toLocaleString()}
+                  </span>
                 </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  <span>Статистика участников</span>
-                  <Button
-                    onClick={() => setIsAddModalOpen(true)}
-                    disabled={registrations.length >= tournament.max_players}
-                    size="sm"
-                  >
-                    <Plus className="w-4 h-4 mr-2" />
-                    Добавить участников
-                  </Button>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between items-center py-2">
-                    <span className="text-slate-600">Повторные входы:</span>
-                    <span className="font-medium">
-                      {registrations.reduce((sum, reg) => sum + reg.reentries, 0)}
+                {activePlayers.length > 0 && (
+                  <div className="flex justify-between items-center p-3 bg-purple-50/50 rounded-xl">
+                    <span className="text-sm text-slate-600 font-light">Средний стек</span>
+                    <span className="text-lg font-medium text-purple-600">
+                      {Math.round(activePlayers.reduce((sum, player) => sum + player.chips, 0) / activePlayers.length).toLocaleString()}
                     </span>
                   </div>
-                  <div className="flex justify-between items-center py-2">
-                    <span className="text-slate-600">Дополнительные наборы:</span>
-                    <span className="font-medium">
-                      {registrations.reduce((sum, reg) => sum + reg.additional_sets, 0)}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center py-2">
-                    <span className="text-slate-600">Средний инвентарь:</span>
-                    <span className="font-medium">
-                      {registrations.length > 0 
-                        ? Math.round(registrations.reduce((sum, reg) => sum + reg.chips, 0) / registrations.length).toLocaleString()
-                        : 0
-                      } фишек
-                    </span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Trophy className="w-5 h-5 mr-2" />
-                  Фонд RPS баллов
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between items-center py-1">
-                    <span className="text-slate-600">Организационные взносы:</span>
-                    <span className="font-medium text-primary">
-                      {formatRPSPoints(calculateTotalRPSPool(registrations.length, tournament.participation_fee, 0, 0, 0, 0))}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center py-1">
-                    <span className="text-slate-600">Повторные входы:</span>
-                    <span className="font-medium text-primary">
-                      {formatRPSPoints(calculateTotalRPSPool(0, 0, registrations.reduce((sum, reg) => sum + reg.reentries, 0), tournament.reentry_fee, 0, 0))}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center py-1">
-                    <span className="text-slate-600">Дополнительные наборы:</span>
-                    <span className="font-medium text-primary">
-                      {formatRPSPoints(calculateTotalRPSPool(0, 0, 0, 0, registrations.reduce((sum, reg) => sum + reg.additional_sets, 0), tournament.additional_fee))}
-                    </span>
-                  </div>
-                  <div className="border-t pt-2 mt-2">
-                    <div className="flex justify-between items-center">
-                      <span className="text-base font-medium">Общий фонд RPS:</span>
-                      <span className="text-xl font-bold text-primary">
-                        {formatRPSPoints(totalRPSPool)}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="active" className="space-y-4">
