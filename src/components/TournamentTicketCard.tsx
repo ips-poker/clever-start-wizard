@@ -1,4 +1,5 @@
 import React from "react";
+import Barcode from "react-barcode";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { 
@@ -102,7 +103,7 @@ export function TournamentTicketCard({ tournament, onViewDetails, onRegister }: 
   const spotsLeft = tournament.max_players - registeredCount;
   const isFilling = spotsLeft <= 3 && spotsLeft > 0;
   const ticketNumber = tournament.id.split('-')[0].toUpperCase();
-  const barcodeSegments = Array.from({ length: 35 }, (_, i) => Math.random() > 0.3);
+  const barcodeValue = tournament.id.replace(/-/g, '').substring(0, 12).toUpperCase();
   
   // Calculate time until start
   const timeUntilStart = () => {
@@ -190,19 +191,6 @@ export function TournamentTicketCard({ tournament, onViewDetails, onRegister }: 
                   <span className="text-sm text-amber-200 font-bold font-mono tracking-wide bg-gradient-to-r from-amber-200 via-yellow-100 to-amber-200 bg-clip-text text-transparent">#{ticketNumber}</span>
                 </div>
                 <Trophy className="h-4 w-4 text-amber-300" />
-              </div>
-            </div>
-          </div>
-          
-          {/* Premium embossed stamp */}
-          <div className="absolute top-3 left-3 rotate-[-12deg]">
-            <div className="relative">
-              <div className="absolute inset-0 bg-red-600/20 blur-md rounded-md"></div>
-              <div className="relative bg-gradient-to-br from-red-500/20 to-red-600/20 border-2 border-red-500/40 rounded-md px-3 py-1.5 shadow-lg">
-                <div className="flex items-center gap-1.5">
-                  <Gem className="h-3 w-3 text-red-400" />
-                  <span className="text-[10px] text-red-300 font-bold uppercase tracking-wider">PREMIUM</span>
-                </div>
               </div>
             </div>
           </div>
@@ -333,21 +321,18 @@ export function TournamentTicketCard({ tournament, onViewDetails, onRegister }: 
         {/* Bottom section - Actions */}
         <div className="p-5 bg-gradient-to-br from-slate-900/80 to-black/80 relative backdrop-blur-md border-t border-amber-400/10">
           <div className="flex items-start justify-between gap-4 mb-4">
-            {/* Barcode */}
+            {/* Real Barcode */}
             <div className="flex-1">
-              <div className="bg-white/98 rounded-md px-3 py-2.5 flex items-center gap-0.5 shadow-xl border border-slate-300">
-                {barcodeSegments.map((tall, i) => (
-                  <div 
-                    key={i} 
-                    className={`${tall ? 'h-9' : 'h-6'} w-[2px] bg-slate-900`}
-                    style={{ opacity: 0.85 + Math.random() * 0.15 }}
-                  />
-                ))}
-              </div>
-              <div className="text-center mt-1">
-                <p className="text-[8px] text-white/40 font-mono tracking-widest">
-                  {ticketNumber}-{tournament.id.split('-')[1]?.toUpperCase()}
-                </p>
+              <div className="bg-white/98 rounded-md px-2 py-2 shadow-xl border border-slate-300 flex justify-center">
+                <Barcode 
+                  value={barcodeValue}
+                  height={45}
+                  width={1.5}
+                  fontSize={10}
+                  background="transparent"
+                  displayValue={true}
+                  margin={0}
+                />
               </div>
             </div>
             
