@@ -45,6 +45,8 @@ interface Tournament {
   participation_fee?: number;
   reentry_fee?: number;
   additional_fee?: number;
+  reentry_chips?: number;
+  additional_chips?: number;
 }
 
 interface Player {
@@ -298,8 +300,11 @@ const PlayerManagement = ({ tournament, players, registrations, onRegistrationUp
     const registration = registrations.find(r => r.id === registrationId);
     if (!registration) return;
 
+    // Используем новые поля с fallback на старые
+    const reentryChips = tournament.reentry_chips || tournament.rebuy_chips || 0;
+    
     const newRebuys = Math.max(0, registration.rebuys + change);
-    const newChips = registration.chips + (change > 0 ? tournament.rebuy_chips : -tournament.rebuy_chips);
+    const newChips = registration.chips + (change > 0 ? reentryChips : -reentryChips);
 
     const { error } = await supabase
       .from('tournament_registrations')
@@ -314,7 +319,7 @@ const PlayerManagement = ({ tournament, players, registrations, onRegistrationUp
     } else {
       toast({ 
         title: change > 0 ? "Ребай добавлен" : "Ребай удален", 
-        description: `Игрок получил ${change > 0 ? '+' : ''}${change > 0 ? tournament.rebuy_chips : -tournament.rebuy_chips} фишек` 
+        description: `Игрок получил ${change > 0 ? '+' : ''}${change > 0 ? reentryChips : -reentryChips} фишек` 
       });
       onRegistrationUpdate();
     }
@@ -324,8 +329,11 @@ const PlayerManagement = ({ tournament, players, registrations, onRegistrationUp
     const registration = registrations.find(r => r.id === registrationId);
     if (!registration) return;
 
+    // Используем новые поля с fallback на старые
+    const additionalChips = tournament.additional_chips || tournament.addon_chips || 0;
+    
     const newAddons = Math.max(0, registration.addons + change);
-    const newChips = registration.chips + (change > 0 ? tournament.addon_chips : -tournament.addon_chips);
+    const newChips = registration.chips + (change > 0 ? additionalChips : -additionalChips);
 
     const { error } = await supabase
       .from('tournament_registrations')
@@ -340,7 +348,7 @@ const PlayerManagement = ({ tournament, players, registrations, onRegistrationUp
     } else {
       toast({ 
         title: change > 0 ? "Аддон добавлен" : "Аддон удален", 
-        description: `Игрок получил ${change > 0 ? '+' : ''}${change > 0 ? tournament.addon_chips : -tournament.addon_chips} фишек` 
+        description: `Игрок получил ${change > 0 ? '+' : ''}${change > 0 ? additionalChips : -additionalChips} фишек` 
       });
       onRegistrationUpdate();
     }

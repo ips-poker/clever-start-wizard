@@ -53,6 +53,11 @@ interface Tournament {
   tournament_format: string;
   addon_level: number;
   break_start_level: number;
+  reentry_chips?: number;
+  additional_chips?: number;
+  participation_fee?: number;
+  reentry_fee?: number;
+  additional_fee?: number;
 }
 
 interface Player {

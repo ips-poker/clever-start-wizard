@@ -28,6 +28,8 @@ interface Tournament {
   current_level: number;
   rebuy_end_level?: number;
   addon_level?: number;
+  reentry_chips?: number;
+  additional_chips?: number;
 }
 
 interface Player {
@@ -215,8 +217,11 @@ const ImprovedPlayerManagement = ({ tournament, players, registrations, onRegist
     const registration = registrations.find(r => r.id === registrationId);
     if (!registration) return;
 
+    // Используем новые поля с fallback на старые
+    const reentryChips = tournament.reentry_chips || tournament.rebuy_chips || 0;
+    
     const newRebuys = Math.max(0, registration.rebuys + change);
-    const chipsChange = change > 0 ? tournament.rebuy_chips : -tournament.rebuy_chips;
+    const chipsChange = change > 0 ? reentryChips : -reentryChips;
     const newChips = Math.max(0, registration.chips + chipsChange);
 
     const { error } = await supabase
@@ -242,8 +247,11 @@ const ImprovedPlayerManagement = ({ tournament, players, registrations, onRegist
     const registration = registrations.find(r => r.id === registrationId);
     if (!registration) return;
 
+    // Используем новые поля с fallback на старые
+    const additionalChips = tournament.additional_chips || tournament.addon_chips || 0;
+    
     const newAddons = Math.max(0, registration.addons + change);
-    const chipsChange = change > 0 ? tournament.addon_chips : -tournament.addon_chips;
+    const chipsChange = change > 0 ? additionalChips : -additionalChips;
     const newChips = Math.max(0, registration.chips + chipsChange);
 
     const { error } = await supabase
