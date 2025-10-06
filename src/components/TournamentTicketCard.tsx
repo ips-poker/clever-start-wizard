@@ -176,76 +176,78 @@ export function TournamentTicketCard({ tournament, onViewDetails, onRegister }: 
 
   return (
     <div className="group relative w-full max-w-sm mx-auto">
-      {/* Holographic glow effect */}
-      <div className="absolute -inset-0.5 bg-gradient-to-r from-amber-500 via-purple-500 to-blue-500 rounded-2xl opacity-0 group-hover:opacity-20 blur-xl transition-opacity duration-500"></div>
+      {/* Enhanced holographic glow effect with animation */}
+      <div className="absolute -inset-1 bg-gradient-to-r from-amber-500 via-purple-500 to-blue-500 rounded-2xl opacity-0 group-hover:opacity-30 blur-2xl transition-all duration-700 animate-pulse"></div>
       
-      {/* Main ticket container */}
-      <div className="relative bg-gradient-to-br from-slate-900/98 via-black/95 to-slate-800/98 border border-amber-400/30 rounded-2xl overflow-hidden shadow-2xl group-hover:shadow-amber-500/40 group-hover:border-amber-400/50 group-hover:-translate-y-1 transition-all duration-300 backdrop-blur-2xl">
+      {/* Main ticket container with enhanced effects */}
+      <div className="relative bg-gradient-to-br from-slate-900/98 via-slate-800/95 to-black/98 border-2 border-amber-400/40 rounded-2xl overflow-hidden shadow-2xl group-hover:shadow-amber-500/50 group-hover:border-amber-400/70 group-hover:-translate-y-2 group-hover:scale-[1.02] transition-all duration-500 backdrop-blur-2xl">
         
-        {/* Ticket perforations - left side */}
-        <div className="absolute left-0 top-1/2 transform -translate-y-1/2">
+        {/* Enhanced ticket perforations - left side with glow */}
+        <div className="absolute left-0 top-1/2 transform -translate-y-1/2 z-20">
           <div className="flex flex-col gap-3">
             {[...Array(8)].map((_, i) => (
-              <div key={i} className="w-2 h-2 bg-slate-950 rounded-full -ml-1 border border-amber-400/30 shadow-inner"></div>
+              <div key={i} className="w-2.5 h-2.5 bg-slate-950 rounded-full -ml-1 border-2 border-amber-400/40 shadow-inner shadow-amber-500/20 group-hover:border-amber-400/70 group-hover:shadow-amber-500/40 transition-all duration-300"></div>
             ))}
           </div>
         </div>
         
-        {/* Ticket perforations - right side */}
-        <div className="absolute right-0 top-1/2 transform -translate-y-1/2">
+        {/* Enhanced ticket perforations - right side with glow */}
+        <div className="absolute right-0 top-1/2 transform -translate-y-1/2 z-20">
           <div className="flex flex-col gap-3">
             {[...Array(8)].map((_, i) => (
-              <div key={i} className="w-2 h-2 bg-slate-950 rounded-full -mr-1 border border-amber-400/30 shadow-inner"></div>
+              <div key={i} className="w-2.5 h-2.5 bg-slate-950 rounded-full -mr-1 border-2 border-amber-400/40 shadow-inner shadow-amber-500/20 group-hover:border-amber-400/70 group-hover:shadow-amber-500/40 transition-all duration-300"></div>
             ))}
           </div>
         </div>
         
-        {/* Diagonal tear line - adjusted */}
-        <div className="absolute left-0 right-0 h-px bg-gradient-to-r from-transparent via-amber-400/20 to-transparent" style={{ top: '62%' }}></div>
-        
-        {/* Покерные масти декорация */}
-        <div className="absolute inset-0 opacity-5 overflow-hidden pointer-events-none">
-          <div className="absolute top-4 right-6 text-3xl text-amber-400 transform rotate-12">♠</div>
-          <div className="absolute top-16 left-4 text-2xl text-amber-500 transform -rotate-12">♥</div>
-          <div className="absolute bottom-12 right-8 text-4xl text-amber-400 transform rotate-45">♦</div>
-          <div className="absolute bottom-4 left-6 text-3xl text-amber-500 transform -rotate-30">♣</div>
+        {/* Enhanced diagonal tear line with animation */}
+        <div className="absolute left-0 right-0 h-px bg-gradient-to-r from-transparent via-amber-400/30 to-transparent group-hover:via-amber-400/50 transition-all duration-500" style={{ top: '62%' }}>
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-amber-400/20 to-transparent blur-sm"></div>
         </div>
         
-        {/* Security pattern watermark */}
-        <div className="absolute inset-0 opacity-[0.02] overflow-hidden pointer-events-none">
+        {/* Покерные масти декорация с анимацией */}
+        <div className="absolute inset-0 opacity-5 group-hover:opacity-10 overflow-hidden pointer-events-none transition-opacity duration-700">
+          <div className="absolute top-4 right-6 text-3xl text-amber-400 transform rotate-12 group-hover:rotate-[20deg] transition-transform duration-700">♠</div>
+          <div className="absolute top-16 left-4 text-2xl text-amber-500 transform -rotate-12 group-hover:-rotate-[20deg] transition-transform duration-700">♥</div>
+          <div className="absolute bottom-12 right-8 text-4xl text-amber-400 transform rotate-45 group-hover:rotate-[60deg] transition-transform duration-700">♦</div>
+          <div className="absolute bottom-4 left-6 text-3xl text-amber-500 transform -rotate-30 group-hover:-rotate-[40deg] transition-transform duration-700">♣</div>
+        </div>
+        
+        {/* Enhanced security pattern watermark */}
+        <div className="absolute inset-0 opacity-[0.02] group-hover:opacity-[0.04] overflow-hidden pointer-events-none transition-opacity duration-700">
           <div className="absolute inset-0" style={{
             backgroundImage: `repeating-linear-gradient(45deg, transparent, transparent 10px, currentColor 10px, currentColor 11px)`,
             color: '#fbbf24'
           }}></div>
         </div>
         
-        {/* Premium badge watermark */}
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 opacity-5 pointer-events-none">
-          <div className="text-8xl font-bold text-amber-400 tracking-widest">VIP</div>
+        {/* Premium badge watermark with animation */}
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 opacity-5 group-hover:opacity-10 pointer-events-none transition-all duration-700">
+          <div className="text-8xl font-bold text-amber-400 tracking-widest group-hover:scale-110 transition-transform duration-700">VIP</div>
         </div>
 
         {/* Top section - Tournament Info */}
         <div className="p-5 relative z-10">
-          {/* Ticket number badge - holographic effect */}
-          <div className="absolute top-3 right-3 bg-gradient-to-br from-amber-500/30 via-amber-400/20 to-amber-600/30 backdrop-blur-sm border-2 border-amber-400/50 rounded-lg px-3 py-2 shadow-2xl shadow-amber-500/20">
+          {/* Enhanced ticket number badge with glow animation */}
+          <div className="absolute top-3 right-3 bg-gradient-to-br from-amber-500/40 via-amber-400/30 to-amber-600/40 backdrop-blur-sm border-2 border-amber-400/60 rounded-lg px-3 py-2 shadow-2xl shadow-amber-500/30 group-hover:shadow-amber-500/50 group-hover:border-amber-400/80 transition-all duration-500">
             <div className="relative">
-              <div className="absolute inset-0 bg-gradient-to-r from-amber-300 via-yellow-200 to-amber-300 opacity-20 blur-sm"></div>
+              <div className="absolute inset-0 bg-gradient-to-r from-amber-300 via-yellow-200 to-amber-300 opacity-30 blur-sm group-hover:opacity-40 transition-opacity duration-500"></div>
               <div className="flex items-center gap-2 relative">
                 <div className="flex flex-col">
-                  <span className="text-[9px] text-amber-300 font-mono uppercase tracking-widest font-bold">TICKET</span>
-                  <span className="text-sm text-amber-200 font-bold font-mono tracking-wide bg-gradient-to-r from-amber-200 via-yellow-100 to-amber-200 bg-clip-text text-transparent">#{ticketNumber}</span>
+                  <span className="text-[9px] text-amber-300 font-mono uppercase tracking-widest font-bold group-hover:text-amber-200 transition-colors duration-300">TICKET</span>
+                  <span className="text-sm text-amber-200 font-bold font-mono tracking-wide bg-gradient-to-r from-amber-200 via-yellow-100 to-amber-200 bg-clip-text text-transparent group-hover:from-amber-100 group-hover:via-yellow-50 group-hover:to-amber-100 transition-all duration-300">#{ticketNumber}</span>
                 </div>
-                <Trophy className="h-4 w-4 text-amber-300" />
+                <Trophy className="h-4 w-4 text-amber-300 group-hover:text-amber-200 group-hover:scale-110 transition-all duration-300" />
               </div>
             </div>
           </div>
 
-          {/* Header with title and status */}
+          {/* Enhanced header with title and status */}
           <div className="text-center mb-4 pr-20">
-            <h3 className="text-2xl font-bold text-white tracking-wide mb-2 bg-gradient-to-r from-white via-amber-50 to-white bg-clip-text text-transparent">
+            <h3 className="text-2xl font-bold text-white tracking-wide mb-2 bg-gradient-to-r from-white via-amber-50 to-white bg-clip-text text-transparent group-hover:from-amber-100 group-hover:via-amber-50 group-hover:to-amber-100 transition-all duration-500">
               {tournament.name}
             </h3>
-            <div className="h-0.5 w-16 bg-gradient-to-r from-transparent via-amber-400 to-transparent mx-auto mb-3"></div>
+            <div className="h-0.5 w-16 bg-gradient-to-r from-transparent via-amber-400 to-transparent mx-auto mb-3 group-hover:w-24 group-hover:via-amber-300 transition-all duration-500"></div>
             <div className="flex justify-center gap-2 flex-wrap">
               {getStatusBadge(tournament.status)}
               
@@ -270,21 +272,22 @@ export function TournamentTicketCard({ tournament, onViewDetails, onRegister }: 
             </div>
           </div>
 
-          {/* RPS Prize Pool Banner */}
+          {/* Enhanced RPS Prize Pool Banner with glow animation */}
           {totalRPSPool > 0 && (
-            <div className="mb-3 bg-gradient-to-r from-amber-500/20 via-yellow-500/20 to-amber-500/20 border-2 border-amber-400/40 rounded-lg p-2.5 shadow-xl relative overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-amber-400/10 to-transparent"></div>
-              <div className="flex items-center justify-between relative">
+            <div className="mb-3 bg-gradient-to-r from-amber-500/25 via-yellow-500/25 to-amber-500/25 border-2 border-amber-400/50 rounded-lg p-3 shadow-2xl relative overflow-hidden group-hover:shadow-amber-500/40 group-hover:border-amber-400/70 transition-all duration-500">
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-amber-400/15 to-transparent group-hover:via-amber-400/25 transition-all duration-500"></div>
+              <div className="absolute inset-0 bg-gradient-to-r from-amber-500/0 via-amber-500/20 to-amber-500/0 animate-pulse"></div>
+              <div className="flex items-center justify-between relative z-10">
                 <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 bg-gradient-to-br from-amber-400 to-amber-600 rounded-full flex items-center justify-center shadow-lg">
-                    <Trophy className="h-3.5 w-3.5 text-white" />
+                  <div className="w-8 h-8 bg-gradient-to-br from-amber-400 to-amber-600 rounded-full flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
+                    <Trophy className="h-4 w-4 text-white" />
                   </div>
                   <div>
-                    <p className="text-[10px] text-amber-300/80 font-semibold uppercase tracking-wider">Фонд RPS баллов</p>
-                    <p className="text-xl font-bold text-amber-200 tracking-tight">{formatRPSPoints(totalRPSPool)}</p>
+                    <p className="text-[10px] text-amber-300/90 font-bold uppercase tracking-wider group-hover:text-amber-200 transition-colors duration-300">Фонд RPS баллов</p>
+                    <p className="text-2xl font-bold text-amber-200 tracking-tight group-hover:text-amber-100 transition-colors duration-300">{formatRPSPoints(totalRPSPool)}</p>
                   </div>
                 </div>
-                <Crown className="h-7 w-7 text-amber-400/30" />
+                <Crown className="h-8 w-8 text-amber-400/40 group-hover:text-amber-400/60 group-hover:scale-110 transition-all duration-300" />
               </div>
             </div>
           )}
@@ -334,17 +337,17 @@ export function TournamentTicketCard({ tournament, onViewDetails, onRegister }: 
               </div>
             </div>
 
-            {/* Buy-in - EMPHASIZED */}
-            <div className="bg-gradient-to-br from-green-500/20 via-green-600/10 to-green-500/20 rounded-lg p-2.5 border-2 border-green-500/40 backdrop-blur-sm shadow-xl">
-              <div className="flex items-center gap-1.5 mb-1.5">
-                <div className="w-6 h-6 bg-gradient-to-br from-green-500 to-green-600 rounded-md flex items-center justify-center shadow-md">
-                  <DollarSign className="h-3.5 w-3.5 text-white" />
+            {/* Enhanced Buy-in - EMPHASIZED with glow */}
+            <div className="bg-gradient-to-br from-green-500/25 via-green-600/15 to-green-500/25 rounded-lg p-3 border-2 border-green-500/50 backdrop-blur-sm shadow-xl group-hover:shadow-green-500/30 group-hover:border-green-500/70 group-hover:from-green-500/30 transition-all duration-500">
+              <div className="flex items-center gap-1.5 mb-2">
+                <div className="w-7 h-7 bg-gradient-to-br from-green-500 to-green-600 rounded-md flex items-center justify-center shadow-md group-hover:scale-110 transition-transform duration-300">
+                  <DollarSign className="h-4 w-4 text-white" />
                 </div>
-                <h4 className="text-xs font-semibold text-green-300">Орг. взнос</h4>
+                <h4 className="text-xs font-bold text-green-300 group-hover:text-green-200 transition-colors duration-300">Орг. взнос</h4>
               </div>
-              <p className="text-2xl font-bold text-green-200">{formatParticipationFee(tournament.participation_fee)}</p>
+              <p className="text-2xl font-bold text-green-200 group-hover:text-green-100 transition-colors duration-300">{formatParticipationFee(tournament.participation_fee)}</p>
               {(tournament.reentry_fee && tournament.reentry_fee > 0) && (
-                <p className="text-[10px] text-white/60 mt-0.5">Re-entry: {formatParticipationFee(tournament.reentry_fee)}</p>
+                <p className="text-[10px] text-white/60 mt-1 group-hover:text-white/80 transition-colors duration-300">Re-entry: {formatParticipationFee(tournament.reentry_fee)}</p>
               )}
             </div>
 
@@ -400,12 +403,13 @@ export function TournamentTicketCard({ tournament, onViewDetails, onRegister }: 
             <span>ID:{ticketNumber}</span>
           </div>
 
-          {/* Enhanced CTA Button with Price */}
+          {/* Ultra-enhanced CTA Button with Price and animations */}
           <Button 
             onClick={onRegister}
             disabled={tournament.status !== 'registration'}
-            className="relative w-full bg-gradient-to-r from-amber-500 via-amber-600 to-amber-500 hover:from-amber-600 hover:via-amber-500 hover:to-amber-600 text-white font-bold py-4 rounded-lg shadow-2xl hover:shadow-amber-500/60 transition-all duration-300 text-sm disabled:opacity-50 disabled:cursor-not-allowed border-2 border-amber-400/30 mb-2"
+            className="relative w-full bg-gradient-to-r from-amber-500 via-amber-600 to-amber-500 hover:from-amber-600 hover:via-amber-700 hover:to-amber-600 text-white font-bold py-5 rounded-lg shadow-2xl hover:shadow-amber-500/70 hover:scale-[1.02] transition-all duration-500 text-sm disabled:opacity-50 disabled:cursor-not-allowed border-2 border-amber-400/40 hover:border-amber-400/70 mb-2 overflow-hidden group/btn"
           >
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover/btn:translate-x-full transition-transform duration-1000"></div>
             <div className="flex items-center justify-center gap-2">
               <PlayCircle className="h-5 w-5" />
               <div className="flex flex-col items-start">
@@ -420,18 +424,19 @@ export function TournamentTicketCard({ tournament, onViewDetails, onRegister }: 
           <Button 
             variant="outline" 
             onClick={onViewDetails}
-            className="w-full border-2 border-white/30 bg-white/5 text-white hover:bg-white/10 hover:border-amber-400/50 transition-all duration-300 text-sm rounded-lg group/info font-semibold py-2.5"
+            className="w-full border-2 border-white/30 bg-white/5 text-white hover:bg-white/15 hover:border-amber-400/70 hover:scale-[1.01] transition-all duration-500 text-sm rounded-lg group/info font-semibold py-3 overflow-hidden"
           >
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-amber-400/10 to-transparent -translate-x-full group-hover/info:translate-x-full transition-transform duration-1000"></div>
             Подробная информация
             <ChevronRight className="h-4 w-4 ml-auto group-hover/info:translate-x-1 transition-transform" />
           </Button>
         </div>
         
-        {/* Corner decorations - enhanced */}
-        <div className="absolute top-0 left-0 w-20 h-20 border-l-2 border-t-2 border-amber-400/30 rounded-tl-2xl"></div>
-        <div className="absolute top-0 left-0 w-12 h-12 border-l border-t border-amber-400/20 rounded-tl-2xl"></div>
-        <div className="absolute bottom-0 right-0 w-20 h-20 border-r-2 border-b-2 border-amber-400/30 rounded-br-2xl"></div>
-        <div className="absolute bottom-0 right-0 w-12 h-12 border-r border-b border-amber-400/20 rounded-br-2xl"></div>
+        {/* Enhanced corner decorations with glow animation */}
+        <div className="absolute top-0 left-0 w-20 h-20 border-l-2 border-t-2 border-amber-400/40 rounded-tl-2xl group-hover:border-amber-400/70 group-hover:w-24 group-hover:h-24 transition-all duration-700"></div>
+        <div className="absolute top-0 left-0 w-12 h-12 border-l border-t border-amber-400/25 rounded-tl-2xl group-hover:border-amber-400/50 transition-all duration-700"></div>
+        <div className="absolute bottom-0 right-0 w-20 h-20 border-r-2 border-b-2 border-amber-400/40 rounded-br-2xl group-hover:border-amber-400/70 group-hover:w-24 group-hover:h-24 transition-all duration-700"></div>
+        <div className="absolute bottom-0 right-0 w-12 h-12 border-r border-b border-amber-400/25 rounded-br-2xl group-hover:border-amber-400/50 transition-all duration-700"></div>
       </div>
     </div>
   );
