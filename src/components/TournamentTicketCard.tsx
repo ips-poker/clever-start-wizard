@@ -12,7 +12,9 @@ import {
   Coins,
   Crown,
   Gem,
-  Target
+  Target,
+  QrCode,
+  Zap
 } from "lucide-react";
 
 interface Tournament {
@@ -46,17 +48,38 @@ interface TournamentTicketCardProps {
 export function TournamentTicketCard({ tournament, onViewDetails, onRegister }: TournamentTicketCardProps) {
   const getStatusBadge = (status: string) => {
     const statusConfig = {
-      'registration': { label: 'Регистрация открыта', className: 'bg-green-500/20 text-green-400 border-green-500/30' },
-      'running': { label: 'Турнир проходит', className: 'bg-red-500/20 text-red-400 border-red-500/30' },
-      'scheduled': { label: 'Запланирован', className: 'bg-blue-500/20 text-blue-400 border-blue-500/30' },
-      'completed': { label: 'Завершен', className: 'bg-gray-500/20 text-gray-400 border-gray-500/30' },
-      'paused': { label: 'Приостановлен', className: 'bg-gray-500/20 text-gray-400 border-gray-500/30' }
+      'registration': { 
+        label: 'Регистрация открыта', 
+        className: 'bg-green-500/30 text-green-300 border-2 border-green-500/50 shadow-lg shadow-green-500/20',
+        glow: 'shadow-green-500/30'
+      },
+      'running': { 
+        label: 'Турнир проходит', 
+        className: 'bg-red-500/30 text-red-300 border-2 border-red-500/50 shadow-lg shadow-red-500/20',
+        glow: 'shadow-red-500/30'
+      },
+      'scheduled': { 
+        label: 'Запланирован', 
+        className: 'bg-blue-500/30 text-blue-300 border-2 border-blue-500/50 shadow-lg shadow-blue-500/20',
+        glow: 'shadow-blue-500/30'
+      },
+      'completed': { 
+        label: 'Завершен', 
+        className: 'bg-gray-500/30 text-gray-300 border-2 border-gray-500/50 shadow-lg',
+        glow: ''
+      },
+      'paused': { 
+        label: 'Приостановлен', 
+        className: 'bg-gray-500/30 text-gray-300 border-2 border-gray-500/50 shadow-lg',
+        glow: ''
+      }
     };
 
     const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.scheduled;
     
     return (
-      <Badge className={`px-3 py-1 rounded-full text-xs font-medium border ${config.className}`}>
+      <Badge className={`px-3 py-1 rounded-full text-xs font-bold ${config.className}`}>
+        <span className={`inline-block w-2 h-2 rounded-full mr-2 ${config.glow ? `bg-current ${config.glow}` : 'bg-current'}`}></span>
         {config.label}
       </Badge>
     );
@@ -80,6 +103,30 @@ export function TournamentTicketCard({ tournament, onViewDetails, onRegister }: 
   const isFilling = spotsLeft <= 3 && spotsLeft > 0;
   const ticketNumber = tournament.id.split('-')[0].toUpperCase();
   const barcodeSegments = Array.from({ length: 35 }, (_, i) => Math.random() > 0.3);
+  
+  // Calculate time until start
+  const timeUntilStart = () => {
+    const now = new Date();
+    const start = new Date(tournament.start_time);
+    const diff = start.getTime() - now.getTime();
+    
+    if (diff <= 0) return null;
+    
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    
+    if (hours > 24) {
+      const days = Math.floor(hours / 24);
+      return `через ${days}д`;
+    }
+    if (hours > 0) {
+      return `через ${hours}ч ${minutes}м`;
+    }
+    return `через ${minutes}м`;
+  };
+  
+  // Calculate prize pool
+  const prizePool = tournament.participation_fee * registeredCount;
 
   return (
     <div className="group relative w-full max-w-sm mx-auto">
@@ -118,6 +165,14 @@ export function TournamentTicketCard({ tournament, onViewDetails, onRegister }: 
           <div className="absolute bottom-4 left-6 text-3xl text-amber-500 transform -rotate-30">♣</div>
         </div>
         
+        {/* Security pattern watermark */}
+        <div className="absolute inset-0 opacity-[0.02] overflow-hidden pointer-events-none">
+          <div className="absolute inset-0" style={{
+            backgroundImage: `repeating-linear-gradient(45deg, transparent, transparent 10px, currentColor 10px, currentColor 11px)`,
+            color: '#fbbf24'
+          }}></div>
+        </div>
+        
         {/* Premium badge watermark */}
         <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 opacity-5 pointer-events-none">
           <div className="text-8xl font-bold text-amber-400 tracking-widest">VIP</div>
@@ -125,37 +180,74 @@ export function TournamentTicketCard({ tournament, onViewDetails, onRegister }: 
 
         {/* Top section - Tournament Info */}
         <div className="p-5 relative z-10">
-          {/* Ticket number badge - top right corner */}
-          <div className="absolute top-3 right-3 bg-gradient-to-br from-amber-500/20 to-amber-600/20 backdrop-blur-sm border-2 border-amber-400/40 rounded-lg px-3 py-2 shadow-lg">
-            <div className="flex items-center gap-2">
-              <div className="flex flex-col">
-                <span className="text-[9px] text-amber-400/90 font-mono uppercase tracking-widest">TICKET</span>
-                <span className="text-sm text-amber-300 font-bold font-mono tracking-wide">#{ticketNumber}</span>
+          {/* Ticket number badge - holographic effect */}
+          <div className="absolute top-3 right-3 bg-gradient-to-br from-amber-500/30 via-amber-400/20 to-amber-600/30 backdrop-blur-sm border-2 border-amber-400/50 rounded-lg px-3 py-2 shadow-2xl shadow-amber-500/20">
+            <div className="relative">
+              <div className="absolute inset-0 bg-gradient-to-r from-amber-300 via-yellow-200 to-amber-300 opacity-20 blur-sm"></div>
+              <div className="flex items-center gap-2 relative">
+                <div className="flex flex-col">
+                  <span className="text-[9px] text-amber-300 font-mono uppercase tracking-widest font-bold">TICKET</span>
+                  <span className="text-sm text-amber-200 font-bold font-mono tracking-wide bg-gradient-to-r from-amber-200 via-yellow-100 to-amber-200 bg-clip-text text-transparent">#{ticketNumber}</span>
+                </div>
+                <Trophy className="h-4 w-4 text-amber-300" />
               </div>
-              <Trophy className="h-4 w-4 text-amber-400" />
             </div>
           </div>
           
-          {/* Premium stamp */}
-          <div className="absolute top-3 left-3 bg-red-500/10 border border-red-500/30 rounded-md px-2 py-1 rotate-[-12deg]">
-            <span className="text-[10px] text-red-400 font-bold uppercase tracking-wider">PREMIUM</span>
+          {/* Premium embossed stamp */}
+          <div className="absolute top-3 left-3 rotate-[-12deg]">
+            <div className="relative">
+              <div className="absolute inset-0 bg-red-600/20 blur-md rounded-md"></div>
+              <div className="relative bg-gradient-to-br from-red-500/20 to-red-600/20 border-2 border-red-500/40 rounded-md px-3 py-1.5 shadow-lg">
+                <div className="flex items-center gap-1.5">
+                  <Gem className="h-3 w-3 text-red-400" />
+                  <span className="text-[10px] text-red-300 font-bold uppercase tracking-wider">PREMIUM</span>
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Header with title and status */}
           <div className="text-center mb-4 pr-24">
-            <h3 className="text-xl font-light text-white tracking-wider uppercase mb-2">
+            <h3 className="text-2xl font-bold text-white tracking-wide mb-2 bg-gradient-to-r from-white via-amber-50 to-white bg-clip-text text-transparent">
               {tournament.name}
             </h3>
-            <div className="h-0.5 w-12 bg-gradient-to-r from-amber-400 to-amber-600 mx-auto mb-3"></div>
-            <div className="flex justify-center gap-2">
+            <div className="h-0.5 w-16 bg-gradient-to-r from-transparent via-amber-400 to-transparent mx-auto mb-3"></div>
+            <div className="flex justify-center gap-2 flex-wrap">
               {getStatusBadge(tournament.status)}
               {isFilling && (
-                <Badge className="bg-red-500/20 text-red-400 border-red-500/30 px-3 py-1 rounded-full text-xs font-medium border-2 shadow-lg">
-                  🔥 Осталось {spotsLeft}!
+                <Badge className="bg-red-500/30 text-red-300 border-2 border-red-500/50 px-3 py-1 rounded-full text-xs font-bold shadow-lg shadow-red-500/20">
+                  <Zap className="h-3 w-3 mr-1 inline" />
+                  Осталось {spotsLeft}!
+                </Badge>
+              )}
+              {timeUntilStart() && tournament.status === 'registration' && (
+                <Badge className="bg-blue-500/30 text-blue-300 border-2 border-blue-500/50 px-3 py-1 rounded-full text-xs font-bold shadow-lg">
+                  <Clock className="h-3 w-3 mr-1 inline" />
+                  {timeUntilStart()}
                 </Badge>
               )}
             </div>
           </div>
+
+          {/* Prize Pool Banner - NEW */}
+          {prizePool > 0 && (
+            <div className="mb-3 bg-gradient-to-r from-amber-500/20 via-yellow-500/20 to-amber-500/20 border-2 border-amber-400/40 rounded-lg p-3 shadow-xl relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-amber-400/10 to-transparent"></div>
+              <div className="flex items-center justify-between relative">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 bg-gradient-to-br from-amber-400 to-amber-600 rounded-full flex items-center justify-center shadow-lg">
+                    <Trophy className="h-4 w-4 text-white" />
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-amber-300/80 font-semibold uppercase tracking-wider">Prize Pool</p>
+                    <p className="text-xl font-bold text-amber-200 tracking-tight">{prizePool.toLocaleString()} ₽</p>
+                  </div>
+                </div>
+                <Crown className="h-8 w-8 text-amber-400/30" />
+              </div>
+            </div>
+          )}
 
           {/* Дата, время и участники */}
           <div className="grid grid-cols-2 gap-3 mb-3">
@@ -240,16 +332,31 @@ export function TournamentTicketCard({ tournament, onViewDetails, onRegister }: 
         
         {/* Bottom section - Actions */}
         <div className="p-5 bg-gradient-to-br from-slate-900/80 to-black/80 relative backdrop-blur-md border-t border-amber-400/10">
-          {/* Barcode */}
-          <div className="mb-4 flex justify-center">
-            <div className="bg-white/98 rounded-md px-4 py-3 flex items-center gap-0.5 shadow-xl border border-slate-300">
-              {barcodeSegments.map((tall, i) => (
-                <div 
-                  key={i} 
-                  className={`${tall ? 'h-10' : 'h-7'} w-[2.5px] bg-slate-900`}
-                  style={{ opacity: 0.85 + Math.random() * 0.15 }}
-                />
-              ))}
+          <div className="flex items-start justify-between gap-4 mb-4">
+            {/* Barcode */}
+            <div className="flex-1">
+              <div className="bg-white/98 rounded-md px-3 py-2.5 flex items-center gap-0.5 shadow-xl border border-slate-300">
+                {barcodeSegments.map((tall, i) => (
+                  <div 
+                    key={i} 
+                    className={`${tall ? 'h-9' : 'h-6'} w-[2px] bg-slate-900`}
+                    style={{ opacity: 0.85 + Math.random() * 0.15 }}
+                  />
+                ))}
+              </div>
+              <div className="text-center mt-1">
+                <p className="text-[8px] text-white/40 font-mono tracking-widest">
+                  {ticketNumber}-{tournament.id.split('-')[1]?.toUpperCase()}
+                </p>
+              </div>
+            </div>
+            
+            {/* QR Code */}
+            <div className="bg-white/98 rounded-md p-2 shadow-xl border border-slate-300">
+              <div className="w-16 h-16 bg-gradient-to-br from-slate-900 to-slate-800 rounded flex items-center justify-center">
+                <QrCode className="h-12 w-12 text-white" />
+              </div>
+              <p className="text-[7px] text-slate-600 text-center mt-1 font-mono">SCAN ME</p>
             </div>
           </div>
           
