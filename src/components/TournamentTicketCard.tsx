@@ -3,6 +3,7 @@ import Barcode from "react-barcode";
 import { QRCodeSVG } from "qrcode.react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { calculateTotalRPSPool, formatRPSPoints, formatParticipationFee } from "@/utils/rpsCalculations";
 import { 
   Calendar, 
   Clock, 
@@ -38,6 +39,8 @@ interface Tournament {
   additional_level?: number;
   break_start_level?: number;
   calculated_prize_pool?: number;
+  total_reentries?: number;
+  total_additional_sets?: number;
   _count?: {
     tournament_registrations: number;
   };
@@ -114,6 +117,18 @@ export function TournamentTicketCard({ tournament, onViewDetails, onRegister }: 
     url: `${window.location.origin}/tournaments?id=${tournament.id}`
   });
   
+  // Calculate RPS prize pool using data from tournament
+  const totalReentries = tournament.total_reentries || 0;
+  const totalAdditionalSets = tournament.total_additional_sets || 0;
+  const totalRPSPool = calculateTotalRPSPool(
+    registeredCount,
+    tournament.participation_fee,
+    totalReentries,
+    tournament.reentry_fee || 0,
+    totalAdditionalSets,
+    tournament.additional_fee || 0
+  );
+  
   // Calculate time until start
   const timeUntilStart = () => {
     const now = new Date();
@@ -134,9 +149,6 @@ export function TournamentTicketCard({ tournament, onViewDetails, onRegister }: 
     }
     return `через ${minutes}м`;
   };
-  
-  // Use calculated prize pool from backend or fallback to simple calculation
-  const prizePool = tournament.calculated_prize_pool ?? (tournament.participation_fee * registeredCount);
   
   // Get format icon
   const getFormatIcon = () => {
@@ -258,8 +270,8 @@ export function TournamentTicketCard({ tournament, onViewDetails, onRegister }: 
             </div>
           </div>
 
-          {/* Prize Pool Banner */}
-          {prizePool > 0 && (
+          {/* RPS Prize Pool Banner */}
+          {totalRPSPool > 0 && (
             <div className="mb-3 bg-gradient-to-r from-amber-500/20 via-yellow-500/20 to-amber-500/20 border-2 border-amber-400/40 rounded-lg p-2.5 shadow-xl relative overflow-hidden">
               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-amber-400/10 to-transparent"></div>
               <div className="flex items-center justify-between relative">
@@ -268,8 +280,8 @@ export function TournamentTicketCard({ tournament, onViewDetails, onRegister }: 
                     <Trophy className="h-3.5 w-3.5 text-white" />
                   </div>
                   <div>
-                    <p className="text-[10px] text-amber-300/80 font-semibold uppercase tracking-wider">Prize Pool</p>
-                    <p className="text-xl font-bold text-amber-200 tracking-tight">{prizePool.toLocaleString()} ₽</p>
+                    <p className="text-[10px] text-amber-300/80 font-semibold uppercase tracking-wider">Фонд RPS баллов</p>
+                    <p className="text-xl font-bold text-amber-200 tracking-tight">{formatRPSPoints(totalRPSPool)}</p>
                   </div>
                 </div>
                 <Crown className="h-7 w-7 text-amber-400/30" />
@@ -330,9 +342,9 @@ export function TournamentTicketCard({ tournament, onViewDetails, onRegister }: 
                 </div>
                 <h4 className="text-xs font-semibold text-green-300">Орг. взнос</h4>
               </div>
-              <p className="text-2xl font-bold text-green-200">{tournament.participation_fee.toLocaleString()} ₽</p>
+              <p className="text-2xl font-bold text-green-200">{formatParticipationFee(tournament.participation_fee)}</p>
               {(tournament.reentry_fee && tournament.reentry_fee > 0) && (
-                <p className="text-[10px] text-white/60 mt-0.5">Re-entry: {tournament.reentry_fee.toLocaleString()} ₽</p>
+                <p className="text-[10px] text-white/60 mt-0.5">Re-entry: {formatParticipationFee(tournament.reentry_fee)}</p>
               )}
             </div>
 
@@ -399,7 +411,7 @@ export function TournamentTicketCard({ tournament, onViewDetails, onRegister }: 
               <div className="flex flex-col items-start">
                 <span className="text-sm font-semibold">{getButtonText(tournament.status)}</span>
                 {tournament.status === 'registration' && (
-                  <span className="text-xs font-normal text-amber-100">Взнос: {tournament.participation_fee.toLocaleString()} ₽</span>
+                  <span className="text-xs font-normal text-amber-100">Взнос: {formatParticipationFee(tournament.participation_fee)}</span>
                 )}
               </div>
             </div>

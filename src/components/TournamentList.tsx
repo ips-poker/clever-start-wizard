@@ -25,6 +25,8 @@ interface Tournament {
   reentry_end_level: number;
   additional_level: number;
   break_start_level: number;
+  total_reentries?: number;
+  total_additional_sets?: number;
   _count?: {
     tournament_registrations: number;
   };
@@ -88,19 +90,14 @@ export function TournamentList() {
         // Calculate total reentries and additional sets
         const totalReentries = registrations.reduce((sum, reg) => sum + (reg.reentries || 0), 0);
         const totalAdditionalSets = registrations.reduce((sum, reg) => sum + (reg.additional_sets || 0), 0);
-        
-        // Calculate total prize pool
-        const prizePool = 
-          (tournament.participation_fee * registeredCount) +
-          (tournament.reentry_fee * totalReentries) +
-          (tournament.additional_fee * totalAdditionalSets);
 
         return {
           ...tournament,
           _count: {
             tournament_registrations: registeredCount
           },
-          calculated_prize_pool: prizePool
+          total_reentries: totalReentries,
+          total_additional_sets: totalAdditionalSets
         };
       }) || [];
 
