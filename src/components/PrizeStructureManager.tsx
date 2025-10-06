@@ -405,33 +405,57 @@ const PrizeStructureManager = ({ tournamentId, registeredPlayers, mode = 'manage
               />
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <Label className="text-xs text-gray-500 tracking-wide uppercase">Зарегистрировано игроков</Label>
-                <Input
-                  type="number"
-                  value={registeredPlayers}
-                  disabled
-                  className="bg-gray-50/80 border-gray-200/50"
-                />
-              </div>
-              <div>
-                <Label className="text-xs text-gray-500 tracking-wide uppercase">Повторные входы и Доп наборы</Label>
-                <div className="text-sm text-gray-600 space-y-1">
-                  <div>Повторные входы: {registrations.reduce((sum, reg) => {
-                    const count = (reg.reentries !== undefined ? reg.reentries : reg.rebuys) || 0;
-                    return sum + count;
-                  }, 0)} × {tournament?.reentry_fee || tournament?.rebuy_cost || 0} ₽ ({tournament?.reentry_chips || tournament?.rebuy_chips || 0} фишек)</div>
-                  <div>Доп наборы: {registrations.reduce((sum, reg) => {
-                    const count = (reg.additional_sets !== undefined ? reg.additional_sets : reg.addons) || 0;
-                    return sum + count;
-                  }, 0)} × {tournament?.additional_fee || tournament?.addon_cost || 0} ₽ ({tournament?.additional_chips || tournament?.addon_chips || 0} фишек)</div>
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="p-4 bg-blue-50/50 rounded-lg border border-blue-200/50">
+                  <Label className="text-xs text-blue-600 tracking-wide uppercase mb-2 block">Орг. взнос</Label>
+                  <div className="text-lg font-semibold text-blue-800">
+                    {(tournament?.participation_fee || tournament?.buy_in || 0).toLocaleString()} ₽
+                  </div>
+                  <div className="text-sm text-blue-600 mt-1">
+                    {(tournament?.starting_chips || 0).toLocaleString()} фишек
+                  </div>
+                </div>
+                <div className="p-4 bg-green-50/50 rounded-lg border border-green-200/50">
+                  <Label className="text-xs text-green-600 tracking-wide uppercase mb-2 block">Повторный вход</Label>
+                  <div className="text-lg font-semibold text-green-800">
+                    {(tournament?.reentry_fee || tournament?.rebuy_cost || 0).toLocaleString()} ₽
+                  </div>
+                  <div className="text-sm text-green-600 mt-1">
+                    {(tournament?.reentry_chips || tournament?.rebuy_chips || 0).toLocaleString()} фишек
+                  </div>
                 </div>
               </div>
-              <div>
-                <Label className="text-xs text-gray-500 tracking-wide uppercase">Общий призовой фонд</Label>
-                <div className="text-xl font-light text-gray-800">
-                  {totalPrizePool.toLocaleString()} RPS
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="p-4 bg-gray-50/50 rounded-lg border border-gray-200/50">
+                  <Label className="text-xs text-gray-600 tracking-wide uppercase mb-2 block">Зарегистрировано</Label>
+                  <div className="text-2xl font-bold text-gray-800">{registeredPlayers}</div>
+                </div>
+                <div className="p-4 bg-purple-50/50 rounded-lg border border-purple-200/50">
+                  <Label className="text-xs text-purple-600 tracking-wide uppercase mb-2 block">Статистика</Label>
+                  <div className="text-sm text-purple-800 space-y-1">
+                    <div className="flex justify-between">
+                      <span>Повторные входы:</span>
+                      <span className="font-semibold">{registrations.reduce((sum, reg) => {
+                        const count = (reg.reentries !== undefined ? reg.reentries : reg.rebuys) || 0;
+                        return sum + count;
+                      }, 0)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Доп наборы:</span>
+                      <span className="font-semibold">{registrations.reduce((sum, reg) => {
+                        const count = (reg.additional_sets !== undefined ? reg.additional_sets : reg.addons) || 0;
+                        return sum + count;
+                      }, 0)}</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="p-4 bg-amber-50/50 rounded-lg border border-amber-200/50">
+                  <Label className="text-xs text-amber-600 tracking-wide uppercase mb-2 block">Общий фонд</Label>
+                  <div className="text-2xl font-bold text-amber-800">
+                    {totalPrizePool.toLocaleString()} RPS
+                  </div>
                 </div>
               </div>
             </div>
