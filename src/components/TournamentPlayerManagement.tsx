@@ -46,6 +46,8 @@ interface Registration {
   chips: number;
   reentries: number; // Количество повторных входов
   additional_sets: number; // Количество дополнительных наборов
+  rebuys?: number; // Старое поле для обратной совместимости
+  addons?: number; // Старое поле для обратной совместимости
   status: string;
   position?: number;
   seat_number?: number;
@@ -169,14 +171,17 @@ const TournamentPlayerManagement = ({ tournament, players, registrations, onRegi
     const registration = registrations.find(r => r.id === registrationId);
     if (!registration) return;
 
-    const newReentries = Math.max(0, registration.reentries + change);
+    // Используем и старое и новое поле для совместимости
+    const currentReentries = registration.reentries || registration.rebuys || 0;
+    const newReentries = Math.max(0, currentReentries + change);
     const chipsChange = change > 0 ? tournament.reentry_chips : -tournament.reentry_chips;
     const newChips = Math.max(0, registration.chips + chipsChange);
 
     const { error } = await supabase
       .from('tournament_registrations')
       .update({
-        rebuys: newReentries, // Временно используем старое поле
+        reentries: newReentries,
+        rebuys: newReentries, // Дублируем в старое поле для совместимости
         chips: newChips
       })
       .eq('id', registrationId);
@@ -201,14 +206,17 @@ const TournamentPlayerManagement = ({ tournament, players, registrations, onRegi
     const registration = registrations.find(r => r.id === registrationId);
     if (!registration) return;
 
-    const newAdditionalSets = Math.max(0, registration.additional_sets + change);
+    // Используем и старое и новое поле для совместимости
+    const currentAdditionalSets = registration.additional_sets || registration.addons || 0;
+    const newAdditionalSets = Math.max(0, currentAdditionalSets + change);
     const chipsChange = change > 0 ? tournament.additional_chips : -tournament.additional_chips;
     const newChips = Math.max(0, registration.chips + chipsChange);
 
     const { error } = await supabase
       .from('tournament_registrations')
       .update({
-        addons: newAdditionalSets, // Временно используем старое поле
+        additional_sets: newAdditionalSets,
+        addons: newAdditionalSets, // Дублируем в старое поле для совместимости
         chips: newChips
       })
       .eq('id', registrationId);
@@ -232,9 +240,9 @@ const TournamentPlayerManagement = ({ tournament, players, registrations, onRegi
   const totalRPSPool = calculateTotalRPSPool(
     registrations.length,
     tournament.participation_fee,
-    registrations.reduce((sum, reg) => sum + reg.reentries, 0),
+    registrations.reduce((sum, reg) => sum + (reg.reentries || reg.rebuys || 0), 0),
     tournament.reentry_fee,
-    registrations.reduce((sum, reg) => sum + reg.additional_sets, 0),
+    registrations.reduce((sum, reg) => sum + (reg.additional_sets || reg.addons || 0), 0),
     tournament.additional_fee
   );
 
@@ -310,13 +318,13 @@ const TournamentPlayerManagement = ({ tournament, players, registrations, onRegi
                 <div className="flex justify-between items-center p-3 bg-green-50/50 rounded-xl">
                   <span className="text-sm text-slate-600 font-light">Повторные входы</span>
                   <span className="text-lg font-medium text-green-600">
-                    {(tournament.reentry_fee * registrations.reduce((sum, reg) => sum + reg.reentries, 0)).toLocaleString()} ₽
+                    {(tournament.reentry_fee * registrations.reduce((sum, reg) => sum + (reg.reentries || reg.rebuys || 0), 0)).toLocaleString()} ₽
                   </span>
                 </div>
                 <div className="flex justify-between items-center p-3 bg-blue-50/50 rounded-xl">
                   <span className="text-sm text-slate-600 font-light">Доп наборы</span>
                   <span className="text-lg font-medium text-blue-600">
-                    {(tournament.additional_fee * registrations.reduce((sum, reg) => sum + reg.additional_sets, 0)).toLocaleString()} ₽
+                    {(tournament.additional_fee * registrations.reduce((sum, reg) => sum + (reg.additional_sets || reg.addons || 0), 0)).toLocaleString()} ₽
                   </span>
                 </div>
                 <div className="border-t border-slate-200 pt-3">
@@ -393,7 +401,7 @@ const TournamentPlayerManagement = ({ tournament, players, registrations, onRegi
                       <div className="text-center">
                         <div className="text-xs text-slate-500 mb-1">Повторные входы + Доп. наборы</div>
                         <div className="text-lg font-light text-slate-800">
-                          {registration.reentries + registration.additional_sets}
+                          {(registration.reentries || registration.rebuys || 0) + (registration.additional_sets || registration.addons || 0)}
                         </div>
                       </div>
                       <div className="flex items-center space-x-1">
@@ -406,16 +414,16 @@ const TournamentPlayerManagement = ({ tournament, players, registrations, onRegi
                         >
                           <Plus className="h-3 w-3" />
                         </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => updateReentries(registration.id, -1)}
-                          disabled={registration.reentries === 0}
-                          className="h-8 w-8 p-0"
-                          title="Убрать повторный вход"
-                        >
-                          <Minus className="h-3 w-3" />
-                        </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => updateReentries(registration.id, -1)}
+                            disabled={(registration.reentries || registration.rebuys || 0) === 0}
+                            className="h-8 w-8 p-0"
+                            title="Убрать повторный вход"
+                          >
+                            <Minus className="h-3 w-3" />
+                          </Button>
                         {tournament.current_level === tournament.additional_level && (
                           <Button
                             variant="outline"
@@ -466,10 +474,10 @@ const TournamentPlayerManagement = ({ tournament, players, registrations, onRegi
                     </div>
                     <div className="text-right">
                       <div className="text-sm text-muted-foreground">
-                        Повторных входов: {registration.reentries}
+                        Повторных входов: {registration.reentries || registration.rebuys || 0}
                       </div>
                       <div className="text-sm text-muted-foreground">
-                        Доп. наборов: {registration.additional_sets}
+                        Доп. наборов: {registration.additional_sets || registration.addons || 0}
                       </div>
                     </div>
                   </div>
