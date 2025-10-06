@@ -49,11 +49,11 @@ export function Hero() {
               <div className="mb-8 flex justify-center animate-fade-in">
                 <div className="relative group">
                   <div className="absolute -inset-4 bg-gradient-to-r from-amber-500/20 via-amber-400/30 to-amber-500/20 rounded-full blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
-                  <div className="relative bg-white rounded-2xl p-4 shadow-2xl group-hover:shadow-amber-500/30 transition-all duration-500">
+                  <div className="relative bg-gradient-to-br from-white via-gray-50 to-gray-100 rounded-2xl p-3 shadow-2xl group-hover:shadow-amber-500/30 transition-all duration-500 ring-1 ring-white/20 group-hover:ring-amber-400/30">
                     <img 
                       src={epcLogo} 
                       alt="EPC Logo" 
-                      className="h-24 w-auto group-hover:scale-105 transition-transform duration-500"
+                      className="h-20 w-auto group-hover:scale-105 transition-transform duration-500"
                     />
                   </div>
                 </div>
