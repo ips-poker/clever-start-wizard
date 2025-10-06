@@ -205,8 +205,7 @@ export function Hero() {
                 <Link to="/rating">
                   <Button 
                     size="lg" 
-                    variant="outline"
-                    className="border-2 border-amber-400/50 text-amber-400 hover:bg-amber-400/10 hover:border-amber-400/70 backdrop-blur-xl font-semibold px-8 py-6 text-lg rounded-xl transition-all duration-300 group"
+                    className="bg-white/5 border-2 border-amber-400/30 text-amber-400 hover:bg-amber-400/10 hover:border-amber-400/50 backdrop-blur-xl font-semibold px-8 py-6 text-lg rounded-xl transition-all duration-300 group shadow-lg hover:shadow-amber-400/20"
                   >
                     <TrendingUp className="mr-2 h-5 w-5 group-hover:scale-110 transition-transform" />
                     {getContent('cta_secondary', 'Рейтинг RPS')}

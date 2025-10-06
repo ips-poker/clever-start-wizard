@@ -310,9 +310,8 @@ export function TopPlayers() {
             <div className="text-center mb-8">
               <div className="flex flex-col items-center gap-4">
                 <Button 
-                  variant="outline" 
                   onClick={() => setShowAll(!showAll)} 
-                  className="group border-amber-400/50 text-amber-400 hover:bg-amber-400/10 transition-all duration-300"
+                  className="group bg-white/5 border-2 border-amber-400/30 text-amber-400 hover:bg-amber-400/10 hover:border-amber-400/50 backdrop-blur-xl transition-all duration-300 shadow-lg hover:shadow-amber-400/20"
                 >
                   <span>{showAll ? 'Скрыть полный рейтинг' : 'Посмотреть полный рейтинг'}</span>
                   <ChevronRight className={`w-4 h-4 ml-2 transition-transform ${showAll ? 'rotate-90' : 'group-hover:translate-x-1'}`} />
@@ -330,9 +329,12 @@ export function TopPlayers() {
                       />
                     </div>
                     <Button 
-                      variant={showFirstPlaceOnly ? "default" : "outline"} 
                       onClick={() => setShowFirstPlaceOnly(!showFirstPlaceOnly)} 
-                      className="flex items-center gap-2 border-amber-400/50 text-amber-400 hover:bg-amber-400/10"
+                      className={`flex items-center gap-2 transition-all duration-300 ${
+                        showFirstPlaceOnly 
+                          ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-white border-2 border-transparent hover:from-amber-600 hover:to-amber-700' 
+                          : 'bg-white/5 border-2 border-amber-400/30 text-amber-400 hover:bg-amber-400/10 hover:border-amber-400/50'
+                      }`}
                     >
                       <Filter className="w-4 h-4" />
                       <span className="hidden sm:inline">Только победители</span>
@@ -430,8 +432,7 @@ export function TopPlayers() {
               </Link>
               <Link to="/tournaments">
                 <Button 
-                  variant="outline" 
-                  className="border-amber-400/50 text-amber-400 hover:bg-amber-400/10 px-8 py-3 font-medium transition-all duration-300"
+                  className="bg-white/5 border-2 border-amber-400/30 text-amber-400 hover:bg-amber-400/10 hover:border-amber-400/50 backdrop-blur-xl px-8 py-3 font-medium transition-all duration-300 shadow-lg hover:shadow-amber-400/20"
                 >
                   <Users className="h-4 w-4 mr-2" />
                   Участвовать

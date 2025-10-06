@@ -265,12 +265,11 @@ export function TournamentList() {
 
         <div className="text-center mt-12">
           <Button 
-            variant="outline" 
             size="lg" 
-            className="border-amber-400/50 text-amber-400 hover:bg-amber-400/10 px-8 py-4 font-medium rounded-lg transition-all duration-300"
+            className="bg-white/5 border-2 border-amber-400/30 text-amber-400 hover:bg-amber-400/10 hover:border-amber-400/50 backdrop-blur-xl px-8 py-4 font-medium rounded-xl transition-all duration-300 group shadow-lg hover:shadow-amber-400/20"
             onClick={() => window.location.href = '/tournaments'}
           >
-            <ChevronRight className="h-5 w-5 mr-2" />
+            <ChevronRight className="h-5 w-5 mr-2 group-hover:translate-x-1 transition-transform" />
             Показать все турниры
           </Button>
         </div>

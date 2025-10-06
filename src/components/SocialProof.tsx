@@ -314,7 +314,7 @@ export function SocialProof() {
                 <UserCheck className="w-5 h-5 mr-2" />
                 Присоединиться бесплатно
               </Button>
-              <Button size="lg" variant="outline" className="border-2 border-amber-400/50 text-amber-400 hover:bg-amber-400/20 hover:border-amber-400 font-medium transition-all duration-300 px-8">
+              <Button size="lg" className="bg-white/5 border-2 border-amber-400/30 text-amber-400 hover:bg-amber-400/10 hover:border-amber-400/50 backdrop-blur-xl font-medium transition-all duration-300 px-8 shadow-lg hover:shadow-amber-400/20">
                 Подробнее о клубе
                 <ArrowRight className="w-5 h-5 ml-2" />
               </Button>
