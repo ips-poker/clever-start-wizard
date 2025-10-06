@@ -170,11 +170,15 @@ const PrizeStructureManager = ({ tournamentId, registeredPlayers, mode = 'manage
     
     const mainTotal = participationFee * registeredPlayers;
     const reentryTotal = registrations.reduce((sum, reg) => {
-      const count = (reg.reentries !== undefined ? reg.reentries : reg.rebuys) || 0;
+      const reentries = reg.reentries || 0;
+      const rebuys = reg.rebuys || 0;
+      const count = reentries + rebuys;
       return sum + (count * reentryFee);
     }, 0);
     const additionalTotal = registrations.reduce((sum, reg) => {
-      const count = (reg.additional_sets !== undefined ? reg.additional_sets : reg.addons) || 0;
+      const additionalSets = reg.additional_sets || 0;
+      const addons = reg.addons || 0;
+      const count = additionalSets + addons;
       return sum + (count * additionalFee);
     }, 0);
     
@@ -438,15 +442,17 @@ const PrizeStructureManager = ({ tournamentId, registeredPlayers, mode = 'manage
                     <div className="flex justify-between">
                       <span>Повторные входы:</span>
                       <span className="font-semibold">{registrations.reduce((sum, reg) => {
-                        const count = (reg.reentries !== undefined ? reg.reentries : reg.rebuys) || 0;
-                        return sum + count;
+                        const reentries = reg.reentries || 0;
+                        const rebuys = reg.rebuys || 0;
+                        return sum + reentries + rebuys;
                       }, 0)}</span>
                     </div>
                     <div className="flex justify-between">
                       <span>Доп наборы:</span>
                       <span className="font-semibold">{registrations.reduce((sum, reg) => {
-                        const count = (reg.additional_sets !== undefined ? reg.additional_sets : reg.addons) || 0;
-                        return sum + count;
+                        const additionalSets = reg.additional_sets || 0;
+                        const addons = reg.addons || 0;
+                        return sum + additionalSets + addons;
                       }, 0)}</span>
                     </div>
                   </div>

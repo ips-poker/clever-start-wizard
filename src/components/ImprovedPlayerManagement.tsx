@@ -30,6 +30,9 @@ interface Tournament {
   addon_level?: number;
   reentry_chips?: number;
   additional_chips?: number;
+  participation_fee?: number;
+  reentry_fee?: number;
+  additional_fee?: number;
 }
 
 interface Player {
@@ -49,6 +52,8 @@ interface Registration {
   status: string;
   position?: number;
   seat_number?: number;
+  reentries?: number;
+  additional_sets?: number;
 }
 
 interface ImprovedPlayerManagementProps {
@@ -220,16 +225,20 @@ const ImprovedPlayerManagement = ({ tournament, players, registrations, onRegist
     // Используем новые поля с fallback на старые
     const reentryChips = tournament.reentry_chips || tournament.rebuy_chips || 0;
     
-    const newRebuys = Math.max(0, registration.rebuys + change);
+    // Определяем какое поле использовать
+    const useNewFields = tournament.participation_fee !== undefined;
+    const currentCount = useNewFields ? (registration.reentries || 0) : (registration.rebuys || 0);
+    const newCount = Math.max(0, currentCount + change);
     const chipsChange = change > 0 ? reentryChips : -reentryChips;
     const newChips = Math.max(0, registration.chips + chipsChange);
 
+    const updateData = useNewFields 
+      ? { reentries: newCount, chips: newChips }
+      : { rebuys: newCount, chips: newChips };
+
     const { error } = await supabase
       .from('tournament_registrations')
-      .update({ 
-        rebuys: newRebuys,
-        chips: newChips
-      })
+      .update(updateData)
       .eq('id', registrationId);
 
     if (error) {

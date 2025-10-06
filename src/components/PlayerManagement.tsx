@@ -303,15 +303,19 @@ const PlayerManagement = ({ tournament, players, registrations, onRegistrationUp
     // Используем новые поля с fallback на старые
     const reentryChips = tournament.reentry_chips || tournament.rebuy_chips || 0;
     
-    const newRebuys = Math.max(0, registration.rebuys + change);
+    // Определяем какое поле использовать
+    const useNewFields = tournament.participation_fee !== undefined;
+    const currentCount = useNewFields ? (registration.reentries || 0) : (registration.rebuys || 0);
+    const newCount = Math.max(0, currentCount + change);
     const newChips = registration.chips + (change > 0 ? reentryChips : -reentryChips);
+
+    const updateData = useNewFields 
+      ? { reentries: newCount, chips: Math.max(0, newChips) }
+      : { rebuys: newCount, chips: Math.max(0, newChips) };
 
     const { error } = await supabase
       .from('tournament_registrations')
-      .update({ 
-        rebuys: newRebuys,
-        chips: Math.max(0, newChips)
-      })
+      .update(updateData)
       .eq('id', registrationId);
 
     if (error) {
@@ -332,15 +336,19 @@ const PlayerManagement = ({ tournament, players, registrations, onRegistrationUp
     // Используем новые поля с fallback на старые
     const additionalChips = tournament.additional_chips || tournament.addon_chips || 0;
     
-    const newAddons = Math.max(0, registration.addons + change);
+    // Определяем какое поле использовать
+    const useNewFields = tournament.participation_fee !== undefined;
+    const currentCount = useNewFields ? (registration.additional_sets || 0) : (registration.addons || 0);
+    const newCount = Math.max(0, currentCount + change);
     const newChips = registration.chips + (change > 0 ? additionalChips : -additionalChips);
+
+    const updateData = useNewFields 
+      ? { additional_sets: newCount, chips: Math.max(0, newChips) }
+      : { addons: newCount, chips: Math.max(0, newChips) };
 
     const { error } = await supabase
       .from('tournament_registrations')
-      .update({ 
-        addons: newAddons,
-        chips: Math.max(0, newChips)
-      })
+      .update(updateData)
       .eq('id', registrationId);
 
     if (error) {
