@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { Label } from '@/components/ui/label';
 import { 
   Users, ArrowUpDown, Plus, Shuffle, Play, Crown, 
   UserMinus, AlertTriangle, Target, Settings,
@@ -67,6 +68,7 @@ const TableSeating = ({
   const [newTableSize, setNewTableSize] = useState<number>(maxPlayersPerTable);
   const [balancingInProgress, setBalancingInProgress] = useState(false);
   const [isFinalTableReady, setIsFinalTableReady] = useState(false);
+  const [playersPerTable, setPlayersPerTable] = useState<number>(9);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -145,15 +147,16 @@ const TableSeating = ({
 
   const reconstructTablesFromDatabase = (seatingData: any[]) => {
     const maxSeatNumber = Math.max(...seatingData.map(s => s.seat_number || 0));
-    const totalTables = Math.ceil(maxSeatNumber / maxPlayersPerTable);
+    const currentMaxPerTable = playersPerTable;
+    const totalTables = Math.ceil(maxSeatNumber / currentMaxPerTable);
     
     const newTables: Table[] = [];
     
     for (let tableNum = 1; tableNum <= totalTables; tableNum++) {
       const seats: TableSeat[] = [];
       
-      for (let seatNum = 1; seatNum <= maxPlayersPerTable; seatNum++) {
-        const seatData = seatingData.find(s => s.seat_number === ((tableNum - 1) * maxPlayersPerTable + seatNum));
+      for (let seatNum = 1; seatNum <= currentMaxPerTable; seatNum++) {
+        const seatData = seatingData.find(s => s.seat_number === ((tableNum - 1) * currentMaxPerTable + seatNum));
         
         seats.push({
           seat_number: seatNum,
@@ -171,7 +174,7 @@ const TableSeating = ({
         table_number: tableNum,
         seats,
         active_players: activePlayers,
-        max_seats: maxPlayersPerTable,
+        max_seats: currentMaxPerTable,
         dealer_position: 1,
         table_status: 'active',
         average_stack: activePlayers > 0 ? 
@@ -187,7 +190,7 @@ const TableSeating = ({
     console.log('Инициализация столов:', {
       totalRegistrations: registrations.length,
       activePlayers: activePlayers.length,
-      maxPlayersPerTable,
+      playersPerTable,
       registrationStatuses: registrations.map(r => ({name: r.player?.name, status: r.status}))
     });
     
@@ -196,7 +199,7 @@ const TableSeating = ({
       return;
     }
     
-    const totalTables = Math.ceil(activePlayers.length / maxPlayersPerTable);
+    const totalTables = Math.ceil(activePlayers.length / playersPerTable);
     console.log(`Создаем ${totalTables} столов для ${activePlayers.length} игроков`);
     
     const newTables: Table[] = [];
@@ -204,7 +207,7 @@ const TableSeating = ({
     for (let tableNum = 1; tableNum <= totalTables; tableNum++) {
       const seats: TableSeat[] = [];
       
-      for (let seatNum = 1; seatNum <= maxPlayersPerTable; seatNum++) {
+      for (let seatNum = 1; seatNum <= playersPerTable; seatNum++) {
         seats.push({
           seat_number: seatNum,
           stack_bb: 0
@@ -215,7 +218,7 @@ const TableSeating = ({
         table_number: tableNum,
         seats,
         active_players: 0,
-        max_seats: maxPlayersPerTable,
+        max_seats: playersPerTable,
         dealer_position: 1,
         table_status: 'active',
         average_stack: 0
@@ -224,6 +227,27 @@ const TableSeating = ({
     
     console.log('Созданные столы:', newTables);
     setTables(newTables);
+  };
+
+  // Функция для расчета сбалансированного распределения игроков по столам
+  const calculateBalancedDistribution = (totalPlayers: number, maxPerTable: number) => {
+    const totalTables = Math.ceil(totalPlayers / maxPerTable);
+    const distribution: number[] = [];
+    
+    // Базовое количество игроков за столом
+    const basePlayersPerTable = Math.floor(totalPlayers / totalTables);
+    // Количество столов с дополнительным игроком
+    const tablesWithExtra = totalPlayers % totalTables;
+    
+    for (let i = 0; i < totalTables; i++) {
+      if (i < tablesWithExtra) {
+        distribution.push(basePlayersPerTable + 1);
+      } else {
+        distribution.push(basePlayersPerTable);
+      }
+    }
+    
+    return distribution;
   };
 
   const startInitialSeating = async () => {
@@ -239,37 +263,43 @@ const TableSeating = ({
       .eq('tournament_id', tournamentId);
 
     const shuffledPlayers = [...activePlayers].sort(() => Math.random() - 0.5);
-    const totalTables = Math.ceil(shuffledPlayers.length / maxPlayersPerTable);
+    const distribution = calculateBalancedDistribution(shuffledPlayers.length, playersPerTable);
     
     const newTables: Table[] = [];
+    let playerIndex = 0;
     
-    for (let tableNum = 1; tableNum <= totalTables; tableNum++) {
+    // Создаем столы согласно сбалансированному распределению
+    for (let tableNum = 1; tableNum <= distribution.length; tableNum++) {
+      const playersAtThisTable = distribution[tableNum - 1];
       const seats: TableSeat[] = [];
       
-      for (let seatNum = 1; seatNum <= maxPlayersPerTable; seatNum++) {
+      // Создаем места по максимальному количеству для этого стола
+      for (let seatNum = 1; seatNum <= playersPerTable; seatNum++) {
         seats.push({
           seat_number: seatNum,
           stack_bb: 0
         });
       }
       
-      newTables.push({
+      const table: Table = {
         table_number: tableNum,
         seats,
         active_players: 0,
-        max_seats: maxPlayersPerTable,
-        dealer_position: Math.floor(Math.random() * maxPlayersPerTable) + 1,
+        max_seats: playersPerTable,
+        dealer_position: Math.floor(Math.random() * playersPerTable) + 1,
         table_status: 'active',
         average_stack: 0
-      });
-    }
-    
-    shuffledPlayers.forEach((registration, index) => {
-      const tableIndex = Math.floor(index / maxPlayersPerTable);
-      const seatIndex = index % maxPlayersPerTable;
+      };
       
-      if (newTables[tableIndex]) {
-        newTables[tableIndex].seats[seatIndex] = {
+      // Рассаживаем игроков за этот стол рандомно
+      const availableSeats = [...Array(playersPerTable).keys()];
+      availableSeats.sort(() => Math.random() - 0.5);
+      
+      for (let i = 0; i < playersAtThisTable && playerIndex < shuffledPlayers.length; i++) {
+        const registration = shuffledPlayers[playerIndex];
+        const seatIndex = availableSeats[i];
+        
+        table.seats[seatIndex] = {
           seat_number: seatIndex + 1,
           player_id: registration.player.id,
           player_name: registration.player.name,
@@ -277,26 +307,31 @@ const TableSeating = ({
           status: registration.status,
           stack_bb: Math.round((registration.chips || 0) / bigBlind)
         };
-        newTables[tableIndex].active_players++;
+        table.active_players++;
+        playerIndex++;
       }
-    });
-
-    newTables.forEach(table => {
+      
+      // Рассчитываем средний стек
       const activeSeats = table.seats.filter(s => s.player_id);
       if (activeSeats.length > 0) {
         table.average_stack = Math.round(
           activeSeats.reduce((sum, seat) => sum + (seat.chips || 0), 0) / activeSeats.length
         );
       }
-    });
+      
+      newTables.push(table);
+    }
     
     setTables(newTables);
     await updateSeatingInDatabase(newTables);
     setIsSeatingStarted(true);
     
+    const minPlayers = Math.min(...distribution);
+    const maxPlayers = Math.max(...distribution);
+    
     toast({ 
       title: "Рассадка завершена", 
-      description: `${shuffledPlayers.length} игроков рассажено за ${totalTables} столов`,
+      description: `${shuffledPlayers.length} игроков рассажено за ${newTables.length} столов (${minPlayers}-${maxPlayers} игроков/стол)`,
       className: "font-medium"
     });
   };
@@ -306,7 +341,7 @@ const TableSeating = ({
       for (const table of tablesData) {
         for (const seat of table.seats) {
           if (seat.player_id) {
-            const seatNumber = (table.table_number - 1) * maxPlayersPerTable + seat.seat_number;
+            const seatNumber = (table.table_number - 1) * playersPerTable + seat.seat_number;
             
             const { error } = await supabase
               .from('tournament_registrations')
@@ -448,7 +483,7 @@ const TableSeating = ({
           }
         }
         
-        const absoluteSeatNumber = (tableWithFreeSpace.table_number - 1) * maxPlayersPerTable + (freeSeatIndex + 1);
+        const absoluteSeatNumber = (tableWithFreeSpace.table_number - 1) * playersPerTable + (freeSeatIndex + 1);
         await supabase
           .from('tournament_registrations')
           .update({ seat_number: absoluteSeatNumber })
@@ -614,13 +649,13 @@ const TableSeating = ({
       // Если не удалось разместить в существующие столы, создаем новые
       if (!placed) {
         const remainingUnseated = unseatedPlayers.slice(unseatedPlayers.indexOf(player));
-        const newTablesNeeded = Math.ceil(remainingUnseated.length / maxPlayersPerTable);
+        const newTablesNeeded = Math.ceil(remainingUnseated.length / playersPerTable);
         
         for (let i = 0; i < newTablesNeeded; i++) {
           const newTableNumber = Math.max(...newTables.map(t => t.table_number)) + 1;
           const seats: TableSeat[] = [];
           
-          for (let seatNum = 1; seatNum <= maxPlayersPerTable; seatNum++) {
+          for (let seatNum = 1; seatNum <= playersPerTable; seatNum++) {
             seats.push({
               seat_number: seatNum,
               stack_bb: 0
@@ -631,8 +666,8 @@ const TableSeating = ({
             table_number: newTableNumber,
             seats,
             active_players: 0,
-            max_seats: maxPlayersPerTable,
-            dealer_position: Math.floor(Math.random() * maxPlayersPerTable) + 1,
+            max_seats: playersPerTable,
+            dealer_position: Math.floor(Math.random() * playersPerTable) + 1,
             table_status: 'active',
             average_stack: 0
           };
@@ -645,7 +680,7 @@ const TableSeating = ({
         for (let i = 0; i < remainingUnseated.length; i++) {
           const currentPlayer = remainingUnseated[i];
           const currentTable = newTables[tableIndex];
-          const seatIndex = i % maxPlayersPerTable;
+          const seatIndex = i % playersPerTable;
           
           if (seatIndex === 0 && i > 0) {
             tableIndex++;
@@ -857,7 +892,7 @@ const TableSeating = ({
         setTables(newTables);
 
         // Обновляем в базе данных
-        const newAbsoluteSeatNumber = (toTable - 1) * maxPlayersPerTable + toSeat;
+        const newAbsoluteSeatNumber = (toTable - 1) * playersPerTable + toSeat;
         await supabase
           .from('tournament_registrations')
           .update({ seat_number: newAbsoluteSeatNumber })
@@ -953,7 +988,7 @@ const TableSeating = ({
             }
 
             // Обновляем в БД
-            const newAbsoluteSeatNumber = (targetTable.table_number - 1) * maxPlayersPerTable + freeSeat.seat_number;
+            const newAbsoluteSeatNumber = (targetTable.table_number - 1) * playersPerTable + freeSeat.seat_number;
             await supabase
               .from('tournament_registrations')
               .update({ seat_number: newAbsoluteSeatNumber })
@@ -1149,6 +1184,22 @@ const TableSeating = ({
             
             <div className="w-full h-px bg-slate-200 mb-6"></div>
             
+            {!isSeatingStarted && (
+              <div className="mb-6 flex items-center justify-center gap-4">
+                <Label className="text-slate-700 font-light text-sm">Игроков за столом:</Label>
+                <Select value={playersPerTable.toString()} onValueChange={(value) => setPlayersPerTable(Number(value))}>
+                  <SelectTrigger className="w-32 bg-white border-slate-200">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="8">8 игроков</SelectItem>
+                    <SelectItem value="9">9 игроков</SelectItem>
+                    <SelectItem value="10">10 игроков</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            
             <div className="flex flex-wrap gap-3 justify-center">
               {!isSeatingStarted ? (
                 <Button 
@@ -1165,7 +1216,7 @@ const TableSeating = ({
                     onClick={openNewTable}
                     variant="outline"
                     className="bg-white border-slate-200 text-slate-700 hover:bg-slate-50 px-4 py-2 rounded-lg font-light text-sm"
-                    disabled={getActivePlayers().length < maxPlayersPerTable * 2}
+                    disabled={getActivePlayers().length < playersPerTable * 2}
                   >
                     <Plus className="w-4 h-4 mr-2" />
                     Новый стол
