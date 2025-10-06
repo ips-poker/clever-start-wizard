@@ -114,12 +114,35 @@ export function TopPlayers() {
   }
   return (
     <section id="rating" className="py-20 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 relative overflow-hidden">
-      {/* Покерные масти декорация */}
+      {/* Elegant Poker Chips Background */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-10">
-        <div className="absolute top-20 left-20 text-amber-400/40 text-6xl animate-pulse transform rotate-12">♦</div>
-        <div className="absolute top-40 right-10 text-amber-400/30 text-4xl animate-bounce-subtle transform -rotate-12">♥</div>
-        <div className="absolute bottom-20 left-10 text-amber-400/35 text-5xl animate-pulse transform rotate-45">♠</div>
-        <div className="absolute bottom-40 right-20 text-amber-400/30 text-3xl animate-bounce-subtle transform -rotate-30">♣</div>
+        <div className="absolute top-20 right-24 w-24 h-24 rounded-full animate-pulse-slow">
+          <div className="absolute inset-0 rounded-full bg-gradient-to-br from-blue-400 via-blue-500 to-blue-600 shadow-2xl opacity-35"></div>
+          <div className="absolute inset-2 rounded-full bg-gradient-to-br from-slate-900 to-slate-800 border-2 border-blue-400/30 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-full border-2 border-dashed border-blue-400/25"></div>
+          </div>
+        </div>
+        
+        <div className="absolute bottom-32 left-16 w-20 h-20 rounded-full animate-bounce-subtle">
+          <div className="absolute inset-0 rounded-full bg-gradient-to-br from-amber-400 via-amber-500 to-amber-600 shadow-xl opacity-40"></div>
+          <div className="absolute inset-2 rounded-full bg-gradient-to-br from-slate-900 to-slate-800 border-2 border-amber-400/30"></div>
+        </div>
+      </div>
+      
+      {/* Elegant Poker Suits */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-10">
+        <div className="absolute top-20 left-20 animate-pulse-slow transform rotate-12">
+          <div className="text-amber-400/45 text-6xl filter drop-shadow-[0_0_18px_rgba(251,191,36,0.35)]">♦</div>
+        </div>
+        <div className="absolute top-40 right-10 animate-bounce-subtle transform -rotate-12">
+          <div className="text-red-400/40 text-4xl filter drop-shadow-[0_0_15px_rgba(248,113,113,0.35)]">♥</div>
+        </div>
+        <div className="absolute bottom-20 left-10 animate-pulse-slow transform rotate-45">
+          <div className="text-purple-400/40 text-5xl filter drop-shadow-[0_0_16px_rgba(192,132,252,0.35)]">♠</div>
+        </div>
+        <div className="absolute bottom-40 right-20 animate-bounce-subtle transform -rotate-30">
+          <div className="text-amber-400/35 text-3xl filter drop-shadow-[0_0_12px_rgba(251,191,36,0.3)]">♣</div>
+        </div>
       </div>
       
       {/* Gradient light spots */}

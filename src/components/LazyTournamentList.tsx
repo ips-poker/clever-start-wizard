@@ -5,19 +5,55 @@ const TournamentList = lazy(() => import('./TournamentList').then(module => ({ d
 
 const TournamentListSkeleton = () => (
   <section className="py-20 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 relative overflow-hidden">
-    {/* Decorative elements - Enhanced */}
-    <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-10">
-      <div className="absolute top-10 left-10 text-amber-400/40 text-5xl animate-pulse">♠</div>
-      <div className="absolute top-20 right-20 text-amber-400/30 text-4xl animate-bounce-subtle">♣</div>
-      <div className="absolute bottom-10 left-20 text-amber-400/35 text-6xl animate-pulse">♥</div>
-      <div className="absolute bottom-20 right-10 text-amber-400/30 text-3xl animate-bounce-subtle">♦</div>
-    </div>
-    
-    {/* Gradient light spots */}
-    <div className="absolute inset-0 pointer-events-none overflow-hidden">
-      <div className="absolute top-0 left-1/4 w-96 h-96 bg-amber-500/5 rounded-full blur-3xl"></div>
-      <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-purple-500/5 rounded-full blur-3xl"></div>
-    </div>
+      {/* Elegant Poker Chips Background */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-10">
+        {/* Top section chips */}
+        <div className="absolute top-10 left-10 w-20 h-20 rounded-full animate-pulse-slow">
+          <div className="absolute inset-0 rounded-full bg-gradient-to-br from-amber-400 via-amber-500 to-amber-600 shadow-2xl opacity-40"></div>
+          <div className="absolute inset-2 rounded-full bg-gradient-to-br from-slate-900 to-slate-800 border-2 border-amber-400/30"></div>
+          <div className="absolute inset-4 rounded-full border-2 border-dashed border-amber-400/20"></div>
+        </div>
+        
+        <div className="absolute top-1/4 right-16 w-16 h-16 rounded-full animate-bounce-subtle">
+          <div className="absolute inset-0 rounded-full bg-gradient-to-br from-purple-400 via-purple-500 to-purple-600 shadow-xl opacity-35"></div>
+          <div className="absolute inset-1.5 rounded-full bg-gradient-to-br from-slate-900 to-slate-800 border-2 border-purple-400/30"></div>
+        </div>
+        
+        {/* Bottom section chips */}
+        <div className="absolute bottom-20 left-1/4 w-24 h-24 rounded-full animate-pulse-slow">
+          <div className="absolute inset-0 rounded-full bg-gradient-to-br from-red-400 via-red-500 to-red-600 shadow-2xl opacity-40"></div>
+          <div className="absolute inset-2 rounded-full bg-gradient-to-br from-slate-900 to-slate-800 border-2 border-red-400/30 flex items-center justify-center">
+            <span className="text-red-400/50 font-bold text-xs">500</span>
+          </div>
+        </div>
+        
+        <div className="absolute bottom-10 right-20 w-18 h-18 rounded-full animate-bounce-subtle">
+          <div className="absolute inset-0 rounded-full bg-gradient-to-br from-blue-400 via-blue-500 to-blue-600 shadow-xl opacity-30"></div>
+          <div className="absolute inset-1.5 rounded-full bg-gradient-to-br from-slate-900 to-slate-800 border border-blue-400/30"></div>
+        </div>
+      </div>
+      
+      {/* Elegant Poker Suits */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-10">
+        <div className="absolute top-10 left-10 animate-pulse-slow">
+          <div className="text-amber-400/40 text-5xl filter drop-shadow-[0_0_15px_rgba(251,191,36,0.3)]">♠</div>
+        </div>
+        <div className="absolute top-20 right-20 animate-bounce-subtle">
+          <div className="text-purple-400/35 text-4xl filter drop-shadow-[0_0_12px_rgba(192,132,252,0.3)]">♣</div>
+        </div>
+        <div className="absolute bottom-10 left-20 animate-pulse-slow">
+          <div className="text-red-400/45 text-6xl filter drop-shadow-[0_0_20px_rgba(248,113,113,0.4)]">♥</div>
+        </div>
+        <div className="absolute bottom-20 right-10 animate-bounce-subtle">
+          <div className="text-amber-400/30 text-3xl filter drop-shadow-[0_0_10px_rgba(251,191,36,0.25)]">♦</div>
+        </div>
+      </div>
+      
+      {/* Gradient light spots */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-amber-500/5 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-purple-500/5 rounded-full blur-3xl"></div>
+      </div>
 
     <div className="container mx-auto px-4 relative z-10">
       <div className="text-center mb-12">
@@ -68,11 +104,18 @@ const TournamentListSkeleton = () => (
     {/* Custom animations */}
     <style>{`
       .animate-bounce-subtle {
-        animation: bounce-subtle 3s ease-in-out infinite;
+        animation: bounce-subtle 4s ease-in-out infinite;
+      }
+      .animate-pulse-slow {
+        animation: pulse-slow 8s ease-in-out infinite;
       }
       @keyframes bounce-subtle {
         0%, 100% { transform: translateY(0px) rotate(var(--tw-rotate)); }
-        50% { transform: translateY(-10px) rotate(var(--tw-rotate)); }
+        50% { transform: translateY(-12px) rotate(var(--tw-rotate)); }
+      }
+      @keyframes pulse-slow {
+        0%, 100% { opacity: 0.5; transform: scale(1); }
+        50% { opacity: 1; transform: scale(1.05); }
       }
     `}</style>
   </section>

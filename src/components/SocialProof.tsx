@@ -146,12 +146,36 @@ export function SocialProof() {
 
   return (
     <section className="py-20 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 relative overflow-hidden">
-      {/* Покерные масти декорация */}
+      {/* Elegant Poker Chips Background */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-10">
-        <div className="absolute top-20 right-10 text-amber-400/40 text-6xl animate-pulse transform rotate-12">♦</div>
-        <div className="absolute top-40 left-20 text-amber-400/30 text-4xl animate-bounce-subtle transform -rotate-12">♥</div>
-        <div className="absolute bottom-20 right-20 text-amber-400/35 text-5xl animate-pulse transform rotate-45">♠</div>
-        <div className="absolute bottom-40 left-10 text-amber-400/30 text-3xl animate-bounce-subtle transform -rotate-30">♣</div>
+        <div className="absolute top-20 left-20 w-22 h-22 rounded-full animate-pulse-slow">
+          <div className="absolute inset-0 rounded-full bg-gradient-to-br from-green-400 via-green-500 to-green-600 shadow-2xl opacity-35"></div>
+          <div className="absolute inset-2 rounded-full bg-gradient-to-br from-slate-900 to-slate-800 border-2 border-green-400/30 flex items-center justify-center">
+            <span className="text-green-400/40 font-bold text-xs">50</span>
+          </div>
+        </div>
+        
+        <div className="absolute bottom-24 right-20 w-20 h-20 rounded-full animate-bounce-subtle">
+          <div className="absolute inset-0 rounded-full bg-gradient-to-br from-amber-400 via-amber-500 to-amber-600 shadow-xl opacity-40"></div>
+          <div className="absolute inset-2 rounded-full bg-gradient-to-br from-slate-900 to-slate-800 border-2 border-amber-400/30"></div>
+          <div className="absolute inset-4 rounded-full border border-dashed border-amber-400/25"></div>
+        </div>
+      </div>
+      
+      {/* Elegant Poker Suits */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-10">
+        <div className="absolute top-20 right-10 animate-pulse-slow transform rotate-12">
+          <div className="text-amber-400/45 text-6xl filter drop-shadow-[0_0_20px_rgba(251,191,36,0.4)]">♦</div>
+        </div>
+        <div className="absolute top-40 left-20 animate-bounce-subtle transform -rotate-12">
+          <div className="text-red-400/35 text-4xl filter drop-shadow-[0_0_14px_rgba(248,113,113,0.3)]">♥</div>
+        </div>
+        <div className="absolute bottom-20 right-20 animate-pulse-slow transform rotate-45">
+          <div className="text-purple-400/40 text-5xl filter drop-shadow-[0_0_16px_rgba(192,132,252,0.35)]">♠</div>
+        </div>
+        <div className="absolute bottom-40 left-10 animate-bounce-subtle transform -rotate-30">
+          <div className="text-blue-400/35 text-3xl filter drop-shadow-[0_0_12px_rgba(96,165,250,0.3)]">♣</div>
+        </div>
       </div>
       
       {/* Gradient light spots */}
@@ -312,11 +336,18 @@ export function SocialProof() {
       
       <style>{`
         .animate-bounce-subtle {
-          animation: bounce-subtle 3s ease-in-out infinite;
+          animation: bounce-subtle 4s ease-in-out infinite;
+        }
+        .animate-pulse-slow {
+          animation: pulse-slow 8s ease-in-out infinite;
         }
         @keyframes bounce-subtle {
           0%, 100% { transform: translateY(0px) rotate(var(--tw-rotate)); }
-          50% { transform: translateY(-10px) rotate(var(--tw-rotate)); }
+          50% { transform: translateY(-12px) rotate(var(--tw-rotate)); }
+        }
+        @keyframes pulse-slow {
+          0%, 100% { opacity: 0.5; transform: scale(1); }
+          50% { opacity: 1; transform: scale(1.05); }
         }
       `}</style>
     </section>
