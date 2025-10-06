@@ -993,24 +993,54 @@ const PlayerManagement = ({ tournament, players, registrations, onRegistrationUp
               <div className="flex justify-between items-center p-3 bg-green-50/50 rounded-xl">
                 <span className="text-sm text-slate-600 font-light">Повторные входы</span>
                 <span className="text-lg font-light text-green-600">
-                  {((tournament.reentry_fee || tournament.rebuy_cost || 0) * registrations.reduce((sum, reg) => sum + (reg.reentries || reg.rebuys || 0), 0)).toLocaleString()} ₽
+                  {((tournament.reentry_fee || tournament.rebuy_cost || 0) * registrations.reduce((sum, reg) => {
+                    const reentries = reg.reentries || 0;
+                    const rebuys = reg.rebuys || 0;
+                    return sum + reentries + rebuys;
+                  }, 0)).toLocaleString()} ₽
                 </span>
               </div>
               <div className="flex justify-between items-center p-3 bg-blue-50/50 rounded-xl">
                 <span className="text-sm text-slate-600 font-light">Доп наборы</span>
                 <span className="text-lg font-light text-blue-600">
-                  {((tournament.additional_fee || tournament.addon_cost || 0) * registrations.reduce((sum, reg) => sum + (reg.additional_sets || reg.addons || 0), 0)).toLocaleString()} ₽
+                  {((tournament.additional_fee || tournament.addon_cost || 0) * registrations.reduce((sum, reg) => {
+                    const additionalSets = reg.additional_sets || 0;
+                    const addons = reg.addons || 0;
+                    return sum + additionalSets + addons;
+                  }, 0)).toLocaleString()} ₽
                 </span>
               </div>
               <div className="border-t border-slate-200 pt-3">
                 <div className="flex justify-between items-center p-3 bg-emerald-50/50 rounded-xl">
                   <span className="text-base text-slate-800 font-medium">Общий призовой фонд</span>
                   <span className="text-xl font-light text-emerald-600">
-                    {(
-                      (tournament.participation_fee || tournament.buy_in || 0) * registrations.length +
-                      (tournament.reentry_fee || tournament.rebuy_cost || 0) * registrations.reduce((sum, reg) => sum + (reg.reentries || reg.rebuys || 0), 0) +
-                      (tournament.additional_fee || tournament.addon_cost || 0) * registrations.reduce((sum, reg) => sum + (reg.additional_sets || reg.addons || 0), 0)
-                    ).toLocaleString()} ₽
+                    {(() => {
+                      const participationFee = tournament.participation_fee || tournament.buy_in || 0;
+                      const reentryFee = tournament.reentry_fee || tournament.rebuy_cost || 0;
+                      const additionalFee = tournament.additional_fee || tournament.addon_cost || 0;
+                      
+                      const mainTotal = participationFee * registrations.length;
+                      const reentryTotal = reentryFee * registrations.reduce((sum, reg) => {
+                        const reentries = reg.reentries || 0;
+                        const rebuys = reg.rebuys || 0;
+                        return sum + reentries + rebuys;
+                      }, 0);
+                      const additionalTotal = additionalFee * registrations.reduce((sum, reg) => {
+                        const additionalSets = reg.additional_sets || 0;
+                        const addons = reg.addons || 0;
+                        return sum + additionalSets + addons;
+                      }, 0);
+                      
+                      const totalInRubles = mainTotal + reentryTotal + additionalTotal;
+                      const totalRPS = Math.floor(totalInRubles / 10);
+                      
+                      return (
+                        <div className="flex flex-col items-end">
+                          <div>{totalInRubles.toLocaleString()} ₽</div>
+                          <div className="text-sm text-emerald-500">{totalRPS.toLocaleString()} RPS</div>
+                        </div>
+                      );
+                    })()}
                   </span>
                 </div>
               </div>
@@ -1033,12 +1063,26 @@ const PlayerManagement = ({ tournament, players, registrations, onRegistrationUp
               <div className="flex justify-between items-center p-3 bg-slate-50/50 rounded-xl">
                 <span className="text-sm text-slate-600 font-light">Всего фишек в игре</span>
                 <span className="text-lg font-light text-slate-800">
-                  {activePlayers.reduce((sum, player) => sum + player.chips, 0).toLocaleString()}
+                  {(() => {
+                    const startingChipsTotal = tournament.starting_chips * registrations.length;
+                    const reentryChips = (tournament.reentry_chips || tournament.rebuy_chips || 0) * registrations.reduce((sum, reg) => {
+                      const reentries = reg.reentries || 0;
+                      const rebuys = reg.rebuys || 0;
+                      return sum + reentries + rebuys;
+                    }, 0);
+                    const additionalChipsTotal = (tournament.additional_chips || tournament.addon_chips || 0) * registrations.reduce((sum, reg) => {
+                      const additionalSets = reg.additional_sets || 0;
+                      const addons = reg.addons || 0;
+                      return sum + additionalSets + addons;
+                    }, 0);
+                    const totalChips = startingChipsTotal + reentryChips + additionalChipsTotal;
+                    return totalChips.toLocaleString();
+                  })()}
                 </span>
               </div>
               {activePlayers.length > 0 && (
                 <div className="flex justify-between items-center p-3 bg-indigo-50/50 rounded-xl">
-                  <span className="text-sm text-slate-600 font-light">Средний стек</span>
+                  <span className="text-sm text-slate-600 font-light">Средний стек активных</span>
                   <span className="text-lg font-light text-indigo-600">
                     {Math.round(activePlayers.reduce((sum, player) => sum + player.chips, 0) / activePlayers.length).toLocaleString()}
                   </span>
@@ -1048,6 +1092,18 @@ const PlayerManagement = ({ tournament, players, registrations, onRegistrationUp
                 <span className="text-sm text-slate-600 font-light">Стартовые фишки</span>
                 <span className="text-lg font-light text-green-600">
                   {tournament.starting_chips.toLocaleString()}
+                </span>
+              </div>
+              <div className="flex justify-between items-center p-3 bg-purple-50/50 rounded-xl">
+                <span className="text-sm text-slate-600 font-light">Фишки за повторный вход</span>
+                <span className="text-lg font-light text-purple-600">
+                  {(tournament.reentry_chips || tournament.rebuy_chips || 0).toLocaleString()}
+                </span>
+              </div>
+              <div className="flex justify-between items-center p-3 bg-amber-50/50 rounded-xl">
+                <span className="text-sm text-slate-600 font-light">Фишки за доп набор</span>
+                <span className="text-lg font-light text-amber-600">
+                  {(tournament.additional_chips || tournament.addon_chips || 0).toLocaleString()}
                 </span>
               </div>
               {activePlayers.length > 0 && (
