@@ -1063,57 +1063,48 @@ const PlayerManagement = ({ tournament, players, registrations, onRegistrationUp
               <div className="flex justify-between items-center p-3 bg-slate-50/50 rounded-xl">
                 <span className="text-sm text-slate-600 font-light">Всего фишек в игре</span>
                 <span className="text-lg font-light text-slate-800">
-                  {(() => {
-                    const startingChipsTotal = tournament.starting_chips * registrations.length;
-                    const reentryChips = (tournament.reentry_chips || tournament.rebuy_chips || 0) * registrations.reduce((sum, reg) => {
-                      const reentries = reg.reentries || 0;
-                      const rebuys = reg.rebuys || 0;
-                      return sum + reentries + rebuys;
-                    }, 0);
-                    const additionalChipsTotal = (tournament.additional_chips || tournament.addon_chips || 0) * registrations.reduce((sum, reg) => {
-                      const additionalSets = reg.additional_sets || 0;
-                      const addons = reg.addons || 0;
-                      return sum + additionalSets + addons;
-                    }, 0);
-                    const totalChips = startingChipsTotal + reentryChips + additionalChipsTotal;
-                    return totalChips.toLocaleString();
-                  })()}
+                  {activePlayers.reduce((sum, player) => sum + player.chips, 0).toLocaleString()}
                 </span>
               </div>
               {activePlayers.length > 0 && (
-                <div className="flex justify-between items-center p-3 bg-indigo-50/50 rounded-xl">
-                  <span className="text-sm text-slate-600 font-light">Средний стек активных</span>
-                  <span className="text-lg font-light text-indigo-600">
-                    {Math.round(activePlayers.reduce((sum, player) => sum + player.chips, 0) / activePlayers.length).toLocaleString()}
-                  </span>
-                </div>
+                <>
+                  <div className="flex justify-between items-center p-3 bg-indigo-50/50 rounded-xl">
+                    <span className="text-sm text-slate-600 font-light">Средний стек</span>
+                    <span className="text-lg font-light text-indigo-600">
+                      {Math.round(activePlayers.reduce((sum, player) => sum + player.chips, 0) / activePlayers.length).toLocaleString()}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center p-3 bg-blue-50/50 rounded-xl">
+                    <span className="text-sm text-slate-600 font-light">Лидер по фишкам</span>
+                    <span className="text-lg font-light text-blue-600">
+                      {Math.max(...activePlayers.map(p => p.chips)).toLocaleString()}
+                    </span>
+                  </div>
+                </>
               )}
-              <div className="flex justify-between items-center p-3 bg-green-50/50 rounded-xl">
-                <span className="text-sm text-slate-600 font-light">Стартовые фишки</span>
-                <span className="text-lg font-light text-green-600">
-                  {tournament.starting_chips.toLocaleString()}
-                </span>
-              </div>
-              <div className="flex justify-between items-center p-3 bg-purple-50/50 rounded-xl">
-                <span className="text-sm text-slate-600 font-light">Фишки за повторный вход</span>
-                <span className="text-lg font-light text-purple-600">
-                  {(tournament.reentry_chips || tournament.rebuy_chips || 0).toLocaleString()}
-                </span>
-              </div>
-              <div className="flex justify-between items-center p-3 bg-amber-50/50 rounded-xl">
-                <span className="text-sm text-slate-600 font-light">Фишки за доп набор</span>
-                <span className="text-lg font-light text-amber-600">
-                  {(tournament.additional_chips || tournament.addon_chips || 0).toLocaleString()}
-                </span>
-              </div>
-              {activePlayers.length > 0 && (
-                <div className="flex justify-between items-center p-3 bg-blue-50/50 rounded-xl">
-                  <span className="text-sm text-slate-600 font-light">Лидер по фишкам</span>
-                  <span className="text-lg font-light text-blue-600">
-                    {Math.max(...activePlayers.map(p => p.chips)).toLocaleString()}
-                  </span>
+              <div className="border-t border-slate-200 pt-3 mt-3">
+                <div className="text-xs text-slate-500 font-medium mb-2 uppercase">Конфигурация турнира</div>
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center p-2 bg-green-50/30 rounded-lg">
+                    <span className="text-xs text-slate-600">Стартовые фишки</span>
+                    <span className="text-sm font-medium text-green-600">
+                      {tournament.starting_chips.toLocaleString()}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center p-2 bg-purple-50/30 rounded-lg">
+                    <span className="text-xs text-slate-600">Фишки за повторный вход</span>
+                    <span className="text-sm font-medium text-purple-600">
+                      {(tournament.reentry_chips || tournament.rebuy_chips || 0).toLocaleString()}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center p-2 bg-amber-50/30 rounded-lg">
+                    <span className="text-xs text-slate-600">Фишки за доп набор</span>
+                    <span className="text-sm font-medium text-amber-600">
+                      {(tournament.additional_chips || tournament.addon_chips || 0).toLocaleString()}
+                    </span>
+                  </div>
                 </div>
-              )}
+              </div>
             </div>
           </CardContent>
         </Card>
