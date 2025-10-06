@@ -42,6 +42,9 @@ interface Tournament {
   tournament_format: string;
   current_level: number;
   addon_level: number;
+  participation_fee?: number;
+  reentry_fee?: number;
+  additional_fee?: number;
 }
 
 interface Player {
@@ -63,6 +66,8 @@ interface Registration {
   rebuys: number;
   addons: number;
   position?: number;
+  reentries?: number;
+  additional_sets?: number;
 }
 
 interface PlayerManagementProps {
@@ -937,13 +942,13 @@ const PlayerManagement = ({ tournament, players, registrations, onRegistrationUp
             <div className="grid grid-cols-2 gap-4 text-center">
               <div className="p-4 bg-green-50/50 rounded-xl">
                 <div className="text-2xl font-light text-green-600">
-                  {registrations.reduce((sum, reg) => sum + reg.rebuys, 0)}
+                  {registrations.reduce((sum, reg) => sum + (reg.reentries || reg.rebuys || 0), 0)}
                 </div>
                 <div className="text-sm text-slate-500 font-light">Повторных входов</div>
               </div>
               <div className="p-4 bg-blue-50/50 rounded-xl">
                 <div className="text-2xl font-light text-blue-600">
-                  {registrations.reduce((sum, reg) => sum + reg.addons, 0)}
+                  {registrations.reduce((sum, reg) => sum + (reg.additional_sets || reg.addons || 0), 0)}
                 </div>
                 <div className="text-sm text-slate-500 font-light">Доп наборов</div>
               </div>
@@ -966,19 +971,19 @@ const PlayerManagement = ({ tournament, players, registrations, onRegistrationUp
               <div className="flex justify-between items-center p-3 bg-slate-50/50 rounded-xl">
                 <span className="text-sm text-slate-600 font-light">Орг взносы</span>
                 <span className="text-lg font-light text-slate-800">
-                  {(tournament.buy_in * registrations.length).toLocaleString()} ₽
+                  {((tournament.participation_fee || tournament.buy_in || 0) * registrations.length).toLocaleString()} ₽
                 </span>
               </div>
               <div className="flex justify-between items-center p-3 bg-green-50/50 rounded-xl">
                 <span className="text-sm text-slate-600 font-light">Повторные входы</span>
                 <span className="text-lg font-light text-green-600">
-                  {(tournament.rebuy_cost * registrations.reduce((sum, reg) => sum + reg.rebuys, 0)).toLocaleString()} ₽
+                  {((tournament.reentry_fee || tournament.rebuy_cost || 0) * registrations.reduce((sum, reg) => sum + (reg.reentries || reg.rebuys || 0), 0)).toLocaleString()} ₽
                 </span>
               </div>
               <div className="flex justify-between items-center p-3 bg-blue-50/50 rounded-xl">
                 <span className="text-sm text-slate-600 font-light">Доп наборы</span>
                 <span className="text-lg font-light text-blue-600">
-                  {(tournament.addon_cost * registrations.reduce((sum, reg) => sum + reg.addons, 0)).toLocaleString()} ₽
+                  {((tournament.additional_fee || tournament.addon_cost || 0) * registrations.reduce((sum, reg) => sum + (reg.additional_sets || reg.addons || 0), 0)).toLocaleString()} ₽
                 </span>
               </div>
               <div className="border-t border-slate-200 pt-3">
@@ -986,9 +991,9 @@ const PlayerManagement = ({ tournament, players, registrations, onRegistrationUp
                   <span className="text-base text-slate-800 font-medium">Общий призовой фонд</span>
                   <span className="text-xl font-light text-emerald-600">
                     {(
-                      tournament.buy_in * registrations.length +
-                      tournament.rebuy_cost * registrations.reduce((sum, reg) => sum + reg.rebuys, 0) +
-                      tournament.addon_cost * registrations.reduce((sum, reg) => sum + reg.addons, 0)
+                      (tournament.participation_fee || tournament.buy_in || 0) * registrations.length +
+                      (tournament.reentry_fee || tournament.rebuy_cost || 0) * registrations.reduce((sum, reg) => sum + (reg.reentries || reg.rebuys || 0), 0) +
+                      (tournament.additional_fee || tournament.addon_cost || 0) * registrations.reduce((sum, reg) => sum + (reg.additional_sets || reg.addons || 0), 0)
                     ).toLocaleString()} ₽
                   </span>
                 </div>
