@@ -1,5 +1,6 @@
 import React from "react";
 import Barcode from "react-barcode";
+import { QRCodeSVG } from "qrcode.react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { 
@@ -104,6 +105,12 @@ export function TournamentTicketCard({ tournament, onViewDetails, onRegister }: 
   const isFilling = spotsLeft <= 3 && spotsLeft > 0;
   const ticketNumber = tournament.id.split('-')[0].toUpperCase();
   const barcodeValue = tournament.id.replace(/-/g, '').substring(0, 12).toUpperCase();
+  const qrCodeData = JSON.stringify({
+    tournamentId: tournament.id,
+    tournamentName: tournament.name,
+    startTime: tournament.start_time,
+    url: `${window.location.origin}/tournaments?id=${tournament.id}`
+  });
   
   // Calculate time until start
   const timeUntilStart = () => {
@@ -321,27 +328,33 @@ export function TournamentTicketCard({ tournament, onViewDetails, onRegister }: 
         {/* Bottom section - Actions */}
         <div className="p-5 bg-gradient-to-br from-slate-900/80 to-black/80 relative backdrop-blur-md border-t border-amber-400/10">
           <div className="flex items-start justify-between gap-4 mb-4">
-            {/* Real Barcode */}
+            {/* Real Barcode with white background */}
             <div className="flex-1">
-              <div className="bg-white/98 rounded-md px-2 py-2 shadow-xl border border-slate-300 flex justify-center">
+              <div className="bg-white rounded-md px-3 py-3 shadow-xl border-2 border-slate-300 flex justify-center">
                 <Barcode 
                   value={barcodeValue}
-                  height={45}
-                  width={1.5}
-                  fontSize={10}
-                  background="transparent"
+                  height={50}
+                  width={1.8}
+                  fontSize={11}
+                  background="#ffffff"
+                  lineColor="#000000"
                   displayValue={true}
-                  margin={0}
+                  margin={2}
                 />
               </div>
             </div>
             
-            {/* QR Code */}
-            <div className="bg-white/98 rounded-md p-2 shadow-xl border border-slate-300">
-              <div className="w-16 h-16 bg-gradient-to-br from-slate-900 to-slate-800 rounded flex items-center justify-center">
-                <QrCode className="h-12 w-12 text-white" />
-              </div>
-              <p className="text-[7px] text-slate-600 text-center mt-1 font-mono">SCAN ME</p>
+            {/* Real QR Code */}
+            <div className="bg-white rounded-md p-2.5 shadow-xl border-2 border-slate-300">
+              <QRCodeSVG 
+                value={qrCodeData}
+                size={70}
+                level="H"
+                includeMargin={false}
+                bgColor="#ffffff"
+                fgColor="#000000"
+              />
+              <p className="text-[7px] text-slate-700 text-center mt-1.5 font-bold">SCAN ME</p>
             </div>
           </div>
           
