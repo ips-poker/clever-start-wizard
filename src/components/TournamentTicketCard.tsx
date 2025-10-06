@@ -176,8 +176,8 @@ export function TournamentTicketCard({ tournament, onViewDetails, onRegister }: 
 
   return (
     <div className="group relative w-full max-w-sm mx-auto">
-      {/* Enhanced holographic glow effect with animation */}
-      <div className="absolute -inset-1 bg-gradient-to-r from-amber-500 via-purple-500 to-blue-500 rounded-2xl opacity-0 group-hover:opacity-30 blur-2xl transition-all duration-700 animate-pulse"></div>
+      {/* Enhanced holographic glow effect */}
+      <div className="absolute -inset-1 bg-gradient-to-r from-amber-500 via-purple-500 to-blue-500 rounded-2xl opacity-0 group-hover:opacity-30 blur-2xl transition-all duration-700"></div>
       
       {/* Main ticket container with enhanced effects */}
       <div className="relative bg-gradient-to-br from-slate-900/98 via-slate-800/95 to-black/98 border-2 border-amber-400/40 rounded-2xl overflow-hidden shadow-2xl group-hover:shadow-amber-500/50 group-hover:border-amber-400/70 group-hover:-translate-y-2 group-hover:scale-[1.02] transition-all duration-500 backdrop-blur-2xl">
@@ -272,19 +272,18 @@ export function TournamentTicketCard({ tournament, onViewDetails, onRegister }: 
             </div>
           </div>
 
-          {/* Enhanced RPS Prize Pool Banner with glow animation */}
+          {/* Enhanced RPS Prize Pool Banner */}
           {totalRPSPool > 0 && (
             <div className="mb-3 bg-gradient-to-r from-amber-500/25 via-yellow-500/25 to-amber-500/25 border-2 border-amber-400/50 rounded-lg p-3 shadow-2xl relative overflow-hidden group-hover:shadow-amber-500/40 group-hover:border-amber-400/70 transition-all duration-500">
               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-amber-400/15 to-transparent group-hover:via-amber-400/25 transition-all duration-500"></div>
-              <div className="absolute inset-0 bg-gradient-to-r from-amber-500/0 via-amber-500/20 to-amber-500/0 animate-pulse"></div>
               <div className="flex items-center justify-between relative z-10">
                 <div className="flex items-center gap-2">
                   <div className="w-8 h-8 bg-gradient-to-br from-amber-400 to-amber-600 rounded-full flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
                     <Trophy className="h-4 w-4 text-white" />
                   </div>
                   <div>
-                    <p className="text-[10px] text-amber-300/90 font-bold uppercase tracking-wider group-hover:text-amber-200 transition-colors duration-300">Фонд RPS баллов</p>
-                    <p className="text-2xl font-bold text-amber-200 tracking-tight group-hover:text-amber-100 transition-colors duration-300">{formatRPSPoints(totalRPSPool)}</p>
+                    <p className="text-xs text-amber-300/90 font-bold uppercase tracking-wider group-hover:text-amber-200 transition-colors duration-300">Фонд RPS баллов</p>
+                    <p className="text-3xl font-bold text-amber-200 tracking-tight group-hover:text-amber-100 transition-colors duration-300">{formatRPSPoints(totalRPSPool)}</p>
                   </div>
                 </div>
                 <Crown className="h-8 w-8 text-amber-400/40 group-hover:text-amber-400/60 group-hover:scale-110 transition-all duration-300" />
@@ -343,23 +342,23 @@ export function TournamentTicketCard({ tournament, onViewDetails, onRegister }: 
                 <div className="w-7 h-7 bg-gradient-to-br from-green-500 to-green-600 rounded-md flex items-center justify-center shadow-md group-hover:scale-110 transition-transform duration-300">
                   <DollarSign className="h-4 w-4 text-white" />
                 </div>
-                <h4 className="text-xs font-bold text-green-300 group-hover:text-green-200 transition-colors duration-300">Орг. взнос</h4>
+                <h4 className="text-sm font-bold text-green-300 group-hover:text-green-200 transition-colors duration-300">Орг. взнос</h4>
               </div>
-              <p className="text-2xl font-bold text-green-200 group-hover:text-green-100 transition-colors duration-300">{formatParticipationFee(tournament.participation_fee)}</p>
+              <p className="text-3xl font-bold text-green-200 group-hover:text-green-100 transition-colors duration-300">{formatParticipationFee(tournament.participation_fee)}</p>
               {(tournament.reentry_fee && tournament.reentry_fee > 0) && (
-                <p className="text-[10px] text-white/60 mt-1 group-hover:text-white/80 transition-colors duration-300">Re-entry: {formatParticipationFee(tournament.reentry_fee)}</p>
+                <p className="text-xs text-white/60 mt-1 group-hover:text-white/80 transition-colors duration-300">Re-entry: {formatParticipationFee(tournament.reentry_fee)}</p>
               )}
             </div>
 
             {/* Starting Stack */}
-            <div className="bg-gradient-to-br from-white/10 via-white/5 to-white/10 rounded-lg p-2.5 border border-white/20 backdrop-blur-sm shadow-lg">
-              <div className="flex items-center gap-1.5 mb-1.5">
-                <div className="w-6 h-6 bg-gradient-to-br from-red-500 to-red-600 rounded-md flex items-center justify-center shadow-md">
-                  <Coins className="h-3.5 w-3.5 text-white" />
+            <div className="bg-gradient-to-br from-white/10 via-white/5 to-white/10 rounded-lg p-3 border border-white/20 backdrop-blur-sm shadow-lg">
+              <div className="flex items-center gap-1.5 mb-2">
+                <div className="w-7 h-7 bg-gradient-to-br from-red-500 to-red-600 rounded-md flex items-center justify-center shadow-md">
+                  <Coins className="h-4 w-4 text-white" />
                 </div>
-                <h4 className="text-xs font-semibold text-white/90">Стартовый стек</h4>
+                <h4 className="text-sm font-semibold text-white/90">Стартовый стек</h4>
               </div>
-              <p className="text-base font-medium text-white">{tournament.starting_chips?.toLocaleString() || 'N/A'}</p>
+              <p className="text-3xl font-bold text-white">{tournament.starting_chips?.toLocaleString() || 'N/A'}</p>
             </div>
           </div>
         </div>
@@ -403,21 +402,16 @@ export function TournamentTicketCard({ tournament, onViewDetails, onRegister }: 
             <span>ID:{ticketNumber}</span>
           </div>
 
-          {/* Ultra-enhanced CTA Button with Price and animations */}
+          {/* Ultra-enhanced CTA Button */}
           <Button 
             onClick={onRegister}
             disabled={tournament.status !== 'registration'}
-            className="relative w-full bg-gradient-to-r from-amber-500 via-amber-600 to-amber-500 hover:from-amber-600 hover:via-amber-700 hover:to-amber-600 text-white font-bold py-5 rounded-lg shadow-2xl hover:shadow-amber-500/70 hover:scale-[1.02] transition-all duration-500 text-sm disabled:opacity-50 disabled:cursor-not-allowed border-2 border-amber-400/40 hover:border-amber-400/70 mb-2 overflow-hidden group/btn"
+            className="relative w-full bg-gradient-to-r from-amber-500 via-amber-600 to-amber-500 hover:from-amber-600 hover:via-amber-700 hover:to-amber-600 text-white font-bold py-5 rounded-lg shadow-2xl hover:shadow-amber-500/70 hover:scale-[1.02] transition-all duration-500 text-base disabled:opacity-50 disabled:cursor-not-allowed border-2 border-amber-400/40 hover:border-amber-400/70 mb-2 overflow-hidden group/btn"
           >
             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover/btn:translate-x-full transition-transform duration-1000"></div>
             <div className="flex items-center justify-center gap-2">
               <PlayCircle className="h-5 w-5" />
-              <div className="flex flex-col items-start">
-                <span className="text-sm font-semibold">{getButtonText(tournament.status)}</span>
-                {tournament.status === 'registration' && (
-                  <span className="text-xs font-normal text-amber-100">Взнос: {formatParticipationFee(tournament.participation_fee)}</span>
-                )}
-              </div>
+              <span className="text-base font-semibold">{getButtonText(tournament.status)}</span>
             </div>
           </Button>
           
