@@ -229,8 +229,7 @@ function calculatePoolBasedRPS(players: Player[], results: TournamentResult[], t
   
   console.log('Processing results for positions:', results.map(r => `Player ${r.player_id}: position ${r.position}`))
 
-  // Рассчитываем общий пул очков по новой системе
-  const coefficient = ratingConfig?.pool_coefficient || 0.1 // 1000 руб = 100 очков
+  // Рассчитываем общий пул RPS баллов по ПРАВИЛЬНОЙ формуле: 1000₽ = 100 RPS
   let totalPointsPool = 0
   
   results.forEach(result => {
@@ -245,23 +244,33 @@ function calculatePoolBasedRPS(players: Player[], results: TournamentResult[], t
       (rebuys * reentryFee) + 
       (addons * additionalFee)
     
-    totalPointsPool += Math.floor(playerContribution * coefficient)
+    // ПРАВИЛЬНАЯ ФОРМУЛА: делим на 10, чтобы 1000₽ = 100 RPS
+    totalPointsPool += Math.floor(playerContribution / 10)
   })
 
-  console.log(`💰 Total points pool: ${totalPointsPool} очков (от ${results.length} игроков)`)
+  console.log(`💰 Total RPS pool: ${totalPointsPool} RPS баллов (от ${results.length} игроков)`)
 
-  // Используем структуру выплат из БД для распределения пула очков
-  let payoutStructure: number[] = []
+  // Используем структуру выплат из БД для распределения пула RPS баллов
+  let payoutStructure: Array<{percentage: number, rps_points?: number}> = []
   
   if (payoutStructureFromDB && payoutStructureFromDB.length > 0) {
-    payoutStructure = payoutStructureFromDB.map(p => parseFloat(p.percentage.toString()))
+    // Используем структуру из БД с сохраненными RPS баллами
+    payoutStructure = payoutStructureFromDB.map(p => ({
+      percentage: parseFloat(p.percentage.toString()),
+      rps_points: p.rps_points || null
+    }))
     console.log('📊 Using payout structure from database:', payoutStructure)
   } else {
-    payoutStructure = getPayoutStructure(results.length)
-    console.log('📊 Using default payout structure:', payoutStructure)
+    // Используем дефолтную структуру процентов
+    const defaultPercentages = getPayoutStructure(results.length)
+    payoutStructure = defaultPercentages.map(pct => ({
+      percentage: pct,
+      rps_points: null
+    }))
+    console.log('📊 Using default payout structure:', payoutStructure.map(p => p.percentage))
   }
   
-  // Распределяем очки согласно призовой структуре
+  // Распределяем RPS баллы согласно призовой структуре
   for (let i = 0; i < results.length; i++) {
     const playerResult = results[i]
     const player = players.find(p => p.id === playerResult.player_id)
@@ -272,15 +281,21 @@ function calculatePoolBasedRPS(players: Player[], results: TournamentResult[], t
 
     // Проверяем, находится ли игрок в призовых местах
     if (position <= payoutStructure.length) {
-      // Игрок в призовых - получает долю от общего пула очков
-      const prizePercentage = payoutStructure[position - 1]
-      rpsChange = Math.floor((totalPointsPool * prizePercentage) / 100)
+      const payout = payoutStructure[position - 1]
       
-      console.log(`🏆 Призовое место ${position}: ${prizePercentage}% от ${totalPointsPool} = ${rpsChange} очков`)
+      // Если в БД есть сохраненные RPS баллы - используем их
+      if (payout.rps_points && payout.rps_points > 0) {
+        rpsChange = payout.rps_points
+        console.log(`🏆 Призовое место ${position}: ${rpsChange} RPS (из БД)`)
+      } else {
+        // Иначе рассчитываем по проценту от пула
+        rpsChange = Math.floor((totalPointsPool * payout.percentage) / 100)
+        console.log(`🏆 Призовое место ${position}: ${payout.percentage}% от ${totalPointsPool} = ${rpsChange} RPS`)
+      }
     } else {
-      // Игрок не в призовых - получает 0 очков
+      // Игрок не в призовых - получает 0 RPS
       rpsChange = 0
-      console.log(`❌ Позиция ${position} не в призовых (призовых мест: ${payoutStructure.length}) = 0 очков`)
+      console.log(`❌ Позиция ${position} не в призовых (призовых мест: ${payoutStructure.length}) = 0 RPS`)
     }
 
     // Применяем минимальный рейтинг

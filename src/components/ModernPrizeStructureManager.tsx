@@ -147,16 +147,29 @@ const ModernPrizeStructureManager = ({ tournamentId, registeredPlayers, mode = '
   };
 
   const calculateRPSPool = () => {
-    if (!tournament) return 0;
+    if (!tournament || !registrations) return 0;
 
-    return calculateTotalRPSPool(
-      registeredPlayers,
-      tournament.participation_fee || tournament.buy_in || 0,
-      registrations.reduce((sum, reg) => sum + reg.reentries, 0),
-      tournament.reentry_fee || tournament.rebuy_cost || 0,
-      registrations.reduce((sum, reg) => sum + reg.additional_sets, 0),
-      tournament.additional_fee || tournament.addon_cost || 0
-    );
+    const activeRegistrations = registrations.filter(r => r.player_id);
+    
+    // Рассчитываем общий пул RPS по новой системе: каждые 1000₽ = 100 RPS
+    let totalRPS = 0;
+    
+    activeRegistrations.forEach(registration => {
+      const participationFee = tournament.participation_fee || 0;
+      const reentryFee = tournament.reentry_fee || 0;
+      const additionalFee = tournament.additional_fee || 0;
+      
+      const reentries = registration.reentries || 0;
+      const additionalSets = registration.additional_sets || 0;
+      
+      // Общая сумма взносов этого игрока в рублях
+      const playerTotalFee = participationFee + (reentries * reentryFee) + (additionalSets * additionalFee);
+      
+      // Конвертируем в RPS: 1000₽ = 100 RPS, то есть делим на 10
+      totalRPS += Math.floor(playerTotalFee / 10);
+    });
+
+    return totalRPS;
   };
 
   const getProfessionalPayoutStructure = (players: number): number[] => {
@@ -215,42 +228,42 @@ const ModernPrizeStructureManager = ({ tournamentId, registeredPlayers, mode = '
   };
 
   const savePayoutStructure = async () => {
-    if (!payoutPlaces.length) return;
+    if (!tournament) return;
 
     try {
-      // Удаляем существующие выплаты
-      await supabase
+      // Удаляем старую структуру
+      const { error: deleteError } = await supabase
         .from('tournament_payouts')
         .delete()
-        .eq('tournament_id', tournamentId);
+        .eq('tournament_id', tournament.id);
 
-      // Добавляем новые выплаты
-      const payoutData = payoutPlaces.map(payout => ({
-        tournament_id: tournamentId,
-        place: payout.place,
-        percentage: payout.percentage,
-        amount: 0, // Оставляем для совместимости
-        rps_points: payout.rps_points
+      if (deleteError) throw deleteError;
+
+      // Сохраняем новую структуру с рассчитанными RPS баллами
+      const payoutsToInsert = payoutPlaces.map(place => ({
+        tournament_id: tournament.id,
+        place: place.place,
+        percentage: place.percentage,
+        amount: 0, // Не используется для RPS системы
+        rps_points: place.rps_points // Сохраняем рассчитанные RPS баллы
       }));
 
-      const { error } = await supabase
+      const { error: insertError } = await supabase
         .from('tournament_payouts')
-        .insert(payoutData);
+        .insert(payoutsToInsert);
 
-      if (error) throw error;
+      if (insertError) throw insertError;
 
       toast({
-        title: "Структура RPS сохранена",
-        description: "Структура фонда RPS баллов обновлена",
+        title: "Структура призового фонда RPS сохранена",
+        description: `Сохранено распределение ${totalRPSPool} RPS баллов на ${payoutPlaces.length} призовых мест`
       });
-
-      setIsEditing(false);
     } catch (error) {
       console.error('Error saving payout structure:', error);
       toast({
-        title: "Ошибка",
-        description: "Не удалось сохранить структуру фонда RPS баллов",
-        variant: "destructive",
+        title: "Ошибка сохранения",
+        description: "Не удалось сохранить структуру выплат",
+        variant: "destructive"
       });
     }
   };
