@@ -602,7 +602,7 @@ const ImprovedPlayerManagement = ({ tournament, players, registrations, onRegist
                   <div className="p-2 bg-amber-500/10 rounded-xl">
                     <Plus className="w-5 h-5 text-amber-600" />
                   </div>
-                  Ребаи и аддоны
+                  Повторные входы и доп наборы
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-6">
@@ -611,13 +611,13 @@ const ImprovedPlayerManagement = ({ tournament, players, registrations, onRegist
                     <div className="text-2xl font-light text-green-600">
                       {registrations.reduce((sum, reg) => sum + reg.rebuys, 0)}
                     </div>
-                    <div className="text-sm text-slate-500 font-light">Ребаев</div>
+                    <div className="text-sm text-slate-500 font-light">Повторных входов</div>
                   </div>
                   <div className="p-4 bg-blue-50/50 rounded-xl">
                     <div className="text-2xl font-light text-blue-600">
                       {registrations.reduce((sum, reg) => sum + reg.addons, 0)}
                     </div>
-                    <div className="text-sm text-slate-500 font-light">Аддонов</div>
+                    <div className="text-sm text-slate-500 font-light">Доп наборов</div>
                   </div>
                 </div>
               </CardContent>
@@ -636,19 +636,19 @@ const ImprovedPlayerManagement = ({ tournament, players, registrations, onRegist
               <CardContent className="p-6">
                 <div className="space-y-4">
                   <div className="flex justify-between items-center p-3 bg-slate-50/50 rounded-xl">
-                    <span className="text-sm text-slate-600 font-light">Основные взносы</span>
+                    <span className="text-sm text-slate-600 font-light">Орг взносы</span>
                     <span className="text-lg font-light text-slate-800">
                       {(tournament.buy_in * registrations.length).toLocaleString()} ₽
                     </span>
                   </div>
                   <div className="flex justify-between items-center p-3 bg-green-50/50 rounded-xl">
-                    <span className="text-sm text-slate-600 font-light">Ребаи</span>
+                    <span className="text-sm text-slate-600 font-light">Повторные входы</span>
                     <span className="text-lg font-light text-green-600">
                       {(tournament.rebuy_cost * registrations.reduce((sum, reg) => sum + reg.rebuys, 0)).toLocaleString()} ₽
                     </span>
                   </div>
                   <div className="flex justify-between items-center p-3 bg-blue-50/50 rounded-xl">
-                    <span className="text-sm text-slate-600 font-light">Аддоны</span>
+                    <span className="text-sm text-slate-600 font-light">Доп наборы</span>
                     <span className="text-lg font-light text-blue-600">
                       {(tournament.addon_cost * registrations.reduce((sum, reg) => sum + reg.addons, 0)).toLocaleString()} ₽
                     </span>

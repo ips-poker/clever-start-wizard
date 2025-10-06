@@ -419,7 +419,7 @@ const FullscreenTimer = ({
             </div>
             <div>
               <div className="flex items-center justify-center mb-1">
-                <span className="text-sm text-gray-600">Ребаи / Адоны</span>
+                <span className="text-sm text-gray-600">Повторные входы / Доп наборы</span>
               </div>
               <p className="text-xl font-medium text-gray-800">{statisticsData.totalRebuys} / {statisticsData.totalAddons}</p>
             </div>
