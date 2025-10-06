@@ -394,7 +394,8 @@ const TableSeating = ({
         .from('tournament_registrations')
         .update({ 
           status: 'eliminated',
-          seat_number: null
+          seat_number: null,
+          chips: 0 // Обнуляем фишки у выбывшего игрока
         })
         .eq('player_id', playerId)
         .eq('tournament_id', tournamentId);

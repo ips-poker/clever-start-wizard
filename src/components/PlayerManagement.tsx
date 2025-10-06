@@ -349,7 +349,8 @@ const PlayerManagement = ({ tournament, players, registrations, onRegistrationUp
       .from('tournament_registrations')
       .update({ 
         status: 'eliminated',
-        position: position
+        position: position,
+        chips: 0 // Обнуляем фишки у выбывшего игрока
       })
       .eq('id', registrationId);
 
@@ -362,7 +363,9 @@ const PlayerManagement = ({ tournament, players, registrations, onRegistrationUp
       await voiceAnnouncements.announcePlayerElimination(registration.player.name, position);
       
       // Проверяем необходимость балансировки столов с задержкой 30 секунд
-      const remainingPlayers = registrations.filter(r => r.status !== 'eliminated' && r.id !== registrationId);
+      const remainingPlayers = registrations.filter(r => 
+        (r.status === 'registered' || r.status === 'playing') && r.id !== registrationId
+      );
       if (remainingPlayers.length > 1) {
         setTimeout(async () => {
           await announceTableBalancing(remainingPlayers);
@@ -372,8 +375,8 @@ const PlayerManagement = ({ tournament, players, registrations, onRegistrationUp
       onRegistrationUpdate();
       
       // Check if tournament should finish
-      const activePlayers = registrations.filter(r => r.status !== 'eliminated').length;
-      if (activePlayers <= 1) {
+      const activePlayersCount = registrations.filter(r => r.status === 'registered' || r.status === 'playing').length;
+      if (activePlayersCount <= 1) {
         toast({ title: "Турнир готов к завершению", description: "Остался один игрок" });
         await voiceAnnouncements.playAnnouncement('Внимание! Остался последний игрок. Турнир готов к завершению!');
       }
@@ -415,7 +418,9 @@ const PlayerManagement = ({ tournament, players, registrations, onRegistrationUp
       if (tournamentError) throw tournamentError;
 
       // Assign proper positions to remaining players
-      const activePlayersToUpdate = registrations.filter(r => r.status !== 'eliminated');
+      const activePlayersToUpdate = registrations.filter(r => 
+        r.status === 'registered' || r.status === 'playing'
+      );
       const eliminatedPlayersCount = registrations.filter(r => r.status === 'eliminated').length;
       
       // Активные игроки получают позиции начиная с 1 места до количества активных игроков
@@ -432,7 +437,7 @@ const PlayerManagement = ({ tournament, players, registrations, onRegistrationUp
       // Prepare results for RPS calculation with correct positions
       const results = registrations.map((reg) => {
         let position = reg.position;
-        if (reg.status !== 'eliminated') {
+        if (reg.status === 'registered' || reg.status === 'playing') {
           // Find position for active players based on their order
           const activeIndex = activePlayersToUpdate.findIndex(p => p.id === reg.id);
           position = activeIndex + 1;
@@ -505,7 +510,9 @@ const PlayerManagement = ({ tournament, players, registrations, onRegistrationUp
     !registrations.some(reg => reg.player.id === player.id)
   );
 
-  const activePlayers = registrations.filter(r => r.status !== 'eliminated');
+  const activePlayers = registrations.filter(r => 
+    r.status === 'registered' || r.status === 'playing'
+  );
   const eliminatedPlayers = registrations.filter(r => r.status === 'eliminated').sort((a, b) => (b.position || 0) - (a.position || 0));
 
   return (
