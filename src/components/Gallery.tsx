@@ -153,34 +153,39 @@ export function Gallery() {
     <section className="py-20 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 relative overflow-hidden">
       {/* Elegant Poker Chips Background */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-10">
-        <div className="absolute top-24 left-16 w-24 h-24 rounded-full animate-bounce-subtle">
-          <div className="absolute inset-0 rounded-full bg-gradient-to-br from-purple-400 via-purple-500 to-purple-600 shadow-2xl opacity-40"></div>
-          <div className="absolute inset-2 rounded-full bg-gradient-to-br from-slate-900 to-slate-800 border-2 border-purple-400/30 flex items-center justify-center">
-            <div className="w-12 h-12 rounded-full border-2 border-dashed border-purple-400/20 flex items-center justify-center">
-              <span className="text-purple-400/50 font-bold text-xs">100</span>
-            </div>
+        <div className="absolute top-[15%] left-[18%] w-20 h-20 rounded-full animate-pulse-slow">
+          <div className="absolute inset-0 rounded-full bg-gradient-to-br from-blue-400 via-blue-500 to-blue-600 shadow-2xl opacity-40"></div>
+          <div className="absolute inset-2 rounded-full bg-gradient-to-br from-slate-900 to-slate-800 border-2 border-blue-400/30 flex items-center justify-center">
+            <span className="text-blue-400/50 font-bold text-xs">1K</span>
+          </div>
+          <div className="absolute inset-4 rounded-full border-2 border-dashed border-blue-400/20"></div>
+        </div>
+        
+        <div className="absolute top-[32%] right-[20%] w-16 h-16 rounded-full animate-bounce-subtle">
+          <div className="absolute inset-0 rounded-full bg-gradient-to-br from-green-400 via-green-500 to-green-600 shadow-xl opacity-35"></div>
+          <div className="absolute inset-1.5 rounded-full bg-gradient-to-br from-slate-900 to-slate-800 border-2 border-green-400/30 flex items-center justify-center">
+            <span className="text-green-400/50 font-bold text-xs">50</span>
           </div>
         </div>
         
-        <div className="absolute bottom-20 right-24 w-18 h-18 rounded-full animate-pulse-slow">
-          <div className="absolute inset-0 rounded-full bg-gradient-to-br from-amber-400 via-amber-500 to-amber-600 shadow-xl opacity-35"></div>
-          <div className="absolute inset-1.5 rounded-full bg-gradient-to-br from-slate-900 to-slate-800 border-2 border-amber-400/30"></div>
+        <div className="absolute bottom-[25%] left-[25%] w-18 h-18 rounded-full animate-pulse-slow">
+          <div className="absolute inset-0 rounded-full bg-gradient-to-br from-amber-400 via-amber-500 to-amber-600 shadow-xl opacity-30"></div>
+          <div className="absolute inset-1.5 rounded-full bg-gradient-to-br from-slate-900 to-slate-800 border border-amber-400/30 flex items-center justify-center">
+            <span className="text-amber-400/50 font-bold text-xs">100</span>
+          </div>
         </div>
       </div>
       
       {/* Elegant Poker Suits */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-10">
-        <div className="absolute top-20 left-10 animate-pulse-slow transform rotate-12">
-          <div className="text-purple-400/45 text-6xl filter drop-shadow-[0_0_20px_rgba(192,132,252,0.4)]">♣</div>
+        <div className="absolute top-[20%] right-[30%] animate-pulse-slow">
+          <div className="text-blue-400/40 text-5xl filter drop-shadow-[0_0_15px_rgba(96,165,250,0.3)]">♦</div>
         </div>
-        <div className="absolute top-40 right-20 animate-bounce-subtle transform -rotate-12">
-          <div className="text-red-400/35 text-4xl filter drop-shadow-[0_0_14px_rgba(248,113,113,0.3)]">♥</div>
+        <div className="absolute top-[48%] left-[15%] animate-bounce-subtle">
+          <div className="text-green-400/35 text-4xl filter drop-shadow-[0_0_12px_rgba(74,222,128,0.3)]">♣</div>
         </div>
-        <div className="absolute bottom-20 left-20 animate-pulse-slow transform rotate-45">
-          <div className="text-amber-400/40 text-5xl filter drop-shadow-[0_0_16px_rgba(251,191,36,0.35)]">♦</div>
-        </div>
-        <div className="absolute bottom-40 right-10 animate-bounce-subtle transform -rotate-30">
-          <div className="text-blue-400/35 text-3xl filter drop-shadow-[0_0_12px_rgba(96,165,250,0.3)]">♠</div>
+        <div className="absolute bottom-[15%] right-[22%] animate-pulse-slow">
+          <div className="text-amber-400/45 text-6xl filter drop-shadow-[0_0_20px_rgba(251,191,36,0.4)]">♠</div>
         </div>
       </div>
       

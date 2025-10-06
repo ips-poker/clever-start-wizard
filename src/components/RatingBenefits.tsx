@@ -60,32 +60,39 @@ export function RatingBenefits() {
     <section className="py-20 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 relative overflow-hidden">
       {/* Elegant Poker Chips Background */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-10">
-        <div className="absolute top-16 left-12 w-22 h-22 rounded-full animate-bounce-subtle">
-          <div className="absolute inset-0 rounded-full bg-gradient-to-br from-purple-400 via-purple-500 to-purple-600 shadow-2xl opacity-35"></div>
-          <div className="absolute inset-2 rounded-full bg-gradient-to-br from-slate-900 to-slate-800 border-2 border-purple-400/30 flex items-center justify-center">
-            <span className="text-purple-400/40 font-bold text-xs">1K</span>
+        <div className="absolute top-[12%] left-[28%] w-20 h-20 rounded-full animate-pulse-slow">
+          <div className="absolute inset-0 rounded-full bg-gradient-to-br from-red-400 via-red-500 to-red-600 shadow-2xl opacity-40"></div>
+          <div className="absolute inset-2 rounded-full bg-gradient-to-br from-slate-900 to-slate-800 border-2 border-red-400/30 flex items-center justify-center">
+            <span className="text-red-400/50 font-bold text-xs">500</span>
+          </div>
+          <div className="absolute inset-4 rounded-full border-2 border-dashed border-red-400/20"></div>
+        </div>
+        
+        <div className="absolute top-[40%] right-[15%] w-16 h-16 rounded-full animate-bounce-subtle">
+          <div className="absolute inset-0 rounded-full bg-gradient-to-br from-blue-400 via-blue-500 to-blue-600 shadow-xl opacity-35"></div>
+          <div className="absolute inset-1.5 rounded-full bg-gradient-to-br from-slate-900 to-slate-800 border-2 border-blue-400/30 flex items-center justify-center">
+            <span className="text-blue-400/50 font-bold text-xs">1K</span>
           </div>
         </div>
         
-        <div className="absolute bottom-24 right-16 w-18 h-18 rounded-full animate-pulse-slow">
+        <div className="absolute bottom-[18%] left-[15%] w-18 h-18 rounded-full animate-pulse-slow">
           <div className="absolute inset-0 rounded-full bg-gradient-to-br from-green-400 via-green-500 to-green-600 shadow-xl opacity-30"></div>
-          <div className="absolute inset-1.5 rounded-full bg-gradient-to-br from-slate-900 to-slate-800 border border-green-400/30"></div>
+          <div className="absolute inset-1.5 rounded-full bg-gradient-to-br from-slate-900 to-slate-800 border border-green-400/30 flex items-center justify-center">
+            <span className="text-green-400/50 font-bold text-xs">50</span>
+          </div>
         </div>
       </div>
       
       {/* Elegant Poker Suits */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-10">
-        <div className="absolute top-20 right-10 animate-pulse-slow transform rotate-12">
-          <div className="text-purple-400/40 text-5xl filter drop-shadow-[0_0_15px_rgba(192,132,252,0.35)]">♣</div>
+        <div className="absolute top-[25%] right-[32%] animate-pulse-slow">
+          <div className="text-red-400/40 text-5xl filter drop-shadow-[0_0_15px_rgba(248,113,113,0.3)]">♥</div>
         </div>
-        <div className="absolute top-40 left-20 animate-bounce-subtle transform -rotate-12">
-          <div className="text-red-400/35 text-4xl filter drop-shadow-[0_0_12px_rgba(248,113,113,0.3)]">♥</div>
+        <div className="absolute top-[38%] left-[25%] animate-bounce-subtle">
+          <div className="text-blue-400/35 text-4xl filter drop-shadow-[0_0_12px_rgba(96,165,250,0.3)]">♠</div>
         </div>
-        <div className="absolute bottom-20 right-20 animate-pulse-slow transform rotate-45">
-          <div className="text-amber-400/40 text-6xl filter drop-shadow-[0_0_20px_rgba(251,191,36,0.35)]">♦</div>
-        </div>
-        <div className="absolute bottom-40 left-10 animate-bounce-subtle transform -rotate-30">
-          <div className="text-amber-400/35 text-3xl filter drop-shadow-[0_0_12px_rgba(251,191,36,0.3)]">♠</div>
+        <div className="absolute bottom-[15%] right-[20%] animate-pulse-slow">
+          <div className="text-green-400/45 text-6xl filter drop-shadow-[0_0_20px_rgba(74,222,128,0.4)]">♣</div>
         </div>
       </div>
       
