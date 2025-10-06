@@ -213,13 +213,14 @@ export function ModernTournamentModal({ tournament, open, onOpenChange, onTourna
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto bg-gradient-to-br from-slate-900/98 via-black/95 to-slate-800/98 border-amber-400/20 backdrop-blur-2xl text-white">
+      <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto bg-gradient-to-br from-slate-900 via-black to-slate-800 border border-amber-400/30 backdrop-blur-2xl text-white shadow-2xl">
         {/* Покерные масти декорация */}
-        <div className="absolute inset-0 opacity-5 overflow-hidden pointer-events-none">
-          <div className="absolute top-4 right-6 text-3xl text-amber-400 transform rotate-12 animate-pulse">♠</div>
-          <div className="absolute top-16 left-4 text-2xl text-amber-500 transform -rotate-12 animate-bounce-subtle">♥</div>
-          <div className="absolute bottom-12 right-8 text-4xl text-amber-400 transform rotate-45 animate-pulse">♦</div>
-          <div className="absolute bottom-4 left-6 text-3xl text-amber-500 transform -rotate-30 animate-bounce-subtle">♣</div>
+        <div className="absolute inset-0 opacity-[0.07] overflow-hidden pointer-events-none">
+          <div className="absolute top-4 right-6 text-4xl text-amber-400 transform rotate-12 animate-pulse">♠</div>
+          <div className="absolute top-16 left-4 text-3xl text-amber-500 transform -rotate-12 animate-bounce-subtle">♥</div>
+          <div className="absolute bottom-12 right-8 text-5xl text-amber-400 transform rotate-45 animate-pulse" style={{ animationDelay: '0.5s' }}>♦</div>
+          <div className="absolute bottom-4 left-6 text-4xl text-amber-500 transform -rotate-30 animate-bounce-subtle" style={{ animationDelay: '0.3s' }}>♣</div>
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-9xl text-amber-400/20 rotate-12">♠</div>
         </div>
 
         <DialogHeader className="relative z-10 pb-4">
@@ -251,22 +252,22 @@ export function ModernTournamentModal({ tournament, open, onOpenChange, onTourna
           <div className="space-y-3">
             {/* Дата, время и участники в одной строке */}
             <div className="grid grid-cols-2 gap-3">
-              <div className="bg-gradient-to-br from-white/5 via-white/10 to-white/5 rounded-lg p-3 border border-white/10 backdrop-blur-sm">
+              <div className="bg-gradient-to-br from-white/[0.08] via-white/[0.12] to-white/[0.08] rounded-xl p-3.5 border border-white/20 backdrop-blur-sm hover:border-blue-400/30 transition-all duration-300 group/card">
                 <div className="flex items-center gap-2 mb-2">
-                  <div className="w-6 h-6 bg-gradient-to-br from-blue-500 to-blue-600 rounded-md flex items-center justify-center">
-                    <Calendar className="h-3 w-3 text-white" />
+                  <div className="w-7 h-7 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center shadow-lg group-hover/card:shadow-blue-500/30 transition-shadow">
+                    <Calendar className="h-4 w-4 text-white" />
                   </div>
-                  <h3 className="text-sm font-medium text-white">Дата и время</h3>
+                  <h3 className="text-sm font-semibold text-white">Дата и время</h3>
                 </div>
                 <div className="space-y-1">
-                  <p className="text-sm font-light text-white">
+                  <p className="text-sm font-normal text-white/90">
                     {new Date(tournament.start_time).toLocaleDateString('ru-RU', { 
                       day: 'numeric', 
                       month: 'long',
                       year: 'numeric'
                     })}
                   </p>
-                  <p className="text-sm text-amber-400 font-medium">
+                  <p className="text-base text-amber-400 font-semibold">
                     {new Date(tournament.start_time).toLocaleTimeString('ru-RU', { 
                       hour: '2-digit', 
                       minute: '2-digit' 
@@ -275,21 +276,21 @@ export function ModernTournamentModal({ tournament, open, onOpenChange, onTourna
                 </div>
               </div>
 
-              <div className="bg-gradient-to-br from-white/5 via-white/10 to-white/5 rounded-lg p-3 border border-white/10 backdrop-blur-sm">
+              <div className="bg-gradient-to-br from-white/[0.08] via-white/[0.12] to-white/[0.08] rounded-xl p-3.5 border border-white/20 backdrop-blur-sm hover:border-purple-400/30 transition-all duration-300 group/card">
                 <div className="flex items-center gap-2 mb-2">
-                  <div className="w-6 h-6 bg-gradient-to-br from-purple-500 to-purple-600 rounded-md flex items-center justify-center">
-                    <Users className="h-3 w-3 text-white" />
+                  <div className="w-7 h-7 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg flex items-center justify-center shadow-lg group-hover/card:shadow-purple-500/30 transition-shadow">
+                    <Users className="h-4 w-4 text-white" />
                   </div>
-                  <h3 className="text-sm font-medium text-white">Участники</h3>
+                  <h3 className="text-sm font-semibold text-white">Участники</h3>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-lg font-light text-white">{participantCount}</span>
-                  <span className="text-white/40">/</span>
-                  <span className="text-lg font-light text-white/80">{tournament.max_players}</span>
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-xl font-semibold text-white">{participantCount}</span>
+                  <span className="text-white/40 text-lg">/</span>
+                  <span className="text-xl font-semibold text-white/80">{tournament.max_players}</span>
                 </div>
-                <div className="mt-2 bg-white/10 rounded-full h-1 overflow-hidden">
+                <div className="bg-white/10 rounded-full h-1.5 overflow-hidden">
                   <div 
-                    className="h-full bg-gradient-to-r from-amber-400 to-amber-600 transition-all duration-500"
+                    className="h-full bg-gradient-to-r from-purple-400 via-amber-400 to-amber-600 transition-all duration-500 shadow-sm"
                     style={{ width: `${Math.min((participantCount / tournament.max_players) * 100, 100)}%` }}
                   ></div>
                 </div>
@@ -298,50 +299,50 @@ export function ModernTournamentModal({ tournament, open, onOpenChange, onTourna
 
             {/* Стоимость и призовой фонд */}
             <div className="grid grid-cols-2 gap-3">
-              <div className="bg-gradient-to-br from-white/5 via-white/10 to-white/5 rounded-lg p-3 border border-white/10 backdrop-blur-sm">
+              <div className="bg-gradient-to-br from-white/[0.08] via-white/[0.12] to-white/[0.08] rounded-xl p-3.5 border border-white/20 backdrop-blur-sm hover:border-green-400/30 transition-all duration-300 group/card">
                 <div className="flex items-center gap-2 mb-2">
-                  <div className="w-6 h-6 bg-gradient-to-br from-green-500 to-green-600 rounded-md flex items-center justify-center">
-                    <DollarSign className="h-3 w-3 text-white" />
+                  <div className="w-7 h-7 bg-gradient-to-br from-green-500 to-green-600 rounded-lg flex items-center justify-center shadow-lg group-hover/card:shadow-green-500/30 transition-shadow">
+                    <DollarSign className="h-4 w-4 text-white" />
                   </div>
-                  <h3 className="text-sm font-medium text-white">Орг. взнос</h3>
+                  <h3 className="text-sm font-semibold text-white">Орг. взнос</h3>
                 </div>
-                <p className="text-lg font-semibold text-white">{formatParticipationFee(tournament.participation_fee)}</p>
+                <p className="text-xl font-bold text-white">{formatParticipationFee(tournament.participation_fee)}</p>
                 {tournament.reentry_fee && tournament.reentry_fee > 0 && (
-                  <p className="text-xs text-white/60 mt-1">Повторный вход: {formatParticipationFee(tournament.reentry_fee)}</p>
+                  <p className="text-xs text-white/70 mt-1.5">Повторный вход: {formatParticipationFee(tournament.reentry_fee)}</p>
                 )}
               </div>
 
-              <div className="bg-gradient-to-br from-amber-500/10 via-amber-600/15 to-amber-500/10 rounded-lg p-3 border border-amber-500/20 backdrop-blur-sm">
+              <div className="bg-gradient-to-br from-amber-500/[0.15] via-amber-600/[0.2] to-amber-500/[0.15] rounded-xl p-3.5 border border-amber-500/30 backdrop-blur-sm hover:border-amber-400/50 transition-all duration-300 group/card shadow-lg shadow-amber-500/10">
                 <div className="flex items-center gap-2 mb-2">
-                  <div className="w-6 h-6 bg-gradient-to-br from-amber-500 to-amber-600 rounded-md flex items-center justify-center">
-                    <Crown className="h-3 w-3 text-white" />
+                  <div className="w-7 h-7 bg-gradient-to-br from-amber-500 to-amber-600 rounded-lg flex items-center justify-center shadow-lg group-hover/card:shadow-amber-500/40 transition-shadow">
+                    <Crown className="h-4 w-4 text-white" />
                   </div>
-                  <h3 className="text-sm font-medium text-white">Фонд RPS баллов</h3>
+                  <h3 className="text-sm font-semibold text-white">Фонд RPS баллов</h3>
                 </div>
-                <p className="text-lg font-semibold text-amber-400">{formatRPSPoints(rpsPool)}</p>
+                <p className="text-xl font-bold text-amber-400">{formatRPSPoints(rpsPool)}</p>
               </div>
             </div>
 
             {/* Стартовый стек и формат */}
             <div className="grid grid-cols-2 gap-3">
-              <div className="bg-gradient-to-br from-white/5 via-white/10 to-white/5 rounded-lg p-3 border border-white/10 backdrop-blur-sm">
+              <div className="bg-gradient-to-br from-white/[0.08] via-white/[0.12] to-white/[0.08] rounded-xl p-3.5 border border-white/20 backdrop-blur-sm hover:border-red-400/30 transition-all duration-300 group/card">
                 <div className="flex items-center gap-2 mb-2">
-                  <div className="w-6 h-6 bg-gradient-to-br from-red-500 to-red-600 rounded-md flex items-center justify-center">
-                    <Target className="h-3 w-3 text-white" />
+                  <div className="w-7 h-7 bg-gradient-to-br from-red-500 to-red-600 rounded-lg flex items-center justify-center shadow-lg group-hover/card:shadow-red-500/30 transition-shadow">
+                    <Target className="h-4 w-4 text-white" />
                   </div>
-                  <h3 className="text-sm font-medium text-white">Стартовый стек</h3>
+                  <h3 className="text-sm font-semibold text-white">Стартовый стек</h3>
                 </div>
-                <p className="text-sm font-light text-white">{tournament.starting_chips?.toLocaleString() || 'N/A'} фишек</p>
+                <p className="text-base font-semibold text-white">{tournament.starting_chips?.toLocaleString() || 'N/A'} фишек</p>
               </div>
 
-              <div className="bg-gradient-to-br from-white/5 via-white/10 to-white/5 rounded-lg p-3 border border-white/10 backdrop-blur-sm">
+              <div className="bg-gradient-to-br from-white/[0.08] via-white/[0.12] to-white/[0.08] rounded-xl p-3.5 border border-white/20 backdrop-blur-sm hover:border-amber-400/30 transition-all duration-300 group/card">
                 <div className="flex items-center gap-2 mb-2">
-                  <div className="w-6 h-6 bg-gradient-to-br from-amber-500 to-amber-600 rounded-md flex items-center justify-center">
-                    <Trophy className="h-3 w-3 text-white" />
+                  <div className="w-7 h-7 bg-gradient-to-br from-amber-500 to-amber-600 rounded-lg flex items-center justify-center shadow-lg group-hover/card:shadow-amber-500/30 transition-shadow">
+                    <Trophy className="h-4 w-4 text-white" />
                   </div>
-                  <h3 className="text-sm font-medium text-white">Формат</h3>
+                  <h3 className="text-sm font-semibold text-white">Формат</h3>
                 </div>
-                <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30 px-2 py-0.5 text-xs font-medium">
+                <Badge className="bg-amber-500/25 text-amber-300 border border-amber-500/40 px-3 py-1 text-xs font-semibold">
                   {tournament.tournament_format?.toUpperCase() || 'FREEZEOUT'}
                 </Badge>
               </div>
@@ -350,28 +351,28 @@ export function ModernTournamentModal({ tournament, open, onOpenChange, onTourna
 
           {/* Структура блайндов */}
           {blindStructure.length > 0 && (
-            <div className="bg-gradient-to-br from-white/5 via-white/10 to-white/5 rounded-lg p-3 border border-white/10 backdrop-blur-sm">
+            <div className="bg-gradient-to-br from-white/[0.08] via-white/[0.12] to-white/[0.08] rounded-xl p-4 border border-white/20 backdrop-blur-sm">
               <div className="flex items-center gap-2 mb-3">
-                <div className="w-6 h-6 bg-gradient-to-br from-purple-500 to-purple-600 rounded-md flex items-center justify-center">
-                  <Timer className="h-3 w-3 text-white" />
+                <div className="w-7 h-7 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg flex items-center justify-center shadow-lg">
+                  <Timer className="h-4 w-4 text-white" />
                 </div>
-                <h3 className="text-sm font-medium text-white">Структура блайндов</h3>
+                <h3 className="text-sm font-semibold text-white">Структура блайндов</h3>
               </div>
               
-              <div className="grid grid-cols-2 gap-2 max-h-32 overflow-y-auto custom-scrollbar">
+              <div className="grid grid-cols-2 gap-2.5 max-h-40 overflow-y-auto custom-scrollbar pr-1">
                 {blindStructure.slice(0, 8).map((level) => (
                   <div 
                     key={level.level} 
-                    className={`p-2 rounded-md border transition-all duration-300 ${
+                    className={`p-2.5 rounded-lg border transition-all duration-300 ${
                       level.is_break 
-                        ? 'bg-gradient-to-br from-orange-500/10 to-orange-600/10 border-orange-500/30' 
-                        : 'bg-gradient-to-br from-white/5 to-white/10 border-white/10'
+                        ? 'bg-gradient-to-br from-orange-500/15 to-orange-600/15 border-orange-500/40 hover:border-orange-400/60' 
+                        : 'bg-gradient-to-br from-white/[0.06] to-white/[0.12] border-white/20 hover:border-white/30'
                     }`}
                   >
-                    <div className="flex items-center gap-1 mb-1">
-                      <span className="text-xs font-medium text-white/60">Ур. {level.level}</span>
+                    <div className="flex items-center gap-1.5 mb-1.5">
+                      <span className="text-xs font-semibold text-white/70">Ур. {level.level}</span>
                       {level.ante > 0 && (
-                        <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30 text-xs px-1 py-0">
+                        <Badge className="bg-blue-500/25 text-blue-300 border border-blue-500/40 text-[10px] px-1.5 py-0">
                           A
                         </Badge>
                       )}
@@ -379,22 +380,22 @@ export function ModernTournamentModal({ tournament, open, onOpenChange, onTourna
                     
                     {level.is_break ? (
                       <div className="text-center">
-                        <p className="text-orange-400 font-medium text-xs">ПЕРЕРЫВ</p>
-                        <p className="text-xs text-white/60">{level.duration / 60}м</p>
+                        <p className="text-orange-300 font-semibold text-xs">ПЕРЕРЫВ</p>
+                        <p className="text-xs text-white/70 mt-0.5">{level.duration / 60}м</p>
                       </div>
                     ) : (
                       <div>
-                        <div className="flex justify-between items-center mb-0.5">
-                          <span className="text-white text-xs">{level.small_blind}</span>
-                          <span className="text-white/40 text-xs">/</span>
-                          <span className="text-white text-xs">{level.big_blind}</span>
+                        <div className="flex justify-between items-center mb-1">
+                          <span className="text-white font-semibold text-sm">{level.small_blind}</span>
+                          <span className="text-white/40 text-sm font-medium">/</span>
+                          <span className="text-white font-semibold text-sm">{level.big_blind}</span>
                         </div>
                         {level.ante > 0 && (
-                          <div className="text-center">
-                            <span className="text-xs text-blue-400">A:{level.ante}</span>
+                          <div className="text-center mb-0.5">
+                            <span className="text-xs text-blue-300 font-medium">A:{level.ante}</span>
                           </div>
                         )}
-                        <div className="text-xs text-white/60 text-center">
+                        <div className="text-xs text-white/70 text-center font-medium">
                           {level.duration / 60}м
                         </div>
                       </div>
@@ -404,19 +405,18 @@ export function ModernTournamentModal({ tournament, open, onOpenChange, onTourna
               </div>
               
               {blindStructure.length > 8 && (
-                <div className="text-center mt-2">
-                  <p className="text-white/60 text-xs">+{blindStructure.length - 8} уровней</p>
+                <div className="text-center mt-3 pt-2 border-t border-white/10">
+                  <p className="text-white/60 text-xs font-medium">+{blindStructure.length - 8} уровней</p>
                 </div>
               )}
             </div>
           )}
         </div>
 
-        <div className="flex justify-center pt-4 relative z-10">
+        <div className="flex justify-center pt-6 relative z-10">
           <Button 
-            variant="outline"
             onClick={() => onOpenChange(false)}
-            className="border border-white/20 bg-white/5 text-white hover:bg-white/10 hover:border-white/30 transition-all duration-300 text-sm rounded-lg px-8"
+            className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-semibold py-3 px-12 rounded-lg shadow-lg hover:shadow-amber-500/30 transition-all duration-300 text-sm"
           >
             Закрыть
           </Button>
