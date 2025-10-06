@@ -18,8 +18,10 @@ interface PrizeStructureManagerProps {
 
 interface TournamentRegistration {
   player_id: string;
-  rebuys: number;
-  addons: number;
+  rebuys?: number;
+  addons?: number;
+  reentries?: number;
+  additional_sets?: number;
 }
 
 interface PayoutPlace {
@@ -99,7 +101,7 @@ const PrizeStructureManager = ({ tournamentId, registeredPlayers, mode = 'manage
 
       const { data: registrationsData, error: registrationsError } = await supabase
         .from('tournament_registrations')
-        .select('player_id, rebuys, addons')
+        .select('player_id, rebuys, addons, reentries, additional_sets')
         .eq('tournament_id', tournamentId);
 
       if (registrationsError) throw registrationsError;
@@ -161,11 +163,24 @@ const PrizeStructureManager = ({ tournamentId, registeredPlayers, mode = 'manage
   };
 
   const calculatePrizePool = () => {
-    const buyInTotal = tournament.buy_in * registeredPlayers;
-    const rebuyTotal = registrations.reduce((sum, reg) => sum + (reg.rebuys * (tournament.rebuy_cost || 0)), 0);
-    const addonTotal = registrations.reduce((sum, reg) => sum + (reg.addons * (tournament.addon_cost || 0)), 0);
+    // Используем новые поля с fallback на старые
+    const participationFee = tournament.participation_fee || tournament.buy_in || 0;
+    const reentryFee = tournament.reentry_fee || tournament.rebuy_cost || 0;
+    const additionalFee = tournament.additional_fee || tournament.addon_cost || 0;
     
-    return buyInTotal + rebuyTotal + addonTotal;
+    const mainTotal = participationFee * registeredPlayers;
+    const reentryTotal = registrations.reduce((sum, reg) => {
+      const count = (reg.reentries !== undefined ? reg.reentries : reg.rebuys) || 0;
+      return sum + (count * reentryFee);
+    }, 0);
+    const additionalTotal = registrations.reduce((sum, reg) => {
+      const count = (reg.additional_sets !== undefined ? reg.additional_sets : reg.addons) || 0;
+      return sum + (count * additionalFee);
+    }, 0);
+    
+    // Конвертируем в RPS: 1000₽ = 100 RPS, то есть делим на 10
+    const totalInRubles = mainTotal + reentryTotal + additionalTotal;
+    return Math.floor(totalInRubles / 10);
   };
 
   // Функция для расчета призовых мест в покере (правильная логика)
@@ -401,16 +416,22 @@ const PrizeStructureManager = ({ tournamentId, registeredPlayers, mode = 'manage
                 />
               </div>
               <div>
-                <Label className="text-xs text-gray-500 tracking-wide uppercase">Ребаи и Адоны</Label>
+                <Label className="text-xs text-gray-500 tracking-wide uppercase">Повторные входы и Доп наборы</Label>
                 <div className="text-sm text-gray-600 space-y-1">
-                  <div>Ребаев: {registrations.reduce((sum, reg) => sum + reg.rebuys, 0)} × {tournament?.rebuy_cost || 0}</div>
-                  <div>Адонов: {registrations.reduce((sum, reg) => sum + reg.addons, 0)} × {tournament?.addon_cost || 0}</div>
+                  <div>Повторные входы: {registrations.reduce((sum, reg) => {
+                    const count = (reg.reentries !== undefined ? reg.reentries : reg.rebuys) || 0;
+                    return sum + count;
+                  }, 0)} × {tournament?.reentry_fee || tournament?.rebuy_cost || 0} ₽ ({tournament?.reentry_chips || tournament?.rebuy_chips || 0} фишек)</div>
+                  <div>Доп наборы: {registrations.reduce((sum, reg) => {
+                    const count = (reg.additional_sets !== undefined ? reg.additional_sets : reg.addons) || 0;
+                    return sum + count;
+                  }, 0)} × {tournament?.additional_fee || tournament?.addon_cost || 0} ₽ ({tournament?.additional_chips || tournament?.addon_chips || 0} фишек)</div>
                 </div>
               </div>
               <div>
                 <Label className="text-xs text-gray-500 tracking-wide uppercase">Общий призовой фонд</Label>
                 <div className="text-xl font-light text-gray-800">
-                  {totalPrizePool.toLocaleString()}₽
+                  {totalPrizePool.toLocaleString()} RPS
                 </div>
               </div>
             </div>
