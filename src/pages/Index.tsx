@@ -81,13 +81,53 @@ const Index = () => {
         }}
       />
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 relative overflow-hidden">
-        {/* Global decorative elements */}
-        <div className="fixed inset-0 pointer-events-none overflow-hidden opacity-8 z-0">
-          <div className="absolute top-20 left-10 text-amber-400/30 text-6xl animate-pulse">♠</div>
-          <div className="absolute top-40 right-20 text-amber-400/25 text-5xl animate-bounce-subtle">♣</div>
-          <div className="absolute bottom-40 left-20 text-amber-400/35 text-7xl animate-pulse">♥</div>
-          <div className="absolute bottom-20 right-10 text-amber-400/20 text-4xl animate-bounce-subtle">♦</div>
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-amber-400/10 text-9xl rotate-45 animate-glow">♠</div>
+        {/* Elegant Poker Chips Background */}
+        <div className="fixed inset-0 pointer-events-none overflow-hidden opacity-10 z-0">
+          {/* Scattered elegant chips */}
+          <div className="absolute top-20 left-10 w-16 h-16 rounded-full animate-pulse-slow">
+            <div className="absolute inset-0 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 opacity-30"></div>
+            <div className="absolute inset-1 rounded-full bg-slate-900/80 border border-amber-400/20"></div>
+          </div>
+          
+          <div className="absolute top-1/4 right-20 w-12 h-12 rounded-full animate-bounce-subtle">
+            <div className="absolute inset-0 rounded-full bg-gradient-to-br from-purple-400 to-purple-600 opacity-25"></div>
+            <div className="absolute inset-1 rounded-full bg-slate-900/80 border border-purple-400/20"></div>
+          </div>
+          
+          <div className="absolute bottom-1/3 left-1/4 w-20 h-20 rounded-full animate-pulse-slow">
+            <div className="absolute inset-0 rounded-full bg-gradient-to-br from-red-400 to-red-600 opacity-35"></div>
+            <div className="absolute inset-1.5 rounded-full bg-slate-900/80 border-2 border-red-400/20"></div>
+          </div>
+          
+          <div className="absolute bottom-20 right-1/4 w-14 h-14 rounded-full animate-bounce-subtle">
+            <div className="absolute inset-0 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 opacity-25"></div>
+            <div className="absolute inset-1 rounded-full bg-slate-900/80 border border-blue-400/20"></div>
+          </div>
+        </div>
+
+        {/* Elegant Poker Suits */}
+        <div className="fixed inset-0 pointer-events-none overflow-hidden opacity-10 z-0">
+          <div className="absolute top-20 left-10 animate-pulse-slow">
+            <div className="text-amber-400/40 text-6xl filter drop-shadow-[0_0_15px_rgba(251,191,36,0.3)]">♠</div>
+          </div>
+          <div className="absolute top-1/3 right-20 animate-bounce-subtle">
+            <div className="text-amber-400/35 text-5xl filter drop-shadow-[0_0_12px_rgba(251,191,36,0.25)]">♣</div>
+          </div>
+          <div className="absolute bottom-1/3 left-20 animate-pulse-slow">
+            <div className="text-red-400/45 text-7xl filter drop-shadow-[0_0_20px_rgba(248,113,113,0.4)]">♥</div>
+          </div>
+          <div className="absolute bottom-20 right-10 animate-bounce-subtle">
+            <div className="text-amber-400/30 text-4xl filter drop-shadow-[0_0_10px_rgba(251,191,36,0.2)]">♦</div>
+          </div>
+          <div className="absolute top-1/2 left-1/3 animate-pulse-slow">
+            <div className="text-purple-400/30 text-5xl filter drop-shadow-[0_0_12px_rgba(192,132,252,0.25)]">♠</div>
+          </div>
+          <div className="absolute bottom-1/2 right-1/3 animate-bounce-subtle">
+            <div className="text-blue-400/25 text-6xl filter drop-shadow-[0_0_15px_rgba(96,165,250,0.3)]">♦</div>
+          </div>
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 animate-glow">
+            <div className="text-amber-400/10 text-9xl rotate-45 filter drop-shadow-[0_0_25px_rgba(251,191,36,0.15)]">♠</div>
+          </div>
         </div>
         
         {/* Ambient light spots */}
@@ -113,16 +153,23 @@ const Index = () => {
           .animate-bounce-subtle {
             animation: bounce-subtle 4s ease-in-out infinite;
           }
+          .animate-pulse-slow {
+            animation: pulse-slow 8s ease-in-out infinite;
+          }
           .animate-glow {
-            animation: glow 6s ease-in-out infinite;
+            animation: glow 10s ease-in-out infinite;
           }
           @keyframes bounce-subtle {
             0%, 100% { transform: translateY(0px) rotate(var(--tw-rotate)); }
             50% { transform: translateY(-15px) rotate(var(--tw-rotate)); }
           }
+          @keyframes pulse-slow {
+            0%, 100% { opacity: 0.5; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.05); }
+          }
           @keyframes glow {
-            0%, 100% { opacity: 0.05; transform: translate(-50%, -50%) rotate(45deg) scale(1); }
-            50% { opacity: 0.1; transform: translate(-50%, -50%) rotate(45deg) scale(1.1); }
+            0%, 100% { opacity: 0.1; transform: translate(-50%, -50%) rotate(45deg) scale(1); }
+            50% { opacity: 0.15; transform: translate(-50%, -50%) rotate(45deg) scale(1.05); }
           }
         `}</style>
       </div>

@@ -68,21 +68,88 @@ export function Hero() {
           <div className="absolute top-1/3 left-10 w-16 h-16 border-2 border-purple-400/30 transform rotate-12"></div>
         </div>
 
-        {/* Покерные фишки декорация */}
-        <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-8">
-          <div className="absolute top-20 right-32 w-12 h-12 rounded-full bg-gradient-to-br from-amber-400/30 to-amber-600/30 border-2 border-amber-400/40 animate-float"></div>
-          <div className="absolute bottom-40 left-20 w-16 h-16 rounded-full bg-gradient-to-br from-purple-400/30 to-purple-600/30 border-2 border-purple-400/40 animate-float-delayed"></div>
-          <div className="absolute top-1/2 right-10 w-10 h-10 rounded-full bg-gradient-to-br from-blue-400/30 to-blue-600/30 border-2 border-blue-400/40 animate-float" style={{ animationDelay: '1s' }}></div>
+        {/* Elegant Poker Chips */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          {/* Top left chip */}
+          <div className="absolute top-20 left-20 w-24 h-24 rounded-full animate-float opacity-20">
+            <div className="absolute inset-0 rounded-full bg-gradient-to-br from-amber-400 via-amber-500 to-amber-600 shadow-2xl"></div>
+            <div className="absolute inset-2 rounded-full bg-gradient-to-br from-slate-900 to-slate-800 flex items-center justify-center">
+              <div className="w-12 h-12 rounded-full border-4 border-amber-400/50 flex items-center justify-center">
+                <span className="text-amber-400 font-bold text-xs">100</span>
+              </div>
+            </div>
+          </div>
+          
+          {/* Top right chip */}
+          <div className="absolute top-40 right-32 w-20 h-20 rounded-full animate-float-delayed opacity-15">
+            <div className="absolute inset-0 rounded-full bg-gradient-to-br from-red-500 via-red-600 to-red-700 shadow-xl"></div>
+            <div className="absolute inset-1.5 rounded-full bg-gradient-to-br from-slate-900 to-slate-800 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-full border-3 border-red-500/50 flex items-center justify-center">
+                <span className="text-red-400 font-bold text-xs">500</span>
+              </div>
+            </div>
+          </div>
+          
+          {/* Bottom left chip */}
+          <div className="absolute bottom-32 left-40 w-28 h-28 rounded-full animate-float opacity-25">
+            <div className="absolute inset-0 rounded-full bg-gradient-to-br from-purple-500 via-purple-600 to-purple-700 shadow-2xl"></div>
+            <div className="absolute inset-2 rounded-full bg-gradient-to-br from-slate-900 to-slate-800 flex items-center justify-center">
+              <div className="w-14 h-14 rounded-full border-4 border-purple-400/50 flex items-center justify-center">
+                <span className="text-purple-400 font-bold text-sm">1K</span>
+              </div>
+            </div>
+          </div>
+          
+          {/* Bottom right chip */}
+          <div className="absolute bottom-20 right-20 w-16 h-16 rounded-full animate-float-delayed opacity-20">
+            <div className="absolute inset-0 rounded-full bg-gradient-to-br from-blue-500 via-blue-600 to-blue-700 shadow-xl"></div>
+            <div className="absolute inset-1.5 rounded-full bg-gradient-to-br from-slate-900 to-slate-800 flex items-center justify-center">
+              <div className="w-8 h-8 rounded-full border-2 border-blue-400/50 flex items-center justify-center">
+                <span className="text-blue-400 font-bold text-[10px]">50</span>
+              </div>
+            </div>
+          </div>
+          
+          {/* Center chips cluster */}
+          <div className="absolute top-1/2 left-1/3 w-20 h-20 rounded-full animate-float opacity-10">
+            <div className="absolute inset-0 rounded-full bg-gradient-to-br from-green-500 via-green-600 to-green-700 shadow-xl"></div>
+            <div className="absolute inset-1.5 rounded-full bg-gradient-to-br from-slate-900 to-slate-800"></div>
+          </div>
         </div>
 
-        {/* Animated poker symbols */}
-        <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-15">
-          <div className="absolute top-[15%] left-[10%] text-amber-400/50 text-5xl animate-float">♠</div>
-          <div className="absolute top-[25%] right-[15%] text-amber-400/40 text-4xl animate-float-delayed">♣</div>
-          <div className="absolute bottom-[20%] left-[15%] text-amber-400/45 text-6xl animate-float">♥</div>
-          <div className="absolute bottom-[15%] right-[10%] text-amber-400/35 text-3xl animate-float-delayed">♦</div>
-          <div className="absolute top-[40%] left-[25%] text-purple-400/30 text-4xl animate-float" style={{ animationDelay: '1.5s' }}>♠</div>
-          <div className="absolute top-[60%] right-[30%] text-blue-400/25 text-3xl animate-float-delayed" style={{ animationDelay: '2.5s' }}>♦</div>
+        {/* Elegant Poker Suits */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          {/* Spades with glow */}
+          <div className="absolute top-20 left-10 animate-float">
+            <div className="text-amber-400/30 text-6xl filter drop-shadow-[0_0_15px_rgba(251,191,36,0.3)]">♠</div>
+          </div>
+          <div className="absolute top-1/3 left-1/4 animate-float-delayed">
+            <div className="text-amber-400/15 text-5xl filter drop-shadow-[0_0_10px_rgba(251,191,36,0.2)]">♠</div>
+          </div>
+          
+          {/* Clubs with glow */}
+          <div className="absolute top-40 right-20 animate-float-delayed">
+            <div className="text-amber-400/25 text-5xl filter drop-shadow-[0_0_12px_rgba(251,191,36,0.25)]">♣</div>
+          </div>
+          <div className="absolute top-2/3 right-1/3 animate-float">
+            <div className="text-amber-400/20 text-6xl filter drop-shadow-[0_0_15px_rgba(251,191,36,0.3)]">♣</div>
+          </div>
+          
+          {/* Hearts with red glow */}
+          <div className="absolute bottom-40 left-20 animate-float">
+            <div className="text-red-400/35 text-7xl filter drop-shadow-[0_0_20px_rgba(248,113,113,0.4)]">♥</div>
+          </div>
+          <div className="absolute top-1/2 right-1/4 animate-float-delayed">
+            <div className="text-red-400/20 text-5xl filter drop-shadow-[0_0_12px_rgba(248,113,113,0.3)]">♥</div>
+          </div>
+          
+          {/* Diamonds with glow */}
+          <div className="absolute bottom-20 right-10 animate-float-delayed">
+            <div className="text-amber-400/25 text-4xl filter drop-shadow-[0_0_10px_rgba(251,191,36,0.25)]">♦</div>
+          </div>
+          <div className="absolute bottom-1/3 left-1/3 animate-float">
+            <div className="text-amber-400/15 text-6xl filter drop-shadow-[0_0_15px_rgba(251,191,36,0.2)]">♦</div>
+          </div>
         </div>
 
         {/* Main content */}
