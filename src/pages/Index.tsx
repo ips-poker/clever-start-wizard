@@ -80,14 +80,20 @@ const Index = () => {
           ]
         }}
       />
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-black to-slate-800 relative overflow-hidden">
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 relative overflow-hidden">
         {/* Global decorative elements */}
-        <div className="fixed inset-0 pointer-events-none overflow-hidden opacity-3 z-0">
-          <div className="absolute top-20 left-10 text-amber-400/20 text-6xl animate-pulse">♠</div>
-          <div className="absolute top-40 right-20 text-amber-400/15 text-5xl animate-bounce-subtle">♣</div>
-          <div className="absolute bottom-40 left-20 text-amber-400/25 text-7xl animate-pulse">♥</div>
-          <div className="absolute bottom-20 right-10 text-amber-400/10 text-4xl animate-bounce-subtle">♦</div>
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-amber-400/5 text-9xl rotate-45 animate-glow">♠</div>
+        <div className="fixed inset-0 pointer-events-none overflow-hidden opacity-8 z-0">
+          <div className="absolute top-20 left-10 text-amber-400/30 text-6xl animate-pulse">♠</div>
+          <div className="absolute top-40 right-20 text-amber-400/25 text-5xl animate-bounce-subtle">♣</div>
+          <div className="absolute bottom-40 left-20 text-amber-400/35 text-7xl animate-pulse">♥</div>
+          <div className="absolute bottom-20 right-10 text-amber-400/20 text-4xl animate-bounce-subtle">♦</div>
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-amber-400/10 text-9xl rotate-45 animate-glow">♠</div>
+        </div>
+        
+        {/* Ambient light spots */}
+        <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
+          <div className="absolute top-0 left-1/4 w-96 h-96 bg-amber-500/5 rounded-full blur-3xl"></div>
+          <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-purple-500/5 rounded-full blur-3xl"></div>
         </div>
         
         <Header />

@@ -21,23 +21,68 @@ export function Hero() {
   
   return (
     <>
-      <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-slate-950 via-slate-900 to-black">
+      <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
         {/* Background image with overlay */}
         <div className="absolute inset-0">
           <img 
             src={luxuryPokerHero} 
             alt="Покерный стол" 
-            className="w-full h-full object-cover opacity-15"
+            className="w-full h-full object-cover opacity-30"
           />
-          <div className="absolute inset-0 bg-gradient-to-br from-slate-950/95 via-slate-900/90 to-black/95 backdrop-blur-[2px]"></div>
+          <div className="absolute inset-0 bg-gradient-to-br from-slate-900/85 via-slate-800/80 to-slate-900/85 backdrop-blur-[1px]"></div>
+        </div>
+
+        {/* Светящиеся частицы */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          {[...Array(20)].map((_, i) => (
+            <div
+              key={i}
+              className="absolute w-1 h-1 bg-amber-400/60 rounded-full animate-particle"
+              style={{
+                left: `${Math.random() * 100}%`,
+                top: `${Math.random() * 100}%`,
+                animationDelay: `${Math.random() * 5}s`,
+                animationDuration: `${3 + Math.random() * 4}s`
+              }}
+            />
+          ))}
+        </div>
+
+        {/* Диагональные световые лучи */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-20">
+          <div className="absolute top-0 -left-1/4 w-1/2 h-full bg-gradient-to-r from-transparent via-amber-400/20 to-transparent transform rotate-12 animate-ray-1"></div>
+          <div className="absolute top-0 right-1/4 w-1/3 h-full bg-gradient-to-r from-transparent via-amber-500/15 to-transparent transform -rotate-12 animate-ray-2"></div>
+        </div>
+
+        {/* Градиентные световые пятна */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          <div className="absolute top-20 left-10 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl animate-pulse-slow"></div>
+          <div className="absolute bottom-20 right-10 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl animate-pulse-slow" style={{ animationDelay: '2s' }}></div>
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-blue-500/5 rounded-full blur-3xl"></div>
+        </div>
+
+        {/* Геометрические паттерны */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-5">
+          <div className="absolute top-10 right-20 w-32 h-32 border-2 border-amber-400/30 rounded-lg transform rotate-45 animate-spin-slow"></div>
+          <div className="absolute bottom-32 left-32 w-24 h-24 border border-amber-400/20 rounded-full animate-pulse"></div>
+          <div className="absolute top-1/3 left-10 w-16 h-16 border-2 border-purple-400/30 transform rotate-12"></div>
+        </div>
+
+        {/* Покерные фишки декорация */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-8">
+          <div className="absolute top-20 right-32 w-12 h-12 rounded-full bg-gradient-to-br from-amber-400/30 to-amber-600/30 border-2 border-amber-400/40 animate-float"></div>
+          <div className="absolute bottom-40 left-20 w-16 h-16 rounded-full bg-gradient-to-br from-purple-400/30 to-purple-600/30 border-2 border-purple-400/40 animate-float-delayed"></div>
+          <div className="absolute top-1/2 right-10 w-10 h-10 rounded-full bg-gradient-to-br from-blue-400/30 to-blue-600/30 border-2 border-blue-400/40 animate-float" style={{ animationDelay: '1s' }}></div>
         </div>
 
         {/* Animated poker symbols */}
-        <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-10">
-          <div className="absolute top-[15%] left-[10%] text-amber-400/40 text-5xl animate-float">♠</div>
-          <div className="absolute top-[25%] right-[15%] text-amber-400/30 text-4xl animate-float-delayed">♣</div>
-          <div className="absolute bottom-[20%] left-[15%] text-amber-400/35 text-6xl animate-float">♥</div>
-          <div className="absolute bottom-[15%] right-[10%] text-amber-400/25 text-3xl animate-float-delayed">♦</div>
+        <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-15">
+          <div className="absolute top-[15%] left-[10%] text-amber-400/50 text-5xl animate-float">♠</div>
+          <div className="absolute top-[25%] right-[15%] text-amber-400/40 text-4xl animate-float-delayed">♣</div>
+          <div className="absolute bottom-[20%] left-[15%] text-amber-400/45 text-6xl animate-float">♥</div>
+          <div className="absolute bottom-[15%] right-[10%] text-amber-400/35 text-3xl animate-float-delayed">♦</div>
+          <div className="absolute top-[40%] left-[25%] text-purple-400/30 text-4xl animate-float" style={{ animationDelay: '1.5s' }}>♠</div>
+          <div className="absolute top-[60%] right-[30%] text-blue-400/25 text-3xl animate-float-delayed" style={{ animationDelay: '2.5s' }}>♦</div>
         </div>
 
         {/* Main content */}
@@ -183,6 +228,53 @@ export function Hero() {
           @keyframes float {
             0%, 100% { transform: translateY(0px) rotate(var(--tw-rotate)); }
             50% { transform: translateY(-20px) rotate(var(--tw-rotate)); }
+          }
+          .animate-particle {
+            animation: particle linear infinite;
+          }
+          @keyframes particle {
+            0% { 
+              transform: translateY(0) scale(0);
+              opacity: 0;
+            }
+            10% {
+              opacity: 1;
+            }
+            90% {
+              opacity: 1;
+            }
+            100% { 
+              transform: translateY(-100vh) scale(1);
+              opacity: 0;
+            }
+          }
+          .animate-ray-1 {
+            animation: ray-move-1 20s ease-in-out infinite;
+          }
+          .animate-ray-2 {
+            animation: ray-move-2 25s ease-in-out infinite;
+          }
+          @keyframes ray-move-1 {
+            0%, 100% { transform: translateX(-10%) rotate(12deg); }
+            50% { transform: translateX(10%) rotate(12deg); }
+          }
+          @keyframes ray-move-2 {
+            0%, 100% { transform: translateX(10%) rotate(-12deg); }
+            50% { transform: translateX(-10%) rotate(-12deg); }
+          }
+          .animate-pulse-slow {
+            animation: pulse-slow 8s ease-in-out infinite;
+          }
+          @keyframes pulse-slow {
+            0%, 100% { opacity: 0.3; transform: scale(1); }
+            50% { opacity: 0.6; transform: scale(1.1); }
+          }
+          .animate-spin-slow {
+            animation: spin-slow 30s linear infinite;
+          }
+          @keyframes spin-slow {
+            from { transform: rotate(45deg); }
+            to { transform: rotate(405deg); }
           }
           .animation-delay-100 {
             animation-delay: 0.1s;
