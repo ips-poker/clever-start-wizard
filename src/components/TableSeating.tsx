@@ -370,7 +370,86 @@ const TableSeating = ({
     }
   };
 
+  const redistributeChips = async (eliminatedChips: number, remainingPlayerIds: string[]) => {
+    if (remainingPlayerIds.length === 0 || eliminatedChips <= 0) return;
+
+    // Получаем актуальные данные о фишках из БД
+    const { data: freshPlayers, error: fetchError } = await supabase
+      .from('tournament_registrations')
+      .select('id, player_id, chips')
+      .in('player_id', remainingPlayerIds)
+      .eq('tournament_id', tournamentId);
+
+    if (fetchError || !freshPlayers) {
+      console.error('Ошибка получения данных игроков:', fetchError);
+      return;
+    }
+
+    // Равномерное распределение фишек для правильного подсчета среднего стека
+    const chipsPerPlayer = Math.floor(eliminatedChips / freshPlayers.length);
+    const remainderChips = eliminatedChips % freshPlayers.length;
+
+    console.log('🔄 [Рассадка] Распределение фишек:', {
+      eliminatedChips,
+      playersCount: freshPlayers.length,
+      chipsPerPlayer,
+      remainderChips
+    });
+
+    // Обновляем фишки каждого игрока
+    const updatePromises = freshPlayers.map((player, index) => {
+      const additionalChips = chipsPerPlayer + (index < remainderChips ? 1 : 0);
+      const newChips = player.chips + additionalChips;
+      
+      console.log(`  Игрок ${player.player_id}: ${player.chips} + ${additionalChips} = ${newChips}`);
+      
+      return supabase
+        .from('tournament_registrations')
+        .update({ chips: newChips })
+        .eq('player_id', player.player_id)
+        .eq('tournament_id', tournamentId);
+    });
+
+    const results = await Promise.all(updatePromises);
+    const hasError = results.some(result => result.error);
+
+    if (hasError) {
+      console.error('Ошибки при обновлении фишек:', results.filter(r => r.error));
+    } else {
+      console.log('✅ [Рассадка] Фишки распределены равномерно между игроками');
+    }
+  };
+
   const eliminatePlayer = async (playerId: string) => {
+    // Находим регистрацию игрока для получения его фишек
+    const playerRegistration = registrations.find(r => r.player_id === playerId);
+    if (!playerRegistration) {
+      console.error('Регистрация игрока не найдена');
+      return;
+    }
+
+    const eliminatedChips = playerRegistration.chips || 0;
+    
+    // Находим всех активных игроков кроме исключаемого
+    const remainingActive = registrations.filter(r => 
+      (r.status === 'registered' || r.status === 'playing' || r.status === 'confirmed') && 
+      r.player_id !== playerId
+    );
+    
+    console.log('🎯 [Рассадка] Исключение игрока:', {
+      name: playerRegistration.player?.name,
+      chips: eliminatedChips,
+      remainingPlayers: remainingActive.length
+    });
+
+    // Перераспределяем фишки выбывшего ПЕРЕД его исключением
+    if (eliminatedChips > 0 && remainingActive.length > 0) {
+      const remainingPlayerIds = remainingActive.map(r => r.player_id);
+      await redistributeChips(eliminatedChips, remainingPlayerIds);
+      console.log('✅ [Рассадка] Фишки распределены, теперь исключаем игрока');
+    }
+
+    // Теперь обновляем UI и БД
     const newTables = [...tables];
     let playerFound = false;
     
@@ -389,12 +468,13 @@ const TableSeating = ({
     });
 
     if (playerFound) {
-      // Обновляем статус на eliminated - триггер автоматически установит время выбывания
+      // Обновляем статус на eliminated и обнуляем фишки - триггер автоматически установит время выбывания
       await supabase
         .from('tournament_registrations')
         .update({ 
           status: 'eliminated',
-          seat_number: null
+          seat_number: null,
+          chips: 0
         })
         .eq('player_id', playerId)
         .eq('tournament_id', tournamentId);
@@ -408,7 +488,7 @@ const TableSeating = ({
       
       toast({ 
         title: "Игрок выбыл", 
-        description: "Игрок исключен из турнира. Позиция автоматически рассчитана по времени выбывания.",
+        description: `Игрок исключен. Фишки (${eliminatedChips.toLocaleString()}) распределены между ${remainingActive.length} игроками. Позиция рассчитана автоматически.`,
         className: "font-medium"
       });
 
