@@ -221,11 +221,11 @@ export default function Profile() {
   }));
 
   const getRankClass = (rating: number) => {
-    if (rating >= 1800) return "from-amber-600 to-amber-800";
-    if (rating >= 1600) return "from-purple-600 to-purple-800";
-    if (rating >= 1400) return "from-blue-600 to-blue-800";
-    if (rating >= 1200) return "from-emerald-600 to-emerald-800";
-    return "from-slate-600 to-slate-800";
+    if (rating >= 1800) return "from-yellow-400 to-yellow-600";
+    if (rating >= 1600) return "from-purple-400 to-purple-600";
+    if (rating >= 1400) return "from-blue-400 to-blue-600";
+    if (rating >= 1200) return "from-green-400 to-green-600";
+    return "from-gray-400 to-gray-600";
   };
 
   const getRankTitle = (rating: number) => {
@@ -242,28 +242,28 @@ export default function Profile() {
       value: player?.elo_rating || 100,
       description: getRankTitle(player?.elo_rating || 100),
       icon: TrendingUp,
-      color: "text-primary"
+      color: "text-amber-400"
     },
     {
       title: "Игр сыграно",
       value: player?.games_played || 0,
       description: "Всего турниров",
       icon: Target,
-      color: "text-chart-2"
+      color: "text-blue-400"
     },
     {
       title: "Побед",
       value: player?.wins || 0,
       description: "Первые места",
       icon: Trophy,
-      color: "text-chart-3"
+      color: "text-green-400"
     },
     {
       title: "Винрейт",
       value: player?.games_played ? `${Math.round((player.wins / player.games_played) * 100)}%` : "0%",
       description: "Процент побед",
       icon: Award,
-      color: "text-chart-4"
+      color: "text-purple-400"
     }
   ];
 
@@ -271,8 +271,8 @@ export default function Profile() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-foreground">Загрузка профиля...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-400 mx-auto mb-4"></div>
+          <p className="text-white/70">Загрузка профиля...</p>
         </div>
       </div>
     );
@@ -326,83 +326,83 @@ export default function Profile() {
             <div className="relative z-10 text-center space-y-6">
               <div className="relative inline-block">
                 <div className={`absolute inset-0 rounded-full bg-gradient-to-br ${getRankClass(player?.elo_rating || 100)} opacity-30 blur-xl scale-110`}></div>
-                <Avatar className="relative w-32 h-32 mx-auto border-4 border-slate-800/80 shadow-2xl ring-4 ring-primary/30">
+                <Avatar className="relative w-32 h-32 mx-auto border-4 border-white/20 shadow-2xl">
                   <AvatarImage src={player?.avatar_url} alt={player?.name} />
-                  <AvatarFallback className="text-2xl bg-gradient-to-br from-slate-800 to-slate-900 text-primary border-2 border-slate-700/50">
+                  <AvatarFallback className="text-2xl bg-gradient-to-br from-amber-500 to-amber-600 text-white">
                     {player?.name?.charAt(0).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
                 <Button
                   onClick={() => setShowAvatarSelector(true)}
-                  className="absolute -bottom-2 -right-2 rounded-full w-10 h-10 p-0 shadow-lg hover:scale-110 transition-transform bg-primary hover:bg-primary/90"
+                  className="absolute -bottom-2 -right-2 rounded-full w-10 h-10 p-0 shadow-lg hover:scale-110 transition-transform bg-amber-500 hover:bg-amber-600"
                   size="sm"
                 >
-                  <Edit3 className="h-4 w-4" />
+                  <Edit3 className="h-4 w-4 text-white" />
                 </Button>
               </div>
               
               <div className="space-y-3">
                 <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-                  {editingName ? (
+                   {editingName ? (
                     <div className="flex items-center gap-2">
                       <Input
                         value={newPlayerName}
                         onChange={(e) => setNewPlayerName(e.target.value)}
-                        className="text-center text-xl font-bold max-w-xs bg-slate-900/80 border-slate-700/50 text-foreground placeholder:text-muted-foreground"
+                        className="text-center text-xl font-bold max-w-xs bg-white/10 border-white/20 text-white placeholder:text-white/50"
                         placeholder="Введите новое имя"
                         onKeyPress={(e) => e.key === 'Enter' && handleNameUpdate()}
                       />
                       <Button
                         onClick={handleNameUpdate}
                         size="sm"
-                        className="h-8 w-8 p-0 bg-primary hover:bg-primary/90"
+                        className="h-8 w-8 p-0 bg-green-500 hover:bg-green-600"
                         disabled={!newPlayerName.trim()}
                       >
-                        <Check className="h-4 w-4" />
+                        <Check className="h-4 w-4 text-white" />
                       </Button>
                       <Button
                         onClick={cancelNameEdit}
-                        variant="secondary"
+                        variant="outline"
                         size="sm"
-                        className="h-8 w-8 p-0"
+                        className="h-8 w-8 p-0 border-white/20 hover:bg-white/10"
                       >
-                        <X className="h-4 w-4" />
+                        <X className="h-4 w-4 text-white" />
                       </Button>
                     </div>
                   ) : (
                     <div className="flex items-center gap-2">
-                      <h1 className="text-2xl sm:text-3xl font-bold text-foreground text-center">{player?.name}</h1>
+                      <h1 className="text-2xl sm:text-3xl font-light text-white tracking-wide text-center">{player?.name}</h1>
                       <Button
                         onClick={startNameEdit}
                         variant="ghost"
                         size="sm"
-                        className="h-8 w-8 p-0 hover:bg-primary/20 text-primary"
+                        className="h-8 w-8 p-0 hover:bg-white/10 text-white/70 hover:text-white"
                       >
                         <Edit3 className="h-4 w-4" />
                       </Button>
                     </div>
                   )}
-                   <Badge className={`bg-gradient-to-r ${getRankClass(player?.elo_rating || 100)} text-white border-0 px-3 py-1 font-semibold shadow-lg`}>
+                   <Badge className={`bg-gradient-to-r ${getRankClass(player?.elo_rating || 100)} text-white border-0 px-3 py-1 font-medium text-sm shadow-lg`}>
                     {getRankTitle(player?.elo_rating || 100)}
                   </Badge>
                 </div>
-                <p className="text-muted-foreground text-center">{userProfile?.full_name || player?.name}</p>
+                <p className="text-white/60 text-center">{userProfile?.full_name || player?.name}</p>
                 
                 {/* Quick Stats */}
-                <div className="flex items-center justify-center gap-6 mt-4 pt-4 border-t border-slate-700/50">
+                <div className="flex items-center justify-center gap-6 mt-4 pt-4 border-t border-white/10">
                   <div className="text-center">
-                    <p className="text-2xl font-bold text-primary">{player?.elo_rating || 100}</p>
-                    <p className="text-xs text-muted-foreground">RPS Рейтинг</p>
+                    <p className="text-2xl font-light text-amber-400">{player?.elo_rating || 100}</p>
+                    <p className="text-xs text-white/60">RPS Рейтинг</p>
                   </div>
-                  <div className="w-px h-8 bg-slate-700/50"></div>
+                  <div className="w-px h-8 bg-white/20"></div>
                   <div className="text-center">
-                    <p className="text-2xl font-bold text-chart-3">{player?.wins || 0}</p>
-                    <p className="text-xs text-muted-foreground">Побед</p>
+                    <p className="text-2xl font-light text-green-400">{player?.wins || 0}</p>
+                    <p className="text-xs text-white/60">Побед</p>
                   </div>
-                  <div className="w-px h-8 bg-slate-700/50"></div>
+                  <div className="w-px h-8 bg-white/20"></div>
                   <div className="text-center">
-                    <p className="text-2xl font-bold text-chart-2">{player?.games_played || 0}</p>
-                    <p className="text-xs text-muted-foreground">Игр</p>
+                    <p className="text-2xl font-light text-blue-400">{player?.games_played || 0}</p>
+                    <p className="text-xs text-white/60">Игр</p>
                   </div>
                 </div>
               </div>
@@ -423,14 +423,14 @@ export default function Profile() {
                         <stat.icon className={`h-5 w-5 ${stat.color}`} />
                       </div>
                       <div className="text-right">
-                        <p className="text-2xl font-bold text-foreground group-hover:text-primary transition-colors">
+                        <p className="text-2xl font-bold text-white group-hover:text-amber-400 transition-colors">
                           {stat.value}
                         </p>
                       </div>
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-muted-foreground mb-1">{stat.title}</p>
-                      <p className="text-xs text-muted-foreground">{stat.description}</p>
+                      <p className="text-sm font-medium text-white/70 mb-1">{stat.title}</p>
+                      <p className="text-xs text-white/50">{stat.description}</p>
                     </div>
                   </div>
                 </CardContent>
@@ -468,8 +468,8 @@ export default function Profile() {
                 {/* ELO Chart */}
                 <Card className="border-slate-800/80 bg-gradient-to-br from-slate-900/95 via-slate-800/90 to-slate-900/95 backdrop-blur-sm shadow-lg lg:col-span-2">
                   <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <TrendingUp className="h-5 w-5 text-primary" />
+                    <CardTitle className="flex items-center gap-2 text-white">
+                      <TrendingUp className="h-5 w-5 text-amber-400" />
                       График рейтинга RPS
                     </CardTitle>
                   </CardHeader>
@@ -525,11 +525,11 @@ export default function Profile() {
                         </AreaChart>
                       </ResponsiveContainer>
                     ) : (
-                      <div className="text-center py-16 text-muted-foreground">
+                      <div className="text-center py-16 text-white/70">
                         <div className="bg-slate-800/60 border border-slate-700/40 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                          <Target className="h-8 w-8 text-primary" />
+                          <Target className="h-8 w-8 text-amber-400" />
                         </div>
-                        <h3 className="text-lg font-medium text-foreground mb-2">Нет данных для отображения</h3>
+                        <h3 className="text-lg font-medium text-white mb-2">Нет данных для отображения</h3>
                         <p className="text-sm">Сыграйте несколько турниров для просмотра статистики</p>
                       </div>
                     )}
@@ -539,8 +539,8 @@ export default function Profile() {
                 {/* Additional Stats */}
                 <Card className="border-slate-800/80 bg-gradient-to-br from-slate-900/95 via-slate-800/90 to-slate-900/95 backdrop-blur-sm shadow-lg">
                   <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Medal className="h-5 w-5 text-chart-3" />
+                    <CardTitle className="flex items-center gap-2 text-white">
+                      <Medal className="h-5 w-5 text-green-400" />
                       Лучшие результаты
                     </CardTitle>
                   </CardHeader>
@@ -548,15 +548,15 @@ export default function Profile() {
                     {gameResults.slice(0, 3).map((result, index) => (
                       <div key={result.id} className="flex items-center gap-3 p-3 rounded-lg bg-slate-900/50 backdrop-blur-sm border border-slate-800/40">
                         <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold text-white shadow-md ${
-                          result.position === 1 ? 'bg-gradient-to-br from-amber-600 to-amber-800' :
-                          result.position === 2 ? 'bg-gradient-to-br from-slate-500 to-slate-700' :
-                          result.position === 3 ? 'bg-gradient-to-br from-amber-700 to-amber-900' : 'bg-gradient-to-br from-primary/50 to-primary/30'
+                          result.position === 1 ? 'bg-gradient-to-br from-yellow-400 to-yellow-600' :
+                          result.position === 2 ? 'bg-gradient-to-br from-gray-300 to-gray-400' :
+                          result.position === 3 ? 'bg-gradient-to-br from-orange-400 to-orange-600' : 'bg-gradient-to-br from-slate-600 to-slate-800'
                         }`}>
                           #{result.position}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="font-medium text-sm truncate">{result.tournament.name}</p>
-                          <p className="text-xs text-muted-foreground">
+                          <p className="font-medium text-sm truncate text-white">{result.tournament.name}</p>
+                          <p className="text-xs text-white/60">
                             {new Date(result.created_at).toLocaleDateString('ru-RU')}
                           </p>
                         </div>
@@ -566,8 +566,8 @@ export default function Profile() {
                       </div>
                     ))}
                     {gameResults.length === 0 && (
-                      <div className="text-center py-8 text-muted-foreground">
-                        <Trophy className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                      <div className="text-center py-8 text-white/70">
+                        <Trophy className="h-8 w-8 mx-auto mb-2 opacity-50 text-amber-400" />
                         <p className="text-sm">Нет результатов</p>
                       </div>
                     )}
@@ -576,20 +576,20 @@ export default function Profile() {
 
                 <Card className="border-slate-800/80 bg-gradient-to-br from-slate-900/95 via-slate-800/90 to-slate-900/95 backdrop-blur-sm shadow-lg">
                   <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Award className="h-5 w-5 text-chart-4" />
+                    <CardTitle className="flex items-center gap-2 text-white">
+                      <Award className="h-5 w-5 text-purple-400" />
                       Прогресс
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="space-y-2">
-                      <div className="flex justify-between text-sm">
+                      <div className="flex justify-between text-sm text-white/70">
                         <span>До следующего ранга</span>
-                        <span className="font-medium">{Math.max(0, Math.ceil(((Math.floor(((player?.elo_rating || 100) + 199) / 200) * 200) - (player?.elo_rating || 100))))}</span>
+                        <span className="font-medium text-white">{Math.max(0, Math.ceil(((Math.floor(((player?.elo_rating || 100) + 199) / 200) * 200) - (player?.elo_rating || 100))))}</span>
                       </div>
                       <div className="w-full bg-slate-800/50 rounded-full h-2 border border-slate-700/30">
                         <div 
-                          className="bg-gradient-to-r from-primary to-primary/80 h-2 rounded-full transition-all duration-500 shadow-lg shadow-primary/20" 
+                          className="bg-gradient-to-r from-amber-400 to-amber-600 h-2 rounded-full transition-all duration-500 shadow-lg shadow-amber-400/20" 
                           style={{ 
                             width: `${Math.min(100, (((player?.elo_rating || 100) % 200) / 200) * 100)}%` 
                           }}
@@ -598,13 +598,13 @@ export default function Profile() {
                     </div>
                     
                     <div className="grid grid-cols-2 gap-4 pt-2">
-                      <div className="text-center p-3 rounded-lg bg-chart-2/10">
-                        <p className="text-xl font-bold text-chart-2">{((player?.wins || 0) / Math.max(1, player?.games_played || 1) * 100).toFixed(1)}%</p>
-                        <p className="text-xs text-muted-foreground">Winrate</p>
+                      <div className="text-center p-3 rounded-lg bg-blue-400/10">
+                        <p className="text-xl font-bold text-blue-400">{((player?.wins || 0) / Math.max(1, player?.games_played || 1) * 100).toFixed(1)}%</p>
+                        <p className="text-xs text-white/60">Winrate</p>
                       </div>
-                      <div className="text-center p-3 rounded-lg bg-chart-3/10">
-                        <p className="text-xl font-bold text-chart-3">{Math.max(...eloData.map(d => d.elo), player?.elo_rating || 100)}</p>
-                        <p className="text-xs text-muted-foreground">Пик RPS</p>
+                      <div className="text-center p-3 rounded-lg bg-green-400/10">
+                        <p className="text-xl font-bold text-green-400">{Math.max(...eloData.map(d => d.elo), player?.elo_rating || 100)}</p>
+                        <p className="text-xs text-white/60">Пик RPS</p>
                       </div>
                     </div>
                   </CardContent>
@@ -623,8 +623,8 @@ export default function Profile() {
             <TabsContent value="history" className="space-y-6">
                 <Card className="border-slate-800/80 bg-gradient-to-br from-slate-900/95 via-slate-800/90 to-slate-900/95 backdrop-blur-sm shadow-lg">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Star className="h-5 w-5 text-primary" />
+                  <CardTitle className="flex items-center gap-2 text-white">
+                    <Star className="h-5 w-5 text-amber-400" />
                     История игр
                   </CardTitle>
                 </CardHeader>
@@ -639,9 +639,9 @@ export default function Profile() {
                             <div className="flex items-center gap-4">
                                <div className="relative">
                                 <div className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-white shadow-lg ${
-                                  result.position === 1 ? 'bg-gradient-to-br from-amber-600 to-amber-800' :
-                                  result.position === 2 ? 'bg-gradient-to-br from-slate-500 to-slate-700' :
-                                  result.position === 3 ? 'bg-gradient-to-br from-amber-700 to-amber-900' : 'bg-gradient-to-br from-slate-700 to-slate-900'
+                                  result.position === 1 ? 'bg-gradient-to-br from-yellow-400 to-yellow-600' :
+                                  result.position === 2 ? 'bg-gradient-to-br from-gray-300 to-gray-400' :
+                                  result.position === 3 ? 'bg-gradient-to-br from-orange-400 to-orange-600' : 'bg-gradient-to-br from-slate-600 to-slate-800'
                                 }`}>
                                   <span className="text-sm">#{result.position}</span>
                                 </div>
@@ -653,10 +653,10 @@ export default function Profile() {
                               </div>
                               
                               <div className="space-y-1">
-                                <p className="font-semibold text-foreground group-hover:text-primary transition-colors">
+                                <p className="font-semibold text-white group-hover:text-amber-400 transition-colors">
                                   {result.tournament.name}
                                 </p>
-                                <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                                <div className="flex items-center gap-3 text-sm text-white/60">
                                   <span className="flex items-center gap-1">
                                     <Calendar className="h-3 w-3" />
                                     {new Date(result.created_at).toLocaleDateString('ru-RU')}
@@ -678,7 +678,7 @@ export default function Profile() {
                               >
                                 {result.elo_change >= 0 ? '+' : ''}{result.elo_change}
                               </Badge>
-                              <div className="text-xs text-muted-foreground">
+                              <div className="text-xs text-white/60">
                                 Изменение рейтинга
                               </div>
                             </div>
@@ -687,11 +687,11 @@ export default function Profile() {
                       ))}
                     </div>
                   ) : (
-                    <div className="text-center py-16 text-muted-foreground">
+                    <div className="text-center py-16 text-white/70">
                       <div className="bg-slate-800/60 border border-slate-700/40 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                        <Calendar className="h-8 w-8 text-primary" />
+                        <Calendar className="h-8 w-8 text-amber-400" />
                       </div>
-                      <h3 className="text-lg font-medium text-foreground mb-2">История игр пуста</h3>
+                      <h3 className="text-lg font-medium text-white mb-2">История игр пуста</h3>
                       <p className="text-sm">Зарегистрируйтесь на турнир, чтобы начать играть</p>
                     </div>
                   )}
