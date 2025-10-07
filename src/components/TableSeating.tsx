@@ -420,7 +420,7 @@ const TableSeating = ({
     }
   };
 
-  const eliminatePlayer = async (playerId: string) => {
+  const eliminatePlayer = (playerId: string) => {
     const playerRegistration = registrations.find(r => r.player_id === playerId);
     if (!playerRegistration) {
       console.error('Регистрация игрока не найдена');
@@ -433,7 +433,7 @@ const TableSeating = ({
       r.player_id !== playerId
     );
 
-    // МГНОВЕННО обновляем UI локально
+    // МГНОВЕННО обновляем UI локально БЕЗ ОЖИДАНИЯ
     const newTables = [...tables];
     let playerFound = false;
     
@@ -457,12 +457,12 @@ const TableSeating = ({
     
     toast({ 
       title: "Игрок выбыл", 
-      description: `Обновление данных...`,
+      description: `Игрок исключен`,
       className: "font-medium"
     });
 
-    // Все операции БД параллельно БЕЗ БЛОКИРОВКИ
-    setTimeout(async () => {
+    // ВСЕ БД операции в фоне, БЕЗ await, БЕЗ блокировки UI
+    const performDbUpdates = async () => {
       try {
         const dbOperations = [];
 
@@ -523,7 +523,10 @@ const TableSeating = ({
       } catch (error) {
         console.error('Ошибка БД:', error);
       }
-    }, 0);
+    };
+    
+    // Запускаем БЕЗ await - функция возвращается сразу
+    performDbUpdates();
   };
 
   const recalculatePositions = async () => {
