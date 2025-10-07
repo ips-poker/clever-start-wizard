@@ -12,7 +12,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Users, UserX, Trophy, Clock, TrendingUp, TrendingDown, Shuffle, Upload, Plus, Minus, X } from 'lucide-react';
+import { Users, UserX, Trophy, Clock, TrendingUp, TrendingDown, Shuffle, Upload, Plus, Minus, X, UserMinus } from 'lucide-react';
 import { calculateTotalRPSPool, formatRPSPoints, formatParticipationFee } from '@/utils/rpsCalculations';
 import TableSeating from './TableSeating';
 
@@ -435,6 +435,33 @@ const TournamentPlayerManagement = ({ tournament, players, registrations, onRegi
                             <Plus className="h-3 w-3" />
                           </Button>
                         )}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={async () => {
+                            const { error } = await supabase.rpc('redistribute_chips_on_elimination', {
+                              eliminated_player_id: registration.player.id,
+                              tournament_id_param: tournament.id
+                            });
+                            if (error) {
+                              toast({
+                                title: "Ошибка",
+                                description: "Не удалось исключить игрока",
+                                variant: "destructive",
+                              });
+                            } else {
+                              toast({
+                                title: "Игрок исключен",
+                                description: `${registration.player.name} выбыл из турнира`,
+                              });
+                              onRegistrationUpdate();
+                            }
+                          }}
+                          className="h-8 w-8 p-0 border-red-200 text-red-600 hover:bg-red-50"
+                          title="Исключить игрока"
+                        >
+                          <UserMinus className="h-3 w-3" />
+                        </Button>
                       </div>
                     </div>
                   </div>

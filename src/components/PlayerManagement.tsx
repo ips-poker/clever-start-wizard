@@ -414,51 +414,39 @@ const PlayerManagement = ({ tournament, players, registrations, onRegistrationUp
     const registration = registrations.find(r => r.id === registrationId);
     if (!registration) return;
 
-    const eliminatedChips = registration.chips;
-    const remainingActive = registrations.filter(r => 
-      (r.status === 'registered' || r.status === 'playing') && r.id !== registrationId
-    );
-    
     console.log('🎯 Исключение игрока:', {
       name: registration.player.name,
-      chips: eliminatedChips,
-      remainingPlayers: remainingActive.length
+      playerId: registration.player.id
     });
 
-    // Перераспределяем фишки выбывшего ПЕРЕД его исключением
-    if (eliminatedChips > 0 && remainingActive.length > 0) {
-      const remainingPlayerIds = remainingActive.map(r => r.id);
-      await redistributeChips(eliminatedChips, remainingPlayerIds);
-      console.log('✅ Фишки распределены, теперь исключаем игрока');
-    }
-
-    // Теперь исключаем игрока и обнуляем его фишки
-    const { error } = await supabase
-      .from('tournament_registrations')
-      .update({ 
-        status: 'eliminated',
-        position: position,
-        chips: 0
-      })
-      .eq('id', registrationId);
+    // Используем RPC функцию для корректного удаления с перераспределением фишек и очисткой seat_number
+    const { error } = await supabase.rpc('redistribute_chips_on_elimination', {
+      eliminated_player_id: registration.player.id,
+      tournament_id_param: tournament.id
+    });
 
     if (error) {
-      toast({ title: "Ошибка", description: "Не удалось исключить игрока", variant: "destructive" });
+      console.error('Ошибка исключения игрока:', error);
+      toast({ 
+        title: "Ошибка", 
+        description: "Не удалось исключить игрока", 
+        variant: "destructive" 
+      });
     } else {
       toast({ 
         title: "Игрок исключен", 
-        description: `${registration.player.name} - место ${position}. Фишки (${eliminatedChips.toLocaleString()}) распределены между ${remainingActive.length} игроками` 
+        description: `${registration.player.name} выбыл из турнира` 
       });
       
       // Голосовое объявление об исключении игрока
       await voiceAnnouncements.announcePlayerElimination(registration.player.name, position);
       
-      // Проверяем необходимость балансировки столов с задержкой 30 секунд
+      // Проверяем необходимость балансировки столов с задержкой 15 секунд
       const remainingPlayers = registrations.filter(r => r.status !== 'eliminated' && r.id !== registrationId);
       if (remainingPlayers.length > 1) {
         setTimeout(async () => {
           await announceTableBalancing(remainingPlayers);
-        }, 15000); // 15 секунд задержки
+        }, 15000);
       }
       
       onRegistrationUpdate();
