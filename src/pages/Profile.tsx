@@ -271,8 +271,8 @@ export default function Profile() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-400 mx-auto mb-4"></div>
-          <p className="text-white">Загрузка профиля...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-foreground">Загрузка профиля...</p>
         </div>
       </div>
     );
@@ -280,12 +280,47 @@ export default function Profile() {
 
   return (
     <AuthGuard>
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 relative overflow-hidden">
+        {/* Decorative Background Elements - matching homepage */}
+        <div className="fixed inset-0 pointer-events-none overflow-hidden opacity-10 z-0">
+          <div className="absolute top-20 left-10 w-16 h-16 rounded-full animate-pulse-slow">
+            <div className="absolute inset-0 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 opacity-30"></div>
+            <div className="absolute inset-1 rounded-full bg-slate-900/80 border border-amber-400/20"></div>
+          </div>
+          <div className="absolute top-1/4 right-20 w-12 h-12 rounded-full animate-bounce-subtle">
+            <div className="absolute inset-0 rounded-full bg-gradient-to-br from-purple-400 to-purple-600 opacity-25"></div>
+            <div className="absolute inset-1 rounded-full bg-slate-900/80 border border-purple-400/20"></div>
+          </div>
+          <div className="absolute bottom-1/3 left-1/4 w-20 h-20 rounded-full animate-pulse-slow">
+            <div className="absolute inset-0 rounded-full bg-gradient-to-br from-red-400 to-red-600 opacity-35"></div>
+            <div className="absolute inset-1.5 rounded-full bg-slate-900/80 border-2 border-red-400/20"></div>
+          </div>
+        </div>
+
+        {/* Poker Suits Background */}
+        <div className="fixed inset-0 pointer-events-none overflow-hidden opacity-10 z-0">
+          <div className="absolute top-20 left-10 animate-pulse-slow">
+            <div className="text-amber-400/40 text-6xl filter drop-shadow-[0_0_15px_rgba(251,191,36,0.3)]">♠</div>
+          </div>
+          <div className="absolute bottom-1/3 left-20 animate-pulse-slow">
+            <div className="text-red-400/45 text-7xl filter drop-shadow-[0_0_20px_rgba(248,113,113,0.4)]">♥</div>
+          </div>
+          <div className="absolute top-1/2 right-1/4 animate-bounce-subtle">
+            <div className="text-purple-400/30 text-5xl filter drop-shadow-[0_0_12px_rgba(192,132,252,0.25)]">♦</div>
+          </div>
+        </div>
+
+        {/* Ambient light spots */}
+        <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
+          <div className="absolute top-0 left-1/4 w-96 h-96 bg-amber-500/5 rounded-full blur-3xl"></div>
+          <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-purple-500/5 rounded-full blur-3xl"></div>
+        </div>
+
         <Header />
         
-        <main className="container mx-auto px-4 pt-24 md:pt-20 pb-8 space-y-8">
+        <main className="container mx-auto px-4 pt-24 md:pt-20 pb-8 space-y-8 relative z-10">
           {/* Profile Header */}
-          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/10 via-background to-primary/5 p-8 border border-primary/10">
+          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/10 via-card/95 to-primary/5 p-8 border border-primary/20 shadow-2xl backdrop-blur-sm">
             <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48cGF0dGVybiBpZD0iZ3JpZCIgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBwYXR0ZXJuVW5pdHM9InVzZXJTcGFjZU9uVXNlIj48cGF0aCBkPSJNIDQwIDAgTCAwIDAgMCA0MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJoc2wodmFyKC0tcHJpbWFyeSkpIiBzdHJva2Utd2lkdGg9IjAuNSIgb3BhY2l0eT0iMC4xIi8+PC9wYXR0ZXJuPjwvZGVmcz48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJ1cmwoI2dyaWQpIi8+PC9zdmc+')] opacity-30"></div>
             
             <div className="relative z-10 text-center space-y-6">
@@ -299,10 +334,10 @@ export default function Profile() {
                 </Avatar>
                 <Button
                   onClick={() => setShowAvatarSelector(true)}
-                  className="absolute -bottom-2 -right-2 rounded-full w-10 h-10 p-0 shadow-lg hover:scale-110 transition-transform"
+                  className="absolute -bottom-2 -right-2 rounded-full w-10 h-10 p-0 shadow-lg hover:scale-110 transition-transform bg-primary hover:bg-primary/90"
                   size="sm"
                 >
-                  ✏️
+                  <Edit3 className="h-4 w-4" />
                 </Button>
               </div>
               
@@ -320,14 +355,14 @@ export default function Profile() {
                       <Button
                         onClick={handleNameUpdate}
                         size="sm"
-                        className="h-8 w-8 p-0"
+                        className="h-8 w-8 p-0 bg-primary hover:bg-primary/90"
                         disabled={!newPlayerName.trim()}
                       >
                         <Check className="h-4 w-4" />
                       </Button>
                       <Button
                         onClick={cancelNameEdit}
-                        variant="outline"
+                        variant="secondary"
                         size="sm"
                         className="h-8 w-8 p-0"
                       >
@@ -341,7 +376,7 @@ export default function Profile() {
                         onClick={startNameEdit}
                         variant="ghost"
                         size="sm"
-                        className="h-8 w-8 p-0 hover:bg-primary/10"
+                        className="h-8 w-8 p-0 hover:bg-primary/20 text-primary"
                       >
                         <Edit3 className="h-4 w-4" />
                       </Button>
@@ -377,7 +412,7 @@ export default function Profile() {
           {/* Stats Cards */}
           <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
             {statCards.map((stat, index) => (
-              <Card key={index} className="group hover:shadow-xl transition-all duration-300 border-border/50 hover:border-primary/20 bg-gradient-to-br from-card via-card to-card/80 hover:scale-105">
+              <Card key={index} className="group hover:shadow-2xl transition-all duration-300 border-primary/20 hover:border-primary/40 bg-gradient-to-br from-card/95 via-card to-card/90 hover:scale-105 backdrop-blur-sm shadow-lg">
                 <CardContent className="p-6 relative overflow-hidden">
                   <div className="absolute top-0 right-0 w-16 h-16 opacity-10">
                     <stat.icon className="w-full h-full text-primary" />
@@ -405,7 +440,7 @@ export default function Profile() {
 
           {/* Main Content */}
           <Tabs defaultValue="statistics" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 bg-muted/30 h-auto p-1">
+            <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 bg-card/50 backdrop-blur-sm border border-primary/20 h-auto p-1">
               <TabsTrigger value="statistics" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm py-2">
                 <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4" />
                 <span className="hidden sm:inline">Статистика</span>
@@ -431,7 +466,7 @@ export default function Profile() {
             <TabsContent value="statistics" className="space-y-6">
               <div className="grid gap-6 lg:grid-cols-2">
                 {/* ELO Chart */}
-                <Card className="border-border/50 lg:col-span-2">
+                <Card className="border-primary/20 bg-card/95 backdrop-blur-sm shadow-lg lg:col-span-2">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <TrendingUp className="h-5 w-5 text-primary" />
@@ -502,7 +537,7 @@ export default function Profile() {
                 </Card>
 
                 {/* Additional Stats */}
-                <Card className="border-border/50">
+                <Card className="border-primary/20 bg-card/95 backdrop-blur-sm shadow-lg">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <Medal className="h-5 w-5 text-chart-3" />
@@ -511,11 +546,11 @@ export default function Profile() {
                   </CardHeader>
                   <CardContent className="space-y-4">
                     {gameResults.slice(0, 3).map((result, index) => (
-                      <div key={result.id} className="flex items-center gap-3 p-3 rounded-lg bg-muted/30">
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold text-white ${
-                          result.position === 1 ? 'bg-yellow-500' :
-                          result.position === 2 ? 'bg-gray-400' :
-                          result.position === 3 ? 'bg-amber-600' : 'bg-muted'
+                      <div key={result.id} className="flex items-center gap-3 p-3 rounded-lg bg-card/50 backdrop-blur-sm border border-primary/10">
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold text-white shadow-md ${
+                          result.position === 1 ? 'bg-gradient-to-br from-yellow-400 to-yellow-600' :
+                          result.position === 2 ? 'bg-gradient-to-br from-gray-300 to-gray-500' :
+                          result.position === 3 ? 'bg-gradient-to-br from-amber-500 to-amber-700' : 'bg-gradient-to-br from-primary/50 to-primary/30'
                         }`}>
                           #{result.position}
                         </div>
@@ -539,7 +574,7 @@ export default function Profile() {
                   </CardContent>
                 </Card>
 
-                <Card className="border-border/50">
+                <Card className="border-primary/20 bg-card/95 backdrop-blur-sm shadow-lg">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <Award className="h-5 w-5 text-chart-4" />
@@ -586,7 +621,7 @@ export default function Profile() {
             </TabsContent>
 
             <TabsContent value="history" className="space-y-6">
-              <Card className="border-border/50">
+              <Card className="border-primary/20 bg-card/95 backdrop-blur-sm shadow-lg">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Star className="h-5 w-5 text-primary" />
@@ -597,7 +632,7 @@ export default function Profile() {
                   {gameResults.length > 0 ? (
                     <div className="space-y-3">
                       {gameResults.map((result, index) => (
-                        <div key={result.id} className="group relative overflow-hidden rounded-xl border border-border/50 bg-gradient-to-r from-card to-card/80 p-4 hover:shadow-lg hover:border-primary/20 transition-all duration-300">
+                        <div key={result.id} className="group relative overflow-hidden rounded-xl border border-primary/20 bg-gradient-to-r from-card/95 to-card/90 p-4 hover:shadow-xl hover:border-primary/30 transition-all duration-300 backdrop-blur-sm">
                           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                           
                           <div className="relative z-10 flex items-center justify-between">
@@ -675,6 +710,24 @@ export default function Profile() {
         )}
 
         <Footer />
+        
+        {/* Custom animations matching homepage */}
+        <style>{`
+          .animate-bounce-subtle {
+            animation: bounce-subtle 4s ease-in-out infinite;
+          }
+          .animate-pulse-slow {
+            animation: pulse-slow 8s ease-in-out infinite;
+          }
+          @keyframes bounce-subtle {
+            0%, 100% { transform: translateY(0px) rotate(var(--tw-rotate)); }
+            50% { transform: translateY(-15px) rotate(var(--tw-rotate)); }
+          }
+          @keyframes pulse-slow {
+            0%, 100% { opacity: 0.5; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.05); }
+          }
+        `}</style>
       </div>
     </AuthGuard>
   );
