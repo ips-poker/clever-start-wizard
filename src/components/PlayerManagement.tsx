@@ -427,7 +427,7 @@ const PlayerManagement = ({ tournament, players, registrations, onRegistrationUp
 
   const finishTournament = async () => {
     try {
-      // Update tournament status to finished first
+      // Обновляем статус турнира
       const { error: tournamentError } = await supabase
         .from('tournaments')
         .update({ status: 'finished' })
@@ -435,41 +435,29 @@ const PlayerManagement = ({ tournament, players, registrations, onRegistrationUp
 
       if (tournamentError) throw tournamentError;
 
-      // Assign proper positions to remaining players
-      const activePlayersToUpdate = registrations.filter(r => r.status !== 'eliminated');
-      const eliminatedPlayersCount = registrations.filter(r => r.status === 'eliminated').length;
-      
-      // Активные игроки получают позиции начиная с 1 места до количества активных игроков
-      const activePlayerUpdates = activePlayersToUpdate.map(async (reg, index) => {
-        const position = index + 1; // 1, 2, 3... для активных игроков
-        return supabase
-          .from('tournament_registrations')
-          .update({ position })
-          .eq('id', reg.id);
-      });
+      // Получаем свежие данные регистраций с final_position
+      const { data: freshRegistrations, error: regError } = await supabase
+        .from('tournament_registrations')
+        .select('id, player_id, position, final_position, reentries, rebuys, additional_sets, addons, status')
+        .eq('tournament_id', tournament.id);
 
-      await Promise.all(activePlayerUpdates);
+      if (regError) throw regError;
 
-      // Prepare results for RPS calculation with correct positions
-      const results = registrations.map((reg) => {
-        let position = reg.position;
-        if (reg.status !== 'eliminated') {
-          // Find position for active players based on their order
-          const activeIndex = activePlayersToUpdate.findIndex(p => p.id === reg.id);
-          position = activeIndex + 1;
-        }
-        
-        return {
-          player_id: reg.player.id,
-          position: position || 1,
-          rebuys: reg.rebuys || 0,
-          addons: reg.addons || 0
-        };
-      });
+      // Формируем результаты используя final_position для выбывших и position для активных
+      const results = freshRegistrations.map(reg => ({
+        player_id: reg.player_id,
+        position: reg.final_position || reg.position || null,
+        rebuys: reg.reentries || reg.rebuys || 0,
+        addons: reg.additional_sets || reg.addons || 0
+      })).filter(r => r.position !== null);
 
-      console.log('Завершение турнира - отправка результатов:', results);
+      if (results.length === 0) {
+        throw new Error('Нет участников с корректными позициями');
+      }
 
-      // Call RPS calculation function
+      console.log('Завершение турнира - отправка результатов с final_position:', results);
+
+      // Вызываем функцию расчета RPS рейтингов
       const { error: rpsError } = await supabase.functions.invoke('calculate-elo', {
         body: {
           tournament_id: tournament.id,
@@ -484,7 +472,7 @@ const PlayerManagement = ({ tournament, players, registrations, onRegistrationUp
 
       toast({ 
         title: "Турнир завершен", 
-        description: "Рейтинги обновлены, призовые места определены",
+        description: "Рейтинги обновлены с правильными позициями и призовыми местами",
       });
 
       setIsFinishDialogOpen(false);
@@ -494,7 +482,7 @@ const PlayerManagement = ({ tournament, players, registrations, onRegistrationUp
       console.error('Error finishing tournament:', error);
       toast({ 
         title: "Ошибка", 
-        description: "Не удалось завершить турнир", 
+        description: error.message || "Не удалось завершить турнир", 
         variant: "destructive" 
       });
     }
