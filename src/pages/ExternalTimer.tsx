@@ -135,7 +135,7 @@ const ExternalTimer = () => {
       )
       .subscribe();
 
-    // Подписка на изменения регистраций
+    // Подписка на изменения регистраций - только обновляем registrations, не трогая таймер
     const registrationChannel = supabase
       .channel('registration-changes')
       .on(
@@ -146,8 +146,16 @@ const ExternalTimer = () => {
           table: 'tournament_registrations',
           filter: `tournament_id=eq.${tournamentId}`
         },
-        () => {
-          loadTournamentData();
+        async () => {
+          // Обновляем только регистрации, не трогая турнир и таймер
+          const { data: registrationData } = await supabase
+            .from('tournament_registrations')
+            .select('*')
+            .eq('tournament_id', tournamentId);
+
+          if (registrationData) {
+            setRegistrations(registrationData);
+          }
         }
       )
       .subscribe();
