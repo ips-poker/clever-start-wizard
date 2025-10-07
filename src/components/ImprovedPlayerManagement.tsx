@@ -358,7 +358,8 @@ const ImprovedPlayerManagement = ({ tournament, players, registrations, onRegist
     console.log('🎯 Исключение игрока:', {
       name: registration.player.name,
       chips: eliminatedChips,
-      remainingPlayers: remainingActive.length
+      remainingPlayers: remainingActive.length,
+      totalChipsBefore: activePlayers.reduce((sum, p) => sum + p.chips, 0)
     });
     
     // ЛОГИКА ПОЗИЦИЙ:
@@ -393,9 +394,27 @@ const ImprovedPlayerManagement = ({ tournament, players, registrations, onRegist
       return;
     }
 
+    // Проверяем что общее количество фишек сохранилось
+    const { data: verifyData, error: verifyError } = await supabase
+      .from('tournament_registrations')
+      .select('chips, status')
+      .eq('tournament_id', tournament.id)
+      .in('status', ['registered', 'playing']);
+
+    if (!verifyError && verifyData) {
+      const totalChipsAfter = verifyData.reduce((sum, r) => sum + r.chips, 0);
+      const totalChipsBefore = activePlayers.reduce((sum, p) => sum + p.chips, 0);
+      console.log('🔍 Проверка фишек:', {
+        before: totalChipsBefore,
+        after: totalChipsAfter,
+        difference: totalChipsAfter - totalChipsBefore,
+        expected: 0
+      });
+    }
+
     toast({ 
       title: "Игрок исключен", 
-      description: `${registration.player.name} - место ${position}. Фишки распределены между оставшимися игроками` 
+      description: `${registration.player.name} - место ${position}. Фишки (${eliminatedChips.toLocaleString()}) распределены между ${remainingActive.length} игроками` 
     });
     
     // Обновляем данные после завершения всех операций
