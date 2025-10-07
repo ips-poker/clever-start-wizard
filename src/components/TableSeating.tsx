@@ -442,14 +442,7 @@ const TableSeating = ({
       remainingPlayers: remainingActive.length
     });
 
-    // Перераспределяем фишки выбывшего ПЕРЕД его исключением
-    if (eliminatedChips > 0 && remainingActive.length > 0) {
-      const remainingPlayerIds = remainingActive.map(r => r.player_id);
-      await redistributeChips(eliminatedChips, remainingPlayerIds);
-      console.log('✅ [Рассадка] Фишки распределены, теперь исключаем игрока');
-    }
-
-    // Теперь обновляем UI и БД
+    // МГНОВЕННО обновляем UI без ожидания БД
     const newTables = [...tables];
     let playerFound = false;
     
@@ -468,33 +461,49 @@ const TableSeating = ({
     });
 
     if (playerFound) {
-      // Обновляем статус на eliminated и обнуляем фишки - триггер автоматически установит время выбывания
-      await supabase
-        .from('tournament_registrations')
-        .update({ 
-          status: 'eliminated',
-          seat_number: null,
-          chips: 0
-        })
-        .eq('player_id', playerId)
-        .eq('tournament_id', tournamentId);
-
-      // Пересчитываем финальные позиции для всех выбывших игроков
-      await supabase.rpc('calculate_final_positions', {
-        tournament_id_param: tournamentId
-      });
-
       setTables(newTables);
       
       toast({ 
         title: "Игрок выбыл", 
-        description: `Игрок исключен. Фишки (${eliminatedChips.toLocaleString()}) распределены между ${remainingActive.length} игроками. Позиция рассчитана автоматически.`,
+        description: `Игрок исключен. Фишки (${eliminatedChips.toLocaleString()}) распределяются...`,
         className: "font-medium"
       });
 
       if (onSeatingUpdate) {
         onSeatingUpdate();
       }
+
+      // ВСЕ операции с БД выполняем в фоне БЕЗ БЛОКИРОВКИ UI
+      (async () => {
+        try {
+          // 1. Перераспределяем фишки
+          if (eliminatedChips > 0 && remainingActive.length > 0) {
+            const remainingPlayerIds = remainingActive.map(r => r.player_id);
+            await redistributeChips(eliminatedChips, remainingPlayerIds);
+            console.log('✅ [Рассадка] Фишки распределены');
+          }
+
+          // 2. Обновляем статус игрока
+          await supabase
+            .from('tournament_registrations')
+            .update({ 
+              status: 'eliminated',
+              seat_number: null,
+              chips: 0
+            })
+            .eq('player_id', playerId)
+            .eq('tournament_id', tournamentId);
+
+          // 3. Пересчитываем финальные позиции
+          await supabase.rpc('calculate_final_positions', {
+            tournament_id_param: tournamentId
+          });
+
+          console.log('✅ [Рассадка] Все операции завершены');
+        } catch (error) {
+          console.error('❌ [Рассадка] Ошибка фоновых операций:', error);
+        }
+      })();
     }
   };
 
