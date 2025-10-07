@@ -282,32 +282,55 @@ const ImprovedPlayerManagement = ({ tournament, players, registrations, onRegist
     }
   };
 
-  const redistributeChips = async (eliminatedChips: number, remainingPlayers: Registration[]) => {
-    if (remainingPlayers.length === 0 || eliminatedChips <= 0) return;
+  const redistributeChips = async (eliminatedChips: number, remainingPlayerIds: string[]) => {
+    if (remainingPlayerIds.length === 0 || eliminatedChips <= 0) return;
 
-    // ВСЕГДА равное распределение фишек для правильного подсчета среднего стека
-    const chipsPerPlayer = Math.floor(eliminatedChips / remainingPlayers.length);
-    const remainderChips = eliminatedChips % remainingPlayers.length;
+    // Получаем актуальные данные о фишках из БД
+    const { data: freshPlayers, error: fetchError } = await supabase
+      .from('tournament_registrations')
+      .select('id, chips')
+      .in('id', remainingPlayerIds);
 
-    // Создаем обновления для каждого игрока
-    const updates = remainingPlayers.map((player, index) => ({
-      id: player.id,
-      chips: player.chips + chipsPerPlayer + (index < remainderChips ? 1 : 0),
-      additionalChips: chipsPerPlayer + (index < remainderChips ? 1 : 0)
-    }));
+    if (fetchError || !freshPlayers) {
+      console.error('Ошибка получения данных игроков:', fetchError);
+      toast({
+        title: "Ошибка",
+        description: "Не удалось получить данные игроков для распределения фишек",
+        variant: "destructive"
+      });
+      return;
+    }
 
-    // Обновляем фишки в базе данных
-    const updatePromises = updates.map(update => 
-      supabase
+    // Равномерное распределение фишек для правильного подсчета среднего стека
+    const chipsPerPlayer = Math.floor(eliminatedChips / freshPlayers.length);
+    const remainderChips = eliminatedChips % freshPlayers.length;
+
+    console.log('🔄 Распределение фишек:', {
+      eliminatedChips,
+      playersCount: freshPlayers.length,
+      chipsPerPlayer,
+      remainderChips,
+      totalBeforeRedistribution: freshPlayers.reduce((sum, p) => sum + p.chips, 0)
+    });
+
+    // Создаем обновления для каждого игрока с актуальными данными
+    const updatePromises = freshPlayers.map((player, index) => {
+      const additionalChips = chipsPerPlayer + (index < remainderChips ? 1 : 0);
+      const newChips = player.chips + additionalChips;
+      
+      console.log(`  Игрок ${player.id}: ${player.chips} + ${additionalChips} = ${newChips}`);
+      
+      return supabase
         .from('tournament_registrations')
-        .update({ chips: update.chips })
-        .eq('id', update.id)
-    );
+        .update({ chips: newChips })
+        .eq('id', player.id);
+    });
 
     const results = await Promise.all(updatePromises);
     const hasError = results.some(result => result.error);
 
     if (hasError) {
+      console.error('Ошибки при обновлении фишек:', results.filter(r => r.error));
       toast({
         title: "Ошибка",
         description: "Не удалось перераспределить все фишки",
@@ -316,12 +339,12 @@ const ImprovedPlayerManagement = ({ tournament, players, registrations, onRegist
       return;
     }
 
-    // Проверяем правильность распределения
-    const totalDistributed = updates.reduce((sum, u) => sum + u.additionalChips, 0);
-    
+    const totalAfterRedistribution = freshPlayers.reduce((sum, p) => sum + p.chips, 0) + eliminatedChips;
+    console.log('✅ Фишки распределены. Общее кол-во после:', totalAfterRedistribution);
+
     toast({
       title: "Фишки перераспределены равномерно",
-      description: `${eliminatedChips.toLocaleString()} фишек распределено поровну между ${remainingPlayers.length} игроками (по ${chipsPerPlayer.toLocaleString()}${remainderChips > 0 ? '+1 некоторым' : ''})`
+      description: `${eliminatedChips.toLocaleString()} фишек распределено поровну между ${freshPlayers.length} игроками (по ${chipsPerPlayer.toLocaleString()}${remainderChips > 0 ? '+1 некоторым' : ''})`
     });
   };
 
@@ -332,19 +355,25 @@ const ImprovedPlayerManagement = ({ tournament, players, registrations, onRegist
     const remainingActive = activePlayers.filter(r => r.id !== registrationId);
     const eliminatedChips = registration.chips;
     
+    console.log('🎯 Исключение игрока:', {
+      name: registration.player.name,
+      chips: eliminatedChips,
+      remainingPlayers: remainingActive.length
+    });
+    
     // ЛОГИКА ПОЗИЦИЙ:
     // - Если в турнире 10 игроков, первый исключенный получает позицию 10 (остается 9, позиция = 9+1 = 10)
     // - Второй исключенный получает позицию 9 (остается 8, позиция = 8+1 = 9)
     // - Последний исключенный получает позицию 1 (остается 0, позиция = 0+1 = 1) - ПОБЕДИТЕЛЬ!
     const position = remainingActive.length + 1;
 
-    // Исключаем игрока
+    // Исключаем игрока и обнуляем его фишки
     const { error } = await supabase
       .from('tournament_registrations')
       .update({ 
         status: 'eliminated',
         position: position,
-        chips: 0 // Обнуляем фишки у выбывшего игрока
+        chips: 0 // Обнуляем фишки у выбывшего - они будут распределены между оставшимися
       })
       .eq('id', registrationId);
 
@@ -353,9 +382,10 @@ const ImprovedPlayerManagement = ({ tournament, players, registrations, onRegist
       return;
     }
 
-    // Перераспределяем фишки
+    // Перераспределяем фишки выбывшего между оставшимися активными игроками
     if (eliminatedChips > 0 && remainingActive.length > 0) {
-      await redistributeChips(eliminatedChips, remainingActive);
+      const remainingPlayerIds = remainingActive.map(r => r.id);
+      await redistributeChips(eliminatedChips, remainingPlayerIds);
     } else if (eliminatedChips <= 0) {
       console.log('⚠️ ПРЕДУПРЕЖДЕНИЕ: У исключенного игрока 0 фишек, нечего распределять');
     } else if (remainingActive.length === 0) {
@@ -364,7 +394,7 @@ const ImprovedPlayerManagement = ({ tournament, players, registrations, onRegist
 
     toast({ 
       title: "Игрок исключен", 
-      description: `${registration.player.name} - место ${position}` 
+      description: `${registration.player.name} - место ${position}. Фишки распределены между оставшимися игроками` 
     });
     onRegistrationUpdate();
     
