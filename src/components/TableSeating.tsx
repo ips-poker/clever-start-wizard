@@ -433,7 +433,7 @@ const TableSeating = ({
       r.player_id !== playerId
     );
 
-    // МГНОВЕННО обновляем UI локально БЕЗ ОЖИДАНИЯ
+    // МГНОВЕННО обновляем UI локально
     const newTables = [...tables];
     let playerFound = false;
     
@@ -461,12 +461,26 @@ const TableSeating = ({
       className: "font-medium"
     });
 
-    // ВСЕ БД операции в фоне, БЕЗ await, БЕЗ блокировки UI
+    // ВСЕ БД операции в фоне
     const performDbUpdates = async () => {
       try {
+        // Объединяем все UPDATE в один batch для минимизации нагрузки
         const dbOperations = [];
 
-        // 1. Перераспределение фишек
+        // 1. Сначала обновляем статус игрока
+        dbOperations.push(
+          supabase
+            .from('tournament_registrations')
+            .update({ 
+              status: 'eliminated',
+              seat_number: null,
+              chips: 0
+            })
+            .eq('player_id', playerId)
+            .eq('tournament_id', tournamentId)
+        );
+
+        // 2. Перераспределение фишек
         if (eliminatedChips > 0 && remainingActive.length > 0) {
           const remainingPlayerIds = remainingActive.map(r => r.player_id);
           
@@ -495,20 +509,7 @@ const TableSeating = ({
           }
         }
 
-        // 2. Обновление статуса игрока
-        dbOperations.push(
-          supabase
-            .from('tournament_registrations')
-            .update({ 
-              status: 'eliminated',
-              seat_number: null,
-              chips: 0
-            })
-            .eq('player_id', playerId)
-            .eq('tournament_id', tournamentId)
-        );
-
-        // Выполняем все операции параллельно
+        // Выполняем все UPDATE параллельно
         await Promise.all(dbOperations);
 
         // 3. Пересчет позиций
@@ -516,16 +517,12 @@ const TableSeating = ({
           tournament_id_param: tournamentId
         });
 
-        // Обновляем данные только после ВСЕХ операций
-        if (onSeatingUpdate) {
-          onSeatingUpdate();
-        }
+        // НЕ вызываем onSeatingUpdate - данные обновятся через realtime
       } catch (error) {
         console.error('Ошибка БД:', error);
       }
     };
     
-    // Запускаем БЕЗ await - функция возвращается сразу
     performDbUpdates();
   };
 
