@@ -367,13 +367,24 @@ const ImprovedPlayerManagement = ({ tournament, players, registrations, onRegist
     // - Последний исключенный получает позицию 1 (остается 0, позиция = 0+1 = 1) - ПОБЕДИТЕЛЬ!
     const position = remainingActive.length + 1;
 
-    // Исключаем игрока и обнуляем его фишки
+    // Перераспределяем фишки выбывшего ПЕРЕД обнулением
+    if (eliminatedChips > 0 && remainingActive.length > 0) {
+      const remainingPlayerIds = remainingActive.map(r => r.id);
+      await redistributeChips(eliminatedChips, remainingPlayerIds);
+      console.log('✅ Фишки распределены, теперь исключаем игрока');
+    } else if (eliminatedChips <= 0) {
+      console.log('⚠️ ПРЕДУПРЕЖДЕНИЕ: У исключенного игрока 0 фишек, нечего распределять');
+    } else if (remainingActive.length === 0) {
+      console.log('⚠️ ПРЕДУПРЕЖДЕНИЕ: Нет активных игроков для распределения фишек');
+    }
+
+    // Теперь исключаем игрока и обнуляем его фишки
     const { error } = await supabase
       .from('tournament_registrations')
       .update({ 
         status: 'eliminated',
         position: position,
-        chips: 0 // Обнуляем фишки у выбывшего - они будут распределены между оставшимися
+        chips: 0
       })
       .eq('id', registrationId);
 
@@ -382,20 +393,12 @@ const ImprovedPlayerManagement = ({ tournament, players, registrations, onRegist
       return;
     }
 
-    // Перераспределяем фишки выбывшего между оставшимися активными игроками
-    if (eliminatedChips > 0 && remainingActive.length > 0) {
-      const remainingPlayerIds = remainingActive.map(r => r.id);
-      await redistributeChips(eliminatedChips, remainingPlayerIds);
-    } else if (eliminatedChips <= 0) {
-      console.log('⚠️ ПРЕДУПРЕЖДЕНИЕ: У исключенного игрока 0 фишек, нечего распределять');
-    } else if (remainingActive.length === 0) {
-      console.log('⚠️ ПРЕДУПРЕЖДЕНИЕ: Нет активных игроков для распределения фишек');
-    }
-
     toast({ 
       title: "Игрок исключен", 
       description: `${registration.player.name} - место ${position}. Фишки распределены между оставшимися игроками` 
     });
+    
+    // Обновляем данные после завершения всех операций
     onRegistrationUpdate();
     
     if (remainingActive.length <= 1) {
