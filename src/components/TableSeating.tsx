@@ -421,7 +421,6 @@ const TableSeating = ({
   };
 
   const eliminatePlayer = async (playerId: string) => {
-    // Находим регистрацию игрока для получения его фишек
     const playerRegistration = registrations.find(r => r.player_id === playerId);
     if (!playerRegistration) {
       console.error('Регистрация игрока не найдена');
@@ -429,20 +428,12 @@ const TableSeating = ({
     }
 
     const eliminatedChips = playerRegistration.chips || 0;
-    
-    // Находим всех активных игроков кроме исключаемого
     const remainingActive = registrations.filter(r => 
       (r.status === 'registered' || r.status === 'playing' || r.status === 'confirmed') && 
       r.player_id !== playerId
     );
-    
-    console.log('🎯 [Рассадка] Исключение игрока:', {
-      name: playerRegistration.player?.name,
-      chips: eliminatedChips,
-      remainingPlayers: remainingActive.length
-    });
 
-    // МГНОВЕННО обновляем UI без ожидания БД
+    // МГНОВЕННО обновляем UI локально
     const newTables = [...tables];
     let playerFound = false;
     
@@ -460,31 +451,53 @@ const TableSeating = ({
       });
     });
 
-    if (playerFound) {
-      setTables(newTables);
-      
-      toast({ 
-        title: "Игрок выбыл", 
-        description: `Игрок исключен. Фишки (${eliminatedChips.toLocaleString()}) распределяются...`,
-        className: "font-medium"
-      });
+    if (!playerFound) return;
 
-      if (onSeatingUpdate) {
-        onSeatingUpdate();
-      }
+    setTables(newTables);
+    
+    toast({ 
+      title: "Игрок выбыл", 
+      description: `Обновление данных...`,
+      className: "font-medium"
+    });
 
-      // ВСЕ операции с БД выполняем в фоне БЕЗ БЛОКИРОВКИ UI
-      (async () => {
-        try {
-          // 1. Перераспределяем фишки
-          if (eliminatedChips > 0 && remainingActive.length > 0) {
-            const remainingPlayerIds = remainingActive.map(r => r.player_id);
-            await redistributeChips(eliminatedChips, remainingPlayerIds);
-            console.log('✅ [Рассадка] Фишки распределены');
+    // Все операции БД параллельно БЕЗ БЛОКИРОВКИ
+    setTimeout(async () => {
+      try {
+        const dbOperations = [];
+
+        // 1. Перераспределение фишек
+        if (eliminatedChips > 0 && remainingActive.length > 0) {
+          const remainingPlayerIds = remainingActive.map(r => r.player_id);
+          
+          const { data: freshPlayers } = await supabase
+            .from('tournament_registrations')
+            .select('id, player_id, chips')
+            .in('player_id', remainingPlayerIds)
+            .eq('tournament_id', tournamentId);
+
+          if (freshPlayers) {
+            const chipsPerPlayer = Math.floor(eliminatedChips / freshPlayers.length);
+            const remainderChips = eliminatedChips % freshPlayers.length;
+
+            freshPlayers.forEach((player, index) => {
+              const additionalChips = chipsPerPlayer + (index < remainderChips ? 1 : 0);
+              const newChips = player.chips + additionalChips;
+              
+              dbOperations.push(
+                supabase
+                  .from('tournament_registrations')
+                  .update({ chips: newChips })
+                  .eq('player_id', player.player_id)
+                  .eq('tournament_id', tournamentId)
+              );
+            });
           }
+        }
 
-          // 2. Обновляем статус игрока
-          await supabase
+        // 2. Обновление статуса игрока
+        dbOperations.push(
+          supabase
             .from('tournament_registrations')
             .update({ 
               status: 'eliminated',
@@ -492,19 +505,25 @@ const TableSeating = ({
               chips: 0
             })
             .eq('player_id', playerId)
-            .eq('tournament_id', tournamentId);
+            .eq('tournament_id', tournamentId)
+        );
 
-          // 3. Пересчитываем финальные позиции
-          await supabase.rpc('calculate_final_positions', {
-            tournament_id_param: tournamentId
-          });
+        // Выполняем все операции параллельно
+        await Promise.all(dbOperations);
 
-          console.log('✅ [Рассадка] Все операции завершены');
-        } catch (error) {
-          console.error('❌ [Рассадка] Ошибка фоновых операций:', error);
+        // 3. Пересчет позиций
+        await supabase.rpc('calculate_final_positions', {
+          tournament_id_param: tournamentId
+        });
+
+        // Обновляем данные только после ВСЕХ операций
+        if (onSeatingUpdate) {
+          onSeatingUpdate();
         }
-      })();
-    }
+      } catch (error) {
+        console.error('Ошибка БД:', error);
+      }
+    }, 0);
   };
 
   const recalculatePositions = async () => {
