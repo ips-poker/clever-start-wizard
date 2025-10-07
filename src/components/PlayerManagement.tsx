@@ -296,6 +296,54 @@ const PlayerManagement = ({ tournament, players, registrations, onRegistrationUp
     onRegistrationUpdate();
   };
 
+  const redistributeChips = async (eliminatedChips: number, remainingPlayerIds: string[]) => {
+    if (remainingPlayerIds.length === 0 || eliminatedChips <= 0) return;
+
+    // Получаем актуальные данные о фишках из БД
+    const { data: freshPlayers, error: fetchError } = await supabase
+      .from('tournament_registrations')
+      .select('id, chips')
+      .in('id', remainingPlayerIds);
+
+    if (fetchError || !freshPlayers) {
+      console.error('Ошибка получения данных игроков:', fetchError);
+      return;
+    }
+
+    // Равномерное распределение фишек для правильного подсчета среднего стека
+    const chipsPerPlayer = Math.floor(eliminatedChips / freshPlayers.length);
+    const remainderChips = eliminatedChips % freshPlayers.length;
+
+    console.log('🔄 Распределение фишек:', {
+      eliminatedChips,
+      playersCount: freshPlayers.length,
+      chipsPerPlayer,
+      remainderChips
+    });
+
+    // Обновляем фишки каждого игрока
+    const updatePromises = freshPlayers.map((player, index) => {
+      const additionalChips = chipsPerPlayer + (index < remainderChips ? 1 : 0);
+      const newChips = player.chips + additionalChips;
+      
+      console.log(`  Игрок ${player.id}: ${player.chips} + ${additionalChips} = ${newChips}`);
+      
+      return supabase
+        .from('tournament_registrations')
+        .update({ chips: newChips })
+        .eq('id', player.id);
+    });
+
+    const results = await Promise.all(updatePromises);
+    const hasError = results.some(result => result.error);
+
+    if (hasError) {
+      console.error('Ошибки при обновлении фишек:', results.filter(r => r.error));
+    } else {
+      console.log('✅ Фишки распределены равномерно между игроками');
+    }
+  };
+
   const updateRebuys = async (registrationId: string, change: number) => {
     const registration = registrations.find(r => r.id === registrationId);
     if (!registration) return;
@@ -366,18 +414,41 @@ const PlayerManagement = ({ tournament, players, registrations, onRegistrationUp
     const registration = registrations.find(r => r.id === registrationId);
     if (!registration) return;
 
+    const eliminatedChips = registration.chips;
+    const remainingActive = registrations.filter(r => 
+      (r.status === 'registered' || r.status === 'playing') && r.id !== registrationId
+    );
+    
+    console.log('🎯 Исключение игрока:', {
+      name: registration.player.name,
+      chips: eliminatedChips,
+      remainingPlayers: remainingActive.length
+    });
+
+    // Перераспределяем фишки выбывшего ПЕРЕД его исключением
+    if (eliminatedChips > 0 && remainingActive.length > 0) {
+      const remainingPlayerIds = remainingActive.map(r => r.id);
+      await redistributeChips(eliminatedChips, remainingPlayerIds);
+      console.log('✅ Фишки распределены, теперь исключаем игрока');
+    }
+
+    // Теперь исключаем игрока и обнуляем его фишки
     const { error } = await supabase
       .from('tournament_registrations')
       .update({ 
         status: 'eliminated',
-        position: position
+        position: position,
+        chips: 0
       })
       .eq('id', registrationId);
 
     if (error) {
       toast({ title: "Ошибка", description: "Не удалось исключить игрока", variant: "destructive" });
     } else {
-      toast({ title: "Игрок исключен", description: `${registration.player.name} - место ${position}` });
+      toast({ 
+        title: "Игрок исключен", 
+        description: `${registration.player.name} - место ${position}. Фишки (${eliminatedChips.toLocaleString()}) распределены между ${remainingActive.length} игроками` 
+      });
       
       // Голосовое объявление об исключении игрока
       await voiceAnnouncements.announcePlayerElimination(registration.player.name, position);
