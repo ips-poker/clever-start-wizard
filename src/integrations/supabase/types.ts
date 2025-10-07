@@ -1177,6 +1177,10 @@ export type Database = {
         Args: { tournament_id_param: string }
         Returns: boolean
       }
+      redistribute_chips_on_elimination: {
+        Args: { eliminated_player_id: string; tournament_id_param: string }
+        Returns: undefined
+      }
       resume_tournament: {
         Args: { tournament_id_param: string }
         Returns: boolean

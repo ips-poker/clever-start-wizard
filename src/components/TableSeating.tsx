@@ -370,55 +370,6 @@ const TableSeating = ({
     }
   };
 
-  const redistributeChips = async (eliminatedChips: number, remainingPlayerIds: string[]) => {
-    if (remainingPlayerIds.length === 0 || eliminatedChips <= 0) return;
-
-    // Получаем актуальные данные о фишках из БД
-    const { data: freshPlayers, error: fetchError } = await supabase
-      .from('tournament_registrations')
-      .select('id, player_id, chips')
-      .in('player_id', remainingPlayerIds)
-      .eq('tournament_id', tournamentId);
-
-    if (fetchError || !freshPlayers) {
-      console.error('Ошибка получения данных игроков:', fetchError);
-      return;
-    }
-
-    // Равномерное распределение фишек для правильного подсчета среднего стека
-    const chipsPerPlayer = Math.floor(eliminatedChips / freshPlayers.length);
-    const remainderChips = eliminatedChips % freshPlayers.length;
-
-    console.log('🔄 [Рассадка] Распределение фишек:', {
-      eliminatedChips,
-      playersCount: freshPlayers.length,
-      chipsPerPlayer,
-      remainderChips
-    });
-
-    // Обновляем фишки каждого игрока
-    const updatePromises = freshPlayers.map((player, index) => {
-      const additionalChips = chipsPerPlayer + (index < remainderChips ? 1 : 0);
-      const newChips = player.chips + additionalChips;
-      
-      console.log(`  Игрок ${player.player_id}: ${player.chips} + ${additionalChips} = ${newChips}`);
-      
-      return supabase
-        .from('tournament_registrations')
-        .update({ chips: newChips })
-        .eq('player_id', player.player_id)
-        .eq('tournament_id', tournamentId);
-    });
-
-    const results = await Promise.all(updatePromises);
-    const hasError = results.some(result => result.error);
-
-    if (hasError) {
-      console.error('Ошибки при обновлении фишек:', results.filter(r => r.error));
-    } else {
-      console.log('✅ [Рассадка] Фишки распределены равномерно между игроками');
-    }
-  };
 
   const eliminatePlayer = (playerId: string) => {
     const playerRegistration = registrations.find(r => r.player_id === playerId);
@@ -426,12 +377,6 @@ const TableSeating = ({
       console.error('Регистрация игрока не найдена');
       return;
     }
-
-    const eliminatedChips = playerRegistration.chips || 0;
-    const remainingActive = registrations.filter(r => 
-      (r.status === 'registered' || r.status === 'playing' || r.status === 'confirmed') && 
-      r.player_id !== playerId
-    );
 
     // МГНОВЕННО обновляем UI локально
     const newTables = [...tables];
@@ -461,69 +406,15 @@ const TableSeating = ({
       className: "font-medium"
     });
 
-    // ВСЕ БД операции в фоне
-    const performDbUpdates = async () => {
-      try {
-        // Объединяем все UPDATE в один batch для минимизации нагрузки
-        const dbOperations = [];
-
-        // 1. Сначала обновляем статус игрока
-        dbOperations.push(
-          supabase
-            .from('tournament_registrations')
-            .update({ 
-              status: 'eliminated',
-              seat_number: null,
-              chips: 0
-            })
-            .eq('player_id', playerId)
-            .eq('tournament_id', tournamentId)
-        );
-
-        // 2. Перераспределение фишек
-        if (eliminatedChips > 0 && remainingActive.length > 0) {
-          const remainingPlayerIds = remainingActive.map(r => r.player_id);
-          
-          const { data: freshPlayers } = await supabase
-            .from('tournament_registrations')
-            .select('id, player_id, chips')
-            .in('player_id', remainingPlayerIds)
-            .eq('tournament_id', tournamentId);
-
-          if (freshPlayers) {
-            const chipsPerPlayer = Math.floor(eliminatedChips / freshPlayers.length);
-            const remainderChips = eliminatedChips % freshPlayers.length;
-
-            freshPlayers.forEach((player, index) => {
-              const additionalChips = chipsPerPlayer + (index < remainderChips ? 1 : 0);
-              const newChips = player.chips + additionalChips;
-              
-              dbOperations.push(
-                supabase
-                  .from('tournament_registrations')
-                  .update({ chips: newChips })
-                  .eq('player_id', player.player_id)
-                  .eq('tournament_id', tournamentId)
-              );
-            });
-          }
-        }
-
-        // Выполняем все UPDATE параллельно
-        await Promise.all(dbOperations);
-
-        // 3. Пересчет позиций
-        await supabase.rpc('calculate_final_positions', {
-          tournament_id_param: tournamentId
-        });
-
-        // НЕ вызываем onSeatingUpdate - данные обновятся через realtime
-      } catch (error) {
-        console.error('Ошибка БД:', error);
+    // ОДИН быстрый RPC вызов в фоне
+    supabase.rpc('redistribute_chips_on_elimination', {
+      eliminated_player_id: playerId,
+      tournament_id_param: tournamentId
+    }).then(({ error }) => {
+      if (error) {
+        console.error('Ошибка перераспределения фишек:', error);
       }
-    };
-    
-    performDbUpdates();
+    });
   };
 
   const recalculatePositions = async () => {
