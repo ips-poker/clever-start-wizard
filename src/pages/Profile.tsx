@@ -221,11 +221,11 @@ export default function Profile() {
   }));
 
   const getRankClass = (rating: number) => {
-    if (rating >= 1800) return "from-yellow-400 to-yellow-600";
-    if (rating >= 1600) return "from-purple-400 to-purple-600";
-    if (rating >= 1400) return "from-blue-400 to-blue-600";
-    if (rating >= 1200) return "from-green-400 to-green-600";
-    return "from-gray-400 to-gray-600";
+    if (rating >= 1800) return "from-amber-600 to-amber-800";
+    if (rating >= 1600) return "from-purple-600 to-purple-800";
+    if (rating >= 1400) return "from-blue-600 to-blue-800";
+    if (rating >= 1200) return "from-emerald-600 to-emerald-800";
+    return "from-slate-600 to-slate-800";
   };
 
   const getRankTitle = (rating: number) => {
@@ -320,15 +320,15 @@ export default function Profile() {
         
         <main className="container mx-auto px-4 pt-24 md:pt-20 pb-8 space-y-8 relative z-10">
           {/* Profile Header */}
-          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/10 via-card/95 to-primary/5 p-8 border border-primary/20 shadow-2xl backdrop-blur-sm">
-            <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48cGF0dGVybiBpZD0iZ3JpZCIgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBwYXR0ZXJuVW5pdHM9InVzZXJTcGFjZU9uVXNlIj48cGF0aCBkPSJNIDQwIDAgTCAwIDAgMCA0MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJoc2wodmFyKC0tcHJpbWFyeSkpIiBzdHJva2Utd2lkdGg9IjAuNSIgb3BhY2l0eT0iMC4xIi8+PC9wYXR0ZXJuPjwvZGVmcz48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJ1cmwoI2dyaWQpIi8+PC9zdmc+')] opacity-30"></div>
+          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900/95 via-slate-800/90 to-slate-900/95 p-8 border border-primary/30 shadow-2xl backdrop-blur-sm">
+            <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48cGF0dGVybiBpZD0iZ3JpZCIgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBwYXR0ZXJuVW5pdHM9InVzZXJTcGFjZU9uVXNlIj48cGF0aCBkPSJNIDQwIDAgTCAwIDAgMCA0MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJoc2wodmFyKC0tcHJpbWFyeSkpIiBzdHJva2Utd2lkdGg9IjAuNSIgb3BhY2l0eT0iMC4xIi8+PC9wYXR0ZXJuPjwvZGVmcz48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJ1cmwoI2dyaWQpIi8+PC9zdmc+')] opacity-20"></div>
             
             <div className="relative z-10 text-center space-y-6">
               <div className="relative inline-block">
-                <div className={`absolute inset-0 rounded-full bg-gradient-to-br ${getRankClass(player?.elo_rating || 100)} opacity-20 blur-xl scale-110`}></div>
-                <Avatar className="relative w-32 h-32 mx-auto border-4 border-background shadow-2xl ring-4 ring-primary/20">
+                <div className={`absolute inset-0 rounded-full bg-gradient-to-br ${getRankClass(player?.elo_rating || 100)} opacity-30 blur-xl scale-110`}></div>
+                <Avatar className="relative w-32 h-32 mx-auto border-4 border-slate-800/80 shadow-2xl ring-4 ring-primary/30">
                   <AvatarImage src={player?.avatar_url} alt={player?.name} />
-                  <AvatarFallback className="text-2xl bg-gradient-to-br from-primary to-primary/60 text-primary-foreground">
+                  <AvatarFallback className="text-2xl bg-gradient-to-br from-slate-800 to-slate-900 text-primary border-2 border-slate-700/50">
                     {player?.name?.charAt(0).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
@@ -348,7 +348,7 @@ export default function Profile() {
                       <Input
                         value={newPlayerName}
                         onChange={(e) => setNewPlayerName(e.target.value)}
-                        className="text-center text-xl font-bold max-w-xs"
+                        className="text-center text-xl font-bold max-w-xs bg-slate-900/80 border-slate-700/50 text-foreground placeholder:text-muted-foreground"
                         placeholder="Введите новое имя"
                         onKeyPress={(e) => e.key === 'Enter' && handleNameUpdate()}
                       />
@@ -382,24 +382,24 @@ export default function Profile() {
                       </Button>
                     </div>
                   )}
-                  <Badge className={`bg-gradient-to-r ${getRankClass(player?.elo_rating || 100)} text-white border-0 px-3 py-1 font-semibold`}>
+                   <Badge className={`bg-gradient-to-r ${getRankClass(player?.elo_rating || 100)} text-white border-0 px-3 py-1 font-semibold shadow-lg`}>
                     {getRankTitle(player?.elo_rating || 100)}
                   </Badge>
                 </div>
                 <p className="text-muted-foreground text-center">{userProfile?.full_name || player?.name}</p>
                 
                 {/* Quick Stats */}
-                <div className="flex items-center justify-center gap-6 mt-4 pt-4 border-t border-primary/10">
+                <div className="flex items-center justify-center gap-6 mt-4 pt-4 border-t border-slate-700/50">
                   <div className="text-center">
                     <p className="text-2xl font-bold text-primary">{player?.elo_rating || 100}</p>
                     <p className="text-xs text-muted-foreground">RPS Рейтинг</p>
                   </div>
-                  <div className="w-px h-8 bg-border"></div>
+                  <div className="w-px h-8 bg-slate-700/50"></div>
                   <div className="text-center">
                     <p className="text-2xl font-bold text-chart-3">{player?.wins || 0}</p>
                     <p className="text-xs text-muted-foreground">Побед</p>
                   </div>
-                  <div className="w-px h-8 bg-border"></div>
+                  <div className="w-px h-8 bg-slate-700/50"></div>
                   <div className="text-center">
                     <p className="text-2xl font-bold text-chart-2">{player?.games_played || 0}</p>
                     <p className="text-xs text-muted-foreground">Игр</p>
@@ -412,14 +412,14 @@ export default function Profile() {
           {/* Stats Cards */}
           <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
             {statCards.map((stat, index) => (
-              <Card key={index} className="group hover:shadow-2xl transition-all duration-300 border-primary/20 hover:border-primary/40 bg-gradient-to-br from-card/95 via-card to-card/90 hover:scale-105 backdrop-blur-sm shadow-lg">
+              <Card key={index} className="group hover:shadow-2xl transition-all duration-300 border-slate-800/80 hover:border-primary/50 bg-gradient-to-br from-slate-900/95 via-slate-800/90 to-slate-900/95 hover:scale-105 backdrop-blur-sm shadow-lg">
                 <CardContent className="p-6 relative overflow-hidden">
                   <div className="absolute top-0 right-0 w-16 h-16 opacity-10">
                     <stat.icon className="w-full h-full text-primary" />
                   </div>
                   <div className="relative z-10">
                     <div className="flex items-center justify-between mb-4">
-                      <div className={`p-3 rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/10`}>
+                      <div className={`p-3 rounded-xl bg-gradient-to-br from-slate-800/60 to-slate-900/80 border border-slate-700/40`}>
                         <stat.icon className={`h-5 w-5 ${stat.color}`} />
                       </div>
                       <div className="text-right">
@@ -440,7 +440,7 @@ export default function Profile() {
 
           {/* Main Content */}
           <Tabs defaultValue="statistics" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 bg-card/50 backdrop-blur-sm border border-primary/20 h-auto p-1">
+            <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 bg-slate-900/70 backdrop-blur-sm border border-slate-800/80 h-auto p-1 shadow-lg">
               <TabsTrigger value="statistics" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm py-2">
                 <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4" />
                 <span className="hidden sm:inline">Статистика</span>
@@ -466,7 +466,7 @@ export default function Profile() {
             <TabsContent value="statistics" className="space-y-6">
               <div className="grid gap-6 lg:grid-cols-2">
                 {/* ELO Chart */}
-                <Card className="border-primary/20 bg-card/95 backdrop-blur-sm shadow-lg lg:col-span-2">
+                <Card className="border-slate-800/80 bg-gradient-to-br from-slate-900/95 via-slate-800/90 to-slate-900/95 backdrop-blur-sm shadow-lg lg:col-span-2">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <TrendingUp className="h-5 w-5 text-primary" />
@@ -526,7 +526,7 @@ export default function Profile() {
                       </ResponsiveContainer>
                     ) : (
                       <div className="text-center py-16 text-muted-foreground">
-                        <div className="bg-primary/10 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                        <div className="bg-slate-800/60 border border-slate-700/40 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
                           <Target className="h-8 w-8 text-primary" />
                         </div>
                         <h3 className="text-lg font-medium text-foreground mb-2">Нет данных для отображения</h3>
@@ -537,7 +537,7 @@ export default function Profile() {
                 </Card>
 
                 {/* Additional Stats */}
-                <Card className="border-primary/20 bg-card/95 backdrop-blur-sm shadow-lg">
+                <Card className="border-slate-800/80 bg-gradient-to-br from-slate-900/95 via-slate-800/90 to-slate-900/95 backdrop-blur-sm shadow-lg">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <Medal className="h-5 w-5 text-chart-3" />
@@ -546,11 +546,11 @@ export default function Profile() {
                   </CardHeader>
                   <CardContent className="space-y-4">
                     {gameResults.slice(0, 3).map((result, index) => (
-                      <div key={result.id} className="flex items-center gap-3 p-3 rounded-lg bg-card/50 backdrop-blur-sm border border-primary/10">
+                      <div key={result.id} className="flex items-center gap-3 p-3 rounded-lg bg-slate-900/50 backdrop-blur-sm border border-slate-800/40">
                         <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold text-white shadow-md ${
-                          result.position === 1 ? 'bg-gradient-to-br from-yellow-400 to-yellow-600' :
-                          result.position === 2 ? 'bg-gradient-to-br from-gray-300 to-gray-500' :
-                          result.position === 3 ? 'bg-gradient-to-br from-amber-500 to-amber-700' : 'bg-gradient-to-br from-primary/50 to-primary/30'
+                          result.position === 1 ? 'bg-gradient-to-br from-amber-600 to-amber-800' :
+                          result.position === 2 ? 'bg-gradient-to-br from-slate-500 to-slate-700' :
+                          result.position === 3 ? 'bg-gradient-to-br from-amber-700 to-amber-900' : 'bg-gradient-to-br from-primary/50 to-primary/30'
                         }`}>
                           #{result.position}
                         </div>
@@ -574,7 +574,7 @@ export default function Profile() {
                   </CardContent>
                 </Card>
 
-                <Card className="border-primary/20 bg-card/95 backdrop-blur-sm shadow-lg">
+                <Card className="border-slate-800/80 bg-gradient-to-br from-slate-900/95 via-slate-800/90 to-slate-900/95 backdrop-blur-sm shadow-lg">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <Award className="h-5 w-5 text-chart-4" />
@@ -587,9 +587,9 @@ export default function Profile() {
                         <span>До следующего ранга</span>
                         <span className="font-medium">{Math.max(0, Math.ceil(((Math.floor(((player?.elo_rating || 100) + 199) / 200) * 200) - (player?.elo_rating || 100))))}</span>
                       </div>
-                      <div className="w-full bg-muted rounded-full h-2">
+                      <div className="w-full bg-slate-800/50 rounded-full h-2 border border-slate-700/30">
                         <div 
-                          className="bg-gradient-to-r from-primary to-primary/80 h-2 rounded-full transition-all duration-500" 
+                          className="bg-gradient-to-r from-primary to-primary/80 h-2 rounded-full transition-all duration-500 shadow-lg shadow-primary/20" 
                           style={{ 
                             width: `${Math.min(100, (((player?.elo_rating || 100) % 200) / 200) * 100)}%` 
                           }}
@@ -621,7 +621,7 @@ export default function Profile() {
             </TabsContent>
 
             <TabsContent value="history" className="space-y-6">
-              <Card className="border-primary/20 bg-card/95 backdrop-blur-sm shadow-lg">
+                <Card className="border-slate-800/80 bg-gradient-to-br from-slate-900/95 via-slate-800/90 to-slate-900/95 backdrop-blur-sm shadow-lg">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Star className="h-5 w-5 text-primary" />
@@ -632,16 +632,16 @@ export default function Profile() {
                   {gameResults.length > 0 ? (
                     <div className="space-y-3">
                       {gameResults.map((result, index) => (
-                        <div key={result.id} className="group relative overflow-hidden rounded-xl border border-primary/20 bg-gradient-to-r from-card/95 to-card/90 p-4 hover:shadow-xl hover:border-primary/30 transition-all duration-300 backdrop-blur-sm">
+                        <div key={result.id} className="group relative overflow-hidden rounded-xl border border-slate-800/60 bg-gradient-to-r from-slate-900/90 to-slate-800/80 p-4 hover:shadow-xl hover:border-primary/40 transition-all duration-300 backdrop-blur-sm">
                           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                           
                           <div className="relative z-10 flex items-center justify-between">
                             <div className="flex items-center gap-4">
-                              <div className="relative">
+                               <div className="relative">
                                 <div className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-white shadow-lg ${
-                                  result.position === 1 ? 'bg-gradient-to-br from-yellow-400 to-yellow-600' :
-                                  result.position === 2 ? 'bg-gradient-to-br from-gray-300 to-gray-500' :
-                                  result.position === 3 ? 'bg-gradient-to-br from-amber-500 to-amber-700' : 'bg-gradient-to-br from-muted to-muted-foreground'
+                                  result.position === 1 ? 'bg-gradient-to-br from-amber-600 to-amber-800' :
+                                  result.position === 2 ? 'bg-gradient-to-br from-slate-500 to-slate-700' :
+                                  result.position === 3 ? 'bg-gradient-to-br from-amber-700 to-amber-900' : 'bg-gradient-to-br from-slate-700 to-slate-900'
                                 }`}>
                                   <span className="text-sm">#{result.position}</span>
                                 </div>
@@ -688,7 +688,7 @@ export default function Profile() {
                     </div>
                   ) : (
                     <div className="text-center py-16 text-muted-foreground">
-                      <div className="bg-primary/10 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                      <div className="bg-slate-800/60 border border-slate-700/40 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
                         <Calendar className="h-8 w-8 text-primary" />
                       </div>
                       <h3 className="text-lg font-medium text-foreground mb-2">История игр пуста</h3>
