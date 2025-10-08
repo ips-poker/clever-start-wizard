@@ -574,7 +574,11 @@ const PlayerManagement = ({ tournament, players, registrations, onRegistrationUp
   );
 
   const activePlayers = registrations.filter(r => r.status !== 'eliminated');
-  const eliminatedPlayers = registrations.filter(r => r.status === 'eliminated').sort((a, b) => (b.position || 0) - (a.position || 0));
+  const eliminatedPlayers = registrations.filter(r => r.status === 'eliminated').sort((a, b) => {
+    const posA = (a as any).final_position || a.position || 999;
+    const posB = (b as any).final_position || b.position || 999;
+    return posA - posB; // От меньшего к большему (1 место первым)
+  });
 
   return (
     <div className="space-y-6">
@@ -741,8 +745,8 @@ const PlayerManagement = ({ tournament, players, registrations, onRegistrationUp
                       
                       <div className="flex items-center gap-4">
                         <div className="text-right">
-                          <div className="text-sm text-slate-500 font-light">Ребаи + Аддоны</div>
-                          <div className="text-lg font-light text-slate-800">{registration.rebuys + registration.addons}</div>
+                          <div className="text-sm text-slate-500 font-light">Re-entry + Доп. наборы</div>
+                          <div className="text-lg font-light text-slate-800">{(registration.reentries || 0) + (registration.additional_sets || 0)}</div>
                         </div>
                         
                         <div className="flex gap-2">
@@ -751,7 +755,7 @@ const PlayerManagement = ({ tournament, players, registrations, onRegistrationUp
                             variant="outline"
                             onClick={() => updateRebuys(registration.id, 1)}
                             className="h-8 w-8 p-0 border-green-200 text-green-600 hover:bg-green-50"
-                            title="Добавить ребай"
+                            title="Добавить re-entry"
                           >
                             <span className="text-xs font-medium">R</span>
                           </Button>
@@ -759,9 +763,9 @@ const PlayerManagement = ({ tournament, players, registrations, onRegistrationUp
                             size="sm"
                             variant="outline"
                             onClick={() => updateRebuys(registration.id, -1)}
-                            disabled={registration.rebuys === 0}
+                            disabled={(registration.reentries || 0) === 0}
                             className="h-8 w-8 p-0 border-red-200 text-red-600 hover:bg-red-50"
-                            title="Убрать ребай"
+                            title="Убрать re-entry"
                           >
                             <Minus className="w-3 h-3" />
                           </Button>
@@ -772,7 +776,7 @@ const PlayerManagement = ({ tournament, players, registrations, onRegistrationUp
                                 variant="outline"
                                 onClick={() => updateAddons(registration.id, 1)}
                                 className="h-8 w-8 p-0 border-blue-200 text-blue-600 hover:bg-blue-50"
-                                title="Добавить аддон"
+                                title="Добавить доп. набор"
                               >
                                 <span className="text-xs font-medium">A</span>
                               </Button>
@@ -780,9 +784,9 @@ const PlayerManagement = ({ tournament, players, registrations, onRegistrationUp
                                 size="sm"
                                 variant="outline"
                                 onClick={() => updateAddons(registration.id, -1)}
-                                disabled={registration.addons === 0}
+                                disabled={(registration.additional_sets || 0) === 0}
                                 className="h-8 w-8 p-0 border-orange-200 text-orange-600 hover:bg-orange-50"
-                                title="Убрать аддон"
+                                title="Убрать доп. набор"
                               >
                                 <Minus className="w-3 h-3" />
                               </Button>
@@ -845,13 +849,13 @@ const PlayerManagement = ({ tournament, players, registrations, onRegistrationUp
                             </AvatarFallback>
                           </Avatar>
                           <div className={`absolute -top-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium text-white shadow-sm ${
-                            (registration.position || 0) <= 3 
+                            ((registration as any).final_position || registration.position || 0) <= 3 
                               ? 'bg-gradient-to-br from-yellow-400 to-yellow-600' 
                               : 'bg-gradient-to-br from-slate-400 to-slate-600'
                           }`}>
-                            {registration.position}
+                            {(registration as any).final_position || registration.position}
                           </div>
-                          {(registration.position || 0) <= 3 && (
+                          {((registration as any).final_position || registration.position || 0) <= 3 && (
                             <div className="absolute -top-2 -left-2">
                               <Trophy className="w-5 h-5 text-yellow-500 drop-shadow-sm" />
                             </div>
@@ -862,17 +866,17 @@ const PlayerManagement = ({ tournament, players, registrations, onRegistrationUp
                           <div className="flex items-center gap-3 text-sm text-slate-500 font-light">
                             <span>RPS {registration.player.elo_rating}</span>
                             <span>•</span>
-                            <span>Ребаи {registration.rebuys}</span>
+                            <span>Re-entry {registration.reentries || 0}</span>
                             <span>•</span>
-                            <span>Аддоны {registration.addons}</span>
+                            <span>Доп. наборы {registration.additional_sets || 0}</span>
                           </div>
                         </div>
                       </div>
                       
                       <div className="text-right">
-                        <div className="text-lg font-light text-slate-800">{registration.position} место</div>
+                        <div className="text-lg font-light text-slate-800">{(registration as any).final_position || registration.position} место</div>
                         <div className="text-sm text-slate-500 font-light">
-                          {(registration.position || 0) <= 3 ? (
+                          {((registration as any).final_position || registration.position || 0) <= 3 ? (
                             <span className="text-yellow-600">Призовое место</span>
                           ) : (
                             'Выбыл'
