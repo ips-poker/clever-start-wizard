@@ -58,19 +58,6 @@ export function PlayerStats() {
     }
   };
 
-  const getRankIcon = (position: number) => {
-    switch (position) {
-      case 1:
-        return <Trophy className="h-5 w-5 text-yellow-500" />;
-      case 2:
-        return <Medal className="h-5 w-5 text-gray-400" />;
-      case 3:
-        return <Award className="h-5 w-5 text-amber-600" />;
-      default:
-        return <span className="h-5 w-5 flex items-center justify-center text-sm font-bold text-muted-foreground">#{position}</span>;
-    }
-  };
-
   const getWinRate = (wins: number, games: number) => {
     if (games === 0) return 0;
     return Math.round((wins / games) * 100);
@@ -79,17 +66,9 @@ export function PlayerStats() {
   if (loading) {
     return (
       <div className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {[1, 2, 3].map((i) => (
-            <Card key={i} className="border-border/50">
-              <CardContent className="p-6">
-                <div className="animate-pulse">
-                  <div className="h-4 bg-muted rounded w-3/4 mb-2"></div>
-                  <div className="h-8 bg-muted rounded w-1/2"></div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+        <div className="text-center py-12">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-400 mx-auto mb-4"></div>
+          <p className="text-white/70">Загрузка рейтинга...</p>
         </div>
       </div>
     );
@@ -99,129 +78,144 @@ export function PlayerStats() {
     <div className="space-y-6">
       {/* Summary Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="border-border/50">
+        <Card className="border-slate-800/80 bg-gradient-to-br from-slate-900/95 via-slate-800/90 to-slate-900/95 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Всего игроков</p>
-                <p className="text-2xl font-bold text-foreground">{stats.totalPlayers}</p>
+                <p className="text-sm font-medium text-white/60">Всего игроков</p>
+                <p className="text-3xl font-bold text-amber-400">{stats.totalPlayers}</p>
               </div>
-              <Users className="h-8 w-8 text-blue-500" />
+              <div className="w-12 h-12 bg-amber-500/10 rounded-xl flex items-center justify-center">
+                <Users className="h-6 w-6 text-amber-400" />
+              </div>
             </div>
           </CardContent>
         </Card>
         
-        <Card className="border-border/50">
+        <Card className="border-slate-800/80 bg-gradient-to-br from-slate-900/95 via-slate-800/90 to-slate-900/95 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Средний рейтинг</p>
-                <p className="text-2xl font-bold text-foreground">{stats.averageRating}</p>
+                <p className="text-sm font-medium text-white/60">Средний рейтинг</p>
+                <p className="text-3xl font-bold text-green-400">{stats.averageRating}</p>
               </div>
-              <TrendingUp className="h-8 w-8 text-green-500" />
+              <div className="w-12 h-12 bg-green-500/10 rounded-xl flex items-center justify-center">
+                <TrendingUp className="h-6 w-6 text-green-400" />
+              </div>
             </div>
           </CardContent>
         </Card>
         
-        <Card className="border-border/50">
+        <Card className="border-slate-800/80 bg-gradient-to-br from-slate-900/95 via-slate-800/90 to-slate-900/95 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Всего игр</p>
-                <p className="text-2xl font-bold text-foreground">{stats.totalGames}</p>
+                <p className="text-sm font-medium text-white/60">Всего игр</p>
+                <p className="text-3xl font-bold text-purple-400">{stats.totalGames}</p>
               </div>
-              <Target className="h-8 w-8 text-purple-500" />
+              <div className="w-12 h-12 bg-purple-500/10 rounded-xl flex items-center justify-center">
+                <Target className="h-6 w-6 text-purple-400" />
+              </div>
             </div>
           </CardContent>
         </Card>
       </div>
 
       {/* Leaderboard */}
-      <Card className="border-border/50">
+      <Card className="border-slate-800/80 bg-gradient-to-br from-slate-900/95 via-slate-800/90 to-slate-900/95 backdrop-blur-sm shadow-lg">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Trophy className="h-5 w-5 text-primary" />
+          <CardTitle className="flex items-center gap-2 text-white">
+            <Trophy className="h-5 w-5 text-amber-400" />
             Таблица лидеров
           </CardTitle>
         </CardHeader>
         <CardContent>
           {players.length > 0 ? (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-16">Место</TableHead>
-                  <TableHead>Игрок</TableHead>
-                  <TableHead className="text-center">RPS</TableHead>
-                  <TableHead className="text-center">Игр</TableHead>
-                  <TableHead className="text-center">Побед</TableHead>
-                  <TableHead className="text-center">Винрейт</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {players.map((player, index) => (
-                  <TableRow key={player.id} className="hover:bg-muted/30">
-                    <TableCell className="font-medium">
-                      <div className="flex items-center gap-2">
-                        {getRankIcon(index + 1)}
+            <div className="space-y-3">
+              {players.map((player, index) => {
+                const position = index + 1;
+                const isTopFive = position <= 5;
+                
+                return (
+                  <div 
+                    key={player.id} 
+                    className={`
+                      flex items-center justify-between p-4 rounded-xl transition-all duration-300
+                      ${isTopFive 
+                        ? 'bg-gradient-to-br from-amber-500/10 via-amber-600/5 to-amber-500/10 border border-amber-500/20 hover:border-amber-500/40' 
+                        : 'bg-slate-800/50 hover:bg-slate-800/70 border border-slate-700/50'
+                      }
+                    `}
+                  >
+                    <div className="flex items-center gap-4">
+                      {/* Rank Icon/Number */}
+                      <div className={`
+                        w-10 h-10 rounded-lg flex items-center justify-center text-sm font-semibold
+                        ${position === 1 
+                          ? 'bg-gradient-to-br from-yellow-400 to-yellow-600 text-white shadow-lg' 
+                          : position === 2 
+                          ? 'bg-gradient-to-br from-gray-300 to-gray-500 text-white shadow-md' 
+                          : position === 3 
+                          ? 'bg-gradient-to-br from-amber-400 to-amber-600 text-white shadow-md' 
+                          : isTopFive
+                          ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                          : 'bg-slate-700/50 text-white/60 border border-slate-600/30'
+                        }
+                      `}>
+                        {position === 1 && <Trophy className="h-5 w-5" />}
+                        {position === 2 && <Medal className="h-5 w-5" />}
+                        {position === 3 && <Award className="h-5 w-5" />}
+                        {position > 3 && position}
                       </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-3">
-                        <Avatar className="h-10 w-10">
-                          <AvatarImage src={player.avatar_url} alt={player.name} />
-                          <AvatarFallback className="text-sm bg-gradient-to-br from-primary/20 to-primary/10">
-                            {player.name.charAt(0).toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <p className="font-medium text-foreground">{player.name}</p>
-                          {index < 3 && (
-                            <Badge variant="secondary" className="text-xs">
-                              Топ {index + 1}
-                            </Badge>
-                          )}
+                      
+                      {/* Avatar */}
+                      <Avatar className="h-12 w-12 border-2 border-amber-500/20">
+                        <AvatarImage src={player.avatar_url} alt={player.name} />
+                        <AvatarFallback className="text-sm bg-gradient-to-br from-amber-500/20 to-amber-600/20 text-white">
+                          {player.name.charAt(0).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      
+                      {/* Player Info */}
+                      <div>
+                        <p className={`font-medium mb-1 ${isTopFive ? 'text-white' : 'text-white/90'}`}>
+                          {player.name}
+                        </p>
+                        <div className="flex items-center gap-3 text-xs text-white/60">
+                          <span className="flex items-center gap-1">
+                            <TrendingUp className="w-3 h-3" />
+                            {player.games_played} игр
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Trophy className="w-3 h-3" />
+                            {player.wins} побед
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Target className="w-3 h-3" />
+                            {getWinRate(player.wins, player.games_played)}% винрейт
+                          </span>
                         </div>
                       </div>
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <Badge 
-                        variant="outline" 
-                        className={`font-mono ${
-                          player.elo_rating >= 1400 ? 'border-green-500 text-green-700' :
-                          player.elo_rating >= 1200 ? 'border-blue-500 text-blue-700' :
-                          'border-orange-500 text-orange-700'
-                        }`}
-                      >
-                        RPS {player.elo_rating}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-center text-muted-foreground">
-                      {player.games_played}
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <span className="font-medium text-foreground">{player.wins}</span>
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <Badge 
-                        variant="secondary"
-                        className={`${
-                          getWinRate(player.wins, player.games_played) >= 30 ? 'bg-green-100 text-green-800' :
-                          getWinRate(player.wins, player.games_played) >= 15 ? 'bg-blue-100 text-blue-800' :
-                          'bg-orange-100 text-orange-800'
-                        }`}
-                      >
-                        {getWinRate(player.wins, player.games_played)}%
-                      </Badge>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                    </div>
+                    
+                    {/* ELO Rating */}
+                    <div className="text-right">
+                      <div className={`text-2xl font-light mb-1 ${isTopFive ? 'text-amber-400' : 'text-white'}`}>
+                        {player.elo_rating}
+                      </div>
+                      <div className="text-xs text-white/60 uppercase tracking-wide">RPS</div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           ) : (
-            <div className="text-center py-12 text-muted-foreground">
-              <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>Нет зарегистрированных игроков</p>
-              <p className="text-sm">Игроки появятся после первых турниров</p>
+            <div className="text-center py-12">
+              <div className="w-16 h-16 bg-slate-800/50 rounded-xl flex items-center justify-center mx-auto mb-4">
+                <Users className="h-8 w-8 text-amber-400/50" />
+              </div>
+              <p className="text-white/70 mb-2">Нет зарегистрированных игроков</p>
+              <p className="text-sm text-white/50">Игроки появятся после первых турниров</p>
             </div>
           )}
         </CardContent>
