@@ -30,8 +30,8 @@ interface BlindLevel {
 interface Registration {
   id: string;
   status: string;
-  rebuys: number;
-  addons: number;
+  reentries: number;
+  additional_sets: number;
   chips?: number;
 }
 
@@ -184,9 +184,9 @@ const ExternalTimer = () => {
   }
 
   const activePlayers = registrations.filter(r => r.status === 'registered' || r.status === 'playing');
-  const totalRebuys = registrations.reduce((sum, r) => sum + r.rebuys, 0);
-  const totalAddons = registrations.reduce((sum, r) => sum + r.addons, 0);
-  const prizePool = (registrations.length * tournament.buy_in) + (totalRebuys * tournament.buy_in) + (totalAddons * tournament.buy_in);
+  const totalReentries = registrations.reduce((sum, r) => sum + r.reentries, 0);
+  const totalAdditionalSets = registrations.reduce((sum, r) => sum + r.additional_sets, 0);
+  const prizePool = (registrations.length * tournament.buy_in) + (totalReentries * tournament.buy_in) + (totalAdditionalSets * tournament.buy_in);
   
   const totalChips = registrations.reduce((sum, r) => sum + (r.chips || tournament.starting_chips), 0);
   const averageStack = activePlayers.length > 0 ? Math.round(totalChips / activePlayers.length) : 0;
@@ -356,9 +356,9 @@ const ExternalTimer = () => {
             </div>
             <div>
               <div className="flex items-center justify-center mb-2">
-                <span className="text-lg text-gray-600">Ребаи / Адоны</span>
+                <span className="text-lg text-gray-600">Re-entry / Доп. наборы</span>
               </div>
-              <p className="text-3xl font-medium text-gray-800">{totalRebuys} / {totalAddons}</p>
+              <p className="text-3xl font-medium text-gray-800">{totalReentries} / {totalAdditionalSets}</p>
             </div>
           </div>
         </div>

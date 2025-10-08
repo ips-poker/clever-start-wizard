@@ -74,8 +74,8 @@ interface Registration {
   player: Player;
   chips: number;
   status: string;
-  rebuys: number;
-  addons: number;
+  reentries: number;
+  additional_sets: number;
   seat_number: number;
   position?: number;
 }
@@ -248,9 +248,9 @@ const TournamentOverview = ({
   const activePlayers = registrations.filter(r => r.status === 'registered' || r.status === 'playing');
   const eliminatedPlayers = registrations.filter(r => r.status === 'eliminated');
   
-  // Используем новую терминологию с fallback на старую для обратной совместимости
-  const totalReentries = registrations.reduce((sum, r) => sum + ((r as any).reentries || r.rebuys || 0), 0);
-  const totalAdditionalSets = registrations.reduce((sum, r) => sum + ((r as any).additional_sets || r.addons || 0), 0);
+  // Используем новую терминологию
+  const totalReentries = registrations.reduce((sum, r) => sum + (r.reentries || 0), 0);
+  const totalAdditionalSets = registrations.reduce((sum, r) => sum + (r.additional_sets || 0), 0);
   
   // Рассчитываем фонд RPS баллов
   const participationFee = (tournament as any).participation_fee || tournament.buy_in || 0;

@@ -65,11 +65,11 @@ interface Registration {
   seat_number: number;
   chips: number;
   status: string;
-  rebuys: number;
-  addons: number;
+  reentries: number;
+  additional_sets: number;
   position?: number;
-  reentries?: number;
-  additional_sets?: number;
+  rebuys?: number;
+  addons?: number;
 }
 
 interface PlayerManagementProps {

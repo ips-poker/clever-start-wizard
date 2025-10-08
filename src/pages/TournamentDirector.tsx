@@ -103,9 +103,11 @@ interface Registration {
   seat_number: number;
   chips: number;
   status: string;
-  rebuys: number;
-  addons: number;
+  reentries: number;
+  additional_sets: number;
   position?: number;
+  rebuys?: number;
+  addons?: number;
 }
 
 const TournamentDirector = () => {
@@ -1281,7 +1283,7 @@ const TournamentDirector = () => {
                 <TournamentPlayerManagement 
                   tournament={adaptTournamentToModern(selectedTournament)}
                   players={players}
-                  registrations={adaptRegistrationsToModern(registrations)}
+                  registrations={registrations}
                   onRegistrationUpdate={() => selectedTournament && loadRegistrations(selectedTournament.id)}
                 />
               )}
