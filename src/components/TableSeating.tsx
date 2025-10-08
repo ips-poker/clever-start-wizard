@@ -129,7 +129,8 @@ const TableSeating = ({
           player:players(id, name, avatar_url, user_id)
         `)
         .eq('tournament_id', tournamentId)
-        .not('seat_number', 'is', null);
+        .not('seat_number', 'is', null)
+        .neq('status', 'eliminated'); // Исключаем выбывших игроков
 
       if (error) {
         console.error('Ошибка загрузки рассадки:', error);
@@ -139,6 +140,9 @@ const TableSeating = ({
       if (seatingData && seatingData.length > 0) {
         reconstructTablesFromDatabase(seatingData);
         setIsSeatingStarted(true);
+      } else if (seatingData && seatingData.length === 0 && isSeatingStarted) {
+        // Если нет активных игроков в рассадке, очищаем столы
+        setTables([]);
       }
     } catch (error) {
       console.error('Ошибка при загрузке рассадки:', error);
@@ -371,7 +375,7 @@ const TableSeating = ({
   };
 
 
-  const eliminatePlayer = (playerId: string) => {
+  const eliminatePlayer = async (playerId: string) => {
     const playerRegistration = registrations.find(r => r.player_id === playerId);
     if (!playerRegistration) {
       console.error('Регистрация игрока не найдена');
@@ -406,15 +410,28 @@ const TableSeating = ({
       className: "font-medium"
     });
 
-    // ОДИН быстрый RPC вызов в фоне
-    supabase.rpc('redistribute_chips_on_elimination', {
-      eliminated_player_id: playerId,
-      tournament_id_param: tournamentId
-    }).then(({ error }) => {
-      if (error) {
-        console.error('Ошибка перераспределения фишек:', error);
+    try {
+      // Сначала обнуляем seat_number
+      await supabase
+        .from('tournament_registrations')
+        .update({ seat_number: null })
+        .eq('player_id', playerId)
+        .eq('tournament_id', tournamentId);
+
+      // Затем перераспределяем фишки и обновляем статус
+      await supabase.rpc('redistribute_chips_on_elimination', {
+        eliminated_player_id: playerId,
+        tournament_id_param: tournamentId
+      });
+
+      // Перезагружаем данные для синхронизации
+      if (onSeatingUpdate) {
+        onSeatingUpdate();
       }
-    });
+      await loadSavedSeating();
+    } catch (error) {
+      console.error('Ошибка выбывания игрока:', error);
+    }
   };
 
   const recalculatePositions = async () => {
@@ -852,7 +869,19 @@ const TableSeating = ({
         return;
       }
 
-      // Обновляем столы локально
+      // Сначала обновляем в базе данных
+      const newAbsoluteSeatNumber = (toTable - 1) * playersPerTable + toSeat;
+      const { error } = await supabase
+        .from('tournament_registrations')
+        .update({ seat_number: newAbsoluteSeatNumber })
+        .eq('player_id', playerId)
+        .eq('tournament_id', tournamentId);
+
+      if (error) {
+        throw error;
+      }
+
+      // Затем обновляем UI
       const newTables = [...tables];
       const newSourceTable = newTables.find(t => t.table_number === fromTable);
       const newTargetTable = newTables.find(t => t.table_number === toTable);
@@ -890,23 +919,17 @@ const TableSeating = ({
 
         setTables(newTables);
 
-        // Обновляем в базе данных
-        const newAbsoluteSeatNumber = (toTable - 1) * playersPerTable + toSeat;
-        await supabase
-          .from('tournament_registrations')
-          .update({ seat_number: newAbsoluteSeatNumber })
-          .eq('player_id', playerId)
-          .eq('tournament_id', tournamentId);
-
         toast({
           title: "Игрок перемещен",
           description: `${sourceSeatObj.player_name} перемещен со стола ${fromTable} места ${fromSeat} за стол ${toTable} место ${toSeat}`,
           className: "font-medium"
         });
 
+        // Перезагружаем данные для синхронизации
         if (onSeatingUpdate) {
           onSeatingUpdate();
         }
+        await loadSavedSeating();
       }
     } catch (error) {
       console.error('Error moving player:', error);
