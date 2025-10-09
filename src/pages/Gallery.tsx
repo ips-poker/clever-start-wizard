@@ -127,51 +127,51 @@ export default function Gallery() {
             <section className="mb-16">
               <div className="flex items-center gap-3 mb-8">
                 <Star className="w-6 h-6 text-amber-500" />
-                <h2 className="text-2xl font-bold text-poker-primary">Рекомендуемые</h2>
+                <h2 className="text-2xl font-light text-white tracking-wide">Рекомендуемые</h2>
               </div>
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {featuredImages.map((image) => (
                   <Dialog key={`featured-${image.id}`}>
                     <DialogTrigger asChild>
-                      <Card className="group cursor-pointer overflow-hidden border-2 border-amber-500/20 hover:border-amber-500/40 transition-all duration-500 hover:shadow-2xl hover:shadow-amber-500/10">
+                      <Card className="group cursor-pointer overflow-hidden bg-gradient-to-br from-slate-800/95 via-slate-900/95 to-black/90 border-2 border-amber-500/20 hover:border-amber-500/40 backdrop-blur-xl transition-all duration-500 hover:shadow-2xl hover:shadow-amber-500/20">
                         <div className="relative overflow-hidden">
                           <img 
                             src={image.image_url} 
                             alt={image.alt_text || image.title}
                             className="w-full h-72 object-cover group-hover:scale-110 transition-transform duration-700"
                           />
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                             <div className="absolute bottom-4 left-4 text-white transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
                               <div className="flex items-center gap-2 mb-2">
                                 <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
-                                <Badge className="bg-amber-500/90 text-white">Рекомендуемое</Badge>
+                                <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30 backdrop-blur-xl">Рекомендуемое</Badge>
                               </div>
-                              <h3 className="font-bold text-lg">{image.title}</h3>
+                              <h3 className="font-light text-lg">{image.title}</h3>
                               {image.description && (
-                                <p className="text-sm text-white/80 mt-1">{image.description}</p>
+                                <p className="text-sm text-white/80 mt-1 font-light">{image.description}</p>
                               )}
                             </div>
                           </div>
                         </div>
                       </Card>
                     </DialogTrigger>
-                    <DialogContent className="max-w-4xl max-h-[90vh] p-0">
+                    <DialogContent className="max-w-4xl max-h-[90vh] p-0 bg-gradient-to-br from-slate-800/95 via-slate-900/95 to-black/90 border border-white/10 text-white">
                       <div className="relative">
                         <img 
                           src={image.image_url} 
                           alt={image.alt_text || image.title}
                           className="w-full h-auto max-h-[80vh] object-contain"
                         />
-                        <div className="p-6 bg-background">
+                        <div className="p-6">
                           <div className="flex items-center gap-2 mb-2">
                             <Star className="w-5 h-5 text-amber-500 fill-amber-500" />
-                            <Badge className="bg-amber-500 text-white">Рекомендуемое</Badge>
+                            <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30">Рекомендуемое</Badge>
                           </div>
-                          <h3 className="text-2xl font-bold mb-2 text-poker-primary">{image.title}</h3>
+                          <h3 className="text-2xl font-light mb-2 text-white tracking-wide">{image.title}</h3>
                           {image.description && (
-                            <p className="text-muted-foreground mb-4">{image.description}</p>
+                            <p className="text-white/70 mb-4 font-light">{image.description}</p>
                           )}
-                          <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                          <div className="flex items-center gap-4 text-sm text-white/60">
                             <div className="flex items-center gap-2">
                               <Calendar className="w-4 h-4" />
                               {new Date(image.created_at).toLocaleDateString('ru-RU')}
@@ -191,15 +191,17 @@ export default function Gallery() {
           )}
 
           {/* Filters */}
-          <div className="flex flex-wrap items-center justify-between gap-4 mb-8 p-6 bg-background/50 backdrop-blur-sm rounded-2xl border border-border/50">
+          <div className="flex flex-wrap items-center justify-between gap-4 mb-8 p-6 bg-gradient-to-br from-slate-800/95 via-slate-900/95 to-black/90 border border-white/10 backdrop-blur-xl rounded-2xl">
             <div className="flex flex-wrap gap-2">
               {categoriesWithCounts.map((category) => (
                 <Button
                   key={category.value}
-                  variant={selectedCategory === category.value ? "default" : "outline"}
+                  className={selectedCategory === category.value 
+                    ? "bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white" 
+                    : "bg-white/5 border-2 border-amber-400/30 text-amber-400 hover:bg-amber-400/10 hover:border-amber-400/50 backdrop-blur-xl"
+                  }
                   size="sm"
                   onClick={() => setSelectedCategory(category.value)}
-                  className={selectedCategory === category.value ? "bg-poker-primary hover:bg-poker-primary/90" : ""}
                 >
                   <Filter className="w-4 h-4 mr-2" />
                   {category.label} ({category.count})
@@ -209,14 +211,20 @@ export default function Gallery() {
             
             <div className="flex items-center gap-2">
               <Button
-                variant={viewMode === 'grid' ? "default" : "outline"}
+                className={viewMode === 'grid' 
+                  ? "bg-gradient-to-r from-amber-500 to-amber-600 text-white" 
+                  : "bg-white/5 border-2 border-amber-400/30 text-amber-400 hover:bg-amber-400/10"
+                }
                 size="sm"
                 onClick={() => setViewMode('grid')}
               >
                 <Grid3X3 className="w-4 h-4" />
               </Button>
               <Button
-                variant={viewMode === 'masonry' ? "default" : "outline"}
+                className={viewMode === 'masonry' 
+                  ? "bg-gradient-to-r from-amber-500 to-amber-600 text-white" 
+                  : "bg-white/5 border-2 border-amber-400/30 text-amber-400 hover:bg-amber-400/10"
+                }
                 size="sm"
                 onClick={() => setViewMode('masonry')}
               >
@@ -229,11 +237,11 @@ export default function Gallery() {
           {filteredImages.length === 0 ? (
             <div className="text-center py-16">
               <div className="max-w-md mx-auto">
-                <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Tag className="w-8 h-8 text-muted-foreground" />
+                <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Tag className="w-8 h-8 text-white/60" />
                 </div>
-                <h3 className="text-xl font-semibold mb-2">Нет изображений</h3>
-                <p className="text-muted-foreground">
+                <h3 className="text-xl font-light text-white mb-2 tracking-wide">Нет изображений</h3>
+                <p className="text-white/60 font-light">
                   {selectedCategory === 'all' 
                     ? 'Галерея пуста. Изображения скоро появятся!' 
                     : 'В этой категории пока нет изображений.'}
@@ -245,7 +253,7 @@ export default function Gallery() {
               {filteredImages.map((image) => (
                 <Dialog key={image.id}>
                   <DialogTrigger asChild>
-                    <Card className="group cursor-pointer overflow-hidden hover:shadow-floating transition-all duration-500 hover:scale-[1.02] animate-fade-in">
+                    <Card className="group cursor-pointer overflow-hidden bg-gradient-to-br from-slate-800/95 via-slate-900/95 to-black/90 border border-white/10 backdrop-blur-xl hover:shadow-2xl hover:shadow-amber-500/20 transition-all duration-500 hover:scale-[1.02] animate-fade-in">
                       <div className="relative overflow-hidden">
                         <img 
                           src={image.image_url} 
@@ -254,14 +262,14 @@ export default function Gallery() {
                             viewMode === 'grid' ? 'h-64' : 'h-auto'
                           }`}
                         />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                           <div className="absolute bottom-4 left-4 text-white transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
-                            <Badge className="mb-2 bg-white/20 text-white backdrop-blur-sm">
+                            <Badge className="mb-2 bg-amber-500/20 text-amber-400 border-amber-500/30 backdrop-blur-xl">
                               {categoriesWithCounts.find(c => c.value === image.category)?.label}
                             </Badge>
-                            <h3 className="font-bold text-lg">{image.title}</h3>
+                            <h3 className="font-light text-lg">{image.title}</h3>
                             {image.description && (
-                              <p className="text-sm text-white/80 mt-1 line-clamp-2">{image.description}</p>
+                              <p className="text-sm text-white/80 mt-1 line-clamp-2 font-light">{image.description}</p>
                             )}
                           </div>
                           <div className="absolute top-4 right-4">
@@ -271,19 +279,19 @@ export default function Gallery() {
                       </div>
                     </Card>
                   </DialogTrigger>
-                  <DialogContent className="max-w-4xl max-h-[90vh] p-0">
+                  <DialogContent className="max-w-4xl max-h-[90vh] p-0 bg-gradient-to-br from-slate-800/95 via-slate-900/95 to-black/90 border border-white/10 text-white">
                     <div className="relative">
                       <img 
                         src={image.image_url} 
                         alt={image.alt_text || image.title}
                         className="w-full h-auto max-h-[80vh] object-contain"
                       />
-                      <div className="p-6 bg-background">
-                        <h3 className="text-2xl font-bold mb-2 text-poker-primary">{image.title}</h3>
+                      <div className="p-6">
+                        <h3 className="text-2xl font-light mb-2 text-white tracking-wide">{image.title}</h3>
                         {image.description && (
-                          <p className="text-muted-foreground mb-4">{image.description}</p>
+                          <p className="text-white/70 mb-4 font-light">{image.description}</p>
                         )}
-                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                        <div className="flex items-center gap-4 text-sm text-white/60">
                           <div className="flex items-center gap-2">
                             <Calendar className="w-4 h-4" />
                             {new Date(image.created_at).toLocaleDateString('ru-RU')}
