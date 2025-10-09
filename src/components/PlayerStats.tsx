@@ -78,12 +78,12 @@ export function PlayerStats() {
     <div className="space-y-6">
       {/* Summary Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="border-slate-800/80 bg-gradient-to-br from-slate-900/95 via-slate-800/90 to-slate-900/95 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300">
+        <Card className="bg-gradient-to-br from-slate-800/95 via-slate-900/95 to-black/90 border border-white/10 backdrop-blur-xl shadow-xl hover:shadow-2xl hover:shadow-amber-500/20 transition-all duration-300">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-white/60">Всего игроков</p>
-                <p className="text-3xl font-bold text-amber-400">{stats.totalPlayers}</p>
+                <p className="text-sm font-light text-white/60 uppercase tracking-wide">Всего игроков</p>
+                <p className="text-3xl font-light text-amber-400 mt-1">{stats.totalPlayers}</p>
               </div>
               <div className="w-12 h-12 bg-amber-500/10 rounded-xl flex items-center justify-center">
                 <Users className="h-6 w-6 text-amber-400" />
@@ -92,12 +92,12 @@ export function PlayerStats() {
           </CardContent>
         </Card>
         
-        <Card className="border-slate-800/80 bg-gradient-to-br from-slate-900/95 via-slate-800/90 to-slate-900/95 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300">
+        <Card className="bg-gradient-to-br from-slate-800/95 via-slate-900/95 to-black/90 border border-white/10 backdrop-blur-xl shadow-xl hover:shadow-2xl hover:shadow-green-500/20 transition-all duration-300">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-white/60">Средний рейтинг</p>
-                <p className="text-3xl font-bold text-green-400">{stats.averageRating}</p>
+                <p className="text-sm font-light text-white/60 uppercase tracking-wide">Средний рейтинг</p>
+                <p className="text-3xl font-light text-green-400 mt-1">{stats.averageRating}</p>
               </div>
               <div className="w-12 h-12 bg-green-500/10 rounded-xl flex items-center justify-center">
                 <TrendingUp className="h-6 w-6 text-green-400" />
@@ -106,12 +106,12 @@ export function PlayerStats() {
           </CardContent>
         </Card>
         
-        <Card className="border-slate-800/80 bg-gradient-to-br from-slate-900/95 via-slate-800/90 to-slate-900/95 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300">
+        <Card className="bg-gradient-to-br from-slate-800/95 via-slate-900/95 to-black/90 border border-white/10 backdrop-blur-xl shadow-xl hover:shadow-2xl hover:shadow-purple-500/20 transition-all duration-300">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-white/60">Всего игр</p>
-                <p className="text-3xl font-bold text-purple-400">{stats.totalGames}</p>
+                <p className="text-sm font-light text-white/60 uppercase tracking-wide">Всего игр</p>
+                <p className="text-3xl font-light text-purple-400 mt-1">{stats.totalGames}</p>
               </div>
               <div className="w-12 h-12 bg-purple-500/10 rounded-xl flex items-center justify-center">
                 <Target className="h-6 w-6 text-purple-400" />
@@ -122,63 +122,86 @@ export function PlayerStats() {
       </div>
 
       {/* Leaderboard */}
-      <Card className="border-slate-800/80 bg-gradient-to-br from-slate-900/95 via-slate-800/90 to-slate-900/95 backdrop-blur-sm shadow-lg">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-white">
-            <Trophy className="h-5 w-5 text-amber-400" />
-            Таблица лидеров
+      <Card className="bg-gradient-to-br from-slate-800/95 via-slate-900/95 to-black/90 border border-white/10 backdrop-blur-xl shadow-xl">
+        <CardHeader className="border-b border-white/10">
+          <CardTitle className="flex items-center gap-3 text-white">
+            <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl flex items-center justify-center shadow-lg">
+              <Trophy className="h-5 w-5 text-white" />
+            </div>
+            <div>
+              <h3 className="text-2xl font-light tracking-wide">ПОЛНЫЙ РЕЙТИНГ</h3>
+              <div className="h-0.5 w-16 bg-gradient-to-r from-amber-400 to-amber-600 mt-2"></div>
+            </div>
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-6">
           {players.length > 0 ? (
             <div className="space-y-3">
               {players.map((player, index) => {
                 const position = index + 1;
+                const isTopThree = position <= 3;
                 const isTopFive = position <= 5;
                 
                 return (
                   <div 
                     key={player.id} 
                     className={`
-                      flex items-center justify-between p-4 rounded-xl transition-all duration-300
-                      ${isTopFive 
-                        ? 'bg-gradient-to-br from-amber-500/10 via-amber-600/5 to-amber-500/10 border border-amber-500/20 hover:border-amber-500/40' 
-                        : 'bg-slate-800/50 hover:bg-slate-800/70 border border-slate-700/50'
+                      group flex items-center justify-between p-4 rounded-2xl transition-all duration-300
+                      ${isTopThree
+                        ? 'bg-gradient-to-br from-amber-500/10 via-amber-600/5 to-amber-500/10 border border-amber-500/20 hover:scale-[1.02] hover:shadow-xl hover:shadow-amber-500/20' 
+                        : 'bg-slate-800/50 hover:bg-slate-800/70 border border-white/10 hover:border-amber-500/30'
                       }
                     `}
                   >
                     <div className="flex items-center gap-4">
                       {/* Rank Icon/Number */}
-                      <div className={`
-                        w-10 h-10 rounded-lg flex items-center justify-center text-sm font-semibold
-                        ${position === 1 
-                          ? 'bg-gradient-to-br from-yellow-400 to-yellow-600 text-white shadow-lg' 
-                          : position === 2 
-                          ? 'bg-gradient-to-br from-gray-300 to-gray-500 text-white shadow-md' 
-                          : position === 3 
-                          ? 'bg-gradient-to-br from-amber-400 to-amber-600 text-white shadow-md' 
-                          : isTopFive
-                          ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
-                          : 'bg-slate-700/50 text-white/60 border border-slate-600/30'
-                        }
-                      `}>
-                        {position === 1 && <Trophy className="h-5 w-5" />}
-                        {position === 2 && <Medal className="h-5 w-5" />}
-                        {position === 3 && <Award className="h-5 w-5" />}
-                        {position > 3 && position}
+                      <div className="flex items-center justify-center w-10 h-10">
+                        {position === 1 && (
+                          <div className="w-10 h-10 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-xl flex items-center justify-center shadow-lg">
+                            <Trophy className="h-6 w-6 text-white" />
+                          </div>
+                        )}
+                        {position === 2 && (
+                          <div className="w-10 h-10 bg-gradient-to-br from-gray-300 to-gray-500 rounded-xl flex items-center justify-center shadow-md">
+                            <Medal className="h-6 w-6 text-white" />
+                          </div>
+                        )}
+                        {position === 3 && (
+                          <div className="w-10 h-10 bg-gradient-to-br from-amber-400 to-amber-600 rounded-xl flex items-center justify-center shadow-md">
+                            <Award className="h-6 w-6 text-white" />
+                          </div>
+                        )}
+                        {position > 3 && (
+                          <div className={`
+                            w-10 h-10 rounded-xl flex items-center justify-center text-sm font-medium
+                            ${isTopFive
+                              ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                              : 'bg-white/5 text-white/70 border border-white/20'
+                            }
+                          `}>
+                            {position}
+                          </div>
+                        )}
                       </div>
                       
                       {/* Avatar */}
-                      <Avatar className="h-12 w-12 border-2 border-amber-500/20">
-                        <AvatarImage src={player.avatar_url} alt={player.name} />
-                        <AvatarFallback className="text-sm bg-gradient-to-br from-amber-500/20 to-amber-600/20 text-white">
-                          {player.name.charAt(0).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
+                      {player.avatar_url ? (
+                        <img 
+                          src={player.avatar_url} 
+                          alt={player.name}
+                          className="w-12 h-12 rounded-xl border border-amber-500/30 object-cover"
+                        />
+                      ) : (
+                        <Avatar className="h-12 w-12 border-2 border-amber-500/20">
+                          <AvatarFallback className="text-sm bg-gradient-to-br from-amber-500/20 to-amber-600/20 text-white">
+                            {player.name.charAt(0).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                      )}
                       
                       {/* Player Info */}
                       <div>
-                        <p className={`font-medium mb-1 ${isTopFive ? 'text-white' : 'text-white/90'}`}>
+                        <p className={`font-light text-lg mb-1 tracking-wide group-hover:text-amber-100 transition-colors duration-300 ${isTopThree ? 'text-white' : 'text-white/90'}`}>
                           {player.name}
                         </p>
                         <div className="flex items-center gap-3 text-xs text-white/60">
@@ -198,23 +221,23 @@ export function PlayerStats() {
                       </div>
                     </div>
                     
-                    {/* ELO Rating */}
+                    {/* RPS Rating */}
                     <div className="text-right">
-                      <div className={`text-2xl font-light mb-1 ${isTopFive ? 'text-amber-400' : 'text-white'}`}>
+                      <div className={`text-2xl font-light mb-1 transition-colors duration-300 ${isTopThree ? 'text-amber-400' : 'text-white'}`}>
                         {player.elo_rating}
                       </div>
-                      <div className="text-xs text-white/60 uppercase tracking-wide">RPS</div>
+                      <div className="text-xs text-white/60 uppercase tracking-widest">RPS</div>
                     </div>
                   </div>
                 );
               })}
             </div>
           ) : (
-            <div className="text-center py-12">
-              <div className="w-16 h-16 bg-slate-800/50 rounded-xl flex items-center justify-center mx-auto mb-4">
-                <Users className="h-8 w-8 text-amber-400/50" />
+            <div className="text-center py-16">
+              <div className="w-20 h-20 bg-slate-800/50 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-sm">
+                <Users className="h-10 w-10 text-amber-400/50" />
               </div>
-              <p className="text-white/70 mb-2">Нет зарегистрированных игроков</p>
+              <h3 className="text-xl font-light text-white mb-3 tracking-wide">Рейтинг формируется</h3>
               <p className="text-sm text-white/50">Игроки появятся после первых турниров</p>
             </div>
           )}
