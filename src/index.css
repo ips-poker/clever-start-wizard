@@ -187,8 +187,16 @@
     @apply border-border;
   }
 
+  html {
+    background-color: hsl(0 0% 3%);
+    overflow-x: hidden;
+  }
+
   body {
     @apply bg-background text-foreground;
+    background-color: hsl(0 0% 3%);
+    overflow-x: hidden;
+    min-height: 100vh;
   }
 }
 

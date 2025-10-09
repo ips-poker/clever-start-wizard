@@ -28,16 +28,18 @@ export function Hero() {
             src={luxuryPokerHero} 
             alt="Покерный стол" 
             className="w-full h-full object-cover opacity-30"
+            loading="eager"
+            decoding="async"
           />
           <div className="absolute inset-0 bg-gradient-to-br from-slate-900/85 via-slate-800/80 to-slate-900/85 backdrop-blur-[1px]"></div>
         </div>
 
-        {/* Светящиеся частицы */}
-        <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          {[...Array(20)].map((_, i) => (
+        {/* Светящиеся частицы - уменьшено для производительности */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden hidden md:block">
+          {[...Array(8)].map((_, i) => (
             <div
               key={i}
-              className="absolute w-1 h-1 bg-amber-400/60 rounded-full animate-particle"
+              className="absolute w-1 h-1 bg-amber-400/60 rounded-full animate-particle will-change-transform"
               style={{
                 left: `${Math.random() * 100}%`,
                 top: `${Math.random() * 100}%`,
@@ -48,10 +50,10 @@ export function Hero() {
           ))}
         </div>
 
-        {/* Диагональные световые лучи */}
-        <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-20">
-          <div className="absolute top-0 -left-1/4 w-1/2 h-full bg-gradient-to-r from-transparent via-amber-400/20 to-transparent transform rotate-12 animate-ray-1"></div>
-          <div className="absolute top-0 right-1/4 w-1/3 h-full bg-gradient-to-r from-transparent via-amber-500/15 to-transparent transform -rotate-12 animate-ray-2"></div>
+        {/* Диагональные световые лучи - только на десктопе */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-20 hidden lg:block">
+          <div className="absolute top-0 -left-1/4 w-1/2 h-full bg-gradient-to-r from-transparent via-amber-400/20 to-transparent transform rotate-12 animate-ray-1 will-change-transform"></div>
+          <div className="absolute top-0 right-1/4 w-1/3 h-full bg-gradient-to-r from-transparent via-amber-500/15 to-transparent transform -rotate-12 animate-ray-2 will-change-transform"></div>
         </div>
 
         {/* Градиентные световые пятна */}
@@ -61,17 +63,16 @@ export function Hero() {
           <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-blue-500/5 rounded-full blur-3xl"></div>
         </div>
 
-        {/* Геометрические паттерны */}
-        <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-5">
-          <div className="absolute top-10 right-20 w-32 h-32 border-2 border-amber-400/30 rounded-lg transform rotate-45 animate-spin-slow"></div>
+        {/* Геометрические паттерны - только на больших экранах */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-5 hidden xl:block">
+          <div className="absolute top-10 right-20 w-32 h-32 border-2 border-amber-400/30 rounded-lg transform rotate-45 animate-spin-slow will-change-transform"></div>
           <div className="absolute bottom-32 left-32 w-24 h-24 border border-amber-400/20 rounded-full animate-pulse"></div>
-          <div className="absolute top-1/3 left-10 w-16 h-16 border-2 border-purple-400/30 transform rotate-12"></div>
         </div>
 
-        {/* Elegant Poker Chips */}
-        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        {/* Elegant Poker Chips - упрощено для производительности */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden hidden lg:block">
           {/* Top left chip */}
-          <div className="absolute top-[8%] left-[12%] w-24 h-24 rounded-full animate-float opacity-20">
+          <div className="absolute top-[8%] left-[12%] w-24 h-24 rounded-full animate-float opacity-20 will-change-transform">
             <div className="absolute inset-0 rounded-full bg-gradient-to-br from-amber-400 via-amber-500 to-amber-600 shadow-2xl"></div>
             <div className="absolute inset-2 rounded-full bg-gradient-to-br from-slate-900 to-slate-800 flex items-center justify-center">
               <div className="w-12 h-12 rounded-full border-4 border-amber-400/50 flex items-center justify-center">
@@ -80,28 +81,8 @@ export function Hero() {
             </div>
           </div>
           
-          {/* Top right chip */}
-          <div className="absolute top-[18%] right-[15%] w-20 h-20 rounded-full animate-float-delayed opacity-15">
-            <div className="absolute inset-0 rounded-full bg-gradient-to-br from-red-500 via-red-600 to-red-700 shadow-xl"></div>
-            <div className="absolute inset-1.5 rounded-full bg-gradient-to-br from-slate-900 to-slate-800 flex items-center justify-center">
-              <div className="w-10 h-10 rounded-full border-3 border-red-500/50 flex items-center justify-center">
-                <span className="text-red-400 font-bold text-xs">500</span>
-              </div>
-            </div>
-          </div>
-          
-          {/* Bottom left chip */}
-          <div className="absolute bottom-[15%] left-[22%] w-28 h-28 rounded-full animate-float opacity-25">
-            <div className="absolute inset-0 rounded-full bg-gradient-to-br from-purple-500 via-purple-600 to-purple-700 shadow-2xl"></div>
-            <div className="absolute inset-2 rounded-full bg-gradient-to-br from-slate-900 to-slate-800 flex items-center justify-center">
-              <div className="w-14 h-14 rounded-full border-4 border-purple-400/50 flex items-center justify-center">
-                <span className="text-purple-400 font-bold text-sm">1K</span>
-              </div>
-            </div>
-          </div>
-          
           {/* Bottom right chip */}
-          <div className="absolute bottom-[8%] right-[18%] w-16 h-16 rounded-full animate-float-delayed opacity-20">
+          <div className="absolute bottom-[8%] right-[18%] w-16 h-16 rounded-full animate-float-delayed opacity-20 will-change-transform">
             <div className="absolute inset-0 rounded-full bg-gradient-to-br from-blue-500 via-blue-600 to-blue-700 shadow-xl"></div>
             <div className="absolute inset-1.5 rounded-full bg-gradient-to-br from-slate-900 to-slate-800 flex items-center justify-center">
               <div className="w-8 h-8 rounded-full border-2 border-blue-400/50 flex items-center justify-center">
@@ -109,45 +90,27 @@ export function Hero() {
               </div>
             </div>
           </div>
-          
-          {/* Center chips cluster */}
-          <div className="absolute top-[55%] left-[8%] w-20 h-20 rounded-full animate-float opacity-10">
-            <div className="absolute inset-0 rounded-full bg-gradient-to-br from-green-500 via-green-600 to-green-700 shadow-xl"></div>
-            <div className="absolute inset-1.5 rounded-full bg-gradient-to-br from-slate-900 to-slate-800"></div>
-          </div>
         </div>
 
-        {/* Elegant Poker Suits */}
+        {/* Elegant Poker Suits - упрощено */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          {/* Spades with glow */}
-          <div className="absolute top-[12%] left-[35%] animate-float">
+          {/* Spades */}
+          <div className="absolute top-[12%] left-[35%] animate-float will-change-transform">
             <div className="text-amber-400/30 text-6xl filter drop-shadow-[0_0_15px_rgba(251,191,36,0.3)]">♠</div>
           </div>
-          <div className="absolute top-[48%] left-[8%] animate-float-delayed">
-            <div className="text-amber-400/15 text-5xl filter drop-shadow-[0_0_10px_rgba(251,191,36,0.2)]">♠</div>
-          </div>
           
-          {/* Clubs with glow */}
-          <div className="absolute top-[22%] right-[8%] animate-float-delayed">
-            <div className="text-purple-400/25 text-5xl filter drop-shadow-[0_0_12px_rgba(192,132,252,0.25)]">♣</div>
-          </div>
-          <div className="absolute top-[65%] right-[25%] animate-float">
+          {/* Clubs */}
+          <div className="absolute top-[65%] right-[25%] animate-float will-change-transform hidden md:block">
             <div className="text-purple-400/20 text-6xl filter drop-shadow-[0_0_15px_rgba(192,132,252,0.3)]">♣</div>
           </div>
           
-          {/* Hearts with red glow */}
-          <div className="absolute bottom-[18%] left-[12%] animate-float">
+          {/* Hearts */}
+          <div className="absolute bottom-[18%] left-[12%] animate-float will-change-transform">
             <div className="text-red-400/35 text-7xl filter drop-shadow-[0_0_20px_rgba(248,113,113,0.4)]">♥</div>
           </div>
-          <div className="absolute top-[58%] right-[15%] animate-float-delayed">
-            <div className="text-red-400/20 text-5xl filter drop-shadow-[0_0_12px_rgba(248,113,113,0.3)]">♥</div>
-          </div>
           
-          {/* Diamonds with glow */}
-          <div className="absolute bottom-[25%] right-[38%] animate-float-delayed">
-            <div className="text-amber-400/25 text-4xl filter drop-shadow-[0_0_10px_rgba(251,191,36,0.25)]">♦</div>
-          </div>
-          <div className="absolute bottom-[35%] left-[28%] animate-float">
+          {/* Diamonds */}
+          <div className="absolute bottom-[35%] left-[28%] animate-float will-change-transform hidden md:block">
             <div className="text-amber-400/15 text-6xl filter drop-shadow-[0_0_15px_rgba(251,191,36,0.2)]">♦</div>
           </div>
         </div>
