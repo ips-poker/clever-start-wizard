@@ -85,8 +85,36 @@ export const TelegramApp = () => {
       fetchData();
       fetchGalleryImages();
       setupRealtimeSubscriptions();
+      enableAddToHomeScreen();
     }
   }, [isAuthenticated, telegramUser]);
+
+  const enableAddToHomeScreen = () => {
+    try {
+      // Используем Telegram WebApp API для добавления на главный экран
+      if (window.Telegram?.WebApp) {
+        const tg = window.Telegram.WebApp;
+        
+        // Проверяем, доступна ли функция добавления на главный экран
+        if (typeof tg.addToHomeScreen === 'function') {
+          console.log('Add to Home Screen is available, triggering...');
+          tg.addToHomeScreen();
+          console.log('Add to Home Screen triggered successfully');
+        } else {
+          console.log('Add to Home Screen is not available on this device/version');
+        }
+        
+        // Также разворачиваем приложение на весь экран
+        if (typeof tg.expand === 'function') {
+          tg.expand();
+        }
+      } else {
+        console.log('Telegram WebApp API is not available');
+      }
+    } catch (error) {
+      console.error('Error enabling Add to Home Screen:', error);
+    }
+  };
 
   const setupRealtimeSubscriptions = () => {
     const tournamentsChannel = supabase.channel('tournaments-changes').on('postgres_changes', {
