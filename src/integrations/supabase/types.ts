@@ -421,6 +421,10 @@ export type Database = {
           email: string | null
           full_name: string | null
           id: string
+          privacy_consent_at: string | null
+          privacy_consent_given: boolean | null
+          terms_consent_at: string | null
+          terms_consent_given: boolean | null
           updated_at: string
           user_id: string
           user_role: Database["public"]["Enums"]["user_role"] | null
@@ -431,6 +435,10 @@ export type Database = {
           email?: string | null
           full_name?: string | null
           id?: string
+          privacy_consent_at?: string | null
+          privacy_consent_given?: boolean | null
+          terms_consent_at?: string | null
+          terms_consent_given?: boolean | null
           updated_at?: string
           user_id: string
           user_role?: Database["public"]["Enums"]["user_role"] | null
@@ -441,6 +449,10 @@ export type Database = {
           email?: string | null
           full_name?: string | null
           id?: string
+          privacy_consent_at?: string | null
+          privacy_consent_given?: boolean | null
+          terms_consent_at?: string | null
+          terms_consent_given?: boolean | null
           updated_at?: string
           user_id?: string
           user_role?: Database["public"]["Enums"]["user_role"] | null

@@ -104,7 +104,11 @@ export default function Auth() {
         email: validationResult.data.email,
         password: validationResult.data.password,
         options: {
-          emailRedirectTo: redirectUrl
+          emailRedirectTo: redirectUrl,
+          data: {
+            privacy_consent: true,
+            terms_consent: true
+          }
         }
       });
 
