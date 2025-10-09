@@ -261,7 +261,7 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate }: Tele
         .update({ avatar_url: avatarUrl })
         .eq('id', player.id)
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error('Avatar update error:', error);
@@ -294,7 +294,7 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate }: Tele
         .update({ name: newPlayerName.trim() })
         .eq('id', player.id)
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error('Name update error:', error);
