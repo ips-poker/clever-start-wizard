@@ -139,7 +139,7 @@ export default function About() {
                   </Badge>
                 </div>
                 <h1 className="text-3xl md:text-5xl font-light mb-6 text-white tracking-wide">
-                  {getContent('hero_title', 'International Poker Style')}
+                  {getContent('hero_title', 'Event Poker Club')}
                 </h1>
                 <div className="h-0.5 w-20 bg-gradient-to-r from-amber-400 to-amber-600 mb-6"></div>
                 <p className="text-lg md:text-xl text-white/70 leading-relaxed mb-8 font-light">
@@ -159,7 +159,7 @@ export default function About() {
               <div className="relative">
                 <img 
                   src={getContent('hero_image', 'https://images.unsplash.com/photo-1606092195730-5d7b9af1efc5?w=600&h=600&fit=crop')}
-                  alt="IPS Poker Club"
+                  alt="EPC Poker Club"
                   className="rounded-2xl shadow-floating w-full"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-poker-primary/20 to-transparent rounded-2xl"></div>
@@ -215,7 +215,7 @@ export default function About() {
                     {getContent('story_paragraph2', 'Основой нашего подхода стала справедливая рейтинговая система RPS, адаптированная специально для покера. Это позволило создать объективную оценку навыков каждого игрока и мотивировать к постоянному развитию.')}
                   </p>
                   <p>
-                    {getContent('story_paragraph3', 'Сегодня IPS - это не просто покерный клуб, а целая экосистема для развития покерных навыков, включающая регулярные турниры, обучающие программы и дружелюбное сообщество игроков всех уровней.')}
+                    {getContent('story_paragraph3', 'Сегодня EPC - это не просто покерный клуб, а целая экосистема для развития покерных навыков, включающая регулярные турниры, обучающие программы и дружелюбное сообщество игроков всех уровней.')}
                   </p>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-4 mt-8">
@@ -232,7 +232,7 @@ export default function About() {
               <div className="relative">
                 <img 
                   src={getContent('story_image', 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=600&h=400&fit=crop') + (getContent('story_image') !== 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=600&h=400&fit=crop' ? `?v=${Date.now()}` : '')}
-                  alt="Покерный турнир в IPS"
+                  alt="Покерный турнир в EPC"
                   className="rounded-2xl shadow-2xl w-full border border-white/10"
                   key={getContent('story_image', 'default')}
                 />
@@ -259,7 +259,7 @@ export default function About() {
               </div>
               <div className="h-0.5 w-20 bg-gradient-to-r from-amber-400 to-amber-600 mx-auto mb-6"></div>
               <p className="text-xl text-white/70 max-w-3xl mx-auto font-light">
-                {getContent('values_description', 'Наши принципы определяют каждое решение и создают уникальную атмосферу в IPS')}
+                {getContent('values_description', 'Наши принципы определяют каждое решение и создают уникальную атмосферу в EPC')}
               </p>
             </div>
 
@@ -346,7 +346,7 @@ export default function About() {
             <div className="max-w-4xl mx-auto text-center">
               <div className="bg-gradient-to-br from-amber-500/10 via-amber-600/15 to-amber-500/10 rounded-3xl p-12 border border-amber-500/20 backdrop-blur-xl shadow-2xl">
                 <h2 className="text-4xl font-light mb-6 text-white tracking-wide">
-                  Готовы стать частью IPS?
+                  Готовы стать частью EPC?
                 </h2>
                 <div className="h-0.5 w-20 bg-gradient-to-r from-amber-400 to-amber-600 mx-auto mb-6"></div>
                 <p className="text-xl text-white/70 mb-8 leading-relaxed font-light">
