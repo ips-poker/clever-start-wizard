@@ -9,6 +9,11 @@ export function MobileBottomNav() {
   const [isVisible, setIsVisible] = useState(false);
   const [lastScrollY, setLastScrollY] = useState(0);
 
+  // Hide navigation in Telegram Mini App
+  if (currentPath.startsWith('/telegram')) {
+    return null;
+  }
+
   useEffect(() => {
     const controlNavbar = () => {
       const currentScrollY = window.scrollY;
