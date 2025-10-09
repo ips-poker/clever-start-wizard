@@ -141,15 +141,16 @@ export function RecalculateRatings() {
     <Button
       onClick={handleRecalculate}
       disabled={isRecalculating}
-      className="inline-flex items-center gap-2"
-      variant="outline"
+      className="inline-flex items-center gap-2 bg-white/5 border-2 border-amber-400/30 text-amber-400 hover:bg-amber-400/10 hover:border-amber-400/50 backdrop-blur-xl transition-all duration-300 shadow-lg hover:shadow-amber-400/20"
     >
       {isRecalculating ? (
         <Loader2 className="w-4 h-4 animate-spin" />
       ) : (
         <Calculator className="w-4 h-4" />
       )}
-      {isRecalculating ? 'Пересчитываем...' : 'Пересчитать рейтинги'}
+      <span className="font-light tracking-wide">
+        {isRecalculating ? 'Пересчитываем...' : 'Пересчитать рейтинги'}
+      </span>
     </Button>
   );
 }
