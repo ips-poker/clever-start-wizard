@@ -15,6 +15,7 @@ interface Player {
   elo_rating: number;
   games_played: number;
   wins: number;
+  avatar_url?: string;
 }
 
 interface Tournament {
@@ -324,10 +325,18 @@ export default function Rating() {
                                   )}
                                 </div>
 
-                                {/* Player avatar */}
-                                <div className="w-12 h-12 bg-gradient-to-br from-amber-500/20 to-amber-600/20 border border-amber-500/30 rounded-xl flex items-center justify-center text-lg">
-                                  {getPokerAvatar(player.name)}
-                                </div>
+                        {/* Player avatar */}
+                        {player.avatar_url ? (
+                          <img 
+                            src={player.avatar_url} 
+                            alt={player.name}
+                            className="w-12 h-12 rounded-xl border border-amber-500/30 object-cover"
+                          />
+                        ) : (
+                          <div className="w-12 h-12 bg-gradient-to-br from-amber-500/20 to-amber-600/20 border border-amber-500/30 rounded-xl flex items-center justify-center text-lg">
+                            {getPokerAvatar(player.name)}
+                          </div>
+                        )}
 
                                 {/* Player info */}
                                 <div>
@@ -387,12 +396,20 @@ export default function Rating() {
                                   `}>
                                     {position}
                                   </div>
-                                  <div className={`
-                                    w-12 h-12 rounded-lg flex items-center justify-center text-lg
-                                    ${isTopFive ? 'bg-poker-primary/20 border border-poker-primary/30' : 'bg-background border border-border'}
-                                  `}>
-                                    {getPokerAvatar(player.name, position === 1)}
-                                  </div>
+                                  {player.avatar_url ? (
+                                    <img 
+                                      src={player.avatar_url} 
+                                      alt={player.name}
+                                      className={`w-12 h-12 rounded-lg object-cover ${isTopFive ? 'border border-poker-primary/30' : 'border border-border'}`}
+                                    />
+                                  ) : (
+                                    <div className={`
+                                      w-12 h-12 rounded-lg flex items-center justify-center text-lg
+                                      ${isTopFive ? 'bg-poker-primary/20 border border-poker-primary/30' : 'bg-background border border-border'}
+                                    `}>
+                                      {getPokerAvatar(player.name, position === 1)}
+                                    </div>
+                                  )}
                                   <div>
                                     <div className={`font-semibold ${isTopFive ? 'text-poker-primary' : 'text-foreground'}`}>
                                       {player.name}

@@ -107,14 +107,26 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate }: Tele
   const [editingName, setEditingName] = useState(false);
   const [newPlayerName, setNewPlayerName] = useState("");
 
-  // Если нет игрока, но есть телеграм пользователь, создаем профиль
+  // Инициализируем игрока только один раз
   useEffect(() => {
     if (!player && telegramUser) {
       createPlayerProfile();
-    } else if (userStats) {
+    } else if (!player && userStats) {
       setPlayer(userStats);
     }
-  }, [userStats, telegramUser, player]);
+  }, [telegramUser]);
+
+  // Обновляем только если изменились данные в БД И они отличаются от текущих
+  useEffect(() => {
+    if (userStats && player && (
+      userStats.name !== player.name || 
+      userStats.avatar_url !== player.avatar_url ||
+      userStats.elo_rating !== player.elo_rating
+    )) {
+      console.log('Updating player from userStats', userStats);
+      setPlayer(userStats);
+    }
+  }, [userStats]);
 
   useEffect(() => {
     if (player) {
@@ -242,13 +254,21 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate }: Tele
 
     try {
       setLoading(true);
-      const { error } = await supabase
+      console.log('Updating avatar for player:', player.id, 'to:', avatarUrl);
+      
+      const { data, error } = await supabase
         .from('players')
         .update({ avatar_url: avatarUrl })
-        .eq('id', player.id);
+        .eq('id', player.id)
+        .select()
+        .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Avatar update error:', error);
+        throw error;
+      }
 
+      console.log('Avatar updated successfully:', data);
       const updatedPlayer = { ...player, avatar_url: avatarUrl };
       setPlayer(updatedPlayer);
       onStatsUpdate(updatedPlayer);
@@ -267,13 +287,21 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate }: Tele
 
     try {
       setLoading(true);
-      const { error } = await supabase
+      console.log('Updating name for player:', player.id, 'to:', newPlayerName.trim());
+      
+      const { data, error } = await supabase
         .from('players')
         .update({ name: newPlayerName.trim() })
-        .eq('id', player.id);
+        .eq('id', player.id)
+        .select()
+        .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Name update error:', error);
+        throw error;
+      }
 
+      console.log('Name updated successfully:', data);
       const updatedPlayer = { ...player, name: newPlayerName.trim() };
       setPlayer(updatedPlayer);
       onStatsUpdate(updatedPlayer);
