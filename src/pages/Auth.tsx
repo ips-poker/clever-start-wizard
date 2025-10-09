@@ -237,7 +237,7 @@ export default function Auth() {
                     <Input
                       id="signin-email"
                       type="email"
-                      placeholder="casinofix@ya.ru"
+                      placeholder="player@example.com"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       required

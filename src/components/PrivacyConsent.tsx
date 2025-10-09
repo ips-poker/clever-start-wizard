@@ -12,24 +12,24 @@ interface PrivacyConsentProps {
 
 export function PrivacyConsent({ checked, onCheckedChange, disabled, className }: PrivacyConsentProps) {
   return (
-    <div className={`flex items-start space-x-2 ${className}`}>
+    <div className={`flex items-start space-x-3 ${className}`}>
       <Checkbox
         id="privacy-consent"
         checked={checked}
         onCheckedChange={onCheckedChange}
         disabled={disabled}
-        className="mt-0.5"
+        className="mt-1 h-5 w-5 border-2 border-amber-400/50 data-[state=checked]:bg-amber-500 data-[state=checked]:border-amber-500"
         required
       />
       <Label 
         htmlFor="privacy-consent" 
-        className="text-sm leading-relaxed cursor-pointer flex-1"
+        className="text-sm leading-relaxed cursor-pointer flex-1 text-slate-200 font-medium"
       >
         Я согласен с{" "}
         <Link 
           to="/privacy" 
           target="_blank"
-          className="text-primary hover:underline font-medium"
+          className="text-amber-400 hover:text-amber-300 hover:underline font-semibold"
         >
           Политикой конфиденциальности
         </Link>
@@ -37,7 +37,7 @@ export function PrivacyConsent({ checked, onCheckedChange, disabled, className }
         <Link 
           to="/terms" 
           target="_blank"
-          className="text-primary hover:underline font-medium"
+          className="text-amber-400 hover:text-amber-300 hover:underline font-semibold"
         >
           Договором оферты
         </Link>
