@@ -176,14 +176,26 @@ export default function Auth() {
       <div className="w-full max-w-md relative z-10">
         {/* Logo and Brand */}
         <div className="text-center mb-8 animate-fade-in">
-          <Link to="/" className="inline-flex items-center space-x-2 text-3xl font-bold group">
+          <Link to="/" className="inline-flex flex-col items-center space-y-3 group">
+            {/* Logo with background */}
             <div className="relative">
-              <div className="absolute -inset-2 bg-gradient-to-r from-amber-500/20 to-amber-400/20 rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-              <Spade className="w-10 h-10 text-amber-400 relative" />
+              <div className="absolute -inset-3 bg-gradient-to-br from-amber-500/20 to-amber-600/20 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+              <div className="relative bg-gradient-to-br from-white via-gray-50 to-gray-100 rounded-2xl p-3 shadow-2xl group-hover:shadow-amber-500/30 transition-all duration-500 ring-1 ring-white/20 group-hover:ring-amber-400/30">
+                <img 
+                  src="/lovable-uploads/a689ff05-9338-4573-bd08-aa9486811d3f.png" 
+                  alt="EPC Logo" 
+                  className="w-16 h-16 object-contain group-hover:scale-105 transition-transform duration-500"
+                />
+              </div>
             </div>
-            <span className="bg-gradient-to-r from-amber-200 to-amber-400 bg-clip-text text-transparent">IPS</span>
+            {/* Company Name */}
+            <div className="flex flex-col items-center">
+              <span className="text-3xl font-bold bg-gradient-to-r from-amber-200 to-amber-400 bg-clip-text text-transparent">
+                Event Poker Club
+              </span>
+              <span className="text-sm text-slate-400 tracking-wider mt-1">EPC</span>
+            </div>
           </Link>
-          <p className="text-slate-400 mt-2 text-sm tracking-wide">International Poker Style</p>
         </div>
 
         <Card className="bg-gradient-to-br from-slate-800/90 via-slate-900/95 to-black/90 border-2 border-amber-400/20 shadow-2xl backdrop-blur-xl animate-fade-in animation-delay-200">
