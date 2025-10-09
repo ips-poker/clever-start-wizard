@@ -505,9 +505,16 @@ export default function Blog() {
                   <p className="text-sm text-white/70 mb-4 font-light">
                     Получайте лучшие статьи и эксклюзивные материалы на email
                   </p>
-                  <Button className="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white shadow-lg hover:shadow-xl hover:shadow-amber-500/20 transition-all duration-300">
-                    Подписаться
-                  </Button>
+                  <div className="space-y-3">
+                    <Input 
+                      type="email" 
+                      placeholder="Ваш email"
+                      className="bg-white/5 border-white/10 text-white placeholder:text-white/40"
+                    />
+                    <Button className="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white shadow-lg hover:shadow-xl hover:shadow-amber-500/20 transition-all duration-300">
+                      Подписаться
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
 
