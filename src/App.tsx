@@ -3,6 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { MobileBottomNav } from "@/components/MobileBottomNav";
 import Index from "./pages/Index";
 import TournamentDirector from "./pages/TournamentDirector";
 import Admin from "./pages/Admin";
@@ -30,25 +31,28 @@ function App() {
         <Sonner />
       </div>
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/director" element={<TournamentDirector />} />
-          <Route path="/admin" element={<Admin />} />
-          <Route path="/auth" element={<Auth />} />
-          <Route path="/about" element={<About />} />
-          <Route path="/blog" element={<Blog />} />
-          <Route path="/gallery" element={<Gallery />} />
-          <Route path="/tournaments" element={<Tournaments />} />
-          <Route path="/rating" element={<Rating />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/external-timer" element={<ExternalTimer />} />
-          <Route path="/invitation/:id" element={<InvitationCard />} />
-          <Route path="/telegram" element={<TelegramMiniApp />} />
-          <Route path="/terms" element={<TermsOfService />} />
-          <Route path="/privacy" element={<Privacy />} />
-          
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <div className="pb-16 md:pb-0">
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/director" element={<TournamentDirector />} />
+            <Route path="/admin" element={<Admin />} />
+            <Route path="/auth" element={<Auth />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/blog" element={<Blog />} />
+            <Route path="/gallery" element={<Gallery />} />
+            <Route path="/tournaments" element={<Tournaments />} />
+            <Route path="/rating" element={<Rating />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/external-timer" element={<ExternalTimer />} />
+            <Route path="/invitation/:id" element={<InvitationCard />} />
+            <Route path="/telegram" element={<TelegramMiniApp />} />
+            <Route path="/terms" element={<TermsOfService />} />
+            <Route path="/privacy" element={<Privacy />} />
+            
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+          <MobileBottomNav />
+        </div>
       </BrowserRouter>
     </QueryClientProvider>
   );
