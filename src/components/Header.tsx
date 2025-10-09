@@ -93,9 +93,8 @@ export function Header() {
                     </Link>
                     <Link to="/admin">
                       <Button 
-                        variant="outline" 
                         size="sm" 
-                        className="text-white/90 border-white/30 hover:bg-amber-400/20 hover:text-amber-400 hover:border-amber-400/40 transition-all duration-300 font-medium backdrop-blur-sm"
+                        className="bg-white/5 border-2 border-amber-400/30 text-amber-400 hover:bg-amber-400/10 hover:border-amber-400/50 backdrop-blur-xl transition-all duration-300 font-medium"
                       >
                         <Settings className="w-4 h-4 mr-2" />
                         Админ панель
