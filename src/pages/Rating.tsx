@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Trophy, Medal, Award, TrendingUp, Users, Clock, Star, ChevronDown, Crown, Target } from "lucide-react";
-import { RecalculateRatings } from "@/components/RecalculateRatings";
 
 interface Player {
   id: string;
@@ -179,49 +178,46 @@ export default function Rating() {
                   <Trophy className="h-5 w-5 text-white" />
                 </div>
                 <h1 className="text-3xl lg:text-4xl font-light text-white tracking-wide">
-                  РЕЙТИНГ IPS
+                  РЕЙТИНГ EPC
                 </h1>
               </div>
               <div className="h-0.5 w-20 bg-gradient-to-r from-amber-400 to-amber-600 mx-auto mb-6"></div>
               <p className="text-base md:text-lg text-white/70 max-w-3xl mx-auto leading-relaxed font-light px-4">
                 Система RPS отслеживает навыки каждого игрока. Каждая партия влияет на рейтинг в зависимости от результата и уровня соперников.
               </p>
-              <div className="flex justify-center mt-8">
-                <RecalculateRatings />
-              </div>
             </div>
 
             {/* Statistics Cards */}
             <div className="grid md:grid-cols-3 gap-6 mb-16 max-w-4xl mx-auto">
-              <Card className="p-6 text-center hover:shadow-floating transition-all duration-300 animate-fade-in">
-                <div className="w-16 h-16 bg-poker-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Users className="w-8 h-8 text-poker-primary" />
+              <div className="bg-gradient-to-br from-slate-800/95 via-slate-900/95 to-black/90 border border-white/10 rounded-2xl p-6 text-center backdrop-blur-xl hover:shadow-2xl hover:shadow-amber-500/20 transition-all duration-300">
+                <div className="w-12 h-12 bg-amber-500/10 rounded-xl flex items-center justify-center mx-auto mb-4">
+                  <Users className="w-6 h-6 text-amber-400" />
                 </div>
-                <div className="text-3xl font-bold text-poker-primary mb-2">
+                <div className="text-3xl font-light text-amber-400 mb-2">
                   {allPlayers.length}
                 </div>
-                <div className="text-muted-foreground">Всего игроков</div>
-              </Card>
+                <div className="text-sm font-light text-white/60 uppercase tracking-wide">Всего игроков</div>
+              </div>
               
-              <Card className="p-6 text-center hover:shadow-floating transition-all duration-300 animate-fade-in">
-                <div className="w-16 h-16 bg-poker-accent/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <TrendingUp className="w-8 h-8 text-poker-accent" />
+              <div className="bg-gradient-to-br from-slate-800/95 via-slate-900/95 to-black/90 border border-white/10 rounded-2xl p-6 text-center backdrop-blur-xl hover:shadow-2xl hover:shadow-green-500/20 transition-all duration-300">
+                <div className="w-12 h-12 bg-green-500/10 rounded-xl flex items-center justify-center mx-auto mb-4">
+                  <TrendingUp className="w-6 h-6 text-green-400" />
                 </div>
-                <div className="text-3xl font-bold text-poker-accent mb-2">
+                <div className="text-3xl font-light text-green-400 mb-2">
                   {allPlayers.reduce((sum, player) => sum + player.games_played, 0)}
                 </div>
-                <div className="text-muted-foreground">Партий сыграно</div>
-              </Card>
+                <div className="text-sm font-light text-white/60 uppercase tracking-wide">Партий сыграно</div>
+              </div>
               
-              <Card className="p-6 text-center hover:shadow-floating transition-all duration-300 animate-fade-in">
-                <div className="w-16 h-16 bg-poker-warning/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Star className="w-8 h-8 text-poker-warning" />
+              <div className="bg-gradient-to-br from-slate-800/95 via-slate-900/95 to-black/90 border border-white/10 rounded-2xl p-6 text-center backdrop-blur-xl hover:shadow-2xl hover:shadow-purple-500/20 transition-all duration-300">
+                <div className="w-12 h-12 bg-purple-500/10 rounded-xl flex items-center justify-center mx-auto mb-4">
+                  <Star className="w-6 h-6 text-purple-400" />
                 </div>
-                <div className="text-3xl font-bold text-poker-warning mb-2">
+                <div className="text-3xl font-light text-purple-400 mb-2">
                   {topPlayers[0]?.elo_rating || 100}
                 </div>
-                <div className="text-muted-foreground">Лучший рейтинг</div>
-              </Card>
+                <div className="text-sm font-light text-white/60 uppercase tracking-wide">Лучший рейтинг</div>
+              </div>
             </div>
 
             {/* Top Players */}
@@ -246,13 +242,21 @@ export default function Rating() {
                           <div className="absolute bottom-4 left-6 text-amber-400/20 text-3xl animate-bounce-subtle">♣</div>
                         </div>
 
-                        <div className="flex items-center gap-6 relative z-10">
+                         <div className="flex items-center gap-6 relative z-10">
                           {/* Champion badge */}
                           <div className="flex-shrink-0">
                             <div className="relative">
-                              <div className="w-16 h-16 bg-gradient-to-br from-amber-500/20 to-amber-600/20 border border-amber-500/30 rounded-xl flex items-center justify-center text-2xl">
-                                👑
-                              </div>
+                              {topPlayers[0].avatar_url ? (
+                                <img 
+                                  src={topPlayers[0].avatar_url} 
+                                  alt={topPlayers[0].name}
+                                  className="w-16 h-16 rounded-xl border-2 border-amber-500/30 object-cover"
+                                />
+                              ) : (
+                                <div className="w-16 h-16 bg-gradient-to-br from-amber-500/20 to-amber-600/20 border border-amber-500/30 rounded-xl flex items-center justify-center text-2xl">
+                                  👑
+                                </div>
+                              )}
                               <div className="absolute -top-2 -right-2 w-6 h-6 bg-gradient-to-br from-amber-500 to-amber-600 rounded-full flex items-center justify-center shadow-lg">
                                 <Crown className="w-3 h-3 text-white" />
                               </div>
