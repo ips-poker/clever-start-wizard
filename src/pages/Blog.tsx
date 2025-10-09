@@ -132,7 +132,7 @@ export default function Blog() {
       title: postsData[postNumber].title || '',
       excerpt: postsData[postNumber].content ? postsData[postNumber].content.substring(0, 200) + '...' : '',
       content: postsData[postNumber].content || '',
-      author: "IPS Team",
+      author: "EPC Team",
       author_role: "Эксперт по покеру",
       author_avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80&h=80&fit=crop&crop=face",
       published_at: new Date().toISOString().split('T')[0],
@@ -150,8 +150,8 @@ export default function Blog() {
 
   // Fallback данные если нет в CMS
   const heroTitle = cmsContent['hero_title'] || 'Покерная мудрость и аналитика';
-  const heroSubtitle = cmsContent['hero_subtitle'] || 'Блог IPS';
-  const heroDescription = cmsContent['hero_description'] || 'Экспертные статьи, анализ раздач, стратегии и инсайты от профессионалов IPS';
+  const heroSubtitle = cmsContent['hero_subtitle'] || 'Блог EPC';
+  const heroDescription = cmsContent['hero_description'] || 'Экспертные статьи, анализ раздач, стратегии и инсайты от профессионалов EPC';
 
   const featuredPost = posts.find(post => post.is_featured) || posts[0];
   
@@ -226,15 +226,15 @@ export default function Blog() {
             <div className="lg:col-span-3 space-y-8 md:space-y-10 lg:space-y-12">
               {/* Featured Article */}
               {featuredPost && (
-                <article className="bg-gradient-card rounded-2xl overflow-hidden shadow-floating border border-border/50">
+                <article className="bg-gradient-to-br from-slate-800/95 via-slate-900/95 to-black/90 border border-white/10 rounded-2xl overflow-hidden backdrop-blur-xl hover:shadow-2xl hover:shadow-amber-500/20 transition-all duration-300">
                   <div className="relative">
                     <img 
                       src={featuredPost.image}
                       alt={featuredPost.title}
                       className="w-full h-48 sm:h-56 md:h-64 object-cover"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-poker-primary/60 via-transparent to-transparent"></div>
-                    <Badge className="absolute top-3 left-3 md:top-4 md:left-4 bg-poker-accent text-white border-0 text-xs md:text-sm">
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
+                    <Badge className="absolute top-3 left-3 md:top-4 md:left-4 bg-amber-500/20 text-amber-400 border-amber-500/30 backdrop-blur-xl text-xs md:text-sm">
                       Рекомендуем
                     </Badge>
                   </div>
@@ -242,17 +242,17 @@ export default function Blog() {
                   <div className="p-4 sm:p-6 lg:p-8">
                     <div className="flex flex-wrap gap-2 mb-4">
                       {featuredPost.tags.map((tag) => (
-                        <Badge key={tag} variant="outline" className="text-xs">
+                        <Badge key={tag} className="bg-amber-500/20 text-amber-400 border-amber-500/30 border text-xs">
                           {tag}
                         </Badge>
                       ))}
                     </div>
                     
-                    <h2 className="text-xl sm:text-2xl md:text-3xl font-bold mb-3 md:mb-4 text-poker-primary">
+                    <h2 className="text-xl sm:text-2xl md:text-3xl font-light mb-3 md:mb-4 text-white tracking-wide">
                       {featuredPost.title}
                     </h2>
                     
-                    <p className="text-muted-foreground mb-4 md:mb-6 text-sm md:text-base lg:text-lg leading-relaxed">
+                    <p className="text-white/70 mb-4 md:mb-6 text-sm md:text-base lg:text-lg leading-relaxed font-light">
                       {featuredPost.excerpt}
                     </p>
                     
@@ -261,15 +261,15 @@ export default function Blog() {
                         <img 
                           src={featuredPost.author_avatar}
                           alt={featuredPost.author}
-                          className="w-8 h-8 md:w-10 md:h-10 rounded-full"
+                          className="w-8 h-8 md:w-10 md:h-10 rounded-full border border-white/10"
                         />
                         <div>
-                          <p className="font-medium text-poker-primary text-sm md:text-base">{featuredPost.author}</p>
-                          <p className="text-xs md:text-sm text-muted-foreground">{featuredPost.author_role}</p>
+                          <p className="font-light text-white text-sm md:text-base">{featuredPost.author}</p>
+                          <p className="text-xs md:text-sm text-white/60">{featuredPost.author_role}</p>
                         </div>
                       </div>
                       
-                      <div className="flex items-center gap-2 md:gap-4 text-xs md:text-sm text-muted-foreground flex-wrap">
+                      <div className="flex items-center gap-2 md:gap-4 text-xs md:text-sm text-white/60 flex-wrap">
                         <div className="flex items-center gap-1">
                           <Calendar className="w-3 h-3 md:w-4 md:h-4" />
                           <span className="hidden sm:inline">{new Date(featuredPost.published_at).toLocaleDateString('ru-RU')}</span>
@@ -287,19 +287,19 @@ export default function Blog() {
                     </div>
                     
                     {/* Article Content Preview */}
-                    <div className="prose prose-sm md:prose-lg max-w-none text-muted-foreground">
+                    <div className="prose prose-sm md:prose-lg max-w-none text-white/70">
                       <div dangerouslySetInnerHTML={{ 
                         __html: featuredPost.content.substring(0, 400) + "..." 
                       }} />
                     </div>
                     
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between mt-6 md:mt-8 pt-4 md:pt-6 border-t border-border gap-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between mt-6 md:mt-8 pt-4 md:pt-6 border-t border-white/10 gap-4">
                       <div className="flex items-center gap-2 md:gap-4">
-                        <Button variant="outline" size="sm" className="text-xs md:text-sm">
+                        <Button className="bg-white/5 border-2 border-amber-400/30 text-amber-400 hover:bg-amber-400/10 hover:border-amber-400/50 backdrop-blur-xl text-xs md:text-sm" size="sm">
                           <Heart className="w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-2" />
                           {featuredPost.likes}
                         </Button>
-                        <Button variant="outline" size="sm" className="text-xs md:text-sm">
+                        <Button className="bg-white/5 border-2 border-amber-400/30 text-amber-400 hover:bg-amber-400/10 hover:border-amber-400/50 backdrop-blur-xl text-xs md:text-sm" size="sm">
                           <Share2 className="w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-2" />
                           <span className="hidden sm:inline">Поделиться</span>
                           <span className="sm:hidden">Share</span>
@@ -307,7 +307,7 @@ export default function Blog() {
                       </div>
                       
                       <Button 
-                        className="bg-gradient-button text-sm md:text-base"
+                        className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white shadow-lg hover:shadow-xl hover:shadow-amber-500/20 transition-all duration-300 text-sm md:text-base"
                         onClick={() => openPostModal(featuredPost)}
                       >
                         <span className="hidden sm:inline">Читать полностью</span>
@@ -320,25 +320,27 @@ export default function Blog() {
               )}
 
               {/* Search and Filter */}
-              <div className="bg-gradient-card rounded-2xl p-4 md:p-6 border border-border/50 mb-6 md:mb-8">
+              <div className="bg-gradient-to-br from-slate-800/95 via-slate-900/95 to-black/90 border border-white/10 rounded-2xl p-4 md:p-6 backdrop-blur-xl mb-6 md:mb-8">
                 <div className="flex flex-col gap-4">
                   <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/60 w-4 h-4" />
                     <Input
                       placeholder="Поиск статей..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10 border-border/50"
+                      className="pl-10 bg-white/5 border-white/10 text-white placeholder:text-white/40"
                     />
                   </div>
                   <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
                     {categories.map((category) => (
                       <Button
                         key={category.name}
-                        variant={selectedCategory === category.name ? "default" : "outline"}
+                        className={selectedCategory === category.name 
+                          ? "bg-gradient-to-r from-amber-500 to-amber-600 text-white whitespace-nowrap text-xs md:text-sm flex-shrink-0" 
+                          : "bg-white/5 border-2 border-amber-400/30 text-amber-400 hover:bg-amber-400/10 hover:border-amber-400/50 backdrop-blur-xl whitespace-nowrap text-xs md:text-sm flex-shrink-0"
+                        }
                         size="sm"
                         onClick={() => setSelectedCategory(category.name)}
-                        className="whitespace-nowrap text-xs md:text-sm flex-shrink-0"
                       >
                         <category.icon className="w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-2" />
                         <span className="hidden sm:inline">{category.name} ({category.count})</span>
@@ -353,28 +355,28 @@ export default function Blog() {
               {filteredPosts.length > 0 ? (
                 <div className="space-y-8">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                    <h3 className="text-lg md:text-xl lg:text-2xl font-bold text-poker-primary">
+                    <h3 className="text-lg md:text-xl lg:text-2xl font-light text-white tracking-wide">
                       <span className="hidden sm:inline">{selectedCategory === "Все" ? "Все статьи" : `Категория: ${selectedCategory}`}</span>
                       <span className="sm:hidden">{selectedCategory === "Все" ? "Статьи" : selectedCategory}</span>
                     </h3>
-                    <Badge variant="outline" className="text-xs md:text-sm">
+                    <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30 border text-xs md:text-sm">
                       {filteredPosts.length} {filteredPosts.length === 1 ? 'статья' : 'статей'}
                     </Badge>
                   </div>
                   
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
                     {filteredPosts.map((post) => (
-                      <Card key={post.id} className="group hover:shadow-elegant hover:-translate-y-1 md:hover:-translate-y-2 transition-all duration-500 border border-border/50 overflow-hidden bg-gradient-card">
+                      <Card key={post.id} className="group bg-gradient-to-br from-slate-800/95 via-slate-900/95 to-black/90 border border-white/10 backdrop-blur-xl hover:shadow-2xl hover:shadow-amber-500/20 hover:-translate-y-1 md:hover:-translate-y-2 transition-all duration-500 overflow-hidden">
                         <div className="relative overflow-hidden">
                           <img 
                             src={post.image}
                             alt={post.title}
                             className="w-full h-40 md:h-48 object-cover group-hover:scale-110 transition-transform duration-700"
                           />
-                          <div className="absolute inset-0 bg-gradient-to-t from-poker-primary/60 via-transparent to-transparent"></div>
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
                           <div className="absolute top-2 left-2 md:top-3 md:left-3">
                             {post.tags.slice(0, 2).map((tag) => (
-                              <Badge key={tag} className="bg-poker-accent/90 text-white border-0 mb-1 mr-1 text-xs">
+                              <Badge key={tag} className="bg-amber-500/20 text-amber-400 border-amber-500/30 backdrop-blur-xl border-0 mb-1 mr-1 text-xs">
                                 {tag}
                               </Badge>
                             ))}
@@ -382,15 +384,15 @@ export default function Blog() {
                         </div>
                         
                         <CardContent className="p-4 md:p-6">
-                          <h4 className="text-base md:text-lg font-bold mb-2 md:mb-3 text-poker-primary group-hover:text-poker-accent transition-colors line-clamp-2">
+                          <h4 className="text-base md:text-lg font-light mb-2 md:mb-3 text-white group-hover:text-amber-400 transition-colors line-clamp-2 tracking-wide">
                             {post.title}
                           </h4>
                           
-                          <p className="text-muted-foreground mb-3 md:mb-4 text-xs md:text-sm leading-relaxed line-clamp-3">
+                          <p className="text-white/70 mb-3 md:mb-4 text-xs md:text-sm leading-relaxed line-clamp-3 font-light">
                             {post.excerpt}
                           </p>
                           
-                          <div className="flex flex-col sm:flex-row sm:items-center justify-between text-xs text-muted-foreground mb-3 md:mb-4 gap-2">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between text-xs text-white/60 mb-3 md:mb-4 gap-2">
                             <div className="flex items-center gap-2">
                               <User className="w-3 h-3" />
                               <span className="truncate">{post.author}</span>
@@ -408,8 +410,7 @@ export default function Blog() {
                           </div>
                           
                           <Button 
-                            variant="ghost" 
-                            className="w-full group-hover:bg-poker-accent/10 transition-colors text-sm"
+                            className="w-full bg-white/5 border-2 border-amber-400/30 text-amber-400 hover:bg-amber-400/10 hover:border-amber-400/50 backdrop-blur-xl transition-all text-sm"
                             onClick={() => openPostModal(post)}
                           >
                             <span className="hidden sm:inline">Читать далее</span>
@@ -422,8 +423,8 @@ export default function Blog() {
                   </div>
                 </div>
               ) : (
-                <div className="text-center py-12 bg-gradient-card rounded-2xl border border-border/50">
-                  <div className="text-muted-foreground mb-4">
+                <div className="text-center py-12 bg-gradient-to-br from-slate-800/95 via-slate-900/95 to-black/90 border border-white/10 rounded-2xl backdrop-blur-xl">
+                  <div className="text-white/60 mb-4">
                     {searchTerm || selectedCategory !== "Все" 
                       ? "По вашему запросу ничего не найдено"
                       : "Скоро здесь появятся статьи"
@@ -431,7 +432,7 @@ export default function Blog() {
                   </div>
                   {(searchTerm || selectedCategory !== "Все") && (
                     <Button 
-                      variant="outline" 
+                      className="bg-white/5 border-2 border-amber-400/30 text-amber-400 hover:bg-amber-400/10 hover:border-amber-400/50 backdrop-blur-xl"
                       onClick={() => { setSearchTerm(""); setSelectedCategory("Все"); }}
                     >
                       Сбросить фильтры
@@ -443,10 +444,10 @@ export default function Blog() {
               {/* No posts message */}
               {posts.length === 0 && (
                 <div className="text-center py-12">
-                  <h3 className="text-xl font-semibold text-poker-primary mb-2">
+                  <h3 className="text-xl font-light text-white mb-2 tracking-wide">
                     Скоро здесь появятся статьи
                   </h3>
-                  <p className="text-muted-foreground">
+                  <p className="text-white/60 font-light">
                     Наши эксперты готовят для вас интересные материалы о покере
                   </p>
                 </div>
@@ -456,9 +457,9 @@ export default function Blog() {
             {/* Sidebar */}
             <div className="space-y-6">
               {/* Categories */}
-              <Card className="border border-border/50 bg-gradient-card">
+              <Card className="bg-gradient-to-br from-slate-800/95 via-slate-900/95 to-black/90 border border-white/10 backdrop-blur-xl">
                 <CardHeader>
-                  <CardTitle className="flex items-center text-poker-primary">
+                  <CardTitle className="flex items-center text-white font-light tracking-wide">
                     <BookOpen className="w-5 h-5 mr-2" />
                     Категории
                   </CardTitle>
@@ -472,21 +473,21 @@ export default function Blog() {
                         onClick={() => setSelectedCategory(category.name)}
                         className={`w-full flex items-center justify-between p-3 rounded-lg transition-all text-left ${
                           selectedCategory === category.name 
-                            ? 'bg-poker-accent/10 border border-poker-accent/20' 
-                            : 'hover:bg-gradient-surface'
+                            ? 'bg-amber-500/10 border border-amber-500/30' 
+                            : 'hover:bg-white/5'
                         }`}
                       >
                         <div className="flex items-center gap-3">
                           <IconComponent className={`w-4 h-4 ${
-                            selectedCategory === category.name ? 'text-poker-accent' : 'text-muted-foreground'
+                            selectedCategory === category.name ? 'text-amber-400' : 'text-white/60'
                           }`} />
-                          <span className={`font-medium ${
-                            selectedCategory === category.name ? 'text-poker-accent' : ''
+                          <span className={`font-light ${
+                            selectedCategory === category.name ? 'text-amber-400' : 'text-white'
                           }`}>
                             {category.name}
                           </span>
                         </div>
-                        <Badge variant="outline" className="text-xs">
+                        <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30 border text-xs">
                           {category.count}
                         </Badge>
                       </button>
@@ -496,39 +497,39 @@ export default function Blog() {
               </Card>
 
               {/* Newsletter */}
-              <Card className="border border-poker-accent/20 bg-gradient-to-br from-poker-accent/5 to-poker-primary/5">
+              <Card className="bg-gradient-to-br from-amber-500/10 via-amber-600/15 to-amber-500/10 border border-amber-500/20 backdrop-blur-xl">
                 <CardContent className="p-6 text-center">
-                  <h4 className="text-lg font-bold mb-3 text-poker-primary">
+                  <h4 className="text-lg font-light mb-3 text-white tracking-wide">
                     Покерная рассылка
                   </h4>
-                  <p className="text-sm text-muted-foreground mb-4">
+                  <p className="text-sm text-white/70 mb-4 font-light">
                     Получайте лучшие статьи и эксклюзивные материалы на email
                   </p>
-                  <Button className="w-full bg-gradient-button">
+                  <Button className="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white shadow-lg hover:shadow-xl hover:shadow-amber-500/20 transition-all duration-300">
                     Подписаться
                   </Button>
                 </CardContent>
               </Card>
 
               {/* Popular Articles */}
-              <Card className="border border-border/50 bg-gradient-card">
+              <Card className="bg-gradient-to-br from-slate-800/95 via-slate-900/95 to-black/90 border border-white/10 backdrop-blur-xl">
                 <CardHeader>
-                  <CardTitle className="flex items-center text-poker-primary">
+                  <CardTitle className="flex items-center text-white font-light tracking-wide">
                     <TrendingUp className="w-5 h-5 mr-2" />
                     Популярное
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {posts.slice(0, 3).map((post, index) => (
-                    <div key={post.id} className="flex gap-3 group cursor-pointer hover:bg-gradient-surface/50 p-2 rounded-lg transition-colors">
-                      <div className="w-8 h-8 bg-gradient-to-br from-poker-accent to-poker-primary rounded-full flex items-center justify-center text-sm font-bold text-white shadow-md">
+                    <div key={post.id} className="flex gap-3 group cursor-pointer hover:bg-white/5 p-2 rounded-lg transition-colors">
+                      <div className="w-8 h-8 bg-gradient-to-br from-amber-500 to-amber-600 rounded-full flex items-center justify-center text-sm font-light text-white shadow-md">
                         {index + 1}
                       </div>
                       <div className="flex-1">
-                        <h5 className="font-medium text-sm group-hover:text-poker-accent transition-colors leading-tight line-clamp-2">
+                        <h5 className="font-light text-sm text-white group-hover:text-amber-400 transition-colors leading-tight line-clamp-2">
                           {post.title}
                         </h5>
-                        <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
+                        <div className="flex items-center gap-2 mt-1 text-xs text-white/60">
                           <Eye className="w-3 h-3" />
                           {post.views}
                           <Heart className="w-3 h-3" />
@@ -546,41 +547,41 @@ export default function Blog() {
       
       {/* Article Modal */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-gradient-to-br from-slate-800/95 via-slate-900/95 to-black/90 border border-white/10 text-white">
           {selectedPost && (
             <>
               <DialogHeader>
                 <div className="flex items-center gap-2 mb-2">
                   {selectedPost.tags.map((tag) => (
-                    <Badge key={tag} variant="outline" className="text-xs">
+                    <Badge key={tag} className="bg-amber-500/20 text-amber-400 border-amber-500/30 border text-xs">
                       {tag}
                     </Badge>
                   ))}
                 </div>
-                <DialogTitle className="text-2xl font-bold text-poker-primary">
+                <DialogTitle className="text-2xl font-light text-white tracking-wide">
                   {selectedPost.title}
                 </DialogTitle>
-                <DialogDescription className="text-lg text-muted-foreground">
+                <DialogDescription className="text-lg text-white/70 font-light">
                   {selectedPost.excerpt.replace('...', '')}
                 </DialogDescription>
               </DialogHeader>
               
               <div className="space-y-6">
                 {/* Author and Meta Info */}
-                <div className="flex items-center justify-between border-b border-border pb-4">
+                <div className="flex items-center justify-between border-b border-white/10 pb-4">
                   <div className="flex items-center gap-4">
                     <img 
                       src={selectedPost.author_avatar}
                       alt={selectedPost.author}
-                      className="w-12 h-12 rounded-full"
+                      className="w-12 h-12 rounded-full border border-white/10"
                     />
                     <div>
-                      <p className="font-medium text-poker-primary">{selectedPost.author}</p>
-                      <p className="text-sm text-muted-foreground">{selectedPost.author_role}</p>
+                      <p className="font-light text-white">{selectedPost.author}</p>
+                      <p className="text-sm text-white/60">{selectedPost.author_role}</p>
                     </div>
                   </div>
                   
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                  <div className="flex items-center gap-4 text-sm text-white/60">
                     <div className="flex items-center gap-1">
                       <Calendar className="w-4 h-4" />
                       {new Date(selectedPost.published_at).toLocaleDateString('ru-RU')}
@@ -597,7 +598,7 @@ export default function Blog() {
                 </div>
                 
                 {/* Article Image */}
-                <div className="relative rounded-lg overflow-hidden">
+                <div className="relative rounded-lg overflow-hidden border border-white/10">
                   <img 
                     src={selectedPost.image}
                     alt={selectedPost.title}
@@ -606,25 +607,25 @@ export default function Blog() {
                 </div>
                 
                 {/* Article Content */}
-                <div className="prose prose-lg max-w-none text-foreground">
+                <div className="prose prose-lg max-w-none text-white/70 prose-headings:text-white prose-strong:text-white prose-a:text-amber-400">
                   <div dangerouslySetInnerHTML={{ __html: selectedPost.content }} />
                 </div>
                 
                 {/* Actions */}
-                <div className="flex items-center justify-between pt-6 border-t border-border">
+                <div className="flex items-center justify-between pt-6 border-t border-white/10">
                   <div className="flex items-center gap-4">
-                    <Button variant="outline" size="sm">
+                    <Button className="bg-white/5 border-2 border-amber-400/30 text-amber-400 hover:bg-amber-400/10 hover:border-amber-400/50 backdrop-blur-xl" size="sm">
                       <Heart className="w-4 h-4 mr-2" />
                       {selectedPost.likes}
                     </Button>
-                    <Button variant="outline" size="sm">
+                    <Button className="bg-white/5 border-2 border-amber-400/30 text-amber-400 hover:bg-amber-400/10 hover:border-amber-400/50 backdrop-blur-xl" size="sm">
                       <Share2 className="w-4 h-4 mr-2" />
                       Поделиться
                     </Button>
                   </div>
                   
                   <DialogClose asChild>
-                    <Button variant="ghost">
+                    <Button className="bg-white/5 text-white hover:bg-white/10">
                       Закрыть
                     </Button>
                   </DialogClose>
