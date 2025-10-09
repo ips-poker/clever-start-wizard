@@ -1,10 +1,46 @@
 import { Home, Trophy, TrendingUp, UserPlus } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import { useState, useEffect } from "react";
 
 export function MobileBottomNav() {
   const location = useLocation();
   const currentPath = location.pathname;
+  const [isVisible, setIsVisible] = useState(true);
+  const [lastScrollY, setLastScrollY] = useState(0);
+
+  useEffect(() => {
+    const controlNavbar = () => {
+      const currentScrollY = window.scrollY;
+      
+      // Show navbar when at top of page
+      if (currentScrollY < 50) {
+        setIsVisible(true);
+      } 
+      // Hide when scrolling down, show when scrolling up
+      else if (currentScrollY > lastScrollY) {
+        setIsVisible(false);
+      } else {
+        setIsVisible(true);
+      }
+      
+      setLastScrollY(currentScrollY);
+    };
+
+    // Throttle scroll events for better performance
+    let timeoutId: NodeJS.Timeout;
+    const handleScroll = () => {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(controlNavbar, 10);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      clearTimeout(timeoutId);
+    };
+  }, [lastScrollY]);
 
   const navItems = [
     { title: "Главная", url: "/", icon: Home },
@@ -19,7 +55,12 @@ export function MobileBottomNav() {
   };
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-slate-900/95 backdrop-blur-xl border-t border-amber-400/20 md:hidden">
+    <nav 
+      className={cn(
+        "fixed bottom-0 left-0 right-0 z-50 bg-slate-900/95 backdrop-blur-xl border-t border-amber-400/20 md:hidden transition-transform duration-300 ease-in-out",
+        isVisible ? "translate-y-0" : "translate-y-full"
+      )}
+    >
       <div className="flex items-center justify-around h-16 px-2">
         {navItems.map((item) => {
           const active = isActive(item.url);
