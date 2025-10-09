@@ -497,7 +497,7 @@ export default function Blog() {
               </Card>
 
               {/* Newsletter */}
-              <Card className="bg-gradient-to-br from-amber-500/10 via-amber-600/15 to-amber-500/10 border border-amber-500/20 backdrop-blur-xl">
+              <Card className="bg-gradient-to-br from-slate-800/95 via-slate-900/95 to-black/90 border border-white/10 backdrop-blur-xl">
                 <CardContent className="p-6 text-center">
                   <h4 className="text-lg font-light mb-3 text-white tracking-wide">
                     Покерная рассылка
