@@ -164,7 +164,10 @@ export default function Profile() {
   };
 
   const handleAvatarUpdate = async (avatarUrl: string) => {
-    if (!player) return;
+    if (!player) {
+      toast.error("Ошибка: профиль игрока не найден");
+      return;
+    }
 
     try {
       const { error } = await supabase
@@ -172,14 +175,18 @@ export default function Profile() {
         .update({ avatar_url: avatarUrl })
         .eq('id', player.id);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error updating avatar:', error);
+        toast.error(`Ошибка при обновлении аватара: ${error.message}`);
+        throw error;
+      }
 
       setPlayer({ ...player, avatar_url: avatarUrl });
       setShowAvatarSelector(false);
-      toast("Аватар обновлен успешно!");
-    } catch (error) {
+      toast.success("Аватар обновлен успешно!");
+    } catch (error: any) {
       console.error('Error updating avatar:', error);
-      toast("Ошибка при обновлении аватара");
+      toast.error(`Ошибка при обновлении аватара: ${error.message || 'Неизвестная ошибка'}`);
     }
   };
 
@@ -702,10 +709,11 @@ export default function Profile() {
         </main>
 
         {/* Avatar Selector Modal */}
-        {showAvatarSelector && (
+        {showAvatarSelector && player && (
           <AvatarSelector
             onSelect={handleAvatarUpdate}
             onClose={() => setShowAvatarSelector(false)}
+            playerId={player.id}
           />
         )}
 

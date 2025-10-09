@@ -30,6 +30,7 @@ import pokerAvatar16 from "@/assets/avatars/poker-avatar-16.png";
 interface AvatarSelectorProps {
   onSelect: (avatarUrl: string) => void;
   onClose: () => void;
+  playerId?: string; // Добавляем ID игрока для Telegram пользователей
 }
 
 const presetAvatars = [
@@ -51,10 +52,13 @@ const presetAvatars = [
   { id: "16", url: pokerAvatar16, name: "Енот" },
 ];
 
-export function AvatarSelector({ onSelect, onClose }: AvatarSelectorProps) {
+export function AvatarSelector({ onSelect, onClose, playerId }: AvatarSelectorProps) {
   const { user } = useAuth();
   const [selectedAvatar, setSelectedAvatar] = useState<string>("");
   const [uploading, setUploading] = useState(false);
+  
+  // Используем playerId если передан (для Telegram), иначе user?.id (для веб)
+  const uploaderId = playerId || user?.id;
 
   const compressImage = async (file: File): Promise<File> => {
     return new Promise((resolve, reject) => {
@@ -115,43 +119,65 @@ export function AvatarSelector({ onSelect, onClose }: AvatarSelectorProps) {
       setUploading(true);
       
       if (!event.target.files || event.target.files.length === 0) {
+        console.log('No files selected');
         return;
       }
 
       let file = event.target.files[0];
+      console.log('File selected:', { 
+        name: file.name, 
+        size: file.size, 
+        type: file.type 
+      });
       
       // Validate file type
       if (!file.type.startsWith('image/')) {
+        console.error('Invalid file type:', file.type);
         toast.error("Пожалуйста, выберите файл изображения");
         return;
       }
 
       // Compress image if larger than 500KB
       if (file.size > 500 * 1024) {
+        console.log('Compressing image, original size:', file.size);
         toast.info("Сжимаем изображение...");
         file = await compressImage(file);
+        console.log('Image compressed, new size:', file.size);
+      }
+
+      if (!uploaderId) {
+        console.error('No uploader ID available');
+        toast.error("Ошибка: не удалось определить пользователя");
+        return;
       }
 
       const fileExt = file.name.split('.').pop();
-      const fileName = `${user?.id}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+      const fileName = `${uploaderId}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+      
+      console.log('Uploading avatar:', { uploaderId, fileName, fileSize: file.size });
 
       const { error: uploadError } = await supabase.storage
         .from('gallery')
         .upload(`avatars/${fileName}`, file);
 
       if (uploadError) {
+        console.error('Upload error:', uploadError);
+        toast.error(`Ошибка загрузки: ${uploadError.message}`);
         throw uploadError;
       }
+
+      console.log('File uploaded successfully');
 
       const { data } = supabase.storage
         .from('gallery')
         .getPublicUrl(`avatars/${fileName}`);
 
+      console.log('Public URL:', data.publicUrl);
       setSelectedAvatar(data.publicUrl);
       toast.success("Изображение загружено успешно!");
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error uploading file:', error);
-      toast.error("Ошибка при загрузке файла");
+      toast.error(`Ошибка при загрузке файла: ${error.message || 'Неизвестная ошибка'}`);
     } finally {
       setUploading(false);
     }

@@ -250,11 +250,19 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate }: Tele
   };
 
   const handleAvatarUpdate = async (avatarUrl: string) => {
-    if (!player) return;
+    if (!player) {
+      console.error('No player found for avatar update');
+      toast.error('Ошибка: профиль игрока не найден');
+      return;
+    }
 
     try {
       setLoading(true);
-      console.log('Updating avatar for player:', player.id, 'to:', avatarUrl);
+      console.log('Updating avatar for player:', { 
+        playerId: player.id, 
+        telegram: player.telegram,
+        newAvatarUrl: avatarUrl 
+      });
       
       const { data, error } = await supabase
         .from('players')
@@ -265,7 +273,14 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate }: Tele
 
       if (error) {
         console.error('Avatar update error:', error);
+        toast.error(`Ошибка обновления: ${error.message}`);
         throw error;
+      }
+
+      if (!data) {
+        console.error('No data returned after avatar update');
+        toast.error('Ошибка: не удалось обновить аватар');
+        return;
       }
 
       console.log('Avatar updated successfully:', data);
@@ -274,20 +289,29 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate }: Tele
       onStatsUpdate(updatedPlayer);
       setShowAvatarSelector(false);
       toast.success('Аватар обновлен!');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error updating avatar:', error);
-      toast.error('Ошибка обновления аватара');
+      toast.error(`Ошибка обновления аватара: ${error.message || 'Неизвестная ошибка'}`);
     } finally {
       setLoading(false);
     }
   };
 
   const handleNameUpdate = async () => {
-    if (!player || !newPlayerName.trim()) return;
+    if (!player || !newPlayerName.trim()) {
+      console.error('Cannot update name:', { player, newPlayerName });
+      toast.error('Ошибка: введите имя');
+      return;
+    }
 
     try {
       setLoading(true);
-      console.log('Updating name for player:', player.id, 'to:', newPlayerName.trim());
+      console.log('Updating name for player:', { 
+        playerId: player.id, 
+        telegram: player.telegram,
+        oldName: player.name,
+        newName: newPlayerName.trim() 
+      });
       
       const { data, error } = await supabase
         .from('players')
@@ -298,7 +322,14 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate }: Tele
 
       if (error) {
         console.error('Name update error:', error);
+        toast.error(`Ошибка обновления: ${error.message}`);
         throw error;
+      }
+
+      if (!data) {
+        console.error('No data returned after name update');
+        toast.error('Ошибка: не удалось обновить имя');
+        return;
       }
 
       console.log('Name updated successfully:', data);
@@ -308,9 +339,9 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate }: Tele
       setEditingName(false);
       setNewPlayerName("");
       toast.success('Имя обновлено!');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error updating player name:', error);
-      toast.error('Ошибка обновления имени');
+      toast.error(`Ошибка обновления имени: ${error.message || 'Неизвестная ошибка'}`);
     } finally {
       setLoading(false);
     }
@@ -734,7 +765,7 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate }: Tele
       </Card>
 
       {/* Avatar Selector Modal */}
-      {showAvatarSelector && (
+      {showAvatarSelector && player && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-slate-900 rounded-xl border border-white/20 p-6 max-w-md w-full">
             <div className="flex items-center justify-between mb-4">
@@ -751,6 +782,7 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate }: Tele
             <AvatarSelector
               onSelect={handleAvatarUpdate}
               onClose={() => setShowAvatarSelector(false)}
+              playerId={player.id}
             />
           </div>
         </div>
