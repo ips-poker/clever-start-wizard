@@ -6,22 +6,18 @@ import { useState, useEffect } from "react";
 export function MobileBottomNav() {
   const location = useLocation();
   const currentPath = location.pathname;
-  const [isVisible, setIsVisible] = useState(true);
+  const [isVisible, setIsVisible] = useState(false);
   const [lastScrollY, setLastScrollY] = useState(0);
 
   useEffect(() => {
     const controlNavbar = () => {
       const currentScrollY = window.scrollY;
       
-      // Show navbar when at top of page
-      if (currentScrollY < 50) {
+      // Show when scrolling up, hide when scrolling down
+      if (currentScrollY < lastScrollY) {
         setIsVisible(true);
-      } 
-      // Hide when scrolling down, show when scrolling up
-      else if (currentScrollY > lastScrollY) {
+      } else if (currentScrollY > lastScrollY && currentScrollY > 100) {
         setIsVisible(false);
-      } else {
-        setIsVisible(true);
       }
       
       setLastScrollY(currentScrollY);
