@@ -200,13 +200,14 @@ Deno.serve(async (req) => {
       console.log('Successfully updated profile with Telegram data');
     }
 
-    // Создаем сессию с токенами для пользователя
-    const { data: sessionData, error: sessionError } = await supabase.auth.admin.createSession({
-      user_id: existingUser.user.id
+    // Создаем магическую ссылку для автоматического входа
+    const { data: linkData, error: linkError } = await supabase.auth.admin.generateLink({
+      type: 'magiclink',
+      email: telegramEmail
     });
 
-    if (sessionError || !sessionData) {
-      console.error('Error creating session:', sessionError);
+    if (linkError || !linkData) {
+      console.error('Error generating link:', linkError);
       return new Response(
         JSON.stringify({ error: 'Failed to create session' }),
         { 
@@ -216,7 +217,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    console.log('Session created successfully');
+    console.log('Magic link created successfully');
 
     // Используем функцию для объединения игроков
     const telegramId = authData.id.toString();
@@ -277,13 +278,17 @@ Deno.serve(async (req) => {
 
     console.log('Successfully authenticated Telegram user:', authData.id);
 
+    // Извлекаем токены из hashed_token в URL
+    const magicLinkUrl = new URL(linkData.properties.action_link);
+    const hashedToken = magicLinkUrl.searchParams.get('token');
+    const tokenHash = magicLinkUrl.searchParams.get('token_hash') || hashedToken;
+
     return new Response(
       JSON.stringify({ 
         success: true,
         user: existingUser.user,
-        session: sessionData.session,
-        access_token: sessionData.session.access_token,
-        refresh_token: sessionData.session.refresh_token,
+        hashed_token: tokenHash,
+        email: telegramEmail,
         player: player
       }),
       { 

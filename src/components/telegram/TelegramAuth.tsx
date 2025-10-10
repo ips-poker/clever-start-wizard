@@ -135,17 +135,18 @@ export const TelegramAuth: React.FC<TelegramAuthProps> = ({ onAuthComplete }) =>
         return;
       }
 
-      if (data?.success && data?.access_token && data?.refresh_token) {
-        console.log('Authentication successful, setting session');
+      if (data?.success && data?.hashed_token && data?.email) {
+        console.log('Authentication successful, verifying OTP');
         
-        // Устанавливаем сессию в Supabase клиенте
-        const { error: sessionError } = await supabase.auth.setSession({
-          access_token: data.access_token,
-          refresh_token: data.refresh_token
+        // Используем hashed token для верификации и установки сессии
+        const { data: sessionData, error: verifyError } = await supabase.auth.verifyOtp({
+          email: data.email,
+          token: data.hashed_token,
+          type: 'email'
         });
 
-        if (sessionError) {
-          console.error('Error setting session:', sessionError);
+        if (verifyError) {
+          console.error('Error verifying OTP:', verifyError);
           setAuthError('Ошибка установки сессии');
           return;
         }
