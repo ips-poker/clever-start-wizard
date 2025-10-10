@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Trophy, Calendar, Users, Star, MessageSquare, User, Home, TrendingUp, Clock, MapPin, Coins, ChevronRight, Award, Target, CheckCircle, UserPlus, Loader2, Crown, Gem, Zap, Shield, Play, Pause, CircleDot, ArrowLeft, Heart, Globe, Camera, ChevronLeft } from 'lucide-react';
+import { Trophy, Calendar, Users, Star, MessageSquare, User, Home, TrendingUp, Clock, MapPin, Coins, ChevronRight, Award, Target, CheckCircle, UserPlus, Loader2, Crown, Gem, Zap, Shield, Play, Pause, CircleDot, ArrowLeft, Heart, Globe, Camera, ChevronLeft, Download } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { TelegramAuth } from './TelegramAuth';
 import { TelegramTournamentModal } from './TelegramTournamentModal';
@@ -85,34 +85,24 @@ export const TelegramApp = () => {
       fetchData();
       fetchGalleryImages();
       setupRealtimeSubscriptions();
-      enableAddToHomeScreen();
     }
   }, [isAuthenticated, telegramUser]);
 
-  const enableAddToHomeScreen = () => {
+  const handleAddToHomeScreen = () => {
     try {
-      // Используем Telegram WebApp API для добавления на главный экран
       if (window.Telegram?.WebApp) {
         const tg = window.Telegram.WebApp;
         
-        // Проверяем, доступна ли функция добавления на главный экран
         if (typeof tg.addToHomeScreen === 'function') {
-          console.log('Add to Home Screen is available, triggering...');
           tg.addToHomeScreen();
-          console.log('Add to Home Screen triggered successfully');
+          toast.success("Следуйте инструкциям для установки приложения на главный экран");
         } else {
-          console.log('Add to Home Screen is not available on this device/version');
+          toast.error("Ваша версия Telegram не поддерживает установку на главный экран");
         }
-        
-        // Также разворачиваем приложение на весь экран
-        if (typeof tg.expand === 'function') {
-          tg.expand();
-        }
-      } else {
-        console.log('Telegram WebApp API is not available');
       }
     } catch (error) {
-      console.error('Error enabling Add to Home Screen:', error);
+      console.error('Error adding to home screen:', error);
+      toast.error("Не удалось установить приложение на главный экран");
     }
   };
 
@@ -337,6 +327,18 @@ export const TelegramApp = () => {
               </h1>
               <div className="h-0.5 w-12 bg-gradient-to-r from-amber-400 to-amber-600 mt-1 group-hover:w-16 transition-all duration-500"></div>
             </div>
+
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleAddToHomeScreen();
+              }}
+              className="text-white hover:text-amber-400 hover:bg-white/10 p-2 transition-all duration-300 rounded-lg"
+            >
+              <Download className="h-5 w-5" />
+            </Button>
           </div>
           
             <div className="bg-gradient-to-r from-white/10 via-white/15 to-white/10 rounded-lg p-3 backdrop-blur-md border border-white/20 group-hover:border-amber-400/30 transition-all duration-300">
