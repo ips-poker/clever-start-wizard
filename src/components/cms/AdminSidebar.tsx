@@ -16,7 +16,8 @@ import {
   TrendingUp,
   Activity,
   MessageSquare,
-  Receipt
+  Receipt,
+  Send
 } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import {
@@ -70,6 +71,7 @@ const adminSections = [
     items: [
       { title: "Воркфлоу", id: "workflows", icon: Zap },
       { title: "Интеграции", id: "integrations", icon: Globe },
+      { title: "Telegram Bot", id: "telegram-config", icon: Send },
       { title: "Orange Data", id: "orange-data", icon: Receipt },
     ]
   },

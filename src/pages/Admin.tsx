@@ -32,6 +32,7 @@ import PlayersManager from "@/components/cms/PlayersManager";
 import { OrangeDataIntegration } from "@/components/cms/OrangeDataIntegration";
 import { ImageOptimizer } from "@/components/cms/ImageOptimizer";
 import { TerminologyMigrationGuide } from "@/components/TerminologyMigrationGuide";
+import { TelegramBotConfigurator } from "@/components/telegram/TelegramBotConfigurator";
 
 export default function Admin() {
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -86,6 +87,8 @@ export default function Admin() {
         return <EnhancedPerformanceMonitor />;
       case "orange-data":
         return <OrangeDataIntegration />;
+      case "telegram-config":
+        return <TelegramBotConfigurator />;
       case "invitations":
         return <SocialInvitationGenerator />;
       case "tournaments":
