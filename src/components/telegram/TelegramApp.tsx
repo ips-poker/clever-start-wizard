@@ -89,20 +89,38 @@ export const TelegramApp = () => {
   }, [isAuthenticated, telegramUser]);
 
   const handleAddToHomeScreen = () => {
+    console.log('=== ADD TO HOME SCREEN CLICKED ===');
+    
     try {
+      console.log('Window.Telegram exists:', !!window.Telegram);
+      console.log('Window.Telegram.WebApp exists:', !!window.Telegram?.WebApp);
+      
       if (window.Telegram?.WebApp) {
         const tg = window.Telegram.WebApp;
+        console.log('Telegram WebApp version:', tg.version);
+        console.log('Telegram WebApp platform:', tg.platform);
+        console.log('addToHomeScreen function type:', typeof tg.addToHomeScreen);
+        console.log('addToHomeScreen exists:', 'addToHomeScreen' in tg);
+        
+        // Проверяем все доступные методы
+        console.log('Available methods:', Object.keys(tg).filter(key => typeof tg[key] === 'function'));
         
         if (typeof tg.addToHomeScreen === 'function') {
+          console.log('Calling addToHomeScreen...');
           tg.addToHomeScreen();
+          console.log('addToHomeScreen called successfully');
           toast.success("Следуйте инструкциям для установки приложения на главный экран");
         } else {
-          toast.error("Ваша версия Telegram не поддерживает установку на главный экран");
+          console.warn('addToHomeScreen is not available');
+          toast.error("Ваша версия Telegram не поддерживает установку на главный экран. Версия: " + tg.version);
         }
+      } else {
+        console.error('Telegram WebApp API is not available');
+        toast.error("Telegram WebApp API недоступен");
       }
     } catch (error) {
       console.error('Error adding to home screen:', error);
-      toast.error("Не удалось установить приложение на главный экран");
+      toast.error("Ошибка: " + (error instanceof Error ? error.message : String(error)));
     }
   };
 
