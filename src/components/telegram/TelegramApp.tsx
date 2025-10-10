@@ -79,6 +79,25 @@ export const TelegramApp = () => {
   const [galleryImages, setGalleryImages] = useState<GalleryImage[]>([]);
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
   const [currentRuleIndex, setCurrentRuleIndex] = useState(0);
+  const [isTelegramWebApp, setIsTelegramWebApp] = useState(false);
+
+  useEffect(() => {
+    // Проверяем доступность Telegram WebApp API
+    const checkTelegramWebApp = () => {
+      const isTg = !!(window.Telegram?.WebApp);
+      console.log('Telegram WebApp check:', {
+        exists: isTg,
+        version: window.Telegram?.WebApp?.version,
+        platform: window.Telegram?.WebApp?.platform,
+        hasAddToHomeScreen: typeof window.Telegram?.WebApp?.addToHomeScreen === 'function'
+      });
+      setIsTelegramWebApp(isTg);
+    };
+    
+    checkTelegramWebApp();
+    // Проверяем еще раз через небольшую задержку на случай асинхронной инициализации
+    setTimeout(checkTelegramWebApp, 100);
+  }, []);
 
   useEffect(() => {
     if (isAuthenticated && telegramUser) {
@@ -346,7 +365,7 @@ export const TelegramApp = () => {
               <div className="h-0.5 w-12 bg-gradient-to-r from-amber-400 to-amber-600 mt-1 group-hover:w-16 transition-all duration-500"></div>
             </div>
 
-            {window.Telegram?.WebApp && (
+            {isTelegramWebApp && (
               <Button
                 variant="ghost"
                 size="sm"
