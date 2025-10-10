@@ -31,40 +31,10 @@ export const TelegramAuth: React.FC<TelegramAuthProps> = ({ onAuthComplete }) =>
 
   const initializeTelegramAuth = async () => {
     try {
-      console.log('=== Starting Telegram Auth Initialization ===');
-      console.log('Current URL:', window.location.href);
-      
-      // ПЕРВЫМ делом проверяем существующую сессию Supabase
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      console.log('Existing session check:', session ? 'Found session' : 'No session');
-      
-      if (session) {
-        console.log('Found existing Supabase session, auto-login');
-        console.log('Session user:', session.user.email);
-        // Получаем данные пользователя из metadata
-        const userData = session.user.user_metadata;
-        const telegramUserData: TelegramUser = {
-          id: userData.telegram_id || 0,
-          firstName: userData.telegram_first_name || userData.full_name,
-          lastName: userData.telegram_last_name,
-          username: userData.telegram_username,
-          photoUrl: userData.telegram_photo_url,
-        };
-        setTelegramUser(telegramUserData);
-        setLoading(false);
-        onAuthComplete(telegramUserData);
-        return;
-      }
-
-      console.log('No existing session, proceeding with Telegram auth');
-
       // Проверяем режим эмуляции ПЕРЕД попыткой восстановления Telegram данных
       const isDevelopment = window.location.hostname === 'localhost' || 
                             window.location.hostname === '127.0.0.1' ||
                             window.location.hostname.includes('.lovableproject.com');
-      
-      console.log('Development mode:', isDevelopment);
       
       if (isDevelopment) {
         // Тестовый пользователь для разработки
@@ -82,11 +52,8 @@ export const TelegramAuth: React.FC<TelegramAuthProps> = ({ onAuthComplete }) =>
       }
       
       // Обычная авторизация через Telegram только если НЕ режим разработки
-      console.log('Attempting to restore Telegram initData');
       await initData.restore();
       const user = initData.user();
-      
-      console.log('Telegram user data:', user ? 'Found' : 'Not found');
       
       if (user) {
         const telegramUserData: TelegramUser = {
@@ -97,11 +64,9 @@ export const TelegramAuth: React.FC<TelegramAuthProps> = ({ onAuthComplete }) =>
           photoUrl: user.photo_url,
         };
         
-        console.log('Telegram user ID:', user.id);
         setTelegramUser(telegramUserData);
         await authenticateWithSupabase(telegramUserData);
       } else {
-        console.error('No Telegram user data available');
         setAuthError('Приложение должно быть открыто через Telegram бота');
       }
     } catch (error) {
@@ -150,11 +115,11 @@ export const TelegramAuth: React.FC<TelegramAuthProps> = ({ onAuthComplete }) =>
         return;
       }
 
-      if (data?.success && data?.login_url) {
-        console.log('Authentication successful, redirecting to login URL');
+      if (data?.success) {
+        console.log('Authentication successful');
         
-        // Перенаправляем на login_url для автоматического входа
-        window.location.href = data.login_url;
+        // Автоматически входим в приложение
+        onAuthComplete(telegramUserData);
         return;
       } else {
         console.error('Invalid response from auth function:', data);
