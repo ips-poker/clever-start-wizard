@@ -31,7 +31,28 @@ export const TelegramAuth: React.FC<TelegramAuthProps> = ({ onAuthComplete }) =>
 
   const initializeTelegramAuth = async () => {
     try {
-      // Проверяем режим эмуляции ПЕРЕД попыткой восстановления Telegram данных
+      // Сначала проверяем существующую сессию Supabase
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (session?.user) {
+        // Если есть активная сессия, извлекаем данные Telegram пользователя
+        const metadata = session.user.user_metadata;
+        const telegramUserData: TelegramUser = {
+          id: metadata.telegram_id,
+          firstName: metadata.telegram_first_name,
+          lastName: metadata.telegram_last_name,
+          username: metadata.telegram_username,
+          photoUrl: metadata.telegram_photo_url,
+        };
+        
+        console.log('Found existing session, auto-login');
+        setTelegramUser(telegramUserData);
+        setLoading(false);
+        onAuthComplete(telegramUserData);
+        return;
+      }
+      
+      // Если нет сессии, проверяем режим эмуляции
       const isDevelopment = window.location.hostname === 'localhost' || 
                             window.location.hostname === '127.0.0.1' ||
                             window.location.hostname.includes('.lovableproject.com');
@@ -47,7 +68,7 @@ export const TelegramAuth: React.FC<TelegramAuthProps> = ({ onAuthComplete }) =>
         };
         
         setTelegramUser(testUser);
-        await authenticateWithSupabase(testUser);
+        setLoading(false);
         return;
       }
       
@@ -65,7 +86,6 @@ export const TelegramAuth: React.FC<TelegramAuthProps> = ({ onAuthComplete }) =>
         };
         
         setTelegramUser(telegramUserData);
-        await authenticateWithSupabase(telegramUserData);
       } else {
         setAuthError('Приложение должно быть открыто через Telegram бота');
       }
@@ -80,16 +100,6 @@ export const TelegramAuth: React.FC<TelegramAuthProps> = ({ onAuthComplete }) =>
   const authenticateWithSupabase = async (telegramUserData: TelegramUser) => {
     try {
       setRegistering(true);
-      
-      // Проверяем, было ли ранее дано согласие
-      const consentKey = `telegram_consent_${telegramUserData.id}`;
-      const hasConsent = localStorage.getItem(consentKey) === 'true';
-      
-      if (!hasConsent) {
-        // Если согласия нет, просто устанавливаем пользователя и показываем форму согласия
-        setRegistering(false);
-        return;
-      }
       
       // Подготавливаем данные для Telegram авторизации через edge function
       const telegramAuthData = {
@@ -115,8 +125,24 @@ export const TelegramAuth: React.FC<TelegramAuthProps> = ({ onAuthComplete }) =>
         return;
       }
 
-      if (data?.success) {
-        console.log('Authentication successful');
+      if (data?.success && data?.access_token) {
+        console.log('Authentication successful, setting session');
+        
+        // Устанавливаем сессию в Supabase
+        const { error: sessionError } = await supabase.auth.setSession({
+          access_token: data.access_token,
+          refresh_token: data.refresh_token
+        });
+        
+        if (sessionError) {
+          console.error('Error setting session:', sessionError);
+          setAuthError('Ошибка установки сессии');
+          return;
+        }
+        
+        // Сохраняем согласие
+        const consentKey = `telegram_consent_${telegramUserData.id}`;
+        localStorage.setItem(consentKey, 'true');
         
         // Автоматически входим в приложение
         onAuthComplete(telegramUserData);
