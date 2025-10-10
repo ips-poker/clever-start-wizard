@@ -346,7 +346,7 @@ export const TelegramApp = () => {
               <div className="h-0.5 w-12 bg-gradient-to-r from-amber-400 to-amber-600 mt-1 group-hover:w-16 transition-all duration-500"></div>
             </div>
 
-            {window.Telegram?.WebApp && typeof window.Telegram.WebApp.addToHomeScreen === 'function' && (
+            {window.Telegram?.WebApp && (
               <Button
                 variant="ghost"
                 size="sm"
