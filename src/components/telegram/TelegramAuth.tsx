@@ -119,6 +119,8 @@ export const TelegramAuth: React.FC<TelegramAuthProps> = ({ onAuthComplete }) =>
         body: telegramAuthData
       });
 
+      console.log('Edge function response:', { data, error });
+
       if (error) {
         console.error('Telegram auth edge function error:', error);
         setAuthError('Ошибка авторизации через Telegram');

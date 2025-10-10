@@ -215,6 +215,22 @@ Deno.serve(async (req) => {
         }
       );
     }
+    
+    console.log('Session created successfully');
+    
+    // createSession возвращает { session, user }, не вложенный объект
+    const session = sessionData.session || sessionData;
+    
+    if (!session.access_token) {
+      console.error('Session missing access_token');
+      return new Response(
+        JSON.stringify({ error: 'Invalid session format' }),
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
 
     // Используем функцию для объединения игроков
     const telegramId = authData.id.toString();
@@ -279,9 +295,8 @@ Deno.serve(async (req) => {
       JSON.stringify({ 
         success: true,
         user: existingUser.user,
-        session: sessionData.session,
-        access_token: sessionData.session.access_token,
-        refresh_token: sessionData.session.refresh_token,
+        access_token: session.access_token,
+        refresh_token: session.refresh_token,
         player: player
       }),
       { 
