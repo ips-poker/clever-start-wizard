@@ -11,6 +11,7 @@ import { TelegramAuth } from './TelegramAuth';
 import { TelegramTournamentModal } from './TelegramTournamentModal';
 import { TelegramProfile } from './TelegramProfile';
 import { toast } from 'sonner';
+import { addToHomeScreen } from '@telegram-apps/sdk';
 import epcLogo from '@/assets/epc-logo.png';
 import mainPokerRoom from '@/assets/gallery/main-poker-room.jpg';
 import tournamentTable from '@/assets/gallery/tournament-table.jpg';
@@ -79,24 +80,23 @@ export const TelegramApp = () => {
   const [galleryImages, setGalleryImages] = useState<GalleryImage[]>([]);
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
   const [currentRuleIndex, setCurrentRuleIndex] = useState(0);
-  const [isTelegramWebApp, setIsTelegramWebApp] = useState(false);
+  const [canAddToHomeScreen, setCanAddToHomeScreen] = useState(false);
 
   useEffect(() => {
-    // Проверяем доступность Telegram WebApp API
-    const checkTelegramWebApp = () => {
-      const isTg = !!(window.Telegram?.WebApp);
-      console.log('Telegram WebApp check:', {
-        exists: isTg,
-        version: window.Telegram?.WebApp?.version,
-        platform: window.Telegram?.WebApp?.platform,
-        hasAddToHomeScreen: typeof window.Telegram?.WebApp?.addToHomeScreen === 'function'
+    // Проверяем доступность функции добавления на главный экран
+    const checkAddToHomeScreen = () => {
+      const isAvailable = addToHomeScreen.isAvailable();
+      console.log('Add to Home Screen check:', {
+        isAvailable,
+        telegramVersion: window.Telegram?.WebApp?.version,
+        platform: window.Telegram?.WebApp?.platform
       });
-      setIsTelegramWebApp(isTg);
+      setCanAddToHomeScreen(isAvailable);
     };
     
-    checkTelegramWebApp();
-    // Проверяем еще раз через небольшую задержку на случай асинхронной инициализации
-    setTimeout(checkTelegramWebApp, 100);
+    checkAddToHomeScreen();
+    // Проверяем еще раз через небольшую задержку
+    setTimeout(checkAddToHomeScreen, 200);
   }, []);
 
   useEffect(() => {
@@ -111,31 +111,13 @@ export const TelegramApp = () => {
     console.log('=== ADD TO HOME SCREEN CLICKED ===');
     
     try {
-      console.log('Window.Telegram exists:', !!window.Telegram);
-      console.log('Window.Telegram.WebApp exists:', !!window.Telegram?.WebApp);
-      
-      if (window.Telegram?.WebApp) {
-        const tg = window.Telegram.WebApp;
-        console.log('Telegram WebApp version:', tg.version);
-        console.log('Telegram WebApp platform:', tg.platform);
-        console.log('addToHomeScreen function type:', typeof tg.addToHomeScreen);
-        console.log('addToHomeScreen exists:', 'addToHomeScreen' in tg);
-        
-        // Проверяем все доступные методы
-        console.log('Available methods:', Object.keys(tg).filter(key => typeof tg[key] === 'function'));
-        
-        if (typeof tg.addToHomeScreen === 'function') {
-          console.log('Calling addToHomeScreen...');
-          tg.addToHomeScreen();
-          console.log('addToHomeScreen called successfully');
-          toast.success("Следуйте инструкциям для установки приложения на главный экран");
-        } else {
-          console.warn('addToHomeScreen is not available');
-          toast.error("Ваша версия Telegram не поддерживает установку на главный экран. Версия: " + tg.version);
-        }
+      if (addToHomeScreen.isAvailable()) {
+        console.log('Calling addToHomeScreen from @telegram-apps/sdk...');
+        addToHomeScreen();
+        toast.success("Приложение будет добавлено на главный экран");
       } else {
-        console.error('Telegram WebApp API is not available');
-        toast.error("Telegram WebApp API недоступен");
+        console.warn('addToHomeScreen is not available');
+        toast.error("Функция недоступна на вашем устройстве или версии Telegram");
       }
     } catch (error) {
       console.error('Error adding to home screen:', error);
@@ -365,7 +347,7 @@ export const TelegramApp = () => {
               <div className="h-0.5 w-12 bg-gradient-to-r from-amber-400 to-amber-600 mt-1 group-hover:w-16 transition-all duration-500"></div>
             </div>
 
-            {isTelegramWebApp && (
+            {canAddToHomeScreen && (
               <Button
                 variant="ghost"
                 size="sm"
