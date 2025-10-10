@@ -46,6 +46,7 @@ function App() {
             <Route path="/external-timer" element={<ExternalTimer />} />
             <Route path="/invitation/:id" element={<InvitationCard />} />
             <Route path="/telegram" element={<TelegramMiniApp />} />
+            <Route path="/telegram-mini-app" element={<TelegramMiniApp />} />
             <Route path="/terms" element={<TermsOfService />} />
             <Route path="/privacy" element={<Privacy />} />
             

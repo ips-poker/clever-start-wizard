@@ -81,6 +81,16 @@ export const TelegramAuth: React.FC<TelegramAuthProps> = ({ onAuthComplete }) =>
     try {
       setRegistering(true);
       
+      // Проверяем, было ли ранее дано согласие
+      const consentKey = `telegram_consent_${telegramUserData.id}`;
+      const hasConsent = localStorage.getItem(consentKey) === 'true';
+      
+      if (!hasConsent) {
+        // Если согласия нет, просто устанавливаем пользователя и показываем форму согласия
+        setRegistering(false);
+        return;
+      }
+      
       // Подготавливаем данные для Telegram авторизации через edge function
       const telegramAuthData = {
         id: telegramUserData.id,
@@ -108,7 +118,7 @@ export const TelegramAuth: React.FC<TelegramAuthProps> = ({ onAuthComplete }) =>
       if (data?.success) {
         console.log('Authentication successful');
         
-        // Остаемся в Telegram приложении вместо перенаправления
+        // Автоматически входим в приложение
         onAuthComplete(telegramUserData);
         return;
       } else {
@@ -122,6 +132,17 @@ export const TelegramAuth: React.FC<TelegramAuthProps> = ({ onAuthComplete }) =>
     } finally {
       setRegistering(false);
     }
+  };
+
+  const handleLogin = async () => {
+    if (!telegramUser || !privacyConsent) return;
+    
+    // Сохраняем согласие
+    const consentKey = `telegram_consent_${telegramUser.id}`;
+    localStorage.setItem(consentKey, 'true');
+    
+    // Выполняем авторизацию
+    await authenticateWithSupabase(telegramUser);
   };
 
   const retryAuth = () => {
@@ -201,7 +222,7 @@ export const TelegramAuth: React.FC<TelegramAuthProps> = ({ onAuthComplete }) =>
           />
           
           <Button 
-            onClick={() => telegramUser && onAuthComplete(telegramUser)}
+            onClick={handleLogin}
             disabled={registering || !privacyConsent}
             className="w-full bg-amber-600 hover:bg-amber-700 text-white border-0"
           >
