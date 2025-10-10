@@ -346,17 +346,20 @@ export const TelegramApp = () => {
               <div className="h-0.5 w-12 bg-gradient-to-r from-amber-400 to-amber-600 mt-1 group-hover:w-16 transition-all duration-500"></div>
             </div>
 
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleAddToHomeScreen();
-              }}
-              className="text-white hover:text-amber-400 hover:bg-white/10 p-2 transition-all duration-300 rounded-lg"
-            >
-              <Download className="h-5 w-5" />
-            </Button>
+            {window.Telegram?.WebApp && typeof window.Telegram.WebApp.addToHomeScreen === 'function' && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleAddToHomeScreen();
+                }}
+                className="text-white hover:text-amber-400 hover:bg-white/10 p-2 transition-all duration-300 rounded-lg"
+                title="Установить на главный экран"
+              >
+                <Download className="h-5 w-5" />
+              </Button>
+            )}
           </div>
           
             <div className="bg-gradient-to-r from-white/10 via-white/15 to-white/10 rounded-lg p-3 backdrop-blur-md border border-white/20 group-hover:border-amber-400/30 transition-all duration-300">
