@@ -200,31 +200,25 @@ Deno.serve(async (req) => {
       console.log('Successfully updated profile with Telegram data');
     }
 
-    // Создаем сессию напрямую через admin API
-    const { data: sessionData, error: sessionError } = await supabase.auth.admin.createSession({
-      user_id: existingUser.user.id,
+    // Создаем сессию для пользователя
+    // Определяем правильный URL для редиректа
+    const origin = req.headers.get('origin') || req.headers.get('referer') || 'https://a391e581-510e-4cfc-905a-60ff6b51b1e6.lovableproject.com';
+    const redirectUrl = origin.includes('localhost') ? 'https://a391e581-510e-4cfc-905a-60ff6b51b1e6.lovableproject.com/' : `${origin}/`;
+    
+    console.log('Redirect URL will be:', redirectUrl);
+    
+    const { data: sessionData, error: sessionError } = await supabase.auth.admin.generateLink({
+      type: 'magiclink',
+      email: telegramEmail,
+      options: {
+        redirectTo: redirectUrl
+      }
     });
 
     if (sessionError || !sessionData) {
       console.error('Error generating session:', sessionError);
       return new Response(
         JSON.stringify({ error: 'Failed to create session' }),
-        { 
-          status: 500, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
-    }
-    
-    console.log('Session created successfully');
-    
-    // createSession возвращает { session, user }, не вложенный объект
-    const session = sessionData.session || sessionData;
-    
-    if (!session.access_token) {
-      console.error('Session missing access_token');
-      return new Response(
-        JSON.stringify({ error: 'Invalid session format' }),
         { 
           status: 500, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -295,8 +289,7 @@ Deno.serve(async (req) => {
       JSON.stringify({ 
         success: true,
         user: existingUser.user,
-        access_token: session.access_token,
-        refresh_token: session.refresh_token,
+        login_url: sessionData.properties.action_link,
         player: player
       }),
       { 

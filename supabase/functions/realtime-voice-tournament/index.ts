@@ -32,18 +32,9 @@ serve(async (req) => {
     socket.onopen = () => {
       console.log("Client WebSocket connected");
       
-      // Connect to OpenAI Realtime API with auth header
+      // Connect to OpenAI Realtime API
       const openaiUrl = "wss://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview-2024-12-17";
-      const headers = {
-        "Authorization": `Bearer ${openAIApiKey}`,
-        "OpenAI-Beta": "realtime=v1"
-      };
-      
-      // Note: WebSocket constructor doesn't support custom headers in browser,
-      // but in Deno we need to pass auth via query params or use a different approach
-      openaiSocket = new WebSocket(openaiUrl, {
-        headers: headers
-      });
+      openaiSocket = new WebSocket(openaiUrl);
 
       openaiSocket.onopen = () => {
         console.log("Connected to OpenAI Realtime API");
@@ -537,7 +528,7 @@ async function handleTournamentFunction(functionName: string, args: any, callId:
         if (playersError) {
           result = { success: false, message: 'Ошибка получения списка игроков' };
         } else {
-          const playerNames = playersData?.map((p: any) => p.players?.name || 'Неизвестный').join(', ') || 'Нет игроков';
+          const playerNames = playersData?.map(p => p.players?.[0]?.name || 'Неизвестный').join(', ') || 'Нет игроков';
           result = { 
             success: true, 
             message: `Зарегистрированные игроки: ${playerNames}` 
@@ -682,21 +673,15 @@ async function handleTournamentFunction(functionName: string, args: any, callId:
         break;
         
       case 'make_announcement':
-        // Проверяем существование таблицы перед вставкой
-        try {
-          await supabase
-            .from('voice_announcements')
-            .insert([{
-              tournament_id: args.tournament_id,
-              message: args.message,
-              announcement_type: 'voice',
-              auto_generated: false
-            }]);
-          result = { success: true, message: `Объявление отправлено: "${args.message}"` };
-        } catch (err) {
-          console.log('Voice announcements table does not exist, skipping insert');
-          result = { success: true, message: `Объявление: "${args.message}"` };
-        }
+        await supabase
+          .from('voice_announcements')
+          .insert([{
+            tournament_id: args.tournament_id,
+            message: args.message,
+            announcement_type: 'voice',
+            auto_generated: false
+          }]);
+        result = { success: true, message: `Объявление отправлено: "${args.message}"` };
         break;
         
       case 'show_payout_structure':
@@ -725,16 +710,12 @@ async function handleTournamentFunction(functionName: string, args: any, callId:
         
       case 'change_volume':
         // Сохранить настройки громкости пользователя
-        try {
-          await supabase
-            .from('voice_settings')
-            .upsert([{
-              user_id: 'current_user', // Здесь должен быть реальный user_id
-              volume_level: args.volume
-            }]);
-        } catch (err) {
-          console.log('Voice settings table does not exist, skipping insert');
-        }
+        await supabase
+          .from('voice_settings')
+          .upsert([{
+            user_id: 'current_user', // Здесь должен быть реальный user_id
+            volume_level: args.volume
+          }]);
         result = { success: true, message: `Громкость изменена на ${args.volume}%` };
         break;
         
@@ -749,21 +730,17 @@ async function handleTournamentFunction(functionName: string, args: any, callId:
     }
     
     // Логирование команды
-    try {
-      await supabase
-        .from('voice_commands_log')
-        .insert([{
-          user_id: 'current_user', // Здесь должен быть реальный user_id
-          tournament_id: args.tournament_id || null,
-          command: functionName,
-          parameters: args,
-          result: result,
-          success: result.success,
-          execution_time_ms: 0 // Время выполнения
-        }]);
-    } catch (err) {
-      console.log('Voice commands log table does not exist, skipping log');
-    }
+    await supabase
+      .from('voice_commands_log')
+      .insert([{
+        user_id: 'current_user', // Здесь должен быть реальный user_id
+        tournament_id: args.tournament_id || null,
+        command: functionName,
+        parameters: args,
+        result: result,
+        success: result.success,
+        execution_time_ms: Date.now() - Date.now() // Здесь должно быть реальное время выполнения
+      }]);
       
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
