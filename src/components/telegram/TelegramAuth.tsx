@@ -31,6 +31,26 @@ export const TelegramAuth: React.FC<TelegramAuthProps> = ({ onAuthComplete }) =>
 
   const initializeTelegramAuth = async () => {
     try {
+      // ПЕРВЫМ делом проверяем существующую сессию Supabase
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (session) {
+        console.log('Found existing Supabase session, auto-login');
+        // Получаем данные пользователя из metadata
+        const userData = session.user.user_metadata;
+        const telegramUserData: TelegramUser = {
+          id: userData.telegram_id || 0,
+          firstName: userData.telegram_first_name || userData.full_name,
+          lastName: userData.telegram_last_name,
+          username: userData.telegram_username,
+          photoUrl: userData.telegram_photo_url,
+        };
+        setTelegramUser(telegramUserData);
+        setLoading(false);
+        onAuthComplete(telegramUserData);
+        return;
+      }
+
       // Проверяем режим эмуляции ПЕРЕД попыткой восстановления Telegram данных
       const isDevelopment = window.location.hostname === 'localhost' || 
                             window.location.hostname === '127.0.0.1' ||
@@ -115,8 +135,22 @@ export const TelegramAuth: React.FC<TelegramAuthProps> = ({ onAuthComplete }) =>
         return;
       }
 
-      if (data?.success) {
-        console.log('Authentication successful');
+      if (data?.success && data?.access_token && data?.refresh_token) {
+        console.log('Authentication successful, setting session');
+        
+        // Устанавливаем сессию в Supabase клиенте
+        const { error: sessionError } = await supabase.auth.setSession({
+          access_token: data.access_token,
+          refresh_token: data.refresh_token
+        });
+
+        if (sessionError) {
+          console.error('Error setting session:', sessionError);
+          setAuthError('Ошибка установки сессии');
+          return;
+        }
+
+        console.log('Session established successfully');
         
         // Автоматически входим в приложение
         onAuthComplete(telegramUserData);
