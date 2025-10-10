@@ -85,18 +85,22 @@ export const TelegramApp = () => {
   useEffect(() => {
     // Проверяем доступность функции добавления на главный экран
     const checkAddToHomeScreen = () => {
-      const isAvailable = addToHomeScreen.isAvailable();
-      console.log('Add to Home Screen check:', {
-        isAvailable,
-        telegramVersion: window.Telegram?.WebApp?.version,
-        platform: window.Telegram?.WebApp?.platform
-      });
-      setCanAddToHomeScreen(isAvailable);
+      try {
+        const isAvailable = addToHomeScreen.isAvailable();
+        console.log('Add to Home Screen check:', {
+          isAvailable,
+          telegramVersion: window.Telegram?.WebApp?.version,
+          platform: window.Telegram?.WebApp?.platform
+        });
+        setCanAddToHomeScreen(isAvailable);
+      } catch (error) {
+        console.error('Error checking addToHomeScreen availability:', error);
+        setCanAddToHomeScreen(false);
+      }
     };
     
-    checkAddToHomeScreen();
-    // Проверяем еще раз через небольшую задержку
-    setTimeout(checkAddToHomeScreen, 200);
+    // Проверяем с задержкой после инициализации SDK
+    setTimeout(checkAddToHomeScreen, 500);
   }, []);
 
   useEffect(() => {
