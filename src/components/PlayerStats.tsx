@@ -185,19 +185,16 @@ export function PlayerStats() {
                       </div>
                       
                       {/* Avatar */}
-                      {player.avatar_url ? (
-                        <img 
-                          src={player.avatar_url} 
+                      <Avatar className="h-12 w-12 border-2 border-amber-500/20">
+                        <AvatarImage 
+                          src={player.avatar_url || undefined} 
                           alt={player.name}
-                          className="w-12 h-12 rounded-xl border border-amber-500/30 object-cover"
+                          className="object-cover"
                         />
-                      ) : (
-                        <Avatar className="h-12 w-12 border-2 border-amber-500/20">
-                          <AvatarFallback className="text-sm bg-gradient-to-br from-amber-500/20 to-amber-600/20 text-white">
-                            {player.name.charAt(0).toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
-                      )}
+                        <AvatarFallback className="text-sm bg-gradient-to-br from-amber-500/20 to-amber-600/20 text-white">
+                          {player.name.charAt(0).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
                       
                       {/* Player Info */}
                       <div>
