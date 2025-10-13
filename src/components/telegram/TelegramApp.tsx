@@ -246,6 +246,8 @@ export const TelegramApp = () => {
     try {
       const telegramId = telegramUser.id.toString();
       
+      console.log('Fetching user stats for Telegram ID:', telegramId);
+      
       // Сначала пытаемся найти игрока по telegram ID
       let { data, error } = await supabase
         .from('players')
@@ -258,9 +260,23 @@ export const TelegramApp = () => {
         return;
       }
       
+      console.log('Found player:', data ? { 
+        id: data.id, 
+        name: data.name, 
+        avatar_url: data.avatar_url || 'NO AVATAR',
+        hasAvatar: !!data.avatar_url 
+      } : 'NOT FOUND');
+      
       // Если игрок не найден, создаем нового
       if (!data) {
         const playerName = telegramUser.firstName || telegramUser.username || `Player_${telegramId}`;
+        
+        console.log('Creating new player with Telegram data:', {
+          name: playerName,
+          telegram: telegramId,
+          avatar_url: telegramUser.photoUrl || 'NO PHOTO',
+          hasPhoto: !!telegramUser.photoUrl
+        });
         
         const { data: newPlayer, error: createError } = await supabase
           .from('players')
@@ -270,7 +286,7 @@ export const TelegramApp = () => {
             elo_rating: 1000,
             games_played: 0,
             wins: 0,
-            avatar_url: telegramUser.photoUrl
+            avatar_url: telegramUser.photoUrl || null
           })
           .select()
           .single();
@@ -280,6 +296,12 @@ export const TelegramApp = () => {
           toast.error('Не удалось создать профиль игрока');
           return;
         }
+        
+        console.log('Player created successfully:', {
+          id: newPlayer.id,
+          name: newPlayer.name,
+          avatar_url: newPlayer.avatar_url || 'NO AVATAR'
+        });
         
         data = newPlayer;
         toast.success('Профиль игрока создан!');

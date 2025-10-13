@@ -83,6 +83,8 @@ export default function Profile() {
     if (!user) return;
 
     try {
+      console.log('Loading player data for user:', user.id);
+      
       // Сначала ищем игрока по user_id, затем по email
       let data, error;
       
@@ -94,6 +96,8 @@ export default function Profile() {
         .single();
 
       if (userIdResult.error && userIdResult.error.code === 'PGRST116') {
+        console.log('Player not found by user_id, trying email:', user.email);
+        
         // Если не найден по user_id, ищем по email
         const emailResult = await supabase
           .from('players')
@@ -109,8 +113,18 @@ export default function Profile() {
       }
 
       if (error && error.code === 'PGRST116') {
+        console.log('Player does not exist, creating new one');
+        
         // Player doesn't exist, create one
         const playerName = userProfile?.full_name || user.email?.split('@')[0] || 'Player';
+        
+        console.log('Creating player with data:', {
+          name: playerName,
+          email: user.email,
+          user_id: user.id,
+          avatar_url: userProfile?.avatar_url || 'NO AVATAR',
+          hasAvatar: !!userProfile?.avatar_url
+        });
         
         const { data: newPlayer, error: createError } = await supabase
           .from('players')
@@ -119,7 +133,7 @@ export default function Profile() {
             email: user.email,
             elo_rating: 100,
             user_id: user.id,
-            avatar_url: userProfile?.avatar_url
+            avatar_url: userProfile?.avatar_url || null
           }])
           .select()
           .single();
@@ -128,10 +142,23 @@ export default function Profile() {
           console.error('Error creating player:', createError);
           return;
         }
+        
+        console.log('Player created successfully:', {
+          id: newPlayer.id,
+          name: newPlayer.name,
+          avatar_url: newPlayer.avatar_url || 'NO AVATAR'
+        });
+        
         setPlayer(newPlayer);
       } else if (error) {
         console.error('Error loading player:', error);
       } else {
+        console.log('Player loaded successfully:', {
+          id: data.id,
+          name: data.name,
+          avatar_url: data.avatar_url || 'NO AVATAR',
+          hasAvatar: !!data.avatar_url
+        });
         setPlayer(data);
       }
     } catch (error) {

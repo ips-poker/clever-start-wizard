@@ -166,7 +166,9 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate }: Tele
         telegram: telegramId,
         elo_rating: 1000,
         games_played: 0,
-        wins: 0
+        wins: 0,
+        avatar_url: telegramUser.photoUrl || 'NO PHOTO',
+        hasPhoto: !!telegramUser.photoUrl
       });
       
       // Создаем нового игрока (без user_id для телеграм пользователей)
@@ -178,7 +180,7 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate }: Tele
           elo_rating: 1000,
           games_played: 0,
           wins: 0,
-          avatar_url: telegramUser.photoUrl
+          avatar_url: telegramUser.photoUrl || null
           // user_id не устанавливается для телеграм пользователей
         })
         .select()

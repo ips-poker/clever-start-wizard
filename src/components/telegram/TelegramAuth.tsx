@@ -56,6 +56,15 @@ export const TelegramAuth: React.FC<TelegramAuthProps> = ({ onAuthComplete }) =>
       const user = initData.user();
       
       if (user) {
+        console.log('Telegram user data from SDK:', {
+          id: user.id,
+          firstName: user.first_name,
+          lastName: user.last_name,
+          username: user.username,
+          photoUrl: user.photo_url,
+          hasPhoto: !!user.photo_url
+        });
+        
         const telegramUserData: TelegramUser = {
           id: user.id,
           firstName: user.first_name,
@@ -103,6 +112,14 @@ export const TelegramAuth: React.FC<TelegramAuthProps> = ({ onAuthComplete }) =>
       };
 
       console.log('Authenticating with Telegram data:', telegramAuthData);
+
+      // Показываем предупреждение, если нет фото
+      if (!telegramUserData.photoUrl) {
+        console.warn('⚠️ Telegram не предоставил фотографию профиля. Возможные причины:',
+          '\n- Настройки приватности в Telegram',
+          '\n- Фото профиля не установлено',
+          '\n- Версия Telegram не поддерживает передачу фото');
+      }
 
       // Используем edge function для полной авторизации
       const { data, error } = await supabase.functions.invoke('telegram-auth', {

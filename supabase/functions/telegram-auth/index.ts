@@ -66,7 +66,12 @@ Deno.serve(async (req) => {
     }
 
     const authData: TelegramAuthData = await req.json();
-    console.log('Received Telegram auth data:', { ...authData, hash: '[HIDDEN]' });
+    console.log('Received Telegram auth data:', { 
+      ...authData, 
+      hash: '[HIDDEN]',
+      photo_url: authData.photo_url || 'NOT PROVIDED',
+      hasPhoto: !!authData.photo_url
+    });
 
     // Проверяем подлинность данных (в продакшене должна быть реальная проверка)
     if (!verifyTelegramAuth(authData, telegramBotToken)) {
@@ -147,13 +152,16 @@ Deno.serve(async (req) => {
           user_id: newUser.user.id,
           email: telegramEmail,
           full_name: displayName,
-          avatar_url: authData.photo_url
+          avatar_url: authData.photo_url || null
         });
 
       if (profileError) {
         console.error('Error creating profile:', profileError);
       } else {
-        console.log('Successfully created profile with Telegram data');
+        console.log('Successfully created profile with Telegram data', {
+          avatar_url: authData.photo_url || 'NO PHOTO',
+          full_name: displayName
+        });
       }
     } else {
       // Обновляем метаданные существующего пользователя
@@ -189,7 +197,7 @@ Deno.serve(async (req) => {
         user_id: existingUser.user.id,
         email: telegramEmail,
         full_name: displayName,
-        avatar_url: authData.photo_url
+        avatar_url: authData.photo_url || null
       }, {
         onConflict: 'user_id'
       });
@@ -197,7 +205,10 @@ Deno.serve(async (req) => {
     if (profileError) {
       console.error('Error updating profile:', profileError);
     } else {
-      console.log('Successfully updated profile with Telegram data');
+      console.log('Successfully updated profile with Telegram data', {
+        avatar_url: authData.photo_url || 'NO PHOTO',
+        full_name: displayName
+      });
     }
 
     // Создаем сессию для пользователя
@@ -271,7 +282,7 @@ Deno.serve(async (req) => {
           elo_rating: 100,
           games_played: 0,
           wins: 0,
-          avatar_url: authData.photo_url
+          avatar_url: authData.photo_url || null
         })
         .select()
         .single();
@@ -279,6 +290,11 @@ Deno.serve(async (req) => {
       if (createPlayerError) {
         console.error('Error creating player:', createPlayerError);
       } else {
+        console.log('Successfully created player with Telegram data', {
+          player_name: playerName,
+          avatar_url: authData.photo_url || 'NO PHOTO',
+          telegram_id: telegramId
+        });
         player = newPlayer;
       }
     }
