@@ -232,9 +232,8 @@ Deno.serve(async (req) => {
     }
 
     // Создаем сессию для пользователя
-    // Определяем правильный URL для редиректа
-    const origin = req.headers.get('origin') || req.headers.get('referer') || 'https://a391e581-510e-4cfc-905a-60ff6b51b1e6.lovableproject.com';
-    const redirectUrl = origin.includes('localhost') ? 'https://a391e581-510e-4cfc-905a-60ff6b51b1e6.lovableproject.com/' : `${origin}/`;
+    // Используем основной домен для редиректа
+    const redirectUrl = 'https://epc-poker.ru/';
     
     console.log('Redirect URL will be:', redirectUrl);
     
