@@ -26,6 +26,14 @@ import pokerAvatar13 from "@/assets/avatars/poker-avatar-13.png";
 import pokerAvatar14 from "@/assets/avatars/poker-avatar-14.png";
 import pokerAvatar15 from "@/assets/avatars/poker-avatar-15.png";
 import pokerAvatar16 from "@/assets/avatars/poker-avatar-16.png";
+import pokerAvatar17 from "@/assets/avatars/poker-avatar-17.png";
+import pokerAvatar18 from "@/assets/avatars/poker-avatar-18.png";
+import pokerAvatar19 from "@/assets/avatars/poker-avatar-19.png";
+import pokerAvatar20 from "@/assets/avatars/poker-avatar-20.png";
+import pokerAvatar21 from "@/assets/avatars/poker-avatar-21.png";
+import pokerAvatar22 from "@/assets/avatars/poker-avatar-22.png";
+import pokerAvatar23 from "@/assets/avatars/poker-avatar-23.png";
+import pokerAvatar24 from "@/assets/avatars/poker-avatar-24.png";
 
 interface AvatarSelectorProps {
   onSelect: (avatarUrl: string) => void;
@@ -34,22 +42,30 @@ interface AvatarSelectorProps {
 }
 
 const presetAvatars = [
-  { id: "1", url: pokerAvatar1, name: "Профессионал" },
-  { id: "2", url: pokerAvatar2, name: "Леди удачи" },
-  { id: "3", url: pokerAvatar3, name: "Борода" },
-  { id: "4", url: pokerAvatar4, name: "Мистер X" },
-  { id: "5", url: pokerAvatar5, name: "Джентльмен" },
-  { id: "6", url: pokerAvatar6, name: "Новичок" },
-  { id: "7", url: pokerAvatar7, name: "Акула" },
-  { id: "8", url: pokerAvatar8, name: "Лев" },
-  { id: "9", url: pokerAvatar9, name: "Тигр" },
-  { id: "10", url: pokerAvatar10, name: "Рыбка" },
-  { id: "11", url: pokerAvatar11, name: "Босс" },
-  { id: "12", url: pokerAvatar12, name: "Дама" },
-  { id: "13", url: pokerAvatar13, name: "Бульдог" },
-  { id: "14", url: pokerAvatar14, name: "Лис" },
-  { id: "15", url: pokerAvatar15, name: "Сова" },
-  { id: "16", url: pokerAvatar16, name: "Енот" },
+  { id: "1", url: pokerAvatar1 },
+  { id: "2", url: pokerAvatar2 },
+  { id: "3", url: pokerAvatar3 },
+  { id: "4", url: pokerAvatar4 },
+  { id: "5", url: pokerAvatar5 },
+  { id: "6", url: pokerAvatar6 },
+  { id: "7", url: pokerAvatar7 },
+  { id: "8", url: pokerAvatar8 },
+  { id: "9", url: pokerAvatar9 },
+  { id: "10", url: pokerAvatar10 },
+  { id: "11", url: pokerAvatar11 },
+  { id: "12", url: pokerAvatar12 },
+  { id: "13", url: pokerAvatar13 },
+  { id: "14", url: pokerAvatar14 },
+  { id: "15", url: pokerAvatar15 },
+  { id: "16", url: pokerAvatar16 },
+  { id: "17", url: pokerAvatar17 },
+  { id: "18", url: pokerAvatar18 },
+  { id: "19", url: pokerAvatar19 },
+  { id: "20", url: pokerAvatar20 },
+  { id: "21", url: pokerAvatar21 },
+  { id: "22", url: pokerAvatar22 },
+  { id: "23", url: pokerAvatar23 },
+  { id: "24", url: pokerAvatar24 },
 ];
 
 export function AvatarSelector({ onSelect, onClose, playerId }: AvatarSelectorProps) {
@@ -241,10 +257,9 @@ export function AvatarSelector({ onSelect, onClose, playerId }: AvatarSelectorPr
                 >
                   <img
                     src={avatar.url}
-                    alt={avatar.name}
+                    alt="Poker avatar"
                     className="w-full aspect-square rounded-lg object-cover"
                   />
-                  <p className="text-center text-sm font-medium mt-2">{avatar.name}</p>
                 </div>
               ))}
             </div>

@@ -370,8 +370,8 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate }: Tele
   const getRankTitle = (rating: number) => {
     if (rating >= 1800) return "Мастер";
     if (rating >= 1600) return "Эксперт";
-    if (rating >= 1400) return "Продвинутый";
-    if (rating >= 1200) return "Любитель";
+    if (rating >= 1400) return "Про";
+    if (rating >= 1200) return "Игрок";
     return "Новичок";
   };
 
