@@ -60,7 +60,7 @@ export function AvatarSelector({ onSelect, onClose, playerId }: AvatarSelectorPr
   // Используем playerId если передан (для Telegram), иначе user?.id (для веб)
   const uploaderId = playerId || user?.id;
 
-  const compressImage = async (file: File): Promise<File> => {
+  const compressImage = async (file: File, targetSizeKB: number = 500): Promise<File> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.readAsDataURL(file);
@@ -92,6 +92,18 @@ export function AvatarSelector({ onSelect, onClose, playerId }: AvatarSelectorPr
           canvas.height = height;
           ctx?.drawImage(img, 0, 0, width, height);
           
+          // Определяем качество в зависимости от размера исходного файла
+          const fileSizeMB = file.size / (1024 * 1024);
+          let quality = 0.85; // По умолчанию хорошее качество
+          
+          if (fileSizeMB > 10) {
+            quality = 0.6; // Очень большие файлы (>10 МБ) - агрессивное сжатие
+          } else if (fileSizeMB > 5) {
+            quality = 0.7; // Большие файлы (>5 МБ) - среднее сжатие
+          } else if (fileSizeMB > 2) {
+            quality = 0.75; // Средние файлы (>2 МБ) - легкое сжатие
+          }
+          
           canvas.toBlob(
             (blob) => {
               if (blob) {
@@ -99,13 +111,19 @@ export function AvatarSelector({ onSelect, onClose, playerId }: AvatarSelectorPr
                   type: 'image/jpeg',
                   lastModified: Date.now(),
                 });
+                console.log('Image compressed:', {
+                  originalSize: `${(file.size / (1024 * 1024)).toFixed(2)} MB`,
+                  compressedSize: `${(blob.size / 1024).toFixed(2)} KB`,
+                  quality: quality,
+                  reduction: `${(((file.size - blob.size) / file.size) * 100).toFixed(1)}%`
+                });
                 resolve(compressedFile);
               } else {
                 reject(new Error('Compression failed'));
               }
             },
             'image/jpeg',
-            0.85
+            quality
           );
         };
         img.onerror = reject;
@@ -137,12 +155,12 @@ export function AvatarSelector({ onSelect, onClose, playerId }: AvatarSelectorPr
         return;
       }
 
-      // Compress image if larger than 500KB
-      if (file.size > 500 * 1024) {
-        console.log('Compressing image, original size:', file.size);
+      // Compress image if larger than 1MB (всегда сжимаем большие файлы)
+      if (file.size > 1024 * 1024) {
+        console.log('Compressing image, original size:', `${(file.size / (1024 * 1024)).toFixed(2)} MB`);
         toast.info("Сжимаем изображение...");
         file = await compressImage(file);
-        console.log('Image compressed, new size:', file.size);
+        console.log('Image compressed, new size:', `${(file.size / 1024).toFixed(2)} KB`);
       }
 
       if (!uploaderId) {
@@ -245,7 +263,7 @@ export function AvatarSelector({ onSelect, onClose, playerId }: AvatarSelectorPr
                   className="mt-2"
                 />
                 <p className="text-xs text-muted-foreground mt-1">
-                  Поддерживаются форматы: JPG, PNG, GIF. Большие изображения автоматически сжимаются.
+                  Поддерживаются форматы: JPG, PNG, GIF. Файлы более 1 МБ автоматически сжимаются до оптимального размера.
                 </p>
               </div>
 

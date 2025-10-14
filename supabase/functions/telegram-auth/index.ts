@@ -188,26 +188,46 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Обновляем/создаем профиль пользователя с данными из Telegram
+    // Проверяем существующий профиль и НЕ перезаписываем данные при повторном входе
+    const { data: existingProfile } = await supabase
+      .from('profiles')
+      .select('avatar_url, full_name')
+      .eq('user_id', existingUser.user.id)
+      .maybeSingle();
+
     const displayName = authData.username || fullName || `User_${authData.id}`;
     
+    // Если профиль существует и уже имеет данные, НЕ перезаписываем их
+    const shouldUpdateAvatar = !existingProfile || !existingProfile.avatar_url;
+    const shouldUpdateName = !existingProfile || !existingProfile.full_name;
+
+    const profileUpdateData: any = {
+      user_id: existingUser.user.id,
+      email: telegramEmail,
+    };
+
+    // Обновляем только если данных еще нет
+    if (shouldUpdateAvatar) {
+      profileUpdateData.avatar_url = authData.photo_url || null;
+    }
+    if (shouldUpdateName) {
+      profileUpdateData.full_name = displayName;
+    }
+
     const { error: profileError } = await supabase
       .from('profiles')
-      .upsert({
-        user_id: existingUser.user.id,
-        email: telegramEmail,
-        full_name: displayName,
-        avatar_url: authData.photo_url || null
-      }, {
+      .upsert(profileUpdateData, {
         onConflict: 'user_id'
       });
 
     if (profileError) {
       console.error('Error updating profile:', profileError);
     } else {
-      console.log('Successfully updated profile with Telegram data', {
-        avatar_url: authData.photo_url || 'NO PHOTO',
-        full_name: displayName
+      console.log('Successfully updated profile', {
+        avatar_updated: shouldUpdateAvatar,
+        name_updated: shouldUpdateName,
+        avatar_url: shouldUpdateAvatar ? (authData.photo_url || 'NO PHOTO') : 'KEPT EXISTING',
+        full_name: shouldUpdateName ? displayName : 'KEPT EXISTING'
       });
     }
 
@@ -268,34 +288,52 @@ Deno.serve(async (req) => {
       console.error('Error in merge process:', error);
     }
 
-    // Если объединение не удалось или игрока нет, создаем нового
+    // Если объединение не удалось или игрока нет, проверяем существующего или создаем нового
     if (!player) {
-      const playerName = authData.username || fullName || `Player_${telegramId}`;
-      
-      const { data: newPlayer, error: createPlayerError } = await supabase
+      // Ищем существующего игрока по telegram ID
+      const { data: existingPlayerByTelegram } = await supabase
         .from('players')
-        .insert({
-          name: playerName,
-          telegram: telegramId,
-          user_id: existingUser.user?.id,
-          email: telegramEmail,
-          elo_rating: 100,
-          games_played: 0,
-          wins: 0,
-          avatar_url: authData.photo_url || null
-        })
-        .select()
-        .single();
+        .select('*')
+        .eq('telegram', telegramId)
+        .maybeSingle();
 
-      if (createPlayerError) {
-        console.error('Error creating player:', createPlayerError);
-      } else {
-        console.log('Successfully created player with Telegram data', {
-          player_name: playerName,
-          avatar_url: authData.photo_url || 'NO PHOTO',
-          telegram_id: telegramId
+      if (existingPlayerByTelegram) {
+        // Игрок существует, НЕ перезаписываем его данные
+        console.log('Found existing player by Telegram ID, keeping existing data', {
+          player_id: existingPlayerByTelegram.id,
+          name: existingPlayerByTelegram.name,
+          avatar_url: existingPlayerByTelegram.avatar_url || 'NO AVATAR'
         });
-        player = newPlayer;
+        player = existingPlayerByTelegram;
+      } else {
+        // Создаем нового игрока только если его нет
+        const playerName = authData.username || fullName || `Player_${telegramId}`;
+        
+        const { data: newPlayer, error: createPlayerError } = await supabase
+          .from('players')
+          .insert({
+            name: playerName,
+            telegram: telegramId,
+            user_id: existingUser.user?.id,
+            email: telegramEmail,
+            elo_rating: 100,
+            games_played: 0,
+            wins: 0,
+            avatar_url: authData.photo_url || null
+          })
+          .select()
+          .single();
+
+        if (createPlayerError) {
+          console.error('Error creating player:', createPlayerError);
+        } else {
+          console.log('Successfully created player with Telegram data', {
+            player_name: playerName,
+            avatar_url: authData.photo_url || 'NO PHOTO',
+            telegram_id: telegramId
+          });
+          player = newPlayer;
+        }
       }
     }
 
