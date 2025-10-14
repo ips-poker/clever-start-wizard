@@ -137,18 +137,11 @@ Deno.serve(async (req) => {
           } else if (authResult && authResult.success) {
             console.log('Auth successful, login URL:', authResult.login_url);
             
-            // Отправляем ссылку для авторизации
+            // Отправляем прямую ссылку для авторизации (не через web_app!)
             const successMessage: TelegramMessage = {
               chat_id: chatId!,
-              text: `✅ Авторизация прошла успешно!\n\n🔗 Нажмите кнопку ниже для входа на сайт:`,
-              reply_markup: {
-                inline_keyboard: [[
-                  {
-                    text: '🌐 Перейти на сайт',
-                    web_app: { url: authResult.login_url }
-                  }
-                ]]
-              }
+              text: `✅ Авторизация прошла успешно!\n\n🔗 Перейдите по ссылке для входа на сайт:\n\n${authResult.login_url}\n\n⚠️ Ссылка действительна 60 секунд`,
+              parse_mode: 'Markdown'
             };
             
             await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
