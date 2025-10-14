@@ -231,10 +231,19 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Создаем сессию для пользователя с токенами доступа
+    // Создаем сессию для пользователя
+    // Определяем правильный URL для редиректа
+    const origin = req.headers.get('origin') || req.headers.get('referer') || 'https://a391e581-510e-4cfc-905a-60ff6b51b1e6.lovableproject.com';
+    const redirectUrl = origin.includes('localhost') ? 'https://a391e581-510e-4cfc-905a-60ff6b51b1e6.lovableproject.com/' : `${origin}/`;
+    
+    console.log('Redirect URL will be:', redirectUrl);
+    
     const { data: sessionData, error: sessionError } = await supabase.auth.admin.generateLink({
       type: 'magiclink',
       email: telegramEmail,
+      options: {
+        redirectTo: redirectUrl
+      }
     });
 
     if (sessionError || !sessionData) {
@@ -247,8 +256,6 @@ Deno.serve(async (req) => {
         }
       );
     }
-
-    console.log('Session created successfully for user:', existingUser.user.id);
 
     // Используем функцию для объединения игроков
     const telegramId = authData.id.toString();
@@ -332,15 +339,11 @@ Deno.serve(async (req) => {
 
     console.log('Successfully authenticated Telegram user:', authData.id);
 
-    // Возвращаем данные сессии для установки на клиенте
     return new Response(
       JSON.stringify({ 
         success: true,
         user: existingUser.user,
-        session: {
-          access_token: sessionData.properties.hashed_token,
-          refresh_token: sessionData.properties.hashed_token,
-        },
+        login_url: sessionData.properties.action_link,
         player: player
       }),
       { 

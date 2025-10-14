@@ -132,23 +132,10 @@ export const TelegramAuth: React.FC<TelegramAuthProps> = ({ onAuthComplete }) =>
         return;
       }
 
-      if (data?.success && data?.session) {
-        console.log('Authentication successful, establishing session...');
+      if (data?.success) {
+        console.log('Authentication successful');
         
-        // Устанавливаем сессию напрямую с полученными токенами
-        const { error: sessionError } = await supabase.auth.setSession({
-          access_token: data.session.access_token,
-          refresh_token: data.session.refresh_token,
-        });
-
-        if (sessionError) {
-          console.error('Error setting session:', sessionError);
-          setAuthError('Ошибка установки сессии');
-          return;
-        }
-
-        console.log('Session established successfully');
-        // Входим в приложение
+        // Автоматически входим в приложение
         onAuthComplete(telegramUserData);
         return;
       } else {
