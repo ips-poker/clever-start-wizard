@@ -197,23 +197,13 @@ export function PlayerStats() {
                       </Avatar>
                       
                       {/* Player Info */}
-                      <div>
-                        <p className={`font-light text-lg mb-1 tracking-wide group-hover:text-amber-100 transition-colors duration-300 ${isTopThree ? 'text-white' : 'text-white/90'}`}>
+                      <div className="flex-1 min-w-0">
+                        <p className={`font-light text-lg mb-1 tracking-wide group-hover:text-amber-100 transition-colors duration-300 truncate ${isTopThree ? 'text-white' : 'text-white/90'}`}>
                           {player.name}
                         </p>
                         <div className="flex items-center gap-3 text-xs text-white/60">
-                          <span className="flex items-center gap-1">
-                            <TrendingUp className="w-3 h-3" />
-                            {player.games_played} игр
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <Trophy className="w-3 h-3" />
-                            {player.wins} побед
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <Target className="w-3 h-3" />
-                            {getWinRate(player.wins, player.games_played)}% винрейт
-                          </span>
+                          <span>{player.games_played} игр</span>
+                          <span>{getWinRate(player.wins, player.games_played)}% побед</span>
                         </div>
                       </div>
                     </div>
