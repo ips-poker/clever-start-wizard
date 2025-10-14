@@ -1,13 +1,15 @@
-import { Home, Trophy, TrendingUp, UserPlus } from "lucide-react";
+import { Home, Trophy, TrendingUp, UserPlus, User } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
+import { useAuth } from "@/hooks/useAuth";
 
 export function MobileBottomNav() {
   const location = useLocation();
   const currentPath = location.pathname;
   const [isVisible, setIsVisible] = useState(false);
   const [lastScrollY, setLastScrollY] = useState(0);
+  const { isAuthenticated } = useAuth();
 
   // Hide navigation in Telegram Mini App
   if (currentPath.startsWith('/telegram')) {
@@ -47,7 +49,9 @@ export function MobileBottomNav() {
     { title: "Главная", url: "/", icon: Home },
     { title: "Турниры", url: "/tournaments", icon: Trophy },
     { title: "Рейтинг", url: "/rating", icon: TrendingUp },
-    { title: "Войти", url: "/auth", icon: UserPlus },
+    isAuthenticated 
+      ? { title: "Профиль", url: "/profile", icon: User }
+      : { title: "Войти", url: "/auth", icon: UserPlus },
   ];
 
   const isActive = (path: string) => {
