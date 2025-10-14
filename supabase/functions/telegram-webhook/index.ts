@@ -46,6 +46,7 @@ interface TelegramMessage {
       text: string
       web_app?: { url: string }
       callback_data?: string
+      url?: string
     }>>
   }
 }
@@ -137,11 +138,18 @@ Deno.serve(async (req) => {
           } else if (authResult && authResult.success) {
             console.log('Auth successful, login URL:', authResult.login_url);
             
-            // Отправляем прямую ссылку для авторизации (не через web_app!)
+            // Отправляем кнопку с прямой ссылкой (не web_app, а url)
             const successMessage: TelegramMessage = {
               chat_id: chatId!,
-              text: `✅ Авторизация прошла успешно!\n\n🔗 Перейдите по ссылке для входа на сайт:\n\n${authResult.login_url}\n\n⚠️ Ссылка действительна 60 секунд`,
-              parse_mode: 'Markdown'
+              text: `✅ Авторизация прошла успешно!\n\n🔗 Нажмите кнопку ниже для входа на сайт\n\n⚠️ Ссылка действительна 60 секунд`,
+              reply_markup: {
+                inline_keyboard: [[
+                  {
+                    text: '🌐 Перейти на сайт',
+                    url: authResult.login_url
+                  }
+                ]]
+              }
             };
             
             await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
