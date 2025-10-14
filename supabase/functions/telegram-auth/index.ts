@@ -189,7 +189,7 @@ Deno.serve(async (req) => {
     }
 
     // Проверяем существующий профиль и НЕ перезаписываем данные при повторном входе
-    const { data: existingProfile } = await supabase
+    const { data: currentProfile } = await supabase
       .from('profiles')
       .select('avatar_url, full_name')
       .eq('user_id', existingUser.user.id)
@@ -198,8 +198,8 @@ Deno.serve(async (req) => {
     const displayName = authData.username || fullName || `User_${authData.id}`;
     
     // Если профиль существует и уже имеет данные, НЕ перезаписываем их
-    const shouldUpdateAvatar = !existingProfile || !existingProfile.avatar_url;
-    const shouldUpdateName = !existingProfile || !existingProfile.full_name;
+    const shouldUpdateAvatar = !currentProfile || !currentProfile.avatar_url;
+    const shouldUpdateName = !currentProfile || !currentProfile.full_name;
 
     const profileUpdateData: any = {
       user_id: existingUser.user.id,
