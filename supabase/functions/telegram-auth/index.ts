@@ -256,12 +256,8 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Заменяем стандартный Supabase URL на наш кастомный домен
-    let loginUrl = sessionData.properties.action_link;
-    if (loginUrl) {
-      loginUrl = loginUrl.replace('mokhssmnorrhohrowxvu.supabase.co', 'api.epc-poker.ru');
-      console.log('Modified login URL to use custom domain:', loginUrl);
-    }
+    // Используем стандартный Supabase URL
+    const loginUrl = sessionData.properties.action_link;
 
     // Используем функцию для объединения игроков
     const telegramId = authData.id.toString();
