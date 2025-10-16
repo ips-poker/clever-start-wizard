@@ -2,14 +2,8 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
-const SUPABASE_URL = "https://api.epc-poker.ru";
+const SUPABASE_URL = "https://mokhssmnorrhohrowxvu.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1va2hzc21ub3JyaG9ocm93eHZ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMwODUzNDYsImV4cCI6MjA2ODY2MTM0Nn0.ZWYgSZFeidY0b_miC7IyfXVPh1EUR2WtxlEvt_fFmGc";
-
-console.log('🔍 Supabase Client Configuration:', {
-  url: SUPABASE_URL,
-  environment: typeof window !== 'undefined' ? window.location.hostname : 'server',
-  timestamp: new Date().toISOString()
-});
 
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
