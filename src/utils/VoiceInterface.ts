@@ -202,7 +202,7 @@ export class VoiceTournamentInterface {
       this.audioQueue = new AudioQueue(this.audioContext);
 
       // Connect to WebSocket
-      this.ws = new WebSocket('wss://mokhssmnorrhohrowxvu.functions.supabase.co/realtime-voice-tournament');
+      this.ws = new WebSocket('wss://api.epc-poker.ru/functions/v1/realtime-voice-tournament');
 
       this.ws.onopen = () => {
         console.log('WebSocket connected');
