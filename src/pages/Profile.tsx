@@ -197,15 +197,21 @@ export default function Profile() {
     }
 
     try {
-      const { error } = await supabase
-        .from('players')
-        .update({ avatar_url: avatarUrl })
-        .eq('id', player.id);
+      const { data, error } = await supabase.rpc('update_player_safe', {
+        p_player_id: player.id,
+        p_avatar_url: avatarUrl
+      });
 
       if (error) {
         console.error('Error updating avatar:', error);
         toast.error(`Ошибка при обновлении аватара: ${error.message}`);
         throw error;
+      }
+
+      const result = data as { success: boolean; error?: string };
+      if (!result?.success) {
+        toast.error(`Ошибка: ${result?.error || 'Не удалось обновить аватар'}`);
+        return;
       }
 
       setPlayer({ ...player, avatar_url: avatarUrl });
@@ -221,12 +227,18 @@ export default function Profile() {
     if (!player || !newPlayerName.trim()) return;
 
     try {
-      const { error } = await supabase
-        .from('players')
-        .update({ name: newPlayerName.trim() })
-        .eq('id', player.id);
+      const { data, error } = await supabase.rpc('update_player_safe', {
+        p_player_id: player.id,
+        p_name: newPlayerName.trim()
+      });
 
       if (error) throw error;
+
+      const result = data as { success: boolean; error?: string };
+      if (!result?.success) {
+        toast(`Ошибка: ${result?.error || 'Не удалось обновить имя'}`);
+        return;
+      }
 
       setPlayer({ ...player, name: newPlayerName.trim() });
       setEditingName(false);

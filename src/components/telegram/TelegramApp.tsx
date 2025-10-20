@@ -322,22 +322,27 @@ export const TelegramApp = () => {
     }
     setRegistering(tournamentId);
     try {
-      const { data: existingRegistration, error: checkError } = await supabase.from('tournament_registrations').select('id').eq('tournament_id', tournamentId).eq('player_id', userStats.id).maybeSingle();
-      if (checkError && checkError.code !== 'PGRST116') {
-        throw checkError;
-      }
-      if (existingRegistration) {
-        toast.info("Вы уже зарегистрированы на этот турнир");
-        return;
-      }
-      const { error } = await supabase.from('tournament_registrations').insert({
-        tournament_id: tournamentId,
-        player_id: userStats.id,
-        status: 'registered'
+      const { data, error } = await supabase.rpc('register_tournament_safe', {
+        p_tournament_id: tournamentId,
+        p_player_id: userStats.id
       });
+
       if (error) {
         throw error;
       }
+
+      const result = data as { success: boolean; error?: string };
+      if (!result?.success) {
+        if (result?.error === 'Already registered') {
+          toast.info("Вы уже зарегистрированы на этот турнир");
+        } else if (result?.error === 'Tournament is full') {
+          toast.error("Турнир заполнен");
+        } else {
+          toast.error(`Ошибка: ${result?.error || 'Не удалось зарегистрироваться'}`);
+        }
+        return;
+      }
+
       toast.success("Вы успешно зарегистрированы на турнир");
       fetchTournaments();
     } catch (error) {

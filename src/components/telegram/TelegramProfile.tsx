@@ -266,12 +266,10 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate }: Tele
         newAvatarUrl: avatarUrl 
       });
       
-      const { data, error } = await supabase
-        .from('players')
-        .update({ avatar_url: avatarUrl })
-        .eq('id', player.id)
-        .select()
-        .maybeSingle();
+      const { data, error } = await supabase.rpc('update_player_safe', {
+        p_player_id: player.id,
+        p_avatar_url: avatarUrl
+      });
 
       if (error) {
         console.error('Avatar update error:', error);
@@ -279,13 +277,14 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate }: Tele
         throw error;
       }
 
-      if (!data) {
-        console.error('No data returned after avatar update');
-        toast.error('Ошибка: не удалось обновить аватар');
+      const result = data as { success: boolean; error?: string };
+      if (!result?.success) {
+        console.error('Avatar update failed:', result?.error);
+        toast.error(`Ошибка: ${result?.error || 'Не удалось обновить аватар'}`);
         return;
       }
 
-      console.log('Avatar updated successfully:', data);
+      console.log('Avatar updated successfully');
       const updatedPlayer = { ...player, avatar_url: avatarUrl };
       setPlayer(updatedPlayer);
       onStatsUpdate(updatedPlayer);
@@ -315,12 +314,10 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate }: Tele
         newName: newPlayerName.trim() 
       });
       
-      const { data, error } = await supabase
-        .from('players')
-        .update({ name: newPlayerName.trim() })
-        .eq('id', player.id)
-        .select()
-        .maybeSingle();
+      const { data, error } = await supabase.rpc('update_player_safe', {
+        p_player_id: player.id,
+        p_name: newPlayerName.trim()
+      });
 
       if (error) {
         console.error('Name update error:', error);
@@ -328,13 +325,14 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate }: Tele
         throw error;
       }
 
-      if (!data) {
-        console.error('No data returned after name update');
-        toast.error('Ошибка: не удалось обновить имя');
+      const result = data as { success: boolean; error?: string };
+      if (!result?.success) {
+        console.error('Name update failed:', result?.error);
+        toast.error(`Ошибка: ${result?.error || 'Не удалось обновить имя'}`);
         return;
       }
 
-      console.log('Name updated successfully:', data);
+      console.log('Name updated successfully');
       const updatedPlayer = { ...player, name: newPlayerName.trim() };
       setPlayer(updatedPlayer);
       onStatsUpdate(updatedPlayer);

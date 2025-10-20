@@ -1120,6 +1120,16 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      create_player_safe: {
+        Args: {
+          p_avatar_url?: string
+          p_email?: string
+          p_name: string
+          p_telegram?: string
+          p_user_id?: string
+        }
+        Returns: Json
+      }
       create_tournament_safe: {
         Args: {
           p_additional_chips: number
@@ -1245,6 +1255,10 @@ export type Database = {
         Args: { eliminated_player_id: string; tournament_id_param: string }
         Returns: undefined
       }
+      register_tournament_safe: {
+        Args: { p_player_id: string; p_tournament_id: string }
+        Returns: Json
+      }
       resume_tournament: {
         Args: { tournament_id_param: string }
         Returns: boolean
@@ -1260,6 +1274,10 @@ export type Database = {
       sync_all_player_avatars: {
         Args: Record<PropertyKey, never>
         Returns: undefined
+      }
+      update_player_safe: {
+        Args: { p_avatar_url?: string; p_name?: string; p_player_id: string }
+        Returns: Json
       }
       update_player_wins: {
         Args: Record<PropertyKey, never>
