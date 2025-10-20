@@ -23,6 +23,7 @@ export function useAuth() {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
+        console.log('Auth state changed:', event, session?.user?.email);
         setSession(session);
         setUser(session?.user ?? null);
         
@@ -41,6 +42,7 @@ export function useAuth() {
 
     // THEN check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log('Initial session check:', session?.user?.email);
       setSession(session);
       setUser(session?.user ?? null);
       
@@ -67,13 +69,15 @@ export function useAuth() {
 
       if (error) {
         console.error('Error fetching user profile:', error);
+        // Don't try to create if there was an actual error
         return;
       }
 
-      if (!data) {
-        console.log('Profile not found, creating new profile');
-        // Profile doesn't exist, create one
-        await createUserProfile(userId);
+      if (data === null) {
+        console.log('Profile not found, user needs to complete registration');
+        // Profile doesn't exist - this should only happen for new users
+        // Don't automatically create, let the registration flow handle it
+        setUserProfile(null);
         return;
       }
 
