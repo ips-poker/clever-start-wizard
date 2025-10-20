@@ -65,8 +65,9 @@ export function useAuth() {
         .single();
 
       if (error && error.code === 'PGRST116') {
-        // Profile doesn't exist, create one
-        await createUserProfile(userId);
+        // Profile doesn't exist - trigger should create it automatically
+        // Just wait a bit and retry
+        setTimeout(() => fetchUserProfile(userId), 1000);
         return;
       }
 
@@ -78,31 +79,6 @@ export function useAuth() {
       setUserProfile(data as UserProfile);
     } catch (error) {
       console.error('Error in fetchUserProfile:', error);
-    }
-  };
-
-  const createUserProfile = async (userId: string) => {
-    try {
-      const { data, error } = await (supabase as any)
-        .from('profiles')
-        .insert([
-          {
-            user_id: userId,
-            email: user?.email,
-            user_role: 'user' as const
-          }
-        ])
-        .select()
-        .single();
-
-      if (error) {
-        console.error('Error creating user profile:', error);
-        return;
-      }
-
-      setUserProfile(data as UserProfile);
-    } catch (error) {
-      console.error('Error in createUserProfile:', error);
     }
   };
 
