@@ -223,62 +223,56 @@ export function ModernTournamentCreationModal({
 
     try {
       if (tournament?.id) {
-        // Обновление существующего турнира
-        const { error } = await supabase
-          .from('tournaments')
-          .update({
-            name: formData.name,
-            description: formData.description,
-            participation_fee: formData.participation_fee,
-            reentry_fee: formData.reentry_fee,
-            additional_fee: formData.additional_fee,
-            reentry_chips: formData.reentry_chips,
-            additional_chips: formData.additional_chips,
-            starting_chips: formData.starting_chips,
-            max_players: formData.max_players,
-            start_time: formData.start_time,
-            tournament_format: formData.tournament_format,
-            reentry_end_level: formData.reentry_end_level,
-            additional_level: formData.additional_level,
-            break_start_level: formData.break_start_level,
-            timer_duration: formData.timer_duration,
-            is_published: formData.is_published
-          })
-          .eq('id', tournament.id);
+        // Обновление существующего турнира через безопасную RPC функцию
+        const { error } = await supabase.rpc('update_tournament_safe', {
+          p_tournament_id: tournament.id,
+          p_name: formData.name,
+          p_description: formData.description,
+          p_participation_fee: formData.participation_fee,
+          p_reentry_fee: formData.reentry_fee,
+          p_additional_fee: formData.additional_fee,
+          p_reentry_chips: formData.reentry_chips,
+          p_additional_chips: formData.additional_chips,
+          p_starting_chips: formData.starting_chips,
+          p_max_players: formData.max_players,
+          p_start_time: formData.start_time,
+          p_tournament_format: formData.tournament_format,
+          p_reentry_end_level: formData.reentry_end_level,
+          p_additional_level: formData.additional_level,
+          p_break_start_level: formData.break_start_level,
+          p_timer_duration: formData.timer_duration,
+          p_is_published: formData.is_published
+        });
 
         if (error) throw error;
       } else {
-        // Создание нового турнира
-        const { data: newTournament, error } = await supabase
-          .from('tournaments')
-          .insert([{
-            name: formData.name,
-            description: formData.description,
-            participation_fee: formData.participation_fee,
-            reentry_fee: formData.reentry_fee,
-            additional_fee: formData.additional_fee,
-            reentry_chips: formData.reentry_chips,
-            additional_chips: formData.additional_chips,
-            starting_chips: formData.starting_chips,
-            max_players: formData.max_players,
-            start_time: formData.start_time,
-            tournament_format: formData.tournament_format,
-            reentry_end_level: formData.reentry_end_level,
-            additional_level: formData.additional_level,
-            break_start_level: formData.break_start_level,
-            timer_duration: formData.timer_duration,
-            is_published: formData.is_published,
-            status: 'scheduled'
-          }])
-          .select()
-          .single();
+        // Создание нового турнира через безопасную RPC функцию
+        const { data: newTournamentId, error } = await supabase.rpc('create_tournament_safe', {
+          p_name: formData.name,
+          p_description: formData.description,
+          p_participation_fee: formData.participation_fee,
+          p_reentry_fee: formData.reentry_fee,
+          p_additional_fee: formData.additional_fee,
+          p_reentry_chips: formData.reentry_chips,
+          p_additional_chips: formData.additional_chips,
+          p_starting_chips: formData.starting_chips,
+          p_max_players: formData.max_players,
+          p_start_time: formData.start_time,
+          p_tournament_format: formData.tournament_format,
+          p_reentry_end_level: formData.reentry_end_level,
+          p_additional_level: formData.additional_level,
+          p_break_start_level: formData.break_start_level,
+          p_timer_duration: formData.timer_duration,
+          p_is_published: formData.is_published,
+          p_voice_control_enabled: false,
+          p_status: 'scheduled'
+        });
 
         if (error) throw error;
 
-        // Создание структуры блайндов
-        if (newTournament) {
-          const blindLevelsData = blindLevels.map(level => ({
-            tournament_id: newTournament.id,
+        // Создание структуры блайндов через безопасную RPC функцию
+        if (newTournamentId) {
+          const blindLevelsJson = blindLevels.map(level => ({
             level: level.level,
             small_blind: level.small_blind,
             big_blind: level.big_blind,
@@ -287,9 +281,10 @@ export function ModernTournamentCreationModal({
             is_break: level.is_break
           }));
 
-          const { error: blindError } = await supabase
-            .from('blind_levels')
-            .insert(blindLevelsData);
+          const { error: blindError } = await supabase.rpc('create_blind_levels_safe', {
+            p_tournament_id: newTournamentId,
+            p_blind_levels: blindLevelsJson
+          });
 
           if (blindError) throw blindError;
         }

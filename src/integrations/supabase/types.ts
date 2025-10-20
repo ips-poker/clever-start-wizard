@@ -1108,8 +1108,39 @@ export type Database = {
         Args: { amount_rubles: number }
         Returns: number
       }
+      create_blind_levels_safe: {
+        Args: { p_blind_levels: Json; p_tournament_id: string }
+        Returns: undefined
+      }
       create_first_admin: {
         Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      create_tournament_safe: {
+        Args: {
+          p_additional_chips: number
+          p_additional_fee: number
+          p_additional_level: number
+          p_break_start_level: number
+          p_description: string
+          p_is_published: boolean
+          p_max_players: number
+          p_name: string
+          p_participation_fee: number
+          p_reentry_chips: number
+          p_reentry_end_level: number
+          p_reentry_fee: number
+          p_start_time: string
+          p_starting_chips: number
+          p_status: string
+          p_timer_duration: number
+          p_tournament_format: string
+          p_voice_control_enabled: boolean
+        }
+        Returns: string
+      }
+      delete_tournament_safe: {
+        Args: { p_tournament_id: string }
         Returns: undefined
       }
       get_player_safe: {
@@ -1228,6 +1259,32 @@ export type Database = {
       }
       update_player_wins: {
         Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      update_tournament_safe: {
+        Args: {
+          p_additional_chips: number
+          p_additional_fee: number
+          p_additional_level: number
+          p_break_start_level: number
+          p_description: string
+          p_is_published: boolean
+          p_max_players: number
+          p_name: string
+          p_participation_fee: number
+          p_reentry_chips: number
+          p_reentry_end_level: number
+          p_reentry_fee: number
+          p_start_time: string
+          p_starting_chips: number
+          p_timer_duration: number
+          p_tournament_format: string
+          p_tournament_id: string
+        }
+        Returns: undefined
+      }
+      update_tournament_status_safe: {
+        Args: { p_status: string; p_tournament_id: string }
         Returns: undefined
       }
       update_tournament_timer: {
