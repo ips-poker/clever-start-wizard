@@ -1112,6 +1112,10 @@ export type Database = {
         Args: { p_blind_levels: Json; p_tournament_id: string }
         Returns: undefined
       }
+      create_default_blind_structure_safe: {
+        Args: { p_tournament_id: string }
+        Returns: undefined
+      }
       create_first_admin: {
         Args: Record<PropertyKey, never>
         Returns: undefined
@@ -1259,6 +1263,21 @@ export type Database = {
       }
       update_player_wins: {
         Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      update_timer_only_safe: {
+        Args: { p_timer_remaining: number; p_tournament_id: string }
+        Returns: undefined
+      }
+      update_tournament_level_safe: {
+        Args: {
+          p_big_blind: number
+          p_current_level: number
+          p_small_blind: number
+          p_timer_duration: number
+          p_timer_remaining: number
+          p_tournament_id: string
+        }
         Returns: undefined
       }
       update_tournament_safe: {

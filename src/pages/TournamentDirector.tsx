@@ -342,10 +342,11 @@ const TournamentDirector = () => {
   const updateTimerInDatabase = async (timeRemaining: number) => {
     if (!selectedTournament) return;
     
-    await supabase
-      .from('tournaments')
-      .update({ timer_remaining: timeRemaining })
-      .eq('id', selectedTournament.id);
+    // Используем безопасную RPC функцию для обновления таймера
+    await supabase.rpc('update_timer_only_safe', {
+      p_tournament_id: selectedTournament.id,
+      p_timer_remaining: timeRemaining
+    });
   };
 
   const handleTournamentSelect = (tournament: Tournament) => {
@@ -508,22 +509,19 @@ const TournamentDirector = () => {
       lastUpdate: Date.now()
     }));
 
-    // Обновление БД — фоново, без await
-    supabase
-      .from('tournaments')
-      .update({
-        current_level: newLevel,
-        current_small_blind: prevBlindLevel.small_blind,
-        current_big_blind: prevBlindLevel.big_blind,
-        timer_remaining: resetTime,
-        timer_duration: resetTime
-      })
-      .eq('id', selectedTournament.id)
-      .then(({ error }) => {
-        if (error) {
-          console.error('Ошибка обновления уровня в БД:', error);
-        }
-      });
+    // Обновление БД через безопасную RPC функцию — фоново, без await
+    supabase.rpc('update_tournament_level_safe', {
+      p_tournament_id: selectedTournament.id,
+      p_current_level: newLevel,
+      p_small_blind: prevBlindLevel.small_blind,
+      p_big_blind: prevBlindLevel.big_blind,
+      p_timer_remaining: resetTime,
+      p_timer_duration: resetTime
+    }).then(({ error }) => {
+      if (error) {
+        console.error('Ошибка обновления уровня в БД:', error);
+      }
+    });
 
     toast({ 
       title: prevBlindLevel.is_break ? "Перерыв" : `Уровень ${newLevel}`, 
@@ -750,17 +748,10 @@ const TournamentDirector = () => {
 
   const deleteTournament = async (id: string) => {
     try {
-      // Удаляем только настройки турнира, НЕ затрагивая результаты игр и статистику
-      await supabase.from('tournament_payouts').delete().eq('tournament_id', id);
-      await supabase.from('blind_levels').delete().eq('tournament_id', id);
-      
-      // НЕ удаляем game_results и tournament_registrations - они нужны для статистики!
-      
-      // Теперь удаляем сам турнир
-      const { error } = await supabase
-        .from('tournaments')
-        .delete()
-        .eq('id', id);
+      // Используем безопасную RPC функцию для удаления турнира
+      const { error } = await supabase.rpc('delete_tournament_safe', {
+        p_tournament_id: id
+      });
 
       if (!error) {
         toast({ title: "Турнир удален", description: "Результаты игр и рейтинги сохранены" });

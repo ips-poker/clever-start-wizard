@@ -119,16 +119,10 @@ const TournamentSyncManager = ({ tournaments, onRefresh }: TournamentSyncManager
 
   const deleteTournament = async (tournamentId: string) => {
     try {
-      // Delete related records first
-      await supabase.from('game_results').delete().eq('tournament_id', tournamentId);
-      await supabase.from('tournament_registrations').delete().eq('tournament_id', tournamentId);
-      await supabase.from('blind_levels').delete().eq('tournament_id', tournamentId);
-      
-      // Then delete the tournament
-      const { error } = await supabase
-        .from('tournaments')
-        .delete()
-        .eq('id', tournamentId);
+      // Используем безопасную RPC функцию для удаления турнира
+      const { error } = await supabase.rpc('delete_tournament_safe', {
+        p_tournament_id: tournamentId
+      });
 
       if (error) throw error;
 
