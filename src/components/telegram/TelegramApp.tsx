@@ -267,7 +267,7 @@ export const TelegramApp = () => {
         hasAvatar: !!data.avatar_url 
       } : 'NOT FOUND');
       
-      // Если игрок не найден, создаем нового
+      // Если игрок не найден, создаем нового через безопасную RPC функцию
       if (!data) {
         const playerName = telegramUser.firstName || telegramUser.username || `Player_${telegramId}`;
         
@@ -278,32 +278,35 @@ export const TelegramApp = () => {
           hasPhoto: !!telegramUser.photoUrl
         });
         
-        const { data: newPlayer, error: createError } = await supabase
-          .from('players')
-          .insert({
-            name: playerName,
-            telegram: telegramId,
-            elo_rating: 1000,
-            games_played: 0,
-            wins: 0,
-            avatar_url: telegramUser.photoUrl || null
-          })
-          .select()
-          .single();
+        const { data: createResult, error: createError } = await supabase.rpc('create_player_safe', {
+          p_name: playerName,
+          p_email: null,
+          p_telegram: telegramId,
+          p_avatar_url: telegramUser.photoUrl || null,
+          p_user_id: null
+        });
           
         if (createError) {
           console.error('Error creating player:', createError);
           toast.error('Не удалось создать профиль игрока');
           return;
         }
+
+        const result = createResult as { success: boolean; error?: string; player?: any };
+        
+        if (!result?.success) {
+          console.error('Player creation failed:', result?.error);
+          toast.error(`Ошибка: ${result?.error || 'Не удалось создать профиль'}`);
+          return;
+        }
         
         console.log('Player created successfully:', {
-          id: newPlayer.id,
-          name: newPlayer.name,
-          avatar_url: newPlayer.avatar_url || 'NO AVATAR'
+          id: result.player?.id,
+          name: result.player?.name,
+          avatar_url: result.player?.avatar_url || 'NO AVATAR'
         });
         
-        data = newPlayer;
+        data = result.player;
         toast.success('Профиль игрока создан!');
       }
       

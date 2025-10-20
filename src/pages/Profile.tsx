@@ -115,7 +115,7 @@ export default function Profile() {
       if (error && error.code === 'PGRST116') {
         console.log('Player does not exist, creating new one');
         
-        // Player doesn't exist, create one
+        // Player doesn't exist, create one using safe RPC
         const playerName = userProfile?.full_name || user.email?.split('@')[0] || 'Player';
         
         console.log('Creating player with data:', {
@@ -126,30 +126,45 @@ export default function Profile() {
           hasAvatar: !!userProfile?.avatar_url
         });
         
-        const { data: newPlayer, error: createError } = await supabase
-          .from('players')
-          .insert([{ 
-            name: playerName,
-            email: user.email,
-            elo_rating: 100,
-            user_id: user.id,
-            avatar_url: userProfile?.avatar_url || null
-          }])
-          .select()
-          .single();
+        const { data: createResult, error: createError } = await supabase.rpc('create_player_safe', {
+          p_name: playerName,
+          p_email: user.email || null,
+          p_telegram: null,
+          p_avatar_url: userProfile?.avatar_url || null,
+          p_user_id: user.id
+        });
 
         if (createError) {
           console.error('Error creating player:', createError);
           return;
         }
+
+        const result = createResult as { success: boolean; error?: string; player?: any; player_id?: string };
+        
+        if (!result?.success) {
+          console.error('Player creation failed:', result?.error);
+          // Если игрок уже существует, пытаемся загрузить его
+          if (result?.player_id) {
+            const { data: existingPlayer } = await supabase
+              .from('players')
+              .select('*')
+              .eq('id', result.player_id)
+              .single();
+            if (existingPlayer) {
+              setPlayer(existingPlayer);
+              return;
+            }
+          }
+          return;
+        }
         
         console.log('Player created successfully:', {
-          id: newPlayer.id,
-          name: newPlayer.name,
-          avatar_url: newPlayer.avatar_url || 'NO AVATAR'
+          id: result.player?.id,
+          name: result.player?.name,
+          avatar_url: result.player?.avatar_url || 'NO AVATAR'
         });
         
-        setPlayer(newPlayer);
+        setPlayer(result.player);
       } else if (error) {
         console.error('Error loading player:', error);
       } else {

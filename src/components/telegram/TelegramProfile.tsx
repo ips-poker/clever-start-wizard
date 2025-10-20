@@ -171,31 +171,33 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate }: Tele
         hasPhoto: !!telegramUser.photoUrl
       });
       
-      // Создаем нового игрока (без user_id для телеграм пользователей)
-      const { data: newPlayer, error: createError } = await supabase
-        .from('players')
-        .insert({
-          name: playerName,
-          telegram: telegramId,
-          elo_rating: 1000,
-          games_played: 0,
-          wins: 0,
-          avatar_url: telegramUser.photoUrl || null
-          // user_id не устанавливается для телеграм пользователей
-        })
-        .select()
-        .single();
+      // Создаем нового игрока через безопасную RPC функцию
+      const { data: createResult, error: createError } = await supabase.rpc('create_player_safe', {
+        p_name: playerName,
+        p_email: null,
+        p_telegram: telegramId,
+        p_avatar_url: telegramUser.photoUrl || null,
+        p_user_id: null
+      });
         
-      console.log('Create player result:', { newPlayer, createError });
+      console.log('Create player result:', { createResult, createError });
         
       if (createError) {
         console.error('Error creating player:', createError);
         toast.error(`Ошибка создания профиля: ${createError.message}`);
         return;
       }
+
+      const result = createResult as { success: boolean; error?: string; player?: any };
       
-      setPlayer(newPlayer);
-      onStatsUpdate(newPlayer);
+      if (!result?.success) {
+        console.error('Player creation failed:', result?.error);
+        toast.error(`Ошибка: ${result?.error || 'Не удалось создать профиль'}`);
+        return;
+      }
+      
+      setPlayer(result.player);
+      onStatsUpdate(result.player);
       toast.success('Профиль успешно создан!');
     } catch (error) {
       console.error('Error in createPlayerProfile:', error);
