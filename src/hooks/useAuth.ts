@@ -58,22 +58,51 @@ export function useAuth() {
 
   const fetchUserProfile = async (userId: string) => {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('profiles')
         .select('*')
         .eq('user_id', userId)
-        .maybeSingle();
+        .single();
+
+      if (error && error.code === 'PGRST116') {
+        // Profile doesn't exist, create one
+        await createUserProfile(userId);
+        return;
+      }
 
       if (error) {
         console.error('Error fetching user profile:', error);
         return;
       }
 
-      if (data) {
-        setUserProfile(data as UserProfile);
-      }
+      setUserProfile(data as UserProfile);
     } catch (error) {
       console.error('Error in fetchUserProfile:', error);
+    }
+  };
+
+  const createUserProfile = async (userId: string) => {
+    try {
+      const { data, error } = await (supabase as any)
+        .from('profiles')
+        .insert([
+          {
+            user_id: userId,
+            email: user?.email,
+            user_role: 'user' as const
+          }
+        ])
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error creating user profile:', error);
+        return;
+      }
+
+      setUserProfile(data as UserProfile);
+    } catch (error) {
+      console.error('Error in createUserProfile:', error);
     }
   };
 
