@@ -61,11 +61,21 @@ export function useAuth() {
   const fetchUserProfile = async (userId: string) => {
     try {
       console.log('Fetching profile for user:', userId);
+      
+      // Первый запрос - с обходом RLS через service role
+      const { data: profileCheck, error: checkError } = await supabase
+        .rpc('get_user_role', { user_uuid: userId });
+      
+      console.log('Profile check result:', profileCheck, checkError);
+      
+      // Основной запрос к профилю
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
         .eq('user_id', userId)
         .maybeSingle();
+
+      console.log('Profile query result:', { data, error, userId });
 
       if (error) {
         console.error('Error fetching user profile:', error);
