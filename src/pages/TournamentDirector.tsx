@@ -836,7 +836,7 @@ const TournamentDirector = () => {
   }, [selectedTournament?.id, selectedTournament?.current_level, currentTime, timerActive]);
 
   return (
-    <AuthGuard>
+    <AuthGuard requireAdmin={true}>
       <SidebarProvider>
         <div className="min-h-screen flex w-full bg-gradient-to-br from-gray-50 via-white to-gray-100">
           <TournamentDirectorSidebar 
