@@ -24,8 +24,6 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
     schema: 'public',
   },
   realtime: {
-    // Use original Supabase URL for WebSocket connections (bypasses proxy issues)
-    url: 'wss://mokhssmnorrhohrowxvu.supabase.co/realtime/v1',
     params: {
       apikey: SUPABASE_PUBLISHABLE_KEY,
     },
