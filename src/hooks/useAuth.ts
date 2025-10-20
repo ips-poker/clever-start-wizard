@@ -62,37 +62,27 @@ export function useAuth() {
     try {
       console.log('Fetching profile for user:', userId);
       
-      // Первый запрос - с обходом RLS через service role
-      const { data: profileCheck, error: checkError } = await supabase
-        .rpc('get_user_role', { user_uuid: userId });
-      
-      console.log('Profile check result:', profileCheck, checkError);
-      
-      // Основной запрос к профилю
+      // Используем функцию get_user_profile для обхода RLS через кастомный домен
       const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('user_id', userId)
-        .maybeSingle();
+        .rpc('get_user_profile', { user_uuid: userId });
 
-      console.log('Profile query result:', { data, error, userId });
+      console.log('Profile RPC result:', { data, error, userId });
 
       if (error) {
         console.error('Error fetching user profile:', error);
-        // Don't try to create if there was an actual error
         return;
       }
 
-      if (data === null) {
-        console.log('Profile not found, user needs to complete registration');
-        // Profile doesn't exist - this should only happen for new users
-        // Don't automatically create, let the registration flow handle it
+      if (!data || data.length === 0) {
+        console.log('Profile not found for user');
         setUserProfile(null);
         return;
       }
 
-      console.log('Profile fetched successfully:', data);
-      setUserProfile(data as UserProfile);
+      // RPC возвращает массив, берем первый элемент
+      const profileData = Array.isArray(data) ? data[0] : data;
+      console.log('Profile fetched successfully:', profileData);
+      setUserProfile(profileData as UserProfile);
     } catch (error) {
       console.error('Error in fetchUserProfile:', error);
     }

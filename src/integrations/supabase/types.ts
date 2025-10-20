@@ -1153,6 +1153,23 @@ export type Database = {
         Args: { tournament_id_param: string }
         Returns: Json
       }
+      get_user_profile: {
+        Args: { user_uuid: string }
+        Returns: {
+          avatar_url: string
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          privacy_consent_at: string
+          privacy_consent_given: boolean
+          terms_consent_at: string
+          terms_consent_given: boolean
+          updated_at: string
+          user_id: string
+          user_role: Database["public"]["Enums"]["user_role"]
+        }[]
+      }
       get_user_role: {
         Args: { user_uuid: string }
         Returns: Database["public"]["Enums"]["user_role"]
