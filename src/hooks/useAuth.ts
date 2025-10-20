@@ -91,25 +91,26 @@ export function useAuth() {
   const createUserProfile = async (userId: string) => {
     try {
       console.log('Creating profile for user:', userId);
-      const { data, error } = await supabase
-        .from('profiles')
-        .insert([
-          {
-            user_id: userId,
-            email: user?.email,
-            user_role: 'user' as const
-          }
-        ])
-        .select()
-        .maybeSingle();
+      const { data, error } = await supabase.rpc('create_user_profile_safe', {
+        p_user_id: userId,
+        p_email: user?.email || '',
+        p_full_name: null,
+        p_avatar_url: null
+      });
 
       if (error) {
         console.error('Error creating user profile:', error);
         return;
       }
 
-      console.log('Profile created successfully:', data);
-      setUserProfile(data as UserProfile);
+      const result = data as { success: boolean; error?: string; profile?: any };
+      if (!result?.success) {
+        console.error('Profile creation failed:', result?.error);
+        return;
+      }
+
+      console.log('Profile created successfully:', result.profile);
+      setUserProfile(result.profile as UserProfile);
     } catch (error) {
       console.error('Error in createUserProfile:', error);
     }

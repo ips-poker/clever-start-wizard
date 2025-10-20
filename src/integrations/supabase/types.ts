@@ -1153,6 +1153,15 @@ export type Database = {
         }
         Returns: string
       }
+      create_user_profile_safe: {
+        Args: {
+          p_avatar_url?: string
+          p_email: string
+          p_full_name?: string
+          p_user_id: string
+        }
+        Returns: Json
+      }
       delete_tournament_safe: {
         Args: { p_tournament_id: string }
         Returns: undefined
