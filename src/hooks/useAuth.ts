@@ -58,25 +58,20 @@ export function useAuth() {
 
   const fetchUserProfile = async (userId: string) => {
     try {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from('profiles')
         .select('*')
         .eq('user_id', userId)
-        .single();
-
-      if (error && error.code === 'PGRST116') {
-        // Profile doesn't exist - trigger should create it automatically
-        // Just wait a bit and retry
-        setTimeout(() => fetchUserProfile(userId), 1000);
-        return;
-      }
+        .maybeSingle();
 
       if (error) {
         console.error('Error fetching user profile:', error);
         return;
       }
 
-      setUserProfile(data as UserProfile);
+      if (data) {
+        setUserProfile(data as UserProfile);
+      }
     } catch (error) {
       console.error('Error in fetchUserProfile:', error);
     }

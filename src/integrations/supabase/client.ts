@@ -14,18 +14,4 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
     persistSession: true,
     autoRefreshToken: true,
   },
-  global: {
-    headers: {
-      'apikey': SUPABASE_PUBLISHABLE_KEY,
-      'Authorization': `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
-    },
-  },
-  db: {
-    schema: 'public',
-  },
-  realtime: {
-    params: {
-      apikey: SUPABASE_PUBLISHABLE_KEY,
-    },
-  },
 });
