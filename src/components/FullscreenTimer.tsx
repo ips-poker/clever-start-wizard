@@ -31,8 +31,8 @@ interface Tournament {
   current_big_blind: number;
   timer_duration: number;
   timer_remaining: number;
-  buy_in: number;
-  break_start_level: number;
+  buy_in?: number;
+  break_start_level?: number;
   starting_chips: number;
   participation_fee?: number;
   reentry_fee?: number;

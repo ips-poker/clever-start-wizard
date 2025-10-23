@@ -5,6 +5,7 @@ import { Progress } from "@/components/ui/progress";
 import { Coffee, Clock, Users, Trophy } from "lucide-react";
 import ipsLogo from "/lovable-uploads/3d3f89dd-02a1-4e23-845c-641c0ee0956b.png";
 import telegramQr from "@/assets/telegram-qr.png";
+import { calculateTotalRPSPool } from "@/utils/rpsCalculations";
 
 interface Tournament {
   id: string;
@@ -16,6 +17,9 @@ interface Tournament {
   timer_remaining: number;
   buy_in: number;
   starting_chips: number;
+  participation_fee?: number;
+  reentry_fee?: number;
+  additional_fee?: number;
 }
 
 interface BlindLevel {
@@ -186,7 +190,16 @@ const ExternalTimer = () => {
   const activePlayers = registrations.filter(r => r.status === 'registered' || r.status === 'playing');
   const totalReentries = registrations.reduce((sum, r) => sum + r.reentries, 0);
   const totalAdditionalSets = registrations.reduce((sum, r) => sum + r.additional_sets, 0);
-  const prizePool = (registrations.length * tournament.buy_in) + (totalReentries * tournament.buy_in) + (totalAdditionalSets * tournament.buy_in);
+  
+  // Рассчитываем фонд RPS баллов
+  const rpsPool = calculateTotalRPSPool(
+    registrations.length,
+    tournament.participation_fee || tournament.buy_in || 0,
+    totalReentries,
+    tournament.reentry_fee || tournament.buy_in || 0,
+    totalAdditionalSets,
+    tournament.additional_fee || tournament.buy_in || 0
+  );
   
   const totalChips = registrations.reduce((sum, r) => sum + (r.chips || tournament.starting_chips), 0);
   const averageStack = activePlayers.length > 0 ? Math.round(totalChips / activePlayers.length) : 0;
@@ -344,9 +357,9 @@ const ExternalTimer = () => {
             <div>
               <div className="flex items-center justify-center mb-2">
                 <Trophy className="w-6 h-6 text-amber-600 mr-3" />
-                <span className="text-lg text-gray-600">Призовой (₽)</span>
+                <span className="text-lg text-gray-600">Призовой фонд RPS</span>
               </div>
-              <p className="text-3xl font-medium text-gray-800">{prizePool.toLocaleString()}</p>
+              <p className="text-3xl font-medium text-gray-800">{rpsPool.toLocaleString()} RPS</p>
             </div>
             <div>
               <div className="flex items-center justify-center mb-2">
