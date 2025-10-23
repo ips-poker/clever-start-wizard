@@ -82,8 +82,8 @@ export const extractAndConvertQR = async (imageSrc: string): Promise<string> => 
         }
       }
       
-      // Добавляем небольшой отступ
-      const padding = 10;
+      // Добавляем более агрессивные отступы для обрезки краев
+      const padding = 30;
       const cropX = Math.max(0, maxWhiteArea.minX + padding);
       const cropY = Math.max(0, finalMinY + padding);
       const cropWidth = Math.min(maxWhiteArea.maxX - maxWhiteArea.minX - padding * 2, canvas.width - cropX);
