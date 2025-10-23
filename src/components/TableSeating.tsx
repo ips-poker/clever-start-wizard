@@ -150,17 +150,46 @@ const TableSeating = ({
   };
 
   const reconstructTablesFromDatabase = (seatingData: any[]) => {
-    const maxSeatNumber = Math.max(...seatingData.map(s => s.seat_number || 0));
-    const currentMaxPerTable = playersPerTable;
-    const totalTables = Math.ceil(maxSeatNumber / currentMaxPerTable);
+    if (seatingData.length === 0) return;
+    
+    // Вычисляем размер стола из данных рассадки
+    // Группируем seat_number, чтобы определить паттерн распределения
+    const seatNumbers = seatingData.map(s => s.seat_number).sort((a, b) => a - b);
+    
+    // Находим разрывы в последовательности seat_number для определения границ столов
+    let detectedMaxPerTable = playersPerTable; // default
+    
+    if (seatNumbers.length >= 2) {
+      const gaps = [];
+      for (let i = 1; i < seatNumbers.length; i++) {
+        const gap = seatNumbers[i] - seatNumbers[i - 1];
+        if (gap > 1) {
+          gaps.push(seatNumbers[i - 1]); // Конец стола
+        }
+      }
+      
+      // Если нашли разрывы, вычисляем размер стола по первому разрыву
+      if (gaps.length > 0) {
+        detectedMaxPerTable = gaps[0];
+      } else {
+        // Если разрывов нет, это один стол - берём максимальное значение
+        detectedMaxPerTable = Math.max(...seatNumbers);
+      }
+    }
+    
+    // Обновляем state, чтобы UI знал правильное количество мест
+    setPlayersPerTable(detectedMaxPerTable);
+    
+    const maxSeatNumber = Math.max(...seatNumbers);
+    const totalTables = Math.ceil(maxSeatNumber / detectedMaxPerTable);
     
     const newTables: Table[] = [];
     
     for (let tableNum = 1; tableNum <= totalTables; tableNum++) {
       const seats: TableSeat[] = [];
       
-      for (let seatNum = 1; seatNum <= currentMaxPerTable; seatNum++) {
-        const seatData = seatingData.find(s => s.seat_number === ((tableNum - 1) * currentMaxPerTable + seatNum));
+      for (let seatNum = 1; seatNum <= detectedMaxPerTable; seatNum++) {
+        const seatData = seatingData.find(s => s.seat_number === ((tableNum - 1) * detectedMaxPerTable + seatNum));
         
         seats.push({
           seat_number: seatNum,
@@ -178,7 +207,7 @@ const TableSeating = ({
         table_number: tableNum,
         seats,
         active_players: activePlayers,
-        max_seats: currentMaxPerTable,
+        max_seats: detectedMaxPerTable,
         dealer_position: 1,
         table_status: 'active',
         average_stack: activePlayers > 0 ? 
