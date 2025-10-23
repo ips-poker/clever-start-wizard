@@ -420,9 +420,9 @@ const FullscreenTimer = ({
             <div>
               <div className="flex items-center justify-center mb-1">
                 <Trophy className="w-4 h-4 text-amber-600 mr-2" />
-                <span className="text-sm text-gray-600">Призовой (RPS)</span>
+                <span className="text-sm text-gray-600">Призовой фонд RPS</span>
               </div>
-              <p className="text-xl font-medium text-gray-800">{formatRPSPoints(statisticsData.rpsPool)}</p>
+              <p className="text-xl font-medium text-gray-800">{statisticsData.rpsPool.toLocaleString()} RPS</p>
             </div>
             <div>
               <div className="flex items-center justify-center mb-1">
