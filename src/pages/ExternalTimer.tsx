@@ -4,8 +4,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { Progress } from "@/components/ui/progress";
 import { Coffee, Clock, Users, Trophy } from "lucide-react";
 import ipsLogo from "/lovable-uploads/3d3f89dd-02a1-4e23-845c-641c0ee0956b.png";
-import telegramQr from "@/assets/telegram-qr-new.jpg";
+import telegramQrOriginal from "@/assets/telegram-qr-new.jpg";
 import { calculateTotalRPSPool } from "@/utils/rpsCalculations";
+import { extractAndConvertQR } from "@/utils/qrExtractor";
 
 interface Tournament {
   id: string;
@@ -49,6 +50,7 @@ const ExternalTimer = () => {
   const [currentTime, setCurrentTime] = useState(0);
   const [timerActive, setTimerActive] = useState(false);
   const [slogan, setSlogan] = useState("Престижные турниры. Высокие стандарты.");
+  const [telegramQr, setTelegramQr] = useState<string>("");
 
   useEffect(() => {
     if (!tournamentId) return;
@@ -56,6 +58,20 @@ const ExternalTimer = () => {
     loadTournamentData();
     setupRealtimeSubscription();
   }, [tournamentId]);
+
+  // Обработка QR кода при загрузке
+  useEffect(() => {
+    const processQR = async () => {
+      try {
+        const processedQR = await extractAndConvertQR(telegramQrOriginal);
+        setTelegramQr(processedQR);
+      } catch (error) {
+        console.error('Error processing QR code:', error);
+        setTelegramQr(telegramQrOriginal);
+      }
+    };
+    processQR();
+  }, []);
 
   // Синхронизация с localStorage
   useEffect(() => {
@@ -246,11 +262,13 @@ const ExternalTimer = () => {
 
         {/* Right - QR Code */}
         <div className="flex items-center">
-          <img 
-            src={telegramQr} 
-            alt="Telegram QR" 
-            className="w-32 h-32 border border-gray-200 rounded"
-          />
+          {telegramQr && (
+            <img 
+              src={telegramQr} 
+              alt="Telegram QR" 
+              className="w-32 h-32 border border-gray-200 rounded bg-white"
+            />
+          )}
         </div>
       </div>
 
