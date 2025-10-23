@@ -152,33 +152,16 @@ const TableSeating = ({
   const reconstructTablesFromDatabase = (seatingData: any[]) => {
     if (seatingData.length === 0) return;
     
-    const seatNumbers = seatingData.map(s => s.seat_number).sort((a, b) => a - b);
+    // Восстанавливаем сохраненное значение playersPerTable из localStorage
+    const savedPlayersPerTable = localStorage.getItem(`tournament_${tournamentId}_playersPerTable`);
+    const detectedMaxPerTable = savedPlayersPerTable ? parseInt(savedPlayersPerTable) : playersPerTable;
     
-    // Определяем размер стола по данным из БД
-    let detectedMaxPerTable = playersPerTable; // default из state
-    
-    // Ищем первый разрыв в seat_number - это граница между столами
-    if (seatNumbers.length >= 2) {
-      for (let i = 1; i < seatNumbers.length; i++) {
-        const gap = seatNumbers[i] - seatNumbers[i - 1];
-        if (gap > 1) {
-          // Нашли разрыв - второй стол начинается с seatNumbers[i]
-          // Значит первый стол имел максимум (seatNumbers[i] - 1) мест
-          // Например: если второй стол начинается с 11, то первый стол был 1-10, размер = 10
-          detectedMaxPerTable = seatNumbers[i] - 1;
-          break;
-        }
-      }
-      
-      // Если разрывов не нашли, значит это один стол или все места подряд
-      // В этом случае оставляем текущее значение из state
-    }
-    
-    // Обновляем state только если определили размер из данных
-    if (detectedMaxPerTable !== playersPerTable && detectedMaxPerTable > 0) {
+    // Обновляем state если значение отличается
+    if (detectedMaxPerTable !== playersPerTable) {
       setPlayersPerTable(detectedMaxPerTable);
     }
     
+    const seatNumbers = seatingData.map(s => s.seat_number);
     const maxSeatNumber = Math.max(...seatNumbers);
     const totalTables = Math.ceil(maxSeatNumber / detectedMaxPerTable);
     
@@ -288,6 +271,9 @@ const TableSeating = ({
       toast({ title: "Ошибка", description: "Нет активных игроков для рассадки", variant: "destructive" });
       return;
     }
+
+    // Сохраняем playersPerTable в localStorage для восстановления после перезагрузки
+    localStorage.setItem(`tournament_${tournamentId}_playersPerTable`, playersPerTable.toString());
 
     await supabase
       .from('tournament_registrations')
