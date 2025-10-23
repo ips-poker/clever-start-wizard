@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Progress } from "@/components/ui/progress";
 import { Coffee, Clock, Users, Trophy } from "lucide-react";
 import ipsLogo from "/lovable-uploads/3d3f89dd-02a1-4e23-845c-641c0ee0956b.png";
-import telegramQr from "@/assets/telegram-qr.png";
+import telegramQr from "@/assets/telegram-qr-new.jpg";
 import { calculateTotalRPSPool } from "@/utils/rpsCalculations";
 
 interface Tournament {
