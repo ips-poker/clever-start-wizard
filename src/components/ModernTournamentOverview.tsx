@@ -133,7 +133,20 @@ const ModernTournamentOverview = ({
     <div className="space-y-8">
       {/* Полноэкранный таймер */}
       {showFullscreenTimer && (
-        <div>Полноэкранный таймер временно недоступен</div>
+        <FullscreenTimer
+          tournament={tournament}
+          registrations={registrations}
+          currentTime={currentTime}
+          timerActive={timerActive}
+          onToggleTimer={onToggleTimer}
+          onResetTimer={onResetTimer}
+          onNextLevel={onNextLevel}
+          onPrevLevel={onPrevLevel}
+          onStopTournament={onStopTournament}
+          onClose={closeFullscreenTimer}
+          onTimerAdjust={onTimerAdjust || (() => {})}
+          blindLevels={blindLevels}
+        />
       )}
 
       {/* Основная информация о турнире */}
