@@ -51,6 +51,15 @@ const ExternalTimer = () => {
   const [timerActive, setTimerActive] = useState(false);
   const [slogan, setSlogan] = useState("Престижные турниры. Высокие стандарты.");
   const [telegramQr, setTelegramQr] = useState<string>("");
+  const [isDarkTheme, setIsDarkTheme] = useState(() => {
+    const saved = localStorage.getItem('timer-theme');
+    return saved ? saved === 'dark' : false;
+  });
+
+  // Сохраняем выбор темы
+  useEffect(() => {
+    localStorage.setItem('timer-theme', isDarkTheme ? 'dark' : 'light');
+  }, [isDarkTheme]);
 
   useEffect(() => {
     if (!tournamentId) return;
@@ -236,9 +245,17 @@ const ExternalTimer = () => {
   const currentAnte = currentLevel?.ante || 0;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white text-gray-800 flex flex-col">
+    <div className={`min-h-screen flex flex-col transition-all duration-500 ${
+      isDarkTheme 
+        ? 'bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white' 
+        : 'bg-gradient-to-br from-gray-50 to-white text-gray-800'
+    }`}>
       {/* Header */}
-      <div className="flex justify-between items-center p-6 border-b border-gray-200 bg-white shadow-sm">
+      <div className={`flex justify-between items-center p-6 border-b transition-all duration-500 ${
+        isDarkTheme
+          ? 'bg-slate-900/50 backdrop-blur-xl border-slate-700/50 shadow-lg shadow-blue-500/10'
+          : 'bg-white border-gray-200 shadow-sm'
+      }`}>
         {/* Left - Logo and Company */}
         <div className="flex items-center space-x-4">
           <div className="w-24 h-24 flex items-center justify-center">
@@ -256,19 +273,44 @@ const ExternalTimer = () => {
 
         {/* Center - Tournament Name and Slogan */}
         <div className="text-center flex-1 mx-8">
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">{tournament.name}</h1>
-          <p className="text-lg text-gray-500 italic">{slogan}</p>
+          <h1 className={`text-3xl font-bold mb-2 transition-all duration-500 ${
+            isDarkTheme 
+              ? 'bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent'
+              : 'text-gray-800'
+          }`}>
+            {tournament.name}
+          </h1>
+          <p className={`text-lg italic transition-colors duration-500 ${
+            isDarkTheme ? 'text-slate-400' : 'text-gray-500'
+          }`}>
+            {slogan}
+          </p>
         </div>
 
-        {/* Right - QR Code */}
-        <div className="flex items-center">
+        {/* Right - QR Code and Theme Toggle */}
+        <div className="flex items-center gap-4">
           {telegramQr && (
             <img 
               src={telegramQr} 
               alt="Telegram QR" 
-              className="w-32 h-32 border border-gray-200 rounded bg-white"
+              className={`w-32 h-32 border rounded transition-all duration-500 ${
+                isDarkTheme 
+                  ? 'border-blue-500/30 bg-white shadow-lg shadow-blue-500/20' 
+                  : 'border-gray-200 bg-white'
+              }`}
             />
           )}
+          <button
+            onClick={() => setIsDarkTheme(!isDarkTheme)}
+            className={`p-3 rounded-lg transition-all duration-300 ${
+              isDarkTheme
+                ? 'bg-gradient-to-br from-blue-500/20 to-purple-500/20 border border-blue-500/30 hover:border-blue-400/50 shadow-lg shadow-blue-500/10'
+                : 'bg-gray-100 hover:bg-gray-200 border border-gray-300'
+            }`}
+            title={isDarkTheme ? 'Светлая тема' : 'Темная тема'}
+          >
+            {isDarkTheme ? '☀️' : '🌙'}
+          </button>
         </div>
       </div>
 
@@ -276,85 +318,193 @@ const ExternalTimer = () => {
       <div className="flex-1 flex flex-col justify-center items-center space-y-8 p-8">
         {/* Current Level */}
         <div className="text-center">
-          <div className="inline-flex items-center gap-3 bg-gray-100 rounded-xl px-6 py-3 mb-6">
+          <div className={`inline-flex items-center gap-3 rounded-xl px-6 py-3 mb-6 transition-all duration-500 ${
+            isDarkTheme
+              ? 'bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/30 shadow-lg shadow-blue-500/10'
+              : 'bg-gray-100'
+          }`}>
             {isBreakLevel ? (
               <>
-                <Coffee className="w-6 h-6 text-amber-600" />
-                <span className="text-2xl font-medium text-gray-800">ПЕРЕРЫВ</span>
+                <Coffee className={`w-6 h-6 transition-colors duration-500 ${
+                  isDarkTheme ? 'text-amber-400' : 'text-amber-600'
+                }`} />
+                <span className={`text-2xl font-medium transition-colors duration-500 ${
+                  isDarkTheme ? 'text-white' : 'text-gray-800'
+                }`}>
+                  ПЕРЕРЫВ
+                </span>
               </>
             ) : (
               <>
-                <Clock className="w-6 h-6 text-gray-600" />
-                <span className="text-2xl font-medium text-gray-800">Уровень {tournament.current_level}</span>
+                <Clock className={`w-6 h-6 transition-colors duration-500 ${
+                  isDarkTheme ? 'text-blue-400' : 'text-gray-600'
+                }`} />
+                <span className={`text-2xl font-medium transition-colors duration-500 ${
+                  isDarkTheme ? 'text-white' : 'text-gray-800'
+                }`}>
+                  Уровень {tournament.current_level}
+                </span>
               </>
             )}
           </div>
           
           {/* Timer Display */}
           <div className={`text-[20rem] md:text-[24rem] font-mono font-light transition-all duration-500 leading-none ${
-            currentTime <= 60 ? 'text-red-500 animate-pulse' : 
-            currentTime <= 300 ? 'text-amber-500' : 
-            'text-gray-800'
+            currentTime <= 60 
+              ? isDarkTheme 
+                ? 'bg-gradient-to-r from-red-500 via-pink-500 to-red-500 bg-clip-text text-transparent animate-pulse drop-shadow-[0_0_30px_rgba(239,68,68,0.5)]' 
+                : 'text-red-500 animate-pulse'
+              : currentTime <= 300 
+                ? isDarkTheme
+                  ? 'bg-gradient-to-r from-amber-400 to-orange-500 bg-clip-text text-transparent drop-shadow-[0_0_20px_rgba(251,191,36,0.3)]'
+                  : 'text-amber-500'
+                : isDarkTheme
+                  ? 'bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent drop-shadow-[0_0_40px_rgba(96,165,250,0.2)]'
+                  : 'text-gray-800'
           }`}>
             {formatTime(currentTime)}
           </div>
           
           {/* Progress Bar */}
           <div className="w-96 max-w-full mt-8">
-            <Progress 
-              value={timerProgress} 
-              className="h-4 bg-gray-200"
-            />
+            <div className={`h-4 rounded-full overflow-hidden transition-all duration-500 ${
+              isDarkTheme 
+                ? 'bg-slate-800/50 border border-slate-700/50 shadow-inner shadow-black/50' 
+                : 'bg-gray-200'
+            }`}>
+              <div
+                className={`h-full transition-all duration-1000 ${
+                  isDarkTheme
+                    ? 'bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 shadow-lg shadow-blue-500/50'
+                    : 'bg-primary'
+                }`}
+                style={{ width: `${timerProgress}%` }}
+              />
+            </div>
           </div>
         </div>
 
         {/* Current and Next Blinds */}
         <div className="grid grid-cols-2 gap-8 max-w-4xl w-full">
           {/* Current Blinds */}
-          <div className="text-center p-8 border-4 border-gray-800 rounded-xl bg-white shadow-xl">
-            <p className="text-lg text-gray-800 font-bold mb-4">ТЕКУЩИЙ УРОВЕНЬ</p>
+          <div className={`text-center p-8 rounded-xl shadow-xl transition-all duration-500 ${
+            isDarkTheme
+              ? 'bg-gradient-to-br from-slate-800/50 to-slate-900/50 backdrop-blur-xl border-2 border-blue-500/30 shadow-blue-500/20'
+              : 'border-4 border-gray-800 bg-white'
+          }`}>
+            <p className={`text-lg font-bold mb-4 transition-colors duration-500 ${
+              isDarkTheme ? 'text-blue-400' : 'text-gray-800'
+            }`}>
+              ТЕКУЩИЙ УРОВЕНЬ
+            </p>
             <div className={`grid gap-4 ${currentLevel?.ante > 0 ? 'grid-cols-3' : 'grid-cols-2'}`}>
               <div className="space-y-2">
-                <p className="text-5xl font-bold text-gray-900">{isBreakLevel ? '—' : (currentLevel?.small_blind || tournament.current_small_blind)}</p>
-                <p className="text-sm text-gray-600">МАЛЫЙ БЛАЙНД</p>
+                <p className={`text-5xl font-bold transition-all duration-500 ${
+                  isDarkTheme 
+                    ? 'bg-gradient-to-br from-blue-400 to-purple-400 bg-clip-text text-transparent drop-shadow-[0_0_20px_rgba(96,165,250,0.3)]' 
+                    : 'text-gray-900'
+                }`}>
+                  {isBreakLevel ? '—' : (currentLevel?.small_blind || tournament.current_small_blind)}
+                </p>
+                <p className={`text-sm transition-colors duration-500 ${
+                  isDarkTheme ? 'text-slate-400' : 'text-gray-600'
+                }`}>
+                  МАЛЫЙ БЛАЙНД
+                </p>
               </div>
               <div className="space-y-2">
-                <p className="text-5xl font-bold text-gray-900">{isBreakLevel ? '—' : (currentLevel?.big_blind || tournament.current_big_blind)}</p>
-                <p className="text-sm text-gray-600">БОЛЬШОЙ БЛАЙНД</p>
+                <p className={`text-5xl font-bold transition-all duration-500 ${
+                  isDarkTheme 
+                    ? 'bg-gradient-to-br from-blue-400 to-purple-400 bg-clip-text text-transparent drop-shadow-[0_0_20px_rgba(96,165,250,0.3)]' 
+                    : 'text-gray-900'
+                }`}>
+                  {isBreakLevel ? '—' : (currentLevel?.big_blind || tournament.current_big_blind)}
+                </p>
+                <p className={`text-sm transition-colors duration-500 ${
+                  isDarkTheme ? 'text-slate-400' : 'text-gray-600'
+                }`}>
+                  БОЛЬШОЙ БЛАЙНД
+                </p>
               </div>
               {currentLevel?.ante > 0 && (
                 <div className="space-y-2">
-                  <p className="text-5xl font-bold text-amber-600">{isBreakLevel ? '—' : currentLevel.ante}</p>
-                  <p className="text-sm text-gray-600">АНТЕ</p>
+                  <p className={`text-5xl font-bold transition-all duration-500 ${
+                    isDarkTheme 
+                      ? 'bg-gradient-to-br from-amber-400 to-orange-500 bg-clip-text text-transparent drop-shadow-[0_0_20px_rgba(251,191,36,0.3)]' 
+                      : 'text-amber-600'
+                  }`}>
+                    {isBreakLevel ? '—' : currentLevel.ante}
+                  </p>
+                  <p className={`text-sm transition-colors duration-500 ${
+                    isDarkTheme ? 'text-slate-400' : 'text-gray-600'
+                  }`}>
+                    АНТЕ
+                  </p>
                 </div>
               )}
             </div>
           </div>
 
           {/* Next Blinds */}
-          <div className="text-center p-8 border-2 border-gray-300 rounded-xl bg-gray-50">
-            <p className="text-lg text-gray-500 font-medium mb-4">
+          <div className={`text-center p-8 rounded-xl transition-all duration-500 ${
+            isDarkTheme
+              ? 'bg-slate-800/30 backdrop-blur-xl border border-slate-700/50'
+              : 'border-2 border-gray-300 bg-gray-50'
+          }`}>
+            <p className={`text-lg font-medium mb-4 transition-colors duration-500 ${
+              isDarkTheme ? 'text-slate-400' : 'text-gray-500'
+            }`}>
               {isBreakLevel ? 'ПОСЛЕ ПЕРЕРЫВА' : (isNextBreakLevel ? 'ПЕРЕРЫВ' : 'СЛЕДУЮЩИЙ УРОВЕНЬ')}
             </p>
             {isNextBreakLevel ? (
               <div className="flex items-center justify-center py-8">
-                <Coffee className="w-16 h-16 text-amber-600 mr-4" />
-                <span className="text-4xl font-medium text-gray-700">ПЕРЕРЫВ</span>
+                <Coffee className={`w-16 h-16 mr-4 transition-colors duration-500 ${
+                  isDarkTheme ? 'text-amber-400' : 'text-amber-600'
+                }`} />
+                <span className={`text-4xl font-medium transition-colors duration-500 ${
+                  isDarkTheme ? 'text-slate-300' : 'text-gray-700'
+                }`}>
+                  ПЕРЕРЫВ
+                </span>
               </div>
             ) : (
               <div className={`grid gap-4 ${nextLevel?.ante > 0 ? 'grid-cols-3' : 'grid-cols-2'}`}>
                 <div className="space-y-2">
-                  <p className="text-3xl font-medium text-gray-700">{nextSmallBlind}</p>
-                  <p className="text-sm text-gray-500">МАЛЫЙ БЛАЙНД</p>
+                  <p className={`text-3xl font-medium transition-colors duration-500 ${
+                    isDarkTheme ? 'text-slate-300' : 'text-gray-700'
+                  }`}>
+                    {nextSmallBlind}
+                  </p>
+                  <p className={`text-sm transition-colors duration-500 ${
+                    isDarkTheme ? 'text-slate-500' : 'text-gray-500'
+                  }`}>
+                    МАЛЫЙ БЛАЙНД
+                  </p>
                 </div>
                 <div className="space-y-2">
-                  <p className="text-3xl font-medium text-gray-700">{nextBigBlind}</p>
-                  <p className="text-sm text-gray-500">БОЛЬШОЙ БЛАЙНД</p>
+                  <p className={`text-3xl font-medium transition-colors duration-500 ${
+                    isDarkTheme ? 'text-slate-300' : 'text-gray-700'
+                  }`}>
+                    {nextBigBlind}
+                  </p>
+                  <p className={`text-sm transition-colors duration-500 ${
+                    isDarkTheme ? 'text-slate-500' : 'text-gray-500'
+                  }`}>
+                    БОЛЬШОЙ БЛАЙНД
+                  </p>
                 </div>
                 {nextLevel?.ante > 0 && (
                   <div className="space-y-2">
-                    <p className="text-3xl font-medium text-amber-500">{nextLevel.ante}</p>
-                    <p className="text-sm text-gray-500">АНТЕ</p>
+                    <p className={`text-3xl font-medium transition-colors duration-500 ${
+                      isDarkTheme ? 'text-amber-400' : 'text-amber-500'
+                    }`}>
+                      {nextLevel.ante}
+                    </p>
+                    <p className={`text-sm transition-colors duration-500 ${
+                      isDarkTheme ? 'text-slate-500' : 'text-gray-500'
+                    }`}>
+                      АНТЕ
+                    </p>
                   </div>
                 )}
               </div>
@@ -363,41 +513,89 @@ const ExternalTimer = () => {
         </div>
 
         {/* Statistics */}
-        <div className="bg-white border border-gray-200 rounded-xl p-6 max-w-6xl w-full shadow-lg">
+        <div className={`rounded-xl p-6 max-w-6xl w-full shadow-lg transition-all duration-500 ${
+          isDarkTheme
+            ? 'bg-gradient-to-br from-slate-800/50 to-slate-900/50 backdrop-blur-xl border border-slate-700/50 shadow-blue-500/10'
+            : 'bg-white border border-gray-200'
+        }`}>
           <div className="grid grid-cols-4 gap-8 text-center">
             <div>
               <div className="flex items-center justify-center mb-2">
-                <Users className="w-6 h-6 text-gray-600 mr-3" />
-                <span className="text-lg text-gray-600">Игроки</span>
+                <Users className={`w-6 h-6 mr-3 transition-colors duration-500 ${
+                  isDarkTheme ? 'text-blue-400' : 'text-gray-600'
+                }`} />
+                <span className={`text-lg transition-colors duration-500 ${
+                  isDarkTheme ? 'text-slate-400' : 'text-gray-600'
+                }`}>
+                  Игроки
+                </span>
               </div>
-              <p className="text-3xl font-medium text-gray-800">{activePlayers.length}</p>
+              <p className={`text-3xl font-medium transition-colors duration-500 ${
+                isDarkTheme ? 'text-white' : 'text-gray-800'
+              }`}>
+                {activePlayers.length}
+              </p>
             </div>
             <div>
               <div className="flex items-center justify-center mb-2">
-                <Trophy className="w-6 h-6 text-amber-600 mr-3" />
-                <span className="text-lg text-gray-600">Призовой фонд RPS</span>
+                <Trophy className={`w-6 h-6 mr-3 transition-colors duration-500 ${
+                  isDarkTheme ? 'text-amber-400' : 'text-amber-600'
+                }`} />
+                <span className={`text-lg transition-colors duration-500 ${
+                  isDarkTheme ? 'text-slate-400' : 'text-gray-600'
+                }`}>
+                  Призовой фонд RPS
+                </span>
               </div>
-              <p className="text-3xl font-medium text-gray-800">{rpsPool.toLocaleString()} RPS</p>
+              <p className={`text-3xl font-medium transition-all duration-500 ${
+                isDarkTheme 
+                  ? 'bg-gradient-to-r from-amber-400 to-orange-500 bg-clip-text text-transparent drop-shadow-[0_0_15px_rgba(251,191,36,0.3)]' 
+                  : 'text-gray-800'
+              }`}>
+                {rpsPool.toLocaleString()} RPS
+              </p>
             </div>
             <div>
               <div className="flex items-center justify-center mb-2">
-                <span className="text-lg text-gray-600">Средний стек</span>
+                <span className={`text-lg transition-colors duration-500 ${
+                  isDarkTheme ? 'text-slate-400' : 'text-gray-600'
+                }`}>
+                  Средний стек
+                </span>
               </div>
-              <p className="text-3xl font-medium text-gray-800">{averageStack.toLocaleString()}</p>
+              <p className={`text-3xl font-medium transition-colors duration-500 ${
+                isDarkTheme ? 'text-white' : 'text-gray-800'
+              }`}>
+                {averageStack.toLocaleString()}
+              </p>
             </div>
             <div>
               <div className="flex items-center justify-center mb-2">
-                <span className="text-lg text-gray-600">Re-entry / Доп. наборы</span>
+                <span className={`text-lg transition-colors duration-500 ${
+                  isDarkTheme ? 'text-slate-400' : 'text-gray-600'
+                }`}>
+                  Re-entry / Доп. наборы
+                </span>
               </div>
-              <p className="text-3xl font-medium text-gray-800">{totalReentries} / {totalAdditionalSets}</p>
+              <p className={`text-3xl font-medium transition-colors duration-500 ${
+                isDarkTheme ? 'text-white' : 'text-gray-800'
+              }`}>
+                {totalReentries} / {totalAdditionalSets}
+              </p>
             </div>
           </div>
         </div>
       </div>
 
       {/* Footer */}
-      <div className="bg-gray-100 border-t border-gray-200 p-4 text-center">
-        <p className="text-gray-500 text-sm">
+      <div className={`border-t p-4 text-center transition-all duration-500 ${
+        isDarkTheme
+          ? 'bg-slate-900/50 backdrop-blur-xl border-slate-800/50'
+          : 'bg-gray-100 border-gray-200'
+      }`}>
+        <p className={`text-sm transition-colors duration-500 ${
+          isDarkTheme ? 'text-slate-500' : 'text-gray-500'
+        }`}>
           Внешний дисплей турнира • Обновляется автоматически
         </p>
       </div>
