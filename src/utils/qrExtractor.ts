@@ -1,5 +1,5 @@
 /**
- * Извлекает QR код из изображения и конвертирует в черно-белый формат
+ * Извлекает центральную белую область с QR кодом и надписью
  */
 export const extractAndConvertQR = async (imageSrc: string): Promise<string> => {
   return new Promise((resolve, reject) => {
@@ -27,6 +27,9 @@ export const extractAndConvertQR = async (imageSrc: string): Promise<string> => 
       let minX = canvas.width, minY = canvas.height;
       let maxX = 0, maxY = 0;
       
+      // Определяем порог для белого цвета
+      const whiteThreshold = 180;
+      
       for (let y = 0; y < canvas.height; y++) {
         for (let x = 0; x < canvas.width; x++) {
           const i = (y * canvas.width + x) * 4;
@@ -35,7 +38,7 @@ export const extractAndConvertQR = async (imageSrc: string): Promise<string> => 
           const b = data[i + 2];
           
           // Определяем светлые пиксели (белый фон QR кода)
-          if (r > 200 && g > 200 && b > 200) {
+          if (r > whiteThreshold && g > whiteThreshold && b > whiteThreshold) {
             minX = Math.min(minX, x);
             minY = Math.min(minY, y);
             maxX = Math.max(maxX, x);
@@ -44,16 +47,20 @@ export const extractAndConvertQR = async (imageSrc: string): Promise<string> => 
         }
       }
       
-      // Добавляем небольшой отступ
-      const padding = 20;
-      minX = Math.max(0, minX - padding);
-      minY = Math.max(0, minY - padding);
-      maxX = Math.min(canvas.width, maxX + padding);
-      maxY = Math.min(canvas.height, maxY + padding);
+      // Вычисляем центр белой области
+      const centerX = (minX + maxX) / 2;
+      const centerY = (minY + maxY) / 2;
+      
+      // Определяем размер обрезки (квадрат вокруг центра)
+      const size = Math.min(maxX - minX, maxY - minY) * 0.85;
+      
+      // Вычисляем координаты обрезки
+      const cropX = Math.max(0, centerX - size / 2);
+      const cropY = Math.max(0, centerY - size / 2);
+      const cropWidth = Math.min(size, canvas.width - cropX);
+      const cropHeight = Math.min(size, canvas.height - cropY);
       
       // Создаем новый canvas с обрезанным изображением
-      const croppedWidth = maxX - minX;
-      const croppedHeight = maxY - minY;
       const croppedCanvas = document.createElement('canvas');
       const croppedCtx = croppedCanvas.getContext('2d');
       
@@ -62,30 +69,19 @@ export const extractAndConvertQR = async (imageSrc: string): Promise<string> => 
         return;
       }
       
-      croppedCanvas.width = croppedWidth;
-      croppedCanvas.height = croppedHeight;
+      croppedCanvas.width = cropWidth;
+      croppedCanvas.height = cropHeight;
+      
+      // Заливаем белым фоном
+      croppedCtx.fillStyle = '#FFFFFF';
+      croppedCtx.fillRect(0, 0, cropWidth, cropHeight);
       
       // Копируем обрезанную область
       croppedCtx.drawImage(
         canvas,
-        minX, minY, croppedWidth, croppedHeight,
-        0, 0, croppedWidth, croppedHeight
+        cropX, cropY, cropWidth, cropHeight,
+        0, 0, cropWidth, cropHeight
       );
-      
-      // Конвертируем в черно-белое
-      const croppedImageData = croppedCtx.getImageData(0, 0, croppedWidth, croppedHeight);
-      const croppedData = croppedImageData.data;
-      
-      for (let i = 0; i < croppedData.length; i += 4) {
-        const avg = (croppedData[i] + croppedData[i + 1] + croppedData[i + 2]) / 3;
-        // Пороговое значение для черно-белого
-        const value = avg > 128 ? 255 : 0;
-        croppedData[i] = value;
-        croppedData[i + 1] = value;
-        croppedData[i + 2] = value;
-      }
-      
-      croppedCtx.putImageData(croppedImageData, 0, 0);
       
       // Конвертируем в base64
       resolve(croppedCanvas.toDataURL('image/png'));
