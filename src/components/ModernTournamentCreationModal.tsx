@@ -142,9 +142,24 @@ export function ModernTournamentCreationModal({
   const [activeTab, setActiveTab] = useState('basic');
   const { toast } = useToast();
 
+  // Функция для конвертации UTC времени в локальное для input datetime-local
+  const convertUTCToLocalDateTime = (utcDateString: string): string => {
+    if (!utcDateString) return '';
+    const date = new Date(utcDateString);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+  };
+
   useEffect(() => {
     if (tournament) {
-      setFormData(tournament);
+      setFormData({
+        ...tournament,
+        start_time: convertUTCToLocalDateTime(tournament.start_time)
+      });
     } else {
       // Сброс формы для нового турнира
       setFormData({
