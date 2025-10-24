@@ -258,7 +258,9 @@ const ExternalTimer = () => {
       }`}>
         {/* Left - Logo and Company */}
         <div className="flex items-center space-x-4">
-          <div className="w-24 h-24 flex items-center justify-center">
+          <div className={`w-24 h-24 flex items-center justify-center transition-all duration-500 ${
+            isDarkTheme ? 'bg-white/95 rounded-xl p-2 shadow-lg shadow-blue-500/20' : ''
+          }`}>
             <img 
               src={ipsLogo} 
               alt="EPC Logo" 
@@ -266,8 +268,16 @@ const ExternalTimer = () => {
             />
           </div>
           <div className="flex flex-col">
-            <span className="text-2xl font-sinkin text-poker-gold tracking-tight">EPC</span>
-            <span className="text-sm text-muted-foreground -mt-1 font-sinkin font-medium tracking-widest uppercase">EVENT POKER CLUB</span>
+            <span className={`text-2xl font-sinkin tracking-tight transition-colors duration-500 ${
+              isDarkTheme ? 'bg-gradient-to-r from-amber-400 via-yellow-500 to-amber-400 bg-clip-text text-transparent' : 'text-poker-gold'
+            }`}>
+              EPC
+            </span>
+            <span className={`text-sm -mt-1 font-sinkin font-medium tracking-widest uppercase transition-colors duration-500 ${
+              isDarkTheme ? 'text-slate-400' : 'text-muted-foreground'
+            }`}>
+              EVENT POKER CLUB
+            </span>
           </div>
         </div>
 
@@ -275,13 +285,13 @@ const ExternalTimer = () => {
         <div className="text-center flex-1 mx-8">
           <h1 className={`text-3xl font-bold mb-2 transition-all duration-500 ${
             isDarkTheme 
-              ? 'bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent'
+              ? 'bg-gradient-to-r from-cyan-300 via-blue-400 to-purple-400 bg-clip-text text-transparent drop-shadow-[0_0_30px_rgba(34,211,238,0.3)]'
               : 'text-gray-800'
           }`}>
             {tournament.name}
           </h1>
           <p className={`text-lg italic transition-colors duration-500 ${
-            isDarkTheme ? 'text-slate-400' : 'text-gray-500'
+            isDarkTheme ? 'text-cyan-300/70' : 'text-gray-500'
           }`}>
             {slogan}
           </p>
@@ -290,21 +300,25 @@ const ExternalTimer = () => {
         {/* Right - QR Code and Theme Toggle */}
         <div className="flex items-center gap-4">
           {telegramQr && (
-            <img 
-              src={telegramQr} 
-              alt="Telegram QR" 
-              className={`w-32 h-32 border rounded transition-all duration-500 ${
-                isDarkTheme 
-                  ? 'border-blue-500/30 bg-white shadow-lg shadow-blue-500/20' 
-                  : 'border-gray-200 bg-white'
-              }`}
-            />
+            <div className={`transition-all duration-500 ${
+              isDarkTheme ? 'p-2 bg-white/95 rounded-xl shadow-lg shadow-cyan-500/20' : ''
+            }`}>
+              <img 
+                src={telegramQr} 
+                alt="Telegram QR" 
+                className={`w-28 h-28 border rounded transition-all duration-500 ${
+                  isDarkTheme 
+                    ? 'border-transparent' 
+                    : 'border-gray-200'
+                }`}
+              />
+            </div>
           )}
           <button
             onClick={() => setIsDarkTheme(!isDarkTheme)}
             className={`p-3 rounded-lg transition-all duration-300 ${
               isDarkTheme
-                ? 'bg-gradient-to-br from-blue-500/20 to-purple-500/20 border border-blue-500/30 hover:border-blue-400/50 shadow-lg shadow-blue-500/10'
+                ? 'bg-gradient-to-br from-cyan-500/20 to-blue-500/20 border border-cyan-500/40 hover:border-cyan-400/60 shadow-lg shadow-cyan-500/20'
                 : 'bg-gray-100 hover:bg-gray-200 border border-gray-300'
             }`}
             title={isDarkTheme ? 'Светлая тема' : 'Темная тема'}
@@ -320,7 +334,7 @@ const ExternalTimer = () => {
         <div className="text-center">
           <div className={`inline-flex items-center gap-3 rounded-xl px-6 py-3 mb-6 transition-all duration-500 ${
             isDarkTheme
-              ? 'bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/30 shadow-lg shadow-blue-500/10'
+              ? 'bg-gradient-to-r from-cyan-500/15 to-blue-500/15 border border-cyan-500/40 shadow-lg shadow-cyan-500/20'
               : 'bg-gray-100'
           }`}>
             {isBreakLevel ? (
@@ -329,7 +343,7 @@ const ExternalTimer = () => {
                   isDarkTheme ? 'text-amber-400' : 'text-amber-600'
                 }`} />
                 <span className={`text-2xl font-medium transition-colors duration-500 ${
-                  isDarkTheme ? 'text-white' : 'text-gray-800'
+                  isDarkTheme ? 'text-cyan-100' : 'text-gray-800'
                 }`}>
                   ПЕРЕРЫВ
                 </span>
@@ -337,10 +351,10 @@ const ExternalTimer = () => {
             ) : (
               <>
                 <Clock className={`w-6 h-6 transition-colors duration-500 ${
-                  isDarkTheme ? 'text-blue-400' : 'text-gray-600'
+                  isDarkTheme ? 'text-cyan-400' : 'text-gray-600'
                 }`} />
                 <span className={`text-2xl font-medium transition-colors duration-500 ${
-                  isDarkTheme ? 'text-white' : 'text-gray-800'
+                  isDarkTheme ? 'text-cyan-100' : 'text-gray-800'
                 }`}>
                   Уровень {tournament.current_level}
                 </span>
@@ -352,14 +366,14 @@ const ExternalTimer = () => {
           <div className={`text-[20rem] md:text-[24rem] font-mono font-light transition-all duration-500 leading-none ${
             currentTime <= 60 
               ? isDarkTheme 
-                ? 'bg-gradient-to-r from-red-500 via-pink-500 to-red-500 bg-clip-text text-transparent animate-pulse drop-shadow-[0_0_30px_rgba(239,68,68,0.5)]' 
+                ? 'bg-gradient-to-r from-red-400 via-pink-400 to-red-400 bg-clip-text text-transparent animate-pulse drop-shadow-[0_0_40px_rgba(248,113,113,0.6)]' 
                 : 'text-red-500 animate-pulse'
               : currentTime <= 300 
                 ? isDarkTheme
-                  ? 'bg-gradient-to-r from-amber-400 to-orange-500 bg-clip-text text-transparent drop-shadow-[0_0_20px_rgba(251,191,36,0.3)]'
+                  ? 'bg-gradient-to-r from-amber-300 via-yellow-400 to-amber-300 bg-clip-text text-transparent drop-shadow-[0_0_30px_rgba(251,191,36,0.4)]'
                   : 'text-amber-500'
                 : isDarkTheme
-                  ? 'bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent drop-shadow-[0_0_40px_rgba(96,165,250,0.2)]'
+                  ? 'bg-gradient-to-r from-cyan-300 via-blue-400 to-purple-400 bg-clip-text text-transparent drop-shadow-[0_0_50px_rgba(34,211,238,0.3)]'
                   : 'text-gray-800'
           }`}>
             {formatTime(currentTime)}
@@ -375,7 +389,7 @@ const ExternalTimer = () => {
               <div
                 className={`h-full transition-all duration-1000 ${
                   isDarkTheme
-                    ? 'bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 shadow-lg shadow-blue-500/50'
+                    ? 'bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 shadow-lg shadow-cyan-500/50'
                     : 'bg-primary'
                 }`}
                 style={{ width: `${timerProgress}%` }}
@@ -389,11 +403,11 @@ const ExternalTimer = () => {
           {/* Current Blinds */}
           <div className={`text-center p-8 rounded-xl shadow-xl transition-all duration-500 ${
             isDarkTheme
-              ? 'bg-gradient-to-br from-slate-800/50 to-slate-900/50 backdrop-blur-xl border-2 border-blue-500/30 shadow-blue-500/20'
+              ? 'bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur-xl border-2 border-cyan-500/40 shadow-cyan-500/30'
               : 'border-4 border-gray-800 bg-white'
           }`}>
             <p className={`text-lg font-bold mb-4 transition-colors duration-500 ${
-              isDarkTheme ? 'text-blue-400' : 'text-gray-800'
+              isDarkTheme ? 'text-cyan-400' : 'text-gray-800'
             }`}>
               ТЕКУЩИЙ УРОВЕНЬ
             </p>
@@ -401,13 +415,13 @@ const ExternalTimer = () => {
               <div className="space-y-2">
                 <p className={`text-5xl font-bold transition-all duration-500 ${
                   isDarkTheme 
-                    ? 'bg-gradient-to-br from-blue-400 to-purple-400 bg-clip-text text-transparent drop-shadow-[0_0_20px_rgba(96,165,250,0.3)]' 
+                    ? 'bg-gradient-to-br from-cyan-300 to-blue-400 bg-clip-text text-transparent drop-shadow-[0_0_25px_rgba(34,211,238,0.4)]' 
                     : 'text-gray-900'
                 }`}>
                   {isBreakLevel ? '—' : (currentLevel?.small_blind || tournament.current_small_blind)}
                 </p>
                 <p className={`text-sm transition-colors duration-500 ${
-                  isDarkTheme ? 'text-slate-400' : 'text-gray-600'
+                  isDarkTheme ? 'text-cyan-300/60' : 'text-gray-600'
                 }`}>
                   МАЛЫЙ БЛАЙНД
                 </p>
@@ -415,13 +429,13 @@ const ExternalTimer = () => {
               <div className="space-y-2">
                 <p className={`text-5xl font-bold transition-all duration-500 ${
                   isDarkTheme 
-                    ? 'bg-gradient-to-br from-blue-400 to-purple-400 bg-clip-text text-transparent drop-shadow-[0_0_20px_rgba(96,165,250,0.3)]' 
+                    ? 'bg-gradient-to-br from-cyan-300 to-blue-400 bg-clip-text text-transparent drop-shadow-[0_0_25px_rgba(34,211,238,0.4)]' 
                     : 'text-gray-900'
                 }`}>
                   {isBreakLevel ? '—' : (currentLevel?.big_blind || tournament.current_big_blind)}
                 </p>
                 <p className={`text-sm transition-colors duration-500 ${
-                  isDarkTheme ? 'text-slate-400' : 'text-gray-600'
+                  isDarkTheme ? 'text-cyan-300/60' : 'text-gray-600'
                 }`}>
                   БОЛЬШОЙ БЛАЙНД
                 </p>
@@ -430,13 +444,13 @@ const ExternalTimer = () => {
                 <div className="space-y-2">
                   <p className={`text-5xl font-bold transition-all duration-500 ${
                     isDarkTheme 
-                      ? 'bg-gradient-to-br from-amber-400 to-orange-500 bg-clip-text text-transparent drop-shadow-[0_0_20px_rgba(251,191,36,0.3)]' 
+                      ? 'bg-gradient-to-br from-amber-300 via-yellow-400 to-amber-300 bg-clip-text text-transparent drop-shadow-[0_0_25px_rgba(252,211,77,0.4)]' 
                       : 'text-amber-600'
                   }`}>
                     {isBreakLevel ? '—' : currentLevel.ante}
                   </p>
                   <p className={`text-sm transition-colors duration-500 ${
-                    isDarkTheme ? 'text-slate-400' : 'text-gray-600'
+                    isDarkTheme ? 'text-amber-300/60' : 'text-gray-600'
                   }`}>
                     АНТЕ
                   </p>
@@ -448,7 +462,7 @@ const ExternalTimer = () => {
           {/* Next Blinds */}
           <div className={`text-center p-8 rounded-xl transition-all duration-500 ${
             isDarkTheme
-              ? 'bg-slate-800/30 backdrop-blur-xl border border-slate-700/50'
+              ? 'bg-slate-800/40 backdrop-blur-xl border border-slate-700/60'
               : 'border-2 border-gray-300 bg-gray-50'
           }`}>
             <p className={`text-lg font-medium mb-4 transition-colors duration-500 ${
@@ -470,28 +484,28 @@ const ExternalTimer = () => {
             ) : (
               <div className={`grid gap-4 ${nextLevel?.ante > 0 ? 'grid-cols-3' : 'grid-cols-2'}`}>
                 <div className="space-y-2">
-                  <p className={`text-3xl font-medium transition-colors duration-500 ${
-                    isDarkTheme ? 'text-slate-300' : 'text-gray-700'
-                  }`}>
-                    {nextSmallBlind}
-                  </p>
-                  <p className={`text-sm transition-colors duration-500 ${
-                    isDarkTheme ? 'text-slate-500' : 'text-gray-500'
-                  }`}>
-                    МАЛЫЙ БЛАЙНД
-                  </p>
-                </div>
-                <div className="space-y-2">
-                  <p className={`text-3xl font-medium transition-colors duration-500 ${
-                    isDarkTheme ? 'text-slate-300' : 'text-gray-700'
-                  }`}>
-                    {nextBigBlind}
-                  </p>
-                  <p className={`text-sm transition-colors duration-500 ${
-                    isDarkTheme ? 'text-slate-500' : 'text-gray-500'
-                  }`}>
-                    БОЛЬШОЙ БЛАЙНД
-                  </p>
+                <p className={`text-3xl font-medium transition-colors duration-500 ${
+                  isDarkTheme ? 'text-cyan-200' : 'text-gray-700'
+                }`}>
+                  {nextSmallBlind}
+                </p>
+                <p className={`text-sm transition-colors duration-500 ${
+                  isDarkTheme ? 'text-slate-500' : 'text-gray-500'
+                }`}>
+                  МАЛЫЙ БЛАЙНД
+                </p>
+              </div>
+              <div className="space-y-2">
+                <p className={`text-3xl font-medium transition-colors duration-500 ${
+                  isDarkTheme ? 'text-cyan-200' : 'text-gray-700'
+                }`}>
+                  {nextBigBlind}
+                </p>
+                <p className={`text-sm transition-colors duration-500 ${
+                  isDarkTheme ? 'text-slate-500' : 'text-gray-500'
+                }`}>
+                  БОЛЬШОЙ БЛАЙНД
+                </p>
                 </div>
                 {nextLevel?.ante > 0 && (
                   <div className="space-y-2">
@@ -515,23 +529,23 @@ const ExternalTimer = () => {
         {/* Statistics */}
         <div className={`rounded-xl p-6 max-w-6xl w-full shadow-lg transition-all duration-500 ${
           isDarkTheme
-            ? 'bg-gradient-to-br from-slate-800/50 to-slate-900/50 backdrop-blur-xl border border-slate-700/50 shadow-blue-500/10'
+            ? 'bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur-xl border border-slate-700/60 shadow-cyan-500/20'
             : 'bg-white border border-gray-200'
         }`}>
           <div className="grid grid-cols-4 gap-8 text-center">
             <div>
               <div className="flex items-center justify-center mb-2">
                 <Users className={`w-6 h-6 mr-3 transition-colors duration-500 ${
-                  isDarkTheme ? 'text-blue-400' : 'text-gray-600'
+                  isDarkTheme ? 'text-cyan-400' : 'text-gray-600'
                 }`} />
                 <span className={`text-lg transition-colors duration-500 ${
-                  isDarkTheme ? 'text-slate-400' : 'text-gray-600'
+                  isDarkTheme ? 'text-cyan-300/70' : 'text-gray-600'
                 }`}>
                   Игроки
                 </span>
               </div>
               <p className={`text-3xl font-medium transition-colors duration-500 ${
-                isDarkTheme ? 'text-white' : 'text-gray-800'
+                isDarkTheme ? 'text-cyan-100' : 'text-gray-800'
               }`}>
                 {activePlayers.length}
               </p>
@@ -542,14 +556,14 @@ const ExternalTimer = () => {
                   isDarkTheme ? 'text-amber-400' : 'text-amber-600'
                 }`} />
                 <span className={`text-lg transition-colors duration-500 ${
-                  isDarkTheme ? 'text-slate-400' : 'text-gray-600'
+                  isDarkTheme ? 'text-amber-300/70' : 'text-gray-600'
                 }`}>
                   Призовой фонд RPS
                 </span>
               </div>
               <p className={`text-3xl font-medium transition-all duration-500 ${
                 isDarkTheme 
-                  ? 'bg-gradient-to-r from-amber-400 to-orange-500 bg-clip-text text-transparent drop-shadow-[0_0_15px_rgba(251,191,36,0.3)]' 
+                  ? 'bg-gradient-to-r from-amber-300 via-yellow-400 to-amber-300 bg-clip-text text-transparent drop-shadow-[0_0_20px_rgba(252,211,77,0.4)]' 
                   : 'text-gray-800'
               }`}>
                 {rpsPool.toLocaleString()} RPS
@@ -558,13 +572,13 @@ const ExternalTimer = () => {
             <div>
               <div className="flex items-center justify-center mb-2">
                 <span className={`text-lg transition-colors duration-500 ${
-                  isDarkTheme ? 'text-slate-400' : 'text-gray-600'
+                  isDarkTheme ? 'text-cyan-300/70' : 'text-gray-600'
                 }`}>
                   Средний стек
                 </span>
               </div>
               <p className={`text-3xl font-medium transition-colors duration-500 ${
-                isDarkTheme ? 'text-white' : 'text-gray-800'
+                isDarkTheme ? 'text-cyan-100' : 'text-gray-800'
               }`}>
                 {averageStack.toLocaleString()}
               </p>
@@ -572,13 +586,13 @@ const ExternalTimer = () => {
             <div>
               <div className="flex items-center justify-center mb-2">
                 <span className={`text-lg transition-colors duration-500 ${
-                  isDarkTheme ? 'text-slate-400' : 'text-gray-600'
+                  isDarkTheme ? 'text-cyan-300/70' : 'text-gray-600'
                 }`}>
                   Re-entry / Доп. наборы
                 </span>
               </div>
               <p className={`text-3xl font-medium transition-colors duration-500 ${
-                isDarkTheme ? 'text-white' : 'text-gray-800'
+                isDarkTheme ? 'text-cyan-100' : 'text-gray-800'
               }`}>
                 {totalReentries} / {totalAdditionalSets}
               </p>
