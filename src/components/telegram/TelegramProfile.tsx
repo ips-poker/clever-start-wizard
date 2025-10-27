@@ -96,9 +96,10 @@ interface TelegramProfileProps {
   telegramUser: TelegramUser | null;
   userStats: Player | null;
   onStatsUpdate: (stats: Player) => void;
+  onUnregister?: (registrationId: string) => void;
 }
 
-export function TelegramProfile({ telegramUser, userStats, onStatsUpdate }: TelegramProfileProps) {
+export function TelegramProfile({ telegramUser, userStats, onStatsUpdate, onUnregister }: TelegramProfileProps) {
   const [player, setPlayer] = useState<Player | null>(userStats);
   const [gameResults, setGameResults] = useState<GameResult[]>([]);
   const [userTournaments, setUserTournaments] = useState<TournamentRegistration[]>([]);
@@ -690,7 +691,23 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate }: Tele
                       <span className="text-xs font-bold uppercase tracking-wider">✅ Зарегистрирован</span>
                     </div>
                     
-                    {getStatusBadge(reg.tournament.status)}
+                    <div className="flex items-center gap-2">
+                      {getStatusBadge(reg.tournament.status)}
+                      {onUnregister && reg.tournament.status !== 'running' && reg.tournament.status !== 'completed' && (
+                        <Button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onUnregister(reg.id);
+                          }}
+                          variant="ghost"
+                          size="sm"
+                          className="text-red-400 hover:text-red-300 hover:bg-red-500/10 px-2 py-1 h-auto text-xs"
+                        >
+                          <X className="h-3 w-3 mr-1" />
+                          Отменить
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 </CardContent>
               </Card>

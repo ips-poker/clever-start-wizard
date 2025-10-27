@@ -356,6 +356,36 @@ export const TelegramApp = () => {
     }
   };
 
+  const unregisterFromTournament = async (registrationId: string) => {
+    if (!userStats) {
+      toast.error("Не удалось найти данные пользователя");
+      return;
+    }
+    
+    try {
+      setLoading(true);
+      
+      // Удаляем регистрацию
+      const { error } = await supabase
+        .from('tournament_registrations')
+        .delete()
+        .eq('id', registrationId)
+        .eq('player_id', userStats.id);
+
+      if (error) {
+        throw error;
+      }
+
+      toast.success("Регистрация отменена");
+      await fetchTournaments();
+    } catch (error) {
+      console.error('Error unregistering from tournament:', error);
+      toast.error("Не удалось отменить регистрацию");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const renderHome = () => (
     <div className="space-y-4 pb-20 px-4 bg-transparent min-h-screen relative z-10">
       <Card className="bg-gradient-to-br from-slate-800/90 via-slate-900/95 to-black/90 border border-white/10 overflow-hidden relative cursor-pointer group transition-all duration-500 hover:scale-[1.02] hover:shadow-2xl hover:shadow-amber-500/20 backdrop-blur-xl" onClick={() => setActiveTab('about')}>
@@ -1281,13 +1311,14 @@ export const TelegramApp = () => {
         </div>
       )}
 
-      {activeTab === 'profile' && (
-        <TelegramProfile 
-          telegramUser={telegramUser}
-          userStats={userStats}
-          onStatsUpdate={setUserStats}
-        />
-      )}
+        {activeTab === 'profile' && (
+          <TelegramProfile 
+            telegramUser={telegramUser} 
+            userStats={userStats} 
+            onStatsUpdate={setUserStats}
+            onUnregister={unregisterFromTournament}
+          />
+        )}
 
       {activeTab === 'qa' && (
         <div className="space-y-6 pb-20 px-4 bg-transparent min-h-screen relative z-10">
