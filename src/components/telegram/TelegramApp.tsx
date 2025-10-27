@@ -356,7 +356,7 @@ export const TelegramApp = () => {
     }
   };
 
-  const unregisterFromTournament = async (tournamentId: string) => {
+  const unregisterFromTournament = async (registrationId: string) => {
     if (!userStats) {
       toast.error("Не удалось найти данные пользователя");
       return;
@@ -365,11 +365,11 @@ export const TelegramApp = () => {
     try {
       setLoading(true);
       
-      // Удаляем регистрацию по tournament_id и player_id (как на сайте)
+      // Удаляем регистрацию
       const { error } = await supabase
         .from('tournament_registrations')
         .delete()
-        .eq('tournament_id', tournamentId)
+        .eq('id', registrationId)
         .eq('player_id', userStats.id);
 
       if (error) {
@@ -377,8 +377,6 @@ export const TelegramApp = () => {
       }
 
       toast.success("Регистрация отменена");
-      
-      // Обновляем список турниров
       await fetchTournaments();
     } catch (error) {
       console.error('Error unregistering from tournament:', error);

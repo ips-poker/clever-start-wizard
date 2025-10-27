@@ -107,7 +107,6 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate, onUnre
   const [showAvatarSelector, setShowAvatarSelector] = useState(false);
   const [editingName, setEditingName] = useState(false);
   const [newPlayerName, setNewPlayerName] = useState("");
-  const [unregistering, setUnregistering] = useState<string>("");
 
   // Инициализируем игрока только один раз
   useEffect(() => {
@@ -696,27 +695,16 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate, onUnre
                       {getStatusBadge(reg.tournament.status)}
                       {onUnregister && reg.tournament.status !== 'running' && reg.tournament.status !== 'completed' && (
                         <Button
-                          onClick={async (e) => {
+                          onClick={(e) => {
                             e.stopPropagation();
-                            setUnregistering(reg.tournament.id);
-                            await onUnregister(reg.tournament.id);
-                            // Удаляем турнир из локального списка после успешной отмены
-                            setUserTournaments(prev => prev.filter(t => t.tournament.id !== reg.tournament.id));
-                            setUnregistering("");
+                            onUnregister(reg.id);
                           }}
                           variant="ghost"
                           size="sm"
-                          disabled={unregistering === reg.tournament.id}
                           className="text-red-400 hover:text-red-300 hover:bg-red-500/10 px-2 py-1 h-auto text-xs"
                         >
-                          {unregistering === reg.tournament.id ? (
-                            <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-red-400"></div>
-                          ) : (
-                            <>
-                              <X className="h-3 w-3 mr-1" />
-                              Отменить
-                            </>
-                          )}
+                          <X className="h-3 w-3 mr-1" />
+                          Отменить
                         </Button>
                       )}
                     </div>
