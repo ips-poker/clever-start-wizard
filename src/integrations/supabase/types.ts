@@ -1116,10 +1116,7 @@ export type Database = {
         Args: { p_tournament_id: string }
         Returns: undefined
       }
-      create_first_admin: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      create_first_admin: { Args: never; Returns: undefined }
       create_player_safe: {
         Args: {
           p_avatar_url?: string
@@ -1181,12 +1178,9 @@ export type Database = {
           wins: number
         }[]
       }
-      get_players_count: {
-        Args: Record<PropertyKey, never>
-        Returns: number
-      }
+      get_players_count: { Args: never; Returns: number }
       get_players_public: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           avatar_url: string
           created_at: string
@@ -1199,10 +1193,7 @@ export type Database = {
           wins: number
         }[]
       }
-      get_system_statistics: {
-        Args: Record<PropertyKey, never>
-        Returns: Json
-      }
+      get_system_statistics: { Args: never; Returns: Json }
       get_tournament_voice_stats: {
         Args: { tournament_id_param: string }
         Returns: Json
@@ -1236,14 +1227,8 @@ export type Database = {
         }
         Returns: Json
       }
-      is_admin: {
-        Args: { user_uuid: string }
-        Returns: boolean
-      }
-      link_players_to_profiles: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      is_admin: { Args: { user_uuid: string }; Returns: boolean }
+      link_players_to_profiles: { Args: never; Returns: undefined }
       merge_player_profiles: {
         Args: {
           supabase_user_id: string
@@ -1280,18 +1265,12 @@ export type Database = {
         Args: { tournament_id_param: string }
         Returns: boolean
       }
-      sync_all_player_avatars: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      sync_all_player_avatars: { Args: never; Returns: undefined }
       update_player_safe: {
         Args: { p_avatar_url?: string; p_name?: string; p_player_id: string }
         Returns: Json
       }
-      update_player_wins: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      update_player_wins: { Args: never; Returns: undefined }
       update_timer_only_safe: {
         Args: { p_timer_remaining: number; p_tournament_id: string }
         Returns: undefined
