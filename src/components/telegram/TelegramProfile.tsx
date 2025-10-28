@@ -688,9 +688,10 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate, onUnre
                   </div>
 
                   <div className="flex items-center justify-between gap-2 mt-3">
-                    <div className="flex items-center gap-1 text-blue-400 group-hover:gap-2 transition-all duration-300">
-                      <span className="text-xs font-bold uppercase tracking-wider">✅ Зарегистрирован</span>
-                    </div>
+                    <Badge className="bg-gradient-to-r from-emerald-500/20 to-green-500/20 text-emerald-400 border border-emerald-500/40 hover:from-emerald-500/30 hover:to-green-500/30 transition-all duration-300 px-3 py-1 text-xs font-bold uppercase tracking-wider shadow-lg shadow-emerald-500/20">
+                      <CheckCircle className="h-3 w-3 mr-1.5" />
+                      Зарегистрирован
+                    </Badge>
                     
                     <div className="flex items-center gap-2">
                       {getStatusBadge(reg.tournament.status)}
@@ -704,10 +705,10 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate, onUnre
                             setUserTournaments(prev => prev.filter(t => t.tournament.id !== reg.tournament.id));
                             setUnregistering("");
                           }}
-                          variant="ghost"
+                          variant="outline"
                           size="sm"
                           disabled={unregistering === reg.tournament.id}
-                          className="text-red-400 hover:text-red-300 hover:bg-red-500/10 px-2 py-1 h-auto text-xs"
+                          className="bg-gradient-to-r from-red-500/10 to-rose-500/10 border-red-500/40 text-red-400 hover:from-red-500/20 hover:to-rose-500/20 hover:text-red-300 hover:border-red-400/60 transition-all duration-300 px-3 py-1 h-auto text-xs font-semibold shadow-lg shadow-red-500/20 hover:shadow-red-500/30"
                         >
                           {unregistering === reg.tournament.id ? (
                             <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-red-400"></div>
