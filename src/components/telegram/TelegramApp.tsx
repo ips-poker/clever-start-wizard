@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Trophy, Calendar, Users, Star, MessageSquare, User, Home, TrendingUp, Clock, MapPin, Coins, ChevronRight, Award, Target, CheckCircle, UserPlus, Loader2, Crown, Gem, Zap, Shield, Play, Pause, CircleDot, ArrowLeft, Heart, Globe, Camera, ChevronLeft, Download } from 'lucide-react';
+import { Trophy, Calendar, Users, Star, MessageSquare, User, Home, TrendingUp, Clock, MapPin, Coins, ChevronRight, Award, Target, CheckCircle, UserPlus, Loader2, Crown, Gem, Zap, Shield, Play, Pause, CircleDot, ArrowLeft, Heart, Globe, Camera, ChevronLeft, Download, X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { TelegramAuth } from './TelegramAuth';
 import { TelegramTournamentModal } from './TelegramTournamentModal';
@@ -81,6 +81,7 @@ export const TelegramApp = () => {
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
   const [currentRuleIndex, setCurrentRuleIndex] = useState(0);
   const [canAddToHomeScreen, setCanAddToHomeScreen] = useState(false);
+  const [userRegistrations, setUserRegistrations] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     // Проверяем доступность функции добавления на главный экран
@@ -110,6 +111,12 @@ export const TelegramApp = () => {
       setupRealtimeSubscriptions();
     }
   }, [isAuthenticated, telegramUser]);
+
+  useEffect(() => {
+    if (userStats) {
+      fetchUserRegistrations();
+    }
+  }, [userStats]);
 
   const handleAddToHomeScreen = () => {
     console.log('=== ADD TO HOME SCREEN CLICKED ===');
@@ -158,6 +165,7 @@ export const TelegramApp = () => {
     }, payload => {
       console.log('Registration update:', payload);
       fetchTournaments();
+      fetchUserRegistrations();
     }).subscribe();
 
     return () => {
@@ -174,11 +182,30 @@ export const TelegramApp = () => {
 
   const fetchData = async (): Promise<void> => {
     try {
-      await Promise.all([fetchTournaments(), fetchPlayers(), fetchUserStats()]);
+      await Promise.all([fetchTournaments(), fetchPlayers(), fetchUserStats(), fetchUserRegistrations()]);
     } catch (error) {
       console.error('Error fetching data:', error);
     }
     setLoading(false);
+  };
+
+  const fetchUserRegistrations = async () => {
+    if (!userStats) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('tournament_registrations')
+        .select('tournament_id')
+        .eq('player_id', userStats.id)
+        .in('status', ['registered', 'confirmed', 'playing']);
+
+      if (error) throw error;
+      
+      const registeredIds = new Set(data?.map(r => r.tournament_id) || []);
+      setUserRegistrations(registeredIds);
+    } catch (error) {
+      console.error('Error fetching user registrations:', error);
+    }
   };
 
   const fetchGalleryImages = async () => {
@@ -347,7 +374,8 @@ export const TelegramApp = () => {
       }
 
       toast.success("Вы успешно зарегистрированы на турнир");
-      fetchTournaments();
+      await fetchTournaments();
+      await fetchUserRegistrations();
     } catch (error) {
       console.error('Error registering for tournament:', error);
       toast.error("Не удалось зарегистрироваться на турнир");
@@ -378,8 +406,9 @@ export const TelegramApp = () => {
 
       toast.success("Регистрация отменена");
       
-      // Обновляем список турниров
+      // Обновляем список турниров и регистраций
       await fetchTournaments();
+      await fetchUserRegistrations();
     } catch (error) {
       console.error('Error unregistering from tournament:', error);
       toast.error("Не удалось отменить регистрацию");
@@ -1082,25 +1111,54 @@ export const TelegramApp = () => {
                 </div>
                 
                 {tournament.status === 'registration' && (
-                  <Button 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      registerForTournament(tournament.id);
-                    }} 
-                    disabled={registering === tournament.id} 
-                    className="w-full mt-4 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-bold py-3 rounded-xl shadow-lg hover:shadow-amber-500/40 transition-all duration-300 group-hover:scale-[1.02] border-0 text-sm uppercase tracking-wider"
-                  >
-                    {registering === tournament.id ? (
-                      <div className="flex items-center gap-2">
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        <span>Регистрируем...</span>
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-2">
-                        <span>🎫 Записаться на турнир</span>
-                      </div>
-                    )}
-                  </Button>
+                  userRegistrations.has(tournament.id) ? (
+                    <div className="w-full mt-4 flex items-center justify-between gap-2">
+                      <Badge className="flex-1 bg-gradient-to-r from-emerald-500/20 to-green-500/20 text-emerald-400 border border-emerald-500/40 hover:from-emerald-500/30 hover:to-green-500/30 transition-all duration-300 px-4 py-2.5 text-xs font-bold uppercase tracking-wider shadow-lg shadow-emerald-500/20 justify-center">
+                        <CheckCircle className="h-3.5 w-3.5 mr-1.5" />
+                        Зарегистрирован
+                      </Badge>
+                      <Button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          unregisterFromTournament(tournament.id);
+                        }}
+                        variant="outline"
+                        size="sm"
+                        disabled={loading}
+                        className="bg-gradient-to-r from-red-500/10 to-rose-500/10 border-red-500/40 text-red-400 hover:from-red-500/20 hover:to-rose-500/20 hover:text-red-300 hover:border-red-400/60 transition-all duration-300 px-3 py-2.5 h-auto text-xs font-semibold shadow-lg shadow-red-500/20 hover:shadow-red-500/30"
+                      >
+                        {loading ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <>
+                            <X className="h-3.5 w-3.5 mr-1" />
+                            Отменить
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  ) : (
+                    <Button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        registerForTournament(tournament.id);
+                      }} 
+                      disabled={registering === tournament.id} 
+                      className="w-full mt-4 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-bold py-3 rounded-xl shadow-lg hover:shadow-amber-500/40 transition-all duration-300 group-hover:scale-[1.02] border-0 text-sm uppercase tracking-wider"
+                    >
+                      {registering === tournament.id ? (
+                        <div className="flex items-center gap-2">
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          <span>Регистрируем...</span>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <UserPlus className="h-4 w-4" />
+                          <span>Записаться на турнир</span>
+                        </div>
+                      )}
+                    </Button>
+                  )
                 )}
               </CardContent>
             </Card>
