@@ -1100,10 +1100,6 @@ export type Database = {
         Args: { tournament_id_param: string }
         Returns: number
       }
-      can_view_player_contacts: {
-        Args: { player_record: Database["public"]["Tables"]["players"]["Row"] }
-        Returns: boolean
-      }
       complete_tournament: {
         Args: { tournament_id_param: string }
         Returns: boolean
