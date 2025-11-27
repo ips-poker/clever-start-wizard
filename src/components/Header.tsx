@@ -54,11 +54,11 @@ export function Header() {
             
             {/* Text with curved bottom */}
             <div className="relative">
-              <svg viewBox="0 0 200 56" className="w-48 h-14">
+              <svg viewBox="0 0 220 56" className="w-52 h-14">
                 <defs>
-                  <path id="curve" d="M 10,28 Q 100,14 190,28" fill="transparent" />
+                  <path id="curve" d="M 10,28 Q 110,14 210,28" fill="transparent" />
                 </defs>
-                <text className="fill-syndikate-orange font-display text-[18px] font-bold tracking-wider group-hover:drop-shadow-[0_0_12px_rgba(255,90,31,0.6)] transition-all duration-300" style={{ letterSpacing: '0.15em' }}>
+                <text className="fill-syndikate-orange font-display text-[20px] font-bold tracking-wider group-hover:drop-shadow-[0_0_12px_rgba(255,90,31,0.6)] transition-all duration-300" style={{ letterSpacing: '0.15em' }}>
                   <textPath href="#curve" startOffset="50%" textAnchor="middle">
                     SYNDIKATE
                   </textPath>
