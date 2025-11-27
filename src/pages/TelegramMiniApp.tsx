@@ -4,6 +4,9 @@ import { init, miniApp, viewport, themeParams } from '@telegram-apps/sdk-react';
 
 export default function TelegramMiniApp() {
   useEffect(() => {
+    // Add telegram-mini-app class to body for specific styling
+    document.body.classList.add('telegram-mini-app');
+    
     // Initialize Telegram SDK
     try {
       init();
@@ -103,6 +106,7 @@ export default function TelegramMiniApp() {
     
     return () => {
       window.removeEventListener('resize', handleResize);
+      document.body.classList.remove('telegram-mini-app');
     };
   }, []);
 

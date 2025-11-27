@@ -105,21 +105,14 @@
   html {
     background-color: hsl(0 0% 8%);
     overflow-x: hidden;
-    overflow-y: hidden;
-    position: fixed;
-    width: 100%;
-    height: 100%;
   }
 
   body {
     @apply bg-background text-foreground;
     background-color: hsl(0 0% 8%);
-    overflow: hidden;
-    position: fixed;
-    width: 100%;
-    height: 100%;
     margin: 0;
     padding: 0;
+    overflow-x: hidden;
     /* Support for iOS safe areas */
     padding-top: env(safe-area-inset-top);
     padding-right: env(safe-area-inset-right);
@@ -128,10 +121,17 @@
   }
   
   #root {
+    min-height: 100vh;
+  }
+  
+  /* Telegram Mini App specific styles */
+  .telegram-mini-app html,
+  .telegram-mini-app body,
+  .telegram-mini-app #root {
+    overflow: hidden;
+    position: fixed;
     width: 100%;
     height: 100%;
-    position: fixed;
-    overflow: hidden;
   }
 }
 
