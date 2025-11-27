@@ -145,48 +145,24 @@ export function SocialProof() {
   ];
 
   return (
-    <section className="py-20 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 relative overflow-hidden">
-      {/* Elegant Poker Chips Background */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-10">
-        <div className="absolute top-[12%] right-[18%] w-20 h-20 rounded-full animate-pulse-slow">
-          <div className="absolute inset-0 rounded-full bg-gradient-to-br from-amber-400 via-amber-500 to-amber-600 shadow-2xl opacity-40"></div>
-          <div className="absolute inset-2 rounded-full bg-gradient-to-br from-slate-900 to-slate-800 border-2 border-amber-400/30 flex items-center justify-center">
-            <span className="text-amber-400/50 font-bold text-xs">100</span>
-          </div>
-          <div className="absolute inset-4 rounded-full border-2 border-dashed border-amber-400/20"></div>
-        </div>
-        
-        <div className="absolute top-[50%] left-[20%] w-16 h-16 rounded-full animate-bounce-subtle">
-          <div className="absolute inset-0 rounded-full bg-gradient-to-br from-red-400 via-red-500 to-red-600 shadow-xl opacity-35"></div>
-          <div className="absolute inset-1.5 rounded-full bg-gradient-to-br from-slate-900 to-slate-800 border-2 border-red-400/30 flex items-center justify-center">
-            <span className="text-red-400/50 font-bold text-xs">500</span>
-          </div>
-        </div>
-        
-        <div className="absolute bottom-[10%] right-[30%] w-18 h-18 rounded-full animate-pulse-slow">
-          <div className="absolute inset-0 rounded-full bg-gradient-to-br from-purple-400 via-purple-500 to-purple-600 shadow-xl opacity-30"></div>
-          <div className="absolute inset-1.5 rounded-full bg-gradient-to-br from-slate-900 to-slate-800 border border-purple-400/30"></div>
-        </div>
-      </div>
+    <section className="py-20 bg-background relative overflow-hidden">
+      {/* Industrial Background */}
+      <div className="absolute inset-0 industrial-texture opacity-50" />
       
-      {/* Elegant Poker Suits */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-10">
-        <div className="absolute top-[28%] left-[32%] animate-pulse-slow">
-          <div className="text-amber-400/40 text-5xl filter drop-shadow-[0_0_15px_rgba(251,191,36,0.3)]">♦</div>
-        </div>
-        <div className="absolute top-[55%] right-[15%] animate-bounce-subtle">
-          <div className="text-red-400/35 text-4xl filter drop-shadow-[0_0_12px_rgba(248,113,113,0.3)]">♥</div>
-        </div>
-        <div className="absolute bottom-[12%] left-[20%] animate-pulse-slow">
-          <div className="text-purple-400/45 text-6xl filter drop-shadow-[0_0_20px_rgba(192,132,252,0.4)]">♣</div>
-        </div>
-      </div>
+      {/* Metal Grid Pattern */}
+      <div 
+        className="absolute inset-0 opacity-10"
+        style={{
+          backgroundImage: `
+            repeating-linear-gradient(0deg, transparent, transparent 50px, rgba(255, 255, 255, 0.05) 50px, rgba(255, 255, 255, 0.05) 51px),
+            repeating-linear-gradient(90deg, transparent, transparent 50px, rgba(255, 255, 255, 0.05) 50px, rgba(255, 255, 255, 0.05) 51px)
+          `
+        }}
+      />
       
-      {/* Gradient light spots */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-1/3 left-0 w-96 h-96 bg-blue-500/5 rounded-full blur-3xl"></div>
-        <div className="absolute bottom-1/3 right-0 w-96 h-96 bg-amber-500/5 rounded-full blur-3xl"></div>
-      </div>
+      {/* Neon Glows */}
+      <div className="absolute top-0 right-1/4 w-96 h-96 bg-syndikate-orange/10 rounded-full blur-3xl" />
+      <div className="absolute bottom-0 left-1/4 w-96 h-96 bg-syndikate-red/10 rounded-full blur-3xl" />
 
       <div className="container mx-auto px-4 relative z-10">
         {/* Stats Section */}
@@ -194,14 +170,27 @@ export function SocialProof() {
           {stats.map((stat, index) => {
             const IconComponent = stat.icon;
             return (
-              <div key={`stat-${index}-${stat.value}`} className="bg-gradient-to-br from-slate-800/90 via-slate-900/95 to-black/90 border border-white/10 rounded-2xl p-6 backdrop-blur-xl group hover:scale-105 transition-all duration-500 hover:shadow-xl hover:shadow-amber-500/20 relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 via-transparent to-amber-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+              <div key={`stat-${index}-${stat.value}`} className="brutal-metal brutal-border p-6 group hover:scale-105 transition-all duration-500 hover:shadow-neon-orange relative overflow-hidden">
+                {/* Industrial texture */}
+                <div 
+                  className="absolute inset-0 opacity-10"
+                  style={{
+                    backgroundImage: `repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255, 255, 255, 0.02) 10px, rgba(255, 255, 255, 0.02) 20px)`
+                  }}
+                />
+                
+                {/* Corner brackets */}
+                <div className="absolute top-0 left-0 w-4 h-4 border-l-2 border-t-2 border-syndikate-orange" />
+                <div className="absolute top-0 right-0 w-4 h-4 border-r-2 border-t-2 border-syndikate-orange" />
+                <div className="absolute bottom-0 left-0 w-4 h-4 border-l-2 border-b-2 border-syndikate-orange" />
+                <div className="absolute bottom-0 right-0 w-4 h-4 border-r-2 border-b-2 border-syndikate-orange" />
+                
                 <div className="relative z-10 text-center">
-                  <div className="w-12 h-12 bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300 shadow-lg">
-                    <IconComponent className="w-6 h-6 text-white" />
+                  <div className="w-10 h-10 bg-syndikate-orange brutal-border flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
+                    <IconComponent className="w-5 h-5 text-background" />
                   </div>
-                  <div className="text-3xl font-light text-amber-400 mb-2">{stat.value}</div>
-                  <div className="text-sm text-white/70 font-light">{stat.label}</div>
+                  <div className="font-display text-3xl text-syndikate-orange neon-orange mb-2">{stat.value}</div>
+                  <div className="text-xs text-muted-foreground uppercase tracking-wider font-bold">{stat.label}</div>
                 </div>
               </div>
             );
@@ -211,15 +200,15 @@ export function SocialProof() {
         {/* Testimonials */}
         <div className="text-center mb-12">
           <div className="flex items-center gap-3 justify-center mb-6">
-            <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl flex items-center justify-center shadow-lg">
-              <MessageCircle className="h-5 w-5 text-white" />
+            <div className="w-12 h-12 border-2 border-syndikate-orange bg-syndikate-metal brutal-border flex items-center justify-center">
+              <MessageCircle className="h-6 w-6 text-syndikate-orange" />
             </div>
-            <h2 className="text-3xl lg:text-4xl font-light text-white tracking-wide">
+            <h2 className="font-display text-4xl lg:text-5xl uppercase tracking-wider text-foreground">
               ОТЗЫВЫ ИГРОКОВ
             </h2>
           </div>
-          <div className="h-0.5 w-20 bg-gradient-to-r from-amber-400 to-amber-600 mx-auto mb-6"></div>
-          <p className="text-lg text-white/70 max-w-2xl mx-auto font-light">
+          <div className="h-[2px] w-20 bg-gradient-neon mx-auto mb-6" />
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto uppercase tracking-wider">
             Присоединяйтесь к сообществу довольных игроков клуба
           </p>
         </div>
@@ -235,12 +224,20 @@ export function SocialProof() {
             </div>
           ) : (
             testimonials.map((testimonial, index) => (
-            <div key={`testimonial-${index}-${testimonial.name}`} className="bg-gradient-to-br from-slate-800/90 via-slate-900/95 to-black/90 border border-white/10 rounded-2xl p-6 backdrop-blur-xl group hover:scale-[1.02] transition-all duration-500 hover:shadow-xl hover:shadow-amber-500/20 relative overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 via-transparent to-amber-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-              <div className="absolute inset-0 opacity-8 group-hover:opacity-15 transition-opacity duration-500">
-                <div className="absolute top-3 right-3 text-amber-400/30 text-2xl animate-pulse">♥</div>
-                <div className="absolute bottom-3 left-3 text-amber-400/20 text-xl animate-bounce-subtle">♦</div>
-              </div>
+            <div key={`testimonial-${index}-${testimonial.name}`} className="brutal-metal brutal-border p-6 group hover:scale-[1.02] transition-all duration-500 hover:shadow-neon-orange relative overflow-hidden">
+              {/* Industrial texture */}
+              <div 
+                className="absolute inset-0 opacity-10"
+                style={{
+                  backgroundImage: `repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255, 255, 255, 0.02) 10px, rgba(255, 255, 255, 0.02) 20px)`
+                }}
+              />
+              
+              {/* Corner brackets */}
+              <div className="absolute top-0 left-0 w-4 h-4 border-l-2 border-t-2 border-syndikate-orange" />
+              <div className="absolute top-0 right-0 w-4 h-4 border-r-2 border-t-2 border-syndikate-orange" />
+              <div className="absolute bottom-0 left-0 w-4 h-4 border-l-2 border-b-2 border-syndikate-orange" />
+              <div className="absolute bottom-0 right-0 w-4 h-4 border-r-2 border-b-2 border-syndikate-orange" />
               
               <div className="relative z-10">
                 {/* Header */}
@@ -249,40 +246,40 @@ export function SocialProof() {
                     <img 
                       src={testimonial.avatar} 
                       alt={testimonial.name}
-                      className="w-12 h-12 rounded-xl border-2 border-amber-400/20 object-cover"
+                      className="w-12 h-12 brutal-border border-2 border-syndikate-orange/20 object-cover"
                     />
                     {testimonial.verified && (
-                      <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-gradient-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center border-2 border-slate-900">
-                        <CheckCircle className="w-3 h-3 text-white" />
+                      <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-syndikate-orange brutal-border flex items-center justify-center">
+                        <CheckCircle className="w-3 h-3 text-background" />
                       </div>
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h4 className="text-white font-medium text-base mb-1 truncate">{testimonial.name}</h4>
+                    <h4 className="text-foreground font-bold text-base mb-1 truncate uppercase tracking-wide">{testimonial.name}</h4>
                     <div className="flex items-center gap-2">
-                      <div className="px-2 py-0.5 bg-gradient-to-r from-amber-500/20 to-amber-600/20 rounded-md border border-amber-400/30">
-                        <span className="text-amber-400 text-xs font-medium">{testimonial.rating} RPS</span>
+                      <div className="bg-syndikate-orange/20 brutal-border px-2 py-0.5">
+                        <span className="text-syndikate-orange text-xs font-bold uppercase">{testimonial.rating} RPS</span>
                       </div>
-                      <span className="text-white/50 text-xs">{testimonial.time}</span>
+                      <span className="text-muted-foreground text-xs uppercase">{testimonial.time}</span>
                     </div>
                   </div>
                 </div>
 
                 {/* Message */}
-                <div className="bg-gradient-to-r from-white/5 to-white/10 rounded-xl p-4 mb-4 border border-white/10">
-                  <p className="text-white/90 leading-relaxed text-sm">
+                <div className="bg-syndikate-metal/30 brutal-border p-4 mb-4">
+                  <p className="text-foreground/90 leading-relaxed text-sm">
                     {testimonial.text}
                   </p>
                 </div>
                 
                 {/* Footer */}
                 <div className="flex items-center justify-between">
-                  <div className="px-3 py-1 bg-gradient-to-r from-white/5 to-white/10 rounded-lg border border-white/10">
-                    <span className="text-white/70 text-xs font-medium">{testimonial.status}</span>
+                  <div className="bg-syndikate-metal/30 brutal-border px-3 py-1">
+                    <span className="text-muted-foreground text-xs font-bold uppercase tracking-wider">{testimonial.status}</span>
                   </div>
                   <div className="flex gap-1">
                     {[...Array(5)].map((_, i) => (
-                      <Star key={i} className="w-3 h-3 text-amber-400 fill-amber-400" />
+                      <Star key={i} className="w-3 h-3 text-syndikate-orange fill-syndikate-orange" />
                     ))}
                   </div>
                 </div>
@@ -293,45 +290,53 @@ export function SocialProof() {
         </div>
 
         {/* Call to Action */}
-        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-amber-500/10 via-amber-600/15 to-amber-500/10 border border-amber-500/20 backdrop-blur-xl shadow-2xl">
-          <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 to-transparent"></div>
-          <div className="absolute inset-0 opacity-8">
-            <div className="absolute top-4 right-6 text-amber-400/30 text-4xl animate-pulse">♠</div>
-            <div className="absolute bottom-4 left-6 text-amber-400/20 text-3xl animate-bounce-subtle">♣</div>
-          </div>
+        <div className="relative overflow-hidden brutal-metal brutal-border p-12 shadow-neon-orange">
+          {/* Industrial texture */}
+          <div 
+            className="absolute inset-0 opacity-10"
+            style={{
+              backgroundImage: `repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255, 255, 255, 0.02) 10px, rgba(255, 255, 255, 0.02) 20px)`
+            }}
+          />
           
-          <div className="relative z-10 text-center p-12">
-            <h3 className="text-3xl lg:text-4xl font-light text-white mb-6 tracking-wide">
+          {/* Corner brackets */}
+          <div className="absolute top-0 left-0 w-8 h-8 border-l-2 border-t-2 border-syndikate-orange" />
+          <div className="absolute top-0 right-0 w-8 h-8 border-r-2 border-t-2 border-syndikate-orange" />
+          <div className="absolute bottom-0 left-0 w-8 h-8 border-l-2 border-b-2 border-syndikate-orange" />
+          <div className="absolute bottom-0 right-0 w-8 h-8 border-r-2 border-b-2 border-syndikate-orange" />
+          
+          <div className="relative z-10 text-center">
+            <h3 className="font-display text-4xl uppercase mb-6 tracking-wider text-foreground">
               Готовы начать свой путь к покерному мастерству?
             </h3>
-            <p className="text-lg text-white/80 mb-8 max-w-2xl mx-auto font-light leading-relaxed">
+            <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto uppercase tracking-wide leading-relaxed">
               Присоединяйтесь к клубу сегодня и получите доступ к профессиональной рейтинговой системе, 
               регулярным турнирам и элитному сообществу.
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-8">
-              <Button size="lg" className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-bold shadow-lg hover:shadow-amber-500/30 transition-all duration-300 px-8">
+              <Button size="lg" className="bg-syndikate-orange hover:bg-syndikate-orange-glow text-background font-bold uppercase tracking-wider shadow-neon-orange px-8">
                 <UserCheck className="w-5 h-5 mr-2" />
                 Присоединиться бесплатно
               </Button>
-              <Button size="lg" className="bg-white/5 border-2 border-amber-400/30 text-amber-400 hover:bg-amber-400/10 hover:border-amber-400/50 backdrop-blur-xl font-medium transition-all duration-300 px-8 shadow-lg hover:shadow-amber-400/20">
+              <Button size="lg" variant="outline" className="border-2 border-syndikate-orange text-syndikate-orange hover:bg-syndikate-orange hover:text-background font-bold uppercase tracking-wider px-8">
                 Подробнее о клубе
                 <ArrowRight className="w-5 h-5 ml-2" />
               </Button>
             </div>
 
             <div className="flex flex-wrap items-center justify-center gap-4">
-              <div className="flex items-center gap-2 bg-gradient-to-r from-white/10 to-white/5 rounded-lg px-4 py-2 border border-white/20">
-                <Clock className="w-4 h-4 text-amber-400" />
-                <span className="text-white text-sm font-medium">Регистрация 2 минуты</span>
+              <div className="flex items-center gap-2 bg-syndikate-metal/30 brutal-border px-4 py-2">
+                <Clock className="w-4 h-4 text-syndikate-orange" />
+                <span className="text-foreground text-sm font-bold uppercase">Регистрация 2 минуты</span>
               </div>
-              <div className="flex items-center gap-2 bg-gradient-to-r from-white/10 to-white/5 rounded-lg px-4 py-2 border border-white/20">
-                <MapPin className="w-4 h-4 text-amber-400" />
-                <span className="text-white text-sm font-medium">Москва</span>
+              <div className="flex items-center gap-2 bg-syndikate-metal/30 brutal-border px-4 py-2">
+                <MapPin className="w-4 h-4 text-syndikate-orange" />
+                <span className="text-foreground text-sm font-bold uppercase">Москва</span>
               </div>
-              <div className="flex items-center gap-2 bg-gradient-to-r from-white/10 to-white/5 rounded-lg px-4 py-2 border border-white/20">
-                <Star className="w-4 h-4 text-amber-400" />
-                <span className="text-white text-sm font-medium">Без доплат</span>
+              <div className="flex items-center gap-2 bg-syndikate-metal/30 brutal-border px-4 py-2">
+                <Star className="w-4 h-4 text-syndikate-orange" />
+                <span className="text-foreground text-sm font-bold uppercase">Без доплат</span>
               </div>
             </div>
           </div>

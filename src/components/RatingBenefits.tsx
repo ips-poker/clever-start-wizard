@@ -57,8 +57,37 @@ export function RatingBenefits() {
   ];
 
   return (
-    <section className="py-20 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 relative overflow-hidden">
-      {/* Elegant Poker Chips Background */}
+    <section className="py-20 bg-background relative overflow-hidden">
+      {/* Industrial Background */}
+      <div className="absolute inset-0 industrial-texture opacity-50" />
+      
+      {/* Metal Grid Pattern */}
+      <div 
+        className="absolute inset-0 opacity-10"
+        style={{
+          backgroundImage: `
+            repeating-linear-gradient(0deg, transparent, transparent 50px, rgba(255, 255, 255, 0.05) 50px, rgba(255, 255, 255, 0.05) 51px),
+            repeating-linear-gradient(90deg, transparent, transparent 50px, rgba(255, 255, 255, 0.05) 50px, rgba(255, 255, 255, 0.05) 51px)
+          `
+        }}
+      />
+      
+      {/* Diagonal metal plates */}
+      <div
+        className="absolute inset-0 opacity-15"
+        style={{
+          backgroundImage: `
+            linear-gradient(135deg, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.9) 40%, rgba(255,255,255,0.06) 41%, rgba(255,255,255,0.06) 42%, rgba(0,0,0,0.9) 43%, rgba(0,0,0,0.9) 100%)
+          `,
+          backgroundSize: "220px 220px",
+        }}
+      />
+      
+      {/* Neon Glows */}
+      <div className="absolute top-0 left-1/4 w-96 h-96 bg-syndikate-orange/10 rounded-full blur-3xl" />
+      <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-syndikate-red/10 rounded-full blur-3xl" />
+      
+      {/* Poker Chips Background */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-10">
         <div className="absolute top-[12%] left-[28%] w-20 h-20 rounded-full animate-pulse-slow">
           <div className="absolute inset-0 rounded-full bg-gradient-to-br from-red-400 via-red-500 to-red-600 shadow-2xl opacity-40"></div>
@@ -105,15 +134,15 @@ export function RatingBenefits() {
       <div className="container mx-auto px-4 relative z-10">
         <div className="text-center mb-16">
           <div className="flex items-center gap-3 justify-center mb-6">
-            <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl flex items-center justify-center shadow-lg">
-              <BarChart3 className="h-5 w-5 text-white" />
+            <div className="w-12 h-12 border-2 border-syndikate-orange bg-syndikate-metal brutal-border flex items-center justify-center">
+              <BarChart3 className="h-6 w-6 text-syndikate-orange" />
             </div>
-            <h2 className="text-3xl lg:text-4xl font-light text-white tracking-wide">
+            <h2 className="font-display text-4xl lg:text-5xl uppercase tracking-wider text-foreground">
               РЕЙТИНГОВАЯ СИСТЕМА
             </h2>
           </div>
-          <div className="h-0.5 w-20 bg-gradient-to-r from-amber-400 to-amber-600 mx-auto mb-6"></div>
-          <p className="text-lg text-white/70 max-w-3xl mx-auto font-light leading-relaxed">
+          <div className="h-[2px] w-20 bg-gradient-neon mx-auto mb-6" />
+          <p className="text-lg text-muted-foreground max-w-3xl mx-auto uppercase tracking-wider">
             Профессиональная система RPS адаптированная специально для покера. 
             Получайте точную оценку навыков и отслеживайте свой прогресс.
           </p>
@@ -126,27 +155,35 @@ export function RatingBenefits() {
             return (
               <div 
                 key={`benefit-${index}-${benefit.title}`} 
-                className="bg-gradient-to-br from-slate-800/90 via-slate-900/95 to-black/90 border border-white/10 rounded-2xl p-6 backdrop-blur-xl group hover:scale-105 transition-all duration-500 hover:shadow-xl hover:shadow-amber-500/20 relative overflow-hidden"
+                className="brutal-metal brutal-border p-6 group hover:scale-105 transition-all duration-500 hover:shadow-neon-orange relative overflow-hidden"
               >
-                <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 via-transparent to-amber-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                <div className="absolute inset-0 opacity-8 group-hover:opacity-15 transition-opacity duration-500">
-                  <div className="absolute top-3 right-3 text-amber-400/30 text-xl animate-pulse">♠</div>
-                  <div className="absolute bottom-3 left-3 text-amber-400/20 text-lg animate-bounce-subtle">♣</div>
-                </div>
+                {/* Industrial texture */}
+                <div 
+                  className="absolute inset-0 opacity-10"
+                  style={{
+                    backgroundImage: `repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255, 255, 255, 0.02) 10px, rgba(255, 255, 255, 0.02) 20px)`
+                  }}
+                />
+                
+                {/* Corner brackets */}
+                <div className="absolute top-0 left-0 w-6 h-6 border-l-2 border-t-2 border-syndikate-orange" />
+                <div className="absolute top-0 right-0 w-6 h-6 border-r-2 border-t-2 border-syndikate-orange" />
+                <div className="absolute bottom-0 left-0 w-6 h-6 border-l-2 border-b-2 border-syndikate-orange" />
+                <div className="absolute bottom-0 right-0 w-6 h-6 border-r-2 border-b-2 border-syndikate-orange" />
                 
                 <div className="text-center relative z-10">
-                  <div className="w-12 h-12 bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300 shadow-lg">
-                    <IconComponent className="w-6 h-6 text-white" />
+                  <div className="w-12 h-12 bg-syndikate-orange brutal-border flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
+                    <IconComponent className="w-6 h-6 text-background" />
                   </div>
-                  <h3 className="text-lg font-medium text-white mb-2 group-hover:text-amber-100 transition-colors duration-300">
+                  <h3 className="font-display text-lg uppercase text-foreground mb-2 group-hover:text-syndikate-orange transition-colors duration-300 tracking-wider">
                     {benefit.title}
                   </h3>
-                  <div className="bg-gradient-to-r from-white/10 via-white/15 to-white/10 rounded-lg p-2 backdrop-blur-md border border-white/20 mb-3">
-                    <span className="text-amber-400 text-sm font-medium">
+                  <div className="bg-syndikate-metal/50 brutal-border p-2 mb-3">
+                    <span className="text-syndikate-orange text-sm font-bold uppercase tracking-wider">
                       {benefit.value}
                     </span>
                   </div>
-                  <p className="text-white/60 text-sm leading-relaxed">
+                  <p className="text-muted-foreground text-sm leading-relaxed">
                     {benefit.description}
                   </p>
                 </div>
@@ -158,19 +195,19 @@ export function RatingBenefits() {
         {/* Features Section */}
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           <div className="space-y-6 text-center lg:text-left">
-            <h3 className="text-2xl lg:text-3xl font-light text-white tracking-wide">
+            <h3 className="font-display text-3xl uppercase tracking-wider text-foreground">
               Что включает рейтинговая система?
             </h3>
-            <p className="text-lg text-white/70 leading-relaxed font-light">
+            <p className="text-lg text-muted-foreground leading-relaxed uppercase tracking-wide">
               Наша система анализирует каждую игру и предоставляет детальную статистику 
               для улучшения ваших навыков.
             </p>
             
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {features.map((feature, index) => (
-                <div key={`feature-${index}-${feature}`} className="flex items-center space-x-3 bg-gradient-to-r from-white/5 via-white/10 to-white/5 rounded-lg p-3 border border-white/10">
-                  <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0" />
-                  <span className="text-white text-sm font-light">{feature}</span>
+                <div key={`feature-${index}-${feature}`} className="flex items-center space-x-3 bg-syndikate-metal/30 brutal-border p-3">
+                  <CheckCircle className="w-5 h-5 text-syndikate-orange flex-shrink-0" />
+                  <span className="text-foreground text-sm font-medium uppercase tracking-wide">{feature}</span>
                 </div>
               ))}
             </div>
@@ -178,7 +215,7 @@ export function RatingBenefits() {
             <div className="pt-4">
               <Button 
                 size="lg" 
-                className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-medium px-8 py-4 rounded-lg shadow-lg hover:shadow-amber-500/30 transition-all duration-300"
+                className="bg-syndikate-orange hover:bg-syndikate-orange-glow text-background font-bold uppercase tracking-wider shadow-neon-orange px-8"
               >
                 Узнать свой рейтинг
                 <ChevronRight className="w-5 h-5 ml-2" />
@@ -187,50 +224,58 @@ export function RatingBenefits() {
           </div>
 
           <div className="relative order-first lg:order-last">
-            {/* Rating Display - Enhanced Design */}
-            <div className="bg-gradient-to-br from-amber-500/10 via-amber-600/15 to-amber-500/10 rounded-3xl p-8 border border-amber-500/20 backdrop-blur-xl shadow-2xl relative overflow-hidden group">
-              <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 to-transparent rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-              <div className="absolute inset-0 opacity-8 group-hover:opacity-15 transition-opacity duration-500">
-                <div className="absolute top-4 right-6 text-amber-400/30 text-4xl animate-pulse">♦</div>
-                <div className="absolute bottom-4 left-6 text-amber-400/20 text-3xl animate-bounce-subtle">♥</div>
-              </div>
+            {/* Rating Display */}
+            <div className="brutal-metal brutal-border p-8 shadow-neon-orange relative overflow-hidden group">
+              {/* Industrial texture */}
+              <div 
+                className="absolute inset-0 opacity-10"
+                style={{
+                  backgroundImage: `repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255, 255, 255, 0.02) 10px, rgba(255, 255, 255, 0.02) 20px)`
+                }}
+              />
+              
+              {/* Corner brackets */}
+              <div className="absolute top-0 left-0 w-8 h-8 border-l-2 border-t-2 border-syndikate-orange" />
+              <div className="absolute top-0 right-0 w-8 h-8 border-r-2 border-t-2 border-syndikate-orange" />
+              <div className="absolute bottom-0 left-0 w-8 h-8 border-l-2 border-b-2 border-syndikate-orange" />
+              <div className="absolute bottom-0 right-0 w-8 h-8 border-r-2 border-b-2 border-syndikate-orange" />
 
               <div className="text-center space-y-6 relative z-10">
                 <div className="space-y-3">
-                  <h4 className="text-xl lg:text-2xl font-light text-white tracking-wide">Ваш текущий рейтинг</h4>
-                  <div className="text-5xl lg:text-6xl font-light text-amber-400 drop-shadow-lg">1847</div>
-                  <div className="bg-gradient-to-r from-white/10 via-white/15 to-white/10 rounded-lg p-3 backdrop-blur-md border border-white/20 inline-block">
-                    <span className="text-amber-400 font-medium text-sm tracking-wide">Продвинутый игрок</span>
+                  <h4 className="font-display text-2xl uppercase tracking-wider text-foreground">Ваш текущий рейтинг</h4>
+                  <div className="text-6xl font-display text-syndikate-orange neon-orange">1847</div>
+                  <div className="bg-syndikate-orange/20 brutal-border px-4 py-2 inline-block">
+                    <span className="text-syndikate-orange font-bold text-sm uppercase tracking-widest">Продвинутый игрок</span>
                   </div>
                 </div>
                 
-                <div className="grid grid-cols-3 gap-4 pt-6 border-t border-white/20">
-                  <div className="text-center p-3 rounded-lg bg-gradient-to-r from-white/5 via-white/10 to-white/5 border border-white/10">
-                    <div className="text-xl lg:text-2xl font-light text-white">23</div>
-                    <div className="text-xs lg:text-sm text-white/60 font-light">Турниров</div>
+                <div className="grid grid-cols-3 gap-4 pt-6 border-t-2 border-border">
+                  <div className="text-center bg-syndikate-metal/30 brutal-border p-3">
+                    <div className="text-2xl font-display text-foreground">23</div>
+                    <div className="text-xs uppercase tracking-wider text-muted-foreground">Турниров</div>
                   </div>
-                  <div className="text-center p-3 rounded-lg bg-gradient-to-r from-white/5 via-white/10 to-white/5 border border-white/10">
-                    <div className="text-xl lg:text-2xl font-light text-green-400">+127</div>
-                    <div className="text-xs lg:text-sm text-white/60 font-light">За месяц</div>
+                  <div className="text-center bg-syndikate-metal/30 brutal-border p-3">
+                    <div className="text-2xl font-display text-syndikate-orange">+127</div>
+                    <div className="text-xs uppercase tracking-wider text-muted-foreground">За месяц</div>
                   </div>
-                  <div className="text-center p-3 rounded-lg bg-gradient-to-r from-white/5 via-white/10 to-white/5 border border-white/10">
-                    <div className="text-xl lg:text-2xl font-light text-amber-400">TOP 15</div>
-                    <div className="text-xs lg:text-sm text-white/60 font-light">Позиция</div>
+                  <div className="text-center bg-syndikate-metal/30 brutal-border p-3">
+                    <div className="text-2xl font-display text-syndikate-orange">TOP 15</div>
+                    <div className="text-xs uppercase tracking-wider text-muted-foreground">Позиция</div>
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between pt-6 border-t border-white/20">
-                  <span className="text-sm text-white/60 font-light">До Elite осталось:</span>
-                  <div className="bg-gradient-to-r from-amber-500 to-amber-600 px-3 py-1 rounded-full shadow-lg">
-                    <span className="text-white font-medium text-sm">153 очка</span>
+                <div className="flex items-center justify-between pt-6 border-t-2 border-border">
+                  <span className="text-sm text-muted-foreground font-bold uppercase tracking-wider">До Elite:</span>
+                  <div className="bg-syndikate-orange brutal-border px-4 py-1.5">
+                    <span className="text-background font-bold text-sm uppercase">153 очка</span>
                   </div>
                 </div>
               </div>
             </div>
 
             {/* Floating Achievement */}
-            <div className="absolute -top-4 -right-4 bg-gradient-to-br from-amber-500 to-amber-600 p-3 rounded-full shadow-xl animate-pulse">
-              <Star className="w-6 h-6 text-white" />
+            <div className="absolute -top-4 -right-4 w-12 h-12 bg-syndikate-orange brutal-border flex items-center justify-center animate-pulse">
+              <Star className="w-6 h-6 text-background" />
             </div>
           </div>
         </div>
