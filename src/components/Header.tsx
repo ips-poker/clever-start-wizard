@@ -22,6 +22,11 @@ export function Header() {
     { name: "Галерея", path: "/gallery" },
   ];
 
+  // Добавляем вкладку директора для админов
+  const adminNavItems = isAdmin 
+    ? [...navItems, { name: "Турнирный директор", path: "/director" }]
+    : navItems;
+
   const handleSignOut = async () => {
     await signOut();
     navigate("/");
@@ -56,7 +61,7 @@ export function Header() {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-1">
-            {navItems.map((item) => (
+            {adminNavItems.map((item) => (
               <Link key={item.path} to={item.path}>
                 <Button 
                   variant="ghost" 
@@ -144,7 +149,7 @@ export function Header() {
         {/* Mobile Menu */}
         {isMenuOpen && (
           <div className="md:hidden py-4 space-y-2 border-t border-border animate-fade-in">
-            {navItems.map((item) => (
+            {adminNavItems.map((item) => (
               <Link
                 key={item.path}
                 to={item.path}
@@ -176,12 +181,6 @@ export function Header() {
                   <Button variant="ghost" className="w-full justify-start">
                     <User className="h-4 w-4 mr-2" />
                     Профиль
-                  </Button>
-                </Link>
-                <Link to="/director" onClick={() => setIsMenuOpen(false)}>
-                  <Button variant="ghost" className="w-full justify-start">
-                    <Settings className="h-4 w-4 mr-2" />
-                    Управление турнирами
                   </Button>
                 </Link>
                 <Button
