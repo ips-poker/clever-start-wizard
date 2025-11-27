@@ -455,7 +455,7 @@ export const TelegramApp = () => {
   };
 
   const renderHome = () => (
-    <div className="space-y-4 pb-20 px-4 pt-10 bg-transparent min-h-screen relative z-10">
+    <div className="space-y-4 pb-20 px-4 pt-16 bg-transparent min-h-screen relative z-10">
       <Card className="bg-syndikate-metal/90 brutal-border overflow-hidden relative cursor-pointer group transition-all duration-500 hover:scale-[1.02] hover:shadow-neon-orange backdrop-blur-xl" onClick={() => setActiveTab('about')}>
         <div className="absolute inset-0 bg-gradient-to-br from-syndikate-orange/5 via-transparent to-syndikate-red/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
         <div className="absolute inset-0 opacity-10 group-hover:opacity-20 transition-opacity duration-500">
