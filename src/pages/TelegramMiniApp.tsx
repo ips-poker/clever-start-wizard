@@ -6,6 +6,30 @@ export default function TelegramMiniApp() {
   useEffect(() => {
     // Add telegram-mini-app class to body for specific styling
     document.body.classList.add('telegram-mini-app');
+
+    // Save previous inline styles to restore later
+    const prevBodyStyle = {
+      margin: document.body.style.margin,
+      padding: document.body.style.padding,
+      width: document.body.style.width,
+      height: document.body.style.height,
+      position: document.body.style.position,
+      overflow: document.body.style.overflow,
+      overscrollBehavior: (document.body.style as any).overscrollBehavior,
+      overscrollBehaviorY: (document.body.style as any).overscrollBehaviorY,
+      touchAction: document.body.style.touchAction,
+      webkitUserSelect: (document.body.style as any).webkitUserSelect,
+    };
+
+    const rootElement = document.getElementById('root');
+    const prevRootStyle = rootElement
+      ? {
+          width: rootElement.style.width,
+          height: rootElement.style.height,
+          position: rootElement.style.position,
+          overflow: rootElement.style.overflow,
+        }
+      : null;
     
     // Initialize Telegram SDK
     try {
@@ -39,7 +63,7 @@ export default function TelegramMiniApp() {
         themeParams.mount();
         console.log('Theme params:', {
           bgColor: themeParams.backgroundColor(),
-          textColor: themeParams.textColor()
+          textColor: themeParams.textColor(),
         });
       } catch (e) {
         console.log('Theme params not available');
@@ -56,7 +80,8 @@ export default function TelegramMiniApp() {
     // Enhanced viewport setup for fullscreen
     const viewportMeta = document.querySelector('meta[name="viewport"]');
     if (viewportMeta) {
-      viewportMeta.setAttribute('content', 
+      viewportMeta.setAttribute(
+        'content',
         'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover'
       );
     }
@@ -75,18 +100,17 @@ export default function TelegramMiniApp() {
     document.body.style.height = '100vh';
     document.body.style.position = 'fixed';
     document.body.style.overflow = 'hidden';
-    document.body.style.overscrollBehavior = 'none';
+    (document.body.style as any).overscrollBehavior = 'none';
     document.body.style.touchAction = 'pan-x pan-y';
-    document.body.style.webkitUserSelect = 'none';
+    (document.body.style as any).webkitUserSelect = 'none';
     
     // Prevent pull-to-refresh on mobile
-    document.body.style.overscrollBehaviorY = 'contain';
+    (document.body.style as any).overscrollBehaviorY = 'contain';
     
     // Set dark theme by default
     document.documentElement.classList.add('dark');
     
     // Prevent scrolling on the root element
-    const rootElement = document.getElementById('root');
     if (rootElement) {
       rootElement.style.width = '100%';
       rootElement.style.height = '100vh';
@@ -107,6 +131,30 @@ export default function TelegramMiniApp() {
     return () => {
       window.removeEventListener('resize', handleResize);
       document.body.classList.remove('telegram-mini-app');
+
+      // Restore previous body styles
+      document.body.style.margin = prevBodyStyle.margin;
+      document.body.style.padding = prevBodyStyle.padding;
+      document.body.style.width = prevBodyStyle.width;
+      document.body.style.height = prevBodyStyle.height;
+      document.body.style.position = prevBodyStyle.position;
+      document.body.style.overflow = prevBodyStyle.overflow;
+      if (prevBodyStyle.overscrollBehavior !== undefined) {
+        (document.body.style as any).overscrollBehavior = prevBodyStyle.overscrollBehavior || '';
+      }
+      if (prevBodyStyle.overscrollBehaviorY !== undefined) {
+        (document.body.style as any).overscrollBehaviorY = prevBodyStyle.overscrollBehaviorY || '';
+      }
+      document.body.style.touchAction = prevBodyStyle.touchAction;
+      (document.body.style as any).webkitUserSelect = prevBodyStyle.webkitUserSelect;
+
+      // Restore root element styles
+      if (rootElement && prevRootStyle) {
+        rootElement.style.width = prevRootStyle.width;
+        rootElement.style.height = prevRootStyle.height;
+        rootElement.style.position = prevRootStyle.position;
+        rootElement.style.overflow = prevRootStyle.overflow;
+      }
     };
   }, []);
 
