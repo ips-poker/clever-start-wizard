@@ -164,72 +164,78 @@ export default function Auth() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-4 relative overflow-hidden">
-      {/* Background decorative elements */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-10 right-20 text-amber-400/10 text-8xl">♠</div>
-        <div className="absolute bottom-20 left-20 text-amber-400/10 text-7xl">♥</div>
-        <div className="absolute top-1/2 left-10 text-purple-400/10 text-6xl">♣</div>
-        <div className="absolute top-1/3 right-10 text-amber-400/10 text-5xl">♦</div>
-      </div>
-
-      {/* Gradient glow effects */}
-      <div className="absolute top-20 left-10 w-96 h-96 bg-amber-500/5 rounded-full blur-3xl"></div>
-      <div className="absolute bottom-20 right-10 w-96 h-96 bg-purple-500/5 rounded-full blur-3xl"></div>
+    <div className="min-h-screen flex items-center justify-center bg-background p-4 relative overflow-hidden">
+      {/* Industrial background pattern */}
+      <div className="absolute inset-0 industrial-texture opacity-10 pointer-events-none" />
+      
+      {/* Neon glow effects */}
+      <div className="absolute top-20 left-10 w-96 h-96 bg-syndikate-orange/5 rounded-full blur-3xl"></div>
+      <div className="absolute bottom-20 right-10 w-96 h-96 bg-syndikate-red/5 rounded-full blur-3xl"></div>
+      
+      {/* Corner brackets decoration */}
+      <div className="absolute top-4 left-4 w-16 h-16 border-l-2 border-t-2 border-syndikate-orange/30" />
+      <div className="absolute top-4 right-4 w-16 h-16 border-r-2 border-t-2 border-syndikate-orange/30" />
+      <div className="absolute bottom-4 left-4 w-16 h-16 border-l-2 border-b-2 border-syndikate-orange/30" />
+      <div className="absolute bottom-4 right-4 w-16 h-16 border-r-2 border-b-2 border-syndikate-orange/30" />
 
       <div className="w-full max-w-md relative z-10">
         {/* Logo and Brand */}
         <div className="text-center mb-8 animate-fade-in">
-          <Link to="/" className="inline-flex flex-col items-center space-y-3 group">
-            {/* Logo with background */}
+          <Link to="/" className="inline-flex flex-col items-center space-y-4 group">
+            {/* Logo with brutal metal background */}
             <div className="relative">
-              <div className="absolute -inset-3 bg-gradient-to-br from-amber-500/20 to-amber-600/20 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-              <div className="relative bg-gradient-to-br from-white via-gray-50 to-gray-100 rounded-2xl p-3 shadow-2xl group-hover:shadow-amber-500/30 transition-all duration-500 ring-1 ring-white/20 group-hover:ring-amber-400/30">
+              <div className="absolute -inset-4 bg-syndikate-orange/10 blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+              <div className="relative brutal-metal brutal-border p-4 shadow-2xl group-hover:shadow-neon-orange transition-all duration-500">
+                <div className="absolute inset-0 industrial-texture opacity-20 pointer-events-none" />
                 <img 
                   src="/lovable-uploads/a689ff05-9338-4573-bd08-aa9486811d3f.png" 
                   alt="EPC Logo" 
-                  className="w-16 h-16 object-contain group-hover:scale-105 transition-transform duration-500"
+                  className="w-16 h-16 object-contain group-hover:scale-105 transition-transform duration-500 relative z-10"
                 />
               </div>
             </div>
             {/* Company Name */}
             <div className="flex flex-col items-center">
-              <span className="text-3xl font-bold bg-gradient-to-r from-amber-200 to-amber-400 bg-clip-text text-transparent">
+              <span className="text-3xl font-bold font-mono uppercase tracking-wider neon-orange">
                 Event Poker Club
               </span>
-              <span className="text-sm text-slate-400 tracking-wider mt-1">EPC</span>
+              <span className="text-xs text-muted-foreground tracking-widest mt-2 font-mono">[ EPC SYSTEM ]</span>
             </div>
           </Link>
         </div>
 
-        <Card className="bg-gradient-to-br from-slate-800/90 via-slate-900/95 to-black/90 border-2 border-amber-400/20 shadow-2xl backdrop-blur-xl animate-fade-in animation-delay-200">
-          <CardHeader className="text-center">
-            <CardTitle className="text-3xl text-white mb-2">Добро пожаловать</CardTitle>
-            <CardDescription className="text-slate-400">
-              Войдите в систему или создайте новый аккаунт
+        <Card className="brutal-metal brutal-border shadow-2xl backdrop-blur-xl animate-fade-in animation-delay-200 relative overflow-hidden">
+          <div className="absolute inset-0 industrial-texture opacity-10 pointer-events-none" />
+          <CardHeader className="text-center relative z-10 border-b border-border/50">
+            <CardTitle className="text-3xl font-mono uppercase tracking-wider neon-orange mb-2">
+              // АВТОРИЗАЦИЯ
+            </CardTitle>
+            <CardDescription className="text-muted-foreground font-mono text-xs">
+              &gt; ВВЕДИТЕ УЧЕТНЫЕ ДАННЫЕ ДЛЯ ДОСТУПА К СИСТЕМЕ
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="relative z-10">
             <Tabs defaultValue="signin" className="space-y-4">
-              <TabsList className="grid w-full grid-cols-2 bg-slate-900/50 border border-amber-400/10">
+              <TabsList className="grid w-full grid-cols-2 bg-background/50 border border-border brutal-border">
                 <TabsTrigger 
                   value="signin"
-                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-500 data-[state=active]:to-amber-600 data-[state=active]:text-white"
+                  className="font-mono uppercase text-xs tracking-wider data-[state=active]:bg-syndikate-orange data-[state=active]:text-background data-[state=active]:shadow-neon-orange transition-all"
                 >
-                  Вход
+                  &gt; ВХОД
                 </TabsTrigger>
                 <TabsTrigger 
                   value="signup"
-                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-500 data-[state=active]:to-amber-600 data-[state=active]:text-white"
+                  className="font-mono uppercase text-xs tracking-wider data-[state=active]:bg-syndikate-orange data-[state=active]:text-background data-[state=active]:shadow-neon-orange transition-all"
                 >
-                  Регистрация
+                  &gt; РЕГИСТРАЦИЯ
                 </TabsTrigger>
               </TabsList>
 
               {error && (
-                <Alert variant="destructive" className="bg-red-900/20 border-red-400/30 text-red-300">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription>{error}</AlertDescription>
+                <Alert variant="destructive" className="bg-syndikate-red/10 border-syndikate-red/50 brutal-border relative overflow-hidden">
+                  <div className="absolute inset-0 industrial-texture opacity-20" />
+                  <AlertCircle className="h-4 w-4 relative z-10" />
+                  <AlertDescription className="font-mono text-xs relative z-10">{error}</AlertDescription>
                 </Alert>
               )}
 
@@ -237,20 +243,24 @@ export default function Auth() {
               <TabsContent value="signin">
                 <form onSubmit={handleSignIn} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="signin-email" className="text-slate-300">Email</Label>
+                    <Label htmlFor="signin-email" className="text-foreground font-mono text-xs uppercase tracking-wider">
+                      &gt; Email
+                    </Label>
                     <Input
                       id="signin-email"
                       type="email"
-                      placeholder="player@example.com"
+                      placeholder="player@epc.system"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       required
                       disabled={loading}
-                      className="bg-slate-900/50 border-amber-400/20 text-white placeholder:text-slate-500 focus:border-amber-400/50"
+                      className="bg-background/50 border-border brutal-border text-foreground placeholder:text-muted-foreground focus:border-syndikate-orange font-mono"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="signin-password" className="text-slate-300">Пароль</Label>
+                    <Label htmlFor="signin-password" className="text-foreground font-mono text-xs uppercase tracking-wider">
+                      &gt; Пароль
+                    </Label>
                     <div className="relative">
                       <Input
                         id="signin-password"
@@ -260,13 +270,13 @@ export default function Auth() {
                         onChange={(e) => setPassword(e.target.value)}
                         required
                         disabled={loading}
-                        className="bg-slate-900/50 border-amber-400/20 text-white placeholder:text-slate-500 focus:border-amber-400/50"
+                        className="bg-background/50 border-border brutal-border text-foreground placeholder:text-muted-foreground focus:border-syndikate-orange font-mono"
                       />
                       <Button
                         type="button"
                         variant="ghost"
                         size="sm"
-                        className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent text-slate-400 hover:text-amber-400"
+                        className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent text-muted-foreground hover:text-syndikate-orange"
                         onClick={() => setShowPassword(!showPassword)}
                         disabled={loading}
                       >
@@ -280,18 +290,18 @@ export default function Auth() {
                   </div>
                   <Button 
                     type="submit" 
-                    className="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-semibold shadow-lg hover:shadow-amber-500/30 transition-all duration-300" 
+                    className="w-full bg-syndikate-orange hover:bg-syndikate-orange/90 text-background font-mono uppercase tracking-wider shadow-neon-orange transition-all duration-300 brutal-border" 
                     disabled={loading}
                   >
                     {loading ? (
                       <>
                         <LoadingSpinner size="sm" className="mr-2" />
-                        Вход...
+                        ВХОД...
                       </>
                     ) : (
                       <>
                         <LogIn className="w-4 h-4 mr-2" />
-                        Войти
+                        &gt; ВОЙТИ
                       </>
                     )}
                   </Button>
@@ -301,20 +311,24 @@ export default function Auth() {
               <TabsContent value="signup">
                 <form onSubmit={handleSignUp} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="signup-email" className="text-slate-300">Email</Label>
+                    <Label htmlFor="signup-email" className="text-foreground font-mono text-xs uppercase tracking-wider">
+                      &gt; Email
+                    </Label>
                     <Input
                       id="signup-email"
                       type="email"
-                      placeholder="your@email.com"
+                      placeholder="your@epc.system"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       required
                       disabled={loading}
-                      className="bg-slate-900/50 border-amber-400/20 text-white placeholder:text-slate-500 focus:border-amber-400/50"
+                      className="bg-background/50 border-border brutal-border text-foreground placeholder:text-muted-foreground focus:border-syndikate-orange font-mono"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="signup-password" className="text-slate-300">Пароль</Label>
+                    <Label htmlFor="signup-password" className="text-foreground font-mono text-xs uppercase tracking-wider">
+                      &gt; Пароль
+                    </Label>
                     <div className="relative">
                       <Input
                         id="signup-password"
@@ -325,13 +339,13 @@ export default function Auth() {
                         required
                         disabled={loading}
                         minLength={6}
-                        className="bg-slate-900/50 border-amber-400/20 text-white placeholder:text-slate-500 focus:border-amber-400/50"
+                        className="bg-background/50 border-border brutal-border text-foreground placeholder:text-muted-foreground focus:border-syndikate-orange font-mono"
                       />
                       <Button
                         type="button"
                         variant="ghost"
                         size="sm"
-                        className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent text-slate-400 hover:text-amber-400"
+                        className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent text-muted-foreground hover:text-syndikate-orange"
                         onClick={() => setShowPassword(!showPassword)}
                         disabled={loading}
                       >
@@ -342,8 +356,8 @@ export default function Auth() {
                         )}
                       </Button>
                     </div>
-                    <p className="text-xs text-slate-500">
-                      Минимум 6 символов
+                    <p className="text-xs text-muted-foreground font-mono">
+                      // Минимум 6 символов
                     </p>
                   </div>
                   
@@ -356,18 +370,18 @@ export default function Auth() {
                   
                   <Button 
                     type="submit" 
-                    className="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-semibold shadow-lg hover:shadow-amber-500/30 transition-all duration-300" 
+                    className="w-full bg-syndikate-orange hover:bg-syndikate-orange/90 text-background font-mono uppercase tracking-wider shadow-neon-orange transition-all duration-300 brutal-border" 
                     disabled={loading || !privacyConsent}
                   >
                     {loading ? (
                       <>
                         <LoadingSpinner size="sm" className="mr-2" />
-                        Регистрация...
+                        РЕГИСТРАЦИЯ...
                       </>
                     ) : (
                       <>
                         <UserPlus className="w-4 h-4 mr-2" />
-                        Зарегистрироваться
+                        &gt; ЗАРЕГИСТРИРОВАТЬСЯ
                       </>
                     )}
                   </Button>
@@ -387,13 +401,13 @@ export default function Auth() {
               requirePrivacyConsent={true}
             />
 
-            <div className="mt-6 text-center">
+            <div className="mt-6 text-center border-t border-border/50 pt-6">
               <Link 
                 to="/" 
-                className="text-sm text-slate-400 hover:text-amber-400 transition-colors inline-flex items-center gap-2 group"
+                className="text-xs text-muted-foreground hover:text-syndikate-orange transition-colors inline-flex items-center gap-2 group font-mono uppercase tracking-wider"
               >
-                <span className="group-hover:-translate-x-1 transition-transform">←</span>
-                Вернуться на главную
+                <span className="group-hover:-translate-x-1 transition-transform">&lt;</span>
+                ВЕРНУТЬСЯ НА ГЛАВНУЮ
               </Link>
             </div>
           </CardContent>
