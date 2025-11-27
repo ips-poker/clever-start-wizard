@@ -733,13 +733,13 @@ export const TelegramApp = () => {
           variant="ghost" 
           size="sm" 
           onClick={() => setActiveTab('home')} 
-          className="text-white hover:bg-white/10 p-2 rounded-lg backdrop-blur-sm border border-white/10 hover:border-amber-400/30 transition-all duration-300 group"
+          className="text-foreground hover:bg-syndikate-metal p-2 brutal-border backdrop-blur-sm hover:border-syndikate-orange/30 transition-all duration-300 group"
         >
           <ArrowLeft className="h-4 w-4 group-hover:-translate-x-0.5 transition-transform duration-300" />
         </Button>
         <div>
-          <h2 className="text-2xl font-light text-white tracking-wider">О НАС</h2>
-          <div className="h-0.5 w-10 bg-gradient-to-r from-amber-400 to-amber-600 mt-1"></div>
+          <h2 className="font-display text-2xl uppercase text-foreground tracking-wider">О НАС</h2>
+          <div className="h-[2px] w-10 bg-gradient-neon mt-1"></div>
         </div>
       </div>
 
@@ -765,27 +765,27 @@ export const TelegramApp = () => {
         </Card>
 
         {/* Photo Gallery with Scroll */}
-        <Card className="bg-gradient-to-br from-slate-800/90 via-slate-900/95 to-black/90 border border-white/10 overflow-hidden relative shadow-xl backdrop-blur-xl">
+        <Card className="bg-syndikate-metal/90 brutal-border overflow-hidden relative shadow-brutal backdrop-blur-xl">
           <CardContent className="p-4 relative z-10">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-lg flex items-center justify-center">
-                  <Camera className="h-4 w-4 text-white" />
+                <div className="w-8 h-8 bg-syndikate-orange brutal-border flex items-center justify-center">
+                  <Camera className="h-4 w-4 text-background" />
                 </div>
-                <h3 className="text-white font-semibold text-lg">Наши залы</h3>
+                <h3 className="text-foreground font-bold uppercase tracking-wider">Наши залы</h3>
               </div>
-              <div className="flex items-center gap-2 text-white/60 text-sm">
+              <div className="flex items-center gap-2 text-muted-foreground text-sm font-mono">
                 <span>{currentPhotoIndex + 1} / {galleryImages.length}</span>
               </div>
             </div>
             
             <div className="relative">
-              <ScrollArea className="w-full whitespace-nowrap rounded-lg">
+              <ScrollArea className="w-full whitespace-nowrap">
                 <div className="flex gap-3 pb-2">
                   {galleryImages.map((image, index) => (
                     <div 
                       key={image.id}
-                      className="flex-none w-40 h-32 bg-gradient-to-br from-gray-600 to-gray-800 rounded-xl overflow-hidden shadow-lg border border-white/10 cursor-pointer relative group"
+                      className="flex-none w-40 h-32 bg-syndikate-concrete brutal-border overflow-hidden shadow-lg cursor-pointer relative group"
                       onClick={() => setCurrentPhotoIndex(index)}
                     >
                       <img 
@@ -793,14 +793,14 @@ export const TelegramApp = () => {
                         alt={image.title} 
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" 
                       />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
                       <div className="absolute bottom-2 left-2 right-2">
-                        <p className="text-white text-xs font-medium drop-shadow-lg truncate">
+                        <p className="text-foreground text-xs font-bold uppercase drop-shadow-lg truncate">
                           {image.title}
                         </p>
                       </div>
                       {index === currentPhotoIndex && (
-                        <div className="absolute inset-0 border-2 border-amber-400 rounded-xl"></div>
+                        <div className="absolute inset-0 border-2 border-syndikate-orange shadow-neon-orange"></div>
                       )}
                     </div>
                   ))}
@@ -808,23 +808,23 @@ export const TelegramApp = () => {
               </ScrollArea>
             </div>
             
-            <div className="text-center p-3 bg-gradient-to-r from-white/5 via-white/10 to-white/5 rounded-lg border border-white/10 backdrop-blur-sm mt-4">
-              <p className="text-white/80 text-sm leading-relaxed">
-                Профессиональные покерные залы с современным оборудованием
+            <div className="text-center p-3 bg-syndikate-concrete/50 brutal-border backdrop-blur-sm mt-4">
+              <p className="text-foreground text-sm leading-relaxed uppercase tracking-wide">
+                Профессиональные покерные залы
               </p>
             </div>
           </CardContent>
         </Card>
 
         {/* Club Rules - Swipeable */}
-        <Card className="bg-gradient-to-br from-blue-600/90 via-blue-700/95 to-indigo-700/90 border border-blue-400/20 backdrop-blur-xl shadow-xl relative overflow-hidden">
+        <Card className="bg-syndikate-red/90 brutal-border backdrop-blur-xl shadow-brutal relative overflow-hidden">
           <CardContent className="p-5 relative z-10">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-gradient-to-br from-white/20 to-white/10 rounded-xl flex items-center justify-center">
-                  <MessageSquare className="h-5 w-5 text-white" />
+                <div className="w-10 h-10 bg-background/20 brutal-border flex items-center justify-center">
+                  <MessageSquare className="h-5 w-5 text-background" />
                 </div>
-                <h3 className="text-white font-bold text-xl tracking-wide">
+                <h3 className="text-background font-display text-xl uppercase tracking-wider">
                   Наши правила
                 </h3>
               </div>
@@ -834,11 +834,11 @@ export const TelegramApp = () => {
                   size="sm"
                   onClick={() => setCurrentRuleIndex(Math.max(0, currentRuleIndex - 1))}
                   disabled={currentRuleIndex === 0}
-                  className="text-white/60 hover:text-white hover:bg-white/10 p-1 rounded-md disabled:opacity-30"
+                  className="text-background/60 hover:text-background hover:bg-background/10 p-1 disabled:opacity-30"
                 >
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
-                <span className="text-white/60 text-sm min-w-[3rem] text-center">
+                <span className="text-background/80 text-sm min-w-[3rem] text-center font-mono">
                   {currentRuleIndex + 1} / {rules.length}
                 </span>
                 <Button
@@ -846,7 +846,7 @@ export const TelegramApp = () => {
                   size="sm"
                   onClick={() => setCurrentRuleIndex(Math.min(rules.length - 1, currentRuleIndex + 1))}
                   disabled={currentRuleIndex === rules.length - 1}
-                  className="text-white/60 hover:text-white hover:bg-white/10 p-1 rounded-md disabled:opacity-30"
+                  className="text-background/60 hover:text-background hover:bg-background/10 p-1 disabled:opacity-30"
                 >
                   <ChevronRight className="h-4 w-4" />
                 </Button>
@@ -854,14 +854,14 @@ export const TelegramApp = () => {
             </div>
             
             <div className="min-h-[120px]">
-              <div className="p-4 bg-gradient-to-r from-white/8 via-white/12 to-white/8 rounded-xl border border-white/15 backdrop-blur-sm">
+              <div className="p-4 bg-syndikate-concrete/50 brutal-border backdrop-blur-sm">
                 <div className="flex items-start gap-3">
-                  <div className={`w-6 h-6 bg-gradient-to-br ${rules[currentRuleIndex].color} rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5`}>
-                    <span className="text-white text-xs font-bold">{currentRuleIndex + 1}</span>
+                  <div className={`w-6 h-6 bg-syndikate-orange brutal-border flex items-center justify-center flex-shrink-0 mt-0.5`}>
+                    <span className="text-background text-xs font-bold">{currentRuleIndex + 1}</span>
                   </div>
                   <div className="flex-1">
-                    <h4 className="text-white font-semibold text-sm mb-2">{rules[currentRuleIndex].title}</h4>
-                    <p className="text-white/80 text-xs leading-relaxed">
+                    <h4 className="text-foreground font-bold uppercase text-sm mb-2 tracking-wider">{rules[currentRuleIndex].title}</h4>
+                    <p className="text-foreground/80 text-xs leading-relaxed">
                       {rules[currentRuleIndex].content}
                     </p>
                   </div>
@@ -869,13 +869,13 @@ export const TelegramApp = () => {
               </div>
             </div>
 
-            <div className="mt-4 p-3 bg-gradient-to-r from-amber-500/10 via-amber-600/15 to-amber-500/10 rounded-lg border border-amber-400/30 backdrop-blur-sm">
+            <div className="mt-4 p-3 bg-syndikate-orange/10 brutal-border backdrop-blur-sm">
               <div className="flex items-start gap-2">
-                <div className="w-4 h-4 bg-gradient-to-br from-amber-500 to-amber-600 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <CheckCircle className="h-2.5 w-2.5 text-white" />
+                <div className="w-4 h-4 bg-syndikate-orange brutal-border flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <CheckCircle className="h-2.5 w-2.5 text-background" />
                 </div>
-                <p className="text-white/90 text-xs leading-relaxed">
-                  <span className="font-semibold">Важно:</span> Участвуя в турнирах EPC, вы автоматически соглашаетесь с данными правилами.
+                <p className="text-foreground text-xs leading-relaxed">
+                  <span className="font-bold uppercase">Важно:</span> Участвуя в турнирах Syndikate, вы автоматически соглашаетесь с данными правилами.
                 </p>
               </div>
             </div>
@@ -884,40 +884,40 @@ export const TelegramApp = () => {
 
         {/* Mission & Values - Compact */}
         <div className="grid grid-cols-2 gap-3">
-          <Card className="bg-gradient-to-br from-emerald-600/90 via-emerald-700/95 to-emerald-800/90 border border-emerald-400/20 overflow-hidden relative shadow-lg backdrop-blur-xl">
+          <Card className="bg-syndikate-orange/90 brutal-border overflow-hidden relative shadow-neon-orange backdrop-blur-xl">
             <CardContent className="p-4 relative z-10">
               <div className="flex items-center gap-2 mb-3">
-                <div className="w-8 h-8 bg-gradient-to-br from-white/20 to-white/10 rounded-lg flex items-center justify-center">
-                  <Target className="h-4 w-4 text-white" />
+                <div className="w-8 h-8 bg-background/20 brutal-border flex items-center justify-center">
+                  <Target className="h-4 w-4 text-background" />
                 </div>
-                <h3 className="text-white font-semibold text-sm">Миссия</h3>
+                <h3 className="text-background font-bold uppercase text-sm tracking-wider">Миссия</h3>
               </div>
-              <p className="text-white/90 text-xs leading-relaxed">
-                Создавать профессиональную игровую среду для развития навыков в покере
+              <p className="text-background/90 text-xs leading-relaxed uppercase tracking-wide">
+                Создание элитной среды для покера
               </p>
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-purple-600/90 via-purple-700/95 to-blue-600/90 border border-purple-400/20 overflow-hidden relative shadow-lg backdrop-blur-xl">
+          <Card className="bg-syndikate-red/90 brutal-border overflow-hidden relative shadow-brutal backdrop-blur-xl">
             <CardContent className="p-4 relative z-10">
               <div className="flex items-center gap-2 mb-3">
-                <div className="w-8 h-8 bg-gradient-to-br from-white/20 to-white/10 rounded-lg flex items-center justify-center">
-                  <Heart className="h-4 w-4 text-white" />
+                <div className="w-8 h-8 bg-background/20 brutal-border flex items-center justify-center">
+                  <Heart className="h-4 w-4 text-background" />
                 </div>
-                <h3 className="text-white font-semibold text-sm">Ценности</h3>
+                <h3 className="text-background font-bold uppercase text-sm tracking-wider">Ценности</h3>
               </div>
               <div className="space-y-1.5">
                 <div className="flex items-center gap-1.5">
-                  <div className="w-1.5 h-1.5 bg-white/60 rounded-full"></div>
-                  <span className="text-white/90 text-xs">Честность</span>
+                  <div className="w-1.5 h-1.5 bg-background/60 brutal-border"></div>
+                  <span className="text-background/90 text-xs uppercase">Честность</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <div className="w-1.5 h-1.5 bg-white/60 rounded-full"></div>
-                  <span className="text-white/90 text-xs">Профессионализм</span>
+                  <div className="w-1.5 h-1.5 bg-background/60 brutal-border"></div>
+                  <span className="text-background/90 text-xs uppercase">Профессионализм</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <div className="w-1.5 h-1.5 bg-white/60 rounded-full"></div>
-                  <span className="text-white/90 text-xs">Дружелюбие</span>
+                  <div className="w-1.5 h-1.5 bg-background/60 brutal-border"></div>
+                  <span className="text-background/90 text-xs uppercase">Сила</span>
                 </div>
               </div>
             </CardContent>
@@ -1391,182 +1391,183 @@ export const TelegramApp = () => {
       {activeTab === 'qa' && (
         <div className="space-y-6 pb-20 px-4 bg-transparent min-h-screen relative z-10">
           <div className="flex items-center gap-3 p-4">
-            <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-blue-600 rounded-xl flex items-center justify-center">
-              <MessageSquare className="h-5 w-5 text-white" />
+            <div className="w-10 h-10 bg-syndikate-orange brutal-border flex items-center justify-center">
+              <MessageSquare className="h-5 w-5 text-background" />
             </div>
             <div>
-              <h2 className="text-3xl font-light text-white tracking-wider">Q&A</h2>
-              <div className="h-0.5 w-8 bg-gradient-to-r from-purple-400 to-blue-500 mt-2"></div>
+              <h2 className="font-display text-3xl uppercase text-foreground tracking-wider">Q&A</h2>
+              <div className="h-[2px] w-8 bg-gradient-neon mt-2"></div>
             </div>
           </div>
           
           <div className="space-y-4">
-            <Card className="bg-gradient-to-br from-slate-800/95 via-slate-900/95 to-black/90 border border-white/10 backdrop-blur-xl shadow-xl group hover:shadow-2xl hover:shadow-green-500/20 transition-all duration-500 relative overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 via-transparent to-emerald-600/5 opacity-60 group-hover:opacity-100 transition-opacity duration-500"></div>
-              <div className="absolute inset-0 opacity-8 group-hover:opacity-15 transition-opacity duration-500">
-                <div className="absolute top-4 right-4 text-green-400/30 text-3xl animate-pulse">♠</div>
+            <Card className="bg-syndikate-metal/90 brutal-border backdrop-blur-xl shadow-brutal group hover:shadow-neon-orange transition-all duration-500 relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-syndikate-orange/5 via-transparent to-syndikate-red/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+              <div className="absolute inset-0 opacity-10 group-hover:opacity-20 transition-opacity duration-500">
+                <div className="absolute top-4 right-4 text-syndikate-orange/30 text-3xl animate-pulse">♠</div>
               </div>
               
               <CardContent className="p-6 relative z-10">
                 <div className="flex items-start gap-4">
-                  <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-emerald-500 rounded-lg flex items-center justify-center flex-shrink-0 mt-1">
-                    <CheckCircle className="h-4 w-4 text-white" />
+                  <div className="w-8 h-8 bg-syndikate-orange brutal-border flex items-center justify-center flex-shrink-0 mt-1">
+                    <CheckCircle className="h-4 w-4 text-background" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="text-white font-semibold text-lg mb-3 group-hover:text-green-100 transition-colors duration-300">1. Это законно?</h3>
-                    <p className="text-white/80 text-sm leading-relaxed">Абсолютно! Мы проводим спортивные турниры без денежных призов, что полностью соответствует российскому законодательству. Согласно ФЗ №244, запрещены только азартные игры с материальными выигрышами. Event Poker Club — это спортивное сообщество для развития навыков и общения.</p>
+                    <h3 className="text-foreground font-bold uppercase text-lg mb-3 tracking-wider group-hover:text-syndikate-orange transition-colors duration-300">1. Это законно?</h3>
+                    <p className="text-foreground/80 text-sm leading-relaxed">Абсолютно! Мы проводим спортивные турниры без денежных призов, что полностью соответствует российскому законодательству. Согласно ФЗ №244, запрещены только азартные игры с материальными выигрышами. Syndikate — это спортивное сообщество для развития навыков и общения.</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
             
-            <Card className="bg-gradient-to-br from-slate-800/95 via-slate-900/95 to-black/90 border border-white/10 backdrop-blur-xl shadow-xl group hover:shadow-2xl hover:shadow-blue-500/20 transition-all duration-500 relative overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-transparent to-cyan-600/5 opacity-60 group-hover:opacity-100 transition-opacity duration-500"></div>
-              <div className="absolute inset-0 opacity-8 group-hover:opacity-15 transition-opacity duration-500">
-                <div className="absolute top-4 right-4 text-blue-400/30 text-3xl animate-bounce-subtle">♣</div>
+            <Card className="bg-syndikate-metal/90 brutal-border backdrop-blur-xl shadow-brutal group hover:shadow-neon-orange transition-all duration-500 relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-syndikate-orange/5 via-transparent to-syndikate-red/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+              <div className="absolute inset-0 opacity-10 group-hover:opacity-20 transition-opacity duration-500">
+                <div className="absolute top-4 right-4 text-syndikate-orange/30 text-3xl">♣</div>
               </div>
               
               <CardContent className="p-6 relative z-10">
                 <div className="flex items-start gap-4">
-                  <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-lg flex items-center justify-center flex-shrink-0 mt-1">
-                    <Users className="h-4 w-4 text-white" />
+                  <div className="w-8 h-8 bg-syndikate-orange brutal-border flex items-center justify-center flex-shrink-0 mt-1">
+                    <Users className="h-4 w-4 text-background" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="text-white font-semibold text-lg mb-3 group-hover:text-blue-100 transition-colors duration-300">2. Зачем играть без призов?</h3>
-                    <p className="text-white/80 text-sm leading-relaxed">EPC — это уникальное комьюнити единомышленников! Где еще вы найдете профессиональное оборудование, отличный сервис и возможность развивать покерные навыки в безопасной среде? Мы создаем атмосферу спортивного соревнования и дружеского общения.</p>
+                    <h3 className="text-foreground font-bold uppercase text-lg mb-3 tracking-wider group-hover:text-syndikate-orange transition-colors duration-300">2. Зачем играть без призов?</h3>
+                    <p className="text-foreground/80 text-sm leading-relaxed">Syndikate — это уникальное комьюнити единомышленников! Где еще вы найдете профессиональное оборудование, отличный сервис и возможность развивать покерные навыки в безопасной среде? Мы создаем атмосферу спортивного соревнования и дружеского общения.</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
             
-            <Card className="bg-gradient-to-br from-slate-800/95 via-slate-900/95 to-black/90 border border-white/10 backdrop-blur-xl shadow-xl group hover:shadow-2xl hover:shadow-amber-500/20 transition-all duration-500 relative overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 via-transparent to-orange-600/5 opacity-60 group-hover:opacity-100 transition-opacity duration-500"></div>
-              <div className="absolute inset-0 opacity-8 group-hover:opacity-15 transition-opacity duration-500">
-                <div className="absolute top-4 right-4 text-amber-400/30 text-3xl animate-glow">♦</div>
+            <Card className="bg-syndikate-metal/90 brutal-border backdrop-blur-xl shadow-brutal group hover:shadow-neon-orange transition-all duration-500 relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-syndikate-orange/5 via-transparent to-syndikate-red/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+              <div className="absolute inset-0 opacity-10 group-hover:opacity-20 transition-opacity duration-500">
+                <div className="absolute top-4 right-4 text-syndikate-orange/30 text-3xl animate-pulse">♦</div>
               </div>
               
               <CardContent className="p-6 relative z-10">
                 <div className="flex items-start gap-4">
-                  <div className="w-8 h-8 bg-gradient-to-br from-amber-500 to-orange-500 rounded-lg flex items-center justify-center flex-shrink-0 mt-1">
-                    <Trophy className="h-4 w-4 text-white" />
+                  <div className="w-8 h-8 bg-syndikate-orange brutal-border flex items-center justify-center flex-shrink-0 mt-1">
+                    <Trophy className="h-4 w-4 text-background" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="text-white font-semibold text-lg mb-3 group-hover:text-amber-100 transition-colors duration-300">3. Как работает рейтинг EPC?</h3>
-                    <p className="text-white/80 text-sm leading-relaxed">В Event Poker Club действует продуманная RPS-система для честного ранжирования участников. Рейтинговые очки начисляются за результативные выступления в турнирах и отражают исключительно игровое мастерство. Система мотивирует на спортивное развитие и определяет лучших игроков клуба.</p>
+                    <h3 className="text-foreground font-bold uppercase text-lg mb-3 tracking-wider group-hover:text-syndikate-orange transition-colors duration-300">3. Как работает рейтинг RPS?</h3>
+                    <p className="text-foreground/80 text-sm leading-relaxed">В Syndikate действует продуманная RPS-система для честного ранжирования участников. Рейтинговые очки начисляются за результативные выступления в турнирах и отражают исключительно игровое мастерство. Система мотивирует на спортивное развитие и определяет лучших игроков клуба.</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
             
-            <Card className="bg-gradient-to-br from-slate-800/95 via-slate-900/95 to-black/90 border border-white/10 backdrop-blur-xl shadow-xl group hover:shadow-2xl hover:shadow-purple-500/20 transition-all duration-500 relative overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 via-transparent to-pink-600/5 opacity-60 group-hover:opacity-100 transition-opacity duration-500"></div>
-              <div className="absolute inset-0 opacity-8 group-hover:opacity-15 transition-opacity duration-500">
-                <div className="absolute top-4 right-4 text-purple-400/30 text-3xl animate-pulse">♥</div>
+            <Card className="bg-syndikate-metal/90 brutal-border backdrop-blur-xl shadow-brutal group hover:shadow-neon-orange transition-all duration-500 relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-syndikate-orange/5 via-transparent to-syndikate-red/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+              <div className="absolute inset-0 opacity-10 group-hover:opacity-20 transition-opacity duration-500">
+                <div className="absolute top-4 right-4 text-syndikate-orange/30 text-3xl animate-pulse">♥</div>
               </div>
               
               <CardContent className="p-6 relative z-10">
                 <div className="flex items-start gap-4">
-                  <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center flex-shrink-0 mt-1">
-                    <Crown className="h-4 w-4 text-white" />
+                  <div className="w-8 h-8 bg-syndikate-red brutal-border flex items-center justify-center flex-shrink-0 mt-1">
+                    <Crown className="h-4 w-4 text-background" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="text-white font-semibold text-lg mb-3 group-hover:text-purple-100 transition-colors duration-300">4. Что такое VIP-турниры?</h3>
-                    <p className="text-white/80 text-sm leading-relaxed">Это эксклюзивные события для топовых игроков рейтинга EPC. Проводятся в особом формате с повышенным комфортом и сервисом. Участие строго по приглашениям на основе достижений в рейтинге. Место нельзя передать — только личное участие лучших игроков клуба.</p>
+                    <h3 className="text-foreground font-bold uppercase text-lg mb-3 tracking-wider group-hover:text-syndikate-orange transition-colors duration-300">4. Что такое VIP-турниры?</h3>
+                    <p className="text-foreground/80 text-sm leading-relaxed">Это эксклюзивные события для топовых игроков рейтинга Syndikate. Проводятся в особом формате с повышенным комфортом и сервисом. Участие строго по приглашениям на основе достижений в рейтинге. Место нельзя передать — только личное участие лучших игроков клуба.</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="bg-gradient-to-br from-slate-800/95 via-slate-900/95 to-black/90 border border-white/10 backdrop-blur-xl shadow-xl group hover:shadow-2xl hover:shadow-cyan-500/20 transition-all duration-500 relative overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 via-transparent to-blue-600/5 opacity-60 group-hover:opacity-100 transition-opacity duration-500"></div>
-              <div className="absolute inset-0 opacity-8 group-hover:opacity-15 transition-opacity duration-500">
-                <div className="absolute top-4 right-4 text-cyan-400/30 text-3xl animate-bounce-subtle">♠</div>
+            <Card className="bg-syndikate-metal/90 brutal-border backdrop-blur-xl shadow-brutal group hover:shadow-neon-orange transition-all duration-500 relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-syndikate-orange/5 via-transparent to-syndikate-red/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+              <div className="absolute inset-0 opacity-10 group-hover:opacity-20 transition-opacity duration-500">
+                <div className="absolute top-4 right-4 text-syndikate-orange/30 text-3xl">♠</div>
               </div>
               
               <CardContent className="p-6 relative z-10">
                 <div className="flex items-start gap-4">
-                  <div className="w-8 h-8 bg-gradient-to-br from-cyan-500 to-blue-500 rounded-lg flex items-center justify-center flex-shrink-0 mt-1">
-                    <UserPlus className="h-4 w-4 text-white" />
+                  <div className="w-8 h-8 bg-syndikate-orange brutal-border flex items-center justify-center flex-shrink-0 mt-1">
+                    <UserPlus className="h-4 w-4 text-background" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="text-white font-semibold text-lg mb-3 group-hover:text-cyan-100 transition-colors duration-300">5. Как записаться на турнир?</h3>
-                    <p className="text-white/80 text-sm leading-relaxed">После первичной регистрации в нашем Telegram-боте, вы получаете доступ к удобному мини-приложению. В нем можно бронировать места на любые турниры. Внимание: количество мест ограничено! При частых пропусках без предупреждения возможность записи может быть временно ограничена.</p>
+                    <h3 className="text-foreground font-bold uppercase text-lg mb-3 tracking-wider group-hover:text-syndikate-orange transition-colors duration-300">5. Как записаться на турнир?</h3>
+                    <p className="text-foreground/80 text-sm leading-relaxed">После первичной регистрации в нашем Telegram-боте, вы получаете доступ к удобному мини-приложению. В нем можно бронировать места на любые турниры. Внимание: количество мест ограничено! При частых пропусках без предупреждения возможность записи может быть временно ограничена.</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="bg-gradient-to-br from-slate-800/95 via-slate-900/95 to-black/90 border border-white/10 backdrop-blur-xl shadow-xl group hover:shadow-2xl hover:shadow-orange-500/20 transition-all duration-500 relative overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-br from-orange-500/5 via-transparent to-red-600/5 opacity-60 group-hover:opacity-100 transition-opacity duration-500"></div>
-              <div className="absolute inset-0 opacity-8 group-hover:opacity-15 transition-opacity duration-500">
-                <div className="absolute top-4 right-4 text-orange-400/30 text-3xl animate-glow">♣</div>
+            <Card className="bg-syndikate-metal/90 brutal-border backdrop-blur-xl shadow-brutal group hover:shadow-neon-orange transition-all duration-500 relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-syndikate-orange/5 via-transparent to-syndikate-red/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+              <div className="absolute inset-0 opacity-10 group-hover:opacity-20 transition-opacity duration-500">
+                <div className="absolute top-4 right-4 text-syndikate-orange/30 text-3xl animate-pulse">♣</div>
               </div>
               
               <CardContent className="p-6 relative z-10">
                 <div className="flex items-start gap-4">
-                  <div className="w-8 h-8 bg-gradient-to-br from-orange-500 to-red-500 rounded-lg flex items-center justify-center flex-shrink-0 mt-1">
-                    <Coins className="h-4 w-4 text-white" />
+                  <div className="w-8 h-8 bg-syndikate-red brutal-border flex items-center justify-center flex-shrink-0 mt-1">
+                    <Coins className="h-4 w-4 text-background" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="text-white font-semibold text-lg mb-3 group-hover:text-orange-100 transition-colors duration-300">6. Что такое организационный взнос?</h3>
-                    <p className="text-white/80 text-sm leading-relaxed">Это плата за комплекс услуг: аренду профессионального оборудования, игровых фишек, зала и сервисное обслуживание. Фишки — исключительно игровое оборудование без денежной стоимости, их нельзя обменять или вывести. Повторный вход (re-entry) оплачивается отдельно.</p>
+                    <h3 className="text-foreground font-bold uppercase text-lg mb-3 tracking-wider group-hover:text-syndikate-orange transition-colors duration-300">6. Что такое организационный взнос?</h3>
+                    <p className="text-foreground/80 text-sm leading-relaxed">Это плата за комплекс услуг: аренду профессионального оборудования, игровых фишек, зала и сервисное обслуживание. Фишки — исключительно игровое оборудование без денежной стоимости, их нельзя обменять или вывести. Повторный вход (re-entry) оплачивается отдельно.</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="bg-gradient-to-br from-slate-800/95 via-slate-900/95 to-black/90 border border-white/10 backdrop-blur-xl shadow-xl group hover:shadow-2xl hover:shadow-teal-500/20 transition-all duration-500 relative overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-br from-teal-500/5 via-transparent to-green-600/5 opacity-60 group-hover:opacity-100 transition-opacity duration-500"></div>
-              <div className="absolute inset-0 opacity-8 group-hover:opacity-15 transition-opacity duration-500">
-                <div className="absolute top-4 right-4 text-teal-400/30 text-3xl animate-pulse">♦</div>
+
+            <Card className="bg-syndikate-metal/90 brutal-border backdrop-blur-xl shadow-brutal group hover:shadow-neon-orange transition-all duration-500 relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-syndikate-orange/5 via-transparent to-syndikate-red/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+              <div className="absolute inset-0 opacity-10 group-hover:opacity-20 transition-opacity duration-500">
+                <div className="absolute top-4 right-4 text-syndikate-orange/30 text-3xl animate-pulse">♦</div>
               </div>
               
               <CardContent className="p-6 relative z-10">
                 <div className="flex items-start gap-4">
-                  <div className="w-8 h-8 bg-gradient-to-br from-teal-500 to-green-500 rounded-lg flex items-center justify-center flex-shrink-0 mt-1">
-                    <Clock className="h-4 w-4 text-white" />
+                  <div className="w-8 h-8 bg-syndikate-orange brutal-border flex items-center justify-center flex-shrink-0 mt-1">
+                    <Clock className="h-4 w-4 text-background" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="text-white font-semibold text-lg mb-3 group-hover:text-teal-100 transition-colors duration-300">7. Что такое поздняя регистрация?</h3>
-                    <p className="text-white/80 text-sm leading-relaxed">Это возможность присоединиться к турниру после официального старта — полезно, если вы опаздываете или хотите сделать повторный вход. Время поздней регистрации указывается для каждого турнира отдельно. После её завершения предусмотрен короткий перерыв для окончательного входа.</p>
+                    <h3 className="text-foreground font-bold uppercase text-lg mb-3 tracking-wider group-hover:text-syndikate-orange transition-colors duration-300">7. Что такое поздняя регистрация?</h3>
+                    <p className="text-foreground/80 text-sm leading-relaxed">Это возможность присоединиться к турниру после официального старта — полезно, если вы опаздываете или хотите сделать повторный вход. Время поздней регистрации указывается для каждого турнира отдельно. После её завершения предусмотрен короткий перерыв для окончательного входа.</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="bg-gradient-to-br from-slate-800/95 via-slate-900/95 to-black/90 border border-white/10 backdrop-blur-xl shadow-xl group hover:shadow-2xl hover:shadow-indigo-500/20 transition-all duration-500 relative overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 via-transparent to-purple-600/5 opacity-60 group-hover:opacity-100 transition-opacity duration-500"></div>
-              <div className="absolute inset-0 opacity-8 group-hover:opacity-15 transition-opacity duration-500">
-                <div className="absolute top-4 right-4 text-indigo-400/30 text-3xl animate-bounce-subtle">♥</div>
+            <Card className="bg-syndikate-metal/90 brutal-border backdrop-blur-xl shadow-brutal group hover:shadow-neon-orange transition-all duration-500 relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-syndikate-orange/5 via-transparent to-syndikate-red/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+              <div className="absolute inset-0 opacity-10 group-hover:opacity-20 transition-opacity duration-500">
+                <div className="absolute top-4 right-4 text-syndikate-orange/30 text-3xl">♥</div>
               </div>
               
               <CardContent className="p-6 relative z-10">
                 <div className="flex items-start gap-4">
-                  <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-lg flex items-center justify-center flex-shrink-0 mt-1">
-                    <Target className="h-4 w-4 text-white" />
+                  <div className="w-8 h-8 bg-syndikate-orange brutal-border flex items-center justify-center flex-shrink-0 mt-1">
+                    <Target className="h-4 w-4 text-background" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="text-white font-semibold text-lg mb-3 group-hover:text-indigo-100 transition-colors duration-300">8. Что такое стартовый стек?</h3>
-                    <p className="text-white/80 text-sm leading-relaxed">Это набор игровых фишек, который получает каждый участник турнира. Фишки — развлекательное оборудование без денежной стоимости, их нельзя обменять или вывести. Стандартный стартовый стек в Event Poker Club составляет 30,000 фишек для всех участников.</p>
+                    <h3 className="text-foreground font-bold uppercase text-lg mb-3 tracking-wider group-hover:text-syndikate-orange transition-colors duration-300">8. Что такое стартовый стек?</h3>
+                    <p className="text-foreground/80 text-sm leading-relaxed">Это набор игровых фишек, который получает каждый участник турнира. Фишки — развлекательное оборудование без денежной стоимости, их нельзя обменять или вывести. Стандартный стартовый стек в Syndikate составляет 30,000 фишек для всех участников.</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="bg-gradient-to-br from-slate-800/95 via-slate-900/95 to-black/90 border border-white/10 backdrop-blur-xl shadow-xl group hover:shadow-2xl hover:shadow-pink-500/20 transition-all duration-500 relative overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-br from-pink-500/5 via-transparent to-rose-600/5 opacity-60 group-hover:opacity-100 transition-opacity duration-500"></div>
-              <div className="absolute inset-0 opacity-8 group-hover:opacity-15 transition-opacity duration-500">
-                <div className="absolute top-4 right-4 text-pink-400/30 text-3xl animate-glow">♠</div>
+            <Card className="bg-syndikate-metal/90 brutal-border backdrop-blur-xl shadow-brutal group hover:shadow-neon-orange transition-all duration-500 relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-syndikate-orange/5 via-transparent to-syndikate-red/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+              <div className="absolute inset-0 opacity-10 group-hover:opacity-20 transition-opacity duration-500">
+                <div className="absolute top-4 right-4 text-syndikate-orange/30 text-3xl animate-pulse">♠</div>
               </div>
               
               <CardContent className="p-6 relative z-10">
                 <div className="flex items-start gap-4">
-                  <div className="w-8 h-8 bg-gradient-to-br from-pink-500 to-rose-500 rounded-lg flex items-center justify-center flex-shrink-0 mt-1">
-                    <Users className="h-4 w-4 text-white" />
+                  <div className="w-8 h-8 bg-syndikate-red brutal-border flex items-center justify-center flex-shrink-0 mt-1">
+                    <Users className="h-4 w-4 text-background" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="text-white font-semibold text-lg mb-3 group-hover:text-pink-100 transition-colors duration-300">9. Как работает лист ожидания?</h3>
-                    <p className="text-white/80 text-sm leading-relaxed">Если турнир полностью забронирован, вы можете встать в лист ожидания. При освобождении мест участники переносятся в основной список в порядке очереди. Можно также приехать лично и занять живую очередь — это обсуждается с администратором индивидуально.</p>
+                    <h3 className="text-foreground font-bold uppercase text-lg mb-3 tracking-wider group-hover:text-syndikate-orange transition-colors duration-300">9. Как работает лист ожидания?</h3>
+                    <p className="text-foreground/80 text-sm leading-relaxed">Если турнир полностью забронирован, вы можете встать в лист ожидания. При освобождении мест участники переносятся в основной список в порядке очереди. Можно также приехать лично и занять живую очередь — это обсуждается с администратором индивидуально.</p>
                   </div>
                 </div>
               </CardContent>
