@@ -731,36 +731,78 @@ export const TelegramApp = () => {
 
   const renderAbout = () => (
     <div className="pb-20 px-4 bg-transparent min-h-screen relative z-10">
-      {/* Header with back button */}
-      <div className="flex items-center gap-3 p-4">
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          onClick={() => setActiveTab('home')} 
-          className="text-foreground hover:bg-syndikate-metal p-2 brutal-border backdrop-blur-sm hover:border-syndikate-orange/30 transition-all duration-300 group"
-        >
-          <ArrowLeft className="h-4 w-4 group-hover:-translate-x-0.5 transition-transform duration-300" />
-        </Button>
-        <div>
-          <h2 className="font-display text-2xl uppercase text-foreground tracking-wider">О НАС</h2>
-          <div className="h-[2px] w-10 bg-gradient-neon mt-1"></div>
+      {/* Industrial header with glitch effect */}
+      <div className="relative p-6 bg-syndikate-metal/90 brutal-border backdrop-blur-xl shadow-brutal overflow-hidden group mb-4">
+        {/* Metal grid background */}
+        <div className="absolute inset-0 opacity-5">
+          <div className="absolute inset-0" style={{
+            backgroundImage: 'linear-gradient(0deg, transparent 24%, rgba(255, 107, 0, 0.05) 25%, rgba(255, 107, 0, 0.05) 26%, transparent 27%, transparent 74%, rgba(255, 107, 0, 0.05) 75%, rgba(255, 107, 0, 0.05) 76%, transparent 77%, transparent), linear-gradient(90deg, transparent 24%, rgba(255, 107, 0, 0.05) 25%, rgba(255, 107, 0, 0.05) 26%, transparent 27%, transparent 74%, rgba(255, 107, 0, 0.05) 75%, rgba(255, 107, 0, 0.05) 76%, transparent 77%, transparent)',
+            backgroundSize: '50px 50px'
+          }}></div>
+        </div>
+        
+        {/* Corner brackets */}
+        <div className="absolute top-2 left-2 w-6 h-6 border-l-2 border-t-2 border-syndikate-orange"></div>
+        <div className="absolute top-2 right-2 w-6 h-6 border-r-2 border-t-2 border-syndikate-orange"></div>
+        <div className="absolute bottom-2 left-2 w-6 h-6 border-l-2 border-b-2 border-syndikate-orange"></div>
+        <div className="absolute bottom-2 right-2 w-6 h-6 border-r-2 border-b-2 border-syndikate-orange"></div>
+        
+        <div className="flex items-center gap-4 relative z-10">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => setActiveTab('home')} 
+            className="text-foreground hover:text-syndikate-orange hover:bg-syndikate-metal/50 p-2 brutal-border backdrop-blur-sm transition-all duration-300 group shadow-md hover:shadow-neon-orange"
+          >
+            <ArrowLeft className="h-5 w-5 group-hover:-translate-x-1 transition-transform duration-300" />
+          </Button>
+          <div className="flex-1">
+            <h2 className="font-display text-4xl uppercase text-foreground tracking-wider drop-shadow-lg">
+              <GlitchText 
+                text="О НАС" 
+                glitchIntensity="high" 
+                glitchInterval={4000}
+              />
+            </h2>
+            <div className="h-[3px] w-16 bg-gradient-neon mt-2 group-hover:w-24 transition-all duration-500"></div>
+            <p className="font-display text-xs uppercase tracking-wider text-syndikate-orange mt-1">
+              ЭЛИТНЫЙ ПОКЕРНЫЙ КЛУБ
+            </p>
+          </div>
         </div>
       </div>
 
       <div className="space-y-4">
-        {/* Hero Card - Compact Version */}
-        <Card className="bg-syndikate-metal/90 brutal-border overflow-hidden relative shadow-xl backdrop-blur-xl">
-          <CardContent className="p-5 relative z-10">
+        {/* Hero Card - Enhanced */}
+        <Card className="bg-syndikate-metal/90 brutal-border overflow-hidden relative shadow-brutal backdrop-blur-xl group hover:shadow-neon-orange transition-all duration-500 animate-fade-in">
+          {/* Industrial texture overlay */}
+          <div className="absolute inset-0 opacity-5 group-hover:opacity-10 transition-opacity duration-500">
+            <div className="absolute inset-0" style={{
+              backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255, 107, 0, 0.03) 10px, rgba(255, 107, 0, 0.03) 20px)'
+            }}></div>
+          </div>
+          
+          <div className="absolute inset-0 bg-gradient-to-br from-syndikate-orange/5 via-transparent to-syndikate-red/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+          
+          {/* Animated card suits */}
+          <div className="absolute inset-0 opacity-10 group-hover:opacity-20 transition-opacity duration-500">
+            <div className="absolute top-4 right-4 text-syndikate-orange/40 text-5xl animate-pulse">♠</div>
+            <div className="absolute top-12 left-4 text-syndikate-orange/20 text-3xl">♣</div>
+            <div className="absolute bottom-4 right-12 text-syndikate-orange/30 text-4xl animate-pulse">♦</div>
+            <div className="absolute bottom-12 left-12 text-syndikate-orange/15 text-2xl">♥</div>
+          </div>
+          
+          <CardContent className="p-6 relative z-10">
             <div className="flex items-center gap-4 mb-4">
-              <div className="w-16 h-16 border-2 border-syndikate-orange bg-syndikate-concrete brutal-border flex items-center justify-center overflow-hidden shadow-lg p-2">
-                <img src={syndikateLogo} alt="Syndikate Logo" className="w-full h-full object-contain neon-orange" />
+              <div className="w-20 h-20 border-2 border-syndikate-orange bg-syndikate-concrete brutal-border flex items-center justify-center overflow-hidden shadow-lg group-hover:shadow-neon-orange transition-shadow duration-300 p-2">
+                <img src={syndikateLogo} alt="Syndikate Logo" className="w-full h-full object-contain neon-orange group-hover:scale-110 transition-transform duration-300" />
               </div>
               <div className="flex-1">
-                <h1 className="font-display text-2xl uppercase text-foreground tracking-wider">
-                  <GlitchText text="SYNDIKATE" glitchIntensity="low" />
+                <h1 className="font-display text-3xl uppercase text-foreground tracking-wider drop-shadow-lg group-hover:text-syndikate-orange transition-colors duration-300">
+                  <GlitchText text="SYNDIKATE" glitchIntensity="medium" glitchInterval={5000} />
                 </h1>
-                <div className="h-[2px] w-16 bg-gradient-neon mt-1"></div>
-                <p className="font-display text-sm uppercase tracking-wider text-syndikate-orange mt-1">
+                <div className="h-[2px] w-20 bg-gradient-neon mt-2 group-hover:w-28 transition-all duration-500"></div>
+                <p className="font-display text-sm uppercase tracking-wider text-syndikate-orange mt-2">
                   Власть за столом
                 </p>
               </div>
@@ -769,16 +811,25 @@ export const TelegramApp = () => {
         </Card>
 
         {/* Photo Gallery with Scroll */}
-        <Card className="bg-syndikate-metal/90 brutal-border overflow-hidden relative shadow-brutal backdrop-blur-xl">
+        <Card className="bg-syndikate-metal/90 brutal-border overflow-hidden relative shadow-brutal backdrop-blur-xl group hover:shadow-neon-orange transition-all duration-500 animate-fade-in" style={{ animationDelay: '0.1s' }}>
+          {/* Metal texture */}
+          <div className="absolute inset-0 opacity-5 group-hover:opacity-10 transition-opacity duration-500">
+            <div className="absolute inset-0" style={{
+              backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255, 107, 0, 0.03) 10px, rgba(255, 107, 0, 0.03) 20px)'
+            }}></div>
+          </div>
+          
           <CardContent className="p-4 relative z-10">
             <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 bg-syndikate-orange brutal-border flex items-center justify-center">
-                  <Camera className="h-4 w-4 text-background" />
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-syndikate-orange brutal-border flex items-center justify-center shadow-md group-hover:shadow-neon-orange transition-shadow duration-300">
+                  <Camera className="h-5 w-5 text-background" />
                 </div>
-                <h3 className="text-foreground font-bold uppercase tracking-wider">Наши залы</h3>
+                <h3 className="text-foreground font-display font-bold text-lg uppercase tracking-wider group-hover:text-syndikate-orange transition-colors duration-300">
+                  Наши залы
+                </h3>
               </div>
-              <div className="flex items-center gap-2 text-muted-foreground text-sm font-mono">
+              <div className="flex items-center gap-2 text-muted-foreground text-sm font-mono bg-syndikate-concrete/50 brutal-border px-2 py-1">
                 <span>{currentPhotoIndex + 1} / {galleryImages.length}</span>
               </div>
             </div>
@@ -820,17 +871,37 @@ export const TelegramApp = () => {
           </CardContent>
         </Card>
 
-        {/* Club Rules - Swipeable */}
-        <Card className="bg-syndikate-red/90 brutal-border backdrop-blur-xl shadow-brutal relative overflow-hidden">
+        {/* Club Rules - Swipeable with animations */}
+        <Card className="bg-syndikate-red/90 brutal-border backdrop-blur-xl shadow-brutal relative overflow-hidden group hover:shadow-neon-red hover:scale-[1.01] transition-all duration-500 animate-fade-in" style={{ animationDelay: '0.2s' }}>
+          {/* Industrial texture overlay */}
+          <div className="absolute inset-0 opacity-10 group-hover:opacity-20 transition-opacity duration-500">
+            <div className="absolute inset-0" style={{
+              backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(0, 0, 0, 0.05) 10px, rgba(0, 0, 0, 0.05) 20px)'
+            }}></div>
+          </div>
+          
+          {/* Animated suits background */}
+          <div className="absolute inset-0 opacity-20 group-hover:opacity-30 transition-opacity duration-500">
+            <div className="absolute top-4 right-4 text-background/30 text-5xl animate-pulse">♠</div>
+            <div className="absolute bottom-4 left-4 text-background/20 text-3xl">♦</div>
+          </div>
+          
+          {/* Corner brackets */}
+          <div className="absolute top-2 left-2 w-6 h-6 border-l-2 border-t-2 border-background/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+          <div className="absolute top-2 right-2 w-6 h-6 border-r-2 border-t-2 border-background/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+          
           <CardContent className="p-5 relative z-10">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-background/20 brutal-border flex items-center justify-center">
-                  <MessageSquare className="h-5 w-5 text-background" />
+                <div className="w-12 h-12 bg-background/20 brutal-border flex items-center justify-center shadow-md group-hover:shadow-neon-red transition-shadow duration-300">
+                  <MessageSquare className="h-6 w-6 text-background" />
                 </div>
-                <h3 className="text-background font-display text-xl uppercase tracking-wider">
-                  Наши правила
-                </h3>
+                <div>
+                  <h3 className="text-background font-display text-2xl uppercase tracking-wider drop-shadow-lg">
+                    <GlitchText text="ПРАВИЛА" glitchIntensity="low" />
+                  </h3>
+                  <div className="h-[2px] w-12 bg-background/50 mt-1"></div>
+                </div>
               </div>
               <div className="flex items-center gap-2">
                 <Button
@@ -857,15 +928,26 @@ export const TelegramApp = () => {
               </div>
             </div>
             
-            <div className="min-h-[120px]">
-              <div className="p-4 bg-syndikate-concrete/50 brutal-border backdrop-blur-sm">
-                <div className="flex items-start gap-3">
-                  <div className={`w-6 h-6 bg-syndikate-orange brutal-border flex items-center justify-center flex-shrink-0 mt-0.5`}>
-                    <span className="text-background text-xs font-bold">{currentRuleIndex + 1}</span>
+            <div className="min-h-[160px]">
+              <div className="p-5 bg-syndikate-concrete/60 brutal-border backdrop-blur-sm relative overflow-hidden group/rule animate-fade-in">
+                {/* Metal texture for rule card */}
+                <div className="absolute inset-0 opacity-5 group-hover/rule:opacity-10 transition-opacity duration-500">
+                  <div className="absolute inset-0" style={{
+                    backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255, 107, 0, 0.03) 10px, rgba(255, 107, 0, 0.03) 20px)'
+                  }}></div>
+                </div>
+                
+                <div className="flex items-start gap-4 relative z-10">
+                  <div className="w-10 h-10 bg-syndikate-orange brutal-border flex items-center justify-center flex-shrink-0 shadow-md group-hover/rule:shadow-neon-orange transition-shadow duration-300">
+                    <span className="text-background text-base font-display font-bold">
+                      <GlitchText text={String(currentRuleIndex + 1).padStart(2, '0')} glitchIntensity="low" />
+                    </span>
                   </div>
                   <div className="flex-1">
-                    <h4 className="text-foreground font-bold uppercase text-sm mb-2 tracking-wider">{rules[currentRuleIndex].title}</h4>
-                    <p className="text-foreground/80 text-xs leading-relaxed">
+                    <h4 className="text-foreground font-display font-bold uppercase text-base mb-3 tracking-wider group-hover/rule:text-syndikate-orange transition-colors duration-300">
+                      {rules[currentRuleIndex].title}
+                    </h4>
+                    <p className="text-foreground/80 text-sm leading-relaxed">
                       {rules[currentRuleIndex].content}
                     </p>
                   </div>
@@ -886,82 +968,114 @@ export const TelegramApp = () => {
           </CardContent>
         </Card>
 
-        {/* Mission & Values - Compact */}
+        {/* Mission & Values - Enhanced */}
         <div className="grid grid-cols-2 gap-3">
-          <Card className="bg-syndikate-orange/90 brutal-border overflow-hidden relative shadow-neon-orange backdrop-blur-xl">
+          <Card className="bg-syndikate-orange/90 brutal-border overflow-hidden relative shadow-neon-orange backdrop-blur-xl group hover:scale-105 transition-all duration-500 animate-fade-in" style={{ animationDelay: '0.3s' }}>
+            {/* Industrial texture */}
+            <div className="absolute inset-0 opacity-10 group-hover:opacity-20 transition-opacity duration-500">
+              <div className="absolute inset-0" style={{
+                backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(0, 0, 0, 0.05) 10px, rgba(0, 0, 0, 0.05) 20px)'
+              }}></div>
+            </div>
+            
             <CardContent className="p-4 relative z-10">
               <div className="flex items-center gap-2 mb-3">
-                <div className="w-8 h-8 bg-background/20 brutal-border flex items-center justify-center">
-                  <Target className="h-4 w-4 text-background" />
+                <div className="w-10 h-10 bg-background/20 brutal-border flex items-center justify-center shadow-md group-hover:shadow-neon-orange transition-shadow duration-300">
+                  <Target className="h-5 w-5 text-background" />
                 </div>
-                <h3 className="text-background font-bold uppercase text-sm tracking-wider">Миссия</h3>
+                <h3 className="text-background font-display font-bold uppercase text-sm tracking-wider">Миссия</h3>
               </div>
-              <p className="text-background/90 text-xs leading-relaxed uppercase tracking-wide">
+              <p className="text-background/90 text-xs leading-relaxed uppercase tracking-wide font-medium">
                 Создание элитной среды для покера
               </p>
             </CardContent>
           </Card>
 
-          <Card className="bg-syndikate-red/90 brutal-border overflow-hidden relative shadow-brutal backdrop-blur-xl">
+          <Card className="bg-syndikate-red/90 brutal-border overflow-hidden relative shadow-brutal backdrop-blur-xl group hover:scale-105 transition-all duration-500 animate-fade-in" style={{ animationDelay: '0.4s' }}>
+            {/* Industrial texture */}
+            <div className="absolute inset-0 opacity-10 group-hover:opacity-20 transition-opacity duration-500">
+              <div className="absolute inset-0" style={{
+                backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(0, 0, 0, 0.05) 10px, rgba(0, 0, 0, 0.05) 20px)'
+              }}></div>
+            </div>
+            
             <CardContent className="p-4 relative z-10">
               <div className="flex items-center gap-2 mb-3">
-                <div className="w-8 h-8 bg-background/20 brutal-border flex items-center justify-center">
-                  <Heart className="h-4 w-4 text-background" />
+                <div className="w-10 h-10 bg-background/20 brutal-border flex items-center justify-center shadow-md group-hover:shadow-neon-red transition-shadow duration-300">
+                  <Heart className="h-5 w-5 text-background" />
                 </div>
-                <h3 className="text-background font-bold uppercase text-sm tracking-wider">Ценности</h3>
+                <h3 className="text-background font-display font-bold uppercase text-sm tracking-wider">Ценности</h3>
               </div>
-              <div className="space-y-1.5">
-                <div className="flex items-center gap-1.5">
-                  <div className="w-1.5 h-1.5 bg-background/60 brutal-border"></div>
-                  <span className="text-background/90 text-xs uppercase">Честность</span>
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-background/60 brutal-border"></div>
+                  <span className="text-background/90 text-xs uppercase font-medium">Честность</span>
                 </div>
-                <div className="flex items-center gap-1.5">
-                  <div className="w-1.5 h-1.5 bg-background/60 brutal-border"></div>
-                  <span className="text-background/90 text-xs uppercase">Профессионализм</span>
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-background/60 brutal-border"></div>
+                  <span className="text-background/90 text-xs uppercase font-medium">Профессионализм</span>
                 </div>
-                <div className="flex items-center gap-1.5">
-                  <div className="w-1.5 h-1.5 bg-background/60 brutal-border"></div>
-                  <span className="text-background/90 text-xs uppercase">Сила</span>
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-background/60 brutal-border"></div>
+                  <span className="text-background/90 text-xs uppercase font-medium">Сила</span>
                 </div>
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Contact - Compact */}
-        <Card className="bg-syndikate-metal/90 brutal-border backdrop-blur-xl shadow-brutal relative overflow-hidden">
-          <div className="absolute inset-0 opacity-10">
-            <div className="absolute top-3 right-3 text-syndikate-orange/40 text-2xl animate-pulse">♠</div>
-            <div className="absolute bottom-3 left-3 text-syndikate-orange/30 text-xl">♣</div>
+        {/* Contact - Enhanced */}
+        <Card className="bg-syndikate-metal/90 brutal-border backdrop-blur-xl shadow-brutal relative overflow-hidden group hover:shadow-neon-orange hover:scale-[1.01] transition-all duration-500 animate-fade-in" style={{ animationDelay: '0.5s' }}>
+          {/* Industrial texture */}
+          <div className="absolute inset-0 opacity-5 group-hover:opacity-10 transition-opacity duration-500">
+            <div className="absolute inset-0" style={{
+              backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255, 107, 0, 0.03) 10px, rgba(255, 107, 0, 0.03) 20px)'
+            }}></div>
           </div>
-          <CardContent className="p-4 relative z-10">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-10 h-10 bg-syndikate-orange brutal-border flex items-center justify-center">
-                <Shield className="h-5 w-5 text-background" />
+          
+          <div className="absolute inset-0 bg-gradient-to-br from-syndikate-orange/5 via-transparent to-syndikate-red/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+          
+          <div className="absolute inset-0 opacity-10 group-hover:opacity-20 transition-opacity duration-500">
+            <div className="absolute top-4 right-4 text-syndikate-orange/40 text-5xl animate-pulse">♠</div>
+            <div className="absolute top-12 left-4 text-syndikate-orange/20 text-3xl">♣</div>
+            <div className="absolute bottom-4 right-8 text-syndikate-orange/30 text-4xl">♦</div>
+            <div className="absolute bottom-8 left-8 text-syndikate-orange/15 text-2xl animate-pulse">♥</div>
+          </div>
+          
+          {/* Corner brackets */}
+          <div className="absolute top-2 left-2 w-6 h-6 border-l-2 border-t-2 border-syndikate-orange/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+          <div className="absolute top-2 right-2 w-6 h-6 border-r-2 border-t-2 border-syndikate-orange/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+          <CardContent className="p-5 relative z-10">
+            <div className="flex items-center gap-4 mb-4">
+              <div className="w-12 h-12 bg-syndikate-orange brutal-border flex items-center justify-center shadow-md group-hover:shadow-neon-orange transition-shadow duration-300">
+                <Shield className="h-6 w-6 text-background" />
               </div>
-              <h3 className="text-foreground font-display font-bold text-lg tracking-wide uppercase">
-                Присоединяйтесь к EPC
-              </h3>
+              <div>
+                <h3 className="text-foreground font-display font-bold text-xl tracking-wide uppercase drop-shadow-lg group-hover:text-syndikate-orange transition-colors duration-300">
+                  <GlitchText text="EPC" glitchIntensity="low" />
+                </h3>
+                <div className="h-[2px] w-12 bg-gradient-neon mt-1"></div>
+              </div>
             </div>
             
-            <p className="text-muted-foreground text-sm mb-4 leading-relaxed uppercase font-medium">
+            <p className="text-muted-foreground text-sm mb-4 leading-relaxed uppercase font-medium tracking-wide">
               Станьте частью элитного покерного сообщества
             </p>
             
-            <div className="grid grid-cols-1 gap-2">
-              <div className="flex items-center gap-2 p-2 bg-syndikate-concrete/50 brutal-border backdrop-blur-sm">
-                <CheckCircle className="h-4 w-4 text-syndikate-orange flex-shrink-0" />
-                <span className="text-foreground text-xs font-bold uppercase">100% легальная деятельность</span>
+            <div className="grid grid-cols-1 gap-3">
+              <div className="flex items-center gap-3 p-3 bg-syndikate-concrete/60 brutal-border backdrop-blur-sm group/item hover:bg-syndikate-concrete/80 transition-all duration-300">
+                <CheckCircle className="h-5 w-5 text-syndikate-orange flex-shrink-0" />
+                <span className="text-foreground text-sm font-display font-bold uppercase">100% легальная деятельность</span>
               </div>
               
-              <div className="flex items-center gap-2 p-2 bg-syndikate-concrete/50 brutal-border backdrop-blur-sm">
-                <Globe className="h-4 w-4 text-syndikate-orange flex-shrink-0" />
-                <span className="text-foreground text-xs font-bold uppercase">Международные стандарты</span>
+              <div className="flex items-center gap-3 p-3 bg-syndikate-concrete/60 brutal-border backdrop-blur-sm group/item hover:bg-syndikate-concrete/80 transition-all duration-300">
+                <Globe className="h-5 w-5 text-syndikate-orange flex-shrink-0" />
+                <span className="text-foreground text-sm font-display font-bold uppercase">Международные стандарты</span>
               </div>
               
-              <div className="flex items-center gap-2 p-2 bg-syndikate-concrete/50 brutal-border backdrop-blur-sm">
-                <Users className="h-4 w-4 text-syndikate-orange flex-shrink-0" />
-                <span className="text-foreground text-xs font-bold uppercase">Активное сообщество</span>
+              <div className="flex items-center gap-3 p-3 bg-syndikate-concrete/60 brutal-border backdrop-blur-sm group/item hover:bg-syndikate-concrete/80 transition-all duration-300">
+                <Users className="h-5 w-5 text-syndikate-orange flex-shrink-0" />
+                <span className="text-foreground text-sm font-display font-bold uppercase">Активное сообщество</span>
               </div>
             </div>
           </CardContent>
