@@ -80,7 +80,35 @@ export function Features() {
   ];
 
   return (
-    <section className="py-20 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 relative overflow-hidden">
+    <section className="py-20 bg-background relative overflow-hidden">
+      {/* Industrial Background */}
+      <div className="absolute inset-0 industrial-texture opacity-50" />
+      
+      {/* Metal Grid Pattern */}
+      <div 
+        className="absolute inset-0 opacity-10"
+        style={{
+          backgroundImage: `
+            repeating-linear-gradient(0deg, transparent, transparent 50px, rgba(255, 255, 255, 0.05) 50px, rgba(255, 255, 255, 0.05) 51px),
+            repeating-linear-gradient(90deg, transparent, transparent 50px, rgba(255, 255, 255, 0.05) 50px, rgba(255, 255, 255, 0.05) 51px)
+          `
+        }}
+      />
+      
+      {/* Diagonal metal plates */}
+      <div
+        className="absolute inset-0 opacity-15"
+        style={{
+          backgroundImage: `
+            linear-gradient(135deg, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.9) 40%, rgba(255,255,255,0.06) 41%, rgba(255,255,255,0.06) 42%, rgba(0,0,0,0.9) 43%, rgba(0,0,0,0.9) 100%)
+          `,
+          backgroundSize: "220px 220px",
+        }}
+      />
+      
+      {/* Neon Glows */}
+      <div className="absolute top-0 left-1/3 w-96 h-96 bg-syndikate-orange/10 rounded-full blur-3xl" />
+      <div className="absolute bottom-0 right-1/3 w-96 h-96 bg-syndikate-red/10 rounded-full blur-3xl" />
       {/* Elegant Poker Chips Background */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-10">
         <div className="absolute top-[8%] right-[25%] w-20 h-20 rounded-full animate-pulse-slow">
@@ -126,17 +154,16 @@ export function Features() {
       <div className="container mx-auto px-4 relative z-10">
         <div className="text-center mb-16">
           <div className="flex items-center gap-3 justify-center mb-6">
-            <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl flex items-center justify-center shadow-lg">
-              <Trophy className="h-5 w-5 text-white" />
+            <div className="w-12 h-12 border-2 border-syndikate-orange bg-syndikate-metal brutal-border flex items-center justify-center">
+              <Trophy className="h-6 w-6 text-syndikate-orange" />
             </div>
-            <h2 className="text-3xl lg:text-4xl font-light text-white tracking-wide">
+            <h2 className="font-display text-4xl lg:text-5xl uppercase tracking-wider text-foreground">
               ВОЗМОЖНОСТИ КЛУБА
             </h2>
           </div>
-          <div className="h-0.5 w-20 bg-gradient-to-r from-amber-400 to-amber-600 mx-auto mb-6"></div>
-          <p className="text-lg text-white/70 max-w-3xl mx-auto font-light leading-relaxed">
-            EPC предоставляет полный спектр услуг для серьезных покерных игроков: 
-            от турниров до персональной аналитики
+          <div className="h-[2px] w-20 bg-gradient-neon mx-auto mb-6" />
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto uppercase tracking-wider">
+            Наш клуб предлагает полный спектр услуг для серьёзных игроков в покер
           </p>
         </div>
 
@@ -146,29 +173,37 @@ export function Features() {
             return (
               <div 
                 key={`feature-${index}-${feature.title}`} 
-                className="bg-gradient-to-br from-slate-800/90 via-slate-900/95 to-black/90 border border-white/10 rounded-2xl p-6 backdrop-blur-xl group hover:scale-105 transition-all duration-500 hover:shadow-xl hover:shadow-amber-500/20 relative overflow-hidden"
+                className="brutal-metal brutal-border p-6 group hover:scale-105 transition-all duration-500 hover:shadow-neon-orange relative overflow-hidden"
               >
-                <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 via-transparent to-amber-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                <div className="absolute inset-0 opacity-8 group-hover:opacity-15 transition-opacity duration-500">
-                  <div className="absolute top-3 right-3 text-amber-400/30 text-xl animate-pulse">♦</div>
-                  <div className="absolute bottom-3 left-3 text-amber-400/20 text-lg animate-bounce-subtle">♠</div>
-                </div>
+                {/* Industrial texture */}
+                <div 
+                  className="absolute inset-0 opacity-10"
+                  style={{
+                    backgroundImage: `repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255, 255, 255, 0.02) 10px, rgba(255, 255, 255, 0.02) 20px)`
+                  }}
+                />
+                
+                {/* Corner brackets */}
+                <div className="absolute top-0 left-0 w-6 h-6 border-l-2 border-t-2 border-syndikate-orange" />
+                <div className="absolute top-0 right-0 w-6 h-6 border-r-2 border-t-2 border-syndikate-orange" />
+                <div className="absolute bottom-0 left-0 w-6 h-6 border-l-2 border-b-2 border-syndikate-orange" />
+                <div className="absolute bottom-0 right-0 w-6 h-6 border-r-2 border-b-2 border-syndikate-orange" />
                 
                 <div className="relative z-10">
-                  <div className="w-10 h-10 lg:w-12 lg:h-12 bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300 shadow-lg">
-                    <IconComponent className="w-5 h-5 lg:w-6 lg:h-6 text-white" />
+                  <div className="w-12 h-12 bg-syndikate-orange brutal-border flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+                    <IconComponent className="w-6 h-6 text-background" />
                   </div>
-                  <h3 className="text-lg lg:text-xl font-medium text-white leading-tight mb-3 group-hover:text-amber-100 transition-colors duration-300">
+                  <h3 className="font-display text-xl uppercase text-foreground leading-tight mb-3 group-hover:text-syndikate-orange transition-colors duration-300 tracking-wider">
                     {feature.title}
                   </h3>
-                  <p className="text-white/60 mb-4 text-sm lg:text-base leading-relaxed font-light">
+                  <p className="text-muted-foreground mb-4 text-sm leading-relaxed">
                     {feature.description}
                   </p>
                   <ul className="space-y-2">
                     {feature.highlights.map((highlight, idx) => (
-                      <li key={idx} className="flex items-center text-xs lg:text-sm">
-                        <div className="w-1.5 h-1.5 rounded-full bg-amber-400 mr-3 flex-shrink-0"></div>
-                        <span className="leading-relaxed text-white/70 font-light">{highlight}</span>
+                      <li key={idx} className="flex items-center text-sm">
+                        <div className="w-1.5 h-1.5 bg-syndikate-orange mr-3 flex-shrink-0 brutal-border"></div>
+                        <span className="leading-relaxed text-foreground/80">{highlight}</span>
                       </li>
                     ))}
                   </ul>
