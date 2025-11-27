@@ -29,12 +29,41 @@ export const TournamentCard: React.FC<TournamentCardProps> = ({ tournament, inde
   const spotsLeft = maxPlayers - registeredCount;
   const fillPercentage = (registeredCount / maxPlayers) * 100;
   
-  // Calculate countdown
+  // Calculate countdown with days
   const now = new Date();
   const startTime = new Date(tournament.start_time);
   const timeUntilStart = startTime.getTime() - now.getTime();
-  const hoursUntil = Math.floor(timeUntilStart / (1000 * 60 * 60));
+  const daysUntil = Math.floor(timeUntilStart / (1000 * 60 * 60 * 24));
+  const hoursUntil = Math.floor((timeUntilStart % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
   const minutesUntil = Math.floor((timeUntilStart % (1000 * 60 * 60)) / (1000 * 60));
+  
+  // Format time display
+  const getTimeDisplay = () => {
+    if (daysUntil > 0) {
+      return { 
+        primary: daysUntil, 
+        primaryLabel: daysUntil === 1 ? 'День' : daysUntil < 5 ? 'Дня' : 'Дней',
+        secondary: hoursUntil,
+        secondaryLabel: hoursUntil === 1 ? 'Час' : hoursUntil < 5 ? 'Часа' : 'Часов'
+      };
+    } else if (hoursUntil > 0) {
+      return { 
+        primary: hoursUntil, 
+        primaryLabel: hoursUntil === 1 ? 'Час' : hoursUntil < 5 ? 'Часа' : 'Часов',
+        secondary: minutesUntil,
+        secondaryLabel: minutesUntil === 1 ? 'Минута' : minutesUntil < 5 ? 'Минуты' : 'Минут'
+      };
+    } else {
+      return { 
+        primary: minutesUntil, 
+        primaryLabel: minutesUntil === 1 ? 'Минута' : minutesUntil < 5 ? 'Минуты' : 'Минут',
+        secondary: null,
+        secondaryLabel: ''
+      };
+    }
+  };
+  
+  const timeDisplay = getTimeDisplay();
   
   const getStatusBadge = () => {
     if (tournament.status === 'active') {
@@ -45,7 +74,7 @@ export const TournamentCard: React.FC<TournamentCardProps> = ({ tournament, inde
       );
     }
     if (tournament.status === 'registration') {
-      if (hoursUntil <= 1) {
+      if (daysUntil === 0 && hoursUntil <= 1) {
         return (
           <div className="px-3 py-1 bg-syndikate-orange/20 brutal-border text-xs uppercase animate-pulse">
             <span className="text-syndikate-orange">● Starting Soon</span>
@@ -97,26 +126,37 @@ export const TournamentCard: React.FC<TournamentCardProps> = ({ tournament, inde
           </div>
         </div>
         
-        {/* Countdown Timer for upcoming tournaments */}
+        {/* Enhanced Countdown Timer for upcoming tournaments */}
         {tournament.status === 'registration' && timeUntilStart > 0 && (
-          <div className="bg-background/50 brutal-border p-3 space-y-2">
-            <div className="text-xs text-syndikate-concrete uppercase text-center">
-              Starts In
+          <div className="bg-syndikate-concrete/10 brutal-border p-4 space-y-2 backdrop-blur-sm">
+            <div className="flex items-center justify-center gap-2 mb-3">
+              <Clock className="h-5 w-5 text-syndikate-orange animate-pulse" />
+              <div className="text-sm text-syndikate-orange uppercase font-display tracking-wider">
+                Начало через
+              </div>
             </div>
-            <div className="flex justify-center gap-2">
-              <div className="text-center">
-                <div className="text-2xl font-display text-syndikate-orange tabular-nums">
-                  {String(hoursUntil).padStart(2, '0')}
+            <div className="flex justify-center items-center gap-3">
+              <div className="flex flex-col items-center bg-background/50 brutal-border px-4 py-3 min-w-[80px]">
+                <div className="text-3xl font-display text-syndikate-orange tabular-nums leading-none">
+                  {timeDisplay.primary}
                 </div>
-                <div className="text-xs text-syndikate-concrete uppercase">Hours</div>
-              </div>
-              <div className="text-2xl font-display text-syndikate-orange animate-pulse">:</div>
-              <div className="text-center">
-                <div className="text-2xl font-display text-syndikate-orange tabular-nums">
-                  {String(minutesUntil).padStart(2, '0')}
+                <div className="text-xs text-syndikate-concrete uppercase mt-1 font-display">
+                  {timeDisplay.primaryLabel}
                 </div>
-                <div className="text-xs text-syndikate-concrete uppercase">Minutes</div>
               </div>
+              {timeDisplay.secondary !== null && (
+                <>
+                  <div className="text-2xl font-display text-syndikate-orange">•</div>
+                  <div className="flex flex-col items-center bg-background/50 brutal-border px-4 py-3 min-w-[80px]">
+                    <div className="text-3xl font-display text-syndikate-orange tabular-nums leading-none">
+                      {timeDisplay.secondary}
+                    </div>
+                    <div className="text-xs text-syndikate-concrete uppercase mt-1 font-display">
+                      {timeDisplay.secondaryLabel}
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         )}
