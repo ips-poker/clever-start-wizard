@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { GlitchText } from "@/components/ui/glitch-text";
 import { 
   Calendar, 
   Clock, 
@@ -171,7 +172,12 @@ export function TelegramTournamentModal({
         <DialogHeader className="relative z-10 pb-4 animate-fade-in">
           <div className="text-center">
             <DialogTitle className="font-display text-xl uppercase text-foreground tracking-wider mb-2 animate-scale-in">
-              {tournament.name}
+              <GlitchText 
+                text={tournament.name}
+                glitchIntensity="high"
+                glitchInterval={5000}
+                className="inline-block"
+              />
             </DialogTitle>
             <div className="flex justify-center mb-3 animate-fade-in" style={{ animationDelay: '0.1s' }}>
               <div className="h-[2px] w-12 bg-gradient-neon"></div>
