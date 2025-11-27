@@ -40,34 +40,23 @@ export function Header() {
           {/* Logo */}
           <Link 
             to="/" 
-            className="flex items-center space-x-3 group"
+            className="flex items-center space-x-4 group"
           >
+            {/* Logo */}
             <div className="relative">
-              <div className="relative flex items-center justify-center transition-all group-hover:drop-shadow-[0_0_20px_rgba(255,90,31,0.7)]">
-                <img 
-                  src={syndikateLogoSpade} 
-                  alt="Syndikate Logo" 
-                  className="h-20 w-auto object-contain group-hover:scale-105 transition-transform duration-300 filter brightness-110"
-                  style={{ imageRendering: 'crisp-edges' }}
-                />
-              </div>
-              {/* Corner accents */}
-              <div className="absolute -top-1 -left-1 w-5 h-5 border-l-2 border-t-2 border-syndikate-orange opacity-0 group-hover:opacity-100 transition-opacity" />
-              <div className="absolute -top-1 -right-1 w-5 h-5 border-r-2 border-t-2 border-syndikate-orange opacity-0 group-hover:opacity-100 transition-opacity" />
-              <div className="absolute -bottom-1 -left-1 w-5 h-5 border-l-2 border-b-2 border-syndikate-orange opacity-0 group-hover:opacity-100 transition-opacity" />
-              <div className="absolute -bottom-1 -right-1 w-5 h-5 border-r-2 border-b-2 border-syndikate-orange opacity-0 group-hover:opacity-100 transition-opacity" />
+              <img 
+                src={syndikateLogoSpade} 
+                alt="Syndikate Logo" 
+                className="h-16 w-auto object-contain group-hover:scale-105 transition-transform duration-300 filter brightness-110 group-hover:drop-shadow-[0_0_20px_rgba(255,90,31,0.5)]"
+                style={{ imageRendering: 'crisp-edges' }}
+              />
             </div>
-            <div className="relative flex flex-col items-center">
-              <svg viewBox="0 0 240 80" className="w-56 h-20">
-                <defs>
-                  <path id="curve" d="M 10,40 Q 120,15 230,40" fill="transparent" />
-                </defs>
-                <text className="fill-syndikate-orange font-display text-[24px] font-bold tracking-wider" style={{ letterSpacing: '0.15em' }}>
-                  <textPath href="#curve" startOffset="50%" textAnchor="middle">
-                    SYNDIKATE
-                  </textPath>
-                </text>
-              </svg>
+            
+            {/* Text */}
+            <div className="relative">
+              <h1 className="text-4xl font-display font-bold tracking-[0.2em] text-syndikate-orange uppercase group-hover:drop-shadow-[0_0_12px_rgba(255,90,31,0.6)] transition-all duration-300">
+                SYNDIKATE
+              </h1>
             </div>
           </Link>
 
