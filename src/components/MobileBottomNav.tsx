@@ -1,4 +1,4 @@
-import { Home, Trophy, TrendingUp, UserPlus, User } from "lucide-react";
+import { Home, Trophy, TrendingUp, UserPlus, User, Settings } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
@@ -7,12 +7,12 @@ import { useAuth } from "@/hooks/useAuth";
 export function MobileBottomNav() {
   const location = useLocation();
   const currentPath = location.pathname;
-  const [isVisible, setIsVisible] = useState(false);
+  const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isAdmin } = useAuth();
 
-  // Hide navigation in Telegram Mini App
-  if (currentPath.startsWith('/telegram')) {
+  // Hide navigation in Telegram Mini App and on director/admin pages
+  if (currentPath.startsWith('/telegram') || currentPath === '/director' || currentPath === '/admin') {
     return null;
   }
 
@@ -20,8 +20,10 @@ export function MobileBottomNav() {
     const controlNavbar = () => {
       const currentScrollY = window.scrollY;
       
-      // Hide when scrolling up, show when scrolling down
-      if (currentScrollY < lastScrollY && currentScrollY > 100) {
+      // Show when at top or scrolling down, hide when scrolling up
+      if (currentScrollY < 50) {
+        setIsVisible(true);
+      } else if (currentScrollY < lastScrollY) {
         setIsVisible(false);
       } else if (currentScrollY > lastScrollY) {
         setIsVisible(true);
@@ -54,6 +56,11 @@ export function MobileBottomNav() {
       : { title: "Войти", url: "/auth", icon: UserPlus },
   ];
 
+  // Добавляем директора для админов
+  if (isAdmin && isAuthenticated) {
+    navItems.splice(3, 0, { title: "Директор", url: "/director", icon: Settings });
+  }
+
   const isActive = (path: string) => {
     if (path === "/") return currentPath === "/";
     return currentPath.startsWith(path);
@@ -62,11 +69,19 @@ export function MobileBottomNav() {
   return (
     <nav 
       className={cn(
-        "fixed bottom-0 left-0 right-0 z-50 bg-slate-900/95 backdrop-blur-xl border-t border-amber-400/20 md:hidden transition-transform duration-300 ease-in-out",
+        "fixed bottom-0 left-0 right-0 z-50 md:hidden transition-all duration-300 ease-in-out",
+        "bg-background/95 backdrop-blur-xl border-t-2 border-syndikate-orange/50",
+        "shadow-[0_-4px_20px_rgba(255,90,31,0.2)]",
         isVisible ? "translate-y-0" : "translate-y-full"
       )}
     >
-      <div className="flex items-center justify-around h-16 px-2">
+      {/* Industrial texture overlay */}
+      <div className="absolute inset-0 industrial-texture opacity-30 pointer-events-none" />
+      
+      {/* Top neon line */}
+      <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-syndikate-orange to-transparent opacity-80" />
+      
+      <div className="relative flex items-center justify-around h-16 px-2">
         {navItems.map((item) => {
           const active = isActive(item.url);
           return (
@@ -74,19 +89,46 @@ export function MobileBottomNav() {
               key={item.url}
               to={item.url}
               className={cn(
-                "flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-xl transition-all duration-300 min-w-[70px]",
-                active
-                  ? "bg-amber-400/20 text-amber-400"
-                  : "text-slate-400 hover:text-white hover:bg-white/5"
+                "flex flex-col items-center justify-center gap-1 px-2 py-2 transition-all duration-300 min-w-[60px] relative",
+                "hover:scale-105",
+                active && "scale-105"
               )}
             >
-              <item.icon 
-                className={cn(
-                  "h-5 w-5 transition-transform duration-300",
-                  active && "scale-110"
-                )} 
-              />
-              <span className="text-[10px] font-medium">{item.title}</span>
+              {/* Background highlight for active */}
+              {active && (
+                <>
+                  <div className="absolute inset-0 bg-syndikate-orange/10 brutal-border" />
+                  <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-8 h-[2px] bg-syndikate-orange shadow-neon-orange" />
+                </>
+              )}
+              
+              {/* Icon with glow effect */}
+              <div className={cn(
+                "relative transition-all duration-300",
+                active && "animate-pulse"
+              )}>
+                <item.icon 
+                  className={cn(
+                    "h-5 w-5 transition-all duration-300 relative z-10",
+                    active 
+                      ? "text-syndikate-orange drop-shadow-[0_0_8px_rgba(255,90,31,0.8)]" 
+                      : "text-muted-foreground"
+                  )} 
+                />
+                {active && (
+                  <div className="absolute inset-0 bg-syndikate-orange/20 blur-md rounded-full" />
+                )}
+              </div>
+              
+              {/* Label */}
+              <span className={cn(
+                "text-[9px] font-bold uppercase tracking-wider transition-all duration-300 relative z-10 font-mono",
+                active 
+                  ? "text-syndikate-orange" 
+                  : "text-muted-foreground"
+              )}>
+                {item.title}
+              </span>
             </Link>
           );
         })}
