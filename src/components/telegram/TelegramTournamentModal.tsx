@@ -110,16 +110,16 @@ export function TelegramTournamentModal({
 
   const getStatusBadge = (status: string) => {
     const statusConfig = {
-      'registration': { label: 'Регистрация открыта', className: 'bg-green-500/20 text-green-400 border-green-500/30' },
-      'running': { label: 'Турнир проходит', className: 'bg-red-500/20 text-red-400 border-red-500/30' },
-      'scheduled': { label: 'Запланирован', className: 'bg-blue-500/20 text-blue-400 border-blue-500/30' },
-      'completed': { label: 'Завершен', className: 'bg-gray-500/20 text-gray-400 border-gray-500/30' }
+      'registration': { label: 'Регистрация', className: 'bg-syndikate-orange/20 text-syndikate-orange brutal-border' },
+      'running': { label: 'В процессе', className: 'bg-syndikate-red/20 text-syndikate-red brutal-border' },
+      'scheduled': { label: 'Запланирован', className: 'bg-syndikate-orange/20 text-syndikate-orange brutal-border' },
+      'completed': { label: 'Завершен', className: 'bg-muted text-muted-foreground brutal-border' }
     };
 
     const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.scheduled;
     
     return (
-      <Badge className={`px-3 py-1 rounded-full text-xs font-medium border ${config.className}`}>
+      <Badge className={`px-3 py-1 text-xs font-bold uppercase ${config.className}`}>
         {config.label}
       </Badge>
     );
@@ -158,27 +158,27 @@ export function TelegramTournamentModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto bg-gradient-to-br from-slate-900/98 via-black/95 to-slate-800/98 border-amber-400/20 backdrop-blur-2xl text-white">
-        {/* Покерные масти декорация */}
-        <div className="absolute inset-0 opacity-5 overflow-hidden pointer-events-none">
-          <div className="absolute top-4 right-6 text-3xl text-amber-400 transform rotate-12 animate-pulse">♠</div>
-          <div className="absolute top-16 left-4 text-2xl text-amber-500 transform -rotate-12 animate-bounce-subtle">♥</div>
-          <div className="absolute bottom-12 right-8 text-4xl text-amber-400 transform rotate-45 animate-pulse">♦</div>
-          <div className="absolute bottom-4 left-6 text-3xl text-amber-500 transform -rotate-30 animate-bounce-subtle">♣</div>
+      <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto bg-syndikate-metal/98 brutal-border backdrop-blur-2xl text-foreground">
+        {/* Industrial Background */}
+        <div className="absolute inset-0 opacity-10 overflow-hidden pointer-events-none">
+          <div className="absolute top-4 right-6 text-3xl text-syndikate-orange transform rotate-12 animate-pulse">♠</div>
+          <div className="absolute top-16 left-4 text-2xl text-syndikate-orange transform -rotate-12">♥</div>
+          <div className="absolute bottom-12 right-8 text-4xl text-syndikate-orange transform rotate-45 animate-pulse">♦</div>
+          <div className="absolute bottom-4 left-6 text-3xl text-syndikate-orange transform -rotate-30">♣</div>
         </div>
 
         <DialogHeader className="relative z-10 pb-4">
           <div className="text-center">
-            <DialogTitle className="text-xl font-light text-white tracking-wider uppercase mb-2">
+            <DialogTitle className="font-display text-xl uppercase text-foreground tracking-wider mb-2">
               {tournament.name}
             </DialogTitle>
             <div className="flex justify-center mb-3">
-              <div className="h-0.5 w-12 bg-gradient-to-r from-amber-400 to-amber-600"></div>
+              <div className="h-[2px] w-12 bg-gradient-neon"></div>
             </div>
             <div className="flex justify-center mb-3">
               {getStatusBadge(tournament.status)}
             </div>
-            <DialogDescription className="text-white/60 text-xs leading-relaxed max-w-xs mx-auto">
+            <DialogDescription className="text-muted-foreground text-xs leading-relaxed max-w-xs mx-auto">
               {tournament.description || "Присоединяйтесь к покерному турниру"}
             </DialogDescription>
           </div>
@@ -344,17 +344,17 @@ export function TelegramTournamentModal({
               <Button 
                 onClick={() => onRegister(tournament.id)} 
                 disabled={registering} 
-                className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-semibold py-3 px-6 rounded-lg shadow-lg hover:shadow-amber-500/30 transition-all duration-300 text-sm w-full"
+                className="bg-syndikate-orange hover:bg-syndikate-orange-glow text-background font-bold uppercase tracking-wider py-3 px-6 brutal-border shadow-neon-orange hover:shadow-neon-orange transition-all duration-300 text-sm w-full"
               >
                 {registering ? (
                   <div className="flex items-center gap-2">
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-background"></div>
                     <span>Регистрируем...</span>
                   </div>
                 ) : (
                   <div className="flex items-center gap-2 justify-center">
                     <UserPlus className="h-4 w-4" />
-                    <span>Записаться на турнир</span>
+                    <span>Записаться</span>
                   </div>
                 )}
               </Button>
