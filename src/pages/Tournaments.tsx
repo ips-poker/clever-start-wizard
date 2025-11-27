@@ -29,7 +29,7 @@ export default function Tournaments() {
     <>
       <ScrollProgress />
       <FloatingParticles />
-      <div className="min-h-screen bg-background relative">
+      <div className="min-h-screen bg-background relative overflow-hidden">
         {/* Industrial metal base texture */}
         <div 
           ref={baseTextureRef}

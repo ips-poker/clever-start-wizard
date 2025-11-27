@@ -15,10 +15,6 @@ import { addToHomeScreen } from '@telegram-apps/sdk';
 import syndikateLogo from '@/assets/syndikate-logo-main.png';
 import { GlitchText } from '@/components/ui/glitch-text';
 import { FloatingParticles } from '@/components/ui/floating-particles';
-import { TournamentCard } from './TournamentCard';
-import { RatingPodium } from './RatingPodium';
-import { PlayerRatingCard } from './PlayerRatingCard';
-import { PlayerStatsModal } from './PlayerStatsModal';
 import mainPokerRoom from '@/assets/gallery/main-poker-room.jpg';
 import tournamentTable from '@/assets/gallery/tournament-table.jpg';
 import vipZone from '@/assets/gallery/vip-zone.jpg';
@@ -83,8 +79,6 @@ export const TelegramApp = () => {
   const [registering, setRegistering] = useState<string | null>(null);
   const [selectedTournament, setSelectedTournament] = useState<Tournament | null>(null);
   const [showTournamentModal, setShowTournamentModal] = useState(false);
-  const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
-  const [showPlayerStatsModal, setShowPlayerStatsModal] = useState(false);
   const [galleryImages, setGalleryImages] = useState<GalleryImage[]>([]);
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
   const [currentRuleIndex, setCurrentRuleIndex] = useState(0);
@@ -1239,40 +1233,174 @@ export const TelegramApp = () => {
               <Trophy className="h-5 w-5 text-background" />
             </div>
             <div>
-              <h2 className="font-display text-3xl uppercase text-foreground tracking-wider">
-                <GlitchText text="ТУРНИРЫ" />
-              </h2>
+              <h2 className="font-display text-3xl uppercase text-foreground tracking-wider">ТУРНИРЫ</h2>
               <div className="h-[2px] w-16 bg-gradient-neon mt-2"></div>
             </div>
           </div>
           
-          {tournaments.length === 0 ? (
-            <div className="text-center py-16 space-y-4">
-              <div className="w-20 h-20 mx-auto bg-syndikate-metal brutal-border flex items-center justify-center">
-                <Trophy className="h-10 w-10 text-syndikate-concrete" />
-              </div>
-              <h3 className="text-xl font-display text-syndikate-concrete uppercase">
-                No Active Tournaments
-              </h3>
-              <p className="text-sm text-syndikate-concrete/60">
-                Check back soon for upcoming tournaments
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {tournaments.map((tournament, index) => (
-                <TournamentCard
-                  key={tournament.id}
-                  tournament={tournament}
-                  index={index}
+          {tournaments.map((tournament, index) => (
+            <Card key={tournament.id} className="bg-syndikate-metal/90 brutal-border border-2 border-dashed border-syndikate-orange/40 backdrop-blur-xl shadow-brutal group hover:shadow-neon-orange transition-all duration-500 relative overflow-hidden cursor-pointer hover:scale-[1.01]"
                   onClick={() => {
                     setSelectedTournament(tournament);
                     setShowTournamentModal(true);
-                  }}
-                />
-              ))}
-            </div>
-          )}
+                  }}>
+              {/* Corner Decorations */}
+              <div className="absolute left-0 top-1/2 -translate-y-1/2 w-6 h-6 bg-background brutal-border -ml-3"></div>
+              <div className="absolute right-0 top-1/2 -translate-y-1/2 w-6 h-6 bg-background brutal-border -mr-3"></div>
+              
+              {/* Номер билета */}
+              <div className="absolute top-3 right-4 text-syndikate-orange text-xs font-mono tracking-wider bg-syndikate-concrete/50 px-2 py-1 brutal-border backdrop-blur-sm">
+                #{tournament.id.slice(-6).toUpperCase()}
+              </div>
+              
+              {/* Barcode Effect */}
+              <div className="absolute bottom-3 right-4 flex gap-0.5">
+                {[...Array(8)].map((_, i) => (
+                  <div key={i} className={`bg-syndikate-orange/60 ${i % 2 === 0 ? 'w-0.5 h-6' : 'w-1 h-8'}`}></div>
+                ))}
+              </div>
+              
+              <div className="absolute inset-0 bg-gradient-to-br from-syndikate-orange/5 via-transparent to-syndikate-red/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+              <div className="absolute inset-0 opacity-10 group-hover:opacity-20 transition-opacity duration-500">
+                <div className="absolute top-3 left-4 text-2xl text-syndikate-orange/30 animate-pulse">♠</div>
+                <div className="absolute bottom-8 left-8 text-xl text-syndikate-orange/20">♣</div>
+              </div>
+              
+              <CardContent className="p-6 relative z-10">
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex-1">
+                    <div className="text-syndikate-orange text-xs font-bold uppercase tracking-widest mb-1">🎫 БИЛЕТ НА ТУРНИР</div>
+                    <h3 className="font-display text-xl uppercase text-foreground tracking-wide mb-2 group-hover:text-syndikate-orange transition-colors duration-300">
+                      {tournament.name}
+                    </h3>
+                    <div className="h-[2px] w-12 bg-gradient-neon group-hover:w-16 transition-all duration-500"></div>
+                    {tournament.description && (
+                      <p className="text-muted-foreground text-sm mt-2 line-clamp-1">{tournament.description}</p>
+                    )}
+                  </div>
+                  <div className="w-10 h-10 bg-syndikate-orange brutal-border flex items-center justify-center backdrop-blur-sm group-hover:scale-110 transition-transform duration-300">
+                    <Trophy className="h-5 w-5 text-background" />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 mb-4">
+                  <div className="flex items-center gap-3 p-3 bg-syndikate-concrete/50 brutal-border group-hover:border-syndikate-orange/30 transition-all duration-300 backdrop-blur-sm">
+                    <div className="w-7 h-7 bg-syndikate-orange brutal-border flex items-center justify-center shadow-lg">
+                      <Users className="h-4 w-4 text-background" />
+                    </div>
+                    <div>
+                      <span className="text-foreground font-bold text-sm">{tournament.tournament_registrations?.[0]?.count || 0}/{tournament.max_players}</span>
+                      <p className="text-muted-foreground text-xs">участников</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-3 p-3 bg-syndikate-concrete/50 brutal-border group-hover:border-syndikate-orange/30 transition-all duration-300 backdrop-blur-sm">
+                    <div className="w-7 h-7 bg-syndikate-orange brutal-border flex items-center justify-center shadow-lg">
+                      <Clock className="h-4 w-4 text-background" />
+                    </div>
+                    <div>
+                      <span className="text-foreground font-bold text-sm">{new Date(tournament.start_time).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}</span>
+                      <p className="text-muted-foreground text-xs">{new Date(tournament.start_time).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 mb-4">
+                  <div className="flex items-center gap-3 p-3 bg-syndikate-concrete/50 brutal-border group-hover:border-syndikate-orange/30 transition-all duration-300 backdrop-blur-sm">
+                    <div className="w-7 h-7 bg-syndikate-red brutal-border flex items-center justify-center shadow-lg">
+                      <Coins className="h-4 w-4 text-background" />
+                    </div>
+                    <div>
+                      <span className="text-foreground font-bold text-sm">{tournament.participation_fee.toLocaleString()} ₽</span>
+                      <p className="text-muted-foreground text-xs">орг. взнос</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 p-2 bg-syndikate-concrete/50 brutal-border group-hover:border-syndikate-orange/30 transition-all duration-300 backdrop-blur-sm">
+                    <div className="w-6 h-6 bg-syndikate-orange brutal-border flex items-center justify-center">
+                      <Target className="h-3 w-3 text-background" />
+                    </div>
+                    <div>
+                      <span className="text-foreground font-semibold text-sm">{tournament.starting_chips?.toLocaleString() || 'N/A'}</span>
+                      <p className="text-muted-foreground text-xs">стартовый стек</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between gap-3 mt-4">
+                  <div className="flex items-center gap-2 text-syndikate-orange group-hover:gap-3 transition-all duration-300">
+                    <span className="font-display text-sm uppercase tracking-widest font-bold">🎫 Подробнее</span>
+                    <ChevronRight className="h-4 w-4 group-hover:translate-x-1 transition-transform duration-300" />
+                  </div>
+                  
+                  <Badge 
+                    className={`px-3 py-1.5 text-xs font-bold uppercase brutal-border backdrop-blur-sm ${
+                      tournament.status === 'registration' ? 'bg-syndikate-orange/20 text-syndikate-orange' :
+                      tournament.status === 'running' ? 'bg-syndikate-red/20 text-syndikate-red' :
+                      tournament.status === 'scheduled' ? 'bg-syndikate-orange/20 text-syndikate-orange' :
+                      'bg-muted text-muted-foreground'
+                    }`}
+                  >
+                    {tournament.status === 'registration' ? 'Регистрация' :
+                     tournament.status === 'running' ? 'В процессе' :
+                     tournament.status === 'scheduled' ? 'Запланирован' :
+                     tournament.status}
+                  </Badge>
+                </div>
+                
+                {tournament.status === 'registration' && (
+                  userRegistrations.has(tournament.id) ? (
+                    <div className="w-full mt-4 flex items-center justify-between gap-2">
+                      <Badge className="flex-1 bg-gradient-to-r from-emerald-500/20 to-green-500/20 text-emerald-400 border border-emerald-500/40 hover:from-emerald-500/30 hover:to-green-500/30 transition-all duration-300 px-4 py-2.5 text-xs font-bold uppercase tracking-wider shadow-lg shadow-emerald-500/20 justify-center">
+                        <CheckCircle className="h-3.5 w-3.5 mr-1.5" />
+                        Зарегистрирован
+                      </Badge>
+                      <Button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          unregisterFromTournament(tournament.id);
+                        }}
+                        variant="outline"
+                        size="sm"
+                        disabled={loading}
+                        className="bg-gradient-to-r from-red-500/10 to-rose-500/10 border-red-500/40 text-red-400 hover:from-red-500/20 hover:to-rose-500/20 hover:text-red-300 hover:border-red-400/60 transition-all duration-300 px-3 py-2.5 h-auto text-xs font-semibold shadow-lg shadow-red-500/20 hover:shadow-red-500/30"
+                      >
+                        {loading ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <>
+                            <X className="h-3.5 w-3.5 mr-1" />
+                            Отменить
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  ) : (
+                    <Button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        registerForTournament(tournament.id);
+                      }} 
+                      disabled={registering === tournament.id} 
+                      className="w-full mt-4 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-bold py-3 rounded-xl shadow-lg hover:shadow-amber-500/40 transition-all duration-300 group-hover:scale-[1.02] border-0 text-sm uppercase tracking-wider"
+                    >
+                      {registering === tournament.id ? (
+                        <div className="flex items-center gap-2">
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          <span>Регистрируем...</span>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <UserPlus className="h-4 w-4" />
+                          <span>Записаться на турнир</span>
+                        </div>
+                      )}
+                    </Button>
+                  )
+                )}
+              </CardContent>
+            </Card>
+          ))}
         </div>
       )}
 
@@ -1281,49 +1409,205 @@ export const TelegramApp = () => {
           {/* Header */}
           <div className="flex items-center gap-3 p-4">
             <div className="w-10 h-10 bg-syndikate-orange brutal-border flex items-center justify-center">
-              <Award className="h-5 w-5 text-background" />
+              <Crown className="h-5 w-5 text-background" />
             </div>
-            <h2 className="text-2xl font-display tracking-wider uppercase">
-              <GlitchText text="Рейтинг" />
-            </h2>
+            <div>
+              <h2 className="font-display text-3xl uppercase text-foreground tracking-wider">ЛЕГЕНДЫ EPC</h2>
+              <div className="h-[2px] w-16 bg-gradient-neon mt-2"></div>
+            </div>
           </div>
 
-          <RatingPodium 
-            topPlayers={players.slice(0, 3)}
-            onPlayerClick={(player) => {
-              setSelectedPlayer(player);
-              setShowPlayerStatsModal(true);
-            }}
-          />
+          {/* Stats Overview */}
+          <div className="grid grid-cols-2 gap-3">
+            <Card className="bg-syndikate-metal/90 brutal-border backdrop-blur-xl shadow-brutal group hover:shadow-neon-orange transition-all duration-500 relative overflow-hidden hover:scale-[1.02]">
+              <div className="absolute inset-0 bg-gradient-to-br from-syndikate-orange/5 via-transparent to-syndikate-red/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+              <div className="absolute top-2 right-2 text-syndikate-orange/30 text-2xl animate-pulse">♠</div>
+              
+              <CardContent className="p-4 relative z-10">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-syndikate-orange brutal-border flex items-center justify-center">
+                    <Users className="h-4 w-4 text-background" />
+                  </div>
+                  <div>
+                    <div className="text-foreground font-bold text-lg">{players.length}</div>
+                    <div className="text-muted-foreground text-xs uppercase tracking-wider">Активных игроков</div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
-          {players.length === 0 ? (
-            <div className="text-center py-16 space-y-4">
-              <div className="w-20 h-20 mx-auto bg-syndikate-metal brutal-border flex items-center justify-center">
-                <Award className="h-10 w-10 text-syndikate-concrete" />
+            <Card className="bg-syndikate-metal/90 brutal-border backdrop-blur-xl shadow-brutal group hover:shadow-neon-orange transition-all duration-500 relative overflow-hidden hover:scale-[1.02]">
+              <div className="absolute inset-0 bg-gradient-to-br from-syndikate-orange/5 via-transparent to-syndikate-red/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+              <div className="absolute top-2 right-2 text-syndikate-orange/30 text-2xl animate-pulse">♥</div>
+              
+              <CardContent className="p-4 relative z-10">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-syndikate-red brutal-border flex items-center justify-center">
+                    <Trophy className="h-4 w-4 text-background" />
+                  </div>
+                  <div>
+                    <div className="text-foreground font-bold text-lg">{players[0]?.elo_rating || 0}</div>
+                    <div className="text-muted-foreground text-xs uppercase tracking-wider">Лучший рейтинг</div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Top 3 Podium */}
+          {players.length >= 3 && (
+            <Card className="bg-syndikate-metal/90 brutal-border backdrop-blur-xl shadow-brutal group hover:shadow-neon-orange transition-all duration-500 relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-syndikate-orange/5 via-transparent to-syndikate-red/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+              <div className="absolute inset-0 opacity-10 group-hover:opacity-20 transition-opacity duration-500">
+                <div className="absolute top-3 right-3 text-syndikate-orange/30 text-3xl animate-pulse">♠</div>
+                <div className="absolute bottom-3 left-3 text-syndikate-orange/20 text-2xl">♦</div>
               </div>
-              <h3 className="text-xl font-display text-syndikate-concrete uppercase">
-                No Players Yet
-              </h3>
-              <p className="text-sm text-syndikate-concrete/60">
-                Be the first to join and compete
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {players.slice(3).map((player, index) => (
-                <PlayerRatingCard
-                  key={player.id}
-                  player={player}
-                  rank={index + 4}
-                  index={index}
-                  onClick={() => {
-                    setSelectedPlayer(player);
-                    setShowPlayerStatsModal(true);
-                  }}
-                />
-              ))}
-            </div>
+              
+              <CardContent className="p-5 relative z-10">
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="w-1 h-5 bg-gradient-neon brutal-border"></div>
+                  <h3 className="text-foreground font-display font-bold text-base tracking-wider uppercase">ТОП-3 ИГРОКОВ</h3>
+                </div>
+                
+                <div className="flex items-end justify-center gap-2">
+                  {/* 2nd Place */}
+                  <div className="flex flex-col items-center">
+                    <div className="relative mb-2">
+                      <Avatar className="w-10 h-10 brutal-border ring-2 ring-muted/40">
+                        <AvatarImage src={players[1]?.avatar_url} />
+                        <AvatarFallback className="bg-muted text-foreground text-xs font-bold">{players[1]?.name?.[0] || 'P'}</AvatarFallback>
+                      </Avatar>
+                      <div className="absolute -top-1 -right-1 w-5 h-5 bg-muted brutal-border flex items-center justify-center text-xs">
+                        🥈
+                      </div>
+                    </div>
+                    <div className="w-12 h-16 bg-syndikate-concrete/50 brutal-border flex flex-col items-center justify-end pb-2">
+                      <span className="text-foreground text-xs font-bold">{players[1]?.elo_rating}</span>
+                    </div>
+                    <p className="text-muted-foreground text-xs mt-1 text-center truncate w-12 uppercase">{players[1]?.name}</p>
+                  </div>
+
+                  {/* 1st Place */}
+                  <div className="flex flex-col items-center">
+                    <div className="relative mb-2">
+                      <Avatar className="w-12 h-12 brutal-border ring-2 ring-syndikate-orange/50 shadow-neon-orange">
+                        <AvatarImage src={players[0]?.avatar_url} />
+                        <AvatarFallback className="bg-syndikate-orange text-background text-sm font-bold">{players[0]?.name?.[0] || 'P'}</AvatarFallback>
+                      </Avatar>
+                      <div className="absolute -top-1 -right-1 w-6 h-6 bg-syndikate-orange brutal-border flex items-center justify-center shadow-neon-orange">
+                        👑
+                      </div>
+                    </div>
+                    <div className="w-14 h-20 bg-syndikate-orange/30 brutal-border flex flex-col items-center justify-end pb-2 shadow-neon-orange">
+                      <span className="text-syndikate-orange text-sm font-bold neon-orange">{players[0]?.elo_rating}</span>
+                    </div>
+                    <p className="text-foreground text-xs mt-1 text-center font-bold truncate w-14 uppercase">{players[0]?.name}</p>
+                  </div>
+
+                  {/* 3rd Place */}
+                  <div className="flex flex-col items-center">
+                    <div className="relative mb-2">
+                      <Avatar className="w-10 h-10 brutal-border ring-2 ring-syndikate-red/40">
+                        <AvatarImage src={players[2]?.avatar_url} />
+                        <AvatarFallback className="bg-syndikate-red text-background text-xs font-bold">{players[2]?.name?.[0] || 'P'}</AvatarFallback>
+                      </Avatar>
+                      <div className="absolute -top-1 -right-1 w-5 h-5 bg-syndikate-red brutal-border flex items-center justify-center text-xs">
+                        🥉
+                      </div>
+                    </div>
+                    <div className="w-12 h-12 bg-syndikate-red/30 brutal-border flex flex-col items-center justify-end pb-2">
+                      <span className="text-syndikate-red text-xs font-bold">{players[2]?.elo_rating}</span>
+                    </div>
+                    <p className="text-muted-foreground text-xs mt-1 text-center truncate w-12 uppercase">{players[2]?.name}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           )}
+
+          {/* Players List */}
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 mb-3 px-1">
+              <div className="w-1 h-4 bg-gradient-neon brutal-border"></div>
+              <p className="text-foreground text-sm font-bold uppercase tracking-wide">Полный рейтинг</p>
+              <div className="flex-1 h-[2px] bg-syndikate-rust/30"></div>
+            </div>
+            
+            {players.map((player, index) => (
+              <Card key={player.id} className={`backdrop-blur-xl shadow-brutal group hover:shadow-neon-orange transition-all duration-500 relative overflow-hidden brutal-border ${
+                  index === 0 ? 'bg-syndikate-orange/20 border-syndikate-orange/40' :
+                  index === 1 ? 'bg-muted/20 border-muted/40' :
+                  index === 2 ? 'bg-syndikate-red/20 border-syndikate-red/40' :
+                  'bg-syndikate-metal/90'
+                } hover:scale-[1.01] cursor-pointer`}>
+                <div className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 ${
+                  index === 0 ? 'bg-gradient-to-r from-syndikate-orange/5 to-transparent' :
+                  index === 1 ? 'bg-gradient-to-r from-muted/5 to-transparent' :
+                  index === 2 ? 'bg-gradient-to-r from-syndikate-red/5 to-transparent' :
+                  'bg-gradient-to-r from-syndikate-orange/5 to-transparent'
+                }`}></div>
+                
+                <div className="absolute top-2 right-2 opacity-10 group-hover:opacity-20 transition-opacity duration-500">
+                  <div className={`text-2xl animate-pulse ${
+                    index < 3 ? 'text-syndikate-orange/30' : 'text-syndikate-orange/30'
+                  }`}>
+                    {index === 0 ? '♠' : index === 1 ? '♥' : index === 2 ? '♦' : '♣'}
+                  </div>
+                </div>
+                
+                <CardContent className="p-4 relative z-10">
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-1 min-w-[1.5rem]">
+                      <span className={`text-sm font-bold uppercase ${
+                        index < 3 ? 'text-syndikate-orange' : 'text-muted-foreground'
+                      }`}>
+                        #{index + 1}
+                      </span>
+                    </div>
+                    
+                    <div className="relative">
+                      <Avatar className={`w-10 h-10 brutal-border group-hover:ring-2 group-hover:ring-syndikate-orange/30 transition-all duration-300 ${
+                        index === 0 ? 'ring-2 ring-syndikate-orange/50' : ''
+                      }`}>
+                        <AvatarImage src={player.avatar_url} />
+                        <AvatarFallback className="bg-syndikate-concrete text-foreground font-bold text-sm">{player.name?.[0] || 'P'}</AvatarFallback>
+                      </Avatar>
+                      {index < 3 && (
+                        <div className={`absolute -top-1 -right-1 w-4 h-4 brutal-border flex items-center justify-center text-xs font-bold text-background shadow-md ${
+                          index === 0 ? 'bg-syndikate-orange' :
+                          index === 1 ? 'bg-muted' :
+                          'bg-syndikate-red'
+                        }`}>
+                          {index === 0 ? '👑' : index === 1 ? '🥈' : '🥉'}
+                        </div>
+                      )}
+                    </div>
+                    
+                    <div className="flex-1">
+                      <h3 className="text-foreground font-bold text-sm uppercase tracking-wide group-hover:text-syndikate-orange transition-colors duration-300">{player.name}</h3>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <p className="text-muted-foreground text-xs uppercase tracking-wider">{player.games_played} игр</p>
+                        <div className="w-1 h-1 bg-muted-foreground/40 brutal-border"></div>
+                        <p className="text-muted-foreground text-xs uppercase tracking-wider">{player.wins} побед</p>
+                      </div>
+                    </div>
+                    
+                    <div className="text-right">
+                      <div className={`text-lg font-bold ${
+                        index === 0 ? 'text-syndikate-orange neon-orange' :
+                        index === 1 ? 'text-muted-foreground' :
+                        index === 2 ? 'text-syndikate-red' :
+                        'text-foreground'
+                      } group-hover:scale-110 transition-transform duration-300`}>
+                        {player.elo_rating}
+                      </div>
+                      <p className="text-muted-foreground text-xs uppercase tracking-wider">RPS</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
         </div>
       )}
 
@@ -1770,16 +2054,6 @@ export const TelegramApp = () => {
         onRegister={registerForTournament}
         registering={registering !== null}
       />
-
-      {showPlayerStatsModal && selectedPlayer && (
-        <PlayerStatsModal
-          player={selectedPlayer}
-          onClose={() => {
-            setShowPlayerStatsModal(false);
-            setSelectedPlayer(null);
-          }}
-        />
-      )}
     </div>
   );
 };
