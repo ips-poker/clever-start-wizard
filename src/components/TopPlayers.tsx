@@ -8,6 +8,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { AnimatedCounter } from "@/components/ui/animated-counter";
 import { Trophy, Medal, Award, TrendingUp, Users, ChevronRight, Crown, Search, Filter } from "lucide-react";
 import { Link } from "react-router-dom";
+
 interface Player {
   id: string;
   name: string;
@@ -16,6 +17,7 @@ interface Player {
   wins: number;
   avatar_url: string | null;
 }
+
 const PlayerAvatar = ({ player, size = "w-12 h-12", isChampion = false }: {
   player: Player;
   size?: string;
@@ -26,7 +28,7 @@ const PlayerAvatar = ({ player, size = "w-12 h-12", isChampion = false }: {
   const fallbackAvatar = isChampion ? "👑" : fallbackAvatars[fallbackIndex];
 
   return player.avatar_url ? (
-    <div className={`${size} rounded-xl overflow-hidden flex-shrink-0`}>
+    <div className={`${size} rounded-none overflow-hidden flex-shrink-0 border-2 border-syndikate-orange`}>
       <img 
         src={player.avatar_url} 
         alt={`${player.name} avatar`}
@@ -36,17 +38,18 @@ const PlayerAvatar = ({ player, size = "w-12 h-12", isChampion = false }: {
           target.style.display = 'none';
           const parent = target.parentElement;
           if (parent) {
-            parent.innerHTML = `<div class="w-full h-full bg-gradient-to-br from-poker-accent/20 to-poker-primary/20 border border-poker-accent/30 rounded-xl flex items-center justify-center text-lg">${fallbackAvatar}</div>`;
+            parent.innerHTML = `<div class="w-full h-full bg-syndikate-metal brutal-border flex items-center justify-center text-lg">${fallbackAvatar}</div>`;
           }
         }}
       />
     </div>
   ) : (
-    <div className={`${size} bg-gradient-to-br from-poker-accent/20 to-poker-primary/20 border border-poker-accent/30 rounded-xl flex items-center justify-center text-lg`}>
+    <div className={`${size} bg-syndikate-metal brutal-border flex items-center justify-center text-lg`}>
       {fallbackAvatar}
     </div>
   );
 };
+
 export function TopPlayers() {
   const [topPlayers, setTopPlayers] = useState<Player[]>([]);
   const [allPlayers, setAllPlayers] = useState<Player[]>([]);
@@ -54,10 +57,10 @@ export function TopPlayers() {
   const [searchTerm, setSearchTerm] = useState("");
   const [showAll, setShowAll] = useState(false);
   const [showFirstPlaceOnly, setShowFirstPlaceOnly] = useState(false);
+
   useEffect(() => {
     loadPlayers();
 
-    // Set up real-time subscription for player updates
     const playersChannel = supabase.channel('players-changes').on('postgres_changes', {
       event: '*',
       schema: 'public',
@@ -65,6 +68,7 @@ export function TopPlayers() {
     }, () => {
       loadPlayers();
     }).subscribe();
+
     return () => {
       supabase.removeChannel(playersChannel);
     };
@@ -78,7 +82,6 @@ export function TopPlayers() {
       
       const sortedPlayers = (data || []).sort((a, b) => b.elo_rating - a.elo_rating);
       
-      // Устанавливаем все данные из одного запроса
       setAllPlayers(sortedPlayers);
       setTopPlayers(sortedPlayers.slice(0, 5));
     } catch (error) {
@@ -88,7 +91,6 @@ export function TopPlayers() {
     }
   };
 
-  // Filter players based on search and first place filter
   const filteredPlayers = useMemo(() => {
     let filtered = allPlayers;
     if (searchTerm) {
@@ -104,84 +106,64 @@ export function TopPlayers() {
     if (games === 0) return 0;
     return Math.round(wins / games * 100);
   }, []);
+
   if (loading) {
-    return <section className="py-20">
-        <div className="container mx-auto px-4">
+    return <section className="py-20 bg-background relative overflow-hidden">
+        {/* Industrial Background */}
+        <div className="absolute inset-0 industrial-texture opacity-50" />
+        <div className="container mx-auto px-4 relative z-10">
           <div className="text-center">
-            <h2 className="text-3xl font-bold mb-4 text-poker-text-primary">Загрузка рейтинга...</h2>
+            <h2 className="text-3xl font-bold mb-4 text-foreground uppercase tracking-wider">ЗАГРУЗКА РЕЙТИНГА...</h2>
           </div>
         </div>
       </section>;
   }
+
   return (
-    <section id="rating" className="py-20 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 relative overflow-hidden">
-      {/* Elegant Poker Chips Background */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-10">
-        <div className="absolute top-[10%] right-[20%] w-20 h-20 rounded-full animate-pulse-slow">
-          <div className="absolute inset-0 rounded-full bg-gradient-to-br from-green-400 via-green-500 to-green-600 shadow-2xl opacity-40"></div>
-          <div className="absolute inset-2 rounded-full bg-gradient-to-br from-slate-900 to-slate-800 border-2 border-green-400/30 flex items-center justify-center">
-            <span className="text-green-400/50 font-bold text-xs">50</span>
-          </div>
-          <div className="absolute inset-4 rounded-full border-2 border-dashed border-green-400/20"></div>
-        </div>
-        
-        <div className="absolute top-[35%] left-[12%] w-16 h-16 rounded-full animate-bounce-subtle">
-          <div className="absolute inset-0 rounded-full bg-gradient-to-br from-amber-400 via-amber-500 to-amber-600 shadow-xl opacity-35"></div>
-          <div className="absolute inset-1.5 rounded-full bg-gradient-to-br from-slate-900 to-slate-800 border-2 border-amber-400/30 flex items-center justify-center">
-            <span className="text-amber-400/50 font-bold text-xs">100</span>
-          </div>
-        </div>
-        
-        <div className="absolute bottom-[15%] right-[28%] w-18 h-18 rounded-full animate-pulse-slow">
-          <div className="absolute inset-0 rounded-full bg-gradient-to-br from-purple-400 via-purple-500 to-purple-600 shadow-xl opacity-30"></div>
-          <div className="absolute inset-1.5 rounded-full bg-gradient-to-br from-slate-900 to-slate-800 border border-purple-400/30"></div>
-        </div>
-      </div>
+    <section id="rating" className="py-20 bg-background relative overflow-hidden">
+      {/* Industrial Background */}
+      <div className="absolute inset-0 industrial-texture opacity-50" />
       
-      {/* Elegant Poker Suits */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-10">
-        <div className="absolute top-[18%] left-[30%] animate-pulse-slow">
-          <div className="text-green-400/40 text-5xl filter drop-shadow-[0_0_15px_rgba(74,222,128,0.3)]">♣</div>
-        </div>
-        <div className="absolute top-[42%] right-[18%] animate-bounce-subtle">
-          <div className="text-amber-400/35 text-4xl filter drop-shadow-[0_0_12px_rgba(251,191,36,0.3)]">♦</div>
-        </div>
-        <div className="absolute bottom-[20%] left-[22%] animate-pulse-slow">
-          <div className="text-purple-400/45 text-6xl filter drop-shadow-[0_0_20px_rgba(192,132,252,0.4)]">♠</div>
-        </div>
-      </div>
-      
-      {/* Gradient light spots */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-0 right-1/4 w-96 h-96 bg-blue-500/5 rounded-full blur-3xl"></div>
-        <div className="absolute bottom-0 left-1/4 w-96 h-96 bg-amber-500/5 rounded-full blur-3xl"></div>
-      </div>
+      {/* Metal Grid Pattern */}
+      <div 
+        className="absolute inset-0 opacity-10"
+        style={{
+          backgroundImage: `
+            repeating-linear-gradient(0deg, transparent, transparent 50px, rgba(255, 255, 255, 0.05) 50px, rgba(255, 255, 255, 0.05) 51px),
+            repeating-linear-gradient(90deg, transparent, transparent 50px, rgba(255, 255, 255, 0.05) 50px, rgba(255, 255, 255, 0.05) 51px)
+          `
+        }}
+      />
+
+      {/* Neon Glow Spots */}
+      <div className="absolute top-0 right-1/4 w-96 h-96 bg-syndikate-orange/10 rounded-full blur-3xl animate-pulse" />
+      <div className="absolute bottom-0 left-1/4 w-96 h-96 bg-syndikate-red/10 rounded-full blur-3xl animate-pulse" />
 
       <div className="container mx-auto px-4 relative z-10">
         {/* Header */}
         <div className="text-center mb-16">
           <div className="flex items-center gap-3 justify-center mb-6">
-            <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl flex items-center justify-center shadow-lg">
-              <Trophy className="h-5 w-5 text-white" />
+            <div className="w-12 h-12 bg-syndikate-orange brutal-border flex items-center justify-center shadow-neon-orange">
+              <Trophy className="h-6 w-6 text-background" />
             </div>
-            <h2 className="text-3xl lg:text-4xl font-light text-white tracking-wide">
+            <h2 className="text-4xl lg:text-5xl font-bold text-foreground tracking-wider uppercase">
               РЕЙТИНГ ЭЛИТЫ
             </h2>
           </div>
-          <div className="h-0.5 w-20 bg-gradient-to-r from-amber-400 to-amber-600 mx-auto mb-6"></div>
-          <p className="text-lg text-white/70 max-w-xl mx-auto font-light">
-            Система RPS рейтинга. Поднимайтесь к вершине покерного мастерства
+          <div className="h-[2px] w-20 bg-syndikate-orange mx-auto mb-6"></div>
+          <p className="text-lg text-muted-foreground max-w-xl mx-auto font-mono uppercase tracking-wider">
+            СИСТЕМА RPS. ПУТЬ К ВЕРШИНЕ
           </p>
         </div>
 
         {topPlayers.length === 0 ? (
           <div className="max-w-md mx-auto text-center py-16">
-            <div className="bg-gradient-to-br from-slate-800/90 via-slate-900/95 to-black/90 border border-white/10 rounded-2xl p-8 backdrop-blur-xl">
-              <div className="w-16 h-16 bg-gradient-to-br from-amber-500/20 to-amber-600/20 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                <Trophy className="w-8 h-8 text-amber-400" />
+            <div className="brutal-metal brutal-border p-8">
+              <div className="w-16 h-16 bg-syndikate-orange brutal-border flex items-center justify-center mx-auto mb-6">
+                <Trophy className="w-8 h-8 text-background" />
               </div>
-              <h3 className="text-xl font-medium mb-3 text-white">Рейтинг формируется</h3>
-              <p className="text-white/60">Станьте первым в элитном списке игроков</p>
+              <h3 className="text-xl font-bold mb-3 text-foreground uppercase tracking-wider">Рейтинг формируется</h3>
+              <p className="text-muted-foreground uppercase tracking-wide text-sm">Станьте первым в элитном списке игроков</p>
             </div>
           </div>
         ) : (
@@ -189,20 +171,28 @@ export function TopPlayers() {
             {/* Top Player Highlight */}
             {topPlayers[0] && (
               <div className="mb-12">
-                <div className="bg-gradient-to-br from-amber-500/10 via-amber-600/15 to-amber-500/10 rounded-3xl p-8 border border-amber-500/20 backdrop-blur-xl shadow-2xl relative overflow-hidden group">
-                  <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 to-transparent rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                  <div className="absolute inset-0 opacity-8 group-hover:opacity-15 transition-opacity duration-500">
-                    <div className="absolute top-4 right-6 text-amber-400/30 text-4xl animate-pulse">♠</div>
-                    <div className="absolute bottom-4 left-6 text-amber-400/20 text-3xl animate-bounce-subtle">♣</div>
-                  </div>
+                <div className="brutal-metal brutal-border p-8 relative overflow-hidden group">
+                  {/* Warning Stripe Top */}
+                  <div 
+                    className="absolute top-0 left-0 right-0 h-2"
+                    style={{
+                      backgroundImage: 'repeating-linear-gradient(45deg, rgba(255, 135, 31, 0.5), rgba(255, 135, 31, 0.5) 10px, transparent 10px, transparent 20px)'
+                    }}
+                  />
+
+                  {/* Corner Brackets */}
+                  <div className="absolute top-0 left-0 w-8 h-8 border-l-2 border-t-2 border-syndikate-orange" />
+                  <div className="absolute top-0 right-0 w-8 h-8 border-r-2 border-t-2 border-syndikate-orange" />
+                  <div className="absolute bottom-0 left-0 w-8 h-8 border-l-2 border-b-2 border-syndikate-orange" />
+                  <div className="absolute bottom-0 right-0 w-8 h-8 border-r-2 border-b-2 border-syndikate-orange" />
 
                   <div className="flex items-center gap-6 relative z-10">
                     {/* Champion badge */}
                     <div className="flex-shrink-0">
                       <div className="relative">
                         <PlayerAvatar player={topPlayers[0]} size="w-16 h-16" isChampion={true} />
-                        <div className="absolute -top-2 -right-2 w-6 h-6 bg-gradient-to-br from-amber-500 to-amber-600 rounded-full flex items-center justify-center shadow-lg">
-                          <Crown className="w-3 h-3 text-white" />
+                        <div className="absolute -top-2 -right-2 w-6 h-6 bg-syndikate-orange brutal-border flex items-center justify-center shadow-neon-orange">
+                          <Crown className="w-3 h-3 text-background" />
                         </div>
                       </div>
                     </div>
@@ -210,27 +200,35 @@ export function TopPlayers() {
                     {/* Player info */}
                     <div className="flex-grow">
                       <div className="flex items-center gap-3 mb-2">
-                        <h3 className="text-2xl font-light text-white tracking-wide">
+                        <h3 className="text-2xl font-bold text-foreground tracking-wider uppercase">
                           {topPlayers[0].name}
                         </h3>
-                        <div className="px-3 py-1 bg-gradient-to-r from-white/10 via-white/15 to-white/10 rounded-lg backdrop-blur-md border border-white/20">
-                          <span className="text-amber-400 text-sm font-medium tracking-wide">Чемпион</span>
+                        <div className="px-3 py-1 bg-syndikate-orange brutal-border">
+                          <span className="text-background text-sm font-bold tracking-wider uppercase">Чемпион</span>
                         </div>
                       </div>
-                      <div className="flex items-center gap-6 text-sm text-white/60">
-                        <span>{topPlayers[0].games_played} игр</span>
-                        <span>{getWinRate(topPlayers[0].wins, topPlayers[0].games_played)}% побед</span>
+                      <div className="flex items-center gap-6 text-sm text-muted-foreground font-mono">
+                        <span>{topPlayers[0].games_played} ИГР</span>
+                        <span>{getWinRate(topPlayers[0].wins, topPlayers[0].games_played)}% ПОБЕД</span>
                       </div>
                     </div>
 
                     {/* ELO Rating */}
                     <div className="text-right">
-                      <div className="text-3xl font-light text-amber-400 mb-1">
+                      <div className="text-3xl font-bold text-syndikate-orange mb-1">
                         <AnimatedCounter end={topPlayers[0].elo_rating} duration={2000} />
                       </div>
-                      <div className="text-xs text-white/60 uppercase tracking-widest">RPS</div>
+                      <div className="text-xs text-muted-foreground uppercase tracking-widest font-mono">RPS</div>
                     </div>
                   </div>
+
+                  {/* Warning Stripe Bottom */}
+                  <div 
+                    className="absolute bottom-0 left-0 right-0 h-2"
+                    style={{
+                      backgroundImage: 'repeating-linear-gradient(-45deg, rgba(255, 135, 31, 0.5), rgba(255, 135, 31, 0.5) 10px, transparent 10px, transparent 20px)'
+                    }}
+                  />
                 </div>
               </div>
             )}
@@ -239,33 +237,32 @@ export function TopPlayers() {
             <div className="space-y-4 mb-8">
               {topPlayers.slice(1).map((player, index) => {
                 const position = index + 2;
-                const isTopThree = position <= 3;
                 return (
                   <div key={player.id} className="group">
-                    <div className="bg-gradient-to-br from-slate-800/90 via-slate-900/95 to-black/90 border border-white/10 rounded-2xl p-6 backdrop-blur-xl group-hover:scale-[1.02] transition-all duration-500 hover:shadow-xl hover:shadow-amber-500/20 relative overflow-hidden">
-                      <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 via-transparent to-amber-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                      <div className="absolute inset-0 opacity-8 group-hover:opacity-15 transition-opacity duration-500">
-                        <div className="absolute top-3 right-3 text-amber-400/30 text-2xl animate-pulse">♥</div>
-                        <div className="absolute bottom-3 left-3 text-amber-400/20 text-xl animate-bounce-subtle">♦</div>
-                      </div>
+                    <div className="brutal-metal brutal-border p-6 transition-all duration-300 hover:shadow-neon-orange relative overflow-hidden">
+                      {/* Corner Brackets */}
+                      <div className="absolute top-0 left-0 w-6 h-6 border-l-2 border-t-2 border-border opacity-30" />
+                      <div className="absolute top-0 right-0 w-6 h-6 border-r-2 border-t-2 border-border opacity-30" />
+                      <div className="absolute bottom-0 left-0 w-6 h-6 border-l-2 border-b-2 border-border opacity-30" />
+                      <div className="absolute bottom-0 right-0 w-6 h-6 border-r-2 border-b-2 border-border opacity-30" />
 
                       <div className="flex items-center justify-between relative z-10">
                         <div className="flex items-center gap-4">
-                          {/* Position with premium icons */}
+                          {/* Position */}
                           <div className="flex items-center justify-center w-10 h-10">
                             {position === 2 && (
-                              <div className="w-8 h-8 bg-gradient-to-br from-gray-300 to-gray-500 rounded-lg flex items-center justify-center shadow-md">
-                                <Medal className="w-5 h-5 text-white" />
+                              <div className="w-8 h-8 bg-syndikate-metal-light brutal-border flex items-center justify-center">
+                                <Medal className="w-5 h-5 text-syndikate-orange" />
                               </div>
                             )}
                             {position === 3 && (
-                              <div className="w-8 h-8 bg-gradient-to-br from-amber-400 to-amber-600 rounded-lg flex items-center justify-center shadow-md">
-                                <Award className="w-5 h-5 text-white" />
+                              <div className="w-8 h-8 bg-syndikate-metal-light brutal-border flex items-center justify-center">
+                                <Award className="w-5 h-5 text-syndikate-orange" />
                               </div>
                             )}
                             {position > 3 && (
-                              <div className="w-8 h-8 bg-gradient-to-br from-white/10 to-white/5 rounded-lg flex items-center justify-center border border-white/20">
-                                <span className="text-white/70 font-medium text-sm">
+                              <div className="w-8 h-8 brutal-metal brutal-border flex items-center justify-center">
+                                <span className="text-muted-foreground font-bold text-sm">
                                   {position}
                                 </span>
                               </div>
@@ -277,17 +274,17 @@ export function TopPlayers() {
 
                           {/* Player info */}
                           <div>
-                            <h4 className="text-lg font-light text-white mb-1 tracking-wide group-hover:text-amber-100 transition-colors duration-300">
+                            <h4 className="text-lg font-bold text-foreground mb-1 tracking-wider uppercase group-hover:text-syndikate-orange transition-colors duration-300">
                               {player.name}
                             </h4>
-                            <div className="flex items-center gap-4 text-xs text-white/60">
+                            <div className="flex items-center gap-4 text-xs text-muted-foreground font-mono uppercase">
                               <span className="flex items-center gap-1">
                                 <TrendingUp className="w-3 h-3" />
-                                {player.games_played} игр
+                                {player.games_played} ИГР
                               </span>
                               <span className="flex items-center gap-1">
                                 <Trophy className="w-3 h-3" />
-                                {getWinRate(player.wins, player.games_played)}% побед
+                                {getWinRate(player.wins, player.games_played)}% ПОБЕД
                               </span>
                             </div>
                           </div>
@@ -295,10 +292,10 @@ export function TopPlayers() {
 
                         {/* ELO Rating */}
                         <div className="text-right">
-                          <div className={`text-2xl font-light mb-1 transition-colors duration-300 ${isTopThree ? 'text-amber-400' : 'text-white'}`}>
+                          <div className="text-2xl font-bold mb-1 text-syndikate-orange transition-colors duration-300">
                             <AnimatedCounter end={player.elo_rating} duration={1800} />
                           </div>
-                          <div className="text-xs text-white/60 uppercase tracking-wide">RPS</div>
+                          <div className="text-xs text-muted-foreground uppercase tracking-wide font-mono">RPS</div>
                         </div>
                       </div>
                     </div>
@@ -312,156 +309,86 @@ export function TopPlayers() {
               <div className="flex flex-col items-center gap-4">
                 <Button 
                   onClick={() => setShowAll(!showAll)} 
-                  className="group bg-white/5 border-2 border-amber-400/30 text-amber-400 hover:bg-amber-400/10 hover:border-amber-400/50 backdrop-blur-xl transition-all duration-300 shadow-lg hover:shadow-amber-400/20"
+                  className="group bg-syndikate-orange hover:bg-syndikate-orange-glow text-background font-bold uppercase tracking-wider shadow-neon-orange transition-all duration-300"
                 >
-                  <span>{showAll ? 'Скрыть полный рейтинг' : 'Посмотреть полный рейтинг'}</span>
+                  <span>{showAll ? 'СКРЫТЬ РЕЙТИНГ' : 'ПОЛНЫЙ РЕЙТИНГ'}</span>
                   <ChevronRight className={`w-4 h-4 ml-2 transition-transform ${showAll ? 'rotate-90' : 'group-hover:translate-x-1'}`} />
                 </Button>
 
                 {showAll && (
                   <div className="flex flex-col sm:flex-row gap-3 w-full max-w-md">
                     <div className="relative flex-1">
-                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/60 w-4 h-4" />
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
                       <Input 
-                        placeholder="Поиск игрока..." 
+                        placeholder="ПОИСК ИГРОКА..." 
                         value={searchTerm} 
                         onChange={e => setSearchTerm(e.target.value)} 
-                        className="pl-10 bg-white/10 border-white/20 text-white placeholder:text-white/50" 
+                        className="pl-10 brutal-metal brutal-border text-foreground placeholder:text-muted-foreground uppercase tracking-wider font-mono" 
                       />
                     </div>
                     <Button 
                       onClick={() => setShowFirstPlaceOnly(!showFirstPlaceOnly)} 
-                      className={`flex items-center gap-2 transition-all duration-300 ${
+                      className={`flex items-center gap-2 transition-all duration-300 uppercase tracking-wider font-bold ${
                         showFirstPlaceOnly 
-                          ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-white border-2 border-transparent hover:from-amber-600 hover:to-amber-700' 
-                          : 'bg-white/5 border-2 border-amber-400/30 text-amber-400 hover:bg-amber-400/10 hover:border-amber-400/50'
+                          ? 'bg-syndikate-orange text-background hover:bg-syndikate-orange-glow shadow-neon-orange' 
+                          : 'brutal-metal brutal-border text-foreground hover:bg-syndikate-metal-light'
                       }`}
                     >
                       <Filter className="w-4 h-4" />
-                      <span className="hidden sm:inline">Только победители</span>
-                      <span className="sm:hidden">Фильтр</span>
+                      {showFirstPlaceOnly ? 'ВСЕ' : 'ПОБЕДИТЕЛИ'}
                     </Button>
                   </div>
                 )}
               </div>
             </div>
 
-            {/* Full Rating List */}
+            {/* Full Rating Table */}
             {showAll && (
-              <div className="mb-16">
-                <ScrollArea className="h-96 w-full rounded-2xl border border-white/10 bg-gradient-to-br from-slate-800/90 via-slate-900/95 to-black/90 backdrop-blur-xl">
-                  <div className="p-4 space-y-2">
-                    {filteredPlayers.map((player, index) => {
-                      const position = allPlayers.findIndex(p => p.id === player.id) + 1;
-                      const isTopThree = position <= 3;
-                      return (
-                        <div key={player.id} className="group">
-                          <div className="bg-gradient-to-br from-white/5 via-white/10 to-white/5 rounded-xl p-4 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all duration-300 relative overflow-hidden">
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-3">
-                                {/* Position */}
-                                <div className="flex items-center justify-center w-8 h-8">
-                                  {position === 1 && (
-                                    <div className="w-6 h-6 bg-gradient-to-br from-amber-500 to-amber-600 rounded-md flex items-center justify-center">
-                                      <Crown className="w-4 h-4 text-white" />
-                                    </div>
-                                  )}
-                                  {position === 2 && (
-                                    <div className="w-6 h-6 bg-gradient-to-br from-gray-300 to-gray-500 rounded-md flex items-center justify-center">
-                                      <Medal className="w-4 h-4 text-white" />
-                                    </div>
-                                  )}
-                                  {position === 3 && (
-                                    <div className="w-6 h-6 bg-gradient-to-br from-amber-400 to-amber-600 rounded-md flex items-center justify-center">
-                                      <Award className="w-4 h-4 text-white" />
-                                    </div>
-                                  )}
-                                  {position > 3 && (
-                                    <div className="w-6 h-6 bg-white/10 rounded-md flex items-center justify-center border border-white/20">
-                                      <span className="text-white/70 font-medium text-xs">
-                                        {position}
-                                      </span>
-                                    </div>
-                                  )}
-                                </div>
-
-                                {/* Player avatar */}
-                                <PlayerAvatar player={player} size="w-8 h-8" isChampion={position === 1} />
-
-                                {/* Player info */}
-                                <div>
-                                  <h4 className="text-sm font-medium text-white">
-                                    {player.name}
-                                  </h4>
-                                  <div className="flex items-center gap-3 text-xs text-white/60">
-                                    <span>{player.games_played} игр</span>
-                                    <span>{getWinRate(player.wins, player.games_played)}% побед</span>
-                                  </div>
-                                </div>
-                              </div>
-
-                              {/* ELO Rating */}
-                              <div className="text-right">
-                                <div className={`text-lg font-light ${isTopThree ? 'text-amber-400' : 'text-white'}`}>
-                                  <AnimatedCounter end={player.elo_rating} duration={1600} />
-                                </div>
-                                <div className="text-xs text-white/60 uppercase tracking-wide">RPS</div>
-                              </div>
+              <div className="brutal-metal brutal-border p-6">
+                <ScrollArea className="h-[500px]">
+                  <div className="space-y-3">
+                    {filteredPlayers.map((player, index) => (
+                      <div key={player.id} className="flex items-center justify-between p-4 brutal-metal brutal-border hover:shadow-neon-orange transition-all duration-300">
+                        <div className="flex items-center gap-4">
+                          <div className="w-8 h-8 brutal-metal brutal-border flex items-center justify-center">
+                            <span className="text-muted-foreground font-bold text-sm">{index + 1}</span>
+                          </div>
+                          <PlayerAvatar player={player} size="w-10 h-10" />
+                          <div>
+                            <h5 className="font-bold text-foreground uppercase tracking-wider">{player.name}</h5>
+                            <div className="text-xs text-muted-foreground font-mono uppercase">
+                              {player.games_played} ИГР • {getWinRate(player.wins, player.games_played)}% ПОБЕД
                             </div>
                           </div>
                         </div>
-                      );
-                    })}
+                        <div className="text-right">
+                          <div className="text-xl font-bold text-syndikate-orange">
+                            {player.elo_rating}
+                          </div>
+                          <div className="text-xs text-muted-foreground uppercase font-mono">RPS</div>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </ScrollArea>
               </div>
             )}
-          </div>
-        )}
 
-        {/* CTA Section */}
-        <div className="text-center mt-16">
-          <div className="bg-gradient-to-r from-white/8 via-white/12 to-white/8 rounded-2xl p-8 border border-white/10 backdrop-blur-sm max-w-2xl mx-auto">
-            <h3 className="text-xl font-light text-white mb-4 tracking-wide">Присоединяйтесь к элите</h3>
-            <p className="text-white/70 mb-6 font-light">Начните свой путь к вершине рейтинга RPS</p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            {/* Link to Rating Page */}
+            <div className="text-center mt-8">
               <Link to="/rating">
-                <Button className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-medium px-8 py-3 transition-all duration-300">
-                  <TrendingUp className="h-4 w-4 mr-2" />
-                  Полный рейтинг
-                </Button>
-              </Link>
-              <Link to="/tournaments">
                 <Button 
-                  className="bg-white/5 border-2 border-amber-400/30 text-amber-400 hover:bg-amber-400/10 hover:border-amber-400/50 backdrop-blur-xl px-8 py-3 font-medium transition-all duration-300 shadow-lg hover:shadow-amber-400/20"
+                  size="lg" 
+                  className="bg-syndikate-orange hover:bg-syndikate-orange-glow text-background font-bold uppercase tracking-wider shadow-neon-orange px-8 group"
                 >
-                  <Users className="h-4 w-4 mr-2" />
-                  Участвовать
+                  ПОЛНАЯ СТАТИСТИКА
+                  <ChevronRight className="h-5 w-5 ml-2 group-hover:translate-x-1 transition-transform" />
                 </Button>
               </Link>
             </div>
           </div>
-        </div>
+        )}
       </div>
-
-      <style>{`
-        .animate-bounce-subtle {
-          animation: bounce-subtle 3s ease-in-out infinite;
-        }
-        @keyframes bounce-subtle {
-          0%, 100% { transform: translateY(0px) rotate(var(--tw-rotate)); }
-          50% { transform: translateY(-10px) rotate(var(--tw-rotate)); }
-        }
-      `}</style>
-      <style>{`
-        .animate-bounce-subtle {
-          animation: bounce-subtle 3s ease-in-out infinite;
-        }
-        @keyframes bounce-subtle {
-          0%, 100% { transform: translateY(0px) rotate(var(--tw-rotate)); }
-          50% { transform: translateY(-10px) rotate(var(--tw-rotate)); }
-        }
-      `}</style>
     </section>
   );
 }
