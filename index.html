@@ -2,7 +2,11 @@
 <html lang="ru">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="theme-color" content="#000000" />
     <title>Syndikate Poker Club - Власть за столом | Москва</title>
     <meta name="description" content="Syndikate Poker Club - брутальный покерный клуб для элиты. Турниры для тех, кто не боится рисковать. Рейтинговая система RPS." />
     <meta name="keywords" content="syndikate покер, покер клуб москва, брутальный покер, турниры покер, рейтинг RPS, элитный покер клуб" />
@@ -25,6 +29,24 @@
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="Syndikate Poker Club - Власть за столом | Москва" />
     <meta name="twitter:description" content="Syndikate Poker Club - брутальный покерный клуб для элиты. Турниры для тех, кто не боится рисковать." />
+    
+    <style>
+      /* Prevent iOS bounce and ensure fullscreen */
+      html, body, #root {
+        position: fixed;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        margin: 0;
+        padding: 0;
+        -webkit-overflow-scrolling: touch;
+      }
+      
+      /* Support for iOS safe areas */
+      body {
+        padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+      }
+    </style>
   </head>
 
   <body>
