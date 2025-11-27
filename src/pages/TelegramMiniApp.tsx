@@ -4,6 +4,28 @@ import { init, miniApp, viewport, themeParams } from '@telegram-apps/sdk-react';
 
 export default function TelegramMiniApp() {
   useEffect(() => {
+    // Save original body and root styles before modification
+    const originalBodyStyles = {
+      margin: document.body.style.margin,
+      padding: document.body.style.padding,
+      width: document.body.style.width,
+      height: document.body.style.height,
+      position: document.body.style.position,
+      overflow: document.body.style.overflow,
+      overscrollBehavior: document.body.style.overscrollBehavior,
+      overscrollBehaviorY: document.body.style.overscrollBehaviorY,
+      touchAction: document.body.style.touchAction,
+      webkitUserSelect: (document.body.style as any).webkitUserSelect,
+    };
+
+    const rootElement = document.getElementById('root');
+    const originalRootStyles = rootElement ? {
+      width: rootElement.style.width,
+      height: rootElement.style.height,
+      position: rootElement.style.position,
+      overflow: rootElement.style.overflow,
+    } : null;
+
     // Initialize Telegram SDK
     try {
       init();
@@ -82,8 +104,7 @@ export default function TelegramMiniApp() {
     // Set dark theme by default
     document.documentElement.classList.add('dark');
     
-    // Prevent scrolling on the root element
-    const rootElement = document.getElementById('root');
+    // Prevent scrolling on the root element (using saved rootElement reference)
     if (rootElement) {
       rootElement.style.width = '100%';
       rootElement.style.height = '100vh';
@@ -104,17 +125,17 @@ export default function TelegramMiniApp() {
     return () => {
       window.removeEventListener('resize', handleResize);
 
-      // Restore body styles for normal scrolling outside Telegram Mini App
-      document.body.style.margin = '';
-      document.body.style.padding = '';
-      document.body.style.width = '';
-      document.body.style.height = '';
-      document.body.style.position = '';
-      document.body.style.overflow = '';
-      document.body.style.overscrollBehavior = '';
-      document.body.style.overscrollBehaviorY = '';
-      document.body.style.touchAction = '';
-      (document.body.style as any).webkitUserSelect = '';
+      // Restore original body styles
+      document.body.style.margin = originalBodyStyles.margin;
+      document.body.style.padding = originalBodyStyles.padding;
+      document.body.style.width = originalBodyStyles.width;
+      document.body.style.height = originalBodyStyles.height;
+      document.body.style.position = originalBodyStyles.position;
+      document.body.style.overflow = originalBodyStyles.overflow;
+      document.body.style.overscrollBehavior = originalBodyStyles.overscrollBehavior;
+      document.body.style.overscrollBehaviorY = originalBodyStyles.overscrollBehaviorY;
+      document.body.style.touchAction = originalBodyStyles.touchAction;
+      (document.body.style as any).webkitUserSelect = originalBodyStyles.webkitUserSelect;
 
       // Remove safe-area and viewport custom CSS variables
       const root = document.documentElement;
@@ -124,13 +145,12 @@ export default function TelegramMiniApp() {
       root.style.removeProperty('--sal');
       root.style.removeProperty('--vh');
 
-      // Restore root element layout so main site can scroll normally
-      const rootElement = document.getElementById('root');
-      if (rootElement) {
-        rootElement.style.width = '';
-        rootElement.style.height = '';
-        rootElement.style.position = '';
-        rootElement.style.overflow = '';
+      // Restore original root element styles
+      if (rootElement && originalRootStyles) {
+        rootElement.style.width = originalRootStyles.width;
+        rootElement.style.height = originalRootStyles.height;
+        rootElement.style.position = originalRootStyles.position;
+        rootElement.style.overflow = originalRootStyles.overflow;
       }
 
       // Remove forced dark theme when leaving Telegram Mini App
