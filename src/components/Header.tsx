@@ -52,11 +52,30 @@ export function Header() {
               <div className="absolute -bottom-1 -left-1 w-3 h-3 border-l-2 border-b-2 border-syndikate-red opacity-0 group-hover:opacity-100 transition-opacity" />
               <div className="absolute -bottom-1 -right-1 w-3 h-3 border-r-2 border-b-2 border-syndikate-red opacity-0 group-hover:opacity-100 transition-opacity" />
             </div>
-            <div>
-              <span className="font-display text-2xl uppercase tracking-wider text-foreground">
-                Syndikate
-              </span>
-              <div className="h-[1px] w-0 group-hover:w-full bg-syndikate-orange transition-all duration-300" />
+            <div className="relative">
+              <svg width="140" height="50" viewBox="0 0 140 50" className="overflow-visible">
+                <defs>
+                  <path id="arc" d="M 10,40 Q 70,10 130,40" fill="transparent" />
+                  <filter id="glow">
+                    <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+                    <feMerge>
+                      <feMergeNode in="coloredBlur"/>
+                      <feMergeNode in="SourceGraphic"/>
+                    </feMerge>
+                  </filter>
+                </defs>
+                <text className="font-display uppercase tracking-[0.15em]" fill="none" stroke="currentColor" strokeWidth="1.5" fontSize="16" letterSpacing="3">
+                  <textPath href="#arc" startOffset="50%" textAnchor="middle" className="text-foreground group-hover:text-syndikate-orange transition-colors duration-300">
+                    SYNDIKATE
+                  </textPath>
+                </text>
+                <text className="font-display uppercase tracking-[0.15em] opacity-30" fill="currentColor" fontSize="16" letterSpacing="3" filter="url(#glow)">
+                  <textPath href="#arc" startOffset="50%" textAnchor="middle" className="text-syndikate-orange group-hover:opacity-100 transition-opacity duration-300">
+                    SYNDIKATE
+                  </textPath>
+                </text>
+              </svg>
+              <div className="absolute bottom-0 left-0 right-0 h-[1px] w-0 group-hover:w-full bg-syndikate-orange transition-all duration-300 mx-auto" />
             </div>
           </Link>
 
