@@ -168,15 +168,15 @@ export function Hero() {
             <div className="relative aspect-square">
               {/* Main Industrial Frame */}
               <div className="absolute inset-0 brutal-border bg-syndikate-metal/30 backdrop-blur-sm transform rotate-6">
-                <div className="absolute inset-4 border-2 border-syndikate-orange/30" />
+                <div className="absolute inset-6 border-2 border-syndikate-orange/30" />
               </div>
               
               {/* Center Content */}
               <div className="absolute inset-0 flex items-center justify-center">
-                <div className="text-center space-y-6 p-8">
-                  {/* Large Icon/Symbol */}
+                <div className="text-center space-y-8 p-12">
+                  {/* Large Icon/Symbol - Увеличено в 2 раза */}
                   <div className="relative">
-                    <div className="w-32 h-32 mx-auto border-4 border-syndikate-orange bg-syndikate-metal brutal-border flex items-center justify-center p-4 overflow-hidden">
+                    <div className="w-64 h-64 mx-auto border-4 border-syndikate-orange bg-syndikate-metal brutal-border flex items-center justify-center p-6 overflow-hidden">
                       <div className="relative w-full h-full">
                         <img 
                           src={syndikateLogo} 
@@ -211,22 +211,22 @@ export function Hero() {
                         )}
                       </div>
                     </div>
-                    {/* Corner Decorations */}
-                    <div className="absolute -top-2 -left-2 w-8 h-8 border-l-2 border-t-2 border-syndikate-red" />
-                    <div className="absolute -top-2 -right-2 w-8 h-8 border-r-2 border-t-2 border-syndikate-red" />
-                    <div className="absolute -bottom-2 -left-2 w-8 h-8 border-l-2 border-b-2 border-syndikate-red" />
-                    <div className="absolute -bottom-2 -right-2 w-8 h-8 border-r-2 border-b-2 border-syndikate-red" />
+                    {/* Corner Decorations - Увеличены */}
+                    <div className="absolute -top-3 -left-3 w-12 h-12 border-l-2 border-t-2 border-syndikate-red" />
+                    <div className="absolute -top-3 -right-3 w-12 h-12 border-r-2 border-t-2 border-syndikate-red" />
+                    <div className="absolute -bottom-3 -left-3 w-12 h-12 border-l-2 border-b-2 border-syndikate-red" />
+                    <div className="absolute -bottom-3 -right-3 w-12 h-12 border-r-2 border-b-2 border-syndikate-red" />
                   </div>
 
-                  {/* Industrial Labels */}
-                  <div className="space-y-2">
-                    <div className="inline-block px-4 py-2 bg-background brutal-border">
-                      <span className="font-display text-2xl uppercase tracking-widest text-syndikate-orange">
+                  {/* Industrial Labels - Увеличен шрифт */}
+                  <div className="space-y-3">
+                    <div className="inline-block px-6 py-3 bg-background brutal-border">
+                      <span className="font-display text-3xl uppercase tracking-widest text-syndikate-orange">
                         Только сильные
                       </span>
                     </div>
-                    <div className="inline-block px-4 py-2 bg-background brutal-border">
-                      <span className="font-display text-xl uppercase tracking-widest text-foreground">
+                    <div className="inline-block px-6 py-3 bg-background brutal-border">
+                      <span className="font-display text-2xl uppercase tracking-widest text-foreground">
                         Выживают
                       </span>
                     </div>
@@ -234,11 +234,11 @@ export function Hero() {
                 </div>
               </div>
 
-              {/* Corner Accents */}
-              <div className="absolute top-0 left-0 w-16 h-16 border-l-4 border-t-4 border-syndikate-orange" />
-              <div className="absolute top-0 right-0 w-16 h-16 border-r-4 border-t-4 border-syndikate-orange" />
-              <div className="absolute bottom-0 left-0 w-16 h-16 border-l-4 border-b-4 border-syndikate-orange" />
-              <div className="absolute bottom-0 right-0 w-16 h-16 border-r-4 border-b-4 border-syndikate-orange" />
+              {/* Corner Accents - Увеличены */}
+              <div className="absolute top-0 left-0 w-20 h-20 border-l-4 border-t-4 border-syndikate-orange" />
+              <div className="absolute top-0 right-0 w-20 h-20 border-r-4 border-t-4 border-syndikate-orange" />
+              <div className="absolute bottom-0 left-0 w-20 h-20 border-l-4 border-b-4 border-syndikate-orange" />
+              <div className="absolute bottom-0 right-0 w-20 h-20 border-r-4 border-b-4 border-syndikate-orange" />
             </div>
           </div>
         </div>
