@@ -103,6 +103,38 @@ export default function TelegramMiniApp() {
     
     return () => {
       window.removeEventListener('resize', handleResize);
+
+      // Restore body styles for normal scrolling outside Telegram Mini App
+      document.body.style.margin = '';
+      document.body.style.padding = '';
+      document.body.style.width = '';
+      document.body.style.height = '';
+      document.body.style.position = '';
+      document.body.style.overflow = '';
+      document.body.style.overscrollBehavior = '';
+      document.body.style.overscrollBehaviorY = '';
+      document.body.style.touchAction = '';
+      (document.body.style as any).webkitUserSelect = '';
+
+      // Remove safe-area and viewport custom CSS variables
+      const root = document.documentElement;
+      root.style.removeProperty('--sat');
+      root.style.removeProperty('--sar');
+      root.style.removeProperty('--sab');
+      root.style.removeProperty('--sal');
+      root.style.removeProperty('--vh');
+
+      // Restore root element layout so main site can scroll normally
+      const rootElement = document.getElementById('root');
+      if (rootElement) {
+        rootElement.style.width = '';
+        rootElement.style.height = '';
+        rootElement.style.position = '';
+        rootElement.style.overflow = '';
+      }
+
+      // Remove forced dark theme when leaving Telegram Mini App
+      document.documentElement.classList.remove('dark');
     };
   }, []);
 
