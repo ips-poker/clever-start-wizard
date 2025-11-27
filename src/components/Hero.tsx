@@ -7,10 +7,28 @@ import { GlitchText } from "@/components/ui/glitch-text";
 import { useCMSContent } from "@/hooks/useCMSContent";
 import { Trophy, Users, TrendingUp, ArrowRight } from "lucide-react";
 import syndikateLogo from "@/assets/syndikate-logo-main.png";
-import { motion } from "framer-motion";
+import { useState, useEffect } from "react";
 
 export function Hero() {
   const { getContent, loading } = useCMSContent('home');
+  const [isLogoGlitching, setIsLogoGlitching] = useState(false);
+
+  useEffect(() => {
+    const triggerGlitch = () => {
+      setIsLogoGlitching(true);
+      setTimeout(() => {
+        setIsLogoGlitching(false);
+      }, 300);
+    };
+
+    const initialTimeout = setTimeout(triggerGlitch, 1000);
+    const glitchInterval = setInterval(triggerGlitch, 3000);
+
+    return () => {
+      clearTimeout(initialTimeout);
+      clearInterval(glitchInterval);
+    };
+  }, []);
 
   if (loading) {
     return <HeroSkeleton />;
@@ -159,28 +177,39 @@ export function Hero() {
                   {/* Large Icon/Symbol */}
                   <div className="relative">
                     <div className="w-32 h-32 mx-auto border-4 border-syndikate-orange bg-syndikate-metal brutal-border flex items-center justify-center p-4 overflow-hidden">
-                      <motion.img 
-                        src={syndikateLogo} 
-                        alt="Syndikate Logo" 
-                        className="w-full h-full object-contain neon-orange"
-                        animate={{
-                          x: [0, -2, 2, -1, 1, 0],
-                          y: [0, 1, -1, 2, -2, 0],
-                          filter: [
-                            "hue-rotate(0deg) brightness(1)",
-                            "hue-rotate(5deg) brightness(1.2)",
-                            "hue-rotate(-5deg) brightness(0.9)",
-                            "hue-rotate(0deg) brightness(1.1)",
-                            "hue-rotate(0deg) brightness(1)"
-                          ]
-                        }}
-                        transition={{
-                          duration: 3,
-                          repeat: Infinity,
-                          repeatType: "reverse",
-                          ease: "easeInOut"
-                        }}
-                      />
+                      <div className="relative w-full h-full">
+                        <img 
+                          src={syndikateLogo} 
+                          alt="Syndikate Logo" 
+                          className="relative z-10 w-full h-full object-contain neon-orange"
+                        />
+                        {isLogoGlitching && (
+                          <>
+                            <img 
+                              src={syndikateLogo} 
+                              alt="" 
+                              className="absolute inset-0 w-full h-full object-contain opacity-70 animate-glitch-1"
+                              style={{
+                                clipPath: 'polygon(0 0, 100% 0, 100% 45%, 0 45%)',
+                                transform: 'translate(-2px, 0)',
+                                filter: 'hue-rotate(-30deg) saturate(2)'
+                              }}
+                              aria-hidden="true"
+                            />
+                            <img 
+                              src={syndikateLogo} 
+                              alt="" 
+                              className="absolute inset-0 w-full h-full object-contain opacity-70 animate-glitch-2"
+                              style={{
+                                clipPath: 'polygon(0 55%, 100% 55%, 100% 100%, 0 100%)',
+                                transform: 'translate(2px, 0)',
+                                filter: 'hue-rotate(180deg) saturate(2)'
+                              }}
+                              aria-hidden="true"
+                            />
+                          </>
+                        )}
+                      </div>
                     </div>
                     {/* Corner Decorations */}
                     <div className="absolute -top-2 -left-2 w-8 h-8 border-l-2 border-t-2 border-syndikate-red" />
