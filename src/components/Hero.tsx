@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { HeroSkeleton } from "@/components/ui/hero-skeleton";
 import { AnimatedCounter } from "@/components/ui/animated-counter";
+import { TypewriterText } from "@/components/ui/typewriter-text";
 import { useCMSContent } from "@/hooks/useCMSContent";
 import { Trophy, Users, TrendingUp, ArrowRight } from "lucide-react";
 
@@ -59,23 +60,32 @@ export function Hero() {
             {/* Main Title */}
             <div className="space-y-4">
               <h1 className="font-display text-6xl md:text-7xl lg:text-8xl uppercase leading-none tracking-tight">
-                <span className="block text-foreground">SYNDIKATE</span>
-                <span className="block neon-orange animate-neon-pulse mt-2">POKER CLUB</span>
+                <span className="block text-foreground">
+                  <TypewriterText text="SYNDIKATE" speed={100} delay={300} />
+                </span>
+                <span className="block neon-orange animate-neon-pulse mt-2">
+                  <TypewriterText text="POKER CLUB" speed={100} delay={1200} />
+                </span>
               </h1>
               
               {/* Slogan */}
               <div className="flex items-center gap-4">
                 <div className="h-[2px] w-16 bg-gradient-neon" />
                 <p className="font-display text-2xl md:text-3xl uppercase tracking-wider text-syndikate-orange">
-                  Власть за столом
+                  <TypewriterText text="Власть за столом" speed={80} delay={2500} />
                 </p>
               </div>
             </div>
 
             {/* Description */}
             <p className="text-lg text-muted-foreground max-w-xl leading-relaxed">
-              {getContent('hero_description', 
-                "Здесь решаются судьбы. Турниры для тех, кто не боится рисковать и готов доказать своё превосходство. Присоединяйся к элите.")}
+              <TypewriterText 
+                text={getContent('hero_description', 
+                  "Здесь решаются судьбы. Турниры для тех, кто не боится рисковать и готов доказать своё превосходство. Присоединяйся к элите.")}
+                speed={30}
+                delay={3500}
+                cursor={false}
+              />
             </p>
 
             {/* CTA Buttons */}
