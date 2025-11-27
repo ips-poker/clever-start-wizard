@@ -6,6 +6,7 @@ import { TypewriterText } from "@/components/ui/typewriter-text";
 import { GlitchText } from "@/components/ui/glitch-text";
 import { useCMSContent } from "@/hooks/useCMSContent";
 import { Trophy, Users, TrendingUp, ArrowRight } from "lucide-react";
+import syndikateLogo from "@/assets/syndikate-logo-main.png";
 
 export function Hero() {
   const { getContent, loading } = useCMSContent('home');
@@ -156,8 +157,8 @@ export function Hero() {
                 <div className="text-center space-y-6 p-8">
                   {/* Large Icon/Symbol */}
                   <div className="relative">
-                    <div className="w-32 h-32 mx-auto border-4 border-syndikate-orange bg-syndikate-metal brutal-border flex items-center justify-center">
-                      <span className="font-display text-6xl neon-orange">S</span>
+                    <div className="w-32 h-32 mx-auto border-4 border-syndikate-orange bg-syndikate-metal brutal-border flex items-center justify-center p-4">
+                      <img src={syndikateLogo} alt="Syndikate Logo" className="w-full h-full object-contain neon-orange" />
                     </div>
                     {/* Corner Decorations */}
                     <div className="absolute -top-2 -left-2 w-8 h-8 border-l-2 border-t-2 border-syndikate-red" />

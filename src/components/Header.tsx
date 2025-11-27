@@ -9,7 +9,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Menu, X, User, LogOut, Settings, Crown } from "lucide-react";
-import syndikateLogo from "@/assets/syndikate-logo.png";
+import syndikateLogo from "@/assets/syndikate-logo-main.png";
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
