@@ -24,12 +24,12 @@ export function Gallery() {
   const [gridSize, setGridSize] = useState(3);
 
   const categories = [
-    { value: "all", label: "Все фото" },
-    { value: "tournament", label: "Турниры" },
+    { value: "all", label: "ВСЕ ФОТО" },
+    { value: "tournament", label: "ТУРНИРЫ" },
     { value: "vip", label: "VIP" },
-    { value: "lounge", label: "Лаунж" },
-    { value: "events", label: "События" },
-    { value: "general", label: "Общие" }
+    { value: "lounge", label: "ЛАУНЖ" },
+    { value: "events", label: "СОБЫТИЯ" },
+    { value: "general", label: "ОБЩИЕ" }
   ];
 
   useEffect(() => {
@@ -126,7 +126,6 @@ export function Gallery() {
       }
     } catch (error) {
       console.error('Error fetching gallery images:', error);
-      // Use fallback images on error
       setImages([]);
     } finally {
       setLoading(false);
@@ -139,10 +138,11 @@ export function Gallery() {
 
   if (loading) {
     return (
-      <section className="py-20 bg-background">
-        <div className="container mx-auto px-4">
+      <section className="py-20 bg-background relative overflow-hidden">
+        <div className="absolute inset-0 industrial-texture opacity-50" />
+        <div className="container mx-auto px-4 relative z-10">
           <div className="text-center">
-            <div className="animate-pulse">Загрузка галереи...</div>
+            <div className="text-foreground uppercase tracking-wider font-mono">ЗАГРУЗКА ГАЛЕРЕИ...</div>
           </div>
         </div>
       </section>
@@ -150,65 +150,39 @@ export function Gallery() {
   }
 
   return (
-    <section className="py-20 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 relative overflow-hidden">
-      {/* Elegant Poker Chips Background */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-10">
-        <div className="absolute top-[15%] left-[18%] w-20 h-20 rounded-full animate-pulse-slow">
-          <div className="absolute inset-0 rounded-full bg-gradient-to-br from-blue-400 via-blue-500 to-blue-600 shadow-2xl opacity-40"></div>
-          <div className="absolute inset-2 rounded-full bg-gradient-to-br from-slate-900 to-slate-800 border-2 border-blue-400/30 flex items-center justify-center">
-            <span className="text-blue-400/50 font-bold text-xs">1K</span>
-          </div>
-          <div className="absolute inset-4 rounded-full border-2 border-dashed border-blue-400/20"></div>
-        </div>
-        
-        <div className="absolute top-[32%] right-[20%] w-16 h-16 rounded-full animate-bounce-subtle">
-          <div className="absolute inset-0 rounded-full bg-gradient-to-br from-green-400 via-green-500 to-green-600 shadow-xl opacity-35"></div>
-          <div className="absolute inset-1.5 rounded-full bg-gradient-to-br from-slate-900 to-slate-800 border-2 border-green-400/30 flex items-center justify-center">
-            <span className="text-green-400/50 font-bold text-xs">50</span>
-          </div>
-        </div>
-        
-        <div className="absolute bottom-[25%] left-[25%] w-18 h-18 rounded-full animate-pulse-slow">
-          <div className="absolute inset-0 rounded-full bg-gradient-to-br from-amber-400 via-amber-500 to-amber-600 shadow-xl opacity-30"></div>
-          <div className="absolute inset-1.5 rounded-full bg-gradient-to-br from-slate-900 to-slate-800 border border-amber-400/30 flex items-center justify-center">
-            <span className="text-amber-400/50 font-bold text-xs">100</span>
-          </div>
-        </div>
-      </div>
+    <section className="py-20 bg-background relative overflow-hidden">
+      {/* Industrial Background */}
+      <div className="absolute inset-0 industrial-texture opacity-50" />
       
-      {/* Elegant Poker Suits */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-10">
-        <div className="absolute top-[20%] right-[30%] animate-pulse-slow">
-          <div className="text-blue-400/40 text-5xl filter drop-shadow-[0_0_15px_rgba(96,165,250,0.3)]">♦</div>
-        </div>
-        <div className="absolute top-[48%] left-[15%] animate-bounce-subtle">
-          <div className="text-green-400/35 text-4xl filter drop-shadow-[0_0_12px_rgba(74,222,128,0.3)]">♣</div>
-        </div>
-        <div className="absolute bottom-[15%] right-[22%] animate-pulse-slow">
-          <div className="text-amber-400/45 text-6xl filter drop-shadow-[0_0_20px_rgba(251,191,36,0.4)]">♠</div>
-        </div>
-      </div>
-      
-      {/* Gradient light spots */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-0 right-1/3 w-96 h-96 bg-purple-500/5 rounded-full blur-3xl"></div>
-        <div className="absolute bottom-0 left-1/3 w-96 h-96 bg-amber-500/5 rounded-full blur-3xl"></div>
-      </div>
+      {/* Metal Grid Pattern */}
+      <div 
+        className="absolute inset-0 opacity-10"
+        style={{
+          backgroundImage: `
+            repeating-linear-gradient(0deg, transparent, transparent 50px, rgba(255, 255, 255, 0.05) 50px, rgba(255, 255, 255, 0.05) 51px),
+            repeating-linear-gradient(90deg, transparent, transparent 50px, rgba(255, 255, 255, 0.05) 50px, rgba(255, 255, 255, 0.05) 51px)
+          `
+        }}
+      />
+
+      {/* Neon Glow Spots */}
+      <div className="absolute top-0 right-1/3 w-96 h-96 bg-syndikate-orange/10 rounded-full blur-3xl animate-pulse" />
+      <div className="absolute bottom-0 left-1/3 w-96 h-96 bg-syndikate-red/10 rounded-full blur-3xl animate-pulse" />
 
       <div className="container mx-auto px-4 relative z-10">
         {/* Header */}
         <div className="text-center mb-12">
           <div className="flex items-center gap-3 justify-center mb-6">
-            <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl flex items-center justify-center shadow-lg">
-              <Star className="h-5 w-5 text-white" />
+            <div className="w-12 h-12 bg-syndikate-orange brutal-border flex items-center justify-center shadow-neon-orange">
+              <Star className="h-6 w-6 text-background" />
             </div>
-            <h2 className="text-3xl lg:text-4xl font-light text-white tracking-wide">
+            <h2 className="text-4xl lg:text-5xl font-bold text-foreground tracking-wider uppercase">
               ГАЛЕРЕЯ КЛУБА
             </h2>
           </div>
-          <div className="h-0.5 w-20 bg-gradient-to-r from-amber-400 to-amber-600 mx-auto mb-6"></div>
-          <p className="text-lg text-white/70 max-w-2xl mx-auto font-light">
-            Познакомьтесь с атмосферой премиального покерного клуба
+          <div className="h-[2px] w-20 bg-syndikate-orange mx-auto mb-6"></div>
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto font-mono uppercase tracking-wider">
+            ОКУНИСЬ В АТМОСФЕРУ ПРЕМИАЛЬНОГО КЛУБА
           </p>
         </div>
 
@@ -222,7 +196,11 @@ export function Gallery() {
                 variant={selectedCategory === category.value ? "default" : "outline"}
                 size="sm"
                 onClick={() => setSelectedCategory(category.value)}
-                className={`touch-target text-xs lg:text-sm px-3 lg:px-4 ${selectedCategory === category.value ? "bg-poker-accent text-white" : ""}`}
+                className={`touch-target text-xs lg:text-sm px-3 lg:px-4 font-bold tracking-wider uppercase ${
+                  selectedCategory === category.value 
+                    ? "bg-syndikate-orange text-background hover:bg-syndikate-orange-glow shadow-neon-orange" 
+                    : "brutal-metal brutal-border text-foreground hover:bg-syndikate-metal-light"
+                }`}
               >
                 {category.label}
               </Button>
@@ -235,19 +213,27 @@ export function Gallery() {
               variant={gridSize === 2 ? "default" : "outline"}
               size="sm"
               onClick={() => setGridSize(2)}
-              className="touch-target"
+              className={`touch-target font-bold uppercase tracking-wider ${
+                gridSize === 2 
+                  ? "bg-syndikate-orange text-background hover:bg-syndikate-orange-glow" 
+                  : "brutal-metal brutal-border text-foreground"
+              }`}
             >
               <Grid2X2 className="w-4 h-4" />
-              <span className="ml-2 hidden sm:inline">2 колонки</span>
+              <span className="ml-2 hidden sm:inline">2 КОЛОНКИ</span>
             </Button>
             <Button
               variant={gridSize === 3 ? "default" : "outline"}
               size="sm"
               onClick={() => setGridSize(3)}
-              className="touch-target"
+              className={`touch-target font-bold uppercase tracking-wider ${
+                gridSize === 3 
+                  ? "bg-syndikate-orange text-background hover:bg-syndikate-orange-glow" 
+                  : "brutal-metal brutal-border text-foreground"
+              }`}
             >
               <Grid3X3 className="w-4 h-4" />
-              <span className="ml-2 hidden sm:inline">3 колонки</span>
+              <span className="ml-2 hidden sm:inline">3 КОЛОНКИ</span>
             </Button>
           </div>
         </div>
@@ -256,12 +242,17 @@ export function Gallery() {
         <div className={`grid gap-4 lg:gap-6 ${gridSize === 2 ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'}`}>
           {filteredImages.length === 0 ? (
             <div className="col-span-full text-center py-12">
-              <p className="text-white/60">Нет изображений для отображения</p>
+              <p className="text-muted-foreground uppercase tracking-wider font-mono">НЕТ ИЗОБРАЖЕНИЙ ДЛЯ ОТОБРАЖЕНИЯ</p>
             </div>
           ) : (
             filteredImages.map((image) => (
-            <div key={image.id} className="group cursor-pointer overflow-hidden rounded-2xl bg-gradient-to-br from-slate-800/90 via-slate-900/95 to-black/90 border border-white/10 backdrop-blur-xl hover:scale-[1.02] transition-all duration-500 hover:shadow-xl hover:shadow-amber-500/20 relative">
-              <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 via-transparent to-amber-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+            <div key={image.id} className="group cursor-pointer overflow-hidden brutal-metal brutal-border hover:shadow-neon-orange transition-all duration-500 relative">
+              {/* Corner Brackets */}
+              <div className="absolute top-0 left-0 w-8 h-8 border-l-2 border-t-2 border-syndikate-orange z-10" />
+              <div className="absolute top-0 right-0 w-8 h-8 border-r-2 border-t-2 border-syndikate-orange z-10" />
+              <div className="absolute bottom-0 left-0 w-8 h-8 border-l-2 border-b-2 border-syndikate-orange z-10" />
+              <div className="absolute bottom-0 right-0 w-8 h-8 border-r-2 border-b-2 border-syndikate-orange z-10" />
+
               <div className="relative">
                 <img
                   src={image.image_url}
@@ -272,25 +263,25 @@ export function Gallery() {
                 
                 {/* Featured Badge */}
                 {image.is_featured && (
-                  <div className="absolute top-3 left-3">
-                    <div className="px-3 py-1 bg-gradient-to-r from-amber-500 to-amber-600 rounded-lg shadow-lg flex items-center gap-1.5">
-                      <Star className="w-3 h-3 text-white" />
-                      <span className="text-white text-xs font-medium">Избранное</span>
+                  <div className="absolute top-3 left-3 z-10">
+                    <div className="px-3 py-1 bg-syndikate-orange brutal-border flex items-center gap-1.5 shadow-neon-orange">
+                      <Star className="w-3 h-3 text-background" />
+                      <span className="text-background text-xs font-bold uppercase tracking-wider">ИЗБРАННОЕ</span>
                     </div>
                   </div>
                 )}
 
                 {/* Zoom Icon */}
-                <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                  <div className="w-9 h-9 bg-gradient-to-br from-white/20 to-white/10 backdrop-blur-md rounded-lg flex items-center justify-center border border-white/20">
-                    <ZoomIn className="w-4 h-4 text-white" />
+                <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10">
+                  <div className="w-9 h-9 brutal-metal brutal-border flex items-center justify-center shadow-neon-orange">
+                    <ZoomIn className="w-4 h-4 text-syndikate-orange" />
                   </div>
                 </div>
 
                 {/* Image Info Overlay */}
-                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/60 to-transparent p-4 translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
-                  <h3 className="text-white font-medium text-base mb-1">{image.title}</h3>
-                  <p className="text-white/70 text-sm line-clamp-2">{image.description}</p>
+                <div className="absolute bottom-0 left-0 right-0 bg-syndikate-metal/95 p-4 translate-y-2 group-hover:translate-y-0 transition-transform duration-300 brutal-border-top">
+                  <h3 className="text-foreground font-bold text-base mb-1 uppercase tracking-wider">{image.title}</h3>
+                  <p className="text-muted-foreground text-sm line-clamp-2 uppercase tracking-wide">{image.description}</p>
                 </div>
               </div>
             </div>
@@ -299,55 +290,36 @@ export function Gallery() {
 
         {/* Lightbox Modal */}
         {selectedImage && (
-          <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4" onClick={() => setSelectedImage(null)}>
-            <div className="relative max-w-7xl max-h-full">
-              <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
-                <div className="relative max-w-5xl max-h-[90vh] w-full">
-                  {/* Close Button */}
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    className="absolute top-4 right-4 z-10"
-                    onClick={() => setSelectedImage(null)}
-                  >
-                    <X className="w-4 h-4" />
-                  </Button>
-                  
-                  {/* Large Image */}
-                  <img
-                    src={selectedImage.image_url}
-                    alt={selectedImage.alt_text || selectedImage.title}
-                    className="w-full h-full object-contain rounded-lg"
-                  />
-                  
-                  {/* Image Info */}
-                  <div className="absolute bottom-0 left-0 right-0 bg-black/80 text-white p-6 rounded-b-lg">
-                    <h3 className="text-2xl font-bold mb-2">{selectedImage.title}</h3>
-                    <p className="text-white/80">{selectedImage.description}</p>
-                  </div>
+          <div className="fixed inset-0 bg-background/95 z-50 flex items-center justify-center p-4" onClick={() => setSelectedImage(null)}>
+            <div className="relative max-w-5xl max-h-[90vh] w-full">
+              {/* Close Button */}
+              <Button
+                variant="secondary"
+                size="sm"
+                className="absolute top-4 right-4 z-10 bg-syndikate-orange text-background hover:bg-syndikate-orange-glow font-bold uppercase tracking-wider"
+                onClick={() => setSelectedImage(null)}
+              >
+                <X className="w-4 h-4" />
+              </Button>
+              
+              {/* Large Image */}
+              <div className="brutal-metal brutal-border overflow-hidden">
+                <img
+                  src={selectedImage.image_url}
+                  alt={selectedImage.alt_text || selectedImage.title}
+                  className="w-full h-full object-contain"
+                />
+                
+                {/* Image Info */}
+                <div className="bg-syndikate-metal p-6 brutal-border-top">
+                  <h3 className="text-2xl font-bold mb-2 text-foreground uppercase tracking-wider">{selectedImage.title}</h3>
+                  <p className="text-muted-foreground uppercase tracking-wide">{selectedImage.description}</p>
                 </div>
               </div>
             </div>
           </div>
         )}
       </div>
-      
-      <style>{`
-        .animate-bounce-subtle {
-          animation: bounce-subtle 4s ease-in-out infinite;
-        }
-        .animate-pulse-slow {
-          animation: pulse-slow 8s ease-in-out infinite;
-        }
-        @keyframes bounce-subtle {
-          0%, 100% { transform: translateY(0px) rotate(var(--tw-rotate)); }
-          50% { transform: translateY(-12px) rotate(var(--tw-rotate)); }
-        }
-        @keyframes pulse-slow {
-          0%, 100% { opacity: 0.5; transform: scale(1); }
-          50% { opacity: 1; transform: scale(1.05); }
-        }
-      `}</style>
     </section>
   );
 }
