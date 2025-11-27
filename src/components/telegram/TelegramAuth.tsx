@@ -250,7 +250,11 @@ export const TelegramAuth: React.FC<TelegramAuthProps> = ({ onAuthComplete }) =>
           </div>
           
           <CardTitle className="font-display text-3xl uppercase tracking-wider neon-orange mb-2">
-            <GlitchText text="SYNDIKATE" glitchIntensity="low" />
+            <GlitchText 
+              text="SYNDIKATE" 
+              glitchIntensity="high" 
+              glitchInterval={4500}
+            />
           </CardTitle>
           <div className="flex items-center justify-center gap-2 mb-4">
             <div className="h-[2px] w-8 bg-gradient-neon" />
