@@ -1,6 +1,7 @@
 import React from 'react';
 import { Crown } from 'lucide-react';
 import { PlayerLevelBadge } from './PlayerLevelBadge';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 
 interface Player {
   id: string;
@@ -31,9 +32,12 @@ export const RatingPodium: React.FC<RatingPodiumProps> = ({ topPlayers, onPlayer
             <span className="text-xl font-display text-background">2</span>
           </div>
           <div className="bg-syndikate-metal/90 brutal-border p-4 pt-10 text-center space-y-2 hover:shadow-neon-orange transition-all">
-            <div className="w-16 h-16 mx-auto bg-syndikate-concrete/20 brutal-border flex items-center justify-center text-2xl">
-              {topPlayers[1].name.charAt(0)}
-            </div>
+            <Avatar className="w-16 h-16 mx-auto brutal-border">
+              <AvatarImage src={topPlayers[1].avatar_url} alt={topPlayers[1].name} />
+              <AvatarFallback className="bg-syndikate-concrete/20 text-2xl font-display">
+                {topPlayers[1].name.charAt(0)}
+              </AvatarFallback>
+            </Avatar>
             <div className="text-sm font-display truncate">{topPlayers[1].name}</div>
             <PlayerLevelBadge rating={topPlayers[1].elo_rating} size="sm" />
             <div className="text-lg font-display text-syndikate-orange">{topPlayers[1].elo_rating}</div>
@@ -51,9 +55,12 @@ export const RatingPodium: React.FC<RatingPodiumProps> = ({ topPlayers, onPlayer
             <Crown className="h-8 w-8 text-background" />
           </div>
           <div className="bg-syndikate-metal/90 brutal-border p-4 pt-12 text-center space-y-2 shadow-neon-orange">
-            <div className="w-20 h-20 mx-auto bg-syndikate-orange/20 brutal-border flex items-center justify-center text-3xl">
-              {topPlayers[0].name.charAt(0)}
-            </div>
+            <Avatar className="w-20 h-20 mx-auto brutal-border">
+              <AvatarImage src={topPlayers[0].avatar_url} alt={topPlayers[0].name} />
+              <AvatarFallback className="bg-syndikate-orange/20 text-3xl font-display text-syndikate-orange">
+                {topPlayers[0].name.charAt(0)}
+              </AvatarFallback>
+            </Avatar>
             <div className="text-base font-display truncate">{topPlayers[0].name}</div>
             <PlayerLevelBadge rating={topPlayers[0].elo_rating} size="md" />
             <div className="text-2xl font-display text-syndikate-orange">{topPlayers[0].elo_rating}</div>
@@ -75,9 +82,12 @@ export const RatingPodium: React.FC<RatingPodiumProps> = ({ topPlayers, onPlayer
             <span className="text-xl font-display text-background">3</span>
           </div>
           <div className="bg-syndikate-metal/90 brutal-border p-4 pt-10 text-center space-y-2 hover:shadow-neon-orange transition-all">
-            <div className="w-16 h-16 mx-auto bg-syndikate-concrete/20 brutal-border flex items-center justify-center text-2xl">
-              {topPlayers[2].name.charAt(0)}
-            </div>
+            <Avatar className="w-16 h-16 mx-auto brutal-border">
+              <AvatarImage src={topPlayers[2].avatar_url} alt={topPlayers[2].name} />
+              <AvatarFallback className="bg-syndikate-concrete/20 text-2xl font-display">
+                {topPlayers[2].name.charAt(0)}
+              </AvatarFallback>
+            </Avatar>
             <div className="text-sm font-display truncate">{topPlayers[2].name}</div>
             <PlayerLevelBadge rating={topPlayers[2].elo_rating} size="sm" />
             <div className="text-lg font-display text-syndikate-orange">{topPlayers[2].elo_rating}</div>

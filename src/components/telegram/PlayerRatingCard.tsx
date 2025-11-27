@@ -1,5 +1,6 @@
 import React from 'react';
 import { PlayerLevelBadge } from './PlayerLevelBadge';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 
 interface Player {
   id: string;
@@ -46,12 +47,13 @@ export const PlayerRatingCard: React.FC<PlayerRatingCardProps> = ({ player, rank
             </span>
           </div>
 
-          {/* Player avatar/initial */}
-          <div className="w-12 h-12 bg-syndikate-orange/20 brutal-border flex items-center justify-center group-hover:scale-110 transition-transform">
-            <span className="text-xl font-display text-syndikate-orange">
+          {/* Player avatar */}
+          <Avatar className="w-12 h-12 brutal-border group-hover:scale-110 transition-transform">
+            <AvatarImage src={player.avatar_url} alt={player.name} />
+            <AvatarFallback className="bg-syndikate-orange/20 text-syndikate-orange text-xl font-display">
               {player.name.charAt(0)}
-            </span>
-          </div>
+            </AvatarFallback>
+          </Avatar>
 
           {/* Player info */}
           <div className="flex-1 min-w-0">
