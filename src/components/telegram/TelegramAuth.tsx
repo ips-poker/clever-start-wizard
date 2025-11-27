@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { PrivacyConsent } from '@/components/PrivacyConsent';
 import { User, LogIn, Loader2 } from 'lucide-react';
+import syndikateLogo from '@/assets/syndikate-logo-main.png';
+import { GlitchText } from '@/components/ui/glitch-text';
 
 interface TelegramUser {
   id: number;
@@ -170,12 +172,16 @@ export const TelegramAuth: React.FC<TelegramAuthProps> = ({ onAuthComplete }) =>
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 flex items-center justify-center">
-        <Card className="bg-slate-900/50 border-slate-700 p-6 max-w-sm mx-4">
+      <div className="min-h-screen bg-background industrial-texture flex items-center justify-center relative overflow-hidden">
+        <div className="absolute inset-0 opacity-20">
+          <div className="absolute top-10 left-10 w-[300px] h-[300px] bg-syndikate-orange/20 rounded-full blur-[80px] animate-pulse" />
+          <div className="absolute bottom-10 right-10 w-[250px] h-[250px] bg-syndikate-red/15 rounded-full blur-[70px] animate-pulse" style={{ animationDelay: '1s' }} />
+        </div>
+        <Card className="bg-syndikate-metal/90 brutal-border max-w-sm mx-4 backdrop-blur-xl relative z-10">
           <CardContent className="text-center p-6">
-            <div className="animate-spin w-10 h-10 border-2 border-amber-600 border-t-transparent rounded-full mx-auto mb-4"></div>
-            <CardTitle className="text-white text-lg mb-2">Авторизация</CardTitle>
-            <p className="text-slate-400">Подключение к Telegram...</p>
+            <div className="animate-spin w-10 h-10 border-2 border-syndikate-orange border-t-transparent rounded-full mx-auto mb-4"></div>
+            <CardTitle className="text-foreground font-display text-2xl uppercase tracking-wider mb-2">Авторизация</CardTitle>
+            <p className="text-muted-foreground">Подключение к Telegram...</p>
           </CardContent>
         </Card>
       </div>
@@ -184,17 +190,21 @@ export const TelegramAuth: React.FC<TelegramAuthProps> = ({ onAuthComplete }) =>
 
   if (authError) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 flex items-center justify-center">
-        <Card className="bg-slate-900/50 border-slate-700 p-6 max-w-sm mx-4">
+      <div className="min-h-screen bg-background industrial-texture flex items-center justify-center relative overflow-hidden">
+        <div className="absolute inset-0 opacity-20">
+          <div className="absolute top-10 left-10 w-[300px] h-[300px] bg-syndikate-orange/20 rounded-full blur-[80px] animate-pulse" />
+          <div className="absolute bottom-10 right-10 w-[250px] h-[250px] bg-syndikate-red/15 rounded-full blur-[70px] animate-pulse" style={{ animationDelay: '1s' }} />
+        </div>
+        <Card className="bg-syndikate-metal/90 brutal-border max-w-sm mx-4 backdrop-blur-xl relative z-10">
           <CardContent className="text-center p-6">
-            <div className="w-12 h-12 bg-red-600/20 rounded-full flex items-center justify-center mx-auto mb-4">
-              <LogIn className="w-6 h-6 text-red-400" />
+            <div className="w-12 h-12 bg-syndikate-red/20 brutal-border flex items-center justify-center mx-auto mb-4">
+              <LogIn className="w-6 h-6 text-syndikate-red" />
             </div>
-            <CardTitle className="text-white text-lg mb-2">Ошибка авторизации</CardTitle>
-            <p className="text-slate-400 mb-4">{authError}</p>
+            <CardTitle className="text-foreground font-display text-2xl uppercase tracking-wider mb-2">Ошибка</CardTitle>
+            <p className="text-muted-foreground mb-4">{authError}</p>
             <Button 
               onClick={retryAuth}
-              className="w-full bg-amber-600 hover:bg-amber-700 text-white"
+              className="w-full bg-syndikate-orange hover:bg-syndikate-orange-glow text-background font-bold uppercase tracking-wider shadow-neon-orange"
             >
               Попробовать снова
             </Button>
@@ -205,30 +215,70 @@ export const TelegramAuth: React.FC<TelegramAuthProps> = ({ onAuthComplete }) =>
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 flex items-center justify-center">
-      <Card className="bg-slate-900/50 border-slate-700 max-w-sm mx-4">
+    <div className="min-h-screen bg-background industrial-texture flex items-center justify-center relative overflow-hidden">
+      {/* Industrial Background */}
+      <div className="absolute inset-0 opacity-20">
+        <div className="absolute top-10 left-10 w-[300px] h-[300px] bg-syndikate-orange/20 rounded-full blur-[80px] animate-pulse" />
+        <div className="absolute bottom-10 right-10 w-[250px] h-[250px] bg-syndikate-red/15 rounded-full blur-[70px] animate-pulse" style={{ animationDelay: '1s' }} />
+      </div>
+      
+      {/* Metal Grid Pattern */}
+      <div 
+        className="absolute inset-0 opacity-10"
+        style={{
+          backgroundImage: `
+            repeating-linear-gradient(0deg, transparent, transparent 50px, rgba(255, 255, 255, 0.05) 50px, rgba(255, 255, 255, 0.05) 51px),
+            repeating-linear-gradient(90deg, transparent, transparent 50px, rgba(255, 255, 255, 0.05) 50px, rgba(255, 255, 255, 0.05) 51px)
+          `
+        }}
+      />
+
+      <Card className="bg-syndikate-metal/90 brutal-border max-w-sm mx-4 backdrop-blur-xl relative z-10">
         <CardHeader className="text-center pb-3">
-          <div className="w-20 h-20 bg-amber-600/20 rounded-full flex items-center justify-center mx-auto mb-4 border-2 border-amber-600/30">
+          {/* Syndikate Logo */}
+          <div className="w-32 h-32 mx-auto mb-4 border-4 border-syndikate-orange bg-syndikate-metal brutal-border flex items-center justify-center p-4 relative group">
+            <img 
+              src={syndikateLogo} 
+              alt="Syndikate Logo" 
+              className="w-full h-full object-contain neon-orange"
+            />
+            {/* Corner Decorations */}
+            <div className="absolute -top-2 -left-2 w-6 h-6 border-l-2 border-t-2 border-syndikate-red" />
+            <div className="absolute -top-2 -right-2 w-6 h-6 border-r-2 border-t-2 border-syndikate-red" />
+            <div className="absolute -bottom-2 -left-2 w-6 h-6 border-l-2 border-b-2 border-syndikate-red" />
+            <div className="absolute -bottom-2 -right-2 w-6 h-6 border-r-2 border-b-2 border-syndikate-red" />
+          </div>
+          
+          <CardTitle className="font-display text-3xl uppercase tracking-wider neon-orange mb-2">
+            <GlitchText text="SYNDIKATE" glitchIntensity="low" />
+          </CardTitle>
+          <div className="flex items-center justify-center gap-2 mb-4">
+            <div className="h-[2px] w-8 bg-gradient-neon" />
+            <p className="font-display text-lg uppercase tracking-wider text-syndikate-orange">
+              Власть за столом
+            </p>
+            <div className="h-[2px] w-8 bg-gradient-neon" />
+          </div>
+          
+          {/* User Avatar */}
+          <div className="w-20 h-20 brutal-border flex items-center justify-center mx-auto mb-4 bg-syndikate-concrete/50">
             {telegramUser?.photoUrl ? (
               <img 
                 src={telegramUser.photoUrl} 
                 alt="Avatar" 
-                className="w-20 h-20 rounded-full object-cover"
+                className="w-full h-full object-cover"
               />
             ) : (
-              <User className="w-10 h-10 text-amber-400" />
+              <User className="w-10 h-10 text-syndikate-orange" />
             )}
           </div>
-          <CardTitle className="text-white text-xl">
-            Добро пожаловать в EPC Event Poker Club!
-          </CardTitle>
         </CardHeader>
         <CardContent className="text-center">
-          <p className="text-slate-300 mb-2 font-medium">
+          <p className="text-foreground mb-2 font-bold uppercase tracking-wider">
             {telegramUser?.firstName} {telegramUser?.lastName}
           </p>
           {telegramUser?.username && (
-            <p className="text-slate-400 mb-4 text-sm">@{telegramUser.username}</p>
+            <p className="text-muted-foreground mb-4 text-sm">@{telegramUser.username}</p>
           )}
           
           <PrivacyConsent
@@ -241,7 +291,7 @@ export const TelegramAuth: React.FC<TelegramAuthProps> = ({ onAuthComplete }) =>
           <Button 
             onClick={handleLogin}
             disabled={registering || !privacyConsent}
-            className="w-full bg-amber-600 hover:bg-amber-700 text-white border-0"
+            className="w-full bg-syndikate-orange hover:bg-syndikate-orange-glow text-background font-bold uppercase tracking-wider shadow-neon-orange hover:shadow-neon-orange transition-all"
           >
             {registering ? (
               <>
