@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -25,37 +25,15 @@ import Privacy from "./pages/Privacy";
 const queryClient = new QueryClient();
 
 function App() {
-  const [isLoading, setIsLoading] = useState(true);
-  const [showContent, setShowContent] = useState(false);
-
-  useEffect(() => {
-    // Check if loading screen was already shown in this session
-    const hasShownLoading = sessionStorage.getItem('syndikate_loading_shown');
-    
-    if (hasShownLoading) {
-      setIsLoading(false);
-      setShowContent(true);
-    }
-  }, []);
-
-  const handleLoadingComplete = () => {
-    sessionStorage.setItem('syndikate_loading_shown', 'true');
-    setIsLoading(false);
-    setTimeout(() => setShowContent(true), 100);
-  };
-
   return (
     <QueryClientProvider client={queryClient}>
-      {isLoading && <BrutalLoadingScreen onLoadingComplete={handleLoadingComplete} />}
-      {showContent && (
-        <>
-          <div className="notranslate" translate="no">
-            <Toaster />
-            <Sonner />
-          </div>
-          <BrowserRouter>
-            <div className="pb-16 md:pb-0">
-              <Routes>
+      <div className="notranslate" translate="no">
+        <Toaster />
+        <Sonner />
+      </div>
+      <BrowserRouter>
+        <div className="pb-16 md:pb-0">
+          <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/director" element={<TournamentDirector />} />
             <Route path="/admin" element={<Admin />} />
@@ -72,14 +50,11 @@ function App() {
             <Route path="/telegram-mini-app" element={<TelegramMiniApp />} />
             <Route path="/terms" element={<TermsOfService />} />
             <Route path="/privacy" element={<Privacy />} />
-            
             <Route path="*" element={<NotFound />} />
           </Routes>
           <MobileBottomNav />
         </div>
       </BrowserRouter>
-        </>
-      )}
     </QueryClientProvider>
   );
 }
