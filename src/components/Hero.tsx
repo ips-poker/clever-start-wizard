@@ -244,7 +244,7 @@ export function Hero() {
         </div>
 
         {/* Bottom Warning Strip */}
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 w-full max-w-4xl">
+        <div className="w-full max-w-4xl mx-auto mt-12">
           <div className="bg-syndikate-red/10 border-l-4 border-syndikate-red px-6 py-3 backdrop-blur-sm">
             <p className="text-sm uppercase tracking-wider text-center text-foreground">
               <span className="text-syndikate-red font-bold">Внимание:</span> Организационный взнос 1000₽ • 
