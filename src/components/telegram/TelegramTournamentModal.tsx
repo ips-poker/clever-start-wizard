@@ -160,11 +160,12 @@ export function TelegramTournamentModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto bg-syndikate-metal/98 brutal-border backdrop-blur-2xl text-foreground">
         {/* Industrial Background */}
-        <div className="absolute inset-0 opacity-10 overflow-hidden pointer-events-none">
-          <div className="absolute top-4 right-6 text-3xl text-syndikate-orange transform rotate-12 animate-pulse">♠</div>
-          <div className="absolute top-16 left-4 text-2xl text-syndikate-orange transform -rotate-12">♥</div>
-          <div className="absolute bottom-12 right-8 text-4xl text-syndikate-orange transform rotate-45 animate-pulse">♦</div>
-          <div className="absolute bottom-4 left-6 text-3xl text-syndikate-orange transform -rotate-30">♣</div>
+        <div className="absolute inset-0 opacity-5 overflow-hidden pointer-events-none">
+          <div className="absolute top-4 right-6 text-4xl text-syndikate-orange font-bold transform rotate-12 animate-pulse">♠</div>
+          <div className="absolute top-16 left-4 text-3xl text-syndikate-red font-bold transform -rotate-12">♥</div>
+          <div className="absolute bottom-12 right-8 text-5xl text-syndikate-orange font-bold transform rotate-45 animate-pulse">♦</div>
+          <div className="absolute bottom-4 left-6 text-4xl text-syndikate-rust font-bold transform -rotate-30">♣</div>
+          <div className="absolute inset-0 metal-grid-pattern opacity-30"></div>
         </div>
 
         <DialogHeader className="relative z-10 pb-4">
@@ -189,34 +190,34 @@ export function TelegramTournamentModal({
           <div className="space-y-3">
             {/* Дата, время и участники в одной строке */}
             <div className="grid grid-cols-2 gap-3">
-              <div className="bg-gradient-to-br from-white/5 via-white/10 to-white/5 rounded-lg p-3 border border-white/10 backdrop-blur-sm">
+              <div className="bg-syndikate-concrete/50 brutal-border p-3 backdrop-blur-sm">
                 <div className="flex items-center gap-2 mb-2">
-                  <div className="w-6 h-6 bg-gradient-to-br from-blue-500 to-blue-600 rounded-md flex items-center justify-center">
-                    <Calendar className="h-3 w-3 text-white" />
+                  <div className="w-6 h-6 bg-syndikate-orange brutal-border flex items-center justify-center">
+                    <Calendar className="h-3 w-3 text-background" />
                   </div>
-                  <h3 className="text-sm font-medium text-white">Дата и время</h3>
+                  <h3 className="text-xs font-display font-bold text-foreground uppercase">Дата и время</h3>
                 </div>
                 <div className="space-y-1">
-                  <p className="text-sm font-light text-white">{dateTime.date}</p>
-                  <p className="text-sm text-amber-400 font-medium">{dateTime.time}</p>
+                  <p className="text-sm font-medium text-foreground">{dateTime.date}</p>
+                  <p className="text-sm text-syndikate-orange font-bold">{dateTime.time}</p>
                 </div>
               </div>
 
-              <div className="bg-gradient-to-br from-white/5 via-white/10 to-white/5 rounded-lg p-3 border border-white/10 backdrop-blur-sm">
+              <div className="bg-syndikate-concrete/50 brutal-border p-3 backdrop-blur-sm">
                 <div className="flex items-center gap-2 mb-2">
-                  <div className="w-6 h-6 bg-gradient-to-br from-purple-500 to-purple-600 rounded-md flex items-center justify-center">
-                    <Users className="h-3 w-3 text-white" />
+                  <div className="w-6 h-6 bg-syndikate-orange brutal-border flex items-center justify-center">
+                    <Users className="h-3 w-3 text-background" />
                   </div>
-                  <h3 className="text-sm font-medium text-white">Участники</h3>
+                  <h3 className="text-xs font-display font-bold text-foreground uppercase">Участники</h3>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-lg font-light text-white">{currentPlayers}</span>
-                  <span className="text-white/40">/</span>
-                  <span className="text-lg font-light text-white/80">{tournament.max_players}</span>
+                  <span className="text-lg font-bold text-syndikate-orange">{currentPlayers}</span>
+                  <span className="text-syndikate-rust font-bold">/</span>
+                  <span className="text-lg font-bold text-foreground/80">{tournament.max_players}</span>
                 </div>
-                <div className="mt-2 bg-white/10 rounded-full h-1 overflow-hidden">
+                <div className="mt-2 bg-syndikate-rust/30 brutal-border h-1 overflow-hidden">
                   <div 
-                    className="h-full bg-gradient-to-r from-amber-400 to-amber-600 transition-all duration-500"
+                    className="h-full bg-gradient-neon transition-all duration-500"
                     style={{ width: `${Math.min((currentPlayers / tournament.max_players) * 100, 100)}%` }}
                   ></div>
                 </div>
@@ -225,50 +226,50 @@ export function TelegramTournamentModal({
 
             {/* Стоимость и призовой фонд */}
             <div className="grid grid-cols-2 gap-3">
-              <div className="bg-gradient-to-br from-white/5 via-white/10 to-white/5 rounded-lg p-3 border border-white/10 backdrop-blur-sm">
+              <div className="bg-syndikate-concrete/50 brutal-border p-3 backdrop-blur-sm">
                 <div className="flex items-center gap-2 mb-2">
-                  <div className="w-6 h-6 bg-gradient-to-br from-green-500 to-green-600 rounded-md flex items-center justify-center">
-                    <Coins className="h-3 w-3 text-white" />
+                  <div className="w-6 h-6 bg-syndikate-orange brutal-border flex items-center justify-center">
+                    <Coins className="h-3 w-3 text-background" />
                   </div>
-                  <h3 className="text-sm font-medium text-white">Орг. взнос</h3>
+                  <h3 className="text-xs font-display font-bold text-foreground uppercase">Орг. взнос</h3>
                 </div>
-                <p className="text-lg font-semibold text-white">{formatCurrency(tournament.participation_fee)}</p>
+                <p className="text-lg font-bold text-syndikate-orange">{formatCurrency(tournament.participation_fee)}</p>
                 {tournament.reentry_fee && tournament.reentry_fee > 0 && (
-                  <p className="text-xs text-white/60 mt-1">Повторный вход: {formatCurrency(tournament.reentry_fee)}</p>
+                  <p className="text-xs text-foreground/60 mt-1 font-medium">Повторный вход: {formatCurrency(tournament.reentry_fee)}</p>
                 )}
               </div>
 
-              <div className="bg-gradient-to-br from-amber-500/10 via-amber-600/15 to-amber-500/10 rounded-lg p-3 border border-amber-500/20 backdrop-blur-sm">
+              <div className="bg-syndikate-orange/10 brutal-border p-3 backdrop-blur-sm border-syndikate-orange/30">
                 <div className="flex items-center gap-2 mb-2">
-                  <div className="w-6 h-6 bg-gradient-to-br from-amber-500 to-amber-600 rounded-md flex items-center justify-center">
-                    <Crown className="h-3 w-3 text-white" />
+                  <div className="w-6 h-6 bg-syndikate-orange brutal-border flex items-center justify-center">
+                    <Crown className="h-3 w-3 text-background" />
                   </div>
-                  <h3 className="text-sm font-medium text-white">Фонд RPS баллов</h3>
+                  <h3 className="text-xs font-display font-bold text-foreground uppercase">Фонд RPS</h3>
                 </div>
-                <p className="text-lg font-semibold text-amber-400">{formatRPSPoints(totalRPSPool)}</p>
+                <p className="text-lg font-bold text-syndikate-orange">{formatRPSPoints(totalRPSPool)}</p>
               </div>
             </div>
 
             {/* Стартовый стек и формат */}
             <div className="grid grid-cols-2 gap-3">
-              <div className="bg-gradient-to-br from-white/5 via-white/10 to-white/5 rounded-lg p-3 border border-white/10 backdrop-blur-sm">
+              <div className="bg-syndikate-concrete/50 brutal-border p-3 backdrop-blur-sm">
                 <div className="flex items-center gap-2 mb-2">
-                  <div className="w-6 h-6 bg-gradient-to-br from-red-500 to-red-600 rounded-md flex items-center justify-center">
+                  <div className="w-6 h-6 bg-syndikate-red brutal-border flex items-center justify-center">
                     <Target className="h-3 w-3 text-white" />
                   </div>
-                  <h3 className="text-sm font-medium text-white">Стартовый стек</h3>
+                  <h3 className="text-xs font-display font-bold text-foreground uppercase">Стартовый стек</h3>
                 </div>
-                <p className="text-sm font-light text-white">{tournament.starting_chips?.toLocaleString() || 'N/A'} фишек</p>
+                <p className="text-sm font-bold text-foreground">{tournament.starting_chips?.toLocaleString() || 'N/A'} фишек</p>
               </div>
 
-              <div className="bg-gradient-to-br from-white/5 via-white/10 to-white/5 rounded-lg p-3 border border-white/10 backdrop-blur-sm">
+              <div className="bg-syndikate-concrete/50 brutal-border p-3 backdrop-blur-sm">
                 <div className="flex items-center gap-2 mb-2">
-                  <div className="w-6 h-6 bg-gradient-to-br from-amber-500 to-amber-600 rounded-md flex items-center justify-center">
-                    <Trophy className="h-3 w-3 text-white" />
+                  <div className="w-6 h-6 bg-syndikate-orange brutal-border flex items-center justify-center">
+                    <Trophy className="h-3 w-3 text-background" />
                   </div>
-                  <h3 className="text-sm font-medium text-white">Формат</h3>
+                  <h3 className="text-xs font-display font-bold text-foreground uppercase">Формат</h3>
                 </div>
-                <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30 px-2 py-0.5 text-xs font-medium">
+                <Badge className="bg-syndikate-orange/20 text-syndikate-orange brutal-border px-2 py-0.5 text-xs font-bold uppercase">
                   {tournament.tournament_format?.toUpperCase() || 'FREEZEOUT'}
                 </Badge>
               </div>
@@ -277,28 +278,28 @@ export function TelegramTournamentModal({
 
           {/* Структура блайндов */}
           {blindStructure.length > 0 && (
-            <div className="bg-gradient-to-br from-white/5 via-white/10 to-white/5 rounded-lg p-3 border border-white/10 backdrop-blur-sm">
+            <div className="bg-syndikate-metal/50 brutal-border p-3 backdrop-blur-sm">
               <div className="flex items-center gap-2 mb-3">
-                <div className="w-6 h-6 bg-gradient-to-br from-purple-500 to-purple-600 rounded-md flex items-center justify-center">
-                  <Timer className="h-3 w-3 text-white" />
+                <div className="w-6 h-6 bg-syndikate-orange rounded-none flex items-center justify-center brutal-border">
+                  <Timer className="h-3 w-3 text-background" />
                 </div>
-                <h3 className="text-sm font-medium text-white">Структура блайндов</h3>
+                <h3 className="text-sm font-display font-bold text-foreground uppercase tracking-wider">Структура блайндов</h3>
               </div>
               
               <div className="grid grid-cols-2 gap-2 max-h-32 overflow-y-auto custom-scrollbar">
                 {blindStructure.slice(0, 8).map((level, index) => (
                   <div 
                     key={level.level} 
-                    className={`p-2 rounded-md border transition-all duration-300 ${
+                    className={`p-2 brutal-border transition-all duration-300 ${
                       level.is_break 
-                        ? 'bg-gradient-to-br from-orange-500/10 to-orange-600/10 border-orange-500/30' 
-                        : 'bg-gradient-to-br from-white/5 to-white/10 border-white/10'
+                        ? 'bg-syndikate-orange/20 border-syndikate-orange/50' 
+                        : 'bg-syndikate-concrete/30 border-syndikate-rust/30'
                     }`}
                   >
                     <div className="flex items-center gap-1 mb-1">
-                      <span className="text-xs font-medium text-white/60">Ур. {level.level}</span>
+                      <span className="text-xs font-bold text-foreground/80 uppercase">Ур. {level.level}</span>
                       {level.ante > 0 && (
-                        <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30 text-xs px-1 py-0">
+                        <Badge className="bg-syndikate-orange/30 text-syndikate-orange brutal-border text-xs px-1 py-0">
                           A
                         </Badge>
                       )}
@@ -306,22 +307,22 @@ export function TelegramTournamentModal({
                     
                     {level.is_break ? (
                       <div className="text-center">
-                        <p className="text-orange-400 font-medium text-xs">ПЕРЕРЫВ</p>
-                        <p className="text-xs text-white/60">{level.duration / 60}м</p>
+                        <p className="text-syndikate-orange font-bold text-xs uppercase">ПЕРЕРЫВ</p>
+                        <p className="text-xs text-foreground/60 font-medium">{level.duration / 60}м</p>
                       </div>
                     ) : (
                       <div>
                         <div className="flex justify-between items-center mb-0.5">
-                          <span className="text-white text-xs">{level.small_blind}</span>
-                          <span className="text-white/40 text-xs">/</span>
-                          <span className="text-white text-xs">{level.big_blind}</span>
+                          <span className="text-foreground text-xs font-bold">{level.small_blind}</span>
+                          <span className="text-syndikate-orange text-xs font-bold">/</span>
+                          <span className="text-foreground text-xs font-bold">{level.big_blind}</span>
                         </div>
                         {level.ante > 0 && (
                           <div className="text-center">
-                            <span className="text-xs text-blue-400">A:{level.ante}</span>
+                            <span className="text-xs text-syndikate-orange font-bold">A:{level.ante}</span>
                           </div>
                         )}
-                        <div className="text-xs text-white/60 text-center">
+                        <div className="text-xs text-foreground/60 text-center font-medium">
                           {level.duration / 60}м
                         </div>
                       </div>
@@ -332,7 +333,7 @@ export function TelegramTournamentModal({
               
               {blindStructure.length > 8 && (
                 <div className="text-center mt-2">
-                  <p className="text-white/60 text-xs">+{blindStructure.length - 8} уровней</p>
+                  <p className="text-syndikate-orange text-xs font-bold uppercase">+{blindStructure.length - 8} уровней</p>
                 </div>
               )}
             </div>
