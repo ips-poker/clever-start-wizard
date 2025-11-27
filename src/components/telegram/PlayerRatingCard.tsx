@@ -1,4 +1,5 @@
 import React from 'react';
+import { PlayerLevelBadge } from './PlayerLevelBadge';
 
 interface Player {
   id: string;
@@ -68,6 +69,9 @@ export const PlayerRatingCard: React.FC<PlayerRatingCardProps> = ({ player, rank
                   ))}
                 </div>
               )}
+            </div>
+            <div className="flex items-center gap-2 mb-1">
+              <PlayerLevelBadge rating={player.elo_rating} size="sm" />
             </div>
             <div className="text-xs text-syndikate-concrete flex items-center gap-2">
               <span>{player.games_played} games</span>

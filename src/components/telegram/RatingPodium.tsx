@@ -1,5 +1,6 @@
 import React from 'react';
 import { Crown } from 'lucide-react';
+import { PlayerLevelBadge } from './PlayerLevelBadge';
 
 interface Player {
   id: string;
@@ -34,6 +35,7 @@ export const RatingPodium: React.FC<RatingPodiumProps> = ({ topPlayers, onPlayer
               {topPlayers[1].name.charAt(0)}
             </div>
             <div className="text-sm font-display truncate">{topPlayers[1].name}</div>
+            <PlayerLevelBadge rating={topPlayers[1].elo_rating} size="sm" />
             <div className="text-lg font-display text-syndikate-orange">{topPlayers[1].elo_rating}</div>
             <div className="text-xs text-syndikate-concrete">{topPlayers[1].games_played} games</div>
           </div>
@@ -53,6 +55,7 @@ export const RatingPodium: React.FC<RatingPodiumProps> = ({ topPlayers, onPlayer
               {topPlayers[0].name.charAt(0)}
             </div>
             <div className="text-base font-display truncate">{topPlayers[0].name}</div>
+            <PlayerLevelBadge rating={topPlayers[0].elo_rating} size="md" />
             <div className="text-2xl font-display text-syndikate-orange">{topPlayers[0].elo_rating}</div>
             <div className="text-xs text-syndikate-concrete">{topPlayers[0].games_played} games</div>
             {/* Achievement badge */}
@@ -76,6 +79,7 @@ export const RatingPodium: React.FC<RatingPodiumProps> = ({ topPlayers, onPlayer
               {topPlayers[2].name.charAt(0)}
             </div>
             <div className="text-sm font-display truncate">{topPlayers[2].name}</div>
+            <PlayerLevelBadge rating={topPlayers[2].elo_rating} size="sm" />
             <div className="text-lg font-display text-syndikate-orange">{topPlayers[2].elo_rating}</div>
             <div className="text-xs text-syndikate-concrete">{topPlayers[2].games_played} games</div>
           </div>
