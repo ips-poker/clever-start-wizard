@@ -123,16 +123,6 @@
   #root {
     min-height: 100vh;
   }
-  
-  /* Telegram Mini App specific styles */
-  .telegram-mini-app html,
-  .telegram-mini-app body,
-  .telegram-mini-app #root {
-    overflow: hidden;
-    position: fixed;
-    width: 100%;
-    height: 100%;
-  }
 }
 
 /* Safe area utility for iOS/Android */

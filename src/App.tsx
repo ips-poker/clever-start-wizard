@@ -38,21 +38,6 @@ function App() {
     }
   }, []);
 
-  useEffect(() => {
-    // Safety: reset any global fixed styles that could block scrolling
-    const rootEl = document.getElementById('root');
-    document.body.style.position = '';
-    document.body.style.overflow = '';
-    document.body.style.width = '';
-    document.body.style.height = '';
-    if (rootEl) {
-      rootEl.style.position = '';
-      rootEl.style.overflow = '';
-      rootEl.style.width = '';
-      rootEl.style.height = '';
-    }
-  }, []);
-
   const handleLoadingComplete = () => {
     sessionStorage.setItem('syndikate_loading_shown', 'true');
     setIsLoading(false);
