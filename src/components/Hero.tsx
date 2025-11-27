@@ -7,6 +7,7 @@ import { GlitchText } from "@/components/ui/glitch-text";
 import { useCMSContent } from "@/hooks/useCMSContent";
 import { Trophy, Users, TrendingUp, ArrowRight } from "lucide-react";
 import syndikateLogo from "@/assets/syndikate-logo-main.png";
+import { motion } from "framer-motion";
 
 export function Hero() {
   const { getContent, loading } = useCMSContent('home');
@@ -157,8 +158,30 @@ export function Hero() {
                 <div className="text-center space-y-6 p-8">
                   {/* Large Icon/Symbol */}
                   <div className="relative">
-                    <div className="w-32 h-32 mx-auto border-4 border-syndikate-orange bg-syndikate-metal brutal-border flex items-center justify-center p-4">
-                      <img src={syndikateLogo} alt="Syndikate Logo" className="w-full h-full object-contain neon-orange" />
+                    <div className="w-32 h-32 mx-auto border-4 border-syndikate-orange bg-syndikate-metal brutal-border flex items-center justify-center p-4 overflow-hidden">
+                      <motion.img 
+                        src={syndikateLogo} 
+                        alt="Syndikate Logo" 
+                        className="w-full h-full object-contain neon-orange"
+                        animate={{
+                          x: [0, -2, 2, -1, 1, 0],
+                          y: [0, 1, -1, 2, -2, 0],
+                          filter: [
+                            "hue-rotate(0deg) brightness(1)",
+                            "hue-rotate(5deg) brightness(1.2)",
+                            "hue-rotate(-5deg) brightness(0.9)",
+                            "hue-rotate(0deg) brightness(1.1)",
+                            "hue-rotate(0deg) brightness(1)"
+                          ],
+                          opacity: [1, 0.95, 1, 0.98, 1]
+                        }}
+                        transition={{
+                          duration: 3,
+                          repeat: Infinity,
+                          repeatType: "reverse",
+                          ease: "easeInOut"
+                        }}
+                      />
                     </div>
                     {/* Corner Decorations */}
                     <div className="absolute -top-2 -left-2 w-8 h-8 border-l-2 border-t-2 border-syndikate-red" />
