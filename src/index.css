@@ -2,183 +2,98 @@
 @tailwind components;
 @tailwind utilities;
 
-/* IPS Poker Club Design System - Elegant Dark Theme */
+/* Syndikate Poker Club - Brutal Industrial Design System */
 
 @layer base {
   :root {
-    --background: 220 15% 97%;
-    --foreground: 220 15% 25%;
-
-    --card: 220 15% 100%;
-    --card-foreground: 220 15% 25%;
-
-    --popover: 220 15% 100%;
-    --popover-foreground: 220 15% 25%;
-
-    --primary: 220 20% 32%;
-    --primary-foreground: 220 15% 98%;
-
-    --secondary: 220 10% 94%;
-    --secondary-foreground: 220 20% 32%;
-
-    --muted: 220 10% 96%;
-    --muted-foreground: 220 10% 45%;
-
-    --accent: 220 15% 90%;
-    --accent-foreground: 220 20% 32%;
-
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 220 15% 98%;
-
-    --border: 220 10% 88%;
-    --input: 220 10% 88%;
-    --ring: 220 20% 32%;
-
-    --radius: 0.75rem;
-
-    /* Professional Light Theme Design Tokens */
-    --poker-primary: 220 26% 14%;           /* Deep navy for main elements */
-    --poker-primary-light: 220 26% 18%;     /* Slightly lighter navy */
-    --poker-secondary: 220 14% 96%;         /* Very light gray-blue */
-    --poker-accent: 260 100% 65%;           /* Vibrant purple accent */
-    --poker-accent-light: 260 100% 70%;     /* Lighter purple */
-    --poker-success: 142 71% 45%;           /* Professional green */
-    --poker-warning: 38 100% 50%;           /* Warm orange */
-    --poker-error: 0 84% 60%;               /* Professional red */
-    --poker-surface: 220 14% 99%;           /* Almost white surface */
-    --poker-surface-elevated: 220 20% 98%;  /* Slightly elevated surface */
-    --poker-border: 220 14% 91%;            /* Subtle border */
-    --poker-text-primary: 220 26% 14%;      /* Main text color */
-    --poker-text-secondary: 220 16% 46%;    /* Secondary text */
-    --poker-text-muted: 220 14% 71%;        /* Muted text */
+    /* Syndikate Industrial Brutal Theme */
+    --background: 0 0% 8%; /* Deep dark concrete */
+    --foreground: 0 0% 95%; /* Light text */
     
-    /* Professional Gradients - Light Theme */
-    --gradient-primary: linear-gradient(135deg, hsl(220 14% 99%) 0%, hsl(220 20% 96%) 50%, hsl(220 14% 93%) 100%);
-    --gradient-hero: linear-gradient(135deg, hsl(220 14% 99% / 0.95) 0%, hsl(220 20% 96% / 0.90) 50%, hsl(220 14% 93% / 0.85) 100%);
-    --gradient-card: linear-gradient(135deg, hsl(220 20% 98% / 0.8) 0%, hsl(220 14% 96% / 0.9) 100%);
-    --gradient-tooltip: linear-gradient(135deg, hsl(220 20% 96% / 0.95) 0%, hsl(220 14% 94% / 0.98) 100%);
-    --gradient-accent: linear-gradient(135deg, hsl(260 100% 65%) 0%, hsl(260 100% 70%) 100%);
-    --gradient-success: linear-gradient(135deg, hsl(142 71% 45%) 0%, hsl(142 71% 50%) 100%);
-    --gradient-glass: linear-gradient(135deg, rgba(255, 255, 255, 0.25) 0%, rgba(255, 255, 255, 0.10) 100%);
-    --gradient-border: linear-gradient(135deg, hsl(220 14% 91%) 0%, hsl(220 20% 88%) 100%);
-    --gradient-button: linear-gradient(135deg, hsl(220 26% 14%) 0%, hsl(220 26% 18%) 100%);
-    --gradient-surface: linear-gradient(135deg, hsl(220 14% 99%) 0%, hsl(220 20% 97%) 100%);
+    --card: 0 0% 12%; /* Dark metal card */
+    --card-foreground: 0 0% 95%;
     
-    /* Professional Shadows - Light Theme */
-    --shadow-minimal: 0 1px 3px hsl(220 26% 14% / 0.05);
-    --shadow-subtle: 0 2px 8px hsl(220 26% 14% / 0.08);
-    --shadow-card: 0 4px 16px hsl(220 26% 14% / 0.10);
-    --shadow-elevated: 0 8px 24px hsl(220 26% 14% / 0.12);
-    --shadow-floating: 0 12px 32px hsl(220 26% 14% / 0.15);
-    --shadow-dramatic: 0 16px 48px hsl(220 26% 14% / 0.18);
-    --shadow-accent: 0 4px 16px hsl(260 100% 65% / 0.25);
-    --shadow-success: 0 4px 16px hsl(142 71% 45% / 0.25);
-    --shadow-inset: inset 0 1px 3px hsl(220 26% 14% / 0.06);
+    --popover: 0 0% 10%;
+    --popover-foreground: 0 0% 95%;
     
-    /* Typography Enhancements */
-    --font-weight-light: 300;
-    --font-weight-normal: 400;
-    --font-weight-medium: 500;
-    --font-weight-semibold: 600;
-    --font-weight-bold: 700;
+    --primary: 24 100% 50%; /* Neon Orange */
+    --primary-foreground: 0 0% 100%;
+    
+    --secondary: 0 0% 18%; /* Metal gray */
+    --secondary-foreground: 0 0% 95%;
+    
+    --muted: 0 0% 15%;
+    --muted-foreground: 0 0% 65%;
+    
+    --accent: 0 84% 45%; /* Aggressive red */
+    --accent-foreground: 0 0% 100%;
+    
+    --destructive: 0 84% 50%;
+    --destructive-foreground: 0 0% 100%;
+    
+    --border: 0 0% 20%; /* Metal border */
+    --input: 0 0% 20%;
+    --ring: 24 100% 50%; /* Orange ring */
+    
+    --radius: 0.25rem; /* Sharp edges */
+    
+    /* Syndikate Custom Colors */
+    --syndikate-orange: 24 100% 50%; /* Main neon orange */
+    --syndikate-orange-glow: 24 100% 55%;
+    --syndikate-red: 0 84% 45%; /* Aggressive red */
+    --syndikate-red-dark: 0 84% 35%;
+    --syndikate-concrete: 0 0% 12%; /* Concrete texture */
+    --syndikate-metal: 0 0% 18%; /* Metal surface */
+    --syndikate-metal-light: 0 0% 25%;
+    --syndikate-rust: 15 70% 35%; /* Rust accent */
+    
+    /* Industrial Gradients */
+    --gradient-industrial: linear-gradient(135deg, hsl(var(--syndikate-concrete)), hsl(var(--syndikate-metal)));
+    --gradient-neon: linear-gradient(135deg, hsl(var(--syndikate-orange)), hsl(var(--syndikate-red)));
+    --gradient-metal: linear-gradient(180deg, hsl(var(--syndikate-metal)), hsl(var(--syndikate-concrete)));
+    
+    /* Brutal Shadows */
+    --shadow-brutal: 0 10px 40px -15px rgba(0, 0, 0, 0.8);
+    --shadow-neon-orange: 0 0 30px hsla(var(--syndikate-orange), 0.5);
+    --shadow-neon-red: 0 0 30px hsla(var(--syndikate-red), 0.5);
+    --shadow-inset: inset 0 2px 8px rgba(0, 0, 0, 0.5);
+    
+    /* Typography */
+    --font-display: 'Bebas Neue', 'Impact', sans-serif;
+    --font-body: 'Roboto Condensed', sans-serif;
     --font-weight-black: 900;
+    --font-weight-bold: 700;
+    --font-weight-normal: 400;
     
-    /* Spacing and Sizing */
-    --space-xs: 0.25rem;
-    --space-sm: 0.5rem;
-    --space-md: 1rem;
-    --space-lg: 1.5rem;
-    --space-xl: 2rem;
-    --space-2xl: 3rem;
+    /* Spacing */
+    --spacing-brutal: 2rem;
+    
+    /* Transitions */
+    --transition-brutal: all 0.2s cubic-bezier(0.4, 0, 1, 1);
+    --transition-glow: all 0.3s ease;
+    
+    --chart-1: 24 100% 50%;
+    --chart-2: 0 84% 45%;
+    --chart-3: 0 0% 25%;
+    --chart-4: 15 70% 35%;
+    --chart-5: 0 0% 50%;
 
-    --radius: 0.75rem;
-
-    --sidebar-background: 0 0% 98%;
-
-    --sidebar-foreground: 240 5.3% 26.1%;
-
-    --sidebar-primary: 240 5.9% 10%;
-
-    --sidebar-primary-foreground: 0 0% 98%;
-
-    --sidebar-accent: 240 4.8% 95.9%;
-
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-background: 0 0% 10%;
+    --sidebar-foreground: 0 0% 95%;
+    --sidebar-primary: 24 100% 50%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 0 0% 18%;
+    --sidebar-accent-foreground: 0 0% 95%;
+    --sidebar-border: 0 0% 20%;
+    --sidebar-ring: 24 100% 50%;
+    
+    --warning-intervals: 120, 60, 30;
   }
 
   .dark {
-    /* Premium Poker Dark Theme - PokerStars Inspired */
-    --background: 0 0% 3%;                    /* Ultra deep black */
-    --foreground: 0 0% 98%;                   /* Pure white text */
-
-    --card: 0 0% 8%;                          /* Dark card background */
-    --card-foreground: 0 0% 98%;              /* White card text */
-
-    --popover: 0 0% 6%;
-    --popover-foreground: 0 0% 98%;
-
-    --primary: 0 72% 55%;                     /* Vibrant poker red */
-    --primary-foreground: 0 0% 98%;
-
-    --secondary: 0 0% 12%;                    /* Rich dark gray */
-    --secondary-foreground: 0 0% 98%;
-
-    --muted: 0 0% 12%;
-    --muted-foreground: 0 0% 70%;
-
-    --accent: 45 100% 55%;                    /* Premium gold accent */
-    --accent-foreground: 0 0% 8%;
-
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 98%;
-
-    --border: 0 0% 18%;
-    --input: 0 0% 12%;
-    --ring: 0 72% 55%;
-
-    /* Premium Poker Color Palette */
-    --poker-red: 0 72% 55%;                   /* Signature poker red */
-    --poker-red-dark: 0 65% 45%;              /* Deep red for shadows */
-    --poker-red-light: 0 72% 65%;             /* Bright red accents */
-    --poker-gold: 45 100% 55%;                /* Luxury gold */
-    --poker-gold-light: 45 100% 65%;          /* Bright gold */
-    --poker-green: 140 60% 35%;               /* Table green */
-    --poker-green-dark: 140 60% 25%;          /* Deep table green */
-    --poker-blue: 220 100% 45%;               /* Accent blue */
-    --poker-gray: 0 0% 25%;                   /* Medium gray */
-    --poker-gray-light: 0 0% 40%;             /* Light gray */
-    --poker-gray-dark: 0 0% 8%;               /* Rich dark gray */
-    --poker-surface: 0 0% 6%;                 /* Card surface */
-    --poker-surface-elevated: 0 0% 10%;       /* Elevated surfaces */
-
-    /* Premium Gradients */
-    --gradient-poker-red: radial-gradient(ellipse at center, hsl(0 72% 55%) 0%, hsl(0 65% 45%) 70%);
-    --gradient-poker-gold: radial-gradient(ellipse at center, hsl(45 100% 55%) 0%, hsl(35 90% 45%) 70%);
-    --gradient-poker-dark: radial-gradient(ellipse at top, hsl(0 0% 12%) 0%, hsl(0 0% 3%) 100%);
-    --gradient-poker-card: linear-gradient(145deg, hsl(0 0% 10%) 0%, hsl(0 0% 6%) 50%, hsl(0 0% 8%) 100%);
-    --gradient-poker-accent: linear-gradient(135deg, hsl(0 72% 55%) 0%, hsl(0 65% 45%) 100%);
-    --gradient-poker-surface: linear-gradient(145deg, hsl(0 0% 8%) 0%, hsl(0 0% 5%) 100%);
-    --gradient-table-green: radial-gradient(ellipse at center, hsl(140 60% 35%) 0%, hsl(140 60% 25%) 70%);
-    
-    /* Premium Shadows */
-    --shadow-poker-red: 0 8px 32px hsl(0 72% 55% / 0.3);
-    --shadow-poker-gold: 0 8px 32px hsl(45 100% 55% / 0.25);
-    --shadow-poker-card: 0 4px 20px hsl(0 0% 0% / 0.4);
-    --shadow-poker-elevated: 0 8px 40px hsl(0 0% 0% / 0.5);
-    --shadow-poker-glow: 0 0 20px hsl(45 100% 55% / 0.4);
-    
-    --sidebar-background: 0 0% 5%;
-    --sidebar-foreground: 0 0% 98%;
-    --sidebar-primary: 0 72% 55%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 0 0% 10%;
-    --sidebar-accent-foreground: 0 0% 98%;
-    --sidebar-border: 0 0% 15%;
-    --sidebar-ring: 0 72% 55%;
+    /* Dark mode uses same brutal industrial theme */
+    --background: 0 0% 8%;
+    --foreground: 0 0% 95%;
   }
 }
 
@@ -188,13 +103,13 @@
   }
 
   html {
-    background-color: hsl(0 0% 3%);
+    background-color: hsl(0 0% 8%);
     overflow-x: hidden;
   }
 
   body {
     @apply bg-background text-foreground;
-    background-color: hsl(0 0% 3%);
+    background-color: hsl(0 0% 8%);
     overflow-x: hidden;
     min-height: 100vh;
   }
@@ -231,41 +146,61 @@
   overflow: hidden;
 }
 
-/* Premium Poker UI Utilities */
-.poker-glass {
-  backdrop-filter: blur(20px) saturate(180%);
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-}
-
-.poker-shine {
+/* Syndikate Industrial Utilities */
+.brutal-metal {
+  background: linear-gradient(135deg, hsl(var(--syndikate-metal)), hsl(var(--syndikate-concrete)));
   position: relative;
-  overflow: hidden;
 }
 
-.poker-shine::before {
+.brutal-metal::before {
   content: '';
   position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
-  transition: left 0.5s;
+  inset: 0;
+  background: repeating-linear-gradient(
+    90deg,
+    transparent,
+    transparent 2px,
+    rgba(255, 255, 255, 0.02) 2px,
+    rgba(255, 255, 255, 0.02) 4px
+  );
+  pointer-events: none;
 }
 
-.poker-shine:hover::before {
-  left: 100%;
+.neon-orange {
+  color: hsl(var(--syndikate-orange));
+  text-shadow: 0 0 20px hsla(var(--syndikate-orange), 0.8),
+               0 0 40px hsla(var(--syndikate-orange), 0.4);
 }
 
-.text-shadow-poker {
-  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+.neon-red {
+  color: hsl(var(--syndikate-red));
+  text-shadow: 0 0 20px hsla(var(--syndikate-red), 0.8),
+               0 0 40px hsla(var(--syndikate-red), 0.4);
 }
 
-.glow-gold {
-  box-shadow: 0 0 20px hsl(var(--poker-gold) / 0.3);
+.brutal-border {
+  border: 2px solid hsl(var(--border));
+  box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.5);
 }
 
-.glow-red {
-  box-shadow: 0 0 20px hsl(var(--poker-red) / 0.3);
+.industrial-texture {
+  background-image: 
+    repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 10px,
+      rgba(255, 255, 255, 0.02) 10px,
+      rgba(255, 255, 255, 0.02) 20px
+    );
+}
+
+@keyframes neon-pulse {
+  0%, 100% {
+    text-shadow: 0 0 20px hsla(var(--syndikate-orange), 0.8),
+                 0 0 40px hsla(var(--syndikate-orange), 0.4);
+  }
+  50% {
+    text-shadow: 0 0 30px hsla(var(--syndikate-orange), 1),
+                 0 0 60px hsla(var(--syndikate-orange), 0.6);
+  }
 }
