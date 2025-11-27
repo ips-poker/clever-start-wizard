@@ -18,6 +18,7 @@ import { FloatingParticles } from '@/components/ui/floating-particles';
 import { TournamentCard } from './TournamentCard';
 import { RatingPodium } from './RatingPodium';
 import { PlayerRatingCard } from './PlayerRatingCard';
+import { PlayerStatsModal } from './PlayerStatsModal';
 import mainPokerRoom from '@/assets/gallery/main-poker-room.jpg';
 import tournamentTable from '@/assets/gallery/tournament-table.jpg';
 import vipZone from '@/assets/gallery/vip-zone.jpg';
@@ -82,6 +83,8 @@ export const TelegramApp = () => {
   const [registering, setRegistering] = useState<string | null>(null);
   const [selectedTournament, setSelectedTournament] = useState<Tournament | null>(null);
   const [showTournamentModal, setShowTournamentModal] = useState(false);
+  const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
+  const [showPlayerStatsModal, setShowPlayerStatsModal] = useState(false);
   const [galleryImages, setGalleryImages] = useState<GalleryImage[]>([]);
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
   const [currentRuleIndex, setCurrentRuleIndex] = useState(0);
@@ -1285,7 +1288,13 @@ export const TelegramApp = () => {
             </h2>
           </div>
 
-          <RatingPodium topPlayers={players.slice(0, 3)} />
+          <RatingPodium 
+            topPlayers={players.slice(0, 3)}
+            onPlayerClick={(player) => {
+              setSelectedPlayer(player);
+              setShowPlayerStatsModal(true);
+            }}
+          />
 
           {players.length === 0 ? (
             <div className="text-center py-16 space-y-4">
@@ -1307,6 +1316,10 @@ export const TelegramApp = () => {
                   player={player}
                   rank={index + 4}
                   index={index}
+                  onClick={() => {
+                    setSelectedPlayer(player);
+                    setShowPlayerStatsModal(true);
+                  }}
                 />
               ))}
             </div>
@@ -1757,6 +1770,16 @@ export const TelegramApp = () => {
         onRegister={registerForTournament}
         registering={registering !== null}
       />
+
+      {showPlayerStatsModal && selectedPlayer && (
+        <PlayerStatsModal
+          player={selectedPlayer}
+          onClose={() => {
+            setShowPlayerStatsModal(false);
+            setSelectedPlayer(null);
+          }}
+        />
+      )}
     </div>
   );
 };
