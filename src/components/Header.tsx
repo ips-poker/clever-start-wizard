@@ -9,6 +9,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Menu, X, User, LogOut, Settings, Crown } from "lucide-react";
+import syndikateLogo from "@/assets/syndikate-logo.png";
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -42,8 +43,8 @@ export function Header() {
             className="flex items-center space-x-3 group"
           >
             <div className="relative">
-              <div className="w-12 h-12 border-2 border-syndikate-orange bg-syndikate-metal brutal-border flex items-center justify-center transition-all group-hover:shadow-neon-orange">
-                <span className="font-display text-2xl neon-orange">S</span>
+              <div className="w-12 h-12 border-2 border-syndikate-orange bg-syndikate-metal brutal-border flex items-center justify-center transition-all group-hover:shadow-neon-orange p-1">
+                <img src={syndikateLogo} alt="Syndikate Logo" className="w-full h-full object-contain" />
               </div>
               {/* Corner accents */}
               <div className="absolute -top-1 -left-1 w-3 h-3 border-l-2 border-t-2 border-syndikate-red opacity-0 group-hover:opacity-100 transition-opacity" />
