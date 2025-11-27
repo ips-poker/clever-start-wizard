@@ -8,6 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogClose } from "@/components/ui/dialog";
 import { useCMSContent } from "@/hooks/useCMSContent";
 import { supabase } from "@/integrations/supabase/client";
+import { ScrollProgress } from "@/components/ScrollProgress";
+import { FloatingParticles } from "@/components/ui/floating-particles";
 import { 
   Calendar, 
   Clock, 
@@ -176,49 +178,70 @@ export default function Blog() {
 
   if (loading || cmsLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
-        <Header />
-        <div className="flex items-center justify-center py-20 pt-24 md:pt-20">
-          <Loader2 className="w-8 h-8 animate-spin text-amber-400" />
+      <>
+        <ScrollProgress />
+        <div className="min-h-screen bg-background relative overflow-hidden">
+          <div className="fixed inset-0 industrial-texture opacity-50" />
+          <Header />
+          <div className="flex items-center justify-center py-20 pt-24 md:pt-20 relative z-20">
+            <div className="w-12 h-12 border-2 border-syndikate-orange border-t-transparent rounded-full animate-spin" />
+          </div>
+          <Footer />
         </div>
-        <Footer />
-      </div>
+      </>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
-      <Header />
+    <>
+      <ScrollProgress />
+      <FloatingParticles />
+      <div className="min-h-screen bg-background relative overflow-hidden">
+        {/* Industrial metal base texture */}
+        <div className="fixed inset-0 pointer-events-none industrial-texture opacity-50 z-0" />
+
+        {/* Metal grid overlay */}
+        <div
+          className="fixed inset-0 pointer-events-none opacity-20 z-0"
+          style={{
+            backgroundImage: `
+              repeating-linear-gradient(0deg, transparent, transparent 48px, rgba(255,255,255,0.04) 48px, rgba(255,255,255,0.04) 49px),
+              repeating-linear-gradient(90deg, transparent, transparent 48px, rgba(255,255,255,0.04) 48px, rgba(255,255,255,0.04) 49px)
+            `,
+          }}
+        />
+
+        {/* Neon glows */}
+        <div className="fixed top-0 left-1/4 w-[520px] h-[520px] bg-syndikate-orange/25 rounded-full blur-[160px] opacity-80 animate-pulse" />
+        <div className="fixed bottom-0 right-1/4 w-[520px] h-[520px] bg-syndikate-red/20 rounded-full blur-[160px] opacity-80 animate-pulse" />
+
+        {/* Side rails */}
+        <div className="fixed inset-y-0 left-0 w-[3px] bg-gradient-to-b from-syndikate-orange/70 via-syndikate-red/40 to-transparent shadow-neon-orange pointer-events-none z-10" />
+        <div className="fixed inset-y-0 right-0 w-[3px] bg-gradient-to-b from-syndikate-orange/70 via-syndikate-red/40 to-transparent shadow-neon-orange pointer-events-none z-10" />
+        <div className="fixed top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-transparent via-syndikate-orange/80 to-transparent pointer-events-none z-10" />
+
+        <Header />
       
-      <main className="pt-24 md:pt-20">
-        {/* Hero Section */}
-        <section className="py-12 md:py-16 lg:py-20 relative overflow-hidden">
-          <div className="absolute inset-0 opacity-10">
-            <div className="absolute top-10 left-10 text-amber-400/40 text-5xl animate-pulse">♠</div>
-            <div className="absolute top-20 right-20 text-amber-400/30 text-4xl animate-bounce-subtle">♣</div>
-            <div className="absolute bottom-10 left-20 text-amber-400/35 text-6xl animate-pulse">♥</div>
-          </div>
-          <div className="absolute inset-0 pointer-events-none">
-            <div className="absolute top-0 left-1/4 w-96 h-96 bg-amber-500/5 rounded-full blur-3xl"></div>
-            <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-blue-500/5 rounded-full blur-3xl"></div>
-          </div>
-          <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative">
-            <div className="max-w-4xl mx-auto text-center">
-              <div className="flex items-center gap-3 justify-center mb-6">
-                <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl flex items-center justify-center shadow-lg">
-                  <BookOpen className="h-5 w-5 text-white" />
+        <main className="pt-24 md:pt-20 relative z-20">
+          {/* Hero Section */}
+          <section className="py-12 md:py-16 lg:py-20 relative overflow-hidden">
+            <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative">
+              <div className="max-w-4xl mx-auto text-center">
+                <div className="flex items-center gap-3 justify-center mb-6">
+                  <div className="w-12 h-12 bg-syndikate-orange brutal-border flex items-center justify-center shadow-neon-orange">
+                    <BookOpen className="h-6 w-6 text-background" />
+                  </div>
+                  <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-foreground tracking-wider uppercase">
+                    {heroTitle}
+                  </h1>
                 </div>
-                <h1 className="text-3xl sm:text-4xl md:text-5xl font-light text-white tracking-wide">
-                  {heroTitle}
-                </h1>
+                <div className="h-[2px] w-20 bg-syndikate-orange mx-auto mb-6"></div>
+                <p className="text-base md:text-lg lg:text-xl text-muted-foreground leading-relaxed px-4 sm:px-0 font-mono uppercase tracking-wider">
+                  {heroDescription}
+                </p>
               </div>
-              <div className="h-0.5 w-20 bg-gradient-to-r from-amber-400 to-amber-600 mx-auto mb-6"></div>
-              <p className="text-base md:text-lg lg:text-xl text-white/70 leading-relaxed px-4 sm:px-0 font-light">
-                {heroDescription}
-              </p>
             </div>
-          </div>
-        </section>
+          </section>
 
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12 lg:py-16">
           <div className="grid lg:grid-cols-4 gap-6 md:gap-8">
@@ -226,7 +249,7 @@ export default function Blog() {
             <div className="lg:col-span-3 space-y-8 md:space-y-10 lg:space-y-12">
               {/* Featured Article */}
               {featuredPost && (
-                <article className="bg-gradient-to-br from-slate-800/95 via-slate-900/95 to-black/90 border border-white/10 rounded-2xl overflow-hidden backdrop-blur-xl hover:shadow-2xl hover:shadow-amber-500/20 transition-all duration-300">
+                <article className="brutal-metal brutal-border overflow-hidden hover:shadow-neon-orange transition-all duration-300 relative group">
                   <div className="relative">
                     <img 
                       src={featuredPost.image}
@@ -234,25 +257,25 @@ export default function Blog() {
                       className="w-full h-48 sm:h-56 md:h-64 object-cover"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
-                    <Badge className="absolute top-3 left-3 md:top-4 md:left-4 bg-amber-500/20 text-amber-400 border-amber-500/30 backdrop-blur-xl text-xs md:text-sm">
-                      Рекомендуем
+                    <Badge className="absolute top-3 left-3 md:top-4 md:left-4 bg-syndikate-orange brutal-border text-background font-bold uppercase tracking-wider text-xs md:text-sm shadow-neon-orange">
+                      РЕКОМЕНДУЕМ
                     </Badge>
                   </div>
                   
-                  <div className="p-4 sm:p-6 lg:p-8">
+                   <div className="p-4 sm:p-6 lg:p-8">
                     <div className="flex flex-wrap gap-2 mb-4">
                       {featuredPost.tags.map((tag) => (
-                        <Badge key={tag} className="bg-amber-500/20 text-amber-400 border-amber-500/30 border text-xs">
+                        <Badge key={tag} className="bg-syndikate-orange/20 text-syndikate-orange brutal-border text-xs uppercase tracking-wider">
                           {tag}
                         </Badge>
                       ))}
                     </div>
                     
-                    <h2 className="text-xl sm:text-2xl md:text-3xl font-light mb-3 md:mb-4 text-white tracking-wide">
+                    <h2 className="text-xl sm:text-2xl md:text-3xl font-bold mb-3 md:mb-4 text-foreground tracking-wider uppercase">
                       {featuredPost.title}
                     </h2>
                     
-                    <p className="text-white/70 mb-4 md:mb-6 text-sm md:text-base lg:text-lg leading-relaxed font-light">
+                    <p className="text-muted-foreground mb-4 md:mb-6 text-sm md:text-base lg:text-lg leading-relaxed font-mono uppercase tracking-wide">
                       {featuredPost.excerpt}
                     </p>
                     
@@ -263,13 +286,13 @@ export default function Blog() {
                           alt={featuredPost.author}
                           className="w-8 h-8 md:w-10 md:h-10 rounded-full border border-white/10"
                         />
-                        <div>
-                          <p className="font-light text-white text-sm md:text-base">{featuredPost.author}</p>
-                          <p className="text-xs md:text-sm text-white/60">{featuredPost.author_role}</p>
+                         <div>
+                          <p className="font-bold text-foreground text-sm md:text-base uppercase tracking-wider">{featuredPost.author}</p>
+                          <p className="text-xs md:text-sm text-muted-foreground font-mono uppercase">{featuredPost.author_role}</p>
                         </div>
                       </div>
                       
-                      <div className="flex items-center gap-2 md:gap-4 text-xs md:text-sm text-white/60 flex-wrap">
+                      <div className="flex items-center gap-2 md:gap-4 text-xs md:text-sm text-muted-foreground flex-wrap font-mono">
                         <div className="flex items-center gap-1">
                           <Calendar className="w-3 h-3 md:w-4 md:h-4" />
                           <span className="hidden sm:inline">{new Date(featuredPost.published_at).toLocaleDateString('ru-RU')}</span>
@@ -287,31 +310,31 @@ export default function Blog() {
                     </div>
                     
                     {/* Article Content Preview */}
-                    <div className="prose prose-sm md:prose-lg max-w-none text-white/70">
+                    <div className="prose prose-sm md:prose-lg max-w-none text-muted-foreground font-mono">
                       <div dangerouslySetInnerHTML={{ 
                         __html: featuredPost.content.substring(0, 400) + "..." 
                       }} />
                     </div>
                     
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between mt-6 md:mt-8 pt-4 md:pt-6 border-t border-white/10 gap-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between mt-6 md:mt-8 pt-4 md:pt-6 border-t border-syndikate-orange/30 gap-4">
                       <div className="flex items-center gap-2 md:gap-4">
-                        <Button className="bg-white/5 border-2 border-amber-400/30 text-amber-400 hover:bg-amber-400/10 hover:border-amber-400/50 backdrop-blur-xl text-xs md:text-sm" size="sm">
+                        <Button className="brutal-metal brutal-border text-syndikate-orange hover:bg-syndikate-orange/10 text-xs md:text-sm uppercase tracking-wider" size="sm">
                           <Heart className="w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-2" />
                           {featuredPost.likes}
                         </Button>
-                        <Button className="bg-white/5 border-2 border-amber-400/30 text-amber-400 hover:bg-amber-400/10 hover:border-amber-400/50 backdrop-blur-xl text-xs md:text-sm" size="sm">
+                        <Button className="brutal-metal brutal-border text-syndikate-orange hover:bg-syndikate-orange/10 text-xs md:text-sm uppercase tracking-wider" size="sm">
                           <Share2 className="w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-2" />
-                          <span className="hidden sm:inline">Поделиться</span>
-                          <span className="sm:hidden">Share</span>
+                          <span className="hidden sm:inline">ПОДЕЛИТЬСЯ</span>
+                          <span className="sm:hidden">SHARE</span>
                         </Button>
                       </div>
                       
                       <Button 
-                        className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white shadow-lg hover:shadow-xl hover:shadow-amber-500/20 transition-all duration-300 text-sm md:text-base"
+                        className="bg-syndikate-orange brutal-border text-background hover:bg-syndikate-orange/90 shadow-neon-orange hover:shadow-neon-orange/70 transition-all duration-300 text-sm md:text-base uppercase tracking-wider font-bold"
                         onClick={() => openPostModal(featuredPost)}
                       >
-                        <span className="hidden sm:inline">Читать полностью</span>
-                        <span className="sm:hidden">Читать</span>
+                        <span className="hidden sm:inline">ЧИТАТЬ ПОЛНОСТЬЮ</span>
+                        <span className="sm:hidden">ЧИТАТЬ</span>
                         <ChevronRight className="w-3 h-3 md:w-4 md:h-4 ml-1 md:ml-2" />
                       </Button>
                     </div>
@@ -320,15 +343,17 @@ export default function Blog() {
               )}
 
               {/* Search and Filter */}
-              <div className="bg-gradient-to-br from-slate-800/95 via-slate-900/95 to-black/90 border border-white/10 rounded-2xl p-4 md:p-6 backdrop-blur-xl mb-6 md:mb-8">
+              <div className="brutal-metal brutal-border p-4 md:p-6 mb-6 md:mb-8 relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-8 h-8 border-l-2 border-t-2 border-syndikate-orange" />
+                <div className="absolute top-0 right-0 w-8 h-8 border-r-2 border-t-2 border-syndikate-orange" />
                 <div className="flex flex-col gap-4">
                   <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/60 w-4 h-4" />
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
                     <Input
-                      placeholder="Поиск статей..."
+                      placeholder="ПОИСК СТАТЕЙ..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10 bg-white/5 border-white/10 text-white placeholder:text-white/40"
+                      className="pl-10 brutal-metal brutal-border text-foreground placeholder:text-muted-foreground font-mono uppercase tracking-wider"
                     />
                   </div>
                   <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
@@ -336,15 +361,15 @@ export default function Blog() {
                       <Button
                         key={category.name}
                         className={selectedCategory === category.name 
-                          ? "bg-gradient-to-r from-amber-500 to-amber-600 text-white whitespace-nowrap text-xs md:text-sm flex-shrink-0" 
-                          : "bg-white/5 border-2 border-amber-400/30 text-amber-400 hover:bg-amber-400/10 hover:border-amber-400/50 backdrop-blur-xl whitespace-nowrap text-xs md:text-sm flex-shrink-0"
+                          ? "bg-syndikate-orange brutal-border text-background whitespace-nowrap text-xs md:text-sm flex-shrink-0 uppercase tracking-wider font-bold" 
+                          : "brutal-metal brutal-border text-syndikate-orange hover:bg-syndikate-orange/10 whitespace-nowrap text-xs md:text-sm flex-shrink-0 uppercase tracking-wider"
                         }
                         size="sm"
                         onClick={() => setSelectedCategory(category.name)}
                       >
                         <category.icon className="w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-2" />
-                        <span className="hidden sm:inline">{category.name} ({category.count})</span>
-                        <span className="sm:hidden">{category.name}</span>
+                        <span className="hidden sm:inline">{category.name.toUpperCase()} ({category.count})</span>
+                        <span className="sm:hidden">{category.name.toUpperCase()}</span>
                       </Button>
                     ))}
                   </div>
@@ -355,18 +380,21 @@ export default function Blog() {
               {filteredPosts.length > 0 ? (
                 <div className="space-y-8">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                    <h3 className="text-lg md:text-xl lg:text-2xl font-light text-white tracking-wide">
-                      <span className="hidden sm:inline">{selectedCategory === "Все" ? "Все статьи" : `Категория: ${selectedCategory}`}</span>
-                      <span className="sm:hidden">{selectedCategory === "Все" ? "Статьи" : selectedCategory}</span>
+                    <h3 className="text-lg md:text-xl lg:text-2xl font-bold text-foreground tracking-wider uppercase">
+                      <span className="hidden sm:inline">{selectedCategory === "Все" ? "ВСЕ СТАТЬИ" : `КАТЕГОРИЯ: ${selectedCategory.toUpperCase()}`}</span>
+                      <span className="sm:hidden">{selectedCategory === "Все" ? "СТАТЬИ" : selectedCategory.toUpperCase()}</span>
                     </h3>
-                    <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30 border text-xs md:text-sm">
-                      {filteredPosts.length} {filteredPosts.length === 1 ? 'статья' : 'статей'}
+                    <Badge className="bg-syndikate-orange/20 text-syndikate-orange brutal-border text-xs md:text-sm uppercase tracking-wider">
+                      {filteredPosts.length} {filteredPosts.length === 1 ? 'СТАТЬЯ' : 'СТАТЕЙ'}
                     </Badge>
                   </div>
                   
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
                     {filteredPosts.map((post) => (
-                      <Card key={post.id} className="group bg-gradient-to-br from-slate-800/95 via-slate-900/95 to-black/90 border border-white/10 backdrop-blur-xl hover:shadow-2xl hover:shadow-amber-500/20 hover:-translate-y-1 md:hover:-translate-y-2 transition-all duration-500 overflow-hidden">
+                      <Card key={post.id} className="group brutal-metal brutal-border hover:shadow-neon-orange hover:-translate-y-1 md:hover:-translate-y-2 transition-all duration-500 overflow-hidden relative">
+                        <div className="absolute top-0 left-0 w-6 h-6 border-l-2 border-t-2 border-syndikate-orange opacity-0 group-hover:opacity-100 transition-opacity" />
+                        <div className="absolute top-0 right-0 w-6 h-6 border-r-2 border-t-2 border-syndikate-orange opacity-0 group-hover:opacity-100 transition-opacity" />
+                        
                         <div className="relative overflow-hidden">
                           <img 
                             src={post.image}
@@ -376,23 +404,23 @@ export default function Blog() {
                           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
                           <div className="absolute top-2 left-2 md:top-3 md:left-3">
                             {post.tags.slice(0, 2).map((tag) => (
-                              <Badge key={tag} className="bg-amber-500/20 text-amber-400 border-amber-500/30 backdrop-blur-xl border-0 mb-1 mr-1 text-xs">
-                                {tag}
+                              <Badge key={tag} className="bg-syndikate-orange/20 text-syndikate-orange brutal-border mb-1 mr-1 text-xs uppercase tracking-wider">
+                                {tag.toUpperCase()}
                               </Badge>
                             ))}
                           </div>
                         </div>
                         
                         <CardContent className="p-4 md:p-6">
-                          <h4 className="text-base md:text-lg font-light mb-2 md:mb-3 text-white group-hover:text-amber-400 transition-colors line-clamp-2 tracking-wide">
+                          <h4 className="text-base md:text-lg font-bold mb-2 md:mb-3 text-foreground group-hover:text-syndikate-orange transition-colors line-clamp-2 tracking-wider uppercase">
                             {post.title}
                           </h4>
                           
-                          <p className="text-white/70 mb-3 md:mb-4 text-xs md:text-sm leading-relaxed line-clamp-3 font-light">
+                          <p className="text-muted-foreground mb-3 md:mb-4 text-xs md:text-sm leading-relaxed line-clamp-3 font-mono uppercase tracking-wide">
                             {post.excerpt}
                           </p>
                           
-                          <div className="flex flex-col sm:flex-row sm:items-center justify-between text-xs text-white/60 mb-3 md:mb-4 gap-2">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between text-xs text-muted-foreground mb-3 md:mb-4 gap-2 font-mono">
                             <div className="flex items-center gap-2">
                               <User className="w-3 h-3" />
                               <span className="truncate">{post.author}</span>
@@ -410,11 +438,11 @@ export default function Blog() {
                           </div>
                           
                           <Button 
-                            className="w-full bg-white/5 border-2 border-amber-400/30 text-amber-400 hover:bg-amber-400/10 hover:border-amber-400/50 backdrop-blur-xl transition-all text-sm"
+                            className="w-full brutal-metal brutal-border text-syndikate-orange hover:bg-syndikate-orange/10 transition-all text-sm uppercase tracking-wider font-bold"
                             onClick={() => openPostModal(post)}
                           >
-                            <span className="hidden sm:inline">Читать далее</span>
-                            <span className="sm:hidden">Читать</span>
+                            <span className="hidden sm:inline">ЧИТАТЬ ДАЛЕЕ</span>
+                            <span className="sm:hidden">ЧИТАТЬ</span>
                             <ArrowRight className="w-3 h-3 md:w-4 md:h-4 ml-1 md:ml-2 group-hover:translate-x-1 transition-transform" />
                           </Button>
                         </CardContent>
@@ -423,19 +451,21 @@ export default function Blog() {
                   </div>
                 </div>
               ) : (
-                <div className="text-center py-12 bg-gradient-to-br from-slate-800/95 via-slate-900/95 to-black/90 border border-white/10 rounded-2xl backdrop-blur-xl">
-                  <div className="text-white/60 mb-4">
+                <div className="text-center py-12 brutal-metal brutal-border relative">
+                  <div className="absolute top-0 left-0 w-8 h-8 border-l-2 border-t-2 border-syndikate-orange" />
+                  <div className="absolute top-0 right-0 w-8 h-8 border-r-2 border-t-2 border-syndikate-orange" />
+                  <div className="text-muted-foreground mb-4 font-mono uppercase tracking-wider">
                     {searchTerm || selectedCategory !== "Все" 
-                      ? "По вашему запросу ничего не найдено"
-                      : "Скоро здесь появятся статьи"
+                      ? "ПО ВАШЕМУ ЗАПРОСУ НИЧЕГО НЕ НАЙДЕНО"
+                      : "СКОРО ЗДЕСЬ ПОЯВЯТСЯ СТАТЬИ"
                     }
                   </div>
                   {(searchTerm || selectedCategory !== "Все") && (
                     <Button 
-                      className="bg-white/5 border-2 border-amber-400/30 text-amber-400 hover:bg-amber-400/10 hover:border-amber-400/50 backdrop-blur-xl"
+                      className="brutal-metal brutal-border text-syndikate-orange hover:bg-syndikate-orange/10 uppercase tracking-wider font-bold"
                       onClick={() => { setSearchTerm(""); setSelectedCategory("Все"); }}
                     >
-                      Сбросить фильтры
+                      СБРОСИТЬ ФИЛЬТРЫ
                     </Button>
                   )}
                 </div>
@@ -443,12 +473,14 @@ export default function Blog() {
 
               {/* No posts message */}
               {posts.length === 0 && (
-                <div className="text-center py-12">
-                  <h3 className="text-xl font-light text-white mb-2 tracking-wide">
-                    Скоро здесь появятся статьи
+                <div className="text-center py-12 brutal-metal brutal-border relative">
+                  <div className="absolute top-0 left-0 w-8 h-8 border-l-2 border-t-2 border-syndikate-orange" />
+                  <div className="absolute top-0 right-0 w-8 h-8 border-r-2 border-t-2 border-syndikate-orange" />
+                  <h3 className="text-xl font-bold text-foreground mb-2 tracking-wider uppercase">
+                    СКОРО ЗДЕСЬ ПОЯВЯТСЯ СТАТЬИ
                   </h3>
-                  <p className="text-white/60 font-light">
-                    Наши эксперты готовят для вас интересные материалы о покере
+                  <p className="text-muted-foreground font-mono uppercase tracking-wide">
+                    НАШИ ЭКСПЕРТЫ ГОТОВЯТ ДЛЯ ВАС ИНТЕРЕСНЫЕ МАТЕРИАЛЫ О ПОКЕРЕ
                   </p>
                 </div>
               )}
@@ -457,11 +489,13 @@ export default function Blog() {
             {/* Sidebar */}
             <div className="space-y-6">
               {/* Categories */}
-              <Card className="bg-gradient-to-br from-slate-800/95 via-slate-900/95 to-black/90 border border-white/10 backdrop-blur-xl">
+              <Card className="brutal-metal brutal-border relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-6 h-6 border-l-2 border-t-2 border-syndikate-orange" />
+                <div className="absolute top-0 right-0 w-6 h-6 border-r-2 border-t-2 border-syndikate-orange" />
                 <CardHeader>
-                  <CardTitle className="flex items-center text-white font-light tracking-wide">
-                    <BookOpen className="w-5 h-5 mr-2" />
-                    Категории
+                  <CardTitle className="flex items-center text-foreground font-bold tracking-wider uppercase">
+                    <BookOpen className="w-5 h-5 mr-2 text-syndikate-orange" />
+                    КАТЕГОРИИ
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
@@ -471,23 +505,23 @@ export default function Blog() {
                       <button
                         key={category.name}
                         onClick={() => setSelectedCategory(category.name)}
-                        className={`w-full flex items-center justify-between p-3 rounded-lg transition-all text-left ${
+                        className={`w-full flex items-center justify-between p-3 brutal-border transition-all text-left ${
                           selectedCategory === category.name 
-                            ? 'bg-amber-500/10 border border-amber-500/30' 
-                            : 'hover:bg-white/5'
+                            ? 'bg-syndikate-orange/10 border-syndikate-orange' 
+                            : 'hover:bg-syndikate-orange/5'
                         }`}
                       >
                         <div className="flex items-center gap-3">
                           <IconComponent className={`w-4 h-4 ${
-                            selectedCategory === category.name ? 'text-amber-400' : 'text-white/60'
+                            selectedCategory === category.name ? 'text-syndikate-orange' : 'text-muted-foreground'
                           }`} />
-                          <span className={`font-light ${
-                            selectedCategory === category.name ? 'text-amber-400' : 'text-white'
+                          <span className={`font-bold uppercase tracking-wider ${
+                            selectedCategory === category.name ? 'text-syndikate-orange' : 'text-foreground'
                           }`}>
-                            {category.name}
+                            {category.name.toUpperCase()}
                           </span>
                         </div>
-                        <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30 border text-xs">
+                        <Badge className="bg-syndikate-orange/20 text-syndikate-orange brutal-border text-xs font-mono">
                           {category.count}
                         </Badge>
                       </button>
@@ -497,29 +531,31 @@ export default function Blog() {
               </Card>
 
               {/* Newsletter */}
-              <Card className="bg-gradient-to-br from-slate-800/95 via-slate-900/95 to-black/90 border border-white/10 backdrop-blur-xl">
+              <Card className="brutal-metal brutal-border relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-6 h-6 border-l-2 border-t-2 border-syndikate-orange" />
+                <div className="absolute top-0 right-0 w-6 h-6 border-r-2 border-t-2 border-syndikate-orange" />
                 <CardContent className="p-6 text-center">
-                  <h4 className="text-lg font-light mb-3 text-white tracking-wide">
-                    Покерная рассылка
+                  <h4 className="text-lg font-bold mb-3 text-foreground tracking-wider uppercase">
+                    ПОКЕРНАЯ РАССЫЛКА
                   </h4>
-                  <p className="text-sm text-white/70 mb-4 font-light">
-                    Получайте лучшие статьи и эксклюзивные материалы на email
+                  <p className="text-sm text-muted-foreground mb-4 font-mono uppercase tracking-wide">
+                    ПОЛУЧАЙТЕ ЛУЧШИЕ СТАТЬИ И ЭКСКЛЮЗИВНЫЕ МАТЕРИАЛЫ
                   </p>
                   <div className="space-y-3">
                     <Input 
                       type="email" 
-                      placeholder="Ваш email"
-                      className="bg-white/5 border-white/10 text-white placeholder:text-white/40"
+                      placeholder="ВАШ EMAIL"
+                      className="brutal-metal brutal-border text-foreground placeholder:text-muted-foreground font-mono uppercase tracking-wider"
                     />
-                    <Button className="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white shadow-lg hover:shadow-xl hover:shadow-amber-500/20 transition-all duration-300">
-                      Подписаться
+                    <Button className="w-full bg-syndikate-orange brutal-border text-background hover:bg-syndikate-orange/90 shadow-neon-orange hover:shadow-neon-orange/70 transition-all duration-300 uppercase tracking-wider font-bold">
+                      ПОДПИСАТЬСЯ
                     </Button>
                   </div>
                 </CardContent>
               </Card>
 
               {/* Popular Articles */}
-              <Card className="bg-gradient-to-br from-slate-800/95 via-slate-900/95 to-black/90 border border-white/10 backdrop-blur-xl">
+              <Card className="brutal-metal brutal-border relative overflow-hidden">
                 <CardHeader>
                   <CardTitle className="flex items-center text-white font-light tracking-wide">
                     <TrendingUp className="w-5 h-5 mr-2" />
@@ -645,5 +681,6 @@ export default function Blog() {
       
       <Footer />
     </div>
+    </>
   );
 }

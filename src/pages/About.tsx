@@ -291,6 +291,70 @@ export default function About() {
               </div>
             </div>
           </section>
+
+          {/* Team Section */}
+          <section className="py-20 relative overflow-hidden">
+            <div className="container mx-auto px-4 relative z-10">
+              <div className="text-center mb-16">
+                <div className="flex items-center gap-3 justify-center mb-6">
+                  <div className="w-12 h-12 bg-syndikate-orange brutal-border flex items-center justify-center shadow-neon-orange">
+                    <Users className="h-6 w-6 text-background" />
+                  </div>
+                  <h2 className="text-4xl lg:text-5xl font-bold text-foreground tracking-wider uppercase">
+                    {getContent('team_title', 'НАША КОМАНДА')}
+                  </h2>
+                </div>
+                <div className="h-[2px] w-20 bg-syndikate-orange mx-auto mb-6"></div>
+                <p className="text-xl text-muted-foreground max-w-3xl mx-auto font-mono uppercase tracking-wider">
+                  {getContent('team_description', 'ПРОФЕССИОНАЛЫ С МНОГОЛЕТНИМ ОПЫТОМ')}
+                </p>
+              </div>
+
+              <div className="grid md:grid-cols-3 gap-8">
+                {[1, 2, 3].map((num) => (
+                  <div key={`team-${num}`} className="brutal-metal brutal-border p-6 transition-all duration-300 hover:shadow-neon-orange relative overflow-hidden group">
+                    {/* Corner Brackets */}
+                    <div className="absolute top-0 left-0 w-6 h-6 border-l-2 border-t-2 border-syndikate-orange opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <div className="absolute top-0 right-0 w-6 h-6 border-r-2 border-t-2 border-syndikate-orange opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <div className="absolute bottom-0 left-0 w-6 h-6 border-l-2 border-b-2 border-syndikate-orange opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <div className="absolute bottom-0 right-0 w-6 h-6 border-r-2 border-b-2 border-syndikate-orange opacity-0 group-hover:opacity-100 transition-opacity" />
+
+                    <div className="relative mb-6">
+                      <div className="brutal-border overflow-hidden">
+                        <img 
+                          src={getContent(`team_${num}_image`, `https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=400&fit=crop&crop=face`)}
+                          alt={getContent(`team_${num}_name`, 'Член команды')}
+                          className="w-full aspect-square object-cover"
+                        />
+                      </div>
+                      <div className="absolute -bottom-3 -right-3 w-16 h-16 bg-syndikate-orange brutal-border flex items-center justify-center">
+                        <Trophy className="w-8 h-8 text-background" />
+                      </div>
+                    </div>
+
+                    <div className="space-y-3">
+                      <h3 className="text-2xl font-bold text-foreground tracking-wider uppercase">
+                        {getContent(`team_${num}_name`, 'ИМЯ ФАМИЛИЯ')}
+                      </h3>
+                      <Badge className="bg-syndikate-orange text-background font-mono uppercase tracking-wider">
+                        {getContent(`team_${num}_role`, 'ДОЛЖНОСТЬ')}
+                      </Badge>
+                      <p className="text-sm text-muted-foreground font-mono uppercase tracking-wide">
+                        {getContent(`team_${num}_experience`, '10+ ЛЕТ В ПОКЕРЕ')}
+                      </p>
+                      {getContent(`team_${num}_achievements`, '') && (
+                        <div className="pt-4 border-t border-syndikate-orange/30">
+                          <p className="text-xs text-muted-foreground font-mono uppercase tracking-wide leading-relaxed">
+                            {getContent(`team_${num}_achievements`, '')}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
         </main>
         
         <Footer />
