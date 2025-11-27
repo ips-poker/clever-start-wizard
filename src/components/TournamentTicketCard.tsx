@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useRef } from "react";
 import Barcode from "react-barcode";
 import { QRCodeSVG } from "qrcode.react";
 import { Badge } from "@/components/ui/badge";
@@ -52,6 +52,39 @@ interface TournamentTicketCardProps {
 }
 
 export function TournamentTicketCard({ tournament, onViewDetails, onRegister }: TournamentTicketCardProps) {
+  const [rotateX, setRotateX] = useState(0);
+  const [rotateY, setRotateY] = useState(0);
+  const [isHovering, setIsHovering] = useState(false);
+  const cardRef = useRef<HTMLDivElement>(null);
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!cardRef.current) return;
+    
+    const card = cardRef.current;
+    const rect = card.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    
+    const centerX = rect.width / 2;
+    const centerY = rect.height / 2;
+    
+    const rotateXValue = ((y - centerY) / centerY) * -8; // Max 8 degrees
+    const rotateYValue = ((x - centerX) / centerX) * 8;  // Max 8 degrees
+    
+    setRotateX(rotateXValue);
+    setRotateY(rotateYValue);
+  };
+
+  const handleMouseEnter = () => {
+    setIsHovering(true);
+  };
+
+  const handleMouseLeave = () => {
+    setIsHovering(false);
+    setRotateX(0);
+    setRotateY(0);
+  };
+
   const getStatusBadge = (status: string) => {
     const statusConfig = {
       'registration': { 
@@ -167,12 +200,28 @@ export function TournamentTicketCard({ tournament, onViewDetails, onRegister }: 
   };
 
   return (
-    <div className="group relative w-full">
+    <div 
+      className="group relative w-full"
+      style={{ perspective: '1000px' }}
+    >
       {/* Neon Glow Effect */}
       <div className="absolute -inset-1 bg-gradient-neon rounded opacity-0 group-hover:opacity-30 blur-xl transition-all duration-500"></div>
       
       {/* Main Card Container */}
-      <div className="relative brutal-metal brutal-border overflow-hidden shadow-brutal group-hover:shadow-neon-orange transition-all duration-500">
+      <div 
+        ref={cardRef}
+        onMouseMove={handleMouseMove}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+        className="relative brutal-metal brutal-border overflow-hidden shadow-brutal group-hover:shadow-neon-orange transition-all duration-300 will-change-transform"
+        style={{
+          transform: isHovering 
+            ? `rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(1.02)` 
+            : 'rotateX(0deg) rotateY(0deg) scale(1)',
+          transformStyle: 'preserve-3d',
+          transition: 'transform 0.1s ease-out, box-shadow 0.5s'
+        }}
+      >
         
         {/* Industrial Background Pattern */}
         <div 
