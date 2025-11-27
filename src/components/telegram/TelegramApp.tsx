@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -14,6 +14,7 @@ import { toast } from 'sonner';
 import { addToHomeScreen } from '@telegram-apps/sdk';
 import syndikateLogo from '@/assets/syndikate-logo-main.png';
 import { GlitchText } from '@/components/ui/glitch-text';
+import { FloatingParticles } from '@/components/ui/floating-particles';
 import mainPokerRoom from '@/assets/gallery/main-poker-room.jpg';
 import tournamentTable from '@/assets/gallery/tournament-table.jpg';
 import vipZone from '@/assets/gallery/vip-zone.jpg';
@@ -83,6 +84,13 @@ export const TelegramApp = () => {
   const [currentRuleIndex, setCurrentRuleIndex] = useState(0);
   const [canAddToHomeScreen, setCanAddToHomeScreen] = useState(false);
   const [userRegistrations, setUserRegistrations] = useState<Set<string>>(new Set());
+  const [scrollY, setScrollY] = useState(0);
+  
+  // Refs for parallax effects
+  const baseTextureRef = useRef<HTMLDivElement>(null);
+  const gridRef = useRef<HTMLDivElement>(null);
+  const glowTopRef = useRef<HTMLDivElement>(null);
+  const glowBottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     // Проверяем доступность функции добавления на главный экран
@@ -104,6 +112,34 @@ export const TelegramApp = () => {
     // Проверяем с задержкой после инициализации SDK
     setTimeout(checkAddToHomeScreen, 500);
   }, []);
+
+  // Parallax scroll effect
+  useEffect(() => {
+    const handleScroll = (e: Event) => {
+      const target = e.target as HTMLElement;
+      const currentScrollY = target.scrollTop || 0;
+      setScrollY(currentScrollY);
+      
+      if (baseTextureRef.current) {
+        baseTextureRef.current.style.transform = `translateY(${currentScrollY * 0.15}px)`;
+      }
+      if (gridRef.current) {
+        gridRef.current.style.transform = `translateY(${currentScrollY * 0.25}px)`;
+      }
+      if (glowTopRef.current) {
+        glowTopRef.current.style.transform = `translate(-24px, ${-128 + currentScrollY * 0.1}px)`;
+      }
+      if (glowBottomRef.current) {
+        glowBottomRef.current.style.transform = `translate(-120px, ${-180 + currentScrollY * 0.2}px)`;
+      }
+    };
+
+    const contentElement = document.querySelector('.telegram-content');
+    if (contentElement) {
+      contentElement.addEventListener('scroll', handleScroll, { passive: true });
+      return () => contentElement.removeEventListener('scroll', handleScroll);
+    }
+  }, [activeTab]);
 
   useEffect(() => {
     if (isAuthenticated && telegramUser) {
@@ -419,7 +455,7 @@ export const TelegramApp = () => {
   };
 
   const renderHome = () => (
-    <div className="space-y-4 pb-20 px-4 bg-transparent min-h-screen relative z-10">
+    <div className="space-y-4 pb-20 px-4 pt-2 bg-transparent min-h-screen relative z-10">
       <Card className="bg-syndikate-metal/90 brutal-border overflow-hidden relative cursor-pointer group transition-all duration-500 hover:scale-[1.02] hover:shadow-neon-orange backdrop-blur-xl" onClick={() => setActiveTab('about')}>
         <div className="absolute inset-0 bg-gradient-to-br from-syndikate-orange/5 via-transparent to-syndikate-red/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
         <div className="absolute inset-0 opacity-10 group-hover:opacity-20 transition-opacity duration-500">
@@ -1105,25 +1141,56 @@ export const TelegramApp = () => {
 
   return (
     <div className="w-full h-full bg-background industrial-texture relative overflow-hidden flex flex-col">
-      {/* Industrial Background Elements */}
-      <div className="absolute inset-0 opacity-20 overflow-hidden pointer-events-none">
-        <div className="absolute top-10 left-10 w-[300px] h-[300px] bg-syndikate-orange/20 rounded-full blur-[80px] animate-pulse" />
-        <div className="absolute bottom-10 right-10 w-[250px] h-[250px] bg-syndikate-red/15 rounded-full blur-[70px] animate-pulse" style={{ animationDelay: '1s' }} />
-      </div>
+      <FloatingParticles />
       
-      {/* Metal Grid Pattern */}
-      <div 
-        className="absolute inset-0 opacity-10 pointer-events-none"
-        style={{
-          backgroundImage: `
-            repeating-linear-gradient(0deg, transparent, transparent 50px, rgba(255, 255, 255, 0.05) 50px, rgba(255, 255, 255, 0.05) 51px),
-            repeating-linear-gradient(90deg, transparent, transparent 50px, rgba(255, 255, 255, 0.05) 50px, rgba(255, 255, 255, 0.05) 51px)
-          `
-        }}
-      />
+      {/* Background Effects - only on home page */}
+      {activeTab === 'home' && (
+        <>
+          {/* Industrial metal base texture */}
+          <div 
+            ref={baseTextureRef}
+            className="fixed inset-0 pointer-events-none industrial-texture opacity-50 z-0 transition-transform duration-0 will-change-transform" 
+          />
 
-      {/* Scrollable content area */}
-      <div className="flex-1 overflow-y-auto overflow-x-hidden relative z-10" style={{ maxHeight: '100%' }}>
+          {/* Metal grid overlay */}
+          <div
+            ref={gridRef}
+            className="fixed inset-0 pointer-events-none opacity-20 z-0 transition-transform duration-0 will-change-transform"
+            style={{
+              backgroundImage: `
+                repeating-linear-gradient(0deg, transparent, transparent 48px, rgba(255,255,255,0.04) 48px, rgba(255,255,255,0.04) 49px),
+                repeating-linear-gradient(90deg, transparent, transparent 48px, rgba(255,255,255,0.04) 48px, rgba(255,255,255,0.04) 49px)
+              `,
+            }}
+          />
+
+          {/* Neon glows */}
+          <div 
+            ref={glowTopRef}
+            className="fixed w-[520px] h-[520px] bg-syndikate-orange/25 rounded-full blur-[160px] opacity-80 animate-pulse will-change-transform z-0" 
+          />
+          <div 
+            ref={glowBottomRef}
+            className="fixed right-0 bottom-0 w-[520px] h-[520px] bg-syndikate-red/20 rounded-full blur-[160px] opacity-80 animate-pulse will-change-transform z-0" 
+          />
+
+          {/* Side rails */}
+          <div className="fixed inset-y-0 left-0 w-[2px] bg-gradient-to-b from-syndikate-orange/70 via-syndikate-red/40 to-transparent shadow-neon-orange pointer-events-none z-10" />
+          <div className="fixed inset-y-0 right-0 w-[2px] bg-gradient-to-b from-syndikate-orange/70 via-syndikate-red/40 to-transparent shadow-neon-orange pointer-events-none z-10" />
+          
+          {/* Subtle noise */}
+          <div
+            className="fixed inset-0 pointer-events-none opacity-25 mix-blend-soft-light z-0"
+            style={{
+              backgroundImage: "radial-gradient(circle at 1px 1px, rgba(255,255,255,0.15) 1px, transparent 0)",
+              backgroundSize: "4px 4px",
+            }}
+          />
+        </>
+      )}
+      
+      {/* Content Area with relative z-index */}
+      <div className="flex-1 overflow-y-auto telegram-content relative z-20 overflow-x-hidden" style={{ maxHeight: '100%' }}>
         <div className="max-w-lg mx-auto">
           {activeTab === 'home' && renderHome()}
           {activeTab === 'about' && renderAbout()}
