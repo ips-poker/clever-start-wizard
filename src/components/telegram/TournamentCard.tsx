@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Trophy, Users, Clock } from 'lucide-react';
 import { GlitchText } from '@/components/ui/glitch-text';
 
@@ -24,15 +24,25 @@ interface TournamentCardProps {
 }
 
 export const TournamentCard: React.FC<TournamentCardProps> = ({ tournament, index, onClick }) => {
+  const [currentTime, setCurrentTime] = useState(new Date());
+  
   const registeredCount = tournament.tournament_registrations?.[0]?.count || 0;
   const maxPlayers = tournament.max_players;
   const spotsLeft = maxPlayers - registeredCount;
   const fillPercentage = (registeredCount / maxPlayers) * 100;
   
+  // Live countdown timer - updates every minute
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 60000); // Update every minute
+    
+    return () => clearInterval(timer);
+  }, []);
+  
   // Calculate countdown with days
-  const now = new Date();
   const startTime = new Date(tournament.start_time);
-  const timeUntilStart = startTime.getTime() - now.getTime();
+  const timeUntilStart = startTime.getTime() - currentTime.getTime();
   const daysUntil = Math.floor(timeUntilStart / (1000 * 60 * 60 * 24));
   const hoursUntil = Math.floor((timeUntilStart % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
   const minutesUntil = Math.floor((timeUntilStart % (1000 * 60 * 60)) / (1000 * 60));
@@ -126,9 +136,9 @@ export const TournamentCard: React.FC<TournamentCardProps> = ({ tournament, inde
           </div>
         </div>
         
-        {/* Enhanced Countdown Timer for upcoming tournaments */}
+        {/* Enhanced Live Countdown Timer for upcoming tournaments */}
         {tournament.status === 'registration' && timeUntilStart > 0 && (
-          <div className="bg-syndikate-concrete/10 brutal-border p-4 space-y-2 backdrop-blur-sm">
+          <div className="bg-syndikate-concrete/10 brutal-border p-4 space-y-2 backdrop-blur-sm animate-fade-in">
             <div className="flex items-center justify-center gap-2 mb-3">
               <Clock className="h-5 w-5 text-syndikate-orange animate-pulse" />
               <div className="text-sm text-syndikate-orange uppercase font-display tracking-wider">
@@ -136,8 +146,8 @@ export const TournamentCard: React.FC<TournamentCardProps> = ({ tournament, inde
               </div>
             </div>
             <div className="flex justify-center items-center gap-3">
-              <div className="flex flex-col items-center bg-background/50 brutal-border px-4 py-3 min-w-[80px]">
-                <div className="text-3xl font-display text-syndikate-orange tabular-nums leading-none">
+              <div className="flex flex-col items-center bg-background/50 brutal-border px-4 py-3 min-w-[80px] transition-all duration-300 hover:scale-105">
+                <div className="text-3xl font-display text-syndikate-orange tabular-nums leading-none animate-fade-in">
                   {timeDisplay.primary}
                 </div>
                 <div className="text-xs text-syndikate-concrete uppercase mt-1 font-display">
@@ -146,9 +156,9 @@ export const TournamentCard: React.FC<TournamentCardProps> = ({ tournament, inde
               </div>
               {timeDisplay.secondary !== null && (
                 <>
-                  <div className="text-2xl font-display text-syndikate-orange">•</div>
-                  <div className="flex flex-col items-center bg-background/50 brutal-border px-4 py-3 min-w-[80px]">
-                    <div className="text-3xl font-display text-syndikate-orange tabular-nums leading-none">
+                  <div className="text-2xl font-display text-syndikate-orange animate-pulse">•</div>
+                  <div className="flex flex-col items-center bg-background/50 brutal-border px-4 py-3 min-w-[80px] transition-all duration-300 hover:scale-105">
+                    <div className="text-3xl font-display text-syndikate-orange tabular-nums leading-none animate-fade-in">
                       {timeDisplay.secondary}
                     </div>
                     <div className="text-xs text-syndikate-concrete uppercase mt-1 font-display">
@@ -157,6 +167,13 @@ export const TournamentCard: React.FC<TournamentCardProps> = ({ tournament, inde
                   </div>
                 </>
               )}
+            </div>
+            {/* Live indicator */}
+            <div className="flex items-center justify-center gap-1 mt-2">
+              <div className="w-1.5 h-1.5 bg-syndikate-orange rounded-full animate-pulse" />
+              <div className="text-xs text-syndikate-concrete/60 uppercase tracking-wide">
+                Live
+              </div>
             </div>
           </div>
         )}
