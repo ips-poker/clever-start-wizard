@@ -9,6 +9,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Menu, X, User, LogOut, Settings, Crown } from "lucide-react";
+import syndikateLogoSpade from "@/assets/syndikate-logo-spade.png";
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -42,19 +43,25 @@ export function Header() {
             className="flex items-center space-x-3 group"
           >
             <div className="relative">
-              <div className="w-12 h-12 border-2 border-syndikate-orange bg-syndikate-metal brutal-border flex items-center justify-center transition-all group-hover:shadow-neon-orange">
-                <span className="font-display text-2xl neon-orange">S</span>
+              <div className="w-14 h-14 brutal-metal brutal-border flex items-center justify-center transition-all group-hover:shadow-neon-orange relative overflow-hidden">
+                <div className="absolute inset-0 industrial-texture opacity-20" />
+                <img 
+                  src={syndikateLogoSpade} 
+                  alt="Syndikate Logo" 
+                  className="w-9 h-9 object-contain relative z-10 group-hover:scale-110 transition-transform duration-300 drop-shadow-[0_0_8px_rgba(255,90,31,0.5)]"
+                />
               </div>
               {/* Corner accents */}
-              <div className="absolute -top-1 -left-1 w-3 h-3 border-l-2 border-t-2 border-syndikate-red opacity-0 group-hover:opacity-100 transition-opacity" />
-              <div className="absolute -top-1 -right-1 w-3 h-3 border-r-2 border-t-2 border-syndikate-red opacity-0 group-hover:opacity-100 transition-opacity" />
-              <div className="absolute -bottom-1 -left-1 w-3 h-3 border-l-2 border-b-2 border-syndikate-red opacity-0 group-hover:opacity-100 transition-opacity" />
-              <div className="absolute -bottom-1 -right-1 w-3 h-3 border-r-2 border-b-2 border-syndikate-red opacity-0 group-hover:opacity-100 transition-opacity" />
+              <div className="absolute -top-1 -left-1 w-3 h-3 border-l-2 border-t-2 border-syndikate-orange opacity-0 group-hover:opacity-100 transition-opacity" />
+              <div className="absolute -top-1 -right-1 w-3 h-3 border-r-2 border-t-2 border-syndikate-orange opacity-0 group-hover:opacity-100 transition-opacity" />
+              <div className="absolute -bottom-1 -left-1 w-3 h-3 border-l-2 border-b-2 border-syndikate-orange opacity-0 group-hover:opacity-100 transition-opacity" />
+              <div className="absolute -bottom-1 -right-1 w-3 h-3 border-r-2 border-b-2 border-syndikate-orange opacity-0 group-hover:opacity-100 transition-opacity" />
             </div>
             <div>
-              <span className="font-display text-2xl uppercase tracking-wider text-foreground">
+              <span className="font-display text-2xl uppercase tracking-wider neon-orange">
                 Syndikate
               </span>
+              <div className="text-[8px] font-mono text-muted-foreground tracking-widest mt-0.5">POKER CLUB</div>
               <div className="h-[1px] w-0 group-hover:w-full bg-syndikate-orange transition-all duration-300" />
             </div>
           </Link>
