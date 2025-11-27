@@ -40,7 +40,7 @@ export function Header() {
           {/* Logo */}
           <Link 
             to="/" 
-            className="flex items-center space-x-1 group"
+            className="flex items-center group"
           >
             {/* Logo */}
             <div className="relative">
@@ -53,7 +53,7 @@ export function Header() {
             </div>
             
             {/* Text with curved bottom */}
-            <div className="relative">
+            <div className="relative -ml-2">
               <svg viewBox="0 0 380 96" className="w-80 h-24">
                 <defs>
                   <path id="curve" d="M 10,48 Q 190,28 370,48" fill="transparent" />
