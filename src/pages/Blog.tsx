@@ -180,7 +180,7 @@ export default function Blog() {
     return (
       <>
         <ScrollProgress />
-        <div className="min-h-screen bg-background relative overflow-hidden">
+        <div className="min-h-screen bg-background relative">
           <div className="fixed inset-0 industrial-texture opacity-50" />
           <Header />
           <div className="flex items-center justify-center py-20 pt-24 md:pt-20 relative z-20">
@@ -196,7 +196,7 @@ export default function Blog() {
     <>
       <ScrollProgress />
       <FloatingParticles />
-      <div className="min-h-screen bg-background relative overflow-hidden">
+      <div className="min-h-screen bg-background relative">
         {/* Industrial metal base texture */}
         <div className="fixed inset-0 pointer-events-none industrial-texture opacity-50 z-0" />
 

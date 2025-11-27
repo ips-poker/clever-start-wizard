@@ -147,7 +147,7 @@ export default function Rating() {
     return (
       <>
         <ScrollProgress />
-        <div className="min-h-screen bg-background relative overflow-hidden">
+        <div className="min-h-screen bg-background relative">
           <div className="fixed inset-0 industrial-texture opacity-50" />
           <Header />
           <main className="pt-24 md:pt-20 relative z-20">
@@ -168,7 +168,7 @@ export default function Rating() {
     <>
       <ScrollProgress />
       <FloatingParticles />
-      <div className="min-h-screen bg-background relative overflow-hidden">
+      <div className="min-h-screen bg-background relative">
         {/* Industrial metal base texture */}
         <div 
           ref={baseTextureRef}

@@ -150,7 +150,7 @@ const Index = () => {
           ]
         }}
       />
-      <div className="min-h-screen bg-background relative overflow-hidden">
+      <div className="min-h-screen bg-background relative">
         {/* Industrial metal base texture */}
         <div 
           ref={baseTextureRef}
