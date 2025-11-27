@@ -159,62 +159,33 @@ export function TelegramTournamentModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto bg-syndikate-metal/98 brutal-border backdrop-blur-2xl text-foreground shadow-neon-orange">
+      <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto bg-syndikate-metal/98 brutal-border backdrop-blur-2xl text-foreground">
         {/* Industrial Background */}
         <div className="absolute inset-0 opacity-5 overflow-hidden pointer-events-none">
-          <div className="absolute inset-0 industrial-texture" />
           <div className="absolute top-4 right-6 text-4xl text-syndikate-orange font-bold transform rotate-12 animate-pulse">♠</div>
-          <div className="absolute top-16 left-4 text-3xl text-syndikate-red font-bold transform -rotate-12 animate-pulse" style={{ animationDelay: '0.5s' }}>♥</div>
-          <div className="absolute bottom-12 right-8 text-5xl text-syndikate-orange font-bold transform rotate-45 animate-pulse" style={{ animationDelay: '1s' }}>♦</div>
-          <div className="absolute bottom-4 left-6 text-4xl text-syndikate-rust font-bold transform -rotate-30 animate-pulse" style={{ animationDelay: '1.5s' }}>♣</div>
+          <div className="absolute top-16 left-4 text-3xl text-syndikate-red font-bold transform -rotate-12">♥</div>
+          <div className="absolute bottom-12 right-8 text-5xl text-syndikate-orange font-bold transform rotate-45 animate-pulse">♦</div>
+          <div className="absolute bottom-4 left-6 text-4xl text-syndikate-rust font-bold transform -rotate-30">♣</div>
+          <div className="absolute inset-0 metal-grid-pattern opacity-30"></div>
         </div>
-        
-        {/* Metal Grid Overlay */}
-        <div 
-          className="absolute inset-0 opacity-3 pointer-events-none"
-          style={{
-            backgroundImage: `
-              repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255, 135, 31, 0.08) 2px, rgba(255, 135, 31, 0.08) 3px),
-              repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(255, 135, 31, 0.08) 2px, rgba(255, 135, 31, 0.08) 3px)
-            `,
-            backgroundSize: '30px 30px'
-          }}
-        />
-        
-        {/* Animated Glows */}
-        <div className="absolute top-10 right-10 w-32 h-32 bg-syndikate-orange/20 rounded-full blur-3xl animate-pulse pointer-events-none" />
-        <div className="absolute bottom-20 left-10 w-40 h-40 bg-syndikate-red/15 rounded-full blur-3xl animate-pulse pointer-events-none" style={{ animationDelay: '1s' }} />
 
         <DialogHeader className="relative z-10 pb-4 animate-fade-in">
           <div className="text-center">
-            {/* Title with Corner Brackets */}
-            <div className="relative inline-block mb-3">
-              <div className="absolute -top-2 -left-2 w-4 h-4 border-l-2 border-t-2 border-syndikate-orange" />
-              <div className="absolute -top-2 -right-2 w-4 h-4 border-r-2 border-t-2 border-syndikate-orange" />
-              <div className="absolute -bottom-2 -left-2 w-4 h-4 border-l-2 border-b-2 border-syndikate-orange" />
-              <div className="absolute -bottom-2 -right-2 w-4 h-4 border-r-2 border-b-2 border-syndikate-orange" />
-              
-              <DialogTitle className="font-display text-xl uppercase text-foreground tracking-wider px-6 py-2 animate-scale-in neon-orange">
-                <GlitchText 
-                  text={tournament.name}
-                  glitchIntensity="high"
-                  glitchInterval={5000}
-                  className="inline-block"
-                />
-              </DialogTitle>
-            </div>
-            
+            <DialogTitle className="font-display text-xl uppercase text-foreground tracking-wider mb-2 animate-scale-in">
+              <GlitchText 
+                text={tournament.name}
+                glitchIntensity="high"
+                glitchInterval={5000}
+                className="inline-block"
+              />
+            </DialogTitle>
             <div className="flex justify-center mb-3 animate-fade-in" style={{ animationDelay: '0.1s' }}>
-              <div className="h-[3px] w-16 bg-gradient-neon shadow-neon-orange"></div>
+              <div className="h-[2px] w-12 bg-gradient-neon"></div>
             </div>
-            <div className="flex justify-center gap-2 mb-3 animate-scale-in" style={{ animationDelay: '0.2s' }}>
+            <div className="flex justify-center mb-3 animate-scale-in" style={{ animationDelay: '0.2s' }}>
               {getStatusBadge(tournament.status)}
-              <Badge className="bg-syndikate-orange/20 text-syndikate-orange brutal-border px-2 py-1 text-xs font-bold uppercase">
-                <Trophy className="h-3 w-3 mr-1" />
-                ID: {tournament.id.split('-')[0].toUpperCase()}
-              </Badge>
             </div>
-            <DialogDescription className="text-muted-foreground text-xs leading-relaxed max-w-xs mx-auto animate-fade-in font-medium" style={{ animationDelay: '0.3s' }}>
+            <DialogDescription className="text-muted-foreground text-xs leading-relaxed max-w-xs mx-auto animate-fade-in" style={{ animationDelay: '0.3s' }}>
               {tournament.description || "Присоединяйтесь к покерному турниру"}
             </DialogDescription>
           </div>
@@ -274,21 +245,14 @@ export function TelegramTournamentModal({
                 )}
               </div>
 
-              <div className="bg-syndikate-orange/10 brutal-border p-3 backdrop-blur-sm border-syndikate-orange/30 relative overflow-hidden group/prize">
-                <div className="absolute inset-0 industrial-texture opacity-20" />
-                <div className="absolute top-0 right-0 w-20 h-20 bg-syndikate-orange/20 rounded-full blur-2xl animate-pulse" />
-                <div className="relative">
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="w-6 h-6 bg-syndikate-orange brutal-border flex items-center justify-center shadow-neon-orange animate-pulse">
-                      <Crown className="h-3 w-3 text-background" />
-                    </div>
-                    <h3 className="text-xs font-display font-bold text-foreground uppercase flex items-center gap-1">
-                      <Zap className="h-3 w-3 text-syndikate-orange" />
-                      Фонд RPS
-                    </h3>
+              <div className="bg-syndikate-orange/10 brutal-border p-3 backdrop-blur-sm border-syndikate-orange/30">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-6 h-6 bg-syndikate-orange brutal-border flex items-center justify-center">
+                    <Crown className="h-3 w-3 text-background" />
                   </div>
-                  <p className="text-lg font-bold text-syndikate-orange neon-orange">{formatRPSPoints(totalRPSPool)}</p>
+                  <h3 className="text-xs font-display font-bold text-foreground uppercase">Фонд RPS</h3>
                 </div>
+                <p className="text-lg font-bold text-syndikate-orange">{formatRPSPoints(totalRPSPool)}</p>
               </div>
             </div>
 
@@ -387,19 +351,17 @@ export function TelegramTournamentModal({
               <Button 
                 onClick={() => onRegister(tournament.id)} 
                 disabled={registering} 
-                className="bg-syndikate-orange hover:bg-syndikate-orange-glow text-background font-bold uppercase tracking-wider py-3 px-6 brutal-border shadow-neon-orange hover:shadow-neon-orange transition-all duration-300 text-sm w-full relative overflow-hidden group/register disabled:opacity-50"
+                className="bg-syndikate-orange hover:bg-syndikate-orange-glow text-background font-bold uppercase tracking-wider py-3 px-6 brutal-border shadow-neon-orange hover:shadow-neon-orange transition-all duration-300 text-sm w-full"
               >
-                <div className="absolute inset-0 bg-syndikate-red/20 translate-x-full group-hover/register:translate-x-0 transition-transform duration-500" />
                 {registering ? (
-                  <div className="flex items-center gap-2 relative z-10">
+                  <div className="flex items-center gap-2">
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-background"></div>
                     <span>Регистрируем...</span>
                   </div>
                 ) : (
-                  <div className="flex items-center gap-2 justify-center relative z-10">
-                    <Target className="h-4 w-4" />
-                    <span>Записаться на турнир</span>
-                    <Zap className="h-4 w-4 animate-pulse" />
+                  <div className="flex items-center gap-2 justify-center">
+                    <UserPlus className="h-4 w-4" />
+                    <span>Записаться</span>
                   </div>
                 )}
               </Button>

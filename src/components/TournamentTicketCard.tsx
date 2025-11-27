@@ -3,7 +3,6 @@ import Barcode from "react-barcode";
 import { QRCodeSVG } from "qrcode.react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { GlitchText } from "@/components/ui/glitch-text";
 import { calculateTotalRPSPool, formatRPSPoints, formatParticipationFee } from "@/utils/rpsCalculations";
 import { 
   Calendar, 
@@ -18,8 +17,7 @@ import {
   Shield,
   Repeat,
   Lock,
-  AlertTriangle,
-  Crosshair
+  AlertTriangle
 } from "lucide-react";
 
 interface Tournament {
@@ -226,22 +224,14 @@ export function TournamentTicketCard({ tournament, onViewDetails, onRegister }: 
       >
         
         {/* Industrial Background Pattern */}
-        <div className="absolute inset-0 industrial-texture opacity-20" />
-        
-        {/* Metal Grid Overlay */}
         <div 
-          className="absolute inset-0 opacity-5"
+          className="absolute inset-0 opacity-10"
           style={{
             backgroundImage: `
-              repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255, 135, 31, 0.1) 2px, rgba(255, 135, 31, 0.1) 3px),
-              repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(255, 135, 31, 0.1) 2px, rgba(255, 135, 31, 0.1) 3px)
-            `,
-            backgroundSize: '30px 30px'
+              repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255, 255, 255, 0.02) 10px, rgba(255, 255, 255, 0.02) 20px)
+            `
           }}
         />
-        
-        {/* Animated Orange Glow */}
-        <div className="absolute top-0 right-0 w-32 h-32 bg-syndikate-orange/20 rounded-full blur-3xl animate-pulse" />
 
         {/* Corner Brackets */}
         <div className="absolute top-0 left-0 w-8 h-8 border-l-2 border-t-2 border-syndikate-orange" />
@@ -262,19 +252,10 @@ export function TournamentTicketCard({ tournament, onViewDetails, onRegister }: 
           
           {/* Header Section */}
           <div className="mb-4 space-y-3">
-            {/* Tournament Name with Glitch */}
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-syndikate-orange brutal-border flex items-center justify-center animate-pulse">
-                <Crosshair className="h-4 w-4 text-background" />
-              </div>
-              <h3 className="font-display text-2xl uppercase tracking-wider text-foreground group-hover:text-syndikate-orange transition-colors duration-300 flex-1">
-                <GlitchText 
-                  text={tournament.name}
-                  glitchIntensity="medium"
-                  glitchInterval={8000}
-                />
-              </h3>
-            </div>
+            {/* Tournament Name */}
+            <h3 className="font-display text-2xl uppercase tracking-wider text-foreground group-hover:text-syndikate-orange transition-colors duration-300">
+              {tournament.name}
+            </h3>
             
             {/* Status and Format Row */}
             <div className="flex items-center gap-2 flex-wrap">
@@ -316,23 +297,16 @@ export function TournamentTicketCard({ tournament, onViewDetails, onRegister }: 
 
           {/* RPS Prize Pool Banner */}
           {totalRPSPool > 0 && (
-            <div className="mb-4 bg-syndikate-metal/50 brutal-border p-3 relative overflow-hidden group/prize">
-              <div className="absolute inset-0 industrial-texture opacity-10" />
-              <div className="absolute top-0 right-0 w-24 h-24 bg-syndikate-orange/20 rounded-full blur-2xl animate-pulse" />
-              <div className="absolute -top-2 -left-2 w-16 h-16 bg-syndikate-red/10 rounded-full blur-xl animate-pulse" style={{ animationDelay: '1s' }} />
+            <div className="mb-4 bg-syndikate-metal/50 brutal-border p-3 relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-20 h-20 bg-syndikate-orange/10 rounded-full blur-2xl" />
               <div className="relative flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-syndikate-orange brutal-border flex items-center justify-center shadow-neon-orange group-hover/prize:animate-pulse">
-                    <Trophy className="h-6 w-6 text-background" />
+                  <div className="w-10 h-10 bg-syndikate-orange brutal-border flex items-center justify-center">
+                    <Trophy className="h-5 w-5 text-background" />
                   </div>
                   <div>
-                    <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest mb-1 flex items-center gap-1">
-                      <Zap className="h-3 w-3 text-syndikate-orange animate-pulse" />
-                      Призовой фонд RPS
-                    </p>
-                    <p className="font-display text-3xl text-syndikate-orange neon-orange">
-                      {formatRPSPoints(totalRPSPool)}
-                    </p>
+                    <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest">Призовой фонд</p>
+                    <p className="font-display text-3xl text-syndikate-orange">{formatRPSPoints(totalRPSPool)}</p>
                   </div>
                 </div>
               </div>
@@ -422,9 +396,8 @@ export function TournamentTicketCard({ tournament, onViewDetails, onRegister }: 
             <Button 
               onClick={onViewDetails}
               variant="outline"
-              className="w-full border-2 border-syndikate-orange text-syndikate-orange hover:bg-syndikate-orange hover:text-background font-bold uppercase tracking-wider transition-all group/btn brutal-border shadow-brutal hover:shadow-neon-orange"
+              className="w-full border-2 border-syndikate-orange text-syndikate-orange hover:bg-syndikate-orange hover:text-background font-bold uppercase tracking-wider transition-all group/btn"
             >
-              <Target className="mr-2 h-4 w-4" />
               Детали
               <ChevronRight className="ml-2 h-4 w-4 group-hover/btn:translate-x-1 transition-transform" />
             </Button>
@@ -432,13 +405,9 @@ export function TournamentTicketCard({ tournament, onViewDetails, onRegister }: 
             {tournament.status === 'registration' && (
               <Button 
                 onClick={onRegister}
-                className="w-full bg-syndikate-orange hover:bg-syndikate-orange-glow text-background font-bold uppercase tracking-wider shadow-neon-orange hover:shadow-neon-orange transition-all brutal-border relative overflow-hidden group/register"
+                className="w-full bg-syndikate-orange hover:bg-syndikate-orange-glow text-background font-bold uppercase tracking-wider shadow-neon-orange hover:shadow-neon-orange transition-all"
               >
-                <div className="absolute inset-0 bg-syndikate-red/20 translate-x-full group-hover/register:translate-x-0 transition-transform duration-500" />
-                <span className="relative flex items-center justify-center gap-2">
-                  <Zap className="h-4 w-4" />
-                  {getButtonText(tournament.status)}
-                </span>
+                {getButtonText(tournament.status)}
               </Button>
             )}
           </div>
