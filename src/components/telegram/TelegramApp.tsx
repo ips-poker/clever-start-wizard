@@ -12,7 +12,8 @@ import { TelegramTournamentModal } from './TelegramTournamentModal';
 import { TelegramProfile } from './TelegramProfile';
 import { toast } from 'sonner';
 import { addToHomeScreen } from '@telegram-apps/sdk';
-import epcLogo from '@/assets/epc-logo.png';
+import syndikateLogo from '@/assets/syndikate-logo-main.png';
+import { GlitchText } from '@/components/ui/glitch-text';
 import mainPokerRoom from '@/assets/gallery/main-poker-room.jpg';
 import tournamentTable from '@/assets/gallery/tournament-table.jpg';
 import vipZone from '@/assets/gallery/vip-zone.jpg';
@@ -419,27 +420,29 @@ export const TelegramApp = () => {
 
   const renderHome = () => (
     <div className="space-y-4 pb-20 px-4 bg-transparent min-h-screen relative z-10">
-      <Card className="bg-gradient-to-br from-slate-800/90 via-slate-900/95 to-black/90 border border-white/10 overflow-hidden relative cursor-pointer group transition-all duration-500 hover:scale-[1.02] hover:shadow-2xl hover:shadow-amber-500/20 backdrop-blur-xl" onClick={() => setActiveTab('about')}>
-        <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 via-transparent to-amber-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-        <div className="absolute inset-0 opacity-8 group-hover:opacity-15 transition-opacity duration-500">
-          <div className="absolute top-4 right-4 text-amber-400/30 text-5xl animate-pulse">♠</div>
-          <div className="absolute top-12 left-4 text-amber-400/20 text-3xl animate-bounce-subtle">♣</div>
-          <div className="absolute bottom-4 right-12 text-amber-400/25 text-4xl animate-pulse">♦</div>
-          <div className="absolute bottom-12 left-12 text-amber-400/15 text-2xl animate-bounce-subtle">♥</div>
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-amber-400/5 text-9xl rotate-12 animate-glow">♠</div>
+      <Card className="bg-syndikate-metal/90 brutal-border overflow-hidden relative cursor-pointer group transition-all duration-500 hover:scale-[1.02] hover:shadow-neon-orange backdrop-blur-xl" onClick={() => setActiveTab('about')}>
+        <div className="absolute inset-0 bg-gradient-to-br from-syndikate-orange/5 via-transparent to-syndikate-red/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+        <div className="absolute inset-0 opacity-10 group-hover:opacity-20 transition-opacity duration-500">
+          <div className="absolute top-4 right-4 text-syndikate-orange/30 text-5xl animate-pulse">♠</div>
+          <div className="absolute top-12 left-4 text-syndikate-orange/20 text-3xl">♣</div>
+          <div className="absolute bottom-4 right-12 text-syndikate-orange/25 text-4xl animate-pulse">♦</div>
+          <div className="absolute bottom-12 left-12 text-syndikate-orange/15 text-2xl">♥</div>
         </div>
         
         <CardContent className="p-5 relative z-10">
           <div className="flex items-center gap-4 mb-4">
-            <div className="w-12 h-12 bg-gradient-to-br from-white via-gray-50 to-gray-100 rounded-xl flex items-center justify-center overflow-hidden shadow-lg group-hover:shadow-xl transition-shadow duration-300 ring-1 ring-white/20 group-hover:ring-amber-400/30">
-              <img src={epcLogo} alt="EPC Logo" className="w-10 h-10 object-contain group-hover:scale-110 transition-transform duration-300" />
+            <div className="w-16 h-16 border-2 border-syndikate-orange bg-syndikate-concrete brutal-border flex items-center justify-center overflow-hidden shadow-lg group-hover:shadow-neon-orange transition-shadow duration-300 p-2">
+              <img src={syndikateLogo} alt="Syndikate Logo" className="w-full h-full object-contain neon-orange group-hover:scale-110 transition-transform duration-300" />
             </div>
             
             <div className="flex-1">
-              <h1 className="text-2xl font-light text-white tracking-wide drop-shadow-lg group-hover:text-amber-100 transition-colors duration-300">
-                EVENT POKER CLUB
+              <h1 className="font-display text-3xl uppercase text-foreground tracking-wider drop-shadow-lg group-hover:text-syndikate-orange transition-colors duration-300">
+                <GlitchText text="SYNDIKATE" glitchIntensity="low" />
               </h1>
-              <div className="h-0.5 w-12 bg-gradient-to-r from-amber-400 to-amber-600 mt-1 group-hover:w-16 transition-all duration-500"></div>
+              <div className="h-[2px] w-16 bg-gradient-neon mt-1 group-hover:w-24 transition-all duration-500"></div>
+              <p className="font-display text-sm uppercase tracking-wider text-syndikate-orange mt-1">
+                Власть за столом
+              </p>
             </div>
 
             {canAddToHomeScreen && (
@@ -450,7 +453,7 @@ export const TelegramApp = () => {
                   e.stopPropagation();
                   handleAddToHomeScreen();
                 }}
-                className="text-white hover:text-amber-400 hover:bg-white/10 p-2 transition-all duration-300 rounded-lg"
+                className="text-foreground hover:text-syndikate-orange hover:bg-syndikate-metal p-2 transition-all duration-300"
                 title="Установить на главный экран"
               >
                 <Download className="h-5 w-5" />
@@ -742,19 +745,19 @@ export const TelegramApp = () => {
 
       <div className="space-y-4">
         {/* Hero Card - Compact Version */}
-        <Card className="bg-gradient-to-br from-slate-800/95 via-slate-900/95 to-black/90 border border-amber-400/20 overflow-hidden relative shadow-xl backdrop-blur-xl">
+        <Card className="bg-syndikate-metal/90 brutal-border overflow-hidden relative shadow-xl backdrop-blur-xl">
           <CardContent className="p-5 relative z-10">
             <div className="flex items-center gap-4 mb-4">
-              <div className="w-12 h-12 bg-gradient-to-br from-white via-gray-50 to-gray-100 rounded-2xl flex items-center justify-center overflow-hidden shadow-lg">
-                <img src={epcLogo} alt="EPC Logo" className="w-10 h-10 object-contain" />
+              <div className="w-16 h-16 border-2 border-syndikate-orange bg-syndikate-concrete brutal-border flex items-center justify-center overflow-hidden shadow-lg p-2">
+                <img src={syndikateLogo} alt="Syndikate Logo" className="w-full h-full object-contain neon-orange" />
               </div>
               <div className="flex-1">
-                <h1 className="text-xl font-light text-white tracking-wide">
-                  EVENT POKER CLUB
+                <h1 className="font-display text-2xl uppercase text-foreground tracking-wider">
+                  <GlitchText text="SYNDIKATE" glitchIntensity="low" />
                 </h1>
-                <div className="h-0.5 w-16 bg-gradient-to-r from-amber-400 to-amber-600 mt-1 rounded-full"></div>
-                <p className="text-white/80 text-sm mt-2 leading-relaxed">
-                  Элитный покерный клуб с безупречной репутацией
+                <div className="h-[2px] w-16 bg-gradient-neon mt-1"></div>
+                <p className="font-display text-sm uppercase tracking-wider text-syndikate-orange mt-1">
+                  Власть за столом
                 </p>
               </div>
             </div>
@@ -972,18 +975,23 @@ export const TelegramApp = () => {
   }
 
   return (
-    <div className="max-w-lg mx-auto bg-black min-h-screen relative overflow-hidden">
-      {/* Покерные масти в фоне */}
-      <div className="absolute inset-0 opacity-5 overflow-hidden pointer-events-none">
-        <div className="absolute top-20 left-8 text-6xl text-red-500 transform rotate-12">♠</div>
-        <div className="absolute top-40 right-12 text-5xl text-red-600 transform -rotate-12">♥</div>
-        <div className="absolute top-80 left-16 text-7xl text-red-400 transform rotate-45">♦</div>
-        <div className="absolute top-96 right-8 text-6xl text-red-500 transform -rotate-30">♣</div>
-        <div className="absolute top-[28rem] left-4 text-5xl text-red-600 transform rotate-60">♠</div>
-        <div className="absolute top-[32rem] right-16 text-6xl text-red-400 transform -rotate-45">♥</div>
-        <div className="absolute top-[40rem] left-20 text-7xl text-red-500 transform rotate-15">♦</div>
-        <div className="absolute top-[44rem] right-6 text-5xl text-red-600 transform -rotate-60">♣</div>
+    <div className="max-w-lg mx-auto bg-background industrial-texture min-h-screen relative overflow-hidden">
+      {/* Industrial Background Elements */}
+      <div className="absolute inset-0 opacity-20 overflow-hidden pointer-events-none">
+        <div className="absolute top-10 left-10 w-[300px] h-[300px] bg-syndikate-orange/20 rounded-full blur-[80px] animate-pulse" />
+        <div className="absolute bottom-10 right-10 w-[250px] h-[250px] bg-syndikate-red/15 rounded-full blur-[70px] animate-pulse" style={{ animationDelay: '1s' }} />
       </div>
+      
+      {/* Metal Grid Pattern */}
+      <div 
+        className="absolute inset-0 opacity-10 pointer-events-none"
+        style={{
+          backgroundImage: `
+            repeating-linear-gradient(0deg, transparent, transparent 50px, rgba(255, 255, 255, 0.05) 50px, rgba(255, 255, 255, 0.05) 51px),
+            repeating-linear-gradient(90deg, transparent, transparent 50px, rgba(255, 255, 255, 0.05) 50px, rgba(255, 255, 255, 0.05) 51px)
+          `
+        }}
+      />
 
       {activeTab === 'home' && renderHome()}
       {activeTab === 'about' && renderAbout()}
@@ -1567,51 +1575,51 @@ export const TelegramApp = () => {
         </div>
       )}
 
-      <div className="fixed bottom-0 left-0 right-0 bg-gradient-to-t from-black/95 via-slate-900/95 to-slate-800/90 border-t border-amber-400/20 backdrop-blur-xl z-50 shadow-2xl">
-        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-amber-400/50 to-transparent"></div>
+      <div className="fixed bottom-0 left-0 right-0 bg-syndikate-concrete/95 brutal-border border-t border-syndikate-orange/30 backdrop-blur-xl z-50 shadow-brutal">
+        <div className="absolute inset-x-0 top-0 h-px bg-gradient-neon"></div>
         <div className="max-w-lg mx-auto">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="grid w-full grid-cols-4 bg-transparent h-20 p-2 gap-1">
-              <TabsTrigger value="home" className="group flex flex-col gap-2 text-white/60 data-[state=active]:text-amber-400 hover:text-white/80 transition-all duration-300 border-0 rounded-xl bg-transparent data-[state=active]:bg-gradient-to-br data-[state=active]:from-amber-500/10 data-[state=active]:to-amber-600/5 cursor-pointer relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 to-transparent opacity-0 group-hover:opacity-100 group-data-[state=active]:opacity-100 transition-opacity duration-300 rounded-xl"></div>
+              <TabsTrigger value="home" className="group flex flex-col gap-2 text-muted-foreground data-[state=active]:text-syndikate-orange hover:text-foreground transition-all duration-300 border-0 bg-transparent data-[state=active]:bg-syndikate-orange/10 cursor-pointer relative overflow-hidden brutal-border">
+                <div className="absolute inset-0 bg-gradient-to-br from-syndikate-orange/5 to-transparent opacity-0 group-hover:opacity-100 group-data-[state=active]:opacity-100 transition-opacity duration-300"></div>
                 <div className="relative z-10 flex flex-col items-center gap-1.5">
-                  <div className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 group-hover:bg-white/10 group-data-[state=active]:bg-amber-500/20 transition-all duration-300 group-data-[state=active]:shadow-lg group-data-[state=active]:shadow-amber-500/20">
+                  <div className="w-8 h-8 flex items-center justify-center bg-syndikate-metal group-hover:bg-syndikate-metal-light group-data-[state=active]:bg-syndikate-orange/20 transition-all duration-300 group-data-[state=active]:shadow-neon-orange">
                     <Home className="h-4 w-4 group-data-[state=active]:scale-110 transition-transform duration-300" />
                   </div>
-                  <span className="text-xs font-medium tracking-wide">Главная</span>
+                  <span className="text-xs font-bold uppercase tracking-wider">Главная</span>
                 </div>
               </TabsTrigger>
-              <TabsTrigger value="tournaments" className="group flex flex-col gap-2 text-white/60 data-[state=active]:text-amber-400 hover:text-white/80 transition-all duration-300 border-0 rounded-xl bg-transparent data-[state=active]:bg-gradient-to-br data-[state=active]:from-amber-500/10 data-[state=active]:to-amber-600/5 cursor-pointer relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 to-transparent opacity-0 group-hover:opacity-100 group-data-[state=active]:opacity-100 transition-opacity duration-300 rounded-xl"></div>
+              <TabsTrigger value="tournaments" className="group flex flex-col gap-2 text-muted-foreground data-[state=active]:text-syndikate-orange hover:text-foreground transition-all duration-300 border-0 bg-transparent data-[state=active]:bg-syndikate-orange/10 cursor-pointer relative overflow-hidden brutal-border">
+                <div className="absolute inset-0 bg-gradient-to-br from-syndikate-orange/5 to-transparent opacity-0 group-hover:opacity-100 group-data-[state=active]:opacity-100 transition-opacity duration-300"></div>
                 <div className="relative z-10 flex flex-col items-center gap-1.5">
-                  <div className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 group-hover:bg-white/10 group-data-[state=active]:bg-amber-500/20 transition-all duration-300 group-data-[state=active]:shadow-lg group-data-[state=active]:shadow-amber-500/20">
+                  <div className="w-8 h-8 flex items-center justify-center bg-syndikate-metal group-hover:bg-syndikate-metal-light group-data-[state=active]:bg-syndikate-orange/20 transition-all duration-300 group-data-[state=active]:shadow-neon-orange">
                     <Trophy className="h-4 w-4 group-data-[state=active]:scale-110 transition-transform duration-300" />
                   </div>
-                  <span className="text-xs font-medium tracking-wide">Турниры</span>
+                  <span className="text-xs font-bold uppercase tracking-wider">Турниры</span>
                 </div>
               </TabsTrigger>
-              <TabsTrigger value="rating" className="group flex flex-col gap-2 text-white/60 data-[state=active]:text-amber-400 hover:text-white/80 transition-all duration-300 border-0 rounded-xl bg-transparent data-[state=active]:bg-gradient-to-br data-[state=active]:from-amber-500/10 data-[state=active]:to-amber-600/5 cursor-pointer relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 to-transparent opacity-0 group-hover:opacity-100 group-data-[state=active]:opacity-100 transition-opacity duration-300 rounded-xl"></div>
+              <TabsTrigger value="rating" className="group flex flex-col gap-2 text-muted-foreground data-[state=active]:text-syndikate-orange hover:text-foreground transition-all duration-300 border-0 bg-transparent data-[state=active]:bg-syndikate-orange/10 cursor-pointer relative overflow-hidden brutal-border">
+                <div className="absolute inset-0 bg-gradient-to-br from-syndikate-orange/5 to-transparent opacity-0 group-hover:opacity-100 group-data-[state=active]:opacity-100 transition-opacity duration-300"></div>
                 <div className="relative z-10 flex flex-col items-center gap-1.5">
-                  <div className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 group-hover:bg-white/10 group-data-[state=active]:bg-amber-500/20 transition-all duration-300 group-data-[state=active]:shadow-lg group-data-[state=active]:shadow-amber-500/20">
+                  <div className="w-8 h-8 flex items-center justify-center bg-syndikate-metal group-hover:bg-syndikate-metal-light group-data-[state=active]:bg-syndikate-orange/20 transition-all duration-300 group-data-[state=active]:shadow-neon-orange">
                     <Star className="h-4 w-4 group-data-[state=active]:scale-110 transition-transform duration-300" />
                   </div>
-                  <span className="text-xs font-medium tracking-wide">Рейтинг</span>
+                  <span className="text-xs font-bold uppercase tracking-wider">Рейтинг</span>
                 </div>
               </TabsTrigger>
-              <TabsTrigger value="profile" className="group flex flex-col gap-2 text-white/60 data-[state=active]:text-amber-400 hover:text-white/80 transition-all duration-300 border-0 rounded-xl bg-transparent data-[state=active]:bg-gradient-to-br data-[state=active]:from-amber-500/10 data-[state=active]:to-amber-600/5 cursor-pointer relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 to-transparent opacity-0 group-hover:opacity-100 group-data-[state=active]:opacity-100 transition-opacity duration-300 rounded-xl"></div>
+              <TabsTrigger value="profile" className="group flex flex-col gap-2 text-muted-foreground data-[state=active]:text-syndikate-orange hover:text-foreground transition-all duration-300 border-0 bg-transparent data-[state=active]:bg-syndikate-orange/10 cursor-pointer relative overflow-hidden brutal-border">
+                <div className="absolute inset-0 bg-gradient-to-br from-syndikate-orange/5 to-transparent opacity-0 group-hover:opacity-100 group-data-[state=active]:opacity-100 transition-opacity duration-300"></div>
                 <div className="relative z-10 flex flex-col items-center gap-1.5">
-                  <div className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 group-hover:bg-white/10 group-data-[state=active]:bg-amber-500/20 transition-all duration-300 group-data-[state=active]:shadow-lg group-data-[state=active]:shadow-amber-500/20">
+                  <div className="w-8 h-8 flex items-center justify-center bg-syndikate-metal group-hover:bg-syndikate-metal-light group-data-[state=active]:bg-syndikate-orange/20 transition-all duration-300 group-data-[state=active]:shadow-neon-orange">
                     <User className="h-4 w-4 group-data-[state=active]:scale-110 transition-transform duration-300" />
                   </div>
-                  <span className="text-xs font-medium tracking-wide">Профиль</span>
+                  <span className="text-xs font-bold uppercase tracking-wider">Профиль</span>
                 </div>
               </TabsTrigger>
             </TabsList>
           </Tabs>
         </div>
-        <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-32 h-1 bg-gradient-to-r from-transparent via-white/20 to-transparent rounded-full"></div>
+        <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-32 h-1 bg-gradient-neon"></div>
       </div>
 
       <TelegramTournamentModal
