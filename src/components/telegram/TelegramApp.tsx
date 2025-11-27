@@ -437,7 +437,11 @@ export const TelegramApp = () => {
             
             <div className="flex-1">
               <h1 className="font-display text-3xl uppercase text-foreground tracking-wider drop-shadow-lg group-hover:text-syndikate-orange transition-colors duration-300">
-                <GlitchText text="SYNDIKATE" glitchIntensity="low" />
+                <GlitchText 
+                  text="SYNDIKATE" 
+                  glitchIntensity="high" 
+                  glitchInterval={4500}
+                />
               </h1>
               <div className="h-[2px] w-16 bg-gradient-neon mt-1 group-hover:w-24 transition-all duration-500"></div>
               <p className="font-display text-sm uppercase tracking-wider text-syndikate-orange mt-1">
