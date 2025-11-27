@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -25,6 +25,12 @@ import Privacy from "./pages/Privacy";
 const queryClient = new QueryClient();
 
 function App() {
+  useEffect(() => {
+    document.documentElement.style.overflow = "";
+    document.body.style.overflow = "";
+    document.body.style.position = "";
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <div className="notranslate" translate="no">
