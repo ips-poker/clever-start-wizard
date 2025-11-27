@@ -4,9 +4,10 @@ interface GlitchTextProps {
   text: string;
   className?: string;
   glitchIntensity?: 'low' | 'medium' | 'high';
+  glitchInterval?: number; // Custom interval in milliseconds
 }
 
-export function GlitchText({ text, className = "", glitchIntensity = 'medium' }: GlitchTextProps) {
+export function GlitchText({ text, className = "", glitchIntensity = 'medium', glitchInterval }: GlitchTextProps) {
   const [isGlitching, setIsGlitching] = useState(false);
   const glitchRef = useRef<HTMLSpanElement>(null);
 
@@ -23,7 +24,7 @@ export function GlitchText({ text, className = "", glitchIntensity = 'medium' }:
       high: 400
     };
 
-    const interval = glitchIntervals[glitchIntensity];
+    const interval = glitchInterval || glitchIntervals[glitchIntensity];
     const duration = glitchDurations[glitchIntensity];
 
     const triggerGlitch = () => {
@@ -37,13 +38,13 @@ export function GlitchText({ text, className = "", glitchIntensity = 'medium' }:
     const initialTimeout = setTimeout(triggerGlitch, 1000);
 
     // Recurring glitches
-    const glitchInterval = setInterval(triggerGlitch, interval);
+    const intervalId = setInterval(triggerGlitch, interval);
 
     return () => {
       clearTimeout(initialTimeout);
-      clearInterval(glitchInterval);
+      clearInterval(intervalId);
     };
-  }, [glitchIntensity]);
+  }, [glitchIntensity, glitchInterval]);
 
   return (
     <span ref={glitchRef} className={`relative inline-block ${className}`}>
