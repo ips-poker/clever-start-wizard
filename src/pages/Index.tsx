@@ -21,6 +21,9 @@ const Index = () => {
   const glowBottomRef = useRef<HTMLDivElement>(null);
   const glowCenterRef = useRef<HTMLDivElement>(null);
 
+  // Refs for section animations
+  const sectionRefs = useRef<(HTMLDivElement | null)[]>([]);
+
   useEffect(() => {
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
@@ -50,6 +53,33 @@ const Index = () => {
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  // Intersection Observer for section animations
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('section-visible');
+          }
+        });
+      },
+      {
+        threshold: 0.1,
+        rootMargin: '0px 0px -100px 0px'
+      }
+    );
+
+    sectionRefs.current.forEach((ref) => {
+      if (ref) observer.observe(ref);
+    });
+
+    return () => observer.disconnect();
+  }, []);
+
+  const setSectionRef = (index: number) => (el: HTMLDivElement | null) => {
+    sectionRefs.current[index] = el;
+  };
 
   return (
     <>
@@ -183,37 +213,254 @@ const Index = () => {
         <Header />
         <main role="main" className="relative z-20">
           <Hero />
-          <LazyTournamentList />
-          <TopPlayers />
-          <RatingBenefits />
-          <Features />
-          <Gallery />
-          <SocialProof />
+          
+          {/* Section Divider */}
+          <div className="brutal-section-divider">
+            <div className="brutal-divider-line" />
+            <div className="brutal-divider-bolt brutal-divider-bolt-left" />
+            <div className="brutal-divider-bolt brutal-divider-bolt-right" />
+          </div>
+
+          <div ref={setSectionRef(0)} className="section-animate">
+            <LazyTournamentList />
+          </div>
+
+          {/* Section Divider */}
+          <div className="brutal-section-divider">
+            <div className="brutal-divider-line" />
+            <div className="brutal-divider-bolt brutal-divider-bolt-left" />
+            <div className="brutal-divider-bolt brutal-divider-bolt-right" />
+          </div>
+
+          <div ref={setSectionRef(1)} className="section-animate">
+            <TopPlayers />
+          </div>
+
+          {/* Section Divider */}
+          <div className="brutal-section-divider">
+            <div className="brutal-divider-line" />
+            <div className="brutal-divider-bolt brutal-divider-bolt-left" />
+            <div className="brutal-divider-bolt brutal-divider-bolt-right" />
+          </div>
+
+          <div ref={setSectionRef(2)} className="section-animate">
+            <RatingBenefits />
+          </div>
+
+          {/* Section Divider */}
+          <div className="brutal-section-divider">
+            <div className="brutal-divider-line" />
+            <div className="brutal-divider-bolt brutal-divider-bolt-left" />
+            <div className="brutal-divider-bolt brutal-divider-bolt-right" />
+          </div>
+
+          <div ref={setSectionRef(3)} className="section-animate">
+            <Features />
+          </div>
+
+          {/* Section Divider */}
+          <div className="brutal-section-divider">
+            <div className="brutal-divider-line" />
+            <div className="brutal-divider-bolt brutal-divider-bolt-left" />
+            <div className="brutal-divider-bolt brutal-divider-bolt-right" />
+          </div>
+
+          <div ref={setSectionRef(4)} className="section-animate">
+            <Gallery />
+          </div>
+
+          {/* Section Divider */}
+          <div className="brutal-section-divider">
+            <div className="brutal-divider-line" />
+            <div className="brutal-divider-bolt brutal-divider-bolt-left" />
+            <div className="brutal-divider-bolt brutal-divider-bolt-right" />
+          </div>
+
+          <div ref={setSectionRef(5)} className="section-animate">
+            <SocialProof />
+          </div>
         </main>
         <Footer />
         
         {/* Custom global animations */}
         <style>{`
+          /* Brutal Section Dividers */
+          .brutal-section-divider {
+            position: relative;
+            height: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+          }
+
+          .brutal-divider-line {
+            position: absolute;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(
+              90deg,
+              transparent 0%,
+              hsl(var(--syndikate-orange)) 15%,
+              hsl(var(--syndikate-orange)) 50%,
+              hsl(var(--syndikate-orange)) 85%,
+              transparent 100%
+            );
+            box-shadow: 0 0 20px hsla(var(--syndikate-orange), 0.5);
+          }
+
+          .brutal-divider-line::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            right: 0;
+            top: -1px;
+            height: 1px;
+            background: linear-gradient(
+              90deg,
+              transparent 0%,
+              rgba(255, 255, 255, 0.3) 50%,
+              transparent 100%
+            );
+          }
+
+          .brutal-divider-bolt {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background: hsl(var(--syndikate-metal));
+            border: 2px solid hsl(var(--syndikate-orange));
+            border-radius: 50%;
+            box-shadow: 
+              0 0 10px hsla(var(--syndikate-orange), 0.5),
+              inset 0 2px 4px rgba(0, 0, 0, 0.5);
+          }
+
+          .brutal-divider-bolt::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 4px;
+            height: 4px;
+            background: hsl(var(--syndikate-orange));
+            border-radius: 50%;
+          }
+
+          .brutal-divider-bolt-left {
+            left: 10%;
+            animation: bolt-pulse 3s ease-in-out infinite;
+          }
+
+          .brutal-divider-bolt-right {
+            right: 10%;
+            animation: bolt-pulse 3s ease-in-out infinite 1.5s;
+          }
+
+          @keyframes bolt-pulse {
+            0%, 100% {
+              box-shadow: 
+                0 0 10px hsla(var(--syndikate-orange), 0.5),
+                inset 0 2px 4px rgba(0, 0, 0, 0.5);
+            }
+            50% {
+              box-shadow: 
+                0 0 20px hsla(var(--syndikate-orange), 0.8),
+                0 0 30px hsla(var(--syndikate-orange), 0.4),
+                inset 0 2px 4px rgba(0, 0, 0, 0.5);
+            }
+          }
+
+          /* Section Animations */
+          .section-animate {
+            opacity: 0;
+            transform: translateY(60px);
+            transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1),
+                        transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+          }
+
+          .section-animate.section-visible {
+            opacity: 1;
+            transform: translateY(0);
+          }
+
+          /* Stagger animation for child elements */
+          .section-visible > * {
+            animation: stagger-fade-in 0.6s cubic-bezier(0.4, 0, 0.2, 1) backwards;
+          }
+
+          .section-visible > *:nth-child(1) { animation-delay: 0.1s; }
+          .section-visible > *:nth-child(2) { animation-delay: 0.2s; }
+          .section-visible > *:nth-child(3) { animation-delay: 0.3s; }
+          .section-visible > *:nth-child(4) { animation-delay: 0.4s; }
+          .section-visible > *:nth-child(5) { animation-delay: 0.5s; }
+
+          @keyframes stagger-fade-in {
+            from {
+              opacity: 0;
+              transform: translateY(20px);
+            }
+            to {
+              opacity: 1;
+              transform: translateY(0);
+            }
+          }
+
+          /* Smooth scroll behavior */
+          html {
+            scroll-behavior: smooth;
+          }
+
+          /* Existing animations */
           .animate-bounce-subtle {
             animation: bounce-subtle 4s ease-in-out infinite;
           }
+          
           .animate-pulse-slow {
             animation: pulse-slow 8s ease-in-out infinite;
           }
+          
           .animate-glow {
             animation: glow 10s ease-in-out infinite;
           }
+
           @keyframes bounce-subtle {
             0%, 100% { transform: translateY(0px) rotate(var(--tw-rotate)); }
             50% { transform: translateY(-15px) rotate(var(--tw-rotate)); }
           }
+
           @keyframes pulse-slow {
             0%, 100% { opacity: 0.5; transform: scale(1); }
             50% { opacity: 1; transform: scale(1.05); }
           }
+
           @keyframes glow {
             0%, 100% { opacity: 0.15; transform: translate(-50%, -50%) rotate(45deg) scale(1); }
             50% { opacity: 0.25; transform: translate(-50%, -50%) rotate(45deg) scale(1.05); }
+          }
+
+          /* Performance optimizations */
+          .will-change-transform {
+            will-change: transform;
+          }
+
+          /* Reduce motion for accessibility */
+          @media (prefers-reduced-motion: reduce) {
+            .section-animate,
+            .brutal-divider-bolt,
+            .animate-bounce-subtle,
+            .animate-pulse-slow,
+            .animate-glow {
+              animation: none !important;
+              transition: none !important;
+            }
+
+            .section-animate {
+              opacity: 1;
+              transform: none;
+            }
           }
         `}</style>
       </div>
