@@ -172,8 +172,7 @@ export function Hero() {
                             "hue-rotate(-5deg) brightness(0.9)",
                             "hue-rotate(0deg) brightness(1.1)",
                             "hue-rotate(0deg) brightness(1)"
-                          ],
-                          opacity: [1, 0.95, 1, 0.98, 1]
+                          ]
                         }}
                         transition={{
                           duration: 3,
