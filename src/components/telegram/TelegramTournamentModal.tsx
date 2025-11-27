@@ -168,18 +168,18 @@ export function TelegramTournamentModal({
           <div className="absolute inset-0 metal-grid-pattern opacity-30"></div>
         </div>
 
-        <DialogHeader className="relative z-10 pb-4">
+        <DialogHeader className="relative z-10 pb-4 animate-fade-in">
           <div className="text-center">
-            <DialogTitle className="font-display text-xl uppercase text-foreground tracking-wider mb-2">
+            <DialogTitle className="font-display text-xl uppercase text-foreground tracking-wider mb-2 animate-scale-in">
               {tournament.name}
             </DialogTitle>
-            <div className="flex justify-center mb-3">
+            <div className="flex justify-center mb-3 animate-fade-in" style={{ animationDelay: '0.1s' }}>
               <div className="h-[2px] w-12 bg-gradient-neon"></div>
             </div>
-            <div className="flex justify-center mb-3">
+            <div className="flex justify-center mb-3 animate-scale-in" style={{ animationDelay: '0.2s' }}>
               {getStatusBadge(tournament.status)}
             </div>
-            <DialogDescription className="text-muted-foreground text-xs leading-relaxed max-w-xs mx-auto">
+            <DialogDescription className="text-muted-foreground text-xs leading-relaxed max-w-xs mx-auto animate-fade-in" style={{ animationDelay: '0.3s' }}>
               {tournament.description || "Присоединяйтесь к покерному турниру"}
             </DialogDescription>
           </div>
@@ -189,7 +189,7 @@ export function TelegramTournamentModal({
           {/* Основная информация */}
           <div className="space-y-3">
             {/* Дата, время и участники в одной строке */}
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-3 animate-fade-in" style={{ animationDelay: '0.4s' }}>
               <div className="bg-syndikate-concrete/50 brutal-border p-3 backdrop-blur-sm">
                 <div className="flex items-center gap-2 mb-2">
                   <div className="w-6 h-6 bg-syndikate-orange brutal-border flex items-center justify-center">
@@ -225,7 +225,7 @@ export function TelegramTournamentModal({
             </div>
 
             {/* Стоимость и призовой фонд */}
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-3 animate-fade-in" style={{ animationDelay: '0.5s' }}>
               <div className="bg-syndikate-concrete/50 brutal-border p-3 backdrop-blur-sm">
                 <div className="flex items-center gap-2 mb-2">
                   <div className="w-6 h-6 bg-syndikate-orange brutal-border flex items-center justify-center">
@@ -251,7 +251,7 @@ export function TelegramTournamentModal({
             </div>
 
             {/* Стартовый стек и формат */}
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-3 animate-fade-in" style={{ animationDelay: '0.6s' }}>
               <div className="bg-syndikate-concrete/50 brutal-border p-3 backdrop-blur-sm">
                 <div className="flex items-center gap-2 mb-2">
                   <div className="w-6 h-6 bg-syndikate-red brutal-border flex items-center justify-center">
@@ -278,7 +278,7 @@ export function TelegramTournamentModal({
 
           {/* Структура блайндов */}
           {blindStructure.length > 0 && (
-            <div className="bg-syndikate-metal/50 brutal-border p-3 backdrop-blur-sm">
+            <div className="bg-syndikate-metal/50 brutal-border p-3 backdrop-blur-sm animate-fade-in" style={{ animationDelay: '0.7s' }}>
               <div className="flex items-center gap-2 mb-3">
                 <div className="w-6 h-6 bg-syndikate-orange rounded-none flex items-center justify-center brutal-border">
                   <Timer className="h-3 w-3 text-background" />
@@ -341,7 +341,7 @@ export function TelegramTournamentModal({
 
           {/* Кнопка регистрации */}
           {tournament.status === 'registration' && onRegister && (
-            <div className="flex justify-center pt-2">
+            <div className="flex justify-center pt-2 animate-scale-in" style={{ animationDelay: '0.8s' }}>
               <Button 
                 onClick={() => onRegister(tournament.id)} 
                 disabled={registering} 
@@ -384,6 +384,35 @@ export function TelegramTournamentModal({
           @keyframes bounce-subtle {
             0%, 100% { transform: translateY(0px) rotate(var(--tw-rotate)); }
             50% { transform: translateY(-10px) rotate(var(--tw-rotate)); }
+          }
+          .animate-fade-in {
+            animation: fadeIn 0.5s ease-out forwards;
+            opacity: 0;
+          }
+          .animate-scale-in {
+            animation: scaleIn 0.5s ease-out forwards;
+            opacity: 0;
+            transform: scale(0.95);
+          }
+          @keyframes fadeIn {
+            from {
+              opacity: 0;
+              transform: translateY(10px);
+            }
+            to {
+              opacity: 1;
+              transform: translateY(0);
+            }
+          }
+          @keyframes scaleIn {
+            from {
+              opacity: 0;
+              transform: scale(0.95);
+            }
+            to {
+              opacity: 1;
+              transform: scale(1);
+            }
           }
         `}</style>
       </DialogContent>
