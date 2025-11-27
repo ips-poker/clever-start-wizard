@@ -1407,184 +1407,372 @@ export const TelegramApp = () => {
 
       {activeTab === 'qa' && (
         <div className="space-y-6 pb-20 px-4 bg-transparent min-h-screen relative z-10">
-          <div className="flex items-center gap-3 p-4">
-            <div className="w-10 h-10 bg-syndikate-orange brutal-border flex items-center justify-center">
-              <MessageSquare className="h-5 w-5 text-background" />
+          {/* Industrial header with glitch effect */}
+          <div className="relative p-6 bg-syndikate-metal/90 brutal-border backdrop-blur-xl shadow-brutal overflow-hidden group">
+            {/* Metal grid background */}
+            <div className="absolute inset-0 opacity-5">
+              <div className="absolute inset-0" style={{
+                backgroundImage: 'linear-gradient(0deg, transparent 24%, rgba(255, 107, 0, 0.05) 25%, rgba(255, 107, 0, 0.05) 26%, transparent 27%, transparent 74%, rgba(255, 107, 0, 0.05) 75%, rgba(255, 107, 0, 0.05) 76%, transparent 77%, transparent), linear-gradient(90deg, transparent 24%, rgba(255, 107, 0, 0.05) 25%, rgba(255, 107, 0, 0.05) 26%, transparent 27%, transparent 74%, rgba(255, 107, 0, 0.05) 75%, rgba(255, 107, 0, 0.05) 76%, transparent 77%, transparent)',
+                backgroundSize: '50px 50px'
+              }}></div>
             </div>
-            <div>
-              <h2 className="font-display text-3xl uppercase text-foreground tracking-wider">Q&A</h2>
-              <div className="h-[2px] w-8 bg-gradient-neon mt-2"></div>
+            
+            {/* Corner brackets */}
+            <div className="absolute top-2 left-2 w-6 h-6 border-l-2 border-t-2 border-syndikate-orange"></div>
+            <div className="absolute top-2 right-2 w-6 h-6 border-r-2 border-t-2 border-syndikate-orange"></div>
+            <div className="absolute bottom-2 left-2 w-6 h-6 border-l-2 border-b-2 border-syndikate-orange"></div>
+            <div className="absolute bottom-2 right-2 w-6 h-6 border-r-2 border-b-2 border-syndikate-orange"></div>
+            
+            <div className="flex items-center gap-4 relative z-10">
+              <div className="w-12 h-12 bg-syndikate-orange brutal-border flex items-center justify-center shadow-neon-orange group-hover:scale-110 transition-transform duration-300">
+                <MessageSquare className="h-6 w-6 text-background" />
+              </div>
+              <div className="flex-1">
+                <h2 className="font-display text-4xl uppercase text-foreground tracking-wider drop-shadow-lg">
+                  <GlitchText 
+                    text="Q&A" 
+                    glitchIntensity="high" 
+                    glitchInterval={3500}
+                  />
+                </h2>
+                <div className="h-[3px] w-16 bg-gradient-neon mt-2 group-hover:w-24 transition-all duration-500"></div>
+                <p className="font-display text-xs uppercase tracking-wider text-syndikate-orange mt-1">
+                  ВОПРОСЫ И ОТВЕТЫ
+                </p>
+              </div>
             </div>
           </div>
           
           <div className="space-y-4">
-            <Card className="bg-syndikate-metal/90 brutal-border backdrop-blur-xl shadow-brutal group hover:shadow-neon-orange transition-all duration-500 relative overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-br from-syndikate-orange/5 via-transparent to-syndikate-red/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-              <div className="absolute inset-0 opacity-10 group-hover:opacity-20 transition-opacity duration-500">
-                <div className="absolute top-4 right-4 text-syndikate-orange/30 text-3xl animate-pulse">♠</div>
+            <Card className="bg-syndikate-metal/90 brutal-border backdrop-blur-xl shadow-brutal group hover:shadow-neon-orange hover:scale-[1.02] transition-all duration-500 relative overflow-hidden animate-fade-in">
+              {/* Industrial texture overlay */}
+              <div className="absolute inset-0 opacity-5 group-hover:opacity-10 transition-opacity duration-500">
+                <div className="absolute inset-0" style={{
+                  backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255, 107, 0, 0.03) 10px, rgba(255, 107, 0, 0.03) 20px)'
+                }}></div>
               </div>
+              
+              <div className="absolute inset-0 bg-gradient-to-br from-syndikate-orange/5 via-transparent to-syndikate-red/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+              
+              {/* Animated card suits */}
+              <div className="absolute inset-0 opacity-10 group-hover:opacity-20 transition-opacity duration-500">
+                <div className="absolute top-4 right-4 text-syndikate-orange/40 text-4xl animate-pulse">♠</div>
+                <div className="absolute bottom-4 left-4 text-syndikate-orange/20 text-2xl">♦</div>
+              </div>
+              
+              {/* Corner brackets */}
+              <div className="absolute top-2 left-2 w-4 h-4 border-l border-t border-syndikate-orange/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              <div className="absolute top-2 right-2 w-4 h-4 border-r border-t border-syndikate-orange/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
               
               <CardContent className="p-6 relative z-10">
                 <div className="flex items-start gap-4">
-                  <div className="w-8 h-8 bg-syndikate-orange brutal-border flex items-center justify-center flex-shrink-0 mt-1">
-                    <CheckCircle className="h-4 w-4 text-background" />
+                  <div className="w-10 h-10 bg-syndikate-orange brutal-border flex items-center justify-center flex-shrink-0 shadow-md group-hover:shadow-neon-orange transition-shadow duration-300">
+                    <CheckCircle className="h-5 w-5 text-background" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="text-foreground font-bold uppercase text-lg mb-3 tracking-wider group-hover:text-syndikate-orange transition-colors duration-300">1. Это законно?</h3>
-                    <p className="text-foreground/80 text-sm leading-relaxed">Абсолютно! Мы проводим спортивные турниры без денежных призов, что полностью соответствует российскому законодательству. Согласно ФЗ №244, запрещены только азартные игры с материальными выигрышами. Syndikate — это спортивное сообщество для развития навыков и общения.</p>
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="font-display text-2xl text-syndikate-orange drop-shadow-lg">
+                        <GlitchText text="01" glitchIntensity="low" />
+                      </span>
+                      <h3 className="text-foreground font-display uppercase text-lg tracking-wider group-hover:text-syndikate-orange transition-colors duration-300">
+                        Это законно?
+                      </h3>
+                    </div>
+                    <p className="text-foreground/80 text-sm leading-relaxed">
+                      Абсолютно! Мы проводим спортивные турниры без денежных призов, что полностью соответствует российскому законодательству. Согласно ФЗ №244, запрещены только азартные игры с материальными выигрышами. Syndikate — это спортивное сообщество для развития навыков и общения.
+                    </p>
                   </div>
                 </div>
               </CardContent>
             </Card>
             
-            <Card className="bg-syndikate-metal/90 brutal-border backdrop-blur-xl shadow-brutal group hover:shadow-neon-orange transition-all duration-500 relative overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-br from-syndikate-orange/5 via-transparent to-syndikate-red/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-              <div className="absolute inset-0 opacity-10 group-hover:opacity-20 transition-opacity duration-500">
-                <div className="absolute top-4 right-4 text-syndikate-orange/30 text-3xl">♣</div>
+            <Card className="bg-syndikate-metal/90 brutal-border backdrop-blur-xl shadow-brutal group hover:shadow-neon-orange hover:scale-[1.02] transition-all duration-500 relative overflow-hidden animate-fade-in" style={{ animationDelay: '0.1s' }}>
+              <div className="absolute inset-0 opacity-5 group-hover:opacity-10 transition-opacity duration-500">
+                <div className="absolute inset-0" style={{
+                  backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255, 107, 0, 0.03) 10px, rgba(255, 107, 0, 0.03) 20px)'
+                }}></div>
               </div>
+              
+              <div className="absolute inset-0 bg-gradient-to-br from-syndikate-orange/5 via-transparent to-syndikate-red/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+              
+              <div className="absolute inset-0 opacity-10 group-hover:opacity-20 transition-opacity duration-500">
+                <div className="absolute top-4 right-4 text-syndikate-orange/40 text-4xl">♣</div>
+                <div className="absolute bottom-4 left-4 text-syndikate-orange/20 text-2xl animate-pulse">♥</div>
+              </div>
+              
+              <div className="absolute top-2 left-2 w-4 h-4 border-l border-t border-syndikate-orange/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              <div className="absolute top-2 right-2 w-4 h-4 border-r border-t border-syndikate-orange/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
               
               <CardContent className="p-6 relative z-10">
                 <div className="flex items-start gap-4">
-                  <div className="w-8 h-8 bg-syndikate-orange brutal-border flex items-center justify-center flex-shrink-0 mt-1">
-                    <Users className="h-4 w-4 text-background" />
+                  <div className="w-10 h-10 bg-syndikate-orange brutal-border flex items-center justify-center flex-shrink-0 shadow-md group-hover:shadow-neon-orange transition-shadow duration-300">
+                    <Users className="h-5 w-5 text-background" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="text-foreground font-bold uppercase text-lg mb-3 tracking-wider group-hover:text-syndikate-orange transition-colors duration-300">2. Зачем играть без призов?</h3>
-                    <p className="text-foreground/80 text-sm leading-relaxed">Syndikate — это уникальное комьюнити единомышленников! Где еще вы найдете профессиональное оборудование, отличный сервис и возможность развивать покерные навыки в безопасной среде? Мы создаем атмосферу спортивного соревнования и дружеского общения.</p>
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="font-display text-2xl text-syndikate-orange drop-shadow-lg">
+                        <GlitchText text="02" glitchIntensity="low" />
+                      </span>
+                      <h3 className="text-foreground font-display uppercase text-lg tracking-wider group-hover:text-syndikate-orange transition-colors duration-300">
+                        Зачем играть без призов?
+                      </h3>
+                    </div>
+                    <p className="text-foreground/80 text-sm leading-relaxed">
+                      Syndikate — это уникальное комьюнити единомышленников! Где еще вы найдете профессиональное оборудование, отличный сервис и возможность развивать покерные навыки в безопасной среде? Мы создаем атмосферу спортивного соревнования и дружеского общения.
+                    </p>
                   </div>
                 </div>
               </CardContent>
             </Card>
             
-            <Card className="bg-syndikate-metal/90 brutal-border backdrop-blur-xl shadow-brutal group hover:shadow-neon-orange transition-all duration-500 relative overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-br from-syndikate-orange/5 via-transparent to-syndikate-red/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-              <div className="absolute inset-0 opacity-10 group-hover:opacity-20 transition-opacity duration-500">
-                <div className="absolute top-4 right-4 text-syndikate-orange/30 text-3xl animate-pulse">♦</div>
+            <Card className="bg-syndikate-metal/90 brutal-border backdrop-blur-xl shadow-brutal group hover:shadow-neon-orange hover:scale-[1.02] transition-all duration-500 relative overflow-hidden animate-fade-in" style={{ animationDelay: '0.2s' }}>
+              <div className="absolute inset-0 opacity-5 group-hover:opacity-10 transition-opacity duration-500">
+                <div className="absolute inset-0" style={{
+                  backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255, 107, 0, 0.03) 10px, rgba(255, 107, 0, 0.03) 20px)'
+                }}></div>
               </div>
+              
+              <div className="absolute inset-0 bg-gradient-to-br from-syndikate-orange/5 via-transparent to-syndikate-red/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+              
+              <div className="absolute inset-0 opacity-10 group-hover:opacity-20 transition-opacity duration-500">
+                <div className="absolute top-4 right-4 text-syndikate-orange/40 text-4xl animate-pulse">♦</div>
+                <div className="absolute bottom-4 left-4 text-syndikate-orange/20 text-2xl">♠</div>
+              </div>
+              
+              <div className="absolute top-2 left-2 w-4 h-4 border-l border-t border-syndikate-orange/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              <div className="absolute top-2 right-2 w-4 h-4 border-r border-t border-syndikate-orange/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
               
               <CardContent className="p-6 relative z-10">
                 <div className="flex items-start gap-4">
-                  <div className="w-8 h-8 bg-syndikate-orange brutal-border flex items-center justify-center flex-shrink-0 mt-1">
-                    <Trophy className="h-4 w-4 text-background" />
+                  <div className="w-10 h-10 bg-syndikate-orange brutal-border flex items-center justify-center flex-shrink-0 shadow-md group-hover:shadow-neon-orange transition-shadow duration-300">
+                    <Trophy className="h-5 w-5 text-background" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="text-foreground font-bold uppercase text-lg mb-3 tracking-wider group-hover:text-syndikate-orange transition-colors duration-300">3. Как работает рейтинг RPS?</h3>
-                    <p className="text-foreground/80 text-sm leading-relaxed">В Syndikate действует продуманная RPS-система для честного ранжирования участников. Рейтинговые очки начисляются за результативные выступления в турнирах и отражают исключительно игровое мастерство. Система мотивирует на спортивное развитие и определяет лучших игроков клуба.</p>
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="font-display text-2xl text-syndikate-orange drop-shadow-lg">
+                        <GlitchText text="03" glitchIntensity="low" />
+                      </span>
+                      <h3 className="text-foreground font-display uppercase text-lg tracking-wider group-hover:text-syndikate-orange transition-colors duration-300">
+                        Как работает рейтинг RPS?
+                      </h3>
+                    </div>
+                    <p className="text-foreground/80 text-sm leading-relaxed">
+                      В Syndikate действует продуманная RPS-система для честного ранжирования участников. Рейтинговые очки начисляются за результативные выступления в турнирах и отражают исключительно игровое мастерство. Система мотивирует на спортивное развитие и определяет лучших игроков клуба.
+                    </p>
                   </div>
                 </div>
               </CardContent>
             </Card>
             
-            <Card className="bg-syndikate-metal/90 brutal-border backdrop-blur-xl shadow-brutal group hover:shadow-neon-orange transition-all duration-500 relative overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-br from-syndikate-orange/5 via-transparent to-syndikate-red/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-              <div className="absolute inset-0 opacity-10 group-hover:opacity-20 transition-opacity duration-500">
-                <div className="absolute top-4 right-4 text-syndikate-orange/30 text-3xl animate-pulse">♥</div>
+            <Card className="bg-syndikate-metal/90 brutal-border backdrop-blur-xl shadow-brutal group hover:shadow-neon-red hover:scale-[1.02] transition-all duration-500 relative overflow-hidden animate-fade-in" style={{ animationDelay: '0.3s' }}>
+              <div className="absolute inset-0 opacity-5 group-hover:opacity-10 transition-opacity duration-500">
+                <div className="absolute inset-0" style={{
+                  backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255, 107, 0, 0.03) 10px, rgba(255, 107, 0, 0.03) 20px)'
+                }}></div>
               </div>
+              
+              <div className="absolute inset-0 bg-gradient-to-br from-syndikate-red/5 via-transparent to-syndikate-orange/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+              
+              <div className="absolute inset-0 opacity-10 group-hover:opacity-20 transition-opacity duration-500">
+                <div className="absolute top-4 right-4 text-syndikate-red/40 text-4xl animate-pulse">♥</div>
+                <div className="absolute bottom-4 left-4 text-syndikate-red/20 text-2xl">♦</div>
+              </div>
+              
+              <div className="absolute top-2 left-2 w-4 h-4 border-l border-t border-syndikate-red/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              <div className="absolute top-2 right-2 w-4 h-4 border-r border-t border-syndikate-red/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
               
               <CardContent className="p-6 relative z-10">
                 <div className="flex items-start gap-4">
-                  <div className="w-8 h-8 bg-syndikate-red brutal-border flex items-center justify-center flex-shrink-0 mt-1">
-                    <Crown className="h-4 w-4 text-background" />
+                  <div className="w-10 h-10 bg-syndikate-red brutal-border flex items-center justify-center flex-shrink-0 shadow-md group-hover:shadow-neon-red transition-shadow duration-300">
+                    <Crown className="h-5 w-5 text-background" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="text-foreground font-bold uppercase text-lg mb-3 tracking-wider group-hover:text-syndikate-orange transition-colors duration-300">4. Что такое VIP-турниры?</h3>
-                    <p className="text-foreground/80 text-sm leading-relaxed">Это эксклюзивные события для топовых игроков рейтинга Syndikate. Проводятся в особом формате с повышенным комфортом и сервисом. Участие строго по приглашениям на основе достижений в рейтинге. Место нельзя передать — только личное участие лучших игроков клуба.</p>
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="font-display text-2xl text-syndikate-red drop-shadow-lg">
+                        <GlitchText text="04" glitchIntensity="low" />
+                      </span>
+                      <h3 className="text-foreground font-display uppercase text-lg tracking-wider group-hover:text-syndikate-red transition-colors duration-300">
+                        Что такое VIP-турниры?
+                      </h3>
+                    </div>
+                    <p className="text-foreground/80 text-sm leading-relaxed">
+                      Это эксклюзивные события для топовых игроков рейтинга Syndikate. Проводятся в особом формате с повышенным комфортом и сервисом. Участие строго по приглашениям на основе достижений в рейтинге. Место нельзя передать — только личное участие лучших игроков клуба.
+                    </p>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="bg-syndikate-metal/90 brutal-border backdrop-blur-xl shadow-brutal group hover:shadow-neon-orange transition-all duration-500 relative overflow-hidden">
+            <Card className="bg-syndikate-metal/90 brutal-border backdrop-blur-xl shadow-brutal group hover:shadow-neon-orange hover:scale-[1.02] transition-all duration-500 relative overflow-hidden animate-fade-in" style={{ animationDelay: '0.4s' }}>
+              <div className="absolute inset-0 opacity-5 group-hover:opacity-10 transition-opacity duration-500">
+                <div className="absolute inset-0" style={{
+                  backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255, 107, 0, 0.03) 10px, rgba(255, 107, 0, 0.03) 20px)'
+                }}></div>
+              </div>
               <div className="absolute inset-0 bg-gradient-to-br from-syndikate-orange/5 via-transparent to-syndikate-red/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
               <div className="absolute inset-0 opacity-10 group-hover:opacity-20 transition-opacity duration-500">
-                <div className="absolute top-4 right-4 text-syndikate-orange/30 text-3xl">♠</div>
+                <div className="absolute top-4 right-4 text-syndikate-orange/40 text-4xl">♠</div>
+                <div className="absolute bottom-4 left-4 text-syndikate-orange/20 text-2xl animate-pulse">♣</div>
               </div>
-              
+              <div className="absolute top-2 left-2 w-4 h-4 border-l border-t border-syndikate-orange/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              <div className="absolute top-2 right-2 w-4 h-4 border-r border-t border-syndikate-orange/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
               <CardContent className="p-6 relative z-10">
                 <div className="flex items-start gap-4">
-                  <div className="w-8 h-8 bg-syndikate-orange brutal-border flex items-center justify-center flex-shrink-0 mt-1">
-                    <UserPlus className="h-4 w-4 text-background" />
+                  <div className="w-10 h-10 bg-syndikate-orange brutal-border flex items-center justify-center flex-shrink-0 shadow-md group-hover:shadow-neon-orange transition-shadow duration-300">
+                    <UserPlus className="h-5 w-5 text-background" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="text-foreground font-bold uppercase text-lg mb-3 tracking-wider group-hover:text-syndikate-orange transition-colors duration-300">5. Как записаться на турнир?</h3>
-                    <p className="text-foreground/80 text-sm leading-relaxed">После первичной регистрации в нашем Telegram-боте, вы получаете доступ к удобному мини-приложению. В нем можно бронировать места на любые турниры. Внимание: количество мест ограничено! При частых пропусках без предупреждения возможность записи может быть временно ограничена.</p>
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="font-display text-2xl text-syndikate-orange drop-shadow-lg">
+                        <GlitchText text="05" glitchIntensity="low" />
+                      </span>
+                      <h3 className="text-foreground font-display uppercase text-lg tracking-wider group-hover:text-syndikate-orange transition-colors duration-300">
+                        Как записаться на турнир?
+                      </h3>
+                    </div>
+                    <p className="text-foreground/80 text-sm leading-relaxed">
+                      После первичной регистрации в нашем Telegram-боте, вы получаете доступ к удобному мини-приложению. В нем можно бронировать места на любые турниры. Внимание: количество мест ограничено! При частых пропусках без предупреждения возможность записи может быть временно ограничена.
+                    </p>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="bg-syndikate-metal/90 brutal-border backdrop-blur-xl shadow-brutal group hover:shadow-neon-orange transition-all duration-500 relative overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-br from-syndikate-orange/5 via-transparent to-syndikate-red/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-              <div className="absolute inset-0 opacity-10 group-hover:opacity-20 transition-opacity duration-500">
-                <div className="absolute top-4 right-4 text-syndikate-orange/30 text-3xl animate-pulse">♣</div>
+            <Card className="bg-syndikate-metal/90 brutal-border backdrop-blur-xl shadow-brutal group hover:shadow-neon-red hover:scale-[1.02] transition-all duration-500 relative overflow-hidden animate-fade-in" style={{ animationDelay: '0.5s' }}>
+              <div className="absolute inset-0 opacity-5 group-hover:opacity-10 transition-opacity duration-500">
+                <div className="absolute inset-0" style={{
+                  backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255, 107, 0, 0.03) 10px, rgba(255, 107, 0, 0.03) 20px)'
+                }}></div>
               </div>
-              
+              <div className="absolute inset-0 bg-gradient-to-br from-syndikate-red/5 via-transparent to-syndikate-orange/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+              <div className="absolute inset-0 opacity-10 group-hover:opacity-20 transition-opacity duration-500">
+                <div className="absolute top-4 right-4 text-syndikate-red/40 text-4xl animate-pulse">♣</div>
+                <div className="absolute bottom-4 left-4 text-syndikate-red/20 text-2xl">♥</div>
+              </div>
+              <div className="absolute top-2 left-2 w-4 h-4 border-l border-t border-syndikate-red/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              <div className="absolute top-2 right-2 w-4 h-4 border-r border-t border-syndikate-red/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
               <CardContent className="p-6 relative z-10">
                 <div className="flex items-start gap-4">
-                  <div className="w-8 h-8 bg-syndikate-red brutal-border flex items-center justify-center flex-shrink-0 mt-1">
-                    <Coins className="h-4 w-4 text-background" />
+                  <div className="w-10 h-10 bg-syndikate-red brutal-border flex items-center justify-center flex-shrink-0 shadow-md group-hover:shadow-neon-red transition-shadow duration-300">
+                    <Coins className="h-5 w-5 text-background" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="text-foreground font-bold uppercase text-lg mb-3 tracking-wider group-hover:text-syndikate-orange transition-colors duration-300">6. Что такое организационный взнос?</h3>
-                    <p className="text-foreground/80 text-sm leading-relaxed">Это плата за комплекс услуг: аренду профессионального оборудования, игровых фишек, зала и сервисное обслуживание. Фишки — исключительно игровое оборудование без денежной стоимости, их нельзя обменять или вывести. Повторный вход (re-entry) оплачивается отдельно.</p>
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="font-display text-2xl text-syndikate-red drop-shadow-lg">
+                        <GlitchText text="06" glitchIntensity="low" />
+                      </span>
+                      <h3 className="text-foreground font-display uppercase text-lg tracking-wider group-hover:text-syndikate-red transition-colors duration-300">
+                        Что такое организационный взнос?
+                      </h3>
+                    </div>
+                    <p className="text-foreground/80 text-sm leading-relaxed">
+                      Это плата за комплекс услуг: аренду профессионального оборудования, игровых фишек, зала и сервисное обслуживание. Фишки — исключительно игровое оборудование без денежной стоимости, их нельзя обменять или вывести. Повторный вход (re-entry) оплачивается отдельно.
+                    </p>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-
-            <Card className="bg-syndikate-metal/90 brutal-border backdrop-blur-xl shadow-brutal group hover:shadow-neon-orange transition-all duration-500 relative overflow-hidden">
+            <Card className="bg-syndikate-metal/90 brutal-border backdrop-blur-xl shadow-brutal group hover:shadow-neon-orange hover:scale-[1.02] transition-all duration-500 relative overflow-hidden animate-fade-in" style={{ animationDelay: '0.6s' }}>
+              <div className="absolute inset-0 opacity-5 group-hover:opacity-10 transition-opacity duration-500">
+                <div className="absolute inset-0" style={{
+                  backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255, 107, 0, 0.03) 10px, rgba(255, 107, 0, 0.03) 20px)'
+                }}></div>
+              </div>
               <div className="absolute inset-0 bg-gradient-to-br from-syndikate-orange/5 via-transparent to-syndikate-red/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
               <div className="absolute inset-0 opacity-10 group-hover:opacity-20 transition-opacity duration-500">
-                <div className="absolute top-4 right-4 text-syndikate-orange/30 text-3xl animate-pulse">♦</div>
+                <div className="absolute top-4 right-4 text-syndikate-orange/40 text-4xl animate-pulse">♦</div>
+                <div className="absolute bottom-4 left-4 text-syndikate-orange/20 text-2xl">♠</div>
               </div>
-              
+              <div className="absolute top-2 left-2 w-4 h-4 border-l border-t border-syndikate-orange/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              <div className="absolute top-2 right-2 w-4 h-4 border-r border-t border-syndikate-orange/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
               <CardContent className="p-6 relative z-10">
                 <div className="flex items-start gap-4">
-                  <div className="w-8 h-8 bg-syndikate-orange brutal-border flex items-center justify-center flex-shrink-0 mt-1">
-                    <Clock className="h-4 w-4 text-background" />
+                  <div className="w-10 h-10 bg-syndikate-orange brutal-border flex items-center justify-center flex-shrink-0 shadow-md group-hover:shadow-neon-orange transition-shadow duration-300">
+                    <Clock className="h-5 w-5 text-background" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="text-foreground font-bold uppercase text-lg mb-3 tracking-wider group-hover:text-syndikate-orange transition-colors duration-300">7. Что такое поздняя регистрация?</h3>
-                    <p className="text-foreground/80 text-sm leading-relaxed">Это возможность присоединиться к турниру после официального старта — полезно, если вы опаздываете или хотите сделать повторный вход. Время поздней регистрации указывается для каждого турнира отдельно. После её завершения предусмотрен короткий перерыв для окончательного входа.</p>
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="font-display text-2xl text-syndikate-orange drop-shadow-lg">
+                        <GlitchText text="07" glitchIntensity="low" />
+                      </span>
+                      <h3 className="text-foreground font-display uppercase text-lg tracking-wider group-hover:text-syndikate-orange transition-colors duration-300">
+                        Что такое поздняя регистрация?
+                      </h3>
+                    </div>
+                    <p className="text-foreground/80 text-sm leading-relaxed">
+                      Это возможность присоединиться к турниру после официального старта — полезно, если вы опаздываете или хотите сделать повторный вход. Время поздней регистрации указывается для каждого турнира отдельно. После её завершения предусмотрен короткий перерыв для окончательного входа.
+                    </p>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="bg-syndikate-metal/90 brutal-border backdrop-blur-xl shadow-brutal group hover:shadow-neon-orange transition-all duration-500 relative overflow-hidden">
+            <Card className="bg-syndikate-metal/90 brutal-border backdrop-blur-xl shadow-brutal group hover:shadow-neon-orange hover:scale-[1.02] transition-all duration-500 relative overflow-hidden animate-fade-in" style={{ animationDelay: '0.7s' }}>
+              <div className="absolute inset-0 opacity-5 group-hover:opacity-10 transition-opacity duration-500">
+                <div className="absolute inset-0" style={{
+                  backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255, 107, 0, 0.03) 10px, rgba(255, 107, 0, 0.03) 20px)'
+                }}></div>
+              </div>
               <div className="absolute inset-0 bg-gradient-to-br from-syndikate-orange/5 via-transparent to-syndikate-red/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
               <div className="absolute inset-0 opacity-10 group-hover:opacity-20 transition-opacity duration-500">
-                <div className="absolute top-4 right-4 text-syndikate-orange/30 text-3xl">♥</div>
+                <div className="absolute top-4 right-4 text-syndikate-orange/40 text-4xl">♥</div>
+                <div className="absolute bottom-4 left-4 text-syndikate-orange/20 text-2xl animate-pulse">♦</div>
               </div>
-              
+              <div className="absolute top-2 left-2 w-4 h-4 border-l border-t border-syndikate-orange/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              <div className="absolute top-2 right-2 w-4 h-4 border-r border-t border-syndikate-orange/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
               <CardContent className="p-6 relative z-10">
                 <div className="flex items-start gap-4">
-                  <div className="w-8 h-8 bg-syndikate-orange brutal-border flex items-center justify-center flex-shrink-0 mt-1">
-                    <Target className="h-4 w-4 text-background" />
+                  <div className="w-10 h-10 bg-syndikate-orange brutal-border flex items-center justify-center flex-shrink-0 shadow-md group-hover:shadow-neon-orange transition-shadow duration-300">
+                    <Target className="h-5 w-5 text-background" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="text-foreground font-bold uppercase text-lg mb-3 tracking-wider group-hover:text-syndikate-orange transition-colors duration-300">8. Что такое стартовый стек?</h3>
-                    <p className="text-foreground/80 text-sm leading-relaxed">Это набор игровых фишек, который получает каждый участник турнира. Фишки — развлекательное оборудование без денежной стоимости, их нельзя обменять или вывести. Стандартный стартовый стек в Syndikate составляет 30,000 фишек для всех участников.</p>
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="font-display text-2xl text-syndikate-orange drop-shadow-lg">
+                        <GlitchText text="08" glitchIntensity="low" />
+                      </span>
+                      <h3 className="text-foreground font-display uppercase text-lg tracking-wider group-hover:text-syndikate-orange transition-colors duration-300">
+                        Что такое стартовый стек?
+                      </h3>
+                    </div>
+                    <p className="text-foreground/80 text-sm leading-relaxed">
+                      Это набор игровых фишек, который получает каждый участник турнира. Фишки — развлекательное оборудование без денежной стоимости, их нельзя обменять или вывести. Стандартный стартовый стек в Syndikate составляет 30,000 фишек для всех участников.
+                    </p>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="bg-syndikate-metal/90 brutal-border backdrop-blur-xl shadow-brutal group hover:shadow-neon-orange transition-all duration-500 relative overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-br from-syndikate-orange/5 via-transparent to-syndikate-red/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-              <div className="absolute inset-0 opacity-10 group-hover:opacity-20 transition-opacity duration-500">
-                <div className="absolute top-4 right-4 text-syndikate-orange/30 text-3xl animate-pulse">♠</div>
+            <Card className="bg-syndikate-metal/90 brutal-border backdrop-blur-xl shadow-brutal group hover:shadow-neon-red hover:scale-[1.02] transition-all duration-500 relative overflow-hidden animate-fade-in" style={{ animationDelay: '0.8s' }}>
+              <div className="absolute inset-0 opacity-5 group-hover:opacity-10 transition-opacity duration-500">
+                <div className="absolute inset-0" style={{
+                  backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255, 107, 0, 0.03) 10px, rgba(255, 107, 0, 0.03) 20px)'
+                }}></div>
               </div>
-              
+              <div className="absolute inset-0 bg-gradient-to-br from-syndikate-red/5 via-transparent to-syndikate-orange/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+              <div className="absolute inset-0 opacity-10 group-hover:opacity-20 transition-opacity duration-500">
+                <div className="absolute top-4 right-4 text-syndikate-red/40 text-4xl animate-pulse">♠</div>
+                <div className="absolute bottom-4 left-4 text-syndikate-red/20 text-2xl">♣</div>
+              </div>
+              <div className="absolute top-2 left-2 w-4 h-4 border-l border-t border-syndikate-red/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              <div className="absolute top-2 right-2 w-4 h-4 border-r border-t border-syndikate-red/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
               <CardContent className="p-6 relative z-10">
                 <div className="flex items-start gap-4">
-                  <div className="w-8 h-8 bg-syndikate-red brutal-border flex items-center justify-center flex-shrink-0 mt-1">
-                    <Users className="h-4 w-4 text-background" />
+                  <div className="w-10 h-10 bg-syndikate-red brutal-border flex items-center justify-center flex-shrink-0 shadow-md group-hover:shadow-neon-red transition-shadow duration-300">
+                    <Users className="h-5 w-5 text-background" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="text-foreground font-bold uppercase text-lg mb-3 tracking-wider group-hover:text-syndikate-orange transition-colors duration-300">9. Как работает лист ожидания?</h3>
-                    <p className="text-foreground/80 text-sm leading-relaxed">Если турнир полностью забронирован, вы можете встать в лист ожидания. При освобождении мест участники переносятся в основной список в порядке очереди. Можно также приехать лично и занять живую очередь — это обсуждается с администратором индивидуально.</p>
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="font-display text-2xl text-syndikate-red drop-shadow-lg">
+                        <GlitchText text="09" glitchIntensity="low" />
+                      </span>
+                      <h3 className="text-foreground font-display uppercase text-lg tracking-wider group-hover:text-syndikate-red transition-colors duration-300">
+                        Как работает лист ожидания?
+                      </h3>
+                    </div>
+                    <p className="text-foreground/80 text-sm leading-relaxed">
+                      Если турнир полностью забронирован, вы можете встать в лист ожидания. При освобождении мест участники переносятся в основной список в порядке очереди. Можно также приехать лично и занять живую очередь — это обсуждается с администратором индивидуально.
+                    </p>
                   </div>
                 </div>
               </CardContent>
