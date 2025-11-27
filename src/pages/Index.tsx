@@ -10,6 +10,7 @@ import { LazyTournamentList } from "@/components/LazyTournamentList";
 import { TopPlayers } from "@/components/TopPlayers";
 import { SEOHead } from "@/components/SEOHead";
 import { ScrollProgress } from "@/components/ScrollProgress";
+import { FloatingParticles } from "@/components/ui/floating-particles";
 
 const Index = () => {
   const [scrollY, setScrollY] = useState(0);
@@ -53,7 +54,8 @@ const Index = () => {
   return (
     <>
       <ScrollProgress />
-      <SEOHead 
+      <FloatingParticles />
+      <SEOHead
         pageSlug="home"
         defaultTitle="EPC Event Poker Club - Покерный клуб премиум-класса в Москве | Турниры и рейтинг RPS"
         defaultDescription="Премиальный покерный клуб EPC в Москве. Турниры по покеру, уникальная рейтинговая система RPS, элитное сообщество игроков. Присоединяйся к лучшему покер клубу!"
