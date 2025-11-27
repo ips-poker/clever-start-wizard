@@ -40,14 +40,14 @@ export function Header() {
           {/* Logo */}
           <Link 
             to="/" 
-            className="flex items-center space-x-4 group"
+            className="flex items-center space-x-3 group"
           >
             <div className="relative">
               <div className="relative flex items-center justify-center transition-all group-hover:drop-shadow-[0_0_16px_rgba(255,90,31,0.6)]">
                 <img 
                   src={syndikateLogoSpade} 
                   alt="Syndikate Logo" 
-                  className="h-16 w-auto object-contain group-hover:scale-105 transition-transform duration-300 filter brightness-110"
+                  className="h-14 w-auto object-contain group-hover:scale-105 transition-transform duration-300 filter brightness-110"
                   style={{ imageRendering: 'crisp-edges' }}
                 />
               </div>
@@ -56,6 +56,18 @@ export function Header() {
               <div className="absolute -top-1 -right-1 w-4 h-4 border-r-2 border-t-2 border-syndikate-orange opacity-0 group-hover:opacity-100 transition-opacity" />
               <div className="absolute -bottom-1 -left-1 w-4 h-4 border-l-2 border-b-2 border-syndikate-orange opacity-0 group-hover:opacity-100 transition-opacity" />
               <div className="absolute -bottom-1 -right-1 w-4 h-4 border-r-2 border-b-2 border-syndikate-orange opacity-0 group-hover:opacity-100 transition-opacity" />
+            </div>
+            <div className="relative flex flex-col items-center">
+              <svg viewBox="0 0 200 60" className="w-40 h-14">
+                <defs>
+                  <path id="curve" d="M 10,30 Q 100,10 190,30" fill="transparent" />
+                </defs>
+                <text className="fill-syndikate-orange font-display text-[18px] font-bold tracking-wider" style={{ letterSpacing: '0.15em' }}>
+                  <textPath href="#curve" startOffset="50%" textAnchor="middle">
+                    SYNDIKATE
+                  </textPath>
+                </text>
+              </svg>
             </div>
           </Link>
 
