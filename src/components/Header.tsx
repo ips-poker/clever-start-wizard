@@ -40,23 +40,30 @@ export function Header() {
           {/* Logo */}
           <Link 
             to="/" 
-            className="flex items-center space-x-4 group"
+            className="flex items-center space-x-3 group"
           >
             {/* Logo */}
             <div className="relative">
               <img 
                 src={syndikateLogoSpade} 
                 alt="Syndikate Logo" 
-                className="h-16 w-auto object-contain group-hover:scale-105 transition-transform duration-300 filter brightness-110 group-hover:drop-shadow-[0_0_20px_rgba(255,90,31,0.5)]"
+                className="h-12 w-auto object-contain group-hover:scale-105 transition-transform duration-300 filter brightness-110 group-hover:drop-shadow-[0_0_20px_rgba(255,90,31,0.5)]"
                 style={{ imageRendering: 'crisp-edges' }}
               />
             </div>
             
-            {/* Text */}
+            {/* Text with curved bottom */}
             <div className="relative">
-              <h1 className="text-4xl font-display font-bold tracking-[0.2em] text-syndikate-orange uppercase group-hover:drop-shadow-[0_0_12px_rgba(255,90,31,0.6)] transition-all duration-300">
-                SYNDIKATE
-              </h1>
+              <svg viewBox="0 0 180 48" className="w-44 h-12">
+                <defs>
+                  <path id="curve" d="M 10,24 Q 90,12 170,24" fill="transparent" />
+                </defs>
+                <text className="fill-syndikate-orange font-display text-[16px] font-bold tracking-wider group-hover:drop-shadow-[0_0_12px_rgba(255,90,31,0.6)] transition-all duration-300" style={{ letterSpacing: '0.15em' }}>
+                  <textPath href="#curve" startOffset="50%" textAnchor="middle">
+                    SYNDIKATE
+                  </textPath>
+                </text>
+              </svg>
             </div>
           </Link>
 
