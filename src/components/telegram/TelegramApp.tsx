@@ -797,7 +797,7 @@ export const TelegramApp = () => {
   ];
 
   const renderAbout = () => (
-    <div className="pb-20 px-4 bg-transparent min-h-screen relative z-10">
+    <div className="pb-20 px-4 pt-24 bg-transparent min-h-screen relative z-10">
       {/* Industrial header with glitch effect */}
       <div className="relative p-6 bg-syndikate-metal/90 brutal-border backdrop-blur-xl shadow-brutal overflow-hidden group mb-4">
         {/* Metal grid background */}
@@ -1227,7 +1227,7 @@ export const TelegramApp = () => {
           {activeTab === 'about' && renderAbout()}
       
       {activeTab === 'tournaments' && (
-        <div className="space-y-4 pb-20 px-4 bg-transparent min-h-screen relative z-10">
+        <div className="space-y-4 pb-20 px-4 pt-24 bg-transparent min-h-screen relative z-10">
           <div className="flex items-center gap-3 p-4">
             <div className="w-10 h-10 bg-syndikate-orange brutal-border flex items-center justify-center">
               <Trophy className="h-5 w-5 text-background" />
@@ -1405,7 +1405,7 @@ export const TelegramApp = () => {
       )}
 
       {activeTab === 'rating' && (
-        <div className="space-y-4 pb-20 px-4 bg-transparent min-h-screen relative z-10">
+        <div className="space-y-4 pb-20 px-4 pt-24 bg-transparent min-h-screen relative z-10">
           {/* Header */}
           <div className="flex items-center gap-3 p-4">
             <div className="w-10 h-10 bg-syndikate-orange brutal-border flex items-center justify-center">
@@ -1621,7 +1621,7 @@ export const TelegramApp = () => {
       )}
 
       {activeTab === 'qa' && (
-        <div className="space-y-6 pb-20 px-4 bg-transparent min-h-screen relative z-10">
+        <div className="space-y-6 pb-20 px-4 pt-24 bg-transparent min-h-screen relative z-10">
           {/* Industrial header with glitch effect */}
           <div className="relative p-6 bg-syndikate-metal/90 brutal-border backdrop-blur-xl shadow-brutal overflow-hidden group">
             {/* Metal grid background */}
