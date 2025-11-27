@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -20,355 +20,281 @@ import {
   ArrowRight,
   Loader2
 } from "lucide-react";
+import { FloatingParticles } from "@/components/ui/floating-particles";
+import { ScrollProgress } from "@/components/ScrollProgress";
 
 export default function About() {
   const { content: cmsContent, loading: cmsLoading, getContent } = useCMSContent('about');
+  const baseTextureRef = useRef<HTMLDivElement>(null);
+  const gridRef = useRef<HTMLDivElement>(null);
 
-  // Fallback data если нет в CMS
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      
+      if (baseTextureRef.current) {
+        baseTextureRef.current.style.transform = `translateY(${currentScrollY * 0.15}px)`;
+      }
+      if (gridRef.current) {
+        gridRef.current.style.transform = `translateY(${currentScrollY * 0.25}px)`;
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   const getAchievements = () => [
     { 
       icon: Trophy, 
-      title: getContent('achievement_1_title', '500+ турниров'), 
-      desc: getContent('achievement_1_desc', 'Проведено за 3 года работы') 
+      title: getContent('achievement_1_title', '500+'), 
+      desc: getContent('achievement_1_desc', 'ТУРНИРОВ ПРОВЕДЕНО') 
     },
     { 
       icon: Users, 
-      title: getContent('achievement_2_title', '1000+ игроков'), 
-      desc: getContent('achievement_2_desc', 'Доверяют нашей системе') 
+      title: getContent('achievement_2_title', '1000+'), 
+      desc: getContent('achievement_2_desc', 'АКТИВНЫХ ИГРОКОВ') 
     },
     { 
       icon: Star, 
       title: getContent('achievement_3_title', '4.9/5'), 
-      desc: getContent('achievement_3_desc', 'Средняя оценка игроков') 
+      desc: getContent('achievement_3_desc', 'СРЕДНЯЯ ОЦЕНКА') 
     },
     { 
       icon: Shield, 
       title: getContent('achievement_4_title', '100%'), 
-      desc: getContent('achievement_4_desc', 'Безопасность данных') 
+      desc: getContent('achievement_4_desc', 'БЕЗОПАСНОСТЬ ДАННЫХ') 
     }
   ];
 
   const getValues = () => [
     {
       icon: Target,
-      title: getContent('value_1_title', 'Честность'),
+      title: getContent('value_1_title', 'ЧЕСТНОСТЬ'),
       desc: getContent('value_1_desc', 'Прозрачная рейтинговая система и честная игра - основа нашей философии.')
     },
     {
       icon: Heart,
-      title: getContent('value_2_title', 'Сообщество'),
+      title: getContent('value_2_title', 'СООБЩЕСТВО'),
       desc: getContent('value_2_desc', 'Мы создаем дружелюбную атмосферу, где каждый игрок чувствует себя как дома.')
     },
     {
       icon: Zap,
-      title: getContent('value_3_title', 'Инновации'),
+      title: getContent('value_3_title', 'ИННОВАЦИИ'),
       desc: getContent('value_3_desc', 'Постоянно развиваем технологии для улучшения игрового опыта.')
     },
     {
       icon: Globe,
-      title: getContent('value_4_title', 'Международный уровень'),
+      title: getContent('value_4_title', 'МЕЖДУНАРОДНЫЙ УРОВЕНЬ'),
       desc: getContent('value_4_desc', 'Соответствуем мировым стандартам проведения покерных турниров.')
-    }
-  ];
-
-  const getTeam = () => [
-    {
-      name: getContent('team_1_name', 'Александр Петров'),
-      role: getContent('team_1_role', 'Основатель и Турнирный Директор'),
-      experience: getContent('team_1_experience', '15+ лет в покере'),
-      image: getContent('team_1_image', 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=300&h=300&fit=crop&crop=face'),
-      achievements: getContent('team_1_achievements', 'WSOP Circuit Ring, EPT Final Table, Международный судья').split(', ')
-    },
-    {
-      name: getContent('team_2_name', 'Елена Соколова'),
-      role: getContent('team_2_role', 'Технический Директор'),
-      experience: getContent('team_2_experience', '10+ лет в IT'),
-      image: getContent('team_2_image', 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=300&h=300&fit=crop&crop=face'),
-      achievements: getContent('team_2_achievements', 'Разработка ELO системы, IT сертификации, Автоматизация турниров').split(', ')
-    },
-    {
-      name: getContent('team_3_name', 'Дмитрий Волков'),
-      role: getContent('team_3_role', 'Главный дилер'),
-      experience: getContent('team_3_experience', '12+ лет опыта'),
-      image: getContent('team_3_image', 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=300&h=300&fit=crop&crop=face'),
-      achievements: getContent('team_3_achievements', 'Сертификат FIDPA, Обучение новых дилеров, 3000+ турниров').split(', ')
     }
   ];
 
   const achievements = getAchievements();
   const values = getValues();
-  const team = getTeam();
 
   if (cmsLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
-        <Header />
-        <div className="flex items-center justify-center py-20 pt-24 md:pt-20">
-          <Loader2 className="w-8 h-8 animate-spin text-amber-400" />
+      <>
+        <ScrollProgress />
+        <div className="min-h-screen bg-background relative overflow-hidden">
+          <div className="fixed inset-0 industrial-texture opacity-50" />
+          <Header />
+          <div className="flex items-center justify-center py-20 pt-24 md:pt-20 relative z-20">
+            <div className="w-12 h-12 border-2 border-syndikate-orange border-t-transparent rounded-full animate-spin" />
+          </div>
+          <Footer />
         </div>
-        <Footer />
-      </div>
+      </>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
-      <Header />
-      
-      <main className="pt-24 md:pt-20">
-        {/* Hero Section */}
-        <section className="py-12 md:py-20 relative overflow-hidden">
-          <div className="absolute inset-0 opacity-10">
-            <div className="absolute top-10 left-10 text-amber-400/40 text-5xl animate-pulse">♠</div>
-            <div className="absolute top-20 right-20 text-amber-400/30 text-4xl animate-bounce-subtle">♣</div>
-            <div className="absolute bottom-10 left-20 text-amber-400/35 text-6xl animate-pulse">♥</div>
-          </div>
-          <div className="absolute inset-0 pointer-events-none">
-            <div className="absolute top-0 left-1/4 w-96 h-96 bg-amber-500/5 rounded-full blur-3xl"></div>
-            <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-blue-500/5 rounded-full blur-3xl"></div>
-          </div>
-          <div className="container mx-auto px-4 relative">
-            <div className="grid lg:grid-cols-2 gap-12 items-center">
-              <div className="max-w-2xl">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl flex items-center justify-center shadow-lg">
-                    <Shield className="h-5 w-5 text-white" />
-                  </div>
-                  <Badge variant="outline" className="border-amber-400/50 text-amber-400">
-                    {getContent('hero_badge', 'О компании')}
-                  </Badge>
-                </div>
-                <h1 className="text-3xl md:text-5xl font-light mb-6 text-white tracking-wide">
-                  {getContent('hero_title', 'Event Poker Club')}
-                </h1>
-                <div className="h-0.5 w-20 bg-gradient-to-r from-amber-400 to-amber-600 mb-6"></div>
-                <p className="text-lg md:text-xl text-white/70 leading-relaxed mb-8 font-light">
-                  {getContent('hero_description', 'Мы создали уникальное пространство для любителей покера, где каждый может развивать свои навыки, участвовать в честных турнирах и расти в профессиональной рейтинговой системе.')}
-                </p>
-                <div className="flex flex-wrap gap-4">
-                  <Button size="lg" className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white shadow-lg hover:shadow-xl hover:shadow-amber-500/20 transition-all duration-300">
-                    <Users className="w-5 h-5 mr-2" />
-                    Присоединиться
-                  </Button>
-                  <Button size="lg" className="bg-white/5 border-2 border-amber-400/30 text-amber-400 hover:bg-amber-400/10 hover:border-amber-400/50 backdrop-blur-xl transition-all duration-300">
-                    <Trophy className="w-5 h-5 mr-2" />
-                    Наши турниры
-                  </Button>
-                </div>
-              </div>
-              <div className="relative">
-                <img 
-                  src={getContent('hero_image', 'https://images.unsplash.com/photo-1606092195730-5d7b9af1efc5?w=600&h=600&fit=crop')}
-                  alt="EPC Poker Club"
-                  className="rounded-2xl shadow-floating w-full"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-poker-primary/20 to-transparent rounded-2xl"></div>
-              </div>
-            </div>
-          </div>
-        </section>
+    <>
+      <ScrollProgress />
+      <FloatingParticles />
+      <div className="min-h-screen bg-background relative overflow-hidden">
+        {/* Industrial metal base texture */}
+        <div 
+          ref={baseTextureRef}
+          className="fixed inset-0 pointer-events-none industrial-texture opacity-50 z-0 transition-transform duration-0 will-change-transform" 
+        />
 
-        {/* Achievements */}
-        <section className="py-16 relative overflow-hidden">
-          <div className="absolute inset-0 pointer-events-none">
-            <div className="absolute top-0 right-1/4 w-96 h-96 bg-purple-500/5 rounded-full blur-3xl"></div>
-          </div>
-          <div className="container mx-auto px-4 relative z-10">
-            <div className="grid md:grid-cols-4 gap-6">
-              {achievements.map((achievement, index) => {
-                const IconComponent = achievement.icon;
-                return (
-                  <div key={`achievement-${index}-${achievement.title}`} className="bg-gradient-to-br from-slate-800/95 via-slate-900/95 to-black/90 border border-white/10 rounded-2xl p-8 text-center backdrop-blur-xl hover:shadow-2xl hover:shadow-amber-500/20 transition-all duration-300 hover:scale-[1.02]">
-                    <div className="w-16 h-16 bg-amber-500/10 rounded-xl flex items-center justify-center mx-auto mb-4">
-                      <IconComponent className="w-8 h-8 text-amber-400" />
+        {/* Metal grid overlay */}
+        <div
+          ref={gridRef}
+          className="fixed inset-0 pointer-events-none opacity-20 z-0 transition-transform duration-0 will-change-transform"
+          style={{
+            backgroundImage: `
+              repeating-linear-gradient(0deg, transparent, transparent 48px, rgba(255,255,255,0.04) 48px, rgba(255,255,255,0.04) 49px),
+              repeating-linear-gradient(90deg, transparent, transparent 48px, rgba(255,255,255,0.04) 48px, rgba(255,255,255,0.04) 49px)
+            `,
+          }}
+        />
+
+        {/* Neon glows */}
+        <div className="fixed top-0 left-1/4 w-[520px] h-[520px] bg-syndikate-orange/25 rounded-full blur-[160px] opacity-80 animate-pulse" />
+        <div className="fixed bottom-0 right-1/4 w-[520px] h-[520px] bg-syndikate-red/20 rounded-full blur-[160px] opacity-80 animate-pulse" />
+
+        {/* Side rails */}
+        <div className="fixed inset-y-0 left-0 w-[3px] bg-gradient-to-b from-syndikate-orange/70 via-syndikate-red/40 to-transparent shadow-neon-orange pointer-events-none z-10" />
+        <div className="fixed inset-y-0 right-0 w-[3px] bg-gradient-to-b from-syndikate-orange/70 via-syndikate-red/40 to-transparent shadow-neon-orange pointer-events-none z-10" />
+        <div className="fixed top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-transparent via-syndikate-orange/80 to-transparent pointer-events-none z-10" />
+
+        <Header />
+        
+        <main className="pt-24 md:pt-20 pb-16 relative z-20">
+          {/* Hero Section */}
+          <section className="py-12 md:py-20 relative overflow-hidden">
+            <div className="container mx-auto px-4 relative">
+              <div className="grid lg:grid-cols-2 gap-12 items-center">
+                <div className="max-w-2xl">
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="w-12 h-12 bg-syndikate-orange brutal-border flex items-center justify-center shadow-neon-orange">
+                      <Shield className="h-6 w-6 text-background" />
                     </div>
-                    <h3 className="text-2xl font-light text-amber-400 mb-2">{achievement.title}</h3>
-                    <p className="text-white/60 font-light">{achievement.desc}</p>
+                    <Badge className="brutal-metal brutal-border text-syndikate-orange font-bold uppercase tracking-wider">
+                      {getContent('hero_badge', 'О КОМПАНИИ')}
+                    </Badge>
                   </div>
-                );
-              })}
-            </div>
-          </div>
-        </section>
-
-        {/* Our Story */}
-        <section className="py-20 relative overflow-hidden">
-          <div className="absolute inset-0 opacity-10">
-            <div className="absolute top-20 left-10 text-amber-400/40 text-5xl animate-pulse">♠</div>
-            <div className="absolute bottom-20 right-20 text-amber-400/30 text-4xl animate-bounce-subtle">♥</div>
-          </div>
-          <div className="container mx-auto px-4 relative z-10">
-            <div className="grid lg:grid-cols-2 gap-12 items-center">
-              <div>
-                <Badge className="mb-4 bg-amber-500/20 text-amber-400 border-amber-500/30 border">
-                  {getContent('story_badge', 'Наша история')}
-                </Badge>
-                <h2 className="text-4xl font-light mb-6 text-white tracking-wide">
-                  {getContent('story_title', 'Как всё начиналось')}
-                </h2>
-                <div className="h-0.5 w-20 bg-gradient-to-r from-amber-400 to-amber-600 mb-6"></div>
-                <div className="space-y-6 text-lg text-white/70 leading-relaxed font-light">
-                  <p>
-                    {getContent('story_paragraph1', 'В 2021 году группа энтузиастов покера решила создать нечто большее, чем просто игровой клуб. Мы хотели построить настоящее сообщество, где каждый игрок мог бы отслеживать свой прогресс и развиваться в профессиональной среде.')}
-                  </p>
-                  <p>
-                    {getContent('story_paragraph2', 'Основой нашего подхода стала справедливая рейтинговая система RPS, адаптированная специально для покера. Это позволило создать объективную оценку навыков каждого игрока и мотивировать к постоянному развитию.')}
-                  </p>
-                  <p>
-                    {getContent('story_paragraph3', 'Сегодня EPC - это не просто покерный клуб, а целая экосистема для развития покерных навыков, включающая регулярные турниры, обучающие программы и дружелюбное сообщество игроков всех уровней.')}
+                  <h1 className="text-4xl md:text-5xl font-bold mb-6 text-foreground tracking-wider uppercase">
+                    {getContent('hero_title', 'EVENT POKER CLUB')}
+                  </h1>
+                  <div className="h-[2px] w-20 bg-syndikate-orange mb-6"></div>
+                  <p className="text-lg md:text-xl text-muted-foreground leading-relaxed mb-8 font-mono uppercase tracking-wide">
+                    {getContent('hero_description', 'УНИКАЛЬНОЕ ПРОСТРАНСТВО ДЛЯ ЛЮБИТЕЛЕЙ ПОКЕРА. ЧЕСТНЫЕ ТУРНИРЫ И ПРОФЕССИОНАЛЬНАЯ РЕЙТИНГОВАЯ СИСТЕМА.')}
                   </p>
                 </div>
-                <div className="flex flex-col sm:flex-row gap-4 mt-8">
-                  <div className="flex items-center gap-2 bg-green-500/10 border border-green-500/30 rounded-lg px-4 py-2">
-                    <CheckCircle className="w-5 h-5 text-green-400" />
-                    <span className="text-sm font-light text-white">Лицензированная деятельность</span>
-                  </div>
-                  <div className="flex items-center gap-2 bg-blue-500/10 border border-blue-500/30 rounded-lg px-4 py-2">
-                    <CheckCircle className="w-5 h-5 text-blue-400" />
-                    <span className="text-sm font-light text-white">Международные стандарты</span>
-                  </div>
-                </div>
-              </div>
-              <div className="relative">
-                <img 
-                  src={getContent('story_image', 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=600&h=400&fit=crop') + (getContent('story_image') !== 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=600&h=400&fit=crop' ? `?v=${Date.now()}` : '')}
-                  alt="Покерный турнир в EPC"
-                  className="rounded-2xl shadow-2xl w-full border border-white/10"
-                  key={getContent('story_image', 'default')}
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-amber-500/20 to-transparent rounded-2xl"></div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Values */}
-        <section className="py-20 relative overflow-hidden">
-          <div className="absolute inset-0 pointer-events-none">
-            <div className="absolute bottom-0 left-1/4 w-96 h-96 bg-blue-500/5 rounded-full blur-3xl"></div>
-          </div>
-          <div className="container mx-auto px-4 relative z-10">
-            <div className="text-center mb-16">
-              <div className="flex items-center gap-3 justify-center mb-6">
-                <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl flex items-center justify-center shadow-lg">
-                  <Heart className="h-5 w-5 text-white" />
-                </div>
-                <h2 className="text-3xl lg:text-4xl font-light text-white tracking-wide">
-                  {getContent('values_title', 'ВО ЧТО МЫ ВЕРИМ')}
-                </h2>
-              </div>
-              <div className="h-0.5 w-20 bg-gradient-to-r from-amber-400 to-amber-600 mx-auto mb-6"></div>
-              <p className="text-xl text-white/70 max-w-3xl mx-auto font-light">
-                {getContent('values_description', 'Наши принципы определяют каждое решение и создают уникальную атмосферу в EPC')}
-              </p>
-            </div>
-
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {values.map((value, index) => {
-                const IconComponent = value.icon;
-                return (
-                  <div key={`value-${index}-${value.title}`} className="bg-gradient-to-br from-slate-800/95 via-slate-900/95 to-black/90 border border-white/10 rounded-2xl p-6 backdrop-blur-xl hover:shadow-2xl hover:shadow-amber-500/20 hover:scale-[1.02] transition-all duration-300">
-                    <div className="w-12 h-12 bg-amber-500/10 rounded-xl flex items-center justify-center mb-4">
-                      <IconComponent className="w-6 h-6 text-amber-400" />
-                    </div>
-                    <h3 className="text-xl font-light text-white mb-3 tracking-wide">{value.title}</h3>
-                    <p className="text-white/60 leading-relaxed font-light">{value.desc}</p>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </section>
-
-        {/* Team */}
-        <section className="py-20 relative overflow-hidden">
-          <div className="absolute inset-0 opacity-10">
-            <div className="absolute top-10 right-10 text-amber-400/40 text-5xl animate-pulse">♦</div>
-            <div className="absolute bottom-10 left-10 text-amber-400/30 text-4xl animate-bounce-subtle">♣</div>
-          </div>
-          <div className="container mx-auto px-4 relative z-10">
-            <div className="text-center mb-16">
-              <div className="flex items-center gap-3 justify-center mb-6">
-                <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl flex items-center justify-center shadow-lg">
-                  <Users className="h-5 w-5 text-white" />
-                </div>
-                <h2 className="text-3xl lg:text-4xl font-light text-white tracking-wide">
-                  {getContent('team_title', 'ПОЗНАКОМЬТЕСЬ С КОМАНДОЙ')}
-                </h2>
-              </div>
-              <div className="h-0.5 w-20 bg-gradient-to-r from-amber-400 to-amber-600 mx-auto mb-6"></div>
-              <p className="text-xl text-white/70 max-w-3xl mx-auto font-light">
-                {getContent('team_description', 'Профессионалы своего дела, объединенные страстью к покеру и стремлением к совершенству')}
-              </p>
-            </div>
-
-            <div className="grid md:grid-cols-3 gap-8">
-              {team.map((member, index) => (
-                <div key={`member-${index}-${member.name}`} className="bg-gradient-to-br from-slate-800/95 via-slate-900/95 to-black/90 border border-white/10 rounded-2xl overflow-hidden backdrop-blur-xl hover:shadow-2xl hover:shadow-amber-500/20 hover:-translate-y-2 transition-all duration-500">
-                  <div className="relative">
+                <div className="relative">
+                  <div className="brutal-metal brutal-border p-4">
                     <img 
-                      src={member.image}
-                      alt={member.name}
-                      className="w-full h-64 object-cover"
+                      src={getContent('hero_image', 'https://images.unsplash.com/photo-1606092195730-5d7b9af1efc5?w=600&h=600&fit=crop')}
+                      alt="EPC Poker Club"
+                      className="w-full"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
-                    <div className="absolute bottom-4 left-4 text-white">
-                      <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30 backdrop-blur-xl">
-                        {member.experience}
-                      </Badge>
-                    </div>
                   </div>
-                  <div className="p-6">
-                    <h3 className="text-xl font-light text-white mb-2 tracking-wide">{member.name}</h3>
-                    <p className="text-amber-400 font-light mb-4">{member.role}</p>
-                    <div className="space-y-2">
-                      {member.achievements.map((achievement, achIndex) => (
-                        <div key={achIndex} className="flex items-center gap-2">
-                          <Award className="w-4 h-4 text-green-400" />
-                          <span className="text-sm text-white/60 font-light">{achievement}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* CTA */}
-        <section className="py-20 relative overflow-hidden">
-          <div className="absolute inset-0 pointer-events-none">
-            <div className="absolute top-0 left-1/3 w-96 h-96 bg-amber-500/5 rounded-full blur-3xl"></div>
-            <div className="absolute bottom-0 right-1/3 w-96 h-96 bg-purple-500/5 rounded-full blur-3xl"></div>
-          </div>
-          <div className="container mx-auto px-4 relative z-10">
-            <div className="max-w-4xl mx-auto text-center">
-              <div className="bg-gradient-to-br from-amber-500/10 via-amber-600/15 to-amber-500/10 rounded-3xl p-12 border border-amber-500/20 backdrop-blur-xl shadow-2xl">
-                <h2 className="text-4xl font-light mb-6 text-white tracking-wide">
-                  Готовы стать частью EPC?
-                </h2>
-                <div className="h-0.5 w-20 bg-gradient-to-r from-amber-400 to-amber-600 mx-auto mb-6"></div>
-                <p className="text-xl text-white/70 mb-8 leading-relaxed font-light">
-                  Присоединяйтесь к нашему сообществу и начните свой путь к покерному мастерству уже сегодня
-                </p>
-                <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                  <Button size="lg" className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white shadow-lg hover:shadow-xl hover:shadow-amber-500/20 transition-all duration-300">
-                    <Users className="w-5 h-5 mr-2" />
-                    Стать игроком
-                  </Button>
-                  <Button size="lg" className="bg-white/5 border-2 border-amber-400/30 text-amber-400 hover:bg-amber-400/10 hover:border-amber-400/50 backdrop-blur-xl transition-all duration-300">
-                    Связаться с нами
-                    <ArrowRight className="w-5 h-5 ml-2" />
-                  </Button>
+                  {/* Corner Brackets */}
+                  <div className="absolute -top-2 -left-2 w-12 h-12 border-l-4 border-t-4 border-syndikate-orange" />
+                  <div className="absolute -top-2 -right-2 w-12 h-12 border-r-4 border-t-4 border-syndikate-orange" />
+                  <div className="absolute -bottom-2 -left-2 w-12 h-12 border-l-4 border-b-4 border-syndikate-orange" />
+                  <div className="absolute -bottom-2 -right-2 w-12 h-12 border-r-4 border-b-4 border-syndikate-orange" />
                 </div>
               </div>
             </div>
-          </div>
-        </section>
-      </main>
-      
-      <Footer />
-    </div>
+          </section>
+
+          {/* Achievements */}
+          <section className="py-16 relative overflow-hidden">
+            <div className="container mx-auto px-4 relative z-10">
+              <div className="grid md:grid-cols-4 gap-6">
+                {achievements.map((achievement, index) => {
+                  const IconComponent = achievement.icon;
+                  return (
+                    <div key={`achievement-${index}-${achievement.title}`} className="brutal-metal brutal-border p-8 text-center transition-all duration-300 hover:shadow-neon-orange relative overflow-hidden group">
+                      {/* Corner Brackets */}
+                      <div className="absolute top-0 left-0 w-6 h-6 border-l-2 border-t-2 border-syndikate-orange opacity-0 group-hover:opacity-100 transition-opacity" />
+                      <div className="absolute top-0 right-0 w-6 h-6 border-r-2 border-t-2 border-syndikate-orange opacity-0 group-hover:opacity-100 transition-opacity" />
+                      <div className="absolute bottom-0 left-0 w-6 h-6 border-l-2 border-b-2 border-syndikate-orange opacity-0 group-hover:opacity-100 transition-opacity" />
+                      <div className="absolute bottom-0 right-0 w-6 h-6 border-r-2 border-b-2 border-syndikate-orange opacity-0 group-hover:opacity-100 transition-opacity" />
+
+                      <div className="w-16 h-16 bg-syndikate-orange brutal-border flex items-center justify-center mx-auto mb-4">
+                        <IconComponent className="w-8 h-8 text-background" />
+                      </div>
+                      <h3 className="text-2xl font-bold text-syndikate-orange mb-2">{achievement.title}</h3>
+                      <p className="text-muted-foreground font-mono uppercase tracking-wider text-sm">{achievement.desc}</p>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </section>
+
+          {/* Our Story */}
+          <section className="py-20 relative overflow-hidden">
+            <div className="container mx-auto px-4 relative z-10">
+              <div className="grid lg:grid-cols-2 gap-12 items-center">
+                <div>
+                  <Badge className="mb-4 brutal-metal brutal-border text-syndikate-orange font-bold uppercase tracking-wider">
+                    {getContent('story_badge', 'НАША ИСТОРИЯ')}
+                  </Badge>
+                  <h2 className="text-4xl font-bold mb-6 text-foreground tracking-wider uppercase">
+                    {getContent('story_title', 'КАК ВСЁ НАЧИНАЛОСЬ')}
+                  </h2>
+                  <div className="h-[2px] w-20 bg-syndikate-orange mb-6"></div>
+                  <div className="space-y-6 text-lg text-muted-foreground leading-relaxed font-mono uppercase tracking-wide">
+                    <p>
+                      {getContent('story_paragraph1', 'В 2021 ГОДУ ГРУППА ЭНТУЗИАСТОВ ПОКЕРА РЕШИЛА СОЗДАТЬ НЕЧТО БОЛЬШЕЕ, ЧЕМ ПРОСТО ИГРОВОЙ КЛУБ.')}
+                    </p>
+                    <p>
+                      {getContent('story_paragraph2', 'ОСНОВОЙ НАШЕГО ПОДХОДА СТАЛА СПРАВЕДЛИВАЯ РЕЙТИНГОВАЯ СИСТЕМА RPS, АДАПТИРОВАННАЯ СПЕЦИАЛЬНО ДЛЯ ПОКЕРА.')}
+                    </p>
+                    <p>
+                      {getContent('story_paragraph3', 'СЕГОДНЯ EPC - ЭТО НЕ ПРОСТО ПОКЕРНЫЙ КЛУБ, А ЦЕЛАЯ ЭКОСИСТЕМА ДЛЯ РАЗВИТИЯ ПОКЕРНЫХ НАВЫКОВ.')}
+                    </p>
+                  </div>
+                </div>
+                <div className="relative">
+                  <div className="brutal-metal brutal-border p-4">
+                    <img 
+                      src={getContent('story_image', 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=600&h=400&fit=crop')}
+                      alt="Покерный турнир в EPC"
+                      className="w-full"
+                    />
+                  </div>
+                  {/* Corner Brackets */}
+                  <div className="absolute -top-2 -left-2 w-12 h-12 border-l-4 border-t-4 border-syndikate-orange" />
+                  <div className="absolute -top-2 -right-2 w-12 h-12 border-r-4 border-t-4 border-syndikate-orange" />
+                  <div className="absolute -bottom-2 -left-2 w-12 h-12 border-l-4 border-b-4 border-syndikate-orange" />
+                  <div className="absolute -bottom-2 -right-2 w-12 h-12 border-r-4 border-b-4 border-syndikate-orange" />
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Values */}
+          <section className="py-20 relative overflow-hidden">
+            <div className="container mx-auto px-4 relative z-10">
+              <div className="text-center mb-16">
+                <div className="flex items-center gap-3 justify-center mb-6">
+                  <div className="w-12 h-12 bg-syndikate-orange brutal-border flex items-center justify-center shadow-neon-orange">
+                    <Heart className="h-6 w-6 text-background" />
+                  </div>
+                  <h2 className="text-4xl lg:text-5xl font-bold text-foreground tracking-wider uppercase">
+                    {getContent('values_title', 'ВО ЧТО МЫ ВЕРИМ')}
+                  </h2>
+                </div>
+                <div className="h-[2px] w-20 bg-syndikate-orange mx-auto mb-6"></div>
+                <p className="text-xl text-muted-foreground max-w-3xl mx-auto font-mono uppercase tracking-wider">
+                  {getContent('values_description', 'НАШИ ПРИНЦИПЫ ОПРЕДЕЛЯЮТ КАЖДОЕ РЕШЕНИЕ')}
+                </p>
+              </div>
+
+              <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {values.map((value, index) => {
+                  const IconComponent = value.icon;
+                  return (
+                    <div key={`value-${index}-${value.title}`} className="brutal-metal brutal-border p-6 transition-all duration-300 hover:shadow-neon-orange relative overflow-hidden group">
+                      {/* Corner Brackets */}
+                      <div className="absolute top-0 left-0 w-6 h-6 border-l-2 border-t-2 border-syndikate-orange opacity-0 group-hover:opacity-100 transition-opacity" />
+                      <div className="absolute top-0 right-0 w-6 h-6 border-r-2 border-t-2 border-syndikate-orange opacity-0 group-hover:opacity-100 transition-opacity" />
+                      <div className="absolute bottom-0 left-0 w-6 h-6 border-l-2 border-b-2 border-syndikate-orange opacity-0 group-hover:opacity-100 transition-opacity" />
+                      <div className="absolute bottom-0 right-0 w-6 h-6 border-r-2 border-b-2 border-syndikate-orange opacity-0 group-hover:opacity-100 transition-opacity" />
+
+                      <div className="w-12 h-12 bg-syndikate-orange brutal-border flex items-center justify-center mb-4">
+                        <IconComponent className="w-6 h-6 text-background" />
+                      </div>
+                      <h3 className="text-xl font-bold text-foreground mb-3 tracking-wider uppercase">{value.title}</h3>
+                      <p className="text-muted-foreground leading-relaxed font-mono uppercase tracking-wide text-sm">{value.desc}</p>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </section>
+        </main>
+        
+        <Footer />
+      </div>
+    </>
   );
 }
