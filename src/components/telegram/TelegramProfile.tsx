@@ -388,13 +388,13 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate, onUnre
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'scheduled':
-        return <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30">Запланирован</Badge>;
+        return <Badge className="bg-syndikate-orange/20 text-syndikate-orange brutal-border">Запланирован</Badge>;
       case 'registration':
-        return <Badge className="bg-green-500/20 text-green-400 border-green-500/30">Регистрация</Badge>;
+        return <Badge className="bg-syndikate-orange/20 text-syndikate-orange brutal-border">Регистрация</Badge>;
       case 'running':
-        return <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30">Идет</Badge>;
+        return <Badge className="bg-syndikate-red/20 text-syndikate-red brutal-border">Идет</Badge>;
       default:
-        return <Badge className="bg-gray-500/20 text-gray-400 border-gray-500/30">{status}</Badge>;
+        return <Badge className="bg-muted text-muted-foreground brutal-border">{status}</Badge>;
     }
   };
 
@@ -438,11 +438,11 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate, onUnre
     return (
       <div className="flex items-center justify-center min-h-screen bg-transparent">
         <div className="text-center">
-          <User className="h-12 w-12 text-white/30 mx-auto mb-4" />
-          <p className="text-white/70 text-sm">Профиль не найден</p>
+          <User className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+          <p className="text-muted-foreground text-sm">Профиль не найден</p>
           <Button 
             onClick={createPlayerProfile}
-            className="mt-4 bg-amber-500 hover:bg-amber-600"
+            className="mt-4 bg-syndikate-orange hover:bg-syndikate-orange-glow text-background font-bold uppercase shadow-neon-orange"
           >
             Создать профиль
           </Button>
@@ -467,30 +467,30 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate, onUnre
     <div className="space-y-4 pb-20 px-4 bg-transparent min-h-screen relative z-10">
       {/* Header */}
       <div className="flex items-center gap-3 p-4">
-        <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl flex items-center justify-center">
-          <Trophy className="h-5 w-5 text-white" />
+        <div className="w-10 h-10 bg-syndikate-orange brutal-border flex items-center justify-center">
+          <Trophy className="h-5 w-5 text-background" />
         </div>
         <div>
-          <h2 className="text-3xl font-light text-white tracking-wider">ПРОФИЛЬ</h2>
-          <div className="h-0.5 w-16 bg-gradient-to-r from-amber-400 to-amber-600 mt-2"></div>
+          <h2 className="font-display text-3xl uppercase text-foreground tracking-wider">ПРОФИЛЬ</h2>
+          <div className="h-[2px] w-16 bg-gradient-neon mt-2"></div>
         </div>
       </div>
 
       {/* Profile Header */}
-      <Card className="bg-gradient-to-br from-slate-800/95 via-slate-900/95 to-black/90 border border-amber-400/20 backdrop-blur-xl shadow-xl">
+      <Card className="bg-syndikate-metal/90 brutal-border backdrop-blur-xl shadow-brutal">
         <CardContent className="p-6">
           <div className="text-center space-y-4">
             {/* Avatar */}
             <div className="relative inline-block">
-              <Avatar className="w-20 h-20 mx-auto border-2 border-white/20 shadow-xl">
+              <Avatar className="w-20 h-20 mx-auto brutal-border shadow-neon-orange">
                 <AvatarImage src={player.avatar_url} alt={player.name} />
-                <AvatarFallback className="text-lg bg-gradient-to-br from-amber-500 to-amber-600 text-white">
+                <AvatarFallback className="text-lg bg-syndikate-orange text-background font-bold">
                   {player.name?.charAt(0).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
               <Button
                 onClick={() => setShowAvatarSelector(true)}
-                className="absolute -bottom-1 -right-1 rounded-full w-6 h-6 p-0 shadow-lg hover:scale-110 transition-transform bg-amber-500 hover:bg-amber-600"
+                className="absolute -bottom-1 -right-1 brutal-border w-6 h-6 p-0 shadow-lg hover:scale-110 transition-transform bg-syndikate-orange hover:bg-syndikate-orange-glow"
                 size="sm"
               >
                 <Camera className="h-3 w-3" />
@@ -548,17 +548,17 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate, onUnre
             </div>
             
             {/* Main Stats */}
-            <div className="flex items-center justify-center gap-4 pt-3 border-t border-white/10">
+            <div className="flex items-center justify-center gap-4 pt-3 border-t-2 border-dashed border-syndikate-orange/30">
               <div className="text-center">
-                <p className="text-lg font-light text-amber-400">{player.elo_rating}</p>
-                <p className="text-xs text-white/60">RPS Рейтинг</p>
+                <p className="text-lg font-bold text-syndikate-orange neon-orange">{player.elo_rating}</p>
+                <p className="text-xs text-muted-foreground uppercase tracking-wider">RPS Рейтинг</p>
               </div>
-              <div className="w-px h-6 bg-white/20"></div>
+              <div className="w-px h-6 bg-border"></div>
               <div className="text-center">
-                <p className="text-lg font-light text-green-400">{player.wins}</p>
-                <p className="text-xs text-white/60">Побед</p>
+                <p className="text-lg font-bold text-syndikate-orange">{player.wins}</p>
+                <p className="text-xs text-muted-foreground uppercase tracking-wider">Побед</p>
               </div>
-              <div className="w-px h-6 bg-white/20"></div>
+              <div className="w-px h-6 bg-border"></div>
               <div className="text-center">
                 <p className="text-lg font-light text-blue-400">{player.games_played}</p>
                 <p className="text-xs text-white/60">Игр</p>
@@ -629,13 +629,13 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate, onUnre
         {userTournaments.length > 0 ? (
           <div className="space-y-4">
             {userTournaments.map((reg) => (
-              <Card key={reg.id} className="bg-gradient-to-br from-slate-800/95 via-slate-900/95 to-black/90 border-2 border-dashed border-blue-400/40 backdrop-blur-xl shadow-xl group hover:shadow-2xl hover:shadow-blue-500/50 transition-all duration-500 relative overflow-hidden rounded-2xl hover:scale-[1.01]">
-                {/* Перфорированные края */}
-                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-4 h-4 bg-black rounded-full -ml-2 shadow-inner border border-white/20"></div>
-                <div className="absolute right-0 top-1/2 -translate-y-1/2 w-4 h-4 bg-black rounded-full -mr-2 shadow-inner border border-white/20"></div>
+              <Card key={reg.id} className="bg-syndikate-metal/90 brutal-border border-2 border-dashed border-syndikate-orange/40 backdrop-blur-xl shadow-brutal group hover:shadow-neon-orange transition-all duration-500 relative overflow-hidden hover:scale-[1.01]">
+                {/* Corner Decorations */}
+                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-4 h-4 bg-background brutal-border -ml-2"></div>
+                <div className="absolute right-0 top-1/2 -translate-y-1/2 w-4 h-4 bg-background brutal-border -mr-2"></div>
                 
                 {/* Номер билета */}
-                <div className="absolute top-2 right-3 text-blue-400/80 text-xs font-mono tracking-wider bg-white/10 px-1.5 py-0.5 rounded backdrop-blur-sm">
+                <div className="absolute top-2 right-3 text-syndikate-orange text-xs font-mono tracking-wider bg-syndikate-concrete/50 px-1.5 py-0.5 brutal-border backdrop-blur-sm">
                   #{reg.tournament.id.slice(-6).toUpperCase()}
                 </div>
                 
@@ -732,11 +732,11 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate, onUnre
             )}
           </div>
         ) : (
-          <Card className="bg-gradient-to-br from-slate-800/50 via-slate-900/50 to-black/50 border border-white/10 backdrop-blur-xl">
+          <Card className="bg-syndikate-metal/50 brutal-border backdrop-blur-xl">
             <CardContent className="p-8 text-center">
-              <AlertCircle className="h-12 w-12 text-blue-400/50 mx-auto mb-4" />
-              <p className="text-white/70 text-lg font-medium mb-2">Нет активных регистраций</p>
-              <p className="text-white/50 text-sm">
+              <AlertCircle className="h-12 w-12 text-syndikate-orange/50 mx-auto mb-4" />
+              <p className="text-foreground text-lg font-bold uppercase mb-2">Нет активных регистраций</p>
+              <p className="text-muted-foreground text-sm">
                 Зарегистрируйтесь на турниры на главной странице
               </p>
             </CardContent>
@@ -746,10 +746,10 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate, onUnre
 
       {/* Game History */}
       {gameResults.length > 0 && (
-        <Card className="bg-gradient-to-br from-slate-500/10 via-slate-600/15 to-slate-500/10 border border-slate-400/20 backdrop-blur-sm">
+        <Card className="bg-syndikate-metal/50 brutal-border backdrop-blur-sm">
           <CardHeader className="pb-3">
-            <CardTitle className="text-white font-medium text-sm flex items-center gap-2">
-              <Activity className="h-4 w-4 text-slate-400" />
+            <CardTitle className="text-foreground font-display uppercase text-sm flex items-center gap-2">
+              <Activity className="h-4 w-4 text-syndikate-orange" />
               История игр
             </CardTitle>
           </CardHeader>

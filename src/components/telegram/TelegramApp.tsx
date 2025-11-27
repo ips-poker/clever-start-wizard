@@ -471,37 +471,37 @@ export const TelegramApp = () => {
         </CardContent>
       </Card>
 
-      <Card className="bg-gradient-to-br from-slate-800/90 via-gray-900/95 to-slate-900/90 border border-white/10 overflow-hidden cursor-pointer group transition-all duration-500 hover:scale-[1.02] hover:shadow-xl hover:shadow-amber-500/20 backdrop-blur-xl relative" onClick={() => setActiveTab('rating')}>
-        <div className="absolute inset-0 bg-gradient-to-br from-amber-500/8 via-transparent to-amber-600/8 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-        <div className="absolute inset-0 opacity-8 group-hover:opacity-20 transition-opacity duration-500">
-          <div className="absolute top-6 right-6 text-amber-400/30 text-4xl animate-pulse">♦</div>
-          <div className="absolute bottom-6 left-6 text-amber-400/20 text-3xl animate-bounce-subtle">♥</div>
+      <Card className="bg-syndikate-metal/90 brutal-border overflow-hidden cursor-pointer group transition-all duration-500 hover:scale-[1.02] hover:shadow-neon-orange backdrop-blur-xl relative" onClick={() => setActiveTab('rating')}>
+        <div className="absolute inset-0 bg-gradient-to-br from-syndikate-orange/5 via-transparent to-syndikate-red/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+        <div className="absolute inset-0 opacity-10 group-hover:opacity-20 transition-opacity duration-500">
+          <div className="absolute top-6 right-6 text-syndikate-orange/30 text-4xl animate-pulse">♦</div>
+          <div className="absolute bottom-6 left-6 text-syndikate-orange/20 text-3xl">♥</div>
         </div>
         
         <CardContent className="p-4 relative z-10">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-amber-500 via-amber-600 to-amber-700 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-xl group-hover:shadow-amber-500/30 transition-all duration-300 ring-1 ring-amber-400/20 group-hover:ring-amber-400/40">
-              <Trophy className="h-5 w-5 text-white group-hover:scale-110 transition-transform duration-300" />
+            <div className="w-10 h-10 bg-syndikate-orange brutal-border flex items-center justify-center shadow-neon-orange group-hover:shadow-neon-orange transition-all duration-300">
+              <Trophy className="h-5 w-5 text-background group-hover:scale-110 transition-transform duration-300" />
             </div>
             
             <div className="flex-1">
-              <h3 className="text-xl font-light text-white tracking-wide group-hover:text-amber-100 transition-colors duration-300">
+              <h3 className="font-display text-xl uppercase text-foreground tracking-wider group-hover:text-syndikate-orange transition-colors duration-300">
                 RATING POINTS
               </h3>
-              <div className="h-0.5 w-10 bg-gradient-to-r from-amber-400 to-amber-600 mt-1 group-hover:w-14 transition-all duration-500"></div>
+              <div className="h-[2px] w-10 bg-gradient-neon mt-1 group-hover:w-14 transition-all duration-500"></div>
             </div>
             
-            <div className="text-white/60 group-hover:text-amber-400 transition-colors duration-300">
+            <div className="text-muted-foreground group-hover:text-syndikate-orange transition-colors duration-300">
               <ChevronRight className="h-4 w-4 group-hover:translate-x-1 transition-transform duration-300" />
             </div>
           </div>
           
-          <div className="mt-3 bg-gradient-to-r from-white/8 via-white/12 to-white/8 rounded-lg p-3 border border-white/10 group-hover:border-amber-400/20 transition-all duration-300 backdrop-blur-sm">
+          <div className="mt-3 bg-syndikate-concrete/50 brutal-border p-3 group-hover:border-syndikate-orange/30 transition-all duration-300 backdrop-blur-sm">
             <div className="flex items-center justify-between">
-              <p className="text-white/80 text-sm font-medium">Общий рейтинг игроков</p>
+              <p className="text-foreground text-sm font-bold uppercase tracking-wider">Общий рейтинг</p>
               <div className="flex items-center gap-1">
-                <Star className="h-4 w-4 text-amber-400" />
-                <span className="text-amber-400 text-sm font-semibold">TOP</span>
+                <Star className="h-4 w-4 text-syndikate-orange" />
+                <span className="text-syndikate-orange text-sm font-bold">TOP</span>
               </div>
             </div>
           </div>
@@ -509,33 +509,33 @@ export const TelegramApp = () => {
       </Card>
 
       <div className="grid grid-cols-2 gap-3">
-        <Card className="bg-gradient-to-br from-slate-800/90 via-slate-900/95 to-black/90 border border-white/10 cursor-pointer group transition-all duration-500 hover:scale-105 hover:shadow-xl hover:shadow-purple-500/20 backdrop-blur-xl relative overflow-hidden" onClick={() => setActiveTab('qa')}>
-          <div className="absolute inset-0 bg-gradient-to-br from-purple-500/8 via-transparent to-blue-600/8 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-          <div className="absolute inset-0 opacity-6 group-hover:opacity-15 transition-opacity duration-500">
-            <div className="absolute top-3 right-3 text-purple-400/40 text-2xl animate-pulse">♣</div>
-            <div className="absolute bottom-3 left-3 text-blue-400/30 text-xl animate-bounce-subtle">♠</div>
+        <Card className="bg-syndikate-metal/90 brutal-border cursor-pointer group transition-all duration-500 hover:scale-105 hover:shadow-neon-orange backdrop-blur-xl relative overflow-hidden" onClick={() => setActiveTab('qa')}>
+          <div className="absolute inset-0 bg-gradient-to-br from-syndikate-orange/5 via-transparent to-syndikate-red/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+          <div className="absolute inset-0 opacity-10 group-hover:opacity-20 transition-opacity duration-500">
+            <div className="absolute top-3 right-3 text-syndikate-orange/40 text-2xl animate-pulse">♣</div>
+            <div className="absolute bottom-3 left-3 text-syndikate-orange/30 text-xl">♠</div>
           </div>
           <CardContent className="p-4 text-center relative z-10">
-            <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-blue-600 rounded-lg flex items-center justify-center mx-auto mb-2 group-hover:scale-110 transition-transform duration-300 shadow-md">
-              <MessageSquare className="h-4 w-4 text-white" />
+            <div className="w-8 h-8 bg-syndikate-orange brutal-border flex items-center justify-center mx-auto mb-2 group-hover:scale-110 transition-transform duration-300 shadow-md">
+              <MessageSquare className="h-4 w-4 text-background" />
             </div>
-            <h3 className="text-white font-medium text-base tracking-wide group-hover:text-purple-100 transition-colors duration-300">Q&A</h3>
-            <p className="text-white/60 text-sm mt-1">Вопросы и ответы</p>
+            <h3 className="text-foreground font-bold uppercase text-base tracking-wider group-hover:text-syndikate-orange transition-colors duration-300">Q&A</h3>
+            <p className="text-muted-foreground text-sm mt-1">Вопросы и ответы</p>
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-slate-800/90 via-slate-900/95 to-black/90 border border-white/10 cursor-pointer group transition-all duration-500 hover:scale-105 hover:shadow-xl hover:shadow-green-500/20 backdrop-blur-xl relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-green-500/8 via-transparent to-emerald-600/8 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-          <div className="absolute inset-0 opacity-6 group-hover:opacity-15 transition-opacity duration-500">
-            <div className="absolute top-3 left-3 text-green-400/40 text-2xl animate-pulse">♥</div>
-            <div className="absolute bottom-3 right-3 text-emerald-400/30 text-xl animate-bounce-subtle">♦</div>
+        <Card className="bg-syndikate-metal/90 brutal-border cursor-pointer group transition-all duration-500 hover:scale-105 hover:shadow-neon-orange backdrop-blur-xl relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-syndikate-orange/5 via-transparent to-syndikate-red/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+          <div className="absolute inset-0 opacity-10 group-hover:opacity-20 transition-opacity duration-500">
+            <div className="absolute top-3 left-3 text-syndikate-orange/40 text-2xl animate-pulse">♥</div>
+            <div className="absolute bottom-3 right-3 text-syndikate-orange/30 text-xl">♦</div>
           </div>
           <CardContent className="p-4 text-center relative z-10">
-            <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg flex items-center justify-center mx-auto mb-2 group-hover:scale-110 transition-transform duration-300 shadow-md">
-              <Shield className="h-4 w-4 text-white" />
+            <div className="w-8 h-8 bg-syndikate-orange brutal-border flex items-center justify-center mx-auto mb-2 group-hover:scale-110 transition-transform duration-300 shadow-md">
+              <Shield className="h-4 w-4 text-background" />
             </div>
-            <h3 className="text-white font-medium text-base tracking-wide group-hover:text-green-100 transition-colors duration-300">SUPPORT</h3>
-            <p className="text-white/60 text-sm mt-1">Техническая поддержка</p>
+            <h3 className="text-foreground font-bold uppercase text-base tracking-wider group-hover:text-syndikate-orange transition-colors duration-300">SUPPORT</h3>
+            <p className="text-muted-foreground text-sm mt-1">Техническая поддержка</p>
           </CardContent>
         </Card>
       </div>
@@ -999,120 +999,120 @@ export const TelegramApp = () => {
       {activeTab === 'tournaments' && (
         <div className="space-y-4 pb-20 px-4 bg-transparent min-h-screen relative z-10">
           <div className="flex items-center gap-3 p-4">
-            <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl flex items-center justify-center">
-              <Trophy className="h-5 w-5 text-white" />
+            <div className="w-10 h-10 bg-syndikate-orange brutal-border flex items-center justify-center">
+              <Trophy className="h-5 w-5 text-background" />
             </div>
             <div>
-              <h2 className="text-3xl font-light text-white tracking-wider">ТУРНИРЫ</h2>
-              <div className="h-0.5 w-16 bg-gradient-to-r from-amber-400 to-amber-600 mt-2"></div>
+              <h2 className="font-display text-3xl uppercase text-foreground tracking-wider">ТУРНИРЫ</h2>
+              <div className="h-[2px] w-16 bg-gradient-neon mt-2"></div>
             </div>
           </div>
           
           {tournaments.map((tournament, index) => (
-            <Card key={tournament.id} className="bg-gradient-to-br from-slate-800/95 via-slate-900/95 to-black/90 border-2 border-dashed border-amber-400/40 backdrop-blur-xl shadow-xl group hover:shadow-2xl hover:shadow-amber-500/50 transition-all duration-500 relative overflow-hidden cursor-pointer rounded-3xl hover:scale-[1.01]"
+            <Card key={tournament.id} className="bg-syndikate-metal/90 brutal-border border-2 border-dashed border-syndikate-orange/40 backdrop-blur-xl shadow-brutal group hover:shadow-neon-orange transition-all duration-500 relative overflow-hidden cursor-pointer hover:scale-[1.01]"
                   onClick={() => {
                     setSelectedTournament(tournament);
                     setShowTournamentModal(true);
                   }}>
-              {/* Перфорированные края */}
-              <div className="absolute left-0 top-1/2 -translate-y-1/2 w-6 h-6 bg-black rounded-full -ml-3 shadow-inner border border-white/20"></div>
-              <div className="absolute right-0 top-1/2 -translate-y-1/2 w-6 h-6 bg-black rounded-full -mr-3 shadow-inner border border-white/20"></div>
+              {/* Corner Decorations */}
+              <div className="absolute left-0 top-1/2 -translate-y-1/2 w-6 h-6 bg-background brutal-border -ml-3"></div>
+              <div className="absolute right-0 top-1/2 -translate-y-1/2 w-6 h-6 bg-background brutal-border -mr-3"></div>
               
               {/* Номер билета */}
-              <div className="absolute top-3 right-4 text-amber-400/80 text-xs font-mono tracking-wider bg-white/10 px-2 py-1 rounded backdrop-blur-sm">
+              <div className="absolute top-3 right-4 text-syndikate-orange text-xs font-mono tracking-wider bg-syndikate-concrete/50 px-2 py-1 brutal-border backdrop-blur-sm">
                 #{tournament.id.slice(-6).toUpperCase()}
               </div>
               
-              {/* Штрих-код */}
+              {/* Barcode Effect */}
               <div className="absolute bottom-3 right-4 flex gap-0.5">
                 {[...Array(8)].map((_, i) => (
-                  <div key={i} className={`bg-amber-400/60 ${i % 2 === 0 ? 'w-0.5 h-6' : 'w-1 h-8'}`}></div>
+                  <div key={i} className={`bg-syndikate-orange/60 ${i % 2 === 0 ? 'w-0.5 h-6' : 'w-1 h-8'}`}></div>
                 ))}
               </div>
               
-              <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 via-transparent to-amber-600/8 opacity-60 group-hover:opacity-100 transition-opacity duration-500"></div>
-              <div className="absolute inset-0 opacity-8 group-hover:opacity-15 transition-opacity duration-500">
-                <div className="absolute top-3 left-4 text-2xl text-amber-400/30 animate-pulse">♠</div>
-                <div className="absolute bottom-8 left-8 text-xl text-amber-400/20 animate-bounce-subtle">♣</div>
+              <div className="absolute inset-0 bg-gradient-to-br from-syndikate-orange/5 via-transparent to-syndikate-red/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+              <div className="absolute inset-0 opacity-10 group-hover:opacity-20 transition-opacity duration-500">
+                <div className="absolute top-3 left-4 text-2xl text-syndikate-orange/30 animate-pulse">♠</div>
+                <div className="absolute bottom-8 left-8 text-xl text-syndikate-orange/20">♣</div>
               </div>
               
               <CardContent className="p-6 relative z-10">
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex-1">
-                    <div className="text-amber-400/80 text-xs font-semibold uppercase tracking-widest mb-1">🎫 БИЛЕТ НА ТУРНИР</div>
-                    <h3 className="text-xl font-bold text-white tracking-wide uppercase mb-2 group-hover:text-amber-100 transition-colors duration-300">
+                    <div className="text-syndikate-orange text-xs font-bold uppercase tracking-widest mb-1">🎫 БИЛЕТ НА ТУРНИР</div>
+                    <h3 className="font-display text-xl uppercase text-foreground tracking-wide mb-2 group-hover:text-syndikate-orange transition-colors duration-300">
                       {tournament.name}
                     </h3>
-                    <div className="h-1 w-12 bg-gradient-to-r from-amber-400 to-amber-600 group-hover:w-16 transition-all duration-500 rounded-full"></div>
+                    <div className="h-[2px] w-12 bg-gradient-neon group-hover:w-16 transition-all duration-500"></div>
                     {tournament.description && (
-                      <p className="text-white/60 text-sm mt-2 line-clamp-1">{tournament.description}</p>
+                      <p className="text-muted-foreground text-sm mt-2 line-clamp-1">{tournament.description}</p>
                     )}
                   </div>
-                  <div className="w-10 h-10 bg-white/10 backdrop-blur-sm rounded-lg flex items-center justify-center border border-amber-400/30 group-hover:scale-110 transition-transform duration-300">
-                    <Trophy className="h-5 w-5 text-amber-400" />
+                  <div className="w-10 h-10 bg-syndikate-orange brutal-border flex items-center justify-center backdrop-blur-sm group-hover:scale-110 transition-transform duration-300">
+                    <Trophy className="h-5 w-5 text-background" />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3 mb-4">
-                  <div className="flex items-center gap-3 p-3 bg-gradient-to-r from-white/8 via-white/12 to-white/8 rounded-xl border border-white/10 group-hover:border-amber-400/20 transition-all duration-300 backdrop-blur-sm">
-                    <div className="w-7 h-7 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center shadow-lg">
-                      <Users className="h-4 w-4 text-white" />
+                  <div className="flex items-center gap-3 p-3 bg-syndikate-concrete/50 brutal-border group-hover:border-syndikate-orange/30 transition-all duration-300 backdrop-blur-sm">
+                    <div className="w-7 h-7 bg-syndikate-orange brutal-border flex items-center justify-center shadow-lg">
+                      <Users className="h-4 w-4 text-background" />
                     </div>
                     <div>
-                      <span className="text-white font-bold text-sm">{tournament.tournament_registrations?.[0]?.count || 0}/{tournament.max_players}</span>
-                      <p className="text-white/60 text-xs">участников</p>
+                      <span className="text-foreground font-bold text-sm">{tournament.tournament_registrations?.[0]?.count || 0}/{tournament.max_players}</span>
+                      <p className="text-muted-foreground text-xs">участников</p>
                     </div>
                   </div>
                   
-                  <div className="flex items-center gap-3 p-3 bg-gradient-to-r from-white/8 via-white/12 to-white/8 rounded-xl border border-white/10 group-hover:border-amber-400/20 transition-all duration-300 backdrop-blur-sm">
-                    <div className="w-7 h-7 bg-gradient-to-br from-green-500 to-green-600 rounded-lg flex items-center justify-center shadow-lg">
-                      <Clock className="h-4 w-4 text-white" />
+                  <div className="flex items-center gap-3 p-3 bg-syndikate-concrete/50 brutal-border group-hover:border-syndikate-orange/30 transition-all duration-300 backdrop-blur-sm">
+                    <div className="w-7 h-7 bg-syndikate-orange brutal-border flex items-center justify-center shadow-lg">
+                      <Clock className="h-4 w-4 text-background" />
                     </div>
                     <div>
-                      <span className="text-white font-bold text-sm">{new Date(tournament.start_time).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}</span>
-                      <p className="text-white/60 text-xs">{new Date(tournament.start_time).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })}</p>
+                      <span className="text-foreground font-bold text-sm">{new Date(tournament.start_time).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}</span>
+                      <p className="text-muted-foreground text-xs">{new Date(tournament.start_time).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })}</p>
                     </div>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3 mb-4">
-                  <div className="flex items-center gap-3 p-3 bg-gradient-to-r from-white/8 via-white/12 to-white/8 rounded-xl border border-white/10 group-hover:border-amber-400/20 transition-all duration-300 backdrop-blur-sm">
-                    <div className="w-7 h-7 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg flex items-center justify-center shadow-lg">
-                      <Coins className="h-4 w-4 text-white" />
+                  <div className="flex items-center gap-3 p-3 bg-syndikate-concrete/50 brutal-border group-hover:border-syndikate-orange/30 transition-all duration-300 backdrop-blur-sm">
+                    <div className="w-7 h-7 bg-syndikate-red brutal-border flex items-center justify-center shadow-lg">
+                      <Coins className="h-4 w-4 text-background" />
                     </div>
                     <div>
-                      <span className="text-white font-bold text-sm">{tournament.participation_fee.toLocaleString()} ₽</span>
-                      <p className="text-white/60 text-xs">орг. взнос</p>
+                      <span className="text-foreground font-bold text-sm">{tournament.participation_fee.toLocaleString()} ₽</span>
+                      <p className="text-muted-foreground text-xs">орг. взнос</p>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2 p-2 bg-gradient-to-r from-white/8 via-white/12 to-white/8 rounded-lg border border-white/10 group-hover:border-amber-400/20 transition-all duration-300 backdrop-blur-sm">
-                    <div className="w-6 h-6 bg-gradient-to-br from-red-500 to-red-600 rounded-md flex items-center justify-center">
-                      <Target className="h-3 w-3 text-white" />
+                  <div className="flex items-center gap-2 p-2 bg-syndikate-concrete/50 brutal-border group-hover:border-syndikate-orange/30 transition-all duration-300 backdrop-blur-sm">
+                    <div className="w-6 h-6 bg-syndikate-orange brutal-border flex items-center justify-center">
+                      <Target className="h-3 w-3 text-background" />
                     </div>
                     <div>
-                      <span className="text-white font-semibold text-sm">{tournament.starting_chips?.toLocaleString() || 'N/A'}</span>
-                      <p className="text-white/60 text-xs">стартовый стек</p>
+                      <span className="text-foreground font-semibold text-sm">{tournament.starting_chips?.toLocaleString() || 'N/A'}</span>
+                      <p className="text-muted-foreground text-xs">стартовый стек</p>
                     </div>
                   </div>
                 </div>
 
                 <div className="flex items-center justify-between gap-3 mt-4">
-                  <div className="flex items-center gap-2 text-amber-400 group-hover:gap-3 transition-all duration-300">
-                    <span className="text-sm font-bold uppercase tracking-wider">🎫 Подробнее</span>
+                  <div className="flex items-center gap-2 text-syndikate-orange group-hover:gap-3 transition-all duration-300">
+                    <span className="font-display text-sm uppercase tracking-widest font-bold">🎫 Подробнее</span>
                     <ChevronRight className="h-4 w-4 group-hover:translate-x-1 transition-transform duration-300" />
                   </div>
                   
                   <Badge 
-                    className={`px-3 py-1.5 rounded-full text-xs font-medium backdrop-blur-sm ${
-                      tournament.status === 'registration' ? 'bg-green-500/20 text-green-400 border border-green-500/30' :
-                      tournament.status === 'running' ? 'bg-red-500/20 text-red-400 border border-red-500/30' :
-                      tournament.status === 'scheduled' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' :
-                      'bg-gray-500/20 text-gray-400 border border-gray-500/30'
+                    className={`px-3 py-1.5 text-xs font-bold uppercase brutal-border backdrop-blur-sm ${
+                      tournament.status === 'registration' ? 'bg-syndikate-orange/20 text-syndikate-orange' :
+                      tournament.status === 'running' ? 'bg-syndikate-red/20 text-syndikate-red' :
+                      tournament.status === 'scheduled' ? 'bg-syndikate-orange/20 text-syndikate-orange' :
+                      'bg-muted text-muted-foreground'
                     }`}
                   >
-                    {tournament.status === 'registration' ? 'Регистрация открыта' :
-                     tournament.status === 'running' ? 'Турнир проходит' :
+                    {tournament.status === 'registration' ? 'Регистрация' :
+                     tournament.status === 'running' ? 'В процессе' :
                      tournament.status === 'scheduled' ? 'Запланирован' :
                      tournament.status}
                   </Badge>
