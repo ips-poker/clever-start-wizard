@@ -201,8 +201,12 @@ export function useCMSContent(pageSlug: string): UseCMSContentResult {
           if (status === 'SUBSCRIBED') {
             channelRef.current = channel;
             isSubscribingRef.current = false;
-          } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
-            console.error('CMS realtime subscription error');
+          } else if (status === 'CLOSED') {
+            // Normal when leaving page or during hot reload
+            console.log('CMS realtime subscription closed (cleanup)');
+            isSubscribingRef.current = false;
+          } else if (status === 'CHANNEL_ERROR') {
+            console.warn('CMS realtime subscription channel error');
             isSubscribingRef.current = false;
             channelRef.current = null;
           }
