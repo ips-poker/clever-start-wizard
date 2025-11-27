@@ -43,26 +43,26 @@ export function Header() {
             className="flex items-center space-x-3 group"
           >
             <div className="relative">
-              <div className="relative flex items-center justify-center transition-all group-hover:drop-shadow-[0_0_16px_rgba(255,90,31,0.6)]">
+              <div className="relative flex items-center justify-center transition-all group-hover:drop-shadow-[0_0_20px_rgba(255,90,31,0.7)]">
                 <img 
                   src={syndikateLogoSpade} 
                   alt="Syndikate Logo" 
-                  className="h-14 w-auto object-contain group-hover:scale-105 transition-transform duration-300 filter brightness-110"
+                  className="h-20 w-auto object-contain group-hover:scale-105 transition-transform duration-300 filter brightness-110"
                   style={{ imageRendering: 'crisp-edges' }}
                 />
               </div>
               {/* Corner accents */}
-              <div className="absolute -top-1 -left-1 w-4 h-4 border-l-2 border-t-2 border-syndikate-orange opacity-0 group-hover:opacity-100 transition-opacity" />
-              <div className="absolute -top-1 -right-1 w-4 h-4 border-r-2 border-t-2 border-syndikate-orange opacity-0 group-hover:opacity-100 transition-opacity" />
-              <div className="absolute -bottom-1 -left-1 w-4 h-4 border-l-2 border-b-2 border-syndikate-orange opacity-0 group-hover:opacity-100 transition-opacity" />
-              <div className="absolute -bottom-1 -right-1 w-4 h-4 border-r-2 border-b-2 border-syndikate-orange opacity-0 group-hover:opacity-100 transition-opacity" />
+              <div className="absolute -top-1 -left-1 w-5 h-5 border-l-2 border-t-2 border-syndikate-orange opacity-0 group-hover:opacity-100 transition-opacity" />
+              <div className="absolute -top-1 -right-1 w-5 h-5 border-r-2 border-t-2 border-syndikate-orange opacity-0 group-hover:opacity-100 transition-opacity" />
+              <div className="absolute -bottom-1 -left-1 w-5 h-5 border-l-2 border-b-2 border-syndikate-orange opacity-0 group-hover:opacity-100 transition-opacity" />
+              <div className="absolute -bottom-1 -right-1 w-5 h-5 border-r-2 border-b-2 border-syndikate-orange opacity-0 group-hover:opacity-100 transition-opacity" />
             </div>
             <div className="relative flex flex-col items-center">
-              <svg viewBox="0 0 200 60" className="w-40 h-14">
+              <svg viewBox="0 0 240 80" className="w-56 h-20">
                 <defs>
-                  <path id="curve" d="M 10,30 Q 100,10 190,30" fill="transparent" />
+                  <path id="curve" d="M 10,40 Q 120,15 230,40" fill="transparent" />
                 </defs>
-                <text className="fill-syndikate-orange font-display text-[18px] font-bold tracking-wider" style={{ letterSpacing: '0.15em' }}>
+                <text className="fill-syndikate-orange font-display text-[24px] font-bold tracking-wider" style={{ letterSpacing: '0.15em' }}>
                   <textPath href="#curve" startOffset="50%" textAnchor="middle">
                     SYNDIKATE
                   </textPath>
