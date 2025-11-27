@@ -40,7 +40,7 @@ export function Header() {
           {/* Logo */}
           <Link 
             to="/" 
-            className="flex items-center space-x-2 group"
+            className="flex items-center space-x-1 group"
           >
             {/* Logo */}
             <div className="relative">
@@ -54,11 +54,11 @@ export function Header() {
             
             {/* Text with curved bottom */}
             <div className="relative">
-              <svg viewBox="0 0 260 64" className="w-60 h-16">
+              <svg viewBox="0 0 380 96" className="w-80 h-24">
                 <defs>
-                  <path id="curve" d="M 10,32 Q 130,16 250,32" fill="transparent" />
+                  <path id="curve" d="M 10,48 Q 190,28 370,48" fill="transparent" />
                 </defs>
-                <text className="fill-syndikate-orange font-display text-[24px] font-bold tracking-wider group-hover:drop-shadow-[0_0_12px_rgba(255,90,31,0.6)] transition-all duration-300" style={{ letterSpacing: "0.15em" }}>
+                <text className="fill-syndikate-orange font-display text-[40px] font-bold tracking-wider group-hover:drop-shadow-[0_0_12px_rgba(255,90,31,0.6)] transition-all duration-300" style={{ letterSpacing: "0.15em" }}>
                   <textPath href="#curve" startOffset="50%" textAnchor="middle">
                     SYNDIKATE
                   </textPath>
