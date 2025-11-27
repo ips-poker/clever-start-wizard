@@ -103,7 +103,7 @@ export function AdminSidebar({ activeTab, onTabChange }: AdminSidebarProps) {
   const handleNavigation = (itemId: string) => {
     // Если это турниры - переходим на отдельную страницу
     if (itemId === 'tournaments') {
-      window.location.href = '/tournament-director';
+      window.location.href = '/director';
       return;
     }
     

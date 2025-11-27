@@ -103,7 +103,7 @@ export function Header() {
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                      <Link to="/tournament-director" className="cursor-pointer">
+                      <Link to="/director" className="cursor-pointer">
                         <Settings className="h-4 w-4 mr-2" />
                         Управление турнирами
                       </Link>
@@ -178,7 +178,7 @@ export function Header() {
                     Профиль
                   </Button>
                 </Link>
-                <Link to="/tournament-director" onClick={() => setIsMenuOpen(false)}>
+                <Link to="/director" onClick={() => setIsMenuOpen(false)}>
                   <Button variant="ghost" className="w-full justify-start">
                     <Settings className="h-4 w-4 mr-2" />
                     Управление турнирами
