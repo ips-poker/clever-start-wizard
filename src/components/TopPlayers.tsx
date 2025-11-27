@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { AnimatedCounter } from "@/components/ui/animated-counter";
 import { Trophy, Medal, Award, TrendingUp, Users, ChevronRight, Crown, Search, Filter } from "lucide-react";
 import { Link } from "react-router-dom";
 interface Player {
@@ -225,7 +226,7 @@ export function TopPlayers() {
                     {/* ELO Rating */}
                     <div className="text-right">
                       <div className="text-3xl font-light text-amber-400 mb-1">
-                        {topPlayers[0].elo_rating}
+                        <AnimatedCounter end={topPlayers[0].elo_rating} duration={2000} />
                       </div>
                       <div className="text-xs text-white/60 uppercase tracking-widest">RPS</div>
                     </div>
@@ -295,7 +296,7 @@ export function TopPlayers() {
                         {/* ELO Rating */}
                         <div className="text-right">
                           <div className={`text-2xl font-light mb-1 transition-colors duration-300 ${isTopThree ? 'text-amber-400' : 'text-white'}`}>
-                            {player.elo_rating}
+                            <AnimatedCounter end={player.elo_rating} duration={1800} />
                           </div>
                           <div className="text-xs text-white/60 uppercase tracking-wide">RPS</div>
                         </div>
@@ -402,7 +403,7 @@ export function TopPlayers() {
                               {/* ELO Rating */}
                               <div className="text-right">
                                 <div className={`text-lg font-light ${isTopThree ? 'text-amber-400' : 'text-white'}`}>
-                                  {player.elo_rating}
+                                  <AnimatedCounter end={player.elo_rating} duration={1600} />
                                 </div>
                                 <div className="text-xs text-white/60 uppercase tracking-wide">RPS</div>
                               </div>

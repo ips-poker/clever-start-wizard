@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { HeroSkeleton } from "@/components/ui/hero-skeleton";
+import { AnimatedCounter } from "@/components/ui/animated-counter";
 import { useCMSContent } from "@/hooks/useCMSContent";
 import { Trophy, Users, TrendingUp, ArrowRight } from "lucide-react";
 
@@ -101,26 +102,32 @@ export function Hero() {
 
             {/* Stats Bar */}
             <div className="grid grid-cols-3 gap-4 pt-8 border-t border-border">
-              <div className="space-y-1">
+              <div className="space-y-1 group">
                 <div className="flex items-center gap-2">
-                  <Users className="h-5 w-5 text-syndikate-orange" />
-                  <span className="font-display text-3xl neon-orange">150+</span>
+                  <Users className="h-5 w-5 text-syndikate-orange group-hover:scale-110 transition-transform" />
+                  <span className="font-display text-3xl neon-orange">
+                    <AnimatedCounter end={150} duration={2500} suffix="+" />
+                  </span>
                 </div>
                 <p className="text-xs uppercase tracking-wider text-muted-foreground">Игроков</p>
               </div>
-              <div className="space-y-1">
+              <div className="space-y-1 group">
                 <div className="flex items-center gap-2">
-                  <Trophy className="h-5 w-5 text-syndikate-orange" />
-                  <span className="font-display text-3xl neon-orange">50+</span>
+                  <Trophy className="h-5 w-5 text-syndikate-orange group-hover:scale-110 transition-transform" />
+                  <span className="font-display text-3xl neon-orange">
+                    <AnimatedCounter end={50} duration={2000} suffix="+" />
+                  </span>
                 </div>
                 <p className="text-xs uppercase tracking-wider text-muted-foreground">Турниров</p>
               </div>
-              <div className="space-y-1">
+              <div className="space-y-1 group">
                 <div className="flex items-center gap-2">
-                  <TrendingUp className="h-5 w-5 text-syndikate-orange" />
-                  <span className="font-display text-3xl neon-orange">RPS</span>
+                  <TrendingUp className="h-5 w-5 text-syndikate-orange group-hover:scale-110 transition-transform" />
+                  <span className="font-display text-3xl neon-orange">
+                    <AnimatedCounter end={1000} duration={2200} suffix="+" />
+                  </span>
                 </div>
-                <p className="text-xs uppercase tracking-wider text-muted-foreground">Рейтинг</p>
+                <p className="text-xs uppercase tracking-wider text-muted-foreground">RPS рейтинг</p>
               </div>
             </div>
           </div>
