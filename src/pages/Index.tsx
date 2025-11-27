@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { Header } from "@/components/Header";
 import { Hero } from "@/components/Hero";
 import { RatingBenefits } from "@/components/RatingBenefits";
@@ -12,6 +12,44 @@ import { SEOHead } from "@/components/SEOHead";
 import { ScrollProgress } from "@/components/ScrollProgress";
 
 const Index = () => {
+  const [scrollY, setScrollY] = useState(0);
+  const baseTextureRef = useRef<HTMLDivElement>(null);
+  const gridRef = useRef<HTMLDivElement>(null);
+  const platesRef = useRef<HTMLDivElement>(null);
+  const glowTopRef = useRef<HTMLDivElement>(null);
+  const glowBottomRef = useRef<HTMLDivElement>(null);
+  const glowCenterRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      setScrollY(currentScrollY);
+      
+      // Apply parallax transforms with different speeds for depth
+      if (baseTextureRef.current) {
+        baseTextureRef.current.style.transform = `translateY(${currentScrollY * 0.15}px)`;
+      }
+      if (gridRef.current) {
+        gridRef.current.style.transform = `translateY(${currentScrollY * 0.25}px)`;
+      }
+      if (platesRef.current) {
+        platesRef.current.style.transform = `translateY(${currentScrollY * 0.35}px) rotate(0deg)`;
+      }
+      if (glowTopRef.current) {
+        glowTopRef.current.style.transform = `translate(-24px, ${-128 + currentScrollY * 0.1}px)`;
+      }
+      if (glowBottomRef.current) {
+        glowBottomRef.current.style.transform = `translate(-120px, ${-180 + currentScrollY * 0.2}px)`;
+      }
+      if (glowCenterRef.current) {
+        glowCenterRef.current.style.transform = `translate(-50%, -50%) scale(${1 + currentScrollY * 0.0001})`;
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   return (
     <>
       <ScrollProgress />
@@ -82,11 +120,15 @@ const Index = () => {
       />
       <div className="min-h-screen bg-background relative overflow-hidden">
         {/* Industrial metal base texture */}
-        <div className="fixed inset-0 pointer-events-none industrial-texture opacity-50 z-0" />
+        <div 
+          ref={baseTextureRef}
+          className="fixed inset-0 pointer-events-none industrial-texture opacity-50 z-0 transition-transform duration-0 will-change-transform" 
+        />
 
         {/* Metal grid overlay */}
         <div
-          className="fixed inset-0 pointer-events-none opacity-20 z-0"
+          ref={gridRef}
+          className="fixed inset-0 pointer-events-none opacity-20 z-0 transition-transform duration-0 will-change-transform"
           style={{
             backgroundImage: `
               repeating-linear-gradient(0deg, transparent, transparent 48px, rgba(255,255,255,0.04) 48px, rgba(255,255,255,0.04) 49px),
@@ -97,7 +139,8 @@ const Index = () => {
 
         {/* Diagonal metal plates */}
         <div
-          className="fixed inset-0 pointer-events-none opacity-15 z-0"
+          ref={platesRef}
+          className="fixed inset-0 pointer-events-none opacity-15 z-0 transition-transform duration-0 will-change-transform"
           style={{
             backgroundImage: `
               linear-gradient(135deg, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.9) 40%, rgba(255,255,255,0.06) 41%, rgba(255,255,255,0.06) 42%, rgba(0,0,0,0.9) 43%, rgba(0,0,0,0.9) 100%)
@@ -107,9 +150,18 @@ const Index = () => {
         />
 
         {/* Neon glows */}
-        <div className="fixed -top-32 -left-24 w-[520px] h-[520px] bg-syndikate-orange/25 rounded-full blur-[160px] opacity-80 animate-pulse" />
-        <div className="fixed bottom-[-180px] right-[-120px] w-[520px] h-[520px] bg-syndikate-red/20 rounded-full blur-[160px] opacity-80 animate-pulse" />
-        <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[640px] h-[640px] bg-syndikate-metal-light/10 rounded-full blur-[180px] opacity-70" />
+        <div 
+          ref={glowTopRef}
+          className="fixed w-[520px] h-[520px] bg-syndikate-orange/25 rounded-full blur-[160px] opacity-80 animate-pulse will-change-transform" 
+        />
+        <div 
+          ref={glowBottomRef}
+          className="fixed right-0 bottom-0 w-[520px] h-[520px] bg-syndikate-red/20 rounded-full blur-[160px] opacity-80 animate-pulse will-change-transform" 
+        />
+        <div 
+          ref={glowCenterRef}
+          className="fixed top-1/2 left-1/2 w-[640px] h-[640px] bg-syndikate-metal-light/10 rounded-full blur-[180px] opacity-70 will-change-transform" 
+        />
 
         {/* Side rails and top bar */}
         <div className="fixed inset-y-0 left-0 w-[3px] bg-gradient-to-b from-syndikate-orange/70 via-syndikate-red/40 to-transparent shadow-neon-orange pointer-events-none z-10" />
