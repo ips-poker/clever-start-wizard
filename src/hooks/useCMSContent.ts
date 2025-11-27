@@ -23,6 +23,8 @@ export function useCMSContent(pageSlug: string): UseCMSContentResult {
   
   const retryTimeoutRef = useRef<NodeJS.Timeout>();
   const channelRef = useRef<any>(null);
+  const isSubscribingRef = useRef(false); // Prevent duplicate subscriptions
+  const isMountedRef = useRef(true); // Track component mount status
   const lastReconnectTime = useRef(0);
   const retryCountRef = useRef(0);
   const maxRetries = 3;
@@ -127,67 +129,104 @@ export function useCMSContent(pageSlug: string): UseCMSContentResult {
     }
   }, [pageSlug, getCachedContent, setCachedContent]);
 
-  const setupRealtimeSubscription = useCallback(() => {
-    // Clean up existing subscription
-    if (channelRef.current) {
-      console.log('CMS realtime subscription cleaning up...');
-      supabase.removeChannel(channelRef.current);
-      channelRef.current = null;
-    }
-
-    // Rate limiting - prevent too frequent reconnections
-    const now = Date.now();
-    if (now - lastReconnectTime.current < 10000) { // Increased to 10 seconds
-      console.log('CMS realtime subscription rate limited, skipping...');
-      return;
-    }
-    lastReconnectTime.current = now;
-
-    console.log('CMS setting up new realtime subscription for:', pageSlug);
-    channelRef.current = supabase
-      .channel(`cms_${pageSlug}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'cms_content',
-          filter: `page_slug=eq.${pageSlug}`
-        },
-        (payload) => {
-          console.log('CMS content changed:', payload);
-          // Debounce rapid changes
-          if (retryTimeoutRef.current) {
-            clearTimeout(retryTimeoutRef.current);
-          }
-          retryTimeoutRef.current = setTimeout(() => {
-            fetchContent(false, false);
-          }, 500);
-        }
-      )
-      .subscribe((status) => {
-        console.log(`CMS realtime subscription status: ${status}`);
-        if (status === 'CLOSED') {
-          console.error('CMS realtime subscription error, retrying...');
-          // Retry subscription after a delay
-          setTimeout(setupRealtimeSubscription, 5000);
-        }
-      });
-  }, [pageSlug, fetchContent]);
-
   useEffect(() => {
-    fetchContent();
-    setupRealtimeSubscription();
-
-    return () => {
-      if (retryTimeoutRef.current) {
-        clearTimeout(retryTimeoutRef.current);
-      }
-      if (channelRef.current) {
-        supabase.removeChannel(channelRef.current);
+    isMountedRef.current = true;
+    
+    // Call fetch directly without adding to dependencies
+    const initFetch = async () => {
+      try {
+        const cached = getCachedContent();
+        if (cached) {
+          setContent(cached.content);
+          setLastSync(new Date(cached.timestamp));
+          setLoading(false);
+        } else {
+          await fetchContent(false, true);
+        }
+      } catch (error) {
+        console.error('Error initializing CMS content:', error);
       }
     };
-  }, [fetchContent, setupRealtimeSubscription]);
+    
+    initFetch();
+    
+    // Setup subscription only once per pageSlug
+    const setupSub = () => {
+      if (isSubscribingRef.current || !isMountedRef.current) return;
+      
+      isSubscribingRef.current = true;
+      
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
+      
+      const now = Date.now();
+      if (now - lastReconnectTime.current < 15000) {
+        console.log('CMS realtime subscription rate limited, skipping...');
+        isSubscribingRef.current = false;
+        return;
+      }
+      lastReconnectTime.current = now;
+      
+      console.log('CMS setting up new realtime subscription for:', pageSlug);
+      
+      const channel = supabase
+        .channel(`cms_${pageSlug}_${Date.now()}`)
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'cms_content',
+            filter: `page_slug=eq.${pageSlug}`
+          },
+          (payload) => {
+            if (!isMountedRef.current) return;
+            console.log('CMS content changed:', payload);
+            
+            if (retryTimeoutRef.current) {
+              clearTimeout(retryTimeoutRef.current);
+            }
+            retryTimeoutRef.current = setTimeout(() => {
+              if (isMountedRef.current) {
+                fetchContent(false, false);
+              }
+            }, 500);
+          }
+        )
+        .subscribe((status) => {
+          console.log(`CMS realtime subscription status: ${status}`);
+          
+          if (status === 'SUBSCRIBED') {
+            channelRef.current = channel;
+            isSubscribingRef.current = false;
+          } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
+            console.error('CMS realtime subscription error');
+            isSubscribingRef.current = false;
+            channelRef.current = null;
+          }
+        });
+    };
+    
+    setupSub();
+
+    return () => {
+      isMountedRef.current = false;
+      isSubscribingRef.current = false;
+      
+      if (retryTimeoutRef.current) {
+        clearTimeout(retryTimeoutRef.current);
+        retryTimeoutRef.current = undefined;
+      }
+      
+      if (channelRef.current) {
+        console.log('CMS cleaning up subscription on unmount');
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
+    };
+  }, [pageSlug]); // Only pageSlug as dependency
 
   const getContent = useCallback((key: string, fallback: string = '') => {
     return content[key] || fallback;
