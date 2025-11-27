@@ -12,16 +12,20 @@ interface Player {
 
 interface RatingPodiumProps {
   topPlayers: Player[];
+  onPlayerClick?: (player: Player) => void;
 }
 
-export const RatingPodium: React.FC<RatingPodiumProps> = ({ topPlayers }) => {
+export const RatingPodium: React.FC<RatingPodiumProps> = ({ topPlayers, onPlayerClick }) => {
   if (topPlayers.length < 3) return null;
 
   return (
     <div className="relative mb-8">
       <div className="grid grid-cols-3 gap-2 items-end">
         {/* 2nd Place */}
-        <div className="relative">
+        <div 
+          className="relative cursor-pointer"
+          onClick={() => onPlayerClick?.(topPlayers[1])}
+        >
           <div className="absolute -top-8 left-1/2 -translate-x-1/2 w-12 h-12 bg-gradient-to-br from-gray-400 to-gray-600 rounded-full brutal-border flex items-center justify-center shadow-lg animate-fade-in" style={{animationDelay: '100ms'}}>
             <span className="text-xl font-display text-background">2</span>
           </div>
@@ -37,7 +41,10 @@ export const RatingPodium: React.FC<RatingPodiumProps> = ({ topPlayers }) => {
         </div>
 
         {/* 1st Place */}
-        <div className="relative -mt-4">
+        <div 
+          className="relative -mt-4 cursor-pointer"
+          onClick={() => onPlayerClick?.(topPlayers[0])}
+        >
           <div className="absolute -top-10 left-1/2 -translate-x-1/2 w-16 h-16 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-full brutal-border flex items-center justify-center shadow-neon-orange animate-pulse">
             <Crown className="h-8 w-8 text-background" />
           </div>
@@ -57,7 +64,10 @@ export const RatingPodium: React.FC<RatingPodiumProps> = ({ topPlayers }) => {
         </div>
 
         {/* 3rd Place */}
-        <div className="relative">
+        <div 
+          className="relative cursor-pointer"
+          onClick={() => onPlayerClick?.(topPlayers[2])}
+        >
           <div className="absolute -top-8 left-1/2 -translate-x-1/2 w-12 h-12 bg-gradient-to-br from-orange-700 to-orange-900 rounded-full brutal-border flex items-center justify-center shadow-lg animate-fade-in" style={{animationDelay: '200ms'}}>
             <span className="text-xl font-display text-background">3</span>
           </div>

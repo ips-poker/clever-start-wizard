@@ -13,9 +13,10 @@ interface PlayerRatingCardProps {
   player: Player;
   rank: number;
   index: number;
+  onClick?: () => void;
 }
 
-export const PlayerRatingCard: React.FC<PlayerRatingCardProps> = ({ player, rank, index }) => {
+export const PlayerRatingCard: React.FC<PlayerRatingCardProps> = ({ player, rank, index, onClick }) => {
   const ratingChange = Math.floor(Math.random() * 100) - 50; // Mock rating change
   const winRate = ((player.wins / player.games_played) * 100).toFixed(1);
   
@@ -27,6 +28,7 @@ export const PlayerRatingCard: React.FC<PlayerRatingCardProps> = ({ player, rank
 
   return (
     <div
+      onClick={onClick}
       className="relative bg-syndikate-metal/90 brutal-border backdrop-blur-xl shadow-brutal overflow-hidden group cursor-pointer hover:shadow-neon-orange transition-all duration-300 animate-fade-in"
       style={{animationDelay: `${index * 50}ms`}}
     >
