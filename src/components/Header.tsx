@@ -40,25 +40,25 @@ export function Header() {
           {/* Logo */}
           <Link 
             to="/" 
-            className="flex items-center space-x-3 group"
+            className="flex items-center space-x-2 group"
           >
             {/* Logo */}
             <div className="relative">
               <img 
                 src={syndikateLogoSpade} 
                 alt="Syndikate Logo" 
-                className="h-12 w-auto object-contain group-hover:scale-105 transition-transform duration-300 filter brightness-110 group-hover:drop-shadow-[0_0_20px_rgba(255,90,31,0.5)]"
+                className="h-14 w-auto object-contain group-hover:scale-105 transition-transform duration-300 filter brightness-110 group-hover:drop-shadow-[0_0_20px_rgba(255,90,31,0.5)]"
                 style={{ imageRendering: 'crisp-edges' }}
               />
             </div>
             
             {/* Text with curved bottom */}
             <div className="relative">
-              <svg viewBox="0 0 180 48" className="w-44 h-12">
+              <svg viewBox="0 0 200 56" className="w-48 h-14">
                 <defs>
-                  <path id="curve" d="M 10,24 Q 90,12 170,24" fill="transparent" />
+                  <path id="curve" d="M 10,28 Q 100,14 190,28" fill="transparent" />
                 </defs>
-                <text className="fill-syndikate-orange font-display text-[16px] font-bold tracking-wider group-hover:drop-shadow-[0_0_12px_rgba(255,90,31,0.6)] transition-all duration-300" style={{ letterSpacing: '0.15em' }}>
+                <text className="fill-syndikate-orange font-display text-[18px] font-bold tracking-wider group-hover:drop-shadow-[0_0_12px_rgba(255,90,31,0.6)] transition-all duration-300" style={{ letterSpacing: '0.15em' }}>
                   <textPath href="#curve" startOffset="50%" textAnchor="middle">
                     SYNDIKATE
                   </textPath>
