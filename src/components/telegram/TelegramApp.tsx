@@ -677,59 +677,90 @@ export const TelegramApp = () => {
       </div>
 
       {userStats && (
-        <Card className="bg-gradient-to-br from-slate-800/95 via-slate-900/95 to-black/90 border border-white/10 relative overflow-hidden backdrop-blur-xl group hover:shadow-lg hover:shadow-purple-500/20 transition-all duration-500">
-          <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 via-transparent to-blue-600/5 opacity-60 group-hover:opacity-100 transition-opacity duration-500"></div>
-          <div className="absolute inset-0 opacity-8 group-hover:opacity-15 transition-opacity duration-500">
-            <div className="absolute top-3 right-3 text-purple-400/30 text-3xl animate-pulse">♠</div>
-            <div className="absolute bottom-3 left-3 text-blue-400/20 text-2xl animate-bounce-subtle">♣</div>
+        <Card className="bg-syndikate-metal/90 brutal-border overflow-hidden relative shadow-brutal backdrop-blur-xl group hover:shadow-neon-orange transition-all duration-500 animate-fade-in">
+          {/* Industrial texture overlay */}
+          <div className="absolute inset-0 opacity-5 group-hover:opacity-10 transition-opacity duration-500">
+            <div className="absolute inset-0" style={{
+              backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255, 107, 0, 0.03) 10px, rgba(255, 107, 0, 0.03) 20px)'
+            }}></div>
           </div>
           
+          <div className="absolute inset-0 bg-gradient-to-br from-syndikate-orange/5 via-transparent to-syndikate-red/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+          
+          {/* Animated card suits */}
+          <div className="absolute inset-0 opacity-10 group-hover:opacity-20 transition-opacity duration-500">
+            <div className="absolute top-4 right-4 text-syndikate-orange/40 text-4xl animate-pulse">♠</div>
+            <div className="absolute top-12 left-4 text-syndikate-orange/20 text-3xl">♣</div>
+            <div className="absolute bottom-4 right-8 text-syndikate-red/30 text-3xl animate-pulse">♦</div>
+            <div className="absolute bottom-8 left-8 text-syndikate-red/20 text-2xl">♥</div>
+          </div>
+          
+          {/* Corner brackets */}
+          <div className="absolute top-2 left-2 w-6 h-6 border-l-2 border-t-2 border-syndikate-orange/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+          <div className="absolute top-2 right-2 w-6 h-6 border-r-2 border-t-2 border-syndikate-orange/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+          <div className="absolute bottom-2 left-2 w-6 h-6 border-l-2 border-b-2 border-syndikate-orange/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+          <div className="absolute bottom-2 right-2 w-6 h-6 border-r-2 border-b-2 border-syndikate-orange/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+          
           <CardContent className="p-5 relative z-10">
-            <div className="flex items-center gap-4 mb-4">
-              <div className="w-12 h-12 bg-gradient-to-br from-purple-500 via-purple-600 to-blue-600 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-xl group-hover:shadow-purple-500/30 transition-all duration-300 ring-1 ring-purple-400/20 group-hover:ring-purple-400/40">
-                <User className="h-6 w-6 text-white group-hover:scale-110 transition-transform duration-300" />
+            <div className="flex items-center gap-4 mb-5">
+              <div className="w-14 h-14 bg-gradient-to-br from-syndikate-orange to-syndikate-red brutal-border flex items-center justify-center shadow-lg group-hover:shadow-neon-orange transition-all duration-300 group-hover:scale-110">
+                <User className="h-7 w-7 text-background" />
               </div>
               <div className="flex-1">
-                <h3 className="text-white font-bold text-lg tracking-wide group-hover:text-purple-100 transition-colors duration-300">
-                  {telegramUser?.username || telegramUser?.firstName || 'Игрок'}
+                <h3 className="text-foreground font-display font-bold text-xl uppercase tracking-wider drop-shadow-lg group-hover:text-syndikate-orange transition-colors duration-300">
+                  <GlitchText text={telegramUser?.username || telegramUser?.firstName || 'ИГРОК'} glitchIntensity="low" />
                 </h3>
-                <p className="text-white/70 text-xs mt-1">Мой профиль и статистика</p>
-                <div className="h-0.5 w-12 bg-gradient-to-r from-purple-400 to-blue-500 mt-1 group-hover:w-16 transition-all duration-500"></div>
+                <p className="text-muted-foreground text-xs uppercase tracking-wider mt-1 font-display">Мой профиль и статистика</p>
+                <div className="h-[2px] w-12 bg-gradient-neon mt-2 group-hover:w-20 transition-all duration-500"></div>
               </div>
             </div>
             
-            <div className="grid grid-cols-3 gap-3">
-              <div className="text-center p-3 bg-gradient-to-br from-white/8 via-white/12 to-white/8 rounded-lg border border-white/10 group-hover:border-purple-400/20 transition-all duration-300 backdrop-blur-sm hover:scale-105">
-                <div className="w-6 h-6 bg-gradient-to-br from-orange-500 to-red-500 rounded-md flex items-center justify-center mx-auto mb-2">
-                  <Trophy className="h-3 w-3 text-white" />
+            <div className="grid grid-cols-3 gap-3 mb-4">
+              <div className="text-center p-4 bg-syndikate-concrete/60 brutal-border backdrop-blur-sm group/stat hover:bg-syndikate-concrete/80 hover:shadow-neon-orange transition-all duration-300 hover:scale-105 relative overflow-hidden">
+                <div className="absolute top-1 right-1 text-syndikate-orange/20 text-lg">♠</div>
+                <div className="w-8 h-8 bg-syndikate-orange brutal-border flex items-center justify-center mx-auto mb-2 shadow-md group-hover/stat:shadow-neon-orange transition-shadow duration-300">
+                  <Trophy className="h-4 w-4 text-background" />
                 </div>
-                <div className="text-white font-bold text-base">{userStats.elo_rating}</div>
-                <div className="text-white/60 text-xs">Рейтинг RPS</div>
+                <div className="text-foreground font-bold text-lg font-display neon-orange">{userStats.elo_rating}</div>
+                <div className="text-muted-foreground text-xs uppercase tracking-wider font-display">Рейтинг RPS</div>
               </div>
-              <div className="text-center p-3 bg-gradient-to-br from-white/8 via-white/12 to-white/8 rounded-lg border border-white/10 group-hover:border-purple-400/20 transition-all duration-300 backdrop-blur-sm hover:scale-105">
-                <div className="w-6 h-6 bg-gradient-to-br from-green-500 to-emerald-500 rounded-md flex items-center justify-center mx-auto mb-2">
-                  <Crown className="h-3 w-3 text-white" />
+              
+              <div className="text-center p-4 bg-syndikate-concrete/60 brutal-border backdrop-blur-sm group/stat hover:bg-syndikate-concrete/80 hover:shadow-neon-red transition-all duration-300 hover:scale-105 relative overflow-hidden">
+                <div className="absolute top-1 right-1 text-syndikate-red/20 text-lg">♥</div>
+                <div className="w-8 h-8 bg-syndikate-red brutal-border flex items-center justify-center mx-auto mb-2 shadow-md group-hover/stat:shadow-neon-red transition-shadow duration-300">
+                  <Crown className="h-4 w-4 text-background" />
                 </div>
-                <div className="text-white font-bold text-base">{userStats.wins}</div>
-                <div className="text-white/60 text-xs">Побед</div>
+                <div className="text-foreground font-bold text-lg font-display neon-red">{userStats.wins}</div>
+                <div className="text-muted-foreground text-xs uppercase tracking-wider font-display">Побед</div>
               </div>
-              <div className="text-center p-3 bg-gradient-to-br from-white/8 via-white/12 to-white/8 rounded-lg border border-white/10 group-hover:border-purple-400/20 transition-all duration-300 backdrop-blur-sm hover:scale-105">
-                <div className="w-6 h-6 bg-gradient-to-br from-blue-500 to-purple-500 rounded-md flex items-center justify-center mx-auto mb-2">
-                  <Target className="h-3 w-3 text-white" />
+              
+              <div className="text-center p-4 bg-syndikate-concrete/60 brutal-border backdrop-blur-sm group/stat hover:bg-syndikate-concrete/80 hover:shadow-neon-orange transition-all duration-300 hover:scale-105 relative overflow-hidden">
+                <div className="absolute top-1 right-1 text-syndikate-orange/20 text-lg">♦</div>
+                <div className="w-8 h-8 bg-syndikate-metal-light brutal-border flex items-center justify-center mx-auto mb-2 shadow-md group-hover/stat:shadow-neon-orange transition-shadow duration-300">
+                  <Target className="h-4 w-4 text-syndikate-orange" />
                 </div>
-                <div className="text-white font-bold text-base">{userStats.games_played}</div>
-                <div className="text-white/60 text-xs">Игр сыграно</div>
+                <div className="text-foreground font-bold text-lg font-display">{userStats.games_played}</div>
+                <div className="text-muted-foreground text-xs uppercase tracking-wider font-display">Игр сыграно</div>
               </div>
             </div>
             
-            <div className="mt-4 p-4 bg-gradient-to-r from-white/5 via-white/10 to-white/5 rounded-lg border border-white/10 group-hover:border-purple-400/20 transition-all duration-300 backdrop-blur-md">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="w-5 h-5 bg-gradient-to-br from-amber-500 to-orange-500 rounded-md flex items-center justify-center">
-                  <TrendingUp className="h-2.5 w-2.5 text-white" />
-                </div>
-                <h4 className="text-white font-semibold text-sm">Последние достижения</h4>
+            <div className="p-4 bg-syndikate-concrete/50 brutal-border backdrop-blur-md group-hover:border-syndikate-orange/40 transition-all duration-300 relative overflow-hidden">
+              {/* Metal grid pattern */}
+              <div className="absolute inset-0 opacity-5">
+                <div className="absolute inset-0" style={{
+                  backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 10px, rgba(255, 107, 0, 0.1) 10px, rgba(255, 107, 0, 0.1) 11px), repeating-linear-gradient(90deg, transparent, transparent 10px, rgba(255, 107, 0, 0.1) 10px, rgba(255, 107, 0, 0.1) 11px)',
+                }}></div>
               </div>
-              <p className="text-white/70 text-xs leading-relaxed">Статистика обновляется после каждого турнира. Продолжайте играть для улучшения рейтинга!</p>
+              
+              <div className="flex items-center gap-3 mb-3 relative z-10">
+                <div className="w-6 h-6 bg-syndikate-orange brutal-border flex items-center justify-center shadow-md">
+                  <TrendingUp className="h-3 w-3 text-background" />
+                </div>
+                <h4 className="text-foreground font-display font-bold text-sm uppercase tracking-wider">Последние достижения</h4>
+              </div>
+              <p className="text-muted-foreground text-xs leading-relaxed uppercase tracking-wide font-display relative z-10">
+                Статистика обновляется после каждого турнира. Продолжайте играть для улучшения рейтинга!
+              </p>
             </div>
           </CardContent>
         </Card>
