@@ -47,7 +47,7 @@ export function Header() {
               <img 
                 src={syndikateLogoSpade} 
                 alt="Syndikate Logo" 
-                className="h-14 w-auto object-contain group-hover:scale-105 transition-transform duration-300 filter brightness-110 group-hover:drop-shadow-[0_0_20px_rgba(255,90,31,0.5)]"
+                className="h-12 w-auto object-contain group-hover:scale-105 transition-transform duration-300 filter brightness-110 group-hover:drop-shadow-[0_0_20px_rgba(255,90,31,0.5)]"
                 style={{ imageRendering: 'crisp-edges' }}
               />
             </div>
