@@ -3,6 +3,7 @@ import { X, Trophy, TrendingUp, Award, Calendar, Target, Zap, Crown, Star } from
 import { supabase } from '@/integrations/supabase/client';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { GlitchText } from '@/components/ui/glitch-text';
+import { PlayerLevelBadge } from './PlayerLevelBadge';
 
 interface Player {
   id: string;
@@ -238,7 +239,10 @@ export const PlayerStatsModal: React.FC<PlayerStatsModalProps> = ({ player, onCl
                   <h2 className="text-2xl font-display uppercase">
                     <GlitchText text={player.name} />
                   </h2>
-                  <div className="flex items-center gap-4 mt-2">
+                  <div className="mt-2 mb-3">
+                    <PlayerLevelBadge rating={player.elo_rating} size="md" showProgress />
+                  </div>
+                  <div className="flex items-center gap-4">
                     <div className="text-sm text-syndikate-concrete">
                       Rating: <span className="text-syndikate-orange font-bold">{player.elo_rating}</span>
                     </div>
