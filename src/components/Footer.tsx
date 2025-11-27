@@ -1,6 +1,6 @@
-import { Spade } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useCMSContent } from "@/hooks/useCMSContent";
+import syndikateLogo from "@/assets/syndikate-logo-main.png";
 
 export function Footer() {
   const { getContent } = useCMSContent('footer');
@@ -32,8 +32,8 @@ export function Footer() {
           {/* Brand */}
           <div className="space-y-4 text-center sm:text-left">
             <div className="flex items-center justify-center sm:justify-start space-x-2">
-              <div className="w-6 h-6 bg-syndikate-orange brutal-border flex items-center justify-center">
-                <Spade className="w-4 h-4 text-background" />
+              <div className="w-8 h-8 bg-syndikate-metal brutal-border flex items-center justify-center p-1">
+                <img src={syndikateLogo} alt="Syndikate Logo" className="w-full h-full object-contain" />
               </div>
               <div>
                 <div className="font-bold text-base lg:text-lg uppercase tracking-wider">{getContent('brand_name', 'IPS')}</div>
