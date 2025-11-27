@@ -206,45 +206,49 @@ export function TournamentList() {
   }
 
   return (
-    <section id="tournaments" className="py-20 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 relative overflow-hidden">
-      {/* Покерные масти декорация */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-10">
-        <div className="absolute top-10 left-10 text-amber-400/40 text-5xl animate-pulse transform rotate-12">♠</div>
-        <div className="absolute top-20 right-20 text-amber-400/30 text-4xl animate-bounce-subtle transform -rotate-12">♣</div>
-        <div className="absolute bottom-10 left-20 text-amber-400/35 text-6xl animate-pulse transform rotate-45">♥</div>
-        <div className="absolute bottom-20 right-10 text-amber-400/30 text-3xl animate-bounce-subtle transform -rotate-30">♦</div>
-      </div>
+    <section id="tournaments" className="py-20 bg-background relative overflow-hidden">
+      {/* Industrial Background */}
+      <div className="absolute inset-0 industrial-texture opacity-50" />
       
-      {/* Gradient light spots */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-amber-500/5 rounded-full blur-3xl"></div>
-        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-blue-500/5 rounded-full blur-3xl"></div>
-      </div>
+      {/* Metal Grid Pattern */}
+      <div 
+        className="absolute inset-0 opacity-10"
+        style={{
+          backgroundImage: `
+            repeating-linear-gradient(0deg, transparent, transparent 50px, rgba(255, 255, 255, 0.05) 50px, rgba(255, 255, 255, 0.05) 51px),
+            repeating-linear-gradient(90deg, transparent, transparent 50px, rgba(255, 255, 255, 0.05) 50px, rgba(255, 255, 255, 0.05) 51px)
+          `
+        }}
+      />
+
+      {/* Neon Glow Spots */}
+      <div className="absolute top-0 left-1/4 w-96 h-96 bg-syndikate-orange/10 rounded-full blur-3xl" />
+      <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-syndikate-red/10 rounded-full blur-3xl" />
 
       <div className="container mx-auto px-4 relative z-10">
         <div className="text-center mb-12">
           <div className="flex items-center gap-3 justify-center mb-6">
-            <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl flex items-center justify-center shadow-lg">
-              <Trophy className="h-5 w-5 text-white" />
+            <div className="w-12 h-12 border-2 border-syndikate-orange bg-syndikate-metal brutal-border flex items-center justify-center">
+              <Trophy className="h-6 w-6 text-syndikate-orange" />
             </div>
-            <h2 className="text-3xl lg:text-4xl font-light text-white tracking-wide">
-              ПРЕДСТОЯЩИЕ ТУРНИРЫ
+            <h2 className="font-display text-4xl lg:text-5xl uppercase tracking-wider text-foreground">
+              ТУРНИРЫ
             </h2>
           </div>
-          <div className="h-0.5 w-20 bg-gradient-to-r from-amber-400 to-amber-600 mx-auto mb-6"></div>
-          <p className="text-lg text-white/70 max-w-2xl mx-auto font-light">
-            Присоединяйтесь к нашим рейтинговым турнирам и поднимайтесь в таблице лидеров
+          <div className="h-[2px] w-20 bg-gradient-neon mx-auto mb-6" />
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto uppercase tracking-wider">
+            Присоединяйся к элите. Докажи свое превосходство.
           </p>
         </div>
 
-{tournaments.length === 0 ? (
+ {tournaments.length === 0 ? (
           <div className="text-center py-12">
-            <div className="bg-gradient-to-br from-slate-800/90 via-slate-900/95 to-black/90 border border-white/10 rounded-2xl p-8 backdrop-blur-xl max-w-md mx-auto">
-              <div className="w-16 h-16 bg-gradient-to-br from-amber-500/20 to-amber-600/20 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                <Trophy className="w-8 h-8 text-amber-400" />
+            <div className="bg-syndikate-metal brutal-border p-8 max-w-md mx-auto">
+              <div className="w-16 h-16 bg-syndikate-orange brutal-border flex items-center justify-center mx-auto mb-6">
+                <Trophy className="w-8 h-8 text-background" />
               </div>
-              <h3 className="text-xl font-medium mb-3 text-white">Турниры готовятся</h3>
-              <p className="text-white/60">Новые турниры будут добавлены в ближайшее время</p>
+              <h3 className="font-display text-xl uppercase mb-3 text-foreground">Турниры готовятся</h3>
+              <p className="text-muted-foreground uppercase tracking-wider text-sm">Новые турниры будут добавлены в ближайшее время</p>
             </div>
           </div>
         ) : (
@@ -266,11 +270,11 @@ export function TournamentList() {
         <div className="text-center mt-12">
           <Button 
             size="lg" 
-            className="bg-white/5 border-2 border-amber-400/30 text-amber-400 hover:bg-amber-400/10 hover:border-amber-400/50 backdrop-blur-xl px-8 py-4 font-medium rounded-xl transition-all duration-300 group shadow-lg hover:shadow-amber-400/20"
+            className="bg-syndikate-orange hover:bg-syndikate-orange-glow text-background font-bold uppercase tracking-wider shadow-neon-orange px-8 py-4 group"
             onClick={() => window.location.href = '/tournaments'}
           >
-            <ChevronRight className="h-5 w-5 mr-2 group-hover:translate-x-1 transition-transform" />
-            Показать все турниры
+            Все турниры
+            <ChevronRight className="h-5 w-5 ml-2 group-hover:translate-x-1 transition-transform" />
           </Button>
         </div>
       </div>
@@ -312,16 +316,6 @@ export function TournamentList() {
         onOpenChange={setModalOpen}
         onTournamentUpdate={loadTournaments}
       />
-      
-      <style>{`
-        .animate-bounce-subtle {
-          animation: bounce-subtle 3s ease-in-out infinite;
-        }
-        @keyframes bounce-subtle {
-          0%, 100% { transform: translateY(0px) rotate(var(--tw-rotate)); }
-          50% { transform: translateY(-10px) rotate(var(--tw-rotate)); }
-        }
-      `}</style>
     </section>
   );
 }
