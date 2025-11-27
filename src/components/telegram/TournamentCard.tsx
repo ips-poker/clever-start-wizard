@@ -138,30 +138,30 @@ export const TournamentCard: React.FC<TournamentCardProps> = ({ tournament, inde
         
         {/* Enhanced Live Countdown Timer for upcoming tournaments */}
         {tournament.status === 'registration' && timeUntilStart > 0 && (
-          <div className="bg-syndikate-concrete/10 brutal-border p-4 space-y-2 backdrop-blur-sm animate-fade-in">
-            <div className="flex items-center justify-center gap-2 mb-3">
-              <Clock className="h-5 w-5 text-syndikate-orange animate-pulse" />
-              <div className="text-sm text-syndikate-orange uppercase font-display tracking-wider">
+          <div className="bg-syndikate-concrete/10 brutal-border p-3 space-y-2 backdrop-blur-sm animate-fade-in">
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <Clock className="h-4 w-4 text-syndikate-orange animate-pulse" />
+              <div className="text-xs text-syndikate-orange uppercase font-display tracking-wider">
                 Начало через
               </div>
             </div>
-            <div className="flex justify-center items-center gap-3">
-              <div className="flex flex-col items-center bg-background/50 brutal-border px-4 py-3 min-w-[80px] transition-all duration-300 hover:scale-105">
-                <div className="text-3xl font-display text-syndikate-orange tabular-nums leading-none animate-fade-in">
+            <div className="flex justify-center items-center gap-2">
+              <div className="flex flex-col items-center bg-background/50 brutal-border px-3 py-2 min-w-[65px] transition-all duration-300 hover:scale-105">
+                <div className="text-2xl font-display text-syndikate-orange tabular-nums leading-none animate-fade-in">
                   {timeDisplay.primary}
                 </div>
-                <div className="text-xs text-syndikate-concrete uppercase mt-1 font-display">
+                <div className="text-[10px] text-syndikate-concrete uppercase mt-1 font-display">
                   {timeDisplay.primaryLabel}
                 </div>
               </div>
               {timeDisplay.secondary !== null && (
                 <>
-                  <div className="text-2xl font-display text-syndikate-orange animate-pulse">•</div>
-                  <div className="flex flex-col items-center bg-background/50 brutal-border px-4 py-3 min-w-[80px] transition-all duration-300 hover:scale-105">
-                    <div className="text-3xl font-display text-syndikate-orange tabular-nums leading-none animate-fade-in">
+                  <div className="text-xl font-display text-syndikate-orange animate-pulse">•</div>
+                  <div className="flex flex-col items-center bg-background/50 brutal-border px-3 py-2 min-w-[65px] transition-all duration-300 hover:scale-105">
+                    <div className="text-2xl font-display text-syndikate-orange tabular-nums leading-none animate-fade-in">
                       {timeDisplay.secondary}
                     </div>
-                    <div className="text-xs text-syndikate-concrete uppercase mt-1 font-display">
+                    <div className="text-[10px] text-syndikate-concrete uppercase mt-1 font-display">
                       {timeDisplay.secondaryLabel}
                     </div>
                   </div>
@@ -169,11 +169,31 @@ export const TournamentCard: React.FC<TournamentCardProps> = ({ tournament, inde
               )}
             </div>
             {/* Live indicator */}
-            <div className="flex items-center justify-center gap-1 mt-2">
-              <div className="w-1.5 h-1.5 bg-syndikate-orange rounded-full animate-pulse" />
-              <div className="text-xs text-syndikate-concrete/60 uppercase tracking-wide">
+            <div className="flex items-center justify-center gap-1 mt-1">
+              <div className="w-1 h-1 bg-syndikate-orange rounded-full animate-pulse" />
+              <div className="text-[10px] text-syndikate-concrete/60 uppercase tracking-wide">
                 Live
               </div>
+            </div>
+          </div>
+        )}
+        
+        {/* Tournament Description */}
+        {tournament.description && (
+          <div className="bg-background/30 brutal-border p-3">
+            <div className="text-xs text-foreground/80 line-clamp-2">
+              {tournament.description}
+            </div>
+          </div>
+        )}
+        
+        {/* Tournament Format Badge */}
+        {tournament.tournament_format && (
+          <div className="flex items-center gap-2">
+            <div className="px-3 py-1 bg-syndikate-orange/10 brutal-border">
+              <span className="text-xs text-syndikate-orange uppercase font-display">
+                {tournament.tournament_format}
+              </span>
             </div>
           </div>
         )}
@@ -202,22 +222,37 @@ export const TournamentCard: React.FC<TournamentCardProps> = ({ tournament, inde
           </div>
         )}
 
-        {/* Tournament info grid */}
-        <div className="grid grid-cols-2 gap-3 pt-2 border-t border-syndikate-concrete/20">
-          <div className="flex items-center gap-2">
+        {/* Tournament info grid - Enhanced with more details */}
+        <div className="grid grid-cols-3 gap-2 pt-2 border-t border-syndikate-concrete/20">
+          <div className="flex flex-col items-center gap-1 p-2 bg-background/20 brutal-border hover:bg-background/30 transition-colors">
             <Clock className="h-4 w-4 text-syndikate-orange" />
-            <div>
-              <div className="text-xs text-syndikate-concrete">Time</div>
-              <div className="text-sm font-display">{new Date(tournament.start_time).toLocaleTimeString('ru-RU', {hour: '2-digit', minute: '2-digit'})}</div>
-            </div>
+            <div className="text-xs text-syndikate-concrete">Время</div>
+            <div className="text-sm font-display text-foreground">{new Date(tournament.start_time).toLocaleTimeString('ru-RU', {hour: '2-digit', minute: '2-digit'})}</div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-col items-center gap-1 p-2 bg-background/20 brutal-border hover:bg-background/30 transition-colors">
             <Trophy className="h-4 w-4 text-syndikate-orange" />
-            <div>
-              <div className="text-xs text-syndikate-concrete">Stack</div>
-              <div className="text-sm font-display">{tournament.starting_chips.toLocaleString()}</div>
-            </div>
+            <div className="text-xs text-syndikate-concrete">Стек</div>
+            <div className="text-sm font-display text-foreground">{tournament.starting_chips.toLocaleString()}</div>
           </div>
+          <div className="flex flex-col items-center gap-1 p-2 bg-background/20 brutal-border hover:bg-background/30 transition-colors">
+            <Users className="h-4 w-4 text-syndikate-orange" />
+            <div className="text-xs text-syndikate-concrete">Макс</div>
+            <div className="text-sm font-display text-foreground">{maxPlayers}</div>
+          </div>
+        </div>
+        
+        {/* Additional tournament details */}
+        <div className="flex items-center justify-between text-xs pt-2 border-t border-syndikate-concrete/10">
+          <div className="flex items-center gap-1 text-syndikate-concrete">
+            <span>📅</span>
+            <span>{new Date(tournament.start_time).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })}</span>
+          </div>
+          {tournament.status === 'registration' && (
+            <div className="flex items-center gap-1 text-syndikate-orange font-display">
+              <span>→</span>
+              <span className="uppercase text-[10px] tracking-wider">Tap to register</span>
+            </div>
+          )}
         </div>
       </div>
     </div>
