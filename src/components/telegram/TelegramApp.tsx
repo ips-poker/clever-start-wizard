@@ -1104,7 +1104,7 @@ export const TelegramApp = () => {
   }
 
   return (
-    <div className="max-w-lg mx-auto bg-background industrial-texture min-h-screen relative overflow-hidden">
+    <div className="w-full h-full bg-background industrial-texture relative overflow-hidden flex flex-col">
       {/* Industrial Background Elements */}
       <div className="absolute inset-0 opacity-20 overflow-hidden pointer-events-none">
         <div className="absolute top-10 left-10 w-[300px] h-[300px] bg-syndikate-orange/20 rounded-full blur-[80px] animate-pulse" />
@@ -1122,8 +1122,11 @@ export const TelegramApp = () => {
         }}
       />
 
-      {activeTab === 'home' && renderHome()}
-      {activeTab === 'about' && renderAbout()}
+      {/* Scrollable content area */}
+      <div className="flex-1 overflow-y-auto overflow-x-hidden relative z-10" style={{ maxHeight: '100%' }}>
+        <div className="max-w-lg mx-auto">
+          {activeTab === 'home' && renderHome()}
+          {activeTab === 'about' && renderAbout()}
       
       {activeTab === 'tournaments' && (
         <div className="space-y-4 pb-20 px-4 bg-transparent min-h-screen relative z-10">
@@ -1510,14 +1513,14 @@ export const TelegramApp = () => {
         </div>
       )}
 
-        {activeTab === 'profile' && (
-          <TelegramProfile 
-            telegramUser={telegramUser} 
-            userStats={userStats} 
-            onStatsUpdate={setUserStats}
-            onUnregister={unregisterFromTournament}
-          />
-        )}
+      {activeTab === 'profile' && (
+        <TelegramProfile 
+          telegramUser={telegramUser} 
+          userStats={userStats} 
+          onStatsUpdate={setUserStats}
+          onUnregister={unregisterFromTournament}
+        />
+      )}
 
       {activeTab === 'qa' && (
         <div className="space-y-6 pb-20 px-4 bg-transparent min-h-screen relative z-10">
@@ -1895,7 +1898,8 @@ export const TelegramApp = () => {
         </div>
       )}
 
-      <div className="fixed bottom-0 left-0 right-0 bg-syndikate-concrete/95 brutal-border border-t border-syndikate-orange/30 backdrop-blur-xl z-50 shadow-brutal">
+      {/* Fixed bottom navigation */}
+      <div className="fixed bottom-0 left-0 right-0 bg-syndikate-concrete/95 brutal-border border-t border-syndikate-orange/30 backdrop-blur-xl z-50 shadow-brutal pb-safe">
         <div className="absolute inset-x-0 top-0 h-px bg-gradient-neon"></div>
         <div className="max-w-lg mx-auto">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -1940,6 +1944,9 @@ export const TelegramApp = () => {
           </Tabs>
         </div>
         <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-32 h-1 bg-gradient-neon"></div>
+      </div>
+
+        </div>
       </div>
 
       <TelegramTournamentModal
