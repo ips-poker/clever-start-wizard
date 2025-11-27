@@ -9,7 +9,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Menu, X, User, LogOut, Settings, Crown } from "lucide-react";
-import syndikateLogoSpade from "@/assets/syndikate-logo.png";
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -40,30 +39,23 @@ export function Header() {
           {/* Logo */}
           <Link 
             to="/" 
-            className="flex items-center group"
+            className="flex items-center space-x-3 group"
           >
-            {/* Logo */}
             <div className="relative">
-              <img 
-                src={syndikateLogoSpade} 
-                alt="Syndikate Logo" 
-                className="h-12 w-auto object-contain group-hover:scale-105 transition-transform duration-300 filter brightness-110 group-hover:drop-shadow-[0_0_20px_rgba(255,90,31,0.5)]"
-                style={{ imageRendering: 'crisp-edges' }}
-              />
+              <div className="w-12 h-12 border-2 border-syndikate-orange bg-syndikate-metal brutal-border flex items-center justify-center transition-all group-hover:shadow-neon-orange">
+                <span className="font-display text-2xl neon-orange">S</span>
+              </div>
+              {/* Corner accents */}
+              <div className="absolute -top-1 -left-1 w-3 h-3 border-l-2 border-t-2 border-syndikate-red opacity-0 group-hover:opacity-100 transition-opacity" />
+              <div className="absolute -top-1 -right-1 w-3 h-3 border-r-2 border-t-2 border-syndikate-red opacity-0 group-hover:opacity-100 transition-opacity" />
+              <div className="absolute -bottom-1 -left-1 w-3 h-3 border-l-2 border-b-2 border-syndikate-red opacity-0 group-hover:opacity-100 transition-opacity" />
+              <div className="absolute -bottom-1 -right-1 w-3 h-3 border-r-2 border-b-2 border-syndikate-red opacity-0 group-hover:opacity-100 transition-opacity" />
             </div>
-            
-            {/* Text with curved bottom */}
-            <div className="relative -ml-2">
-              <svg viewBox="0 0 380 96" className="w-80 h-24">
-                <defs>
-                  <path id="curve" d="M 10,48 Q 190,28 370,48" fill="transparent" />
-                </defs>
-                <text className="fill-syndikate-orange font-display text-[40px] font-bold tracking-wider group-hover:drop-shadow-[0_0_12px_rgba(255,90,31,0.6)] transition-all duration-300" style={{ letterSpacing: "0.15em" }}>
-                  <textPath href="#curve" startOffset="50%" textAnchor="middle">
-                    SYNDIKATE
-                  </textPath>
-                </text>
-              </svg>
+            <div>
+              <span className="font-display text-2xl uppercase tracking-wider text-foreground">
+                Syndikate
+              </span>
+              <div className="h-[1px] w-0 group-hover:w-full bg-syndikate-orange transition-all duration-300" />
             </div>
           </Link>
 
