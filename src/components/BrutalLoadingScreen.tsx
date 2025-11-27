@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useIndustrialSounds } from "@/hooks/useIndustrialSounds";
 import { Volume2, VolumeX } from "lucide-react";
+import syndikateLogo from "@/assets/syndikate-logo-main.png";
 
 interface BrutalLoadingScreenProps {
   onLoadingComplete?: () => void;
@@ -144,20 +145,20 @@ export const BrutalLoadingScreen = ({ onLoadingComplete, enableSounds: initialEn
                 <div className="absolute -bottom-2 -right-2 w-12 h-12 border-r-4 border-b-4 border-syndikate-orange animate-pulse" style={{ animationDelay: '1.5s' }} />
 
                 {/* Main Logo Box */}
-                <div className="absolute inset-0 brutal-border bg-syndikate-metal/50 backdrop-blur-sm flex items-center justify-center">
-                  <motion.div
+                <div className="absolute inset-0 brutal-border bg-syndikate-metal/50 backdrop-blur-sm flex items-center justify-center p-8">
+                  <motion.img
+                    src={syndikateLogo}
+                    alt="Syndikate Logo"
                     animate={{ 
-                      textShadow: [
-                        "0 0 20px rgba(255, 135, 31, 0.8), 0 0 40px rgba(255, 135, 31, 0.4)",
-                        "0 0 30px rgba(255, 135, 31, 1), 0 0 60px rgba(255, 135, 31, 0.6)",
-                        "0 0 20px rgba(255, 135, 31, 0.8), 0 0 40px rgba(255, 135, 31, 0.4)"
+                      filter: [
+                        "drop-shadow(0 0 20px rgba(255, 135, 31, 0.8)) drop-shadow(0 0 40px rgba(255, 135, 31, 0.4))",
+                        "drop-shadow(0 0 30px rgba(255, 135, 31, 1)) drop-shadow(0 0 60px rgba(255, 135, 31, 0.6))",
+                        "drop-shadow(0 0 20px rgba(255, 135, 31, 0.8)) drop-shadow(0 0 40px rgba(255, 135, 31, 0.4))"
                       ]
                     }}
                     transition={{ duration: 2, repeat: Infinity }}
-                    className="font-display text-8xl text-syndikate-orange"
-                  >
-                    S
-                  </motion.div>
+                    className="w-full h-full object-contain"
+                  />
                 </div>
 
                 {/* Rotating Gear Effect */}
