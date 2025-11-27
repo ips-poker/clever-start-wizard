@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -14,6 +14,11 @@ import { toast } from 'sonner';
 import { addToHomeScreen } from '@telegram-apps/sdk';
 import syndikateLogo from '@/assets/syndikate-logo-main.png';
 import { GlitchText } from '@/components/ui/glitch-text';
+import { FloatingParticles } from '@/components/ui/floating-particles';
+import { TournamentCard } from './TournamentCard';
+import { RatingPodium } from './RatingPodium';
+import { PlayerRatingCard } from './PlayerRatingCard';
+import { PlayerStatsModal } from './PlayerStatsModal';
 import mainPokerRoom from '@/assets/gallery/main-poker-room.jpg';
 import tournamentTable from '@/assets/gallery/tournament-table.jpg';
 import vipZone from '@/assets/gallery/vip-zone.jpg';
@@ -78,11 +83,20 @@ export const TelegramApp = () => {
   const [registering, setRegistering] = useState<string | null>(null);
   const [selectedTournament, setSelectedTournament] = useState<Tournament | null>(null);
   const [showTournamentModal, setShowTournamentModal] = useState(false);
+  const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
+  const [showPlayerStatsModal, setShowPlayerStatsModal] = useState(false);
   const [galleryImages, setGalleryImages] = useState<GalleryImage[]>([]);
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
   const [currentRuleIndex, setCurrentRuleIndex] = useState(0);
   const [canAddToHomeScreen, setCanAddToHomeScreen] = useState(false);
   const [userRegistrations, setUserRegistrations] = useState<Set<string>>(new Set());
+  const [scrollY, setScrollY] = useState(0);
+  
+  // Refs for parallax effects
+  const baseTextureRef = useRef<HTMLDivElement>(null);
+  const gridRef = useRef<HTMLDivElement>(null);
+  const glowTopRef = useRef<HTMLDivElement>(null);
+  const glowBottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     // Проверяем доступность функции добавления на главный экран
@@ -104,6 +118,34 @@ export const TelegramApp = () => {
     // Проверяем с задержкой после инициализации SDK
     setTimeout(checkAddToHomeScreen, 500);
   }, []);
+
+  // Parallax scroll effect
+  useEffect(() => {
+    const handleScroll = (e: Event) => {
+      const target = e.target as HTMLElement;
+      const currentScrollY = target.scrollTop || 0;
+      setScrollY(currentScrollY);
+      
+      if (baseTextureRef.current) {
+        baseTextureRef.current.style.transform = `translateY(${currentScrollY * 0.15}px)`;
+      }
+      if (gridRef.current) {
+        gridRef.current.style.transform = `translateY(${currentScrollY * 0.25}px)`;
+      }
+      if (glowTopRef.current) {
+        glowTopRef.current.style.transform = `translate(-24px, ${-128 + currentScrollY * 0.1}px)`;
+      }
+      if (glowBottomRef.current) {
+        glowBottomRef.current.style.transform = `translate(-120px, ${-180 + currentScrollY * 0.2}px)`;
+      }
+    };
+
+    const contentElement = document.querySelector('.telegram-content');
+    if (contentElement) {
+      contentElement.addEventListener('scroll', handleScroll, { passive: true });
+      return () => contentElement.removeEventListener('scroll', handleScroll);
+    }
+  }, [activeTab]);
 
   useEffect(() => {
     if (isAuthenticated && telegramUser) {
@@ -419,7 +461,7 @@ export const TelegramApp = () => {
   };
 
   const renderHome = () => (
-    <div className="space-y-4 pb-20 px-4 bg-transparent min-h-screen relative z-10">
+    <div className="space-y-4 pb-20 px-4 pt-24 bg-transparent min-h-screen relative z-10">
       <Card className="bg-syndikate-metal/90 brutal-border overflow-hidden relative cursor-pointer group transition-all duration-500 hover:scale-[1.02] hover:shadow-neon-orange backdrop-blur-xl" onClick={() => setActiveTab('about')}>
         <div className="absolute inset-0 bg-gradient-to-br from-syndikate-orange/5 via-transparent to-syndikate-red/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
         <div className="absolute inset-0 opacity-10 group-hover:opacity-20 transition-opacity duration-500">
@@ -641,59 +683,90 @@ export const TelegramApp = () => {
       </div>
 
       {userStats && (
-        <Card className="bg-gradient-to-br from-slate-800/95 via-slate-900/95 to-black/90 border border-white/10 relative overflow-hidden backdrop-blur-xl group hover:shadow-lg hover:shadow-purple-500/20 transition-all duration-500">
-          <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 via-transparent to-blue-600/5 opacity-60 group-hover:opacity-100 transition-opacity duration-500"></div>
-          <div className="absolute inset-0 opacity-8 group-hover:opacity-15 transition-opacity duration-500">
-            <div className="absolute top-3 right-3 text-purple-400/30 text-3xl animate-pulse">♠</div>
-            <div className="absolute bottom-3 left-3 text-blue-400/20 text-2xl animate-bounce-subtle">♣</div>
+        <Card className="bg-syndikate-metal/90 brutal-border overflow-hidden relative shadow-brutal backdrop-blur-xl group hover:shadow-neon-orange transition-all duration-500 animate-fade-in">
+          {/* Industrial texture overlay */}
+          <div className="absolute inset-0 opacity-5 group-hover:opacity-10 transition-opacity duration-500">
+            <div className="absolute inset-0" style={{
+              backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255, 107, 0, 0.03) 10px, rgba(255, 107, 0, 0.03) 20px)'
+            }}></div>
           </div>
           
+          <div className="absolute inset-0 bg-gradient-to-br from-syndikate-orange/5 via-transparent to-syndikate-red/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+          
+          {/* Animated card suits */}
+          <div className="absolute inset-0 opacity-10 group-hover:opacity-20 transition-opacity duration-500">
+            <div className="absolute top-4 right-4 text-syndikate-orange/40 text-4xl animate-pulse">♠</div>
+            <div className="absolute top-12 left-4 text-syndikate-orange/20 text-3xl">♣</div>
+            <div className="absolute bottom-4 right-8 text-syndikate-red/30 text-3xl animate-pulse">♦</div>
+            <div className="absolute bottom-8 left-8 text-syndikate-red/20 text-2xl">♥</div>
+          </div>
+          
+          {/* Corner brackets */}
+          <div className="absolute top-2 left-2 w-6 h-6 border-l-2 border-t-2 border-syndikate-orange/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+          <div className="absolute top-2 right-2 w-6 h-6 border-r-2 border-t-2 border-syndikate-orange/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+          <div className="absolute bottom-2 left-2 w-6 h-6 border-l-2 border-b-2 border-syndikate-orange/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+          <div className="absolute bottom-2 right-2 w-6 h-6 border-r-2 border-b-2 border-syndikate-orange/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+          
           <CardContent className="p-5 relative z-10">
-            <div className="flex items-center gap-4 mb-4">
-              <div className="w-12 h-12 bg-gradient-to-br from-purple-500 via-purple-600 to-blue-600 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-xl group-hover:shadow-purple-500/30 transition-all duration-300 ring-1 ring-purple-400/20 group-hover:ring-purple-400/40">
-                <User className="h-6 w-6 text-white group-hover:scale-110 transition-transform duration-300" />
+            <div className="flex items-center gap-4 mb-5">
+              <div className="w-14 h-14 bg-gradient-to-br from-syndikate-orange to-syndikate-red brutal-border flex items-center justify-center shadow-lg group-hover:shadow-neon-orange transition-all duration-300 group-hover:scale-110">
+                <User className="h-7 w-7 text-background" />
               </div>
               <div className="flex-1">
-                <h3 className="text-white font-bold text-lg tracking-wide group-hover:text-purple-100 transition-colors duration-300">
-                  {telegramUser?.username || telegramUser?.firstName || 'Игрок'}
+                <h3 className="text-foreground font-display font-bold text-xl uppercase tracking-wider drop-shadow-lg group-hover:text-syndikate-orange transition-colors duration-300">
+                  <GlitchText text={telegramUser?.username || telegramUser?.firstName || 'ИГРОК'} glitchIntensity="low" />
                 </h3>
-                <p className="text-white/70 text-xs mt-1">Мой профиль и статистика</p>
-                <div className="h-0.5 w-12 bg-gradient-to-r from-purple-400 to-blue-500 mt-1 group-hover:w-16 transition-all duration-500"></div>
+                <p className="text-muted-foreground text-xs uppercase tracking-wider mt-1 font-display">Мой профиль и статистика</p>
+                <div className="h-[2px] w-12 bg-gradient-neon mt-2 group-hover:w-20 transition-all duration-500"></div>
               </div>
             </div>
             
-            <div className="grid grid-cols-3 gap-3">
-              <div className="text-center p-3 bg-gradient-to-br from-white/8 via-white/12 to-white/8 rounded-lg border border-white/10 group-hover:border-purple-400/20 transition-all duration-300 backdrop-blur-sm hover:scale-105">
-                <div className="w-6 h-6 bg-gradient-to-br from-orange-500 to-red-500 rounded-md flex items-center justify-center mx-auto mb-2">
-                  <Trophy className="h-3 w-3 text-white" />
+            <div className="grid grid-cols-3 gap-3 mb-4">
+              <div className="text-center p-4 bg-syndikate-concrete/60 brutal-border backdrop-blur-sm group/stat hover:bg-syndikate-concrete/80 hover:shadow-neon-orange transition-all duration-300 hover:scale-105 relative overflow-hidden">
+                <div className="absolute top-1 right-1 text-syndikate-orange/20 text-lg">♠</div>
+                <div className="w-8 h-8 bg-syndikate-orange brutal-border flex items-center justify-center mx-auto mb-2 shadow-md group-hover/stat:shadow-neon-orange transition-shadow duration-300">
+                  <Trophy className="h-4 w-4 text-background" />
                 </div>
-                <div className="text-white font-bold text-base">{userStats.elo_rating}</div>
-                <div className="text-white/60 text-xs">Рейтинг RPS</div>
+                <div className="text-foreground font-bold text-lg font-display neon-orange">{userStats.elo_rating}</div>
+                <div className="text-muted-foreground text-xs uppercase tracking-wider font-display">Рейтинг RPS</div>
               </div>
-              <div className="text-center p-3 bg-gradient-to-br from-white/8 via-white/12 to-white/8 rounded-lg border border-white/10 group-hover:border-purple-400/20 transition-all duration-300 backdrop-blur-sm hover:scale-105">
-                <div className="w-6 h-6 bg-gradient-to-br from-green-500 to-emerald-500 rounded-md flex items-center justify-center mx-auto mb-2">
-                  <Crown className="h-3 w-3 text-white" />
+              
+              <div className="text-center p-4 bg-syndikate-concrete/60 brutal-border backdrop-blur-sm group/stat hover:bg-syndikate-concrete/80 hover:shadow-neon-red transition-all duration-300 hover:scale-105 relative overflow-hidden">
+                <div className="absolute top-1 right-1 text-syndikate-red/20 text-lg">♥</div>
+                <div className="w-8 h-8 bg-syndikate-red brutal-border flex items-center justify-center mx-auto mb-2 shadow-md group-hover/stat:shadow-neon-red transition-shadow duration-300">
+                  <Crown className="h-4 w-4 text-background" />
                 </div>
-                <div className="text-white font-bold text-base">{userStats.wins}</div>
-                <div className="text-white/60 text-xs">Побед</div>
+                <div className="text-foreground font-bold text-lg font-display neon-red">{userStats.wins}</div>
+                <div className="text-muted-foreground text-xs uppercase tracking-wider font-display">Побед</div>
               </div>
-              <div className="text-center p-3 bg-gradient-to-br from-white/8 via-white/12 to-white/8 rounded-lg border border-white/10 group-hover:border-purple-400/20 transition-all duration-300 backdrop-blur-sm hover:scale-105">
-                <div className="w-6 h-6 bg-gradient-to-br from-blue-500 to-purple-500 rounded-md flex items-center justify-center mx-auto mb-2">
-                  <Target className="h-3 w-3 text-white" />
+              
+              <div className="text-center p-4 bg-syndikate-concrete/60 brutal-border backdrop-blur-sm group/stat hover:bg-syndikate-concrete/80 hover:shadow-neon-orange transition-all duration-300 hover:scale-105 relative overflow-hidden">
+                <div className="absolute top-1 right-1 text-syndikate-orange/20 text-lg">♦</div>
+                <div className="w-8 h-8 bg-syndikate-metal-light brutal-border flex items-center justify-center mx-auto mb-2 shadow-md group-hover/stat:shadow-neon-orange transition-shadow duration-300">
+                  <Target className="h-4 w-4 text-syndikate-orange" />
                 </div>
-                <div className="text-white font-bold text-base">{userStats.games_played}</div>
-                <div className="text-white/60 text-xs">Игр сыграно</div>
+                <div className="text-foreground font-bold text-lg font-display">{userStats.games_played}</div>
+                <div className="text-muted-foreground text-xs uppercase tracking-wider font-display">Игр сыграно</div>
               </div>
             </div>
             
-            <div className="mt-4 p-4 bg-gradient-to-r from-white/5 via-white/10 to-white/5 rounded-lg border border-white/10 group-hover:border-purple-400/20 transition-all duration-300 backdrop-blur-md">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="w-5 h-5 bg-gradient-to-br from-amber-500 to-orange-500 rounded-md flex items-center justify-center">
-                  <TrendingUp className="h-2.5 w-2.5 text-white" />
-                </div>
-                <h4 className="text-white font-semibold text-sm">Последние достижения</h4>
+            <div className="p-4 bg-syndikate-concrete/50 brutal-border backdrop-blur-md group-hover:border-syndikate-orange/40 transition-all duration-300 relative overflow-hidden">
+              {/* Metal grid pattern */}
+              <div className="absolute inset-0 opacity-5">
+                <div className="absolute inset-0" style={{
+                  backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 10px, rgba(255, 107, 0, 0.1) 10px, rgba(255, 107, 0, 0.1) 11px), repeating-linear-gradient(90deg, transparent, transparent 10px, rgba(255, 107, 0, 0.1) 10px, rgba(255, 107, 0, 0.1) 11px)',
+                }}></div>
               </div>
-              <p className="text-white/70 text-xs leading-relaxed">Статистика обновляется после каждого турнира. Продолжайте играть для улучшения рейтинга!</p>
+              
+              <div className="flex items-center gap-3 mb-3 relative z-10">
+                <div className="w-6 h-6 bg-syndikate-orange brutal-border flex items-center justify-center shadow-md">
+                  <TrendingUp className="h-3 w-3 text-background" />
+                </div>
+                <h4 className="text-foreground font-display font-bold text-sm uppercase tracking-wider">Последние достижения</h4>
+              </div>
+              <p className="text-muted-foreground text-xs leading-relaxed uppercase tracking-wide font-display relative z-10">
+                Статистика обновляется после каждого турнира. Продолжайте играть для улучшения рейтинга!
+              </p>
             </div>
           </CardContent>
         </Card>
@@ -730,37 +803,79 @@ export const TelegramApp = () => {
   ];
 
   const renderAbout = () => (
-    <div className="pb-20 px-4 bg-transparent min-h-screen relative z-10">
-      {/* Header with back button */}
-      <div className="flex items-center gap-3 p-4">
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          onClick={() => setActiveTab('home')} 
-          className="text-foreground hover:bg-syndikate-metal p-2 brutal-border backdrop-blur-sm hover:border-syndikate-orange/30 transition-all duration-300 group"
-        >
-          <ArrowLeft className="h-4 w-4 group-hover:-translate-x-0.5 transition-transform duration-300" />
-        </Button>
-        <div>
-          <h2 className="font-display text-2xl uppercase text-foreground tracking-wider">О НАС</h2>
-          <div className="h-[2px] w-10 bg-gradient-neon mt-1"></div>
+    <div className="pb-20 px-4 pt-24 bg-transparent min-h-screen relative z-10">
+      {/* Industrial header with glitch effect */}
+      <div className="relative p-6 bg-syndikate-metal/90 brutal-border backdrop-blur-xl shadow-brutal overflow-hidden group mb-4">
+        {/* Metal grid background */}
+        <div className="absolute inset-0 opacity-5">
+          <div className="absolute inset-0" style={{
+            backgroundImage: 'linear-gradient(0deg, transparent 24%, rgba(255, 107, 0, 0.05) 25%, rgba(255, 107, 0, 0.05) 26%, transparent 27%, transparent 74%, rgba(255, 107, 0, 0.05) 75%, rgba(255, 107, 0, 0.05) 76%, transparent 77%, transparent), linear-gradient(90deg, transparent 24%, rgba(255, 107, 0, 0.05) 25%, rgba(255, 107, 0, 0.05) 26%, transparent 27%, transparent 74%, rgba(255, 107, 0, 0.05) 75%, rgba(255, 107, 0, 0.05) 76%, transparent 77%, transparent)',
+            backgroundSize: '50px 50px'
+          }}></div>
+        </div>
+        
+        {/* Corner brackets */}
+        <div className="absolute top-2 left-2 w-6 h-6 border-l-2 border-t-2 border-syndikate-orange"></div>
+        <div className="absolute top-2 right-2 w-6 h-6 border-r-2 border-t-2 border-syndikate-orange"></div>
+        <div className="absolute bottom-2 left-2 w-6 h-6 border-l-2 border-b-2 border-syndikate-orange"></div>
+        <div className="absolute bottom-2 right-2 w-6 h-6 border-r-2 border-b-2 border-syndikate-orange"></div>
+        
+        <div className="flex items-center gap-4 relative z-10">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => setActiveTab('home')} 
+            className="text-foreground hover:text-syndikate-orange hover:bg-syndikate-metal/50 p-2 brutal-border backdrop-blur-sm transition-all duration-300 group shadow-md hover:shadow-neon-orange"
+          >
+            <ArrowLeft className="h-5 w-5 group-hover:-translate-x-1 transition-transform duration-300" />
+          </Button>
+          <div className="flex-1">
+            <h2 className="font-display text-4xl uppercase text-foreground tracking-wider drop-shadow-lg">
+              <GlitchText 
+                text="О НАС" 
+                glitchIntensity="high" 
+                glitchInterval={4000}
+              />
+            </h2>
+            <div className="h-[3px] w-16 bg-gradient-neon mt-2 group-hover:w-24 transition-all duration-500"></div>
+            <p className="font-display text-xs uppercase tracking-wider text-syndikate-orange mt-1">
+              ЭЛИТНЫЙ ПОКЕРНЫЙ КЛУБ
+            </p>
+          </div>
         </div>
       </div>
 
       <div className="space-y-4">
-        {/* Hero Card - Compact Version */}
-        <Card className="bg-syndikate-metal/90 brutal-border overflow-hidden relative shadow-xl backdrop-blur-xl">
-          <CardContent className="p-5 relative z-10">
+        {/* Hero Card - Enhanced */}
+        <Card className="bg-syndikate-metal/90 brutal-border overflow-hidden relative shadow-brutal backdrop-blur-xl group hover:shadow-neon-orange transition-all duration-500 animate-fade-in">
+          {/* Industrial texture overlay */}
+          <div className="absolute inset-0 opacity-5 group-hover:opacity-10 transition-opacity duration-500">
+            <div className="absolute inset-0" style={{
+              backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255, 107, 0, 0.03) 10px, rgba(255, 107, 0, 0.03) 20px)'
+            }}></div>
+          </div>
+          
+          <div className="absolute inset-0 bg-gradient-to-br from-syndikate-orange/5 via-transparent to-syndikate-red/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+          
+          {/* Animated card suits */}
+          <div className="absolute inset-0 opacity-10 group-hover:opacity-20 transition-opacity duration-500">
+            <div className="absolute top-4 right-4 text-syndikate-orange/40 text-5xl animate-pulse">♠</div>
+            <div className="absolute top-12 left-4 text-syndikate-orange/20 text-3xl">♣</div>
+            <div className="absolute bottom-4 right-12 text-syndikate-orange/30 text-4xl animate-pulse">♦</div>
+            <div className="absolute bottom-12 left-12 text-syndikate-orange/15 text-2xl">♥</div>
+          </div>
+          
+          <CardContent className="p-6 relative z-10">
             <div className="flex items-center gap-4 mb-4">
-              <div className="w-16 h-16 border-2 border-syndikate-orange bg-syndikate-concrete brutal-border flex items-center justify-center overflow-hidden shadow-lg p-2">
-                <img src={syndikateLogo} alt="Syndikate Logo" className="w-full h-full object-contain neon-orange" />
+              <div className="w-20 h-20 border-2 border-syndikate-orange bg-syndikate-concrete brutal-border flex items-center justify-center overflow-hidden shadow-lg group-hover:shadow-neon-orange transition-shadow duration-300 p-2">
+                <img src={syndikateLogo} alt="Syndikate Logo" className="w-full h-full object-contain neon-orange group-hover:scale-110 transition-transform duration-300" />
               </div>
               <div className="flex-1">
-                <h1 className="font-display text-2xl uppercase text-foreground tracking-wider">
-                  <GlitchText text="SYNDIKATE" glitchIntensity="low" />
+                <h1 className="font-display text-3xl uppercase text-foreground tracking-wider drop-shadow-lg group-hover:text-syndikate-orange transition-colors duration-300">
+                  <GlitchText text="SYNDIKATE" glitchIntensity="medium" glitchInterval={5000} />
                 </h1>
-                <div className="h-[2px] w-16 bg-gradient-neon mt-1"></div>
-                <p className="font-display text-sm uppercase tracking-wider text-syndikate-orange mt-1">
+                <div className="h-[2px] w-20 bg-gradient-neon mt-2 group-hover:w-28 transition-all duration-500"></div>
+                <p className="font-display text-sm uppercase tracking-wider text-syndikate-orange mt-2">
                   Власть за столом
                 </p>
               </div>
@@ -769,16 +884,25 @@ export const TelegramApp = () => {
         </Card>
 
         {/* Photo Gallery with Scroll */}
-        <Card className="bg-syndikate-metal/90 brutal-border overflow-hidden relative shadow-brutal backdrop-blur-xl">
+        <Card className="bg-syndikate-metal/90 brutal-border overflow-hidden relative shadow-brutal backdrop-blur-xl group hover:shadow-neon-orange transition-all duration-500 animate-fade-in" style={{ animationDelay: '0.1s' }}>
+          {/* Metal texture */}
+          <div className="absolute inset-0 opacity-5 group-hover:opacity-10 transition-opacity duration-500">
+            <div className="absolute inset-0" style={{
+              backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255, 107, 0, 0.03) 10px, rgba(255, 107, 0, 0.03) 20px)'
+            }}></div>
+          </div>
+          
           <CardContent className="p-4 relative z-10">
             <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 bg-syndikate-orange brutal-border flex items-center justify-center">
-                  <Camera className="h-4 w-4 text-background" />
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-syndikate-orange brutal-border flex items-center justify-center shadow-md group-hover:shadow-neon-orange transition-shadow duration-300">
+                  <Camera className="h-5 w-5 text-background" />
                 </div>
-                <h3 className="text-foreground font-bold uppercase tracking-wider">Наши залы</h3>
+                <h3 className="text-foreground font-display font-bold text-lg uppercase tracking-wider group-hover:text-syndikate-orange transition-colors duration-300">
+                  Наши залы
+                </h3>
               </div>
-              <div className="flex items-center gap-2 text-muted-foreground text-sm font-mono">
+              <div className="flex items-center gap-2 text-muted-foreground text-sm font-mono bg-syndikate-concrete/50 brutal-border px-2 py-1">
                 <span>{currentPhotoIndex + 1} / {galleryImages.length}</span>
               </div>
             </div>
@@ -820,17 +944,37 @@ export const TelegramApp = () => {
           </CardContent>
         </Card>
 
-        {/* Club Rules - Swipeable */}
-        <Card className="bg-syndikate-red/90 brutal-border backdrop-blur-xl shadow-brutal relative overflow-hidden">
+        {/* Club Rules - Swipeable with animations */}
+        <Card className="bg-syndikate-red/90 brutal-border backdrop-blur-xl shadow-brutal relative overflow-hidden group hover:shadow-neon-red hover:scale-[1.01] transition-all duration-500 animate-fade-in" style={{ animationDelay: '0.2s' }}>
+          {/* Industrial texture overlay */}
+          <div className="absolute inset-0 opacity-10 group-hover:opacity-20 transition-opacity duration-500">
+            <div className="absolute inset-0" style={{
+              backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(0, 0, 0, 0.05) 10px, rgba(0, 0, 0, 0.05) 20px)'
+            }}></div>
+          </div>
+          
+          {/* Animated suits background */}
+          <div className="absolute inset-0 opacity-20 group-hover:opacity-30 transition-opacity duration-500">
+            <div className="absolute top-4 right-4 text-background/30 text-5xl animate-pulse">♠</div>
+            <div className="absolute bottom-4 left-4 text-background/20 text-3xl">♦</div>
+          </div>
+          
+          {/* Corner brackets */}
+          <div className="absolute top-2 left-2 w-6 h-6 border-l-2 border-t-2 border-background/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+          <div className="absolute top-2 right-2 w-6 h-6 border-r-2 border-t-2 border-background/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+          
           <CardContent className="p-5 relative z-10">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-background/20 brutal-border flex items-center justify-center">
-                  <MessageSquare className="h-5 w-5 text-background" />
+                <div className="w-12 h-12 bg-background/20 brutal-border flex items-center justify-center shadow-md group-hover:shadow-neon-red transition-shadow duration-300">
+                  <MessageSquare className="h-6 w-6 text-background" />
                 </div>
-                <h3 className="text-background font-display text-xl uppercase tracking-wider">
-                  Наши правила
-                </h3>
+                <div>
+                  <h3 className="text-background font-display text-2xl uppercase tracking-wider drop-shadow-lg">
+                    <GlitchText text="ПРАВИЛА" glitchIntensity="low" />
+                  </h3>
+                  <div className="h-[2px] w-12 bg-background/50 mt-1"></div>
+                </div>
               </div>
               <div className="flex items-center gap-2">
                 <Button
@@ -857,15 +1001,26 @@ export const TelegramApp = () => {
               </div>
             </div>
             
-            <div className="min-h-[120px]">
-              <div className="p-4 bg-syndikate-concrete/50 brutal-border backdrop-blur-sm">
-                <div className="flex items-start gap-3">
-                  <div className={`w-6 h-6 bg-syndikate-orange brutal-border flex items-center justify-center flex-shrink-0 mt-0.5`}>
-                    <span className="text-background text-xs font-bold">{currentRuleIndex + 1}</span>
+            <div className="min-h-[160px]">
+              <div className="p-5 bg-syndikate-concrete/60 brutal-border backdrop-blur-sm relative overflow-hidden group/rule animate-fade-in">
+                {/* Metal texture for rule card */}
+                <div className="absolute inset-0 opacity-5 group-hover/rule:opacity-10 transition-opacity duration-500">
+                  <div className="absolute inset-0" style={{
+                    backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255, 107, 0, 0.03) 10px, rgba(255, 107, 0, 0.03) 20px)'
+                  }}></div>
+                </div>
+                
+                <div className="flex items-start gap-4 relative z-10">
+                  <div className="w-10 h-10 bg-syndikate-orange brutal-border flex items-center justify-center flex-shrink-0 shadow-md group-hover/rule:shadow-neon-orange transition-shadow duration-300">
+                    <span className="text-background text-base font-display font-bold">
+                      <GlitchText text={String(currentRuleIndex + 1).padStart(2, '0')} glitchIntensity="low" />
+                    </span>
                   </div>
                   <div className="flex-1">
-                    <h4 className="text-foreground font-bold uppercase text-sm mb-2 tracking-wider">{rules[currentRuleIndex].title}</h4>
-                    <p className="text-foreground/80 text-xs leading-relaxed">
+                    <h4 className="text-foreground font-display font-bold uppercase text-base mb-3 tracking-wider group-hover/rule:text-syndikate-orange transition-colors duration-300">
+                      {rules[currentRuleIndex].title}
+                    </h4>
+                    <p className="text-foreground/80 text-sm leading-relaxed">
                       {rules[currentRuleIndex].content}
                     </p>
                   </div>
@@ -886,82 +1041,114 @@ export const TelegramApp = () => {
           </CardContent>
         </Card>
 
-        {/* Mission & Values - Compact */}
+        {/* Mission & Values - Enhanced */}
         <div className="grid grid-cols-2 gap-3">
-          <Card className="bg-syndikate-orange/90 brutal-border overflow-hidden relative shadow-neon-orange backdrop-blur-xl">
+          <Card className="bg-syndikate-orange/90 brutal-border overflow-hidden relative shadow-neon-orange backdrop-blur-xl group hover:scale-105 transition-all duration-500 animate-fade-in" style={{ animationDelay: '0.3s' }}>
+            {/* Industrial texture */}
+            <div className="absolute inset-0 opacity-10 group-hover:opacity-20 transition-opacity duration-500">
+              <div className="absolute inset-0" style={{
+                backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(0, 0, 0, 0.05) 10px, rgba(0, 0, 0, 0.05) 20px)'
+              }}></div>
+            </div>
+            
             <CardContent className="p-4 relative z-10">
               <div className="flex items-center gap-2 mb-3">
-                <div className="w-8 h-8 bg-background/20 brutal-border flex items-center justify-center">
-                  <Target className="h-4 w-4 text-background" />
+                <div className="w-10 h-10 bg-background/20 brutal-border flex items-center justify-center shadow-md group-hover:shadow-neon-orange transition-shadow duration-300">
+                  <Target className="h-5 w-5 text-background" />
                 </div>
-                <h3 className="text-background font-bold uppercase text-sm tracking-wider">Миссия</h3>
+                <h3 className="text-background font-display font-bold uppercase text-sm tracking-wider">Миссия</h3>
               </div>
-              <p className="text-background/90 text-xs leading-relaxed uppercase tracking-wide">
+              <p className="text-background/90 text-xs leading-relaxed uppercase tracking-wide font-medium">
                 Создание элитной среды для покера
               </p>
             </CardContent>
           </Card>
 
-          <Card className="bg-syndikate-red/90 brutal-border overflow-hidden relative shadow-brutal backdrop-blur-xl">
+          <Card className="bg-syndikate-red/90 brutal-border overflow-hidden relative shadow-brutal backdrop-blur-xl group hover:scale-105 transition-all duration-500 animate-fade-in" style={{ animationDelay: '0.4s' }}>
+            {/* Industrial texture */}
+            <div className="absolute inset-0 opacity-10 group-hover:opacity-20 transition-opacity duration-500">
+              <div className="absolute inset-0" style={{
+                backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(0, 0, 0, 0.05) 10px, rgba(0, 0, 0, 0.05) 20px)'
+              }}></div>
+            </div>
+            
             <CardContent className="p-4 relative z-10">
               <div className="flex items-center gap-2 mb-3">
-                <div className="w-8 h-8 bg-background/20 brutal-border flex items-center justify-center">
-                  <Heart className="h-4 w-4 text-background" />
+                <div className="w-10 h-10 bg-background/20 brutal-border flex items-center justify-center shadow-md group-hover:shadow-neon-red transition-shadow duration-300">
+                  <Heart className="h-5 w-5 text-background" />
                 </div>
-                <h3 className="text-background font-bold uppercase text-sm tracking-wider">Ценности</h3>
+                <h3 className="text-background font-display font-bold uppercase text-sm tracking-wider">Ценности</h3>
               </div>
-              <div className="space-y-1.5">
-                <div className="flex items-center gap-1.5">
-                  <div className="w-1.5 h-1.5 bg-background/60 brutal-border"></div>
-                  <span className="text-background/90 text-xs uppercase">Честность</span>
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-background/60 brutal-border"></div>
+                  <span className="text-background/90 text-xs uppercase font-medium">Честность</span>
                 </div>
-                <div className="flex items-center gap-1.5">
-                  <div className="w-1.5 h-1.5 bg-background/60 brutal-border"></div>
-                  <span className="text-background/90 text-xs uppercase">Профессионализм</span>
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-background/60 brutal-border"></div>
+                  <span className="text-background/90 text-xs uppercase font-medium">Профессионализм</span>
                 </div>
-                <div className="flex items-center gap-1.5">
-                  <div className="w-1.5 h-1.5 bg-background/60 brutal-border"></div>
-                  <span className="text-background/90 text-xs uppercase">Сила</span>
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-background/60 brutal-border"></div>
+                  <span className="text-background/90 text-xs uppercase font-medium">Сила</span>
                 </div>
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Contact - Compact */}
-        <Card className="bg-syndikate-metal/90 brutal-border backdrop-blur-xl shadow-brutal relative overflow-hidden">
-          <div className="absolute inset-0 opacity-10">
-            <div className="absolute top-3 right-3 text-syndikate-orange/40 text-2xl animate-pulse">♠</div>
-            <div className="absolute bottom-3 left-3 text-syndikate-orange/30 text-xl">♣</div>
+        {/* Contact - Enhanced */}
+        <Card className="bg-syndikate-metal/90 brutal-border backdrop-blur-xl shadow-brutal relative overflow-hidden group hover:shadow-neon-orange hover:scale-[1.01] transition-all duration-500 animate-fade-in" style={{ animationDelay: '0.5s' }}>
+          {/* Industrial texture */}
+          <div className="absolute inset-0 opacity-5 group-hover:opacity-10 transition-opacity duration-500">
+            <div className="absolute inset-0" style={{
+              backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255, 107, 0, 0.03) 10px, rgba(255, 107, 0, 0.03) 20px)'
+            }}></div>
           </div>
-          <CardContent className="p-4 relative z-10">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-10 h-10 bg-syndikate-orange brutal-border flex items-center justify-center">
-                <Shield className="h-5 w-5 text-background" />
+          
+          <div className="absolute inset-0 bg-gradient-to-br from-syndikate-orange/5 via-transparent to-syndikate-red/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+          
+          <div className="absolute inset-0 opacity-10 group-hover:opacity-20 transition-opacity duration-500">
+            <div className="absolute top-4 right-4 text-syndikate-orange/40 text-5xl animate-pulse">♠</div>
+            <div className="absolute top-12 left-4 text-syndikate-orange/20 text-3xl">♣</div>
+            <div className="absolute bottom-4 right-8 text-syndikate-orange/30 text-4xl">♦</div>
+            <div className="absolute bottom-8 left-8 text-syndikate-orange/15 text-2xl animate-pulse">♥</div>
+          </div>
+          
+          {/* Corner brackets */}
+          <div className="absolute top-2 left-2 w-6 h-6 border-l-2 border-t-2 border-syndikate-orange/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+          <div className="absolute top-2 right-2 w-6 h-6 border-r-2 border-t-2 border-syndikate-orange/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+          <CardContent className="p-5 relative z-10">
+            <div className="flex items-center gap-4 mb-4">
+              <div className="w-12 h-12 bg-syndikate-orange brutal-border flex items-center justify-center shadow-md group-hover:shadow-neon-orange transition-shadow duration-300">
+                <Shield className="h-6 w-6 text-background" />
               </div>
-              <h3 className="text-foreground font-display font-bold text-lg tracking-wide uppercase">
-                Присоединяйтесь к EPC
-              </h3>
+              <div>
+                <h3 className="text-foreground font-display font-bold text-xl tracking-wide uppercase drop-shadow-lg group-hover:text-syndikate-orange transition-colors duration-300">
+                  <GlitchText text="EPC" glitchIntensity="low" />
+                </h3>
+                <div className="h-[2px] w-12 bg-gradient-neon mt-1"></div>
+              </div>
             </div>
             
-            <p className="text-muted-foreground text-sm mb-4 leading-relaxed uppercase font-medium">
+            <p className="text-muted-foreground text-sm mb-4 leading-relaxed uppercase font-medium tracking-wide">
               Станьте частью элитного покерного сообщества
             </p>
             
-            <div className="grid grid-cols-1 gap-2">
-              <div className="flex items-center gap-2 p-2 bg-syndikate-concrete/50 brutal-border backdrop-blur-sm">
-                <CheckCircle className="h-4 w-4 text-syndikate-orange flex-shrink-0" />
-                <span className="text-foreground text-xs font-bold uppercase">100% легальная деятельность</span>
+            <div className="grid grid-cols-1 gap-3">
+              <div className="flex items-center gap-3 p-3 bg-syndikate-concrete/60 brutal-border backdrop-blur-sm group/item hover:bg-syndikate-concrete/80 transition-all duration-300">
+                <CheckCircle className="h-5 w-5 text-syndikate-orange flex-shrink-0" />
+                <span className="text-foreground text-sm font-display font-bold uppercase">100% легальная деятельность</span>
               </div>
               
-              <div className="flex items-center gap-2 p-2 bg-syndikate-concrete/50 brutal-border backdrop-blur-sm">
-                <Globe className="h-4 w-4 text-syndikate-orange flex-shrink-0" />
-                <span className="text-foreground text-xs font-bold uppercase">Международные стандарты</span>
+              <div className="flex items-center gap-3 p-3 bg-syndikate-concrete/60 brutal-border backdrop-blur-sm group/item hover:bg-syndikate-concrete/80 transition-all duration-300">
+                <Globe className="h-5 w-5 text-syndikate-orange flex-shrink-0" />
+                <span className="text-foreground text-sm font-display font-bold uppercase">Международные стандарты</span>
               </div>
               
-              <div className="flex items-center gap-2 p-2 bg-syndikate-concrete/50 brutal-border backdrop-blur-sm">
-                <Users className="h-4 w-4 text-syndikate-orange flex-shrink-0" />
-                <span className="text-foreground text-xs font-bold uppercase">Активное сообщество</span>
+              <div className="flex items-center gap-3 p-3 bg-syndikate-concrete/60 brutal-border backdrop-blur-sm group/item hover:bg-syndikate-concrete/80 transition-all duration-300">
+                <Users className="h-5 w-5 text-syndikate-orange flex-shrink-0" />
+                <span className="text-foreground text-sm font-display font-bold uppercase">Активное сообщество</span>
               </div>
             </div>
           </CardContent>
@@ -990,601 +1177,533 @@ export const TelegramApp = () => {
   }
 
   return (
-    <div className="max-w-lg mx-auto bg-background industrial-texture min-h-screen relative overflow-hidden">
-      {/* Industrial Background Elements */}
-      <div className="absolute inset-0 opacity-20 overflow-hidden pointer-events-none">
-        <div className="absolute top-10 left-10 w-[300px] h-[300px] bg-syndikate-orange/20 rounded-full blur-[80px] animate-pulse" />
-        <div className="absolute bottom-10 right-10 w-[250px] h-[250px] bg-syndikate-red/15 rounded-full blur-[70px] animate-pulse" style={{ animationDelay: '1s' }} />
-      </div>
+    <div className="w-full h-full bg-background industrial-texture relative overflow-hidden flex flex-col">
+      <FloatingParticles />
       
-      {/* Metal Grid Pattern */}
-      <div 
-        className="absolute inset-0 opacity-10 pointer-events-none"
-        style={{
-          backgroundImage: `
-            repeating-linear-gradient(0deg, transparent, transparent 50px, rgba(255, 255, 255, 0.05) 50px, rgba(255, 255, 255, 0.05) 51px),
-            repeating-linear-gradient(90deg, transparent, transparent 50px, rgba(255, 255, 255, 0.05) 50px, rgba(255, 255, 255, 0.05) 51px)
-          `
-        }}
-      />
+      {/* Background Effects - only on home page */}
+      {activeTab === 'home' && (
+        <>
+          {/* Industrial metal base texture */}
+          <div 
+            ref={baseTextureRef}
+            className="fixed inset-0 pointer-events-none industrial-texture opacity-50 z-0 transition-transform duration-0 will-change-transform" 
+          />
 
-      {activeTab === 'home' && renderHome()}
-      {activeTab === 'about' && renderAbout()}
+          {/* Metal grid overlay */}
+          <div
+            ref={gridRef}
+            className="fixed inset-0 pointer-events-none opacity-20 z-0 transition-transform duration-0 will-change-transform"
+            style={{
+              backgroundImage: `
+                repeating-linear-gradient(0deg, transparent, transparent 48px, rgba(255,255,255,0.04) 48px, rgba(255,255,255,0.04) 49px),
+                repeating-linear-gradient(90deg, transparent, transparent 48px, rgba(255,255,255,0.04) 48px, rgba(255,255,255,0.04) 49px)
+              `,
+            }}
+          />
+
+          {/* Neon glows */}
+          <div 
+            ref={glowTopRef}
+            className="fixed w-[520px] h-[520px] bg-syndikate-orange/25 rounded-full blur-[160px] opacity-80 animate-pulse will-change-transform z-0" 
+          />
+          <div 
+            ref={glowBottomRef}
+            className="fixed right-0 bottom-0 w-[520px] h-[520px] bg-syndikate-red/20 rounded-full blur-[160px] opacity-80 animate-pulse will-change-transform z-0" 
+          />
+
+          {/* Side rails */}
+          <div className="fixed inset-y-0 left-0 w-[2px] bg-gradient-to-b from-syndikate-orange/70 via-syndikate-red/40 to-transparent shadow-neon-orange pointer-events-none z-10" />
+          <div className="fixed inset-y-0 right-0 w-[2px] bg-gradient-to-b from-syndikate-orange/70 via-syndikate-red/40 to-transparent shadow-neon-orange pointer-events-none z-10" />
+          
+          {/* Subtle noise */}
+          <div
+            className="fixed inset-0 pointer-events-none opacity-25 mix-blend-soft-light z-0"
+            style={{
+              backgroundImage: "radial-gradient(circle at 1px 1px, rgba(255,255,255,0.15) 1px, transparent 0)",
+              backgroundSize: "4px 4px",
+            }}
+          />
+        </>
+      )}
+      
+      {/* Content Area with relative z-index */}
+      <div className="flex-1 overflow-y-auto telegram-content relative z-20 overflow-x-hidden" style={{ maxHeight: '100%' }}>
+        <div className="max-w-lg mx-auto">
+          {activeTab === 'home' && renderHome()}
+          {activeTab === 'about' && renderAbout()}
       
       {activeTab === 'tournaments' && (
-        <div className="space-y-4 pb-20 px-4 bg-transparent min-h-screen relative z-10">
+        <div className="space-y-4 pb-20 px-4 pt-24 bg-transparent min-h-screen relative z-10">
           <div className="flex items-center gap-3 p-4">
             <div className="w-10 h-10 bg-syndikate-orange brutal-border flex items-center justify-center">
               <Trophy className="h-5 w-5 text-background" />
             </div>
             <div>
-              <h2 className="font-display text-3xl uppercase text-foreground tracking-wider">ТУРНИРЫ</h2>
+              <h2 className="font-display text-3xl uppercase text-foreground tracking-wider">
+                <GlitchText text="ТУРНИРЫ" />
+              </h2>
               <div className="h-[2px] w-16 bg-gradient-neon mt-2"></div>
             </div>
           </div>
           
-          {tournaments.map((tournament, index) => (
-            <Card key={tournament.id} className="bg-syndikate-metal/90 brutal-border border-2 border-dashed border-syndikate-orange/40 backdrop-blur-xl shadow-brutal group hover:shadow-neon-orange transition-all duration-500 relative overflow-hidden cursor-pointer hover:scale-[1.01]"
+          {tournaments.length === 0 ? (
+            <div className="text-center py-16 space-y-4">
+              <div className="w-20 h-20 mx-auto bg-syndikate-metal brutal-border flex items-center justify-center">
+                <Trophy className="h-10 w-10 text-syndikate-concrete" />
+              </div>
+              <h3 className="text-xl font-display text-syndikate-concrete uppercase">
+                No Active Tournaments
+              </h3>
+              <p className="text-sm text-syndikate-concrete/60">
+                Check back soon for upcoming tournaments
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {tournaments.map((tournament, index) => (
+                <TournamentCard
+                  key={tournament.id}
+                  tournament={tournament}
+                  index={index}
                   onClick={() => {
                     setSelectedTournament(tournament);
                     setShowTournamentModal(true);
-                  }}>
-              {/* Corner Decorations */}
-              <div className="absolute left-0 top-1/2 -translate-y-1/2 w-6 h-6 bg-background brutal-border -ml-3"></div>
-              <div className="absolute right-0 top-1/2 -translate-y-1/2 w-6 h-6 bg-background brutal-border -mr-3"></div>
-              
-              {/* Номер билета */}
-              <div className="absolute top-3 right-4 text-syndikate-orange text-xs font-mono tracking-wider bg-syndikate-concrete/50 px-2 py-1 brutal-border backdrop-blur-sm">
-                #{tournament.id.slice(-6).toUpperCase()}
-              </div>
-              
-              {/* Barcode Effect */}
-              <div className="absolute bottom-3 right-4 flex gap-0.5">
-                {[...Array(8)].map((_, i) => (
-                  <div key={i} className={`bg-syndikate-orange/60 ${i % 2 === 0 ? 'w-0.5 h-6' : 'w-1 h-8'}`}></div>
-                ))}
-              </div>
-              
-              <div className="absolute inset-0 bg-gradient-to-br from-syndikate-orange/5 via-transparent to-syndikate-red/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-              <div className="absolute inset-0 opacity-10 group-hover:opacity-20 transition-opacity duration-500">
-                <div className="absolute top-3 left-4 text-2xl text-syndikate-orange/30 animate-pulse">♠</div>
-                <div className="absolute bottom-8 left-8 text-xl text-syndikate-orange/20">♣</div>
-              </div>
-              
-              <CardContent className="p-6 relative z-10">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex-1">
-                    <div className="text-syndikate-orange text-xs font-bold uppercase tracking-widest mb-1">🎫 БИЛЕТ НА ТУРНИР</div>
-                    <h3 className="font-display text-xl uppercase text-foreground tracking-wide mb-2 group-hover:text-syndikate-orange transition-colors duration-300">
-                      {tournament.name}
-                    </h3>
-                    <div className="h-[2px] w-12 bg-gradient-neon group-hover:w-16 transition-all duration-500"></div>
-                    {tournament.description && (
-                      <p className="text-muted-foreground text-sm mt-2 line-clamp-1">{tournament.description}</p>
-                    )}
-                  </div>
-                  <div className="w-10 h-10 bg-syndikate-orange brutal-border flex items-center justify-center backdrop-blur-sm group-hover:scale-110 transition-transform duration-300">
-                    <Trophy className="h-5 w-5 text-background" />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3 mb-4">
-                  <div className="flex items-center gap-3 p-3 bg-syndikate-concrete/50 brutal-border group-hover:border-syndikate-orange/30 transition-all duration-300 backdrop-blur-sm">
-                    <div className="w-7 h-7 bg-syndikate-orange brutal-border flex items-center justify-center shadow-lg">
-                      <Users className="h-4 w-4 text-background" />
-                    </div>
-                    <div>
-                      <span className="text-foreground font-bold text-sm">{tournament.tournament_registrations?.[0]?.count || 0}/{tournament.max_players}</span>
-                      <p className="text-muted-foreground text-xs">участников</p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center gap-3 p-3 bg-syndikate-concrete/50 brutal-border group-hover:border-syndikate-orange/30 transition-all duration-300 backdrop-blur-sm">
-                    <div className="w-7 h-7 bg-syndikate-orange brutal-border flex items-center justify-center shadow-lg">
-                      <Clock className="h-4 w-4 text-background" />
-                    </div>
-                    <div>
-                      <span className="text-foreground font-bold text-sm">{new Date(tournament.start_time).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}</span>
-                      <p className="text-muted-foreground text-xs">{new Date(tournament.start_time).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })}</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3 mb-4">
-                  <div className="flex items-center gap-3 p-3 bg-syndikate-concrete/50 brutal-border group-hover:border-syndikate-orange/30 transition-all duration-300 backdrop-blur-sm">
-                    <div className="w-7 h-7 bg-syndikate-red brutal-border flex items-center justify-center shadow-lg">
-                      <Coins className="h-4 w-4 text-background" />
-                    </div>
-                    <div>
-                      <span className="text-foreground font-bold text-sm">{tournament.participation_fee.toLocaleString()} ₽</span>
-                      <p className="text-muted-foreground text-xs">орг. взнос</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2 p-2 bg-syndikate-concrete/50 brutal-border group-hover:border-syndikate-orange/30 transition-all duration-300 backdrop-blur-sm">
-                    <div className="w-6 h-6 bg-syndikate-orange brutal-border flex items-center justify-center">
-                      <Target className="h-3 w-3 text-background" />
-                    </div>
-                    <div>
-                      <span className="text-foreground font-semibold text-sm">{tournament.starting_chips?.toLocaleString() || 'N/A'}</span>
-                      <p className="text-muted-foreground text-xs">стартовый стек</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between gap-3 mt-4">
-                  <div className="flex items-center gap-2 text-syndikate-orange group-hover:gap-3 transition-all duration-300">
-                    <span className="font-display text-sm uppercase tracking-widest font-bold">🎫 Подробнее</span>
-                    <ChevronRight className="h-4 w-4 group-hover:translate-x-1 transition-transform duration-300" />
-                  </div>
-                  
-                  <Badge 
-                    className={`px-3 py-1.5 text-xs font-bold uppercase brutal-border backdrop-blur-sm ${
-                      tournament.status === 'registration' ? 'bg-syndikate-orange/20 text-syndikate-orange' :
-                      tournament.status === 'running' ? 'bg-syndikate-red/20 text-syndikate-red' :
-                      tournament.status === 'scheduled' ? 'bg-syndikate-orange/20 text-syndikate-orange' :
-                      'bg-muted text-muted-foreground'
-                    }`}
-                  >
-                    {tournament.status === 'registration' ? 'Регистрация' :
-                     tournament.status === 'running' ? 'В процессе' :
-                     tournament.status === 'scheduled' ? 'Запланирован' :
-                     tournament.status}
-                  </Badge>
-                </div>
-                
-                {tournament.status === 'registration' && (
-                  userRegistrations.has(tournament.id) ? (
-                    <div className="w-full mt-4 flex items-center justify-between gap-2">
-                      <Badge className="flex-1 bg-gradient-to-r from-emerald-500/20 to-green-500/20 text-emerald-400 border border-emerald-500/40 hover:from-emerald-500/30 hover:to-green-500/30 transition-all duration-300 px-4 py-2.5 text-xs font-bold uppercase tracking-wider shadow-lg shadow-emerald-500/20 justify-center">
-                        <CheckCircle className="h-3.5 w-3.5 mr-1.5" />
-                        Зарегистрирован
-                      </Badge>
-                      <Button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          unregisterFromTournament(tournament.id);
-                        }}
-                        variant="outline"
-                        size="sm"
-                        disabled={loading}
-                        className="bg-gradient-to-r from-red-500/10 to-rose-500/10 border-red-500/40 text-red-400 hover:from-red-500/20 hover:to-rose-500/20 hover:text-red-300 hover:border-red-400/60 transition-all duration-300 px-3 py-2.5 h-auto text-xs font-semibold shadow-lg shadow-red-500/20 hover:shadow-red-500/30"
-                      >
-                        {loading ? (
-                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                        ) : (
-                          <>
-                            <X className="h-3.5 w-3.5 mr-1" />
-                            Отменить
-                          </>
-                        )}
-                      </Button>
-                    </div>
-                  ) : (
-                    <Button 
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        registerForTournament(tournament.id);
-                      }} 
-                      disabled={registering === tournament.id} 
-                      className="w-full mt-4 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-bold py-3 rounded-xl shadow-lg hover:shadow-amber-500/40 transition-all duration-300 group-hover:scale-[1.02] border-0 text-sm uppercase tracking-wider"
-                    >
-                      {registering === tournament.id ? (
-                        <div className="flex items-center gap-2">
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                          <span>Регистрируем...</span>
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-2">
-                          <UserPlus className="h-4 w-4" />
-                          <span>Записаться на турнир</span>
-                        </div>
-                      )}
-                    </Button>
-                  )
-                )}
-              </CardContent>
-            </Card>
-          ))}
+                  }}
+                />
+              ))}
+            </div>
+          )}
         </div>
       )}
 
       {activeTab === 'rating' && (
-        <div className="space-y-4 pb-20 px-4 bg-transparent min-h-screen relative z-10">
+        <div className="space-y-4 pb-20 px-4 pt-24 bg-transparent min-h-screen relative z-10">
           {/* Header */}
           <div className="flex items-center gap-3 p-4">
             <div className="w-10 h-10 bg-syndikate-orange brutal-border flex items-center justify-center">
-              <Crown className="h-5 w-5 text-background" />
+              <Award className="h-5 w-5 text-background" />
             </div>
-            <div>
-              <h2 className="font-display text-3xl uppercase text-foreground tracking-wider">ЛЕГЕНДЫ EPC</h2>
-              <div className="h-[2px] w-16 bg-gradient-neon mt-2"></div>
-            </div>
+            <h2 className="text-2xl font-display tracking-wider uppercase">
+              <GlitchText text="Рейтинг" />
+            </h2>
           </div>
 
-          {/* Stats Overview */}
-          <div className="grid grid-cols-2 gap-3">
-            <Card className="bg-syndikate-metal/90 brutal-border backdrop-blur-xl shadow-brutal group hover:shadow-neon-orange transition-all duration-500 relative overflow-hidden hover:scale-[1.02]">
-              <div className="absolute inset-0 bg-gradient-to-br from-syndikate-orange/5 via-transparent to-syndikate-red/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-              <div className="absolute top-2 right-2 text-syndikate-orange/30 text-2xl animate-pulse">♠</div>
-              
-              <CardContent className="p-4 relative z-10">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-syndikate-orange brutal-border flex items-center justify-center">
-                    <Users className="h-4 w-4 text-background" />
-                  </div>
-                  <div>
-                    <div className="text-foreground font-bold text-lg">{players.length}</div>
-                    <div className="text-muted-foreground text-xs uppercase tracking-wider">Активных игроков</div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+          <RatingPodium 
+            topPlayers={players.slice(0, 3)}
+            onPlayerClick={(player) => {
+              setSelectedPlayer(player);
+              setShowPlayerStatsModal(true);
+            }}
+          />
 
-            <Card className="bg-syndikate-metal/90 brutal-border backdrop-blur-xl shadow-brutal group hover:shadow-neon-orange transition-all duration-500 relative overflow-hidden hover:scale-[1.02]">
-              <div className="absolute inset-0 bg-gradient-to-br from-syndikate-orange/5 via-transparent to-syndikate-red/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-              <div className="absolute top-2 right-2 text-syndikate-orange/30 text-2xl animate-pulse">♥</div>
-              
-              <CardContent className="p-4 relative z-10">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-syndikate-red brutal-border flex items-center justify-center">
-                    <Trophy className="h-4 w-4 text-background" />
-                  </div>
-                  <div>
-                    <div className="text-foreground font-bold text-lg">{players[0]?.elo_rating || 0}</div>
-                    <div className="text-muted-foreground text-xs uppercase tracking-wider">Лучший рейтинг</div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Top 3 Podium */}
-          {players.length >= 3 && (
-            <Card className="bg-syndikate-metal/90 brutal-border backdrop-blur-xl shadow-brutal group hover:shadow-neon-orange transition-all duration-500 relative overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-br from-syndikate-orange/5 via-transparent to-syndikate-red/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-              <div className="absolute inset-0 opacity-10 group-hover:opacity-20 transition-opacity duration-500">
-                <div className="absolute top-3 right-3 text-syndikate-orange/30 text-3xl animate-pulse">♠</div>
-                <div className="absolute bottom-3 left-3 text-syndikate-orange/20 text-2xl">♦</div>
+          {players.length === 0 ? (
+            <div className="text-center py-16 space-y-4">
+              <div className="w-20 h-20 mx-auto bg-syndikate-metal brutal-border flex items-center justify-center">
+                <Award className="h-10 w-10 text-syndikate-concrete" />
               </div>
-              
-              <CardContent className="p-5 relative z-10">
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="w-1 h-5 bg-gradient-neon brutal-border"></div>
-                  <h3 className="text-foreground font-display font-bold text-base tracking-wider uppercase">ТОП-3 ИГРОКОВ</h3>
-                </div>
-                
-                <div className="flex items-end justify-center gap-2">
-                  {/* 2nd Place */}
-                  <div className="flex flex-col items-center">
-                    <div className="relative mb-2">
-                      <Avatar className="w-10 h-10 brutal-border ring-2 ring-muted/40">
-                        <AvatarImage src={players[1]?.avatar_url} />
-                        <AvatarFallback className="bg-muted text-foreground text-xs font-bold">{players[1]?.name?.[0] || 'P'}</AvatarFallback>
-                      </Avatar>
-                      <div className="absolute -top-1 -right-1 w-5 h-5 bg-muted brutal-border flex items-center justify-center text-xs">
-                        🥈
-                      </div>
-                    </div>
-                    <div className="w-12 h-16 bg-syndikate-concrete/50 brutal-border flex flex-col items-center justify-end pb-2">
-                      <span className="text-foreground text-xs font-bold">{players[1]?.elo_rating}</span>
-                    </div>
-                    <p className="text-muted-foreground text-xs mt-1 text-center truncate w-12 uppercase">{players[1]?.name}</p>
-                  </div>
-
-                  {/* 1st Place */}
-                  <div className="flex flex-col items-center">
-                    <div className="relative mb-2">
-                      <Avatar className="w-12 h-12 brutal-border ring-2 ring-syndikate-orange/50 shadow-neon-orange">
-                        <AvatarImage src={players[0]?.avatar_url} />
-                        <AvatarFallback className="bg-syndikate-orange text-background text-sm font-bold">{players[0]?.name?.[0] || 'P'}</AvatarFallback>
-                      </Avatar>
-                      <div className="absolute -top-1 -right-1 w-6 h-6 bg-syndikate-orange brutal-border flex items-center justify-center shadow-neon-orange">
-                        👑
-                      </div>
-                    </div>
-                    <div className="w-14 h-20 bg-syndikate-orange/30 brutal-border flex flex-col items-center justify-end pb-2 shadow-neon-orange">
-                      <span className="text-syndikate-orange text-sm font-bold neon-orange">{players[0]?.elo_rating}</span>
-                    </div>
-                    <p className="text-foreground text-xs mt-1 text-center font-bold truncate w-14 uppercase">{players[0]?.name}</p>
-                  </div>
-
-                  {/* 3rd Place */}
-                  <div className="flex flex-col items-center">
-                    <div className="relative mb-2">
-                      <Avatar className="w-10 h-10 brutal-border ring-2 ring-syndikate-red/40">
-                        <AvatarImage src={players[2]?.avatar_url} />
-                        <AvatarFallback className="bg-syndikate-red text-background text-xs font-bold">{players[2]?.name?.[0] || 'P'}</AvatarFallback>
-                      </Avatar>
-                      <div className="absolute -top-1 -right-1 w-5 h-5 bg-syndikate-red brutal-border flex items-center justify-center text-xs">
-                        🥉
-                      </div>
-                    </div>
-                    <div className="w-12 h-12 bg-syndikate-red/30 brutal-border flex flex-col items-center justify-end pb-2">
-                      <span className="text-syndikate-red text-xs font-bold">{players[2]?.elo_rating}</span>
-                    </div>
-                    <p className="text-muted-foreground text-xs mt-1 text-center truncate w-12 uppercase">{players[2]?.name}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Players List */}
-          <div className="space-y-3">
-            <div className="flex items-center gap-2 mb-3 px-1">
-              <div className="w-1 h-4 bg-gradient-neon brutal-border"></div>
-              <p className="text-foreground text-sm font-bold uppercase tracking-wide">Полный рейтинг</p>
-              <div className="flex-1 h-[2px] bg-syndikate-rust/30"></div>
+              <h3 className="text-xl font-display text-syndikate-concrete uppercase">
+                No Players Yet
+              </h3>
+              <p className="text-sm text-syndikate-concrete/60">
+                Be the first to join and compete
+              </p>
             </div>
-            
-            {players.map((player, index) => (
-              <Card key={player.id} className={`backdrop-blur-xl shadow-brutal group hover:shadow-neon-orange transition-all duration-500 relative overflow-hidden brutal-border ${
-                  index === 0 ? 'bg-syndikate-orange/20 border-syndikate-orange/40' :
-                  index === 1 ? 'bg-muted/20 border-muted/40' :
-                  index === 2 ? 'bg-syndikate-red/20 border-syndikate-red/40' :
-                  'bg-syndikate-metal/90'
-                } hover:scale-[1.01] cursor-pointer`}>
-                <div className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 ${
-                  index === 0 ? 'bg-gradient-to-r from-syndikate-orange/5 to-transparent' :
-                  index === 1 ? 'bg-gradient-to-r from-muted/5 to-transparent' :
-                  index === 2 ? 'bg-gradient-to-r from-syndikate-red/5 to-transparent' :
-                  'bg-gradient-to-r from-syndikate-orange/5 to-transparent'
-                }`}></div>
-                
-                <div className="absolute top-2 right-2 opacity-10 group-hover:opacity-20 transition-opacity duration-500">
-                  <div className={`text-2xl animate-pulse ${
-                    index < 3 ? 'text-syndikate-orange/30' : 'text-syndikate-orange/30'
-                  }`}>
-                    {index === 0 ? '♠' : index === 1 ? '♥' : index === 2 ? '♦' : '♣'}
-                  </div>
-                </div>
-                
-                <CardContent className="p-4 relative z-10">
-                  <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-1 min-w-[1.5rem]">
-                      <span className={`text-sm font-bold uppercase ${
-                        index < 3 ? 'text-syndikate-orange' : 'text-muted-foreground'
-                      }`}>
-                        #{index + 1}
-                      </span>
-                    </div>
-                    
-                    <div className="relative">
-                      <Avatar className={`w-10 h-10 brutal-border group-hover:ring-2 group-hover:ring-syndikate-orange/30 transition-all duration-300 ${
-                        index === 0 ? 'ring-2 ring-syndikate-orange/50' : ''
-                      }`}>
-                        <AvatarImage src={player.avatar_url} />
-                        <AvatarFallback className="bg-syndikate-concrete text-foreground font-bold text-sm">{player.name?.[0] || 'P'}</AvatarFallback>
-                      </Avatar>
-                      {index < 3 && (
-                        <div className={`absolute -top-1 -right-1 w-4 h-4 brutal-border flex items-center justify-center text-xs font-bold text-background shadow-md ${
-                          index === 0 ? 'bg-syndikate-orange' :
-                          index === 1 ? 'bg-muted' :
-                          'bg-syndikate-red'
-                        }`}>
-                          {index === 0 ? '👑' : index === 1 ? '🥈' : '🥉'}
-                        </div>
-                      )}
-                    </div>
-                    
-                    <div className="flex-1">
-                      <h3 className="text-foreground font-bold text-sm uppercase tracking-wide group-hover:text-syndikate-orange transition-colors duration-300">{player.name}</h3>
-                      <div className="flex items-center gap-2 mt-0.5">
-                        <p className="text-muted-foreground text-xs uppercase tracking-wider">{player.games_played} игр</p>
-                        <div className="w-1 h-1 bg-muted-foreground/40 brutal-border"></div>
-                        <p className="text-muted-foreground text-xs uppercase tracking-wider">{player.wins} побед</p>
-                      </div>
-                    </div>
-                    
-                    <div className="text-right">
-                      <div className={`text-lg font-bold ${
-                        index === 0 ? 'text-syndikate-orange neon-orange' :
-                        index === 1 ? 'text-muted-foreground' :
-                        index === 2 ? 'text-syndikate-red' :
-                        'text-foreground'
-                      } group-hover:scale-110 transition-transform duration-300`}>
-                        {player.elo_rating}
-                      </div>
-                      <p className="text-muted-foreground text-xs uppercase tracking-wider">RPS</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+          ) : (
+            <div className="space-y-3">
+              {players.slice(3).map((player, index) => (
+                <PlayerRatingCard
+                  key={player.id}
+                  player={player}
+                  rank={index + 4}
+                  index={index}
+                  onClick={() => {
+                    setSelectedPlayer(player);
+                    setShowPlayerStatsModal(true);
+                  }}
+                />
+              ))}
+            </div>
+          )}
         </div>
       )}
 
-        {activeTab === 'profile' && (
-          <TelegramProfile 
-            telegramUser={telegramUser} 
-            userStats={userStats} 
-            onStatsUpdate={setUserStats}
-            onUnregister={unregisterFromTournament}
-          />
-        )}
+      {activeTab === 'profile' && (
+        <TelegramProfile 
+          telegramUser={telegramUser} 
+          userStats={userStats} 
+          onStatsUpdate={setUserStats}
+          onUnregister={unregisterFromTournament}
+        />
+      )}
 
       {activeTab === 'qa' && (
-        <div className="space-y-6 pb-20 px-4 bg-transparent min-h-screen relative z-10">
-          <div className="flex items-center gap-3 p-4">
-            <div className="w-10 h-10 bg-syndikate-orange brutal-border flex items-center justify-center">
-              <MessageSquare className="h-5 w-5 text-background" />
+        <div className="space-y-6 pb-20 px-4 pt-24 bg-transparent min-h-screen relative z-10">
+          {/* Industrial header with glitch effect */}
+          <div className="relative p-6 bg-syndikate-metal/90 brutal-border backdrop-blur-xl shadow-brutal overflow-hidden group">
+            {/* Metal grid background */}
+            <div className="absolute inset-0 opacity-5">
+              <div className="absolute inset-0" style={{
+                backgroundImage: 'linear-gradient(0deg, transparent 24%, rgba(255, 107, 0, 0.05) 25%, rgba(255, 107, 0, 0.05) 26%, transparent 27%, transparent 74%, rgba(255, 107, 0, 0.05) 75%, rgba(255, 107, 0, 0.05) 76%, transparent 77%, transparent), linear-gradient(90deg, transparent 24%, rgba(255, 107, 0, 0.05) 25%, rgba(255, 107, 0, 0.05) 26%, transparent 27%, transparent 74%, rgba(255, 107, 0, 0.05) 75%, rgba(255, 107, 0, 0.05) 76%, transparent 77%, transparent)',
+                backgroundSize: '50px 50px'
+              }}></div>
             </div>
-            <div>
-              <h2 className="font-display text-3xl uppercase text-foreground tracking-wider">Q&A</h2>
-              <div className="h-[2px] w-8 bg-gradient-neon mt-2"></div>
+            
+            {/* Corner brackets */}
+            <div className="absolute top-2 left-2 w-6 h-6 border-l-2 border-t-2 border-syndikate-orange"></div>
+            <div className="absolute top-2 right-2 w-6 h-6 border-r-2 border-t-2 border-syndikate-orange"></div>
+            <div className="absolute bottom-2 left-2 w-6 h-6 border-l-2 border-b-2 border-syndikate-orange"></div>
+            <div className="absolute bottom-2 right-2 w-6 h-6 border-r-2 border-b-2 border-syndikate-orange"></div>
+            
+            <div className="flex items-center gap-4 relative z-10">
+              <div className="w-12 h-12 bg-syndikate-orange brutal-border flex items-center justify-center shadow-neon-orange group-hover:scale-110 transition-transform duration-300">
+                <MessageSquare className="h-6 w-6 text-background" />
+              </div>
+              <div className="flex-1">
+                <h2 className="font-display text-4xl uppercase text-foreground tracking-wider drop-shadow-lg">
+                  <GlitchText 
+                    text="Q&A" 
+                    glitchIntensity="high" 
+                    glitchInterval={3500}
+                  />
+                </h2>
+                <div className="h-[3px] w-16 bg-gradient-neon mt-2 group-hover:w-24 transition-all duration-500"></div>
+                <p className="font-display text-xs uppercase tracking-wider text-syndikate-orange mt-1">
+                  ВОПРОСЫ И ОТВЕТЫ
+                </p>
+              </div>
             </div>
           </div>
           
           <div className="space-y-4">
-            <Card className="bg-syndikate-metal/90 brutal-border backdrop-blur-xl shadow-brutal group hover:shadow-neon-orange transition-all duration-500 relative overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-br from-syndikate-orange/5 via-transparent to-syndikate-red/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-              <div className="absolute inset-0 opacity-10 group-hover:opacity-20 transition-opacity duration-500">
-                <div className="absolute top-4 right-4 text-syndikate-orange/30 text-3xl animate-pulse">♠</div>
+            <Card className="bg-syndikate-metal/90 brutal-border backdrop-blur-xl shadow-brutal group hover:shadow-neon-orange hover:scale-[1.02] transition-all duration-500 relative overflow-hidden animate-fade-in">
+              {/* Industrial texture overlay */}
+              <div className="absolute inset-0 opacity-5 group-hover:opacity-10 transition-opacity duration-500">
+                <div className="absolute inset-0" style={{
+                  backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255, 107, 0, 0.03) 10px, rgba(255, 107, 0, 0.03) 20px)'
+                }}></div>
               </div>
+              
+              <div className="absolute inset-0 bg-gradient-to-br from-syndikate-orange/5 via-transparent to-syndikate-red/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+              
+              {/* Animated card suits */}
+              <div className="absolute inset-0 opacity-10 group-hover:opacity-20 transition-opacity duration-500">
+                <div className="absolute top-4 right-4 text-syndikate-orange/40 text-4xl animate-pulse">♠</div>
+                <div className="absolute bottom-4 left-4 text-syndikate-orange/20 text-2xl">♦</div>
+              </div>
+              
+              {/* Corner brackets */}
+              <div className="absolute top-2 left-2 w-4 h-4 border-l border-t border-syndikate-orange/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              <div className="absolute top-2 right-2 w-4 h-4 border-r border-t border-syndikate-orange/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
               
               <CardContent className="p-6 relative z-10">
                 <div className="flex items-start gap-4">
-                  <div className="w-8 h-8 bg-syndikate-orange brutal-border flex items-center justify-center flex-shrink-0 mt-1">
-                    <CheckCircle className="h-4 w-4 text-background" />
+                  <div className="w-10 h-10 bg-syndikate-orange brutal-border flex items-center justify-center flex-shrink-0 shadow-md group-hover:shadow-neon-orange transition-shadow duration-300">
+                    <CheckCircle className="h-5 w-5 text-background" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="text-foreground font-bold uppercase text-lg mb-3 tracking-wider group-hover:text-syndikate-orange transition-colors duration-300">1. Это законно?</h3>
-                    <p className="text-foreground/80 text-sm leading-relaxed">Абсолютно! Мы проводим спортивные турниры без денежных призов, что полностью соответствует российскому законодательству. Согласно ФЗ №244, запрещены только азартные игры с материальными выигрышами. Syndikate — это спортивное сообщество для развития навыков и общения.</p>
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="font-display text-2xl text-syndikate-orange drop-shadow-lg">
+                        <GlitchText text="01" glitchIntensity="low" />
+                      </span>
+                      <h3 className="text-foreground font-display uppercase text-lg tracking-wider group-hover:text-syndikate-orange transition-colors duration-300">
+                        Это законно?
+                      </h3>
+                    </div>
+                    <p className="text-foreground/80 text-sm leading-relaxed">
+                      Абсолютно! Мы проводим спортивные турниры без денежных призов, что полностью соответствует российскому законодательству. Согласно ФЗ №244, запрещены только азартные игры с материальными выигрышами. Syndikate — это спортивное сообщество для развития навыков и общения.
+                    </p>
                   </div>
                 </div>
               </CardContent>
             </Card>
             
-            <Card className="bg-syndikate-metal/90 brutal-border backdrop-blur-xl shadow-brutal group hover:shadow-neon-orange transition-all duration-500 relative overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-br from-syndikate-orange/5 via-transparent to-syndikate-red/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-              <div className="absolute inset-0 opacity-10 group-hover:opacity-20 transition-opacity duration-500">
-                <div className="absolute top-4 right-4 text-syndikate-orange/30 text-3xl">♣</div>
+            <Card className="bg-syndikate-metal/90 brutal-border backdrop-blur-xl shadow-brutal group hover:shadow-neon-orange hover:scale-[1.02] transition-all duration-500 relative overflow-hidden animate-fade-in" style={{ animationDelay: '0.1s' }}>
+              <div className="absolute inset-0 opacity-5 group-hover:opacity-10 transition-opacity duration-500">
+                <div className="absolute inset-0" style={{
+                  backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255, 107, 0, 0.03) 10px, rgba(255, 107, 0, 0.03) 20px)'
+                }}></div>
               </div>
+              
+              <div className="absolute inset-0 bg-gradient-to-br from-syndikate-orange/5 via-transparent to-syndikate-red/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+              
+              <div className="absolute inset-0 opacity-10 group-hover:opacity-20 transition-opacity duration-500">
+                <div className="absolute top-4 right-4 text-syndikate-orange/40 text-4xl">♣</div>
+                <div className="absolute bottom-4 left-4 text-syndikate-orange/20 text-2xl animate-pulse">♥</div>
+              </div>
+              
+              <div className="absolute top-2 left-2 w-4 h-4 border-l border-t border-syndikate-orange/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              <div className="absolute top-2 right-2 w-4 h-4 border-r border-t border-syndikate-orange/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
               
               <CardContent className="p-6 relative z-10">
                 <div className="flex items-start gap-4">
-                  <div className="w-8 h-8 bg-syndikate-orange brutal-border flex items-center justify-center flex-shrink-0 mt-1">
-                    <Users className="h-4 w-4 text-background" />
+                  <div className="w-10 h-10 bg-syndikate-orange brutal-border flex items-center justify-center flex-shrink-0 shadow-md group-hover:shadow-neon-orange transition-shadow duration-300">
+                    <Users className="h-5 w-5 text-background" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="text-foreground font-bold uppercase text-lg mb-3 tracking-wider group-hover:text-syndikate-orange transition-colors duration-300">2. Зачем играть без призов?</h3>
-                    <p className="text-foreground/80 text-sm leading-relaxed">Syndikate — это уникальное комьюнити единомышленников! Где еще вы найдете профессиональное оборудование, отличный сервис и возможность развивать покерные навыки в безопасной среде? Мы создаем атмосферу спортивного соревнования и дружеского общения.</p>
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="font-display text-2xl text-syndikate-orange drop-shadow-lg">
+                        <GlitchText text="02" glitchIntensity="low" />
+                      </span>
+                      <h3 className="text-foreground font-display uppercase text-lg tracking-wider group-hover:text-syndikate-orange transition-colors duration-300">
+                        Зачем играть без призов?
+                      </h3>
+                    </div>
+                    <p className="text-foreground/80 text-sm leading-relaxed">
+                      Syndikate — это уникальное комьюнити единомышленников! Где еще вы найдете профессиональное оборудование, отличный сервис и возможность развивать покерные навыки в безопасной среде? Мы создаем атмосферу спортивного соревнования и дружеского общения.
+                    </p>
                   </div>
                 </div>
               </CardContent>
             </Card>
             
-            <Card className="bg-syndikate-metal/90 brutal-border backdrop-blur-xl shadow-brutal group hover:shadow-neon-orange transition-all duration-500 relative overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-br from-syndikate-orange/5 via-transparent to-syndikate-red/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-              <div className="absolute inset-0 opacity-10 group-hover:opacity-20 transition-opacity duration-500">
-                <div className="absolute top-4 right-4 text-syndikate-orange/30 text-3xl animate-pulse">♦</div>
+            <Card className="bg-syndikate-metal/90 brutal-border backdrop-blur-xl shadow-brutal group hover:shadow-neon-orange hover:scale-[1.02] transition-all duration-500 relative overflow-hidden animate-fade-in" style={{ animationDelay: '0.2s' }}>
+              <div className="absolute inset-0 opacity-5 group-hover:opacity-10 transition-opacity duration-500">
+                <div className="absolute inset-0" style={{
+                  backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255, 107, 0, 0.03) 10px, rgba(255, 107, 0, 0.03) 20px)'
+                }}></div>
               </div>
+              
+              <div className="absolute inset-0 bg-gradient-to-br from-syndikate-orange/5 via-transparent to-syndikate-red/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+              
+              <div className="absolute inset-0 opacity-10 group-hover:opacity-20 transition-opacity duration-500">
+                <div className="absolute top-4 right-4 text-syndikate-orange/40 text-4xl animate-pulse">♦</div>
+                <div className="absolute bottom-4 left-4 text-syndikate-orange/20 text-2xl">♠</div>
+              </div>
+              
+              <div className="absolute top-2 left-2 w-4 h-4 border-l border-t border-syndikate-orange/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              <div className="absolute top-2 right-2 w-4 h-4 border-r border-t border-syndikate-orange/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
               
               <CardContent className="p-6 relative z-10">
                 <div className="flex items-start gap-4">
-                  <div className="w-8 h-8 bg-syndikate-orange brutal-border flex items-center justify-center flex-shrink-0 mt-1">
-                    <Trophy className="h-4 w-4 text-background" />
+                  <div className="w-10 h-10 bg-syndikate-orange brutal-border flex items-center justify-center flex-shrink-0 shadow-md group-hover:shadow-neon-orange transition-shadow duration-300">
+                    <Trophy className="h-5 w-5 text-background" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="text-foreground font-bold uppercase text-lg mb-3 tracking-wider group-hover:text-syndikate-orange transition-colors duration-300">3. Как работает рейтинг RPS?</h3>
-                    <p className="text-foreground/80 text-sm leading-relaxed">В Syndikate действует продуманная RPS-система для честного ранжирования участников. Рейтинговые очки начисляются за результативные выступления в турнирах и отражают исключительно игровое мастерство. Система мотивирует на спортивное развитие и определяет лучших игроков клуба.</p>
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="font-display text-2xl text-syndikate-orange drop-shadow-lg">
+                        <GlitchText text="03" glitchIntensity="low" />
+                      </span>
+                      <h3 className="text-foreground font-display uppercase text-lg tracking-wider group-hover:text-syndikate-orange transition-colors duration-300">
+                        Как работает рейтинг RPS?
+                      </h3>
+                    </div>
+                    <p className="text-foreground/80 text-sm leading-relaxed">
+                      В Syndikate действует продуманная RPS-система для честного ранжирования участников. Рейтинговые очки начисляются за результативные выступления в турнирах и отражают исключительно игровое мастерство. Система мотивирует на спортивное развитие и определяет лучших игроков клуба.
+                    </p>
                   </div>
                 </div>
               </CardContent>
             </Card>
             
-            <Card className="bg-syndikate-metal/90 brutal-border backdrop-blur-xl shadow-brutal group hover:shadow-neon-orange transition-all duration-500 relative overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-br from-syndikate-orange/5 via-transparent to-syndikate-red/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-              <div className="absolute inset-0 opacity-10 group-hover:opacity-20 transition-opacity duration-500">
-                <div className="absolute top-4 right-4 text-syndikate-orange/30 text-3xl animate-pulse">♥</div>
+            <Card className="bg-syndikate-metal/90 brutal-border backdrop-blur-xl shadow-brutal group hover:shadow-neon-red hover:scale-[1.02] transition-all duration-500 relative overflow-hidden animate-fade-in" style={{ animationDelay: '0.3s' }}>
+              <div className="absolute inset-0 opacity-5 group-hover:opacity-10 transition-opacity duration-500">
+                <div className="absolute inset-0" style={{
+                  backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255, 107, 0, 0.03) 10px, rgba(255, 107, 0, 0.03) 20px)'
+                }}></div>
               </div>
+              
+              <div className="absolute inset-0 bg-gradient-to-br from-syndikate-red/5 via-transparent to-syndikate-orange/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+              
+              <div className="absolute inset-0 opacity-10 group-hover:opacity-20 transition-opacity duration-500">
+                <div className="absolute top-4 right-4 text-syndikate-red/40 text-4xl animate-pulse">♥</div>
+                <div className="absolute bottom-4 left-4 text-syndikate-red/20 text-2xl">♦</div>
+              </div>
+              
+              <div className="absolute top-2 left-2 w-4 h-4 border-l border-t border-syndikate-red/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              <div className="absolute top-2 right-2 w-4 h-4 border-r border-t border-syndikate-red/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
               
               <CardContent className="p-6 relative z-10">
                 <div className="flex items-start gap-4">
-                  <div className="w-8 h-8 bg-syndikate-red brutal-border flex items-center justify-center flex-shrink-0 mt-1">
-                    <Crown className="h-4 w-4 text-background" />
+                  <div className="w-10 h-10 bg-syndikate-red brutal-border flex items-center justify-center flex-shrink-0 shadow-md group-hover:shadow-neon-red transition-shadow duration-300">
+                    <Crown className="h-5 w-5 text-background" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="text-foreground font-bold uppercase text-lg mb-3 tracking-wider group-hover:text-syndikate-orange transition-colors duration-300">4. Что такое VIP-турниры?</h3>
-                    <p className="text-foreground/80 text-sm leading-relaxed">Это эксклюзивные события для топовых игроков рейтинга Syndikate. Проводятся в особом формате с повышенным комфортом и сервисом. Участие строго по приглашениям на основе достижений в рейтинге. Место нельзя передать — только личное участие лучших игроков клуба.</p>
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="font-display text-2xl text-syndikate-red drop-shadow-lg">
+                        <GlitchText text="04" glitchIntensity="low" />
+                      </span>
+                      <h3 className="text-foreground font-display uppercase text-lg tracking-wider group-hover:text-syndikate-red transition-colors duration-300">
+                        Что такое VIP-турниры?
+                      </h3>
+                    </div>
+                    <p className="text-foreground/80 text-sm leading-relaxed">
+                      Это эксклюзивные события для топовых игроков рейтинга Syndikate. Проводятся в особом формате с повышенным комфортом и сервисом. Участие строго по приглашениям на основе достижений в рейтинге. Место нельзя передать — только личное участие лучших игроков клуба.
+                    </p>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="bg-syndikate-metal/90 brutal-border backdrop-blur-xl shadow-brutal group hover:shadow-neon-orange transition-all duration-500 relative overflow-hidden">
+            <Card className="bg-syndikate-metal/90 brutal-border backdrop-blur-xl shadow-brutal group hover:shadow-neon-orange hover:scale-[1.02] transition-all duration-500 relative overflow-hidden animate-fade-in" style={{ animationDelay: '0.4s' }}>
+              <div className="absolute inset-0 opacity-5 group-hover:opacity-10 transition-opacity duration-500">
+                <div className="absolute inset-0" style={{
+                  backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255, 107, 0, 0.03) 10px, rgba(255, 107, 0, 0.03) 20px)'
+                }}></div>
+              </div>
               <div className="absolute inset-0 bg-gradient-to-br from-syndikate-orange/5 via-transparent to-syndikate-red/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
               <div className="absolute inset-0 opacity-10 group-hover:opacity-20 transition-opacity duration-500">
-                <div className="absolute top-4 right-4 text-syndikate-orange/30 text-3xl">♠</div>
+                <div className="absolute top-4 right-4 text-syndikate-orange/40 text-4xl">♠</div>
+                <div className="absolute bottom-4 left-4 text-syndikate-orange/20 text-2xl animate-pulse">♣</div>
               </div>
-              
+              <div className="absolute top-2 left-2 w-4 h-4 border-l border-t border-syndikate-orange/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              <div className="absolute top-2 right-2 w-4 h-4 border-r border-t border-syndikate-orange/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
               <CardContent className="p-6 relative z-10">
                 <div className="flex items-start gap-4">
-                  <div className="w-8 h-8 bg-syndikate-orange brutal-border flex items-center justify-center flex-shrink-0 mt-1">
-                    <UserPlus className="h-4 w-4 text-background" />
+                  <div className="w-10 h-10 bg-syndikate-orange brutal-border flex items-center justify-center flex-shrink-0 shadow-md group-hover:shadow-neon-orange transition-shadow duration-300">
+                    <UserPlus className="h-5 w-5 text-background" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="text-foreground font-bold uppercase text-lg mb-3 tracking-wider group-hover:text-syndikate-orange transition-colors duration-300">5. Как записаться на турнир?</h3>
-                    <p className="text-foreground/80 text-sm leading-relaxed">После первичной регистрации в нашем Telegram-боте, вы получаете доступ к удобному мини-приложению. В нем можно бронировать места на любые турниры. Внимание: количество мест ограничено! При частых пропусках без предупреждения возможность записи может быть временно ограничена.</p>
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="font-display text-2xl text-syndikate-orange drop-shadow-lg">
+                        <GlitchText text="05" glitchIntensity="low" />
+                      </span>
+                      <h3 className="text-foreground font-display uppercase text-lg tracking-wider group-hover:text-syndikate-orange transition-colors duration-300">
+                        Как записаться на турнир?
+                      </h3>
+                    </div>
+                    <p className="text-foreground/80 text-sm leading-relaxed">
+                      После первичной регистрации в нашем Telegram-боте, вы получаете доступ к удобному мини-приложению. В нем можно бронировать места на любые турниры. Внимание: количество мест ограничено! При частых пропусках без предупреждения возможность записи может быть временно ограничена.
+                    </p>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="bg-syndikate-metal/90 brutal-border backdrop-blur-xl shadow-brutal group hover:shadow-neon-orange transition-all duration-500 relative overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-br from-syndikate-orange/5 via-transparent to-syndikate-red/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-              <div className="absolute inset-0 opacity-10 group-hover:opacity-20 transition-opacity duration-500">
-                <div className="absolute top-4 right-4 text-syndikate-orange/30 text-3xl animate-pulse">♣</div>
+            <Card className="bg-syndikate-metal/90 brutal-border backdrop-blur-xl shadow-brutal group hover:shadow-neon-red hover:scale-[1.02] transition-all duration-500 relative overflow-hidden animate-fade-in" style={{ animationDelay: '0.5s' }}>
+              <div className="absolute inset-0 opacity-5 group-hover:opacity-10 transition-opacity duration-500">
+                <div className="absolute inset-0" style={{
+                  backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255, 107, 0, 0.03) 10px, rgba(255, 107, 0, 0.03) 20px)'
+                }}></div>
               </div>
-              
+              <div className="absolute inset-0 bg-gradient-to-br from-syndikate-red/5 via-transparent to-syndikate-orange/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+              <div className="absolute inset-0 opacity-10 group-hover:opacity-20 transition-opacity duration-500">
+                <div className="absolute top-4 right-4 text-syndikate-red/40 text-4xl animate-pulse">♣</div>
+                <div className="absolute bottom-4 left-4 text-syndikate-red/20 text-2xl">♥</div>
+              </div>
+              <div className="absolute top-2 left-2 w-4 h-4 border-l border-t border-syndikate-red/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              <div className="absolute top-2 right-2 w-4 h-4 border-r border-t border-syndikate-red/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
               <CardContent className="p-6 relative z-10">
                 <div className="flex items-start gap-4">
-                  <div className="w-8 h-8 bg-syndikate-red brutal-border flex items-center justify-center flex-shrink-0 mt-1">
-                    <Coins className="h-4 w-4 text-background" />
+                  <div className="w-10 h-10 bg-syndikate-red brutal-border flex items-center justify-center flex-shrink-0 shadow-md group-hover:shadow-neon-red transition-shadow duration-300">
+                    <Coins className="h-5 w-5 text-background" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="text-foreground font-bold uppercase text-lg mb-3 tracking-wider group-hover:text-syndikate-orange transition-colors duration-300">6. Что такое организационный взнос?</h3>
-                    <p className="text-foreground/80 text-sm leading-relaxed">Это плата за комплекс услуг: аренду профессионального оборудования, игровых фишек, зала и сервисное обслуживание. Фишки — исключительно игровое оборудование без денежной стоимости, их нельзя обменять или вывести. Повторный вход (re-entry) оплачивается отдельно.</p>
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="font-display text-2xl text-syndikate-red drop-shadow-lg">
+                        <GlitchText text="06" glitchIntensity="low" />
+                      </span>
+                      <h3 className="text-foreground font-display uppercase text-lg tracking-wider group-hover:text-syndikate-red transition-colors duration-300">
+                        Что такое организационный взнос?
+                      </h3>
+                    </div>
+                    <p className="text-foreground/80 text-sm leading-relaxed">
+                      Это плата за комплекс услуг: аренду профессионального оборудования, игровых фишек, зала и сервисное обслуживание. Фишки — исключительно игровое оборудование без денежной стоимости, их нельзя обменять или вывести. Повторный вход (re-entry) оплачивается отдельно.
+                    </p>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-
-            <Card className="bg-syndikate-metal/90 brutal-border backdrop-blur-xl shadow-brutal group hover:shadow-neon-orange transition-all duration-500 relative overflow-hidden">
+            <Card className="bg-syndikate-metal/90 brutal-border backdrop-blur-xl shadow-brutal group hover:shadow-neon-orange hover:scale-[1.02] transition-all duration-500 relative overflow-hidden animate-fade-in" style={{ animationDelay: '0.6s' }}>
+              <div className="absolute inset-0 opacity-5 group-hover:opacity-10 transition-opacity duration-500">
+                <div className="absolute inset-0" style={{
+                  backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255, 107, 0, 0.03) 10px, rgba(255, 107, 0, 0.03) 20px)'
+                }}></div>
+              </div>
               <div className="absolute inset-0 bg-gradient-to-br from-syndikate-orange/5 via-transparent to-syndikate-red/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
               <div className="absolute inset-0 opacity-10 group-hover:opacity-20 transition-opacity duration-500">
-                <div className="absolute top-4 right-4 text-syndikate-orange/30 text-3xl animate-pulse">♦</div>
+                <div className="absolute top-4 right-4 text-syndikate-orange/40 text-4xl animate-pulse">♦</div>
+                <div className="absolute bottom-4 left-4 text-syndikate-orange/20 text-2xl">♠</div>
               </div>
-              
+              <div className="absolute top-2 left-2 w-4 h-4 border-l border-t border-syndikate-orange/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              <div className="absolute top-2 right-2 w-4 h-4 border-r border-t border-syndikate-orange/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
               <CardContent className="p-6 relative z-10">
                 <div className="flex items-start gap-4">
-                  <div className="w-8 h-8 bg-syndikate-orange brutal-border flex items-center justify-center flex-shrink-0 mt-1">
-                    <Clock className="h-4 w-4 text-background" />
+                  <div className="w-10 h-10 bg-syndikate-orange brutal-border flex items-center justify-center flex-shrink-0 shadow-md group-hover:shadow-neon-orange transition-shadow duration-300">
+                    <Clock className="h-5 w-5 text-background" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="text-foreground font-bold uppercase text-lg mb-3 tracking-wider group-hover:text-syndikate-orange transition-colors duration-300">7. Что такое поздняя регистрация?</h3>
-                    <p className="text-foreground/80 text-sm leading-relaxed">Это возможность присоединиться к турниру после официального старта — полезно, если вы опаздываете или хотите сделать повторный вход. Время поздней регистрации указывается для каждого турнира отдельно. После её завершения предусмотрен короткий перерыв для окончательного входа.</p>
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="font-display text-2xl text-syndikate-orange drop-shadow-lg">
+                        <GlitchText text="07" glitchIntensity="low" />
+                      </span>
+                      <h3 className="text-foreground font-display uppercase text-lg tracking-wider group-hover:text-syndikate-orange transition-colors duration-300">
+                        Что такое поздняя регистрация?
+                      </h3>
+                    </div>
+                    <p className="text-foreground/80 text-sm leading-relaxed">
+                      Это возможность присоединиться к турниру после официального старта — полезно, если вы опаздываете или хотите сделать повторный вход. Время поздней регистрации указывается для каждого турнира отдельно. После её завершения предусмотрен короткий перерыв для окончательного входа.
+                    </p>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="bg-syndikate-metal/90 brutal-border backdrop-blur-xl shadow-brutal group hover:shadow-neon-orange transition-all duration-500 relative overflow-hidden">
+            <Card className="bg-syndikate-metal/90 brutal-border backdrop-blur-xl shadow-brutal group hover:shadow-neon-orange hover:scale-[1.02] transition-all duration-500 relative overflow-hidden animate-fade-in" style={{ animationDelay: '0.7s' }}>
+              <div className="absolute inset-0 opacity-5 group-hover:opacity-10 transition-opacity duration-500">
+                <div className="absolute inset-0" style={{
+                  backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255, 107, 0, 0.03) 10px, rgba(255, 107, 0, 0.03) 20px)'
+                }}></div>
+              </div>
               <div className="absolute inset-0 bg-gradient-to-br from-syndikate-orange/5 via-transparent to-syndikate-red/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
               <div className="absolute inset-0 opacity-10 group-hover:opacity-20 transition-opacity duration-500">
-                <div className="absolute top-4 right-4 text-syndikate-orange/30 text-3xl">♥</div>
+                <div className="absolute top-4 right-4 text-syndikate-orange/40 text-4xl">♥</div>
+                <div className="absolute bottom-4 left-4 text-syndikate-orange/20 text-2xl animate-pulse">♦</div>
               </div>
-              
+              <div className="absolute top-2 left-2 w-4 h-4 border-l border-t border-syndikate-orange/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              <div className="absolute top-2 right-2 w-4 h-4 border-r border-t border-syndikate-orange/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
               <CardContent className="p-6 relative z-10">
                 <div className="flex items-start gap-4">
-                  <div className="w-8 h-8 bg-syndikate-orange brutal-border flex items-center justify-center flex-shrink-0 mt-1">
-                    <Target className="h-4 w-4 text-background" />
+                  <div className="w-10 h-10 bg-syndikate-orange brutal-border flex items-center justify-center flex-shrink-0 shadow-md group-hover:shadow-neon-orange transition-shadow duration-300">
+                    <Target className="h-5 w-5 text-background" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="text-foreground font-bold uppercase text-lg mb-3 tracking-wider group-hover:text-syndikate-orange transition-colors duration-300">8. Что такое стартовый стек?</h3>
-                    <p className="text-foreground/80 text-sm leading-relaxed">Это набор игровых фишек, который получает каждый участник турнира. Фишки — развлекательное оборудование без денежной стоимости, их нельзя обменять или вывести. Стандартный стартовый стек в Syndikate составляет 30,000 фишек для всех участников.</p>
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="font-display text-2xl text-syndikate-orange drop-shadow-lg">
+                        <GlitchText text="08" glitchIntensity="low" />
+                      </span>
+                      <h3 className="text-foreground font-display uppercase text-lg tracking-wider group-hover:text-syndikate-orange transition-colors duration-300">
+                        Что такое стартовый стек?
+                      </h3>
+                    </div>
+                    <p className="text-foreground/80 text-sm leading-relaxed">
+                      Это набор игровых фишек, который получает каждый участник турнира. Фишки — развлекательное оборудование без денежной стоимости, их нельзя обменять или вывести. Стандартный стартовый стек в Syndikate составляет 30,000 фишек для всех участников.
+                    </p>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="bg-syndikate-metal/90 brutal-border backdrop-blur-xl shadow-brutal group hover:shadow-neon-orange transition-all duration-500 relative overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-br from-syndikate-orange/5 via-transparent to-syndikate-red/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-              <div className="absolute inset-0 opacity-10 group-hover:opacity-20 transition-opacity duration-500">
-                <div className="absolute top-4 right-4 text-syndikate-orange/30 text-3xl animate-pulse">♠</div>
+            <Card className="bg-syndikate-metal/90 brutal-border backdrop-blur-xl shadow-brutal group hover:shadow-neon-red hover:scale-[1.02] transition-all duration-500 relative overflow-hidden animate-fade-in" style={{ animationDelay: '0.8s' }}>
+              <div className="absolute inset-0 opacity-5 group-hover:opacity-10 transition-opacity duration-500">
+                <div className="absolute inset-0" style={{
+                  backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255, 107, 0, 0.03) 10px, rgba(255, 107, 0, 0.03) 20px)'
+                }}></div>
               </div>
-              
+              <div className="absolute inset-0 bg-gradient-to-br from-syndikate-red/5 via-transparent to-syndikate-orange/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+              <div className="absolute inset-0 opacity-10 group-hover:opacity-20 transition-opacity duration-500">
+                <div className="absolute top-4 right-4 text-syndikate-red/40 text-4xl animate-pulse">♠</div>
+                <div className="absolute bottom-4 left-4 text-syndikate-red/20 text-2xl">♣</div>
+              </div>
+              <div className="absolute top-2 left-2 w-4 h-4 border-l border-t border-syndikate-red/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              <div className="absolute top-2 right-2 w-4 h-4 border-r border-t border-syndikate-red/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
               <CardContent className="p-6 relative z-10">
                 <div className="flex items-start gap-4">
-                  <div className="w-8 h-8 bg-syndikate-red brutal-border flex items-center justify-center flex-shrink-0 mt-1">
-                    <Users className="h-4 w-4 text-background" />
+                  <div className="w-10 h-10 bg-syndikate-red brutal-border flex items-center justify-center flex-shrink-0 shadow-md group-hover:shadow-neon-red transition-shadow duration-300">
+                    <Users className="h-5 w-5 text-background" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="text-foreground font-bold uppercase text-lg mb-3 tracking-wider group-hover:text-syndikate-orange transition-colors duration-300">9. Как работает лист ожидания?</h3>
-                    <p className="text-foreground/80 text-sm leading-relaxed">Если турнир полностью забронирован, вы можете встать в лист ожидания. При освобождении мест участники переносятся в основной список в порядке очереди. Можно также приехать лично и занять живую очередь — это обсуждается с администратором индивидуально.</p>
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="font-display text-2xl text-syndikate-red drop-shadow-lg">
+                        <GlitchText text="09" glitchIntensity="low" />
+                      </span>
+                      <h3 className="text-foreground font-display uppercase text-lg tracking-wider group-hover:text-syndikate-red transition-colors duration-300">
+                        Как работает лист ожидания?
+                      </h3>
+                    </div>
+                    <p className="text-foreground/80 text-sm leading-relaxed">
+                      Если турнир полностью забронирован, вы можете встать в лист ожидания. При освобождении мест участники переносятся в основной список в порядке очереди. Можно также приехать лично и занять живую очередь — это обсуждается с администратором индивидуально.
+                    </p>
                   </div>
                 </div>
               </CardContent>
@@ -1593,7 +1712,8 @@ export const TelegramApp = () => {
         </div>
       )}
 
-      <div className="fixed bottom-0 left-0 right-0 bg-syndikate-concrete/95 brutal-border border-t border-syndikate-orange/30 backdrop-blur-xl z-50 shadow-brutal">
+      {/* Fixed bottom navigation */}
+      <div className="fixed bottom-0 left-0 right-0 bg-syndikate-concrete/95 brutal-border border-t border-syndikate-orange/30 backdrop-blur-xl z-50 shadow-brutal pb-safe">
         <div className="absolute inset-x-0 top-0 h-px bg-gradient-neon"></div>
         <div className="max-w-lg mx-auto">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -1640,6 +1760,9 @@ export const TelegramApp = () => {
         <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-32 h-1 bg-gradient-neon"></div>
       </div>
 
+        </div>
+      </div>
+
       <TelegramTournamentModal
         tournament={selectedTournament}
         open={showTournamentModal}
@@ -1647,6 +1770,16 @@ export const TelegramApp = () => {
         onRegister={registerForTournament}
         registering={registering !== null}
       />
+
+      {showPlayerStatsModal && selectedPlayer && (
+        <PlayerStatsModal
+          player={selectedPlayer}
+          onClose={() => {
+            setShowPlayerStatsModal(false);
+            setSelectedPlayer(null);
+          }}
+        />
+      )}
     </div>
   );
 };
