@@ -34,6 +34,7 @@ import { ImageOptimizer } from "@/components/cms/ImageOptimizer";
 import { TerminologyMigrationGuide } from "@/components/TerminologyMigrationGuide";
 import { TelegramBotConfigurator } from "@/components/telegram/TelegramBotConfigurator";
 import { DatabaseProxyTest } from "@/components/DatabaseProxyTest";
+import { SupabaseProxyDocs } from "@/components/cms/SupabaseProxyDocs";
 
 export default function Admin() {
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -117,6 +118,8 @@ export default function Admin() {
             <DatabaseProxyTest />
           </div>
         );
+      case "proxy-docs":
+        return <SupabaseProxyDocs />;
       case "cache-management":
         return (
           <div className="space-y-6">
