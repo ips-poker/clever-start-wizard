@@ -82,8 +82,6 @@ const adminSections = [
       { title: "Оптимизация изображений", id: "image-optimizer", icon: Image },
       { title: "Настройки сайта", id: "settings", icon: Settings },
       { title: "Файлы", id: "files", icon: Database },
-      { title: "Тест БД (прокси)", id: "database-test", icon: Database },
-      { title: "Документация прокси", id: "proxy-docs", icon: FileText },
       { title: "Бэкап", id: "backup", icon: Download },
       { title: "Умные бэкапы", id: "smart-backup", icon: Database },
       { title: "Расширенная производительность", id: "enhanced-performance", icon: Activity },
