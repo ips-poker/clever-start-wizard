@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { MobileBottomNav } from "@/components/MobileBottomNav";
@@ -46,14 +47,15 @@ function App() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      {isLoading && <BrutalLoadingScreen onLoadingComplete={handleLoadingComplete} />}
-      {showContent && (
-        <>
-          <div className="notranslate" translate="no">
-            <Toaster />
-            <Sonner />
-          </div>
-          <BrowserRouter>
+      <TooltipProvider>
+        {isLoading && <BrutalLoadingScreen onLoadingComplete={handleLoadingComplete} />}
+        {showContent && (
+          <>
+            <div className="notranslate" translate="no">
+              <Toaster />
+              <Sonner />
+            </div>
+            <BrowserRouter>
             <div className="pb-16 md:pb-0">
               <Routes>
             <Route path="/" element={<Index />} />
@@ -77,9 +79,10 @@ function App() {
           </Routes>
           <MobileBottomNav />
         </div>
-      </BrowserRouter>
-        </>
-      )}
+        </BrowserRouter>
+          </>
+        )}
+      </TooltipProvider>
     </QueryClientProvider>
   );
 }
