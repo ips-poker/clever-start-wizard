@@ -19,6 +19,7 @@ ingress:
     service: https://mokhssmnorrhohrowxvu.supabase.co
     originRequest:
       noTLSVerify: true
+      httpHostHeader: mokhssmnorrhohrowxvu.supabase.co
   
   # Catch-all правило (обязательно)
   - service: http_status:404
