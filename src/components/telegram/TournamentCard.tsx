@@ -234,37 +234,39 @@ export const TournamentCard: React.FC<TournamentCardProps> = ({ tournament, inde
         
         {/* Compact Live Countdown Timer */}
         {tournament.status === 'registration' && timeUntilStart > 0 && (
-          <div className="bg-syndikate-metal/30 brutal-border p-2 backdrop-blur-sm">
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-1.5">
-                <Clock className="h-4 w-4 text-syndikate-orange animate-pulse" />
-                <span className="text-[10px] text-syndikate-orange uppercase font-display tracking-wider font-bold">
-                  Начало через:
-                </span>
+          <div className="bg-syndikate-concrete/10 brutal-border p-2.5 space-y-1.5 backdrop-blur-sm animate-fade-in">
+            <div className="flex items-center justify-center gap-1.5">
+              <Clock className="h-3.5 w-3.5 text-syndikate-orange animate-pulse" />
+              <div className="text-[10px] text-syndikate-orange uppercase font-display tracking-wider">
+                Начало через
               </div>
-              <div className="flex items-center gap-1">
-                <div className="bg-background/50 brutal-border px-2 py-1">
-                  <span className="text-lg font-display text-syndikate-orange tabular-nums leading-none">
-                    {timeDisplay.primary}
-                  </span>
-                  <span className="text-[9px] text-syndikate-concrete uppercase ml-1 font-display">
-                    {timeDisplay.primaryLabel}
-                  </span>
+            </div>
+            <div className="flex justify-center items-center gap-1.5">
+              <div className="flex flex-col items-center bg-background/50 brutal-border px-2.5 py-1.5 min-w-[55px]">
+                <div className="text-xl font-display text-syndikate-orange tabular-nums leading-none">
+                  {timeDisplay.primary}
                 </div>
-                {timeDisplay.secondary !== null && (
-                  <>
-                    <span className="text-syndikate-orange">•</span>
-                    <div className="bg-background/50 brutal-border px-2 py-1">
-                      <span className="text-lg font-display text-syndikate-orange tabular-nums leading-none">
-                        {timeDisplay.secondary}
-                      </span>
-                      <span className="text-[9px] text-syndikate-concrete uppercase ml-1 font-display">
-                        {timeDisplay.secondaryLabel}
-                      </span>
-                    </div>
-                  </>
-                )}
+                <div className="text-[9px] text-syndikate-concrete uppercase mt-0.5 font-display">
+                  {timeDisplay.primaryLabel}
+                </div>
               </div>
+              {timeDisplay.secondary !== null && (
+                <>
+                  <div className="text-lg font-display text-syndikate-orange animate-pulse">•</div>
+                  <div className="flex flex-col items-center bg-background/50 brutal-border px-2.5 py-1.5 min-w-[55px]">
+                    <div className="text-xl font-display text-syndikate-orange tabular-nums leading-none">
+                      {timeDisplay.secondary}
+                    </div>
+                    <div className="text-[9px] text-syndikate-concrete uppercase mt-0.5 font-display">
+                      {timeDisplay.secondaryLabel}
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+            <div className="flex items-center justify-center gap-1">
+              <div className="w-1 h-1 bg-syndikate-orange rounded-full animate-pulse" />
+              <div className="text-[9px] text-syndikate-concrete/60 uppercase tracking-wide">Live</div>
             </div>
           </div>
         )}
@@ -359,45 +361,21 @@ export const TournamentCard: React.FC<TournamentCardProps> = ({ tournament, inde
           </div>
         </div>
         
-        {/* Date and Time Info */}
-        <div className="bg-syndikate-metal/20 brutal-border p-2">
-          <div className="flex items-center justify-center gap-2 text-sm">
-            <div className="flex items-center gap-1.5 text-foreground">
-              <span className="text-base">📅</span>
-              <span className="font-display font-bold">{new Date(tournament.start_time).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
-            </div>
-            <div className="w-px h-4 bg-border" />
-            <div className="flex items-center gap-1.5 text-foreground">
-              <Clock className="h-4 w-4 text-syndikate-orange" />
-              <span className="font-display font-bold">{new Date(tournament.start_time).toLocaleTimeString('ru-RU', {hour: '2-digit', minute: '2-digit'})}</span>
-            </div>
+        {/* Action Footer */}
+        <div className="flex items-center justify-between pt-2 border-t border-syndikate-concrete/20">
+          <div className="flex items-center gap-1 text-[10px] text-syndikate-concrete">
+            <span>📅</span>
+            <span>{new Date(tournament.start_time).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })}</span>
+            <span className="text-syndikate-concrete/50">•</span>
+            <Clock className="h-3 w-3" />
+            <span>{new Date(tournament.start_time).toLocaleTimeString('ru-RU', {hour: '2-digit', minute: '2-digit'})}</span>
           </div>
-        </div>
-        
-        {/* Action Buttons */}
-        <div className="flex gap-2">
           {tournament.status === 'registration' && (
-            <button 
-              className="flex-1 bg-syndikate-orange hover:bg-syndikate-orange/90 text-background brutal-border px-4 py-2.5 font-display uppercase text-sm font-bold tracking-wider transition-all duration-200 active:scale-[0.98] shadow-brutal hover:shadow-neon-orange flex items-center justify-center gap-2"
-              onClick={(e) => {
-                e.stopPropagation();
-                onClick();
-              }}
-            >
-              <Target className="h-4 w-4" />
-              <span>Регистрация</span>
-            </button>
+            <div className="flex items-center gap-1 text-syndikate-orange font-display">
+              <span className="uppercase text-[10px] tracking-wider font-bold">Открыть</span>
+              <ChevronRight className="h-3.5 w-3.5" />
+            </div>
           )}
-          <button 
-            className="flex-1 bg-syndikate-metal hover:bg-syndikate-metal-light text-foreground brutal-border px-4 py-2.5 font-display uppercase text-sm font-bold tracking-wider transition-all duration-200 active:scale-[0.98] flex items-center justify-center gap-2"
-            onClick={(e) => {
-              e.stopPropagation();
-              onClick();
-            }}
-          >
-            <span>Подробнее</span>
-            <ChevronRight className="h-4 w-4" />
-          </button>
         </div>
       </div>
     </div>
