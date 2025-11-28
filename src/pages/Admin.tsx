@@ -33,6 +33,7 @@ import { OrangeDataIntegration } from "@/components/cms/OrangeDataIntegration";
 import { ImageOptimizer } from "@/components/cms/ImageOptimizer";
 import { TerminologyMigrationGuide } from "@/components/TerminologyMigrationGuide";
 import { TelegramBotConfigurator } from "@/components/telegram/TelegramBotConfigurator";
+import { DatabaseProxyTest } from "@/components/DatabaseProxyTest";
 
 export default function Admin() {
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -104,6 +105,18 @@ export default function Admin() {
         return <PlayersManager />;
       case "terminology-migration":
         return <TerminologyMigrationGuide />;
+      case "database-test":
+        return (
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-2xl font-bold mb-2">Тест подключения к БД</h2>
+              <p className="text-muted-foreground mb-6">
+                Проверка работы базы данных через прокси-сервер
+              </p>
+            </div>
+            <DatabaseProxyTest />
+          </div>
+        );
       case "cache-management":
         return (
           <div className="space-y-6">
