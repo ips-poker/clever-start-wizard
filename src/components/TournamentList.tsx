@@ -68,6 +68,7 @@ export function TournamentList() {
 
   const loadTournaments = async () => {
     try {
+      console.log('🎪 Загрузка турниров через прокси...');
       const { data, error } = await supabase
         .from('tournaments')
         .select(`
@@ -80,7 +81,12 @@ export function TournamentList() {
         .order('start_time', { ascending: true })
         .limit(6);
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Ошибка загрузки турниров:', error);
+        throw error;
+      }
+      
+      console.log('✅ Турниры успешно загружены:', data?.length || 0, 'записей');
 
       // Transform the data to include registration count and calculate prize pool
       const tournamentsWithCount = data?.map(tournament => {

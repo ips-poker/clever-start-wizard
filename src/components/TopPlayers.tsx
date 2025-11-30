@@ -77,15 +77,21 @@ export function TopPlayers() {
   const loadPlayers = async () => {
     try {
       setLoading(true);
+      console.log('🎯 Загрузка игроков через прокси...');
       const { data, error } = await supabase.rpc('get_players_public');
-      if (error) throw error;
       
+      if (error) {
+        console.error('❌ Ошибка загрузки игроков:', error);
+        throw error;
+      }
+      
+      console.log('✅ Игроки успешно загружены:', data?.length || 0, 'записей');
       const sortedPlayers = (data || []).sort((a, b) => b.elo_rating - a.elo_rating);
       
       setAllPlayers(sortedPlayers);
       setTopPlayers(sortedPlayers.slice(0, 5));
     } catch (error) {
-      console.error('Error loading players:', error);
+      console.error('💥 Критическая ошибка при загрузке игроков:', error);
     } finally {
       setLoading(false);
     }
