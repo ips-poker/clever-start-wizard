@@ -7,10 +7,13 @@ import type { Database } from './types';
 const getSupabaseUrl = () => {
   if (typeof window !== 'undefined') {
     const hostname = window.location.hostname;
+    console.log('🌐 Текущий hostname:', hostname);
     // Если загружено с play.syndicate-poker.ru, используем api-play
     if (hostname === 'play.syndicate-poker.ru') {
+      console.log('✅ Используем api-play для обхода блокировок');
       return "https://api-play.syndicate-poker.ru";
     }
+    console.log('⚠️ Используем основной api домен (может быть заблокирован)');
   }
   // По умолчанию используем основной API домен
   return "https://api.syndicate-poker.ru";
@@ -20,7 +23,7 @@ const SUPABASE_URL = getSupabaseUrl();
 const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1va2hzc21ub3JyaG9ocm93eHZ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMwODUzNDYsImV4cCI6MjA2ODY2MTM0Nn0.ZWYgSZFeidY0b_miC7IyfXVPh1EUR2WtxlEvt_fFmGc";
 
 console.log('🔥 Supabase Client инициализирован');
-console.log('📡 Используется URL:', SUPABASE_URL);
+console.log('📡 Финальный URL:', SUPABASE_URL);
 console.log('🔑 API Key:', SUPABASE_PUBLISHABLE_KEY.substring(0, 20) + '...');
 
 // Import the supabase client like this:
