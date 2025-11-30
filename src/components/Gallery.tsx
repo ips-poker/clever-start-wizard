@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { X, ZoomIn, Star, Grid3X3, Grid2X2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { fixStorageUrl } from "@/utils/storageUtils";
 
 interface GalleryImage {
   id: string;
@@ -48,6 +49,7 @@ export function Gallery() {
       
       if (data && data.length > 0) {
         const fixedImages = data.map(image => {
+          // Исправляем URL для локальных изображений
           if (image.image_url.startsWith('/src/assets/gallery/')) {
             const filename = image.image_url.split('/').pop();
             const urlMap: Record<string, string> = {
@@ -66,7 +68,11 @@ export function Gallery() {
               image_url: urlMap[filename as string] || image.image_url
             };
           }
-          return image;
+          // Исправляем URL для Supabase Storage (заменяем старые домены)
+          return {
+            ...image,
+            image_url: fixStorageUrl(image.image_url)
+          };
         });
         setImages(fixedImages);
       } else {
