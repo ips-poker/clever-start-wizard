@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { fixStorageUrl, addCacheBusting } from "@/utils/storageUtils";
 
 interface Testimonial {
   name: string;
@@ -77,12 +78,13 @@ export function SocialProof() {
         } else if (item.content_key.includes('_text')) {
           acc[position].text = item.content_value;
         } else if (item.content_key.includes('_image')) {
-          // Add cache-busting parameter to force image refresh
+          // Исправляем URL и добавляем cache-busting
           let imageUrl = item.content_value;
-          if (imageUrl && imageUrl.includes('supabase')) {
-            imageUrl = imageUrl.includes('?') 
-              ? imageUrl.split('?')[0] + `?t=${Date.now()}`
-              : imageUrl + `?t=${Date.now()}`;
+          if (imageUrl) {
+            imageUrl = fixStorageUrl(imageUrl);
+            if (imageUrl.includes('/storage/v1/object/public/')) {
+              imageUrl = addCacheBusting(imageUrl);
+            }
           }
           acc[position].avatar = imageUrl;
         }

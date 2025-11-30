@@ -8,6 +8,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { AnimatedCounter } from "@/components/ui/animated-counter";
 import { Trophy, Medal, Award, TrendingUp, Users, ChevronRight, Crown, Search, Filter } from "lucide-react";
 import { Link } from "react-router-dom";
+import { fixStorageUrl } from "@/utils/storageUtils";
 
 interface Player {
   id: string;
@@ -27,10 +28,12 @@ const PlayerAvatar = ({ player, size = "w-12 h-12", isChampion = false }: {
   const fallbackIndex = player.name.charCodeAt(0) % fallbackAvatars.length;
   const fallbackAvatar = isChampion ? "👑" : fallbackAvatars[fallbackIndex];
 
-  return player.avatar_url ? (
+  const fixedAvatarUrl = fixStorageUrl(player.avatar_url);
+  
+  return fixedAvatarUrl ? (
     <div className={`${size} rounded-none overflow-hidden flex-shrink-0 border-2 border-syndikate-orange`}>
       <img 
-        src={player.avatar_url} 
+        src={fixedAvatarUrl} 
         alt={`${player.name} avatar`}
         className="w-full h-full object-cover"
         onError={(e) => {
