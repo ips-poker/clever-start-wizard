@@ -56,6 +56,4 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
       apikey: SUPABASE_PUBLISHABLE_KEY,
     },
   },
-  // Вебсокеты Realtime ходят напрямую на Supabase, минуя прокси-домен
-  realtimeUrl: 'wss://mokhssmnorrhohrowxvu.supabase.co/realtime/v1',
 });
