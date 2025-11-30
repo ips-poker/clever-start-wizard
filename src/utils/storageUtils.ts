@@ -40,31 +40,24 @@ export const fixStorageUrl = (url: string | null | undefined): string => {
   
   const apiUrl = getStorageApiUrl();
   
-  // Список старых доменов, которые нужно заменить
-  const oldDomains = [
-    'api.epc-poker.ru',
-    'https://mokhssmnorrhohrowxvu.supabase.co',
-    'http://mokhssmnorrhohrowxvu.supabase.co',
-    'mokhssmnorrhohrowxvu.supabase.co'
-  ];
-  
-  let fixedUrl = url;
-  
-  // Заменяем все старые домены на актуальный
-  for (const oldDomain of oldDomains) {
-    if (fixedUrl.includes(oldDomain)) {
-      fixedUrl = fixedUrl.replace(oldDomain, apiUrl);
-      break;
-    }
+  // Извлекаем путь после домена (начиная с /storage/...)
+  const storagePathMatch = url.match(/\/storage\/v1\/object\/public\/.+/);
+  if (!storagePathMatch) {
+    return url;
   }
+  
+  const storagePath = storagePathMatch[0];
   
   // Удаляем дублированные параметры ?t= (cache busting)
-  const tMatches = fixedUrl.match(/\?t=\d+/g);
+  let cleanPath = storagePath;
+  const tMatches = storagePath.match(/\?t=\d+/g);
   if (tMatches && tMatches.length > 1) {
-    // Оставляем только первый параметр ?t=
-    const firstT = tMatches[0];
-    fixedUrl = fixedUrl.split('?t=')[0] + firstT;
+    // Оставляем только последний параметр ?t=
+    cleanPath = storagePath.split('?t=')[0] + tMatches[tMatches.length - 1];
   }
+  
+  // Формируем правильный URL: apiUrl + путь
+  const fixedUrl = `${apiUrl}${cleanPath}`;
   
   console.log('🖼️ Fixed storage URL:', { original: url, fixed: fixedUrl });
   
