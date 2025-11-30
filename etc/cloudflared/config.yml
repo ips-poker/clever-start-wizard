@@ -1,5 +1,5 @@
-tunnel: a09c9140-45fc-4cbe-9b2f-e5df95d37b46
-credentials-file: /root/.cloudflared/a09c9140-45fc-4cbe-9b2f-e5df95d37b46.json
+tunnel: 7b83b84e-51cc-4489-b64c-bf0e9677dd7c
+credentials-file: /root/.cloudflared/7b83b84e-51cc-4489-b64c-bf0e9677dd7c.json
 
 ingress:
   # API поддомен - прокси к Supabase для обхода блокировок
