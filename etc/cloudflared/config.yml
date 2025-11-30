@@ -10,6 +10,12 @@ ingress:
       connectTimeout: 30s
       httpHostHeader: mokhssmnorrhohrowxvu.supabase.co
 
+  # Фронтенд на поддомене (обход блокировок)
+  - hostname: play.syndicate-poker.ru
+    service: https://a391e581-510e-4cfc-905a-60ff6b51b1e6.lovableproject.com
+    originRequest:
+      noTLSVerify: true
+
   # Главный фронтенд домен
   - hostname: syndicate-poker.ru
     service: https://a391e581-510e-4cfc-905a-60ff6b51b1e6.lovableproject.com
