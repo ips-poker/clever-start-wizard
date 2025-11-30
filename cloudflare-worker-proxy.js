@@ -27,17 +27,24 @@ export default {
     // Заменяем хост на реальный Supabase URL
     url.hostname = SUPABASE_URL;
     
-    // CORS заголовки
+    // Базовые CORS заголовки
     const corsHeaders = {
       'Access-Control-Allow-Origin': '*',
+      // Значение заголовка Access-Control-Allow-Headers будет доустановлено ниже
       'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, PATCH, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization, apikey, x-client-info, range',
       'Access-Control-Expose-Headers': 'Content-Range, X-Supabase-Api-Version',
       'Access-Control-Max-Age': '86400',
     };
 
     // Обработка preflight запросов
     if (request.method === 'OPTIONS') {
+      const requestHeaders = request.headers.get('Access-Control-Request-Headers');
+      if (requestHeaders) {
+        corsHeaders['Access-Control-Allow-Headers'] = requestHeaders;
+      } else {
+        corsHeaders['Access-Control-Allow-Headers'] = 'authorization, x-client-info, apikey, content-type, range';
+      }
+
       return new Response(null, {
         status: 204,
         headers: corsHeaders
