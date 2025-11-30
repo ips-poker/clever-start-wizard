@@ -201,8 +201,8 @@ export class VoiceTournamentInterface {
       this.audioContext = new AudioContext({ sampleRate: 24000 });
       this.audioQueue = new AudioQueue(this.audioContext);
 
-      // Connect to WebSocket
-      this.ws = new WebSocket('wss://api.epc-poker.ru/functions/v1/realtime-voice-tournament');
+      // Connect to WebSocket through Cloudflare Supabase proxy
+      this.ws = new WebSocket('wss://api.syndicate-poker.ru/functions/v1/realtime-voice-tournament');
 
       this.ws.onopen = () => {
         console.log('WebSocket connected');
