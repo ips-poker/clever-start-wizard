@@ -11,6 +11,7 @@ import { TopPlayers } from "@/components/TopPlayers";
 import { SEOHead } from "@/components/SEOHead";
 import { ScrollProgress } from "@/components/ScrollProgress";
 import { FloatingParticles } from "@/components/ui/floating-particles";
+import { DatabaseProxyTest } from "@/components/DatabaseProxyTest";
 
 const Index = () => {
   const [scrollY, setScrollY] = useState(0);
@@ -212,6 +213,9 @@ const Index = () => {
 
         <Header />
         <main role="main" className="relative z-20">
+          <div className="container mx-auto px-4 py-8">
+            <DatabaseProxyTest />
+          </div>
           <Hero />
           
           {/* Section Divider */}
