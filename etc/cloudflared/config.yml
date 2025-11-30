@@ -2,6 +2,14 @@ tunnel: a09c9140-45fc-4cbe-9b2f-e5df95d37b46
 credentials-file: /root/.cloudflared/a09c9140-45fc-4cbe-9b2f-e5df95d37b46.json
 
 ingress:
+  # API поддомен - прокси к Supabase для обхода блокировок
+  - hostname: api.syndicate-poker.ru
+    service: https://mokhssmnorrhohrowxvu.supabase.co
+    originRequest:
+      noTLSVerify: false
+      connectTimeout: 30s
+      httpHostHeader: mokhssmnorrhohrowxvu.supabase.co
+  
   # Главный фронтенд домен
   - hostname: syndicate-poker.ru
     service: https://a391e581-510e-4cfc-905a-60ff6b51b1e6.lovableproject.com
