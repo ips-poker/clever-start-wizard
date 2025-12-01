@@ -116,8 +116,8 @@ Deno.serve(async (req) => {
           const { data: authResult, error: authError } = await supabase.functions.invoke('telegram-auth', {
             body: telegramAuthData,
             headers: {
-              'origin': 'https://play.syndicate-poker.ru',
-              'referer': 'https://play.syndicate-poker.ru'
+              'origin': 'https://syndicate-poker.ru',
+              'referer': 'https://syndicate-poker.ru'
             }
           });
 
@@ -198,7 +198,7 @@ Deno.serve(async (req) => {
     const userName = `${message.from.first_name}${message.from.last_name ? ' ' + message.from.last_name : ''}`
 
     // Get app URL for Web App
-    const appUrl = `https://play.syndicate-poker.ru/telegram`
+    const appUrl = `https://syndicate-poker.ru/telegram`
 
     let responseMessage: TelegramMessage
 
