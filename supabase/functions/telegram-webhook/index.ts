@@ -136,27 +136,40 @@ Deno.serve(async (req) => {
               body: JSON.stringify(errorMessage)
             });
           } else if (authResult && authResult.success) {
-            console.log('Auth successful, login URL:', authResult.login_url);
-            
-            // Отправляем кнопку с прямой ссылкой (не web_app, а url)
-            const successMessage: TelegramMessage = {
-              chat_id: chatId!,
-              text: `✅ Авторизация прошла успешно!\n\n🔗 Нажмите кнопку ниже для входа на сайт\n\n⚠️ Ссылка действительна 60 секунд`,
-              reply_markup: {
-                inline_keyboard: [[
-                  {
-                    text: '🌐 Перейти на сайт',
-                    url: authResult.login_url
-                  }
-                ]]
-              }
-            };
-            
-            await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(successMessage)
-            });
+             // Корректируем redirect_to в magic link на новый домен
+             let fixedLoginUrl = authResult.login_url as string;
+             try {
+               const urlObj = new URL(authResult.login_url as string);
+               const currentRedirect = urlObj.searchParams.get('redirect_to');
+               if (!currentRedirect || currentRedirect.startsWith('https://epc-poker.ru')) {
+                 urlObj.searchParams.set('redirect_to', 'https://syndicate-poker.ru');
+               }
+               fixedLoginUrl = urlObj.toString();
+             } catch (e) {
+               console.error('Failed to adjust redirect_to param:', e);
+             }
+             
+             console.log('Auth successful, login URL:', fixedLoginUrl);
+             
+             // Отправляем кнопку с прямой ссылкой (не web_app, а url)
+             const successMessage: TelegramMessage = {
+               chat_id: chatId!,
+               text: `✅ Авторизация прошла успешно!\n\n🔗 Нажмите кнопку ниже для входа на сайт\n\n⚠️ Ссылка действительна 60 секунд`,
+               reply_markup: {
+                 inline_keyboard: [[
+                   {
+                     text: '🌐 Перейти на сайт',
+                     url: fixedLoginUrl
+                   }
+                 ]]
+               }
+             };
+             
+             await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+               method: 'POST',
+               headers: { 'Content-Type': 'application/json' },
+               body: JSON.stringify(successMessage)
+             });
           }
 
           // Отвечаем на callback query
