@@ -2,36 +2,14 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
-// Используем Cloudflare Tunnel прокси для обхода блокировок
-// Определяем правильный API URL в зависимости от домена фронтенда
-const getSupabaseUrl = () => {
-  if (typeof window !== 'undefined') {
-    const hostname = window.location.hostname;
-    console.log('🌐 Определяем API URL для hostname:', hostname);
-    
-    // Если загружено с play.syndicate-poker.ru, используем api-play
-    if (hostname === 'play.syndicate-poker.ru') {
-      console.log('✅ Используем api-play.syndicate-poker.ru для обхода блокировок');
-      return "https://api-play.syndicate-poker.ru";
-    }
-    
-    // Для локальной разработки тоже используем api-play
-    if (hostname === 'localhost' || hostname.includes('lovable')) {
-      console.log('🔧 Dev режим: используем api-play.syndicate-poker.ru');
-      return "https://api-play.syndicate-poker.ru";
-    }
-    
-    console.log('⚠️ Используем основной api.syndicate-poker.ru (может быть заблокирован)');
-  }
-  // По умолчанию используем основной API домен
-  return "https://api.syndicate-poker.ru";
-};
+// Используем кастомный домен api.syndicate-poker.ru для Supabase
+const SUPABASE_URL = "https://api.syndicate-poker.ru";
 
-const SUPABASE_URL = getSupabaseUrl();
+console.log('🌐 Supabase API URL:', SUPABASE_URL);
+
 const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1va2hzc21ub3JyaG9ocm93eHZ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMwODUzNDYsImV4cCI6MjA2ODY2MTM0Nn0.ZWYgSZFeidY0b_miC7IyfXVPh1EUR2WtxlEvt_fFmGc";
 
 console.log('🔥 Supabase Client инициализирован');
-console.log('📡 Используется URL:', SUPABASE_URL);
 console.log('🔑 API Key:', SUPABASE_PUBLISHABLE_KEY.substring(0, 20) + '...');
 
 // Import the supabase client like this:

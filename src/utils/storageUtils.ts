@@ -3,25 +3,8 @@
  * Исправляет старые URL и обеспечивает правильный routing через Cloudflare Tunnel
  */
 
-// Определяем правильный API URL для текущего окружения
-const getStorageApiUrl = () => {
-  if (typeof window !== 'undefined') {
-    const hostname = window.location.hostname;
-    
-    // Если загружено с play.syndicate-poker.ru, используем api-play
-    if (hostname === 'play.syndicate-poker.ru') {
-      return 'https://api-play.syndicate-poker.ru';
-    }
-    
-    // Для локальной разработки тоже используем api-play
-    if (hostname === 'localhost' || hostname.includes('lovable')) {
-      return 'https://api-play.syndicate-poker.ru';
-    }
-  }
-  
-  // По умолчанию используем основной API домен
-  return 'https://api.syndicate-poker.ru';
-};
+// Используем кастомный домен api.syndicate-poker.ru для Storage
+const STORAGE_API_URL = 'https://api.syndicate-poker.ru';
 
 /**
  * Исправляет URL изображения из Supabase Storage
@@ -37,8 +20,6 @@ export const fixStorageUrl = (url: string | null | undefined): string => {
   if (!url.includes('/storage/v1/object/public/')) {
     return url;
   }
-  
-  const apiUrl = getStorageApiUrl();
   
   // Извлекаем путь после домена (начиная с /storage/...)
   const storagePathMatch = url.match(/\/storage\/v1\/object\/public\/.+/);
@@ -56,8 +37,8 @@ export const fixStorageUrl = (url: string | null | undefined): string => {
     cleanPath = storagePath.split('?t=')[0] + tMatches[tMatches.length - 1];
   }
   
-  // Формируем правильный URL: apiUrl + путь
-  const fixedUrl = `${apiUrl}${cleanPath}`;
+  // Формируем правильный URL с нашим кастомным доменом
+  const fixedUrl = `${STORAGE_API_URL}${cleanPath}`;
   
   console.log('🖼️ Fixed storage URL:', { original: url, fixed: fixedUrl });
   
