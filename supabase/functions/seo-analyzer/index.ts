@@ -140,8 +140,8 @@ serve(async (req) => {
         "@type": "Organization",
         "name": "EPC Event Poker Club",
         "description": "Премиальный покерный клуб в Москве",
-        "url": "https://epc-poker.ru",
-        "logo": "https://epc-poker.ru/logo.png",
+        "url": "https://syndicate-poker.ru",
+        "logo": "https://syndicate-poker.ru/logo.png",
         "address": {
           "@type": "PostalAddress",
           "addressLocality": "Москва",
