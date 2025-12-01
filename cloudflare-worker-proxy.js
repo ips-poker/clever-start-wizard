@@ -1,7 +1,7 @@
 /**
  * Cloudflare Worker для проксирования Supabase API
  * 
- * Этот worker перенаправляет все запросы с api.syndikate-poker.ru
+ * Этот worker перенаправляет все запросы с api.syndicate-poker.ru
  * на реальный Supabase endpoint: mokhssmnorrhohrowxvu.supabase.co
  * 
  * Инструкция по установке:
@@ -10,7 +10,7 @@
  * 3. Скопируйте весь код из этого файла в редактор Worker
  * 4. Нажмите "Deploy"
  * 5. В Cloudflare Dashboard -> Workers & Pages -> supabase-proxy -> Settings -> Triggers
- *    добавьте Custom Domain: api.syndikate-poker.ru
+ *    добавьте Custom Domain: api.syndicate-poker.ru
  * 6. В DNS добавьте CNAME запись:
  *    Имя: api
  *    Цель: supabase-proxy.ваш-аккаунт.workers.dev
