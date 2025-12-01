@@ -8,7 +8,7 @@ import { CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 export function TelegramBotConfigurator() {
-  const [webAppUrl, setWebAppUrl] = useState('https://epc-poker.ru/telegram');
+  const [webAppUrl, setWebAppUrl] = useState('https://play.syndicate-poker.ru/telegram');
   const [isConfiguring, setIsConfiguring] = useState(false);
   const [result, setResult] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
