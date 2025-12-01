@@ -130,14 +130,14 @@ apt install certbot python3-certbot-nginx -y
 certbot --version
 ```
 
-### Шаг 3.6: Создание конфигурации Nginx
+### Шаг 3.6: Создание ВРЕМЕННОЙ конфигурации Nginx (без SSL)
 
 ```bash
 # Создаем конфигурационный файл
 nano /etc/nginx/sites-available/api.syndicate-poker.ru
 ```
 
-Скопируйте и вставьте следующую конфигурацию:
+Скопируйте и вставьте следующую **ВРЕМЕННУЮ конфигурацию** (без SSL):
 
 ```nginx
 server {
@@ -145,10 +145,104 @@ server {
     listen [::]:80;
     server_name api.syndicate-poker.ru;
 
-    # Для Let's Encrypt сертификата
-    location /.well-known/acme-challenge/ {
-        root /var/www/html;
+    # Логи
+    access_log /var/log/nginx/supabase-proxy-access.log;
+    error_log /var/log/nginx/supabase-proxy-error.log;
+
+    # Таймауты
+    proxy_connect_timeout 600s;
+    proxy_send_timeout 600s;
+    proxy_read_timeout 600s;
+    send_timeout 600s;
+
+    # Размер файлов
+    client_max_body_size 50M;
+
+    # Проксирование к Supabase
+    location / {
+        proxy_pass https://mokhssmnorrhohrowxvu.supabase.co;
+        
+        proxy_set_header Host mokhssmnorrhohrowxvu.supabase.co;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-Host $host;
+        
+        # CORS
+        add_header 'Access-Control-Allow-Origin' '*' always;
+        add_header 'Access-Control-Allow-Methods' 'GET, POST, PUT, DELETE, PATCH, OPTIONS' always;
+        add_header 'Access-Control-Allow-Headers' 'authorization, x-client-info, apikey, content-type, range, x-supabase-api-version' always;
+        add_header 'Access-Control-Expose-Headers' 'Content-Range, X-Supabase-Api-Version' always;
+        add_header 'Access-Control-Max-Age' '86400' always;
+
+        if ($request_method = 'OPTIONS') {
+            return 204;
+        }
+
+        # WebSocket для Realtime
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_buffering off;
+        proxy_redirect off;
     }
+}
+```
+
+**Сохранение файла в nano:**
+- Нажмите `Ctrl + X`
+- Нажмите `Y` (Yes)
+- Нажмите `Enter`
+
+### Шаг 3.7: Активация временной конфигурации
+
+```bash
+# Создаем симлинк
+ln -s /etc/nginx/sites-available/api.syndicate-poker.ru /etc/nginx/sites-enabled/
+
+# Удаляем дефолтную конфигурацию (если есть)
+rm -f /etc/nginx/sites-enabled/default
+
+# Проверяем конфигурацию
+nginx -t
+
+# Должно вывести: 
+# nginx: the configuration file /etc/nginx/nginx.conf syntax is ok
+# nginx: configuration file /etc/nginx/nginx.conf test is successful
+
+# Запускаем Nginx
+systemctl restart nginx
+
+# Проверяем статус
+systemctl status nginx
+```
+
+### Шаг 3.8: Получение SSL сертификата
+
+```bash
+# Получаем сертификат (Nginx УЖЕ запущен)
+certbot certonly --nginx -d api.syndicate-poker.ru
+
+# Certbot спросит:
+# 1. Email для уведомлений - введите ваш email
+# 2. Согласиться с Terms of Service - введите Y
+# 3. Получать новости - введите N или Y (на выбор)
+```
+
+### Шаг 3.9: Обновление конфигурации с SSL
+
+```bash
+# Редактируем конфигурацию
+nano /etc/nginx/sites-available/api.syndicate-poker.ru
+```
+
+Замените содержимое на **ФИНАЛЬНУЮ конфигурацию с SSL**:
+
+```nginx
+server {
+    listen 80;
+    listen [::]:80;
+    server_name api.syndicate-poker.ru;
 
     # Редирект на HTTPS
     location / {
@@ -161,7 +255,7 @@ server {
     listen [::]:443 ssl http2;
     server_name api.syndicate-poker.ru;
 
-    # SSL сертификаты (будут созданы позже)
+    # SSL сертификаты
     ssl_certificate /etc/letsencrypt/live/api.syndicate-poker.ru/fullchain.pem;
     ssl_certificate_key /etc/letsencrypt/live/api.syndicate-poker.ru/privkey.pem;
     ssl_trusted_certificate /etc/letsencrypt/live/api.syndicate-poker.ru/chain.pem;
@@ -222,45 +316,18 @@ server {
 - Нажмите `Y` (Yes)
 - Нажмите `Enter`
 
-### Шаг 3.7: Активация конфигурации
-
 ```bash
-# Создаем симлинк
-ln -s /etc/nginx/sites-available/api.syndicate-poker.ru /etc/nginx/sites-enabled/
-
-# Удаляем дефолтную конфигурацию
-rm /etc/nginx/sites-enabled/default
-
 # Проверяем конфигурацию
 nginx -t
 
-# Должно вывести: 
-# nginx: the configuration file /etc/nginx/nginx.conf syntax is ok
-# nginx: configuration file /etc/nginx/nginx.conf test is successful
-```
-
-### Шаг 3.8: Получение SSL сертификата
-
-```bash
-# Останавливаем Nginx
-systemctl stop nginx
-
-# Получаем сертификат
-certbot certonly --standalone -d api.syndicate-poker.ru
-
-# Certbot спросит:
-# 1. Email для уведомлений - введите ваш email
-# 2. Согласиться с Terms of Service - введите Y
-# 3. Получать новости - введите N или Y (на выбор)
-
-# Запускаем Nginx
-systemctl start nginx
+# Перезапускаем Nginx
+systemctl restart nginx
 
 # Проверяем статус
 systemctl status nginx
 ```
 
-### Шаг 3.9: Настройка Firewall
+### Шаг 3.10: Настройка Firewall
 
 ```bash
 # Установка UFW
@@ -280,7 +347,7 @@ ufw enable
 ufw status
 ```
 
-### Шаг 3.10: Настройка автообновления SSL
+### Шаг 3.11: Настройка автообновления SSL
 
 ```bash
 # Тестируем автообновление

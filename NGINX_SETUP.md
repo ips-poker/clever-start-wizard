@@ -62,22 +62,52 @@ dig api.syndicate-poker.ru
 # Должен вернуться IP: 89.104.74.121
 ```
 
-## Шаг 4: Настройка Nginx
+## Шаг 4: Создание ВРЕМЕННОЙ конфигурации Nginx (без SSL)
 
 ```bash
 # Создать конфигурацию Nginx
 nano /etc/nginx/sites-available/api.syndicate-poker.ru
 ```
 
-Вставьте содержимое из файла `nginx-proxy-config.conf`
+Вставьте **ТОЛЬКО ШАГ 1** из файла `nginx-proxy-config.conf` (временная конфигурация без SSL)
 
 ```bash
 # Создать симлинк
 ln -s /etc/nginx/sites-available/api.syndicate-poker.ru /etc/nginx/sites-enabled/
 
-# Удалить дефолтную конфигурацию
-rm /etc/nginx/sites-enabled/default
+# Удалить дефолтную конфигурацию (если есть)
+rm -f /etc/nginx/sites-enabled/default
 
+# Проверить конфигурацию
+nginx -t
+
+# Запустить Nginx
+systemctl restart nginx
+```
+
+## Шаг 5: Получение SSL сертификата
+
+```bash
+# Получить сертификат (Nginx уже запущен с временной конфигурацией)
+certbot certonly --nginx -d api.syndicate-poker.ru
+
+# Ввести email для уведомлений
+# Согласиться с Terms of Service
+
+# Настроить автообновление сертификата
+certbot renew --dry-run
+```
+
+## Шаг 6: Обновление конфигурации с SSL
+
+```bash
+# Редактировать конфигурацию
+nano /etc/nginx/sites-available/api.syndicate-poker.ru
+```
+
+Замените содержимое на **ШАГ 2** из файла `nginx-proxy-config.conf` (финальная конфигурация с SSL - раскомментируйте блок)
+
+```bash
 # Проверить конфигурацию
 nginx -t
 
@@ -85,26 +115,7 @@ nginx -t
 systemctl restart nginx
 ```
 
-## Шаг 5: Получение SSL сертификата
-
-```bash
-# Остановить Nginx временно
-systemctl stop nginx
-
-# Получить сертификат
-certbot certonly --standalone -d api.syndicate-poker.ru
-
-# Ввести email для уведомлений
-# Согласиться с Terms of Service
-
-# Запустить Nginx
-systemctl start nginx
-
-# Настроить автообновление сертификата
-certbot renew --dry-run
-```
-
-## Шаг 6: Проверка работы
+## Шаг 7: Проверка работы
 
 ```bash
 # Проверить статус Nginx
@@ -118,7 +129,7 @@ tail -f /var/log/nginx/supabase-proxy-access.log
 curl https://api.syndicate-poker.ru/rest/v1/
 ```
 
-## Шаг 7: Настройка Firewall
+## Шаг 8: Настройка Firewall
 
 ```bash
 # Установить UFW
