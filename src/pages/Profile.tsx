@@ -12,11 +12,12 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Trophy, TrendingUp, Calendar, Users, Star, Medal, Award, Target, Edit3, Check, X } from "lucide-react";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from "recharts";
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { toast } from "sonner";
 import { PlayerStats } from "@/components/PlayerStats";
 import { AvatarSelector } from "@/components/AvatarSelector";
 import { ProfileTournaments } from "@/components/ProfileTournaments";
+import { FloatingParticles } from "@/components/ui/floating-particles";
 
 interface Player {
   id: string;
@@ -26,18 +27,6 @@ interface Player {
   wins: number;
   email?: string;
   avatar_url?: string;
-}
-
-interface ProfileTournament {
-  id: string;
-  name: string;
-  description?: string;
-  start_time: string;
-  buy_in: number;
-  max_players: number;
-  status: string;
-  starting_chips: number;
-  registered_count?: number;
 }
 
 interface GameResult {
@@ -85,10 +74,8 @@ export default function Profile() {
     try {
       console.log('Loading player data for user:', user.id);
       
-      // Сначала ищем игрока по user_id, затем по email
       let data, error;
       
-      // Попытка найти по user_id
       const userIdResult = await supabase
         .from('players')
         .select('*')
@@ -98,7 +85,6 @@ export default function Profile() {
       if (userIdResult.error && userIdResult.error.code === 'PGRST116') {
         console.log('Player not found by user_id, trying email:', user.email);
         
-        // Если не найден по user_id, ищем по email
         const emailResult = await supabase
           .from('players')
           .select('*')
@@ -115,16 +101,7 @@ export default function Profile() {
       if (error && error.code === 'PGRST116') {
         console.log('Player does not exist, creating new one');
         
-        // Player doesn't exist, create one using safe RPC
         const playerName = userProfile?.full_name || user.email?.split('@')[0] || 'Player';
-        
-        console.log('Creating player with data:', {
-          name: playerName,
-          email: user.email,
-          user_id: user.id,
-          avatar_url: userProfile?.avatar_url || 'NO AVATAR',
-          hasAvatar: !!userProfile?.avatar_url
-        });
         
         const { data: createResult, error: createError } = await supabase.rpc('create_player_safe', {
           p_name: playerName,
@@ -143,7 +120,6 @@ export default function Profile() {
         
         if (!result?.success) {
           console.error('Player creation failed:', result?.error);
-          // Если игрок уже существует, пытаемся загрузить его
           if (result?.player_id) {
             const { data: existingPlayer } = await supabase
               .from('players')
@@ -158,22 +134,11 @@ export default function Profile() {
           return;
         }
         
-        console.log('Player created successfully:', {
-          id: result.player?.id,
-          name: result.player?.name,
-          avatar_url: result.player?.avatar_url || 'NO AVATAR'
-        });
-        
         setPlayer(result.player);
       } else if (error) {
         console.error('Error loading player:', error);
       } else {
-        console.log('Player loaded successfully:', {
-          id: data.id,
-          name: data.name,
-          avatar_url: data.avatar_url || 'NO AVATAR',
-          hasAvatar: !!data.avatar_url
-        });
+        console.log('Player loaded successfully:', data);
         setPlayer(data);
       }
     } catch (error) {
@@ -182,7 +147,6 @@ export default function Profile() {
       setLoading(false);
     }
   };
-
 
   const loadGameResults = async () => {
     if (!player?.id) return;
@@ -286,7 +250,7 @@ export default function Profile() {
     if (rating >= 1600) return "from-purple-400 to-purple-600";
     if (rating >= 1400) return "from-blue-400 to-blue-600";
     if (rating >= 1200) return "from-green-400 to-green-600";
-    return "from-gray-400 to-gray-600";
+    return "from-muted-foreground to-muted";
   };
 
   const getRankTitle = (rating: number) => {
@@ -303,7 +267,7 @@ export default function Profile() {
       value: player?.elo_rating || 100,
       description: getRankTitle(player?.elo_rating || 100),
       icon: TrendingUp,
-      color: "text-amber-400"
+      color: "text-primary"
     },
     {
       title: "Игр сыграно",
@@ -330,10 +294,10 @@ export default function Profile() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-400 mx-auto mb-4"></div>
-          <p className="text-white/70">Загрузка профиля...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Загрузка профиля...</p>
         </div>
       </div>
     );
@@ -341,82 +305,77 @@ export default function Profile() {
 
   return (
     <AuthGuard>
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 relative overflow-hidden">
-        {/* Decorative Background Elements - matching homepage */}
-        <div className="fixed inset-0 pointer-events-none overflow-hidden opacity-10 z-0">
-          <div className="absolute top-20 left-10 w-16 h-16 rounded-full animate-pulse-slow">
-            <div className="absolute inset-0 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 opacity-30"></div>
-            <div className="absolute inset-1 rounded-full bg-slate-900/80 border border-amber-400/20"></div>
-          </div>
-          <div className="absolute top-1/4 right-20 w-12 h-12 rounded-full animate-bounce-subtle">
-            <div className="absolute inset-0 rounded-full bg-gradient-to-br from-purple-400 to-purple-600 opacity-25"></div>
-            <div className="absolute inset-1 rounded-full bg-slate-900/80 border border-purple-400/20"></div>
-          </div>
-          <div className="absolute bottom-1/3 left-1/4 w-20 h-20 rounded-full animate-pulse-slow">
-            <div className="absolute inset-0 rounded-full bg-gradient-to-br from-red-400 to-red-600 opacity-35"></div>
-            <div className="absolute inset-1.5 rounded-full bg-slate-900/80 border-2 border-red-400/20"></div>
-          </div>
-        </div>
+      <div className="min-h-screen bg-background relative overflow-hidden">
+        {/* Industrial Background */}
+        <div className="fixed inset-0 pointer-events-none industrial-texture opacity-50 z-0" />
+        
+        {/* Metal grid */}
+        <div
+          className="fixed inset-0 pointer-events-none opacity-20 z-0"
+          style={{
+            backgroundImage: `
+              repeating-linear-gradient(0deg, transparent, transparent 48px, rgba(255,255,255,0.04) 48px, rgba(255,255,255,0.04) 49px),
+              repeating-linear-gradient(90deg, transparent, transparent 48px, rgba(255,255,255,0.04) 48px, rgba(255,255,255,0.04) 49px)
+            `,
+          }}
+        />
 
-        {/* Poker Suits Background */}
-        <div className="fixed inset-0 pointer-events-none overflow-hidden opacity-10 z-0">
-          <div className="absolute top-20 left-10 animate-pulse-slow">
-            <div className="text-amber-400/40 text-6xl filter drop-shadow-[0_0_15px_rgba(251,191,36,0.3)]">♠</div>
-          </div>
-          <div className="absolute bottom-1/3 left-20 animate-pulse-slow">
-            <div className="text-red-400/45 text-7xl filter drop-shadow-[0_0_20px_rgba(248,113,113,0.4)]">♥</div>
-          </div>
-          <div className="absolute top-1/2 right-1/4 animate-bounce-subtle">
-            <div className="text-purple-400/30 text-5xl filter drop-shadow-[0_0_12px_rgba(192,132,252,0.25)]">♦</div>
-          </div>
-        </div>
+        {/* Neon glows */}
+        <div className="fixed w-[400px] h-[400px] bg-primary/20 rounded-full blur-[120px] opacity-60 -top-32 -left-24 z-0" />
+        <div className="fixed w-[400px] h-[400px] bg-accent/15 rounded-full blur-[120px] opacity-60 -bottom-32 -right-24 z-0" />
 
-        {/* Ambient light spots */}
-        <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
-          <div className="absolute top-0 left-1/4 w-96 h-96 bg-amber-500/5 rounded-full blur-3xl"></div>
-          <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-purple-500/5 rounded-full blur-3xl"></div>
-        </div>
+        {/* Side rails */}
+        <div className="fixed inset-y-0 left-0 w-[3px] bg-gradient-to-b from-primary/70 via-accent/40 to-transparent shadow-neon-orange pointer-events-none z-10" />
+        <div className="fixed inset-y-0 right-0 w-[3px] bg-gradient-to-b from-primary/70 via-accent/40 to-transparent shadow-neon-orange pointer-events-none z-10" />
+        <div className="fixed top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-transparent via-primary/80 to-transparent pointer-events-none z-10" />
 
+        <FloatingParticles />
         <Header />
         
-        <main className="container mx-auto px-4 pt-24 md:pt-20 pb-8 space-y-8 relative z-10">
+        <main className="container mx-auto px-4 pt-24 md:pt-20 pb-8 space-y-8 relative z-20">
           {/* Profile Header */}
-          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900/95 via-slate-800/90 to-slate-900/95 p-8 border border-primary/30 shadow-2xl backdrop-blur-sm">
-            <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48cGF0dGVybiBpZD0iZ3JpZCIgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBwYXR0ZXJuVW5pdHM9InVzZXJTcGFjZU9uVXNlIj48cGF0aCBkPSJNIDQwIDAgTCAwIDAgMCA0MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJoc2wodmFyKC0tcHJpbWFyeSkpIiBzdHJva2Utd2lkdGg9IjAuNSIgb3BhY2l0eT0iMC4xIi8+PC9wYXR0ZXJuPjwvZGVmcz48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJ1cmwoI2dyaWQpIi8+PC9zdmc+')] opacity-20"></div>
+          <div className="relative overflow-hidden brutal-border bg-card p-6 md:p-8">
+            {/* Industrial texture overlay */}
+            <div className="absolute inset-0 industrial-texture opacity-30" />
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/5" />
             
             <div className="relative z-10 text-center space-y-6">
+              {/* Avatar */}
               <div className="relative inline-block">
-                <div className={`absolute inset-0 rounded-full bg-gradient-to-br ${getRankClass(player?.elo_rating || 100)} opacity-30 blur-xl scale-110`}></div>
-                <Avatar className="relative w-32 h-32 mx-auto border-4 border-white/20 shadow-2xl">
-                  <AvatarImage src={player?.avatar_url} alt={player?.name} />
-                  <AvatarFallback className="text-2xl bg-gradient-to-br from-amber-500 to-amber-600 text-white">
-                    {player?.name?.charAt(0).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-                <Button
-                  onClick={() => setShowAvatarSelector(true)}
-                  className="absolute -bottom-2 -right-2 rounded-full w-10 h-10 p-0 shadow-lg hover:scale-110 transition-transform bg-amber-500 hover:bg-amber-600"
-                  size="sm"
-                >
-                  <Edit3 className="h-4 w-4 text-white" />
-                </Button>
+                <div className={`absolute inset-0 rounded-full bg-gradient-to-br ${getRankClass(player?.elo_rating || 100)} opacity-40 blur-xl scale-125`} />
+                <div className="relative">
+                  <Avatar className="w-28 h-28 md:w-36 md:h-36 mx-auto border-4 border-primary/50 shadow-neon-orange">
+                    <AvatarImage src={player?.avatar_url} alt={player?.name} />
+                    <AvatarFallback className="text-3xl bg-gradient-to-br from-primary to-accent text-primary-foreground font-bold">
+                      {player?.name?.charAt(0).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <Button
+                    onClick={() => setShowAvatarSelector(true)}
+                    className="absolute -bottom-2 -right-2 rounded-none w-10 h-10 p-0 shadow-brutal bg-primary hover:bg-primary/90 border-2 border-background"
+                    size="sm"
+                  >
+                    <Edit3 className="h-4 w-4 text-primary-foreground" />
+                  </Button>
+                </div>
               </div>
               
+              {/* Name & Rank */}
               <div className="space-y-3">
                 <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-                   {editingName ? (
+                  {editingName ? (
                     <div className="flex items-center gap-2">
                       <Input
                         value={newPlayerName}
                         onChange={(e) => setNewPlayerName(e.target.value)}
-                        className="text-center text-xl font-bold max-w-xs bg-white/10 border-white/20 text-white placeholder:text-white/50"
+                        className="text-center text-xl font-bold max-w-xs bg-secondary border-border text-foreground"
                         placeholder="Введите новое имя"
                         onKeyPress={(e) => e.key === 'Enter' && handleNameUpdate()}
                       />
                       <Button
                         onClick={handleNameUpdate}
                         size="sm"
-                        className="h-8 w-8 p-0 bg-green-500 hover:bg-green-600"
+                        className="h-8 w-8 p-0 bg-green-600 hover:bg-green-700 rounded-none"
                         disabled={!newPlayerName.trim()}
                       >
                         <Check className="h-4 w-4 text-white" />
@@ -425,45 +384,47 @@ export default function Profile() {
                         onClick={cancelNameEdit}
                         variant="outline"
                         size="sm"
-                        className="h-8 w-8 p-0 border-white/20 hover:bg-white/10"
+                        className="h-8 w-8 p-0 border-border hover:bg-secondary rounded-none"
                       >
-                        <X className="h-4 w-4 text-white" />
+                        <X className="h-4 w-4" />
                       </Button>
                     </div>
                   ) : (
                     <div className="flex items-center gap-2">
-                      <h1 className="text-2xl sm:text-3xl font-light text-white tracking-wide text-center">{player?.name}</h1>
+                      <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-wide neon-orange">
+                        {player?.name}
+                      </h1>
                       <Button
                         onClick={startNameEdit}
                         variant="ghost"
                         size="sm"
-                        className="h-8 w-8 p-0 hover:bg-white/10 text-white/70 hover:text-white"
+                        className="h-8 w-8 p-0 hover:bg-secondary text-muted-foreground hover:text-foreground"
                       >
                         <Edit3 className="h-4 w-4" />
                       </Button>
                     </div>
                   )}
-                   <Badge className={`bg-gradient-to-r ${getRankClass(player?.elo_rating || 100)} text-white border-0 px-3 py-1 font-medium text-sm shadow-lg`}>
+                  <Badge className={`bg-gradient-to-r ${getRankClass(player?.elo_rating || 100)} text-white border-0 px-4 py-1 font-bold text-sm shadow-brutal rounded-none`}>
                     {getRankTitle(player?.elo_rating || 100)}
                   </Badge>
                 </div>
-                <p className="text-white/60 text-center">{userProfile?.full_name || player?.name}</p>
+                <p className="text-muted-foreground">{userProfile?.full_name || player?.name}</p>
                 
                 {/* Quick Stats */}
-                <div className="flex items-center justify-center gap-6 mt-4 pt-4 border-t border-white/10">
+                <div className="flex items-center justify-center gap-6 mt-4 pt-4 border-t border-border">
                   <div className="text-center">
-                    <p className="text-2xl font-light text-amber-400">{player?.elo_rating || 100}</p>
-                    <p className="text-xs text-white/60">RPS Рейтинг</p>
+                    <p className="text-2xl font-bold neon-orange">{player?.elo_rating || 100}</p>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wider">RPS Рейтинг</p>
                   </div>
-                  <div className="w-px h-8 bg-white/20"></div>
+                  <div className="w-px h-10 bg-border" />
                   <div className="text-center">
-                    <p className="text-2xl font-light text-green-400">{player?.wins || 0}</p>
-                    <p className="text-xs text-white/60">Побед</p>
+                    <p className="text-2xl font-bold text-green-400">{player?.wins || 0}</p>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wider">Побед</p>
                   </div>
-                  <div className="w-px h-8 bg-white/20"></div>
+                  <div className="w-px h-10 bg-border" />
                   <div className="text-center">
-                    <p className="text-2xl font-light text-blue-400">{player?.games_played || 0}</p>
-                    <p className="text-xs text-white/60">Игр</p>
+                    <p className="text-2xl font-bold text-blue-400">{player?.games_played || 0}</p>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wider">Игр</p>
                   </div>
                 </div>
               </div>
@@ -471,27 +432,25 @@ export default function Profile() {
           </div>
 
           {/* Stats Cards */}
-          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {statCards.map((stat, index) => (
-              <Card key={index} className="group hover:shadow-2xl transition-all duration-300 border-slate-800/80 hover:border-primary/50 bg-gradient-to-br from-slate-900/95 via-slate-800/90 to-slate-900/95 hover:scale-105 backdrop-blur-sm shadow-lg">
-                <CardContent className="p-6 relative overflow-hidden">
+              <Card key={index} className="group hover:shadow-neon-orange transition-all duration-300 brutal-border bg-card hover:border-primary/50">
+                <CardContent className="p-4 md:p-6 relative overflow-hidden">
                   <div className="absolute top-0 right-0 w-16 h-16 opacity-10">
                     <stat.icon className="w-full h-full text-primary" />
                   </div>
                   <div className="relative z-10">
-                    <div className="flex items-center justify-between mb-4">
-                      <div className={`p-3 rounded-xl bg-gradient-to-br from-slate-800/60 to-slate-900/80 border border-slate-700/40`}>
-                        <stat.icon className={`h-5 w-5 ${stat.color}`} />
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="p-2 md:p-3 bg-secondary border border-border">
+                        <stat.icon className={`h-4 w-4 md:h-5 md:w-5 ${stat.color}`} />
                       </div>
-                      <div className="text-right">
-                        <p className="text-2xl font-bold text-white group-hover:text-amber-400 transition-colors">
-                          {stat.value}
-                        </p>
-                      </div>
+                      <p className="text-xl md:text-2xl font-bold text-foreground group-hover:text-primary transition-colors">
+                        {stat.value}
+                      </p>
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-white/70 mb-1">{stat.title}</p>
-                      <p className="text-xs text-white/50">{stat.description}</p>
+                      <p className="text-sm font-medium text-foreground/80">{stat.title}</p>
+                      <p className="text-xs text-muted-foreground">{stat.description}</p>
                     </div>
                   </div>
                 </CardContent>
@@ -499,25 +458,25 @@ export default function Profile() {
             ))}
           </div>
 
-          {/* Main Content */}
+          {/* Main Content Tabs */}
           <Tabs defaultValue="statistics" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 bg-slate-900/70 backdrop-blur-sm border border-slate-800/80 h-auto p-1 shadow-lg">
-              <TabsTrigger value="statistics" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm py-2">
+            <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 bg-card border border-border h-auto p-1">
+              <TabsTrigger value="statistics" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm py-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-none">
                 <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4" />
                 <span className="hidden sm:inline">Статистика</span>
                 <span className="sm:hidden">Статс</span>
               </TabsTrigger>
-              <TabsTrigger value="tournaments" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm py-2">
+              <TabsTrigger value="tournaments" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm py-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-none">
                 <Calendar className="h-3 w-3 sm:h-4 sm:w-4" />
                 <span className="hidden sm:inline">Турниры</span>
                 <span className="sm:hidden">Турн</span>
               </TabsTrigger>
-              <TabsTrigger value="leaderboard" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm py-2">
+              <TabsTrigger value="leaderboard" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm py-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-none">
                 <Users className="h-3 w-3 sm:h-4 sm:w-4" />
                 <span className="hidden sm:inline">Рейтинг</span>
                 <span className="sm:hidden">Топ</span>
               </TabsTrigger>
-              <TabsTrigger value="history" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm py-2">
+              <TabsTrigger value="history" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm py-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-none">
                 <Star className="h-3 w-3 sm:h-4 sm:w-4" />
                 <span className="hidden sm:inline">История</span>
                 <span className="sm:hidden">Игры</span>
@@ -527,10 +486,10 @@ export default function Profile() {
             <TabsContent value="statistics" className="space-y-6">
               <div className="grid gap-6 lg:grid-cols-2">
                 {/* ELO Chart */}
-                <Card className="border-slate-800/80 bg-gradient-to-br from-slate-900/95 via-slate-800/90 to-slate-900/95 backdrop-blur-sm shadow-lg lg:col-span-2">
+                <Card className="brutal-border bg-card lg:col-span-2">
                   <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-white">
-                      <TrendingUp className="h-5 w-5 text-amber-400" />
+                    <CardTitle className="flex items-center gap-2 text-foreground">
+                      <TrendingUp className="h-5 w-5 text-primary" />
                       График рейтинга RPS
                     </CardTitle>
                   </CardHeader>
@@ -560,17 +519,13 @@ export default function Profile() {
                           />
                           <Tooltip 
                             contentStyle={{
-                              backgroundColor: 'hsl(var(--popover))',
-                              border: '1px solid hsl(var(--border))',
-                              borderRadius: '12px',
-                              boxShadow: '0 10px 40px -10px rgba(0,0,0,0.1)',
+                              backgroundColor: 'hsl(var(--card))',
+                              border: '2px solid hsl(var(--border))',
+                              borderRadius: '0',
                               fontSize: '14px'
                             }}
                             labelStyle={{ color: 'hsl(var(--foreground))' }}
-                            formatter={(value, name) => [
-                              <span style={{ color: 'hsl(var(--primary))' }}>{value}</span>,
-                              'RPS Рейтинг'
-                            ]}
+                            formatter={(value) => [value, 'RPS Рейтинг']}
                             labelFormatter={(label) => `Игра ${label}`}
                           />
                           <Area 
@@ -586,86 +541,96 @@ export default function Profile() {
                         </AreaChart>
                       </ResponsiveContainer>
                     ) : (
-                      <div className="text-center py-16 text-white/70">
-                        <div className="bg-slate-800/60 border border-slate-700/40 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                          <Target className="h-8 w-8 text-amber-400" />
+                      <div className="text-center py-16 text-muted-foreground">
+                        <div className="bg-secondary border border-border w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                          <Target className="h-8 w-8 text-primary" />
                         </div>
-                        <h3 className="text-lg font-medium text-white mb-2">Нет данных для отображения</h3>
+                        <h3 className="text-lg font-medium text-foreground mb-2">Нет данных для отображения</h3>
                         <p className="text-sm">Сыграйте несколько турниров для просмотра статистики</p>
                       </div>
                     )}
                   </CardContent>
                 </Card>
 
-                {/* Additional Stats */}
-                <Card className="border-slate-800/80 bg-gradient-to-br from-slate-900/95 via-slate-800/90 to-slate-900/95 backdrop-blur-sm shadow-lg">
+                {/* Best Results */}
+                <Card className="brutal-border bg-card">
                   <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-white">
+                    <CardTitle className="flex items-center gap-2 text-foreground">
                       <Medal className="h-5 w-5 text-green-400" />
                       Лучшие результаты
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-4">
-                    {gameResults.slice(0, 3).map((result, index) => (
-                      <div key={result.id} className="flex items-center gap-3 p-3 rounded-lg bg-slate-900/50 backdrop-blur-sm border border-slate-800/40">
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold text-white shadow-md ${
+                  <CardContent className="space-y-3">
+                    {gameResults.slice(0, 3).map((result) => (
+                      <div key={result.id} className="flex items-center gap-3 p-3 bg-secondary border border-border">
+                        <div className={`w-8 h-8 flex items-center justify-center text-sm font-bold text-white ${
                           result.position === 1 ? 'bg-gradient-to-br from-yellow-400 to-yellow-600' :
                           result.position === 2 ? 'bg-gradient-to-br from-gray-300 to-gray-400' :
-                          result.position === 3 ? 'bg-gradient-to-br from-orange-400 to-orange-600' : 'bg-gradient-to-br from-slate-600 to-slate-800'
+                          result.position === 3 ? 'bg-gradient-to-br from-orange-400 to-orange-600' : 'bg-muted'
                         }`}>
                           #{result.position}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="font-medium text-sm truncate text-white">{result.tournament.name}</p>
-                          <p className="text-xs text-white/60">
+                          <p className="font-medium text-sm truncate text-foreground">{result.tournament.name}</p>
+                          <p className="text-xs text-muted-foreground">
                             {new Date(result.created_at).toLocaleDateString('ru-RU')}
                           </p>
                         </div>
-                        <Badge variant={result.elo_change >= 0 ? "default" : "destructive"} className="text-xs">
+                        <Badge 
+                          variant={result.elo_change >= 0 ? "default" : "destructive"} 
+                          className="rounded-none font-bold"
+                        >
                           {result.elo_change >= 0 ? '+' : ''}{result.elo_change}
                         </Badge>
                       </div>
                     ))}
                     {gameResults.length === 0 && (
-                      <div className="text-center py-8 text-white/70">
-                        <Trophy className="h-8 w-8 mx-auto mb-2 opacity-50 text-amber-400" />
+                      <div className="text-center py-8 text-muted-foreground">
+                        <Trophy className="h-8 w-8 mx-auto mb-2 text-primary opacity-50" />
                         <p className="text-sm">Нет результатов</p>
                       </div>
                     )}
                   </CardContent>
                 </Card>
 
-                <Card className="border-slate-800/80 bg-gradient-to-br from-slate-900/95 via-slate-800/90 to-slate-900/95 backdrop-blur-sm shadow-lg">
+                {/* Progress */}
+                <Card className="brutal-border bg-card">
                   <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-white">
+                    <CardTitle className="flex items-center gap-2 text-foreground">
                       <Award className="h-5 w-5 text-purple-400" />
                       Прогресс
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="space-y-2">
-                      <div className="flex justify-between text-sm text-white/70">
+                      <div className="flex justify-between text-sm text-muted-foreground">
                         <span>До следующего ранга</span>
-                        <span className="font-medium text-white">{Math.max(0, Math.ceil(((Math.floor(((player?.elo_rating || 100) + 199) / 200) * 200) - (player?.elo_rating || 100))))}</span>
+                        <span className="font-medium text-foreground">
+                          {Math.max(0, Math.ceil(((Math.floor(((player?.elo_rating || 100) + 199) / 200) * 200) - (player?.elo_rating || 100))))}
+                        </span>
                       </div>
-                      <div className="w-full bg-slate-800/50 rounded-full h-2 border border-slate-700/30">
+                      <div className="w-full bg-secondary h-3 border border-border">
                         <div 
-                          className="bg-gradient-to-r from-amber-400 to-amber-600 h-2 rounded-full transition-all duration-500 shadow-lg shadow-amber-400/20" 
+                          className="bg-gradient-to-r from-primary to-accent h-full transition-all duration-500" 
                           style={{ 
                             width: `${Math.min(100, (((player?.elo_rating || 100) % 200) / 200) * 100)}%` 
                           }}
-                        ></div>
+                        />
                       </div>
                     </div>
                     
                     <div className="grid grid-cols-2 gap-4 pt-2">
-                      <div className="text-center p-3 rounded-lg bg-blue-400/10">
-                        <p className="text-xl font-bold text-blue-400">{((player?.wins || 0) / Math.max(1, player?.games_played || 1) * 100).toFixed(1)}%</p>
-                        <p className="text-xs text-white/60">Winrate</p>
+                      <div className="text-center p-3 bg-blue-500/10 border border-blue-500/30">
+                        <p className="text-xl font-bold text-blue-400">
+                          {((player?.wins || 0) / Math.max(1, player?.games_played || 1) * 100).toFixed(1)}%
+                        </p>
+                        <p className="text-xs text-muted-foreground uppercase tracking-wider">Winrate</p>
                       </div>
-                      <div className="text-center p-3 rounded-lg bg-green-400/10">
-                        <p className="text-xl font-bold text-green-400">{Math.max(...eloData.map(d => d.elo), player?.elo_rating || 100)}</p>
-                        <p className="text-xs text-white/60">Пик RPS</p>
+                      <div className="text-center p-3 bg-green-500/10 border border-green-500/30">
+                        <p className="text-xl font-bold text-green-400">
+                          {Math.max(...eloData.map(d => d.elo), player?.elo_rating || 100)}
+                        </p>
+                        <p className="text-xs text-muted-foreground uppercase tracking-wider">Пик RPS</p>
                       </div>
                     </div>
                   </CardContent>
@@ -682,42 +647,42 @@ export default function Profile() {
             </TabsContent>
 
             <TabsContent value="history" className="space-y-6">
-                <Card className="border-slate-800/80 bg-gradient-to-br from-slate-900/95 via-slate-800/90 to-slate-900/95 backdrop-blur-sm shadow-lg">
+              <Card className="brutal-border bg-card">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-white">
-                    <Star className="h-5 w-5 text-amber-400" />
+                  <CardTitle className="flex items-center gap-2 text-foreground">
+                    <Star className="h-5 w-5 text-primary" />
                     История игр
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   {gameResults.length > 0 ? (
                     <div className="space-y-3">
-                      {gameResults.map((result, index) => (
-                        <div key={result.id} className="group relative overflow-hidden rounded-xl border border-slate-800/60 bg-gradient-to-r from-slate-900/90 to-slate-800/80 p-4 hover:shadow-xl hover:border-primary/40 transition-all duration-300 backdrop-blur-sm">
-                          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                      {gameResults.map((result) => (
+                        <div key={result.id} className="group relative overflow-hidden border border-border bg-secondary p-4 hover:border-primary/50 transition-all duration-300">
+                          <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                           
                           <div className="relative z-10 flex items-center justify-between">
                             <div className="flex items-center gap-4">
-                               <div className="relative">
-                                <div className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-white shadow-lg ${
+                              <div className="relative">
+                                <div className={`w-12 h-12 flex items-center justify-center font-bold text-white ${
                                   result.position === 1 ? 'bg-gradient-to-br from-yellow-400 to-yellow-600' :
                                   result.position === 2 ? 'bg-gradient-to-br from-gray-300 to-gray-400' :
-                                  result.position === 3 ? 'bg-gradient-to-br from-orange-400 to-orange-600' : 'bg-gradient-to-br from-slate-600 to-slate-800'
+                                  result.position === 3 ? 'bg-gradient-to-br from-orange-400 to-orange-600' : 'bg-muted'
                                 }`}>
                                   <span className="text-sm">#{result.position}</span>
                                 </div>
                                 {result.position <= 3 && (
-                                  <div className="absolute -top-1 -right-1">
+                                  <div className="absolute -top-1 -right-1 text-sm">
                                     {result.position === 1 ? '🥇' : result.position === 2 ? '🥈' : '🥉'}
                                   </div>
                                 )}
                               </div>
                               
                               <div className="space-y-1">
-                                <p className="font-semibold text-white group-hover:text-amber-400 transition-colors">
+                                <p className="font-semibold text-foreground group-hover:text-primary transition-colors">
                                   {result.tournament.name}
                                 </p>
-                                <div className="flex items-center gap-3 text-sm text-white/60">
+                                <div className="flex items-center gap-3 text-sm text-muted-foreground">
                                   <span className="flex items-center gap-1">
                                     <Calendar className="h-3 w-3" />
                                     {new Date(result.created_at).toLocaleDateString('ru-RU')}
@@ -730,16 +695,15 @@ export default function Profile() {
                             
                             <div className="text-right space-y-2">
                               <Badge 
-                                variant={result.elo_change >= 0 ? "default" : "destructive"}
-                                className={`font-bold ${
+                                className={`font-bold rounded-none ${
                                   result.elo_change >= 0 
-                                    ? 'bg-gradient-to-r from-green-500 to-green-600 text-white border-0' 
-                                    : 'bg-gradient-to-r from-red-500 to-red-600 text-white border-0'
-                                } shadow-lg`}
+                                    ? 'bg-green-600 text-white' 
+                                    : 'bg-destructive text-destructive-foreground'
+                                }`}
                               >
                                 {result.elo_change >= 0 ? '+' : ''}{result.elo_change}
                               </Badge>
-                              <div className="text-xs text-white/60">
+                              <div className="text-xs text-muted-foreground">
                                 Изменение рейтинга
                               </div>
                             </div>
@@ -748,12 +712,12 @@ export default function Profile() {
                       ))}
                     </div>
                   ) : (
-                    <div className="text-center py-16 text-white/70">
-                      <div className="bg-slate-800/60 border border-slate-700/40 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                        <Calendar className="h-8 w-8 text-amber-400" />
+                    <div className="text-center py-16 text-muted-foreground">
+                      <div className="bg-secondary border border-border w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                        <Calendar className="h-8 w-8 text-primary" />
                       </div>
-                      <h3 className="text-lg font-medium text-white mb-2">История игр пуста</h3>
-                      <p className="text-sm">Зарегистрируйтесь на турнир, чтобы начать играть</p>
+                      <h3 className="text-lg font-medium text-foreground mb-2">История пуста</h3>
+                      <p className="text-sm">Сыграйте в турнирах, чтобы увидеть историю</p>
                     </div>
                   )}
                 </CardContent>
@@ -762,34 +726,24 @@ export default function Profile() {
           </Tabs>
         </main>
 
-        {/* Avatar Selector Modal */}
-        {showAvatarSelector && player && (
-          <AvatarSelector
-            onSelect={handleAvatarUpdate}
-            onClose={() => setShowAvatarSelector(false)}
-            playerId={player.id}
-          />
-        )}
-
         <Footer />
-        
-        {/* Custom animations matching homepage */}
-        <style>{`
-          .animate-bounce-subtle {
-            animation: bounce-subtle 4s ease-in-out infinite;
-          }
-          .animate-pulse-slow {
-            animation: pulse-slow 8s ease-in-out infinite;
-          }
-          @keyframes bounce-subtle {
-            0%, 100% { transform: translateY(0px) rotate(var(--tw-rotate)); }
-            50% { transform: translateY(-15px) rotate(var(--tw-rotate)); }
-          }
-          @keyframes pulse-slow {
-            0%, 100% { opacity: 0.5; transform: scale(1); }
-            50% { opacity: 1; transform: scale(1.05); }
-          }
-        `}</style>
+
+        {/* Avatar Selector Dialog */}
+        <Dialog open={showAvatarSelector} onOpenChange={setShowAvatarSelector}>
+          <DialogContent className="max-w-2xl bg-card border-border rounded-none">
+            <DialogHeader>
+              <DialogTitle className="text-foreground">Выберите аватар</DialogTitle>
+              <DialogDescription className="text-muted-foreground">
+                Выберите готовый аватар или загрузите свое изображение
+              </DialogDescription>
+            </DialogHeader>
+            <AvatarSelector
+              onSelect={handleAvatarUpdate}
+              onClose={() => setShowAvatarSelector(false)}
+              playerId={player?.id}
+            />
+          </DialogContent>
+        </Dialog>
       </div>
     </AuthGuard>
   );
