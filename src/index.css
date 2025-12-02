@@ -103,34 +103,25 @@
   }
 
   html {
-    background-color: hsl(0 0% 8%);
+    @apply bg-background;
     overflow-x: hidden;
-    overflow-y: auto;
     width: 100%;
     min-height: 100%;
   }
 
   body {
     @apply bg-background text-foreground;
-    background-color: hsl(0 0% 8%);
     overflow-x: hidden;
-    overflow-y: auto;
     width: 100%;
     min-height: 100vh;
     margin: 0;
     padding: 0;
-    /* Support for iOS safe areas */
-    padding-top: env(safe-area-inset-top);
-    padding-right: env(safe-area-inset-right);
-    padding-bottom: env(safe-area-inset-bottom);
-    padding-left: env(safe-area-inset-left);
   }
   
   #root {
     width: 100%;
     min-height: 100vh;
     position: relative;
-    overflow: visible;
   }
 }
 
