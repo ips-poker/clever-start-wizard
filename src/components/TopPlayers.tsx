@@ -24,31 +24,34 @@ const PlayerAvatar = ({ player, size = "w-12 h-12", isChampion = false }: {
   size?: string;
   isChampion?: boolean;
 }) => {
+  const [imageError, setImageError] = useState(false);
   const fallbackAvatars = ["♠️", "♥️", "♦️", "♣️", "🃏", "🎯", "🎲", "💎", "⭐", "🔥"];
   const fallbackIndex = player.name.charCodeAt(0) % fallbackAvatars.length;
   const fallbackAvatar = isChampion ? "👑" : fallbackAvatars[fallbackIndex];
 
   const fixedAvatarUrl = fixStorageUrl(player.avatar_url);
   
-  return fixedAvatarUrl ? (
+  // Сбрасываем ошибку при изменении URL
+  useEffect(() => {
+    setImageError(false);
+  }, [fixedAvatarUrl]);
+  
+  if (!fixedAvatarUrl || imageError) {
+    return (
+      <div className={`${size} bg-syndikate-metal brutal-border flex items-center justify-center text-lg flex-shrink-0`}>
+        {fallbackAvatar}
+      </div>
+    );
+  }
+  
+  return (
     <div className={`${size} rounded-none overflow-hidden flex-shrink-0 border-2 border-syndikate-orange`}>
       <img 
         src={fixedAvatarUrl} 
         alt={`${player.name} avatar`}
         className="w-full h-full object-cover"
-        onError={(e) => {
-          const target = e.target as HTMLImageElement;
-          target.style.display = 'none';
-          const parent = target.parentElement;
-          if (parent) {
-            parent.innerHTML = `<div class="w-full h-full bg-syndikate-metal brutal-border flex items-center justify-center text-lg">${fallbackAvatar}</div>`;
-          }
-        }}
+        onError={() => setImageError(true)}
       />
-    </div>
-  ) : (
-    <div className={`${size} bg-syndikate-metal brutal-border flex items-center justify-center text-lg`}>
-      {fallbackAvatar}
     </div>
   );
 };
