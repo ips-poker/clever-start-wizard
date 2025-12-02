@@ -94,8 +94,9 @@ const TournamentResults = ({ selectedTournament }: TournamentResultsProps) => {
         () => {
           loadTopPlayers();
         }
-      )
-      .subscribe();
+      );
+    
+    resultsChannel.subscribe();
 
     return () => {
       supabase.removeChannel(resultsChannel);

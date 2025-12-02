@@ -153,6 +153,7 @@ const TournamentOverview = ({
   // Realtime: обновляем структуру блайндов при любых изменениях в БД
   useEffect(() => {
     if (!tournament?.id) return;
+    
     const channel = supabase
       .channel(`blinds_${tournament.id}`)
       .on('postgres_changes', {
@@ -162,8 +163,10 @@ const TournamentOverview = ({
         filter: `tournament_id=eq.${tournament.id}`
       }, () => {
         loadBlindLevels();
-      })
-      .subscribe();
+      });
+    
+    // Вызываем subscribe, но не возвращаем Promise
+    channel.subscribe();
 
     return () => {
       supabase.removeChannel(channel);

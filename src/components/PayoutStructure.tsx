@@ -64,8 +64,9 @@ const PayoutStructure = ({ tournamentId, registeredPlayers }: PayoutStructurePro
           // Перезагружаем данные при любых изменениях
           fetchTournamentData();
         }
-      )
-      .subscribe();
+      );
+    
+    channel.subscribe();
 
     return () => {
       supabase.removeChannel(channel);

@@ -58,8 +58,9 @@ export function TournamentList() {
         table: 'tournament_registrations'
       }, () => {
         loadTournaments();
-      })
-      .subscribe();
+      });
+    
+    channel.subscribe();
 
     return () => {
       supabase.removeChannel(channel);

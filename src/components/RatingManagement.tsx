@@ -106,8 +106,9 @@ const RatingManagement = ({ tournaments, selectedTournament, onRefresh }: Rating
           loadStats();
           onRefresh();
         }
-      )
-      .subscribe();
+      );
+    
+    ratingsChannel.subscribe();
 
     return () => {
       supabase.removeChannel(ratingsChannel);
