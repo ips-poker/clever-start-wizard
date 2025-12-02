@@ -49,8 +49,9 @@ export function VoiceNotifications({ tournamentId }: VoiceNotificationsProps) {
             toast.info(`Новое объявление: ${newAnnouncement.message.slice(0, 50)}...`);
           }
         }
-      )
-      .subscribe();
+      );
+    
+    channel.subscribe();
 
     return () => {
       supabase.removeChannel(channel);

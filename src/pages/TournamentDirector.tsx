@@ -207,8 +207,9 @@ const TournamentDirector = () => {
         filter: `tournament_id=eq.${selectedTournament.id}`
       }, () => {
         load();
-      })
-      .subscribe();
+      });
+    
+    channel.subscribe();
 
     return () => { supabase.removeChannel(channel); };
   }, [selectedTournament?.id]);
@@ -820,8 +821,9 @@ const TournamentDirector = () => {
         } catch (e) {
           console.error('Ошибка синхронизации блайндов:', e);
         }
-      })
-      .subscribe();
+      });
+    
+    channel.subscribe();
 
     return () => { supabase.removeChannel(channel); };
   }, [selectedTournament?.id, selectedTournament?.current_level, currentTime, timerActive]);

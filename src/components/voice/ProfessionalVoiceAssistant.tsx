@@ -383,8 +383,9 @@ export function ProfessionalVoiceAssistant({ selectedTournament, onStatusChange 
             }
           }
         }
-      )
-      .subscribe();
+      );
+    
+    subscription.subscribe();
 
     return () => {
       supabase.removeChannel(subscription);

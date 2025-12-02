@@ -73,7 +73,9 @@ export function TopPlayers() {
       table: 'players'
     }, () => {
       loadPlayers();
-    }).subscribe();
+    });
+    
+    playersChannel.subscribe();
 
     return () => {
       supabase.removeChannel(playersChannel);

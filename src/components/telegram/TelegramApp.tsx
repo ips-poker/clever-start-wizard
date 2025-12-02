@@ -187,7 +187,9 @@ export const TelegramApp = () => {
     }, payload => {
       console.log('Tournament update:', payload);
       fetchTournaments();
-    }).subscribe();
+    });
+    
+    tournamentsChannel.subscribe();
 
     const playersChannel = supabase.channel('players-changes').on('postgres_changes', {
       event: '*',
@@ -199,7 +201,9 @@ export const TelegramApp = () => {
       if (telegramUser && payload.new && (payload.new as any).telegram === telegramUser.id.toString()) {
         setUserStats(payload.new as Player);
       }
-    }).subscribe();
+    });
+    
+    playersChannel.subscribe();
 
     const registrationsChannel = supabase.channel('registrations-changes').on('postgres_changes', {
       event: '*',
@@ -209,7 +213,9 @@ export const TelegramApp = () => {
       console.log('Registration update:', payload);
       fetchTournaments();
       fetchUserRegistrations();
-    }).subscribe();
+    });
+    
+    registrationsChannel.subscribe();
 
     return () => {
       supabase.removeChannel(tournamentsChannel);

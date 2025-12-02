@@ -79,8 +79,9 @@ const ModernPrizeStructureManager = ({ tournamentId, registeredPlayers, mode = '
         () => {
           fetchTournamentData();
         }
-      )
-      .subscribe();
+      );
+    
+    channel.subscribe();
 
     return () => {
       supabase.removeChannel(channel);

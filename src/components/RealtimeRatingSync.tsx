@@ -43,8 +43,9 @@ export default function RealtimeRatingSync() {
           loadSyncData();
           showSyncNotification();
         }
-      )
-      .subscribe();
+      );
+    
+    gameResultsChannel.subscribe();
 
     const playersChannel = supabase
       .channel('rating-sync-players')
@@ -53,8 +54,9 @@ export default function RealtimeRatingSync() {
         () => {
           loadSyncData();
         }
-      )
-      .subscribe();
+      );
+    
+    playersChannel.subscribe();
 
     return () => {
       supabase.removeChannel(gameResultsChannel);

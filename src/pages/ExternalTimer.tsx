@@ -161,8 +161,9 @@ const ExternalTimer = () => {
             setTournament(payload.new as Tournament);
           }
         }
-      )
-      .subscribe();
+      );
+    
+    tournamentChannel.subscribe();
 
     // Подписка на изменения регистраций - только обновляем registrations, не трогая таймер
     const registrationChannel = supabase
@@ -186,8 +187,9 @@ const ExternalTimer = () => {
             setRegistrations(registrationData);
           }
         }
-      )
-      .subscribe();
+      );
+    
+    registrationChannel.subscribe();
 
     return () => {
       supabase.removeChannel(tournamentChannel);

@@ -65,16 +65,18 @@ export default function Rating() {
       .on('postgres_changes', 
         { event: '*', schema: 'public', table: 'players' }, 
         () => loadData()
-      )
-      .subscribe();
+      );
+    
+    playersChannel.subscribe();
 
     const tournamentsChannel = supabase
       .channel('rating-tournaments-changes')
       .on('postgres_changes', 
         { event: '*', schema: 'public', table: 'tournaments' }, 
         () => loadData()
-      )
-      .subscribe();
+      );
+    
+    tournamentsChannel.subscribe();
 
     return () => {
       window.removeEventListener('scroll', handleScroll);

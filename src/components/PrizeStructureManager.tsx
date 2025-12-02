@@ -80,8 +80,9 @@ const PrizeStructureManager = ({ tournamentId, registeredPlayers, mode = 'manage
         () => {
           fetchTournamentData();
         }
-      )
-      .subscribe();
+      );
+    
+    channel.subscribe();
 
     return () => {
       supabase.removeChannel(channel);
