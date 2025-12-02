@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Trophy, Users, Clock, ChevronRight, Zap, Flame, Coins, Timer } from 'lucide-react';
+import { Trophy, Users, Clock, ChevronRight, Zap, Flame, Coins, Timer, MapPin } from 'lucide-react';
 import { GlitchText } from '@/components/ui/glitch-text';
 import { Button } from '@/components/ui/button';
 
@@ -62,13 +62,31 @@ export const TournamentCard: React.FC<TournamentCardProps> = ({
   
   const getCountdownDisplay = () => {
     if (daysUntil > 0) {
-      return { value: `${daysUntil}д ${hoursUntil}ч`, urgent: false };
+      return { 
+        parts: [
+          { num: daysUntil, label: 'д' },
+          { num: hoursUntil, label: 'ч' }
+        ],
+        urgent: false 
+      };
     } else if (hoursUntil > 0) {
-      return { value: `${hoursUntil}ч ${minutesUntil}м`, urgent: hoursUntil <= 2 };
+      return { 
+        parts: [
+          { num: hoursUntil, label: 'ч' },
+          { num: minutesUntil, label: 'м' }
+        ],
+        urgent: hoursUntil <= 2 
+      };
     } else if (minutesUntil > 0) {
-      return { value: `${minutesUntil}:${secondsUntil.toString().padStart(2, '0')}`, urgent: true };
+      return { 
+        parts: [
+          { num: minutesUntil, label: ':' },
+          { num: secondsUntil, label: '', padded: true }
+        ],
+        urgent: true 
+      };
     } else {
-      return { value: 'СКОРО', urgent: true };
+      return { parts: [{ num: null, label: 'СКОРО' }], urgent: true };
     }
   };
   
@@ -160,6 +178,16 @@ export const TournamentCard: React.FC<TournamentCardProps> = ({
           )}
         </div>
 
+        {/* Description / Address */}
+        {tournament.description && (
+          <div className="flex items-start gap-2 mb-3 px-1">
+            <MapPin className="h-4 w-4 text-syndikate-orange/70 mt-0.5 shrink-0" />
+            <p className="text-sm text-foreground/70 font-medium leading-snug line-clamp-2">
+              {tournament.description}
+            </p>
+          </div>
+        )}
+
         {/* Main Time Block */}
         <div className={`brutal-border p-4 mb-4 ${
           isUrgent || isLive
@@ -188,19 +216,41 @@ export const TournamentCard: React.FC<TournamentCardProps> = ({
             
             {/* Countdown */}
             {tournament.status === 'registration' && timeUntilStart > 0 && (
-              <div className={`text-right px-4 py-2 brutal-border ${
+              <div className={`text-right px-3 py-2 brutal-border ${
                 countdown.urgent ? 'bg-syndikate-red/20' : 'bg-background/40'
               } ${countdown.urgent ? 'animate-pulse' : ''}`}>
-                <div className="flex items-center gap-2 justify-end">
-                  <Timer className={`h-4 w-4 ${countdown.urgent ? 'text-syndikate-red' : 'text-foreground/50'}`} />
-                  <span className={`text-xl font-display font-black tabular-nums ${
-                    countdown.urgent ? 'text-syndikate-red' : 'text-foreground'
-                  }`}>
-                    {countdown.value}
-                  </span>
+                <div className="flex items-center gap-1 justify-end">
+                  <Timer className={`h-3.5 w-3.5 ${countdown.urgent ? 'text-syndikate-red' : 'text-foreground/50'}`} />
+                  <div className="flex items-baseline">
+                    {countdown.parts.map((part, idx) => (
+                      <span key={idx} className="flex items-baseline">
+                        {part.num !== null ? (
+                          <>
+                            <span className={`text-xl font-display font-black tabular-nums ${
+                              countdown.urgent ? 'text-syndikate-red' : 'text-foreground'
+                            }`}>
+                              {part.padded ? String(part.num).padStart(2, '0') : part.num}
+                            </span>
+                            <span className={`text-xs font-medium ml-0.5 ${
+                              countdown.urgent ? 'text-syndikate-red/60' : 'text-foreground/40'
+                            }`}>
+                              {part.label}
+                            </span>
+                            {idx < countdown.parts.length - 1 && <span className="mx-1" />}
+                          </>
+                        ) : (
+                          <span className={`text-base font-display font-black ${
+                            countdown.urgent ? 'text-syndikate-red' : 'text-foreground'
+                          }`}>
+                            {part.label}
+                          </span>
+                        )}
+                      </span>
+                    ))}
+                  </div>
                 </div>
-                <div className={`text-[10px] uppercase tracking-widest font-bold mt-0.5 ${
-                  countdown.urgent ? 'text-syndikate-red/70' : 'text-foreground/50'
+                <div className={`text-[9px] uppercase tracking-widest font-bold mt-0.5 ${
+                  countdown.urgent ? 'text-syndikate-red/60' : 'text-foreground/40'
                 }`}>
                   до старта
                 </div>
