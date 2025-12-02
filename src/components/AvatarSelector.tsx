@@ -173,11 +173,11 @@ export function AvatarSelector({ onSelect, onClose, playerId }: AvatarSelectorPr
         return;
       }
 
-      // Compress image if larger than 1MB (всегда сжимаем большие файлы)
-      if (file.size > 1024 * 1024) {
+      // Compress image if larger than 500KB (агрессивное сжатие для всех файлов)
+      if (file.size > 500 * 1024) {
         console.log('Compressing image, original size:', `${(file.size / (1024 * 1024)).toFixed(2)} MB`);
         toast.info("Сжимаем изображение...");
-        file = await compressImage(file);
+        file = await compressImage(file, 500);
         console.log('Image compressed, new size:', `${(file.size / 1024).toFixed(2)} KB`);
       }
 
@@ -275,13 +275,12 @@ export function AvatarSelector({ onSelect, onClose, playerId }: AvatarSelectorPr
                   id="avatar-upload"
                   type="file"
                   accept="image/*"
-                  capture="environment"
                   onChange={handleFileUpload}
                   disabled={uploading}
                   className="mt-2 cursor-pointer"
                 />
                 <p className="text-xs text-muted-foreground mt-1">
-                  Нажмите, чтобы выбрать фото из галереи или сделать снимок. Файлы более 1 МБ автоматически сжимаются.
+                  Выберите фото из галереи или сделайте новое. Большие файлы автоматически сжимаются.
                 </p>
               </div>
 
