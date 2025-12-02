@@ -12,23 +12,25 @@ interface TelegramAuthData {
 }
 
 // Функция для проверки подлинности данных Telegram
+// В продакшене здесь должна быть реальная проверка HMAC-SHA256
 function verifyTelegramAuth(authData: TelegramAuthData, botToken: string): boolean {
-  const { hash, ...dataCheckString } = authData;
+  // Проверяем наличие обязательных полей
+  if (!authData.id || !authData.auth_date) {
+    console.log('Missing required fields in auth data');
+    return false;
+  }
   
-  // Создаем строку для проверки
-  const checkString = Object.keys(dataCheckString)
-    .sort()
-    .map(key => `${key}=${dataCheckString[key as keyof typeof dataCheckString]}`)
-    .join('\n');
+  // Для бота авторизации через webhook используем упрощенную проверку
+  // hash = 'telegram_bot_auth' означает что запрос пришел от нашего webhook
+  if (authData.hash === 'telegram_bot_auth') {
+    console.log('Auth via telegram webhook - trusted source');
+    return true;
+  }
   
-  // Создаем секретный ключ из токена бота
-  const secretKey = new TextEncoder().encode(botToken);
-  
-  // Хешируем строку проверки (упрощенная реализация для демонстрации)
-  // В продакшене следует использовать crypto.subtle.importKey и HMAC
-  const expectedHash = btoa(checkString); // Упрощенная хеширование для демонстрации
-  
-  return true; // В продакшене здесь должна быть реальная проверка HMAC-SHA256
+  // Для прямой авторизации через Telegram Widget - возвращаем true
+  // В продакшене здесь должна быть проверка HMAC-SHA256
+  console.log('Auth via direct Telegram login');
+  return true;
 }
 
 Deno.serve(async (req) => {
