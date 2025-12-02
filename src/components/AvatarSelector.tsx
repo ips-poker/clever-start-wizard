@@ -228,6 +228,7 @@ export function AvatarSelector({ onSelect, onClose, playerId }: AvatarSelectorPr
       onClose();
     } else {
       console.log('No avatar selected');
+      toast.error("Пожалуйста, сначала выберите аватар");
     }
   };
 
@@ -319,8 +320,8 @@ export function AvatarSelector({ onSelect, onClose, playerId }: AvatarSelectorPr
             Отмена
           </Button>
           <Button 
-            onClick={handleSelectAvatar} 
-            disabled={!selectedAvatar || uploading}
+            onClick={handleSelectAvatar}
+            disabled={uploading}
           >
             Выбрать аватар
           </Button>
