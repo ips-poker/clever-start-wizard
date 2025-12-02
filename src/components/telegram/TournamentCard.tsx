@@ -82,22 +82,22 @@ export const TournamentCard: React.FC<TournamentCardProps> = ({
   const getStatusBadge = () => {
     if (tournament.status === 'active') {
       return (
-        <div className="px-3 py-1.5 bg-syndikate-red/20 brutal-border text-sm uppercase animate-pulse">
-          <span className="text-syndikate-red font-display">● LIVE</span>
+        <div className="inline-flex px-4 py-2 bg-syndikate-red/30 brutal-border text-base uppercase animate-pulse">
+          <span className="text-syndikate-red font-display font-bold tracking-wide">● LIVE</span>
         </div>
       );
     }
     if (tournament.status === 'registration') {
       if (daysUntil === 0 && hoursUntil <= 1) {
         return (
-          <div className="px-3 py-1.5 bg-syndikate-orange/20 brutal-border text-sm uppercase animate-pulse">
-            <span className="text-syndikate-orange font-display">● СКОРО</span>
+          <div className="inline-flex px-4 py-2 bg-syndikate-orange/30 brutal-border text-base uppercase animate-pulse">
+            <span className="text-syndikate-orange font-display font-bold tracking-wide">● СКОРО</span>
           </div>
         );
       }
       return (
-        <div className="px-3 py-1.5 bg-syndikate-orange/20 brutal-border text-sm uppercase">
-          <span className="text-syndikate-orange font-display">● РЕГИСТРАЦИЯ</span>
+        <div className="inline-flex px-4 py-2 bg-syndikate-orange/30 brutal-border text-base uppercase">
+          <span className="text-syndikate-orange font-display font-bold tracking-wide">● ОТКРЫТА</span>
         </div>
       );
     }
@@ -111,7 +111,7 @@ export const TournamentCard: React.FC<TournamentCardProps> = ({
 
   return (
     <div
-      className="relative bg-syndikate-metal/90 brutal-border backdrop-blur-xl shadow-brutal overflow-hidden group cursor-pointer hover:shadow-neon-orange transition-all duration-300 hover:scale-[1.01] animate-fade-in"
+      className="relative bg-syndikate-metal/95 brutal-border backdrop-blur-xl shadow-brutal overflow-hidden group cursor-pointer hover:shadow-neon-orange transition-all duration-300 hover:scale-[1.01] animate-fade-in"
       onClick={onClick}
       style={{
         animationDelay: `${index * 100}ms`,
@@ -120,7 +120,7 @@ export const TournamentCard: React.FC<TournamentCardProps> = ({
     >
       {/* Animated glow background */}
       <div className="absolute inset-0 bg-gradient-to-br from-syndikate-orange/10 via-transparent to-syndikate-red/10 opacity-0 group-hover:opacity-100 transition-opacity" />
-      <div className="absolute inset-0 industrial-texture opacity-30" />
+      <div className="absolute inset-0 industrial-texture opacity-20" />
       
       {/* Metallic shine effect on hover */}
       <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
@@ -129,48 +129,48 @@ export const TournamentCard: React.FC<TournamentCardProps> = ({
       <div className="absolute top-2 left-2 w-6 h-6 border-l-2 border-t-2 border-syndikate-orange transition-all group-hover:w-10 group-hover:h-10" />
       <div className="absolute top-2 right-2 w-6 h-6 border-r-2 border-t-2 border-syndikate-orange transition-all group-hover:w-10 group-hover:h-10" />
 
-      <div className="relative z-10 p-5 space-y-4">
+      <div className="relative z-10 p-5 space-y-5">
         {/* Header with name and status */}
-        <div className="flex items-start justify-between gap-3">
+        <div className="flex items-start justify-between gap-4">
           <div className="flex-1 min-w-0">
-            <h3 className="text-xl font-display mb-2 leading-tight">
+            <h3 className="text-2xl font-display font-bold mb-3 leading-tight text-foreground">
               <GlitchText text={tournament.name} />
             </h3>
             {getStatusBadge()}
           </div>
-          <div className="text-right shrink-0">
-            <div className="text-2xl font-display text-syndikate-orange font-bold">
+          <div className="text-right shrink-0 bg-syndikate-orange/10 brutal-border px-4 py-3">
+            <div className="text-3xl font-display text-syndikate-orange font-bold">
               {tournament.participation_fee.toLocaleString()}₽
             </div>
-            <div className="text-sm text-syndikate-concrete">Взнос</div>
+            <div className="text-sm text-foreground/70 font-medium uppercase tracking-wide">Взнос</div>
           </div>
         </div>
 
         {/* PROMINENT DATE & TIME SECTION */}
-        <div className="bg-gradient-to-r from-syndikate-orange/20 to-syndikate-red/10 brutal-border p-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-syndikate-orange/20 brutal-border flex items-center justify-center">
-                <Calendar className="h-6 w-6 text-syndikate-orange" />
+        <div className="bg-gradient-to-r from-syndikate-orange/20 to-syndikate-red/15 brutal-border p-5">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 bg-syndikate-orange/30 brutal-border flex items-center justify-center">
+                <Calendar className="h-7 w-7 text-syndikate-orange" />
               </div>
               <div>
                 <div className="text-2xl font-display text-foreground font-bold">
                   {startTime.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })}
                 </div>
-                <div className="text-sm text-syndikate-concrete uppercase">
+                <div className="text-base text-foreground/60 capitalize font-medium">
                   {startTime.toLocaleDateString('ru-RU', { weekday: 'long' })}
                 </div>
               </div>
             </div>
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-syndikate-orange/20 brutal-border flex items-center justify-center">
-                <Clock className="h-6 w-6 text-syndikate-orange" />
-              </div>
+            <div className="flex items-center gap-4">
               <div className="text-right">
-                <div className="text-2xl font-display text-syndikate-orange font-bold">
+                <div className="text-3xl font-display text-syndikate-orange font-bold">
                   {startTime.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}
                 </div>
-                <div className="text-sm text-syndikate-concrete uppercase">Начало</div>
+                <div className="text-base text-foreground/60 font-medium uppercase">Начало</div>
+              </div>
+              <div className="w-14 h-14 bg-syndikate-orange/30 brutal-border flex items-center justify-center">
+                <Clock className="h-7 w-7 text-syndikate-orange" />
               </div>
             </div>
           </div>
@@ -178,30 +178,30 @@ export const TournamentCard: React.FC<TournamentCardProps> = ({
         
         {/* Countdown Timer */}
         {tournament.status === 'registration' && timeUntilStart > 0 && (
-          <div className="bg-background/40 brutal-border p-4">
-            <div className="flex items-center justify-center gap-2 mb-3">
+          <div className="bg-background/50 brutal-border p-5">
+            <div className="flex items-center justify-center gap-2 mb-4">
               <div className="w-2 h-2 bg-syndikate-orange rounded-full animate-pulse" />
-              <div className="text-sm text-syndikate-orange uppercase font-display tracking-wider">
+              <div className="text-base text-syndikate-orange uppercase font-display tracking-wider font-bold">
                 До начала осталось
               </div>
             </div>
-            <div className="flex justify-center items-center gap-3">
-              <div className="flex flex-col items-center bg-syndikate-metal brutal-border px-4 py-3 min-w-[80px]">
-                <div className="text-3xl font-display text-syndikate-orange tabular-nums leading-none font-bold">
+            <div className="flex justify-center items-center gap-4">
+              <div className="flex flex-col items-center bg-syndikate-metal brutal-border px-5 py-4 min-w-[90px]">
+                <div className="text-4xl font-display text-syndikate-orange tabular-nums leading-none font-bold">
                   {timeDisplay.primary}
                 </div>
-                <div className="text-xs text-syndikate-concrete uppercase mt-1 font-display">
+                <div className="text-sm text-foreground/70 uppercase mt-2 font-display font-medium">
                   {timeDisplay.primaryLabel}
                 </div>
               </div>
               {timeDisplay.secondary !== null && (
                 <>
-                  <div className="text-2xl font-display text-syndikate-orange/50">:</div>
-                  <div className="flex flex-col items-center bg-syndikate-metal brutal-border px-4 py-3 min-w-[80px]">
-                    <div className="text-3xl font-display text-syndikate-orange tabular-nums leading-none font-bold">
+                  <div className="text-3xl font-display text-syndikate-orange/60 font-bold">:</div>
+                  <div className="flex flex-col items-center bg-syndikate-metal brutal-border px-5 py-4 min-w-[90px]">
+                    <div className="text-4xl font-display text-syndikate-orange tabular-nums leading-none font-bold">
                       {timeDisplay.secondary}
                     </div>
-                    <div className="text-xs text-syndikate-concrete uppercase mt-1 font-display">
+                    <div className="text-sm text-foreground/70 uppercase mt-2 font-display font-medium">
                       {timeDisplay.secondaryLabel}
                     </div>
                   </div>
@@ -212,39 +212,39 @@ export const TournamentCard: React.FC<TournamentCardProps> = ({
         )}
 
         {/* Tournament Format & Stack */}
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-4">
           {tournament.tournament_format && (
-            <div className="bg-background/30 brutal-border p-3 flex items-center gap-2">
-              <Trophy className="h-5 w-5 text-syndikate-orange shrink-0" />
+            <div className="bg-background/40 brutal-border p-4 flex items-center gap-3">
+              <Trophy className="h-6 w-6 text-syndikate-orange shrink-0" />
               <div>
-                <div className="text-xs text-syndikate-concrete uppercase">Формат</div>
-                <div className="text-base font-display text-foreground">{tournament.tournament_format}</div>
+                <div className="text-sm text-foreground/60 uppercase font-medium">Формат</div>
+                <div className="text-lg font-display text-foreground font-bold">{tournament.tournament_format}</div>
               </div>
             </div>
           )}
-          <div className="bg-background/30 brutal-border p-3 flex items-center gap-2">
-            <Zap className="h-5 w-5 text-syndikate-orange shrink-0" />
+          <div className="bg-background/40 brutal-border p-4 flex items-center gap-3">
+            <Zap className="h-6 w-6 text-syndikate-orange shrink-0" />
             <div>
-              <div className="text-xs text-syndikate-concrete uppercase">Стек</div>
-              <div className="text-base font-display text-foreground">{tournament.starting_chips.toLocaleString()}</div>
+              <div className="text-sm text-foreground/60 uppercase font-medium">Стек</div>
+              <div className="text-lg font-display text-foreground font-bold">{tournament.starting_chips.toLocaleString()}</div>
             </div>
           </div>
         </div>
         
         {/* Registration Progress Bar */}
         {tournament.status === 'registration' && (
-          <div className="space-y-2">
-            <div className="flex justify-between text-base">
+          <div className="space-y-3">
+            <div className="flex justify-between items-center text-lg">
               <span className="text-foreground flex items-center gap-2">
-                <Users className="h-4 w-4 text-syndikate-orange" />
-                <span className="font-display">{registeredCount}/{maxPlayers}</span>
-                <span className="text-syndikate-concrete text-sm">игроков</span>
+                <Users className="h-5 w-5 text-syndikate-orange" />
+                <span className="font-display font-bold">{registeredCount}/{maxPlayers}</span>
+                <span className="text-foreground/60 text-base font-medium">игроков</span>
               </span>
-              <span className={`font-display ${fillPercentage >= 90 ? "text-syndikate-red animate-pulse" : "text-syndikate-orange"}`}>
+              <span className={`font-display font-bold text-lg ${fillPercentage >= 90 ? "text-syndikate-red animate-pulse" : "text-syndikate-orange"}`}>
                 {spotsLeft} мест
               </span>
             </div>
-            <div className="h-3 bg-background brutal-border overflow-hidden">
+            <div className="h-4 bg-background brutal-border overflow-hidden">
               <div 
                 className={`h-full transition-all duration-500 ${
                   fillPercentage >= 90 
@@ -258,23 +258,23 @@ export const TournamentCard: React.FC<TournamentCardProps> = ({
         )}
 
         {/* Action Buttons */}
-        <div className="flex gap-3 pt-2">
+        <div className="flex gap-4 pt-2">
           {tournament.status === 'registration' && onQuickRegister && (
             <Button
               onClick={handleQuickRegister}
-              className="flex-1 h-12 bg-syndikate-orange hover:bg-syndikate-orange/90 text-syndikate-metal font-display text-base uppercase tracking-wider brutal-border shadow-brutal hover:shadow-neon-orange transition-all"
+              className="flex-1 h-14 bg-syndikate-orange hover:bg-syndikate-orange/90 text-syndikate-metal font-display text-lg uppercase tracking-wider brutal-border shadow-brutal hover:shadow-neon-orange transition-all font-bold"
             >
-              <Zap className="h-5 w-5 mr-2" />
+              <Zap className="h-6 w-6 mr-2" />
               Регистрация
             </Button>
           )}
           <Button
             onClick={onClick}
             variant="outline"
-            className="flex-1 h-12 bg-transparent border-syndikate-concrete/30 hover:bg-syndikate-concrete/10 text-foreground font-display text-base uppercase tracking-wider brutal-border"
+            className="flex-1 h-14 bg-transparent border-2 border-foreground/30 hover:bg-foreground/10 hover:border-syndikate-orange text-foreground font-display text-lg uppercase tracking-wider brutal-border font-bold"
           >
             Подробнее
-            <ChevronRight className="h-5 w-5 ml-2" />
+            <ChevronRight className="h-6 w-6 ml-2" />
           </Button>
         </div>
       </div>
