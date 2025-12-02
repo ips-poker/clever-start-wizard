@@ -152,15 +152,17 @@ export function AvatarSelector({ onSelect, onClose, playerId }: AvatarSelectorPr
     try {
       setUploading(true);
       
-      if (!event.target.files || event.target.files.length === 0) {
+      const files = event.target.files;
+      if (!files || files.length === 0) {
         console.log('No files selected');
+        setUploading(false);
         return;
       }
 
-      let file = event.target.files[0];
+      let file = files[0];
       console.log('File selected:', { 
         name: file.name, 
-        size: file.size, 
+        size: `${(file.size / (1024 * 1024)).toFixed(2)} MB`, 
         type: file.type 
       });
       
@@ -273,12 +275,13 @@ export function AvatarSelector({ onSelect, onClose, playerId }: AvatarSelectorPr
                   id="avatar-upload"
                   type="file"
                   accept="image/*"
+                  capture="environment"
                   onChange={handleFileUpload}
                   disabled={uploading}
-                  className="mt-2"
+                  className="mt-2 cursor-pointer"
                 />
                 <p className="text-xs text-muted-foreground mt-1">
-                  Поддерживаются форматы: JPG, PNG, GIF. Файлы более 1 МБ автоматически сжимаются до оптимального размера.
+                  Нажмите, чтобы выбрать фото из галереи или сделать снимок. Файлы более 1 МБ автоматически сжимаются.
                 </p>
               </div>
 
