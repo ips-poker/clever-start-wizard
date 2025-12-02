@@ -233,7 +233,24 @@ export function useCMSContent(pageSlug: string): UseCMSContentResult {
   }, [pageSlug]); // Only pageSlug as dependency
 
   const getContent = useCallback((key: string, fallback: string = '') => {
-    return content[key] || fallback;
+    const value = content[key];
+    
+    // Если значение не найдено, возвращаем fallback
+    if (value === undefined || value === null || value === '') {
+      return fallback;
+    }
+    
+    // Если значение - объект, конвертируем в JSON строку
+    if (typeof value === 'object') {
+      try {
+        return JSON.stringify(value);
+      } catch {
+        return fallback;
+      }
+    }
+    
+    // Всегда возвращаем строку
+    return String(value);
   }, [content]);
 
   const refetch = useCallback(() => {
