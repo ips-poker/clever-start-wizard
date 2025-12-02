@@ -33,27 +33,6 @@ export const TelegramAuth: React.FC<TelegramAuthProps> = ({ onAuthComplete }) =>
 
   const initializeTelegramAuth = async () => {
     try {
-      // Проверяем, открыто ли приложение как PWA (с главного экрана)
-      const isPWA = window.matchMedia('(display-mode: standalone)').matches ||
-                    (window.navigator as any).standalone === true ||
-                    document.referrer.includes('android-app://');
-      
-      // Если PWA, пытаемся восстановить сессию из localStorage
-      if (isPWA) {
-        const savedUserData = localStorage.getItem('telegram_user_data');
-        if (savedUserData) {
-          try {
-            const userData = JSON.parse(savedUserData);
-            setTelegramUser(userData);
-            onAuthComplete(userData);
-            setLoading(false);
-            return;
-          } catch (e) {
-            console.error('Error parsing saved user data:', e);
-          }
-        }
-      }
-      
       // Проверяем режим эмуляции ПЕРЕД попыткой восстановления Telegram данных
       const isDevelopment = window.location.hostname === 'localhost' || 
                             window.location.hostname === '127.0.0.1' ||
@@ -74,7 +53,7 @@ export const TelegramAuth: React.FC<TelegramAuthProps> = ({ onAuthComplete }) =>
         return;
       }
       
-      // Обычная авторизация через Telegram только если НЕ режим разработки и НЕ PWA
+      // Обычная авторизация через Telegram
       await initData.restore();
       const user = initData.user();
       
