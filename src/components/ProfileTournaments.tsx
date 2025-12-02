@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Users, DollarSign, Clock, Trophy, UserCheck, UserPlus, Plus } from "lucide-react";
+import { Calendar, Users, DollarSign, Clock, Trophy, UserCheck, UserPlus, Zap, Target, Flame } from "lucide-react";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 import { ru } from "date-fns/locale";
@@ -17,6 +17,7 @@ interface Tournament {
   max_players: number;
   status: string;
   starting_chips: number;
+  participation_fee?: number;
 }
 
 interface ProfileTournamentsProps {
@@ -30,7 +31,6 @@ export function ProfileTournaments({ playerId }: ProfileTournamentsProps) {
   const [loading, setLoading] = useState(true);
   const [registering, setRegistering] = useState<string>("");
 
-  // Загружаем данные только один раз при монтировании
   useEffect(() => {
     loadAllData();
   }, []);
@@ -63,7 +63,6 @@ export function ProfileTournaments({ playerId }: ProfileTournamentsProps) {
 
       setTournaments(data || []);
 
-      // Загружаем счетчики
       if (data && data.length > 0) {
         const tournamentIds = data.map(t => t.id);
         const { data: registrations, error: countError } = await supabase
@@ -81,7 +80,7 @@ export function ProfileTournaments({ playerId }: ProfileTournamentsProps) {
       }
     } catch (error) {
       console.error('Error loading tournaments:', error);
-      toast("Ошибка при загрузке турниров");
+      toast.error("Ошибка при загрузке турниров");
     }
   };
 
@@ -105,7 +104,7 @@ export function ProfileTournaments({ playerId }: ProfileTournamentsProps) {
 
   const handleRegister = async (tournamentId: string) => {
     if (!playerId) {
-      toast("Ошибка: игрок не найден");
+      toast.error("Ошибка: игрок не найден");
       return;
     }
 
@@ -122,23 +121,22 @@ export function ProfileTournaments({ playerId }: ProfileTournamentsProps) {
 
       if (error) {
         if (error.code === '23505') {
-          toast("Вы уже зарегистрированы на этот турнир");
+          toast.error("Вы уже зарегистрированы на этот турнир");
         } else {
           throw error;
         }
         return;
       }
 
-      // Обновляем локальное состояние
       setRegisteredTournaments(prev => new Set([...prev, tournamentId]));
       setTournamentCounts(prev => ({
         ...prev,
         [tournamentId]: (prev[tournamentId] || 0) + 1
       }));
-      toast("Успешно зарегистрированы на турнир!");
+      toast.success("Успешно зарегистрированы на турнир!");
     } catch (error) {
       console.error('Error registering for tournament:', error);
-      toast("Ошибка при регистрации на турнир");
+      toast.error("Ошибка при регистрации на турнир");
     } finally {
       setRegistering("");
     }
@@ -158,7 +156,6 @@ export function ProfileTournaments({ playerId }: ProfileTournamentsProps) {
 
       if (error) throw error;
 
-      // Обновляем локальное состояние
       setRegisteredTournaments(prev => {
         const newSet = new Set(prev);
         newSet.delete(tournamentId);
@@ -168,10 +165,10 @@ export function ProfileTournaments({ playerId }: ProfileTournamentsProps) {
         ...prev,
         [tournamentId]: Math.max(0, (prev[tournamentId] || 0) - 1)
       }));
-      toast("Регистрация отменена");
+      toast.success("Регистрация отменена");
     } catch (error) {
       console.error('Error unregistering from tournament:', error);
-      toast("Ошибка при отмене регистрации");
+      toast.error("Ошибка при отмене регистрации");
     } finally {
       setRegistering("");
     }
@@ -180,17 +177,17 @@ export function ProfileTournaments({ playerId }: ProfileTournamentsProps) {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'scheduled':
-        return <Badge className="bg-gradient-to-r from-blue-400 to-blue-500 text-white border-0">📅 Запланирован</Badge>;
+        return <Badge className="bg-blue-600 text-white border-0 rounded-none font-bold">📅 ЗАПЛАНИРОВАН</Badge>;
       case 'registration':
-        return <Badge className="bg-gradient-to-r from-green-500 to-green-600 text-white border-0">📝 Регистрация</Badge>;
+        return <Badge className="bg-green-600 text-white border-0 rounded-none font-bold animate-pulse">📝 РЕГИСТРАЦИЯ</Badge>;
       case 'running':
-        return <Badge className="bg-gradient-to-r from-red-500 to-red-600 text-white border-0">🔴 Идет турнир</Badge>;
+        return <Badge className="bg-accent text-white border-0 rounded-none font-bold">🔴 ИДЕТ ИГРА</Badge>;
       case 'paused':
-        return <Badge className="bg-gradient-to-r from-yellow-500 to-yellow-600 text-white border-0">⏸️ Пауза</Badge>;
+        return <Badge className="bg-yellow-600 text-white border-0 rounded-none font-bold">⏸️ ПАУЗА</Badge>;
       case 'completed':
-        return <Badge className="bg-gradient-to-r from-gray-400 to-gray-500 text-white border-0">🏁 Завершен</Badge>;
+        return <Badge className="bg-muted text-muted-foreground border-0 rounded-none">🏁 ЗАВЕРШЕН</Badge>;
       default:
-        return <Badge variant="secondary">{status}</Badge>;
+        return <Badge variant="secondary" className="rounded-none">{status}</Badge>;
     }
   };
 
@@ -214,12 +211,17 @@ export function ProfileTournaments({ playerId }: ProfileTournamentsProps) {
     );
   }
 
+  const registeredCount = registeredTournaments.size;
+  const upcomingCount = tournaments.filter(t => t.status === 'scheduled' || t.status === 'registration').length;
+
   if (tournaments.length === 0) {
     return (
-      <Card className="border-border/50">
+      <Card className="brutal-border bg-card">
         <CardContent className="p-8 text-center">
-          <Calendar className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
-          <h3 className="text-lg font-medium text-foreground mb-2">Нет доступных турниров</h3>
+          <div className="w-16 h-16 bg-secondary border border-border flex items-center justify-center mx-auto mb-4">
+            <Calendar className="h-8 w-8 text-primary" />
+          </div>
+          <h3 className="text-lg font-bold text-foreground mb-2">НЕТ ДОСТУПНЫХ ТУРНИРОВ</h3>
           <p className="text-muted-foreground">
             В данный момент нет турниров, доступных для регистрации
           </p>
@@ -230,125 +232,199 @@ export function ProfileTournaments({ playerId }: ProfileTournamentsProps) {
 
   return (
     <div className="space-y-6">
+      {/* Stats Header */}
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+        <Card className="brutal-border bg-card">
+          <CardContent className="p-4 flex items-center gap-3">
+            <div className="p-2 bg-primary/10 border border-primary/30">
+              <UserCheck className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-primary">{registeredCount}</p>
+              <p className="text-xs text-muted-foreground uppercase tracking-wider">Мои регистрации</p>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card className="brutal-border bg-card">
+          <CardContent className="p-4 flex items-center gap-3">
+            <div className="p-2 bg-blue-500/10 border border-blue-500/30">
+              <Calendar className="h-5 w-5 text-blue-400" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-blue-400">{upcomingCount}</p>
+              <p className="text-xs text-muted-foreground uppercase tracking-wider">Предстоящих</p>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card className="brutal-border bg-card col-span-2 md:col-span-1">
+          <CardContent className="p-4 flex items-center gap-3">
+            <div className="p-2 bg-green-500/10 border border-green-500/30">
+              <Trophy className="h-5 w-5 text-green-400" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-green-400">{tournaments.length}</p>
+              <p className="text-xs text-muted-foreground uppercase tracking-wider">Всего турниров</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Header */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Trophy className="h-6 w-6 text-primary" />
-          <h2 className="text-2xl font-bold text-foreground">Турниры</h2>
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-primary border border-primary">
+            <Zap className="h-5 w-5 text-primary-foreground" />
+          </div>
+          <div>
+            <h2 className="text-xl font-bold text-foreground uppercase tracking-wide">Доступные турниры</h2>
+            <div className="h-0.5 w-20 bg-gradient-to-r from-primary to-accent mt-1" />
+          </div>
         </div>
-        <Button onClick={loadAllData} variant="outline" size="sm">
+        <Button onClick={loadAllData} variant="outline" size="sm" className="rounded-none border-border hover:border-primary">
           Обновить
         </Button>
       </div>
 
-      <div className="grid gap-6">
+      {/* Tournament Cards */}
+      <div className="grid gap-4">
         {tournaments.map((tournament) => {
           const isRegistered = registeredTournaments.has(tournament.id);
           const isLoading = registering === tournament.id;
           const timeInfo = formatTime(tournament.start_time);
-          const registeredCount = tournamentCounts[tournament.id] || 0;
+          const registeredPlayersCount = tournamentCounts[tournament.id] || 0;
+          const fillPercentage = (registeredPlayersCount / tournament.max_players) * 100;
 
           return (
-            <Card key={tournament.id} className="group border-border/50 hover:shadow-xl hover:shadow-primary/5 transition-all duration-300 hover:border-primary/20">
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div className="space-y-2">
-                    <CardTitle className="text-xl text-foreground">{tournament.name}</CardTitle>
+            <Card 
+              key={tournament.id} 
+              className={`brutal-border bg-card overflow-hidden transition-all duration-300 hover:border-primary/50 ${
+                isRegistered ? 'border-green-500/50 bg-green-500/5' : ''
+              }`}
+            >
+              {/* Progress bar at top */}
+              <div className="h-1 bg-secondary">
+                <div 
+                  className={`h-full transition-all duration-500 ${
+                    fillPercentage >= 90 ? 'bg-accent' : 
+                    fillPercentage >= 50 ? 'bg-primary' : 'bg-green-500'
+                  }`}
+                  style={{ width: `${fillPercentage}%` }}
+                />
+              </div>
+
+              <CardContent className="p-4 md:p-6">
+                <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
+                  {/* Tournament Info */}
+                  <div className="space-y-3 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      {getStatusBadge(tournament.status)}
+                      {isRegistered && (
+                        <Badge className="bg-green-600 text-white border-0 rounded-none font-bold">
+                          <UserCheck className="h-3 w-3 mr-1" />
+                          ВЫ УЧАСТВУЕТЕ
+                        </Badge>
+                      )}
+                    </div>
+                    
+                    <h3 className="text-xl font-bold text-foreground hover:text-primary transition-colors">
+                      {tournament.name}
+                    </h3>
+                    
                     {tournament.description && (
-                      <p className="text-muted-foreground text-sm">{tournament.description}</p>
+                      <p className="text-sm text-muted-foreground line-clamp-2">{tournament.description}</p>
                     )}
-                  </div>
-                  <div className="flex flex-col items-end gap-2">
-                    {getStatusBadge(tournament.status)}
-                    {isRegistered && (
-                      <Badge className="bg-gradient-to-r from-emerald-500 to-emerald-600 text-white border-0">
-                        <UserCheck className="h-3 w-3 mr-1" />
-                        Зарегистрирован
-                      </Badge>
-                    )}
-                  </div>
-                </div>
-              </CardHeader>
 
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="flex items-center gap-2 text-sm">
-                    <Calendar className="h-4 w-4 text-muted-foreground" />
-                    <div>
-                      <p className="font-medium text-foreground">{timeInfo.date}</p>
-                      <p className="text-muted-foreground">{timeInfo.time}</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2 text-sm">
-                    <Clock className="h-4 w-4 text-muted-foreground" />
-                    <div>
-                      <p className="font-medium text-foreground">Начало</p>
-                      <p className="text-muted-foreground">{timeInfo.relative}</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2 text-sm">
-                    <DollarSign className="h-4 w-4 text-muted-foreground" />
-                    <div>
-                      <p className="font-medium text-foreground">Бай-ин</p>
-                      <p className="text-muted-foreground">{tournament.buy_in}₽</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2 text-sm">
-                    <Users className="h-4 w-4 text-muted-foreground" />
-                    <div>
-                      <p className="font-medium text-foreground">Игроки</p>
-                      <p className="text-muted-foreground">{registeredCount}/{tournament.max_players}</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between pt-4 border-t border-border/50">
-                  <div className="text-sm text-muted-foreground">
-                    Стартовые фишки: <span className="font-medium text-foreground">{tournament.starting_chips.toLocaleString()}</span>
-                  </div>
-
-                  <div className="flex gap-2">
-                    {!playerId ? (
-                      <div className="text-sm text-muted-foreground">
-                        Войдите в аккаунт для регистрации
+                    {/* Info Grid */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pt-2">
+                      <div className="flex items-center gap-2 text-sm">
+                        <Calendar className="h-4 w-4 text-muted-foreground" />
+                        <div>
+                          <p className="font-medium text-foreground">{timeInfo.date}</p>
+                          <p className="text-xs text-muted-foreground">{timeInfo.time}</p>
+                        </div>
                       </div>
+
+                      <div className="flex items-center gap-2 text-sm">
+                        <Clock className="h-4 w-4 text-muted-foreground" />
+                        <div>
+                          <p className="font-medium text-foreground">Старт</p>
+                          <p className="text-xs text-muted-foreground">{timeInfo.relative}</p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 text-sm">
+                        <DollarSign className="h-4 w-4 text-muted-foreground" />
+                        <div>
+                          <p className="font-medium text-primary">{tournament.participation_fee || tournament.buy_in}₽</p>
+                          <p className="text-xs text-muted-foreground">Взнос</p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 text-sm">
+                        <Users className="h-4 w-4 text-muted-foreground" />
+                        <div>
+                          <p className={`font-medium ${fillPercentage >= 90 ? 'text-accent' : 'text-foreground'}`}>
+                            {registeredPlayersCount}/{tournament.max_players}
+                          </p>
+                          <p className="text-xs text-muted-foreground">Игроков</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Action Section */}
+                  <div className="flex flex-col items-end gap-3 min-w-[180px]">
+                    <div className="text-right">
+                      <p className="text-xs text-muted-foreground uppercase">Стартовый стек</p>
+                      <p className="text-lg font-bold text-foreground">{tournament.starting_chips.toLocaleString()}</p>
+                    </div>
+
+                    {!playerId ? (
+                      <p className="text-xs text-muted-foreground text-right">
+                        Войдите для регистрации
+                      </p>
                     ) : tournament.status === 'registration' ? (
                       isRegistered ? (
                         <Button
                           variant="outline"
                           onClick={() => handleUnregister(tournament.id)}
                           disabled={isLoading}
-                          className="gap-2"
+                          className="gap-2 rounded-none border-accent text-accent hover:bg-accent hover:text-white w-full md:w-auto"
                         >
                           {isLoading ? (
-                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current" />
                           ) : (
                             <UserCheck className="h-4 w-4" />
                           )}
-                          Отменить регистрацию
+                          Отменить
                         </Button>
                       ) : (
                         <Button
                           onClick={() => handleRegister(tournament.id)}
-                          disabled={isLoading || registeredCount >= tournament.max_players}
-                          className="gap-2"
+                          disabled={isLoading || registeredPlayersCount >= tournament.max_players}
+                          className="gap-2 rounded-none bg-primary hover:bg-primary/90 w-full md:w-auto"
                         >
                           {isLoading ? (
-                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-foreground"></div>
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-foreground" />
                           ) : (
                             <UserPlus className="h-4 w-4" />
                           )}
-                          {registeredCount >= tournament.max_players ? 'Нет мест' : 'Зарегистрироваться'}
+                          {registeredPlayersCount >= tournament.max_players ? 'Мест нет' : 'Участвовать'}
                         </Button>
                       )
-                    ) : tournament.status === 'running' || tournament.status === 'paused' ? (
-                      <Badge className="bg-red-100 text-red-800">Турнир идет</Badge>
+                    ) : tournament.status === 'running' ? (
+                      <Badge className="bg-accent/20 text-accent border border-accent/30 rounded-none">
+                        <Flame className="h-3 w-3 mr-1" />
+                        Турнир идет
+                      </Badge>
                     ) : tournament.status === 'scheduled' ? (
-                      <Badge className="bg-blue-100 text-blue-800">Скоро начнется</Badge>
+                      <Badge className="bg-blue-500/20 text-blue-400 border border-blue-500/30 rounded-none">
+                        Скоро открытие
+                      </Badge>
                     ) : (
-                      <Badge variant="secondary">Регистрация закрыта</Badge>
+                      <Badge variant="secondary" className="rounded-none">Закрыто</Badge>
                     )}
                   </div>
                 </div>
