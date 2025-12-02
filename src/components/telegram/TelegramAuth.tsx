@@ -33,6 +33,27 @@ export const TelegramAuth: React.FC<TelegramAuthProps> = ({ onAuthComplete }) =>
 
   const initializeTelegramAuth = async () => {
     try {
+      // Проверяем, открыто ли приложение как PWA (с главного экрана)
+      const isPWA = window.matchMedia('(display-mode: standalone)').matches ||
+                    (window.navigator as any).standalone === true ||
+                    document.referrer.includes('android-app://');
+      
+      // Если PWA, пытаемся восстановить сессию из localStorage
+      if (isPWA) {
+        const savedUserData = localStorage.getItem('telegram_user_data');
+        if (savedUserData) {
+          try {
+            const userData = JSON.parse(savedUserData);
+            setTelegramUser(userData);
+            onAuthComplete(userData);
+            setLoading(false);
+            return;
+          } catch (e) {
+            console.error('Error parsing saved user data:', e);
+          }
+        }
+      }
+      
       // Проверяем режим эмуляции ПЕРЕД попыткой восстановления Telegram данных
       const isDevelopment = window.location.hostname === 'localhost' || 
                             window.location.hostname === '127.0.0.1' ||
@@ -53,7 +74,7 @@ export const TelegramAuth: React.FC<TelegramAuthProps> = ({ onAuthComplete }) =>
         return;
       }
       
-      // Обычная авторизация через Telegram только если НЕ режим разработки
+      // Обычная авторизация через Telegram только если НЕ режим разработки и НЕ PWA
       await initData.restore();
       const user = initData.user();
       
@@ -78,11 +99,23 @@ export const TelegramAuth: React.FC<TelegramAuthProps> = ({ onAuthComplete }) =>
         setTelegramUser(telegramUserData);
         await authenticateWithSupabase(telegramUserData);
       } else {
-        setAuthError('Приложение должно быть открыто через Telegram бота');
+        // Если не удалось получить данные из Telegram SDK
+        // но приложение открыто как PWA - показываем ошибку с инструкцией
+        const isPWA = window.matchMedia('(display-mode: standalone)').matches;
+        if (isPWA) {
+          setAuthError('Пожалуйста, откройте приложение через Telegram бота первый раз для авторизации');
+        } else {
+          setAuthError('Приложение должно быть открыто через Telegram бота');
+        }
       }
     } catch (error) {
       console.error('Telegram auth error:', error);
-      setAuthError('Приложение должно быть открыто через Telegram бота');
+      const isPWA = window.matchMedia('(display-mode: standalone)').matches;
+      if (isPWA) {
+        setAuthError('Пожалуйста, откройте приложение через Telegram бота первый раз для авторизации');
+      } else {
+        setAuthError('Приложение должно быть открыто через Telegram бота');
+      }
     } finally {
       setLoading(false);
     }
@@ -136,6 +169,9 @@ export const TelegramAuth: React.FC<TelegramAuthProps> = ({ onAuthComplete }) =>
 
       if (data?.success) {
         console.log('Authentication successful');
+        
+        // Сохраняем данные пользователя для PWA режима
+        localStorage.setItem('telegram_user_data', JSON.stringify(telegramUserData));
         
         // Автоматически входим в приложение
         onAuthComplete(telegramUserData);
