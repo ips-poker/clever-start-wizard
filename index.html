@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="ru" style="background-color: #141414;">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
@@ -34,11 +34,27 @@
     <meta name="twitter:description" content="Syndikate Poker Club - брутальный покерный клуб для элиты. Турниры для тех, кто не боится рисковать." />
     
     <style>
-      /* Initial background to prevent flash */
-      html, body {
-        background-color: #141414;
+      /* Critical initial styles to prevent any flash */
+      * {
+        box-sizing: border-box;
+      }
+      
+      html {
+        background-color: #141414 !important;
         margin: 0;
         padding: 0;
+      }
+      
+      html, body {
+        background-color: #141414 !important;
+        margin: 0;
+        padding: 0;
+        color: #f2f2f2;
+      }
+      
+      #root {
+        background-color: #141414 !important;
+        min-height: 100vh;
       }
       
       /* Support for iOS safe areas */
@@ -48,8 +64,8 @@
     </style>
   </head>
 
-  <body>
-    <div id="root" class="notranslate" translate="no"></div>
+  <body style="background-color: #141414; margin: 0; padding: 0;">
+    <div id="root" class="notranslate" translate="no" style="background-color: #141414; min-height: 100vh;"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
