@@ -221,7 +221,9 @@ export function AvatarSelector({ onSelect, onClose, playerId }: AvatarSelectorPr
 
   const handleSelectAvatar = () => {
     if (selectedAvatar) {
+      console.log('Selecting avatar:', selectedAvatar);
       onSelect(selectedAvatar);
+      onClose();
     }
   };
 
