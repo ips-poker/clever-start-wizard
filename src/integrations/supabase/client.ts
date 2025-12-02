@@ -2,8 +2,9 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
-// Используем кастомный домен для Supabase API
-const SUPABASE_URL = "https://api.syndicate-poker.ru";
+// Временно используем прямой домен Supabase (проблемы с кастомным доменом на LTE)
+// TODO: Разобраться почему api.syndicate-poker.ru не работает без VPN
+const SUPABASE_URL = "https://mokhssmnorrhohrowxvu.supabase.co";
 
 console.log('🌐 Supabase API URL:', SUPABASE_URL);
 
