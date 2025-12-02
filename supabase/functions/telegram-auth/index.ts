@@ -233,7 +233,7 @@ Deno.serve(async (req) => {
 
     // Создаем сессию для пользователя
     // Используем основной домен для редиректа
-    const redirectUrl = 'https://syndicate-poker.ru/';
+    const redirectUrl = 'https://epc-poker.ru/';
     
     console.log('Redirect URL will be:', redirectUrl);
     
