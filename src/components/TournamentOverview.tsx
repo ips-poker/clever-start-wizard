@@ -333,82 +333,83 @@ const TournamentOverview = ({
         />
       )}
       
-      <div className="space-y-10">
+      <div className="space-y-6">
       {/* Timer and Level Display */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-        <Card className="bg-white/70 backdrop-blur-sm border border-gray-200/50 shadow-subtle rounded-xl overflow-hidden">
-          <CardHeader className="bg-white/50 border-b border-gray-200/30">
-            <CardTitle className="flex items-center gap-3 text-gray-800 text-xl font-light">
-              <div className="p-2 bg-gray-100/80 rounded-lg">
-                <Clock className="w-5 h-5 text-gray-600" />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card className="bg-card brutal-border overflow-hidden">
+          <CardHeader className="bg-secondary/50 border-b border-border">
+            <CardTitle className="flex items-center gap-3 text-foreground text-xl font-bold">
+              <div className="p-2 bg-primary/20 rounded-lg">
+                <Clock className="w-5 h-5 text-primary" />
               </div>
               Уровень {tournament.current_level}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6 p-6">
             <div className="text-center">
-              <div className={`text-6xl font-mono font-light transition-all duration-300 ${
-                currentTime <= 60 ? 'text-red-500' : 
-                currentTime <= 300 ? 'text-amber-500' : 
-                'text-gray-800'
+              <div className={`text-6xl font-mono font-bold transition-all duration-300 ${
+                currentTime <= 30 ? 'text-destructive animate-pulse' : 
+                currentTime <= 60 ? 'text-destructive' : 
+                currentTime <= 300 ? 'text-primary' : 
+                'text-foreground'
               }`}>
                 {formatTime(currentTime)}
               </div>
               <Progress 
                 value={timerProgress} 
-                className="mt-4 h-2 bg-gray-100/50"
+                className="mt-4 h-3 bg-secondary"
               />
             </div>
             <div className={`grid gap-4 ${currentBlindLevel?.ante > 0 ? 'grid-cols-3' : 'grid-cols-2'}`}>
-              <div className="text-center p-4 border border-gray-200/30 rounded-lg bg-white/50">
-                <p className="text-xs text-gray-500 font-medium mb-1">Малый блайнд</p>
-                <p className="text-2xl font-light text-gray-800">{currentSmallBlind}</p>
+              <div className="text-center p-4 border border-border rounded-lg bg-secondary/50">
+                <p className="text-xs text-muted-foreground font-medium mb-1">Малый блайнд</p>
+                <p className="text-2xl font-bold text-foreground">{currentSmallBlind}</p>
               </div>
-              <div className="text-center p-4 border border-gray-200/30 rounded-lg bg-white/50">
-                <p className="text-xs text-gray-500 font-medium mb-1">Большой блайнд</p>
-                <p className="text-2xl font-light text-gray-800">{currentBigBlind}</p>
+              <div className="text-center p-4 border border-border rounded-lg bg-secondary/50">
+                <p className="text-xs text-muted-foreground font-medium mb-1">Большой блайнд</p>
+                <p className="text-2xl font-bold text-foreground">{currentBigBlind}</p>
               </div>
               {currentBlindLevel?.ante > 0 && (
-                <div className="text-center p-4 border border-gray-200/30 rounded-lg bg-white/50">
-                  <p className="text-xs text-gray-500 font-medium mb-1">Анте</p>
-                  <p className="text-2xl font-light text-amber-600">{currentBlindLevel.ante}</p>
+                <div className="text-center p-4 border border-primary/50 rounded-lg bg-primary/10">
+                  <p className="text-xs text-primary font-medium mb-1">Анте</p>
+                  <p className="text-2xl font-bold text-primary">{currentBlindLevel.ante}</p>
                 </div>
               )}
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-white/40 backdrop-blur-sm border border-gray-200/30 shadow-minimal rounded-xl overflow-hidden">
+        <Card className="bg-card brutal-border overflow-hidden">
           <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 text-gray-700 font-light">
-              <ChevronRight className="w-4 h-4" />
+            <CardTitle className="flex items-center gap-2 text-foreground font-bold">
+              <ChevronRight className="w-4 h-4 text-primary" />
               {isNextLevelBreak ? 'Следующий: Перерыв' : `Следующий уровень ${tournament.current_level + 1}`}
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-0">
             <div className="text-center">
-              <p className="text-lg font-light text-gray-600 mb-3">Через {formatTime(currentTime)}</p>
+              <p className="text-lg font-medium text-muted-foreground mb-3">Через {formatTime(currentTime)}</p>
             </div>
             {isNextLevelBreak ? (
-              <div className="text-center p-6 space-y-2">
-                <Coffee className="w-8 h-8 text-amber-600 mx-auto" />
-                <p className="text-lg font-medium text-amber-800">Перерыв</p>
-                <p className="text-sm text-gray-600">{nextBlindLevel ? Math.floor(nextBlindLevel.duration / 60) : 15} минут</p>
+              <div className="text-center p-6 space-y-2 bg-primary/10 rounded-lg border border-primary/30">
+                <Coffee className="w-8 h-8 text-primary mx-auto" />
+                <p className="text-lg font-bold text-primary">Перерыв</p>
+                <p className="text-sm text-muted-foreground">{nextBlindLevel ? Math.floor(nextBlindLevel.duration / 60) : 15} минут</p>
               </div>
             ) : (
               <div className={`grid gap-3 ${nextBlindLevel?.ante > 0 ? 'grid-cols-3' : 'grid-cols-2'}`}>
-                <div className="text-center p-3 border border-gray-200/20 rounded-lg bg-white/30">
-                  <p className="text-xs text-gray-500">Малый блайнд</p>
-                  <p className="text-xl font-light text-gray-700">{Math.round(nextSmallBlind)}</p>
+                <div className="text-center p-3 border border-border rounded-lg bg-secondary/30">
+                  <p className="text-xs text-muted-foreground">Малый блайнд</p>
+                  <p className="text-xl font-bold text-foreground">{Math.round(nextSmallBlind)}</p>
                 </div>
-                <div className="text-center p-3 border border-gray-200/20 rounded-lg bg-white/30">
-                  <p className="text-xs text-gray-500">Большой блайнд</p>
-                  <p className="text-xl font-light text-gray-700">{Math.round(nextBigBlind)}</p>
+                <div className="text-center p-3 border border-border rounded-lg bg-secondary/30">
+                  <p className="text-xs text-muted-foreground">Большой блайнд</p>
+                  <p className="text-xl font-bold text-foreground">{Math.round(nextBigBlind)}</p>
                 </div>
                 {nextBlindLevel?.ante > 0 && (
-                  <div className="text-center p-3 border border-gray-200/20 rounded-lg bg-white/30">
-                    <p className="text-xs text-gray-500">Анте</p>
-                    <p className="text-xl font-light text-amber-600">{nextBlindLevel.ante}</p>
+                  <div className="text-center p-3 border border-primary/30 rounded-lg bg-primary/10">
+                    <p className="text-xs text-primary">Анте</p>
+                    <p className="text-xl font-bold text-primary">{nextBlindLevel.ante}</p>
                   </div>
                 )}
               </div>
@@ -418,10 +419,10 @@ const TournamentOverview = ({
       </div>
 
       {/* Quick Control Buttons */}
-      <Card className="bg-white/60 backdrop-blur-sm border border-gray-200/40 shadow-minimal">
+      <Card className="bg-card brutal-border">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-gray-700 font-light">
-            <Target className="w-4 h-4" />
+          <CardTitle className="flex items-center gap-2 text-foreground font-bold">
+            <Target className="w-4 h-4 text-primary" />
             Управление
           </CardTitle>
         </CardHeader>
@@ -431,14 +432,14 @@ const TournamentOverview = ({
               variant="outline"
               size="sm"
               onClick={onToggleTimer}
-              className={`h-12 border-gray-200/50 hover:shadow-subtle transition-all ${
-                timerActive ? 'bg-red-50 text-red-600 hover:bg-red-100' : 'bg-green-50 text-green-600 hover:bg-green-100'
+              className={`h-12 border-border transition-all ${
+                timerActive ? 'bg-destructive/20 text-destructive border-destructive/50 hover:bg-destructive/30' : 'bg-green-500/20 text-green-500 border-green-500/50 hover:bg-green-500/30'
               }`}
             >
               {timerActive ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
             </Button>
             
-            <Button variant="outline" size="sm" onClick={onResetTimer} className="h-12 border-gray-200/50 hover:shadow-subtle">
+            <Button variant="outline" size="sm" onClick={onResetTimer} className="h-12 border-border hover:bg-secondary">
               <RotateCcw className="w-4 h-4" />
             </Button>
             
@@ -447,7 +448,7 @@ const TournamentOverview = ({
               variant="outline" 
               size="sm" 
               onClick={() => onTimerAdjust?.(-60)}
-              className="h-12 border-gray-200/50 hover:shadow-subtle"
+              className="h-12 border-border hover:bg-secondary"
               title="Перемотать назад на 1 минуту"
             >
               <Rewind className="w-4 h-4" />
@@ -457,17 +458,17 @@ const TournamentOverview = ({
               variant="outline" 
               size="sm" 
               onClick={() => onTimerAdjust?.(60)}
-              className="h-12 border-gray-200/50 hover:shadow-subtle"
+              className="h-12 border-border hover:bg-secondary"
               title="Перемотать вперед на 1 минуту"
             >
               <FastForward className="w-4 h-4" />
             </Button>
             
-            <Button variant="outline" size="sm" onClick={onPrevLevel} className="h-12 border-gray-200/50 hover:shadow-subtle">
+            <Button variant="outline" size="sm" onClick={onPrevLevel} className="h-12 border-border hover:bg-secondary">
               <ChevronLeft className="w-4 h-4" />
             </Button>
             
-            <Button variant="outline" size="sm" onClick={onNextLevel} className="h-12 border-gray-200/50 hover:shadow-subtle">
+            <Button variant="outline" size="sm" onClick={onNextLevel} className="h-12 border-border hover:bg-secondary">
               <ChevronRight className="w-4 h-4" />
             </Button>
             
@@ -475,21 +476,21 @@ const TournamentOverview = ({
               variant="outline" 
               size="sm" 
               onClick={() => setSoundEnabled(!soundEnabled)}
-              className={`h-12 border-gray-200/50 hover:shadow-subtle ${soundEnabled ? 'bg-blue-50 text-blue-600' : 'bg-gray-50 text-gray-500'}`}
+              className={`h-12 border-border ${soundEnabled ? 'bg-primary/20 text-primary border-primary/50' : 'bg-secondary text-muted-foreground'}`}
               title="Переключить звуковые оповещения"
             >
               <Volume2 className="w-4 h-4" />
             </Button>
             
-            <Button variant="outline" size="sm" onClick={onOpenExternalTimer} className="h-12 border-gray-200/50 hover:shadow-subtle">
+            <Button variant="outline" size="sm" onClick={onOpenExternalTimer} className="h-12 border-border hover:bg-secondary">
               <Maximize className="w-4 h-4" />
             </Button>
             
-            <Button variant="outline" size="sm" onClick={onStopTournament} className="h-12 text-red-500 border-red-200/50 hover:bg-red-50 hover:shadow-subtle">
+            <Button variant="outline" size="sm" onClick={onStopTournament} className="h-12 text-destructive border-destructive/50 hover:bg-destructive/20">
               <StopCircle className="w-4 h-4" />
             </Button>
             
-            <Button variant="outline" size="sm" onClick={onRefresh} className="h-12 border-gray-200/50 hover:shadow-subtle">
+            <Button variant="outline" size="sm" onClick={onRefresh} className="h-12 border-border hover:bg-secondary">
               <Activity className="w-4 h-4" />
             </Button>
 
@@ -498,7 +499,7 @@ const TournamentOverview = ({
                 variant="outline" 
                 size="sm" 
                 onClick={onFinishTournament} 
-                className="h-12 text-green-600 border-green-200/50 hover:bg-green-50 hover:shadow-subtle"
+                className="h-12 text-green-500 border-green-500/50 hover:bg-green-500/20"
               >
                 <CheckCircle className="w-4 h-4" />
               </Button>
@@ -517,60 +518,60 @@ const TournamentOverview = ({
 
       {/* Tournament Statistics */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="bg-white/50 backdrop-blur-sm border border-gray-200/30 shadow-minimal">
+        <Card className="bg-card brutal-border">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-gray-700 font-light">
-              <Users className="w-4 h-4" />
+            <CardTitle className="flex items-center gap-2 text-foreground font-bold">
+              <Users className="w-4 h-4 text-primary" />
               Статистика турнира
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 gap-3">
-              <div className="text-center p-3 border border-gray-200/20 rounded-lg bg-white/30">
-                <Users className="w-5 h-5 mx-auto mb-1 text-gray-600" />
-                <p className="text-xl font-light text-gray-800">{registrations.length}</p>
-                <p className="text-xs text-gray-500">Всего игроков</p>
+              <div className="text-center p-3 border border-border rounded-lg bg-secondary/30">
+                <Users className="w-5 h-5 mx-auto mb-1 text-primary" />
+                <p className="text-xl font-bold text-foreground">{registrations.length}</p>
+                <p className="text-xs text-muted-foreground">Всего игроков</p>
               </div>
-              <div className="text-center p-3 border border-gray-200/20 rounded-lg bg-white/30">
-                <Activity className="w-5 h-5 mx-auto mb-1 text-green-600" />
-                <p className="text-xl font-light text-green-600">{activePlayers.length}</p>
-                <p className="text-xs text-gray-500">Активных</p>
+              <div className="text-center p-3 border border-green-500/30 rounded-lg bg-green-500/10">
+                <Activity className="w-5 h-5 mx-auto mb-1 text-green-500" />
+                <p className="text-xl font-bold text-green-500">{activePlayers.length}</p>
+                <p className="text-xs text-muted-foreground">Активных</p>
               </div>
-              <div className="text-center p-3 border border-gray-200/20 rounded-lg bg-white/30">
-                <UserX className="w-5 h-5 mx-auto mb-1 text-red-500" />
-                <p className="text-xl font-light text-red-500">{eliminatedPlayers.length}</p>
-                <p className="text-xs text-gray-500">Выбыло</p>
+              <div className="text-center p-3 border border-destructive/30 rounded-lg bg-destructive/10">
+                <UserX className="w-5 h-5 mx-auto mb-1 text-destructive" />
+                <p className="text-xl font-bold text-destructive">{eliminatedPlayers.length}</p>
+                <p className="text-xs text-muted-foreground">Выбыло</p>
               </div>
-              <div className="text-center p-3 border border-gray-200/20 rounded-lg bg-white/30">
-                <RotateCcw className="w-5 h-5 mx-auto mb-1 text-blue-600" />
-                <p className="text-xl font-light text-blue-600">{totalReentries}</p>
-                <p className="text-xs text-gray-500">Повторных входов</p>
+              <div className="text-center p-3 border border-blue-500/30 rounded-lg bg-blue-500/10">
+                <RotateCcw className="w-5 h-5 mx-auto mb-1 text-blue-500" />
+                <p className="text-xl font-bold text-blue-500">{totalReentries}</p>
+                <p className="text-xs text-muted-foreground">Повторных входов</p>
               </div>
             </div>
             
             {/* Дополнительная статистика */}
-            <div className="grid grid-cols-2 gap-3 mt-4 pt-4 border-t border-gray-200/30">
-              <div className="text-center p-3 border border-gray-200/20 rounded-lg bg-white/30">
-                <Trophy className="w-5 h-5 mx-auto mb-1 text-amber-600" />
-                <p className="text-xl font-light text-gray-800">{averageStack.toLocaleString()}</p>
-                <p className="text-xs text-gray-500">Средний стек</p>
+            <div className="grid grid-cols-2 gap-3 mt-4 pt-4 border-t border-border">
+              <div className="text-center p-3 border border-primary/30 rounded-lg bg-primary/10">
+                <Trophy className="w-5 h-5 mx-auto mb-1 text-primary" />
+                <p className="text-xl font-bold text-foreground">{averageStack.toLocaleString()}</p>
+                <p className="text-xs text-muted-foreground">Средний стек</p>
               </div>
-              <div className="text-center p-3 border border-gray-200/20 rounded-lg bg-white/30">
-                <Coffee className="w-5 h-5 mx-auto mb-1 text-amber-600" />
+              <div className="text-center p-3 border border-primary/30 rounded-lg bg-primary/10">
+                <Coffee className="w-5 h-5 mx-auto mb-1 text-primary" />
                 {isCurrentBreak ? (
                   <>
-                    <p className="text-xl font-light text-amber-600">СЕЙЧАС</p>
-                    <p className="text-xs text-gray-500">Перерыв</p>
+                    <p className="text-xl font-bold text-primary">СЕЙЧАС</p>
+                    <p className="text-xs text-muted-foreground">Перерыв</p>
                   </>
                 ) : timeToBreak ? (
                   <>
-                    <p className="text-lg font-light text-gray-800">{formatTime(timeToBreak)}</p>
-                    <p className="text-xs text-gray-500">До перерыва ({levelsUntilBreak} ур.)</p>
+                    <p className="text-lg font-bold text-foreground">{formatTime(timeToBreak)}</p>
+                    <p className="text-xs text-muted-foreground">До перерыва ({levelsUntilBreak} ур.)</p>
                   </>
                 ) : (
                   <>
-                    <p className="text-xl font-light text-gray-800">∞</p>
-                    <p className="text-xs text-gray-500">До перерыва</p>
+                    <p className="text-xl font-bold text-foreground">∞</p>
+                    <p className="text-xs text-muted-foreground">До перерыва</p>
                   </>
                 )}
               </div>
@@ -578,30 +579,30 @@ const TournamentOverview = ({
           </CardContent>
         </Card>
 
-        <Card className="bg-white/50 backdrop-blur-sm border border-gray-200/30 shadow-minimal">
+        <Card className="bg-card brutal-border">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-gray-700 font-light">
-              <Trophy className="w-4 h-4" />
+            <CardTitle className="flex items-center gap-2 text-foreground font-bold">
+              <Trophy className="w-4 h-4 text-primary" />
               Фонд RPS баллов
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-center">
-              <div className="text-3xl font-light text-gray-800 mb-3">
+              <div className="text-3xl font-bold neon-orange mb-3">
                 {rpsPool.toLocaleString()} RPS
               </div>
               <div className="grid grid-cols-3 gap-3 text-xs">
-                <div className="p-2 bg-white/30 rounded-lg border border-gray-200/20">
-                  <p className="text-gray-500">Организационные</p>
-                  <p className="font-medium text-gray-700">{Math.floor(registrations.length * participationFee / 10).toLocaleString()} RPS</p>
+                <div className="p-2 bg-secondary/30 rounded-lg border border-border">
+                  <p className="text-muted-foreground">Организационные</p>
+                  <p className="font-bold text-foreground">{Math.floor(registrations.length * participationFee / 10).toLocaleString()} RPS</p>
                 </div>
-                <div className="p-2 bg-white/30 rounded-lg border border-gray-200/20">
-                  <p className="text-gray-500">Повторные</p>
-                  <p className="font-medium text-gray-700">{Math.floor(totalReentries * reentryFee / 10).toLocaleString()} RPS</p>
+                <div className="p-2 bg-secondary/30 rounded-lg border border-border">
+                  <p className="text-muted-foreground">Повторные</p>
+                  <p className="font-bold text-foreground">{Math.floor(totalReentries * reentryFee / 10).toLocaleString()} RPS</p>
                 </div>
-                <div className="p-2 bg-white/30 rounded-lg border border-gray-200/20">
-                  <p className="text-gray-500">Дополнительные</p>
-                  <p className="font-medium text-gray-700">{Math.floor(totalAdditionalSets * additionalFee / 10).toLocaleString()} RPS</p>
+                <div className="p-2 bg-secondary/30 rounded-lg border border-border">
+                  <p className="text-muted-foreground">Дополнительные</p>
+                  <p className="font-bold text-foreground">{Math.floor(totalAdditionalSets * additionalFee / 10).toLocaleString()} RPS</p>
                 </div>
               </div>
             </div>
@@ -610,34 +611,34 @@ const TournamentOverview = ({
       </div>
 
       {/* System Analytics */}
-      <Card className="bg-white/40 backdrop-blur-sm border border-gray-200/20 shadow-minimal">
+      <Card className="bg-card brutal-border">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-gray-700 font-light">
-            <BarChart3 className="w-4 h-4" />
+          <CardTitle className="flex items-center gap-2 text-foreground font-bold">
+            <BarChart3 className="w-4 h-4 text-primary" />
             Аналитика системы
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="text-center p-3 border border-gray-200/15 rounded-lg bg-white/20">
-              <Trophy className="w-5 h-5 mx-auto mb-1 text-gray-600" />
-              <p className="text-lg font-light text-gray-800">{systemStats.activeTournaments}</p>
-              <p className="text-xs text-gray-500">Активные турниры</p>
+            <div className="text-center p-3 border border-border rounded-lg bg-secondary/20">
+              <Trophy className="w-5 h-5 mx-auto mb-1 text-primary" />
+              <p className="text-lg font-bold text-foreground">{systemStats.activeTournaments}</p>
+              <p className="text-xs text-muted-foreground">Активные турниры</p>
             </div>
-            <div className="text-center p-3 border border-gray-200/15 rounded-lg bg-white/20">
-              <Users className="w-5 h-5 mx-auto mb-1 text-gray-600" />
-              <p className="text-lg font-light text-gray-800">{systemStats.totalPlayersInClub}</p>
-              <p className="text-xs text-gray-500">Игроков в клубе</p>
+            <div className="text-center p-3 border border-border rounded-lg bg-secondary/20">
+              <Users className="w-5 h-5 mx-auto mb-1 text-primary" />
+              <p className="text-lg font-bold text-foreground">{systemStats.totalPlayersInClub}</p>
+              <p className="text-xs text-muted-foreground">Игроков в клубе</p>
             </div>
-            <div className="text-center p-3 border border-gray-200/15 rounded-lg bg-white/20">
-              <TrendingUp className="w-5 h-5 mx-auto mb-1 text-green-600" />
-              <p className="text-lg font-light text-green-600">{systemStats.weeklyGames}</p>
-              <p className="text-xs text-gray-500">Игр за неделю</p>
+            <div className="text-center p-3 border border-green-500/30 rounded-lg bg-green-500/10">
+              <TrendingUp className="w-5 h-5 mx-auto mb-1 text-green-500" />
+              <p className="text-lg font-bold text-green-500">{systemStats.weeklyGames}</p>
+              <p className="text-xs text-muted-foreground">Игр за неделю</p>
             </div>
-            <div className="text-center p-3 border border-gray-200/15 rounded-lg bg-white/20">
-              <Target className="w-5 h-5 mx-auto mb-1 text-blue-600" />
-              <p className="text-lg font-light text-blue-600">{systemStats.averageRating}</p>
-              <p className="text-xs text-gray-500">Средний рейтинг</p>
+            <div className="text-center p-3 border border-blue-500/30 rounded-lg bg-blue-500/10">
+              <Target className="w-5 h-5 mx-auto mb-1 text-blue-500" />
+              <p className="text-lg font-bold text-blue-500">{systemStats.averageRating}</p>
+              <p className="text-xs text-muted-foreground">Средний рейтинг</p>
             </div>
           </div>
         </CardContent>
@@ -645,67 +646,67 @@ const TournamentOverview = ({
 
       {/* System Health */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="bg-white/40 backdrop-blur-sm border border-gray-200/20 shadow-minimal">
+        <Card className="bg-card brutal-border">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-gray-700 font-light">
-              <AlertCircle className="w-4 h-4" />
+            <CardTitle className="flex items-center gap-2 text-foreground font-bold">
+              <AlertCircle className="w-4 h-4 text-primary" />
               Состояние системы
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-600">База данных</span>
-              <Badge variant="secondary" className="bg-green-50 text-green-700 border-green-200">Работает</Badge>
+              <span className="text-muted-foreground">База данных</span>
+              <Badge variant="secondary" className="bg-green-500/20 text-green-500 border-green-500/30">Работает</Badge>
             </div>
             <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-600">Real-time обновления</span>
-              <Badge variant="secondary" className="bg-green-50 text-green-700 border-green-200">Активно</Badge>
+              <span className="text-muted-foreground">Real-time обновления</span>
+              <Badge variant="secondary" className="bg-green-500/20 text-green-500 border-green-500/30">Активно</Badge>
             </div>
             <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-600">RPS расчеты</span>
-              <Badge variant="secondary" className="bg-green-50 text-green-700 border-green-200">Готово</Badge>
+              <span className="text-muted-foreground">RPS расчеты</span>
+              <Badge variant="secondary" className="bg-green-500/20 text-green-500 border-green-500/30">Готово</Badge>
             </div>
             <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-600">Производительность</span>
-              <Badge variant="secondary" className="bg-amber-50 text-amber-700 border-amber-200">Хорошо</Badge>
+              <span className="text-muted-foreground">Производительность</span>
+              <Badge variant="secondary" className="bg-primary/20 text-primary border-primary/30">Хорошо</Badge>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-white/40 backdrop-blur-sm border border-gray-200/20 shadow-minimal">
+        <Card className="bg-card brutal-border">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-gray-700 font-light">
-              <BarChart3 className="w-4 h-4" />
+            <CardTitle className="flex items-center gap-2 text-foreground font-bold">
+              <BarChart3 className="w-4 h-4 text-primary" />
               Рейтинговые показатели
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-600">Качество игры</span>
+              <span className="text-muted-foreground">Качество игры</span>
               <div className="flex items-center gap-2">
                 <Progress value={85} className="w-20 h-2" />
-                <span className="text-sm font-semibold">85%</span>
+                <span className="text-sm font-bold text-foreground">85%</span>
               </div>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-poker-silver">Активность клуба</span>
+              <span className="text-muted-foreground">Активность клуба</span>
               <div className="flex items-center gap-2">
                 <Progress value={92} className="w-20 h-2" />
-                <span className="text-sm font-semibold">92%</span>
+                <span className="text-sm font-bold text-foreground">92%</span>
               </div>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-poker-silver">Рост рейтингов</span>
+              <span className="text-muted-foreground">Рост рейтингов</span>
               <div className="flex items-center gap-2">
                 <Progress value={78} className="w-20 h-2" />
-                <span className="text-sm font-semibold">78%</span>
+                <span className="text-sm font-bold text-foreground">78%</span>
               </div>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-poker-silver">Турнирная активность</span>
+              <span className="text-muted-foreground">Турнирная активность</span>
               <div className="flex items-center gap-2">
                 <Progress value={96} className="w-20 h-2" />
-                <span className="text-sm font-semibold">96%</span>
+                <span className="text-sm font-bold text-foreground">96%</span>
               </div>
             </div>
           </CardContent>

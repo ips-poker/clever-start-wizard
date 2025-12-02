@@ -831,7 +831,7 @@ const TournamentDirector = () => {
   return (
     <AuthGuard requireAdmin={true}>
       <SidebarProvider>
-        <div className="min-h-screen flex w-full bg-gradient-to-br from-gray-50 via-white to-gray-100">
+        <div className="min-h-screen flex w-full bg-background">
           <TournamentDirectorSidebar 
             activeTab={activeTab} 
             onTabChange={setActiveTab}
@@ -849,52 +849,52 @@ const TournamentDirector = () => {
             }} 
             className="space-y-10"
           >
-            <TabsList className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-10 gap-1 sm:gap-2 h-auto p-1 bg-gray-100/60 rounded-lg border border-gray-200/30 overflow-x-auto">
-              <TabsTrigger value="overview" className="flex items-center gap-1 sm:gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm text-xs sm:text-sm py-2 px-2 sm:px-3">
+            <TabsList className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-10 gap-1 sm:gap-2 h-auto p-1 bg-card rounded-lg border border-border overflow-x-auto">
+              <TabsTrigger value="overview" className="flex items-center gap-1 sm:gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs sm:text-sm py-2 px-2 sm:px-3">
                 <BarChart3 className="w-3 h-3 sm:w-4 sm:h-4" />
                 <span className="hidden sm:inline">Обзор</span>
                 <span className="sm:hidden">Обзор</span>
               </TabsTrigger>
-              <TabsTrigger value="tournaments" className="flex items-center gap-1 sm:gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm text-xs sm:text-sm py-2 px-2 sm:px-3">
+              <TabsTrigger value="tournaments" className="flex items-center gap-1 sm:gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs sm:text-sm py-2 px-2 sm:px-3">
                 <Trophy className="w-3 h-3 sm:w-4 sm:h-4" />
                 <span className="hidden sm:inline">Турниры</span>
                 <span className="sm:hidden">Турн</span>
               </TabsTrigger>
-              <TabsTrigger value="control" className="flex items-center gap-1 sm:gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm text-xs sm:text-sm py-2 px-2 sm:px-3">
+              <TabsTrigger value="control" className="flex items-center gap-1 sm:gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs sm:text-sm py-2 px-2 sm:px-3">
                 <Settings className="w-3 h-3 sm:w-4 sm:h-4" />
                 <span className="hidden sm:inline">Управление</span>
                 <span className="sm:hidden">Управ</span>
               </TabsTrigger>
-              <TabsTrigger value="players" className="flex items-center gap-1 sm:gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm text-xs sm:text-sm py-2 px-2 sm:px-3 hidden sm:flex">
+              <TabsTrigger value="players" className="flex items-center gap-1 sm:gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs sm:text-sm py-2 px-2 sm:px-3 hidden sm:flex">
                 <Users className="w-3 h-3 sm:w-4 sm:h-4" />
                 <span className="hidden lg:inline">Игроки</span>
                 <span className="lg:hidden">Игр</span>
               </TabsTrigger>
-              <TabsTrigger value="voice" className="flex items-center gap-1 sm:gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm text-xs sm:text-sm py-2 px-2 sm:px-3 hidden lg:flex">
+              <TabsTrigger value="voice" className="flex items-center gap-1 sm:gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs sm:text-sm py-2 px-2 sm:px-3 hidden lg:flex">
                 <Mic className="w-3 h-3 sm:w-4 sm:h-4" />
                 <span>Голос</span>
               </TabsTrigger>
-              <TabsTrigger value="ratings" className="flex items-center gap-1 sm:gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm text-xs sm:text-sm py-2 px-2 sm:px-3 hidden lg:flex">
+              <TabsTrigger value="ratings" className="flex items-center gap-1 sm:gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs sm:text-sm py-2 px-2 sm:px-3 hidden lg:flex">
                 <TrendingUp className="w-3 h-3 sm:w-4 sm:h-4" />
                 <span>Рейтинги</span>
               </TabsTrigger>
-              <TabsTrigger value="results" className="flex items-center gap-1 sm:gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm text-xs sm:text-sm py-2 px-2 sm:px-3 hidden lg:flex">
+              <TabsTrigger value="results" className="flex items-center gap-1 sm:gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs sm:text-sm py-2 px-2 sm:px-3 hidden lg:flex">
                 <CheckCircle className="w-3 h-3 sm:w-4 sm:h-4" />
                 <span>Результаты</span>
               </TabsTrigger>
-              <TabsTrigger value="sync" className="flex items-center gap-1 sm:gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm text-xs sm:text-sm py-2 px-2 sm:px-3 hidden lg:flex">
+              <TabsTrigger value="sync" className="flex items-center gap-1 sm:gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs sm:text-sm py-2 px-2 sm:px-3 hidden lg:flex">
                 <RefreshCw className="w-3 h-3 sm:w-4 sm:h-4" />
                 <span>Синхронизация</span>
                </TabsTrigger>
-               <TabsTrigger value="analysis" className="flex items-center gap-1 sm:gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm text-xs sm:text-sm py-2 px-2 sm:px-3 hidden lg:flex">
+               <TabsTrigger value="analysis" className="flex items-center gap-1 sm:gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs sm:text-sm py-2 px-2 sm:px-3 hidden lg:flex">
                  <BarChart3 className="w-3 h-3 sm:w-4 sm:h-4" />
                  <span>Анализ турнира</span>
                </TabsTrigger>
-                <TabsTrigger value="rating-test" className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                <TabsTrigger value="rating-test" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                   <Target className="w-4 h-4" />
                   <span className="hidden sm:inline">Тест рейтинга</span>
                 </TabsTrigger>
-                <TabsTrigger value="rating-settings" className="flex items-center gap-1 sm:gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm text-xs sm:text-sm py-2 px-2 sm:px-3 hidden lg:flex">
+                <TabsTrigger value="rating-settings" className="flex items-center gap-1 sm:gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs sm:text-sm py-2 px-2 sm:px-3 hidden lg:flex">
                   <Settings className="w-3 h-3 sm:w-4 sm:h-4" />
                   <span>Настройки RPS</span>
                 </TabsTrigger>
@@ -922,14 +922,14 @@ const TournamentDirector = () => {
                   />
                 </div>
               ) : (
-                <Card className="bg-white/50 backdrop-blur-sm border border-gray-200/30 shadow-minimal">
+                <Card className="bg-card brutal-border">
                   <CardContent className="text-center py-16">
-                    <AlertTriangle className="h-16 w-16 mx-auto mb-4 text-gray-400" />
-                    <h3 className="text-lg font-medium text-gray-700 mb-2">Турнир не выбран</h3>
-                    <p className="text-gray-500 mb-6">Выберите турнир на вкладке "Турниры" для отображения информации</p>
+                    <AlertTriangle className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
+                    <h3 className="text-lg font-medium text-foreground mb-2">Турнир не выбран</h3>
+                    <p className="text-muted-foreground mb-6">Выберите турнир на вкладке "Турниры" для отображения информации</p>
                     <Button
                       onClick={() => setActiveTab('tournaments')}
-                      className="bg-blue-600 hover:bg-blue-700 text-white"
+                      className="bg-primary hover:bg-primary/90 text-primary-foreground"
                     >
                       Перейти к турнирам
                     </Button>
