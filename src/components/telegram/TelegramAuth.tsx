@@ -147,7 +147,15 @@ export const TelegramAuth: React.FC<TelegramAuthProps> = ({ onAuthComplete }) =>
       }
 
       if (data?.success) {
-        console.log('Authentication successful');
+        console.log('Authentication successful', data);
+        
+        // Если есть login_url, выполняем вход через него
+        if (data.login_url) {
+          console.log('Using login URL for authentication');
+          // Переходим по magic link для создания сессии
+          window.location.href = data.login_url;
+          return;
+        }
         
         // Сохраняем данные пользователя для PWA режима
         localStorage.setItem('telegram_user_data', JSON.stringify(telegramUserData));
