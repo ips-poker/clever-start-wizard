@@ -152,6 +152,11 @@ export function AvatarSelector({ onSelect, onClose, playerId }: AvatarSelectorPr
     try {
       setUploading(true);
       
+      console.log('=== Starting file upload ===');
+      console.log('User:', user);
+      console.log('PlayerId:', playerId);
+      console.log('UploaderId:', uploaderId);
+      
       const files = event.target.files;
       if (!files || files.length === 0) {
         console.log('No files selected');
@@ -183,7 +188,19 @@ export function AvatarSelector({ onSelect, onClose, playerId }: AvatarSelectorPr
 
       if (!uploaderId) {
         console.error('No uploader ID available');
-        toast.error("Ошибка: не удалось определить пользователя");
+        toast.error("Ошибка: необходима авторизация для загрузки фото");
+        setUploading(false);
+        return;
+      }
+      
+      // Проверяем сессию пользователя
+      const { data: { session } } = await supabase.auth.getSession();
+      console.log('Session check:', session ? 'authorized' : 'not authorized');
+      
+      if (!session && !playerId) {
+        console.error('No active session');
+        toast.error("Пожалуйста, войдите в систему для загрузки фото");
+        setUploading(false);
         return;
       }
 
