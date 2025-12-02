@@ -14,6 +14,7 @@ import { TelegramLoginWidget } from "@/components/auth/TelegramLoginWidget";
 import { PrivacyConsent } from "@/components/PrivacyConsent";
 import { Eye, EyeOff, LogIn, UserPlus, Spade, AlertCircle } from "lucide-react";
 import { z } from "zod";
+import syndikateLogo from "@/assets/syndikate-logo-main.png";
 
 export default function Auth() {
   const [email, setEmail] = useState("");
@@ -188,8 +189,8 @@ export default function Auth() {
               <div className="relative brutal-metal brutal-border p-4 shadow-2xl group-hover:shadow-neon-orange transition-all duration-500">
                 <div className="absolute inset-0 industrial-texture opacity-20 pointer-events-none" />
                 <img 
-                  src="/lovable-uploads/a689ff05-9338-4573-bd08-aa9486811d3f.png" 
-                  alt="EPC Logo" 
+                  src={syndikateLogo} 
+                  alt="Syndikate Logo" 
                   className="w-16 h-16 object-contain group-hover:scale-105 transition-transform duration-500 relative z-10"
                 />
               </div>
@@ -197,9 +198,9 @@ export default function Auth() {
             {/* Company Name */}
             <div className="flex flex-col items-center">
               <span className="text-3xl font-bold font-mono uppercase tracking-wider neon-orange">
-                Event Poker Club
+                Syndikate
               </span>
-              <span className="text-xs text-muted-foreground tracking-widest mt-2 font-mono">[ EPC SYSTEM ]</span>
+              <span className="text-xs text-muted-foreground tracking-widest mt-2 font-mono">[ POKER CLUB ]</span>
             </div>
           </Link>
         </div>
