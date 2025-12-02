@@ -209,12 +209,10 @@ export function AvatarSelector({ onSelect, onClose, playerId }: AvatarSelectorPr
       
       console.log('Uploading avatar:', { uploaderId, fileName, fileSize: file.size });
 
+      // Простая загрузка без дополнительных заголовков, которые блокирует nginx CORS
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('gallery')
-        .upload(`avatars/${fileName}`, file, {
-          cacheControl: '3600',
-          upsert: false
-        });
+        .upload(`avatars/${fileName}`, file);
 
       if (uploadError) {
         console.error('Upload error details:', {
