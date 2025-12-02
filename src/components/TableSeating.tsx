@@ -1088,216 +1088,192 @@ const TableSeating = ({
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 space-y-6">
-      {/* Главная карточка в стиле приглашений */}
-      <Card className="w-full bg-white border border-slate-200 shadow-[0_20px_25px_-5px_rgba(0,0,0,0.06),0_10px_10px_-5px_rgba(0,0,0,0.04)]"
-        style={{ background: 'linear-gradient(145deg, #ffffff 0%, #f9fafb 100%)' }}
-      >
-        <CardContent className="p-0">
-          {/* Минимальные акцентные линии */}
-          <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-slate-900/20 to-transparent"></div>
-          <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-slate-900/10 to-transparent"></div>
-
-          <div className="relative p-6">
-            {/* Заголовок в стиле приглашений */}
-            <div className="flex items-center justify-between mb-8">
-              <div className="flex items-center gap-4">
-                <div className="w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center">
-                  <Users className="w-6 h-6 text-white" />
-                </div>
-                <div>
-                  <div className="font-light text-lg tracking-tight text-slate-900">РАССАДКА ИГРОКОВ</div>
-                  <div className="text-xs text-slate-500 font-light">Профессиональное управление турниром</div>
-                </div>
+    <div className="space-y-6">
+      {/* Main Stats Card */}
+      <Card className="bg-card brutal-border overflow-hidden">
+        <CardHeader className="bg-secondary/60 border-b-2 border-border">
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-3 text-lg font-black text-foreground">
+              <div className="p-2 rounded-lg bg-blue-500/20 border border-blue-500/30">
+                <Users className="w-5 h-5 text-blue-500" />
               </div>
-              <div className="text-right">
-                {isSeatingStarted ? (
-                  <div className="bg-slate-900 text-white text-xs font-medium px-3 py-1 rounded-full tracking-wide">
-                    АКТИВНА
-                  </div>
-                ) : (
-                  <div className="bg-slate-300 text-slate-700 text-xs font-medium px-3 py-1 rounded-full tracking-wide">
-                    В ОЖИДАНИИ
-                  </div>
-                )}
-              </div>
+              Рассадка игроков
+            </CardTitle>
+            <div>
+              {isSeatingStarted ? (
+                <Badge className="bg-green-500/20 text-green-500 border-2 border-green-500/50 font-black">
+                  АКТИВНА
+                </Badge>
+              ) : (
+                <Badge className="bg-secondary text-muted-foreground border-2 border-border font-bold">
+                  В ОЖИДАНИИ
+                </Badge>
+              )}
             </div>
-
-            {/* Статистические блоки в стиле приглашений */}
-            <div className="mb-6">
-              <div className="grid grid-cols-2 gap-4 mb-6">
-                <div className="text-center py-4">
-                  <div className="text-slate-500 text-xs font-light mb-1 tracking-wide uppercase">Активные игроки</div>
-                  <div className="text-3xl font-light text-slate-900">{getActivePlayers().length}</div>
-                </div>
-                <div className="text-center py-4">
-                  <div className="text-slate-500 text-xs font-light mb-1 tracking-wide uppercase">Выбывшие</div>
-                  <div className="text-3xl font-light text-slate-900">{getEliminatedPlayers().length}</div>
-                </div>
-              </div>
-              
-              <div className="w-full h-px bg-slate-200 my-4"></div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div className="text-center py-3">
-                  <div className="text-slate-500 text-xs font-light mb-1 tracking-wide uppercase">Активные столы</div>
-                  <div className="text-xl font-light text-slate-900">{tables.filter(t => t.active_players > 0).length}</div>
-                </div>
-                <div className="text-center py-3">
-                  <div className="text-slate-500 text-xs font-light mb-1 tracking-wide uppercase">Средний стек (BB)</div>
-                  <div className="text-xl font-light text-slate-900">{Math.round(tables.reduce((sum, t) => sum + (t.average_stack || 0), 0) / Math.max(tables.length, 1))}</div>
-                </div>
-              </div>
+          </div>
+        </CardHeader>
+        <CardContent className="p-6">
+          <div className="grid grid-cols-4 gap-4 mb-6">
+            <div className="text-center p-4 bg-green-500/10 rounded-xl border-2 border-green-500/30">
+              <div className="text-xs text-muted-foreground font-bold uppercase tracking-wider mb-1">Активные</div>
+              <div className="text-3xl font-black text-green-500">{getActivePlayers().length}</div>
+            </div>
+            <div className="text-center p-4 bg-destructive/10 rounded-xl border-2 border-destructive/30">
+              <div className="text-xs text-muted-foreground font-bold uppercase tracking-wider mb-1">Выбывшие</div>
+              <div className="text-3xl font-black text-destructive">{getEliminatedPlayers().length}</div>
+            </div>
+            <div className="text-center p-4 bg-blue-500/10 rounded-xl border-2 border-blue-500/30">
+              <div className="text-xs text-muted-foreground font-bold uppercase tracking-wider mb-1">Столы</div>
+              <div className="text-3xl font-black text-blue-500">{tables.filter(t => t.active_players > 0).length}</div>
+            </div>
+            <div className="text-center p-4 bg-primary/10 rounded-xl border-2 border-primary/30">
+              <div className="text-xs text-muted-foreground font-bold uppercase tracking-wider mb-1">Ср. стек BB</div>
+              <div className="text-3xl font-black text-primary">{Math.round(tables.reduce((sum, t) => sum + (t.average_stack || 0), 0) / Math.max(tables.length, 1))}</div>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Уведомления в стиле приглашений */}
+      {/* Final Table Ready Alert */}
       {isFinalTableReady && (
-        <Card className="w-full bg-white border border-slate-200 shadow-[0_20px_25px_-5px_rgba(0,0,0,0.06),0_10px_10px_-5px_rgba(0,0,0,0.04)]">
-          <CardContent className="p-6">
-            <div className="text-center">
-              <div className="text-slate-500 text-xs font-light mb-2 tracking-wide uppercase">Финальный стол готов</div>
-              <div className="text-lg font-light text-slate-900 mb-2">🏆 Осталось {getActivePlayers().length} игроков</div>
-              <div className="text-sm text-slate-600 font-light">Турнир готов для формирования финального стола</div>
-            </div>
+        <Card className="bg-primary/10 border-2 border-primary/50">
+          <CardContent className="p-6 text-center">
+            <Crown className="w-10 h-10 mx-auto mb-3 text-primary" />
+            <div className="text-xl font-black text-foreground mb-2">Финальный стол готов</div>
+            <div className="text-muted-foreground">Осталось {getActivePlayers().length} игроков</div>
           </CardContent>
         </Card>
       )}
 
-      {/* Выбывшие игроки в стиле приглашений */}
+      {/* Eliminated Players */}
       {getEliminatedPlayers().length > 0 && (
-        <Card className="w-full bg-white border border-slate-200 shadow-[0_20px_25px_-5px_rgba(0,0,0,0.06),0_10px_10px_-5px_rgba(0,0,0,0.04)]"
-          style={{ background: 'linear-gradient(145deg, #ffffff 0%, #f9fafb 100%)' }}
-        >
-          <CardContent className="p-0">
-            <div className="relative p-6">
-              <div className="text-center mb-6">
-                <div className="text-slate-500 text-xs font-light mb-1 tracking-wide uppercase">Выбывшие игроки</div>
-                <div className="text-lg font-light text-slate-900">{getEliminatedPlayers().length} игроков выбыло</div>
+        <Card className="bg-card brutal-border">
+          <CardHeader className="bg-secondary/60 border-b-2 border-border">
+            <CardTitle className="flex items-center gap-3 text-lg font-black text-foreground">
+              <div className="p-2 rounded-lg bg-destructive/20 border border-destructive/30">
+                <UserMinus className="w-5 h-5 text-destructive" />
               </div>
-              
-              <div className="w-full h-px bg-slate-200 mb-6"></div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {getEliminatedPlayers().map(player => (
-                  <div key={player.player.id} className="bg-slate-50 rounded-xl py-4 px-4 text-center">
-                    <Avatar className="w-14 h-14 mx-auto mb-3">
+              Выбывшие игроки ({getEliminatedPlayers().length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {getEliminatedPlayers().map(player => (
+                <Card key={player.player.id} className="bg-secondary/40 border-2 border-border p-4">
+                  <div className="text-center">
+                    <Avatar className="w-14 h-14 mx-auto mb-3 border-2 border-border">
                       <AvatarImage src={getPlayerAvatar(player.player.id)} alt={player.player.name} />
-                      <AvatarFallback className="bg-slate-200 text-slate-700">
+                      <AvatarFallback className="bg-secondary text-foreground font-black">
                         {player.player.name.charAt(0).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
-                    <div className="text-sm font-light text-slate-900 mb-1">{player.player.name}</div>
-                    <div className="text-xs text-slate-500 mb-3 font-light">Выбыл</div>
+                    <div className="font-bold text-foreground mb-1">{player.player.name}</div>
+                    <Badge className="bg-destructive/20 text-destructive border border-destructive/30 mb-3">Выбыл</Badge>
                     <Button
                       size="sm"
                       variant="outline"
-                      className="w-full bg-white border-slate-200 text-slate-700 hover:bg-slate-900 hover:text-white transition-all"
+                      className="w-full border-2 border-green-500/50 text-green-500 hover:bg-green-500/20"
                       onClick={() => restorePlayer(player.player.id)}
                     >
+                      <UserCheck className="w-4 h-4 mr-2" />
                       Восстановить
                     </Button>
                   </div>
-                ))}
-              </div>
+                </Card>
+              ))}
             </div>
           </CardContent>
         </Card>
       )}
 
-      {/* Панель управления в стиле приглашений */}
-      <Card className="w-full bg-white border border-slate-200 shadow-[0_20px_25px_-5px_rgba(0,0,0,0.06),0_10px_10px_-5px_rgba(0,0,0,0.04)]"
-        style={{ background: 'linear-gradient(145deg, #ffffff 0%, #f9fafb 100%)' }}
-      >
-        <CardContent className="p-0">
-          <div className="relative p-6">
-            <div className="text-center mb-6">
-              <div className="text-slate-500 text-xs font-light mb-1 tracking-wide uppercase">Панель управления</div>
-              <div className="text-lg font-light text-slate-900">Управление турниром</div>
+      {/* Control Panel */}
+      <Card className="bg-card brutal-border">
+        <CardHeader className="bg-secondary/60 border-b-2 border-border">
+          <CardTitle className="flex items-center gap-3 text-lg font-black text-foreground">
+            <div className="p-2 rounded-lg bg-primary/20 border border-primary/30">
+              <Settings className="w-5 h-5 text-primary" />
             </div>
-            
-            <div className="w-full h-px bg-slate-200 mb-6"></div>
-            
-            {!isSeatingStarted && (
-              <div className="mb-6 flex items-center justify-center gap-4">
-                <Label className="text-slate-700 font-light text-sm">Игроков за столом:</Label>
-                <Select value={playersPerTable.toString()} onValueChange={(value) => setPlayersPerTable(Number(value))}>
-                  <SelectTrigger className="w-32 bg-white border-slate-200">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="8">8 игроков</SelectItem>
-                    <SelectItem value="9">9 игроков</SelectItem>
-                    <SelectItem value="10">10 игроков</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-            
-            <div className="flex flex-wrap gap-3 justify-center">
-              {!isSeatingStarted ? (
+            Панель управления
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-6">
+          {!isSeatingStarted && (
+            <div className="mb-6 flex items-center justify-center gap-4">
+              <Label className="text-muted-foreground font-bold text-sm uppercase">Игроков за столом:</Label>
+              <Select value={playersPerTable.toString()} onValueChange={(value) => setPlayersPerTable(Number(value))}>
+                <SelectTrigger className="w-32 bg-secondary/50 border-2 border-border">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="8">8 игроков</SelectItem>
+                  <SelectItem value="9">9 игроков</SelectItem>
+                  <SelectItem value="10">10 игроков</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+          
+          <div className="flex flex-wrap gap-3 justify-center">
+            {!isSeatingStarted ? (
+              <Button 
+                onClick={startInitialSeating}
+                className="bg-primary hover:bg-primary/80 text-primary-foreground px-8 py-3 font-black text-base"
+                disabled={getActivePlayers().length === 0}
+              >
+                <Play className="w-5 h-5 mr-2" />
+                НАЧАТЬ РАССАДКУ
+              </Button>
+            ) : (
+              <>
                 <Button 
-                  onClick={startInitialSeating}
-                  className="bg-slate-900 text-white hover:bg-slate-700 px-6 py-2 rounded-lg font-medium text-sm tracking-wide transition-all"
-                  disabled={getActivePlayers().length === 0}
+                  onClick={openNewTable}
+                  variant="outline"
+                  className="border-2 border-border bg-secondary/50 hover:bg-secondary"
+                  disabled={getActivePlayers().length < playersPerTable * 2}
                 >
-                  <Play className="w-4 h-4 mr-2" />
-                  НАЧАТЬ РАССАДКУ
+                  <Plus className="w-4 h-4 mr-2" />
+                  Новый стол
                 </Button>
-              ) : (
-                <>
-                  <Button 
-                    onClick={openNewTable}
-                    variant="outline"
-                    className="bg-white border-slate-200 text-slate-700 hover:bg-slate-50 px-4 py-2 rounded-lg font-light text-sm"
-                    disabled={getActivePlayers().length < playersPerTable * 2}
-                  >
-                    <Plus className="w-4 h-4 mr-2" />
-                    Новый стол
-                  </Button>
-                  
-                  <Button 
-                    onClick={checkTableBalance}
-                    variant="outline"
-                    className="bg-white border-slate-200 text-slate-700 hover:bg-slate-50 px-4 py-2 rounded-lg font-light text-sm"
-                    disabled={balancingInProgress}
-                  >
-                    <ArrowUpDown className="w-4 h-4 mr-2" />
-                    {balancingInProgress ? 'Анализ...' : 'Баланс'}
-                  </Button>
+                
+                <Button 
+                  onClick={checkTableBalance}
+                  variant="outline"
+                  className="border-2 border-border bg-secondary/50 hover:bg-secondary"
+                  disabled={balancingInProgress}
+                >
+                  <ArrowUpDown className="w-4 h-4 mr-2" />
+                  {balancingInProgress ? 'Анализ...' : 'Баланс'}
+                </Button>
 
-                  <Button 
-                    onClick={autoSeatLatePlayers}
-                    variant="outline"
-                    className="bg-white border-slate-200 text-slate-700 hover:bg-slate-50 px-4 py-2 rounded-lg font-light text-sm"
-                  >
-                    <Shuffle className="w-4 h-4 mr-2" />
-                    Авто-рассадка
-                  </Button>
+                <Button 
+                  onClick={autoSeatLatePlayers}
+                  variant="outline"
+                  className="border-2 border-border bg-secondary/50 hover:bg-secondary"
+                >
+                  <Shuffle className="w-4 h-4 mr-2" />
+                  Авто-рассадка
+                </Button>
 
-                  <Button 
-                    onClick={recalculatePositions}
-                    variant="outline"
-                    className="bg-white border-slate-200 text-slate-700 hover:bg-slate-50 px-4 py-2 rounded-lg font-light text-sm"
-                  >
-                    <RotateCcw className="w-4 h-4 mr-2" />
-                    Пересчитать позиции
-                  </Button>
+                <Button 
+                  onClick={recalculatePositions}
+                  variant="outline"
+                  className="border-2 border-border bg-secondary/50 hover:bg-secondary"
+                >
+                  <RotateCcw className="w-4 h-4 mr-2" />
+                  Позиции
+                </Button>
 
-                  {isFinalTableReady && (
-                    <Button 
-                      onClick={createFinalTable}
-                      className="bg-slate-900 text-white hover:bg-slate-700 px-6 py-2 rounded-lg font-medium text-sm tracking-wide transition-all"
-                    >
-                      <Crown className="w-4 h-4 mr-2" />
-                      ФИНАЛЬНЫЙ СТОЛ
-                    </Button>
-                  )}
-                </>
-              )}
-            </div>
+                {isFinalTableReady && (
+                  <Button 
+                    onClick={createFinalTable}
+                    className="bg-primary hover:bg-primary/80 text-primary-foreground px-6 font-black"
+                  >
+                    <Crown className="w-4 h-4 mr-2" />
+                    ФИНАЛЬНЫЙ СТОЛ
+                  </Button>
+                )}
+              </>
+            )}
           </div>
         </CardContent>
       </Card>
