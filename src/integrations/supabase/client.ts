@@ -2,10 +2,8 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
-// ВАЖНО: Используем кастомный домен Supabase (настроенный в Supabase Dashboard)
-// После настройки Custom Domain в Supabase замени на: https://api.syndicate-poker.ru
-// До настройки используем прямой домен Supabase
-const SUPABASE_URL = "https://mokhssmnorrhohrowxvu.supabase.co";
+// Используем кастомный домен для Supabase API
+const SUPABASE_URL = "https://api.syndicate-poker.ru";
 
 console.log('🌐 Supabase API URL:', SUPABASE_URL);
 
