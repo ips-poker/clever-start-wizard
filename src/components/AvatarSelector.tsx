@@ -192,15 +192,32 @@ export function AvatarSelector({ onSelect, onClose, playerId }: AvatarSelectorPr
       
       console.log('Uploading avatar:', { uploaderId, fileName, fileSize: file.size });
 
-      const { error: uploadError } = await supabase.storage
+      const { data: uploadData, error: uploadError } = await supabase.storage
         .from('gallery')
-        .upload(`avatars/${fileName}`, file);
+        .upload(`avatars/${fileName}`, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
 
       if (uploadError) {
-        console.error('Upload error:', uploadError);
-        toast.error(`Ошибка загрузки: ${uploadError.message}`);
+        console.error('Upload error details:', {
+          message: uploadError.message,
+          name: uploadError.name,
+          stack: uploadError.stack
+        });
+        
+        // Более понятные сообщения об ошибках
+        if (uploadError.message.includes('policy')) {
+          toast.error("Ошибка доступа: необходима авторизация для загрузки фото");
+        } else if (uploadError.message.includes('size')) {
+          toast.error("Файл слишком большой. Попробуйте другое изображение");
+        } else {
+          toast.error(`Ошибка загрузки: ${uploadError.message}`);
+        }
         throw uploadError;
       }
+
+      console.log('File uploaded successfully:', uploadData);
 
       console.log('File uploaded successfully');
 
@@ -212,8 +229,18 @@ export function AvatarSelector({ onSelect, onClose, playerId }: AvatarSelectorPr
       setSelectedAvatar(data.publicUrl);
       toast.success("Изображение загружено успешно!");
     } catch (error: any) {
-      console.error('Error uploading file:', error);
-      toast.error(`Ошибка при загрузке файла: ${error.message || 'Неизвестная ошибка'}`);
+      console.error('Error uploading file:', {
+        error,
+        message: error?.message,
+        stack: error?.stack
+      });
+      
+      if (error?.message?.includes('JWT')) {
+        toast.error("Ошибка авторизации. Пожалуйста, войдите в систему");
+      } else if (!error?.message?.includes('policy')) {
+        // Не дублируем сообщение если уже показали ошибку политики выше
+        toast.error(`Ошибка при загрузке файла: ${error?.message || 'Неизвестная ошибка'}`);
+      }
     } finally {
       setUploading(false);
     }
