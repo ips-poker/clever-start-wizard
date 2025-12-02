@@ -18,21 +18,33 @@ export function AuthGuard({ children, requireAdmin = false }: AuthGuardProps) {
     }
   }, [loading, session]);
 
+  // Показываем загрузку пока идет инициализация
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <LoadingSpinner />
       </div>
     );
   }
 
+  // Редирект если нет сессии
   if (redirecting || !session || !user) {
     return <Navigate to="/auth" replace />;
   }
 
+  // Ждём загрузку профиля для проверки прав админа
+  if (requireAdmin && !userProfile) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <LoadingSpinner />
+      </div>
+    );
+  }
+
+  // Проверяем права админа после загрузки профиля
   if (requireAdmin && userProfile?.user_role !== 'admin') {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-destructive mb-4">
             Доступ запрещен
