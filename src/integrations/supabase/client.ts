@@ -2,9 +2,9 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
-// Временно используем прямой домен Supabase (проблемы с кастомным доменом на LTE)
-// TODO: Разобраться почему api.syndicate-poker.ru не работает без VPN
-const SUPABASE_URL = "https://mokhssmnorrhohrowxvu.supabase.co";
+// Используем кастомный домен через nginx прокси на VPS
+// VPS (89.104.74.121) проксирует запросы к Supabase
+const SUPABASE_URL = "https://api.syndicate-poker.ru";
 
 console.log('🌐 Supabase API URL:', SUPABASE_URL);
 
