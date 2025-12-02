@@ -22,6 +22,8 @@ export function useAuth() {
   const isFetching = useRef(false);
 
   useEffect(() => {
+    let isInitialLoad = true;
+
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
@@ -29,12 +31,12 @@ export function useAuth() {
         setSession(session);
         setUser(session?.user ?? null);
         
-        if (session?.user) {
-          // Defer profile fetching to avoid recursion
+        // Только для событий после инициализации, не для INITIAL_SESSION
+        if (!isInitialLoad && event !== 'INITIAL_SESSION' && session?.user) {
           setTimeout(() => {
             fetchUserProfile(session.user.id);
           }, 0);
-        } else {
+        } else if (!session?.user) {
           setUserProfile(null);
           lastFetchedUserId.current = null;
         }
@@ -43,7 +45,7 @@ export function useAuth() {
       }
     );
 
-    // THEN check for existing session
+    // THEN check for existing session ONCE
     supabase.auth.getSession().then(({ data: { session } }) => {
       console.log('Initial session check:', session?.user?.email);
       setSession(session);
@@ -56,6 +58,7 @@ export function useAuth() {
       }
       
       setLoading(false);
+      isInitialLoad = false; // Отмечаем, что начальная загрузка завершена
     });
 
     return () => subscription.unsubscribe();
