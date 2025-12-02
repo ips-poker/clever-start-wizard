@@ -29,18 +29,7 @@ function App() {
   const [isLoading, setIsLoading] = useState(true);
   const [showContent, setShowContent] = useState(false);
 
-  useEffect(() => {
-    // Check if loading screen was already shown in this session
-    const hasShownLoading = sessionStorage.getItem('syndikate_loading_shown');
-    
-    if (hasShownLoading) {
-      setIsLoading(false);
-      setShowContent(true);
-    }
-  }, []);
-
   const handleLoadingComplete = () => {
-    sessionStorage.setItem('syndikate_loading_shown', 'true');
     setIsLoading(false);
     setTimeout(() => setShowContent(true), 100);
   };
