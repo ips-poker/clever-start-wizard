@@ -940,22 +940,22 @@ const TournamentDirector = () => {
 
             <TabsContent value="tournaments" className="space-y-10 animate-fade-in">
               {/* Create Tournament Section */}
-              <Card className="bg-white/60 backdrop-blur-sm border border-gray-200/40 shadow-minimal hover:shadow-subtle transition-all duration-300 rounded-xl group">
-                <CardHeader className="pb-4">
-                  <CardTitle className="flex items-center gap-3 text-gray-800 text-xl font-light">
-                    <div className="p-2 bg-blue-100/80 rounded-lg group-hover:bg-blue-200/80 transition-colors">
-                      <Plus className="w-5 h-5 text-blue-600" />
+              <Card className="bg-card brutal-border overflow-hidden group hover:shadow-neon-orange/20 transition-all duration-300">
+                <CardHeader className="bg-secondary/60 border-b-2 border-border pb-4">
+                  <CardTitle className="flex items-center gap-3 text-foreground text-xl font-black">
+                    <div className="p-2 bg-primary/20 rounded-lg border border-primary/30 group-hover:bg-primary/30 transition-colors">
+                      <Plus className="w-5 h-5 text-primary" />
                     </div>
-                    Создать турнир
+                    СОЗДАТЬ ТУРНИР
                   </CardTitle>
-                  <CardDescription className="text-gray-600">
+                  <CardDescription className="text-muted-foreground font-bold uppercase tracking-wider text-xs">
                     Настройте новый покерный турнир
                   </CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="p-6">
                   <Button 
                     onClick={() => setIsModalOpen(true)}
-                    className="bg-blue-600 hover:bg-blue-700 text-white shadow-subtle hover:shadow-lg transition-all duration-200"
+                    className="bg-primary hover:bg-primary/80 text-primary-foreground font-black uppercase tracking-wider shadow-neon-orange"
                   >
                     <Plus className="w-4 h-4 mr-2" />
                     Создать новый турнир
@@ -964,83 +964,90 @@ const TournamentDirector = () => {
               </Card>
 
               {/* Tournaments Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {tournaments.map((tournament) => (
                   <Card 
                     key={tournament.id} 
-                    className="bg-white/60 backdrop-blur-sm border border-gray-200/40 shadow-minimal hover:shadow-dramatic transition-all duration-500 rounded-xl group hover:-translate-y-2"
+                    className={`bg-card brutal-border overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-neon-orange/20 relative ${
+                      selectedTournament?.id === tournament.id ? 'ring-2 ring-primary shadow-neon-orange/30' : ''
+                    }`}
                   >
-                    <CardHeader className="pb-4">
-                      <div className="flex items-start justify-between mb-3">
-                        <CardTitle className="text-lg font-medium text-gray-800 group-hover:text-blue-600 transition-colors">
+                    <CardHeader className="bg-secondary/60 border-b-2 border-border pb-4">
+                      <div className="flex items-start justify-between mb-2">
+                        <CardTitle className="text-lg font-black text-foreground">
                           {tournament.name}
                         </CardTitle>
                         <Badge 
-                          variant={tournament.status === 'running' ? 'destructive' : 
-                                  tournament.status === 'scheduled' ? 'default' : 'secondary'}
-                          className="text-xs"
+                          className={`text-xs font-black ${
+                            tournament.status === 'running' 
+                              ? 'bg-green-500/20 text-green-500 border-green-500/50 animate-pulse' 
+                              : tournament.status === 'scheduled' 
+                                ? 'bg-blue-500/20 text-blue-500 border-blue-500/50'
+                                : tournament.status === 'paused'
+                                  ? 'bg-yellow-500/20 text-yellow-500 border-yellow-500/50'
+                                  : 'bg-secondary text-muted-foreground border-border'
+                          }`}
                         >
-                          {tournament.status === 'running' ? 'Активен' : 
-                           tournament.status === 'scheduled' ? 'Запланирован' : 
-                           tournament.status === 'finished' ? 'Завершен' : tournament.status}
+                          {tournament.status === 'running' ? '● АКТИВЕН' : 
+                           tournament.status === 'scheduled' ? 'ЗАПЛАНИРОВАН' : 
+                           tournament.status === 'paused' ? 'ПАУЗА' :
+                           tournament.status === 'finished' ? 'ЗАВЕРШЕН' : tournament.status.toUpperCase()}
                         </Badge>
                       </div>
-                      <CardDescription className="text-gray-600 text-sm">
+                      <CardDescription className="text-muted-foreground text-xs font-bold uppercase">
                         {tournament.description || "Рейтинговый турнир"}
                       </CardDescription>
                     </CardHeader>
                     
-                    <CardContent className="space-y-4">
+                    <CardContent className="p-4 space-y-4">
                       {/* Tournament Info */}
                       <div className="space-y-2 text-sm">
-                        <div className="flex justify-between">
-                          <span className="text-gray-500">Время начала:</span>
-                          <span className="font-medium">{new Date(tournament.start_time).toLocaleString('ru-RU')}</span>
+                        <div className="flex justify-between items-center p-2 bg-secondary/40 rounded-lg">
+                          <span className="text-muted-foreground font-bold text-xs uppercase">Начало</span>
+                          <span className="font-black text-foreground text-xs">{new Date(tournament.start_time).toLocaleString('ru-RU')}</span>
                         </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-500">Орг. взнос:</span>
-                          <span className="font-medium text-green-600">{(tournament.participation_fee || tournament.buy_in).toLocaleString()} ₽</span>
+                        <div className="flex justify-between items-center p-2 bg-green-500/10 rounded-lg border border-green-500/30">
+                          <span className="text-muted-foreground font-bold text-xs uppercase">Орг. взнос</span>
+                          <span className="font-black text-green-500">{(tournament.participation_fee || tournament.buy_in).toLocaleString()} ₽</span>
                         </div>
                         {(tournament.reentry_fee && tournament.reentry_fee > 0) && (
-                          <div className="flex justify-between">
-                            <span className="text-gray-500">Повторный вход:</span>
-                            <span className="font-medium text-blue-600">{tournament.reentry_fee.toLocaleString()} ₽</span>
+                          <div className="flex justify-between items-center p-2 bg-blue-500/10 rounded-lg border border-blue-500/30">
+                            <span className="text-muted-foreground font-bold text-xs uppercase">Re-entry</span>
+                            <span className="font-black text-blue-500">{tournament.reentry_fee.toLocaleString()} ₽</span>
                           </div>
                         )}
                         {(tournament.additional_fee && tournament.additional_fee > 0) && (
-                          <div className="flex justify-between">
-                            <span className="text-gray-500">Доп. набор:</span>
-                            <span className="font-medium text-purple-600">{tournament.additional_fee.toLocaleString()} ₽</span>
+                          <div className="flex justify-between items-center p-2 bg-purple-500/10 rounded-lg border border-purple-500/30">
+                            <span className="text-muted-foreground font-bold text-xs uppercase">Add-on</span>
+                            <span className="font-black text-purple-500">{tournament.additional_fee.toLocaleString()} ₽</span>
                           </div>
                         )}
-                        <div className="flex justify-between">
-                          <span className="text-gray-500">Макс. игроков:</span>
-                          <span className="font-medium">{tournament.max_players}</span>
+                        <div className="grid grid-cols-2 gap-2">
+                          <div className="p-2 bg-secondary/40 rounded-lg text-center">
+                            <div className="text-xs text-muted-foreground font-bold">ИГРОКОВ</div>
+                            <div className="font-black text-foreground">{tournament.max_players}</div>
+                          </div>
+                          <div className="p-2 bg-secondary/40 rounded-lg text-center">
+                            <div className="text-xs text-muted-foreground font-bold">СТЕК</div>
+                            <div className="font-black text-foreground">{tournament.starting_chips.toLocaleString()}</div>
+                          </div>
                         </div>
-                         <div className="flex justify-between">
-                           <span className="text-gray-500">Стартовый стек:</span>
-                           <span className="font-medium">{tournament.starting_chips.toLocaleString()}</span>
-                         </div>
-                         <div className="flex justify-between">
-                           <span className="text-gray-500">Текущий уровень:</span>
-                           <span className="font-medium">{tournament.current_level}</span>
-                         </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-500">Блайнды:</span>
-                          <span className="font-medium">{tournament.current_small_blind}/{tournament.current_big_blind}</span>
+                        <div className="flex justify-between items-center p-2 bg-primary/10 rounded-lg border border-primary/30">
+                          <span className="text-muted-foreground font-bold text-xs uppercase">Уровень {tournament.current_level}</span>
+                          <span className="font-black text-primary">{tournament.current_small_blind}/{tournament.current_big_blind}</span>
                         </div>
                       </div>
 
                       {/* Action Buttons */}
-                      <div className="space-y-2 pt-4 border-t border-gray-200/50">
+                      <div className="space-y-2 pt-2 border-t-2 border-border">
                         <div className="grid grid-cols-2 gap-2">
                           <Button
                             variant="outline"
                             size="sm"
                             onClick={() => handleTournamentSelect(tournament)}
-                            className="text-blue-600 border-blue-200 hover:bg-blue-50 transition-colors"
+                            className="border-2 border-primary/50 text-primary hover:bg-primary/20 font-black text-xs"
                           >
-                            <Trophy className="w-4 h-4 mr-1" />
+                            <Trophy className="w-3 h-3 mr-1" />
                             Выбрать
                           </Button>
                           <Button
@@ -1050,9 +1057,9 @@ const TournamentDirector = () => {
                               setEditingTournament(tournament);
                               setIsModalOpen(true);
                             }}
-                            className="text-orange-600 border-orange-200 hover:bg-orange-50 transition-colors"
+                            className="border-2 border-border text-muted-foreground hover:bg-secondary font-black text-xs"
                           >
-                            <Edit className="w-4 h-4 mr-1" />
+                            <Edit className="w-3 h-3 mr-1" />
                             Редактировать
                           </Button>
                         </div>
@@ -1073,10 +1080,10 @@ const TournamentDirector = () => {
                                     toast({ title: "Регистрация открыта" });
                                   }
                                 }}
-                                className="text-blue-600 border-blue-200 hover:bg-blue-50 transition-colors"
+                                className="border-2 border-blue-500/50 text-blue-500 hover:bg-blue-500/20 font-black text-xs"
                               >
-                                <Play className="w-4 h-4 mr-1" />
-                                Открыть регистрацию
+                                <Play className="w-3 h-3 mr-1" />
+                                Регистрация
                               </Button>
                               <Button
                                 variant="outline"
@@ -1091,10 +1098,10 @@ const TournamentDirector = () => {
                                     toast({ title: "Турнир запущен" });
                                   }
                                 }}
-                                className="text-green-600 border-green-200 hover:bg-green-50 transition-colors"
+                                className="border-2 border-green-500/50 text-green-500 hover:bg-green-500/20 font-black text-xs"
                               >
-                                <Play className="w-4 h-4 mr-1" />
-                                Запустить сразу
+                                <Play className="w-3 h-3 mr-1" />
+                                Старт
                               </Button>
                             </>
                           )}
@@ -1113,10 +1120,10 @@ const TournamentDirector = () => {
                                   toast({ title: "Турнир запущен" });
                                 }
                               }}
-                              className="text-green-600 border-green-200 hover:bg-green-50 transition-colors"
+                              className="border-2 border-green-500/50 text-green-500 hover:bg-green-500/20 font-black text-xs col-span-2"
                             >
-                              <Play className="w-4 h-4 mr-1" />
-                              Запустить
+                              <Play className="w-3 h-3 mr-1" />
+                              Запустить турнир
                             </Button>
                           )}
                           
@@ -1134,9 +1141,9 @@ const TournamentDirector = () => {
                                   toast({ title: "Турнир приостановлен" });
                                 }
                               }}
-                              className="text-yellow-600 border-yellow-200 hover:bg-yellow-50 transition-colors"
+                              className="border-2 border-yellow-500/50 text-yellow-500 hover:bg-yellow-500/20 font-black text-xs"
                             >
-                              <Pause className="w-4 h-4 mr-1" />
+                              <Pause className="w-3 h-3 mr-1" />
                               Пауза
                             </Button>
                           )}
@@ -1155,9 +1162,9 @@ const TournamentDirector = () => {
                                   toast({ title: "Турнир возобновлен" });
                                 }
                               }}
-                              className="text-green-600 border-green-200 hover:bg-green-50 transition-colors"
+                              className="border-2 border-green-500/50 text-green-500 hover:bg-green-500/20 font-black text-xs"
                             >
-                              <Play className="w-4 h-4 mr-1" />
+                              <Play className="w-3 h-3 mr-1" />
                               Возобновить
                             </Button>
                           )}
@@ -1170,14 +1177,14 @@ const TournamentDirector = () => {
                                 deleteTournament(tournament.id);
                               }
                             }}
-                            className="text-red-600 border-red-200 hover:bg-red-50 transition-colors"
+                            className="border-2 border-destructive/50 text-destructive hover:bg-destructive/20 font-black text-xs"
                           >
-                            <Trash2 className="w-4 h-4 mr-1" />
+                            <Trash2 className="w-3 h-3 mr-1" />
                             Удалить
                           </Button>
                         </div>
 
-                        {/* Additional Quick Actions */}
+                        {/* Quick Actions */}
                         <div className="grid grid-cols-3 gap-1 pt-2">
                           <Button
                             variant="ghost"
@@ -1186,7 +1193,7 @@ const TournamentDirector = () => {
                               handleTournamentSelect(tournament);
                               setActiveTab('control');
                             }}
-                            className="text-xs text-gray-500 hover:text-blue-600"
+                            className="text-xs text-muted-foreground hover:text-primary hover:bg-primary/10 font-bold"
                           >
                             <Timer className="w-3 h-3 mr-1" />
                             Таймер
@@ -1198,7 +1205,7 @@ const TournamentDirector = () => {
                               handleTournamentSelect(tournament);
                               setActiveTab('players');
                             }}
-                            className="text-xs text-gray-500 hover:text-blue-600"
+                            className="text-xs text-muted-foreground hover:text-primary hover:bg-primary/10 font-bold"
                           >
                             <Users className="w-3 h-3 mr-1" />
                             Игроки
@@ -1210,7 +1217,7 @@ const TournamentDirector = () => {
                               handleTournamentSelect(tournament);
                               setActiveTab('results');
                             }}
-                            className="text-xs text-gray-500 hover:text-blue-600"
+                            className="text-xs text-muted-foreground hover:text-primary hover:bg-primary/10 font-bold"
                           >
                             <Trophy className="w-3 h-3 mr-1" />
                             Результаты
@@ -1218,10 +1225,10 @@ const TournamentDirector = () => {
                         </div>
                       </div>
 
-                      {/* Status Indicator */}
+                      {/* Selected Indicator */}
                       {selectedTournament?.id === tournament.id && (
-                        <div className="absolute -top-2 -right-2">
-                          <div className="w-4 h-4 bg-blue-500 rounded-full border-2 border-white shadow-lg animate-pulse"></div>
+                        <div className="absolute -top-1 -right-1">
+                          <div className="w-4 h-4 bg-primary rounded-full border-2 border-background shadow-neon-orange animate-pulse"></div>
                         </div>
                       )}
                     </CardContent>
@@ -1230,14 +1237,14 @@ const TournamentDirector = () => {
               </div>
 
               {tournaments.length === 0 && (
-                <Card className="bg-white/50 backdrop-blur-sm border border-gray-200/30 shadow-minimal">
+                <Card className="bg-card brutal-border">
                   <CardContent className="text-center py-16">
-                    <Trophy className="h-16 w-16 mx-auto mb-4 text-gray-400" />
-                    <h3 className="text-lg font-medium text-gray-700 mb-2">Нет созданных турниров</h3>
-                    <p className="text-gray-500 mb-6">Создайте первый турнир для начала работы</p>
+                    <Trophy className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
+                    <h3 className="text-lg font-black text-foreground mb-2">НЕТ СОЗДАННЫХ ТУРНИРОВ</h3>
+                    <p className="text-muted-foreground mb-6 font-bold uppercase text-sm">Создайте первый турнир для начала работы</p>
                     <Button
                       onClick={() => setIsModalOpen(true)}
-                      className="bg-blue-600 hover:bg-blue-700 text-white"
+                      className="bg-primary hover:bg-primary/80 text-primary-foreground font-black uppercase"
                     >
                       <Plus className="w-4 h-4 mr-2" />
                       Новый турнир
@@ -1255,14 +1262,14 @@ const TournamentDirector = () => {
                   <ManualAdjustments tournaments={tournaments} selectedTournament={selectedTournament} onRefresh={loadTournaments} />
                 </div>
               ) : (
-                <Card className="bg-white/50 backdrop-blur-sm border border-gray-200/30 shadow-minimal">
+                <Card className="bg-card brutal-border">
                   <CardContent className="text-center py-16">
-                    <AlertTriangle className="h-16 w-16 mx-auto mb-4 text-gray-400" />
-                    <h3 className="text-lg font-medium text-gray-700 mb-2">Турнир не выбран</h3>
-                    <p className="text-gray-500 mb-6">Выберите турнир для настройки управления</p>
+                    <AlertTriangle className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
+                    <h3 className="text-lg font-black text-foreground mb-2">ТУРНИР НЕ ВЫБРАН</h3>
+                    <p className="text-muted-foreground mb-6 font-bold uppercase text-sm">Выберите турнир для настройки управления</p>
                     <Button
                       onClick={() => setActiveTab('tournaments')}
-                      className="bg-blue-600 hover:bg-blue-700 text-white"
+                      className="bg-primary hover:bg-primary/80 text-primary-foreground font-black uppercase"
                     >
                       Выбрать турнир
                     </Button>
@@ -1326,11 +1333,11 @@ const TournamentDirector = () => {
                   <TournamentAnalysisAndRating />
                 </div>
               ) : (
-                <Card className="bg-white/50 backdrop-blur-sm border border-gray-200/30 shadow-minimal">
+                <Card className="bg-card brutal-border">
                   <CardContent className="text-center py-16">
-                    <AlertTriangle className="h-16 w-16 mx-auto mb-4 text-gray-400" />
-                    <h3 className="text-lg font-medium text-gray-700 mb-2">Турнир не выбран</h3>
-                    <p className="text-gray-500">Выберите турнир для анализа</p>
+                    <AlertTriangle className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
+                    <h3 className="text-lg font-black text-foreground mb-2">ТУРНИР НЕ ВЫБРАН</h3>
+                    <p className="text-muted-foreground font-bold uppercase text-sm">Выберите турнир для анализа</p>
                   </CardContent>
                 </Card>
               )}

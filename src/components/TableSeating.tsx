@@ -1278,52 +1278,52 @@ const TableSeating = ({
         </CardContent>
       </Card>
 
-      {/* Столы в стиле приглашений */}
+      {/* Столы в стиле Brutal Industrial */}
       {tables.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           {tables.map(table => (
             <Card 
               key={table.table_number} 
-              className={`w-full border shadow-[0_20px_25px_-5px_rgba(0,0,0,0.06),0_10px_10px_-5px_rgba(0,0,0,0.04)] ${
+              className={`w-full brutal-border overflow-hidden transition-all duration-300 hover:shadow-neon-orange/20 ${
                 table.is_final_table 
-                  ? 'bg-gradient-to-br from-yellow-50 to-amber-50 border-yellow-200' 
-                  : 'bg-white border-slate-200'
+                  ? 'bg-gradient-to-br from-primary/20 to-primary/5 border-primary/50' 
+                  : 'bg-card border-border'
               }`}
-              style={{ 
-                background: table.is_final_table 
-                  ? 'linear-gradient(145deg, #fffbeb 0%, #fef3c7 100%)' 
-                  : 'linear-gradient(145deg, #ffffff 0%, #f9fafb 100%)' 
-              }}
             >
               <CardContent className="p-0">
                 <div className="relative p-6">
                   {/* Заголовок стола */}
                   <div className="text-center mb-6 relative">
-                    <div className="text-slate-500 text-xs font-medium mb-1 tracking-wide uppercase">
-                      {table.is_final_table ? 'Финальный стол' : `Стол ${table.table_number}`}
+                    <div className={`text-xs font-black uppercase tracking-wider mb-2 ${
+                      table.is_final_table ? 'text-primary' : 'text-muted-foreground'
+                    }`}>
+                      {table.is_final_table ? '🏆 ФИНАЛЬНЫЙ СТОЛ' : `СТОЛ ${table.table_number}`}
                     </div>
-                    <div className="text-lg font-light text-slate-900">
-                      {table.active_players}/{table.max_seats} Игроков
+                    <div className="text-2xl font-black text-foreground">
+                      {table.active_players}/{table.max_seats}
                     </div>
+                    <div className="text-xs text-muted-foreground font-bold uppercase">Игроков</div>
                     {table.is_final_table && (
-                      <div className="text-yellow-600 text-xs font-light mt-1">🏆 Чемпионский раунд</div>
+                      <Badge className="mt-2 bg-primary/20 text-primary border border-primary/50 font-black text-xs">
+                        ЧЕМПИОНСКИЙ РАУНД
+                      </Badge>
                     )}
                     
                     {/* Кнопка закрытия стола */}
                     {!table.is_final_table && (
                       <Button
                         size="sm"
-                        variant="outline"
-                        className="absolute top-0 right-0 h-6 w-6 p-0 bg-white border-slate-200 text-red-600 hover:bg-red-50"
+                        variant="ghost"
+                        className="absolute top-0 right-0 h-7 w-7 p-0 text-destructive hover:bg-destructive/20 hover:text-destructive"
                         onClick={() => closeTable(table.table_number)}
                         title="Закрыть стол"
                       >
-                        <X className="w-3 h-3" />
+                        <X className="w-4 h-4" />
                       </Button>
                     )}
                   </div>
                   
-                  <div className="w-full h-px bg-slate-200 mb-6"></div>
+                  <Separator className="bg-border/50 mb-6" />
                   
                   {/* Места за столом */}
                   <div className="grid grid-cols-3 gap-3 mb-6">
@@ -1331,35 +1331,34 @@ const TableSeating = ({
                       <div 
                         key={seat.seat_number} 
                         className={`
-                          p-3 rounded-lg text-center transition-all
+                          p-3 rounded-lg text-center transition-all border-2
                           ${seat.player_id 
-                            ? 'bg-slate-100 border border-slate-200' 
-                            : 'bg-slate-50 border border-slate-100 opacity-50'
+                            ? 'bg-secondary/60 border-border hover:border-primary/50' 
+                            : 'bg-secondary/20 border-border/30 opacity-50'
                           }
                         `}
                       >
-                        <div className="text-xs text-slate-500 mb-1 font-light">Место {seat.seat_number}</div>
+                        <div className="text-xs text-muted-foreground mb-1 font-bold uppercase">#{seat.seat_number}</div>
                         {seat.player_id ? (
                           <div>
-                            <Avatar className="w-10 h-10 mx-auto mb-2">
+                            <Avatar className="w-10 h-10 mx-auto mb-2 border-2 border-border">
                               <AvatarImage src={getPlayerAvatar(seat.player_id)} alt={seat.player_name} />
-                              <AvatarFallback className="bg-slate-200 text-slate-700 text-xs">
+                              <AvatarFallback className="bg-secondary text-foreground text-xs font-black">
                                 {seat.player_name?.charAt(0).toUpperCase()}
                               </AvatarFallback>
                             </Avatar>
-                            <div className="text-xs font-light text-slate-900 truncate">{seat.player_name}</div>
-                            <div className="text-xs text-slate-600 mb-2 font-light">{seat.stack_bb} BB</div>
+                            <div className="text-xs font-bold text-foreground truncate">{seat.player_name}</div>
+                            <div className="text-xs text-primary font-black mb-2">{seat.stack_bb} BB</div>
                             
                             <div className="flex gap-1">
                               <Dialog>
                                 <DialogTrigger asChild>
                                   <Button
                                     size="sm"
-                                    variant="outline"
-                                    className="flex-1 h-6 px-1 text-xs bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
+                                    variant="ghost"
+                                    className="flex-1 h-6 px-1 text-xs bg-secondary/50 border border-border text-muted-foreground hover:bg-primary/20 hover:text-primary"
                                     onClick={() => {
                                       setSelectedPlayer(seat.player_id!);
-                                      // Найдем первый доступный стол и место
                                       const tablesWithFreeSeats = tables.filter(t => 
                                         t.table_number !== table.table_number && 
                                         t.seats.some(s => !s.player_id)
@@ -1375,32 +1374,35 @@ const TableSeating = ({
                                     <ArrowUpDown className="w-3 h-3" />
                                   </Button>
                                 </DialogTrigger>
-                                <DialogContent className="sm:max-w-md">
+                                <DialogContent className="sm:max-w-md bg-card border-border">
                                   <DialogHeader>
-                                    <DialogTitle>Переместить {seat.player_name}</DialogTitle>
+                                    <DialogTitle className="text-foreground font-black">Переместить {seat.player_name}</DialogTitle>
                                   </DialogHeader>
                                   <div className="space-y-4">
                                     <div className="grid grid-cols-2 gap-2">
                                       <Select value={targetTable.toString()} onValueChange={(v) => {
                                         const newTable = Number(v);
                                         setTargetTable(newTable);
-                                        // Автоматически выберем первое свободное место на новом столе
                                         const availableSeats = getAvailableSeats(newTable);
                                         if (availableSeats.length > 0) {
                                           setTargetSeat(availableSeats[0]);
                                         }
                                       }}>
-                                        <SelectTrigger>
+                                        <SelectTrigger className="bg-secondary/50 border-border">
                                           <SelectValue placeholder="Выберите стол" />
                                         </SelectTrigger>
-                                        <SelectContent>
+                                        <SelectContent className="bg-card border-border">
                                           {tables
                                             .filter(t => t.table_number !== table.table_number)
                                             .map(t => {
                                               const freeSeats = getAvailableSeats(t.table_number);
                                               return (
-                                                <SelectItem key={t.table_number} value={t.table_number.toString()}>
-                                                  Стол {t.table_number} ({freeSeats.length} свободных мест)
+                                                <SelectItem 
+                                                  key={t.table_number} 
+                                                  value={t.table_number.toString()}
+                                                  disabled={freeSeats.length === 0}
+                                                >
+                                                  Стол {t.table_number} ({freeSeats.length} мест)
                                                 </SelectItem>
                                               );
                                             })}
@@ -1408,10 +1410,10 @@ const TableSeating = ({
                                       </Select>
                                       
                                       <Select value={targetSeat.toString()} onValueChange={(v) => setTargetSeat(Number(v))}>
-                                        <SelectTrigger>
+                                        <SelectTrigger className="bg-secondary/50 border-border">
                                           <SelectValue placeholder="Выберите место" />
                                         </SelectTrigger>
-                                        <SelectContent>
+                                        <SelectContent className="bg-card border-border">
                                           {getAvailableSeats(targetTable).map(seatNum => (
                                             <SelectItem key={seatNum} value={seatNum.toString()}>
                                               Место {seatNum}
@@ -1421,38 +1423,23 @@ const TableSeating = ({
                                       </Select>
                                     </div>
                                     
-                                    <div className="text-sm text-slate-600">
-                                      Доступно мест: {getAvailableSeats(targetTable).length}
-                                    </div>
-                                    
-                                    <div className="flex gap-2">
-                                      <Button 
-                                        onClick={() => {
-                                          if (seat.player_id) {
-                                            movePlayer(
-                                              seat.player_id, 
-                                              table.table_number, 
-                                              seat.seat_number, 
-                                              targetTable, 
-                                              targetSeat
-                                            );
-                                          }
-                                        }}
-                                        className="flex-1"
-                                        disabled={getAvailableSeats(targetTable).length === 0}
-                                      >
-                                        <ArrowUpDown className="w-4 h-4 mr-2" />
-                                        Переместить
-                                      </Button>
-                                    </div>
+                                    <Button
+                                      className="w-full bg-primary hover:bg-primary/80 text-primary-foreground font-black"
+                                      onClick={() => {
+                                        movePlayer(seat.player_id!, table.table_number, seat.seat_number, targetTable, targetSeat);
+                                      }}
+                                    >
+                                      <ArrowUpDown className="w-4 h-4 mr-2" />
+                                      Переместить
+                                    </Button>
                                   </div>
                                 </DialogContent>
                               </Dialog>
                               
                               <Button
                                 size="sm"
-                                variant="outline"
-                                className="flex-1 h-6 px-1 text-xs bg-white border-slate-200 text-red-600 hover:bg-red-50"
+                                variant="ghost"
+                                className="flex-1 h-6 px-1 text-xs bg-destructive/20 border border-destructive/30 text-destructive hover:bg-destructive/30"
                                 onClick={() => eliminatePlayer(seat.player_id!)}
                               >
                                 <UserMinus className="w-3 h-3" />
@@ -1460,25 +1447,99 @@ const TableSeating = ({
                             </div>
                           </div>
                         ) : (
-                          <div className="text-xs text-slate-400 font-light">Пусто</div>
+                          <div className="text-muted-foreground text-xs font-bold py-3">СВОБОДНО</div>
                         )}
                       </div>
                     ))}
                   </div>
                   
                   {/* Статистика стола */}
-                  {table.active_players > 0 && (
-                    <div className="text-center bg-slate-50 rounded-lg py-3">
-                      <div className="text-slate-500 text-xs font-light mb-1 tracking-wide uppercase">Средний стек</div>
-                      <div className="text-sm font-light text-slate-900">{Math.round(table.average_stack || 0)} фишек</div>
+                  <div className="flex justify-between items-center p-3 bg-secondary/40 rounded-lg border border-border/50">
+                    <div className="text-center">
+                      <div className="text-xs text-muted-foreground font-bold uppercase">Ср. стек</div>
+                      <div className="text-sm font-black text-primary">{table.average_stack?.toLocaleString() || 0}</div>
                     </div>
-                  )}
+                    <div className="text-center">
+                      <div className="text-xs text-muted-foreground font-bold uppercase">Дилер</div>
+                      <div className="text-sm font-black text-foreground">#{table.dealer_position}</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-xs text-muted-foreground font-bold uppercase">Статус</div>
+                      <Badge className={`text-xs font-black ${
+                        table.table_status === 'active' ? 'bg-green-500/20 text-green-500 border-green-500/50' :
+                        table.table_status === 'final' ? 'bg-primary/20 text-primary border-primary/50' :
+                        'bg-secondary text-muted-foreground border-border'
+                      }`}>
+                        {table.table_status === 'active' ? 'АКТИВЕН' : 
+                         table.table_status === 'final' ? 'ФИНАЛ' : 
+                         table.table_status.toUpperCase()}
+                      </Badge>
+                    </div>
+                  </div>
                 </div>
               </CardContent>
             </Card>
           ))}
         </div>
       )}
+
+      {/* Move Player Dialog (global) */}
+      <Dialog open={isMoveDialogOpen} onOpenChange={setIsMoveDialogOpen}>
+        <DialogContent className="bg-card border-border">
+          <DialogHeader>
+            <DialogTitle className="text-foreground font-black">Переместить игрока</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="text-muted-foreground font-bold text-xs uppercase">Стол</Label>
+                <Select value={targetTable.toString()} onValueChange={(v) => setTargetTable(Number(v))}>
+                  <SelectTrigger className="bg-secondary/50 border-border mt-1">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-card border-border">
+                    {tables.map(t => (
+                      <SelectItem key={t.table_number} value={t.table_number.toString()}>
+                        Стол {t.table_number}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label className="text-muted-foreground font-bold text-xs uppercase">Место</Label>
+                <Select value={targetSeat.toString()} onValueChange={(v) => setTargetSeat(Number(v))}>
+                  <SelectTrigger className="bg-secondary/50 border-border mt-1">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-card border-border">
+                    {getAvailableSeats(targetTable).map(seatNum => (
+                      <SelectItem key={seatNum} value={seatNum.toString()}>
+                        Место {seatNum}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <Button 
+              className="w-full bg-primary hover:bg-primary/80 text-primary-foreground font-black"
+              onClick={() => {
+                if (selectedPlayer) {
+                  const currentTable = tables.find(t => t.seats.some(s => s.player_id === selectedPlayer));
+                  const currentSeat = currentTable?.seats.find(s => s.player_id === selectedPlayer);
+                  if (currentTable && currentSeat) {
+                    movePlayer(selectedPlayer, currentTable.table_number, currentSeat.seat_number, targetTable, targetSeat);
+                  }
+                }
+                setIsMoveDialogOpen(false);
+              }}
+            >
+              Подтвердить перемещение
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
