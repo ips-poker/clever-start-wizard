@@ -231,22 +231,16 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Создаем сессию для пользователя
-    // Используем основной домен для редиректа
-    const redirectUrl = 'https://syndicate-poker.ru/';
+    // Создаем сессию для пользователя напрямую (для открытия с иконки)
+    console.log('Creating session for user:', existingUser.user.id);
     
-    console.log('Redirect URL will be:', redirectUrl);
-    
-    const { data: sessionData, error: sessionError } = await supabase.auth.admin.generateLink({
-      type: 'magiclink',
-      email: telegramEmail,
-      options: {
-        redirectTo: redirectUrl
-      }
+    // Генерируем токены напрямую через admin API
+    const { data: sessionData, error: sessionError } = await supabase.auth.admin.createSession({
+      user_id: existingUser.user.id
     });
 
-    if (sessionError || !sessionData) {
-      console.error('Error generating session:', sessionError);
+    if (sessionError || !sessionData?.session) {
+      console.error('Error creating session:', sessionError);
       return new Response(
         JSON.stringify({ error: 'Failed to create session' }),
         { 
@@ -256,8 +250,8 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Используем стандартный Supabase URL
-    const loginUrl = sessionData.properties.action_link;
+    const { access_token, refresh_token } = sessionData.session;
+    console.log('Session created successfully');
 
     // Используем функцию для объединения игроков
     const telegramId = authData.id.toString();
@@ -345,7 +339,8 @@ Deno.serve(async (req) => {
       JSON.stringify({ 
         success: true,
         user: existingUser.user,
-        login_url: loginUrl,
+        access_token: access_token,
+        refresh_token: refresh_token,
         player: player
       }),
       { 
