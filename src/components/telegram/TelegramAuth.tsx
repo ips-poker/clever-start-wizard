@@ -53,7 +53,7 @@ export const TelegramAuth: React.FC<TelegramAuthProps> = ({ onAuthComplete }) =>
         return;
       }
       
-      // Обычная авторизация через Telegram
+      // Обычная авторизация через Telegram только если НЕ режим разработки
       await initData.restore();
       const user = initData.user();
       
@@ -78,23 +78,11 @@ export const TelegramAuth: React.FC<TelegramAuthProps> = ({ onAuthComplete }) =>
         setTelegramUser(telegramUserData);
         await authenticateWithSupabase(telegramUserData);
       } else {
-        // Если не удалось получить данные из Telegram SDK
-        // но приложение открыто как PWA - показываем ошибку с инструкцией
-        const isPWA = window.matchMedia('(display-mode: standalone)').matches;
-        if (isPWA) {
-          setAuthError('Пожалуйста, откройте приложение через Telegram бота первый раз для авторизации');
-        } else {
-          setAuthError('Приложение должно быть открыто через Telegram бота');
-        }
+        setAuthError('Приложение должно быть открыто через Telegram бота');
       }
     } catch (error) {
       console.error('Telegram auth error:', error);
-      const isPWA = window.matchMedia('(display-mode: standalone)').matches;
-      if (isPWA) {
-        setAuthError('Пожалуйста, откройте приложение через Telegram бота первый раз для авторизации');
-      } else {
-        setAuthError('Приложение должно быть открыто через Telegram бота');
-      }
+      setAuthError('Приложение должно быть открыто через Telegram бота');
     } finally {
       setLoading(false);
     }
@@ -147,10 +135,7 @@ export const TelegramAuth: React.FC<TelegramAuthProps> = ({ onAuthComplete }) =>
       }
 
       if (data?.success) {
-        console.log('Authentication successful', data);
-        
-        // Сохраняем данные пользователя
-        localStorage.setItem('telegram_user_data', JSON.stringify(telegramUserData));
+        console.log('Authentication successful');
         
         // Автоматически входим в приложение
         onAuthComplete(telegramUserData);

@@ -26,18 +26,10 @@ import Privacy from "./pages/Privacy";
 const queryClient = new QueryClient();
 
 function App() {
-  const isTelegramRoute = typeof window !== 'undefined' &&
-    (window.location.pathname.startsWith('/telegram') || window.location.pathname.startsWith('/telegram-mini-app'));
-
-  const [isLoading, setIsLoading] = useState(!isTelegramRoute);
-  const [showContent, setShowContent] = useState(isTelegramRoute);
+  const [isLoading, setIsLoading] = useState(true);
+  const [showContent, setShowContent] = useState(false);
 
   useEffect(() => {
-    if (isTelegramRoute) {
-      // Для Telegram Mini App пропускаем общий экран загрузки
-      return;
-    }
-
     // Check if loading screen was already shown in this session
     const hasShownLoading = sessionStorage.getItem('syndikate_loading_shown');
     
@@ -45,12 +37,10 @@ function App() {
       setIsLoading(false);
       setShowContent(true);
     }
-  }, [isTelegramRoute]);
+  }, []);
 
   const handleLoadingComplete = () => {
-    if (!isTelegramRoute) {
-      sessionStorage.setItem('syndikate_loading_shown', 'true');
-    }
+    sessionStorage.setItem('syndikate_loading_shown', 'true');
     setIsLoading(false);
     setTimeout(() => setShowContent(true), 100);
   };

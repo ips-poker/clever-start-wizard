@@ -231,13 +231,18 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Создаем сессию для пользователя без редиректа
-    // Просто генерируем access token для прямой авторизации
-    console.log('Creating session for user:', existingUser.user.id);
+    // Создаем сессию для пользователя
+    // Используем основной домен для редиректа
+    const redirectUrl = 'https://syndicate-poker.ru/';
+    
+    console.log('Redirect URL will be:', redirectUrl);
     
     const { data: sessionData, error: sessionError } = await supabase.auth.admin.generateLink({
       type: 'magiclink',
-      email: telegramEmail
+      email: telegramEmail,
+      options: {
+        redirectTo: redirectUrl
+      }
     });
 
     if (sessionError || !sessionData) {
