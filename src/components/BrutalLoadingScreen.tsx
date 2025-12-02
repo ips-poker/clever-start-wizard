@@ -258,7 +258,7 @@ export const BrutalLoadingScreen = ({ onLoadingComplete, enableSounds: initialEn
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 1 }}
-              className="absolute bottom-8 left-1/2 -translate-x-1/2 w-full max-w-2xl px-4"
+              className="mt-8 w-full max-w-2xl px-4"
             >
               <div className="bg-syndikate-red/10 border-l-4 border-syndikate-red px-6 py-3 backdrop-blur-sm">
                 <p className="text-xs uppercase tracking-wider text-center text-foreground">
