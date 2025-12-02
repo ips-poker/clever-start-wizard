@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Trophy, Medal, Award, TrendingUp, Users, Clock, Star, ChevronDown, Crown, Target } from "lucide-react";
 import { FloatingParticles } from "@/components/ui/floating-particles";
 import { ScrollProgress } from "@/components/ScrollProgress";
+import { fixStorageUrl } from "@/utils/storageUtils";
 
 interface Player {
   id: string;
@@ -286,7 +287,7 @@ export default function Rating() {
                               <div className="relative">
                                 {topPlayers[0].avatar_url ? (
                                   <img 
-                                    src={topPlayers[0].avatar_url} 
+                                    src={fixStorageUrl(topPlayers[0].avatar_url)} 
                                     alt={topPlayers[0].name}
                                     className="w-16 h-16 border-2 border-syndikate-orange object-cover"
                                   />
@@ -373,7 +374,7 @@ export default function Rating() {
 
                                   {player.avatar_url ? (
                                     <img 
-                                      src={player.avatar_url} 
+                                      src={fixStorageUrl(player.avatar_url)} 
                                       alt={player.name}
                                       className="w-12 h-12 border-2 border-syndikate-orange object-cover"
                                     />
