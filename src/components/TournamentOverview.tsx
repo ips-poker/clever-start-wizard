@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { motion, AnimatePresence } from "framer-motion";
 import { 
   Volume2,
   FastForward,
@@ -27,7 +28,11 @@ import {
   Play,
   Pause,
   Coffee,
-  Mic
+  Mic,
+  Zap,
+  Flame,
+  Award,
+  Timer
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import PlayerManagement from "./PlayerManagement";
@@ -334,180 +339,392 @@ const TournamentOverview = ({
       )}
       
       <div className="space-y-6">
+      {/* Tournament Header */}
+      <motion.div 
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="relative"
+      >
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/20 via-transparent to-accent/20 blur-xl" />
+        <Card className="bg-card brutal-border relative overflow-hidden">
+          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary via-accent to-primary" />
+          <CardContent className="p-6">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <motion.div 
+                  animate={{ rotate: timerActive ? 360 : 0 }}
+                  transition={{ duration: 2, repeat: timerActive ? Infinity : 0, ease: "linear" }}
+                  className="p-3 bg-primary/20 rounded-xl border border-primary/30"
+                >
+                  <Trophy className="w-8 h-8 text-primary" />
+                </motion.div>
+                <div>
+                  <h1 className="text-2xl font-bold text-foreground">{tournament.name}</h1>
+                  <div className="flex items-center gap-2 mt-1">
+                    <Badge className={`${
+                      tournament.status === 'running' ? 'bg-green-500/20 text-green-500 border-green-500/30' :
+                      tournament.status === 'paused' ? 'bg-primary/20 text-primary border-primary/30' :
+                      'bg-muted text-muted-foreground'
+                    }`}>
+                      {tournament.status === 'running' ? '● В игре' : 
+                       tournament.status === 'paused' ? '⏸ Пауза' : 
+                       tournament.status}
+                    </Badge>
+                    <span className="text-sm text-muted-foreground">
+                      {tournament.tournament_format || 'Турнир'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="text-center px-4 py-2 bg-secondary/50 rounded-lg border border-border">
+                  <p className="text-xs text-muted-foreground">Игроков</p>
+                  <p className="text-xl font-bold text-foreground">{activePlayers.length}</p>
+                </div>
+                <div className="text-center px-4 py-2 bg-primary/10 rounded-lg border border-primary/30">
+                  <p className="text-xs text-primary">RPS пул</p>
+                  <p className="text-xl font-bold neon-orange">{rpsPool.toLocaleString()}</p>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
+
       {/* Timer and Level Display */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="bg-card brutal-border overflow-hidden">
-          <CardHeader className="bg-secondary/50 border-b border-border">
-            <CardTitle className="flex items-center gap-3 text-foreground text-xl font-bold">
-              <div className="p-2 bg-primary/20 rounded-lg">
-                <Clock className="w-5 h-5 text-primary" />
+        <motion.div
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.1 }}
+        >
+          <Card className="bg-card brutal-border overflow-hidden relative">
+            {/* Animated glow effect for low time */}
+            {currentTime <= 60 && (
+              <motion.div 
+                animate={{ opacity: [0.3, 0.6, 0.3] }}
+                transition={{ duration: 1, repeat: Infinity }}
+                className="absolute inset-0 bg-destructive/10 pointer-events-none"
+              />
+            )}
+            <CardHeader className="bg-secondary/50 border-b border-border">
+              <CardTitle className="flex items-center justify-between text-foreground">
+                <div className="flex items-center gap-3">
+                  <div className={`p-2 rounded-lg transition-colors ${
+                    currentTime <= 60 ? 'bg-destructive/20' : 'bg-primary/20'
+                  }`}>
+                    <Timer className={`w-5 h-5 ${currentTime <= 60 ? 'text-destructive' : 'text-primary'}`} />
+                  </div>
+                  <span className="text-xl font-bold">Уровень {tournament.current_level}</span>
+                </div>
+                {timerActive && (
+                  <motion.div
+                    animate={{ scale: [1, 1.2, 1] }}
+                    transition={{ duration: 1, repeat: Infinity }}
+                  >
+                    <Zap className="w-5 h-5 text-green-500" />
+                  </motion.div>
+                )}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6 p-6">
+              <div className="text-center relative">
+                {/* Timer with glow effect */}
+                <motion.div 
+                  key={currentTime}
+                  initial={{ scale: 1.05 }}
+                  animate={{ scale: 1 }}
+                  className={`text-7xl font-mono font-black transition-all duration-300 ${
+                    currentTime <= 30 ? 'text-destructive' : 
+                    currentTime <= 60 ? 'text-destructive' : 
+                    currentTime <= 300 ? 'text-primary' : 
+                    'text-foreground'
+                  }`}
+                  style={{
+                    textShadow: currentTime <= 60 
+                      ? '0 0 30px hsl(var(--destructive) / 0.5)' 
+                      : currentTime <= 300 
+                        ? '0 0 30px hsl(var(--primary) / 0.5)'
+                        : 'none'
+                  }}
+                >
+                  {formatTime(currentTime)}
+                </motion.div>
+                
+                {/* Progress bar with gradient */}
+                <div className="mt-4 relative">
+                  <div className="h-4 bg-secondary rounded-full overflow-hidden border border-border">
+                    <motion.div 
+                      className={`h-full ${
+                        currentTime <= 60 ? 'bg-gradient-to-r from-destructive to-destructive/70' :
+                        currentTime <= 300 ? 'bg-gradient-to-r from-primary to-primary/70' :
+                        'bg-gradient-to-r from-green-500 to-green-500/70'
+                      }`}
+                      style={{ width: `${100 - timerProgress}%` }}
+                      transition={{ duration: 0.3 }}
+                    />
+                  </div>
+                </div>
               </div>
-              Уровень {tournament.current_level}
+              
+              {/* Blinds display */}
+              <div className={`grid gap-4 ${currentBlindLevel?.ante > 0 ? 'grid-cols-3' : 'grid-cols-2'}`}>
+                <motion.div 
+                  whileHover={{ scale: 1.02 }}
+                  className="text-center p-4 border border-border rounded-lg bg-secondary/50"
+                >
+                  <p className="text-xs text-muted-foreground font-medium mb-1">Малый блайнд</p>
+                  <p className="text-3xl font-black text-foreground">{currentSmallBlind}</p>
+                </motion.div>
+                <motion.div 
+                  whileHover={{ scale: 1.02 }}
+                  className="text-center p-4 border border-border rounded-lg bg-secondary/50"
+                >
+                  <p className="text-xs text-muted-foreground font-medium mb-1">Большой блайнд</p>
+                  <p className="text-3xl font-black text-foreground">{currentBigBlind}</p>
+                </motion.div>
+                {currentBlindLevel?.ante > 0 && (
+                  <motion.div 
+                    whileHover={{ scale: 1.02 }}
+                    className="text-center p-4 border border-primary/50 rounded-lg bg-primary/10"
+                  >
+                    <p className="text-xs text-primary font-medium mb-1">Анте</p>
+                    <p className="text-3xl font-black text-primary">{currentBlindLevel.ante}</p>
+                  </motion.div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.2 }}
+        >
+          <Card className="bg-card brutal-border overflow-hidden h-full">
+            <CardHeader className="pb-2 bg-secondary/30">
+              <CardTitle className="flex items-center gap-2 text-foreground font-bold">
+                <ChevronRight className="w-5 h-5 text-primary" />
+                {isNextLevelBreak ? 'Следующий: Перерыв' : `Следующий уровень ${tournament.current_level + 1}`}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-4">
+              <div className="text-center mb-4">
+                <p className="text-muted-foreground">Через</p>
+                <p className="text-2xl font-bold text-foreground">{formatTime(currentTime)}</p>
+              </div>
+              {isNextLevelBreak ? (
+                <motion.div 
+                  initial={{ scale: 0.9 }}
+                  animate={{ scale: 1 }}
+                  className="text-center p-6 space-y-3 bg-primary/10 rounded-xl border border-primary/30"
+                >
+                  <motion.div
+                    animate={{ y: [0, -5, 0] }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                  >
+                    <Coffee className="w-12 h-12 text-primary mx-auto" />
+                  </motion.div>
+                  <p className="text-xl font-bold text-primary">Перерыв</p>
+                  <p className="text-muted-foreground">{nextBlindLevel ? Math.floor(nextBlindLevel.duration / 60) : 15} минут</p>
+                </motion.div>
+              ) : (
+                <div className={`grid gap-3 ${nextBlindLevel?.ante > 0 ? 'grid-cols-3' : 'grid-cols-2'}`}>
+                  <div className="text-center p-4 border border-border rounded-lg bg-secondary/30">
+                    <p className="text-xs text-muted-foreground">SB</p>
+                    <p className="text-2xl font-bold text-foreground">{Math.round(nextSmallBlind)}</p>
+                  </div>
+                  <div className="text-center p-4 border border-border rounded-lg bg-secondary/30">
+                    <p className="text-xs text-muted-foreground">BB</p>
+                    <p className="text-2xl font-bold text-foreground">{Math.round(nextBigBlind)}</p>
+                  </div>
+                  {nextBlindLevel?.ante > 0 && (
+                    <div className="text-center p-4 border border-primary/30 rounded-lg bg-primary/10">
+                      <p className="text-xs text-primary">Анте</p>
+                      <p className="text-2xl font-bold text-primary">{nextBlindLevel.ante}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+              
+              {/* Next break info */}
+              {!isCurrentBreak && timeToBreak && (
+                <div className="mt-4 p-3 bg-secondary/20 rounded-lg border border-border">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground flex items-center gap-2">
+                      <Coffee className="w-4 h-4" />
+                      До перерыва
+                    </span>
+                    <span className="font-bold text-foreground">
+                      {formatTime(timeToBreak)} ({levelsUntilBreak} ур.)
+                    </span>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </motion.div>
+      </div>
+
+      {/* Quick Control Buttons */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.3 }}
+      >
+        <Card className="bg-card brutal-border">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-foreground font-bold">
+              <Zap className="w-5 h-5 text-primary" />
+              Управление таймером
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-6 p-6">
-            <div className="text-center">
-              <div className={`text-6xl font-mono font-bold transition-all duration-300 ${
-                currentTime <= 30 ? 'text-destructive animate-pulse' : 
-                currentTime <= 60 ? 'text-destructive' : 
-                currentTime <= 300 ? 'text-primary' : 
-                'text-foreground'
-              }`}>
-                {formatTime(currentTime)}
-              </div>
-              <Progress 
-                value={timerProgress} 
-                className="mt-4 h-3 bg-secondary"
-              />
-            </div>
-            <div className={`grid gap-4 ${currentBlindLevel?.ante > 0 ? 'grid-cols-3' : 'grid-cols-2'}`}>
-              <div className="text-center p-4 border border-border rounded-lg bg-secondary/50">
-                <p className="text-xs text-muted-foreground font-medium mb-1">Малый блайнд</p>
-                <p className="text-2xl font-bold text-foreground">{currentSmallBlind}</p>
-              </div>
-              <div className="text-center p-4 border border-border rounded-lg bg-secondary/50">
-                <p className="text-xs text-muted-foreground font-medium mb-1">Большой блайнд</p>
-                <p className="text-2xl font-bold text-foreground">{currentBigBlind}</p>
-              </div>
-              {currentBlindLevel?.ante > 0 && (
-                <div className="text-center p-4 border border-primary/50 rounded-lg bg-primary/10">
-                  <p className="text-xs text-primary font-medium mb-1">Анте</p>
-                  <p className="text-2xl font-bold text-primary">{currentBlindLevel.ante}</p>
-                </div>
+          <CardContent>
+            <div className="grid grid-cols-5 md:grid-cols-10 gap-2">
+              {/* Play/Pause - Main action */}
+              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={onToggleTimer}
+                  className={`h-14 w-full border-2 transition-all ${
+                    timerActive 
+                      ? 'bg-destructive/20 text-destructive border-destructive/50 hover:bg-destructive/30' 
+                      : 'bg-green-500/20 text-green-500 border-green-500/50 hover:bg-green-500/30'
+                  }`}
+                >
+                  {timerActive ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}
+                </Button>
+              </motion.div>
+              
+              {/* Reset */}
+              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={onResetTimer} 
+                  className="h-14 w-full border-border hover:bg-primary/20 hover:text-primary hover:border-primary/50"
+                >
+                  <RotateCcw className="w-5 h-5" />
+                </Button>
+              </motion.div>
+              
+              {/* Rewind 1 min */}
+              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => onTimerAdjust?.(-60)}
+                  className="h-14 w-full border-border hover:bg-secondary"
+                  title="-1 мин"
+                >
+                  <Rewind className="w-5 h-5" />
+                </Button>
+              </motion.div>
+              
+              {/* Forward 1 min */}
+              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => onTimerAdjust?.(60)}
+                  className="h-14 w-full border-border hover:bg-secondary"
+                  title="+1 мин"
+                >
+                  <FastForward className="w-5 h-5" />
+                </Button>
+              </motion.div>
+              
+              {/* Prev Level */}
+              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={onPrevLevel} 
+                  className="h-14 w-full border-border hover:bg-blue-500/20 hover:text-blue-500 hover:border-blue-500/50"
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                </Button>
+              </motion.div>
+              
+              {/* Next Level */}
+              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={onNextLevel} 
+                  className="h-14 w-full border-border hover:bg-blue-500/20 hover:text-blue-500 hover:border-blue-500/50"
+                >
+                  <ChevronRight className="w-5 h-5" />
+                </Button>
+              </motion.div>
+              
+              {/* Sound Toggle */}
+              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => setSoundEnabled(!soundEnabled)}
+                  className={`h-14 w-full border-border ${soundEnabled ? 'bg-primary/20 text-primary border-primary/50' : 'bg-secondary text-muted-foreground'}`}
+                  title="Звук"
+                >
+                  <Volume2 className="w-5 h-5" />
+                </Button>
+              </motion.div>
+              
+              {/* Fullscreen */}
+              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={onOpenExternalTimer} 
+                  className="h-14 w-full border-border hover:bg-purple-500/20 hover:text-purple-500 hover:border-purple-500/50"
+                >
+                  <Maximize className="w-5 h-5" />
+                </Button>
+              </motion.div>
+              
+              {/* Stop Tournament */}
+              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={onStopTournament} 
+                  className="h-14 w-full text-destructive border-destructive/50 hover:bg-destructive/20"
+                >
+                  <StopCircle className="w-5 h-5" />
+                </Button>
+              </motion.div>
+              
+              {/* Refresh / Finish */}
+              {tournament.status === 'running' && onFinishTournament ? (
+                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={onFinishTournament} 
+                    className="h-14 w-full text-green-500 border-green-500/50 hover:bg-green-500/20"
+                  >
+                    <CheckCircle className="w-5 h-5" />
+                  </Button>
+                </motion.div>
+              ) : (
+                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={onRefresh} 
+                    className="h-14 w-full border-border hover:bg-secondary"
+                  >
+                    <Activity className="w-5 h-5" />
+                  </Button>
+                </motion.div>
               )}
             </div>
           </CardContent>
         </Card>
-
-        <Card className="bg-card brutal-border overflow-hidden">
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 text-foreground font-bold">
-              <ChevronRight className="w-4 h-4 text-primary" />
-              {isNextLevelBreak ? 'Следующий: Перерыв' : `Следующий уровень ${tournament.current_level + 1}`}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="pt-0">
-            <div className="text-center">
-              <p className="text-lg font-medium text-muted-foreground mb-3">Через {formatTime(currentTime)}</p>
-            </div>
-            {isNextLevelBreak ? (
-              <div className="text-center p-6 space-y-2 bg-primary/10 rounded-lg border border-primary/30">
-                <Coffee className="w-8 h-8 text-primary mx-auto" />
-                <p className="text-lg font-bold text-primary">Перерыв</p>
-                <p className="text-sm text-muted-foreground">{nextBlindLevel ? Math.floor(nextBlindLevel.duration / 60) : 15} минут</p>
-              </div>
-            ) : (
-              <div className={`grid gap-3 ${nextBlindLevel?.ante > 0 ? 'grid-cols-3' : 'grid-cols-2'}`}>
-                <div className="text-center p-3 border border-border rounded-lg bg-secondary/30">
-                  <p className="text-xs text-muted-foreground">Малый блайнд</p>
-                  <p className="text-xl font-bold text-foreground">{Math.round(nextSmallBlind)}</p>
-                </div>
-                <div className="text-center p-3 border border-border rounded-lg bg-secondary/30">
-                  <p className="text-xs text-muted-foreground">Большой блайнд</p>
-                  <p className="text-xl font-bold text-foreground">{Math.round(nextBigBlind)}</p>
-                </div>
-                {nextBlindLevel?.ante > 0 && (
-                  <div className="text-center p-3 border border-primary/30 rounded-lg bg-primary/10">
-                    <p className="text-xs text-primary">Анте</p>
-                    <p className="text-xl font-bold text-primary">{nextBlindLevel.ante}</p>
-                  </div>
-                )}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Quick Control Buttons */}
-      <Card className="bg-card brutal-border">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-foreground font-bold">
-            <Target className="w-4 h-4 text-primary" />
-            Управление
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-4 md:grid-cols-10 gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onToggleTimer}
-              className={`h-12 border-border transition-all ${
-                timerActive ? 'bg-destructive/20 text-destructive border-destructive/50 hover:bg-destructive/30' : 'bg-green-500/20 text-green-500 border-green-500/50 hover:bg-green-500/30'
-              }`}
-            >
-              {timerActive ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
-            </Button>
-            
-            <Button variant="outline" size="sm" onClick={onResetTimer} className="h-12 border-border hover:bg-secondary">
-              <RotateCcw className="w-4 h-4" />
-            </Button>
-            
-            {/* Кнопки перемотки на 1 минуту */}
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => onTimerAdjust?.(-60)}
-              className="h-12 border-border hover:bg-secondary"
-              title="Перемотать назад на 1 минуту"
-            >
-              <Rewind className="w-4 h-4" />
-            </Button>
-            
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => onTimerAdjust?.(60)}
-              className="h-12 border-border hover:bg-secondary"
-              title="Перемотать вперед на 1 минуту"
-            >
-              <FastForward className="w-4 h-4" />
-            </Button>
-            
-            <Button variant="outline" size="sm" onClick={onPrevLevel} className="h-12 border-border hover:bg-secondary">
-              <ChevronLeft className="w-4 h-4" />
-            </Button>
-            
-            <Button variant="outline" size="sm" onClick={onNextLevel} className="h-12 border-border hover:bg-secondary">
-              <ChevronRight className="w-4 h-4" />
-            </Button>
-            
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => setSoundEnabled(!soundEnabled)}
-              className={`h-12 border-border ${soundEnabled ? 'bg-primary/20 text-primary border-primary/50' : 'bg-secondary text-muted-foreground'}`}
-              title="Переключить звуковые оповещения"
-            >
-              <Volume2 className="w-4 h-4" />
-            </Button>
-            
-            <Button variant="outline" size="sm" onClick={onOpenExternalTimer} className="h-12 border-border hover:bg-secondary">
-              <Maximize className="w-4 h-4" />
-            </Button>
-            
-            <Button variant="outline" size="sm" onClick={onStopTournament} className="h-12 text-destructive border-destructive/50 hover:bg-destructive/20">
-              <StopCircle className="w-4 h-4" />
-            </Button>
-            
-            <Button variant="outline" size="sm" onClick={onRefresh} className="h-12 border-border hover:bg-secondary">
-              <Activity className="w-4 h-4" />
-            </Button>
-
-            {tournament.status === 'running' && onFinishTournament && (
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={onFinishTournament} 
-                className="h-12 text-green-500 border-green-500/50 hover:bg-green-500/20"
-              >
-                <CheckCircle className="w-4 h-4" />
-              </Button>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-
+      </motion.div>
       {/* Player Management */}
       <PlayerManagement 
         tournament={tournament}
