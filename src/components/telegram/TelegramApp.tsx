@@ -1275,6 +1275,11 @@ export const TelegramApp = () => {
                     setSelectedTournament(tournament);
                     setShowTournamentModal(true);
                   }}
+                  onQuickRegister={
+                    tournament.status === 'registration' && !userRegistrations.has(tournament.id)
+                      ? () => registerForTournament(tournament.id)
+                      : undefined
+                  }
                 />
               ))}
             </div>
