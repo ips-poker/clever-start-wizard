@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Header } from "@/components/Header";
@@ -10,8 +10,11 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Trophy, TrendingUp, Calendar, Users, Star, Medal, Award, Target, Edit3, Check, X } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { 
+  Trophy, TrendingUp, Calendar, Users, Star, Medal, Award, Target, Edit3, Check, X, 
+  Flame, Zap, Crown, Shield, Swords, Heart, Gem, Rocket, Gift, Clock
+} from "lucide-react";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { toast } from "sonner";
 import { PlayerStats } from "@/components/PlayerStats";
@@ -261,6 +264,109 @@ export default function Profile() {
     return "Новичок";
   };
 
+  const getRankIcon = (rating: number) => {
+    if (rating >= 1800) return Crown;
+    if (rating >= 1600) return Star;
+    if (rating >= 1400) return Zap;
+    if (rating >= 1200) return Flame;
+    return Target;
+  };
+
+  // Calculate achievements based on player stats
+  const achievements = useMemo(() => {
+    const wins = player?.wins || 0;
+    const games = player?.games_played || 0;
+    const rating = player?.elo_rating || 100;
+    const winRate = games > 0 ? (wins / games) * 100 : 0;
+    const top3Count = gameResults.filter(r => r.position <= 3).length;
+
+    return [
+      { 
+        id: 'first_game', 
+        name: 'Первая игра', 
+        description: 'Сыграйте первый турнир',
+        icon: Gift, 
+        unlocked: games >= 1,
+        progress: Math.min(games, 1),
+        total: 1,
+        color: 'text-green-400'
+      },
+      { 
+        id: 'first_win', 
+        name: 'Первая победа', 
+        description: 'Выиграйте турнир',
+        icon: Trophy, 
+        unlocked: wins >= 1,
+        progress: Math.min(wins, 1),
+        total: 1,
+        color: 'text-yellow-400'
+      },
+      { 
+        id: 'veteran', 
+        name: 'Ветеран', 
+        description: 'Сыграйте 10 турниров',
+        icon: Shield, 
+        unlocked: games >= 10,
+        progress: Math.min(games, 10),
+        total: 10,
+        color: 'text-blue-400'
+      },
+      { 
+        id: 'champion', 
+        name: 'Чемпион', 
+        description: 'Выиграйте 5 турниров',
+        icon: Crown, 
+        unlocked: wins >= 5,
+        progress: Math.min(wins, 5),
+        total: 5,
+        color: 'text-purple-400'
+      },
+      { 
+        id: 'consistent', 
+        name: 'Стабильность', 
+        description: 'Финишируйте в топ-3 5 раз',
+        icon: Medal, 
+        unlocked: top3Count >= 5,
+        progress: Math.min(top3Count, 5),
+        total: 5,
+        color: 'text-orange-400'
+      },
+      { 
+        id: 'master', 
+        name: 'Мастер', 
+        description: 'Достигните 1800+ RPS',
+        icon: Gem, 
+        unlocked: rating >= 1800,
+        progress: Math.min(rating, 1800),
+        total: 1800,
+        color: 'text-cyan-400'
+      },
+      { 
+        id: 'pro_winrate', 
+        name: 'Профи', 
+        description: 'Винрейт 50%+ (мин. 5 игр)',
+        icon: Rocket, 
+        unlocked: winRate >= 50 && games >= 5,
+        progress: games >= 5 ? Math.min(winRate, 50) : 0,
+        total: 50,
+        color: 'text-pink-400'
+      },
+      { 
+        id: 'grinder', 
+        name: 'Гриндер', 
+        description: 'Сыграйте 25 турниров',
+        icon: Swords, 
+        unlocked: games >= 25,
+        progress: Math.min(games, 25),
+        total: 25,
+        color: 'text-red-400'
+      },
+    ];
+  }, [player, gameResults]);
+
+  const unlockedAchievements = achievements.filter(a => a.unlocked).length;
+  const RankIcon = getRankIcon(player?.elo_rating || 100);
+
   const statCards: StatCard[] = [
     {
       title: "Рейтинг RPS",
@@ -484,18 +590,88 @@ export default function Profile() {
             </TabsList>
 
             <TabsContent value="statistics" className="space-y-6">
+              {/* Achievements Section */}
+              <Card className="brutal-border bg-card overflow-hidden">
+                <CardHeader className="border-b border-border bg-secondary/30">
+                  <CardTitle className="flex items-center justify-between text-foreground">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-yellow-500">
+                        <Award className="h-5 w-5 text-white" />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-bold uppercase tracking-wide">Достижения</h3>
+                        <div className="h-0.5 w-16 bg-gradient-to-r from-yellow-400 to-primary mt-1" />
+                      </div>
+                    </div>
+                    <Badge className="bg-primary text-primary-foreground rounded-none font-bold">
+                      {unlockedAchievements}/{achievements.length}
+                    </Badge>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-4">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    {achievements.map((achievement) => {
+                      const Icon = achievement.icon;
+                      const progressPercent = (achievement.progress / achievement.total) * 100;
+                      
+                      return (
+                        <div 
+                          key={achievement.id}
+                          className={`relative p-3 border transition-all duration-300 ${
+                            achievement.unlocked 
+                              ? 'bg-gradient-to-br from-primary/10 to-transparent border-primary/50' 
+                              : 'bg-secondary/30 border-border opacity-60'
+                          }`}
+                        >
+                          <div className="flex flex-col items-center text-center gap-2">
+                            <div className={`p-2 ${achievement.unlocked ? 'bg-primary/20' : 'bg-secondary'} border border-border`}>
+                              <Icon className={`h-5 w-5 ${achievement.unlocked ? achievement.color : 'text-muted-foreground'}`} />
+                            </div>
+                            <div>
+                              <p className={`text-xs font-bold ${achievement.unlocked ? 'text-foreground' : 'text-muted-foreground'}`}>
+                                {achievement.name}
+                              </p>
+                              <p className="text-[10px] text-muted-foreground mt-0.5">{achievement.description}</p>
+                            </div>
+                            {!achievement.unlocked && (
+                              <div className="w-full bg-secondary h-1 mt-1">
+                                <div 
+                                  className="bg-primary/50 h-full transition-all"
+                                  style={{ width: `${progressPercent}%` }}
+                                />
+                              </div>
+                            )}
+                            {achievement.unlocked && (
+                              <Badge className="bg-green-600 text-white text-[10px] px-1 py-0 rounded-none">
+                                <Check className="h-2 w-2 mr-0.5" />
+                                ПОЛУЧЕНО
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
+
               <div className="grid gap-6 lg:grid-cols-2">
                 {/* ELO Chart */}
                 <Card className="brutal-border bg-card lg:col-span-2">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-foreground">
-                      <TrendingUp className="h-5 w-5 text-primary" />
-                      График рейтинга RPS
+                  <CardHeader className="border-b border-border">
+                    <CardTitle className="flex items-center gap-3 text-foreground">
+                      <div className="p-2 bg-primary">
+                        <TrendingUp className="h-5 w-5 text-primary-foreground" />
+                      </div>
+                      <div>
+                        <span className="text-lg font-bold uppercase">График рейтинга RPS</span>
+                        <div className="h-0.5 w-16 bg-gradient-to-r from-primary to-accent mt-1" />
+                      </div>
                     </CardTitle>
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className="p-4">
                     {eloData.length > 0 ? (
-                      <ResponsiveContainer width="100%" height={350}>
+                      <ResponsiveContainer width="100%" height={300}>
                         <AreaChart data={eloData}>
                           <defs>
                             <linearGradient id="eloGradient" x1="0" y1="0" x2="0" y2="1">
@@ -541,12 +717,12 @@ export default function Profile() {
                         </AreaChart>
                       </ResponsiveContainer>
                     ) : (
-                      <div className="text-center py-16 text-muted-foreground">
+                      <div className="text-center py-12 text-muted-foreground">
                         <div className="bg-secondary border border-border w-16 h-16 flex items-center justify-center mx-auto mb-4">
                           <Target className="h-8 w-8 text-primary" />
                         </div>
-                        <h3 className="text-lg font-medium text-foreground mb-2">Нет данных для отображения</h3>
-                        <p className="text-sm">Сыграйте несколько турниров для просмотра статистики</p>
+                        <h3 className="text-lg font-bold text-foreground mb-2">Нет данных</h3>
+                        <p className="text-sm">Сыграйте турниры для отображения графика</p>
                       </div>
                     )}
                   </CardContent>
@@ -554,37 +730,43 @@ export default function Profile() {
 
                 {/* Best Results */}
                 <Card className="brutal-border bg-card">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-foreground">
-                      <Medal className="h-5 w-5 text-green-400" />
-                      Лучшие результаты
+                  <CardHeader className="border-b border-border">
+                    <CardTitle className="flex items-center gap-3 text-foreground">
+                      <div className="p-2 bg-green-600">
+                        <Medal className="h-5 w-5 text-white" />
+                      </div>
+                      <span className="text-base font-bold uppercase">Лучшие результаты</span>
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-3">
-                    {gameResults.slice(0, 3).map((result) => (
-                      <div key={result.id} className="flex items-center gap-3 p-3 bg-secondary border border-border">
-                        <div className={`w-8 h-8 flex items-center justify-center text-sm font-bold text-white ${
-                          result.position === 1 ? 'bg-gradient-to-br from-yellow-400 to-yellow-600' :
-                          result.position === 2 ? 'bg-gradient-to-br from-gray-300 to-gray-400' :
-                          result.position === 3 ? 'bg-gradient-to-br from-orange-400 to-orange-600' : 'bg-muted'
-                        }`}>
-                          #{result.position}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium text-sm truncate text-foreground">{result.tournament.name}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {new Date(result.created_at).toLocaleDateString('ru-RU')}
-                          </p>
-                        </div>
-                        <Badge 
-                          variant={result.elo_change >= 0 ? "default" : "destructive"} 
-                          className="rounded-none font-bold"
-                        >
-                          {result.elo_change >= 0 ? '+' : ''}{result.elo_change}
-                        </Badge>
+                  <CardContent className="p-0">
+                    {gameResults.length > 0 ? (
+                      <div className="divide-y divide-border">
+                        {gameResults.slice(0, 4).map((result) => (
+                          <div key={result.id} className="flex items-center gap-3 p-3 hover:bg-secondary/50 transition-colors">
+                            <div className={`w-10 h-10 flex items-center justify-center text-sm font-bold text-white ${
+                              result.position === 1 ? 'bg-gradient-to-br from-yellow-400 to-yellow-600' :
+                              result.position === 2 ? 'bg-gradient-to-br from-gray-300 to-gray-500' :
+                              result.position === 3 ? 'bg-gradient-to-br from-orange-400 to-orange-600' : 'bg-muted'
+                            }`}>
+                              #{result.position}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium text-sm truncate text-foreground">{result.tournament.name}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {new Date(result.created_at).toLocaleDateString('ru-RU')}
+                              </p>
+                            </div>
+                            <Badge 
+                              className={`rounded-none font-bold ${
+                                result.elo_change >= 0 ? 'bg-green-600' : 'bg-accent'
+                              } text-white`}
+                            >
+                              {result.elo_change >= 0 ? '+' : ''}{result.elo_change}
+                            </Badge>
+                          </div>
+                        ))}
                       </div>
-                    ))}
-                    {gameResults.length === 0 && (
+                    ) : (
                       <div className="text-center py-8 text-muted-foreground">
                         <Trophy className="h-8 w-8 mx-auto mb-2 text-primary opacity-50" />
                         <p className="text-sm">Нет результатов</p>
@@ -593,23 +775,31 @@ export default function Profile() {
                   </CardContent>
                 </Card>
 
-                {/* Progress */}
+                {/* Progress & Stats */}
                 <Card className="brutal-border bg-card">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-foreground">
-                      <Award className="h-5 w-5 text-purple-400" />
-                      Прогресс
+                  <CardHeader className="border-b border-border">
+                    <CardTitle className="flex items-center gap-3 text-foreground">
+                      <div className="p-2 bg-purple-600">
+                        <Rocket className="h-5 w-5 text-white" />
+                      </div>
+                      <span className="text-base font-bold uppercase">Прогресс</span>
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-sm text-muted-foreground">
-                        <span>До следующего ранга</span>
-                        <span className="font-medium text-foreground">
-                          {Math.max(0, Math.ceil(((Math.floor(((player?.elo_rating || 100) + 199) / 200) * 200) - (player?.elo_rating || 100))))}
-                        </span>
+                  <CardContent className="p-4 space-y-4">
+                    {/* Rank Progress */}
+                    <div className="p-3 bg-secondary/50 border border-border">
+                      <div className="flex items-center gap-3 mb-2">
+                        <RankIcon className="h-5 w-5 text-primary" />
+                        <div className="flex-1">
+                          <div className="flex justify-between text-sm">
+                            <span className="font-medium text-foreground">{getRankTitle(player?.elo_rating || 100)}</span>
+                            <span className="text-muted-foreground">
+                              {Math.max(0, Math.ceil(((Math.floor(((player?.elo_rating || 100) + 199) / 200) * 200) - (player?.elo_rating || 100))))} до след. ранга
+                            </span>
+                          </div>
+                        </div>
                       </div>
-                      <div className="w-full bg-secondary h-3 border border-border">
+                      <div className="w-full bg-background h-2 border border-border">
                         <div 
                           className="bg-gradient-to-r from-primary to-accent h-full transition-all duration-500" 
                           style={{ 
@@ -619,18 +809,31 @@ export default function Profile() {
                       </div>
                     </div>
                     
-                    <div className="grid grid-cols-2 gap-4 pt-2">
+                    {/* Quick Stats Grid */}
+                    <div className="grid grid-cols-2 gap-3">
                       <div className="text-center p-3 bg-blue-500/10 border border-blue-500/30">
                         <p className="text-xl font-bold text-blue-400">
-                          {((player?.wins || 0) / Math.max(1, player?.games_played || 1) * 100).toFixed(1)}%
+                          {((player?.wins || 0) / Math.max(1, player?.games_played || 1) * 100).toFixed(0)}%
                         </p>
-                        <p className="text-xs text-muted-foreground uppercase tracking-wider">Winrate</p>
+                        <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Winrate</p>
                       </div>
                       <div className="text-center p-3 bg-green-500/10 border border-green-500/30">
                         <p className="text-xl font-bold text-green-400">
                           {Math.max(...eloData.map(d => d.elo), player?.elo_rating || 100)}
                         </p>
-                        <p className="text-xs text-muted-foreground uppercase tracking-wider">Пик RPS</p>
+                        <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Пик RPS</p>
+                      </div>
+                      <div className="text-center p-3 bg-purple-500/10 border border-purple-500/30">
+                        <p className="text-xl font-bold text-purple-400">
+                          {gameResults.filter(r => r.position <= 3).length}
+                        </p>
+                        <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Топ-3</p>
+                      </div>
+                      <div className="text-center p-3 bg-primary/10 border border-primary/30">
+                        <p className="text-xl font-bold text-primary">
+                          {gameResults.reduce((sum, r) => sum + Math.max(0, r.elo_change), 0)}
+                        </p>
+                        <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Набрано RPS</p>
                       </div>
                     </div>
                   </CardContent>
@@ -647,65 +850,76 @@ export default function Profile() {
             </TabsContent>
 
             <TabsContent value="history" className="space-y-6">
-              <Card className="brutal-border bg-card">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-foreground">
-                    <Star className="h-5 w-5 text-primary" />
-                    История игр
+              <Card className="brutal-border bg-card overflow-hidden">
+                <CardHeader className="border-b border-border bg-secondary/30">
+                  <CardTitle className="flex items-center gap-3 text-foreground">
+                    <div className="p-2 bg-primary">
+                      <Clock className="h-5 w-5 text-primary-foreground" />
+                    </div>
+                    <div>
+                      <span className="text-lg font-bold uppercase tracking-wide">История игр</span>
+                      <div className="h-0.5 w-16 bg-gradient-to-r from-primary to-accent mt-1" />
+                    </div>
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="p-0">
                   {gameResults.length > 0 ? (
-                    <div className="space-y-3">
-                      {gameResults.map((result) => (
-                        <div key={result.id} className="group relative overflow-hidden border border-border bg-secondary p-4 hover:border-primary/50 transition-all duration-300">
+                    <div className="divide-y divide-border">
+                      {gameResults.map((result, index) => (
+                        <div 
+                          key={result.id} 
+                          className="group relative overflow-hidden p-4 hover:bg-secondary/50 transition-all duration-300"
+                          style={{ animationDelay: `${index * 50}ms` }}
+                        >
                           <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                           
-                          <div className="relative z-10 flex items-center justify-between">
+                          <div className="relative z-10 flex items-center justify-between gap-4">
                             <div className="flex items-center gap-4">
                               <div className="relative">
-                                <div className={`w-12 h-12 flex items-center justify-center font-bold text-white ${
+                                <div className={`w-12 h-12 flex items-center justify-center font-bold text-white shadow-brutal ${
                                   result.position === 1 ? 'bg-gradient-to-br from-yellow-400 to-yellow-600' :
-                                  result.position === 2 ? 'bg-gradient-to-br from-gray-300 to-gray-400' :
+                                  result.position === 2 ? 'bg-gradient-to-br from-gray-300 to-gray-500' :
                                   result.position === 3 ? 'bg-gradient-to-br from-orange-400 to-orange-600' : 'bg-muted'
                                 }`}>
                                   <span className="text-sm">#{result.position}</span>
                                 </div>
                                 {result.position <= 3 && (
-                                  <div className="absolute -top-1 -right-1 text-sm">
+                                  <div className="absolute -top-1.5 -right-1.5 text-base">
                                     {result.position === 1 ? '🥇' : result.position === 2 ? '🥈' : '🥉'}
                                   </div>
                                 )}
                               </div>
                               
-                              <div className="space-y-1">
-                                <p className="font-semibold text-foreground group-hover:text-primary transition-colors">
+                              <div className="space-y-1 min-w-0">
+                                <p className="font-bold text-foreground group-hover:text-primary transition-colors truncate">
                                   {result.tournament.name}
                                 </p>
-                                <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                                <div className="flex items-center gap-3 text-xs text-muted-foreground">
                                   <span className="flex items-center gap-1">
                                     <Calendar className="h-3 w-3" />
                                     {new Date(result.created_at).toLocaleDateString('ru-RU')}
                                   </span>
-                                  <span className="text-xs">•</span>
-                                  <span>RPS: {result.elo_before} → {result.elo_after}</span>
+                                  <span className="hidden sm:flex items-center gap-1">
+                                    <TrendingUp className="h-3 w-3" />
+                                    {result.elo_before} → {result.elo_after}
+                                  </span>
                                 </div>
                               </div>
                             </div>
                             
-                            <div className="text-right space-y-2">
+                            <div className="text-right shrink-0">
                               <Badge 
-                                className={`font-bold rounded-none ${
+                                className={`font-bold rounded-none text-sm px-3 py-1 ${
                                   result.elo_change >= 0 
                                     ? 'bg-green-600 text-white' 
-                                    : 'bg-destructive text-destructive-foreground'
+                                    : 'bg-accent text-white'
                                 }`}
                               >
                                 {result.elo_change >= 0 ? '+' : ''}{result.elo_change}
                               </Badge>
-                              <div className="text-xs text-muted-foreground">
-                                Изменение рейтинга
-                              </div>
+                              <p className="text-[10px] text-muted-foreground mt-1 uppercase tracking-wider">
+                                RPS
+                              </p>
                             </div>
                           </div>
                         </div>
@@ -714,9 +928,9 @@ export default function Profile() {
                   ) : (
                     <div className="text-center py-16 text-muted-foreground">
                       <div className="bg-secondary border border-border w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                        <Calendar className="h-8 w-8 text-primary" />
+                        <Clock className="h-8 w-8 text-primary" />
                       </div>
-                      <h3 className="text-lg font-medium text-foreground mb-2">История пуста</h3>
+                      <h3 className="text-lg font-bold text-foreground mb-2">История пуста</h3>
                       <p className="text-sm">Сыграйте в турнирах, чтобы увидеть историю</p>
                     </div>
                   )}
