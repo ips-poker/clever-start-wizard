@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -18,6 +18,8 @@ export function useAuth() {
   const [session, setSession] = useState<Session | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const lastFetchedUserId = useRef<string | null>(null);
+  const isFetching = useRef(false);
 
   useEffect(() => {
     // Set up auth state listener FIRST
@@ -34,6 +36,7 @@ export function useAuth() {
           }, 0);
         } else {
           setUserProfile(null);
+          lastFetchedUserId.current = null;
         }
         
         setLoading(false);
@@ -59,6 +62,13 @@ export function useAuth() {
   }, []);
 
   const fetchUserProfile = async (userId: string) => {
+    // Предотвращаем множественные загрузки одного и того же профиля
+    if (lastFetchedUserId.current === userId || isFetching.current) {
+      console.log('Profile already fetched or currently fetching, skipping');
+      return;
+    }
+    
+    isFetching.current = true;
     try {
       console.log('Fetching profile for user:', userId);
       
@@ -83,8 +93,11 @@ export function useAuth() {
       const profileData = Array.isArray(data) ? data[0] : data;
       console.log('Profile fetched successfully:', profileData);
       setUserProfile(profileData as UserProfile);
+      lastFetchedUserId.current = userId;
     } catch (error) {
       console.error('Error in fetchUserProfile:', error);
+    } finally {
+      isFetching.current = false;
     }
   };
 
