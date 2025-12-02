@@ -249,11 +249,11 @@ const TournamentPlayerManagement = ({ tournament, players, registrations, onRegi
   return (
     <div className="space-y-6">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="overview">Обзор</TabsTrigger>
-          <TabsTrigger value="active">Активные ({activePlayers.length})</TabsTrigger>
-          <TabsTrigger value="eliminated">Выбывшие ({eliminatedPlayers.length})</TabsTrigger>
-          <TabsTrigger value="seating">Рассадка</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-4 bg-secondary/60 border-2 border-border p-1">
+          <TabsTrigger value="overview" className="font-black text-xs uppercase data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Обзор</TabsTrigger>
+          <TabsTrigger value="active" className="font-black text-xs uppercase data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Активные ({activePlayers.length})</TabsTrigger>
+          <TabsTrigger value="eliminated" className="font-black text-xs uppercase data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Выбывшие ({eliminatedPlayers.length})</TabsTrigger>
+          <TabsTrigger value="seating" className="font-black text-xs uppercase data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Рассадка</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
@@ -262,7 +262,7 @@ const TournamentPlayerManagement = ({ tournament, players, registrations, onRegi
             <Button
               onClick={() => setIsAddModalOpen(true)}
               disabled={registrations.length >= tournament.max_players}
-              size="default"
+              className="bg-primary hover:bg-primary/80 text-primary-foreground font-black uppercase"
             >
               <Plus className="w-4 h-4 mr-2" />
               Добавить участников
@@ -270,67 +270,67 @@ const TournamentPlayerManagement = ({ tournament, players, registrations, onRegi
           </div>
 
           {/* Статистика участников */}
-          <Card className="bg-white/80 backdrop-blur-sm border border-slate-200/50 shadow-sm rounded-2xl overflow-hidden">
-            <CardHeader className="bg-gradient-to-r from-blue-50 to-blue-100/50 border-b border-blue-100">
-              <CardTitle className="flex items-center gap-3 text-slate-800 font-light text-xl">
-                <div className="p-2 bg-blue-500/10 rounded-xl">
-                  <Users className="w-5 h-5 text-blue-600" />
+          <Card className="bg-card brutal-border overflow-hidden">
+            <CardHeader className="bg-secondary/60 border-b-2 border-border">
+              <CardTitle className="flex items-center gap-3 text-foreground font-black text-lg">
+                <div className="p-2 bg-blue-500/20 rounded-lg border border-blue-500/30">
+                  <Users className="w-5 h-5 text-blue-500" />
                 </div>
-                Статистика участников
+                СТАТИСТИКА УЧАСТНИКОВ
               </CardTitle>
             </CardHeader>
             <CardContent className="p-6">
               <div className="grid grid-cols-3 gap-4">
-                <div className="p-4 bg-blue-50/50 rounded-xl text-center">
-                  <div className="text-3xl font-light text-blue-600">{registrations.length}</div>
-                  <div className="text-sm text-slate-500 font-light mt-1">Всего игроков</div>
+                <div className="p-4 bg-blue-500/10 rounded-xl border-2 border-blue-500/30 text-center">
+                  <div className="text-3xl font-black text-blue-500">{registrations.length}</div>
+                  <div className="text-xs text-muted-foreground font-bold uppercase mt-1">Всего</div>
                 </div>
-                <div className="p-4 bg-green-50/50 rounded-xl text-center">
-                  <div className="text-3xl font-light text-green-600">{activePlayers.length}</div>
-                  <div className="text-sm text-slate-500 font-light mt-1">Активных</div>
+                <div className="p-4 bg-green-500/10 rounded-xl border-2 border-green-500/30 text-center">
+                  <div className="text-3xl font-black text-green-500">{activePlayers.length}</div>
+                  <div className="text-xs text-muted-foreground font-bold uppercase mt-1">Активных</div>
                 </div>
-                <div className="p-4 bg-red-50/50 rounded-xl text-center">
-                  <div className="text-3xl font-light text-red-600">{eliminatedPlayers.length}</div>
-                  <div className="text-sm text-slate-500 font-light mt-1">Выбыло</div>
+                <div className="p-4 bg-destructive/10 rounded-xl border-2 border-destructive/30 text-center">
+                  <div className="text-3xl font-black text-destructive">{eliminatedPlayers.length}</div>
+                  <div className="text-xs text-muted-foreground font-bold uppercase mt-1">Выбыло</div>
                 </div>
               </div>
             </CardContent>
           </Card>
 
           {/* Призовой фонд */}
-          <Card className="bg-white/80 backdrop-blur-sm border border-slate-200/50 shadow-sm rounded-2xl overflow-hidden">
-            <CardHeader className="bg-gradient-to-r from-emerald-50 to-emerald-100/50 border-b border-emerald-100">
-              <CardTitle className="flex items-center gap-3 text-slate-800 font-light text-xl">
-                <div className="p-2 bg-emerald-500/10 rounded-xl">
-                  <Trophy className="w-5 h-5 text-emerald-600" />
+          <Card className="bg-card brutal-border overflow-hidden">
+            <CardHeader className="bg-secondary/60 border-b-2 border-border">
+              <CardTitle className="flex items-center gap-3 text-foreground font-black text-lg">
+                <div className="p-2 bg-primary/20 rounded-lg border border-primary/30">
+                  <Trophy className="w-5 h-5 text-primary" />
                 </div>
-                Призовой фонд
+                ПРИЗОВОЙ ФОНД
               </CardTitle>
             </CardHeader>
             <CardContent className="p-6">
               <div className="space-y-3">
-                <div className="flex justify-between items-center p-3 bg-slate-50/50 rounded-xl">
-                  <span className="text-sm text-slate-600 font-light">Орг взносы</span>
-                  <span className="text-lg font-medium text-slate-800">
+                <div className="flex justify-between items-center p-3 bg-secondary/40 rounded-lg border border-border">
+                  <span className="text-xs text-muted-foreground font-bold uppercase">Орг взносы</span>
+                  <span className="text-lg font-black text-foreground">
                     {(tournament.participation_fee * registrations.length).toLocaleString()} ₽
                   </span>
                 </div>
-                <div className="flex justify-between items-center p-3 bg-green-50/50 rounded-xl">
-                  <span className="text-sm text-slate-600 font-light">Повторные входы</span>
-                  <span className="text-lg font-medium text-green-600">
+                <div className="flex justify-between items-center p-3 bg-green-500/10 rounded-lg border border-green-500/30">
+                  <span className="text-xs text-muted-foreground font-bold uppercase">Повторные входы</span>
+                  <span className="text-lg font-black text-green-500">
                     {(tournament.reentry_fee * registrations.reduce((sum, reg) => sum + (reg.reentries || reg.rebuys || 0), 0)).toLocaleString()} ₽
                   </span>
                 </div>
-                <div className="flex justify-between items-center p-3 bg-blue-50/50 rounded-xl">
-                  <span className="text-sm text-slate-600 font-light">Доп наборы</span>
-                  <span className="text-lg font-medium text-blue-600">
+                <div className="flex justify-between items-center p-3 bg-blue-500/10 rounded-lg border border-blue-500/30">
+                  <span className="text-xs text-muted-foreground font-bold uppercase">Доп наборы</span>
+                  <span className="text-lg font-black text-blue-500">
                     {(tournament.additional_fee * registrations.reduce((sum, reg) => sum + (reg.additional_sets || reg.addons || 0), 0)).toLocaleString()} ₽
                   </span>
                 </div>
-                <div className="border-t border-slate-200 pt-3">
-                  <div className="flex justify-between items-center p-3 bg-emerald-50/50 rounded-xl">
-                    <span className="text-base font-medium text-slate-800">Общий призовой в баллах RPS</span>
-                    <span className="text-2xl font-light text-emerald-600">
+                <div className="border-t-2 border-border pt-3">
+                  <div className="flex justify-between items-center p-4 bg-primary/10 rounded-lg border-2 border-primary/30">
+                    <span className="text-sm font-black text-foreground uppercase">Общий в RPS</span>
+                    <span className="text-2xl font-black text-primary">
                       {formatRPSPoints(totalRPSPool)}
                     </span>
                   </div>
@@ -340,27 +340,27 @@ const TournamentPlayerManagement = ({ tournament, players, registrations, onRegi
           </Card>
 
           {/* Статистика фишек */}
-          <Card className="bg-white/80 backdrop-blur-sm border border-slate-200/50 shadow-sm rounded-2xl overflow-hidden">
-            <CardHeader className="bg-gradient-to-r from-indigo-50 to-indigo-100/50 border-b border-indigo-100">
-              <CardTitle className="flex items-center gap-3 text-slate-800 font-light text-xl">
-                <div className="p-2 bg-indigo-500/10 rounded-xl">
-                  <TrendingUp className="w-5 h-5 text-indigo-600" />
+          <Card className="bg-card brutal-border overflow-hidden">
+            <CardHeader className="bg-secondary/60 border-b-2 border-border">
+              <CardTitle className="flex items-center gap-3 text-foreground font-black text-lg">
+                <div className="p-2 bg-purple-500/20 rounded-lg border border-purple-500/30">
+                  <TrendingUp className="w-5 h-5 text-purple-500" />
                 </div>
-                Статистика фишек
+                СТАТИСТИКА ФИШЕК
               </CardTitle>
             </CardHeader>
             <CardContent className="p-6">
               <div className="space-y-3">
-                <div className="flex justify-between items-center p-3 bg-indigo-50/50 rounded-xl">
-                  <span className="text-sm text-slate-600 font-light">Всего фишек в игре</span>
-                  <span className="text-lg font-medium text-indigo-600">
+                <div className="flex justify-between items-center p-3 bg-purple-500/10 rounded-lg border border-purple-500/30">
+                  <span className="text-xs text-muted-foreground font-bold uppercase">Всего фишек</span>
+                  <span className="text-lg font-black text-purple-500">
                     {activePlayers.reduce((sum, player) => sum + player.chips, 0).toLocaleString()}
                   </span>
                 </div>
                 {activePlayers.length > 0 && (
-                  <div className="flex justify-between items-center p-3 bg-purple-50/50 rounded-xl">
-                    <span className="text-sm text-slate-600 font-light">Средний стек</span>
-                    <span className="text-lg font-medium text-purple-600">
+                  <div className="flex justify-between items-center p-3 bg-secondary/40 rounded-lg border border-border">
+                    <span className="text-xs text-muted-foreground font-bold uppercase">Средний стек</span>
+                    <span className="text-lg font-black text-foreground">
                       {Math.round(activePlayers.reduce((sum, player) => sum + player.chips, 0) / activePlayers.length).toLocaleString()}
                     </span>
                   </div>
@@ -373,34 +373,38 @@ const TournamentPlayerManagement = ({ tournament, players, registrations, onRegi
         <TabsContent value="active" className="space-y-4">
           <div className="grid gap-4">
             {activePlayers.map((registration, index) => (
-              <Card key={registration.id} className="hover:shadow-md transition-shadow">
+              <Card key={registration.id} className="bg-card brutal-border hover:shadow-neon-orange/10 transition-all">
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-4">
-                      <div className="text-lg font-bold text-slate-500 w-8">
+                      <div className="text-xl font-black text-primary w-10 text-center">
                         #{index + 1}
                       </div>
-                      <Avatar className="w-10 h-10">
+                      <Avatar className="w-12 h-12 border-2 border-border">
                         <AvatarImage src={registration.player.avatar_url} />
-                        <AvatarFallback>
+                        <AvatarFallback className="bg-secondary text-foreground font-black">
                           {registration.player.name.split(' ').map(n => n[0]).join('')}
                         </AvatarFallback>
                       </Avatar>
                       <div>
-                        <h3 className="font-semibold">{registration.player.name}</h3>
-                        <div className="flex items-center space-x-4 text-sm text-muted-foreground">
-                          <span>Инвентарь: {registration.chips.toLocaleString()}</span>
-                          <Badge variant={registration.status === 'playing' ? 'default' : 'secondary'}>
-                            {registration.status === 'playing' ? 'В игре' : 'Зарегистрирован'}
+                        <h3 className="font-black text-foreground">{registration.player.name}</h3>
+                        <div className="flex items-center space-x-4 text-sm">
+                          <span className="text-primary font-bold">{registration.chips.toLocaleString()} фишек</span>
+                          <Badge className={`font-bold text-xs ${
+                            registration.status === 'playing' 
+                              ? 'bg-green-500/20 text-green-500 border-green-500/50' 
+                              : 'bg-secondary text-muted-foreground border-border'
+                          }`}>
+                            {registration.status === 'playing' ? 'В ИГРЕ' : 'ЗАРЕГИСТРИРОВАН'}
                           </Badge>
                         </div>
                       </div>
                     </div>
 
                     <div className="flex items-center space-x-4">
-                      <div className="text-center">
-                        <div className="text-xs text-slate-500 mb-1">Повторные входы + Доп. наборы</div>
-                        <div className="text-lg font-light text-slate-800">
+                      <div className="text-center p-2 bg-secondary/40 rounded-lg border border-border">
+                        <div className="text-xs text-muted-foreground font-bold uppercase">Re-entry + Add-on</div>
+                        <div className="text-xl font-black text-foreground">
                           {(registration.reentries || registration.rebuys || 0) + (registration.additional_sets || registration.addons || 0)}
                         </div>
                       </div>
@@ -409,27 +413,27 @@ const TournamentPlayerManagement = ({ tournament, players, registrations, onRegi
                           variant="outline"
                           size="sm"
                           onClick={() => updateReentries(registration.id, 1)}
-                          className="h-8 w-8 p-0"
+                          className="h-8 w-8 p-0 border-2 border-green-500/50 text-green-500 hover:bg-green-500/20"
                           title="Добавить повторный вход"
                         >
                           <Plus className="h-3 w-3" />
                         </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => updateReentries(registration.id, -1)}
-                            disabled={(registration.reentries || registration.rebuys || 0) === 0}
-                            className="h-8 w-8 p-0"
-                            title="Убрать повторный вход"
-                          >
-                            <Minus className="h-3 w-3" />
-                          </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => updateReentries(registration.id, -1)}
+                          disabled={(registration.reentries || registration.rebuys || 0) === 0}
+                          className="h-8 w-8 p-0 border-2 border-border text-muted-foreground hover:bg-secondary"
+                          title="Убрать повторный вход"
+                        >
+                          <Minus className="h-3 w-3" />
+                        </Button>
                         {tournament.current_level === tournament.additional_level && (
                           <Button
                             variant="outline"
                             size="sm"
                             onClick={() => updateAdditionalSets(registration.id, 1)}
-                            className="h-8 w-8 p-0 mr-1"
+                            className="h-8 w-8 p-0 border-2 border-blue-500/50 text-blue-500 hover:bg-blue-500/20 mr-1"
                             title="Добавить дополнительный набор"
                           >
                             <Plus className="h-3 w-3" />
@@ -457,7 +461,7 @@ const TournamentPlayerManagement = ({ tournament, players, registrations, onRegi
                               onRegistrationUpdate();
                             }
                           }}
-                          className="h-8 w-8 p-0 border-red-200 text-red-600 hover:bg-red-50"
+                          className="h-8 w-8 p-0 border-2 border-destructive/50 text-destructive hover:bg-destructive/20"
                           title="Исключить игрока"
                         >
                           <UserMinus className="h-3 w-3" />
@@ -474,37 +478,39 @@ const TournamentPlayerManagement = ({ tournament, players, registrations, onRegi
         <TabsContent value="eliminated" className="space-y-4">
           <div className="grid gap-4">
             {eliminatedPlayers.map((registration) => (
-              <Card key={registration.id} className="opacity-75">
+              <Card key={registration.id} className="bg-card/60 brutal-border border-destructive/30">
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-4">
-                      <div className="text-lg font-bold text-amber-600 w-8">
+                      <div className="text-xl font-black text-primary w-10 text-center">
                         #{registration.final_position || '?'}
                       </div>
-                      <Avatar className="w-10 h-10">
+                      <Avatar className="w-12 h-12 border-2 border-border opacity-60">
                         <AvatarImage src={registration.player.avatar_url} />
-                        <AvatarFallback>
+                        <AvatarFallback className="bg-secondary text-foreground font-black">
                           {registration.player.name.split(' ').map(n => n[0]).join('')}
                         </AvatarFallback>
                       </Avatar>
                       <div>
-                        <h3 className="font-semibold">{registration.player.name}</h3>
-                        <div className="flex items-center space-x-4 text-sm text-muted-foreground">
-                          <Badge variant="destructive">Выбыл</Badge>
+                        <h3 className="font-black text-foreground/80">{registration.player.name}</h3>
+                        <div className="flex items-center space-x-4 text-sm">
+                          <Badge className="bg-destructive/20 text-destructive border-destructive/50 font-bold text-xs">
+                            ВЫБЫЛ
+                          </Badge>
                           {registration.eliminated_at && (
-                            <span>
+                            <span className="text-muted-foreground text-xs font-bold">
                               {new Date(registration.eliminated_at).toLocaleTimeString()}
                             </span>
                           )}
                         </div>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <div className="text-sm text-muted-foreground">
-                        Повторных входов: {registration.reentries || registration.rebuys || 0}
+                    <div className="text-right space-y-1">
+                      <div className="text-xs text-muted-foreground font-bold">
+                        Re-entry: <span className="text-foreground">{registration.reentries || registration.rebuys || 0}</span>
                       </div>
-                      <div className="text-sm text-muted-foreground">
-                        Доп. наборов: {registration.additional_sets || registration.addons || 0}
+                      <div className="text-xs text-muted-foreground font-bold">
+                        Add-on: <span className="text-foreground">{registration.additional_sets || registration.addons || 0}</span>
                       </div>
                     </div>
                   </div>
@@ -525,9 +531,9 @@ const TournamentPlayerManagement = ({ tournament, players, registrations, onRegi
 
       {/* Модальное окно добавления участников */}
       <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
-        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto bg-card border-border brutal-border">
           <DialogHeader>
-            <DialogTitle>Добавить участников в мероприятие</DialogTitle>
+            <DialogTitle className="text-foreground font-black uppercase">Добавить участников</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div className="flex items-center space-x-4">
@@ -535,10 +541,10 @@ const TournamentPlayerManagement = ({ tournament, players, registrations, onRegi
                 placeholder="Поиск участников..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="flex-1"
+                className="flex-1 bg-secondary/50 border-2 border-border"
               />
-              <Badge variant="outline">
-                Доступно мест: {tournament.max_players - registrations.length}
+              <Badge className="bg-primary/20 text-primary border-primary/50 font-bold">
+                Мест: {tournament.max_players - registrations.length}
               </Badge>
             </div>
 
@@ -551,19 +557,19 @@ const TournamentPlayerManagement = ({ tournament, players, registrations, onRegi
                 .map((player) => (
                   <div
                     key={player.id}
-                    className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50"
+                    className="flex items-center justify-between p-3 border-2 border-border rounded-lg bg-secondary/30 hover:bg-secondary/60 transition-colors"
                   >
                     <div className="flex items-center space-x-3">
-                      <Avatar className="w-8 h-8">
+                      <Avatar className="w-10 h-10 border-2 border-border">
                         <AvatarImage src={player.avatar_url} />
-                        <AvatarFallback>
+                        <AvatarFallback className="bg-secondary text-foreground font-black text-xs">
                           {player.name.split(' ').map(n => n[0]).join('')}
                         </AvatarFallback>
                       </Avatar>
                       <div>
-                        <p className="font-medium">{player.name}</p>
-                        <p className="text-sm text-muted-foreground">
-                          Рейтинг: {player.elo_rating}
+                        <p className="font-black text-foreground">{player.name}</p>
+                        <p className="text-xs text-muted-foreground font-bold">
+                          Рейтинг: <span className="text-primary">{player.elo_rating}</span>
                         </p>
                       </div>
                     </div>
@@ -571,6 +577,7 @@ const TournamentPlayerManagement = ({ tournament, players, registrations, onRegi
                       size="sm"
                       onClick={() => handleSingleRegistration(player.id)}
                       disabled={registrations.length >= tournament.max_players}
+                      className="bg-primary hover:bg-primary/80 text-primary-foreground font-black"
                     >
                       Добавить
                     </Button>
