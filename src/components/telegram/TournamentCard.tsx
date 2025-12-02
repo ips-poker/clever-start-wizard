@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Trophy, Users, Clock, ChevronRight, Zap, Flame, Coins, Timer, MapPin } from 'lucide-react';
+import { Trophy, Users, Clock } from 'lucide-react';
 import { GlitchText } from '@/components/ui/glitch-text';
-import { Button } from '@/components/ui/button';
 
 interface Tournament {
   id: string;
@@ -22,342 +21,238 @@ interface TournamentCardProps {
   tournament: Tournament;
   index: number;
   onClick: () => void;
-  onQuickRegister?: () => void;
 }
 
-export const TournamentCard: React.FC<TournamentCardProps> = ({ 
-  tournament, 
-  index, 
-  onClick,
-  onQuickRegister 
-}) => {
+export const TournamentCard: React.FC<TournamentCardProps> = ({ tournament, index, onClick }) => {
   const [currentTime, setCurrentTime] = useState(new Date());
   
   const registeredCount = tournament.tournament_registrations?.[0]?.count || 0;
   const maxPlayers = tournament.max_players;
   const spotsLeft = maxPlayers - registeredCount;
-  const fillPercentage = Math.min((registeredCount / maxPlayers) * 100, 100);
-  const isHot = spotsLeft <= 3 && spotsLeft > 0;
-  const isFull = spotsLeft === 0;
-  const isAlmostFull = fillPercentage >= 80;
+  const fillPercentage = (registeredCount / maxPlayers) * 100;
   
+  // Live countdown timer - updates every minute
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentTime(new Date());
-    }, 1000); // Update every second for more precise countdown
+    }, 60000); // Update every minute
     
     return () => clearInterval(timer);
   }, []);
   
+  // Calculate countdown with days
   const startTime = new Date(tournament.start_time);
   const timeUntilStart = startTime.getTime() - currentTime.getTime();
   const daysUntil = Math.floor(timeUntilStart / (1000 * 60 * 60 * 24));
   const hoursUntil = Math.floor((timeUntilStart % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
   const minutesUntil = Math.floor((timeUntilStart % (1000 * 60 * 60)) / (1000 * 60));
-  const secondsUntil = Math.floor((timeUntilStart % (1000 * 60)) / 1000);
   
-  const isLive = tournament.status === 'active';
-  const isUrgent = daysUntil === 0 && hoursUntil <= 2;
-  const isStartingSoon = daysUntil === 0 && hoursUntil === 0 && minutesUntil <= 30;
-  
-  const getCountdownDisplay = () => {
+  // Format time display
+  const getTimeDisplay = () => {
     if (daysUntil > 0) {
       return { 
-        parts: [
-          { num: daysUntil, label: 'д' },
-          { num: hoursUntil, label: 'ч' }
-        ],
-        urgent: false 
+        primary: daysUntil, 
+        primaryLabel: daysUntil === 1 ? 'День' : daysUntil < 5 ? 'Дня' : 'Дней',
+        secondary: hoursUntil,
+        secondaryLabel: hoursUntil === 1 ? 'Час' : hoursUntil < 5 ? 'Часа' : 'Часов'
       };
     } else if (hoursUntil > 0) {
       return { 
-        parts: [
-          { num: hoursUntil, label: 'ч' },
-          { num: minutesUntil, label: 'м' }
-        ],
-        urgent: hoursUntil <= 2 
-      };
-    } else if (minutesUntil > 0) {
-      return { 
-        parts: [
-          { num: minutesUntil, label: ':' },
-          { num: secondsUntil, label: '', padded: true }
-        ],
-        urgent: true 
+        primary: hoursUntil, 
+        primaryLabel: hoursUntil === 1 ? 'Час' : hoursUntil < 5 ? 'Часа' : 'Часов',
+        secondary: minutesUntil,
+        secondaryLabel: minutesUntil === 1 ? 'Минута' : minutesUntil < 5 ? 'Минуты' : 'Минут'
       };
     } else {
-      return { parts: [{ num: null, label: 'СКОРО' }], urgent: true };
+      return { 
+        primary: minutesUntil, 
+        primaryLabel: minutesUntil === 1 ? 'Минута' : minutesUntil < 5 ? 'Минуты' : 'Минут',
+        secondary: null,
+        secondaryLabel: ''
+      };
     }
   };
   
-  const countdown = getCountdownDisplay();
-
-  const handleQuickRegister = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    onQuickRegister?.();
-  };
-
-  const formatNumber = (num: number) => {
-    return num.toLocaleString('ru-RU');
-  };
-
-  const getStatusConfig = () => {
-    if (isLive) {
-      return { label: 'LIVE', color: 'syndikate-red', pulse: true };
+  const timeDisplay = getTimeDisplay();
+  
+  const getStatusBadge = () => {
+    if (tournament.status === 'active') {
+      return (
+        <div className="px-3 py-1 bg-syndikate-red/20 brutal-border text-xs uppercase animate-pulse">
+          <span className="text-syndikate-red">● Live</span>
+        </div>
+      );
     }
-    if (isStartingSoon) {
-      return { label: 'СКОРО', color: 'syndikate-orange', pulse: true };
-    }
-    if (isFull) {
-      return { label: 'FULL', color: 'foreground/50', pulse: false };
+    if (tournament.status === 'registration') {
+      if (daysUntil === 0 && hoursUntil <= 1) {
+        return (
+          <div className="px-3 py-1 bg-syndikate-orange/20 brutal-border text-xs uppercase animate-pulse">
+            <span className="text-syndikate-orange">● Starting Soon</span>
+          </div>
+        );
+      }
+      return (
+        <div className="px-3 py-1 bg-syndikate-orange/20 brutal-border text-xs uppercase">
+          <span className="text-syndikate-orange">● Registration</span>
+        </div>
+      );
     }
     return null;
   };
 
-  const status = getStatusConfig();
-
   return (
     <div
-      className={`relative overflow-hidden group cursor-pointer transition-all duration-300 ease-out animate-fade-in ${
-        isHot 
-          ? 'bg-gradient-to-br from-syndikate-metal via-syndikate-metal to-syndikate-red/10 ring-2 ring-syndikate-red/60 shadow-neon-red' 
-          : isLive
-          ? 'bg-gradient-to-br from-syndikate-metal via-syndikate-metal to-syndikate-red/20 ring-2 ring-syndikate-red shadow-neon-red'
-          : 'bg-syndikate-metal/95 shadow-brutal hover:shadow-neon-orange'
-      } brutal-border backdrop-blur-xl hover:translate-y-[-2px]`}
+      className="relative bg-syndikate-metal/90 brutal-border backdrop-blur-xl shadow-brutal overflow-hidden group cursor-pointer hover:shadow-neon-orange transition-all duration-300 hover:scale-[1.02] animate-fade-in"
       onClick={onClick}
-      style={{ animationDelay: `${index * 80}ms` }}
+      style={{
+        animationDelay: `${index * 100}ms`,
+        transformStyle: 'preserve-3d',
+      }}
     >
-      {/* Top accent line */}
-      <div className={`absolute top-0 left-0 right-0 h-1 ${
-        isHot || isLive
-          ? 'bg-gradient-to-r from-syndikate-red via-syndikate-orange to-syndikate-red animate-pulse'
-          : 'bg-gradient-to-r from-transparent via-syndikate-orange/50 to-transparent'
-      }`} />
+      {/* Animated glow background */}
+      <div className="absolute inset-0 bg-gradient-to-br from-syndikate-orange/10 via-transparent to-syndikate-red/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+      <div className="absolute inset-0 industrial-texture opacity-30" />
       
-      {/* Corner accents */}
-      <div className="absolute top-2 left-2 w-4 h-4 border-l-2 border-t-2 border-syndikate-orange/60 transition-all duration-300 group-hover:w-6 group-hover:h-6 group-hover:border-syndikate-orange" />
-      <div className="absolute top-2 right-2 w-4 h-4 border-r-2 border-t-2 border-syndikate-orange/60 transition-all duration-300 group-hover:w-6 group-hover:h-6 group-hover:border-syndikate-orange" />
-      <div className="absolute bottom-2 left-2 w-4 h-4 border-l-2 border-b-2 border-syndikate-orange/60 transition-all duration-300 group-hover:w-6 group-hover:h-6 group-hover:border-syndikate-orange" />
-      <div className="absolute bottom-2 right-2 w-4 h-4 border-r-2 border-b-2 border-syndikate-orange/60 transition-all duration-300 group-hover:w-6 group-hover:h-6 group-hover:border-syndikate-orange" />
+      {/* Metallic shine effect on hover */}
+      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
       
-      {/* Background effects */}
-      <div className="absolute inset-0 bg-gradient-to-br from-syndikate-orange/5 via-transparent to-syndikate-red/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-      <div className="absolute inset-0 industrial-texture opacity-10" />
-      
-      {/* Shine effect */}
-      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/[0.03] to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000 ease-out" />
+      {/* Corner brackets */}
+      <div className="absolute top-2 left-2 w-8 h-8 border-l-2 border-t-2 border-syndikate-orange transition-all group-hover:w-12 group-hover:h-12" />
+      <div className="absolute top-2 right-2 w-8 h-8 border-r-2 border-t-2 border-syndikate-orange transition-all group-hover:w-12 group-hover:h-12" />
 
-      <div className="relative z-10 p-5">
-        {/* Header */}
-        <div className="flex items-start justify-between gap-3 mb-4">
-          <div className="flex-1 min-w-0">
-            <h3 className="text-xl font-display font-black leading-tight text-foreground tracking-tight">
+      <div className="relative z-10 p-4 space-y-3">
+        <div className="flex items-start justify-between mb-2">
+          <div className="flex-1">
+            <h3 className="text-lg font-display mb-2">
               <GlitchText text={tournament.name} />
             </h3>
-            {tournament.tournament_format && (
-              <div className="flex items-center gap-1.5 mt-2">
-                <Trophy className="h-3.5 w-3.5 text-syndikate-orange/70" />
-                <span className="text-sm text-foreground/60 font-medium">{tournament.tournament_format}</span>
-              </div>
-            )}
+            {getStatusBadge()}
           </div>
-          
-          {/* Status Badge */}
-          {(status || isHot) && (
-            <div className={`flex items-center gap-1.5 px-3 py-1.5 brutal-border shrink-0 ${
-              isHot && !status ? 'bg-syndikate-red/20' : `bg-${status?.color}/20`
-            } ${status?.pulse || isHot ? 'animate-pulse' : ''}`}>
-              {isHot && !status && <Flame className="h-4 w-4 text-syndikate-red" />}
-              <span className={`font-display font-black text-xs uppercase tracking-wider ${
-                isHot && !status ? 'text-syndikate-red' : status?.color === 'syndikate-red' ? 'text-syndikate-red' : status?.color === 'syndikate-orange' ? 'text-syndikate-orange' : 'text-foreground/50'
-              }`}>
-                {isHot && !status ? 'HOT' : status?.label}
-              </span>
+          <div className="text-right ml-4">
+            <div className="text-xl font-display text-syndikate-orange">
+              {tournament.participation_fee.toLocaleString()}₽
             </div>
-          )}
-        </div>
-
-        {/* Description / Address */}
-        {tournament.description && (
-          <div className="flex items-start gap-2 mb-3 px-1">
-            <MapPin className="h-4 w-4 text-syndikate-orange/70 mt-0.5 shrink-0" />
-            <p className="text-sm text-foreground/70 font-medium leading-snug line-clamp-2">
-              {tournament.description}
-            </p>
-          </div>
-        )}
-
-        {/* Main Time Block */}
-        <div className={`brutal-border p-4 mb-4 ${
-          isUrgent || isLive
-            ? 'bg-gradient-to-r from-syndikate-red/15 to-syndikate-orange/10'
-            : 'bg-gradient-to-r from-syndikate-orange/10 to-transparent'
-        }`}>
-          <div className="flex items-center justify-between gap-4">
-            {/* Date & Time */}
-            <div className="flex items-center gap-3">
-              <div className={`w-11 h-11 brutal-border flex items-center justify-center shrink-0 ${
-                isUrgent ? 'bg-syndikate-red/30' : 'bg-syndikate-orange/20'
-              }`}>
-                <Clock className={`h-5 w-5 ${isUrgent ? 'text-syndikate-red' : 'text-syndikate-orange'}`} />
-              </div>
-              <div>
-                <div className={`text-2xl font-display font-black tabular-nums tracking-tight ${
-                  isUrgent ? 'text-syndikate-red' : 'text-syndikate-orange'
-                }`}>
-                  {startTime.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}
-                </div>
-                <div className="text-sm text-foreground/70 font-semibold capitalize">
-                  {startTime.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short', weekday: 'short' })}
-                </div>
-              </div>
-            </div>
-            
-            {/* Countdown */}
-            {tournament.status === 'registration' && timeUntilStart > 0 && (
-              <div className={`text-right px-3 py-2 brutal-border ${
-                countdown.urgent ? 'bg-syndikate-red/20' : 'bg-background/40'
-              } ${countdown.urgent ? 'animate-pulse' : ''}`}>
-                <div className="flex items-center gap-1 justify-end">
-                  <Timer className={`h-3.5 w-3.5 ${countdown.urgent ? 'text-syndikate-red' : 'text-foreground/50'}`} />
-                  <div className="flex items-baseline">
-                    {countdown.parts.map((part, idx) => (
-                      <span key={idx} className="flex items-baseline">
-                        {part.num !== null ? (
-                          <>
-                            <span className={`text-xl font-display font-black tabular-nums ${
-                              countdown.urgent ? 'text-syndikate-red' : 'text-foreground'
-                            }`}>
-                              {part.padded ? String(part.num).padStart(2, '0') : part.num}
-                            </span>
-                            <span className={`text-xs font-medium ml-0.5 ${
-                              countdown.urgent ? 'text-syndikate-red/60' : 'text-foreground/40'
-                            }`}>
-                              {part.label}
-                            </span>
-                            {idx < countdown.parts.length - 1 && <span className="mx-1" />}
-                          </>
-                        ) : (
-                          <span className={`text-base font-display font-black ${
-                            countdown.urgent ? 'text-syndikate-red' : 'text-foreground'
-                          }`}>
-                            {part.label}
-                          </span>
-                        )}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-                <div className={`text-[9px] uppercase tracking-widest font-bold mt-0.5 ${
-                  countdown.urgent ? 'text-syndikate-red/60' : 'text-foreground/40'
-                }`}>
-                  до старта
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Stats Grid */}
-        <div className="grid grid-cols-2 gap-3 mb-4">
-          {/* Buy-in */}
-          <div className="bg-background/30 brutal-border p-3 group/stat hover:bg-background/50 transition-colors">
-            <div className="flex items-center gap-2 mb-1">
-              <Coins className="h-4 w-4 text-syndikate-orange" />
-              <span className="text-[10px] text-foreground/50 uppercase tracking-widest font-bold">Взнос</span>
-            </div>
-            <div className="text-2xl font-display text-syndikate-orange font-black tabular-nums">
-              {formatNumber(tournament.participation_fee)}
-              <span className="text-lg ml-0.5">₽</span>
-            </div>
-          </div>
-          
-          {/* Stack */}
-          <div className="bg-background/30 brutal-border p-3 group/stat hover:bg-background/50 transition-colors">
-            <div className="flex items-center gap-2 mb-1">
-              <Zap className="h-4 w-4 text-syndikate-orange" />
-              <span className="text-[10px] text-foreground/50 uppercase tracking-widest font-bold">Стек</span>
-            </div>
-            <div className="text-2xl font-display text-foreground font-black tabular-nums">
-              {formatNumber(tournament.starting_chips)}
-            </div>
+            <div className="text-xs text-syndikate-concrete">Entry Fee</div>
           </div>
         </div>
         
-        {/* Registration Progress */}
-        {tournament.status === 'registration' && (
-          <div className="mb-4">
-            <div className="flex justify-between items-center mb-2">
-              <div className="flex items-center gap-2">
-                <Users className={`h-4 w-4 ${isHot ? 'text-syndikate-red' : 'text-syndikate-orange'}`} />
-                <span className="text-sm font-semibold text-foreground/80">
-                  <span className="font-display font-black text-foreground">{registeredCount}</span>
-                  <span className="text-foreground/40 mx-1">/</span>
-                  <span className="text-foreground/60">{maxPlayers}</span>
-                </span>
+        {/* Enhanced Live Countdown Timer for upcoming tournaments */}
+        {tournament.status === 'registration' && timeUntilStart > 0 && (
+          <div className="bg-syndikate-concrete/10 brutal-border p-3 space-y-2 backdrop-blur-sm animate-fade-in">
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <Clock className="h-4 w-4 text-syndikate-orange animate-pulse" />
+              <div className="text-xs text-syndikate-orange uppercase font-display tracking-wider">
+                Начало через
               </div>
-              <span className={`text-sm font-display font-black ${
-                isFull 
-                  ? 'text-foreground/40' 
-                  : isHot 
-                  ? 'text-syndikate-red animate-pulse' 
-                  : isAlmostFull 
-                  ? 'text-syndikate-orange' 
-                  : 'text-foreground/60'
-              }`}>
-                {isFull ? 'Мест нет' : `${spotsLeft} ${spotsLeft === 1 ? 'место' : spotsLeft < 5 ? 'места' : 'мест'}`}
-              </span>
             </div>
-            
-            {/* Progress Bar */}
-            <div className="h-2.5 bg-background/60 brutal-border overflow-hidden">
-              <div 
-                className={`h-full transition-all duration-700 ease-out relative ${
-                  isFull
-                    ? 'bg-foreground/30'
-                    : isHot 
-                    ? 'bg-gradient-to-r from-syndikate-red to-syndikate-orange' 
-                    : isAlmostFull
-                    ? 'bg-gradient-to-r from-syndikate-orange to-syndikate-red/80'
-                    : 'bg-syndikate-orange'
-                }`}
-                style={{ width: `${fillPercentage}%` }}
-              >
-                {/* Shine on progress bar */}
-                {!isFull && (
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-[shimmer_2s_infinite]" />
-                )}
+            <div className="flex justify-center items-center gap-2">
+              <div className="flex flex-col items-center bg-background/50 brutal-border px-3 py-2 min-w-[65px] transition-all duration-300 hover:scale-105">
+                <div className="text-2xl font-display text-syndikate-orange tabular-nums leading-none animate-fade-in">
+                  {timeDisplay.primary}
+                </div>
+                <div className="text-[10px] text-syndikate-concrete uppercase mt-1 font-display">
+                  {timeDisplay.primaryLabel}
+                </div>
+              </div>
+              {timeDisplay.secondary !== null && (
+                <>
+                  <div className="text-xl font-display text-syndikate-orange animate-pulse">•</div>
+                  <div className="flex flex-col items-center bg-background/50 brutal-border px-3 py-2 min-w-[65px] transition-all duration-300 hover:scale-105">
+                    <div className="text-2xl font-display text-syndikate-orange tabular-nums leading-none animate-fade-in">
+                      {timeDisplay.secondary}
+                    </div>
+                    <div className="text-[10px] text-syndikate-concrete uppercase mt-1 font-display">
+                      {timeDisplay.secondaryLabel}
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+            {/* Live indicator */}
+            <div className="flex items-center justify-center gap-1 mt-1">
+              <div className="w-1 h-1 bg-syndikate-orange rounded-full animate-pulse" />
+              <div className="text-[10px] text-syndikate-concrete/60 uppercase tracking-wide">
+                Live
               </div>
             </div>
           </div>
         )}
+        
+        {/* Tournament Description */}
+        {tournament.description && (
+          <div className="bg-background/30 brutal-border p-3">
+            <div className="text-xs text-foreground/80 line-clamp-2">
+              {tournament.description}
+            </div>
+          </div>
+        )}
+        
+        {/* Tournament Format Badge */}
+        {tournament.tournament_format && (
+          <div className="flex items-center gap-2">
+            <div className="px-3 py-1 bg-syndikate-orange/10 brutal-border">
+              <span className="text-xs text-syndikate-orange uppercase font-display">
+                {tournament.tournament_format}
+              </span>
+            </div>
+          </div>
+        )}
+        
+        {/* Registration Progress Bar */}
+        {tournament.status === 'registration' && (
+          <div className="space-y-2">
+            <div className="flex justify-between text-sm">
+              <span className="text-syndikate-concrete">
+                {registeredCount}/{maxPlayers} Players
+              </span>
+              <span className={fillPercentage >= 90 ? "text-syndikate-red animate-pulse" : "text-syndikate-orange"}>
+                {spotsLeft} spots left
+              </span>
+            </div>
+            <div className="h-2 bg-background brutal-border overflow-hidden">
+              <div 
+                className={`h-full transition-all duration-500 ${
+                  fillPercentage >= 90 
+                    ? 'bg-gradient-to-r from-syndikate-red to-syndikate-orange shadow-neon-red animate-pulse' 
+                    : 'bg-gradient-to-r from-syndikate-orange to-syndikate-red shadow-neon-orange'
+                }`}
+                style={{ width: `${fillPercentage}%` }}
+              />
+            </div>
+          </div>
+        )}
 
-        {/* Action Buttons */}
-        <div className="flex gap-3">
-          {tournament.status === 'registration' && onQuickRegister && !isFull && (
-            <Button
-              onClick={handleQuickRegister}
-              className={`flex-[2] h-12 font-display text-base uppercase tracking-wider brutal-border transition-all duration-300 font-black ${
-                isHot 
-                  ? 'bg-syndikate-red hover:bg-syndikate-red/90 text-white shadow-neon-red hover:shadow-[0_0_30px_rgba(239,68,68,0.5)]' 
-                  : 'bg-syndikate-orange hover:bg-syndikate-orange/90 text-syndikate-metal shadow-brutal hover:shadow-neon-orange'
-              }`}
-            >
-              <Zap className={`h-5 w-5 mr-2 ${isHot ? 'animate-pulse' : ''}`} />
-              {isHot ? 'Успей!' : 'Играть'}
-            </Button>
+        {/* Tournament info grid - Enhanced with more details */}
+        <div className="grid grid-cols-3 gap-2 pt-2 border-t border-syndikate-concrete/20">
+          <div className="flex flex-col items-center gap-1 p-2 bg-background/20 brutal-border hover:bg-background/30 transition-colors">
+            <Clock className="h-4 w-4 text-syndikate-orange" />
+            <div className="text-xs text-syndikate-concrete">Время</div>
+            <div className="text-sm font-display text-foreground">{new Date(tournament.start_time).toLocaleTimeString('ru-RU', {hour: '2-digit', minute: '2-digit'})}</div>
+          </div>
+          <div className="flex flex-col items-center gap-1 p-2 bg-background/20 brutal-border hover:bg-background/30 transition-colors">
+            <Trophy className="h-4 w-4 text-syndikate-orange" />
+            <div className="text-xs text-syndikate-concrete">Стек</div>
+            <div className="text-sm font-display text-foreground">{tournament.starting_chips.toLocaleString()}</div>
+          </div>
+          <div className="flex flex-col items-center gap-1 p-2 bg-background/20 brutal-border hover:bg-background/30 transition-colors">
+            <Users className="h-4 w-4 text-syndikate-orange" />
+            <div className="text-xs text-syndikate-concrete">Макс</div>
+            <div className="text-sm font-display text-foreground">{maxPlayers}</div>
+          </div>
+        </div>
+        
+        {/* Additional tournament details */}
+        <div className="flex items-center justify-between text-xs pt-2 border-t border-syndikate-concrete/10">
+          <div className="flex items-center gap-1 text-syndikate-concrete">
+            <span>📅</span>
+            <span>{new Date(tournament.start_time).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })}</span>
+          </div>
+          {tournament.status === 'registration' && (
+            <div className="flex items-center gap-1 text-syndikate-orange font-display">
+              <span>→</span>
+              <span className="uppercase text-[10px] tracking-wider">Tap to register</span>
+            </div>
           )}
-          <Button
-            onClick={(e) => { e.stopPropagation(); onClick(); }}
-            variant="outline"
-            className={`${
-              tournament.status === 'registration' && onQuickRegister && !isFull ? 'flex-1' : 'flex-1'
-            } h-12 bg-transparent border-2 border-foreground/20 hover:border-syndikate-orange hover:bg-syndikate-orange/10 text-foreground font-display text-sm uppercase tracking-wider brutal-border font-bold transition-all duration-300`}
-          >
-            Детали
-            <ChevronRight className="h-4 w-4 ml-1 transition-transform group-hover:translate-x-1" />
-          </Button>
         </div>
       </div>
     </div>
