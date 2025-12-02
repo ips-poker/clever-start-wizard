@@ -220,10 +220,14 @@ export function AvatarSelector({ onSelect, onClose, playerId }: AvatarSelectorPr
   };
 
   const handleSelectAvatar = () => {
+    console.log('handleSelectAvatar called, selectedAvatar:', selectedAvatar);
     if (selectedAvatar) {
-      console.log('Selecting avatar:', selectedAvatar);
+      console.log('Calling onSelect with:', selectedAvatar);
       onSelect(selectedAvatar);
+      console.log('Calling onClose');
       onClose();
+    } else {
+      console.log('No avatar selected');
     }
   };
 
@@ -257,7 +261,10 @@ export function AvatarSelector({ onSelect, onClose, playerId }: AvatarSelectorPr
                       ? 'border-primary bg-primary/5'
                       : 'border-border hover:border-primary/50'
                   }`}
-                  onClick={() => setSelectedAvatar(avatar.url)}
+                  onClick={() => {
+                    console.log('Preset avatar clicked:', { id: avatar.id, url: avatar.url });
+                    setSelectedAvatar(avatar.url);
+                  }}
                 >
                   <img
                     src={avatar.url}
