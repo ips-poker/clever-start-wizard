@@ -14,7 +14,6 @@ import { toast } from 'sonner';
 import { addToHomeScreen } from '@telegram-apps/sdk';
 import syndikateLogo from '@/assets/syndikate-logo-main.png';
 import { GlitchText } from '@/components/ui/glitch-text';
-import { FloatingParticles } from '@/components/ui/floating-particles';
 import { TournamentCard } from './TournamentCard';
 import { RatingPodium } from './RatingPodium';
 import { PlayerRatingCard } from './PlayerRatingCard';
@@ -93,7 +92,6 @@ export const TelegramApp = () => {
   const [scrollY, setScrollY] = useState(0);
   
   // Refs for parallax effects
-  const baseTextureRef = useRef<HTMLDivElement>(null);
   const gridRef = useRef<HTMLDivElement>(null);
   const glowTopRef = useRef<HTMLDivElement>(null);
   const glowBottomRef = useRef<HTMLDivElement>(null);
@@ -126,17 +124,14 @@ export const TelegramApp = () => {
       const currentScrollY = target.scrollTop || 0;
       setScrollY(currentScrollY);
       
-      if (baseTextureRef.current) {
-        baseTextureRef.current.style.transform = `translateY(${currentScrollY * 0.15}px)`;
-      }
       if (gridRef.current) {
-        gridRef.current.style.transform = `translateY(${currentScrollY * 0.25}px)`;
+        gridRef.current.style.transform = `translateY(${currentScrollY * 0.2}px)`;
       }
       if (glowTopRef.current) {
         glowTopRef.current.style.transform = `translate(-24px, ${-128 + currentScrollY * 0.1}px)`;
       }
       if (glowBottomRef.current) {
-        glowBottomRef.current.style.transform = `translate(-120px, ${-180 + currentScrollY * 0.2}px)`;
+        glowBottomRef.current.style.transform = `translate(-120px, ${-180 + currentScrollY * 0.15}px)`;
       }
     };
 
@@ -1204,71 +1199,72 @@ export const TelegramApp = () => {
   }
 
   return (
-    <div className="w-full h-full bg-background industrial-texture relative overflow-hidden flex flex-col">
-      <FloatingParticles />
-      
-      {/* Background Effects - only on home page */}
-      {activeTab === 'home' && (
-        <>
-          {/* Dark base layer - covers everything */}
-          <div className="fixed inset-[-20px] bg-background z-0" />
-          
-          {/* Industrial metal base texture */}
-          <div 
-            ref={baseTextureRef}
-            className="fixed inset-[-20px] pointer-events-none industrial-texture opacity-40 z-0 transition-transform duration-0 will-change-transform" 
-          />
+    <div className="w-full h-full bg-background relative overflow-hidden flex flex-col">
+      {/* Poker-themed Background - all tabs */}
+      <>
+        {/* Dark base layer */}
+        <div className="fixed inset-[-30px] bg-background z-0" />
+        
+        {/* Poker suits pattern - spades */}
+        <div
+          ref={gridRef}
+          className="fixed inset-[-30px] pointer-events-none z-0 transition-transform duration-0 will-change-transform"
+          style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Ctext x='50' y='55' font-size='32' fill='rgba(80,80,80,0.06)' text-anchor='middle' font-family='Arial' font-weight='bold'%3E♠%3C/text%3E%3C/svg%3E")`,
+            backgroundSize: "100px 100px",
+          }}
+        />
+        
+        {/* Poker suits pattern - hearts offset */}
+        <div
+          className="fixed inset-[-30px] pointer-events-none z-0"
+          style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Ctext x='50' y='55' font-size='24' fill='rgba(70,70,70,0.04)' text-anchor='middle' font-family='Arial'%3E♥%3C/text%3E%3C/svg%3E")`,
+            backgroundSize: "100px 100px",
+            backgroundPosition: "50px 50px",
+          }}
+        />
+        
+        {/* Poker suits pattern - diamonds */}
+        <div
+          className="fixed inset-[-30px] pointer-events-none z-0"
+          style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200' viewBox='0 0 200 200'%3E%3Ctext x='100' y='110' font-size='28' fill='rgba(60,60,60,0.035)' text-anchor='middle' font-family='Arial'%3E♦%3C/text%3E%3C/svg%3E")`,
+            backgroundSize: "200px 200px",
+            backgroundPosition: "25px 75px",
+          }}
+        />
+        
+        {/* Poker suits pattern - clubs */}
+        <div
+          className="fixed inset-[-30px] pointer-events-none z-0"
+          style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200' viewBox='0 0 200 200'%3E%3Ctext x='100' y='110' font-size='36' fill='rgba(50,50,50,0.04)' text-anchor='middle' font-family='Arial' font-weight='bold'%3E♣%3C/text%3E%3C/svg%3E")`,
+            backgroundSize: "200px 200px",
+            backgroundPosition: "100px 0px",
+          }}
+        />
 
-          {/* Logo pattern grid - poker association */}
-          <div
-            ref={gridRef}
-            className="fixed inset-[-20px] pointer-events-none z-0 transition-transform duration-0 will-change-transform"
-            style={{
-              backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'%3E%3Ctext x='40' y='45' font-size='28' fill='rgba(120,120,120,0.08)' text-anchor='middle' font-family='Arial' font-weight='bold'%3E♠%3C/text%3E%3C/svg%3E")`,
-              backgroundSize: "80px 80px",
-            }}
-          />
-          
-          {/* Secondary logo pattern - offset */}
-          <div
-            className="fixed inset-[-20px] pointer-events-none z-0"
-            style={{
-              backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'%3E%3Ctext x='40' y='45' font-size='20' fill='rgba(100,100,100,0.05)' text-anchor='middle' font-family='Arial'%3E♣%3C/text%3E%3C/svg%3E")`,
-              backgroundSize: "80px 80px",
-              backgroundPosition: "40px 40px",
-            }}
-          />
+        {/* Subtle corner glows - contained within dark area */}
+        <div 
+          ref={glowTopRef}
+          className="fixed w-[300px] h-[300px] bg-syndikate-orange/8 rounded-full blur-[150px] opacity-40 will-change-transform z-0" 
+          style={{ left: '-50px', top: '-50px' }}
+        />
+        <div 
+          ref={glowBottomRef}
+          className="fixed w-[300px] h-[300px] bg-syndikate-red/6 rounded-full blur-[150px] opacity-30 will-change-transform z-0" 
+          style={{ right: '-50px', bottom: '-50px' }}
+        />
 
-          {/* Subtle neon glows - reduced and contained */}
-          <div 
-            ref={glowTopRef}
-            className="fixed w-[400px] h-[400px] bg-syndikate-orange/15 rounded-full blur-[200px] opacity-60 will-change-transform z-0" 
-            style={{ left: '-100px', top: '-100px' }}
-          />
-          <div 
-            ref={glowBottomRef}
-            className="fixed w-[400px] h-[400px] bg-syndikate-red/10 rounded-full blur-[200px] opacity-50 will-change-transform z-0" 
-            style={{ right: '-100px', bottom: '-100px' }}
-          />
-
-          {/* Dark vignette overlay - hides edges */}
-          <div 
-            className="fixed inset-0 pointer-events-none z-[1]"
-            style={{
-              background: 'radial-gradient(ellipse at center, transparent 40%, hsl(var(--background)) 100%)'
-            }}
-          />
-          
-          {/* Subtle noise */}
-          <div
-            className="fixed inset-0 pointer-events-none opacity-20 mix-blend-soft-light z-0"
-            style={{
-              backgroundImage: "radial-gradient(circle at 1px 1px, rgba(255,255,255,0.1) 1px, transparent 0)",
-              backgroundSize: "3px 3px",
-            }}
-          />
-        </>
-      )}
+        {/* Dark vignette - strong edges */}
+        <div 
+          className="fixed inset-0 pointer-events-none z-[1]"
+          style={{
+            background: 'radial-gradient(ellipse at center, transparent 30%, hsl(var(--background)) 85%)'
+          }}
+        />
+      </>
       
       {/* Content Area with relative z-index */}
       <div className="flex-1 overflow-y-auto telegram-content relative z-20 overflow-x-hidden" style={{ maxHeight: '100%' }}>
