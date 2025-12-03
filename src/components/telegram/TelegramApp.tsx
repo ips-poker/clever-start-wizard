@@ -468,100 +468,74 @@ export const TelegramApp = () => {
 
   const renderHome = () => (
     <div className="space-y-4 pb-20 px-4 pt-24 bg-transparent min-h-screen relative z-10">
-      {/* Hero Card with Glitch Logo Background */}
+      {/* Hero Card with Glitch Logo */}
       <div className="relative cursor-pointer group/hero" onClick={() => setActiveTab('about')}>
         <Card className="bg-syndikate-metal/80 brutal-border overflow-hidden relative transition-all duration-500 group-hover/hero:scale-[1.02] group-hover/hero:shadow-neon-orange backdrop-blur-xl">
-          {/* Logo as glitch background - reduced 10%, more visible */}
-          <div className="absolute -left-8 -top-4 -bottom-4 w-[180px] z-0 pointer-events-none">
-            {/* Main logo with glitch effect only */}
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="relative w-36 h-36">
-                {/* Glitch layers */}
-                <img 
-                  src={syndikateLogo} 
-                  alt="" 
-                  className="absolute inset-0 w-full h-full object-contain opacity-60 animate-glitch-logo-1" 
-                  style={{ filter: 'drop-shadow(2px 0 0 hsl(24, 100%, 50%))' }}
-                />
-                <img 
-                  src={syndikateLogo} 
-                  alt="" 
-                  className="absolute inset-0 w-full h-full object-contain opacity-55 animate-glitch-logo-2" 
-                  style={{ filter: 'drop-shadow(-2px 0 0 hsl(0, 84%, 45%))' }}
-                />
-                <img 
-                  src={syndikateLogo} 
-                  alt="" 
-                  className="absolute inset-0 w-full h-full object-contain opacity-70 group-hover/hero:opacity-85 transition-opacity duration-500" 
-                />
-              </div>
-            </div>
-          </div>
-          
-          {/* Gradient mask from logo to content */}
-          <div className="absolute left-0 top-0 bottom-0 w-24 bg-gradient-to-r from-transparent via-syndikate-metal/40 to-syndikate-metal/95 z-[1]"></div>
-          
           {/* Animated border glow */}
           <div className="absolute inset-0 rounded-sm opacity-0 group-hover/hero:opacity-100 transition-opacity duration-500" 
                style={{ boxShadow: 'inset 0 0 30px hsla(24, 100%, 50%, 0.15)' }}></div>
           
-          {/* Decorative card suits */}
-          <div className="absolute inset-0 opacity-10 group-hover/hero:opacity-20 transition-opacity duration-500 z-[2]">
-            <div className="absolute top-3 right-3 text-syndikate-orange/40 text-4xl">♠</div>
-            <div className="absolute bottom-3 right-8 text-syndikate-orange/30 text-3xl">♦</div>
-          </div>
-          
           <CardContent className="p-4 relative z-10">
-            {/* Layout: logo space left, content right */}
-            <div className="flex">
-              {/* Empty space for logo visibility */}
-              <div className="w-24 flex-shrink-0"></div>
+            <div className="flex items-center gap-4">
+              {/* Logo with glitch effect - prominent */}
+              <div className="relative w-20 h-20 flex-shrink-0">
+                {/* Glow behind logo */}
+                <div className="absolute inset-0 bg-syndikate-orange/20 blur-xl rounded-full"></div>
+                {/* Glitch layers */}
+                <img 
+                  src={syndikateLogo} 
+                  alt="" 
+                  className="absolute inset-0 w-full h-full object-contain opacity-70 animate-glitch-logo-1" 
+                  style={{ filter: 'drop-shadow(3px 0 0 hsl(24, 100%, 50%))' }}
+                />
+                <img 
+                  src={syndikateLogo} 
+                  alt="" 
+                  className="absolute inset-0 w-full h-full object-contain opacity-65 animate-glitch-logo-2" 
+                  style={{ filter: 'drop-shadow(-3px 0 0 hsl(0, 84%, 45%))' }}
+                />
+                <img 
+                  src={syndikateLogo} 
+                  alt="" 
+                  className="relative w-full h-full object-contain group-hover/hero:scale-110 transition-transform duration-500" 
+                />
+              </div>
               
-              {/* Content on the right */}
-              <div className="flex-1 flex flex-col">
-                {/* Header with download button */}
-                <div className="flex items-start justify-between mb-3">
+              {/* Content */}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-start justify-between gap-2">
                   <div>
-                    <h1 className="font-display text-2xl sm:text-3xl uppercase text-foreground tracking-wider drop-shadow-lg group-hover/hero:text-syndikate-orange transition-colors duration-300">
+                    <h1 className="font-display text-xl sm:text-2xl uppercase text-foreground tracking-wider drop-shadow-lg group-hover/hero:text-syndikate-orange transition-colors duration-300">
                       <GlitchText 
                         text="SYNDIKATE" 
                         glitchIntensity="high" 
                         glitchInterval={4500}
                       />
                     </h1>
-                    <p className="font-display text-sm sm:text-base uppercase tracking-wider text-syndikate-orange mt-1 font-bold">
+                    <p className="font-display text-xs sm:text-sm uppercase tracking-wider text-syndikate-orange font-bold">
                       Власть за столом
                     </p>
-                    <div className="h-[2px] w-16 bg-gradient-neon mt-2 group-hover/hero:w-24 transition-all duration-500"></div>
                   </div>
 
-                  {/* Stylish download button */}
+                  {/* Download icon button */}
                   {canAddToHomeScreen && (
-                    <Button
-                      variant="outline"
-                      size="sm"
+                    <button
                       onClick={(e) => {
                         e.stopPropagation();
                         handleAddToHomeScreen();
                       }}
-                      className="flex-shrink-0 bg-syndikate-orange/10 border-syndikate-orange/50 text-syndikate-orange hover:bg-syndikate-orange hover:text-background hover:border-syndikate-orange transition-all duration-300 shadow-neon-orange/30 hover:shadow-neon-orange px-3 py-2 gap-2"
-                      title="Установить на главный экран"
+                      className="w-9 h-9 flex-shrink-0 bg-syndikate-concrete brutal-border flex items-center justify-center text-syndikate-orange hover:bg-syndikate-orange hover:text-background transition-all duration-300 hover:shadow-neon-orange"
+                      title="Установить"
                     >
                       <Download className="h-4 w-4" />
-                      <span className="text-xs font-bold uppercase tracking-wide">Скачать</span>
-                    </Button>
+                    </button>
                   )}
                 </div>
                 
-                {/* Button "О клубе" */}
-                <div className="bg-syndikate-concrete/70 brutal-border p-3 backdrop-blur-md group-hover/hero:border-syndikate-orange/50 group-hover/hero:bg-syndikate-orange/10 transition-all duration-300">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 bg-syndikate-orange brutal-border animate-pulse"></div>
-                      <p className="text-foreground text-sm sm:text-base font-bold uppercase tracking-wide">О клубе</p>
-                    </div>
-                    <ChevronRight className="h-5 w-5 text-syndikate-orange group-hover/hero:translate-x-1 transition-transform duration-300" />
-                  </div>
+                {/* Compact "О клубе" button */}
+                <div className="mt-3 bg-syndikate-concrete/60 brutal-border px-3 py-2 backdrop-blur-md group-hover/hero:border-syndikate-orange/50 transition-all duration-300 flex items-center justify-between">
+                  <span className="text-foreground text-xs font-bold uppercase tracking-wide">О клубе</span>
+                  <ChevronRight className="h-4 w-4 text-syndikate-orange group-hover/hero:translate-x-1 transition-transform duration-300" />
                 </div>
               </div>
             </div>
