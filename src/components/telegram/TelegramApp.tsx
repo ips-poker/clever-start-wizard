@@ -468,77 +468,62 @@ export const TelegramApp = () => {
 
   const renderHome = () => (
     <div className="space-y-4 pb-20 px-4 pt-24 bg-transparent min-h-screen relative z-10">
-      {/* Hero Card with Breaking Logo Effect */}
+      {/* Hero Card with Massive Logo Background */}
       <div className="relative cursor-pointer group/hero" onClick={() => setActiveTab('about')}>
-        {/* Large background logo that breaks through */}
-        <div className="absolute -left-6 top-1/2 z-30 pointer-events-none animate-logo-glow">
-          {/* Multiple glow layers for depth */}
-          <div className="absolute inset-0 blur-[60px] bg-syndikate-orange/40 scale-[2] animate-pulse"></div>
-          <div className="absolute inset-0 blur-[30px] bg-syndikate-orange/30 scale-150"></div>
-          
-          {/* Main logo - oversized and breaking out */}
-          <img 
-            src={syndikateLogo} 
-            alt="Syndikate Logo" 
-            className="w-36 h-36 object-contain relative z-10" 
-          />
-          
-          {/* Energy particles around logo */}
-          <div className="absolute -inset-4">
-            <div className="absolute top-0 left-1/2 w-1 h-1 bg-syndikate-orange rounded-full animate-ping opacity-60"></div>
-            <div className="absolute bottom-2 right-0 w-1.5 h-1.5 bg-syndikate-orange rounded-full animate-ping opacity-40" style={{ animationDelay: '0.5s' }}></div>
-            <div className="absolute top-1/3 right-2 w-1 h-1 bg-syndikate-orange-glow rounded-full animate-ping opacity-50" style={{ animationDelay: '1s' }}></div>
-          </div>
-        </div>
-
-        {/* Torn edge effect - organic ripped paper look */}
-        <div className="absolute left-[72px] top-0 bottom-0 w-12 z-20 pointer-events-none overflow-visible">
-          <svg viewBox="0 0 48 100" preserveAspectRatio="none" className="w-full h-full animate-torn-breathe">
-            <defs>
-              <filter id="torn-filter" x="-50%" y="-50%" width="200%" height="200%">
-                <feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="5" seed="15" result="noise"/>
-                <feDisplacementMap in="SourceGraphic" in2="noise" scale="12" xChannelSelector="R" yChannelSelector="G"/>
-              </filter>
-              <linearGradient id="torn-grad" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor="transparent"/>
-                <stop offset="30%" stopColor="#2e2e2e" stopOpacity="0.3"/>
-                <stop offset="70%" stopColor="#2e2e2e" stopOpacity="0.7"/>
-                <stop offset="100%" stopColor="#2e2e2e" stopOpacity="0.9"/>
-              </linearGradient>
-            </defs>
-            <path 
-              d="M 0 0 C 8 2, 4 8, 10 12 C 6 16, 14 20, 8 25 C 16 28, 6 34, 12 38 C 4 42, 16 46, 10 50 C 18 54, 8 58, 14 62 C 6 66, 16 70, 10 74 C 18 78, 8 82, 14 86 C 6 90, 18 94, 12 98 L 12 100 L 48 100 L 48 0 Z" 
-              fill="url(#torn-grad)"
-              filter="url(#torn-filter)"
-            />
-          </svg>
-          {/* Orange glow along torn edge */}
-          <div className="absolute inset-y-0 left-0 w-4 bg-gradient-to-r from-syndikate-orange/20 to-transparent blur-sm"></div>
-        </div>
-
-        <Card className="bg-syndikate-metal/90 brutal-border overflow-visible relative transition-all duration-500 group-hover/hero:scale-[1.02] group-hover/hero:shadow-neon-orange backdrop-blur-xl ml-20 border-l-0 rounded-l-none">
-          {/* Left edge highlight */}
-          <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-syndikate-orange/40 via-syndikate-orange/20 to-syndikate-orange/40"></div>
-          
-          <div className="absolute inset-0 bg-gradient-to-br from-syndikate-orange/5 via-transparent to-syndikate-red/5 opacity-0 group-hover/hero:opacity-100 transition-opacity duration-500"></div>
-          <div className="absolute inset-0 opacity-10 group-hover/hero:opacity-20 transition-opacity duration-500">
-            <div className="absolute top-4 right-4 text-syndikate-orange/30 text-5xl animate-pulse">♠</div>
-            <div className="absolute bottom-4 right-12 text-syndikate-orange/25 text-4xl animate-pulse" style={{ animationDelay: '0.5s' }}>♦</div>
-            <div className="absolute bottom-12 left-16 text-syndikate-orange/15 text-2xl">♥</div>
+        <Card className="bg-syndikate-metal/80 brutal-border overflow-hidden relative transition-all duration-500 group-hover/hero:scale-[1.02] group-hover/hero:shadow-neon-orange backdrop-blur-xl">
+          {/* Massive logo as background - extends beyond card */}
+          <div className="absolute -left-12 -top-8 -bottom-8 w-[200px] z-0 pointer-events-none">
+            {/* Animated glow layers */}
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="w-48 h-48 blur-[80px] bg-syndikate-orange/30 animate-pulse rounded-full"></div>
+            </div>
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="w-40 h-40 blur-[40px] bg-syndikate-orange/20 animate-pulse rounded-full" style={{ animationDelay: '0.5s' }}></div>
+            </div>
+            
+            {/* Main logo - oversized, partially visible */}
+            <div className="absolute inset-0 flex items-center justify-center animate-logo-float">
+              <img 
+                src={syndikateLogo} 
+                alt="" 
+                className="w-44 h-44 object-contain opacity-40 group-hover/hero:opacity-60 transition-opacity duration-700" 
+              />
+            </div>
           </div>
           
-          <CardContent className="p-5 pl-6 relative z-10">
+          {/* Gradient mask from logo to content */}
+          <div className="absolute left-0 top-0 bottom-0 w-32 bg-gradient-to-r from-transparent via-syndikate-metal/50 to-syndikate-metal/90 z-[1]"></div>
+          
+          {/* Animated border glow */}
+          <div className="absolute inset-0 rounded-sm opacity-0 group-hover/hero:opacity-100 transition-opacity duration-500" 
+               style={{ boxShadow: 'inset 0 0 30px hsla(24, 100%, 50%, 0.15)' }}></div>
+          
+          {/* Decorative card suits */}
+          <div className="absolute inset-0 opacity-10 group-hover/hero:opacity-20 transition-opacity duration-500 z-[2]">
+            <div className="absolute top-3 right-3 text-syndikate-orange/40 text-4xl">♠</div>
+            <div className="absolute bottom-3 right-8 text-syndikate-orange/30 text-3xl">♦</div>
+          </div>
+          
+          <CardContent className="p-5 relative z-10">
             <div className="flex items-center gap-4 mb-4">
-              <div className="flex-1">
-                <h1 className="font-display text-3xl uppercase text-foreground tracking-wider drop-shadow-lg group-hover/hero:text-syndikate-orange transition-colors duration-300">
+              {/* Small visible logo icon */}
+              <div className="w-14 h-14 relative flex-shrink-0">
+                <div className="absolute inset-0 bg-syndikate-orange/20 blur-xl rounded-full animate-pulse"></div>
+                <div className="relative w-full h-full brutal-border bg-syndikate-concrete/80 flex items-center justify-center p-2 group-hover/hero:border-syndikate-orange/50 transition-colors duration-300">
+                  <img src={syndikateLogo} alt="Syndikate Logo" className="w-full h-full object-contain" />
+                </div>
+              </div>
+              
+              <div className="flex-1 min-w-0">
+                <h1 className="font-display text-2xl sm:text-3xl uppercase text-foreground tracking-wider drop-shadow-lg group-hover/hero:text-syndikate-orange transition-colors duration-300">
                   <GlitchText 
                     text="SYNDIKATE" 
                     glitchIntensity="high" 
                     glitchInterval={4500}
                   />
                 </h1>
-                <div className="h-[2px] w-16 bg-gradient-neon mt-1 group-hover/hero:w-28 transition-all duration-500"></div>
-                <p className="font-display text-sm uppercase tracking-wider text-syndikate-orange mt-1">
+                <div className="h-[2px] w-12 bg-gradient-neon mt-1 group-hover/hero:w-20 transition-all duration-500"></div>
+                <p className="font-display text-xs sm:text-sm uppercase tracking-wider text-syndikate-orange mt-1">
                   Власть за столом
                 </p>
               </div>
@@ -551,7 +536,7 @@ export const TelegramApp = () => {
                     e.stopPropagation();
                     handleAddToHomeScreen();
                   }}
-                  className="text-foreground hover:text-syndikate-orange hover:bg-syndikate-metal p-2 transition-all duration-300"
+                  className="text-foreground hover:text-syndikate-orange hover:bg-syndikate-metal p-2 transition-all duration-300 flex-shrink-0"
                   title="Установить на главный экран"
                 >
                   <Download className="h-5 w-5" />
@@ -559,10 +544,10 @@ export const TelegramApp = () => {
               )}
             </div>
             
-            <div className="bg-syndikate-concrete/50 brutal-border p-3 backdrop-blur-md group-hover/hero:border-syndikate-orange/30 transition-all duration-300">
+            <div className="bg-syndikate-concrete/60 brutal-border p-3 backdrop-blur-md group-hover/hero:border-syndikate-orange/30 group-hover/hero:bg-syndikate-concrete/80 transition-all duration-300">
               <div className="flex items-center gap-2">
                 <div className="w-1.5 h-1.5 bg-syndikate-orange brutal-border animate-pulse"></div>
-                <p className="text-foreground text-base font-bold uppercase tracking-wide">Узнать больше о клубе</p>
+                <p className="text-foreground text-sm sm:text-base font-bold uppercase tracking-wide">Узнать больше о клубе</p>
                 <ChevronRight className="h-4 w-4 text-syndikate-orange ml-auto group-hover/hero:translate-x-1 transition-transform duration-300" />
               </div>
             </div>

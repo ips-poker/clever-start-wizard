@@ -224,41 +224,22 @@
   }
 }
 
-/* Living glow pulse for logo */
-@keyframes logo-glow {
+/* Logo floating animation - subtle and elegant */
+@keyframes logo-float {
   0%, 100% {
-    filter: drop-shadow(0 0 20px hsla(var(--syndikate-orange), 0.5)) 
-            drop-shadow(0 0 40px hsla(var(--syndikate-orange), 0.3));
-    transform: translateY(-50%) scale(1);
+    transform: translateY(0) scale(1) rotate(0deg);
   }
-  33% {
-    filter: drop-shadow(0 0 35px hsla(var(--syndikate-orange), 0.8)) 
-            drop-shadow(0 0 60px hsla(var(--syndikate-orange), 0.5));
-    transform: translateY(calc(-50% - 6px)) scale(1.04);
-  }
-  66% {
-    filter: drop-shadow(0 0 28px hsla(var(--syndikate-orange), 0.6)) 
-            drop-shadow(0 0 50px hsla(var(--syndikate-orange), 0.4));
-    transform: translateY(calc(-50% + 4px)) scale(1.02);
-  }
-}
-
-/* Torn edge breathing animation */
-@keyframes torn-breathe {
-  0%, 100% {
-    opacity: 0.85;
-    transform: scaleX(1) scaleY(1);
+  25% {
+    transform: translateY(-8px) scale(1.02) rotate(1deg);
   }
   50% {
-    opacity: 1;
-    transform: scaleX(1.08) scaleY(1.02);
+    transform: translateY(-4px) scale(1.01) rotate(0deg);
+  }
+  75% {
+    transform: translateY(-10px) scale(1.03) rotate(-1deg);
   }
 }
 
-.animate-logo-glow {
-  animation: logo-glow 4s ease-in-out infinite;
-}
-
-.animate-torn-breathe {
-  animation: torn-breathe 3s ease-in-out infinite;
+.animate-logo-float {
+  animation: logo-float 6s ease-in-out infinite;
 }
