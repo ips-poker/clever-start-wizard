@@ -1744,15 +1744,15 @@ export const TelegramApp = () => {
         </div>
       )}
 
-      {/* Fixed bottom navigation - compact modern */}
-      <div className="fixed bottom-2 left-3 right-3 z-50 pb-safe">
-        <div className="max-w-sm mx-auto">
-          <div className="flex items-center justify-center gap-2 bg-background/90 backdrop-blur-xl rounded-2xl p-2 border border-syndikate-rust/30">
+      {/* Fixed bottom navigation - glass buttons */}
+      <div className="fixed bottom-3 left-4 right-4 z-50 pb-safe">
+        <div className="max-w-md mx-auto">
+          <div className="flex items-center justify-center gap-3">
             {[
-              { value: 'home', icon: Home, label: '●' },
-              { value: 'tournaments', icon: Zap, label: '●' },
-              { value: 'rating', icon: Crown, label: '●' },
-              { value: 'profile', icon: User, label: '●' },
+              { value: 'home', icon: Home },
+              { value: 'tournaments', icon: Trophy },
+              { value: 'rating', icon: Crown },
+              { value: 'profile', icon: User },
             ].map((item) => {
               const Icon = item.icon;
               const isActive = activeTab === item.value;
@@ -1762,17 +1762,18 @@ export const TelegramApp = () => {
                   onClick={() => setActiveTab(item.value)}
                   className={`
                     relative flex items-center justify-center
-                    w-14 h-12 rounded-xl
+                    w-14 h-14 rounded-2xl
+                    backdrop-blur-xl border
                     transition-all duration-300 
                     ${isActive 
-                      ? 'bg-syndikate-orange text-background shadow-neon-orange' 
-                      : 'bg-transparent text-muted-foreground hover:text-syndikate-orange hover:bg-syndikate-orange/10'
+                      ? 'bg-syndikate-orange/25 border-syndikate-orange/50 shadow-[0_0_20px_rgba(255,107,0,0.3),inset_0_1px_1px_rgba(255,255,255,0.1)]' 
+                      : 'bg-white/5 border-white/10 hover:bg-syndikate-orange/10 hover:border-syndikate-orange/30 shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)]'
                     }
                   `}
                 >
                   <Icon 
-                    className={`h-5 w-5 transition-all duration-300 ${isActive ? 'scale-110' : ''}`} 
-                    strokeWidth={isActive ? 2.5 : 2} 
+                    className={`h-6 w-6 transition-all duration-300 ${isActive ? 'text-syndikate-orange drop-shadow-[0_0_8px_rgba(255,107,0,0.5)]' : 'text-white/60'}`} 
+                    strokeWidth={2} 
                   />
                 </button>
               );
