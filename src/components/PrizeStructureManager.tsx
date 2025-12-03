@@ -6,9 +6,10 @@ import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { Plus, Minus, Trophy, Calculator, Save, RefreshCw } from "lucide-react";
+import { Plus, Minus, Trophy, Calculator, Save, RefreshCw, Users, Repeat, Layers, Coins, Award, Settings } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface PrizeStructureManagerProps {
   tournamentId: string;
@@ -51,7 +52,6 @@ const PrizeStructureManager = ({ tournamentId, registeredPlayers, mode = 'manage
     }
   }, [registeredPlayers, tournament, registrations, autoCalculate]);
 
-  // Реал-тайм синхронизация изменений
   useEffect(() => {
     if (!tournamentId) return;
 
@@ -131,7 +131,6 @@ const PrizeStructureManager = ({ tournamentId, registeredPlayers, mode = 'manage
         setPayoutPlaces(payouts);
         setEditedPayouts(payouts);
         
-        // Рассчитываем общий призовой фонд на основе существующих данных
         const totalAmount = payouts.reduce((sum, p) => sum + p.amount, 0);
         setTotalPrizePool(totalAmount);
       }
@@ -140,31 +139,29 @@ const PrizeStructureManager = ({ tournamentId, registeredPlayers, mode = 'manage
     }
   };
 
-  // Профессиональная таблица распределения призовых процентов
   const getPayoutStructure = (playerCount: number): number[] => {
     if (playerCount <= 8) {
-      return [60, 40]; // 2 места
+      return [60, 40];
     } else if (playerCount <= 11) {
-      return [50, 30, 20]; // 3 места
+      return [50, 30, 20];
     } else if (playerCount <= 20) {
-      return [40, 27, 19, 14]; // 4 места
+      return [40, 27, 19, 14];
     } else if (playerCount <= 30) {
-      return [36.0, 25.0, 17.5, 12.8, 8.7]; // 5 мест
+      return [36.0, 25.0, 17.5, 12.8, 8.7];
     } else if (playerCount <= 50) {
-      return [34.0, 23.0, 16.5, 11.9, 8.0, 6.6]; // 6 мест
+      return [34.0, 23.0, 16.5, 11.9, 8.0, 6.6];
     } else if (playerCount <= 70) {
-      return [31.7, 20.7, 15.3, 10.8, 7.2, 5.8, 4.6, 3.9]; // 8 мест
+      return [31.7, 20.7, 15.3, 10.8, 7.2, 5.8, 4.6, 3.9];
     } else if (playerCount <= 100) {
-      return [30.5, 19.5, 13.7, 10.0, 6.7, 5.4, 4.2, 3.7, 3.3, 3.0]; // 10 мест
+      return [30.5, 19.5, 13.7, 10.0, 6.7, 5.4, 4.2, 3.7, 3.3, 3.0];
     } else if (playerCount <= 130) {
-      return [28.0, 18.0, 13.0, 9.3, 6.3, 5.0, 3.9, 3.3, 2.8, 2.55, 2.25, 2.0]; // 12 мест
+      return [28.0, 18.0, 13.0, 9.3, 6.3, 5.0, 3.9, 3.3, 2.8, 2.55, 2.25, 2.0];
     } else {
-      return [28.0, 18.0, 13.0, 9.3, 6.3, 5.0, 3.9, 3.3, 2.8, 2.55, 2.25, 2.0, 1.8, 1.7]; // 14 мест
+      return [28.0, 18.0, 13.0, 9.3, 6.3, 5.0, 3.9, 3.3, 2.8, 2.55, 2.25, 2.0, 1.8, 1.7];
     }
   };
 
   const calculatePrizePool = () => {
-    // Используем новые поля с fallback на старые
     const participationFee = tournament.participation_fee || tournament.buy_in || 0;
     const reentryFee = tournament.reentry_fee || tournament.rebuy_cost || 0;
     const additionalFee = tournament.additional_fee || tournament.addon_cost || 0;
@@ -183,56 +180,16 @@ const PrizeStructureManager = ({ tournamentId, registeredPlayers, mode = 'manage
       return sum + (count * additionalFee);
     }, 0);
     
-    // Конвертируем в RPS: 1000₽ = 100 RPS, то есть делим на 10
     const totalInRubles = mainTotal + reentryTotal + additionalTotal;
     return Math.floor(totalInRubles / 10);
   };
 
-  // Функция для расчета призовых мест в покере (правильная логика)
-  const calculatePokerPrizes = (totalPlayers: number, payoutSpots: number) => {
-    const prizes: { [key: number]: number | null } = {};
-    
-    // Игроки вне призовой зоны (не получают денег)
-    for (let position = 1; position <= totalPlayers - payoutSpots; position++) {
-      prizes[position] = null;
-    }
-    
-    // Призовые места (распределение в обратном порядке вылета)
-    for (let i = 0; i < payoutSpots; i++) {
-      const eliminationPosition = totalPlayers - payoutSpots + 1 + i;
-      const prizeRank = payoutSpots - i;
-      prizes[eliminationPosition] = prizeRank;
-    }
-    
-    // Победитель (последний выживший игрок)
-    prizes[totalPlayers] = 1;
-    
-    return prizes;
-  };
-
-  // Функция для получения правильного места в призовой структуре на основе позиции в турнире
-  const getCorrectPrizePlace = (eliminationPosition: number, totalPlayers: number, payoutSpots: number): number | null => {
-    if (eliminationPosition <= totalPlayers - payoutSpots) {
-      return null; // Вне призов
-    }
-    
-    if (eliminationPosition === totalPlayers) {
-      return 1; // Победитель
-    }
-    
-    // Остальные призовые места в обратном порядке
-    return payoutSpots - (eliminationPosition - (totalPlayers - payoutSpots + 1)) + 1;
-  };
-
-  // Автоматический расчет процентов для дополнительных мест
   const calculateAdditionalPlacePercentage = (currentPlaces: PayoutPlace[], newPlaceNumber: number) => {
     if (currentPlaces.length === 0) return 5;
     
-    // Берем процент последнего места и уменьшаем на 0.5%
     const lastPlace = currentPlaces[currentPlaces.length - 1];
     const newPercentage = Math.max(lastPlace.percentage - 0.5, 1.0);
     
-    // Пропорционально уменьшаем проценты всех предыдущих мест
     const reductionPerPlace = 0.1;
     const adjustedPlaces = currentPlaces.map(place => ({
       ...place,
@@ -262,7 +219,6 @@ const PrizeStructureManager = ({ tournamentId, registeredPlayers, mode = 'manage
     setPayoutPlaces(payouts);
     setEditedPayouts(payouts);
 
-    // Автоматически сохраняем в БД, если включен автоматический расчет
     if (autoCalculate) {
       await savePayoutStructure(payouts);
     }
@@ -270,7 +226,6 @@ const PrizeStructureManager = ({ tournamentId, registeredPlayers, mode = 'manage
 
   const savePayoutStructure = async (payouts: PayoutPlace[]) => {
     try {
-      // Удаляем старые записи и ждем завершения операции
       const { error: deleteError } = await supabase
         .from('tournament_payouts')
         .delete()
@@ -278,14 +233,13 @@ const PrizeStructureManager = ({ tournamentId, registeredPlayers, mode = 'manage
 
       if (deleteError) throw deleteError;
 
-      // Создаем новые записи только если есть что сохранять
       if (payouts.length > 0) {
         const payoutRecords = payouts.map(payout => ({
           tournament_id: tournamentId,
           place: payout.place,
           percentage: payout.percentage,
           amount: payout.amount,
-          rps_points: payout.amount // Сохраняем RPS баллы (amount уже в RPS, так как calculatePrizePool возвращает RPS)
+          rps_points: payout.amount
         }));
 
         const { error: insertError } = await supabase
@@ -310,7 +264,6 @@ const PrizeStructureManager = ({ tournamentId, registeredPlayers, mode = 'manage
   };
 
   const handleSaveEdits = async () => {
-    // Пересчитываем суммы на основе отредактированных процентов
     const totalPrizePool = calculatePrizePool();
     const updatedPayouts = editedPayouts.map(payout => ({
       ...payout,
@@ -354,7 +307,6 @@ const PrizeStructureManager = ({ tournamentId, registeredPlayers, mode = 'manage
       amount: Math.round((totalPrizePool * newPercentage) / 100)
     };
     
-    // Обновляем суммы для скорректированных мест
     const finalPayouts = [
       ...updatedPayouts.map(payout => ({
         ...payout,
@@ -370,8 +322,6 @@ const PrizeStructureManager = ({ tournamentId, registeredPlayers, mode = 'manage
     if (editedPayouts.length <= 1) return;
     
     const removedPayouts = editedPayouts.slice(0, -1);
-    
-    // Пропорционально увеличиваем проценты оставшихся мест
     const totalRemovedPercentage = editedPayouts[editedPayouts.length - 1].percentage;
     const increasePerPlace = totalRemovedPercentage / removedPayouts.length;
     
@@ -388,115 +338,187 @@ const PrizeStructureManager = ({ tournamentId, registeredPlayers, mode = 'manage
     return payouts.reduce((sum, payout) => sum + payout.percentage, 0);
   };
 
+  const getPlaceBadgeStyle = (place: number) => {
+    switch (place) {
+      case 1:
+        return "bg-yellow-500/20 text-yellow-400 border-yellow-500/30";
+      case 2:
+        return "bg-zinc-400/20 text-zinc-300 border-zinc-400/30";
+      case 3:
+        return "bg-amber-600/20 text-amber-400 border-amber-600/30";
+      default:
+        return "bg-primary/10 text-primary border-primary/20";
+    }
+  };
+
+  const totalReentries = registrations.reduce((sum, reg) => {
+    const reentries = reg.reentries || 0;
+    const rebuys = reg.rebuys || 0;
+    return sum + reentries + rebuys;
+  }, 0);
+
+  const totalAdditionalSets = registrations.reduce((sum, reg) => {
+    const additionalSets = reg.additional_sets || 0;
+    const addons = reg.addons || 0;
+    return sum + additionalSets + addons;
+  }, 0);
+
   return (
     <div className="space-y-6">
       {/* Настройки режима */}
       {mode === 'management' && (
-        <Card className="bg-white/60 backdrop-blur-sm border border-gray-200/40 shadow-minimal hover:shadow-subtle transition-all duration-300 rounded-xl group">
-          <CardHeader className="pb-4">
-            <CardTitle className="flex items-center gap-3 text-gray-800 text-xl font-light">
-              <div className="p-2 bg-green-100/80 rounded-lg group-hover:bg-green-200/80 transition-colors">
-                <Calculator className="w-5 h-5 text-green-600" />
-              </div>
-              Настройки призового фонда
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between mb-4">
-              <Label htmlFor="auto-calculate" className="text-sm text-gray-600">Автоматический расчет при изменениях</Label>
-              <Switch 
-                id="auto-calculate"
-                checked={autoCalculate}
-                onCheckedChange={setAutoCalculate}
-              />
-            </div>
-            
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="p-4 bg-blue-50/50 rounded-lg border border-blue-200/50">
-                  <Label className="text-xs text-blue-600 tracking-wide uppercase mb-2 block">Орг. взнос</Label>
-                  <div className="text-lg font-semibold text-blue-800">
-                    {(tournament?.participation_fee || tournament?.buy_in || 0).toLocaleString()} ₽
-                  </div>
-                  <div className="text-sm text-blue-600 mt-1">
-                    {(tournament?.starting_chips || 0).toLocaleString()} фишек
-                  </div>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+        >
+          <Card className="bg-card brutal-border">
+            <CardHeader className="pb-4 border-b border-border/50">
+              <CardTitle className="flex items-center gap-3 text-foreground">
+                <div className="p-2 bg-primary/10 rounded-lg">
+                  <Settings className="w-5 h-5 text-primary" />
                 </div>
-                <div className="p-4 bg-green-50/50 rounded-lg border border-green-200/50">
-                  <Label className="text-xs text-green-600 tracking-wide uppercase mb-2 block">Повторный вход</Label>
-                  <div className="text-lg font-semibold text-green-800">
-                    {(tournament?.reentry_fee || tournament?.rebuy_cost || 0).toLocaleString()} ₽
-                  </div>
-                  <div className="text-sm text-green-600 mt-1">
-                    {(tournament?.reentry_chips || tournament?.rebuy_chips || 0).toLocaleString()} фишек
-                  </div>
+                Настройки призового фонда
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-6">
+              {/* Автоматический расчет */}
+              <div className="flex items-center justify-between p-4 bg-background rounded-lg brutal-border mb-6">
+                <div className="flex items-center gap-3">
+                  <Calculator className="w-5 h-5 text-primary" />
+                  <Label htmlFor="auto-calculate" className="text-foreground">
+                    Автоматический расчет при изменениях
+                  </Label>
                 </div>
+                <Switch 
+                  id="auto-calculate"
+                  checked={autoCalculate}
+                  onCheckedChange={setAutoCalculate}
+                />
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="p-4 bg-gray-50/50 rounded-lg border border-gray-200/50">
-                  <Label className="text-xs text-gray-600 tracking-wide uppercase mb-2 block">Зарегистрировано</Label>
-                  <div className="text-2xl font-bold text-gray-800">{registeredPlayers}</div>
-                </div>
-                <div className="p-4 bg-purple-50/50 rounded-lg border border-purple-200/50">
-                  <Label className="text-xs text-purple-600 tracking-wide uppercase mb-2 block">Статистика</Label>
-                  <div className="text-sm text-purple-800 space-y-1">
-                    <div className="flex justify-between">
-                      <span>Повторные входы:</span>
-                      <span className="font-semibold">{registrations.reduce((sum, reg) => {
-                        const reentries = reg.reentries || 0;
-                        const rebuys = reg.rebuys || 0;
-                        return sum + reentries + rebuys;
-                      }, 0)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Доп наборы:</span>
-                      <span className="font-semibold">{registrations.reduce((sum, reg) => {
-                        const additionalSets = reg.additional_sets || 0;
-                        const addons = reg.addons || 0;
-                        return sum + additionalSets + addons;
-                      }, 0)}</span>
-                    </div>
+              {/* Информация о взносах */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                <motion.div 
+                  className="p-4 bg-background rounded-lg brutal-border"
+                  whileHover={{ scale: 1.02 }}
+                  transition={{ type: "spring", stiffness: 300 }}
+                >
+                  <div className="flex items-center gap-2 mb-2">
+                    <Coins className="w-4 h-4 text-blue-400" />
+                    <Label className="text-xs text-muted-foreground tracking-wide uppercase">
+                      Орг. взнос
+                    </Label>
                   </div>
-                </div>
-                <div className="p-4 bg-amber-50/50 rounded-lg border border-amber-200/50">
-                  <Label className="text-xs text-amber-600 tracking-wide uppercase mb-2 block">Общий фонд</Label>
-                  <div className="text-2xl font-bold text-amber-800">
-                    {totalPrizePool.toLocaleString()} RPS
+                  <div className="text-xl font-bold text-foreground">
+                    {(tournament?.participation_fee || tournament?.buy_in || 0).toLocaleString()} ₽
                   </div>
-                </div>
+                  <div className="text-sm text-muted-foreground mt-1">
+                    {(tournament?.starting_chips || 0).toLocaleString()} фишек
+                  </div>
+                </motion.div>
+                
+                <motion.div 
+                  className="p-4 bg-background rounded-lg brutal-border"
+                  whileHover={{ scale: 1.02 }}
+                  transition={{ type: "spring", stiffness: 300 }}
+                >
+                  <div className="flex items-center gap-2 mb-2">
+                    <Repeat className="w-4 h-4 text-green-400" />
+                    <Label className="text-xs text-muted-foreground tracking-wide uppercase">
+                      Повторный вход
+                    </Label>
+                  </div>
+                  <div className="text-xl font-bold text-foreground">
+                    {(tournament?.reentry_fee || tournament?.rebuy_cost || 0).toLocaleString()} ₽
+                  </div>
+                  <div className="text-sm text-muted-foreground mt-1">
+                    {(tournament?.reentry_chips || tournament?.rebuy_chips || 0).toLocaleString()} фишек
+                  </div>
+                </motion.div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
+              
+              {/* Статистика */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <motion.div 
+                  className="p-4 bg-background rounded-lg brutal-border text-center"
+                  whileHover={{ scale: 1.02 }}
+                  transition={{ type: "spring", stiffness: 300 }}
+                >
+                  <Users className="w-5 h-5 text-primary mx-auto mb-2" />
+                  <div className="text-2xl font-bold text-foreground">{registeredPlayers}</div>
+                  <div className="text-xs text-muted-foreground">Игроков</div>
+                </motion.div>
+                
+                <motion.div 
+                  className="p-4 bg-background rounded-lg brutal-border text-center"
+                  whileHover={{ scale: 1.02 }}
+                  transition={{ type: "spring", stiffness: 300 }}
+                >
+                  <Repeat className="w-5 h-5 text-green-400 mx-auto mb-2" />
+                  <div className="text-2xl font-bold text-foreground">{totalReentries}</div>
+                  <div className="text-xs text-muted-foreground">Повт. входы</div>
+                </motion.div>
+                
+                <motion.div 
+                  className="p-4 bg-background rounded-lg brutal-border text-center"
+                  whileHover={{ scale: 1.02 }}
+                  transition={{ type: "spring", stiffness: 300 }}
+                >
+                  <Layers className="w-5 h-5 text-purple-400 mx-auto mb-2" />
+                  <div className="text-2xl font-bold text-foreground">{totalAdditionalSets}</div>
+                  <div className="text-xs text-muted-foreground">Доп. наборы</div>
+                </motion.div>
+                
+                <motion.div 
+                  className="p-4 bg-primary/10 rounded-lg brutal-border text-center border-primary/30"
+                  whileHover={{ scale: 1.02 }}
+                  transition={{ type: "spring", stiffness: 300 }}
+                >
+                  <Trophy className="w-5 h-5 text-primary mx-auto mb-2" />
+                  <div className="text-2xl font-bold text-primary">{totalPrizePool.toLocaleString()}</div>
+                  <div className="text-xs text-primary/70">RPS Фонд</div>
+                </motion.div>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
       )}
 
       {/* Управление количеством призовых мест */}
-      <div className="flex items-center justify-between">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, delay: 0.1 }}
+        className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 bg-card rounded-lg brutal-border"
+      >
         <div className="space-y-1">
-          <h3 className="text-lg font-medium text-poker-text-primary">Призовые места</h3>
-          <p className="text-sm text-poker-text-secondary">
+          <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
+            <Award className="w-5 h-5 text-primary" />
+            Призовые места
+          </h3>
+          <p className="text-sm text-muted-foreground">
             Призовых мест: {isEditing ? editedPayouts.length : payoutPlaces.length} из {registeredPlayers} игроков
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {!isEditing ? (
             <>
               <Button
                 onClick={() => setIsEditing(true)}
                 size="sm"
                 variant="outline"
-                className="bg-white/70"
+                className="bg-background border-border hover:bg-muted"
               >
                 Редактировать
               </Button>
               <Button
                 onClick={calculateAutomaticPayouts}
                 size="sm"
-                className="bg-gradient-button text-white"
+                className="bg-primary text-primary-foreground hover:bg-primary/90"
               >
                 <RefreshCw className="w-4 h-4 mr-2" />
-                Автоматический расчет
+                Авто-расчет
               </Button>
             </>
           ) : (
@@ -506,6 +528,7 @@ const PrizeStructureManager = ({ tournamentId, registeredPlayers, mode = 'manage
                 disabled={editedPayouts.length <= 1}
                 size="sm"
                 variant="outline"
+                className="bg-background border-border hover:bg-destructive/20 hover:text-destructive"
                 title="Удалить последнее место"
               >
                 <Minus className="w-4 h-4" />
@@ -515,14 +538,15 @@ const PrizeStructureManager = ({ tournamentId, registeredPlayers, mode = 'manage
                 disabled={editedPayouts.length >= registeredPlayers}
                 size="sm"
                 variant="outline"
-                title="Добавить призовое место (автоматический расчет %)"
+                className="bg-background border-border hover:bg-primary/20 hover:text-primary"
+                title="Добавить призовое место"
               >
                 <Plus className="w-4 h-4" />
               </Button>
               <Button
                 onClick={handleSaveEdits}
                 size="sm"
-                className="bg-gradient-button text-white"
+                className="bg-primary text-primary-foreground hover:bg-primary/90"
               >
                 <Save className="w-4 h-4 mr-2" />
                 Сохранить
@@ -531,93 +555,115 @@ const PrizeStructureManager = ({ tournamentId, registeredPlayers, mode = 'manage
                 onClick={handleCancelEdits}
                 size="sm"
                 variant="outline"
+                className="bg-background border-border hover:bg-muted"
               >
-                Отменить
+                Отмена
               </Button>
             </>
           )}
         </div>
-      </div>
-
+      </motion.div>
 
       {/* Таблица выплат */}
-      {(payoutPlaces.length > 0 || editedPayouts.length > 0) && (
-        <Card className="bg-gradient-card border-poker-border shadow-elevated">
-          <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow className="border-gray-200/50">
-                  <TableHead className="text-poker-text-secondary font-medium">Призовое место</TableHead>
-                  <TableHead className="text-poker-text-secondary font-medium">Позиция в турнире</TableHead>
-                  <TableHead className="text-poker-text-secondary font-medium">Процент</TableHead>
-                  <TableHead className="text-poker-text-secondary font-medium">Сумма</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {(isEditing ? editedPayouts : payoutPlaces).map((payout, index) => {
-                  const eliminationPosition = registeredPlayers - index;
-                  return (
-                    <TableRow key={payout.place} className="border-gray-200/30">
-                      <TableCell className="font-medium">
-                        <Badge variant="outline" className="bg-poker-accent/10 text-poker-accent border-poker-accent/20">
-                          <Trophy className="w-3 h-3 mr-1" />
-                          {payout.place} место
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="font-medium text-poker-text-secondary">
-                        Позиция {eliminationPosition}
-                        {eliminationPosition === registeredPlayers && (
-                          <Badge className="ml-2 bg-yellow-500 text-white text-xs">Победитель</Badge>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {isEditing ? (
-                          <Input
-                            type="number"
-                            step="0.1"
-                            value={payout.percentage}
-                            onChange={(e) => updateEditedPercentage(index, parseFloat(e.target.value) || 0)}
-                            className="w-20"
-                          />
-                        ) : (
-                          <span className="font-medium">{payout.percentage.toFixed(1)}%</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="font-bold text-poker-text-primary">
-                        {isEditing 
-                          ? Math.round((totalPrizePool * payout.percentage) / 100).toLocaleString()
-                          : payout.amount.toLocaleString()
-                        }
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-            
-            {/* Итоговая статистика */}
-            <div className="border-t border-gray-200/30 p-4 bg-gray-50/50">
-              <div className="flex justify-between items-center text-sm">
-                <span className="text-poker-text-secondary">Итого:</span>
-                <div className="flex gap-4">
-                  <span className={`font-medium ${
-                    getTotalPercentage(isEditing ? editedPayouts : payoutPlaces) === 100 
-                      ? 'text-green-600' 
-                      : 'text-red-600'
-                  }`}>
-                    {getTotalPercentage(isEditing ? editedPayouts : payoutPlaces).toFixed(1)}%
-                  </span>
-                  <span className="font-bold text-poker-text-primary">
-                    {(isEditing ? editedPayouts : payoutPlaces)
-                      .reduce((sum, p) => sum + (isEditing ? Math.round((totalPrizePool * p.percentage) / 100) : p.amount), 0)
-                      .toLocaleString()}
-                  </span>
+      <AnimatePresence>
+        {(payoutPlaces.length > 0 || editedPayouts.length > 0) && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.3, delay: 0.2 }}
+          >
+            <Card className="bg-card brutal-border overflow-hidden">
+              <CardContent className="p-0">
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="border-border/50 bg-background/50">
+                        <TableHead className="text-muted-foreground font-medium">Призовое место</TableHead>
+                        <TableHead className="text-muted-foreground font-medium">Позиция в турнире</TableHead>
+                        <TableHead className="text-muted-foreground font-medium">Процент</TableHead>
+                        <TableHead className="text-muted-foreground font-medium text-right">RPS баллы</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {(isEditing ? editedPayouts : payoutPlaces).map((payout, index) => {
+                        const eliminationPosition = registeredPlayers - index;
+                        return (
+                          <motion.tr
+                            key={payout.place}
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: index * 0.05 }}
+                            className="border-border/30 hover:bg-muted/30 transition-colors"
+                          >
+                            <TableCell className="font-medium">
+                              <Badge 
+                                variant="outline" 
+                                className={`${getPlaceBadgeStyle(payout.place)}`}
+                              >
+                                <Trophy className="w-3 h-3 mr-1" />
+                                {payout.place} место
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="font-medium text-muted-foreground">
+                              <span>Позиция {eliminationPosition}</span>
+                              {eliminationPosition === registeredPlayers && (
+                                <Badge className="ml-2 bg-yellow-500/20 text-yellow-400 border-yellow-500/30 text-xs">
+                                  Победитель
+                                </Badge>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              {isEditing ? (
+                                <Input
+                                  type="number"
+                                  step="0.1"
+                                  value={payout.percentage}
+                                  onChange={(e) => updateEditedPercentage(index, parseFloat(e.target.value) || 0)}
+                                  className="w-20 bg-background border-border text-foreground"
+                                />
+                              ) : (
+                                <span className="font-medium text-foreground">{payout.percentage.toFixed(1)}%</span>
+                              )}
+                            </TableCell>
+                            <TableCell className="font-bold text-primary text-right">
+                              {isEditing 
+                                ? Math.round((totalPrizePool * payout.percentage) / 100).toLocaleString()
+                                : payout.amount.toLocaleString()
+                              }
+                            </TableCell>
+                          </motion.tr>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
                 </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+                
+                {/* Итоговая статистика */}
+                <div className="border-t border-border/50 p-4 bg-background/50">
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground font-medium">Итого:</span>
+                    <div className="flex gap-6">
+                      <span className={`font-bold ${
+                        getTotalPercentage(isEditing ? editedPayouts : payoutPlaces) === 100 
+                          ? 'text-green-400' 
+                          : 'text-destructive'
+                      }`}>
+                        {getTotalPercentage(isEditing ? editedPayouts : payoutPlaces).toFixed(1)}%
+                      </span>
+                      <span className="font-bold text-primary">
+                        {(isEditing ? editedPayouts : payoutPlaces)
+                          .reduce((sum, p) => sum + (isEditing ? Math.round((totalPrizePool * p.percentage) / 100) : p.amount), 0)
+                          .toLocaleString()} RPS
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
