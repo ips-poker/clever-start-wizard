@@ -27,6 +27,7 @@ import awardsCeremony from '@/assets/gallery/awards-ceremony.jpg';
 import masterclass from '@/assets/gallery/masterclass.jpg';
 import registration from '@/assets/gallery/registration.jpg';
 import pokerChips from '@/assets/gallery/poker-chips.jpg';
+import { calculateTotalRPSPool, formatRPSPoints } from '@/utils/rpsCalculations';
 
 interface Tournament {
   id: string;
@@ -698,10 +699,17 @@ export const TelegramApp = () => {
                     <div>
                       <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest mb-1 flex items-center gap-1">
                         <Zap className="h-3 w-3 text-syndikate-orange animate-pulse" />
-                        Ориентировочный призовой фонд
+                        Призовой фонд RPS
                       </p>
                       <p className="font-display text-3xl text-syndikate-orange drop-shadow-[0_0_10px_rgba(255,107,0,0.5)]">
-                        {((tournaments[0].participation_fee || 0) * (tournaments[0].tournament_registrations?.[0]?.count || 0)).toLocaleString()}₽
+                        {formatRPSPoints(calculateTotalRPSPool(
+                          tournaments[0].tournament_registrations?.[0]?.count || 0,
+                          tournaments[0].participation_fee || 0,
+                          0,
+                          tournaments[0].reentry_fee || 0,
+                          0,
+                          tournaments[0].additional_fee || 0
+                        ))}
                       </p>
                     </div>
                   </div>
