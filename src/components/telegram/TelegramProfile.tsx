@@ -74,14 +74,30 @@ interface Tournament {
   starting_chips: number;
   description?: string;
   tournament_format?: string;
-  tournament_registrations?: Array<{ count: number }>;
+  reentry_fee?: number;
+  additional_fee?: number;
+  // From tournaments_display view
+  participant_count?: number;
+  total_reentries?: number;
+  total_additional_sets?: number;
+  total_rps_pool?: number;
 }
 
 interface TournamentRegistration {
   id: string;
   tournament_id: string;
+  player_id: string;
   status: string;
   created_at: string;
+  seat_number?: number;
+  chips?: number;
+  position?: number;
+  rebuys?: number;
+  addons?: number;
+  reentries?: number;
+  additional_sets?: number;
+  eliminated_at?: string;
+  final_position?: number;
   tournament: Tournament;
 }
 
@@ -237,20 +253,47 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate, onUnre
     try {
       console.log('Loading tournaments for player:', player.id);
       
-      const { data, error } = await supabase
+      // Сначала получаем регистрации игрока
+      const { data: registrations, error: regError } = await supabase
         .from('tournament_registrations')
-        .select(`
-          *,
-          tournament:tournaments(*)
-        `)
+        .select('*')
         .eq('player_id', player.id)
         .in('status', ['registered', 'confirmed', 'playing', 'eliminated'])
         .order('created_at', { ascending: false });
 
-      console.log('Tournament registrations result:', { data, error });
+      if (regError) throw regError;
+      
+      if (!registrations || registrations.length === 0) {
+        setUserTournaments([]);
+        return;
+      }
 
-      if (error) throw error;
-      setUserTournaments(data || []);
+      // Получаем ID турниров
+      const tournamentIds = registrations.map(r => r.tournament_id);
+      
+      // Загружаем турниры из view с актуальными данными
+      const { data: tournaments, error: tournamentError } = await supabase
+        .from('tournaments_display')
+        .select('*')
+        .in('id', tournamentIds);
+
+      if (tournamentError) throw tournamentError;
+
+      // Объединяем данные
+      const combinedData: TournamentRegistration[] = registrations
+        .map(reg => {
+          const tournament = tournaments?.find(t => t.id === reg.tournament_id);
+          if (!tournament) return null;
+          return {
+            ...reg,
+            tournament: tournament as Tournament
+          } as TournamentRegistration;
+        })
+        .filter(Boolean) as TournamentRegistration[];
+
+      console.log('Tournament registrations with display data:', combinedData);
+
+      setUserTournaments(combinedData);
     } catch (error) {
       console.error('Error loading user tournaments:', error);
     }
@@ -774,7 +817,7 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate, onUnre
                         <Users className="h-4 w-4 text-syndikate-orange" />
                         <div>
                           <div className="text-foreground font-bold text-xs">
-                            {reg.tournament.tournament_registrations?.[0]?.count || 0}/{reg.tournament.max_players}
+                            {reg.tournament.participant_count || 0}/{reg.tournament.max_players}
                           </div>
                           <div className="text-[8px] text-muted-foreground uppercase">Игроков</div>
                         </div>
@@ -783,9 +826,9 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate, onUnre
                         <Trophy className="h-4 w-4 text-syndikate-orange" />
                         <div>
                           <div className="text-foreground font-bold text-xs">
-                            {convertFeeToRPS(reg.tournament.participation_fee * (reg.tournament.tournament_registrations?.[0]?.count || 0))} RPS
+                            {reg.tournament.total_rps_pool || 0} RPS
                           </div>
-                          <div className="text-[8px] text-muted-foreground uppercase">Фонд*</div>
+                          <div className="text-[8px] text-muted-foreground uppercase">Фонд</div>
                         </div>
                       </div>
                     </div>
