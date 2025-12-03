@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Trophy, Users, Clock, Calendar, Coins, Target, Zap, Shield, ChevronRight, Gem } from 'lucide-react';
 import { GlitchText } from '@/components/ui/glitch-text';
+import { calculateTotalRPSPool, formatRPSPoints } from '@/utils/rpsCalculations';
 
 interface Tournament {
   id: string;
@@ -249,9 +250,9 @@ export const TournamentCard: React.FC<TournamentCardProps> = ({ tournament, inde
                 <Trophy className="h-3 w-3 text-background" />
               </div>
               <div className="text-foreground font-bold text-sm">
-                {((tournament.participation_fee || 0) * registeredCount / 1000).toFixed(0)}K₽
+                {calculateTotalRPSPool(registeredCount, tournament.participation_fee || 0, 0, tournament.reentry_fee || 0, 0, 0)}
               </div>
-              <div className="text-[8px] text-muted-foreground uppercase tracking-wider">Призы*</div>
+              <div className="text-[8px] text-muted-foreground uppercase tracking-wider">RPS</div>
             </div>
           </div>
           
