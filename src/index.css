@@ -243,3 +243,59 @@
 .animate-logo-float {
   animation: logo-float 6s ease-in-out infinite;
 }
+
+/* Logo glitch animations */
+@keyframes glitch-logo-1 {
+  0%, 90%, 100% {
+    transform: translate(0);
+    opacity: 0;
+  }
+  92% {
+    transform: translate(3px, -2px);
+    opacity: 0.7;
+  }
+  94% {
+    transform: translate(-3px, 2px);
+    opacity: 0.5;
+  }
+  96% {
+    transform: translate(2px, 1px);
+    opacity: 0.6;
+  }
+  98% {
+    transform: translate(-2px, -1px);
+    opacity: 0.4;
+  }
+}
+
+@keyframes glitch-logo-2 {
+  0%, 88%, 100% {
+    transform: translate(0);
+    opacity: 0;
+  }
+  90% {
+    transform: translate(-2px, 3px);
+    opacity: 0.6;
+  }
+  93% {
+    transform: translate(3px, -2px);
+    opacity: 0.5;
+  }
+  95% {
+    transform: translate(-1px, 2px);
+    opacity: 0.7;
+  }
+  97% {
+    transform: translate(2px, -3px);
+    opacity: 0.4;
+  }
+}
+
+.animate-glitch-logo-1 {
+  animation: glitch-logo-1 4s ease-in-out infinite;
+}
+
+.animate-glitch-logo-2 {
+  animation: glitch-logo-2 4s ease-in-out infinite;
+  animation-delay: 0.3s;
+}

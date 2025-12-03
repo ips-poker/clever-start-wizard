@@ -468,31 +468,38 @@ export const TelegramApp = () => {
 
   const renderHome = () => (
     <div className="space-y-4 pb-20 px-4 pt-24 bg-transparent min-h-screen relative z-10">
-      {/* Hero Card with Massive Logo Background */}
+      {/* Hero Card with Glitch Logo Background */}
       <div className="relative cursor-pointer group/hero" onClick={() => setActiveTab('about')}>
         <Card className="bg-syndikate-metal/80 brutal-border overflow-hidden relative transition-all duration-500 group-hover/hero:scale-[1.02] group-hover/hero:shadow-neon-orange backdrop-blur-xl">
-          {/* Massive logo as background - extends beyond card */}
-          <div className="absolute -left-12 -top-8 -bottom-8 w-[200px] z-0 pointer-events-none">
-            {/* Animated glow layers */}
+          {/* Logo as glitch background - reduced 10%, more visible */}
+          <div className="absolute -left-8 -top-4 -bottom-4 w-[180px] z-0 pointer-events-none">
+            {/* Main logo with glitch effect only */}
             <div className="absolute inset-0 flex items-center justify-center">
-              <div className="w-48 h-48 blur-[80px] bg-syndikate-orange/30 animate-pulse rounded-full"></div>
-            </div>
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="w-40 h-40 blur-[40px] bg-syndikate-orange/20 animate-pulse rounded-full" style={{ animationDelay: '0.5s' }}></div>
-            </div>
-            
-            {/* Main logo - oversized, partially visible */}
-            <div className="absolute inset-0 flex items-center justify-center animate-logo-float">
-              <img 
-                src={syndikateLogo} 
-                alt="" 
-                className="w-44 h-44 object-contain opacity-40 group-hover/hero:opacity-60 transition-opacity duration-700" 
-              />
+              <div className="relative w-36 h-36">
+                {/* Glitch layers */}
+                <img 
+                  src={syndikateLogo} 
+                  alt="" 
+                  className="absolute inset-0 w-full h-full object-contain opacity-60 animate-glitch-logo-1" 
+                  style={{ filter: 'drop-shadow(2px 0 0 hsl(24, 100%, 50%))' }}
+                />
+                <img 
+                  src={syndikateLogo} 
+                  alt="" 
+                  className="absolute inset-0 w-full h-full object-contain opacity-55 animate-glitch-logo-2" 
+                  style={{ filter: 'drop-shadow(-2px 0 0 hsl(0, 84%, 45%))' }}
+                />
+                <img 
+                  src={syndikateLogo} 
+                  alt="" 
+                  className="absolute inset-0 w-full h-full object-contain opacity-70 group-hover/hero:opacity-85 transition-opacity duration-500" 
+                />
+              </div>
             </div>
           </div>
           
           {/* Gradient mask from logo to content */}
-          <div className="absolute left-0 top-0 bottom-0 w-32 bg-gradient-to-r from-transparent via-syndikate-metal/50 to-syndikate-metal/90 z-[1]"></div>
+          <div className="absolute left-0 top-0 bottom-0 w-24 bg-gradient-to-r from-transparent via-syndikate-metal/40 to-syndikate-metal/95 z-[1]"></div>
           
           {/* Animated border glow */}
           <div className="absolute inset-0 rounded-sm opacity-0 group-hover/hero:opacity-100 transition-opacity duration-500" 
@@ -505,16 +512,9 @@ export const TelegramApp = () => {
           </div>
           
           <CardContent className="p-5 relative z-10">
-            <div className="flex items-center gap-4 mb-4">
-              {/* Small visible logo icon */}
-              <div className="w-14 h-14 relative flex-shrink-0">
-                <div className="absolute inset-0 bg-syndikate-orange/20 blur-xl rounded-full animate-pulse"></div>
-                <div className="relative w-full h-full brutal-border bg-syndikate-concrete/80 flex items-center justify-center p-2 group-hover/hero:border-syndikate-orange/50 transition-colors duration-300">
-                  <img src={syndikateLogo} alt="Syndikate Logo" className="w-full h-full object-contain" />
-                </div>
-              </div>
-              
-              <div className="flex-1 min-w-0">
+            <div className="flex items-start gap-3 mb-4">
+              {/* Text content shifted left */}
+              <div className="flex-1 min-w-0 pl-0">
                 <h1 className="font-display text-2xl sm:text-3xl uppercase text-foreground tracking-wider drop-shadow-lg group-hover/hero:text-syndikate-orange transition-colors duration-300">
                   <GlitchText 
                     text="SYNDIKATE" 
@@ -522,33 +522,38 @@ export const TelegramApp = () => {
                     glitchInterval={4500}
                   />
                 </h1>
-                <div className="h-[2px] w-12 bg-gradient-neon mt-1 group-hover/hero:w-20 transition-all duration-500"></div>
-                <p className="font-display text-xs sm:text-sm uppercase tracking-wider text-syndikate-orange mt-1">
+                <p className="font-display text-sm sm:text-base uppercase tracking-wider text-syndikate-orange mt-1 font-bold">
                   Власть за столом
                 </p>
+                <div className="h-[2px] w-16 bg-gradient-neon mt-2 group-hover/hero:w-24 transition-all duration-500"></div>
               </div>
 
+              {/* Stylish download button */}
               {canAddToHomeScreen && (
                 <Button
-                  variant="ghost"
+                  variant="outline"
                   size="sm"
                   onClick={(e) => {
                     e.stopPropagation();
                     handleAddToHomeScreen();
                   }}
-                  className="text-foreground hover:text-syndikate-orange hover:bg-syndikate-metal p-2 transition-all duration-300 flex-shrink-0"
+                  className="flex-shrink-0 bg-syndikate-orange/10 border-syndikate-orange/50 text-syndikate-orange hover:bg-syndikate-orange hover:text-background hover:border-syndikate-orange transition-all duration-300 shadow-neon-orange/30 hover:shadow-neon-orange px-3 py-2 gap-2"
                   title="Установить на главный экран"
                 >
-                  <Download className="h-5 w-5" />
+                  <Download className="h-4 w-4" />
+                  <span className="text-xs font-bold uppercase tracking-wide">Скачать</span>
                 </Button>
               )}
             </div>
             
-            <div className="bg-syndikate-concrete/60 brutal-border p-3 backdrop-blur-md group-hover/hero:border-syndikate-orange/30 group-hover/hero:bg-syndikate-concrete/80 transition-all duration-300">
-              <div className="flex items-center gap-2">
-                <div className="w-1.5 h-1.5 bg-syndikate-orange brutal-border animate-pulse"></div>
-                <p className="text-foreground text-sm sm:text-base font-bold uppercase tracking-wide">Узнать больше о клубе</p>
-                <ChevronRight className="h-4 w-4 text-syndikate-orange ml-auto group-hover/hero:translate-x-1 transition-transform duration-300" />
+            {/* Simplified button - only "О клубе" */}
+            <div className="bg-syndikate-concrete/70 brutal-border p-3 backdrop-blur-md group-hover/hero:border-syndikate-orange/50 group-hover/hero:bg-syndikate-orange/10 transition-all duration-300">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-syndikate-orange brutal-border animate-pulse"></div>
+                  <p className="text-foreground text-sm sm:text-base font-bold uppercase tracking-wide">О клубе</p>
+                </div>
+                <ChevronRight className="h-5 w-5 text-syndikate-orange group-hover/hero:translate-x-1 transition-transform duration-300" />
               </div>
             </div>
           </CardContent>
