@@ -1196,152 +1196,183 @@ export const TelegramApp = () => {
 
   return (
     <div className="w-full h-full bg-background relative overflow-hidden flex flex-col">
-      {/* Premium Poker Background */}
+      {/* Modern Premium Background */}
       <>
-        {/* Dark gradient base */}
+        {/* Deep dark base with subtle gradient */}
         <div 
-          className="fixed inset-[-50px] z-0"
+          className="fixed inset-0 z-0"
           style={{
-            background: 'radial-gradient(ellipse at 30% 20%, hsl(var(--syndikate-concrete)) 0%, hsl(var(--background)) 50%), radial-gradient(ellipse at 70% 80%, rgba(30,25,20,1) 0%, transparent 50%)'
+            background: `
+              radial-gradient(ellipse 80% 50% at 50% -20%, rgba(255,107,0,0.08) 0%, transparent 50%),
+              radial-gradient(ellipse 60% 40% at 100% 100%, rgba(180,40,40,0.05) 0%, transparent 40%),
+              linear-gradient(180deg, hsl(var(--background)) 0%, rgba(15,12,10,1) 100%)
+            `
           }}
         />
         
-        {/* Animated diagonal lines - casino feel */}
+        {/* Geometric grid - modern feel */}
         <div
-          className="fixed inset-[-50px] pointer-events-none z-0 opacity-[0.03]"
+          className="fixed inset-0 pointer-events-none z-0 opacity-[0.025]"
           style={{
-            backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 40px, rgba(255,107,0,0.5) 40px, rgba(255,107,0,0.5) 41px)',
-            animation: 'slideLines 20s linear infinite',
+            backgroundImage: `
+              linear-gradient(rgba(255,107,0,0.3) 1px, transparent 1px),
+              linear-gradient(90deg, rgba(255,107,0,0.3) 1px, transparent 1px)
+            `,
+            backgroundSize: '60px 60px',
           }}
         />
         
-        {/* Large floating suits - animated */}
+        {/* Hexagon pattern overlay */}
+        <div
+          className="fixed inset-0 pointer-events-none z-0 opacity-[0.015]"
+          style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='49' viewBox='0 0 28 49'%3E%3Cg fill-rule='evenodd'%3E%3Cg fill='%23ff6b00' fill-opacity='1'%3E%3Cpath d='M13.99 9.25l13 7.5v15l-13 7.5L1 31.75v-15l12.99-7.5zM3 17.9v12.7l10.99 6.34 11-6.35V17.9l-11-6.34L3 17.9zM0 15l12.98-7.5V0h-2v6.35L0 12.69v2.3zm0 18.5L12.98 41v8h-2v-6.85L0 35.81v-2.3zM15 0v7.5L27.99 15H28v-2.31h-.01L17 6.35V0h-2zm0 49v-8l12.99-7.5H28v2.31h-.01L17 42.15V49h-2z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+          }}
+        />
+
+        {/* Floating geometric cards */}
         <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
-          {/* Spade - top left, floating */}
+          {/* Card 1 - Ace silhouette */}
           <div 
-            className="absolute text-[180px] text-white/[0.025] font-bold select-none"
+            className="absolute w-20 h-28 rounded-lg border border-white/[0.03] backdrop-blur-sm"
             style={{ 
-              left: '-20px', 
-              top: '10%',
-              animation: 'floatSuit1 8s ease-in-out infinite',
+              left: '8%', 
+              top: '15%',
+              background: 'linear-gradient(135deg, rgba(255,255,255,0.02) 0%, transparent 100%)',
+              transform: 'rotate(-15deg)',
+              animation: 'floatCard1 12s ease-in-out infinite',
             }}
-          >♠</div>
+          >
+            <span className="absolute top-2 left-2 text-white/[0.06] text-lg font-bold">A</span>
+            <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-white/[0.04] text-3xl">♠</span>
+          </div>
           
-          {/* Heart - right side */}
+          {/* Card 2 */}
           <div 
-            className="absolute text-[140px] text-syndikate-red/[0.03] font-bold select-none"
+            className="absolute w-16 h-22 rounded-lg border border-syndikate-orange/[0.04]"
             style={{ 
-              right: '-10px', 
+              right: '12%', 
               top: '25%',
-              animation: 'floatSuit2 10s ease-in-out infinite',
+              background: 'linear-gradient(135deg, rgba(255,107,0,0.03) 0%, transparent 100%)',
+              transform: 'rotate(12deg)',
+              animation: 'floatCard2 15s ease-in-out infinite',
             }}
-          >♥</div>
+          >
+            <span className="absolute top-2 left-2 text-syndikate-orange/[0.08] text-sm font-bold">K</span>
+            <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-syndikate-orange/[0.05] text-2xl">♦</span>
+          </div>
           
-          {/* Diamond - bottom left */}
+          {/* Card 3 */}
           <div 
-            className="absolute text-[120px] text-syndikate-orange/[0.025] font-bold select-none"
+            className="absolute w-14 h-20 rounded-md border border-syndikate-red/[0.03]"
             style={{ 
-              left: '5%', 
-              bottom: '20%',
-              animation: 'floatSuit3 12s ease-in-out infinite',
+              left: '15%', 
+              bottom: '25%',
+              background: 'linear-gradient(135deg, rgba(180,40,40,0.02) 0%, transparent 100%)',
+              transform: 'rotate(-8deg)',
+              animation: 'floatCard3 18s ease-in-out infinite',
             }}
-          >♦</div>
-          
-          {/* Club - center right */}
+          >
+            <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-syndikate-red/[0.05] text-xl">♥</span>
+          </div>
+
+          {/* Poker chips - stacked effect */}
           <div 
-            className="absolute text-[160px] text-white/[0.02] font-bold select-none"
+            className="absolute"
             style={{ 
-              right: '10%', 
-              bottom: '35%',
-              animation: 'floatSuit1 9s ease-in-out infinite reverse',
+              right: '5%', 
+              bottom: '30%',
+              animation: 'floatChips 10s ease-in-out infinite',
             }}
-          >♣</div>
-          
-          {/* Small decorative suits scattered */}
-          <div className="absolute text-[60px] text-white/[0.015] select-none" style={{ left: '30%', top: '15%', animation: 'pulse 4s ease-in-out infinite' }}>♠</div>
-          <div className="absolute text-[50px] text-syndikate-red/[0.02] select-none" style={{ right: '25%', top: '60%', animation: 'pulse 5s ease-in-out infinite 1s' }}>♥</div>
-          <div className="absolute text-[45px] text-syndikate-orange/[0.02] select-none" style={{ left: '60%', bottom: '15%', animation: 'pulse 6s ease-in-out infinite 2s' }}>♦</div>
-          <div className="absolute text-[55px] text-white/[0.015] select-none" style={{ left: '15%', top: '45%', animation: 'pulse 4.5s ease-in-out infinite 0.5s' }}>♣</div>
+          >
+            <div className="w-12 h-12 rounded-full border-2 border-syndikate-orange/[0.06] bg-gradient-to-br from-syndikate-orange/[0.03] to-transparent" style={{ transform: 'translateY(0)' }} />
+            <div className="w-12 h-12 rounded-full border-2 border-white/[0.04] bg-gradient-to-br from-white/[0.02] to-transparent absolute top-1 left-1" />
+            <div className="w-12 h-12 rounded-full border-2 border-syndikate-red/[0.05] bg-gradient-to-br from-syndikate-red/[0.02] to-transparent absolute top-2 left-2" />
+          </div>
+
+          {/* Glowing orbs */}
+          <div 
+            className="absolute w-2 h-2 rounded-full bg-syndikate-orange/20 blur-sm"
+            style={{ left: '25%', top: '40%', animation: 'orb1 6s ease-in-out infinite' }}
+          />
+          <div 
+            className="absolute w-3 h-3 rounded-full bg-syndikate-red/15 blur-sm"
+            style={{ right: '30%', top: '55%', animation: 'orb2 8s ease-in-out infinite' }}
+          />
+          <div 
+            className="absolute w-2 h-2 rounded-full bg-white/10 blur-sm"
+            style={{ left: '60%', bottom: '35%', animation: 'orb3 7s ease-in-out infinite' }}
+          />
         </div>
 
-        {/* Poker chip ring effect in corner */}
+        {/* Modern gradient mesh */}
         <div 
-          className="fixed w-[400px] h-[400px] rounded-full border-[3px] border-syndikate-orange/[0.04] z-0"
-          style={{ 
-            left: '-200px', 
-            top: '-200px',
-            animation: 'spinSlow 60s linear infinite',
-          }}
-        />
-        <div 
-          className="fixed w-[300px] h-[300px] rounded-full border-[2px] border-syndikate-red/[0.03] z-0"
+          ref={glowTopRef}
+          className="fixed w-[500px] h-[500px] rounded-full blur-[200px] will-change-transform z-0" 
           style={{ 
             left: '-150px', 
             top: '-150px',
-            animation: 'spinSlow 45s linear infinite reverse',
+            background: 'radial-gradient(circle, rgba(255,107,0,0.15) 0%, transparent 70%)',
           }}
-        />
-
-        {/* Ambient glows */}
-        <div 
-          ref={glowTopRef}
-          className="fixed w-[400px] h-[400px] bg-syndikate-orange/10 rounded-full blur-[180px] opacity-30 will-change-transform z-0" 
-          style={{ left: '-100px', top: '-100px' }}
         />
         <div 
           ref={glowBottomRef}
-          className="fixed w-[350px] h-[350px] bg-syndikate-red/8 rounded-full blur-[160px] opacity-25 will-change-transform z-0" 
-          style={{ right: '-80px', bottom: '-80px' }}
-        />
-        
-        {/* Center subtle glow */}
-        <div 
-          className="fixed w-[500px] h-[500px] bg-syndikate-orange/5 rounded-full blur-[200px] opacity-20 z-0" 
-          style={{ left: '50%', top: '40%', transform: 'translate(-50%, -50%)' }}
-        />
-
-        {/* Strong dark vignette */}
-        <div 
-          className="fixed inset-0 pointer-events-none z-[1]"
-          style={{
-            background: 'radial-gradient(ellipse at center, transparent 20%, hsl(var(--background)) 75%)'
+          className="fixed w-[400px] h-[400px] rounded-full blur-[180px] will-change-transform z-0" 
+          style={{ 
+            right: '-100px', 
+            bottom: '-100px',
+            background: 'radial-gradient(circle, rgba(180,40,40,0.1) 0%, transparent 70%)',
           }}
         />
         
-        {/* Edge fade for clean look */}
+        {/* Noise texture for depth */}
+        <div
+          className="fixed inset-0 pointer-events-none opacity-[0.03] z-0"
+          style={{
+            backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 256 256\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noise\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.8\' numOctaves=\'4\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noise)\'/%3E%3C/svg%3E")',
+          }}
+        />
+
+        {/* Vignette */}
         <div 
           className="fixed inset-0 pointer-events-none z-[1]"
           style={{
-            boxShadow: 'inset 0 0 100px 50px hsl(var(--background))'
+            background: 'radial-gradient(ellipse 70% 60% at 50% 50%, transparent 0%, hsl(var(--background)) 100%)'
           }}
         />
       </>
       
       {/* CSS animations */}
       <style>{`
-        @keyframes floatSuit1 {
+        @keyframes floatCard1 {
+          0%, 100% { transform: rotate(-15deg) translateY(0) translateX(0); }
+          25% { transform: rotate(-12deg) translateY(-15px) translateX(5px); }
+          50% { transform: rotate(-18deg) translateY(-8px) translateX(-3px); }
+          75% { transform: rotate(-14deg) translateY(-20px) translateX(8px); }
+        }
+        @keyframes floatCard2 {
+          0%, 100% { transform: rotate(12deg) translateY(0); }
+          50% { transform: rotate(8deg) translateY(-25px); }
+        }
+        @keyframes floatCard3 {
+          0%, 100% { transform: rotate(-8deg) translateY(0) scale(1); }
+          50% { transform: rotate(-5deg) translateY(-18px) scale(1.02); }
+        }
+        @keyframes floatChips {
           0%, 100% { transform: translateY(0) rotate(0deg); }
-          50% { transform: translateY(-20px) rotate(3deg); }
+          50% { transform: translateY(-12px) rotate(5deg); }
         }
-        @keyframes floatSuit2 {
-          0%, 100% { transform: translateY(0) rotate(0deg); }
-          50% { transform: translateY(-15px) rotate(-2deg); }
+        @keyframes orb1 {
+          0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.2; }
+          50% { transform: translate(20px, -30px) scale(1.5); opacity: 0.4; }
         }
-        @keyframes floatSuit3 {
-          0%, 100% { transform: translateY(0) rotate(0deg); }
-          50% { transform: translateY(-25px) rotate(4deg); }
+        @keyframes orb2 {
+          0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.15; }
+          50% { transform: translate(-25px, 20px) scale(1.3); opacity: 0.3; }
         }
-        @keyframes slideLines {
-          0% { transform: translateX(0); }
-          100% { transform: translateX(80px); }
-        }
-        @keyframes spinSlow {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
-        }
-        @keyframes pulse {
-          0%, 100% { opacity: 0.015; transform: scale(1); }
-          50% { opacity: 0.03; transform: scale(1.1); }
+        @keyframes orb3 {
+          0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.1; }
+          50% { transform: translate(15px, -15px) scale(1.4); opacity: 0.25; }
         }
       `}</style>
       
