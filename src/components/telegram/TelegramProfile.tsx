@@ -37,6 +37,7 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { AvatarSelector } from '@/components/AvatarSelector';
 import { toast } from 'sonner';
+import { convertFeeToRPS, formatRPSPoints } from '@/utils/rpsCalculations';
 
 interface Player {
   id: string;
@@ -455,12 +456,27 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate, onUnre
   const winRate = player.games_played ? Math.round((player.wins / player.games_played) * 100) : 0;
   const avgPosition = gameResults.length > 0 ? 
     Math.round(gameResults.reduce((sum, result) => sum + result.position, 0) / gameResults.length * 10) / 10 : 0;
-  const totalEarnings = gameResults.reduce((sum, result) => {
-    if (result.position === 1) sum += result.tournament.participation_fee * 0.5; // Примерный выигрыш
-    if (result.position === 2) sum += result.tournament.participation_fee * 0.3;
-    if (result.position === 3) sum += result.tournament.participation_fee * 0.2;
+  
+  // Calculate total RPS earned from game results (last tournament)
+  const lastTournamentRPS = gameResults.length > 0 ? (() => {
+    const lastResult = gameResults[0];
+    // RPS calculation: position 1 = 50% of pool, 2 = 30%, 3 = 20%
+    const poolRPS = convertFeeToRPS(lastResult.tournament.participation_fee);
+    if (lastResult.position === 1) return Math.round(poolRPS * 5 * 0.5); // Примерно 5 игроков
+    if (lastResult.position === 2) return Math.round(poolRPS * 5 * 0.3);
+    if (lastResult.position === 3) return Math.round(poolRPS * 5 * 0.2);
+    return 0;
+  })() : 0;
+  
+  // Total RPS earned from all games
+  const totalRPSEarned = gameResults.reduce((sum, result) => {
+    const poolRPS = convertFeeToRPS(result.tournament.participation_fee);
+    if (result.position === 1) return sum + Math.round(poolRPS * 5 * 0.5);
+    if (result.position === 2) return sum + Math.round(poolRPS * 5 * 0.3);
+    if (result.position === 3) return sum + Math.round(poolRPS * 5 * 0.2);
     return sum;
   }, 0);
+  
   const recentForm = gameResults.slice(0, 5).map(r => r.position <= 3 ? '✅' : '❌').join('');
 
   return (
@@ -601,11 +617,16 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate, onUnre
           <CardContent className="p-4 relative z-10">
             <div className="flex items-center gap-3 mb-2">
               <div className="w-8 h-8 bg-syndikate-orange brutal-border flex items-center justify-center">
-                <Coins className="h-4 w-4 text-background" />
+                <Trophy className="h-4 w-4 text-background" />
               </div>
               <div className="flex-1">
-                <h3 className="text-foreground font-bold text-sm uppercase tracking-wider">Заработано</h3>
-                <p className="text-syndikate-orange text-lg font-bold">{Math.round(totalEarnings)}₽</p>
+                <h3 className="text-foreground font-bold text-sm uppercase tracking-wider">Заработано RPS</h3>
+                <p className="text-syndikate-orange text-lg font-bold">{totalRPSEarned} RPS</p>
+                {lastTournamentRPS > 0 && (
+                  <p className="text-muted-foreground text-[10px] uppercase tracking-wider">
+                    Последний турнир: +{lastTournamentRPS} RPS
+                  </p>
+                )}
               </div>
             </div>
           </CardContent>
@@ -638,107 +659,166 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate, onUnre
         {userTournaments.length > 0 ? (
           <div className="space-y-4">
             {userTournaments.map((reg) => (
-              <Card key={reg.id} className="bg-syndikate-metal/90 brutal-border border-2 border-dashed border-syndikate-orange/40 backdrop-blur-xl shadow-brutal group hover:shadow-neon-orange transition-all duration-500 relative overflow-hidden hover:scale-[1.01]">
-                {/* Corner Decorations */}
-                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-4 h-4 bg-background brutal-border -ml-2"></div>
-                <div className="absolute right-0 top-1/2 -translate-y-1/2 w-4 h-4 bg-background brutal-border -mr-2"></div>
+              <div key={reg.id} className="relative group">
+                {/* External Neon Glow */}
+                <div className="absolute -inset-1 bg-gradient-to-r from-syndikate-orange via-syndikate-red to-syndikate-orange rounded opacity-0 group-hover:opacity-30 blur-xl transition-all duration-500"></div>
                 
-                {/* Номер билета */}
-                <div className="absolute top-2 right-3 text-syndikate-orange text-xs font-mono tracking-wider bg-syndikate-concrete/50 px-1.5 py-0.5 brutal-border backdrop-blur-sm">
-                  #{reg.tournament.id.slice(-6).toUpperCase()}
-                </div>
-                
-                {/* Штрих-код */}
-                <div className="absolute bottom-2 right-3 flex gap-0.5">
-                  {[...Array(6)].map((_, i) => (
-                    <div key={i} className={`bg-blue-400/60 ${i % 2 === 0 ? 'w-0.5 h-3' : 'w-0.5 h-4'}`}></div>
-                  ))}
-                </div>
-                
-                <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-transparent to-blue-600/8 opacity-60 group-hover:opacity-100 transition-opacity duration-500"></div>
-                
-                <CardContent className="p-4 relative z-10">
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex-1">
-                      <div className="text-blue-400/80 text-xs font-semibold uppercase tracking-wider mb-1">🎫 МОЙ БИЛЕТ</div>
-                      <h3 className="text-lg font-bold text-white tracking-wide uppercase mb-1 group-hover:text-blue-100 transition-colors duration-300">
-                        {reg.tournament.name}
-                      </h3>
-                      <div className="h-0.5 w-8 bg-gradient-to-r from-blue-400 to-blue-600 group-hover:w-12 transition-all duration-500 rounded-full"></div>
-                      {reg.tournament.description && (
-                        <p className="text-white/60 text-xs mt-1 line-clamp-1">{reg.tournament.description}</p>
-                      )}
-                    </div>
-                    <div className="w-8 h-8 bg-white/10 backdrop-blur-sm rounded-lg flex items-center justify-center border border-blue-400/30 group-hover:scale-110 transition-transform duration-300">
-                      <CheckCircle className="h-4 w-4 text-blue-400" />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-2 mb-3">
-                    <div className="flex items-center gap-2 p-2 bg-gradient-to-r from-white/8 via-white/12 to-white/8 rounded-lg border border-white/10 group-hover:border-blue-400/20 transition-all duration-300 backdrop-blur-sm">
-                      <div className="w-6 h-6 bg-gradient-to-br from-green-500 to-green-600 rounded-lg flex items-center justify-center shadow-lg">
-                        <Clock className="h-3 w-3 text-white" />
+                <Card className="bg-gradient-to-br from-syndikate-metal/95 to-syndikate-concrete/90 brutal-border backdrop-blur-xl shadow-brutal group-hover:shadow-neon-orange transition-all duration-500 relative overflow-hidden">
+                  {/* Warning Stripes at Top */}
+                  <div 
+                    className="absolute top-0 left-0 right-0 h-1.5 opacity-50"
+                    style={{
+                      backgroundImage: 'repeating-linear-gradient(45deg, rgba(255, 135, 31, 0.4), rgba(255, 135, 31, 0.4) 6px, transparent 6px, transparent 12px)'
+                    }}
+                  />
+                  
+                  {/* Corner Brackets */}
+                  <div className="absolute top-2 left-2 w-5 h-5 border-l-2 border-t-2 border-syndikate-orange transition-all duration-300 group-hover:w-7 group-hover:h-7" />
+                  <div className="absolute top-2 right-2 w-5 h-5 border-r-2 border-t-2 border-syndikate-orange transition-all duration-300 group-hover:w-7 group-hover:h-7" />
+                  <div className="absolute bottom-2 left-2 w-5 h-5 border-l-2 border-b-2 border-syndikate-orange transition-all duration-300 group-hover:w-7 group-hover:h-7" />
+                  <div className="absolute bottom-2 right-2 w-5 h-5 border-r-2 border-b-2 border-syndikate-orange transition-all duration-300 group-hover:w-7 group-hover:h-7" />
+                  
+                  {/* Ticket Perforations */}
+                  <div className="absolute left-0 top-1/2 -translate-y-1/2 w-3 h-6 bg-background rounded-r-full -ml-1.5"></div>
+                  <div className="absolute right-0 top-1/2 -translate-y-1/2 w-3 h-6 bg-background rounded-l-full -mr-1.5"></div>
+                  
+                  {/* Industrial Texture */}
+                  <div className="absolute inset-0 industrial-texture opacity-15" />
+                  
+                  {/* Metal Grid Overlay */}
+                  <div 
+                    className="absolute inset-0 opacity-5"
+                    style={{
+                      backgroundImage: `
+                        repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255, 135, 31, 0.1) 2px, rgba(255, 135, 31, 0.1) 3px),
+                        repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(255, 135, 31, 0.1) 2px, rgba(255, 135, 31, 0.1) 3px)
+                      `,
+                      backgroundSize: '16px 16px'
+                    }}
+                  />
+                  
+                  {/* Animated Glow */}
+                  <div className="absolute top-0 right-0 w-20 h-20 bg-syndikate-orange/15 rounded-full blur-2xl animate-pulse" />
+                  
+                  {/* Gradient Overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-syndikate-orange/5 via-transparent to-syndikate-red/5 opacity-50 group-hover:opacity-100 transition-opacity duration-500"></div>
+                  
+                  {/* Metallic shine effect */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
+                  
+                  <CardContent className="p-4 pt-5 relative z-10">
+                    {/* Header */}
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <div className="w-7 h-7 bg-syndikate-orange brutal-border flex items-center justify-center animate-pulse shadow-neon-orange">
+                            <CheckCircle className="h-3.5 w-3.5 text-background" />
+                          </div>
+                          <div className="px-2.5 py-1 bg-emerald-500/20 text-emerald-400 border border-emerald-500/50 brutal-border text-[10px] uppercase font-bold tracking-wider">
+                            ✓ ЗАРЕГИСТРИРОВАН
+                          </div>
+                          {getStatusBadge(reg.tournament.status)}
+                        </div>
+                        
+                        <h3 className="text-lg font-display font-bold text-foreground tracking-wide uppercase group-hover:text-syndikate-orange transition-colors duration-300 leading-tight">
+                          {reg.tournament.name}
+                        </h3>
+                        {reg.tournament.description && (
+                          <p className="text-muted-foreground text-xs mt-1 line-clamp-1">{reg.tournament.description}</p>
+                        )}
                       </div>
-                      <div>
-                        <span className="text-white font-bold text-xs">{new Date(reg.tournament.start_time).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}</span>
-                        <p className="text-white/60 text-xs">{new Date(reg.tournament.start_time).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })}</p>
+                      
+                      {/* Ticket Number */}
+                      <div className="bg-syndikate-orange/20 border border-syndikate-orange/50 px-2 py-1 brutal-border ml-2">
+                        <span className="text-[9px] text-syndikate-orange font-bold tracking-widest">#{reg.tournament.id.slice(-6).toUpperCase()}</span>
                       </div>
                     </div>
                     
-                    <div className="flex items-center gap-2 p-2 bg-gradient-to-r from-white/8 via-white/12 to-white/8 rounded-lg border border-white/10 group-hover:border-blue-400/20 transition-all duration-300 backdrop-blur-sm">
-                      <div className="w-6 h-6 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg flex items-center justify-center shadow-lg">
-                        <Coins className="h-3 w-3 text-white" />
-                      </div>
-                      <div>
-                        <span className="text-white font-bold text-xs">{reg.tournament.participation_fee.toLocaleString()} ₽</span>
-                        <p className="text-white/60 text-xs">орг. взнос</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between gap-2 mt-3">
-                    <Badge className="bg-gradient-to-r from-emerald-500/20 to-green-500/20 text-emerald-400 border border-emerald-500/40 hover:from-emerald-500/30 hover:to-green-500/30 transition-all duration-300 px-3 py-1 text-xs font-bold uppercase tracking-wider shadow-lg shadow-emerald-500/20">
-                      <CheckCircle className="h-3 w-3 mr-1.5" />
-                      Зарегистрирован
-                    </Badge>
+                    {/* Divider */}
+                    <div className="h-[2px] bg-gradient-to-r from-syndikate-orange via-syndikate-red to-syndikate-orange mb-3 opacity-50" />
                     
-                    <div className="flex items-center gap-2">
-                      {getStatusBadge(reg.tournament.status)}
-                      {onUnregister && reg.tournament.status !== 'running' && reg.tournament.status !== 'completed' && (
-                        <Button
-                          onClick={async (e) => {
-                            e.stopPropagation();
-                            setUnregistering(reg.tournament.id);
-                            await onUnregister(reg.tournament.id);
-                            // Удаляем турнир из локального списка после успешной отмены
-                            setUserTournaments(prev => prev.filter(t => t.tournament.id !== reg.tournament.id));
-                            setUnregistering("");
-                          }}
-                          variant="outline"
-                          size="sm"
-                          disabled={unregistering === reg.tournament.id}
-                          className="bg-gradient-to-r from-red-500/10 to-rose-500/10 border-red-500/40 text-red-400 hover:from-red-500/20 hover:to-rose-500/20 hover:text-red-300 hover:border-red-400/60 transition-all duration-300 px-3 py-1 h-auto text-xs font-semibold shadow-lg shadow-red-500/20 hover:shadow-red-500/30"
-                        >
-                          {unregistering === reg.tournament.id ? (
-                            <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-red-400"></div>
-                          ) : (
-                            <>
-                              <X className="h-3 w-3 mr-1" />
-                              Отменить
-                            </>
-                          )}
-                        </Button>
-                      )}
+                    {/* Info Grid */}
+                    <div className="grid grid-cols-3 gap-2 mb-3">
+                      <div className="bg-syndikate-metal/30 brutal-border p-2.5 text-center">
+                        <div className="w-6 h-6 bg-syndikate-orange/80 brutal-border flex items-center justify-center mx-auto mb-1">
+                          <Calendar className="h-3 w-3 text-background" />
+                        </div>
+                        <div className="text-foreground font-bold text-sm">
+                          {new Date(reg.tournament.start_time).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })}
+                        </div>
+                        <div className="text-[8px] text-muted-foreground uppercase tracking-wider">Дата</div>
+                      </div>
+                      <div className="bg-syndikate-metal/30 brutal-border p-2.5 text-center">
+                        <div className="w-6 h-6 bg-syndikate-orange/80 brutal-border flex items-center justify-center mx-auto mb-1">
+                          <Clock className="h-3 w-3 text-background" />
+                        </div>
+                        <div className="text-syndikate-orange font-bold text-sm">
+                          {new Date(reg.tournament.start_time).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}
+                        </div>
+                        <div className="text-[8px] text-muted-foreground uppercase tracking-wider">Время</div>
+                      </div>
+                      <div className="bg-syndikate-metal/30 brutal-border p-2.5 text-center">
+                        <div className="w-6 h-6 bg-syndikate-orange/80 brutal-border flex items-center justify-center mx-auto mb-1">
+                          <Coins className="h-3 w-3 text-background" />
+                        </div>
+                        <div className="text-syndikate-orange font-bold text-sm">
+                          {reg.tournament.participation_fee.toLocaleString()}₽
+                        </div>
+                        <div className="text-[8px] text-muted-foreground uppercase tracking-wider">Взнос</div>
+                      </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
+                    
+                    {/* Additional Info */}
+                    <div className="grid grid-cols-2 gap-2 mb-3">
+                      <div className="bg-syndikate-metal/20 brutal-border p-2 flex items-center gap-2">
+                        <Users className="h-4 w-4 text-syndikate-orange" />
+                        <div>
+                          <div className="text-foreground font-bold text-xs">
+                            {reg.tournament.tournament_registrations?.[0]?.count || 0}/{reg.tournament.max_players}
+                          </div>
+                          <div className="text-[8px] text-muted-foreground uppercase">Игроков</div>
+                        </div>
+                      </div>
+                      <div className="bg-syndikate-metal/20 brutal-border p-2 flex items-center gap-2">
+                        <Trophy className="h-4 w-4 text-syndikate-orange" />
+                        <div>
+                          <div className="text-foreground font-bold text-xs">
+                            {convertFeeToRPS(reg.tournament.participation_fee * (reg.tournament.tournament_registrations?.[0]?.count || 0))} RPS
+                          </div>
+                          <div className="text-[8px] text-muted-foreground uppercase">Фонд*</div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Actions */}
+                    {onUnregister && reg.tournament.status !== 'running' && reg.tournament.status !== 'completed' && (
+                      <Button
+                        onClick={async (e) => {
+                          e.stopPropagation();
+                          setUnregistering(reg.tournament.id);
+                          await onUnregister(reg.tournament.id);
+                          setUserTournaments(prev => prev.filter(t => t.tournament.id !== reg.tournament.id));
+                          setUnregistering("");
+                        }}
+                        variant="outline"
+                        size="sm"
+                        disabled={unregistering === reg.tournament.id}
+                        className="w-full bg-syndikate-red/10 border-syndikate-red/30 text-syndikate-red hover:bg-syndikate-red/20 hover:border-syndikate-red/50 brutal-border transition-all duration-300 text-xs font-bold uppercase tracking-wider"
+                      >
+                        {unregistering === reg.tournament.id ? (
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-syndikate-red"></div>
+                        ) : (
+                          <>
+                            <X className="h-4 w-4 mr-1.5" />
+                            Отменить регистрацию
+                          </>
+                        )}
+                      </Button>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
             ))}
-            {userTournaments.length > 5 && (
-              <p className="text-white/60 text-xs text-center mt-3">
-                Показано первые 5 турниров из {userTournaments.length}
-              </p>
-            )}
           </div>
         ) : (
           <Card className="bg-syndikate-metal/50 brutal-border backdrop-blur-xl">
