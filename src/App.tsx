@@ -37,40 +37,44 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        {isLoading && <BrutalLoadingScreen onLoadingComplete={handleLoadingComplete} />}
-        {showContent && (
-          <>
+        <BrowserRouter>
+          {/* Loading screen overlay */}
+          {isLoading && <BrutalLoadingScreen onLoadingComplete={handleLoadingComplete} />}
+          
+          {/* Main content - always mounted but hidden during loading */}
+          <div style={{ 
+            opacity: showContent ? 1 : 0, 
+            visibility: showContent ? 'visible' : 'hidden',
+            transition: 'opacity 0.3s ease-in-out'
+          }}>
             <div className="notranslate" translate="no">
               <Toaster />
               <Sonner />
             </div>
-            <BrowserRouter>
             <div className="pb-16 md:pb-0">
               <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/director" element={<TournamentDirector />} />
-            <Route path="/admin" element={<Admin />} />
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/about" element={<About />} />
-            <Route path="/blog" element={<Blog />} />
-            <Route path="/gallery" element={<Gallery />} />
-            <Route path="/tournaments" element={<Tournaments />} />
-            <Route path="/rating" element={<Rating />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/external-timer" element={<ExternalTimer />} />
-            <Route path="/invitation/:id" element={<InvitationCard />} />
-            <Route path="/telegram" element={<TelegramMiniApp />} />
-            <Route path="/telegram-mini-app" element={<TelegramMiniApp />} />
-            <Route path="/terms" element={<TermsOfService />} />
-            <Route path="/privacy" element={<Privacy />} />
-            
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-          <MobileBottomNav />
-        </div>
+                <Route path="/" element={<Index />} />
+                <Route path="/director" element={<TournamentDirector />} />
+                <Route path="/admin" element={<Admin />} />
+                <Route path="/auth" element={<Auth />} />
+                <Route path="/about" element={<About />} />
+                <Route path="/blog" element={<Blog />} />
+                <Route path="/gallery" element={<Gallery />} />
+                <Route path="/tournaments" element={<Tournaments />} />
+                <Route path="/rating" element={<Rating />} />
+                <Route path="/profile" element={<Profile />} />
+                <Route path="/external-timer" element={<ExternalTimer />} />
+                <Route path="/invitation/:id" element={<InvitationCard />} />
+                <Route path="/telegram" element={<TelegramMiniApp />} />
+                <Route path="/telegram-mini-app" element={<TelegramMiniApp />} />
+                <Route path="/terms" element={<TermsOfService />} />
+                <Route path="/privacy" element={<Privacy />} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+              <MobileBottomNav />
+            </div>
+          </div>
         </BrowserRouter>
-          </>
-        )}
       </TooltipProvider>
     </QueryClientProvider>
   );
