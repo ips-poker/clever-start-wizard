@@ -551,31 +551,19 @@ export const TelegramApp = () => {
         </div>
         
         <CardContent className="p-4 relative z-10">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-syndikate-orange brutal-border flex items-center justify-center shadow-neon-orange group-hover:shadow-neon-orange transition-all duration-300">
-              <Trophy className="h-5 w-5 text-background group-hover:scale-110 transition-transform duration-300" />
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-syndikate-orange brutal-border flex items-center justify-center shadow-neon-orange group-hover:shadow-neon-orange transition-all duration-300">
+              <Trophy className="h-6 w-6 text-background group-hover:scale-110 transition-transform duration-300" />
             </div>
             
             <div className="flex-1">
               <h3 className="font-display text-xl uppercase text-foreground tracking-wider group-hover:text-syndikate-orange transition-colors duration-300">
                 RATING POINTS
               </h3>
-              <div className="h-[2px] w-10 bg-gradient-neon mt-1 group-hover:w-14 transition-all duration-500"></div>
+              <p className="text-muted-foreground text-sm mt-0.5">Общий рейтинг игроков</p>
             </div>
             
-            <div className="text-muted-foreground group-hover:text-syndikate-orange transition-colors duration-300">
-              <ChevronRight className="h-4 w-4 group-hover:translate-x-1 transition-transform duration-300" />
-            </div>
-          </div>
-          
-          <div className="mt-3 bg-syndikate-concrete/50 brutal-border p-3 group-hover:border-syndikate-orange/30 transition-all duration-300 backdrop-blur-sm">
-            <div className="flex items-center justify-between">
-              <p className="text-foreground text-sm font-bold uppercase tracking-wider">Общий рейтинг</p>
-              <div className="flex items-center gap-1">
-                <Star className="h-4 w-4 text-syndikate-orange" />
-                <span className="text-syndikate-orange text-sm font-bold">TOP</span>
-              </div>
-            </div>
+            <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-syndikate-orange group-hover:translate-x-1 transition-all duration-300" />
           </div>
         </CardContent>
       </Card>
@@ -583,31 +571,27 @@ export const TelegramApp = () => {
       <div className="grid grid-cols-2 gap-3">
         <Card className="bg-syndikate-metal/90 brutal-border cursor-pointer group transition-all duration-500 hover:scale-105 hover:shadow-neon-orange backdrop-blur-xl relative overflow-hidden" onClick={() => setActiveTab('qa')}>
           <div className="absolute inset-0 bg-gradient-to-br from-syndikate-orange/5 via-transparent to-syndikate-red/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-          <div className="absolute inset-0 opacity-10 group-hover:opacity-20 transition-opacity duration-500">
-            <div className="absolute top-3 right-3 text-syndikate-orange/40 text-2xl animate-pulse">♣</div>
-            <div className="absolute bottom-3 left-3 text-syndikate-orange/30 text-xl">♠</div>
-          </div>
-          <CardContent className="p-4 text-center relative z-10">
-            <div className="w-8 h-8 bg-syndikate-orange brutal-border flex items-center justify-center mx-auto mb-2 group-hover:scale-110 transition-transform duration-300 shadow-md">
-              <MessageSquare className="h-4 w-4 text-background" />
+          <CardContent className="p-4 flex items-center gap-3 relative z-10">
+            <div className="w-11 h-11 bg-syndikate-orange brutal-border flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-md">
+              <MessageSquare className="h-5 w-5 text-background" />
             </div>
-            <h3 className="text-foreground font-bold uppercase text-base tracking-wider group-hover:text-syndikate-orange transition-colors duration-300">Q&A</h3>
-            <p className="text-muted-foreground text-sm mt-1">Вопросы и ответы</p>
+            <div className="flex-1">
+              <h3 className="text-foreground font-bold uppercase text-sm tracking-wider group-hover:text-syndikate-orange transition-colors duration-300">Q&A</h3>
+            </div>
+            <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-syndikate-orange transition-colors duration-300" />
           </CardContent>
         </Card>
 
         <Card className="bg-syndikate-metal/90 brutal-border cursor-pointer group transition-all duration-500 hover:scale-105 hover:shadow-neon-orange backdrop-blur-xl relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-br from-syndikate-orange/5 via-transparent to-syndikate-red/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-          <div className="absolute inset-0 opacity-10 group-hover:opacity-20 transition-opacity duration-500">
-            <div className="absolute top-3 left-3 text-syndikate-orange/40 text-2xl animate-pulse">♥</div>
-            <div className="absolute bottom-3 right-3 text-syndikate-orange/30 text-xl">♦</div>
-          </div>
-          <CardContent className="p-4 text-center relative z-10">
-            <div className="w-8 h-8 bg-syndikate-orange brutal-border flex items-center justify-center mx-auto mb-2 group-hover:scale-110 transition-transform duration-300 shadow-md">
-              <Shield className="h-4 w-4 text-background" />
+          <CardContent className="p-4 flex items-center gap-3 relative z-10">
+            <div className="w-11 h-11 bg-syndikate-orange brutal-border flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-md">
+              <Shield className="h-5 w-5 text-background" />
             </div>
-            <h3 className="text-foreground font-bold uppercase text-base tracking-wider group-hover:text-syndikate-orange transition-colors duration-300">SUPPORT</h3>
-            <p className="text-muted-foreground text-sm mt-1">Техническая поддержка</p>
+            <div className="flex-1">
+              <h3 className="text-foreground font-bold uppercase text-sm tracking-wider group-hover:text-syndikate-orange transition-colors duration-300">Support</h3>
+            </div>
+            <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-syndikate-orange transition-colors duration-300" />
           </CardContent>
         </Card>
       </div>
@@ -1738,52 +1722,31 @@ export const TelegramApp = () => {
         </div>
       )}
 
-      {/* Fixed bottom navigation */}
-      <div className="fixed bottom-0 left-0 right-0 bg-syndikate-concrete/95 brutal-border border-t border-syndikate-orange/30 backdrop-blur-xl z-50 shadow-brutal pb-safe">
-        <div className="absolute inset-x-0 top-0 h-px bg-gradient-neon"></div>
-        <div className="max-w-lg mx-auto">
+      {/* Fixed bottom navigation - modern style */}
+      <div className="fixed bottom-0 left-0 right-0 bg-syndikate-concrete/98 backdrop-blur-xl z-50 pb-safe border-t-2 border-syndikate-orange/20">
+        <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-neon"></div>
+        <div className="max-w-lg mx-auto px-2">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-4 bg-transparent h-20 p-2 gap-1">
-              <TabsTrigger value="home" className="group flex flex-col gap-2 text-muted-foreground data-[state=active]:text-syndikate-orange hover:text-foreground transition-all duration-300 border-0 bg-transparent data-[state=active]:bg-syndikate-orange/10 cursor-pointer relative overflow-hidden brutal-border">
-                <div className="absolute inset-0 bg-gradient-to-br from-syndikate-orange/5 to-transparent opacity-0 group-hover:opacity-100 group-data-[state=active]:opacity-100 transition-opacity duration-300"></div>
-                <div className="relative z-10 flex flex-col items-center gap-1.5">
-                  <div className="w-8 h-8 flex items-center justify-center bg-syndikate-metal group-hover:bg-syndikate-metal-light group-data-[state=active]:bg-syndikate-orange/20 transition-all duration-300 group-data-[state=active]:shadow-neon-orange">
-                    <Home className="h-4 w-4 group-data-[state=active]:scale-110 transition-transform duration-300" />
-                  </div>
-                  <span className="text-xs font-bold uppercase tracking-wider">Главная</span>
-                </div>
+            <TabsList className="grid w-full grid-cols-4 bg-transparent h-16 p-1.5 gap-1">
+              <TabsTrigger value="home" className="group flex flex-col items-center justify-center gap-1 text-muted-foreground data-[state=active]:text-syndikate-orange transition-all duration-300 bg-transparent data-[state=active]:bg-syndikate-orange/15 rounded-lg">
+                <Home className="h-6 w-6 group-data-[state=active]:scale-110 transition-transform duration-300" strokeWidth={2} />
+                <span className="text-[10px] font-bold uppercase tracking-wide">Home</span>
               </TabsTrigger>
-              <TabsTrigger value="tournaments" className="group flex flex-col gap-2 text-muted-foreground data-[state=active]:text-syndikate-orange hover:text-foreground transition-all duration-300 border-0 bg-transparent data-[state=active]:bg-syndikate-orange/10 cursor-pointer relative overflow-hidden brutal-border">
-                <div className="absolute inset-0 bg-gradient-to-br from-syndikate-orange/5 to-transparent opacity-0 group-hover:opacity-100 group-data-[state=active]:opacity-100 transition-opacity duration-300"></div>
-                <div className="relative z-10 flex flex-col items-center gap-1.5">
-                  <div className="w-8 h-8 flex items-center justify-center bg-syndikate-metal group-hover:bg-syndikate-metal-light group-data-[state=active]:bg-syndikate-orange/20 transition-all duration-300 group-data-[state=active]:shadow-neon-orange">
-                    <Trophy className="h-4 w-4 group-data-[state=active]:scale-110 transition-transform duration-300" />
-                  </div>
-                  <span className="text-xs font-bold uppercase tracking-wider">Турниры</span>
-                </div>
+              <TabsTrigger value="tournaments" className="group flex flex-col items-center justify-center gap-1 text-muted-foreground data-[state=active]:text-syndikate-orange transition-all duration-300 bg-transparent data-[state=active]:bg-syndikate-orange/15 rounded-lg">
+                <Trophy className="h-6 w-6 group-data-[state=active]:scale-110 transition-transform duration-300" strokeWidth={2} />
+                <span className="text-[10px] font-bold uppercase tracking-wide">Games</span>
               </TabsTrigger>
-              <TabsTrigger value="rating" className="group flex flex-col gap-2 text-muted-foreground data-[state=active]:text-syndikate-orange hover:text-foreground transition-all duration-300 border-0 bg-transparent data-[state=active]:bg-syndikate-orange/10 cursor-pointer relative overflow-hidden brutal-border">
-                <div className="absolute inset-0 bg-gradient-to-br from-syndikate-orange/5 to-transparent opacity-0 group-hover:opacity-100 group-data-[state=active]:opacity-100 transition-opacity duration-300"></div>
-                <div className="relative z-10 flex flex-col items-center gap-1.5">
-                  <div className="w-8 h-8 flex items-center justify-center bg-syndikate-metal group-hover:bg-syndikate-metal-light group-data-[state=active]:bg-syndikate-orange/20 transition-all duration-300 group-data-[state=active]:shadow-neon-orange">
-                    <Star className="h-4 w-4 group-data-[state=active]:scale-110 transition-transform duration-300" />
-                  </div>
-                  <span className="text-xs font-bold uppercase tracking-wider">Рейтинг</span>
-                </div>
+              <TabsTrigger value="rating" className="group flex flex-col items-center justify-center gap-1 text-muted-foreground data-[state=active]:text-syndikate-orange transition-all duration-300 bg-transparent data-[state=active]:bg-syndikate-orange/15 rounded-lg">
+                <Star className="h-6 w-6 group-data-[state=active]:scale-110 transition-transform duration-300" strokeWidth={2} />
+                <span className="text-[10px] font-bold uppercase tracking-wide">Rating</span>
               </TabsTrigger>
-              <TabsTrigger value="profile" className="group flex flex-col gap-2 text-muted-foreground data-[state=active]:text-syndikate-orange hover:text-foreground transition-all duration-300 border-0 bg-transparent data-[state=active]:bg-syndikate-orange/10 cursor-pointer relative overflow-hidden brutal-border">
-                <div className="absolute inset-0 bg-gradient-to-br from-syndikate-orange/5 to-transparent opacity-0 group-hover:opacity-100 group-data-[state=active]:opacity-100 transition-opacity duration-300"></div>
-                <div className="relative z-10 flex flex-col items-center gap-1.5">
-                  <div className="w-8 h-8 flex items-center justify-center bg-syndikate-metal group-hover:bg-syndikate-metal-light group-data-[state=active]:bg-syndikate-orange/20 transition-all duration-300 group-data-[state=active]:shadow-neon-orange">
-                    <User className="h-4 w-4 group-data-[state=active]:scale-110 transition-transform duration-300" />
-                  </div>
-                  <span className="text-xs font-bold uppercase tracking-wider">Профиль</span>
-                </div>
+              <TabsTrigger value="profile" className="group flex flex-col items-center justify-center gap-1 text-muted-foreground data-[state=active]:text-syndikate-orange transition-all duration-300 bg-transparent data-[state=active]:bg-syndikate-orange/15 rounded-lg">
+                <User className="h-6 w-6 group-data-[state=active]:scale-110 transition-transform duration-300" strokeWidth={2} />
+                <span className="text-[10px] font-bold uppercase tracking-wide">Profile</span>
               </TabsTrigger>
             </TabsList>
           </Tabs>
         </div>
-        <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-32 h-1 bg-gradient-neon"></div>
       </div>
 
         </div>
