@@ -1196,62 +1196,64 @@ export const TelegramApp = () => {
 
   return (
     <div className="w-full h-full bg-background relative overflow-hidden flex flex-col">
-      {/* Website-style Industrial Background */}
+      {/* Industrial Background - no orange edges */}
       <>
+        {/* Dark base - extended */}
+        <div className="fixed inset-[-50px] bg-background z-0" />
+        
         {/* Industrial metal base texture */}
         <div 
-          className="fixed inset-0 pointer-events-none industrial-texture opacity-50 z-0" 
+          className="fixed inset-[-50px] pointer-events-none industrial-texture opacity-40 z-0" 
         />
 
         {/* Metal grid overlay */}
         <div
-          className="fixed inset-0 pointer-events-none opacity-20 z-0"
+          className="fixed inset-[-50px] pointer-events-none opacity-15 z-0"
           style={{
             backgroundImage: `
-              repeating-linear-gradient(0deg, transparent, transparent 48px, rgba(255,255,255,0.04) 48px, rgba(255,255,255,0.04) 49px),
-              repeating-linear-gradient(90deg, transparent, transparent 48px, rgba(255,255,255,0.04) 48px, rgba(255,255,255,0.04) 49px)
+              repeating-linear-gradient(0deg, transparent, transparent 48px, rgba(255,255,255,0.03) 48px, rgba(255,255,255,0.03) 49px),
+              repeating-linear-gradient(90deg, transparent, transparent 48px, rgba(255,255,255,0.03) 48px, rgba(255,255,255,0.03) 49px)
             `,
           }}
         />
 
         {/* Diagonal metal plates */}
         <div
-          className="fixed inset-0 pointer-events-none opacity-15 z-0"
+          className="fixed inset-[-50px] pointer-events-none opacity-10 z-0"
           style={{
             backgroundImage: `
-              linear-gradient(135deg, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.9) 40%, rgba(255,255,255,0.06) 41%, rgba(255,255,255,0.06) 42%, rgba(0,0,0,0.9) 43%, rgba(0,0,0,0.9) 100%)
+              linear-gradient(135deg, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.9) 40%, rgba(255,255,255,0.04) 41%, rgba(255,255,255,0.04) 42%, rgba(0,0,0,0.9) 43%, rgba(0,0,0,0.9) 100%)
             `,
             backgroundSize: "220px 220px",
           }}
         />
 
-        {/* Neon glows */}
+        {/* Subtle center glow only */}
         <div 
           ref={glowTopRef}
-          className="fixed w-[420px] h-[420px] bg-syndikate-orange/25 rounded-full blur-[140px] opacity-70 animate-pulse will-change-transform z-0" 
-          style={{ left: '-100px', top: '-100px' }}
+          className="fixed w-[300px] h-[300px] bg-syndikate-orange/10 rounded-full blur-[150px] opacity-40 will-change-transform z-0" 
+          style={{ left: '-150px', top: '-150px' }}
         />
         <div 
           ref={glowBottomRef}
-          className="fixed w-[420px] h-[420px] bg-syndikate-red/20 rounded-full blur-[140px] opacity-70 animate-pulse will-change-transform z-0" 
-          style={{ right: '-100px', bottom: '-100px' }}
+          className="fixed w-[300px] h-[300px] bg-syndikate-red/8 rounded-full blur-[150px] opacity-30 will-change-transform z-0" 
+          style={{ right: '-150px', bottom: '-150px' }}
         />
-        <div 
-          className="fixed w-[500px] h-[500px] bg-syndikate-metal-light/10 rounded-full blur-[160px] opacity-60 z-0" 
-          style={{ left: '50%', top: '50%', transform: 'translate(-50%, -50%)' }}
-        />
-
-        {/* Side rails */}
-        <div className="fixed inset-y-0 left-0 w-[2px] bg-gradient-to-b from-syndikate-orange/60 via-syndikate-red/30 to-transparent shadow-neon-orange pointer-events-none z-10" />
-        <div className="fixed inset-y-0 right-0 w-[2px] bg-gradient-to-b from-syndikate-orange/60 via-syndikate-red/30 to-transparent shadow-neon-orange pointer-events-none z-10" />
-        <div className="fixed top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-syndikate-orange/70 to-transparent pointer-events-none z-10" />
 
         {/* Subtle noise */}
         <div
-          className="fixed inset-0 pointer-events-none opacity-25 mix-blend-soft-light z-0"
+          className="fixed inset-0 pointer-events-none opacity-20 mix-blend-soft-light z-0"
           style={{
-            backgroundImage: "radial-gradient(circle at 1px 1px, rgba(255,255,255,0.15) 1px, transparent 0)",
+            backgroundImage: "radial-gradient(circle at 1px 1px, rgba(255,255,255,0.1) 1px, transparent 0)",
             backgroundSize: "4px 4px",
+          }}
+        />
+        
+        {/* Dark vignette - hide any color on edges */}
+        <div 
+          className="fixed inset-0 pointer-events-none z-[1]"
+          style={{
+            boxShadow: 'inset 0 0 150px 80px hsl(var(--background))'
           }}
         />
       </>
