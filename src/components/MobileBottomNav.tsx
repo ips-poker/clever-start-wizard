@@ -72,7 +72,7 @@ export function MobileBottomNav() {
         "fixed left-4 right-4 z-50 md:hidden transition-all duration-300 ease-in-out",
         isVisible ? "translate-y-0 opacity-100" : "translate-y-20 opacity-0 pointer-events-none"
       )}
-      style={{ bottom: '46px' }}
+      style={{ bottom: '106px' }}
     >
       <div className="flex items-center justify-center gap-2">
         {navItems.map((item) => {
