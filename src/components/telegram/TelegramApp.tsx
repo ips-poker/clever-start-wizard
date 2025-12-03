@@ -511,49 +511,58 @@ export const TelegramApp = () => {
             <div className="absolute bottom-3 right-8 text-syndikate-orange/30 text-3xl">♦</div>
           </div>
           
-          <CardContent className="p-5 relative z-10">
-            <div className="flex items-start gap-3 mb-4">
-              {/* Text content shifted left */}
-              <div className="flex-1 min-w-0 pl-0">
-                <h1 className="font-display text-2xl sm:text-3xl uppercase text-foreground tracking-wider drop-shadow-lg group-hover/hero:text-syndikate-orange transition-colors duration-300">
-                  <GlitchText 
-                    text="SYNDIKATE" 
-                    glitchIntensity="high" 
-                    glitchInterval={4500}
-                  />
-                </h1>
-                <p className="font-display text-sm sm:text-base uppercase tracking-wider text-syndikate-orange mt-1 font-bold">
-                  Власть за столом
-                </p>
-                <div className="h-[2px] w-16 bg-gradient-neon mt-2 group-hover/hero:w-24 transition-all duration-500"></div>
-              </div>
+          <CardContent className="p-4 relative z-10">
+            {/* Layout: logo space left, content right */}
+            <div className="flex">
+              {/* Empty space for logo visibility */}
+              <div className="w-24 flex-shrink-0"></div>
+              
+              {/* Content on the right */}
+              <div className="flex-1 flex flex-col">
+                {/* Header with download button */}
+                <div className="flex items-start justify-between mb-3">
+                  <div>
+                    <h1 className="font-display text-2xl sm:text-3xl uppercase text-foreground tracking-wider drop-shadow-lg group-hover/hero:text-syndikate-orange transition-colors duration-300">
+                      <GlitchText 
+                        text="SYNDIKATE" 
+                        glitchIntensity="high" 
+                        glitchInterval={4500}
+                      />
+                    </h1>
+                    <p className="font-display text-sm sm:text-base uppercase tracking-wider text-syndikate-orange mt-1 font-bold">
+                      Власть за столом
+                    </p>
+                    <div className="h-[2px] w-16 bg-gradient-neon mt-2 group-hover/hero:w-24 transition-all duration-500"></div>
+                  </div>
 
-              {/* Stylish download button */}
-              {canAddToHomeScreen && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleAddToHomeScreen();
-                  }}
-                  className="flex-shrink-0 bg-syndikate-orange/10 border-syndikate-orange/50 text-syndikate-orange hover:bg-syndikate-orange hover:text-background hover:border-syndikate-orange transition-all duration-300 shadow-neon-orange/30 hover:shadow-neon-orange px-3 py-2 gap-2"
-                  title="Установить на главный экран"
-                >
-                  <Download className="h-4 w-4" />
-                  <span className="text-xs font-bold uppercase tracking-wide">Скачать</span>
-                </Button>
-              )}
-            </div>
-            
-            {/* Simplified button - only "О клубе" */}
-            <div className="bg-syndikate-concrete/70 brutal-border p-3 backdrop-blur-md group-hover/hero:border-syndikate-orange/50 group-hover/hero:bg-syndikate-orange/10 transition-all duration-300">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-syndikate-orange brutal-border animate-pulse"></div>
-                  <p className="text-foreground text-sm sm:text-base font-bold uppercase tracking-wide">О клубе</p>
+                  {/* Stylish download button */}
+                  {canAddToHomeScreen && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleAddToHomeScreen();
+                      }}
+                      className="flex-shrink-0 bg-syndikate-orange/10 border-syndikate-orange/50 text-syndikate-orange hover:bg-syndikate-orange hover:text-background hover:border-syndikate-orange transition-all duration-300 shadow-neon-orange/30 hover:shadow-neon-orange px-3 py-2 gap-2"
+                      title="Установить на главный экран"
+                    >
+                      <Download className="h-4 w-4" />
+                      <span className="text-xs font-bold uppercase tracking-wide">Скачать</span>
+                    </Button>
+                  )}
                 </div>
-                <ChevronRight className="h-5 w-5 text-syndikate-orange group-hover/hero:translate-x-1 transition-transform duration-300" />
+                
+                {/* Button "О клубе" */}
+                <div className="bg-syndikate-concrete/70 brutal-border p-3 backdrop-blur-md group-hover/hero:border-syndikate-orange/50 group-hover/hero:bg-syndikate-orange/10 transition-all duration-300">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-syndikate-orange brutal-border animate-pulse"></div>
+                      <p className="text-foreground text-sm sm:text-base font-bold uppercase tracking-wide">О клубе</p>
+                    </div>
+                    <ChevronRight className="h-5 w-5 text-syndikate-orange group-hover/hero:translate-x-1 transition-transform duration-300" />
+                  </div>
+                </div>
               </div>
             </div>
           </CardContent>
