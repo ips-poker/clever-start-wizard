@@ -92,7 +92,6 @@ export const TelegramApp = () => {
   const [scrollY, setScrollY] = useState(0);
   
   // Refs for parallax effects
-  const gridRef = useRef<HTMLDivElement>(null);
   const glowTopRef = useRef<HTMLDivElement>(null);
   const glowBottomRef = useRef<HTMLDivElement>(null);
 
@@ -124,9 +123,6 @@ export const TelegramApp = () => {
       const currentScrollY = target.scrollTop || 0;
       setScrollY(currentScrollY);
       
-      if (gridRef.current) {
-        gridRef.current.style.transform = `translateY(${currentScrollY * 0.2}px)`;
-      }
       if (glowTopRef.current) {
         glowTopRef.current.style.transform = `translate(-24px, ${-128 + currentScrollY * 0.1}px)`;
       }
@@ -1200,71 +1196,154 @@ export const TelegramApp = () => {
 
   return (
     <div className="w-full h-full bg-background relative overflow-hidden flex flex-col">
-      {/* Poker-themed Background - all tabs */}
+      {/* Premium Poker Background */}
       <>
-        {/* Dark base layer */}
-        <div className="fixed inset-[-30px] bg-background z-0" />
-        
-        {/* Poker suits pattern - spades */}
-        <div
-          ref={gridRef}
-          className="fixed inset-[-30px] pointer-events-none z-0 transition-transform duration-0 will-change-transform"
+        {/* Dark gradient base */}
+        <div 
+          className="fixed inset-[-50px] z-0"
           style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Ctext x='50' y='55' font-size='32' fill='rgba(80,80,80,0.06)' text-anchor='middle' font-family='Arial' font-weight='bold'%3E♠%3C/text%3E%3C/svg%3E")`,
-            backgroundSize: "100px 100px",
+            background: 'radial-gradient(ellipse at 30% 20%, hsl(var(--syndikate-concrete)) 0%, hsl(var(--background)) 50%), radial-gradient(ellipse at 70% 80%, rgba(30,25,20,1) 0%, transparent 50%)'
           }}
         />
         
-        {/* Poker suits pattern - hearts offset */}
+        {/* Animated diagonal lines - casino feel */}
         <div
-          className="fixed inset-[-30px] pointer-events-none z-0"
+          className="fixed inset-[-50px] pointer-events-none z-0 opacity-[0.03]"
           style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Ctext x='50' y='55' font-size='24' fill='rgba(70,70,70,0.04)' text-anchor='middle' font-family='Arial'%3E♥%3C/text%3E%3C/svg%3E")`,
-            backgroundSize: "100px 100px",
-            backgroundPosition: "50px 50px",
+            backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 40px, rgba(255,107,0,0.5) 40px, rgba(255,107,0,0.5) 41px)',
+            animation: 'slideLines 20s linear infinite',
           }}
         />
         
-        {/* Poker suits pattern - diamonds */}
-        <div
-          className="fixed inset-[-30px] pointer-events-none z-0"
-          style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200' viewBox='0 0 200 200'%3E%3Ctext x='100' y='110' font-size='28' fill='rgba(60,60,60,0.035)' text-anchor='middle' font-family='Arial'%3E♦%3C/text%3E%3C/svg%3E")`,
-            backgroundSize: "200px 200px",
-            backgroundPosition: "25px 75px",
+        {/* Large floating suits - animated */}
+        <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+          {/* Spade - top left, floating */}
+          <div 
+            className="absolute text-[180px] text-white/[0.025] font-bold select-none"
+            style={{ 
+              left: '-20px', 
+              top: '10%',
+              animation: 'floatSuit1 8s ease-in-out infinite',
+            }}
+          >♠</div>
+          
+          {/* Heart - right side */}
+          <div 
+            className="absolute text-[140px] text-syndikate-red/[0.03] font-bold select-none"
+            style={{ 
+              right: '-10px', 
+              top: '25%',
+              animation: 'floatSuit2 10s ease-in-out infinite',
+            }}
+          >♥</div>
+          
+          {/* Diamond - bottom left */}
+          <div 
+            className="absolute text-[120px] text-syndikate-orange/[0.025] font-bold select-none"
+            style={{ 
+              left: '5%', 
+              bottom: '20%',
+              animation: 'floatSuit3 12s ease-in-out infinite',
+            }}
+          >♦</div>
+          
+          {/* Club - center right */}
+          <div 
+            className="absolute text-[160px] text-white/[0.02] font-bold select-none"
+            style={{ 
+              right: '10%', 
+              bottom: '35%',
+              animation: 'floatSuit1 9s ease-in-out infinite reverse',
+            }}
+          >♣</div>
+          
+          {/* Small decorative suits scattered */}
+          <div className="absolute text-[60px] text-white/[0.015] select-none" style={{ left: '30%', top: '15%', animation: 'pulse 4s ease-in-out infinite' }}>♠</div>
+          <div className="absolute text-[50px] text-syndikate-red/[0.02] select-none" style={{ right: '25%', top: '60%', animation: 'pulse 5s ease-in-out infinite 1s' }}>♥</div>
+          <div className="absolute text-[45px] text-syndikate-orange/[0.02] select-none" style={{ left: '60%', bottom: '15%', animation: 'pulse 6s ease-in-out infinite 2s' }}>♦</div>
+          <div className="absolute text-[55px] text-white/[0.015] select-none" style={{ left: '15%', top: '45%', animation: 'pulse 4.5s ease-in-out infinite 0.5s' }}>♣</div>
+        </div>
+
+        {/* Poker chip ring effect in corner */}
+        <div 
+          className="fixed w-[400px] h-[400px] rounded-full border-[3px] border-syndikate-orange/[0.04] z-0"
+          style={{ 
+            left: '-200px', 
+            top: '-200px',
+            animation: 'spinSlow 60s linear infinite',
           }}
         />
-        
-        {/* Poker suits pattern - clubs */}
-        <div
-          className="fixed inset-[-30px] pointer-events-none z-0"
-          style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200' viewBox='0 0 200 200'%3E%3Ctext x='100' y='110' font-size='36' fill='rgba(50,50,50,0.04)' text-anchor='middle' font-family='Arial' font-weight='bold'%3E♣%3C/text%3E%3C/svg%3E")`,
-            backgroundSize: "200px 200px",
-            backgroundPosition: "100px 0px",
+        <div 
+          className="fixed w-[300px] h-[300px] rounded-full border-[2px] border-syndikate-red/[0.03] z-0"
+          style={{ 
+            left: '-150px', 
+            top: '-150px',
+            animation: 'spinSlow 45s linear infinite reverse',
           }}
         />
 
-        {/* Subtle corner glows - contained within dark area */}
+        {/* Ambient glows */}
         <div 
           ref={glowTopRef}
-          className="fixed w-[300px] h-[300px] bg-syndikate-orange/8 rounded-full blur-[150px] opacity-40 will-change-transform z-0" 
-          style={{ left: '-50px', top: '-50px' }}
+          className="fixed w-[400px] h-[400px] bg-syndikate-orange/10 rounded-full blur-[180px] opacity-30 will-change-transform z-0" 
+          style={{ left: '-100px', top: '-100px' }}
         />
         <div 
           ref={glowBottomRef}
-          className="fixed w-[300px] h-[300px] bg-syndikate-red/6 rounded-full blur-[150px] opacity-30 will-change-transform z-0" 
-          style={{ right: '-50px', bottom: '-50px' }}
+          className="fixed w-[350px] h-[350px] bg-syndikate-red/8 rounded-full blur-[160px] opacity-25 will-change-transform z-0" 
+          style={{ right: '-80px', bottom: '-80px' }}
+        />
+        
+        {/* Center subtle glow */}
+        <div 
+          className="fixed w-[500px] h-[500px] bg-syndikate-orange/5 rounded-full blur-[200px] opacity-20 z-0" 
+          style={{ left: '50%', top: '40%', transform: 'translate(-50%, -50%)' }}
         />
 
-        {/* Dark vignette - strong edges */}
+        {/* Strong dark vignette */}
         <div 
           className="fixed inset-0 pointer-events-none z-[1]"
           style={{
-            background: 'radial-gradient(ellipse at center, transparent 30%, hsl(var(--background)) 85%)'
+            background: 'radial-gradient(ellipse at center, transparent 20%, hsl(var(--background)) 75%)'
+          }}
+        />
+        
+        {/* Edge fade for clean look */}
+        <div 
+          className="fixed inset-0 pointer-events-none z-[1]"
+          style={{
+            boxShadow: 'inset 0 0 100px 50px hsl(var(--background))'
           }}
         />
       </>
+      
+      {/* CSS animations */}
+      <style>{`
+        @keyframes floatSuit1 {
+          0%, 100% { transform: translateY(0) rotate(0deg); }
+          50% { transform: translateY(-20px) rotate(3deg); }
+        }
+        @keyframes floatSuit2 {
+          0%, 100% { transform: translateY(0) rotate(0deg); }
+          50% { transform: translateY(-15px) rotate(-2deg); }
+        }
+        @keyframes floatSuit3 {
+          0%, 100% { transform: translateY(0) rotate(0deg); }
+          50% { transform: translateY(-25px) rotate(4deg); }
+        }
+        @keyframes slideLines {
+          0% { transform: translateX(0); }
+          100% { transform: translateX(80px); }
+        }
+        @keyframes spinSlow {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+        @keyframes pulse {
+          0%, 100% { opacity: 0.015; transform: scale(1); }
+          50% { opacity: 0.03; transform: scale(1.1); }
+        }
+      `}</style>
       
       {/* Content Area with relative z-index */}
       <div className="flex-1 overflow-y-auto telegram-content relative z-20 overflow-x-hidden" style={{ maxHeight: '100%' }}>
