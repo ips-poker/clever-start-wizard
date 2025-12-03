@@ -1270,6 +1270,10 @@ export type Database = {
         Returns: boolean
       }
       sync_all_player_avatars: { Args: never; Returns: undefined }
+      update_player_rating_safe: {
+        Args: { p_new_rating: number; p_player_id: string }
+        Returns: Json
+      }
       update_player_safe: {
         Args: { p_avatar_url?: string; p_name?: string; p_player_id: string }
         Returns: Json
