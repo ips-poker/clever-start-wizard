@@ -599,97 +599,114 @@ export const TelegramApp = () => {
       <div>
         <div className="flex items-center gap-2 mb-3 px-1">
           <div className="w-1 h-5 bg-gradient-neon brutal-border"></div>
-          <p className="text-foreground text-base font-bold uppercase tracking-wide">🎫 Билет на ближайший турнир</p>
+          <p className="text-foreground text-base font-bold uppercase tracking-wide">🎫 Ближайший турнир</p>
           <div className="flex-1 h-[2px] bg-syndikate-rust/30"></div>
         </div>
         
-        <Card className="bg-syndikate-metal/95 brutal-border border-2 border-dashed border-syndikate-orange/40 overflow-hidden cursor-pointer group transition-all duration-500 hover:scale-[1.02] hover:shadow-neon-orange backdrop-blur-xl relative" onClick={() => setActiveTab('tournaments')}>
-          {/* Перфорированные края */}
-          <div className="absolute left-0 top-1/2 -translate-y-1/2 w-6 h-6 bg-background brutal-border -ml-3"></div>
-          <div className="absolute right-0 top-1/2 -translate-y-1/2 w-6 h-6 bg-background brutal-border -mr-3"></div>
-          
-          {/* Номер билета */}
-          <div className="absolute top-3 right-4 text-syndikate-orange text-xs font-mono tracking-wider bg-syndikate-concrete/50 px-2 py-1 brutal-border backdrop-blur-sm">
-            #{tournaments.length > 0 ? tournaments[0].id.slice(-6).toUpperCase() : 'EPC001'}
-          </div>
-          
-          {/* Штрих-код */}
-          <div className="absolute bottom-3 right-4 flex gap-0.5">
-            {[...Array(8)].map((_, i) => (
-              <div key={i} className={`bg-syndikate-orange/60 ${i % 2 === 0 ? 'w-0.5 h-6' : 'w-1 h-8'}`}></div>
-            ))}
-          </div>
-          
-          <div className="absolute inset-0 bg-gradient-to-br from-syndikate-orange/5 via-transparent to-syndikate-red/5 opacity-60 group-hover:opacity-100 transition-opacity duration-500"></div>
-          <div className="absolute inset-0 opacity-10 group-hover:opacity-20 transition-opacity duration-500">
-            <div className="absolute top-2 left-4 text-syndikate-orange/30 text-2xl animate-pulse">♠</div>
-            <div className="absolute bottom-8 left-8 text-syndikate-orange/20 text-xl">♣</div>
-          </div>
-          
-          <CardContent className="p-6 relative z-10">
-            <div className="flex items-start justify-between mb-6">
-              <div className="flex-1">
-                <div className="text-syndikate-orange text-xs font-bold uppercase tracking-widest mb-1">🎫 БИЛЕТ НА ТУРНИР</div>
-                {tournaments.length > 0 ? (
-                  <div>
-                    <h3 className="text-2xl font-display font-bold text-foreground tracking-wide uppercase drop-shadow-lg group-hover:text-syndikate-orange transition-colors duration-300">
-                      {tournaments[0].name.split(' ')[0] || 'PHOENIX'}
-                    </h3>
-                    <h3 className="text-xl font-display font-bold text-syndikate-orange tracking-wide uppercase -mt-1 drop-shadow-lg group-hover:text-syndikate-orange-glow transition-colors duration-300">
-                      {tournaments[0].name.split(' ').slice(1).join(' ') || 'TOURNAMENT'}
-                    </h3>
-                    <div className="h-[2px] w-20 bg-gradient-neon mt-2 group-hover:w-24 transition-all duration-500"></div>
-                  </div>
-                ) : (
-                  <div>
-                    <h3 className="text-2xl font-display font-bold text-foreground tracking-wide drop-shadow-lg group-hover:text-syndikate-orange transition-colors duration-300">PHOENIX</h3>
-                    <h3 className="text-xl font-display font-bold text-syndikate-orange tracking-wide -mt-1 drop-shadow-lg group-hover:text-syndikate-orange-glow transition-colors duration-300">TOURNAMENT</h3>
-                    <div className="h-[2px] w-20 bg-gradient-neon mt-2 group-hover:w-24 transition-all duration-500"></div>
-                  </div>
-                )}
-              </div>
-              <div className="text-syndikate-orange group-hover:text-syndikate-orange-glow transition-colors duration-300 bg-syndikate-concrete/50 p-3 brutal-border backdrop-blur-sm">
-                <Trophy className="h-8 w-8 group-hover:scale-110 transition-transform duration-300" />
-              </div>
-            </div>
+        {tournaments.length > 0 ? (
+          <Card className="bg-syndikate-metal/95 brutal-border overflow-hidden cursor-pointer group transition-all duration-500 hover:scale-[1.02] hover:shadow-neon-orange backdrop-blur-xl relative" onClick={() => setActiveTab('tournaments')}>
+            {/* Gradient overlay */}
+            <div className="absolute inset-0 bg-gradient-to-br from-syndikate-orange/10 via-transparent to-syndikate-red/10 opacity-60 group-hover:opacity-100 transition-opacity duration-500"></div>
             
-            <div className="grid grid-cols-2 gap-4 mt-6">
-              <div className="flex items-center gap-3 bg-syndikate-concrete/50 brutal-border p-4 group-hover:border-syndikate-orange/30 transition-all duration-300 backdrop-blur-sm">
-                <div className="w-8 h-8 bg-syndikate-orange brutal-border flex items-center justify-center shadow-lg">
-                  <Users className="h-4 w-4 text-background" />
+            {/* Corner brackets */}
+            <div className="absolute top-2 left-2 w-5 h-5 border-l-2 border-t-2 border-syndikate-orange/60 group-hover:w-7 group-hover:h-7 transition-all duration-300"></div>
+            <div className="absolute top-2 right-2 w-5 h-5 border-r-2 border-t-2 border-syndikate-orange/60 group-hover:w-7 group-hover:h-7 transition-all duration-300"></div>
+            <div className="absolute bottom-2 left-2 w-5 h-5 border-l-2 border-b-2 border-syndikate-orange/60 group-hover:w-7 group-hover:h-7 transition-all duration-300"></div>
+            <div className="absolute bottom-2 right-2 w-5 h-5 border-r-2 border-b-2 border-syndikate-orange/60 group-hover:w-7 group-hover:h-7 transition-all duration-300"></div>
+            
+            <CardContent className="p-4 relative z-10">
+              {/* Header with status and price */}
+              <div className="flex items-start justify-between mb-3">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <div className={`px-2 py-0.5 text-[10px] uppercase font-bold tracking-wider brutal-border ${
+                      tournaments[0].status === 'active' 
+                        ? 'bg-syndikate-red/20 text-syndikate-red animate-pulse' 
+                        : 'bg-syndikate-orange/20 text-syndikate-orange'
+                    }`}>
+                      {tournaments[0].status === 'active' ? '● LIVE' : '● REG'}
+                    </div>
+                    {tournaments[0].tournament_format && (
+                      <div className="px-2 py-0.5 bg-syndikate-concrete/50 brutal-border text-[10px] uppercase text-muted-foreground">
+                        {tournaments[0].tournament_format}
+                      </div>
+                    )}
+                  </div>
+                  <h3 className="text-lg font-display font-bold text-foreground tracking-wide uppercase group-hover:text-syndikate-orange transition-colors duration-300 leading-tight">
+                    <GlitchText text={tournaments[0].name} glitchIntensity="low" />
+                  </h3>
                 </div>
-                <div>
-                  <span className="text-foreground font-bold text-base">
-                    {tournaments.length > 0 ? `${tournaments[0]?.tournament_registrations?.[0]?.count || 0}/${tournaments[0]?.max_players}` : '509/500'}
-                  </span>
-                  <p className="text-muted-foreground text-sm font-medium">игроков</p>
+                <div className="text-right ml-3">
+                  <div className="text-xl font-display font-bold text-syndikate-orange">
+                    {tournaments[0].participation_fee.toLocaleString()}₽
+                  </div>
+                  <div className="text-[9px] text-muted-foreground uppercase">Buy-in</div>
                 </div>
               </div>
               
-              <div className="flex items-center gap-3 bg-syndikate-concrete/50 brutal-border p-4 group-hover:border-syndikate-orange/30 transition-all duration-300 backdrop-blur-sm">
-                <div className="w-8 h-8 bg-syndikate-orange brutal-border flex items-center justify-center shadow-lg">
-                  <Clock className="h-4 w-4 text-background" />
+              {/* Info grid - compact 4 columns */}
+              <div className="grid grid-cols-4 gap-1.5 mb-3">
+                <div className="flex flex-col items-center p-2 bg-background/30 brutal-border">
+                  <Calendar className="h-3.5 w-3.5 text-syndikate-orange mb-0.5" />
+                  <div className="text-[11px] font-bold text-foreground leading-tight">
+                    {new Date(tournaments[0].start_time).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })}
+                  </div>
                 </div>
-                <div>
-                  <span className="text-foreground font-bold text-base">
-                    {tournaments.length > 0 ? new Date(tournaments[0]?.start_time).toLocaleTimeString('ru-RU', {
-                    hour: '2-digit',
-                    minute: '2-digit'
-                  }) : '19:00'}
+                <div className="flex flex-col items-center p-2 bg-background/30 brutal-border">
+                  <Clock className="h-3.5 w-3.5 text-syndikate-orange mb-0.5" />
+                  <div className="text-[11px] font-bold text-foreground leading-tight">
+                    {new Date(tournaments[0].start_time).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}
+                  </div>
+                </div>
+                <div className="flex flex-col items-center p-2 bg-background/30 brutal-border">
+                  <Users className="h-3.5 w-3.5 text-syndikate-orange mb-0.5" />
+                  <div className="text-[11px] font-bold text-foreground leading-tight">
+                    {tournaments[0].tournament_registrations?.[0]?.count || 0}/{tournaments[0].max_players}
+                  </div>
+                </div>
+                <div className="flex flex-col items-center p-2 bg-background/30 brutal-border">
+                  <Coins className="h-3.5 w-3.5 text-syndikate-orange mb-0.5" />
+                  <div className="text-[11px] font-bold text-foreground leading-tight">
+                    {(tournaments[0].starting_chips / 1000).toFixed(0)}K
+                  </div>
+                </div>
+              </div>
+              
+              {/* Registration progress */}
+              <div className="space-y-1.5 mb-3">
+                <div className="flex justify-between text-[10px]">
+                  <span className="text-muted-foreground uppercase">Регистрация</span>
+                  <span className={`font-bold ${
+                    ((tournaments[0].tournament_registrations?.[0]?.count || 0) / tournaments[0].max_players) >= 0.9 
+                      ? 'text-syndikate-red animate-pulse' 
+                      : 'text-syndikate-orange'
+                  }`}>
+                    {tournaments[0].max_players - (tournaments[0].tournament_registrations?.[0]?.count || 0)} мест
                   </span>
-                  <p className="text-muted-foreground text-sm font-medium">время старта</p>
+                </div>
+                <div className="h-1.5 bg-background/50 brutal-border overflow-hidden">
+                  <div 
+                    className="h-full bg-gradient-to-r from-syndikate-orange to-syndikate-red transition-all duration-500"
+                    style={{ width: `${((tournaments[0].tournament_registrations?.[0]?.count || 0) / tournaments[0].max_players) * 100}%` }}
+                  />
                 </div>
               </div>
-            </div>
-            
-            <div className="mt-6 flex items-center justify-center">
-              <div className="flex items-center gap-3 text-syndikate-orange group-hover:gap-4 transition-all duration-300 bg-syndikate-concrete/50 brutal-border px-6 py-3 group-hover:border-syndikate-orange/60 backdrop-blur-md group-hover:bg-syndikate-concrete/70">
-                <span className="text-sm font-bold uppercase tracking-wider">🎫 Участвовать</span>
-                <ChevronRight className="h-4 w-4 group-hover:translate-x-1 transition-transform duration-300" />
+              
+              {/* CTA */}
+              <div className="flex items-center justify-center gap-2 pt-2 border-t border-syndikate-rust/30">
+                <span className="text-syndikate-orange font-display text-xs uppercase tracking-wider">Подробнее</span>
+                <ChevronRight className="h-4 w-4 text-syndikate-orange group-hover:translate-x-1 transition-transform duration-300" />
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        ) : (
+          <Card className="bg-syndikate-metal/90 brutal-border overflow-hidden backdrop-blur-xl">
+            <CardContent className="p-5 text-center">
+              <Trophy className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+              <p className="text-muted-foreground text-sm">Нет запланированных турниров</p>
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       {userStats && (
@@ -1193,44 +1210,61 @@ export const TelegramApp = () => {
       {/* Background Effects - only on home page */}
       {activeTab === 'home' && (
         <>
+          {/* Dark base layer - covers everything */}
+          <div className="fixed inset-[-20px] bg-background z-0" />
+          
           {/* Industrial metal base texture */}
           <div 
             ref={baseTextureRef}
-            className="fixed inset-0 pointer-events-none industrial-texture opacity-50 z-0 transition-transform duration-0 will-change-transform" 
+            className="fixed inset-[-20px] pointer-events-none industrial-texture opacity-40 z-0 transition-transform duration-0 will-change-transform" 
           />
 
-          {/* Metal grid overlay */}
+          {/* Logo pattern grid - poker association */}
           <div
             ref={gridRef}
-            className="fixed inset-0 pointer-events-none opacity-20 z-0 transition-transform duration-0 will-change-transform"
+            className="fixed inset-[-20px] pointer-events-none z-0 transition-transform duration-0 will-change-transform"
             style={{
-              backgroundImage: `
-                repeating-linear-gradient(0deg, transparent, transparent 48px, rgba(255,255,255,0.04) 48px, rgba(255,255,255,0.04) 49px),
-                repeating-linear-gradient(90deg, transparent, transparent 48px, rgba(255,255,255,0.04) 48px, rgba(255,255,255,0.04) 49px)
-              `,
+              backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'%3E%3Ctext x='40' y='45' font-size='28' fill='rgba(120,120,120,0.08)' text-anchor='middle' font-family='Arial' font-weight='bold'%3E♠%3C/text%3E%3C/svg%3E")`,
+              backgroundSize: "80px 80px",
+            }}
+          />
+          
+          {/* Secondary logo pattern - offset */}
+          <div
+            className="fixed inset-[-20px] pointer-events-none z-0"
+            style={{
+              backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'%3E%3Ctext x='40' y='45' font-size='20' fill='rgba(100,100,100,0.05)' text-anchor='middle' font-family='Arial'%3E♣%3C/text%3E%3C/svg%3E")`,
+              backgroundSize: "80px 80px",
+              backgroundPosition: "40px 40px",
             }}
           />
 
-          {/* Neon glows */}
+          {/* Subtle neon glows - reduced and contained */}
           <div 
             ref={glowTopRef}
-            className="fixed w-[520px] h-[520px] bg-syndikate-orange/25 rounded-full blur-[160px] opacity-80 animate-pulse will-change-transform z-0" 
+            className="fixed w-[400px] h-[400px] bg-syndikate-orange/15 rounded-full blur-[200px] opacity-60 will-change-transform z-0" 
+            style={{ left: '-100px', top: '-100px' }}
           />
           <div 
             ref={glowBottomRef}
-            className="fixed right-0 bottom-0 w-[520px] h-[520px] bg-syndikate-red/20 rounded-full blur-[160px] opacity-80 animate-pulse will-change-transform z-0" 
+            className="fixed w-[400px] h-[400px] bg-syndikate-red/10 rounded-full blur-[200px] opacity-50 will-change-transform z-0" 
+            style={{ right: '-100px', bottom: '-100px' }}
           />
 
-          {/* Side rails */}
-          <div className="fixed inset-y-0 left-0 w-[2px] bg-gradient-to-b from-syndikate-orange/70 via-syndikate-red/40 to-transparent shadow-neon-orange pointer-events-none z-10" />
-          <div className="fixed inset-y-0 right-0 w-[2px] bg-gradient-to-b from-syndikate-orange/70 via-syndikate-red/40 to-transparent shadow-neon-orange pointer-events-none z-10" />
+          {/* Dark vignette overlay - hides edges */}
+          <div 
+            className="fixed inset-0 pointer-events-none z-[1]"
+            style={{
+              background: 'radial-gradient(ellipse at center, transparent 40%, hsl(var(--background)) 100%)'
+            }}
+          />
           
           {/* Subtle noise */}
           <div
-            className="fixed inset-0 pointer-events-none opacity-25 mix-blend-soft-light z-0"
+            className="fixed inset-0 pointer-events-none opacity-20 mix-blend-soft-light z-0"
             style={{
-              backgroundImage: "radial-gradient(circle at 1px 1px, rgba(255,255,255,0.15) 1px, transparent 0)",
-              backgroundSize: "4px 4px",
+              backgroundImage: "radial-gradient(circle at 1px 1px, rgba(255,255,255,0.1) 1px, transparent 0)",
+              backgroundSize: "3px 3px",
             }}
           />
         </>
@@ -1722,30 +1756,46 @@ export const TelegramApp = () => {
         </div>
       )}
 
-      {/* Fixed bottom navigation - modern style */}
-      <div className="fixed bottom-0 left-0 right-0 bg-syndikate-concrete/98 backdrop-blur-xl z-50 pb-safe border-t-2 border-syndikate-orange/20">
-        <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-neon"></div>
-        <div className="max-w-lg mx-auto px-2">
-          <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-4 bg-transparent h-16 p-1.5 gap-1">
-              <TabsTrigger value="home" className="group flex flex-col items-center justify-center gap-1 text-muted-foreground data-[state=active]:text-syndikate-orange transition-all duration-300 bg-transparent data-[state=active]:bg-syndikate-orange/15 rounded-lg">
-                <Home className="h-6 w-6 group-data-[state=active]:scale-110 transition-transform duration-300" strokeWidth={2} />
-                <span className="text-[10px] font-bold uppercase tracking-wide">Home</span>
-              </TabsTrigger>
-              <TabsTrigger value="tournaments" className="group flex flex-col items-center justify-center gap-1 text-muted-foreground data-[state=active]:text-syndikate-orange transition-all duration-300 bg-transparent data-[state=active]:bg-syndikate-orange/15 rounded-lg">
-                <Trophy className="h-6 w-6 group-data-[state=active]:scale-110 transition-transform duration-300" strokeWidth={2} />
-                <span className="text-[10px] font-bold uppercase tracking-wide">Games</span>
-              </TabsTrigger>
-              <TabsTrigger value="rating" className="group flex flex-col items-center justify-center gap-1 text-muted-foreground data-[state=active]:text-syndikate-orange transition-all duration-300 bg-transparent data-[state=active]:bg-syndikate-orange/15 rounded-lg">
-                <Star className="h-6 w-6 group-data-[state=active]:scale-110 transition-transform duration-300" strokeWidth={2} />
-                <span className="text-[10px] font-bold uppercase tracking-wide">Rating</span>
-              </TabsTrigger>
-              <TabsTrigger value="profile" className="group flex flex-col items-center justify-center gap-1 text-muted-foreground data-[state=active]:text-syndikate-orange transition-all duration-300 bg-transparent data-[state=active]:bg-syndikate-orange/15 rounded-lg">
-                <User className="h-6 w-6 group-data-[state=active]:scale-110 transition-transform duration-300" strokeWidth={2} />
-                <span className="text-[10px] font-bold uppercase tracking-wide">Profile</span>
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
+      {/* Fixed bottom navigation - separate icon buttons */}
+      <div className="fixed bottom-4 left-4 right-4 z-50 pb-safe">
+        <div className="max-w-md mx-auto">
+          <div className="flex items-center justify-center gap-3">
+            {[
+              { value: 'home', icon: Home, label: 'Home' },
+              { value: 'tournaments', icon: Trophy, label: 'Games' },
+              { value: 'rating', icon: Star, label: 'Rating' },
+              { value: 'profile', icon: User, label: 'Profile' },
+            ].map((item) => {
+              const Icon = item.icon;
+              const isActive = activeTab === item.value;
+              return (
+                <button
+                  key={item.value}
+                  onClick={() => setActiveTab(item.value)}
+                  className={`
+                    relative flex flex-col items-center justify-center gap-1 
+                    w-16 h-16 rounded-xl brutal-border backdrop-blur-xl
+                    transition-all duration-300 
+                    ${isActive 
+                      ? 'bg-syndikate-orange/20 border-syndikate-orange/60 shadow-neon-orange scale-105' 
+                      : 'bg-syndikate-concrete/80 border-syndikate-rust/40 hover:bg-syndikate-concrete hover:border-syndikate-orange/40 hover:scale-105'
+                    }
+                  `}
+                >
+                  {isActive && (
+                    <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-8 h-1 bg-syndikate-orange rounded-full" />
+                  )}
+                  <Icon 
+                    className={`h-6 w-6 transition-all duration-300 ${isActive ? 'text-syndikate-orange' : 'text-muted-foreground'}`} 
+                    strokeWidth={isActive ? 2.5 : 2} 
+                  />
+                  <span className={`text-[9px] font-bold uppercase tracking-wide ${isActive ? 'text-syndikate-orange' : 'text-muted-foreground'}`}>
+                    {item.label}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
 
