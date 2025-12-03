@@ -475,12 +475,12 @@ export const TelegramApp = () => {
           <div className="absolute inset-0 rounded-sm opacity-0 group-hover/hero:opacity-100 transition-opacity duration-500" 
                style={{ boxShadow: 'inset 0 0 30px hsla(24, 100%, 50%, 0.15)' }}></div>
           
-          <CardContent className="p-4 relative z-10">
-            <div className="flex items-center gap-4">
-              {/* Logo with glitch effect - prominent */}
-              <div className="relative w-20 h-20 flex-shrink-0">
+          <CardContent className="p-5 relative z-10">
+            <div className="flex items-center gap-5">
+              {/* Logo with glitch effect - larger */}
+              <div className="relative w-24 h-24 flex-shrink-0">
                 {/* Glow behind logo */}
-                <div className="absolute inset-0 bg-syndikate-orange/20 blur-xl rounded-full"></div>
+                <div className="absolute inset-0 bg-syndikate-orange/25 blur-2xl rounded-full"></div>
                 {/* Glitch layers */}
                 <img 
                   src={syndikateLogo} 
@@ -503,16 +503,16 @@ export const TelegramApp = () => {
               
               {/* Content */}
               <div className="flex-1 min-w-0">
-                <div className="flex items-start justify-between gap-2">
+                <div className="flex items-start justify-between gap-3">
                   <div>
-                    <h1 className="font-display text-xl sm:text-2xl uppercase text-foreground tracking-wider drop-shadow-lg group-hover/hero:text-syndikate-orange transition-colors duration-300">
+                    <h1 className="font-display text-2xl sm:text-3xl uppercase text-foreground tracking-wider drop-shadow-lg group-hover/hero:text-syndikate-orange transition-colors duration-300">
                       <GlitchText 
                         text="SYNDIKATE" 
                         glitchIntensity="high" 
                         glitchInterval={4500}
                       />
                     </h1>
-                    <p className="font-display text-xs sm:text-sm uppercase tracking-wider text-syndikate-orange font-bold">
+                    <p className="font-display text-sm sm:text-base uppercase tracking-wider text-syndikate-orange font-bold mt-1">
                       Власть за столом
                     </p>
                   </div>
@@ -524,18 +524,18 @@ export const TelegramApp = () => {
                         e.stopPropagation();
                         handleAddToHomeScreen();
                       }}
-                      className="w-9 h-9 flex-shrink-0 bg-syndikate-concrete brutal-border flex items-center justify-center text-syndikate-orange hover:bg-syndikate-orange hover:text-background transition-all duration-300 hover:shadow-neon-orange"
+                      className="w-10 h-10 flex-shrink-0 bg-syndikate-concrete brutal-border flex items-center justify-center text-syndikate-orange hover:bg-syndikate-orange hover:text-background transition-all duration-300 hover:shadow-neon-orange"
                       title="Установить"
                     >
-                      <Download className="h-4 w-4" />
+                      <Download className="h-5 w-5" />
                     </button>
                   )}
                 </div>
                 
-                {/* Compact "О клубе" button */}
-                <div className="mt-3 bg-syndikate-concrete/60 brutal-border px-3 py-2 backdrop-blur-md group-hover/hero:border-syndikate-orange/50 transition-all duration-300 flex items-center justify-between">
-                  <span className="text-foreground text-xs font-bold uppercase tracking-wide">О клубе</span>
-                  <ChevronRight className="h-4 w-4 text-syndikate-orange group-hover/hero:translate-x-1 transition-transform duration-300" />
+                {/* "О клубе" button */}
+                <div className="mt-4 bg-syndikate-concrete/60 brutal-border px-4 py-3 backdrop-blur-md group-hover/hero:border-syndikate-orange/50 transition-all duration-300 flex items-center justify-between">
+                  <span className="text-foreground text-sm font-bold uppercase tracking-wide">О клубе</span>
+                  <ChevronRight className="h-5 w-5 text-syndikate-orange group-hover/hero:translate-x-1 transition-transform duration-300" />
                 </div>
               </div>
             </div>
