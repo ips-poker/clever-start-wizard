@@ -1432,6 +1432,9 @@ export const TelegramApp = () => {
                     setSelectedTournament(tournament);
                     setShowTournamentModal(true);
                   }}
+                  onRegister={registerForTournament}
+                  isRegistering={registering === tournament.id}
+                  isRegistered={userRegistrations.has(tournament.id)}
                 />
               ))}
             </div>
