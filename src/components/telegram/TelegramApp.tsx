@@ -588,112 +588,144 @@ export const TelegramApp = () => {
       </div>
 
       <div>
-        <div className="flex items-center gap-2 mb-3 px-1">
-          <div className="w-1 h-5 bg-gradient-neon brutal-border"></div>
-          <p className="text-foreground text-base font-bold uppercase tracking-wide">🎫 Ближайший турнир</p>
-          <div className="flex-1 h-[2px] bg-syndikate-rust/30"></div>
+        <div className="flex items-center gap-2 mb-4 px-1">
+          <div className="w-1.5 h-6 bg-gradient-to-b from-syndikate-orange to-syndikate-red rounded-full"></div>
+          <p className="text-foreground text-lg font-bold uppercase tracking-wide">Ближайший турнир</p>
+          <div className="flex-1 h-[1px] bg-gradient-to-r from-syndikate-rust/50 to-transparent"></div>
         </div>
         
         {tournaments.length > 0 ? (
-          <Card className="bg-syndikate-metal/95 brutal-border overflow-hidden cursor-pointer group transition-all duration-500 hover:scale-[1.02] hover:shadow-neon-orange backdrop-blur-xl relative" onClick={() => setActiveTab('tournaments')}>
-            {/* Gradient overlay */}
-            <div className="absolute inset-0 bg-gradient-to-br from-syndikate-orange/10 via-transparent to-syndikate-red/10 opacity-60 group-hover:opacity-100 transition-opacity duration-500"></div>
+          <Card className="bg-gradient-to-br from-syndikate-metal/95 to-syndikate-concrete/90 brutal-border overflow-hidden cursor-pointer group transition-all duration-500 hover:shadow-neon-orange backdrop-blur-xl relative" onClick={() => setActiveTab('tournaments')}>
+            {/* Animated gradient overlay */}
+            <div className="absolute inset-0 bg-gradient-to-br from-syndikate-orange/10 via-transparent to-syndikate-red/10 opacity-50 group-hover:opacity-100 transition-opacity duration-500"></div>
             
-            {/* Corner brackets */}
-            <div className="absolute top-2 left-2 w-5 h-5 border-l-2 border-t-2 border-syndikate-orange/60 group-hover:w-7 group-hover:h-7 transition-all duration-300"></div>
-            <div className="absolute top-2 right-2 w-5 h-5 border-r-2 border-t-2 border-syndikate-orange/60 group-hover:w-7 group-hover:h-7 transition-all duration-300"></div>
-            <div className="absolute bottom-2 left-2 w-5 h-5 border-l-2 border-b-2 border-syndikate-orange/60 group-hover:w-7 group-hover:h-7 transition-all duration-300"></div>
-            <div className="absolute bottom-2 right-2 w-5 h-5 border-r-2 border-b-2 border-syndikate-orange/60 group-hover:w-7 group-hover:h-7 transition-all duration-300"></div>
+            {/* Subtle pattern */}
+            <div className="absolute inset-0 opacity-[0.02]" style={{
+              backgroundImage: 'radial-gradient(circle at 2px 2px, rgba(255,107,0,0.3) 1px, transparent 0)',
+              backgroundSize: '24px 24px'
+            }}></div>
             
-            <CardContent className="p-4 relative z-10">
-              {/* Header with status and price */}
-              <div className="flex items-start justify-between mb-3">
+            <CardContent className="p-5 relative z-10">
+              {/* Header */}
+              <div className="flex items-start justify-between mb-4">
                 <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1.5">
-                    <div className={`px-2 py-0.5 text-[10px] uppercase font-bold tracking-wider brutal-border ${
+                  {/* Status badges */}
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className={`px-3 py-1 text-xs uppercase font-bold tracking-wider rounded-lg ${
                       tournaments[0].status === 'active' 
-                        ? 'bg-syndikate-red/20 text-syndikate-red animate-pulse' 
-                        : 'bg-syndikate-orange/20 text-syndikate-orange'
+                        ? 'bg-syndikate-red/20 text-syndikate-red border border-syndikate-red/30 animate-pulse' 
+                        : 'bg-syndikate-orange/20 text-syndikate-orange border border-syndikate-orange/30'
                     }`}>
-                      {tournaments[0].status === 'active' ? '● LIVE' : '● REG'}
+                      {tournaments[0].status === 'active' ? '● LIVE' : '● OPEN'}
                     </div>
                     {tournaments[0].tournament_format && (
-                      <div className="px-2 py-0.5 bg-syndikate-concrete/50 brutal-border text-[10px] uppercase text-muted-foreground">
+                      <div className="px-3 py-1 bg-white/5 backdrop-blur-sm border border-white/10 rounded-lg text-xs uppercase text-muted-foreground">
                         {tournaments[0].tournament_format}
                       </div>
                     )}
                   </div>
-                  <h3 className="text-lg font-display font-bold text-foreground tracking-wide uppercase group-hover:text-syndikate-orange transition-colors duration-300 leading-tight">
+                  
+                  {/* Tournament name */}
+                  <h3 className="text-xl font-display font-bold text-foreground tracking-wide uppercase group-hover:text-syndikate-orange transition-colors duration-300 leading-tight mb-1">
                     <GlitchText text={tournaments[0].name} glitchIntensity="low" />
                   </h3>
-                </div>
-                <div className="text-right ml-3">
-                  <div className="text-xl font-display font-bold text-syndikate-orange">
-                    {tournaments[0].participation_fee.toLocaleString()}₽
-                  </div>
-                  <div className="text-[9px] text-muted-foreground uppercase">Buy-in</div>
+                  
+                  {/* Description if exists */}
+                  {tournaments[0].description && (
+                    <p className="text-muted-foreground text-xs line-clamp-1">{tournaments[0].description}</p>
+                  )}
                 </div>
               </div>
               
-              {/* Info grid - compact 4 columns */}
-              <div className="grid grid-cols-4 gap-1.5 mb-3">
-                <div className="flex flex-col items-center p-2 bg-background/30 brutal-border">
-                  <Calendar className="h-3.5 w-3.5 text-syndikate-orange mb-0.5" />
-                  <div className="text-[11px] font-bold text-foreground leading-tight">
+              {/* Main info grid */}
+              <div className="grid grid-cols-2 gap-3 mb-4">
+                {/* Date & Time */}
+                <div className="p-3 rounded-xl bg-white/5 backdrop-blur-sm border border-white/10">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Calendar className="h-4 w-4 text-syndikate-orange" />
+                    <span className="text-[10px] text-muted-foreground uppercase">Дата и время</span>
+                  </div>
+                  <div className="text-foreground font-bold text-base">
                     {new Date(tournaments[0].start_time).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })}
                   </div>
-                </div>
-                <div className="flex flex-col items-center p-2 bg-background/30 brutal-border">
-                  <Clock className="h-3.5 w-3.5 text-syndikate-orange mb-0.5" />
-                  <div className="text-[11px] font-bold text-foreground leading-tight">
+                  <div className="text-syndikate-orange font-bold text-lg">
                     {new Date(tournaments[0].start_time).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}
                   </div>
                 </div>
-                <div className="flex flex-col items-center p-2 bg-background/30 brutal-border">
-                  <Users className="h-3.5 w-3.5 text-syndikate-orange mb-0.5" />
-                  <div className="text-[11px] font-bold text-foreground leading-tight">
+                
+                {/* Buy-in */}
+                <div className="p-3 rounded-xl bg-syndikate-orange/10 backdrop-blur-sm border border-syndikate-orange/20">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Coins className="h-4 w-4 text-syndikate-orange" />
+                    <span className="text-[10px] text-muted-foreground uppercase">Buy-in</span>
+                  </div>
+                  <div className="text-syndikate-orange font-bold text-2xl">
+                    {tournaments[0].participation_fee.toLocaleString()}₽
+                  </div>
+                  {tournaments[0].reentry_fee && tournaments[0].reentry_fee > 0 && (
+                    <div className="text-muted-foreground text-xs">
+                      Re-entry: {tournaments[0].reentry_fee.toLocaleString()}₽
+                    </div>
+                  )}
+                </div>
+              </div>
+              
+              {/* Secondary info row */}
+              <div className="grid grid-cols-3 gap-2 mb-4">
+                <div className="text-center p-2.5 rounded-lg bg-white/5 border border-white/10">
+                  <Users className="h-5 w-5 text-syndikate-orange mx-auto mb-1" />
+                  <div className="text-foreground font-bold text-sm">
                     {tournaments[0].tournament_registrations?.[0]?.count || 0}/{tournaments[0].max_players}
                   </div>
+                  <div className="text-[9px] text-muted-foreground uppercase">Игроков</div>
                 </div>
-                <div className="flex flex-col items-center p-2 bg-background/30 brutal-border">
-                  <Coins className="h-3.5 w-3.5 text-syndikate-orange mb-0.5" />
-                  <div className="text-[11px] font-bold text-foreground leading-tight">
+                <div className="text-center p-2.5 rounded-lg bg-white/5 border border-white/10">
+                  <Coins className="h-5 w-5 text-syndikate-orange mx-auto mb-1" />
+                  <div className="text-foreground font-bold text-sm">
                     {(tournaments[0].starting_chips / 1000).toFixed(0)}K
                   </div>
+                  <div className="text-[9px] text-muted-foreground uppercase">Стек</div>
+                </div>
+                <div className="text-center p-2.5 rounded-lg bg-white/5 border border-white/10">
+                  <Trophy className="h-5 w-5 text-syndikate-orange mx-auto mb-1" />
+                  <div className="text-foreground font-bold text-sm">
+                    {((tournaments[0].participation_fee || 0) * (tournaments[0].tournament_registrations?.[0]?.count || 0)).toLocaleString()}₽
+                  </div>
+                  <div className="text-[9px] text-muted-foreground uppercase">Призы*</div>
                 </div>
               </div>
               
               {/* Registration progress */}
-              <div className="space-y-1.5 mb-3">
-                <div className="flex justify-between text-[10px]">
-                  <span className="text-muted-foreground uppercase">Регистрация</span>
+              <div className="mb-4">
+                <div className="flex justify-between text-xs mb-2">
+                  <span className="text-muted-foreground">Регистрация</span>
                   <span className={`font-bold ${
                     ((tournaments[0].tournament_registrations?.[0]?.count || 0) / tournaments[0].max_players) >= 0.9 
                       ? 'text-syndikate-red animate-pulse' 
                       : 'text-syndikate-orange'
                   }`}>
-                    {tournaments[0].max_players - (tournaments[0].tournament_registrations?.[0]?.count || 0)} мест
+                    {tournaments[0].max_players - (tournaments[0].tournament_registrations?.[0]?.count || 0)} мест свободно
                   </span>
                 </div>
-                <div className="h-1.5 bg-background/50 brutal-border overflow-hidden">
+                <div className="h-2 bg-background/50 rounded-full overflow-hidden">
                   <div 
-                    className="h-full bg-gradient-to-r from-syndikate-orange to-syndikate-red transition-all duration-500"
+                    className="h-full bg-gradient-to-r from-syndikate-orange to-syndikate-red rounded-full transition-all duration-500"
                     style={{ width: `${((tournaments[0].tournament_registrations?.[0]?.count || 0) / tournaments[0].max_players) * 100}%` }}
                   />
                 </div>
               </div>
               
-              {/* CTA */}
-              <div className="flex items-center justify-center gap-2 pt-2 border-t border-syndikate-rust/30">
-                <span className="text-syndikate-orange font-display text-xs uppercase tracking-wider">Подробнее</span>
-                <ChevronRight className="h-4 w-4 text-syndikate-orange group-hover:translate-x-1 transition-transform duration-300" />
-              </div>
+              {/* CTA Button */}
+              <button className="w-full py-3 rounded-xl bg-syndikate-orange/20 hover:bg-syndikate-orange/30 border border-syndikate-orange/40 hover:border-syndikate-orange/60 transition-all duration-300 flex items-center justify-center gap-2 group/btn">
+                <span className="text-syndikate-orange font-bold uppercase tracking-wider">Подробнее</span>
+                <ChevronRight className="h-5 w-5 text-syndikate-orange group-hover/btn:translate-x-1 transition-transform duration-300" />
+              </button>
             </CardContent>
           </Card>
         ) : (
           <Card className="bg-syndikate-metal/90 brutal-border overflow-hidden backdrop-blur-xl">
-            <CardContent className="p-5 text-center">
-              <Trophy className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+            <CardContent className="p-6 text-center">
+              <Trophy className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
               <p className="text-muted-foreground text-sm">Нет запланированных турниров</p>
             </CardContent>
           </Card>
