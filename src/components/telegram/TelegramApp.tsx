@@ -1744,15 +1744,15 @@ export const TelegramApp = () => {
         </div>
       )}
 
-      {/* Fixed bottom navigation - separate icon buttons */}
-      <div className="fixed bottom-4 left-4 right-4 z-50 pb-safe">
-        <div className="max-w-md mx-auto">
-          <div className="flex items-center justify-center gap-3">
+      {/* Fixed bottom navigation - compact modern */}
+      <div className="fixed bottom-2 left-3 right-3 z-50 pb-safe">
+        <div className="max-w-sm mx-auto">
+          <div className="flex items-center justify-center gap-2 bg-background/90 backdrop-blur-xl rounded-2xl p-2 border border-syndikate-rust/30">
             {[
-              { value: 'home', icon: Home, label: 'Home' },
-              { value: 'tournaments', icon: Trophy, label: 'Games' },
-              { value: 'rating', icon: Star, label: 'Rating' },
-              { value: 'profile', icon: User, label: 'Profile' },
+              { value: 'home', icon: Home, label: '●' },
+              { value: 'tournaments', icon: Zap, label: '●' },
+              { value: 'rating', icon: Crown, label: '●' },
+              { value: 'profile', icon: User, label: '●' },
             ].map((item) => {
               const Icon = item.icon;
               const isActive = activeTab === item.value;
@@ -1761,25 +1761,19 @@ export const TelegramApp = () => {
                   key={item.value}
                   onClick={() => setActiveTab(item.value)}
                   className={`
-                    relative flex flex-col items-center justify-center gap-1 
-                    w-16 h-16 rounded-xl brutal-border backdrop-blur-xl
+                    relative flex items-center justify-center
+                    w-14 h-12 rounded-xl
                     transition-all duration-300 
                     ${isActive 
-                      ? 'bg-syndikate-orange/20 border-syndikate-orange/60 shadow-neon-orange scale-105' 
-                      : 'bg-syndikate-concrete/80 border-syndikate-rust/40 hover:bg-syndikate-concrete hover:border-syndikate-orange/40 hover:scale-105'
+                      ? 'bg-syndikate-orange text-background shadow-neon-orange' 
+                      : 'bg-transparent text-muted-foreground hover:text-syndikate-orange hover:bg-syndikate-orange/10'
                     }
                   `}
                 >
-                  {isActive && (
-                    <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-8 h-1 bg-syndikate-orange rounded-full" />
-                  )}
                   <Icon 
-                    className={`h-6 w-6 transition-all duration-300 ${isActive ? 'text-syndikate-orange' : 'text-muted-foreground'}`} 
+                    className={`h-5 w-5 transition-all duration-300 ${isActive ? 'scale-110' : ''}`} 
                     strokeWidth={isActive ? 2.5 : 2} 
                   />
-                  <span className={`text-[9px] font-bold uppercase tracking-wide ${isActive ? 'text-syndikate-orange' : 'text-muted-foreground'}`}>
-                    {item.label}
-                  </span>
                 </button>
               );
             })}
