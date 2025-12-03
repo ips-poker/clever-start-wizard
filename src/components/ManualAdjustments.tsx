@@ -134,43 +134,29 @@ const ManualAdjustments = ({ tournaments, selectedTournament, onRefresh }: Manua
 
     setLoading(true);
     try {
-      const ratingDifference = newPlayerRating - editingPlayer.elo_rating;
-
-      // Используем RPC функцию для безопасного обновления
-      const { error: playerError } = await supabase.rpc('update_player_safe', {
+      // Используем безопасную RPC функцию для обновления рейтинга
+      const { data, error } = await supabase.rpc('update_player_rating_safe', {
         p_player_id: editingPlayer.id,
-        p_name: editingPlayer.name,
-        p_avatar_url: null
+        p_new_rating: newPlayerRating
       });
 
-      // Если RPC не сработала, пробуем напрямую
-      if (playerError) {
-        console.log('RPC failed, trying direct update:', playerError);
-        const { error: directError } = await supabase
-          .from('players')
-          .update({ elo_rating: newPlayerRating })
-          .eq('id', editingPlayer.id);
-
-        if (directError) throw directError;
-      } else {
-        // Обновляем рейтинг отдельно
-        const { error: ratingError } = await supabase
-          .from('players')
-          .update({ elo_rating: newPlayerRating })
-          .eq('id', editingPlayer.id);
-        
-        if (ratingError) {
-          console.error('Rating update error:', ratingError);
-        }
+      if (error) {
+        console.error('RPC error:', error);
+        throw error;
       }
 
-      // Не записываем в game_results для ручных корректировок,
-      // так как tournament_id обязателен
-      console.log(`Ручная корректировка рейтинга: ${editingPlayer.name}, ${editingPlayer.elo_rating} -> ${newPlayerRating}, причина: ${adjustmentReason}`);
+      // Проверяем результат
+      const result = data as { success: boolean; error?: string; change?: number; player_name?: string };
+      
+      if (!result.success) {
+        throw new Error(result.error || 'Не удалось обновить рейтинг');
+      }
+
+      console.log(`Ручная корректировка рейтинга: ${result.player_name}, изменение: ${result.change}, причина: ${adjustmentReason}`);
 
       toast({
         title: 'Рейтинг обновлен',
-        description: `Рейтинг игрока ${editingPlayer.name} изменен на ${ratingDifference > 0 ? '+' : ''}${ratingDifference}`,
+        description: `Рейтинг игрока ${result.player_name} изменен на ${(result.change || 0) > 0 ? '+' : ''}${result.change}`,
       });
 
       setEditingPlayer(null);
