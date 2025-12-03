@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Trophy, Users, Clock, Calendar, Coins, Target, Zap, Shield, ChevronRight, Gem } from 'lucide-react';
+import { Trophy, Users, Clock, Calendar, Coins, Target, Zap, Shield, ChevronRight, Gem, Loader2, CheckCircle, UserPlus } from 'lucide-react';
 import { GlitchText } from '@/components/ui/glitch-text';
 import { calculateTotalRPSPool, formatRPSPoints } from '@/utils/rpsCalculations';
 
@@ -23,9 +23,12 @@ interface TournamentCardProps {
   tournament: Tournament;
   index: number;
   onClick: () => void;
+  onRegister?: (tournamentId: string) => void;
+  isRegistering?: boolean;
+  isRegistered?: boolean;
 }
 
-export const TournamentCard: React.FC<TournamentCardProps> = ({ tournament, index, onClick }) => {
+export const TournamentCard: React.FC<TournamentCardProps> = ({ tournament, index, onClick, onRegister, isRegistering, isRegistered }) => {
   const [currentTime, setCurrentTime] = useState(new Date());
   
   const registeredCount = tournament.tournament_registrations?.[0]?.count || 0;
@@ -281,16 +284,56 @@ export const TournamentCard: React.FC<TournamentCardProps> = ({ tournament, inde
             </div>
           )}
           
-          {/* CTA */}
-          <div className="flex items-center justify-between pt-2 border-t border-syndikate-concrete/20">
-            <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
-              <div className="w-1.5 h-1.5 bg-syndikate-orange rounded-full animate-pulse" />
-              <span className="uppercase tracking-wider">Live update</span>
-            </div>
-            <div className="flex items-center gap-1 text-syndikate-orange font-bold uppercase text-[10px] tracking-wider group-hover:translate-x-1 transition-transform duration-300">
-              <span>Подробнее</span>
-              <ChevronRight className="h-4 w-4" />
-            </div>
+          {/* Action Buttons */}
+          <div className="flex gap-2 pt-2 border-t border-syndikate-concrete/20">
+            {/* Details Button */}
+            <button 
+              onClick={(e) => {
+                e.stopPropagation();
+                onClick();
+              }}
+              className="flex-1 py-2.5 brutal-border bg-syndikate-metal/30 hover:bg-syndikate-metal/50 border border-border transition-all duration-300 flex items-center justify-center gap-1.5"
+            >
+              <Target className="h-4 w-4 text-muted-foreground" />
+              <span className="text-muted-foreground font-bold uppercase text-[10px] tracking-wider">Подробнее</span>
+            </button>
+            
+            {/* Quick Register Button */}
+            {tournament.status === 'registration' && onRegister && (
+              <button 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (!isRegistered && !isRegistering) {
+                    onRegister(tournament.id);
+                  }
+                }}
+                disabled={isRegistering || isRegistered}
+                className={`flex-1 py-2.5 brutal-border transition-all duration-300 flex items-center justify-center gap-1.5 ${
+                  isRegistered 
+                    ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-500 cursor-default' 
+                    : isRegistering
+                      ? 'bg-syndikate-orange/10 border-syndikate-orange/30 text-syndikate-orange cursor-wait'
+                      : 'bg-syndikate-orange/20 hover:bg-syndikate-orange border-2 border-syndikate-orange/50 hover:border-syndikate-orange text-syndikate-orange hover:text-background shadow-brutal hover:shadow-neon-orange'
+                }`}
+              >
+                {isRegistering ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span className="font-bold uppercase text-[10px] tracking-wider">Загрузка...</span>
+                  </>
+                ) : isRegistered ? (
+                  <>
+                    <CheckCircle className="h-4 w-4" />
+                    <span className="font-bold uppercase text-[10px] tracking-wider">Вы в игре</span>
+                  </>
+                ) : (
+                  <>
+                    <UserPlus className="h-4 w-4" />
+                    <span className="font-bold uppercase text-[10px] tracking-wider">Участвовать</span>
+                  </>
+                )}
+              </button>
+            )}
           </div>
         </div>
       </div>
