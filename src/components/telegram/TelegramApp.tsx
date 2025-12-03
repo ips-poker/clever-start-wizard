@@ -468,60 +468,107 @@ export const TelegramApp = () => {
 
   const renderHome = () => (
     <div className="space-y-4 pb-20 px-4 pt-24 bg-transparent min-h-screen relative z-10">
-      <Card className="bg-syndikate-metal/90 brutal-border overflow-hidden relative cursor-pointer group transition-all duration-500 hover:scale-[1.02] hover:shadow-neon-orange backdrop-blur-xl" onClick={() => setActiveTab('about')}>
-        <div className="absolute inset-0 bg-gradient-to-br from-syndikate-orange/5 via-transparent to-syndikate-red/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-        <div className="absolute inset-0 opacity-10 group-hover:opacity-20 transition-opacity duration-500">
-          <div className="absolute top-4 right-4 text-syndikate-orange/30 text-5xl animate-pulse">♠</div>
-          <div className="absolute top-12 left-4 text-syndikate-orange/20 text-3xl">♣</div>
-          <div className="absolute bottom-4 right-12 text-syndikate-orange/25 text-4xl animate-pulse">♦</div>
-          <div className="absolute bottom-12 left-12 text-syndikate-orange/15 text-2xl">♥</div>
+      {/* Hero Card with Breaking Logo Effect */}
+      <div className="relative cursor-pointer group/hero" onClick={() => setActiveTab('about')}>
+        {/* Large background logo that breaks through */}
+        <div className="absolute -left-6 top-1/2 z-30 pointer-events-none animate-logo-glow">
+          {/* Multiple glow layers for depth */}
+          <div className="absolute inset-0 blur-[60px] bg-syndikate-orange/40 scale-[2] animate-pulse"></div>
+          <div className="absolute inset-0 blur-[30px] bg-syndikate-orange/30 scale-150"></div>
+          
+          {/* Main logo - oversized and breaking out */}
+          <img 
+            src={syndikateLogo} 
+            alt="Syndikate Logo" 
+            className="w-36 h-36 object-contain relative z-10" 
+          />
+          
+          {/* Energy particles around logo */}
+          <div className="absolute -inset-4">
+            <div className="absolute top-0 left-1/2 w-1 h-1 bg-syndikate-orange rounded-full animate-ping opacity-60"></div>
+            <div className="absolute bottom-2 right-0 w-1.5 h-1.5 bg-syndikate-orange rounded-full animate-ping opacity-40" style={{ animationDelay: '0.5s' }}></div>
+            <div className="absolute top-1/3 right-2 w-1 h-1 bg-syndikate-orange-glow rounded-full animate-ping opacity-50" style={{ animationDelay: '1s' }}></div>
+          </div>
         </div>
-        
-        <CardContent className="p-5 relative z-10">
-          <div className="flex items-center gap-4 mb-4">
-            <div className="w-16 h-16 border-2 border-syndikate-orange bg-syndikate-concrete brutal-border flex items-center justify-center overflow-hidden shadow-lg group-hover:shadow-neon-orange transition-shadow duration-300 p-2">
-              <img src={syndikateLogo} alt="Syndikate Logo" className="w-full h-full object-contain neon-orange group-hover:scale-110 transition-transform duration-300" />
-            </div>
-            
-            <div className="flex-1">
-              <h1 className="font-display text-3xl uppercase text-foreground tracking-wider drop-shadow-lg group-hover:text-syndikate-orange transition-colors duration-300">
-                <GlitchText 
-                  text="SYNDIKATE" 
-                  glitchIntensity="high" 
-                  glitchInterval={4500}
-                />
-              </h1>
-              <div className="h-[2px] w-16 bg-gradient-neon mt-1 group-hover:w-24 transition-all duration-500"></div>
-              <p className="font-display text-sm uppercase tracking-wider text-syndikate-orange mt-1">
-                Власть за столом
-              </p>
-            </div>
 
-            {canAddToHomeScreen && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleAddToHomeScreen();
-                }}
-                className="text-foreground hover:text-syndikate-orange hover:bg-syndikate-metal p-2 transition-all duration-300"
-                title="Установить на главный экран"
-              >
-                <Download className="h-5 w-5" />
-              </Button>
-            )}
+        {/* Torn edge effect - organic ripped paper look */}
+        <div className="absolute left-[72px] top-0 bottom-0 w-12 z-20 pointer-events-none overflow-visible">
+          <svg viewBox="0 0 48 100" preserveAspectRatio="none" className="w-full h-full animate-torn-breathe">
+            <defs>
+              <filter id="torn-filter" x="-50%" y="-50%" width="200%" height="200%">
+                <feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="5" seed="15" result="noise"/>
+                <feDisplacementMap in="SourceGraphic" in2="noise" scale="12" xChannelSelector="R" yChannelSelector="G"/>
+              </filter>
+              <linearGradient id="torn-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor="transparent"/>
+                <stop offset="30%" stopColor="#2e2e2e" stopOpacity="0.3"/>
+                <stop offset="70%" stopColor="#2e2e2e" stopOpacity="0.7"/>
+                <stop offset="100%" stopColor="#2e2e2e" stopOpacity="0.9"/>
+              </linearGradient>
+            </defs>
+            <path 
+              d="M 0 0 C 8 2, 4 8, 10 12 C 6 16, 14 20, 8 25 C 16 28, 6 34, 12 38 C 4 42, 16 46, 10 50 C 18 54, 8 58, 14 62 C 6 66, 16 70, 10 74 C 18 78, 8 82, 14 86 C 6 90, 18 94, 12 98 L 12 100 L 48 100 L 48 0 Z" 
+              fill="url(#torn-grad)"
+              filter="url(#torn-filter)"
+            />
+          </svg>
+          {/* Orange glow along torn edge */}
+          <div className="absolute inset-y-0 left-0 w-4 bg-gradient-to-r from-syndikate-orange/20 to-transparent blur-sm"></div>
+        </div>
+
+        <Card className="bg-syndikate-metal/90 brutal-border overflow-visible relative transition-all duration-500 group-hover/hero:scale-[1.02] group-hover/hero:shadow-neon-orange backdrop-blur-xl ml-20 border-l-0 rounded-l-none">
+          {/* Left edge highlight */}
+          <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-syndikate-orange/40 via-syndikate-orange/20 to-syndikate-orange/40"></div>
+          
+          <div className="absolute inset-0 bg-gradient-to-br from-syndikate-orange/5 via-transparent to-syndikate-red/5 opacity-0 group-hover/hero:opacity-100 transition-opacity duration-500"></div>
+          <div className="absolute inset-0 opacity-10 group-hover/hero:opacity-20 transition-opacity duration-500">
+            <div className="absolute top-4 right-4 text-syndikate-orange/30 text-5xl animate-pulse">♠</div>
+            <div className="absolute bottom-4 right-12 text-syndikate-orange/25 text-4xl animate-pulse" style={{ animationDelay: '0.5s' }}>♦</div>
+            <div className="absolute bottom-12 left-16 text-syndikate-orange/15 text-2xl">♥</div>
           </div>
           
-          <div className="bg-syndikate-concrete/50 brutal-border p-3 backdrop-blur-md group-hover:border-syndikate-orange/30 transition-all duration-300">
-            <div className="flex items-center gap-2">
-              <div className="w-1.5 h-1.5 bg-syndikate-orange brutal-border animate-pulse"></div>
-              <p className="text-foreground text-base font-bold uppercase tracking-wide">Узнать больше о клубе</p>
-              <ChevronRight className="h-4 w-4 text-syndikate-orange ml-auto group-hover:translate-x-1 transition-transform duration-300" />
+          <CardContent className="p-5 pl-6 relative z-10">
+            <div className="flex items-center gap-4 mb-4">
+              <div className="flex-1">
+                <h1 className="font-display text-3xl uppercase text-foreground tracking-wider drop-shadow-lg group-hover/hero:text-syndikate-orange transition-colors duration-300">
+                  <GlitchText 
+                    text="SYNDIKATE" 
+                    glitchIntensity="high" 
+                    glitchInterval={4500}
+                  />
+                </h1>
+                <div className="h-[2px] w-16 bg-gradient-neon mt-1 group-hover/hero:w-28 transition-all duration-500"></div>
+                <p className="font-display text-sm uppercase tracking-wider text-syndikate-orange mt-1">
+                  Власть за столом
+                </p>
+              </div>
+
+              {canAddToHomeScreen && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleAddToHomeScreen();
+                  }}
+                  className="text-foreground hover:text-syndikate-orange hover:bg-syndikate-metal p-2 transition-all duration-300"
+                  title="Установить на главный экран"
+                >
+                  <Download className="h-5 w-5" />
+                </Button>
+              )}
             </div>
-          </div>
-        </CardContent>
-      </Card>
+            
+            <div className="bg-syndikate-concrete/50 brutal-border p-3 backdrop-blur-md group-hover/hero:border-syndikate-orange/30 transition-all duration-300">
+              <div className="flex items-center gap-2">
+                <div className="w-1.5 h-1.5 bg-syndikate-orange brutal-border animate-pulse"></div>
+                <p className="text-foreground text-base font-bold uppercase tracking-wide">Узнать больше о клубе</p>
+                <ChevronRight className="h-4 w-4 text-syndikate-orange ml-auto group-hover/hero:translate-x-1 transition-transform duration-300" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
       <Card className="bg-syndikate-metal/90 brutal-border overflow-hidden cursor-pointer group transition-all duration-500 hover:scale-[1.02] hover:shadow-neon-orange backdrop-blur-xl relative" onClick={() => setActiveTab('rating')}>
         <div className="absolute inset-0 bg-gradient-to-br from-syndikate-orange/5 via-transparent to-syndikate-red/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>

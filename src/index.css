@@ -223,3 +223,42 @@
                  0 0 60px hsla(var(--syndikate-orange), 0.6);
   }
 }
+
+/* Living glow pulse for logo */
+@keyframes logo-glow {
+  0%, 100% {
+    filter: drop-shadow(0 0 20px hsla(var(--syndikate-orange), 0.5)) 
+            drop-shadow(0 0 40px hsla(var(--syndikate-orange), 0.3));
+    transform: translateY(-50%) scale(1);
+  }
+  33% {
+    filter: drop-shadow(0 0 35px hsla(var(--syndikate-orange), 0.8)) 
+            drop-shadow(0 0 60px hsla(var(--syndikate-orange), 0.5));
+    transform: translateY(calc(-50% - 6px)) scale(1.04);
+  }
+  66% {
+    filter: drop-shadow(0 0 28px hsla(var(--syndikate-orange), 0.6)) 
+            drop-shadow(0 0 50px hsla(var(--syndikate-orange), 0.4));
+    transform: translateY(calc(-50% + 4px)) scale(1.02);
+  }
+}
+
+/* Torn edge breathing animation */
+@keyframes torn-breathe {
+  0%, 100% {
+    opacity: 0.85;
+    transform: scaleX(1) scaleY(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scaleX(1.08) scaleY(1.02);
+  }
+}
+
+.animate-logo-glow {
+  animation: logo-glow 4s ease-in-out infinite;
+}
+
+.animate-torn-breathe {
+  animation: torn-breathe 3s ease-in-out infinite;
+}
