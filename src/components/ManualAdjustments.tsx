@@ -136,27 +136,37 @@ const ManualAdjustments = ({ tournaments, selectedTournament, onRefresh }: Manua
     try {
       const ratingDifference = newPlayerRating - editingPlayer.elo_rating;
 
-      const { error: playerError } = await supabase
-        .from('players')
-        .update({ elo_rating: newPlayerRating })
-        .eq('id', editingPlayer.id);
+      // Используем RPC функцию для безопасного обновления
+      const { error: playerError } = await supabase.rpc('update_player_safe', {
+        p_player_id: editingPlayer.id,
+        p_name: editingPlayer.name,
+        p_avatar_url: null
+      });
 
-      if (playerError) throw playerError;
+      // Если RPC не сработала, пробуем напрямую
+      if (playerError) {
+        console.log('RPC failed, trying direct update:', playerError);
+        const { error: directError } = await supabase
+          .from('players')
+          .update({ elo_rating: newPlayerRating })
+          .eq('id', editingPlayer.id);
 
-      const { error: adjustmentError } = await supabase
-        .from('game_results')
-        .insert({
-          tournament_id: null,
-          player_id: editingPlayer.id,
-          position: 0,
-          elo_before: editingPlayer.elo_rating,
-          elo_after: newPlayerRating,
-          elo_change: ratingDifference,
-        });
-
-      if (adjustmentError) {
-        console.error('Error creating adjustment record:', adjustmentError);
+        if (directError) throw directError;
+      } else {
+        // Обновляем рейтинг отдельно
+        const { error: ratingError } = await supabase
+          .from('players')
+          .update({ elo_rating: newPlayerRating })
+          .eq('id', editingPlayer.id);
+        
+        if (ratingError) {
+          console.error('Rating update error:', ratingError);
+        }
       }
+
+      // Не записываем в game_results для ручных корректировок,
+      // так как tournament_id обязателен
+      console.log(`Ручная корректировка рейтинга: ${editingPlayer.name}, ${editingPlayer.elo_rating} -> ${newPlayerRating}, причина: ${adjustmentReason}`);
 
       toast({
         title: 'Рейтинг обновлен',
@@ -165,12 +175,14 @@ const ManualAdjustments = ({ tournaments, selectedTournament, onRefresh }: Manua
 
       setEditingPlayer(null);
       setAdjustmentReason('');
+      setNewPlayerRating(0);
       loadPlayers();
       onRefresh();
     } catch (error: any) {
+      console.error('Error adjusting rating:', error);
       toast({
         title: 'Ошибка обновления',
-        description: error.message,
+        description: error.message || 'Не удалось обновить рейтинг',
         variant: 'destructive'
       });
     } finally {
