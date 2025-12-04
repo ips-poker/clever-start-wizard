@@ -299,3 +299,63 @@
   animation: glitch-logo-2 4s ease-in-out infinite;
   animation-delay: 0.3s;
 }
+
+/* Rank Profile Animations */
+@keyframes rank-glow {
+  0%, 100% { box-shadow: 0 0 20px currentColor; }
+  50% { box-shadow: 0 0 40px currentColor, 0 0 60px currentColor; }
+}
+
+@keyframes rainbow-glow {
+  0% { box-shadow: 0 0 60px rgba(34,211,238,0.8), 0 0 30px rgba(147,51,234,0.6); }
+  33% { box-shadow: 0 0 60px rgba(147,51,234,0.8), 0 0 30px rgba(236,72,153,0.6); }
+  66% { box-shadow: 0 0 60px rgba(236,72,153,0.8), 0 0 30px rgba(34,211,238,0.6); }
+  100% { box-shadow: 0 0 60px rgba(34,211,238,0.8), 0 0 30px rgba(147,51,234,0.6); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+@keyframes rank-scan {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100%); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes border-flow {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.animate-rank-glow {
+  animation: rank-glow 2s ease-in-out infinite;
+}
+
+.animate-rainbow-glow {
+  animation: rainbow-glow 4s ease-in-out infinite;
+}
+
+.animate-shimmer {
+  background-size: 200% 100%;
+  animation: shimmer 3s linear infinite;
+}
+
+.animate-rank-scan {
+  animation: rank-scan 3s linear infinite;
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+.animate-border-flow {
+  background-size: 200% 200%;
+  animation: border-flow 3s linear infinite;
+}

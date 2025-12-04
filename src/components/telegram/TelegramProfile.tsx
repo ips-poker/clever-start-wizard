@@ -41,6 +41,7 @@ import { convertFeeToRPS, formatRPSPoints } from '@/utils/rpsCalculations';
 import { getCurrentMafiaRank, getMafiaRankProgress, getRarityInfo, type MafiaRank } from '@/utils/mafiaRanks';
 import { fixStorageUrl } from '@/utils/storageUtils';
 import { MafiaHierarchy } from './MafiaHierarchy';
+import { getRankProfileStyle } from './RankProfileStyles';
 
 interface Player {
   id: string;
@@ -510,7 +511,9 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate, onUnre
   }, 0);
   
   const recentForm = gameResults.slice(0, 5).map(r => r.position <= 3 ? '✅' : '❌').join('');
-
+  
+  // Get rank-specific profile styling
+  const rankStyle = getRankProfileStyle(mafiaRank);
   return (
     <div className="space-y-4 pb-20 px-4 bg-transparent min-h-screen relative z-10">
       {/* Header */}
@@ -524,94 +527,103 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate, onUnre
         </div>
       </div>
 
-      {/* Profile Header with Mafia Rank */}
-      <Card className="bg-syndikate-metal/90 brutal-border backdrop-blur-xl shadow-brutal relative overflow-hidden group">
-        {/* Background effects */}
-        <div className={`absolute inset-0 bg-gradient-to-br ${mafiaRank?.bgGradient || 'from-zinc-600 to-zinc-800'} opacity-10`}></div>
-        <div className="absolute inset-0 opacity-10 group-hover:opacity-20 transition-opacity duration-500">
-          <div className="absolute bottom-4 left-4 text-2xl opacity-50">♠</div>
-        </div>
+      {/* Profile Header with Rank-Specific Styling */}
+      <Card className={`brutal-border backdrop-blur-xl shadow-brutal relative overflow-hidden group ${rankStyle.bgPattern}`}>
+        {/* Rank-specific background overlay */}
+        <div className={`absolute inset-0 ${rankStyle.bgOverlay}`}></div>
+        
+        {/* Rank-specific decorations */}
+        {rankStyle.decorations}
         
         <CardContent className="p-6 relative z-10">
           <div className="text-center space-y-4">
-            {/* Avatar */}
-            <div className="relative inline-block">
-              <div className={`absolute -inset-1 rounded-full bg-gradient-to-br ${mafiaRank?.bgGradient || 'from-zinc-600 to-zinc-800'} opacity-50 blur-sm`}></div>
-              <Avatar className={`w-20 h-20 mx-auto brutal-border shadow-lg ring-2 ${mafiaRank?.borderColor || 'ring-zinc-500'} relative`}>
+            {/* Avatar with Rank-Specific Effects */}
+            <div className={`relative inline-block ${rankStyle.avatarAnimation}`}>
+              {/* Outer glow based on rank */}
+              <div className={`absolute -inset-2 rounded-full bg-gradient-to-br ${mafiaRank?.bgGradient || 'from-zinc-600 to-zinc-800'} opacity-40 blur-md ${mafiaRank?.rarity === 'godfather' ? 'animate-pulse' : ''}`}></div>
+              <Avatar className={`w-24 h-24 mx-auto brutal-border ${rankStyle.avatarGlow} ${rankStyle.avatarRing} relative`}>
                 <AvatarImage src={player.avatar_url ? fixStorageUrl(player.avatar_url) : undefined} alt={player.name} />
-                <AvatarFallback className="text-lg bg-syndikate-orange text-background font-bold uppercase">
+                <AvatarFallback className="text-xl bg-syndikate-orange text-background font-bold uppercase">
                   {player.name?.charAt(0).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
               <Button
                 onClick={() => setShowAvatarSelector(true)}
-                className="absolute -bottom-1 -right-1 brutal-border w-6 h-6 p-0 shadow-lg hover:scale-110 transition-transform bg-syndikate-orange hover:bg-syndikate-orange-glow"
+                className="absolute -bottom-1 -right-1 brutal-border w-7 h-7 p-0 shadow-lg hover:scale-110 transition-transform bg-syndikate-orange hover:bg-syndikate-orange-glow"
                 size="sm"
               >
-                <Camera className="h-3 w-3" />
+                <Camera className="h-3.5 w-3.5" />
               </Button>
             </div>
             
-            {/* Name */}
-            <div className="space-y-2">
+            {/* Name with Rank-Specific Styling */}
+            <div className="space-y-3">
               {editingName ? (
                 <div className="flex items-center gap-2 justify-center">
                   <Input
                     value={newPlayerName}
                     onChange={(e) => setNewPlayerName(e.target.value)}
-                    className="text-center text-lg font-bold uppercase max-w-xs bg-syndikate-concrete/50 brutal-border text-foreground placeholder:text-muted-foreground backdrop-blur-sm"
+                    className="text-center text-lg font-bold uppercase max-w-xs bg-background/50 brutal-border text-foreground placeholder:text-muted-foreground backdrop-blur-sm"
                     placeholder="Введите новое имя"
                     onKeyPress={(e) => e.key === 'Enter' && handleNameUpdate()}
                   />
                   <Button
                     onClick={handleNameUpdate}
                     size="sm"
-                    className="h-6 w-6 p-0 bg-syndikate-orange brutal-border hover:bg-syndikate-orange-glow"
+                    className="h-7 w-7 p-0 bg-syndikate-orange brutal-border hover:bg-syndikate-orange-glow"
                     disabled={!newPlayerName.trim() || loading}
                   >
-                    <Check className="h-3 w-3" />
+                    <Check className="h-4 w-4" />
                   </Button>
                   <Button
                     onClick={cancelNameEdit}
                     variant="outline"
                     size="sm"
-                    className="h-6 w-6 p-0 brutal-border border-border hover:bg-syndikate-concrete/50"
+                    className="h-7 w-7 p-0 brutal-border border-border hover:bg-background/50"
                   >
-                    <X className="h-3 w-3" />
+                    <X className="h-4 w-4" />
                   </Button>
                 </div>
               ) : (
                 <div className="flex items-center gap-2 justify-center">
-                  <h1 className="text-xl font-display font-bold text-foreground tracking-wider uppercase">{player.name}</h1>
+                  <h1 className={`text-2xl font-display font-bold tracking-wider uppercase ${rankStyle.nameClass}`}>
+                    {player.name}
+                  </h1>
                   <Button
                     onClick={startNameEdit}
                     variant="ghost"
                     size="sm"
-                    className="h-6 w-6 p-0 hover:bg-syndikate-concrete/50 text-muted-foreground hover:text-foreground brutal-border"
+                    className="h-6 w-6 p-0 hover:bg-background/30 text-muted-foreground hover:text-foreground brutal-border"
                   >
                     <Edit3 className="h-3 w-3" />
                   </Button>
                 </div>
               )}
               
-              {/* Mafia Rank Display with Avatar */}
-              <div className="flex flex-col items-center gap-2">
-                <div className="flex items-center gap-2">
-                  {/* Rank Avatar */}
-                  <img 
-                    src={mafiaRank?.avatar} 
-                    alt={mafiaRank?.name}
-                    className="w-8 h-8 rounded-full border-2 border-white/20 shadow-lg"
-                  />
-                  <Badge className={`bg-gradient-to-r ${mafiaRank?.bgGradient || 'from-zinc-600 to-zinc-800'} brutal-border border-0 px-3 py-1 font-bold text-sm uppercase tracking-wider shadow-brutal`}>
-                    {mafiaRank?.name || 'Аутсайдер'}
-                  </Badge>
+              {/* Mafia Rank Display */}
+              <div className="flex flex-col items-center gap-3">
+                {/* Rank Avatar + Badge */}
+                <div className="flex items-center gap-3">
+                  <div className={`relative ${mafiaRank?.rarity === 'godfather' || mafiaRank?.rarity === 'boss' ? 'animate-pulse' : ''}`}>
+                    <img 
+                      src={mafiaRank?.avatar} 
+                      alt={mafiaRank?.name}
+                      className={`w-12 h-12 rounded-full shadow-xl ${mafiaRank?.rarity === 'godfather' ? 'ring-2 ring-cyan-400' : mafiaRank?.rarity === 'boss' ? 'ring-2 ring-rose-400' : 'border-2 border-white/20'}`}
+                    />
+                  </div>
+                  <div className="flex flex-col items-start">
+                    <Badge className={`bg-gradient-to-r ${mafiaRank?.bgGradient || 'from-zinc-600 to-zinc-800'} brutal-border border-0 px-4 py-1.5 font-bold text-base uppercase tracking-wider shadow-brutal ${mafiaRank?.rarity === 'godfather' ? 'animate-shimmer' : ''}`}>
+                      {mafiaRank?.name || 'Аутсайдер'}
+                    </Badge>
+                    <span className={`text-sm ${mafiaRank?.textColor || 'text-zinc-400'} font-medium mt-1`}>
+                      {mafiaRank?.title || 'Ещё не в семье'}
+                    </span>
+                  </div>
                 </div>
-                <span className={`text-xs ${mafiaRank?.textColor || 'text-zinc-400'} font-medium`}>
-                  {mafiaRank?.title || 'Ещё не в семье'}
-                </span>
+                
+                {/* Rarity Badge */}
                 {rarityInfo && (
-                  <Badge className={`${rarityInfo.class} text-[10px] px-2 py-0.5 rounded-none font-bold`}>
+                  <Badge className={`${rarityInfo.class} text-xs px-3 py-1 rounded-sm font-bold tracking-wide shadow-md`}>
                     {rarityInfo.label} • +{rarityInfo.xp} XP
                   </Badge>
                 )}
@@ -619,15 +631,18 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate, onUnre
               
               {/* Progress to Next Rank */}
               {rankProgress?.next && (
-                <div className="mt-3 px-4 space-y-1">
-                  <div className="flex justify-between text-xs text-muted-foreground">
-                    <span>До ранга: {rankProgress.next.name}</span>
-                    <span>{Math.round(rankProgress.progress)}%</span>
+                <div className="mt-4 px-4 space-y-2 bg-background/20 rounded-lg p-3 backdrop-blur-sm">
+                  <div className="flex justify-between text-xs text-foreground/80">
+                    <span className="flex items-center gap-2">
+                      <img src={rankProgress.next.avatar} alt={rankProgress.next.name} className="w-5 h-5 rounded-full" />
+                      {rankProgress.next.name}
+                    </span>
+                    <span className="font-bold">{Math.round(rankProgress.progress)}%</span>
                   </div>
-                  <Progress value={rankProgress.progress} className="h-2 bg-secondary" />
-                  <div className="flex flex-wrap gap-1 justify-center">
+                  <Progress value={rankProgress.progress} className={`h-2.5 bg-background/30 ${mafiaRank?.rarity === 'godfather' ? '[&>div]:bg-gradient-to-r [&>div]:from-cyan-400 [&>div]:via-purple-400 [&>div]:to-pink-400' : ''}`} />
+                  <div className="flex flex-wrap gap-1.5 justify-center">
                     {rankProgress.details.map((detail, i) => (
-                      <span key={i} className="text-[10px] text-muted-foreground/70 bg-secondary/50 px-2 py-0.5 rounded">
+                      <span key={i} className="text-[11px] text-foreground/70 bg-background/30 px-2 py-1 rounded">
                         {detail}
                       </span>
                     ))}
