@@ -1,381 +1,384 @@
-// Unique profile header styles for each mafia rank
+// Unique profile header styles for each mafia rank - Industrial Premium Design
 import { MafiaRank } from "@/utils/mafiaRanks";
 
 interface RankProfileStyle {
-  // Background styling
   bgPattern: string;
   bgOverlay: string;
-  // Avatar effects
   avatarGlow: string;
   avatarRing: string;
   avatarAnimation: string;
-  // Decorative elements
   decorations: React.ReactNode;
-  // Name styling
   nameClass: string;
-  // Special effects
   particleEffect?: 'none' | 'sparkle' | 'smoke' | 'fire' | 'lightning' | 'royal';
 }
+
+// Металлическая сетка SVG
+const MetalGrid = ({ opacity = 0.1, color = "#fff" }: { opacity?: number; color?: string }) => (
+  <svg className="absolute inset-0 w-full h-full" style={{ opacity }}>
+    <defs>
+      <pattern id="metal-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+        <path d="M 20 0 L 0 0 0 20" fill="none" stroke={color} strokeWidth="0.5" />
+      </pattern>
+    </defs>
+    <rect width="100%" height="100%" fill="url(#metal-grid)" />
+  </svg>
+);
+
+// Индустриальные линии
+const IndustrialLines = ({ color = "#fff", variant = 1 }: { color?: string; variant?: number }) => (
+  <div className="absolute inset-0 overflow-hidden pointer-events-none">
+    {variant === 1 && (
+      <>
+        <div className="absolute top-0 left-0 right-0 h-px" style={{ background: `linear-gradient(90deg, transparent, ${color}40, transparent)` }} />
+        <div className="absolute bottom-0 left-0 right-0 h-px" style={{ background: `linear-gradient(90deg, transparent, ${color}30, transparent)` }} />
+      </>
+    )}
+    {variant === 2 && (
+      <>
+        <div className="absolute top-0 left-0 right-0 h-0.5" style={{ background: `linear-gradient(90deg, ${color}60, ${color}20, ${color}60)` }} />
+        <div className="absolute bottom-0 left-0 right-0 h-0.5" style={{ background: `linear-gradient(90deg, ${color}60, ${color}20, ${color}60)` }} />
+        <div className="absolute top-0 bottom-0 left-0 w-0.5" style={{ background: `linear-gradient(180deg, ${color}60, ${color}10, ${color}60)` }} />
+        <div className="absolute top-0 bottom-0 right-0 w-0.5" style={{ background: `linear-gradient(180deg, ${color}60, ${color}10, ${color}60)` }} />
+      </>
+    )}
+    {variant === 3 && (
+      <>
+        <div className="absolute top-0 left-0 right-0 h-1" style={{ background: `linear-gradient(90deg, ${color}80, ${color}30, ${color}80)` }} />
+        <div className="absolute top-1 left-0 right-0 h-px" style={{ background: `linear-gradient(90deg, transparent, ${color}40, transparent)` }} />
+        <div className="absolute bottom-0 left-0 right-0 h-1" style={{ background: `linear-gradient(90deg, ${color}80, ${color}30, ${color}80)` }} />
+        <div className="absolute bottom-1 left-0 right-0 h-px" style={{ background: `linear-gradient(90deg, transparent, ${color}40, transparent)` }} />
+      </>
+    )}
+  </div>
+);
+
+// Угловые акценты
+const CornerAccents = ({ size = 12, thickness = 2, color = "#fff", opacity = 0.5 }: { size?: number; thickness?: number; color?: string; opacity?: number }) => (
+  <div className="absolute inset-0 pointer-events-none" style={{ opacity }}>
+    {/* Top Left */}
+    <div className="absolute top-3 left-3" style={{ width: size, height: size }}>
+      <div className="absolute top-0 left-0 w-full" style={{ height: thickness, background: color }} />
+      <div className="absolute top-0 left-0 h-full" style={{ width: thickness, background: color }} />
+    </div>
+    {/* Top Right */}
+    <div className="absolute top-3 right-3" style={{ width: size, height: size }}>
+      <div className="absolute top-0 right-0 w-full" style={{ height: thickness, background: color }} />
+      <div className="absolute top-0 right-0 h-full" style={{ width: thickness, background: color }} />
+    </div>
+    {/* Bottom Left */}
+    <div className="absolute bottom-3 left-3" style={{ width: size, height: size }}>
+      <div className="absolute bottom-0 left-0 w-full" style={{ height: thickness, background: color }} />
+      <div className="absolute bottom-0 left-0 h-full" style={{ width: thickness, background: color }} />
+    </div>
+    {/* Bottom Right */}
+    <div className="absolute bottom-3 right-3" style={{ width: size, height: size }}>
+      <div className="absolute bottom-0 right-0 w-full" style={{ height: thickness, background: color }} />
+      <div className="absolute bottom-0 right-0 h-full" style={{ width: thickness, background: color }} />
+    </div>
+  </div>
+);
+
+// Сканирующая линия
+const ScanLine = ({ color = "#fff", speed = 4 }: { color?: string; speed?: number }) => (
+  <div 
+    className="absolute inset-0 pointer-events-none overflow-hidden"
+    style={{
+      background: `linear-gradient(180deg, transparent 0%, ${color}08 50%, transparent 100%)`,
+      animation: `rank-scan ${speed}s linear infinite`
+    }}
+  />
+);
+
+// Голографический эффект
+const HolographicOverlay = () => (
+  <div className="absolute inset-0 pointer-events-none overflow-hidden">
+    <div 
+      className="absolute inset-0 opacity-20"
+      style={{
+        background: 'linear-gradient(135deg, rgba(34,211,238,0.3) 0%, rgba(147,51,234,0.3) 25%, rgba(236,72,153,0.3) 50%, rgba(251,191,36,0.3) 75%, rgba(34,211,238,0.3) 100%)',
+        backgroundSize: '400% 400%',
+        animation: 'holographic 8s ease infinite'
+      }}
+    />
+  </div>
+);
+
+// Noise текстура
+const NoiseTexture = ({ opacity = 0.05 }: { opacity?: number }) => (
+  <div 
+    className="absolute inset-0 pointer-events-none"
+    style={{
+      opacity,
+      backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
+      mixBlendMode: 'overlay'
+    }}
+  />
+);
 
 export function getRankProfileStyle(rank: MafiaRank | null): RankProfileStyle {
   const rankId = rank?.id || 'outsider';
   
   const styles: Record<string, RankProfileStyle> = {
-    // Аутсайдер - минимальный стиль
+    // 1. Аутсайдер - суровый минимализм
     outsider: {
-      bgPattern: 'bg-gradient-to-br from-zinc-900 via-zinc-800 to-zinc-900',
-      bgOverlay: 'bg-[radial-gradient(circle_at_50%_50%,rgba(63,63,70,0.3),transparent_70%)]',
-      avatarGlow: '',
-      avatarRing: 'ring-zinc-600',
+      bgPattern: 'bg-gradient-to-b from-zinc-900 via-zinc-850 to-zinc-900',
+      bgOverlay: '',
+      avatarGlow: 'shadow-lg shadow-black/50',
+      avatarRing: 'ring-2 ring-zinc-700',
       avatarAnimation: '',
-      nameClass: 'text-zinc-400',
+      nameClass: 'text-zinc-500 font-medium',
       decorations: (
-        <div className="absolute inset-0 opacity-20">
-          {/* Минимальные угловые линии */}
-          <div className="absolute top-3 right-3 w-8 h-px bg-zinc-600"></div>
-          <div className="absolute top-3 right-3 w-px h-8 bg-zinc-600"></div>
+        <div className="absolute inset-0">
+          <MetalGrid opacity={0.03} color="#71717a" />
+          <div className="absolute top-3 right-3 w-6 h-px bg-zinc-700" />
+          <div className="absolute top-3 right-3 h-6 w-px bg-zinc-700" />
         </div>
       ),
       particleEffect: 'none'
     },
     
-    // Пиччотто - базовый стиль новичка
+    // 2. Пиччотто - первые шаги, стальной
     picciotto: {
-      bgPattern: 'bg-gradient-to-br from-zinc-800 via-zinc-700 to-zinc-800',
-      bgOverlay: 'bg-[radial-gradient(circle_at_30%_70%,rgba(113,113,122,0.2),transparent_50%)]',
-      avatarGlow: 'shadow-lg shadow-zinc-500/30',
-      avatarRing: 'ring-2 ring-zinc-500',
-      avatarAnimation: '',
-      nameClass: 'text-zinc-300',
+      bgPattern: 'bg-gradient-to-br from-zinc-800 via-neutral-800 to-zinc-900',
+      bgOverlay: 'bg-[radial-gradient(circle_at_50%_0%,rgba(161,161,170,0.08),transparent_60%)]',
+      avatarGlow: 'shadow-xl shadow-zinc-700/50',
+      avatarRing: 'ring-2 ring-zinc-500/80',
+      avatarAnimation: 'transition-transform duration-300 hover:scale-105',
+      nameClass: 'text-zinc-400 font-medium',
       decorations: (
         <div className="absolute inset-0">
-          {/* Угловые рамки */}
-          <div className="absolute top-2 left-2 w-6 h-6 border-l-2 border-t-2 border-zinc-500/40"></div>
-          <div className="absolute top-2 right-2 w-6 h-6 border-r-2 border-t-2 border-zinc-500/40"></div>
-          <div className="absolute bottom-2 left-2 w-6 h-6 border-l-2 border-b-2 border-zinc-500/30"></div>
-          <div className="absolute bottom-2 right-2 w-6 h-6 border-r-2 border-b-2 border-zinc-500/30"></div>
+          <MetalGrid opacity={0.04} color="#a1a1aa" />
+          <NoiseTexture opacity={0.03} />
+          <CornerAccents size={10} thickness={1} color="#71717a" opacity={0.5} />
+          <IndustrialLines color="#71717a" variant={1} />
         </div>
       ),
       particleEffect: 'none'
     },
     
-    // Солдато - стиль проверенного бойца
+    // 3. Солдато - боец, бронзовый металл
     soldato: {
-      bgPattern: 'bg-gradient-to-br from-stone-800 via-stone-700 to-stone-900',
-      bgOverlay: 'bg-[radial-gradient(ellipse_at_top,rgba(168,162,158,0.15),transparent_60%)]',
-      avatarGlow: 'shadow-lg shadow-stone-500/40',
-      avatarRing: 'ring-2 ring-stone-400',
-      avatarAnimation: '',
-      nameClass: 'text-stone-300',
+      bgPattern: 'bg-gradient-to-br from-stone-800 via-neutral-800 to-stone-900',
+      bgOverlay: 'bg-[radial-gradient(ellipse_at_30%_20%,rgba(168,162,158,0.12),transparent_50%)]',
+      avatarGlow: 'shadow-xl shadow-stone-600/60',
+      avatarRing: 'ring-2 ring-stone-500',
+      avatarAnimation: 'transition-all duration-300 hover:scale-105',
+      nameClass: 'text-stone-400 font-semibold',
       decorations: (
         <div className="absolute inset-0">
-          {/* Угловые акценты */}
-          <div className="absolute top-2 left-2 w-10 h-10 border-l-2 border-t-2 border-stone-400/50"></div>
-          <div className="absolute top-2 right-2 w-10 h-10 border-r-2 border-t-2 border-stone-400/50"></div>
-          <div className="absolute bottom-2 left-2 w-10 h-10 border-l-2 border-b-2 border-stone-400/40"></div>
-          <div className="absolute bottom-2 right-2 w-10 h-10 border-r-2 border-b-2 border-stone-400/40"></div>
-          {/* Горизонтальные линии */}
-          <div className="absolute top-1/2 left-3 w-6 h-px bg-gradient-to-r from-stone-400/40 to-transparent"></div>
-          <div className="absolute top-1/2 right-3 w-6 h-px bg-gradient-to-l from-stone-400/40 to-transparent"></div>
+          <MetalGrid opacity={0.05} color="#a8a29e" />
+          <NoiseTexture opacity={0.04} />
+          <CornerAccents size={14} thickness={2} color="#78716c" opacity={0.6} />
+          <IndustrialLines color="#78716c" variant={1} />
+          {/* Вертикальные боковые линии */}
+          <div className="absolute top-1/2 left-4 -translate-y-1/2 w-0.5 h-8 bg-gradient-to-b from-transparent via-stone-500/30 to-transparent" />
+          <div className="absolute top-1/2 right-4 -translate-y-1/2 w-0.5 h-8 bg-gradient-to-b from-transparent via-stone-500/30 to-transparent" />
         </div>
       ),
       particleEffect: 'smoke'
     },
     
-    // Сгарриста - первая победа, появляется золото
+    // 4. Сгарриста - первое золото
     sgarrista: {
-      bgPattern: 'bg-gradient-to-br from-amber-900/80 via-amber-800/60 to-stone-900',
-      bgOverlay: 'bg-[radial-gradient(circle_at_50%_0%,rgba(245,158,11,0.2),transparent_50%)]',
-      avatarGlow: 'shadow-xl shadow-amber-500/50',
-      avatarRing: 'ring-2 ring-amber-400 animate-pulse',
-      avatarAnimation: 'hover:scale-105 transition-transform duration-300',
-      nameClass: 'text-amber-300',
+      bgPattern: 'bg-gradient-to-br from-amber-950 via-stone-900 to-zinc-900',
+      bgOverlay: 'bg-[radial-gradient(circle_at_50%_0%,rgba(251,191,36,0.15),transparent_50%)]',
+      avatarGlow: 'shadow-[0_0_25px_rgba(251,191,36,0.4)]',
+      avatarRing: 'ring-2 ring-amber-500/80',
+      avatarAnimation: 'transition-all duration-300 hover:scale-105',
+      nameClass: 'text-amber-400 font-semibold drop-shadow-[0_0_6px_rgba(251,191,36,0.5)]',
       decorations: (
         <div className="absolute inset-0">
-          {/* Угловые элементы с градиентом */}
-          <div className="absolute top-2 left-2 w-12 h-12 border-l-2 border-t-2 border-amber-400/60"></div>
-          <div className="absolute top-2 right-2 w-12 h-12 border-r-2 border-t-2 border-amber-400/60"></div>
-          <div className="absolute bottom-2 left-2 w-12 h-12 border-l-2 border-b-2 border-amber-500/40"></div>
-          <div className="absolute bottom-2 right-2 w-12 h-12 border-r-2 border-b-2 border-amber-500/40"></div>
-          {/* Вертикальная декоративная линия */}
-          <div className="absolute top-1/2 right-4 w-px h-16 -translate-y-1/2 bg-gradient-to-b from-transparent via-amber-500/40 to-transparent"></div>
-          {/* Маленькие точки */}
-          <div className="absolute top-4 left-16 w-1.5 h-1.5 rounded-full bg-amber-400/50"></div>
-          <div className="absolute bottom-4 right-16 w-1.5 h-1.5 rounded-full bg-amber-400/50"></div>
+          <MetalGrid opacity={0.04} color="#fbbf24" />
+          <NoiseTexture opacity={0.04} />
+          <CornerAccents size={16} thickness={2} color="#f59e0b" opacity={0.6} />
+          <IndustrialLines color="#f59e0b" variant={1} />
+          {/* Золотое свечение сверху */}
+          <div className="absolute -top-4 left-1/2 -translate-x-1/2 w-32 h-16 bg-amber-500/10 rounded-full blur-2xl" />
         </div>
       ),
       particleEffect: 'sparkle'
     },
     
-    // Ассоциато - уважаемый член, оранжевый акцент
+    // 5. Ассоциато - оранжевый неон Syndikate
     associato: {
-      bgPattern: 'bg-gradient-to-br from-orange-900/70 via-orange-800/50 to-zinc-900',
-      bgOverlay: 'bg-[conic-gradient(from_180deg_at_50%_50%,rgba(249,115,22,0.1),transparent,rgba(249,115,22,0.1))]',
-      avatarGlow: 'shadow-xl shadow-orange-500/50 animate-pulse',
-      avatarRing: 'ring-2 ring-orange-400',
-      avatarAnimation: 'hover:scale-105 transition-transform duration-300',
-      nameClass: 'text-orange-300 drop-shadow-[0_0_8px_rgba(249,115,22,0.5)]',
+      bgPattern: 'bg-gradient-to-br from-orange-950 via-zinc-900 to-zinc-950',
+      bgOverlay: 'bg-[radial-gradient(circle_at_70%_30%,rgba(249,115,22,0.2),transparent_50%)]',
+      avatarGlow: 'shadow-[0_0_30px_rgba(249,115,22,0.5)]',
+      avatarRing: 'ring-2 ring-orange-500',
+      avatarAnimation: 'transition-all duration-300 hover:scale-105',
+      nameClass: 'text-orange-400 font-bold drop-shadow-[0_0_8px_rgba(249,115,22,0.6)]',
       decorations: (
         <div className="absolute inset-0">
-          {/* Верхняя линия */}
-          <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-orange-500/60 to-transparent"></div>
-          {/* Угловые элементы */}
-          <div className="absolute top-2 left-2 w-14 h-14 border-l-2 border-t-2 border-orange-400/50"></div>
-          <div className="absolute top-2 right-2 w-14 h-14 border-r-2 border-t-2 border-orange-400/50"></div>
-          <div className="absolute bottom-2 left-2 w-14 h-14 border-l-2 border-b-2 border-orange-400/40"></div>
-          <div className="absolute bottom-2 right-2 w-14 h-14 border-r-2 border-b-2 border-orange-400/40"></div>
-          {/* Свечение в углу */}
-          <div className="absolute bottom-0 right-0 w-24 h-24 bg-gradient-radial from-orange-500/15 to-transparent rounded-full blur-xl"></div>
-          {/* Декоративные точки */}
-          <div className="absolute top-6 left-20 w-2 h-2 rounded-full bg-orange-400/40"></div>
-          <div className="absolute bottom-6 right-20 w-2 h-2 rounded-full bg-orange-400/40"></div>
+          <MetalGrid opacity={0.05} color="#f97316" />
+          <NoiseTexture opacity={0.05} />
+          <CornerAccents size={18} thickness={2} color="#ea580c" opacity={0.7} />
+          <IndustrialLines color="#ea580c" variant={2} />
+          <ScanLine color="#f97316" speed={5} />
+          {/* Свечения */}
+          <div className="absolute -top-6 left-1/2 -translate-x-1/2 w-40 h-20 bg-orange-500/15 rounded-full blur-2xl" />
+          <div className="absolute bottom-0 right-0 w-24 h-24 bg-orange-600/10 rounded-full blur-xl" />
         </div>
       ),
       particleEffect: 'sparkle'
     },
     
-    // Капореджиме - командир, синий элитный стиль
+    // 6. Капореджиме - элитный синий
     caporegime: {
-      bgPattern: 'bg-gradient-to-br from-blue-900/80 via-blue-800/60 to-slate-900',
-      bgOverlay: 'bg-[radial-gradient(ellipse_at_top_right,rgba(59,130,246,0.25),transparent_50%)]',
-      avatarGlow: 'shadow-2xl shadow-blue-500/60',
-      avatarRing: 'ring-3 ring-blue-400 animate-[pulse_3s_ease-in-out_infinite]',
-      avatarAnimation: 'hover:scale-110 transition-all duration-500',
-      nameClass: 'text-blue-300 drop-shadow-[0_0_12px_rgba(59,130,246,0.6)]',
+      bgPattern: 'bg-gradient-to-br from-blue-950 via-slate-900 to-zinc-950',
+      bgOverlay: 'bg-[radial-gradient(ellipse_at_top_right,rgba(59,130,246,0.25),transparent_60%)]',
+      avatarGlow: 'shadow-[0_0_35px_rgba(59,130,246,0.6)]',
+      avatarRing: 'ring-[3px] ring-blue-500 animate-pulse',
+      avatarAnimation: 'transition-all duration-500 hover:scale-110',
+      nameClass: 'text-blue-400 font-bold drop-shadow-[0_0_10px_rgba(59,130,246,0.7)] tracking-wide',
       decorations: (
-        <div className="absolute inset-0 overflow-hidden">
-          {/* Свечение */}
-          <div className="absolute -top-4 -left-4 w-24 h-24 bg-blue-500/10 rounded-full blur-2xl"></div>
-          {/* Линии сверху и снизу */}
-          <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-blue-500/60 via-cyan-400/40 to-transparent"></div>
-          <div className="absolute bottom-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-blue-400/40 to-blue-500/60"></div>
-          {/* Угловые рамки с двойными линиями */}
-          <div className="absolute top-3 left-3 w-16 h-16">
-            <div className="absolute inset-0 border-l-2 border-t-2 border-blue-400/60"></div>
-            <div className="absolute top-1 left-1 w-full h-full border-l border-t border-cyan-400/30"></div>
-          </div>
-          <div className="absolute top-3 right-3 w-16 h-16">
-            <div className="absolute inset-0 border-r-2 border-t-2 border-blue-400/60"></div>
-            <div className="absolute top-1 right-1 w-full h-full border-r border-t border-cyan-400/30"></div>
-          </div>
-          <div className="absolute bottom-3 left-3 w-16 h-16">
-            <div className="absolute inset-0 border-l-2 border-b-2 border-blue-400/50"></div>
-          </div>
-          <div className="absolute bottom-3 right-3 w-16 h-16">
-            <div className="absolute inset-0 border-r-2 border-b-2 border-blue-400/50"></div>
-          </div>
-          {/* Декоративные элементы */}
-          <div className="absolute top-1/2 left-4 -translate-y-1/2 w-1 h-8 bg-gradient-to-b from-transparent via-blue-400/50 to-transparent"></div>
-          <div className="absolute top-1/2 right-4 -translate-y-1/2 w-1 h-8 bg-gradient-to-b from-transparent via-blue-400/50 to-transparent"></div>
+        <div className="absolute inset-0">
+          <MetalGrid opacity={0.06} color="#3b82f6" />
+          <NoiseTexture opacity={0.04} />
+          <CornerAccents size={20} thickness={2} color="#2563eb" opacity={0.8} />
+          <IndustrialLines color="#2563eb" variant={2} />
+          <ScanLine color="#3b82f6" speed={4} />
+          {/* Двойные угловые рамки */}
+          <div className="absolute top-5 left-5 w-4 h-4 border-l border-t border-cyan-400/40" />
+          <div className="absolute top-5 right-5 w-4 h-4 border-r border-t border-cyan-400/40" />
+          <div className="absolute bottom-5 left-5 w-4 h-4 border-l border-b border-cyan-400/40" />
+          <div className="absolute bottom-5 right-5 w-4 h-4 border-r border-b border-cyan-400/40" />
+          {/* Свечения */}
+          <div className="absolute -top-8 left-1/2 -translate-x-1/2 w-48 h-24 bg-blue-500/15 rounded-full blur-3xl" />
         </div>
       ),
       particleEffect: 'sparkle'
     },
     
-    // Шарк - акула покера, фиолетовый хищный стиль
+    // 7. Шарк - хищный фиолетовый
     shark: {
-      bgPattern: 'bg-gradient-to-br from-purple-900/80 via-violet-800/60 to-slate-900',
-      bgOverlay: 'bg-[radial-gradient(circle_at_70%_30%,rgba(147,51,234,0.3),transparent_50%)]',
-      avatarGlow: 'shadow-2xl shadow-purple-500/70',
-      avatarRing: 'ring-3 ring-purple-400 ring-offset-2 ring-offset-purple-950',
-      avatarAnimation: 'hover:scale-110 hover:rotate-3 transition-all duration-500',
-      nameClass: 'text-purple-300 drop-shadow-[0_0_15px_rgba(147,51,234,0.7)]',
+      bgPattern: 'bg-gradient-to-br from-purple-950 via-violet-950 to-zinc-950',
+      bgOverlay: 'bg-[radial-gradient(circle_at_30%_70%,rgba(147,51,234,0.25),transparent_50%),radial-gradient(circle_at_70%_30%,rgba(139,92,246,0.2),transparent_50%)]',
+      avatarGlow: 'shadow-[0_0_40px_rgba(147,51,234,0.6)]',
+      avatarRing: 'ring-[3px] ring-purple-500 ring-offset-2 ring-offset-purple-950',
+      avatarAnimation: 'transition-all duration-500 hover:scale-110 hover:rotate-2',
+      nameClass: 'text-purple-400 font-bold drop-shadow-[0_0_12px_rgba(147,51,234,0.8)] tracking-wide',
       decorations: (
-        <div className="absolute inset-0 overflow-hidden">
-          {/* Большое свечение */}
-          <div className="absolute -top-8 -right-8 w-32 h-32 bg-purple-500/15 rounded-full blur-3xl animate-pulse"></div>
-          {/* Верхняя и нижняя линии */}
-          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-purple-500/70 via-fuchsia-400/50 to-transparent"></div>
-          <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-violet-400/50 to-purple-500/70"></div>
-          {/* Угловые элементы - острые */}
-          <div className="absolute top-3 left-3 w-20 h-20">
-            <div className="absolute inset-0 border-l-2 border-t-2 border-purple-400/70"></div>
-            <div className="absolute top-2 left-2 w-3 h-3 border-l border-t border-fuchsia-400/50"></div>
-          </div>
-          <div className="absolute top-3 right-3 w-20 h-20">
-            <div className="absolute inset-0 border-r-2 border-t-2 border-purple-400/70"></div>
-            <div className="absolute top-2 right-2 w-3 h-3 border-r border-t border-fuchsia-400/50"></div>
-          </div>
-          <div className="absolute bottom-3 left-3 w-20 h-20 border-l-2 border-b-2 border-purple-400/50"></div>
-          <div className="absolute bottom-3 right-3 w-20 h-20 border-r-2 border-b-2 border-purple-400/50"></div>
-          {/* Сканирующая линия */}
-          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-purple-400/5 to-transparent animate-[scan_3s_linear_infinite]"></div>
-          {/* Точки */}
-          <div className="absolute top-8 left-1/3 w-1 h-1 rounded-full bg-purple-400/60"></div>
-          <div className="absolute bottom-8 right-1/3 w-1 h-1 rounded-full bg-fuchsia-400/60"></div>
+        <div className="absolute inset-0">
+          <MetalGrid opacity={0.05} color="#a855f7" />
+          <NoiseTexture opacity={0.05} />
+          <CornerAccents size={22} thickness={2} color="#9333ea" opacity={0.8} />
+          <IndustrialLines color="#9333ea" variant={2} />
+          <ScanLine color="#a855f7" speed={3} />
+          {/* Динамические акценты */}
+          <div className="absolute top-1/2 left-5 -translate-y-1/2 w-px h-12 bg-gradient-to-b from-transparent via-fuchsia-500/50 to-transparent" />
+          <div className="absolute top-1/2 right-5 -translate-y-1/2 w-px h-12 bg-gradient-to-b from-transparent via-fuchsia-500/50 to-transparent" />
+          {/* Свечения */}
+          <div className="absolute -top-8 left-1/4 w-32 h-32 bg-purple-500/15 rounded-full blur-3xl animate-pulse" />
+          <div className="absolute -bottom-4 right-1/4 w-24 h-24 bg-violet-500/10 rounded-full blur-2xl" />
         </div>
       ),
       particleEffect: 'lightning'
     },
     
-    // Капо - глава группировки, красный властный стиль
+    // 8. Капо - властный красный
     kapo: {
-      bgPattern: 'bg-gradient-to-br from-red-900/80 via-rose-800/60 to-zinc-900',
-      bgOverlay: 'bg-[radial-gradient(circle_at_50%_0%,rgba(239,68,68,0.25),transparent_60%)]',
-      avatarGlow: 'shadow-2xl shadow-red-500/70 animate-[glow_2s_ease-in-out_infinite]',
-      avatarRing: 'ring-4 ring-red-500 ring-offset-2 ring-offset-red-950',
-      avatarAnimation: 'hover:scale-110 transition-all duration-500',
-      nameClass: 'text-red-300 drop-shadow-[0_0_20px_rgba(239,68,68,0.8)] font-bold',
+      bgPattern: 'bg-gradient-to-br from-red-950 via-rose-950 to-zinc-950',
+      bgOverlay: 'bg-[radial-gradient(circle_at_50%_0%,rgba(239,68,68,0.3),transparent_60%)]',
+      avatarGlow: 'shadow-[0_0_45px_rgba(239,68,68,0.6)] animate-[glow_2s_ease-in-out_infinite]',
+      avatarRing: 'ring-[3px] ring-red-500 ring-offset-2 ring-offset-red-950',
+      avatarAnimation: 'transition-all duration-500 hover:scale-110',
+      nameClass: 'text-red-400 font-bold drop-shadow-[0_0_15px_rgba(239,68,68,0.9)] tracking-wider',
       decorations: (
-        <div className="absolute inset-0 overflow-hidden">
-          {/* Центральное свечение сверху */}
-          <div className="absolute -top-10 left-1/2 -translate-x-1/2 w-40 h-40 bg-red-500/20 rounded-full blur-3xl"></div>
-          {/* Рамка по периметру */}
-          <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-red-600/80 via-rose-500/60 to-red-600/80"></div>
-          <div className="absolute bottom-0 left-0 w-full h-1.5 bg-gradient-to-r from-red-600/80 via-rose-500/60 to-red-600/80"></div>
-          <div className="absolute left-0 top-0 w-1.5 h-full bg-gradient-to-b from-red-600/80 via-rose-500/60 to-red-600/80"></div>
-          <div className="absolute right-0 top-0 w-1.5 h-full bg-gradient-to-b from-red-600/80 via-rose-500/60 to-red-600/80"></div>
-          {/* Внутренние угловые элементы */}
-          <div className="absolute top-4 left-4 w-6 h-6 border-l border-t border-rose-400/60"></div>
-          <div className="absolute top-4 right-4 w-6 h-6 border-r border-t border-rose-400/60"></div>
-          <div className="absolute bottom-4 left-4 w-6 h-6 border-l border-b border-rose-400/60"></div>
-          <div className="absolute bottom-4 right-4 w-6 h-6 border-r border-b border-rose-400/60"></div>
-          {/* Декоративные линии */}
-          <div className="absolute top-1/2 left-6 -translate-y-1/2 w-4 h-px bg-red-400/50"></div>
-          <div className="absolute top-1/2 right-6 -translate-y-1/2 w-4 h-px bg-red-400/50"></div>
+        <div className="absolute inset-0">
+          <MetalGrid opacity={0.05} color="#ef4444" />
+          <NoiseTexture opacity={0.05} />
+          <IndustrialLines color="#dc2626" variant={3} />
+          <ScanLine color="#ef4444" speed={3} />
+          {/* Внутренняя рамка */}
+          <div className="absolute inset-4 border border-red-800/30 pointer-events-none" />
+          {/* Угловые акценты с градиентом */}
+          <div className="absolute top-2 left-2 w-8 h-8">
+            <div className="w-full h-0.5 bg-gradient-to-r from-red-500 to-transparent" />
+            <div className="h-full w-0.5 bg-gradient-to-b from-red-500 to-transparent" />
+          </div>
+          <div className="absolute top-2 right-2 w-8 h-8">
+            <div className="w-full h-0.5 bg-gradient-to-l from-red-500 to-transparent" />
+            <div className="absolute right-0 h-full w-0.5 bg-gradient-to-b from-red-500 to-transparent" />
+          </div>
+          <div className="absolute bottom-2 left-2 w-8 h-8">
+            <div className="absolute bottom-0 w-full h-0.5 bg-gradient-to-r from-red-500 to-transparent" />
+            <div className="h-full w-0.5 bg-gradient-to-t from-red-500 to-transparent" />
+          </div>
+          <div className="absolute bottom-2 right-2 w-8 h-8">
+            <div className="absolute bottom-0 w-full h-0.5 bg-gradient-to-l from-red-500 to-transparent" />
+            <div className="absolute right-0 h-full w-0.5 bg-gradient-to-t from-red-500 to-transparent" />
+          </div>
+          {/* Центральное свечение */}
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-48 h-32 bg-red-500/20 rounded-full blur-3xl" />
         </div>
       ),
       particleEffect: 'fire'
     },
     
-    // Консильери - правая рука Дона, золотой престижный стиль
+    // 9. Консильери - престижное золото
     konsigliere: {
-      bgPattern: 'bg-gradient-to-br from-yellow-800/70 via-amber-700/50 to-zinc-900',
+      bgPattern: 'bg-gradient-to-br from-yellow-950 via-amber-950 to-zinc-950',
       bgOverlay: 'bg-[conic-gradient(from_0deg_at_50%_50%,rgba(234,179,8,0.15),transparent,rgba(251,191,36,0.15),transparent,rgba(234,179,8,0.15))]',
-      avatarGlow: 'shadow-[0_0_40px_rgba(234,179,8,0.6)]',
-      avatarRing: 'ring-4 ring-yellow-400 ring-offset-2 ring-offset-amber-950 animate-[pulse_2s_ease-in-out_infinite]',
-      avatarAnimation: 'hover:scale-110 hover:-rotate-3 transition-all duration-500',
-      nameClass: 'text-yellow-300 drop-shadow-[0_0_25px_rgba(234,179,8,0.9)] font-bold tracking-wider',
+      avatarGlow: 'shadow-[0_0_50px_rgba(234,179,8,0.6)]',
+      avatarRing: 'ring-[3px] ring-yellow-500 ring-offset-2 ring-offset-yellow-950 animate-[pulse_2s_ease-in-out_infinite]',
+      avatarAnimation: 'transition-all duration-500 hover:scale-110 hover:-rotate-2',
+      nameClass: 'text-yellow-400 font-bold drop-shadow-[0_0_18px_rgba(234,179,8,1)] tracking-wider',
       decorations: (
-        <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute inset-0">
           {/* Диагональный паттерн */}
-          <div className="absolute inset-0 bg-[repeating-linear-gradient(45deg,transparent,transparent_10px,rgba(234,179,8,0.03)_10px,rgba(234,179,8,0.03)_20px)]"></div>
-          {/* Центральное свечение */}
-          <div className="absolute -top-12 left-1/2 -translate-x-1/2 w-48 h-48 bg-yellow-400/20 rounded-full blur-3xl animate-pulse"></div>
-          {/* Рамки */}
-          <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-yellow-500/90 via-amber-400/70 to-yellow-500/90"></div>
-          <div className="absolute bottom-0 left-0 w-full h-1.5 bg-gradient-to-r from-yellow-500/90 via-amber-400/70 to-yellow-500/90"></div>
-          {/* Двойные угловые элементы */}
-          <div className="absolute top-3 left-3 w-20 h-20">
-            <div className="absolute inset-0 border-l-2 border-t-2 border-yellow-400/70"></div>
-            <div className="absolute top-3 left-3 w-full h-full border-l border-t border-amber-400/40"></div>
-          </div>
-          <div className="absolute top-3 right-3 w-20 h-20">
-            <div className="absolute inset-0 border-r-2 border-t-2 border-yellow-400/70"></div>
-            <div className="absolute top-3 right-3 w-full h-full border-r border-t border-amber-400/40"></div>
-          </div>
-          <div className="absolute bottom-3 left-3 w-20 h-20">
-            <div className="absolute inset-0 border-l-2 border-b-2 border-yellow-400/60"></div>
-            <div className="absolute bottom-3 left-3 w-full h-full border-l border-b border-amber-400/30"></div>
-          </div>
-          <div className="absolute bottom-3 right-3 w-20 h-20">
-            <div className="absolute inset-0 border-r-2 border-b-2 border-yellow-400/60"></div>
-            <div className="absolute bottom-3 right-3 w-full h-full border-r border-b border-amber-400/30"></div>
-          </div>
-          {/* Вертикальные декоративные линии */}
-          <div className="absolute top-1/2 left-5 -translate-y-1/2 w-px h-12 bg-gradient-to-b from-transparent via-yellow-400/50 to-transparent"></div>
-          <div className="absolute top-1/2 right-5 -translate-y-1/2 w-px h-12 bg-gradient-to-b from-transparent via-yellow-400/50 to-transparent"></div>
+          <div className="absolute inset-0 bg-[repeating-linear-gradient(45deg,transparent,transparent_8px,rgba(234,179,8,0.03)_8px,rgba(234,179,8,0.03)_16px)]" />
+          <MetalGrid opacity={0.04} color="#eab308" />
+          <NoiseTexture opacity={0.04} />
+          <IndustrialLines color="#ca8a04" variant={3} />
+          <ScanLine color="#eab308" speed={4} />
+          {/* Двойная рамка */}
+          <div className="absolute inset-3 border border-yellow-700/30 pointer-events-none" />
+          <div className="absolute inset-5 border border-yellow-800/20 pointer-events-none" />
+          {/* Угловые элементы */}
+          <div className="absolute top-2 left-2 w-6 h-6 border-l-2 border-t-2 border-yellow-500/70" />
+          <div className="absolute top-2 right-2 w-6 h-6 border-r-2 border-t-2 border-yellow-500/70" />
+          <div className="absolute bottom-2 left-2 w-6 h-6 border-l-2 border-b-2 border-yellow-500/70" />
+          <div className="absolute bottom-2 right-2 w-6 h-6 border-r-2 border-b-2 border-yellow-500/70" />
+          {/* Свечение */}
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-56 h-32 bg-yellow-500/20 rounded-full blur-3xl animate-pulse" />
         </div>
       ),
       particleEffect: 'sparkle'
     },
     
-    // Дон - глава семьи, розово-красный королевский стиль
+    // 10. Дон - королевский голографик
     don: {
-      bgPattern: 'bg-gradient-to-br from-rose-900/90 via-red-800/70 to-zinc-900',
-      bgOverlay: 'bg-[radial-gradient(ellipse_at_center,rgba(244,63,94,0.3),transparent_70%)]',
-      avatarGlow: 'shadow-[0_0_60px_rgba(244,63,94,0.7)] animate-[glow_3s_ease-in-out_infinite]',
-      avatarRing: 'ring-4 ring-rose-400 ring-offset-4 ring-offset-rose-950',
-      avatarAnimation: 'hover:scale-115 transition-all duration-700',
-      nameClass: 'text-rose-200 drop-shadow-[0_0_30px_rgba(244,63,94,1)] font-bold tracking-widest text-2xl',
+      bgPattern: 'bg-gradient-to-br from-rose-950 via-fuchsia-950 to-violet-950',
+      bgOverlay: 'bg-[radial-gradient(ellipse_at_center,rgba(244,63,94,0.3),transparent_60%)]',
+      avatarGlow: 'shadow-[0_0_60px_rgba(244,63,94,0.7),0_0_100px_rgba(147,51,234,0.4)] animate-[rainbow-glow_4s_ease-in-out_infinite]',
+      avatarRing: 'ring-4 ring-rose-400 ring-offset-4 ring-offset-fuchsia-950',
+      avatarAnimation: 'transition-all duration-700 hover:scale-115',
+      nameClass: 'text-transparent bg-clip-text bg-gradient-to-r from-rose-300 via-fuchsia-300 to-cyan-300 font-black drop-shadow-[0_0_25px_rgba(244,63,94,1)] tracking-widest text-xl animate-shimmer',
       decorations: (
         <div className="absolute inset-0 overflow-hidden">
+          {/* Голографический оверлей */}
+          <HolographicOverlay />
           {/* Диагональный паттерн */}
-          <div className="absolute inset-0 bg-[repeating-linear-gradient(-45deg,transparent,transparent_15px,rgba(244,63,94,0.05)_15px,rgba(244,63,94,0.05)_30px)]"></div>
-          {/* Массивное свечение */}
-          <div className="absolute -top-16 left-1/2 -translate-x-1/2 w-64 h-64 bg-rose-500/25 rounded-full blur-3xl animate-[pulse_4s_ease-in-out_infinite]"></div>
-          {/* Толстая рамка по периметру */}
-          <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-rose-600 via-red-400 to-rose-600"></div>
-          <div className="absolute bottom-0 left-0 w-full h-2 bg-gradient-to-r from-rose-600 via-red-400 to-rose-600"></div>
-          <div className="absolute left-0 top-0 w-2 h-full bg-gradient-to-b from-rose-600 via-red-400 to-rose-600"></div>
-          <div className="absolute right-0 top-0 w-2 h-full bg-gradient-to-b from-rose-600 via-red-400 to-rose-600"></div>
-          {/* Тройные угловые элементы */}
-          <div className="absolute top-4 left-4">
-            <div className="w-16 h-16 border-l-2 border-t-2 border-rose-400/80"></div>
-            <div className="absolute top-2 left-2 w-14 h-14 border-l border-t border-red-400/50"></div>
-            <div className="absolute top-4 left-4 w-12 h-12 border-l border-t border-rose-300/30"></div>
-          </div>
-          <div className="absolute top-4 right-4">
-            <div className="w-16 h-16 border-r-2 border-t-2 border-rose-400/80"></div>
-            <div className="absolute top-2 right-2 w-14 h-14 border-r border-t border-red-400/50"></div>
-            <div className="absolute top-4 right-4 w-12 h-12 border-r border-t border-rose-300/30"></div>
-          </div>
-          <div className="absolute bottom-4 left-4">
-            <div className="w-16 h-16 border-l-2 border-b-2 border-rose-400/70"></div>
-            <div className="absolute bottom-2 left-2 w-14 h-14 border-l border-b border-red-400/40"></div>
-          </div>
-          <div className="absolute bottom-4 right-4">
-            <div className="w-16 h-16 border-r-2 border-b-2 border-rose-400/70"></div>
-            <div className="absolute bottom-2 right-2 w-14 h-14 border-r border-b border-red-400/40"></div>
-          </div>
-          {/* Центральные декоративные элементы */}
-          <div className="absolute top-1/2 left-6 -translate-y-1/2 w-1 h-16 bg-gradient-to-b from-transparent via-rose-400/60 to-transparent"></div>
-          <div className="absolute top-1/2 right-6 -translate-y-1/2 w-1 h-16 bg-gradient-to-b from-transparent via-rose-400/60 to-transparent"></div>
-        </div>
-      ),
-      particleEffect: 'fire'
-    },
-    
-    // Патриарх - крёстный отец, божественный радужный стиль
-    patriarch: {
-      bgPattern: 'bg-gradient-to-br from-cyan-900/90 via-blue-800/70 via-purple-800/70 to-zinc-900',
-      bgOverlay: 'bg-[conic-gradient(from_180deg_at_50%_50%,rgba(34,211,238,0.2),rgba(147,51,234,0.2),rgba(236,72,153,0.2),rgba(34,211,238,0.2))]',
-      avatarGlow: 'shadow-[0_0_80px_rgba(34,211,238,0.8),0_0_40px_rgba(147,51,234,0.6)] animate-[rainbow-glow_4s_ease-in-out_infinite]',
-      avatarRing: 'ring-4 ring-cyan-300 ring-offset-4 ring-offset-purple-950 animate-[spin_10s_linear_infinite]',
-      avatarAnimation: 'hover:scale-120 transition-all duration-700',
-      nameClass: 'text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-purple-300 to-pink-300 drop-shadow-[0_0_40px_rgba(34,211,238,1)] font-black tracking-[0.2em] text-2xl animate-[shimmer_3s_linear_infinite]',
-      decorations: (
-        <div className="absolute inset-0 overflow-hidden">
-          {/* Алмазный паттерн */}
-          <div className="absolute inset-0 bg-[repeating-conic-gradient(from_0deg,transparent_0deg_90deg,rgba(34,211,238,0.03)_90deg_180deg)]"></div>
-          {/* Массивное центральное свечение */}
-          <div className="absolute -top-20 left-1/2 -translate-x-1/2 w-80 h-80 bg-gradient-radial from-cyan-400/30 via-purple-500/20 to-transparent rounded-full blur-3xl animate-[pulse_5s_ease-in-out_infinite]"></div>
-          {/* Призматические границы */}
-          <div className="absolute top-0 left-0 w-full h-3 bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 animate-[shimmer_2s_linear_infinite]"></div>
-          <div className="absolute bottom-0 left-0 w-full h-3 bg-gradient-to-r from-pink-500 via-purple-500 to-cyan-500 animate-[shimmer_2s_linear_infinite_reverse]"></div>
-          <div className="absolute left-0 top-0 w-3 h-full bg-gradient-to-b from-cyan-500 via-purple-500 to-pink-500"></div>
-          <div className="absolute right-0 top-0 w-3 h-full bg-gradient-to-b from-pink-500 via-purple-500 to-cyan-500"></div>
-          {/* Четырёхслойные угловые элементы */}
-          <div className="absolute top-5 left-5">
-            <div className="w-20 h-20 border-l-2 border-t-2 border-cyan-400/80"></div>
-            <div className="absolute top-2 left-2 w-16 h-16 border-l-2 border-t-2 border-purple-400/60"></div>
-            <div className="absolute top-4 left-4 w-12 h-12 border-l border-t border-pink-400/40"></div>
-            <div className="absolute top-6 left-6 w-8 h-8 border-l border-t border-cyan-300/30"></div>
-          </div>
-          <div className="absolute top-5 right-5">
-            <div className="w-20 h-20 border-r-2 border-t-2 border-cyan-400/80"></div>
-            <div className="absolute top-2 right-2 w-16 h-16 border-r-2 border-t-2 border-purple-400/60"></div>
-            <div className="absolute top-4 right-4 w-12 h-12 border-r border-t border-pink-400/40"></div>
-            <div className="absolute top-6 right-6 w-8 h-8 border-r border-t border-cyan-300/30"></div>
-          </div>
-          <div className="absolute bottom-5 left-5">
-            <div className="w-20 h-20 border-l-2 border-b-2 border-pink-400/70"></div>
-            <div className="absolute bottom-2 left-2 w-16 h-16 border-l-2 border-b-2 border-purple-400/50"></div>
-            <div className="absolute bottom-4 left-4 w-12 h-12 border-l border-b border-cyan-400/30"></div>
-          </div>
-          <div className="absolute bottom-5 right-5">
-            <div className="w-20 h-20 border-r-2 border-b-2 border-pink-400/70"></div>
-            <div className="absolute bottom-2 right-2 w-16 h-16 border-r-2 border-b-2 border-purple-400/50"></div>
-            <div className="absolute bottom-4 right-4 w-12 h-12 border-r border-b border-cyan-400/30"></div>
-          </div>
-          {/* Плавающие частицы */}
-          <div className="absolute top-1/3 left-1/4 w-2 h-2 rounded-full bg-cyan-400/60 animate-[float_3s_ease-in-out_infinite]"></div>
-          <div className="absolute top-1/2 right-1/4 w-2 h-2 rounded-full bg-purple-400/60 animate-[float_3s_ease-in-out_infinite_0.5s]"></div>
-          <div className="absolute bottom-1/3 left-1/3 w-2 h-2 rounded-full bg-pink-400/60 animate-[float_3s_ease-in-out_infinite_1s]"></div>
-          <div className="absolute top-1/4 right-1/3 w-1.5 h-1.5 rounded-full bg-cyan-300/50 animate-[float_4s_ease-in-out_infinite_1.5s]"></div>
-          {/* Центральные вертикальные линии */}
-          <div className="absolute top-1/2 left-8 -translate-y-1/2 w-px h-20 bg-gradient-to-b from-transparent via-cyan-400/60 to-transparent"></div>
-          <div className="absolute top-1/2 right-8 -translate-y-1/2 w-px h-20 bg-gradient-to-b from-transparent via-pink-400/60 to-transparent"></div>
+          <div className="absolute inset-0 bg-[repeating-linear-gradient(135deg,transparent,transparent_6px,rgba(244,63,94,0.03)_6px,rgba(244,63,94,0.03)_12px)]" />
+          <MetalGrid opacity={0.04} color="#f43f5e" />
+          <NoiseTexture opacity={0.05} />
+          <ScanLine color="#f43f5e" speed={3} />
+          {/* Премиум рамка */}
+          <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-rose-500 via-fuchsia-400 to-cyan-400 animate-border-flow" />
+          <div className="absolute bottom-0 left-0 right-0 h-1.5 bg-gradient-to-r from-cyan-400 via-fuchsia-400 to-rose-500 animate-border-flow" />
+          <div className="absolute top-0 bottom-0 left-0 w-1.5 bg-gradient-to-b from-rose-500 via-fuchsia-400 to-cyan-400 animate-border-flow" />
+          <div className="absolute top-0 bottom-0 right-0 w-1.5 bg-gradient-to-b from-cyan-400 via-fuchsia-400 to-rose-500 animate-border-flow" />
+          {/* Внутренняя рамка */}
+          <div className="absolute inset-4 border border-rose-500/30 pointer-events-none" />
+          {/* Угловые акценты */}
+          <div className="absolute top-3 left-3 w-5 h-5 border-l-2 border-t-2 border-cyan-400/60" />
+          <div className="absolute top-3 right-3 w-5 h-5 border-r-2 border-t-2 border-fuchsia-400/60" />
+          <div className="absolute bottom-3 left-3 w-5 h-5 border-l-2 border-b-2 border-fuchsia-400/60" />
+          <div className="absolute bottom-3 right-3 w-5 h-5 border-r-2 border-b-2 border-cyan-400/60" />
+          {/* Множественные свечения */}
+          <div className="absolute -top-10 left-1/2 -translate-x-1/2 w-64 h-40 bg-rose-500/25 rounded-full blur-3xl" />
+          <div className="absolute -bottom-4 left-1/4 w-32 h-32 bg-fuchsia-500/15 rounded-full blur-2xl" />
+          <div className="absolute -bottom-4 right-1/4 w-32 h-32 bg-cyan-500/15 rounded-full blur-2xl" />
         </div>
       ),
       particleEffect: 'royal'
@@ -384,33 +387,3 @@ export function getRankProfileStyle(rank: MafiaRank | null): RankProfileStyle {
   
   return styles[rankId] || styles.outsider;
 }
-
-// CSS animations to add to index.css
-export const rankAnimations = `
-@keyframes glow {
-  0%, 100% { box-shadow: 0 0 20px currentColor; }
-  50% { box-shadow: 0 0 40px currentColor, 0 0 60px currentColor; }
-}
-
-@keyframes rainbow-glow {
-  0% { box-shadow: 0 0 60px rgba(34,211,238,0.8), 0 0 30px rgba(147,51,234,0.6); }
-  33% { box-shadow: 0 0 60px rgba(147,51,234,0.8), 0 0 30px rgba(236,72,153,0.6); }
-  66% { box-shadow: 0 0 60px rgba(236,72,153,0.8), 0 0 30px rgba(34,211,238,0.6); }
-  100% { box-shadow: 0 0 60px rgba(34,211,238,0.8), 0 0 30px rgba(147,51,234,0.6); }
-}
-
-@keyframes shimmer {
-  0% { background-position: -200% center; }
-  100% { background-position: 200% center; }
-}
-
-@keyframes scan {
-  0% { transform: translateY(-100%); }
-  100% { transform: translateY(100%); }
-}
-
-@keyframes float {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-10px); }
-}
-`;
