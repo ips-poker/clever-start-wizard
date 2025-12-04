@@ -300,17 +300,22 @@
   animation-delay: 0.3s;
 }
 
-/* Rank Profile Animations */
+/* Rank Profile Animations - Industrial Premium */
 @keyframes rank-glow {
   0%, 100% { box-shadow: 0 0 20px currentColor; }
   50% { box-shadow: 0 0 40px currentColor, 0 0 60px currentColor; }
 }
 
+@keyframes glow {
+  0%, 100% { opacity: 0.8; }
+  50% { opacity: 1; }
+}
+
 @keyframes rainbow-glow {
-  0% { box-shadow: 0 0 60px rgba(34,211,238,0.8), 0 0 30px rgba(147,51,234,0.6); }
-  33% { box-shadow: 0 0 60px rgba(147,51,234,0.8), 0 0 30px rgba(236,72,153,0.6); }
-  66% { box-shadow: 0 0 60px rgba(236,72,153,0.8), 0 0 30px rgba(34,211,238,0.6); }
-  100% { box-shadow: 0 0 60px rgba(34,211,238,0.8), 0 0 30px rgba(147,51,234,0.6); }
+  0% { box-shadow: 0 0 60px rgba(244,63,94,0.7), 0 0 100px rgba(147,51,234,0.4); }
+  33% { box-shadow: 0 0 60px rgba(147,51,234,0.7), 0 0 100px rgba(34,211,238,0.4); }
+  66% { box-shadow: 0 0 60px rgba(34,211,238,0.7), 0 0 100px rgba(244,63,94,0.4); }
+  100% { box-shadow: 0 0 60px rgba(244,63,94,0.7), 0 0 100px rgba(147,51,234,0.4); }
 }
 
 @keyframes shimmer {
@@ -319,8 +324,10 @@
 }
 
 @keyframes rank-scan {
-  0% { transform: translateY(-100%); }
-  100% { transform: translateY(100%); }
+  0% { transform: translateY(-100%); opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { transform: translateY(100%); opacity: 0; }
 }
 
 @keyframes float {
@@ -332,6 +339,17 @@
   0% { background-position: 0% 50%; }
   50% { background-position: 100% 50%; }
   100% { background-position: 0% 50%; }
+}
+
+@keyframes holographic {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes scan {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(200%); }
 }
 
 .animate-rank-glow {
@@ -348,7 +366,7 @@
 }
 
 .animate-rank-scan {
-  animation: rank-scan 3s linear infinite;
+  animation: rank-scan 4s ease-in-out infinite;
 }
 
 .animate-float {
@@ -358,4 +376,9 @@
 .animate-border-flow {
   background-size: 200% 200%;
   animation: border-flow 3s linear infinite;
+}
+
+.animate-holographic {
+  background-size: 400% 400%;
+  animation: holographic 8s ease infinite;
 }
