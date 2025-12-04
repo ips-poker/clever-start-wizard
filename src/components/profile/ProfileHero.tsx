@@ -3,8 +3,9 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Edit3, Check, X, Crown, Star, Zap, Flame, Target, Shield, Sparkles } from "lucide-react";
+import { Edit3, Check, X, Shield, Sparkles } from "lucide-react";
 import { motion } from "framer-motion";
+import { getCurrentMafiaRank, getMafiaRankProgress, getTotalRankXP } from "@/utils/mafiaRanks";
 
 interface Player {
   id: string;
@@ -26,38 +27,6 @@ interface ProfileHeroProps {
   onNameUpdate: () => void;
   onCancelNameEdit: () => void;
 }
-
-const getRankClass = (rating: number) => {
-  if (rating >= 1800) return "from-yellow-400 via-yellow-500 to-amber-600";
-  if (rating >= 1600) return "from-purple-400 via-purple-500 to-violet-600";
-  if (rating >= 1400) return "from-blue-400 via-blue-500 to-cyan-600";
-  if (rating >= 1200) return "from-green-400 via-green-500 to-emerald-600";
-  return "from-zinc-400 via-zinc-500 to-zinc-600";
-};
-
-const getRankTitle = (rating: number) => {
-  if (rating >= 1800) return "Мастер";
-  if (rating >= 1600) return "Эксперт";
-  if (rating >= 1400) return "Продвинутый";
-  if (rating >= 1200) return "Любитель";
-  return "Новичок";
-};
-
-const getRankIcon = (rating: number) => {
-  if (rating >= 1800) return Crown;
-  if (rating >= 1600) return Star;
-  if (rating >= 1400) return Zap;
-  if (rating >= 1200) return Flame;
-  return Target;
-};
-
-const getNextRank = (rating: number) => {
-  if (rating >= 1800) return { name: "Максимум", target: rating };
-  if (rating >= 1600) return { name: "Мастер", target: 1800 };
-  if (rating >= 1400) return { name: "Эксперт", target: 1600 };
-  if (rating >= 1200) return { name: "Продвинутый", target: 1400 };
-  return { name: "Любитель", target: 1200 };
-};
 
 const getLevel = (games: number, wins: number, rating: number) => {
   return Math.floor((games * 10 + wins * 50 + (rating - 100)) / 100) + 1;
@@ -84,11 +53,13 @@ export function ProfileHero({
   const wins = player?.wins || 0;
   const winRate = games > 0 ? Math.round((wins / games) * 100) : 0;
   
-  const RankIcon = getRankIcon(rating);
-  const nextRank = getNextRank(rating);
+  const stats = { gamesPlayed: games, wins, rating };
+  const currentRank = getCurrentMafiaRank(stats);
+  const rankProgressData = getMafiaRankProgress(stats);
+  const totalXP = getTotalRankXP(stats);
+  
   const level = getLevel(games, wins, rating);
   const levelProgress = getLevelProgress(games, wins, rating);
-  const rankProgress = rating >= 1800 ? 100 : ((rating - (Math.floor(rating / 200) * 200)) / 200) * 100;
 
   return (
     <div className="relative overflow-hidden brutal-border bg-card">
@@ -98,7 +69,7 @@ export function ProfileHero({
       
       {/* Animated rank glow */}
       <motion.div 
-        className={`absolute -top-20 -right-20 w-64 h-64 bg-gradient-to-br ${getRankClass(rating)} rounded-full blur-[100px] opacity-30`}
+        className={`absolute -top-20 -right-20 w-64 h-64 bg-gradient-to-br ${currentRank.bgGradient} rounded-full blur-[100px] opacity-30`}
         animate={{ 
           scale: [1, 1.2, 1],
           opacity: [0.2, 0.4, 0.2]
@@ -116,7 +87,7 @@ export function ProfileHero({
           <div className="relative">
             {/* Animated ring */}
             <motion.div 
-              className={`absolute inset-0 rounded-full bg-gradient-to-r ${getRankClass(rating)} opacity-60 blur-md`}
+              className={`absolute inset-0 rounded-full bg-gradient-to-r ${currentRank.bgGradient} opacity-60 blur-md`}
               style={{ margin: '-8px' }}
               animate={{ 
                 rotate: 360,
@@ -200,23 +171,24 @@ export function ProfileHero({
                 </motion.div>
               )}
               
-              {/* Rank Badge */}
+              {/* Rank Badge with Icon */}
               <motion.div 
                 className="flex items-center justify-center lg:justify-start gap-2"
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 0.2 }}
               >
-                <Badge className={`bg-gradient-to-r ${getRankClass(rating)} text-white border-0 px-4 py-1.5 font-bold text-sm shadow-brutal rounded-none flex items-center gap-2`}>
-                  <RankIcon className="h-4 w-4" />
-                  {getRankTitle(rating)}
+                <span className="text-2xl">{currentRank.icon}</span>
+                <Badge className={`bg-gradient-to-r ${currentRank.bgGradient} text-white border-0 px-4 py-1.5 font-bold text-sm shadow-brutal rounded-none flex items-center gap-2`}>
+                  {currentRank.name}
                 </Badge>
-                {rating >= 1600 && (
+                <span className={`text-sm ${currentRank.textColor}`}>{currentRank.title}</span>
+                {currentRank.rarity === 'godfather' && (
                   <motion.div
                     animate={{ rotate: [0, 10, -10, 0] }}
                     transition={{ duration: 2, repeat: Infinity }}
                   >
-                    <Sparkles className="h-5 w-5 text-yellow-400" />
+                    <Sparkles className="h-5 w-5 text-cyan-400" />
                   </motion.div>
                 )}
               </motion.div>
@@ -225,8 +197,8 @@ export function ProfileHero({
             {/* Level Progress Bar */}
             <div className="max-w-md mx-auto lg:mx-0">
               <div className="flex justify-between text-xs text-muted-foreground mb-1">
-                <span>Уровень {level}</span>
-                <span>{levelProgress}/100 XP</span>
+                <span>Уровень {level} • {totalXP} XP</span>
+                <span>{levelProgress}/100 XP до след.</span>
               </div>
               <div className="h-2 bg-secondary border border-border overflow-hidden">
                 <motion.div 
@@ -244,25 +216,30 @@ export function ProfileHero({
               </div>
             </div>
 
-            {/* Rank Progress */}
+            {/* Rank Progress to Next */}
             <div className="max-w-md mx-auto lg:mx-0">
               <div className="flex justify-between text-xs text-muted-foreground mb-1">
                 <span className="flex items-center gap-1">
                   <Shield className="h-3 w-3" />
-                  {getRankTitle(rating)}
+                  {currentRank.name}
                 </span>
-                {rating < 1800 && (
-                  <span className="text-primary">{nextRank.target - rating} RPS до {nextRank.name}</span>
+                {rankProgressData.next && (
+                  <span className="text-primary">→ {rankProgressData.next.name}</span>
                 )}
               </div>
               <div className="h-1.5 bg-secondary border border-border overflow-hidden">
                 <motion.div 
-                  className={`h-full bg-gradient-to-r ${getRankClass(rating)}`}
+                  className={`h-full bg-gradient-to-r ${currentRank.bgGradient}`}
                   initial={{ width: 0 }}
-                  animate={{ width: `${rankProgress}%` }}
+                  animate={{ width: `${rankProgressData.progress}%` }}
                   transition={{ duration: 1.5, ease: "easeOut", delay: 0.3 }}
                 />
               </div>
+              {rankProgressData.details.length > 0 && (
+                <p className="text-[10px] text-muted-foreground mt-1">
+                  {rankProgressData.details.join(' • ')}
+                </p>
+              )}
             </div>
           </div>
 
