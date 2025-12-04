@@ -13,7 +13,7 @@ import { AvatarSelector } from "@/components/AvatarSelector";
 import { ProfileTournaments } from "@/components/ProfileTournaments";
 import { FloatingParticles } from "@/components/ui/floating-particles";
 import { ProfileHero } from "@/components/profile/ProfileHero";
-import { ProfileAchievements } from "@/components/profile/ProfileAchievements";
+import { MafiaAchievements } from "@/components/profile/MafiaAchievements";
 import { ProfileStatsDashboard } from "@/components/profile/ProfileStatsDashboard";
 import { ProfileGameHistory } from "@/components/profile/ProfileGameHistory";
 import { motion } from "framer-motion";
@@ -347,8 +347,8 @@ export default function Profile() {
               </TabsList>
 
               <TabsContent value="statistics" className="space-y-6 mt-6">
-                {/* Achievements */}
-                <ProfileAchievements
+                {/* Mafia Hierarchy Achievements */}
+                <MafiaAchievements
                   gamesPlayed={player?.games_played || 0}
                   wins={player?.wins || 0}
                   rating={player?.elo_rating || 100}
