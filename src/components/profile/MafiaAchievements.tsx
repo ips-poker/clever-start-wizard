@@ -348,21 +348,26 @@ export function MafiaAchievements({ gamesPlayed, wins, rating, gameResults }: Ma
                 </div>
 
                 <div className="flex flex-col items-center text-center gap-2 relative z-10">
-                  {/* Avatar */}
+                  {/* Avatar - always visible, bright when unlocked */}
                   <motion.div 
-                    className={`relative rounded-full p-0.5 ${unlocked ? `bg-gradient-to-br ${rank.bgGradient}` : 'bg-secondary'}`}
-                    whileHover={unlocked ? { rotate: [0, -5, 5, 0], scale: 1.1 } : {}}
+                    className={`relative rounded-full p-0.5 ${unlocked ? `bg-gradient-to-br ${rank.bgGradient}` : 'bg-secondary/50'}`}
+                    whileHover={unlocked ? { rotate: [0, -5, 5, 0], scale: 1.1 } : { scale: 1.05 }}
                     transition={{ duration: 0.5 }}
                   >
-                    {unlocked ? (
-                      <img 
-                        src={rank.avatar} 
-                        alt={rank.name}
-                        className="w-12 h-12 rounded-full border border-white/20"
-                      />
-                    ) : (
-                      <div className="w-12 h-12 rounded-full bg-secondary flex items-center justify-center border border-border">
-                        <Lock className="h-5 w-5 text-muted-foreground/50" />
+                    <img 
+                      src={rank.avatar} 
+                      alt={rank.name}
+                      className={`w-12 h-12 rounded-full border transition-all duration-500 ${
+                        unlocked 
+                          ? 'border-white/20 brightness-100 saturate-100' 
+                          : 'border-border/50 brightness-50 saturate-0 opacity-60'
+                      }`}
+                    />
+                    
+                    {/* Lock overlay for locked ranks */}
+                    {!unlocked && (
+                      <div className="absolute inset-0 rounded-full flex items-center justify-center bg-black/30">
+                        <Lock className="h-4 w-4 text-white/50" />
                       </div>
                     )}
                     
