@@ -851,7 +851,7 @@ export const TelegramApp = () => {
             <div className="flex items-center gap-4 mb-5">
               {/* Avatar */}
               <div className="relative group/avatar">
-                <div className="w-16 h-16 rounded-2xl overflow-hidden brutal-border bg-syndikate-concrete shadow-lg group-hover:shadow-neon-orange transition-all duration-300 group-hover/avatar:scale-105">
+                <div className="w-16 h-16 rounded-2xl overflow-hidden brutal-border bg-syndikate-concrete shadow-lg transition-all duration-300 group-hover/avatar:scale-105">
                   {(userStats.avatar_url || telegramUser?.photoUrl) ? (
                     <img 
                       src={userStats.avatar_url || telegramUser?.photoUrl} 

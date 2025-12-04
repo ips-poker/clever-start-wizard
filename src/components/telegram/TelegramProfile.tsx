@@ -42,6 +42,7 @@ import { getCurrentMafiaRank, getMafiaRankProgress, getRarityInfo, MAFIA_RANKS, 
 import { fixStorageUrl } from '@/utils/storageUtils';
 import { MafiaHierarchy } from './MafiaHierarchy';
 import { getRankProfileStyle } from './RankProfileStyles';
+import { GlitchAvatarFrame } from '@/components/ui/glitch-avatar-frame';
 
 interface Player {
   id: string;
@@ -594,19 +595,19 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate, onUnre
         
         <CardContent className="p-6 relative z-10">
           <div className="text-center space-y-4">
-            {/* Avatar with Rank-Specific Effects */}
-            <div className={`relative inline-block ${rankStyle.avatarAnimation}`}>
-              {/* Outer glow based on rank */}
-              <div className={`absolute -inset-2 rounded-full bg-gradient-to-br ${mafiaRank?.bgGradient || 'from-zinc-600 to-zinc-800'} opacity-40 blur-md ${mafiaRank?.rarity === 'godfather' ? 'animate-pulse' : ''}`}></div>
-              <Avatar className={`w-24 h-24 mx-auto brutal-border ${rankStyle.avatarGlow} ${rankStyle.avatarRing} relative`}>
-                <AvatarImage src={player.avatar_url ? fixStorageUrl(player.avatar_url) : undefined} alt={player.name} />
-                <AvatarFallback className="text-xl bg-syndikate-orange text-background font-bold uppercase">
-                  {player.name?.charAt(0).toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
+            {/* Avatar with Rank-Specific Glitch Frame */}
+            <div className="relative inline-block">
+              <GlitchAvatarFrame rank={mafiaRank} size="md">
+                <Avatar className="w-24 h-24 mx-auto brutal-border relative">
+                  <AvatarImage src={player.avatar_url ? fixStorageUrl(player.avatar_url) : undefined} alt={player.name} />
+                  <AvatarFallback className="text-xl bg-syndikate-orange text-background font-bold uppercase">
+                    {player.name?.charAt(0).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+              </GlitchAvatarFrame>
               <Button
                 onClick={() => setShowAvatarSelector(true)}
-                className="absolute -bottom-1 -right-1 brutal-border w-7 h-7 p-0 shadow-lg hover:scale-110 transition-transform bg-syndikate-orange hover:bg-syndikate-orange-glow"
+                className="absolute -bottom-1 -right-1 brutal-border w-7 h-7 p-0 shadow-lg hover:scale-110 transition-transform bg-syndikate-orange hover:bg-syndikate-orange-glow z-20"
                 size="sm"
               >
                 <Camera className="h-3.5 w-3.5" />
