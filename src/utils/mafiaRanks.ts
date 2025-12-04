@@ -47,7 +47,7 @@ export const MAFIA_RANKS: MafiaRank[] = [
     borderColor: 'border-zinc-500',
     glowColor: 'shadow-zinc-500/30',
     rarity: 'initiate',
-    icon: '🃏'
+    icon: ''
   },
   {
     id: 'soldato',
@@ -62,7 +62,7 @@ export const MAFIA_RANKS: MafiaRank[] = [
     borderColor: 'border-stone-500',
     glowColor: 'shadow-stone-500/30',
     rarity: 'initiate',
-    icon: '♠️'
+    icon: ''
   },
   {
     id: 'sgarrista',
@@ -77,7 +77,7 @@ export const MAFIA_RANKS: MafiaRank[] = [
     borderColor: 'border-amber-500',
     glowColor: 'shadow-amber-500/40',
     rarity: 'soldier',
-    icon: '♣️'
+    icon: ''
   },
   {
     id: 'associato',
@@ -92,7 +92,7 @@ export const MAFIA_RANKS: MafiaRank[] = [
     borderColor: 'border-orange-500',
     glowColor: 'shadow-orange-500/40',
     rarity: 'soldier',
-    icon: '♥️'
+    icon: ''
   },
   {
     id: 'caporegime',
@@ -107,7 +107,7 @@ export const MAFIA_RANKS: MafiaRank[] = [
     borderColor: 'border-blue-500',
     glowColor: 'shadow-blue-500/40',
     rarity: 'captain',
-    icon: '♦️'
+    icon: ''
   },
   {
     id: 'shark',
@@ -122,7 +122,7 @@ export const MAFIA_RANKS: MafiaRank[] = [
     borderColor: 'border-purple-500',
     glowColor: 'shadow-purple-500/50',
     rarity: 'captain',
-    icon: '🦈'
+    icon: ''
   },
   {
     id: 'kapo',
@@ -137,7 +137,7 @@ export const MAFIA_RANKS: MafiaRank[] = [
     borderColor: 'border-red-500',
     glowColor: 'shadow-red-500/50',
     rarity: 'underboss',
-    icon: '🎰'
+    icon: ''
   },
   {
     id: 'konsigliere',
@@ -152,7 +152,7 @@ export const MAFIA_RANKS: MafiaRank[] = [
     borderColor: 'border-yellow-500',
     glowColor: 'shadow-yellow-500/50',
     rarity: 'underboss',
-    icon: '🎩'
+    icon: ''
   },
   {
     id: 'don',
@@ -167,7 +167,7 @@ export const MAFIA_RANKS: MafiaRank[] = [
     borderColor: 'border-rose-500',
     glowColor: 'shadow-rose-500/60',
     rarity: 'boss',
-    icon: '👑'
+    icon: ''
   },
   {
     id: 'patriarch',
@@ -182,7 +182,7 @@ export const MAFIA_RANKS: MafiaRank[] = [
     borderColor: 'border-cyan-400',
     glowColor: 'shadow-cyan-400/70',
     rarity: 'godfather',
-    icon: '💎'
+    icon: ''
   },
 ];
 
@@ -215,12 +215,13 @@ export function getCurrentMafiaRank(stats: { gamesPlayed: number; wins: number; 
       return MAFIA_RANKS[i];
     }
   }
-  // Если ничего не разблокировано, возвращаем первый ранг (но не разблокированный)
+  // Если ничего не разблокировано, возвращаем ранг "Аутсайдер"
   return {
     ...MAFIA_RANKS[0],
+    id: 'outsider',
     name: 'Аутсайдер',
     title: 'Ещё не в семье',
-    icon: '🎴',
+    icon: '',
     description: 'Сыграйте первый турнир, чтобы вступить в семью'
   };
 }

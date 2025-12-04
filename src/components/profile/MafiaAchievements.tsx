@@ -141,7 +141,6 @@ export function MafiaAchievements({ gamesPlayed, wins, rating, gameResults }: Ma
           </motion.div>
           <div className="flex-1">
             <div className="flex items-center gap-2">
-              <span className="text-xl mr-1">{currentRank.icon}</span>
               <span className={`text-xl font-black ${currentRank.textColor}`}>{currentRank.name}</span>
               <Badge className={getRarityInfo(currentRank.rarity).class + " rounded-none text-xs"}>
                 {getRarityInfo(currentRank.rarity).label}
