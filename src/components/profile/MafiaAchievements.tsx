@@ -53,10 +53,10 @@ export function MafiaAchievements({ gamesPlayed, wins, rating, gameResults }: Ma
 
   const mafiaRanks: MafiaRank[] = useMemo(() => [
     {
-      id: 'shesterka',
-      name: 'Шестёрка',
-      title: 'Новичок семьи',
-      description: 'Вступите в игру — сыграйте первый турнир',
+      id: 'picciotto',
+      name: 'Пиччотто',
+      title: 'Юный солдат',
+      description: 'Вступите в семью — сыграйте первый турнир',
       avatar: avatar1,
       requirement: { type: 'games', games: 1 },
       color: 'text-zinc-400',
@@ -66,10 +66,10 @@ export function MafiaAchievements({ gamesPlayed, wins, rating, gameResults }: Ma
       rarity: 'initiate'
     },
     {
-      id: 'boets',
-      name: 'Боец',
-      title: 'Проверенный человек',
-      description: 'Покажите характер — сыграйте 3 турнира',
+      id: 'soldato',
+      name: 'Солдато',
+      title: 'Проверенный боец',
+      description: 'Покажите преданность — сыграйте 3 турнира',
       avatar: avatar2,
       requirement: { type: 'games', games: 3 },
       color: 'text-stone-400',
@@ -79,10 +79,10 @@ export function MafiaAchievements({ gamesPlayed, wins, rating, gameResults }: Ma
       rarity: 'initiate'
     },
     {
-      id: 'brigadir',
-      name: 'Бригадир',
-      title: 'Командир бригады',
-      description: 'Докажите лидерство — выиграйте турнир',
+      id: 'sgarrista',
+      name: 'Сгарриста',
+      title: 'Правая рука капо',
+      description: 'Докажите мастерство — выиграйте турнир',
       avatar: avatar3,
       requirement: { type: 'wins', wins: 1 },
       color: 'text-amber-400',
@@ -92,10 +92,10 @@ export function MafiaAchievements({ gamesPlayed, wins, rating, gameResults }: Ma
       rarity: 'soldier'
     },
     {
-      id: 'avtoritet',
-      name: 'Авторитет',
-      title: 'Уважаемый игрок',
-      description: 'Заработайте уважение — 5 турниров',
+      id: 'associato',
+      name: 'Ассоциато',
+      title: 'Уважаемый член семьи',
+      description: 'Заслужите уважение — 5 турниров',
       avatar: avatar4,
       requirement: { type: 'games', games: 5 },
       color: 'text-orange-400',
@@ -105,9 +105,9 @@ export function MafiaAchievements({ gamesPlayed, wins, rating, gameResults }: Ma
       rarity: 'soldier'
     },
     {
-      id: 'pitboss',
-      name: 'Питбосс',
-      title: 'Хозяин стола',
+      id: 'caporegime',
+      name: 'Капореджиме',
+      title: 'Командир бригады',
       description: 'Достигните Silver уровня — 1200+ RPS',
       avatar: avatar5,
       requirement: { type: 'rating', rating: 1200 },
