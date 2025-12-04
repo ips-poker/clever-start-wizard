@@ -2,8 +2,6 @@ import React from 'react';
 import { PlayerLevelBadge } from './PlayerLevelBadge';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { TrendingUp, TrendingDown, Minus, Trophy, Target, Gamepad2 } from 'lucide-react';
-import { getPlayerLevel } from '@/utils/playerLevels';
-import { RankIcon } from '@/components/ui/rank-icon';
 
 interface Player {
   id: string;
@@ -17,7 +15,7 @@ interface Player {
 interface PlayerRatingCardProps {
   player: Player;
   rank: number;
-  index?: number;
+  index: number;
   onClick?: () => void;
   isCurrentUser?: boolean;
 }
@@ -25,7 +23,7 @@ interface PlayerRatingCardProps {
 export const PlayerRatingCard: React.FC<PlayerRatingCardProps> = ({ 
   player, 
   rank, 
-  index = 0, 
+  index, 
   onClick,
   isCurrentUser = false
 }) => {

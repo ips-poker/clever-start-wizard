@@ -2,8 +2,6 @@ import React from 'react';
 import { Crown, Trophy, Medal, Gamepad2 } from 'lucide-react';
 import { PlayerLevelBadge } from './PlayerLevelBadge';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { getPlayerLevel } from '@/utils/playerLevels';
-import { RankIcon } from '@/components/ui/rank-icon';
 
 interface Player {
   id: string;

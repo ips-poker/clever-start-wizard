@@ -1,100 +1,65 @@
-export type PlayerLevel = 'rookie' | 'soldier' | 'capo' | 'consigliere' | 'don';
+export type PlayerLevel = 'bronze' | 'silver' | 'gold' | 'diamond';
 
 export interface LevelInfo {
   level: PlayerLevel;
   name: string;
-  nameRu: string;
   minRating: number;
   maxRating: number;
   color: string;
   gradient: string;
-  bgColor: string;
   icon: string;
-  description: string;
 }
 
 export const PLAYER_LEVELS: Record<PlayerLevel, LevelInfo> = {
-  rookie: {
-    level: 'rookie',
-    name: 'Associate',
-    nameRu: 'Associate',
+  bronze: {
+    level: 'bronze',
+    name: 'Bronze',
     minRating: 0,
-    maxRating: 299,
-    color: 'text-zinc-400',
-    gradient: 'from-zinc-500 to-zinc-700',
-    bgColor: 'bg-zinc-500/20',
-    icon: '♠',
-    description: 'Новичок в синдикате'
+    maxRating: 1199,
+    color: 'text-orange-700',
+    gradient: 'from-orange-700 to-orange-900',
+    icon: '🥉'
   },
-  soldier: {
-    level: 'soldier',
-    name: 'Soldier',
-    nameRu: 'Soldier',
-    minRating: 300,
-    maxRating: 599,
-    color: 'text-emerald-500',
-    gradient: 'from-emerald-500 to-emerald-700',
-    bgColor: 'bg-emerald-500/20',
-    icon: '⚔',
-    description: 'Доказал себя в деле'
-  },
-  capo: {
-    level: 'capo',
-    name: 'Capo',
-    nameRu: 'Capo',
-    minRating: 600,
-    maxRating: 999,
-    color: 'text-blue-500',
-    gradient: 'from-blue-500 to-blue-700',
-    bgColor: 'bg-blue-500/20',
-    icon: '🎩',
-    description: 'Командует группой'
-  },
-  consigliere: {
-    level: 'consigliere',
-    name: 'Consigliere',
-    nameRu: 'Consigliere',
-    minRating: 1000,
+  silver: {
+    level: 'silver',
+    name: 'Silver',
+    minRating: 1200,
     maxRating: 1499,
-    color: 'text-purple-500',
-    gradient: 'from-purple-500 to-purple-700',
-    bgColor: 'bg-purple-500/20',
-    icon: '📜',
-    description: 'Советник семьи'
+    color: 'text-gray-400',
+    gradient: 'from-gray-400 to-gray-600',
+    icon: '🥈'
   },
-  don: {
-    level: 'don',
-    name: 'Boss',
-    nameRu: 'Boss',
+  gold: {
+    level: 'gold',
+    name: 'Gold',
     minRating: 1500,
+    maxRating: 1799,
+    color: 'text-yellow-500',
+    gradient: 'from-yellow-400 to-yellow-600',
+    icon: '🥇'
+  },
+  diamond: {
+    level: 'diamond',
+    name: 'Diamond',
+    minRating: 1800,
     maxRating: Infinity,
-    color: 'text-amber-400',
-    gradient: 'from-amber-400 via-yellow-500 to-amber-600',
-    bgColor: 'bg-amber-500/20',
-    icon: '👑',
-    description: 'Глава семьи'
+    color: 'text-cyan-400',
+    gradient: 'from-cyan-400 to-blue-600',
+    icon: '💎'
   }
 };
 
-export const LEVELS_ORDERED: LevelInfo[] = [
-  PLAYER_LEVELS.rookie,
-  PLAYER_LEVELS.soldier,
-  PLAYER_LEVELS.capo,
-  PLAYER_LEVELS.consigliere,
-  PLAYER_LEVELS.don
-];
-
 export function getPlayerLevel(rating: number): LevelInfo {
-  if (rating >= PLAYER_LEVELS.don.minRating) return PLAYER_LEVELS.don;
-  if (rating >= PLAYER_LEVELS.consigliere.minRating) return PLAYER_LEVELS.consigliere;
-  if (rating >= PLAYER_LEVELS.capo.minRating) return PLAYER_LEVELS.capo;
-  if (rating >= PLAYER_LEVELS.soldier.minRating) return PLAYER_LEVELS.soldier;
-  return PLAYER_LEVELS.rookie;
+  if (rating >= PLAYER_LEVELS.diamond.minRating) return PLAYER_LEVELS.diamond;
+  if (rating >= PLAYER_LEVELS.gold.minRating) return PLAYER_LEVELS.gold;
+  if (rating >= PLAYER_LEVELS.silver.minRating) return PLAYER_LEVELS.silver;
+  return PLAYER_LEVELS.bronze;
 }
 
 export function getNextLevel(currentLevel: LevelInfo): LevelInfo | null {
-  const currentIndex = LEVELS_ORDERED.findIndex(l => l.level === currentLevel.level);
-  return currentIndex < LEVELS_ORDERED.length - 1 ? LEVELS_ORDERED[currentIndex + 1] : null;
+  const levels = Object.values(PLAYER_LEVELS);
+  const currentIndex = levels.findIndex(l => l.level === currentLevel.level);
+  return currentIndex < levels.length - 1 ? levels[currentIndex + 1] : null;
 }
 
 export function getProgressToNextLevel(rating: number): number {
@@ -107,13 +72,4 @@ export function getProgressToNextLevel(rating: number): number {
   const progress = rating - currentLevel.minRating;
   
   return Math.min(100, Math.max(0, (progress / range) * 100));
-}
-
-export function getRatingToNextLevel(rating: number): number {
-  const currentLevel = getPlayerLevel(rating);
-  const nextLevel = getNextLevel(currentLevel);
-  
-  if (!nextLevel) return 0;
-  
-  return nextLevel.minRating - rating;
 }
