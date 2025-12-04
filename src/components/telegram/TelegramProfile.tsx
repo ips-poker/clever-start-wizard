@@ -38,6 +38,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { AvatarSelector } from '@/components/AvatarSelector';
 import { toast } from 'sonner';
 import { convertFeeToRPS, formatRPSPoints } from '@/utils/rpsCalculations';
+import { getCurrentMafiaRank, getMafiaRankProgress, getRarityInfo, type MafiaRank } from '@/utils/mafiaRanks';
 
 interface Player {
   id: string;
@@ -405,29 +406,16 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate, onUnre
     setNewPlayerName("");
   };
 
-  const getRankClass = (rating: number) => {
-    if (rating >= 1800) return "from-yellow-400 to-yellow-600";
-    if (rating >= 1600) return "from-purple-400 to-purple-600";
-    if (rating >= 1400) return "from-blue-400 to-blue-600";
-    if (rating >= 1200) return "from-green-400 to-green-600";
-    return "from-gray-400 to-gray-600";
-  };
+  // Get mafia rank based on player stats
+  const getMafiaStats = () => ({
+    gamesPlayed: player?.games_played || 0,
+    wins: player?.wins || 0,
+    rating: player?.elo_rating || 100
+  });
 
-  const getRankTitle = (rating: number) => {
-    if (rating >= 1800) return "Мастер";
-    if (rating >= 1600) return "Эксперт";
-    if (rating >= 1400) return "Про";
-    if (rating >= 1200) return "Игрок";
-    return "Новичок";
-  };
-
-  const getRankIcon = (rating: number) => {
-    if (rating >= 1800) return Crown;
-    if (rating >= 1600) return Trophy;
-    if (rating >= 1400) return Award;
-    if (rating >= 1200) return Star;
-    return Shield;
-  };
+  const mafiaRank = player ? getCurrentMafiaRank(getMafiaStats()) : null;
+  const rankProgress = player ? getMafiaRankProgress(getMafiaStats()) : null;
+  const rarityInfo = mafiaRank ? getRarityInfo(mafiaRank.rarity) : null;
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -495,7 +483,6 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate, onUnre
     );
   }
 
-  const RankIcon = getRankIcon(player.elo_rating);
   const winRate = player.games_played ? Math.round((player.wins / player.games_played) * 100) : 0;
   const avgPosition = gameResults.length > 0 ? 
     Math.round(gameResults.reduce((sum, result) => sum + result.position, 0) / gameResults.length * 10) / 10 : 0;
@@ -535,24 +522,30 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate, onUnre
         </div>
       </div>
 
-      {/* Profile Header */}
+      {/* Profile Header with Mafia Rank */}
       <Card className="bg-syndikate-metal/90 brutal-border backdrop-blur-xl shadow-brutal relative overflow-hidden group">
-        <div className="absolute inset-0 bg-gradient-to-br from-syndikate-orange/5 via-transparent to-syndikate-red/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+        {/* Background effects */}
+        <div className={`absolute inset-0 bg-gradient-to-br ${mafiaRank?.bgGradient || 'from-zinc-600 to-zinc-800'} opacity-10`}></div>
         <div className="absolute inset-0 opacity-10 group-hover:opacity-20 transition-opacity duration-500">
-          <div className="absolute top-4 right-4 text-syndikate-orange/30 text-3xl animate-pulse">♠</div>
-          <div className="absolute bottom-4 left-4 text-syndikate-orange/20 text-2xl">♣</div>
+          <div className="absolute top-4 right-4 text-3xl animate-pulse">{mafiaRank?.icon || '🎴'}</div>
+          <div className="absolute bottom-4 left-4 text-2xl opacity-50">♠</div>
         </div>
         
         <CardContent className="p-6 relative z-10">
           <div className="text-center space-y-4">
-            {/* Avatar */}
+            {/* Avatar with Rank Badge */}
             <div className="relative inline-block">
-              <Avatar className="w-20 h-20 mx-auto brutal-border shadow-neon-orange ring-2 ring-syndikate-orange/30">
+              <div className={`absolute -inset-1 rounded-full bg-gradient-to-br ${mafiaRank?.bgGradient || 'from-zinc-600 to-zinc-800'} opacity-50 blur-sm`}></div>
+              <Avatar className={`w-20 h-20 mx-auto brutal-border shadow-lg ring-2 ${mafiaRank?.borderColor || 'ring-zinc-500'} relative`}>
                 <AvatarImage src={player.avatar_url} alt={player.name} />
                 <AvatarFallback className="text-lg bg-syndikate-orange text-background font-bold uppercase">
                   {player.name?.charAt(0).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
+              {/* Rank Icon Badge */}
+              <div className={`absolute -top-1 -left-1 w-8 h-8 rounded-full bg-gradient-to-br ${mafiaRank?.bgGradient || 'from-zinc-600 to-zinc-800'} brutal-border flex items-center justify-center text-lg shadow-lg`}>
+                {mafiaRank?.icon || '🎴'}
+              </div>
               <Button
                 onClick={() => setShowAvatarSelector(true)}
                 className="absolute -bottom-1 -right-1 brutal-border w-6 h-6 p-0 shadow-lg hover:scale-110 transition-transform bg-syndikate-orange hover:bg-syndikate-orange-glow"
@@ -604,19 +597,46 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate, onUnre
                 </div>
               )}
               
-              <div className="flex items-center justify-center gap-2">
-                <Badge className={`bg-gradient-to-r ${getRankClass(player.elo_rating)} brutal-border border-0 px-3 py-1 font-bold text-sm uppercase tracking-wider shadow-brutal`}>
-                  <RankIcon className="h-3 w-3 mr-1" />
-                  {getRankTitle(player.elo_rating)}
+              {/* Mafia Rank Display */}
+              <div className="flex flex-col items-center gap-2">
+                <Badge className={`bg-gradient-to-r ${mafiaRank?.bgGradient || 'from-zinc-600 to-zinc-800'} brutal-border border-0 px-4 py-1.5 font-bold text-sm uppercase tracking-wider shadow-brutal`}>
+                  <span className="mr-2">{mafiaRank?.icon}</span>
+                  {mafiaRank?.name || 'Аутсайдер'}
                 </Badge>
+                <span className={`text-xs ${mafiaRank?.textColor || 'text-zinc-400'} font-medium`}>
+                  {mafiaRank?.title || 'Ещё не в семье'}
+                </span>
+                {rarityInfo && (
+                  <Badge className={`${rarityInfo.class} text-[10px] px-2 py-0.5 rounded-none font-bold`}>
+                    {rarityInfo.label}
+                  </Badge>
+                )}
               </div>
+              
+              {/* Progress to Next Rank */}
+              {rankProgress?.next && (
+                <div className="mt-3 px-4 space-y-1">
+                  <div className="flex justify-between text-xs text-muted-foreground">
+                    <span>До ранга: {rankProgress.next.name}</span>
+                    <span>{Math.round(rankProgress.progress)}%</span>
+                  </div>
+                  <Progress value={rankProgress.progress} className="h-2 bg-secondary" />
+                  <div className="flex flex-wrap gap-1 justify-center">
+                    {rankProgress.details.map((detail, i) => (
+                      <span key={i} className="text-[10px] text-muted-foreground/70 bg-secondary/50 px-2 py-0.5 rounded">
+                        {detail}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
             
             {/* Main Stats */}
             <div className="flex items-center justify-center gap-4 pt-3 border-t-2 border-dashed border-syndikate-orange/30">
               <div className="text-center">
                 <p className="text-lg font-bold text-syndikate-orange neon-orange">{player.elo_rating}</p>
-                <p className="text-xs text-muted-foreground uppercase tracking-wider font-bold">RPS Рейтинг</p>
+                <p className="text-xs text-muted-foreground uppercase tracking-wider font-bold">RPS</p>
               </div>
               <div className="w-px h-6 bg-border"></div>
               <div className="text-center">
