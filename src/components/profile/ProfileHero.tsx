@@ -7,6 +7,7 @@ import { Edit3, Check, X, Shield, Sparkles, ChevronLeft, ChevronRight, FlaskConi
 import { motion, AnimatePresence } from "framer-motion";
 import { getCurrentMafiaRank, getMafiaRankProgress, getTotalRankXP, MAFIA_RANKS } from "@/utils/mafiaRanks";
 import { WebRankProfileStyles } from "./WebRankProfileStyles";
+import { GlitchAvatarFrame } from "@/components/ui/glitch-avatar-frame";
 
 interface Player {
   id: string;
@@ -95,20 +96,6 @@ export function ProfileHero({
         <div className="flex flex-col lg:flex-row items-center gap-8">
           {/* Left: Avatar Section */}
           <div className="relative">
-            {/* Animated ring */}
-            <motion.div 
-              className={`absolute inset-0 rounded-full bg-gradient-to-r ${currentRank.bgGradient} opacity-60 blur-md`}
-              style={{ margin: '-8px' }}
-              animate={{ 
-                rotate: 360,
-                scale: [1, 1.05, 1]
-              }}
-              transition={{ 
-                rotate: { duration: 20, repeat: Infinity, ease: "linear" },
-                scale: { duration: 2, repeat: Infinity, ease: "easeInOut" }
-              }}
-            />
-            
             {/* Level badge */}
             <motion.div 
               className="absolute -top-2 -left-2 z-20"
@@ -126,18 +113,20 @@ export function ProfileHero({
             
             <motion.div 
               className="relative"
-              whileHover={{ scale: 1.05 }}
+              whileHover={{ scale: 1.03 }}
               transition={{ type: "spring", stiffness: 300 }}
             >
-              <Avatar className="w-32 h-32 md:w-40 md:h-40 border-4 border-primary/50 shadow-neon-orange cursor-pointer" onClick={onAvatarClick}>
-                <AvatarImage src={player?.avatar_url} alt={player?.name} />
-                <AvatarFallback className="text-4xl bg-gradient-to-br from-primary to-accent text-primary-foreground font-bold">
-                  {player?.name?.charAt(0).toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
+              <GlitchAvatarFrame rank={currentRank} size="lg">
+                <Avatar className="w-32 h-32 md:w-40 md:h-40 cursor-pointer" onClick={onAvatarClick}>
+                  <AvatarImage src={player?.avatar_url} alt={player?.name} />
+                  <AvatarFallback className="text-4xl bg-gradient-to-br from-primary to-accent text-primary-foreground font-bold">
+                    {player?.name?.charAt(0).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+              </GlitchAvatarFrame>
               <Button
                 onClick={onAvatarClick}
-                className="absolute -bottom-2 -right-2 rounded-none w-10 h-10 p-0 shadow-brutal bg-primary hover:bg-primary/90 border-2 border-background"
+                className="absolute -bottom-2 -right-2 rounded-none w-10 h-10 p-0 shadow-brutal bg-primary hover:bg-primary/90 border-2 border-background z-20"
                 size="sm"
               >
                 <Edit3 className="h-4 w-4 text-primary-foreground" />
