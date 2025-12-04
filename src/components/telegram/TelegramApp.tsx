@@ -1468,27 +1468,22 @@ export const TelegramApp = () => {
               </div>
             </div>
             
-            {/* Level explanation */}
-            <div className="mt-4 grid grid-cols-4 gap-2 relative z-10">
-              <div className="text-center p-2 rounded bg-gradient-to-br from-orange-700/30 to-orange-900/30 border border-orange-700/50">
-                <span className="text-sm">🥉</span>
-                <div className="text-[10px] text-orange-400 uppercase font-bold">Bronze</div>
-                <div className="text-[9px] text-muted-foreground">0-1199</div>
+            {/* Mafia Ranks explanation */}
+            <div className="mt-4 grid grid-cols-3 gap-2 relative z-10">
+              <div className="text-center p-2 rounded bg-gradient-to-br from-zinc-700/30 to-zinc-900/30 border border-zinc-600/50">
+                <span className="text-sm">🎴</span>
+                <div className="text-[10px] text-zinc-400 uppercase font-bold">Инициация</div>
+                <div className="text-[9px] text-muted-foreground">0+ игр</div>
               </div>
-              <div className="text-center p-2 rounded bg-gradient-to-br from-gray-400/30 to-gray-600/30 border border-gray-400/50">
-                <span className="text-sm">🥈</span>
-                <div className="text-[10px] text-gray-300 uppercase font-bold">Silver</div>
-                <div className="text-[9px] text-muted-foreground">1200-1499</div>
+              <div className="text-center p-2 rounded bg-gradient-to-br from-amber-700/30 to-amber-900/30 border border-amber-700/50">
+                <span className="text-sm">🔫</span>
+                <div className="text-[10px] text-amber-400 uppercase font-bold">Солдат</div>
+                <div className="text-[9px] text-muted-foreground">5+ игр</div>
               </div>
-              <div className="text-center p-2 rounded bg-gradient-to-br from-yellow-400/30 to-yellow-600/30 border border-yellow-500/50">
-                <span className="text-sm">🥇</span>
-                <div className="text-[10px] text-yellow-400 uppercase font-bold">Gold</div>
-                <div className="text-[9px] text-muted-foreground">1500-1799</div>
-              </div>
-              <div className="text-center p-2 rounded bg-gradient-to-br from-cyan-400/30 to-blue-600/30 border border-cyan-400/50">
-                <span className="text-sm">💎</span>
-                <div className="text-[10px] text-cyan-400 uppercase font-bold">Diamond</div>
-                <div className="text-[9px] text-muted-foreground">1800+</div>
+              <div className="text-center p-2 rounded bg-gradient-to-br from-purple-600/30 to-purple-900/30 border border-purple-500/50">
+                <span className="text-sm">👑</span>
+                <div className="text-[10px] text-purple-400 uppercase font-bold">Босс</div>
+                <div className="text-[9px] text-muted-foreground">20+ игр</div>
               </div>
             </div>
           </div>

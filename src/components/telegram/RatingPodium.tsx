@@ -2,6 +2,7 @@ import React from 'react';
 import { Crown, Trophy, Medal, Gamepad2 } from 'lucide-react';
 import { PlayerLevelBadge } from './PlayerLevelBadge';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { fixStorageUrl } from '@/utils/storageUtils';
 
 interface Player {
   id: string;
@@ -46,7 +47,7 @@ export const RatingPodium: React.FC<RatingPodiumProps> = ({ topPlayers, onPlayer
             <div className="absolute inset-0 bg-gradient-to-br from-gray-400/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
             
             <Avatar className="w-14 h-14 mx-auto brutal-border relative z-10 group-hover:scale-105 transition-transform">
-              <AvatarImage src={topPlayers[1].avatar_url} alt={topPlayers[1].name} />
+              <AvatarImage src={topPlayers[1].avatar_url ? fixStorageUrl(topPlayers[1].avatar_url) : undefined} alt={topPlayers[1].name} />
               <AvatarFallback className="bg-gray-400/20 text-xl font-display text-gray-300">
                 {topPlayers[1].name.charAt(0)}
               </AvatarFallback>
@@ -54,7 +55,7 @@ export const RatingPodium: React.FC<RatingPodiumProps> = ({ topPlayers, onPlayer
             
             <div className="relative z-10">
               <div className="text-sm font-display truncate group-hover:text-syndikate-orange transition-colors">{topPlayers[1].name}</div>
-              <PlayerLevelBadge rating={topPlayers[1].elo_rating} size="sm" />
+              <PlayerLevelBadge rating={topPlayers[1].elo_rating} gamesPlayed={topPlayers[1].games_played} wins={topPlayers[1].wins} size="sm" />
               <div className="text-lg font-display text-syndikate-orange font-bold mt-1">{topPlayers[1].elo_rating}</div>
               <div className="text-[10px] text-muted-foreground flex items-center justify-center gap-1">
                 <Gamepad2 className="h-3 w-3" />
@@ -87,7 +88,7 @@ export const RatingPodium: React.FC<RatingPodiumProps> = ({ topPlayers, onPlayer
             <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-yellow-400 via-syndikate-orange to-yellow-400" />
             
             <Avatar className="w-18 h-18 mx-auto brutal-border relative z-10 group-hover:scale-105 transition-transform ring-2 ring-yellow-500/50 ring-offset-2 ring-offset-background">
-              <AvatarImage src={topPlayers[0].avatar_url} alt={topPlayers[0].name} className="w-[72px] h-[72px]" />
+              <AvatarImage src={topPlayers[0].avatar_url ? fixStorageUrl(topPlayers[0].avatar_url) : undefined} alt={topPlayers[0].name} className="w-[72px] h-[72px]" />
               <AvatarFallback className="bg-syndikate-orange/20 text-2xl font-display text-syndikate-orange w-[72px] h-[72px]">
                 {topPlayers[0].name.charAt(0)}
               </AvatarFallback>
@@ -95,7 +96,7 @@ export const RatingPodium: React.FC<RatingPodiumProps> = ({ topPlayers, onPlayer
             
             <div className="relative z-10">
               <div className="text-base font-display truncate group-hover:text-syndikate-orange transition-colors font-bold">{topPlayers[0].name}</div>
-              <PlayerLevelBadge rating={topPlayers[0].elo_rating} size="sm" />
+              <PlayerLevelBadge rating={topPlayers[0].elo_rating} gamesPlayed={topPlayers[0].games_played} wins={topPlayers[0].wins} size="sm" />
               <div className="text-2xl font-display text-syndikate-orange font-bold mt-1">{topPlayers[0].elo_rating}</div>
               <div className="text-[10px] text-muted-foreground flex items-center justify-center gap-1">
                 <Trophy className="h-3 w-3 text-syndikate-orange" />
@@ -132,7 +133,7 @@ export const RatingPodium: React.FC<RatingPodiumProps> = ({ topPlayers, onPlayer
             <div className="absolute inset-0 bg-gradient-to-br from-orange-700/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
             
             <Avatar className="w-14 h-14 mx-auto brutal-border relative z-10 group-hover:scale-105 transition-transform">
-              <AvatarImage src={topPlayers[2].avatar_url} alt={topPlayers[2].name} />
+              <AvatarImage src={topPlayers[2].avatar_url ? fixStorageUrl(topPlayers[2].avatar_url) : undefined} alt={topPlayers[2].name} />
               <AvatarFallback className="bg-orange-700/20 text-xl font-display text-orange-400">
                 {topPlayers[2].name.charAt(0)}
               </AvatarFallback>
@@ -140,7 +141,7 @@ export const RatingPodium: React.FC<RatingPodiumProps> = ({ topPlayers, onPlayer
             
             <div className="relative z-10">
               <div className="text-sm font-display truncate group-hover:text-syndikate-orange transition-colors">{topPlayers[2].name}</div>
-              <PlayerLevelBadge rating={topPlayers[2].elo_rating} size="sm" />
+              <PlayerLevelBadge rating={topPlayers[2].elo_rating} gamesPlayed={topPlayers[2].games_played} wins={topPlayers[2].wins} size="sm" />
               <div className="text-lg font-display text-syndikate-orange font-bold mt-1">{topPlayers[2].elo_rating}</div>
               <div className="text-[10px] text-muted-foreground flex items-center justify-center gap-1">
                 <Gamepad2 className="h-3 w-3" />

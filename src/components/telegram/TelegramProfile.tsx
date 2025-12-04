@@ -39,6 +39,7 @@ import { AvatarSelector } from '@/components/AvatarSelector';
 import { toast } from 'sonner';
 import { convertFeeToRPS, formatRPSPoints } from '@/utils/rpsCalculations';
 import { getCurrentMafiaRank, getMafiaRankProgress, getRarityInfo, type MafiaRank } from '@/utils/mafiaRanks';
+import { fixStorageUrl } from '@/utils/storageUtils';
 
 interface Player {
   id: string;
@@ -537,7 +538,7 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate, onUnre
             <div className="relative inline-block">
               <div className={`absolute -inset-1 rounded-full bg-gradient-to-br ${mafiaRank?.bgGradient || 'from-zinc-600 to-zinc-800'} opacity-50 blur-sm`}></div>
               <Avatar className={`w-20 h-20 mx-auto brutal-border shadow-lg ring-2 ${mafiaRank?.borderColor || 'ring-zinc-500'} relative`}>
-                <AvatarImage src={player.avatar_url} alt={player.name} />
+                <AvatarImage src={player.avatar_url ? fixStorageUrl(player.avatar_url) : undefined} alt={player.name} />
                 <AvatarFallback className="text-lg bg-syndikate-orange text-background font-bold uppercase">
                   {player.name?.charAt(0).toUpperCase()}
                 </AvatarFallback>

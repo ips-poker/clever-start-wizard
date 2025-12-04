@@ -2,6 +2,7 @@ import React from 'react';
 import { PlayerLevelBadge } from './PlayerLevelBadge';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { TrendingUp, TrendingDown, Minus, Trophy, Target, Gamepad2 } from 'lucide-react';
+import { fixStorageUrl } from '@/utils/storageUtils';
 
 interface Player {
   id: string;
@@ -72,7 +73,7 @@ export const PlayerRatingCard: React.FC<PlayerRatingCardProps> = ({
 
           {/* Player avatar */}
           <Avatar className="w-12 h-12 brutal-border group-hover:scale-110 transition-transform">
-            <AvatarImage src={player.avatar_url} alt={player.name} />
+            <AvatarImage src={player.avatar_url ? fixStorageUrl(player.avatar_url) : undefined} alt={player.name} />
             <AvatarFallback className="bg-syndikate-orange/20 text-syndikate-orange text-xl font-display">
               {player.name.charAt(0).toUpperCase()}
             </AvatarFallback>
@@ -91,7 +92,7 @@ export const PlayerRatingCard: React.FC<PlayerRatingCardProps> = ({
               )}
             </div>
             <div className="flex items-center gap-2 mb-1">
-              <PlayerLevelBadge rating={player.elo_rating} size="sm" />
+              <PlayerLevelBadge rating={player.elo_rating} gamesPlayed={player.games_played} wins={player.wins} size="sm" />
               {/* Achievement badges */}
               {achievements.length > 0 && (
                 <div className="flex gap-0.5">
