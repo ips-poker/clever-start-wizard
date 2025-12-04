@@ -16,8 +16,8 @@ export interface LevelInfo {
 export const PLAYER_LEVELS: Record<PlayerLevel, LevelInfo> = {
   rookie: {
     level: 'rookie',
-    name: 'Rookie',
-    nameRu: 'Шестёрка',
+    name: 'Associate',
+    nameRu: 'Associate',
     minRating: 0,
     maxRating: 299,
     color: 'text-zinc-400',
@@ -29,7 +29,7 @@ export const PLAYER_LEVELS: Record<PlayerLevel, LevelInfo> = {
   soldier: {
     level: 'soldier',
     name: 'Soldier',
-    nameRu: 'Боец',
+    nameRu: 'Soldier',
     minRating: 300,
     maxRating: 599,
     color: 'text-emerald-500',
@@ -41,7 +41,7 @@ export const PLAYER_LEVELS: Record<PlayerLevel, LevelInfo> = {
   capo: {
     level: 'capo',
     name: 'Capo',
-    nameRu: 'Капо',
+    nameRu: 'Capo',
     minRating: 600,
     maxRating: 999,
     color: 'text-blue-500',
@@ -53,7 +53,7 @@ export const PLAYER_LEVELS: Record<PlayerLevel, LevelInfo> = {
   consigliere: {
     level: 'consigliere',
     name: 'Consigliere',
-    nameRu: 'Консильери',
+    nameRu: 'Consigliere',
     minRating: 1000,
     maxRating: 1499,
     color: 'text-purple-500',
@@ -64,8 +64,8 @@ export const PLAYER_LEVELS: Record<PlayerLevel, LevelInfo> = {
   },
   don: {
     level: 'don',
-    name: 'Don',
-    nameRu: 'Дон',
+    name: 'Boss',
+    nameRu: 'Boss',
     minRating: 1500,
     maxRating: Infinity,
     color: 'text-amber-400',
