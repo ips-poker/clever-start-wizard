@@ -105,9 +105,9 @@ export function MafiaAchievements({ gamesPlayed, wins, rating, gameResults }: Ma
       rarity: 'soldier'
     },
     {
-      id: 'smotriaschiy',
-      name: 'Смотрящий',
-      title: 'Надзиратель района',
+      id: 'pitboss',
+      name: 'Питбосс',
+      title: 'Хозяин стола',
       description: 'Достигните Silver уровня — 1200+ RPS',
       avatar: avatar5,
       requirement: { type: 'rating', rating: 1200 },
@@ -118,9 +118,9 @@ export function MafiaAchievements({ gamesPlayed, wins, rating, gameResults }: Ma
       rarity: 'captain'
     },
     {
-      id: 'vor',
-      name: 'Вор в законе',
-      title: 'Хранитель понятий',
+      id: 'shark',
+      name: 'Шарк',
+      title: 'Акула покера',
       description: 'Станьте легендой — 3 победы',
       avatar: avatar6,
       requirement: { type: 'wins', wins: 3 },
