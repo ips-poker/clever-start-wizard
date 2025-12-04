@@ -527,7 +527,7 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate, onUnre
   // Get rank-specific profile styling
   const rankStyle = getRankProfileStyle(mafiaRank);
   return (
-    <div className="space-y-4 pb-20 px-4 bg-transparent min-h-screen relative z-10">
+    <div className="space-y-4 pb-20 px-4 pt-24 bg-transparent min-h-screen relative z-10">
       {/* Test Mode Controls */}
       <div className="fixed top-2 right-2 z-50 flex flex-col gap-2">
         {isTestMode ? (
