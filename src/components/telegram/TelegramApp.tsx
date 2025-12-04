@@ -1878,41 +1878,60 @@ export const TelegramApp = () => {
         </div>
       )}
 
-      {/* Fixed bottom navigation - glass buttons */}
-      <div className="fixed bottom-3 left-4 right-4 z-50 pb-safe">
-        <div className="max-w-md mx-auto">
-          <div className="flex items-center justify-center gap-3">
-            {[
-              { value: 'home', icon: Home },
-              { value: 'tournaments', icon: Trophy },
-              { value: 'rating', icon: Crown },
-              { value: 'profile', icon: User },
-            ].map((item) => {
-              const Icon = item.icon;
-              const isActive = activeTab === item.value;
-              return (
-                <button
-                  key={item.value}
-                  onClick={() => setActiveTab(item.value)}
-                  className={`
-                    relative flex items-center justify-center
-                    w-14 h-14 rounded-2xl
-                    backdrop-blur-xl border
-                    transition-all duration-300 
-                    ${isActive 
-                      ? 'bg-syndikate-orange/25 border-syndikate-orange/50 shadow-[0_0_20px_rgba(255,107,0,0.3),inset_0_1px_1px_rgba(255,255,255,0.1)]' 
-                      : 'bg-white/5 border-white/10 hover:bg-syndikate-orange/10 hover:border-syndikate-orange/30 shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)]'
-                    }
-                  `}
-                >
-                  <Icon 
-                    className={`h-6 w-6 transition-all duration-300 ${isActive ? 'text-syndikate-orange drop-shadow-[0_0_8px_rgba(255,107,0,0.5)]' : 'text-white/60'}`} 
-                    strokeWidth={2} 
-                  />
-                </button>
-              );
-            })}
-          </div>
+      {/* Fixed bottom navigation - site style */}
+      <div className="fixed bottom-4 left-4 right-4 z-50 pb-safe">
+        <div className="flex items-center justify-center gap-2">
+          {[
+            { value: 'home', icon: Home, title: 'Главная' },
+            { value: 'tournaments', icon: Trophy, title: 'Турниры' },
+            { value: 'rating', icon: Crown, title: 'Рейтинг' },
+            { value: 'profile', icon: User, title: 'Профиль' },
+          ].map((item) => {
+            const Icon = item.icon;
+            const isActive = activeTab === item.value;
+            return (
+              <button
+                key={item.value}
+                onClick={() => setActiveTab(item.value)}
+                className={`
+                  relative flex flex-col items-center justify-center gap-0.5 px-4 py-2
+                  transition-all duration-300
+                  backdrop-blur-md bg-background/40 border border-border/30 rounded-lg
+                  hover:scale-105 hover:bg-background/60 hover:border-syndikate-orange/40
+                  ${isActive ? 'bg-background/60 border-syndikate-orange/50' : ''}
+                `}
+                style={{
+                  boxShadow: isActive 
+                    ? '0 4px 16px rgba(255, 90, 31, 0.25)' 
+                    : '0 2px 8px rgba(0, 0, 0, 0.3)'
+                }}
+              >
+                {/* Active indicator - top accent */}
+                {isActive && (
+                  <div className="absolute -top-0.5 left-1/2 -translate-x-1/2 w-6 h-0.5 bg-syndikate-orange rounded-full" />
+                )}
+                
+                {/* Icon */}
+                <Icon 
+                  className={`h-5 w-5 transition-all duration-300 ${
+                    isActive 
+                      ? 'text-syndikate-orange drop-shadow-[0_0_8px_rgba(255,90,31,0.6)]' 
+                      : 'text-muted-foreground'
+                  }`}
+                  strokeWidth={isActive ? 2.5 : 2}
+                />
+                
+                {/* Label */}
+                <span className={`text-[9px] font-semibold uppercase tracking-wide transition-all duration-300 font-mono whitespace-nowrap ${
+                  isActive 
+                    ? 'text-syndikate-orange' 
+                    : 'text-muted-foreground'
+                }`}>
+                  {item.title}
+                </span>
+              </button>
+            );
+          })}
         </div>
       </div>
 
