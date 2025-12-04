@@ -1444,23 +1444,65 @@ export const TelegramApp = () => {
 
       {activeTab === 'rating' && (
         <div className="space-y-4 pb-20 px-4 pt-24 bg-transparent min-h-screen relative z-10">
-          {/* Header */}
-          <div className="flex items-center gap-3 p-4">
-            <div className="w-10 h-10 bg-syndikate-orange brutal-border flex items-center justify-center">
-              <Award className="h-5 w-5 text-background" />
+          {/* Header with level info */}
+          <div className="relative p-4 bg-syndikate-metal/90 brutal-border backdrop-blur-xl overflow-hidden">
+            {/* Background pattern */}
+            <div className="absolute inset-0 opacity-5">
+              <div className="absolute inset-0" style={{
+                backgroundImage: 'linear-gradient(0deg, transparent 24%, rgba(255, 107, 0, 0.05) 25%, rgba(255, 107, 0, 0.05) 26%, transparent 27%, transparent 74%, rgba(255, 107, 0, 0.05) 75%, rgba(255, 107, 0, 0.05) 76%, transparent 77%, transparent), linear-gradient(90deg, transparent 24%, rgba(255, 107, 0, 0.05) 25%, rgba(255, 107, 0, 0.05) 26%, transparent 27%, transparent 74%, rgba(255, 107, 0, 0.05) 75%, rgba(255, 107, 0, 0.05) 76%, transparent 77%, transparent)',
+                backgroundSize: '50px 50px'
+              }}></div>
             </div>
-            <h2 className="text-2xl font-display tracking-wider uppercase">
-              <GlitchText text="Рейтинг" />
-            </h2>
+            
+            <div className="flex items-center gap-3 relative z-10">
+              <div className="w-12 h-12 bg-syndikate-orange brutal-border flex items-center justify-center shadow-neon-orange">
+                <Award className="h-6 w-6 text-background" />
+              </div>
+              <div className="flex-1">
+                <h2 className="text-2xl font-display tracking-wider uppercase">
+                  <GlitchText text="Рейтинг RPS" glitchIntensity="medium" />
+                </h2>
+                <p className="text-xs text-muted-foreground uppercase tracking-wide">
+                  {players.length} игроков в системе
+                </p>
+              </div>
+            </div>
+            
+            {/* Level explanation */}
+            <div className="mt-4 grid grid-cols-4 gap-2 relative z-10">
+              <div className="text-center p-2 rounded bg-gradient-to-br from-orange-700/30 to-orange-900/30 border border-orange-700/50">
+                <span className="text-sm">🥉</span>
+                <div className="text-[10px] text-orange-400 uppercase font-bold">Bronze</div>
+                <div className="text-[9px] text-muted-foreground">0-1199</div>
+              </div>
+              <div className="text-center p-2 rounded bg-gradient-to-br from-gray-400/30 to-gray-600/30 border border-gray-400/50">
+                <span className="text-sm">🥈</span>
+                <div className="text-[10px] text-gray-300 uppercase font-bold">Silver</div>
+                <div className="text-[9px] text-muted-foreground">1200-1499</div>
+              </div>
+              <div className="text-center p-2 rounded bg-gradient-to-br from-yellow-400/30 to-yellow-600/30 border border-yellow-500/50">
+                <span className="text-sm">🥇</span>
+                <div className="text-[10px] text-yellow-400 uppercase font-bold">Gold</div>
+                <div className="text-[9px] text-muted-foreground">1500-1799</div>
+              </div>
+              <div className="text-center p-2 rounded bg-gradient-to-br from-cyan-400/30 to-blue-600/30 border border-cyan-400/50">
+                <span className="text-sm">💎</span>
+                <div className="text-[10px] text-cyan-400 uppercase font-bold">Diamond</div>
+                <div className="text-[9px] text-muted-foreground">1800+</div>
+              </div>
+            </div>
           </div>
 
-          <RatingPodium 
-            topPlayers={players.slice(0, 3)}
-            onPlayerClick={(player) => {
-              setSelectedPlayer(player);
-              setShowPlayerStatsModal(true);
-            }}
-          />
+          {/* Podium for top 3 */}
+          {players.length >= 3 && (
+            <RatingPodium 
+              topPlayers={players.slice(0, 3)}
+              onPlayerClick={(player) => {
+                setSelectedPlayer(player);
+                setShowPlayerStatsModal(true);
+              }}
+            />
+          )}
 
           {players.length === 0 ? (
             <div className="text-center py-16 space-y-4">
@@ -1468,26 +1510,46 @@ export const TelegramApp = () => {
                 <Award className="h-10 w-10 text-syndikate-concrete" />
               </div>
               <h3 className="text-xl font-display text-syndikate-concrete uppercase">
-                No Players Yet
+                Пока нет игроков
               </h3>
               <p className="text-sm text-syndikate-concrete/60">
-                Be the first to join and compete
+                Станьте первым участником рейтинга
               </p>
             </div>
           ) : (
             <div className="space-y-3">
-              {players.slice(3).map((player, index) => (
-                <PlayerRatingCard
-                  key={player.id}
-                  player={player}
-                  rank={index + 4}
-                  index={index}
-                  onClick={() => {
-                    setSelectedPlayer(player);
-                    setShowPlayerStatsModal(true);
-                  }}
-                />
-              ))}
+              {/* Show remaining players (after top 3 if podium shown, or all if less than 3) */}
+              {(players.length >= 3 ? players.slice(3) : players).map((player, index) => {
+                const actualRank = players.length >= 3 ? index + 4 : index + 1;
+                return (
+                  <PlayerRatingCard
+                    key={player.id}
+                    player={player}
+                    rank={actualRank}
+                    index={index}
+                    isCurrentUser={userStats?.id === player.id}
+                    onClick={() => {
+                      setSelectedPlayer(player);
+                      setShowPlayerStatsModal(true);
+                    }}
+                  />
+                );
+              })}
+            </div>
+          )}
+          
+          {/* Your position highlight if not in visible list */}
+          {userStats && players.length > 10 && !players.slice(0, 10).some(p => p.id === userStats.id) && (
+            <div className="mt-4 p-4 bg-syndikate-orange/10 brutal-border">
+              <div className="text-center">
+                <p className="text-sm text-muted-foreground uppercase mb-2">Ваша позиция</p>
+                <div className="flex items-center justify-center gap-3">
+                  <span className="text-2xl font-display text-syndikate-orange">
+                    #{players.findIndex(p => p.id === userStats.id) + 1}
+                  </span>
+                  <span className="text-lg font-display">{userStats.elo_rating} RPS</span>
+                </div>
+              </div>
             </div>
           )}
         </div>
