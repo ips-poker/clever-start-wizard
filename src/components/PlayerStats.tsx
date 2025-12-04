@@ -3,7 +3,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Trophy, Medal, Award, TrendingUp, Users, Target, Crown, Flame, Zap, Star } from "lucide-react";
+import { Trophy, Medal, Award, TrendingUp, Users, Target } from "lucide-react";
+import { getCurrentMafiaRank } from "@/utils/mafiaRanks";
 
 interface Player {
   id: string;
@@ -61,12 +62,17 @@ export function PlayerStats() {
     return Math.round((wins / games) * 100);
   };
 
-  const getRankBadge = (rating: number) => {
-    if (rating >= 1800) return { label: "МАСТЕР", color: "bg-yellow-500", icon: Crown };
-    if (rating >= 1600) return { label: "ЭКСПЕРТ", color: "bg-purple-500", icon: Star };
-    if (rating >= 1400) return { label: "ПРОФИ", color: "bg-blue-500", icon: Zap };
-    if (rating >= 1200) return { label: "ЛЮБИТЕЛЬ", color: "bg-green-500", icon: Flame };
-    return { label: "НОВИЧОК", color: "bg-muted", icon: Target };
+  const getRankInfo = (player: Player) => {
+    const rank = getCurrentMafiaRank({ 
+      gamesPlayed: player.games_played, 
+      wins: player.wins, 
+      rating: player.elo_rating 
+    });
+    return {
+      label: rank.name.toUpperCase(),
+      color: `bg-gradient-to-r ${rank.bgGradient}`,
+      avatar: rank.avatar
+    };
   };
 
   if (loading) {
@@ -146,8 +152,7 @@ export function PlayerStats() {
               {players.map((player, index) => {
                 const position = index + 1;
                 const isTopThree = position <= 3;
-                const rankInfo = getRankBadge(player.elo_rating);
-                const RankIcon = rankInfo.icon;
+                const rankInfo = getRankInfo(player);
                 const winRate = getWinRate(player.wins, player.games_played);
                 
                 return (
@@ -205,8 +210,8 @@ export function PlayerStats() {
                           }`}>
                             {player.name}
                           </p>
-                          <Badge className={`${rankInfo.color} text-white text-[10px] px-1.5 py-0 rounded-none font-bold`}>
-                            <RankIcon className="h-2.5 w-2.5 mr-0.5" />
+                          <Badge className={`${rankInfo.color} text-white text-[10px] px-1.5 py-0 rounded-none font-bold flex items-center gap-1`}>
+                            <img src={rankInfo.avatar} alt="" className="h-3 w-3 rounded-full" />
                             {rankInfo.label}
                           </Badge>
                         </div>

@@ -243,15 +243,15 @@ export function RatingBenefits() {
               <div className="text-center space-y-6 relative z-10">
                 <div className="space-y-3">
                   <h4 className="font-display text-2xl uppercase tracking-wider text-foreground">Ваш текущий рейтинг</h4>
-                  <div className="text-6xl font-display text-syndikate-orange neon-orange">1847</div>
+                  <div className="text-6xl font-display text-syndikate-orange neon-orange">1500</div>
                   <div className="bg-syndikate-orange/20 brutal-border px-4 py-2 inline-block">
-                    <span className="text-syndikate-orange font-bold text-sm uppercase tracking-widest">Продвинутый игрок</span>
+                    <span className="text-syndikate-orange font-bold text-sm uppercase tracking-widest">Консильери</span>
                   </div>
                 </div>
                 
                 <div className="grid grid-cols-3 gap-4 pt-6 border-t-2 border-border">
                   <div className="text-center bg-syndikate-metal/30 brutal-border p-3">
-                    <div className="text-2xl font-display text-foreground">23</div>
+                    <div className="text-2xl font-display text-foreground">10</div>
                     <div className="text-xs uppercase tracking-wider text-muted-foreground">Турниров</div>
                   </div>
                   <div className="text-center bg-syndikate-metal/30 brutal-border p-3">
@@ -259,15 +259,15 @@ export function RatingBenefits() {
                     <div className="text-xs uppercase tracking-wider text-muted-foreground">За месяц</div>
                   </div>
                   <div className="text-center bg-syndikate-metal/30 brutal-border p-3">
-                    <div className="text-2xl font-display text-syndikate-orange">TOP 15</div>
-                    <div className="text-xs uppercase tracking-wider text-muted-foreground">Позиция</div>
+                    <div className="text-2xl font-display text-syndikate-orange">5</div>
+                    <div className="text-xs uppercase tracking-wider text-muted-foreground">Побед</div>
                   </div>
                 </div>
 
                 <div className="flex items-center justify-between pt-6 border-t-2 border-border">
-                  <span className="text-sm text-muted-foreground font-bold uppercase tracking-wider">До Elite:</span>
+                  <span className="text-sm text-muted-foreground font-bold uppercase tracking-wider">До Дона:</span>
                   <div className="bg-syndikate-orange brutal-border px-4 py-1.5">
-                    <span className="text-background font-bold text-sm uppercase">153 очка</span>
+                    <span className="text-background font-bold text-sm uppercase">100 RPS + 5 игр + 3 победы</span>
                   </div>
                 </div>
               </div>
