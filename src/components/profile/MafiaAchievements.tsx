@@ -108,9 +108,9 @@ export function MafiaAchievements({ gamesPlayed, wins, rating, gameResults }: Ma
       id: 'caporegime',
       name: 'Капореджиме',
       title: 'Командир бригады',
-      description: 'Достигните Silver уровня — 1200+ RPS',
+      description: 'Silver уровень (1200+ RPS) И 5 игр',
       avatar: avatar5,
-      requirement: { type: 'rating', rating: 1200 },
+      requirement: { type: 'combined', rating: 1200, games: 5 },
       color: 'text-blue-400',
       bgGradient: 'from-blue-600 to-blue-800',
       borderColor: 'border-blue-500',
@@ -121,9 +121,9 @@ export function MafiaAchievements({ gamesPlayed, wins, rating, gameResults }: Ma
       id: 'shark',
       name: 'Шарк',
       title: 'Акула покера',
-      description: 'Станьте легендой — 3 победы',
+      description: '3 победы И 8 турниров',
       avatar: avatar6,
-      requirement: { type: 'wins', wins: 3 },
+      requirement: { type: 'combined', wins: 3, games: 8 },
       color: 'text-purple-400',
       bgGradient: 'from-purple-600 to-purple-800',
       borderColor: 'border-purple-500',
@@ -134,9 +134,9 @@ export function MafiaAchievements({ gamesPlayed, wins, rating, gameResults }: Ma
       id: 'kapo',
       name: 'Капо',
       title: 'Глава группировки',
-      description: 'Опыт решает — 10 турниров',
+      description: '10 турниров И 5 побед',
       avatar: avatar7,
-      requirement: { type: 'games', games: 10 },
+      requirement: { type: 'combined', games: 10, wins: 5 },
       color: 'text-red-400',
       bgGradient: 'from-red-600 to-red-800',
       borderColor: 'border-red-500',
@@ -147,9 +147,9 @@ export function MafiaAchievements({ gamesPlayed, wins, rating, gameResults }: Ma
       id: 'konsigliere',
       name: 'Консильери',
       title: 'Правая рука Дона',
-      description: 'Достигните Gold уровня — 1500+ RPS',
+      description: 'Gold (1500+ RPS) И 10 игр И 5 побед',
       avatar: avatar8,
-      requirement: { type: 'rating', rating: 1500 },
+      requirement: { type: 'combined', rating: 1500, games: 10, wins: 5 },
       color: 'text-yellow-400',
       bgGradient: 'from-yellow-500 to-yellow-700',
       borderColor: 'border-yellow-500',
@@ -160,9 +160,9 @@ export function MafiaAchievements({ gamesPlayed, wins, rating, gameResults }: Ma
       id: 'don',
       name: 'Дон',
       title: 'Глава семьи',
-      description: 'Докажите превосходство — 5 побед',
+      description: '1600+ RPS И 15 турниров И 8 побед',
       avatar: avatar9,
-      requirement: { type: 'wins', wins: 5 },
+      requirement: { type: 'combined', rating: 1600, games: 15, wins: 8 },
       color: 'text-rose-400',
       bgGradient: 'from-rose-500 to-rose-700',
       borderColor: 'border-rose-500',
@@ -173,9 +173,9 @@ export function MafiaAchievements({ gamesPlayed, wins, rating, gameResults }: Ma
       id: 'patriarch',
       name: 'Патриарх Синдиката',
       title: 'Крёстный отец покера',
-      description: 'Вершина власти — Diamond уровень 1800+ RPS',
+      description: 'Diamond (1800+ RPS) И 20 турниров И 10 побед',
       avatar: avatar10,
-      requirement: { type: 'rating', rating: 1800 },
+      requirement: { type: 'combined', rating: 1800, games: 20, wins: 10 },
       color: 'text-cyan-300',
       bgGradient: 'from-cyan-400 via-blue-500 to-purple-600',
       borderColor: 'border-cyan-400',
@@ -204,31 +204,64 @@ export function MafiaAchievements({ gamesPlayed, wins, rating, gameResults }: Ma
     }
   };
 
-  const getRankProgress = (rank: MafiaRank): { current: number; total: number; percent: number } => {
+  const getRankProgress = (rank: MafiaRank): { current: number; total: number; percent: number; details?: string } => {
     const req = rank.requirement;
-    let current = 0;
-    let total = 1;
     
     switch (req.type) {
       case 'games':
-        current = gamesPlayed;
-        total = req.games || 1;
-        break;
+        return {
+          current: Math.min(gamesPlayed, req.games || 1),
+          total: req.games || 1,
+          percent: Math.min((gamesPlayed / (req.games || 1)) * 100, 100)
+        };
       case 'wins':
-        current = wins;
-        total = req.wins || 1;
-        break;
+        return {
+          current: Math.min(wins, req.wins || 1),
+          total: req.wins || 1,
+          percent: Math.min((wins / (req.wins || 1)) * 100, 100)
+        };
       case 'rating':
-        current = rating;
-        total = req.rating || 1000;
-        break;
+        return {
+          current: Math.min(rating, req.rating || 1000),
+          total: req.rating || 1000,
+          percent: Math.min((rating / (req.rating || 1000)) * 100, 100)
+        };
+      case 'combined': {
+        // Calculate progress for each requirement
+        const progresses: number[] = [];
+        const details: string[] = [];
+        
+        if (req.games) {
+          const gameProgress = Math.min(gamesPlayed / req.games, 1);
+          progresses.push(gameProgress);
+          details.push(`${Math.min(gamesPlayed, req.games)}/${req.games} игр`);
+        }
+        if (req.wins) {
+          const winProgress = Math.min(wins / req.wins, 1);
+          progresses.push(winProgress);
+          details.push(`${Math.min(wins, req.wins)}/${req.wins} побед`);
+        }
+        if (req.rating) {
+          const ratingProgress = Math.min(rating / req.rating, 1);
+          progresses.push(ratingProgress);
+          details.push(`${rating}/${req.rating} RPS`);
+        }
+        
+        // Average progress of all requirements
+        const avgPercent = progresses.length > 0 
+          ? (progresses.reduce((a, b) => a + b, 0) / progresses.length) * 100 
+          : 0;
+        
+        return {
+          current: Math.round(avgPercent),
+          total: 100,
+          percent: Math.min(avgPercent, 100),
+          details: details.join(' • ')
+        };
+      }
+      default:
+        return { current: 0, total: 1, percent: 0 };
     }
-    
-    return {
-      current: Math.min(current, total),
-      total,
-      percent: Math.min((current / total) * 100, 100)
-    };
   };
 
   const getRarityInfo = (rarity: string) => {
@@ -402,8 +435,8 @@ export function MafiaAchievements({ gamesPlayed, wins, rating, gameResults }: Ma
                         value={progress.percent} 
                         className="h-1.5 bg-secondary"
                       />
-                      <p className="text-[8px] text-muted-foreground/60">
-                        {progress.current}/{progress.total}
+                      <p className="text-[8px] text-muted-foreground/60 leading-tight">
+                        {progress.details || `${progress.current}/${progress.total}`}
                       </p>
                     </div>
                   )}
