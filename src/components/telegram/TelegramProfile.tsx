@@ -40,6 +40,7 @@ import { toast } from 'sonner';
 import { convertFeeToRPS, formatRPSPoints } from '@/utils/rpsCalculations';
 import { getCurrentMafiaRank, getMafiaRankProgress, getRarityInfo, type MafiaRank } from '@/utils/mafiaRanks';
 import { fixStorageUrl } from '@/utils/storageUtils';
+import { MafiaHierarchy } from './MafiaHierarchy';
 
 interface Player {
   id: string;
@@ -598,18 +599,25 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate, onUnre
                 </div>
               )}
               
-              {/* Mafia Rank Display */}
+              {/* Mafia Rank Display with Avatar */}
               <div className="flex flex-col items-center gap-2">
-                <Badge className={`bg-gradient-to-r ${mafiaRank?.bgGradient || 'from-zinc-600 to-zinc-800'} brutal-border border-0 px-4 py-1.5 font-bold text-sm uppercase tracking-wider shadow-brutal`}>
-                  <span className="mr-2">{mafiaRank?.icon}</span>
-                  {mafiaRank?.name || 'Аутсайдер'}
-                </Badge>
+                <div className="flex items-center gap-2">
+                  {/* Rank Avatar */}
+                  <img 
+                    src={mafiaRank?.avatar} 
+                    alt={mafiaRank?.name}
+                    className="w-8 h-8 rounded-full border-2 border-white/20 shadow-lg"
+                  />
+                  <Badge className={`bg-gradient-to-r ${mafiaRank?.bgGradient || 'from-zinc-600 to-zinc-800'} brutal-border border-0 px-3 py-1 font-bold text-sm uppercase tracking-wider shadow-brutal`}>
+                    {mafiaRank?.name || 'Аутсайдер'}
+                  </Badge>
+                </div>
                 <span className={`text-xs ${mafiaRank?.textColor || 'text-zinc-400'} font-medium`}>
                   {mafiaRank?.title || 'Ещё не в семье'}
                 </span>
                 {rarityInfo && (
                   <Badge className={`${rarityInfo.class} text-[10px] px-2 py-0.5 rounded-none font-bold`}>
-                    {rarityInfo.label}
+                    {rarityInfo.label} • +{rarityInfo.xp} XP
                   </Badge>
                 )}
               </div>
@@ -658,6 +666,13 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate, onUnre
           </div>
         </CardContent>
       </Card>
+
+      {/* Mafia Hierarchy Section */}
+      <MafiaHierarchy 
+        gamesPlayed={player.games_played}
+        wins={player.wins}
+        rating={player.elo_rating}
+      />
 
       {/* Advanced Statistics */}
       <div className="grid grid-cols-2 gap-3">
