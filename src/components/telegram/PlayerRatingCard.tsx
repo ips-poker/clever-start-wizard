@@ -15,7 +15,7 @@ interface Player {
 interface PlayerRatingCardProps {
   player: Player;
   rank: number;
-  index: number;
+  index?: number;
   onClick?: () => void;
   isCurrentUser?: boolean;
 }
@@ -23,7 +23,7 @@ interface PlayerRatingCardProps {
 export const PlayerRatingCard: React.FC<PlayerRatingCardProps> = ({ 
   player, 
   rank, 
-  index, 
+  index = 0, 
   onClick,
   isCurrentUser = false
 }) => {
