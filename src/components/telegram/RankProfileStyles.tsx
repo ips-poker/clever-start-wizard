@@ -30,8 +30,10 @@ export function getRankProfileStyle(rank: MafiaRank | null): RankProfileStyle {
       avatarAnimation: '',
       nameClass: 'text-zinc-400',
       decorations: (
-        <div className="absolute inset-0 opacity-5">
-          <div className="absolute top-2 right-2 text-xl text-zinc-500">?</div>
+        <div className="absolute inset-0 opacity-20">
+          {/* Минимальные угловые линии */}
+          <div className="absolute top-3 right-3 w-8 h-px bg-zinc-600"></div>
+          <div className="absolute top-3 right-3 w-px h-8 bg-zinc-600"></div>
         </div>
       ),
       particleEffect: 'none'
@@ -46,9 +48,12 @@ export function getRankProfileStyle(rank: MafiaRank | null): RankProfileStyle {
       avatarAnimation: '',
       nameClass: 'text-zinc-300',
       decorations: (
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute bottom-3 left-3 text-lg">♠</div>
-          <div className="absolute top-3 right-3 text-lg opacity-50">♣</div>
+        <div className="absolute inset-0">
+          {/* Угловые рамки */}
+          <div className="absolute top-2 left-2 w-6 h-6 border-l-2 border-t-2 border-zinc-500/40"></div>
+          <div className="absolute top-2 right-2 w-6 h-6 border-r-2 border-t-2 border-zinc-500/40"></div>
+          <div className="absolute bottom-2 left-2 w-6 h-6 border-l-2 border-b-2 border-zinc-500/30"></div>
+          <div className="absolute bottom-2 right-2 w-6 h-6 border-r-2 border-b-2 border-zinc-500/30"></div>
         </div>
       ),
       particleEffect: 'none'
@@ -63,10 +68,15 @@ export function getRankProfileStyle(rank: MafiaRank | null): RankProfileStyle {
       avatarAnimation: '',
       nameClass: 'text-stone-300',
       decorations: (
-        <div className="absolute inset-0 opacity-15">
-          <div className="absolute bottom-3 left-3 text-xl">♠</div>
-          <div className="absolute top-3 right-3 text-xl">♣</div>
-          <div className="absolute bottom-3 right-12 text-sm opacity-50">⚔</div>
+        <div className="absolute inset-0">
+          {/* Угловые акценты */}
+          <div className="absolute top-2 left-2 w-10 h-10 border-l-2 border-t-2 border-stone-400/50"></div>
+          <div className="absolute top-2 right-2 w-10 h-10 border-r-2 border-t-2 border-stone-400/50"></div>
+          <div className="absolute bottom-2 left-2 w-10 h-10 border-l-2 border-b-2 border-stone-400/40"></div>
+          <div className="absolute bottom-2 right-2 w-10 h-10 border-r-2 border-b-2 border-stone-400/40"></div>
+          {/* Горизонтальные линии */}
+          <div className="absolute top-1/2 left-3 w-6 h-px bg-gradient-to-r from-stone-400/40 to-transparent"></div>
+          <div className="absolute top-1/2 right-3 w-6 h-px bg-gradient-to-l from-stone-400/40 to-transparent"></div>
         </div>
       ),
       particleEffect: 'smoke'
@@ -82,9 +92,16 @@ export function getRankProfileStyle(rank: MafiaRank | null): RankProfileStyle {
       nameClass: 'text-amber-300',
       decorations: (
         <div className="absolute inset-0">
-          <div className="absolute top-2 left-2 text-amber-500/30 text-2xl">★</div>
-          <div className="absolute bottom-3 right-3 text-xl text-amber-400/20">♠</div>
-          <div className="absolute top-1/2 right-2 w-px h-12 bg-gradient-to-b from-transparent via-amber-500/30 to-transparent"></div>
+          {/* Угловые элементы с градиентом */}
+          <div className="absolute top-2 left-2 w-12 h-12 border-l-2 border-t-2 border-amber-400/60"></div>
+          <div className="absolute top-2 right-2 w-12 h-12 border-r-2 border-t-2 border-amber-400/60"></div>
+          <div className="absolute bottom-2 left-2 w-12 h-12 border-l-2 border-b-2 border-amber-500/40"></div>
+          <div className="absolute bottom-2 right-2 w-12 h-12 border-r-2 border-b-2 border-amber-500/40"></div>
+          {/* Вертикальная декоративная линия */}
+          <div className="absolute top-1/2 right-4 w-px h-16 -translate-y-1/2 bg-gradient-to-b from-transparent via-amber-500/40 to-transparent"></div>
+          {/* Маленькие точки */}
+          <div className="absolute top-4 left-16 w-1.5 h-1.5 rounded-full bg-amber-400/50"></div>
+          <div className="absolute bottom-4 right-16 w-1.5 h-1.5 rounded-full bg-amber-400/50"></div>
         </div>
       ),
       particleEffect: 'sparkle'
@@ -100,10 +117,18 @@ export function getRankProfileStyle(rank: MafiaRank | null): RankProfileStyle {
       nameClass: 'text-orange-300 drop-shadow-[0_0_8px_rgba(249,115,22,0.5)]',
       decorations: (
         <div className="absolute inset-0">
-          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-orange-500/50 to-transparent"></div>
-          <div className="absolute bottom-2 left-3 text-2xl text-orange-400/30">♠</div>
-          <div className="absolute top-3 right-3 text-xl text-orange-500/20">♦</div>
-          <div className="absolute bottom-0 right-0 w-20 h-20 bg-gradient-radial from-orange-500/10 to-transparent rounded-full blur-xl"></div>
+          {/* Верхняя линия */}
+          <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-orange-500/60 to-transparent"></div>
+          {/* Угловые элементы */}
+          <div className="absolute top-2 left-2 w-14 h-14 border-l-2 border-t-2 border-orange-400/50"></div>
+          <div className="absolute top-2 right-2 w-14 h-14 border-r-2 border-t-2 border-orange-400/50"></div>
+          <div className="absolute bottom-2 left-2 w-14 h-14 border-l-2 border-b-2 border-orange-400/40"></div>
+          <div className="absolute bottom-2 right-2 w-14 h-14 border-r-2 border-b-2 border-orange-400/40"></div>
+          {/* Свечение в углу */}
+          <div className="absolute bottom-0 right-0 w-24 h-24 bg-gradient-radial from-orange-500/15 to-transparent rounded-full blur-xl"></div>
+          {/* Декоративные точки */}
+          <div className="absolute top-6 left-20 w-2 h-2 rounded-full bg-orange-400/40"></div>
+          <div className="absolute bottom-6 right-20 w-2 h-2 rounded-full bg-orange-400/40"></div>
         </div>
       ),
       particleEffect: 'sparkle'
@@ -119,11 +144,29 @@ export function getRankProfileStyle(rank: MafiaRank | null): RankProfileStyle {
       nameClass: 'text-blue-300 drop-shadow-[0_0_12px_rgba(59,130,246,0.6)]',
       decorations: (
         <div className="absolute inset-0 overflow-hidden">
+          {/* Свечение */}
           <div className="absolute -top-4 -left-4 w-24 h-24 bg-blue-500/10 rounded-full blur-2xl"></div>
-          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500/50 via-cyan-400/30 to-transparent"></div>
-          <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-blue-400/30 to-blue-500/50"></div>
-          <div className="absolute bottom-3 left-3 text-3xl text-blue-400/25">♠</div>
-          <div className="absolute top-3 right-3 text-2xl text-cyan-400/20">♛</div>
+          {/* Линии сверху и снизу */}
+          <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-blue-500/60 via-cyan-400/40 to-transparent"></div>
+          <div className="absolute bottom-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-blue-400/40 to-blue-500/60"></div>
+          {/* Угловые рамки с двойными линиями */}
+          <div className="absolute top-3 left-3 w-16 h-16">
+            <div className="absolute inset-0 border-l-2 border-t-2 border-blue-400/60"></div>
+            <div className="absolute top-1 left-1 w-full h-full border-l border-t border-cyan-400/30"></div>
+          </div>
+          <div className="absolute top-3 right-3 w-16 h-16">
+            <div className="absolute inset-0 border-r-2 border-t-2 border-blue-400/60"></div>
+            <div className="absolute top-1 right-1 w-full h-full border-r border-t border-cyan-400/30"></div>
+          </div>
+          <div className="absolute bottom-3 left-3 w-16 h-16">
+            <div className="absolute inset-0 border-l-2 border-b-2 border-blue-400/50"></div>
+          </div>
+          <div className="absolute bottom-3 right-3 w-16 h-16">
+            <div className="absolute inset-0 border-r-2 border-b-2 border-blue-400/50"></div>
+          </div>
+          {/* Декоративные элементы */}
+          <div className="absolute top-1/2 left-4 -translate-y-1/2 w-1 h-8 bg-gradient-to-b from-transparent via-blue-400/50 to-transparent"></div>
+          <div className="absolute top-1/2 right-4 -translate-y-1/2 w-1 h-8 bg-gradient-to-b from-transparent via-blue-400/50 to-transparent"></div>
         </div>
       ),
       particleEffect: 'sparkle'
@@ -139,13 +182,27 @@ export function getRankProfileStyle(rank: MafiaRank | null): RankProfileStyle {
       nameClass: 'text-purple-300 drop-shadow-[0_0_15px_rgba(147,51,234,0.7)]',
       decorations: (
         <div className="absolute inset-0 overflow-hidden">
+          {/* Большое свечение */}
           <div className="absolute -top-8 -right-8 w-32 h-32 bg-purple-500/15 rounded-full blur-3xl animate-pulse"></div>
-          <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-purple-500/60 via-fuchsia-400/40 to-transparent"></div>
-          <div className="absolute bottom-0 left-0 w-full h-1.5 bg-gradient-to-r from-transparent via-violet-400/40 to-purple-500/60"></div>
-          <div className="absolute bottom-3 left-3 text-3xl text-purple-400/30">🦈</div>
-          <div className="absolute top-3 right-3 text-2xl text-violet-400/25">♠</div>
-          {/* Scanning line effect */}
+          {/* Верхняя и нижняя линии */}
+          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-purple-500/70 via-fuchsia-400/50 to-transparent"></div>
+          <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-violet-400/50 to-purple-500/70"></div>
+          {/* Угловые элементы - острые */}
+          <div className="absolute top-3 left-3 w-20 h-20">
+            <div className="absolute inset-0 border-l-2 border-t-2 border-purple-400/70"></div>
+            <div className="absolute top-2 left-2 w-3 h-3 border-l border-t border-fuchsia-400/50"></div>
+          </div>
+          <div className="absolute top-3 right-3 w-20 h-20">
+            <div className="absolute inset-0 border-r-2 border-t-2 border-purple-400/70"></div>
+            <div className="absolute top-2 right-2 w-3 h-3 border-r border-t border-fuchsia-400/50"></div>
+          </div>
+          <div className="absolute bottom-3 left-3 w-20 h-20 border-l-2 border-b-2 border-purple-400/50"></div>
+          <div className="absolute bottom-3 right-3 w-20 h-20 border-r-2 border-b-2 border-purple-400/50"></div>
+          {/* Сканирующая линия */}
           <div className="absolute inset-0 bg-gradient-to-b from-transparent via-purple-400/5 to-transparent animate-[scan_3s_linear_infinite]"></div>
+          {/* Точки */}
+          <div className="absolute top-8 left-1/3 w-1 h-1 rounded-full bg-purple-400/60"></div>
+          <div className="absolute bottom-8 right-1/3 w-1 h-1 rounded-full bg-fuchsia-400/60"></div>
         </div>
       ),
       particleEffect: 'lightning'
@@ -161,13 +218,21 @@ export function getRankProfileStyle(rank: MafiaRank | null): RankProfileStyle {
       nameClass: 'text-red-300 drop-shadow-[0_0_20px_rgba(239,68,68,0.8)] font-bold',
       decorations: (
         <div className="absolute inset-0 overflow-hidden">
+          {/* Центральное свечение сверху */}
           <div className="absolute -top-10 left-1/2 -translate-x-1/2 w-40 h-40 bg-red-500/20 rounded-full blur-3xl"></div>
-          <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-red-600/70 via-rose-500/50 to-red-600/70"></div>
-          <div className="absolute bottom-0 left-0 w-full h-2 bg-gradient-to-r from-red-600/70 via-rose-500/50 to-red-600/70"></div>
-          <div className="absolute left-0 top-0 w-2 h-full bg-gradient-to-b from-red-600/70 via-rose-500/50 to-red-600/70"></div>
-          <div className="absolute right-0 top-0 w-2 h-full bg-gradient-to-b from-red-600/70 via-rose-500/50 to-red-600/70"></div>
-          <div className="absolute bottom-4 left-4 text-4xl text-red-500/30">♠</div>
-          <div className="absolute top-4 right-4 text-3xl text-rose-500/25">👑</div>
+          {/* Рамка по периметру */}
+          <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-red-600/80 via-rose-500/60 to-red-600/80"></div>
+          <div className="absolute bottom-0 left-0 w-full h-1.5 bg-gradient-to-r from-red-600/80 via-rose-500/60 to-red-600/80"></div>
+          <div className="absolute left-0 top-0 w-1.5 h-full bg-gradient-to-b from-red-600/80 via-rose-500/60 to-red-600/80"></div>
+          <div className="absolute right-0 top-0 w-1.5 h-full bg-gradient-to-b from-red-600/80 via-rose-500/60 to-red-600/80"></div>
+          {/* Внутренние угловые элементы */}
+          <div className="absolute top-4 left-4 w-6 h-6 border-l border-t border-rose-400/60"></div>
+          <div className="absolute top-4 right-4 w-6 h-6 border-r border-t border-rose-400/60"></div>
+          <div className="absolute bottom-4 left-4 w-6 h-6 border-l border-b border-rose-400/60"></div>
+          <div className="absolute bottom-4 right-4 w-6 h-6 border-r border-b border-rose-400/60"></div>
+          {/* Декоративные линии */}
+          <div className="absolute top-1/2 left-6 -translate-y-1/2 w-4 h-px bg-red-400/50"></div>
+          <div className="absolute top-1/2 right-6 -translate-y-1/2 w-4 h-px bg-red-400/50"></div>
         </div>
       ),
       particleEffect: 'fire'
@@ -183,14 +248,33 @@ export function getRankProfileStyle(rank: MafiaRank | null): RankProfileStyle {
       nameClass: 'text-yellow-300 drop-shadow-[0_0_25px_rgba(234,179,8,0.9)] font-bold tracking-wider',
       decorations: (
         <div className="absolute inset-0 overflow-hidden">
+          {/* Диагональный паттерн */}
           <div className="absolute inset-0 bg-[repeating-linear-gradient(45deg,transparent,transparent_10px,rgba(234,179,8,0.03)_10px,rgba(234,179,8,0.03)_20px)]"></div>
+          {/* Центральное свечение */}
           <div className="absolute -top-12 left-1/2 -translate-x-1/2 w-48 h-48 bg-yellow-400/20 rounded-full blur-3xl animate-pulse"></div>
-          <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-yellow-500/80 via-amber-400/60 to-yellow-500/80"></div>
-          <div className="absolute bottom-0 left-0 w-full h-2 bg-gradient-to-r from-yellow-500/80 via-amber-400/60 to-yellow-500/80"></div>
-          <div className="absolute bottom-4 left-4 text-4xl text-yellow-400/35">⚜</div>
-          <div className="absolute top-4 right-4 text-3xl text-amber-400/30">👁</div>
-          <div className="absolute top-1/2 left-2 -translate-y-1/2 text-2xl text-yellow-500/20">★</div>
-          <div className="absolute top-1/2 right-2 -translate-y-1/2 text-2xl text-yellow-500/20">★</div>
+          {/* Рамки */}
+          <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-yellow-500/90 via-amber-400/70 to-yellow-500/90"></div>
+          <div className="absolute bottom-0 left-0 w-full h-1.5 bg-gradient-to-r from-yellow-500/90 via-amber-400/70 to-yellow-500/90"></div>
+          {/* Двойные угловые элементы */}
+          <div className="absolute top-3 left-3 w-20 h-20">
+            <div className="absolute inset-0 border-l-2 border-t-2 border-yellow-400/70"></div>
+            <div className="absolute top-3 left-3 w-full h-full border-l border-t border-amber-400/40"></div>
+          </div>
+          <div className="absolute top-3 right-3 w-20 h-20">
+            <div className="absolute inset-0 border-r-2 border-t-2 border-yellow-400/70"></div>
+            <div className="absolute top-3 right-3 w-full h-full border-r border-t border-amber-400/40"></div>
+          </div>
+          <div className="absolute bottom-3 left-3 w-20 h-20">
+            <div className="absolute inset-0 border-l-2 border-b-2 border-yellow-400/60"></div>
+            <div className="absolute bottom-3 left-3 w-full h-full border-l border-b border-amber-400/30"></div>
+          </div>
+          <div className="absolute bottom-3 right-3 w-20 h-20">
+            <div className="absolute inset-0 border-r-2 border-b-2 border-yellow-400/60"></div>
+            <div className="absolute bottom-3 right-3 w-full h-full border-r border-b border-amber-400/30"></div>
+          </div>
+          {/* Вертикальные декоративные линии */}
+          <div className="absolute top-1/2 left-5 -translate-y-1/2 w-px h-12 bg-gradient-to-b from-transparent via-yellow-400/50 to-transparent"></div>
+          <div className="absolute top-1/2 right-5 -translate-y-1/2 w-px h-12 bg-gradient-to-b from-transparent via-yellow-400/50 to-transparent"></div>
         </div>
       ),
       particleEffect: 'sparkle'
@@ -206,16 +290,37 @@ export function getRankProfileStyle(rank: MafiaRank | null): RankProfileStyle {
       nameClass: 'text-rose-200 drop-shadow-[0_0_30px_rgba(244,63,94,1)] font-bold tracking-widest text-2xl',
       decorations: (
         <div className="absolute inset-0 overflow-hidden">
+          {/* Диагональный паттерн */}
           <div className="absolute inset-0 bg-[repeating-linear-gradient(-45deg,transparent,transparent_15px,rgba(244,63,94,0.05)_15px,rgba(244,63,94,0.05)_30px)]"></div>
+          {/* Массивное свечение */}
           <div className="absolute -top-16 left-1/2 -translate-x-1/2 w-64 h-64 bg-rose-500/25 rounded-full blur-3xl animate-[pulse_4s_ease-in-out_infinite]"></div>
-          <div className="absolute top-0 left-0 w-full h-3 bg-gradient-to-r from-rose-600 via-red-400 to-rose-600"></div>
-          <div className="absolute bottom-0 left-0 w-full h-3 bg-gradient-to-r from-rose-600 via-red-400 to-rose-600"></div>
-          <div className="absolute left-0 top-0 w-3 h-full bg-gradient-to-b from-rose-600 via-red-400 to-rose-600"></div>
-          <div className="absolute right-0 top-0 w-3 h-full bg-gradient-to-b from-rose-600 via-red-400 to-rose-600"></div>
-          <div className="absolute bottom-5 left-5 text-5xl text-rose-400/40">♛</div>
-          <div className="absolute top-5 right-5 text-4xl text-red-400/35">🏛</div>
-          <div className="absolute top-1/2 left-4 -translate-y-1/2 text-3xl text-rose-500/25">⚔</div>
-          <div className="absolute top-1/2 right-4 -translate-y-1/2 text-3xl text-rose-500/25">⚔</div>
+          {/* Толстая рамка по периметру */}
+          <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-rose-600 via-red-400 to-rose-600"></div>
+          <div className="absolute bottom-0 left-0 w-full h-2 bg-gradient-to-r from-rose-600 via-red-400 to-rose-600"></div>
+          <div className="absolute left-0 top-0 w-2 h-full bg-gradient-to-b from-rose-600 via-red-400 to-rose-600"></div>
+          <div className="absolute right-0 top-0 w-2 h-full bg-gradient-to-b from-rose-600 via-red-400 to-rose-600"></div>
+          {/* Тройные угловые элементы */}
+          <div className="absolute top-4 left-4">
+            <div className="w-16 h-16 border-l-2 border-t-2 border-rose-400/80"></div>
+            <div className="absolute top-2 left-2 w-14 h-14 border-l border-t border-red-400/50"></div>
+            <div className="absolute top-4 left-4 w-12 h-12 border-l border-t border-rose-300/30"></div>
+          </div>
+          <div className="absolute top-4 right-4">
+            <div className="w-16 h-16 border-r-2 border-t-2 border-rose-400/80"></div>
+            <div className="absolute top-2 right-2 w-14 h-14 border-r border-t border-red-400/50"></div>
+            <div className="absolute top-4 right-4 w-12 h-12 border-r border-t border-rose-300/30"></div>
+          </div>
+          <div className="absolute bottom-4 left-4">
+            <div className="w-16 h-16 border-l-2 border-b-2 border-rose-400/70"></div>
+            <div className="absolute bottom-2 left-2 w-14 h-14 border-l border-b border-red-400/40"></div>
+          </div>
+          <div className="absolute bottom-4 right-4">
+            <div className="w-16 h-16 border-r-2 border-b-2 border-rose-400/70"></div>
+            <div className="absolute bottom-2 right-2 w-14 h-14 border-r border-b border-red-400/40"></div>
+          </div>
+          {/* Центральные декоративные элементы */}
+          <div className="absolute top-1/2 left-6 -translate-y-1/2 w-1 h-16 bg-gradient-to-b from-transparent via-rose-400/60 to-transparent"></div>
+          <div className="absolute top-1/2 right-6 -translate-y-1/2 w-1 h-16 bg-gradient-to-b from-transparent via-rose-400/60 to-transparent"></div>
         </div>
       ),
       particleEffect: 'fire'
@@ -231,24 +336,46 @@ export function getRankProfileStyle(rank: MafiaRank | null): RankProfileStyle {
       nameClass: 'text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-purple-300 to-pink-300 drop-shadow-[0_0_40px_rgba(34,211,238,1)] font-black tracking-[0.2em] text-2xl animate-[shimmer_3s_linear_infinite]',
       decorations: (
         <div className="absolute inset-0 overflow-hidden">
-          {/* Diamond pattern */}
+          {/* Алмазный паттерн */}
           <div className="absolute inset-0 bg-[repeating-conic-gradient(from_0deg,transparent_0deg_90deg,rgba(34,211,238,0.03)_90deg_180deg)]"></div>
-          {/* Massive central glow */}
+          {/* Массивное центральное свечение */}
           <div className="absolute -top-20 left-1/2 -translate-x-1/2 w-80 h-80 bg-gradient-radial from-cyan-400/30 via-purple-500/20 to-transparent rounded-full blur-3xl animate-[pulse_5s_ease-in-out_infinite]"></div>
-          {/* Prismatic borders */}
-          <div className="absolute top-0 left-0 w-full h-4 bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 animate-[shimmer_2s_linear_infinite]"></div>
-          <div className="absolute bottom-0 left-0 w-full h-4 bg-gradient-to-r from-pink-500 via-purple-500 to-cyan-500 animate-[shimmer_2s_linear_infinite_reverse]"></div>
-          <div className="absolute left-0 top-0 w-4 h-full bg-gradient-to-b from-cyan-500 via-purple-500 to-pink-500"></div>
-          <div className="absolute right-0 top-0 w-4 h-full bg-gradient-to-b from-pink-500 via-purple-500 to-cyan-500"></div>
-          {/* Corner decorations */}
-          <div className="absolute top-6 left-6 text-4xl text-cyan-300/50 animate-pulse">💎</div>
-          <div className="absolute top-6 right-6 text-4xl text-purple-300/50 animate-pulse" style={{ animationDelay: '0.5s' }}>👁</div>
-          <div className="absolute bottom-6 left-6 text-5xl text-cyan-400/40">⚜</div>
-          <div className="absolute bottom-6 right-6 text-5xl text-purple-400/40">♛</div>
-          {/* Floating particles */}
+          {/* Призматические границы */}
+          <div className="absolute top-0 left-0 w-full h-3 bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 animate-[shimmer_2s_linear_infinite]"></div>
+          <div className="absolute bottom-0 left-0 w-full h-3 bg-gradient-to-r from-pink-500 via-purple-500 to-cyan-500 animate-[shimmer_2s_linear_infinite_reverse]"></div>
+          <div className="absolute left-0 top-0 w-3 h-full bg-gradient-to-b from-cyan-500 via-purple-500 to-pink-500"></div>
+          <div className="absolute right-0 top-0 w-3 h-full bg-gradient-to-b from-pink-500 via-purple-500 to-cyan-500"></div>
+          {/* Четырёхслойные угловые элементы */}
+          <div className="absolute top-5 left-5">
+            <div className="w-20 h-20 border-l-2 border-t-2 border-cyan-400/80"></div>
+            <div className="absolute top-2 left-2 w-16 h-16 border-l-2 border-t-2 border-purple-400/60"></div>
+            <div className="absolute top-4 left-4 w-12 h-12 border-l border-t border-pink-400/40"></div>
+            <div className="absolute top-6 left-6 w-8 h-8 border-l border-t border-cyan-300/30"></div>
+          </div>
+          <div className="absolute top-5 right-5">
+            <div className="w-20 h-20 border-r-2 border-t-2 border-cyan-400/80"></div>
+            <div className="absolute top-2 right-2 w-16 h-16 border-r-2 border-t-2 border-purple-400/60"></div>
+            <div className="absolute top-4 right-4 w-12 h-12 border-r border-t border-pink-400/40"></div>
+            <div className="absolute top-6 right-6 w-8 h-8 border-r border-t border-cyan-300/30"></div>
+          </div>
+          <div className="absolute bottom-5 left-5">
+            <div className="w-20 h-20 border-l-2 border-b-2 border-pink-400/70"></div>
+            <div className="absolute bottom-2 left-2 w-16 h-16 border-l-2 border-b-2 border-purple-400/50"></div>
+            <div className="absolute bottom-4 left-4 w-12 h-12 border-l border-b border-cyan-400/30"></div>
+          </div>
+          <div className="absolute bottom-5 right-5">
+            <div className="w-20 h-20 border-r-2 border-b-2 border-pink-400/70"></div>
+            <div className="absolute bottom-2 right-2 w-16 h-16 border-r-2 border-b-2 border-purple-400/50"></div>
+            <div className="absolute bottom-4 right-4 w-12 h-12 border-r border-b border-cyan-400/30"></div>
+          </div>
+          {/* Плавающие частицы */}
           <div className="absolute top-1/3 left-1/4 w-2 h-2 rounded-full bg-cyan-400/60 animate-[float_3s_ease-in-out_infinite]"></div>
           <div className="absolute top-1/2 right-1/4 w-2 h-2 rounded-full bg-purple-400/60 animate-[float_3s_ease-in-out_infinite_0.5s]"></div>
           <div className="absolute bottom-1/3 left-1/3 w-2 h-2 rounded-full bg-pink-400/60 animate-[float_3s_ease-in-out_infinite_1s]"></div>
+          <div className="absolute top-1/4 right-1/3 w-1.5 h-1.5 rounded-full bg-cyan-300/50 animate-[float_4s_ease-in-out_infinite_1.5s]"></div>
+          {/* Центральные вертикальные линии */}
+          <div className="absolute top-1/2 left-8 -translate-y-1/2 w-px h-20 bg-gradient-to-b from-transparent via-cyan-400/60 to-transparent"></div>
+          <div className="absolute top-1/2 right-8 -translate-y-1/2 w-px h-20 bg-gradient-to-b from-transparent via-pink-400/60 to-transparent"></div>
         </div>
       ),
       particleEffect: 'royal'
