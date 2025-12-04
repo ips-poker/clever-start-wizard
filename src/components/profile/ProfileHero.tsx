@@ -171,14 +171,18 @@ export function ProfileHero({
                 </motion.div>
               )}
               
-              {/* Rank Badge with Icon */}
+              {/* Rank Badge */}
               <motion.div 
                 className="flex items-center justify-center lg:justify-start gap-2"
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 0.2 }}
               >
-                <span className="text-2xl">{currentRank.icon}</span>
+                <img 
+                  src={currentRank.avatar} 
+                  alt={currentRank.name}
+                  className="w-8 h-8 rounded-full border border-white/20"
+                />
                 <Badge className={`bg-gradient-to-r ${currentRank.bgGradient} text-white border-0 px-4 py-1.5 font-bold text-sm shadow-brutal rounded-none flex items-center gap-2`}>
                   {currentRank.name}
                 </Badge>
