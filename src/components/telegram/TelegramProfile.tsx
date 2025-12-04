@@ -535,28 +535,6 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate, onUnre
         
         <CardContent className="p-6 relative z-10">
           <div className="text-center space-y-4">
-            {/* Avatar with Rank Badge */}
-            <div className="relative inline-block">
-              <div className={`absolute -inset-1 rounded-full bg-gradient-to-br ${mafiaRank?.bgGradient || 'from-zinc-600 to-zinc-800'} opacity-50 blur-sm`}></div>
-              <Avatar className={`w-20 h-20 mx-auto brutal-border shadow-lg ring-2 ${mafiaRank?.borderColor || 'ring-zinc-500'} relative`}>
-                <AvatarImage src={player.avatar_url ? fixStorageUrl(player.avatar_url) : undefined} alt={player.name} />
-                <AvatarFallback className="text-lg bg-syndikate-orange text-background font-bold uppercase">
-                  {player.name?.charAt(0).toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
-              {/* Rank Icon Badge */}
-              <div className={`absolute -top-1 -left-1 w-8 h-8 rounded-full bg-gradient-to-br ${mafiaRank?.bgGradient || 'from-zinc-600 to-zinc-800'} brutal-border flex items-center justify-center text-lg shadow-lg`}>
-                {mafiaRank?.icon || '🎴'}
-              </div>
-              <Button
-                onClick={() => setShowAvatarSelector(true)}
-                className="absolute -bottom-1 -right-1 brutal-border w-6 h-6 p-0 shadow-lg hover:scale-110 transition-transform bg-syndikate-orange hover:bg-syndikate-orange-glow"
-                size="sm"
-              >
-                <Camera className="h-3 w-3" />
-              </Button>
-            </div>
-            
             {/* Name */}
             <div className="space-y-2">
               {editingName ? (
@@ -595,6 +573,14 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate, onUnre
                     className="h-6 w-6 p-0 hover:bg-syndikate-concrete/50 text-muted-foreground hover:text-foreground brutal-border"
                   >
                     <Edit3 className="h-3 w-3" />
+                  </Button>
+                  <Button
+                    onClick={() => setShowAvatarSelector(true)}
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 w-6 p-0 hover:bg-syndikate-concrete/50 text-muted-foreground hover:text-foreground brutal-border"
+                  >
+                    <Camera className="h-3 w-3" />
                   </Button>
                 </div>
               )}
