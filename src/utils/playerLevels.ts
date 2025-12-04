@@ -23,7 +23,7 @@ export const PLAYER_LEVELS: Record<PlayerLevel, LevelInfo> = {
     color: 'text-zinc-400',
     gradient: 'from-zinc-500 to-zinc-700',
     bgColor: 'bg-zinc-500/20',
-    icon: '🎲',
+    icon: '♠',
     description: 'Новичок в синдикате'
   },
   soldier: {
@@ -35,7 +35,7 @@ export const PLAYER_LEVELS: Record<PlayerLevel, LevelInfo> = {
     color: 'text-emerald-500',
     gradient: 'from-emerald-500 to-emerald-700',
     bgColor: 'bg-emerald-500/20',
-    icon: '🔫',
+    icon: '⚔',
     description: 'Доказал себя в деле'
   },
   capo: {

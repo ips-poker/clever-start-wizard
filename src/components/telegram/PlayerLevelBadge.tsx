@@ -1,6 +1,7 @@
 import React from 'react';
 import { getPlayerLevel, getProgressToNextLevel, getNextLevel, getRatingToNextLevel } from '@/utils/playerLevels';
 import { motion } from 'framer-motion';
+import { RankIcon, RankBadge } from '@/components/ui/rank-icon';
 
 interface PlayerLevelBadgeProps {
   rating: number;
@@ -29,9 +30,9 @@ export const PlayerLevelBadge: React.FC<PlayerLevelBadgeProps> = ({
   };
   
   const iconSizes = {
-    sm: 'text-sm',
-    md: 'text-lg',
-    lg: 'text-2xl'
+    sm: 'sm' as const,
+    md: 'md' as const,
+    lg: 'lg' as const
   };
 
   return (
@@ -41,7 +42,7 @@ export const PlayerLevelBadge: React.FC<PlayerLevelBadgeProps> = ({
         whileHover={{ scale: 1.02 }}
         transition={{ type: 'spring', stiffness: 400 }}
       >
-        {/* Shine effect for Don level */}
+        {/* Shine effect for Boss level */}
         {level.level === 'don' && (
           <motion.div
             className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent"
@@ -50,7 +51,7 @@ export const PlayerLevelBadge: React.FC<PlayerLevelBadgeProps> = ({
           />
         )}
         
-        <span className={iconSizes[size]}>{level.icon}</span>
+        <RankIcon rank={level.level} size={iconSizes[size]} className="text-white" />
         <span className="text-background font-bold uppercase tracking-wide">{level.nameRu}</span>
       </motion.div>
       
@@ -62,7 +63,7 @@ export const PlayerLevelBadge: React.FC<PlayerLevelBadgeProps> = ({
         <div className="space-y-1.5 w-full">
           <div className="flex justify-between text-xs text-muted-foreground">
             <span className="flex items-center gap-1">
-              <span>{nextLevel.icon}</span>
+              <RankIcon rank={nextLevel.level} size="sm" />
               <span>{nextLevel.nameRu}</span>
             </span>
             <span className="font-mono">{Math.round(progress)}%</span>
@@ -84,11 +85,12 @@ export const PlayerLevelBadge: React.FC<PlayerLevelBadgeProps> = ({
       {showProgress && !nextLevel && (
         <div className="text-center">
           <motion.p 
-            className="text-xs text-amber-400 font-bold"
+            className="text-xs text-amber-400 font-bold flex items-center justify-center gap-1"
             animate={{ opacity: [1, 0.6, 1] }}
             transition={{ duration: 2, repeat: Infinity }}
           >
-            👑 Максимальный ранг достигнут!
+            <RankIcon rank="don" size="sm" animated />
+            Максимальный ранг достигнут!
           </motion.p>
         </div>
       )}

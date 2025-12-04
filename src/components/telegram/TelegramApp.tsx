@@ -17,6 +17,7 @@ import { GlitchText } from '@/components/ui/glitch-text';
 import { TournamentCard } from './TournamentCard';
 import { RatingPodium } from './RatingPodium';
 import { PlayerRatingCard } from './PlayerRatingCard';
+import { RankIcon } from '@/components/ui/rank-icon';
 import { PlayerStatsModal } from './PlayerStatsModal';
 import mainPokerRoom from '@/assets/gallery/main-poker-room.jpg';
 import tournamentTable from '@/assets/gallery/tournament-table.jpg';
@@ -1470,29 +1471,29 @@ export const TelegramApp = () => {
             
             {/* Syndicate Rank System */}
             <div className="mt-4 grid grid-cols-5 gap-1.5 relative z-10">
-              <div className="text-center p-1.5 rounded bg-gradient-to-br from-zinc-600/30 to-zinc-700/30 border border-zinc-500/50">
-                <span className="text-sm">🎲</span>
-                <div className="text-[9px] text-zinc-400 uppercase font-bold">Шестёрка</div>
+              <div className="text-center p-2 bg-gradient-to-br from-zinc-600/30 to-zinc-700/30 border border-zinc-500/50">
+                <RankIcon rank="rookie" size="md" className="mx-auto" />
+                <div className="text-[9px] text-zinc-400 uppercase font-bold mt-1">Associate</div>
                 <div className="text-[8px] text-muted-foreground">0-299</div>
               </div>
-              <div className="text-center p-1.5 rounded bg-gradient-to-br from-emerald-600/30 to-emerald-700/30 border border-emerald-500/50">
-                <span className="text-sm">🔫</span>
-                <div className="text-[9px] text-emerald-400 uppercase font-bold">Боец</div>
+              <div className="text-center p-2 bg-gradient-to-br from-emerald-600/30 to-emerald-700/30 border border-emerald-500/50">
+                <RankIcon rank="soldier" size="md" className="mx-auto" />
+                <div className="text-[9px] text-emerald-400 uppercase font-bold mt-1">Soldier</div>
                 <div className="text-[8px] text-muted-foreground">300-599</div>
               </div>
-              <div className="text-center p-1.5 rounded bg-gradient-to-br from-blue-600/30 to-blue-700/30 border border-blue-500/50">
-                <span className="text-sm">🎩</span>
-                <div className="text-[9px] text-blue-400 uppercase font-bold">Капо</div>
+              <div className="text-center p-2 bg-gradient-to-br from-blue-600/30 to-blue-700/30 border border-blue-500/50">
+                <RankIcon rank="capo" size="md" className="mx-auto" />
+                <div className="text-[9px] text-blue-400 uppercase font-bold mt-1">Capo</div>
                 <div className="text-[8px] text-muted-foreground">600-999</div>
               </div>
-              <div className="text-center p-1.5 rounded bg-gradient-to-br from-purple-600/30 to-purple-700/30 border border-purple-500/50">
-                <span className="text-sm">📜</span>
-                <div className="text-[9px] text-purple-400 uppercase font-bold">Консильери</div>
+              <div className="text-center p-2 bg-gradient-to-br from-purple-600/30 to-purple-700/30 border border-purple-500/50">
+                <RankIcon rank="consigliere" size="md" className="mx-auto" />
+                <div className="text-[9px] text-purple-400 uppercase font-bold mt-1">Consigliere</div>
                 <div className="text-[8px] text-muted-foreground">1000-1499</div>
               </div>
-              <div className="text-center p-1.5 rounded bg-gradient-to-br from-amber-500/30 to-amber-600/30 border border-amber-400/50">
-                <span className="text-sm">👑</span>
-                <div className="text-[9px] text-amber-400 uppercase font-bold">Дон</div>
+              <div className="text-center p-2 bg-gradient-to-br from-amber-500/30 to-amber-600/30 border border-amber-400/50">
+                <RankIcon rank="don" size="md" animated className="mx-auto" />
+                <div className="text-[9px] text-amber-400 uppercase font-bold mt-1">Boss</div>
                 <div className="text-[8px] text-muted-foreground">1500+</div>
               </div>
             </div>

@@ -6,7 +6,8 @@ import {
   Star, Flame, Zap, Heart, Lock, Users, TrendingUp
 } from "lucide-react";
 import { motion } from "framer-motion";
-import { getPlayerLevel, LEVELS_ORDERED } from "@/utils/playerLevels";
+import { getPlayerLevel, LEVELS_ORDERED, type PlayerLevel } from "@/utils/playerLevels";
+import { RankIcon, RankBadge } from "@/components/ui/rank-icon";
 
 interface GameResult {
   position: number;
@@ -28,7 +29,7 @@ export function ProfileAchievements({ gamesPlayed, wins, rating, gameResults }: 
     // Игровые достижения
     { 
       id: 'first_game', 
-      name: 'Инициация', 
+      name: 'Инициация',
       description: 'Сыграйте первый турнир в Синдикате',
       icon: Gift, 
       unlocked: gamesPlayed >= 1,
@@ -113,51 +114,55 @@ export function ProfileAchievements({ gamesPlayed, wins, rating, gameResults }: 
     // Ранговые достижения
     { 
       id: 'rank_soldier', 
-      name: 'Боец', 
-      description: 'Достигните ранга Боец (300+ RPS)',
+      name: 'Soldier', 
+      description: 'Достигните ранга Soldier (300+ RPS)',
       icon: Swords, 
       unlocked: rating >= 300,
       progress: Math.min(rating, 300),
       total: 300,
       color: 'from-emerald-400 to-emerald-600',
       bgColor: 'bg-emerald-500/20',
-      rarity: 'rare'
+      rarity: 'rare',
+      rankIcon: 'soldier' as PlayerLevel
     },
     { 
       id: 'rank_capo', 
-      name: 'Капо', 
-      description: 'Достигните ранга Капо (600+ RPS)',
+      name: 'Capo', 
+      description: 'Достигните ранга Capo (600+ RPS)',
       icon: Target, 
       unlocked: rating >= 600,
       progress: Math.min(rating, 600),
       total: 600,
       color: 'from-blue-400 to-blue-600',
       bgColor: 'bg-blue-500/20',
-      rarity: 'epic'
+      rarity: 'epic',
+      rankIcon: 'capo' as PlayerLevel
     },
     { 
       id: 'rank_consigliere', 
-      name: 'Консильери', 
-      description: 'Достигните ранга Консильери (1000+ RPS)',
+      name: 'Consigliere', 
+      description: 'Достигните ранга Consigliere (1000+ RPS)',
       icon: Flame, 
       unlocked: rating >= 1000,
       progress: Math.min(rating, 1000),
       total: 1000,
       color: 'from-purple-400 to-purple-600',
       bgColor: 'bg-purple-500/20',
-      rarity: 'epic'
+      rarity: 'epic',
+      rankIcon: 'consigliere' as PlayerLevel
     },
     { 
-      id: 'rank_don', 
-      name: 'Дон', 
-      description: 'Достигните ранга Дон (1500+ RPS)',
+      id: 'rank_boss', 
+      name: 'Boss', 
+      description: 'Достигните ранга Boss (1500+ RPS)',
       icon: Gem, 
       unlocked: rating >= 1500,
       progress: Math.min(rating, 1500),
       total: 1500,
       color: 'from-amber-300 via-yellow-400 to-amber-500',
       bgColor: 'bg-amber-500/20',
-      rarity: 'legendary'
+      rarity: 'legendary',
+      rankIcon: 'don' as PlayerLevel
     },
     { 
       id: 'grinder', 
@@ -216,7 +221,7 @@ export function ProfileAchievements({ gamesPlayed, wins, rating, gameResults }: 
             <div>
               <h3 className="text-lg font-bold uppercase tracking-wide">Достижения</h3>
               <div className="flex items-center gap-2 mt-1">
-                <span className="text-lg">{currentLevel.icon}</span>
+                <RankIcon rank={currentLevel.level} size="sm" animated />
                 <span className={`text-sm font-bold ${currentLevel.color}`}>{currentLevel.nameRu}</span>
               </div>
             </div>
@@ -245,21 +250,27 @@ export function ProfileAchievements({ gamesPlayed, wins, rating, gameResults }: 
             return (
               <React.Fragment key={level.level}>
                 <motion.div 
-                  className={`flex flex-col items-center min-w-[70px] p-2 rounded-lg transition-all ${
+                  className={`flex flex-col items-center min-w-[80px] p-3 transition-all ${
                     isActive 
-                      ? `bg-gradient-to-br ${level.bgColor} border border-primary/50` 
+                      ? `bg-gradient-to-br ${level.bgColor} border-2 border-primary/50` 
                       : isPassed 
-                        ? 'opacity-60' 
-                        : 'opacity-30'
+                        ? 'opacity-70 border border-border' 
+                        : 'opacity-40 border border-border/50'
                   }`}
-                  whileHover={{ scale: 1.05 }}
+                  whileHover={{ scale: 1.05, y: -2 }}
+                  transition={{ type: 'spring', stiffness: 400 }}
                 >
-                  <span className="text-2xl">{level.icon}</span>
-                  <span className={`text-xs font-bold mt-1 ${isPassed ? level.color : 'text-muted-foreground'}`}>
+                  <RankIcon 
+                    rank={level.level} 
+                    size="lg" 
+                    animated={isActive}
+                    className={isPassed ? '' : 'grayscale'}
+                  />
+                  <span className={`text-xs font-bold mt-2 ${isPassed ? level.color : 'text-muted-foreground'}`}>
                     {level.nameRu}
                   </span>
                   <span className="text-[10px] text-muted-foreground">
-                    {level.minRating}+
+                    {level.minRating}+ RPS
                   </span>
                 </motion.div>
                 {index < LEVELS_ORDERED.length - 1 && (
