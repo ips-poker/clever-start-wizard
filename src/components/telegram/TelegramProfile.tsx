@@ -529,13 +529,12 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate, onUnre
         {/* Background effects */}
         <div className={`absolute inset-0 bg-gradient-to-br ${mafiaRank?.bgGradient || 'from-zinc-600 to-zinc-800'} opacity-10`}></div>
         <div className="absolute inset-0 opacity-10 group-hover:opacity-20 transition-opacity duration-500">
-          <div className="absolute top-4 right-4 text-3xl animate-pulse">{mafiaRank?.icon || '🎴'}</div>
           <div className="absolute bottom-4 left-4 text-2xl opacity-50">♠</div>
         </div>
         
         <CardContent className="p-6 relative z-10">
           <div className="text-center space-y-4">
-            {/* Avatar with Rank Badge */}
+            {/* Avatar */}
             <div className="relative inline-block">
               <div className={`absolute -inset-1 rounded-full bg-gradient-to-br ${mafiaRank?.bgGradient || 'from-zinc-600 to-zinc-800'} opacity-50 blur-sm`}></div>
               <Avatar className={`w-20 h-20 mx-auto brutal-border shadow-lg ring-2 ${mafiaRank?.borderColor || 'ring-zinc-500'} relative`}>
@@ -544,10 +543,6 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate, onUnre
                   {player.name?.charAt(0).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
-              {/* Rank Icon Badge */}
-              <div className={`absolute -top-1 -left-1 w-8 h-8 rounded-full bg-gradient-to-br ${mafiaRank?.bgGradient || 'from-zinc-600 to-zinc-800'} brutal-border flex items-center justify-center text-lg shadow-lg`}>
-                {mafiaRank?.icon || '🎴'}
-              </div>
               <Button
                 onClick={() => setShowAvatarSelector(true)}
                 className="absolute -bottom-1 -right-1 brutal-border w-6 h-6 p-0 shadow-lg hover:scale-110 transition-transform bg-syndikate-orange hover:bg-syndikate-orange-glow"
