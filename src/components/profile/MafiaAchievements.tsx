@@ -165,7 +165,7 @@ export function MafiaAchievements({ gamesPlayed, wins, rating, gameResults }: Ma
                 className={`relative p-3 border-2 transition-all duration-300 group cursor-pointer overflow-hidden ${
                   unlocked 
                     ? `${rank.borderColor} bg-gradient-to-br from-background to-secondary/30 hover:scale-105` 
-                    : 'border-border/50 bg-secondary/20 grayscale hover:grayscale-[50%]'
+                    : `border-${rank.color}-500/30 bg-gradient-to-br from-background to-${rank.color}-900/10 hover:border-${rank.color}-500/50`
                 }`}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -181,18 +181,23 @@ export function MafiaAchievements({ gamesPlayed, wins, rating, gameResults }: Ma
                   />
                 )}
 
+                {/* Subtle glow for locked - shows what you can achieve */}
+                {!unlocked && (
+                  <div className={`absolute inset-0 bg-gradient-to-br ${rank.bgGradient} opacity-5`} />
+                )}
+
                 {/* Rank number */}
                 <div className="absolute top-1 left-1">
-                  <span className={`text-xs font-bold ${unlocked ? rank.color : 'text-muted-foreground/50'}`}>
+                  <span className={`text-xs font-bold ${unlocked ? rank.textColor : `text-${rank.color}-500/50`}`}>
                     #{index + 1}
                   </span>
                 </div>
 
                 <div className="flex flex-col items-center text-center gap-2 relative z-10">
-                  {/* Avatar - always visible, bright when unlocked */}
+                  {/* Avatar - COLORFUL even when locked! */}
                   <motion.div 
-                    className={`relative rounded-full p-0.5 ${unlocked ? `bg-gradient-to-br ${rank.bgGradient}` : 'bg-secondary/50'}`}
-                    whileHover={unlocked ? { rotate: [0, -5, 5, 0], scale: 1.1 } : { scale: 1.05 }}
+                    className={`relative rounded-full p-0.5 bg-gradient-to-br ${rank.bgGradient} ${!unlocked ? 'opacity-70' : ''}`}
+                    whileHover={unlocked ? { rotate: [0, -5, 5, 0], scale: 1.1 } : { scale: 1.08 }}
                     transition={{ duration: 0.5 }}
                   >
                     <img 
@@ -200,16 +205,24 @@ export function MafiaAchievements({ gamesPlayed, wins, rating, gameResults }: Ma
                       alt={rank.name}
                       className={`w-12 h-12 rounded-full border transition-all duration-500 ${
                         unlocked 
-                          ? 'border-white/20 brightness-100 saturate-100' 
-                          : 'border-border/50 brightness-50 saturate-0 opacity-60'
+                          ? 'border-white/20 brightness-100' 
+                          : 'border-white/10 brightness-90'
                       }`}
                     />
                     
-                    {/* Lock overlay for locked ranks */}
+                    {/* Lock overlay for locked ranks - elegant glass effect */}
                     {!unlocked && (
-                      <div className="absolute inset-0 rounded-full flex items-center justify-center bg-black/30">
-                        <Lock className="h-4 w-4 text-white/50" />
-                      </div>
+                      <motion.div 
+                        className="absolute inset-0 rounded-full flex items-center justify-center bg-black/40 backdrop-blur-[1px]"
+                        whileHover={{ backgroundColor: 'rgba(0,0,0,0.2)' }}
+                      >
+                        <motion.div
+                          animate={{ scale: [1, 1.1, 1] }}
+                          transition={{ duration: 2, repeat: Infinity }}
+                        >
+                          <Lock className="h-4 w-4 text-white/70" />
+                        </motion.div>
+                      </motion.div>
                     )}
                     
                     {/* Animated ring for godfather rank */}
@@ -224,10 +237,10 @@ export function MafiaAchievements({ gamesPlayed, wins, rating, gameResults }: Ma
                   
                   {/* Name */}
                   <div>
-                    <p className={`text-xs font-black leading-tight ${unlocked ? rank.textColor : 'text-muted-foreground/50'}`}>
+                    <p className={`text-xs font-black leading-tight ${unlocked ? rank.textColor : rank.textColor + '/60'}`}>
                       {rank.name}
                     </p>
-                    <p className={`text-[9px] mt-0.5 leading-tight ${unlocked ? 'text-muted-foreground' : 'text-muted-foreground/40'}`}>
+                    <p className={`text-[9px] mt-0.5 leading-tight ${unlocked ? 'text-muted-foreground' : 'text-muted-foreground/60'}`}>
                       {rank.title}
                     </p>
                   </div>
