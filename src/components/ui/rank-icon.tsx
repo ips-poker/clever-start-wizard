@@ -18,59 +18,71 @@ const sizeMap = {
   xl: 'w-16 h-16'
 };
 
-// Associate - Cards icon
+// Associate - Spade card suit (новичок)
 const AssociateIcon = ({ className }: { className?: string }) => (
   <svg viewBox="0 0 24 24" fill="none" className={className}>
-    <rect x="3" y="4" width="12" height="16" rx="1" fill="currentColor" opacity="0.3"/>
-    <rect x="9" y="4" width="12" height="16" rx="1" fill="currentColor"/>
-    <path d="M15 10L17 12L15 14" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
-    <circle cx="15" cy="8" r="1" fill="white"/>
-    <circle cx="15" cy="16" r="1" fill="white"/>
+    <path 
+      d="M12 2L8 10C6 10 4 12 4 14C4 16 6 18 8 18C9 18 10 17.5 11 17V20H9V22H15V20H13V17C14 17.5 15 18 16 18C18 18 20 16 20 14C20 12 18 10 16 10L12 2Z" 
+      fill="currentColor"
+    />
+    <path 
+      d="M12 5L9.5 10H14.5L12 5Z" 
+      fill="white" 
+      opacity="0.3"
+    />
   </svg>
 );
 
-// Soldier - Gun icon
+// Soldier - Bullet/ammo
 const SoldierIcon = ({ className }: { className?: string }) => (
   <svg viewBox="0 0 24 24" fill="none" className={className}>
-    <path d="M4 12H16L20 8V12H22V14H20V18L16 14H4V12Z" fill="currentColor"/>
-    <rect x="2" y="11" width="6" height="4" rx="0.5" fill="currentColor"/>
-    <path d="M8 13H16" stroke="white" strokeWidth="1" opacity="0.5"/>
-    <circle cx="18" cy="12" r="1" fill="white"/>
+    <rect x="8" y="3" width="8" height="18" rx="1" fill="currentColor"/>
+    <rect x="9" y="4" width="6" height="4" rx="0.5" fill="currentColor" opacity="0.6"/>
+    <ellipse cx="12" cy="8" rx="3" ry="1" fill="white" opacity="0.4"/>
+    <path d="M9 8H15V19C15 20 14 21 12 21C10 21 9 20 9 19V8Z" fill="currentColor"/>
+    <path d="M10 10H14V12H10V10Z" fill="white" opacity="0.2"/>
+    <circle cx="12" cy="15" r="1.5" fill="white" opacity="0.3"/>
   </svg>
 );
 
-// Capo - Hat icon
+// Capo - Fedora hat
 const CapoIcon = ({ className }: { className?: string }) => (
   <svg viewBox="0 0 24 24" fill="none" className={className}>
-    <ellipse cx="12" cy="18" rx="9" ry="2" fill="currentColor"/>
-    <path d="M5 18C5 14 8 8 12 8C16 8 19 14 19 18" fill="currentColor"/>
-    <rect x="10" y="4" width="4" height="5" rx="0.5" fill="currentColor"/>
-    <path d="M7 16C7 14 9 11 12 11C15 11 17 14 17 16" stroke="white" strokeWidth="1" opacity="0.3"/>
-    <rect x="11" y="5" width="2" height="2" fill="white" opacity="0.5"/>
+    <ellipse cx="12" cy="19" rx="10" ry="3" fill="currentColor"/>
+    <path d="M3 19C3 14 7 8 12 8C17 8 21 14 21 19" fill="currentColor"/>
+    <path d="M5 17C5 14 8 10 12 10C16 10 19 14 19 17" fill="white" opacity="0.15"/>
+    <rect x="9" y="4" width="6" height="5" rx="1" fill="currentColor"/>
+    <rect x="10" y="5" width="4" height="3" fill="white" opacity="0.2"/>
+    <path d="M3 18.5C3 18.5 6 17 12 17C18 17 21 18.5 21 18.5" stroke="white" strokeWidth="0.75" opacity="0.4"/>
   </svg>
 );
 
-// Consigliere - Scroll/Book icon
+// Consigliere - Book with seal
 const ConsigliereIcon = ({ className }: { className?: string }) => (
   <svg viewBox="0 0 24 24" fill="none" className={className}>
-    <path d="M6 4C6 3 7 2 8 2H18C19 2 20 3 20 4V20C20 21 19 22 18 22H8C7 22 6 21 6 20V4Z" fill="currentColor"/>
-    <path d="M4 6C4 5 5 4 6 4V20C5 20 4 19 4 18V6Z" fill="currentColor" opacity="0.5"/>
-    <path d="M9 7H17M9 10H17M9 13H14" stroke="white" strokeWidth="1.5" strokeLinecap="round" opacity="0.7"/>
-    <circle cx="16" cy="17" r="2" fill="white" opacity="0.3"/>
+    <path d="M5 3C5 2 6 1 7 1H19C20 1 21 2 21 3V21C21 22 20 23 19 23H7C6 23 5 22 5 21V3Z" fill="currentColor"/>
+    <path d="M3 5C3 4 4 3 5 3V21C4 21 3 20 3 19V5Z" fill="currentColor" opacity="0.5"/>
+    <path d="M8 6H18" stroke="white" strokeWidth="1.5" strokeLinecap="round" opacity="0.5"/>
+    <path d="M8 9H18" stroke="white" strokeWidth="1.5" strokeLinecap="round" opacity="0.5"/>
+    <path d="M8 12H14" stroke="white" strokeWidth="1.5" strokeLinecap="round" opacity="0.5"/>
+    <circle cx="16" cy="18" r="3.5" fill="white" opacity="0.25"/>
+    <circle cx="16" cy="18" r="2" fill="currentColor"/>
+    <circle cx="16" cy="18" r="1" fill="white" opacity="0.5"/>
   </svg>
 );
 
-// Boss - Crown icon
+// Boss - Crown
 const BossIcon = ({ className }: { className?: string }) => (
   <svg viewBox="0 0 24 24" fill="none" className={className}>
-    <path d="M4 17L2 8L7 12L12 6L17 12L22 8L20 17H4Z" fill="currentColor"/>
-    <rect x="4" y="17" width="16" height="3" fill="currentColor"/>
-    <circle cx="6" cy="19" r="1" fill="white" opacity="0.5"/>
-    <circle cx="12" cy="19" r="1" fill="white" opacity="0.5"/>
-    <circle cx="18" cy="19" r="1" fill="white" opacity="0.5"/>
-    <circle cx="12" cy="9" r="1.5" fill="white"/>
-    <circle cx="7" cy="12" r="1" fill="white" opacity="0.7"/>
-    <circle cx="17" cy="12" r="1" fill="white" opacity="0.7"/>
+    <path d="M2 18L0 6L6 11L12 3L18 11L24 6L22 18H2Z" fill="currentColor"/>
+    <rect x="2" y="18" width="20" height="4" rx="0.5" fill="currentColor"/>
+    <circle cx="5" cy="20" r="1.5" fill="white" opacity="0.7"/>
+    <circle cx="12" cy="20" r="2" fill="white" opacity="0.9"/>
+    <circle cx="19" cy="20" r="1.5" fill="white" opacity="0.7"/>
+    <circle cx="12" cy="7" r="2.5" fill="white"/>
+    <circle cx="6" cy="11" r="1.5" fill="white" opacity="0.8"/>
+    <circle cx="18" cy="11" r="1.5" fill="white" opacity="0.8"/>
+    <path d="M4 17L12 14L20 17" stroke="white" strokeWidth="0.5" opacity="0.3"/>
   </svg>
 );
 
@@ -92,10 +104,10 @@ const rankColors: Record<RankLevel, string> = {
 
 const rankGlows: Record<RankLevel, string> = {
   rookie: '',
-  soldier: 'drop-shadow-[0_0_4px_rgba(16,185,129,0.5)]',
-  capo: 'drop-shadow-[0_0_6px_rgba(59,130,246,0.5)]',
-  consigliere: 'drop-shadow-[0_0_8px_rgba(168,85,247,0.6)]',
-  don: 'drop-shadow-[0_0_10px_rgba(251,191,36,0.7)]'
+  soldier: 'drop-shadow-[0_0_6px_rgba(16,185,129,0.6)]',
+  capo: 'drop-shadow-[0_0_8px_rgba(59,130,246,0.6)]',
+  consigliere: 'drop-shadow-[0_0_10px_rgba(168,85,247,0.7)]',
+  don: 'drop-shadow-[0_0_12px_rgba(251,191,36,0.8)]'
 };
 
 export const RankIcon: React.FC<RankIconProps> = ({ 
@@ -125,10 +137,9 @@ export const RankIcon: React.FC<RankIconProps> = ({
       <motion.div
         animate={{ 
           scale: [1, 1.1, 1],
-          rotate: [0, 5, -5, 0]
         }}
         transition={{ 
-          duration: 3, 
+          duration: 2, 
           repeat: Infinity,
           ease: "easeInOut"
         }}
@@ -141,7 +152,7 @@ export const RankIcon: React.FC<RankIconProps> = ({
   if (animated) {
     return (
       <motion.div
-        whileHover={{ scale: 1.1 }}
+        whileHover={{ scale: 1.15 }}
         transition={{ type: 'spring', stiffness: 400 }}
       >
         {icon}
@@ -187,7 +198,7 @@ export const RankBadge: React.FC<RankBadgeProps> = ({
   return (
     <motion.div
       className={cn(
-        'inline-flex items-center font-bold text-white border border-white/20 shadow-lg',
+        'inline-flex items-center font-bold text-white border border-white/20 shadow-lg relative overflow-hidden',
         badgeBgColors[rank],
         badgeSizes[size],
         className
