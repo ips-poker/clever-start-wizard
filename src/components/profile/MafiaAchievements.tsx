@@ -1,21 +1,18 @@
-import React, { useMemo } from "react";
+import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Award, Lock, Crown } from "lucide-react";
+import { Lock, Crown } from "lucide-react";
 import { motion } from "framer-motion";
-
-// Import poker avatars for mafia hierarchy
-import avatar1 from "@/assets/avatars/poker-avatar-1.png";
-import avatar2 from "@/assets/avatars/poker-avatar-2.png";
-import avatar3 from "@/assets/avatars/poker-avatar-3.png";
-import avatar4 from "@/assets/avatars/poker-avatar-4.png";
-import avatar5 from "@/assets/avatars/poker-avatar-5.png";
-import avatar6 from "@/assets/avatars/poker-avatar-6.png";
-import avatar7 from "@/assets/avatars/poker-avatar-7.png";
-import avatar8 from "@/assets/avatars/poker-avatar-8.png";
-import avatar9 from "@/assets/avatars/poker-avatar-9.png";
-import avatar10 from "@/assets/avatars/poker-avatar-10.png";
+import { 
+  MAFIA_RANKS, 
+  MafiaRank,
+  isRankUnlocked, 
+  getCurrentMafiaRank, 
+  getRarityInfo,
+  getUnlockedRanks,
+  getTotalRankXP 
+} from "@/utils/mafiaRanks";
 
 interface GameResult {
   position: number;
@@ -28,182 +25,9 @@ interface MafiaAchievementsProps {
   gameResults: GameResult[];
 }
 
-interface MafiaRank {
-  id: string;
-  name: string;
-  title: string;
-  description: string;
-  avatar: string;
-  requirement: {
-    type: 'games' | 'wins' | 'rating' | 'combined';
-    games?: number;
-    wins?: number;
-    rating?: number;
-  };
-  color: string;
-  bgGradient: string;
-  borderColor: string;
-  glowColor: string;
-  rarity: 'initiate' | 'soldier' | 'captain' | 'underboss' | 'boss' | 'godfather';
-}
-
 export function MafiaAchievements({ gamesPlayed, wins, rating, gameResults }: MafiaAchievementsProps) {
-  const winRate = gamesPlayed > 0 ? (wins / gamesPlayed) * 100 : 0;
-  const top3Count = gameResults.filter(r => r.position <= 3).length;
-
-  const mafiaRanks: MafiaRank[] = useMemo(() => [
-    {
-      id: 'picciotto',
-      name: 'Пиччотто',
-      title: 'Юный солдат',
-      description: 'Вступите в семью — сыграйте первый турнир',
-      avatar: avatar1,
-      requirement: { type: 'games', games: 1 },
-      color: 'text-zinc-400',
-      bgGradient: 'from-zinc-600 to-zinc-800',
-      borderColor: 'border-zinc-500',
-      glowColor: 'shadow-zinc-500/30',
-      rarity: 'initiate'
-    },
-    {
-      id: 'soldato',
-      name: 'Солдато',
-      title: 'Проверенный боец',
-      description: 'Покажите преданность — сыграйте 3 турнира',
-      avatar: avatar2,
-      requirement: { type: 'games', games: 3 },
-      color: 'text-stone-400',
-      bgGradient: 'from-stone-600 to-stone-800',
-      borderColor: 'border-stone-500',
-      glowColor: 'shadow-stone-500/30',
-      rarity: 'initiate'
-    },
-    {
-      id: 'sgarrista',
-      name: 'Сгарриста',
-      title: 'Правая рука капо',
-      description: 'Докажите мастерство — выиграйте турнир',
-      avatar: avatar3,
-      requirement: { type: 'wins', wins: 1 },
-      color: 'text-amber-400',
-      bgGradient: 'from-amber-600 to-amber-800',
-      borderColor: 'border-amber-500',
-      glowColor: 'shadow-amber-500/40',
-      rarity: 'soldier'
-    },
-    {
-      id: 'associato',
-      name: 'Ассоциато',
-      title: 'Уважаемый член семьи',
-      description: 'Заслужите уважение — 5 турниров',
-      avatar: avatar4,
-      requirement: { type: 'games', games: 5 },
-      color: 'text-orange-400',
-      bgGradient: 'from-orange-600 to-orange-800',
-      borderColor: 'border-orange-500',
-      glowColor: 'shadow-orange-500/40',
-      rarity: 'soldier'
-    },
-    {
-      id: 'caporegime',
-      name: 'Капореджиме',
-      title: 'Командир бригады',
-      description: 'Silver уровень (1200+ RPS) И 5 игр',
-      avatar: avatar5,
-      requirement: { type: 'combined', rating: 1200, games: 5 },
-      color: 'text-blue-400',
-      bgGradient: 'from-blue-600 to-blue-800',
-      borderColor: 'border-blue-500',
-      glowColor: 'shadow-blue-500/40',
-      rarity: 'captain'
-    },
-    {
-      id: 'shark',
-      name: 'Шарк',
-      title: 'Акула покера',
-      description: '3 победы И 8 турниров',
-      avatar: avatar6,
-      requirement: { type: 'combined', wins: 3, games: 8 },
-      color: 'text-purple-400',
-      bgGradient: 'from-purple-600 to-purple-800',
-      borderColor: 'border-purple-500',
-      glowColor: 'shadow-purple-500/50',
-      rarity: 'captain'
-    },
-    {
-      id: 'kapo',
-      name: 'Капо',
-      title: 'Глава группировки',
-      description: '10 турниров И 5 побед',
-      avatar: avatar7,
-      requirement: { type: 'combined', games: 10, wins: 5 },
-      color: 'text-red-400',
-      bgGradient: 'from-red-600 to-red-800',
-      borderColor: 'border-red-500',
-      glowColor: 'shadow-red-500/50',
-      rarity: 'underboss'
-    },
-    {
-      id: 'konsigliere',
-      name: 'Консильери',
-      title: 'Правая рука Дона',
-      description: 'Gold (1500+ RPS) И 10 игр И 5 побед',
-      avatar: avatar8,
-      requirement: { type: 'combined', rating: 1500, games: 10, wins: 5 },
-      color: 'text-yellow-400',
-      bgGradient: 'from-yellow-500 to-yellow-700',
-      borderColor: 'border-yellow-500',
-      glowColor: 'shadow-yellow-500/50',
-      rarity: 'underboss'
-    },
-    {
-      id: 'don',
-      name: 'Дон',
-      title: 'Глава семьи',
-      description: '1600+ RPS И 15 турниров И 8 побед',
-      avatar: avatar9,
-      requirement: { type: 'combined', rating: 1600, games: 15, wins: 8 },
-      color: 'text-rose-400',
-      bgGradient: 'from-rose-500 to-rose-700',
-      borderColor: 'border-rose-500',
-      glowColor: 'shadow-rose-500/60',
-      rarity: 'boss'
-    },
-    {
-      id: 'patriarch',
-      name: 'Патриарх Синдиката',
-      title: 'Крёстный отец покера',
-      description: 'Diamond (1800+ RPS) И 20 турниров И 10 побед',
-      avatar: avatar10,
-      requirement: { type: 'combined', rating: 1800, games: 20, wins: 10 },
-      color: 'text-cyan-300',
-      bgGradient: 'from-cyan-400 via-blue-500 to-purple-600',
-      borderColor: 'border-cyan-400',
-      glowColor: 'shadow-cyan-400/70',
-      rarity: 'godfather'
-    },
-  ], []);
-
-  const isRankUnlocked = (rank: MafiaRank): boolean => {
-    const req = rank.requirement;
-    switch (req.type) {
-      case 'games':
-        return gamesPlayed >= (req.games || 0);
-      case 'wins':
-        return wins >= (req.wins || 0);
-      case 'rating':
-        return rating >= (req.rating || 0);
-      case 'combined':
-        return (
-          gamesPlayed >= (req.games || 0) &&
-          wins >= (req.wins || 0) &&
-          rating >= (req.rating || 0)
-        );
-      default:
-        return false;
-    }
-  };
-
+  const stats = { gamesPlayed, wins, rating };
+  
   const getRankProgress = (rank: MafiaRank): { current: number; total: number; percent: number; details?: string } => {
     const req = rank.requirement;
     
@@ -227,7 +51,6 @@ export function MafiaAchievements({ gamesPlayed, wins, rating, gameResults }: Ma
           percent: Math.min((rating / (req.rating || 1000)) * 100, 100)
         };
       case 'combined': {
-        // Calculate progress for each requirement
         const progresses: number[] = [];
         const details: string[] = [];
         
@@ -247,7 +70,6 @@ export function MafiaAchievements({ gamesPlayed, wins, rating, gameResults }: Ma
           details.push(`${rating}/${req.rating} RPS`);
         }
         
-        // Average progress of all requirements
         const avgPercent = progresses.length > 0 
           ? (progresses.reduce((a, b) => a + b, 0) / progresses.length) * 100 
           : 0;
@@ -264,21 +86,9 @@ export function MafiaAchievements({ gamesPlayed, wins, rating, gameResults }: Ma
     }
   };
 
-  const getRarityInfo = (rarity: string) => {
-    const info: Record<string, { label: string; class: string; xp: number }> = {
-      initiate: { label: 'Инициация', class: 'bg-zinc-600/80 text-zinc-200', xp: 25 },
-      soldier: { label: 'Солдат', class: 'bg-amber-600/80 text-amber-100', xp: 50 },
-      captain: { label: 'Капитан', class: 'bg-blue-600/80 text-blue-100', xp: 100 },
-      underboss: { label: 'Андербосс', class: 'bg-purple-600/80 text-purple-100', xp: 150 },
-      boss: { label: 'Босс', class: 'bg-rose-600/80 text-rose-100', xp: 250 },
-      godfather: { label: 'Крёстный отец', class: 'bg-gradient-to-r from-cyan-500 to-purple-500 text-white', xp: 500 }
-    };
-    return info[rarity] || info.initiate;
-  };
-
-  const unlockedRanks = mafiaRanks.filter(r => isRankUnlocked(r));
-  const currentRank = unlockedRanks[unlockedRanks.length - 1];
-  const totalXP = unlockedRanks.reduce((acc, r) => acc + getRarityInfo(r.rarity).xp, 0);
+  const unlockedRanks = getUnlockedRanks(stats);
+  const currentRank = getCurrentMafiaRank(stats);
+  const totalXP = getTotalRankXP(stats);
 
   return (
     <Card className="brutal-border bg-card overflow-hidden">
@@ -302,52 +112,51 @@ export function MafiaAchievements({ gamesPlayed, wins, rating, gameResults }: Ma
               +{totalXP} XP
             </Badge>
             <Badge className="bg-gradient-to-r from-red-600 to-purple-600 text-white rounded-none font-bold px-3">
-              {unlockedRanks.length}/{mafiaRanks.length}
+              {unlockedRanks.length}/{MAFIA_RANKS.length}
             </Badge>
           </div>
         </CardTitle>
       </CardHeader>
 
       {/* Current Rank Display */}
-      {currentRank && (
-        <div className="p-4 border-b border-border bg-gradient-to-r from-background via-primary/5 to-background">
-          <div className="flex items-center gap-4">
+      <div className="p-4 border-b border-border bg-gradient-to-r from-background via-primary/5 to-background">
+        <div className="flex items-center gap-4">
+          <motion.div 
+            className={`relative p-1 rounded-full bg-gradient-to-br ${currentRank.bgGradient} ${currentRank.glowColor} shadow-lg`}
+            animate={{ boxShadow: ['0 0 20px rgba(0,0,0,0.3)', '0 0 40px rgba(0,0,0,0.5)', '0 0 20px rgba(0,0,0,0.3)'] }}
+            transition={{ duration: 2, repeat: Infinity }}
+          >
+            <img 
+              src={currentRank.avatar} 
+              alt={currentRank.name}
+              className="w-16 h-16 rounded-full border-2 border-white/20"
+            />
             <motion.div 
-              className={`relative p-1 rounded-full bg-gradient-to-br ${currentRank.bgGradient} ${currentRank.glowColor} shadow-lg`}
-              animate={{ boxShadow: ['0 0 20px rgba(0,0,0,0.3)', '0 0 40px rgba(0,0,0,0.5)', '0 0 20px rgba(0,0,0,0.3)'] }}
-              transition={{ duration: 2, repeat: Infinity }}
+              className="absolute -top-1 -right-1 bg-yellow-500 rounded-full p-1"
+              animate={{ rotate: [0, 10, -10, 0] }}
+              transition={{ duration: 3, repeat: Infinity }}
             >
-              <img 
-                src={currentRank.avatar} 
-                alt={currentRank.name}
-                className="w-16 h-16 rounded-full border-2 border-white/20"
-              />
-              <motion.div 
-                className="absolute -top-1 -right-1 bg-yellow-500 rounded-full p-1"
-                animate={{ rotate: [0, 10, -10, 0] }}
-                transition={{ duration: 3, repeat: Infinity }}
-              >
-                <Crown className="w-3 h-3 text-white" />
-              </motion.div>
+              <Crown className="w-3 h-3 text-white" />
             </motion.div>
-            <div className="flex-1">
-              <div className="flex items-center gap-2">
-                <span className={`text-xl font-black ${currentRank.color}`}>{currentRank.name}</span>
-                <Badge className={getRarityInfo(currentRank.rarity).class + " rounded-none text-xs"}>
-                  {getRarityInfo(currentRank.rarity).label}
-                </Badge>
-              </div>
-              <p className="text-sm text-muted-foreground">{currentRank.title}</p>
-              <p className="text-xs text-muted-foreground/70 mt-1">Текущий статус в семье</p>
+          </motion.div>
+          <div className="flex-1">
+            <div className="flex items-center gap-2">
+              <span className="text-xl mr-1">{currentRank.icon}</span>
+              <span className={`text-xl font-black ${currentRank.textColor}`}>{currentRank.name}</span>
+              <Badge className={getRarityInfo(currentRank.rarity).class + " rounded-none text-xs"}>
+                {getRarityInfo(currentRank.rarity).label}
+              </Badge>
             </div>
+            <p className="text-sm text-muted-foreground">{currentRank.title}</p>
+            <p className="text-xs text-muted-foreground/70 mt-1">Текущий статус в семье</p>
           </div>
         </div>
-      )}
+      </div>
 
       <CardContent className="p-4">
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
-          {mafiaRanks.map((rank, index) => {
-            const unlocked = isRankUnlocked(rank);
+          {MAFIA_RANKS.map((rank, index) => {
+            const unlocked = isRankUnlocked(rank, stats);
             const progress = getRankProgress(rank);
             const rarityInfo = getRarityInfo(rank.rarity);
             
@@ -416,7 +225,7 @@ export function MafiaAchievements({ gamesPlayed, wins, rating, gameResults }: Ma
                   
                   {/* Name */}
                   <div>
-                    <p className={`text-xs font-black leading-tight ${unlocked ? rank.color : 'text-muted-foreground/50'}`}>
+                    <p className={`text-xs font-black leading-tight ${unlocked ? rank.textColor : 'text-muted-foreground/50'}`}>
                       {rank.name}
                     </p>
                     <p className={`text-[9px] mt-0.5 leading-tight ${unlocked ? 'text-muted-foreground' : 'text-muted-foreground/40'}`}>
