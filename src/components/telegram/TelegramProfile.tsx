@@ -38,7 +38,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { AvatarSelector } from '@/components/AvatarSelector';
 import { toast } from 'sonner';
 import { convertFeeToRPS, formatRPSPoints } from '@/utils/rpsCalculations';
-import { getCurrentMafiaRank, getMafiaRankProgress, getRarityInfo, type MafiaRank } from '@/utils/mafiaRanks';
+import { getCurrentMafiaRank, getMafiaRankProgress, getRarityInfo, MAFIA_RANKS, type MafiaRank } from '@/utils/mafiaRanks';
 import { fixStorageUrl } from '@/utils/storageUtils';
 import { MafiaHierarchy } from './MafiaHierarchy';
 import { getRankProfileStyle } from './RankProfileStyles';
@@ -129,6 +129,10 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate, onUnre
   const [editingName, setEditingName] = useState(false);
   const [newPlayerName, setNewPlayerName] = useState("");
   const [unregistering, setUnregistering] = useState<string>("");
+  
+  // Test mode for previewing ranks
+  const [testRankIndex, setTestRankIndex] = useState<number | null>(null);
+  const isTestMode = testRankIndex !== null;
 
   // Инициализируем игрока только один раз
   useEffect(() => {
@@ -416,8 +420,15 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate, onUnre
     rating: player?.elo_rating || 100
   });
 
-  const mafiaRank = player ? getCurrentMafiaRank(getMafiaStats()) : null;
-  const rankProgress = player ? getMafiaRankProgress(getMafiaStats()) : null;
+  // Use test rank if in test mode, otherwise use real rank
+  const testRank = testRankIndex !== null ? MAFIA_RANKS[testRankIndex] : null;
+  const mafiaRank = isTestMode ? testRank : (player ? getCurrentMafiaRank(getMafiaStats()) : null);
+  const rankProgress = isTestMode ? {
+    current: testRank!,
+    next: testRankIndex !== null && testRankIndex < MAFIA_RANKS.length - 1 ? MAFIA_RANKS[testRankIndex + 1] : null,
+    progress: 65,
+    details: ['5/10 игр', '3/5 побед', '1200/1500 RPS']
+  } : (player ? getMafiaRankProgress(getMafiaStats()) : null);
   const rarityInfo = mafiaRank ? getRarityInfo(mafiaRank.rarity) : null;
 
   const getStatusBadge = (status: string) => {
@@ -516,6 +527,52 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate, onUnre
   const rankStyle = getRankProfileStyle(mafiaRank);
   return (
     <div className="space-y-4 pb-20 px-4 bg-transparent min-h-screen relative z-10">
+      {/* Test Mode Controls */}
+      <div className="fixed top-2 right-2 z-50 flex flex-col gap-2">
+        {isTestMode ? (
+          <div className="bg-background/90 brutal-border p-2 rounded space-y-2">
+            <div className="text-xs text-center font-bold text-syndikate-orange">ТЕСТ РАНГОВ</div>
+            <div className="flex gap-1">
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-7 w-7 p-0 brutal-border"
+                onClick={() => setTestRankIndex(Math.max(0, (testRankIndex || 0) - 1))}
+              >
+                ←
+              </Button>
+              <div className="text-xs text-center min-w-[80px] flex items-center justify-center">
+                {testRankIndex !== null ? MAFIA_RANKS[testRankIndex]?.name : ''}
+              </div>
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-7 w-7 p-0 brutal-border"
+                onClick={() => setTestRankIndex(Math.min(MAFIA_RANKS.length - 1, (testRankIndex || 0) + 1))}
+              >
+                →
+              </Button>
+            </div>
+            <Button
+              size="sm"
+              variant="destructive"
+              className="w-full h-6 text-xs brutal-border"
+              onClick={() => setTestRankIndex(null)}
+            >
+              Выйти
+            </Button>
+          </div>
+        ) : (
+          <Button
+            size="sm"
+            className="bg-purple-600 hover:bg-purple-700 brutal-border text-xs px-2 py-1 h-auto"
+            onClick={() => setTestRankIndex(0)}
+          >
+            🧪 Тест рангов
+          </Button>
+        )}
+      </div>
+
       {/* Header */}
       <div className="flex items-center gap-3 p-4">
         <div className="w-10 h-10 bg-syndikate-orange brutal-border flex items-center justify-center">
