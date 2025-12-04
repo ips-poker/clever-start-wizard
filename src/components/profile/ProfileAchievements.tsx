@@ -3,9 +3,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { 
   Trophy, Award, Target, Crown, Shield, Swords, Medal, Gem, Rocket, Gift, 
-  Star, Flame, Zap, Heart, Check, Lock
+  Star, Flame, Zap, Heart, Lock, Users, TrendingUp
 } from "lucide-react";
 import { motion } from "framer-motion";
+import { getPlayerLevel, LEVELS_ORDERED } from "@/utils/playerLevels";
 
 interface GameResult {
   position: number;
@@ -21,12 +22,14 @@ interface ProfileAchievementsProps {
 export function ProfileAchievements({ gamesPlayed, wins, rating, gameResults }: ProfileAchievementsProps) {
   const winRate = gamesPlayed > 0 ? (wins / gamesPlayed) * 100 : 0;
   const top3Count = gameResults.filter(r => r.position <= 3).length;
+  const currentLevel = getPlayerLevel(rating);
 
   const achievements = useMemo(() => [
+    // Игровые достижения
     { 
       id: 'first_game', 
-      name: 'Первая игра', 
-      description: 'Сыграйте первый турнир',
+      name: 'Инициация', 
+      description: 'Сыграйте первый турнир в Синдикате',
       icon: Gift, 
       unlocked: gamesPlayed >= 1,
       progress: Math.min(gamesPlayed, 1),
@@ -37,7 +40,7 @@ export function ProfileAchievements({ gamesPlayed, wins, rating, gameResults }: 
     },
     { 
       id: 'first_win', 
-      name: 'Первая победа', 
+      name: 'Первая кровь', 
       description: 'Выиграйте турнир',
       icon: Trophy, 
       unlocked: wins >= 1,
@@ -49,7 +52,7 @@ export function ProfileAchievements({ gamesPlayed, wins, rating, gameResults }: 
     },
     { 
       id: 'top3_first', 
-      name: 'На подиуме', 
+      name: 'В деле', 
       description: 'Финишируйте в топ-3',
       icon: Medal, 
       unlocked: top3Count >= 1,
@@ -73,7 +76,7 @@ export function ProfileAchievements({ gamesPlayed, wins, rating, gameResults }: 
     },
     { 
       id: 'consistent', 
-      name: 'Стабильность', 
+      name: 'Надёжный', 
       description: 'Топ-3 в 5 турнирах',
       icon: Star, 
       unlocked: top3Count >= 5,
@@ -85,7 +88,7 @@ export function ProfileAchievements({ gamesPlayed, wins, rating, gameResults }: 
     },
     { 
       id: 'champion', 
-      name: 'Чемпион', 
+      name: 'Авторитет', 
       description: 'Выиграйте 5 турниров',
       icon: Crown, 
       unlocked: wins >= 5,
@@ -97,7 +100,7 @@ export function ProfileAchievements({ gamesPlayed, wins, rating, gameResults }: 
     },
     { 
       id: 'pro_winrate', 
-      name: 'Профессионал', 
+      name: 'Профи', 
       description: 'Винрейт 50%+ (мин. 5 игр)',
       icon: Rocket, 
       unlocked: winRate >= 50 && gamesPlayed >= 5,
@@ -107,38 +110,51 @@ export function ProfileAchievements({ gamesPlayed, wins, rating, gameResults }: 
       bgColor: 'bg-pink-500/20',
       rarity: 'epic'
     },
+    // Ранговые достижения
     { 
-      id: 'rising_star', 
-      name: 'Восходящая звезда', 
-      description: 'Достигните 1200+ RPS',
-      icon: Zap, 
-      unlocked: rating >= 1200,
-      progress: Math.min(rating, 1200),
-      total: 1200,
-      color: 'from-lime-400 to-lime-600',
-      bgColor: 'bg-lime-500/20',
+      id: 'rank_soldier', 
+      name: 'Боец', 
+      description: 'Достигните ранга Боец (300+ RPS)',
+      icon: Swords, 
+      unlocked: rating >= 300,
+      progress: Math.min(rating, 300),
+      total: 300,
+      color: 'from-emerald-400 to-emerald-600',
+      bgColor: 'bg-emerald-500/20',
       rarity: 'rare'
     },
     { 
-      id: 'expert', 
-      name: 'Эксперт', 
-      description: 'Достигните 1600+ RPS',
-      icon: Flame, 
-      unlocked: rating >= 1600,
-      progress: Math.min(rating, 1600),
-      total: 1600,
-      color: 'from-red-400 to-red-600',
-      bgColor: 'bg-red-500/20',
+      id: 'rank_capo', 
+      name: 'Капо', 
+      description: 'Достигните ранга Капо (600+ RPS)',
+      icon: Target, 
+      unlocked: rating >= 600,
+      progress: Math.min(rating, 600),
+      total: 600,
+      color: 'from-blue-400 to-blue-600',
+      bgColor: 'bg-blue-500/20',
       rarity: 'epic'
     },
     { 
-      id: 'master', 
-      name: 'Мастер', 
-      description: 'Достигните 1800+ RPS',
+      id: 'rank_consigliere', 
+      name: 'Консильери', 
+      description: 'Достигните ранга Консильери (1000+ RPS)',
+      icon: Flame, 
+      unlocked: rating >= 1000,
+      progress: Math.min(rating, 1000),
+      total: 1000,
+      color: 'from-purple-400 to-purple-600',
+      bgColor: 'bg-purple-500/20',
+      rarity: 'epic'
+    },
+    { 
+      id: 'rank_don', 
+      name: 'Дон', 
+      description: 'Достигните ранга Дон (1500+ RPS)',
       icon: Gem, 
-      unlocked: rating >= 1800,
-      progress: Math.min(rating, 1800),
-      total: 1800,
+      unlocked: rating >= 1500,
+      progress: Math.min(rating, 1500),
+      total: 1500,
       color: 'from-amber-300 via-yellow-400 to-amber-500',
       bgColor: 'bg-amber-500/20',
       rarity: 'legendary'
@@ -147,7 +163,7 @@ export function ProfileAchievements({ gamesPlayed, wins, rating, gameResults }: 
       id: 'grinder', 
       name: 'Гриндер', 
       description: 'Сыграйте 25 турниров',
-      icon: Swords, 
+      icon: TrendingUp, 
       unlocked: gamesPlayed >= 25,
       progress: Math.min(gamesPlayed, 25),
       total: 25,
@@ -157,7 +173,7 @@ export function ProfileAchievements({ gamesPlayed, wins, rating, gameResults }: 
     },
     { 
       id: 'legend', 
-      name: 'Легенда', 
+      name: 'Крёстный отец', 
       description: 'Выиграйте 10 турниров',
       icon: Heart, 
       unlocked: wins >= 10,
@@ -187,11 +203,11 @@ export function ProfileAchievements({ gamesPlayed, wins, rating, gameResults }: 
 
   return (
     <Card className="brutal-border bg-card overflow-hidden">
-      <CardHeader className="border-b border-border bg-gradient-to-r from-yellow-500/10 via-transparent to-amber-500/10">
+      <CardHeader className="border-b border-border bg-gradient-to-r from-amber-500/10 via-transparent to-primary/10">
         <CardTitle className="flex items-center justify-between text-foreground">
           <div className="flex items-center gap-3">
             <motion.div 
-              className="p-2 bg-gradient-to-br from-yellow-500 to-amber-600 shadow-brutal"
+              className="p-2 bg-gradient-to-br from-amber-500 to-amber-600 shadow-brutal"
               animate={{ rotate: [0, 5, -5, 0] }}
               transition={{ duration: 4, repeat: Infinity }}
             >
@@ -199,19 +215,62 @@ export function ProfileAchievements({ gamesPlayed, wins, rating, gameResults }: 
             </motion.div>
             <div>
               <h3 className="text-lg font-bold uppercase tracking-wide">Достижения</h3>
-              <div className="h-0.5 w-16 bg-gradient-to-r from-yellow-400 to-primary mt-1" />
+              <div className="flex items-center gap-2 mt-1">
+                <span className="text-lg">{currentLevel.icon}</span>
+                <span className={`text-sm font-bold ${currentLevel.color}`}>{currentLevel.nameRu}</span>
+              </div>
             </div>
           </div>
           <div className="flex items-center gap-3">
             <Badge className="bg-primary/20 text-primary border border-primary/30 rounded-none font-bold">
               +{totalXP} XP
             </Badge>
-            <Badge className="bg-yellow-500 text-white rounded-none font-bold px-3">
+            <Badge className="bg-amber-500 text-white rounded-none font-bold px-3">
               {unlockedCount}/{achievements.length}
             </Badge>
           </div>
         </CardTitle>
       </CardHeader>
+
+      {/* Ранговая система */}
+      <div className="p-4 border-b border-border bg-secondary/30">
+        <h4 className="text-sm font-bold uppercase tracking-wide mb-3 text-muted-foreground">
+          Ранги Синдиката
+        </h4>
+        <div className="flex items-center justify-between gap-2 overflow-x-auto pb-2">
+          {LEVELS_ORDERED.map((level, index) => {
+            const isActive = currentLevel.level === level.level;
+            const isPassed = rating >= level.minRating;
+            
+            return (
+              <React.Fragment key={level.level}>
+                <motion.div 
+                  className={`flex flex-col items-center min-w-[70px] p-2 rounded-lg transition-all ${
+                    isActive 
+                      ? `bg-gradient-to-br ${level.bgColor} border border-primary/50` 
+                      : isPassed 
+                        ? 'opacity-60' 
+                        : 'opacity-30'
+                  }`}
+                  whileHover={{ scale: 1.05 }}
+                >
+                  <span className="text-2xl">{level.icon}</span>
+                  <span className={`text-xs font-bold mt-1 ${isPassed ? level.color : 'text-muted-foreground'}`}>
+                    {level.nameRu}
+                  </span>
+                  <span className="text-[10px] text-muted-foreground">
+                    {level.minRating}+
+                  </span>
+                </motion.div>
+                {index < LEVELS_ORDERED.length - 1 && (
+                  <div className={`h-0.5 w-4 flex-shrink-0 ${isPassed ? 'bg-primary' : 'bg-border'}`} />
+                )}
+              </React.Fragment>
+            );
+          })}
+        </div>
+      </div>
+
       <CardContent className="p-4">
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
           {achievements.map((achievement, index) => {
