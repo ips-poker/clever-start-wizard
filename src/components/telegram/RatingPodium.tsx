@@ -4,7 +4,7 @@ import { PlayerLevelBadge } from './PlayerLevelBadge';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { GlitchAvatarFrame } from '@/components/ui/glitch-avatar-frame';
 import { fixStorageUrl } from '@/utils/storageUtils';
-import { getCurrentMafiaRank, getRarityInfo, MafiaRank } from '@/utils/mafiaRanks';
+import { getEffectiveMafiaRank, getRarityInfo, MafiaRank } from '@/utils/mafiaRanks';
 
 interface Player {
   id: string;
@@ -13,6 +13,7 @@ interface Player {
   games_played: number;
   wins: number;
   avatar_url?: string;
+  manual_rank?: string | null;
 }
 
 interface RatingPodiumProps {
@@ -29,11 +30,12 @@ export const RatingPodium: React.FC<RatingPodiumProps> = ({ topPlayers, onPlayer
   };
 
   const getPlayerRank = (player: Player): MafiaRank => {
-    return getCurrentMafiaRank({
+    const effectiveRankData = getEffectiveMafiaRank({
       gamesPlayed: player.games_played,
       wins: player.wins,
       rating: player.elo_rating
-    });
+    }, player.manual_rank);
+    return effectiveRankData.rank;
   };
 
   const getRankStyles = (rank: MafiaRank) => {

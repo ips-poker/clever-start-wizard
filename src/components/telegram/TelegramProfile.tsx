@@ -45,6 +45,7 @@ import { fixStorageUrl } from '@/utils/storageUtils';
 import { MafiaHierarchy } from './MafiaHierarchy';
 import { getRankProfileStyle } from './RankProfileStyles';
 import { GlitchAvatarFrame } from '@/components/ui/glitch-avatar-frame';
+import { TelegramClanPanel } from './TelegramClanPanel';
 
 interface Player {
   id: string;
@@ -718,6 +719,18 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate, onUnre
         rating={player.elo_rating}
         manualRank={player.manual_rank}
       />
+
+      {/* Clan Management Section */}
+      {(() => {
+        // Проверяем, может ли игрок создавать клан (ранг Дон или выше)
+        const canCreateClan = mafiaRank?.id === 'don' || mafiaRank?.id === 'patriarch';
+        return (
+          <TelegramClanPanel 
+            canCreateClan={canCreateClan}
+            playerId={player.id}
+          />
+        );
+      })()}
 
       {/* Advanced Statistics */}
       <div className="grid grid-cols-2 gap-3">
