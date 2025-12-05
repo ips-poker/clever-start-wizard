@@ -519,7 +519,7 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate, onUnre
   // Get rank-specific profile styling
   const rankStyle = getRankProfileStyle(mafiaRank);
   return (
-    <div className="space-y-4 pb-20 px-4 pt-24 bg-transparent min-h-screen relative z-10">
+    <div className="space-y-4 pb-28 px-4 pt-24 bg-transparent min-h-screen relative z-10">
       {/* Header */}
       <div className="relative p-4 bg-syndikate-metal/90 brutal-border backdrop-blur-xl overflow-hidden">
         <div className="absolute inset-0 opacity-5">
