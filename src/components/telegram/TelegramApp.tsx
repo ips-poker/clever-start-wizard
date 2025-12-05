@@ -461,6 +461,30 @@ export const TelegramApp = () => {
 
   const renderHome = () => (
     <div className="space-y-4 pb-20 px-4 pt-24 bg-transparent min-h-screen relative z-10">
+      {/* Header */}
+      <div className="relative p-4 bg-syndikate-metal/90 brutal-border backdrop-blur-xl overflow-hidden">
+        <div className="absolute inset-0 opacity-5">
+          <div className="absolute inset-0" style={{
+            backgroundImage: 'linear-gradient(0deg, transparent 24%, rgba(255, 107, 0, 0.05) 25%, rgba(255, 107, 0, 0.05) 26%, transparent 27%, transparent 74%, rgba(255, 107, 0, 0.05) 75%, rgba(255, 107, 0, 0.05) 76%, transparent 77%, transparent), linear-gradient(90deg, transparent 24%, rgba(255, 107, 0, 0.05) 25%, rgba(255, 107, 0, 0.05) 26%, transparent 27%, transparent 74%, rgba(255, 107, 0, 0.05) 75%, rgba(255, 107, 0, 0.05) 76%, transparent 77%, transparent)',
+            backgroundSize: '50px 50px'
+          }}></div>
+        </div>
+        
+        <div className="flex items-center gap-3 relative z-10">
+          <div className="w-12 h-12 bg-syndikate-orange brutal-border flex items-center justify-center shadow-neon-orange">
+            <Home className="h-6 w-6 text-background" />
+          </div>
+          <div className="flex-1">
+            <h2 className="text-2xl font-display tracking-wider uppercase">
+              <GlitchText text="Главная" glitchIntensity="medium" />
+            </h2>
+            <p className="text-xs text-muted-foreground uppercase tracking-wide">
+              Добро пожаловать в клуб
+            </p>
+          </div>
+        </div>
+      </div>
+
       {/* Hero Card with Glitch Logo */}
       <div className="relative cursor-pointer group/hero" onClick={() => setActiveTab('about')}>
         <Card className="bg-syndikate-metal/80 brutal-border overflow-hidden relative transition-all duration-500 group-hover/hero:scale-[1.02] group-hover/hero:shadow-neon-orange backdrop-blur-xl">
@@ -1398,15 +1422,27 @@ export const TelegramApp = () => {
       
       {activeTab === 'tournaments' && (
         <div className="space-y-4 pb-20 px-4 pt-24 bg-transparent min-h-screen relative z-10">
-          <div className="flex items-center gap-3 p-4">
-            <div className="w-10 h-10 bg-syndikate-orange brutal-border flex items-center justify-center">
-              <Trophy className="h-5 w-5 text-background" />
+          {/* Header */}
+          <div className="relative p-4 bg-syndikate-metal/90 brutal-border backdrop-blur-xl overflow-hidden">
+            <div className="absolute inset-0 opacity-5">
+              <div className="absolute inset-0" style={{
+                backgroundImage: 'linear-gradient(0deg, transparent 24%, rgba(255, 107, 0, 0.05) 25%, rgba(255, 107, 0, 0.05) 26%, transparent 27%, transparent 74%, rgba(255, 107, 0, 0.05) 75%, rgba(255, 107, 0, 0.05) 76%, transparent 77%, transparent), linear-gradient(90deg, transparent 24%, rgba(255, 107, 0, 0.05) 25%, rgba(255, 107, 0, 0.05) 26%, transparent 27%, transparent 74%, rgba(255, 107, 0, 0.05) 75%, rgba(255, 107, 0, 0.05) 76%, transparent 77%, transparent)',
+                backgroundSize: '50px 50px'
+              }}></div>
             </div>
-            <div>
-              <h2 className="font-display text-3xl uppercase text-foreground tracking-wider">
-                <GlitchText text="ТУРНИРЫ" />
-              </h2>
-              <div className="h-[2px] w-16 bg-gradient-neon mt-2"></div>
+            
+            <div className="flex items-center gap-3 relative z-10">
+              <div className="w-12 h-12 bg-syndikate-orange brutal-border flex items-center justify-center shadow-neon-orange">
+                <Trophy className="h-6 w-6 text-background" />
+              </div>
+              <div className="flex-1">
+                <h2 className="text-2xl font-display tracking-wider uppercase">
+                  <GlitchText text="Турниры" glitchIntensity="medium" />
+                </h2>
+                <p className="text-xs text-muted-foreground uppercase tracking-wide">
+                  {tournaments.length} активных турниров
+                </p>
+              </div>
             </div>
           </div>
           
