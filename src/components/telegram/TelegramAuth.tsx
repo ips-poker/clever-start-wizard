@@ -235,11 +235,11 @@ export const TelegramAuth: React.FC<TelegramAuthProps> = ({ onAuthComplete }) =>
 
       <Card className="bg-syndikate-metal/90 brutal-border max-w-sm mx-4 backdrop-blur-xl relative z-10">
         <CardHeader className="text-center pb-3">
-          {/* Syndikate Logo */}
+          {/* SYNDICATE Logo */}
           <div className="w-32 h-32 mx-auto mb-4 border-4 border-syndikate-orange bg-syndikate-metal brutal-border flex items-center justify-center p-4 relative group">
             <img 
               src={syndikateLogo} 
-              alt="Syndikate Logo" 
+              alt="SYNDICATE Logo" 
               className="w-full h-full object-contain neon-orange"
             />
             {/* Corner Decorations */}
@@ -251,7 +251,7 @@ export const TelegramAuth: React.FC<TelegramAuthProps> = ({ onAuthComplete }) =>
           
           <CardTitle className="font-display text-3xl uppercase tracking-wider neon-orange mb-2">
             <GlitchText 
-              text="SYNDIKATE" 
+              text="SYNDICATE" 
               glitchIntensity="high" 
               glitchInterval={4500}
             />

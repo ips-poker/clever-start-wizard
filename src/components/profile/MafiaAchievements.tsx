@@ -103,7 +103,7 @@ export function MafiaAchievements({ gamesPlayed, wins, rating, gameResults }: Ma
               <Crown className="h-5 w-5 text-white" />
             </motion.div>
             <div>
-              <h3 className="text-lg font-bold uppercase tracking-wide">Иерархия Семьи</h3>
+              <h3 className="text-lg font-bold uppercase tracking-wide">Иерархия Синдиката</h3>
               <div className="h-0.5 w-20 bg-gradient-to-r from-red-500 to-purple-500 mt-1" />
             </div>
           </div>

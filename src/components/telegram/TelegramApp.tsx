@@ -500,7 +500,7 @@ export const TelegramApp = () => {
                   <div>
                     <h1 className="font-display text-2xl sm:text-3xl uppercase text-foreground tracking-wider drop-shadow-lg group-hover/hero:text-syndikate-orange transition-colors duration-300">
                       <GlitchText 
-                        text="SYNDIKATE" 
+                        text="SYNDICATE" 
                         glitchIntensity="high" 
                         glitchInterval={4500}
                       />
@@ -1018,11 +1018,11 @@ export const TelegramApp = () => {
           <CardContent className="p-6 relative z-10">
             <div className="flex items-center gap-4 mb-4">
               <div className="w-20 h-20 border-2 border-syndikate-orange bg-syndikate-concrete brutal-border flex items-center justify-center overflow-hidden shadow-lg group-hover:shadow-neon-orange transition-shadow duration-300 p-2">
-                <img src={syndikateLogo} alt="Syndikate Logo" className="w-full h-full object-contain neon-orange group-hover:scale-110 transition-transform duration-300" />
+                <img src={syndikateLogo} alt="SYNDICATE Logo" className="w-full h-full object-contain neon-orange group-hover:scale-110 transition-transform duration-300" />
               </div>
               <div className="flex-1">
                 <h1 className="font-display text-3xl uppercase text-foreground tracking-wider drop-shadow-lg group-hover:text-syndikate-orange transition-colors duration-300">
-                  <GlitchText text="SYNDIKATE" glitchIntensity="medium" glitchInterval={5000} />
+                  <GlitchText text="SYNDICATE" glitchIntensity="medium" glitchInterval={5000} />
                 </h1>
                 <div className="h-[2px] w-20 bg-gradient-neon mt-2 group-hover:w-28 transition-all duration-500"></div>
                 <p className="font-display text-sm uppercase tracking-wider text-syndikate-orange mt-2">
@@ -1184,7 +1184,7 @@ export const TelegramApp = () => {
                   <CheckCircle className="h-2.5 w-2.5 text-background" />
                 </div>
                 <p className="text-foreground text-xs leading-relaxed">
-                  <span className="font-bold uppercase">Важно:</span> Участвуя в турнирах Syndikate, вы автоматически соглашаетесь с данными правилами.
+                  <span className="font-bold uppercase">Важно:</span> Участвуя в турнирах SYNDICATE, вы автоматически соглашаетесь с данными правилами.
                 </p>
               </div>
             </div>
@@ -1623,7 +1623,7 @@ export const TelegramApp = () => {
                       </h3>
                     </div>
                     <p className="text-foreground/80 text-sm leading-relaxed">
-                      Абсолютно! Мы проводим спортивные турниры без денежных призов, что полностью соответствует российскому законодательству. Согласно ФЗ №244, запрещены только азартные игры с материальными выигрышами. Syndikate — это спортивное сообщество для развития навыков и общения.
+                      Абсолютно! Мы проводим спортивные турниры без денежных призов, что полностью соответствует российскому законодательству. Согласно ФЗ №244, запрещены только азартные игры с материальными выигрышами. SYNDICATE — это спортивное сообщество для развития навыков и общения.
                     </p>
                   </div>
                 </div>
@@ -1662,7 +1662,7 @@ export const TelegramApp = () => {
                       </h3>
                     </div>
                     <p className="text-foreground/80 text-sm leading-relaxed">
-                      Syndikate — это уникальное комьюнити единомышленников! Где еще вы найдете профессиональное оборудование, отличный сервис и возможность развивать покерные навыки в безопасной среде? Мы создаем атмосферу спортивного соревнования и дружеского общения.
+                      SYNDICATE — это уникальное комьюнити единомышленников! Где еще вы найдете профессиональное оборудование, отличный сервис и возможность развивать покерные навыки в безопасной среде? Мы создаем атмосферу спортивного соревнования и дружеского общения.
                     </p>
                   </div>
                 </div>
@@ -1701,7 +1701,7 @@ export const TelegramApp = () => {
                       </h3>
                     </div>
                     <p className="text-foreground/80 text-sm leading-relaxed">
-                      В Syndikate действует продуманная RPS-система для честного ранжирования участников. Рейтинговые очки начисляются за результативные выступления в турнирах и отражают исключительно игровое мастерство. Система мотивирует на спортивное развитие и определяет лучших игроков клуба.
+                      В SYNDICATE действует продуманная RPS-система для честного ранжирования участников. Рейтинговые очки начисляются за результативные выступления в турнирах и отражают исключительно игровое мастерство. Система мотивирует на спортивное развитие и определяет лучших игроков клуба.
                     </p>
                   </div>
                 </div>
@@ -1740,7 +1740,7 @@ export const TelegramApp = () => {
                       </h3>
                     </div>
                     <p className="text-foreground/80 text-sm leading-relaxed">
-                      Это эксклюзивные события для топовых игроков рейтинга Syndikate. Проводятся в особом формате с повышенным комфортом и сервисом. Участие строго по приглашениям на основе достижений в рейтинге. Место нельзя передать — только личное участие лучших игроков клуба.
+                      Это эксклюзивные события для топовых игроков рейтинга SYNDICATE. Проводятся в особом формате с повышенным комфортом и сервисом. Участие строго по приглашениям на основе достижений в рейтинге. Место нельзя передать — только личное участие лучших игроков клуба.
                     </p>
                   </div>
                 </div>
@@ -1880,7 +1880,7 @@ export const TelegramApp = () => {
                       </h3>
                     </div>
                     <p className="text-foreground/80 text-sm leading-relaxed">
-                      Это набор игровых фишек, который получает каждый участник турнира. Фишки — развлекательное оборудование без денежной стоимости, их нельзя обменять или вывести. Стандартный стартовый стек в Syndikate составляет 30,000 фишек для всех участников.
+                      Это набор игровых фишек, который получает каждый участник турнира. Фишки — развлекательное оборудование без денежной стоимости, их нельзя обменять или вывести. Стандартный стартовый стек в SYNDICATE составляет 30,000 фишек для всех участников.
                     </p>
                   </div>
                 </div>

@@ -82,7 +82,7 @@ export function Hero() {
             <div className="space-y-4">
               <h1 className="font-display text-6xl md:text-7xl lg:text-8xl uppercase leading-none tracking-tight">
                 <span className="block text-foreground">
-                  <GlitchText text="SYNDIKATE" glitchIntensity="medium" />
+                  <GlitchText text="SYNDICATE" glitchIntensity="medium" />
                 </span>
                 <span className="block neon-orange animate-neon-pulse mt-2">
                   <TypewriterText text="POKER CLUB" speed={100} delay={1200} />
@@ -180,7 +180,7 @@ export function Hero() {
                       <div className="relative w-full h-full">
                         <img 
                           src={syndikateLogo} 
-                          alt="Syndikate Logo" 
+                          alt="SYNDICATE Logo" 
                           className="relative z-10 w-full h-full object-contain neon-orange"
                         />
                         {isLogoGlitching && (

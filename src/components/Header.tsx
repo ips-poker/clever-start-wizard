@@ -44,7 +44,7 @@ export function Header() {
           >
             <div className="relative">
               <div className="w-12 h-12 border-2 border-syndikate-orange bg-syndikate-metal brutal-border flex items-center justify-center transition-all group-hover:shadow-neon-orange p-1">
-                <img src={syndikateLogo} alt="Syndikate Logo" className="w-full h-full object-contain" />
+                <img src={syndikateLogo} alt="SYNDICATE Logo" className="w-full h-full object-contain" />
               </div>
               {/* Corner accents */}
               <div className="absolute -top-1 -left-1 w-3 h-3 border-l-2 border-t-2 border-syndikate-red opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -54,7 +54,7 @@ export function Header() {
             </div>
             <div>
               <span className="font-display text-2xl uppercase tracking-wider text-foreground">
-                Syndikate
+                SYNDICATE
               </span>
               <div className="h-[1px] w-0 group-hover:w-full bg-syndikate-orange transition-all duration-300" />
             </div>

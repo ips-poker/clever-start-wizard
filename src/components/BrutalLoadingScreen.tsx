@@ -148,7 +148,7 @@ export const BrutalLoadingScreen = ({ onLoadingComplete, enableSounds: initialEn
                 <div className="absolute inset-0 brutal-border bg-syndikate-metal/50 backdrop-blur-sm flex items-center justify-center p-8">
                   <motion.img
                     src={syndikateLogo}
-                    alt="Syndikate Logo"
+                    alt="SYNDICATE Logo"
                     animate={{ 
                       filter: [
                         "drop-shadow(0 0 20px rgba(255, 135, 31, 0.8)) drop-shadow(0 0 40px rgba(255, 135, 31, 0.4))",
@@ -181,7 +181,7 @@ export const BrutalLoadingScreen = ({ onLoadingComplete, enableSounds: initialEn
               className="text-center space-y-2"
             >
               <h1 className="font-display text-5xl md:text-6xl uppercase tracking-wider text-foreground">
-                SYNDIKATE
+                SYNDICATE
               </h1>
               <div className="flex items-center justify-center gap-3">
                 <div className="h-[2px] w-12 bg-gradient-neon" />

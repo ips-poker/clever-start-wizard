@@ -33,7 +33,7 @@ export function Footer() {
           <div className="space-y-4 text-center sm:text-left">
             <div className="flex items-center justify-center sm:justify-start space-x-2">
               <div className="w-8 h-8 bg-syndikate-metal brutal-border flex items-center justify-center p-1">
-                <img src={syndikateLogo} alt="Syndikate Logo" className="w-full h-full object-contain" />
+                <img src={syndikateLogo} alt="SYNDICATE Logo" className="w-full h-full object-contain" />
               </div>
               <div>
                 <div className="font-bold text-base lg:text-lg uppercase tracking-wider">{getContent('brand_name', 'IPS')}</div>
