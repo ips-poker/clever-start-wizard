@@ -5,12 +5,14 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import { Crown, Users, Plus, LogOut, Loader2 } from 'lucide-react';
+import { Crown, Users, Plus, LogOut, Loader2, Shield, Stamp, Check, ChevronLeft, ChevronRight, Mail, UserPlus } from 'lucide-react';
 import { ClanEmblemDisplay } from '@/components/clan/ClanEmblemDisplay';
-import { useClanSystem, ClanMember } from '@/hooks/useClanSystem';
-import { CLAN_HIERARCHY } from '@/utils/clanEmblems';
+import { ClanEmblemSVG, ClanSealSVG } from '@/components/clan/ClanEmblemSVG';
+import { useClanSystem, ClanMember, ClanInvitation } from '@/hooks/useClanSystem';
+import { CLAN_HIERARCHY, CLAN_EMBLEMS, CLAN_SEALS } from '@/utils/clanEmblems';
 import { fixStorageUrl } from '@/utils/storageUtils';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 
 interface TelegramClanPanelProps {
   canCreateClan: boolean;
@@ -32,18 +34,26 @@ export function TelegramClanPanel({ canCreateClan, playerId }: TelegramClanPanel
     myClan,
     myMembership,
     isDon,
+    pendingInvitations,
     createClan,
     leaveClan,
-    loadClanMembers
+    loadClanMembers,
+    acceptInvitation,
+    declineInvitation
   } = useClanSystem();
 
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [createStep, setCreateStep] = useState(1);
   const [clanName, setClanName] = useState('');
   const [clanDescription, setClanDescription] = useState('');
+  const [selectedEmblem, setSelectedEmblem] = useState(1);
+  const [selectedSeal, setSelectedSeal] = useState(1);
   const [creating, setCreating] = useState(false);
   const [showMembers, setShowMembers] = useState(false);
   const [members, setMembers] = useState<ClanMember[]>([]);
   const [loadingMembers, setLoadingMembers] = useState(false);
+  const [showInvitations, setShowInvitations] = useState(false);
+  const [processingInvite, setProcessingInvite] = useState<string | null>(null);
 
   const handleCreateClan = async () => {
     if (!clanName.trim()) {
@@ -53,17 +63,23 @@ export function TelegramClanPanel({ canCreateClan, playerId }: TelegramClanPanel
 
     setCreating(true);
     try {
-      // Используем дефолтные emblemId=1 и sealId=1
-      await createClan(clanName.trim(), 1, 1, clanDescription.trim() || undefined);
+      await createClan(clanName.trim(), selectedEmblem, selectedSeal, clanDescription.trim() || undefined);
       toast.success('Клан создан!');
       setShowCreateModal(false);
-      setClanName('');
-      setClanDescription('');
+      resetCreateForm();
     } catch (error: any) {
       toast.error(error.message || 'Ошибка создания клана');
     } finally {
       setCreating(false);
     }
+  };
+
+  const resetCreateForm = () => {
+    setCreateStep(1);
+    setClanName('');
+    setClanDescription('');
+    setSelectedEmblem(1);
+    setSelectedSeal(1);
   };
 
   const handleLeaveClan = async () => {
@@ -89,6 +105,120 @@ export function TelegramClanPanel({ canCreateClan, playerId }: TelegramClanPanel
       }
     }
   };
+
+  const handleAcceptInvitation = async (invitation: ClanInvitation) => {
+    setProcessingInvite(invitation.id);
+    try {
+      await acceptInvitation(invitation.id, invitation.clan_id);
+      toast.success('Вы вступили в клан!');
+      setShowInvitations(false);
+    } catch (error) {
+      toast.error('Ошибка принятия приглашения');
+    } finally {
+      setProcessingInvite(null);
+    }
+  };
+
+  const handleDeclineInvitation = async (invitation: ClanInvitation) => {
+    setProcessingInvite(invitation.id);
+    try {
+      await declineInvitation(invitation.id);
+      toast.success('Приглашение отклонено');
+    } catch (error) {
+      toast.error('Ошибка отклонения приглашения');
+    } finally {
+      setProcessingInvite(null);
+    }
+  };
+
+  // Панель приглашений
+  if (pendingInvitations.length > 0 && !myClan) {
+    return (
+      <>
+        <Card className="bg-gradient-to-br from-emerald-900/30 to-cyan-900/30 brutal-border border-emerald-500/50 overflow-hidden">
+          <CardContent className="p-4 space-y-3">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-cyan-500 rounded-full flex items-center justify-center brutal-border">
+                <Mail className="h-5 w-5 text-background" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-base font-display text-emerald-400">Приглашения в кланы</h3>
+                <p className="text-xs text-muted-foreground">
+                  {pendingInvitations.length} приглашение(й)
+                </p>
+              </div>
+            </div>
+            
+            <Button
+              onClick={() => setShowInvitations(true)}
+              className="w-full bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 brutal-border font-bold"
+            >
+              <UserPlus className="h-4 w-4 mr-2" />
+              Просмотреть
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* Invitations Dialog */}
+        <Dialog open={showInvitations} onOpenChange={setShowInvitations}>
+          <DialogContent className="bg-syndikate-metal border-emerald-500/50 max-w-sm">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-emerald-400">
+                <Mail className="h-5 w-5" />
+                Приглашения
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-3 max-h-60 overflow-y-auto">
+              {pendingInvitations.map((invitation) => (
+                <div key={invitation.id} className="p-3 bg-background/30 rounded brutal-border space-y-2">
+                  <div className="flex items-center gap-2">
+                    {invitation.clan && (
+                      <ClanEmblemDisplay
+                        emblemId={invitation.clan.emblem_id}
+                        sealId={invitation.clan.seal_id}
+                        clanName={invitation.clan.name}
+                        size="sm"
+                        showName={false}
+                      />
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium truncate">{invitation.clan?.name || 'Неизвестный клан'}</div>
+                      <div className="text-xs text-muted-foreground">
+                        Рейтинг: {invitation.clan?.total_rating || 0} RPS
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleDeclineInvitation(invitation)}
+                      disabled={processingInvite === invitation.id}
+                      className="flex-1 brutal-border border-red-500/30 text-red-400 hover:bg-red-500/10"
+                    >
+                      Отклонить
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={() => handleAcceptInvitation(invitation)}
+                      disabled={processingInvite === invitation.id}
+                      className="flex-1 bg-gradient-to-r from-emerald-500 to-cyan-500 brutal-border"
+                    >
+                      {processingInvite === invitation.id ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        'Принять'
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </DialogContent>
+        </Dialog>
+      </>
+    );
+  }
 
   // Если у игрока уже есть клан
   if (myClan && myMembership) {
@@ -158,7 +288,7 @@ export function TelegramClanPanel({ canCreateClan, playerId }: TelegramClanPanel
 
         {/* Members Dialog */}
         <Dialog open={showMembers} onOpenChange={setShowMembers}>
-          <DialogContent className="bg-syndikate-metal border-amber-500/50">
+          <DialogContent className="bg-syndikate-metal border-amber-500/50 max-w-sm">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2 text-amber-400">
                 <Users className="h-5 w-5" />
@@ -227,68 +357,194 @@ export function TelegramClanPanel({ canCreateClan, playerId }: TelegramClanPanel
           </CardContent>
         </Card>
 
-        {/* Create Clan Modal */}
-        <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
-          <DialogContent className="bg-syndikate-metal border-cyan-400/50">
+        {/* Multi-Step Create Clan Modal */}
+        <Dialog open={showCreateModal} onOpenChange={(open) => { setShowCreateModal(open); if (!open) resetCreateForm(); }}>
+          <DialogContent className="bg-syndikate-metal border-cyan-400/50 max-w-sm">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2 text-cyan-400">
                 <Crown className="h-5 w-5" />
                 Создание клана
               </DialogTitle>
               <DialogDescription>
-                Станьте Доном своей собственной семьи
+                Шаг {createStep} из 4
               </DialogDescription>
             </DialogHeader>
             
-            <div className="space-y-4">
-              <div>
-                <label className="text-sm font-medium text-foreground mb-1 block">
-                  Название клана
-                </label>
-                <Input
-                  value={clanName}
-                  onChange={(e) => setClanName(e.target.value)}
-                  placeholder="Введите название..."
-                  className="brutal-border"
-                  maxLength={30}
+            {/* Progress bar */}
+            <div className="flex gap-1 mb-2">
+              {[1, 2, 3, 4].map((s) => (
+                <div
+                  key={s}
+                  className={cn(
+                    'flex-1 h-1 rounded-full transition-colors',
+                    s <= createStep ? 'bg-cyan-400' : 'bg-muted'
+                  )}
                 />
-              </div>
-              
-              <div>
-                <label className="text-sm font-medium text-foreground mb-1 block">
-                  Описание (опционально)
-                </label>
-                <Input
-                  value={clanDescription}
-                  onChange={(e) => setClanDescription(e.target.value)}
-                  placeholder="Краткое описание клана..."
-                  className="brutal-border"
-                  maxLength={100}
-                />
-              </div>
+              ))}
             </div>
 
-            <DialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => setShowCreateModal(false)}
-                className="brutal-border"
-              >
-                Отмена
-              </Button>
-              <Button
-                onClick={handleCreateClan}
-                disabled={creating || !clanName.trim()}
-                className="bg-gradient-to-r from-cyan-500 to-purple-500 brutal-border"
-              >
-                {creating ? (
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                ) : (
-                  <Crown className="h-4 w-4 mr-2" />
-                )}
-                Создать
-              </Button>
-            </DialogFooter>
+            {/* Step 1: Name & Description */}
+            {createStep === 1 && (
+              <div className="space-y-4">
+                <div className="text-center mb-4">
+                  <Crown className="w-10 h-10 mx-auto text-amber-500 mb-2" />
+                  <p className="text-sm text-muted-foreground">Дайте имя своей семье</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-foreground mb-1 block">Название клана</label>
+                  <Input
+                    value={clanName}
+                    onChange={(e) => setClanName(e.target.value)}
+                    placeholder="Введите название..."
+                    className="brutal-border"
+                    maxLength={30}
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">{clanName.length}/30</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-foreground mb-1 block">Описание (опционально)</label>
+                  <Input
+                    value={clanDescription}
+                    onChange={(e) => setClanDescription(e.target.value)}
+                    placeholder="Девиз или описание..."
+                    className="brutal-border"
+                    maxLength={100}
+                  />
+                </div>
+                <Button
+                  onClick={() => setCreateStep(2)}
+                  disabled={!clanName.trim()}
+                  className="w-full bg-gradient-to-r from-cyan-500 to-purple-500 brutal-border"
+                >
+                  Далее: Выбрать герб
+                  <ChevronRight className="h-4 w-4 ml-2" />
+                </Button>
+              </div>
+            )}
+
+            {/* Step 2: Emblem */}
+            {createStep === 2 && (
+              <div className="space-y-4">
+                <div className="text-center mb-2">
+                  <Shield className="w-8 h-8 mx-auto text-cyan-400 mb-2" />
+                  <p className="text-sm text-muted-foreground">Выберите герб семьи</p>
+                </div>
+                <div className="grid grid-cols-5 gap-2">
+                  {CLAN_EMBLEMS.map((emblem) => (
+                    <button
+                      key={emblem.id}
+                      onClick={() => setSelectedEmblem(emblem.id)}
+                      className={cn(
+                        'relative p-2 rounded-lg border-2 transition-all',
+                        selectedEmblem === emblem.id
+                          ? 'border-cyan-400 bg-cyan-400/10'
+                          : 'border-border hover:border-cyan-400/50'
+                      )}
+                    >
+                      <ClanEmblemSVG emblemId={emblem.id} size={36} />
+                      {selectedEmblem === emblem.id && (
+                        <div className="absolute -top-1 -right-1 w-4 h-4 bg-cyan-400 rounded-full flex items-center justify-center">
+                          <Check className="w-3 h-3 text-background" />
+                        </div>
+                      )}
+                    </button>
+                  ))}
+                </div>
+                <div className="text-center text-xs text-muted-foreground">
+                  {CLAN_EMBLEMS.find(e => e.id === selectedEmblem)?.nameRu}
+                </div>
+                <div className="flex gap-2">
+                  <Button variant="outline" onClick={() => setCreateStep(1)} className="flex-1 brutal-border">
+                    <ChevronLeft className="h-4 w-4 mr-1" />
+                    Назад
+                  </Button>
+                  <Button onClick={() => setCreateStep(3)} className="flex-1 bg-gradient-to-r from-cyan-500 to-purple-500 brutal-border">
+                    Далее
+                    <ChevronRight className="h-4 w-4 ml-1" />
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Step 3: Seal */}
+            {createStep === 3 && (
+              <div className="space-y-4">
+                <div className="text-center mb-2">
+                  <Stamp className="w-8 h-8 mx-auto text-cyan-400 mb-2" />
+                  <p className="text-sm text-muted-foreground">Выберите печать семьи</p>
+                </div>
+                <div className="grid grid-cols-5 gap-2">
+                  {CLAN_SEALS.map((seal) => (
+                    <button
+                      key={seal.id}
+                      onClick={() => setSelectedSeal(seal.id)}
+                      className={cn(
+                        'relative p-2 rounded-lg border-2 transition-all',
+                        selectedSeal === seal.id
+                          ? 'border-cyan-400 bg-cyan-400/10'
+                          : 'border-border hover:border-cyan-400/50'
+                      )}
+                    >
+                      <ClanSealSVG sealId={seal.id} size={36} />
+                      {selectedSeal === seal.id && (
+                        <div className="absolute -top-1 -right-1 w-4 h-4 bg-cyan-400 rounded-full flex items-center justify-center">
+                          <Check className="w-3 h-3 text-background" />
+                        </div>
+                      )}
+                    </button>
+                  ))}
+                </div>
+                <div className="text-center text-xs text-muted-foreground">
+                  {CLAN_SEALS.find(s => s.id === selectedSeal)?.nameRu}
+                </div>
+                <div className="flex gap-2">
+                  <Button variant="outline" onClick={() => setCreateStep(2)} className="flex-1 brutal-border">
+                    <ChevronLeft className="h-4 w-4 mr-1" />
+                    Назад
+                  </Button>
+                  <Button onClick={() => setCreateStep(4)} className="flex-1 bg-gradient-to-r from-cyan-500 to-purple-500 brutal-border">
+                    Предпросмотр
+                    <ChevronRight className="h-4 w-4 ml-1" />
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Step 4: Preview */}
+            {createStep === 4 && (
+              <div className="space-y-4">
+                <div className="text-center">
+                  <p className="text-sm text-muted-foreground mb-4">Ваш клан готов!</p>
+                  <ClanEmblemDisplay
+                    emblemId={selectedEmblem}
+                    sealId={selectedSeal}
+                    clanName={clanName}
+                    size="lg"
+                  />
+                  {clanDescription && (
+                    <p className="mt-3 text-xs text-muted-foreground italic">"{clanDescription}"</p>
+                  )}
+                </div>
+                <div className="flex gap-2">
+                  <Button variant="outline" onClick={() => setCreateStep(3)} className="flex-1 brutal-border">
+                    <ChevronLeft className="h-4 w-4 mr-1" />
+                    Назад
+                  </Button>
+                  <Button
+                    onClick={handleCreateClan}
+                    disabled={creating}
+                    className="flex-1 bg-gradient-to-r from-cyan-500 to-purple-500 brutal-border"
+                  >
+                    {creating ? (
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    ) : (
+                      <Crown className="h-4 w-4 mr-2" />
+                    )}
+                    Создать
+                  </Button>
+                </div>
+              </div>
+            )}
           </DialogContent>
         </Dialog>
       </>

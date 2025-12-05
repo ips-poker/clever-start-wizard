@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
-import { getCurrentMafiaRank } from '@/utils/mafiaRanks';
+import { getEffectiveMafiaRank } from '@/utils/mafiaRanks';
 
 export interface Clan {
   id: string;
@@ -75,13 +75,12 @@ export function useClanSystem() {
 
     setPlayerData(data);
     
-    // Проверяем, является ли игрок Доном по рангу (don или patriarch)
+    // Проверяем, является ли игрок Доном по рангу (don или patriarch), учитываем manual_rank
     if (data) {
-      const rank = getCurrentMafiaRank({
-        gamesPlayed: data.games_played,
-        wins: data.wins,
-        rating: data.elo_rating
-      });
+      const { rank } = getEffectiveMafiaRank(
+        { gamesPlayed: data.games_played, wins: data.wins, rating: data.elo_rating },
+        data.manual_rank
+      );
       const isDonRank = rank.id === 'don' || rank.id === 'patriarch';
       setIsDon(isDonRank);
     }
