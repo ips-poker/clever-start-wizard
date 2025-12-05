@@ -36,12 +36,16 @@ import {
   Trash2,
   BarChart3,
   DollarSign,
-  AlertCircle
+  AlertCircle,
+  Mic,
+  Send,
+  Layers
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { calculateTotalRPSPool, convertFeeToRPS, formatRPSPoints, formatParticipationFee } from "@/utils/rpsCalculations";
 import { LegalTerminologyInfo } from "./LegalTerminologyInfo";
+import syndikateLogo from "@/assets/syndikate-logo-main.png";
 
 interface BlindLevel {
   level: number;
@@ -301,509 +305,623 @@ export function TournamentCreationModal({
     let score = 50;
     const chipRatio = formData.starting_chips / Math.max(formData.participation_fee, 1);
     
-    // Чем больше фишек на взнос, тем лучше
     if (chipRatio >= 100) score += 30;
     else if (chipRatio >= 75) score += 20;
     else if (chipRatio >= 50) score += 10;
     else score -= 10;
     
-    // Количество игроков
     if (formData.max_players >= 20) score += 10;
     else if (formData.max_players >= 10) score += 5;
     
-    // Формат турнира
     if (formData.tournament_format === 'freezeout') score += 5;
     
     return Math.min(Math.max(score, 0), 100);
   };
 
+  const getScoreColor = (score: number) => {
+    if (score >= 80) return 'text-green-400';
+    if (score >= 60) return 'text-primary';
+    if (score >= 40) return 'text-yellow-400';
+    return 'text-red-400';
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Trophy className="w-5 h-5 text-primary" />
-            {tournament ? 'Редактировать мероприятие' : 'Создание нового мероприятия'}
-          </DialogTitle>
-          <DialogDescription>
-            Настройте параметры нового покерного турнира
-          </DialogDescription>
-        </DialogHeader>
+      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto bg-background border-2 border-border p-0">
+        {/* Industrial texture overlay */}
+        <div className="absolute inset-0 opacity-5 pointer-events-none">
+          <div className="absolute inset-0" style={{
+            backgroundImage: `repeating-linear-gradient(
+              0deg,
+              transparent,
+              transparent 2px,
+              hsl(var(--syndikate-metal-light)) 2px,
+              hsl(var(--syndikate-metal-light)) 4px
+            )`
+          }} />
+        </div>
 
-        {errors.length > 0 && (
-          <Alert variant="destructive">
-            <AlertTriangle className="h-4 w-4" />
-            <AlertDescription>
-              <ul className="list-disc list-inside">
-                {errors.map((error, index) => (
-                  <li key={index}>{error}</li>
-                ))}
-              </ul>
-            </AlertDescription>
-          </Alert>
-        )}
+        {/* Header with logo */}
+        <div className="relative border-b border-border bg-secondary/50 p-6">
+          <div className="flex items-center gap-4">
+            <img src={syndikateLogo} alt="Syndikate" className="h-10 w-auto" />
+            <div>
+              <DialogTitle className="text-2xl font-display uppercase tracking-wider text-foreground flex items-center gap-2">
+                <Trophy className="w-6 h-6 text-primary" />
+                {tournament ? 'Редактировать мероприятие' : 'Создание турнира'}
+              </DialogTitle>
+              <DialogDescription className="text-muted-foreground mt-1">
+                Настройте параметры покерного турнира
+              </DialogDescription>
+            </div>
+          </div>
+          
+          {/* Neon accent line */}
+          <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-primary to-transparent" />
+        </div>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-5 bg-gray-100">
-            <TabsTrigger value="basic" className="data-[state=active]:bg-white">Основное</TabsTrigger>
-            <TabsTrigger value="structure" className="data-[state=active]:bg-white">Структура</TabsTrigger>
-            <TabsTrigger value="blinds" className="data-[state=active]:bg-white">Блайнды</TabsTrigger>
-            <TabsTrigger value="analysis" className="data-[state=active]:bg-white">Анализ</TabsTrigger>
-            <TabsTrigger value="advanced" className="data-[state=active]:bg-white">Дополнительно</TabsTrigger>
-          </TabsList>
+        <div className="relative p-6">
+          {errors.length > 0 && (
+            <Alert className="mb-6 bg-destructive/10 border-destructive/50 text-destructive">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription>
+                <ul className="list-disc list-inside">
+                  {errors.map((error, index) => (
+                    <li key={index}>{error}</li>
+                  ))}
+                </ul>
+              </AlertDescription>
+            </Alert>
+          )}
 
-          <TabsContent value="basic" className="space-y-6">
-            <Card className="bg-white/80 border-gray-200">
-              <CardHeader>
-                <CardTitle className="text-lg font-medium text-gray-800">Основные настройки</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="name">Название мероприятия *</Label>
-                    <Input
-                      id="name"
-                      placeholder="Например: EPC Weekly Tournament"
-                      value={formData.name}
-                      onChange={(e) => updateFormData('name', e.target.value)}
-                    />
-                  </div>
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <TabsList className="grid w-full grid-cols-5 bg-secondary/50 border border-border p-1 mb-6">
+              <TabsTrigger 
+                value="basic" 
+                className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground font-medium uppercase text-xs tracking-wide"
+              >
+                Основное
+              </TabsTrigger>
+              <TabsTrigger 
+                value="structure" 
+                className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground font-medium uppercase text-xs tracking-wide"
+              >
+                Структура
+              </TabsTrigger>
+              <TabsTrigger 
+                value="blinds" 
+                className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground font-medium uppercase text-xs tracking-wide"
+              >
+                Блайнды
+              </TabsTrigger>
+              <TabsTrigger 
+                value="analysis" 
+                className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground font-medium uppercase text-xs tracking-wide"
+              >
+                Анализ
+              </TabsTrigger>
+              <TabsTrigger 
+                value="advanced" 
+                className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground font-medium uppercase text-xs tracking-wide"
+              >
+                Настройки
+              </TabsTrigger>
+            </TabsList>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="start_time">Время начала *</Label>
-                    <Input
-                      id="start_time"
-                      type="datetime-local"
-                      value={formData.start_time}
-                      onChange={(e) => updateFormData('start_time', e.target.value)}
-                    />
-                  </div>
-
-                  <div className="md:col-span-2 space-y-2">
-                    <Label htmlFor="description">Описание</Label>
-                    <Textarea
-                      id="description"
-                      placeholder="Описание мероприятия..."
-                      value={formData.description}
-                      onChange={(e) => updateFormData('description', e.target.value)}
-                      rows={3}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="max_players">Максимальное количество участников *</Label>
-                    <Input
-                      id="max_players"
-                      type="number"
-                      min="2"
-                      max="200"
-                      value={formData.max_players}
-                      onChange={(e) => updateFormData('max_players', parseInt(e.target.value) || 9)}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="participation_fee">Организационный взнос *</Label>
-                    <Input
-                      id="participation_fee"
-                      type="number"
-                      min="0"
-                      step="100"
-                      value={formData.participation_fee}
-                      onChange={(e) => updateFormData('participation_fee', parseInt(e.target.value) || 1000)}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="starting_chips">Стартовый игровой инвентарь (фишки) *</Label>
-                    <Input
-                      id="starting_chips"
-                      type="number"
-                      min="1000"
-                      step="1000"
-                      value={formData.starting_chips}
-                      onChange={(e) => updateFormData('starting_chips', parseInt(e.target.value) || 10000)}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="tournament_format">Формат турнира</Label>
-                    <Select 
-                      value={formData.tournament_format} 
-                      onValueChange={(value) => updateFormData('tournament_format', value)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Выберите формат" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {TOURNAMENT_FORMATS.map((format) => (
-                          <SelectItem key={format.value} value={format.value}>
-                            <div className="flex items-center gap-2">
-                              <span>{format.label}</span>
-                              <Badge variant="outline" className="text-xs">
-                                {format.category}
-                              </Badge>
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {(formData.tournament_format === 'reentry' || formData.tournament_format === 'reentry-additional') && (
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="reentry_fee">Стоимость повторного входа</Label>
-                        <Input
-                          id="reentry_fee"
-                          type="number"
-                          min="0"
-                          step="100"
-                          value={formData.reentry_fee}
-                          onChange={(e) => updateFormData('reentry_fee', parseInt(e.target.value) || 1000)}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="reentry_chips">Фишки при повторном входе</Label>
-                        <Input
-                          id="reentry_chips"
-                          type="number"
-                          min="1000"
-                          step="1000"
-                          value={formData.reentry_chips}
-                          onChange={(e) => updateFormData('reentry_chips', parseInt(e.target.value) || 10000)}
-                        />
-                      </div>
-                    </div>
-                  )}
-
-                  {(formData.tournament_format === 'additional' || formData.tournament_format === 'reentry-additional') && (
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="additional_fee">Стоимость дополнительного набора</Label>
-                        <Input
-                          id="additional_fee"
-                          type="number"
-                          min="0"
-                          step="100"
-                          value={formData.additional_fee}
-                          onChange={(e) => updateFormData('additional_fee', parseInt(e.target.value) || 1000)}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="additional_chips">Фишки дополнительного набора</Label>
-                        <Input
-                          id="additional_chips"
-                          type="number"
-                          min="1000"
-                          step="1000"
-                          value={formData.additional_chips}
-                          onChange={(e) => updateFormData('additional_chips', parseInt(e.target.value) || 15000)}
-                        />
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="structure" className="space-y-6">
-            <Card className="bg-white/80 border-gray-200">
-              <CardHeader>
-                <CardTitle className="text-lg font-medium text-gray-800 flex items-center gap-2">
-                  <Settings className="w-5 h-5" />
-                  Структура блайндов
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid grid-cols-2 gap-4">
-                  <Card className="bg-blue-50/50 border-blue-200/50 hover:bg-blue-50 transition-colors cursor-pointer">
-                    <CardContent className="p-4">
-                      <div className="space-y-3">
-                        <div className="flex items-center gap-2">
-                          <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
-                            <CheckCircle className="w-4 h-4 text-white" />
-                          </div>
-                          <h3 className="font-medium text-gray-800">Автоматически создать стандартную структуру блайндов</h3>
-                        </div>
-                        <div className="space-y-2 text-sm text-gray-600">
-                          <div className="flex items-center gap-2">
-                            <CheckCircle className="w-4 h-4 text-green-600" />
-                            <span>Будет создана структура из 15 уровней</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <CheckCircle className="w-4 h-4 text-green-600" />
-                            <span>Перерывы на 4, 8, 12 уровнях</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <CheckCircle className="w-4 h-4 text-green-600" />
-                            <span>Автоматическая адаптация под формат турнира</span>
-                          </div>
-                        </div>
-                        <Button 
-                          className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-                          onClick={() => setAutoCreateBlinds(true)}
-                          variant={autoCreateBlinds ? "default" : "outline"}
-                        >
-                          Создать автоматически
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <Card className="bg-amber-50/50 border-amber-200/50 hover:bg-amber-50 transition-colors cursor-pointer">
-                    <CardContent className="p-4">
-                      <div className="space-y-3">
-                        <div className="flex items-center gap-2">
-                          <div className="w-8 h-8 bg-amber-500 rounded-full flex items-center justify-center">
-                            <Edit className="w-4 h-4 text-white" />
-                          </div>
-                          <h3 className="font-medium text-gray-800">Структура блайндов</h3>
-                        </div>
-                        <div className="text-sm text-gray-600">
-                          <p>Настроить структуру блайндов вручную после создания турнира</p>
-                        </div>
-                        <div className="text-sm text-gray-600">
-                          <p>После создания турнира перейдите на вкладку "Управление" → "Структура блайндов" для настройки уровней вручную.</p>
-                        </div>
-                        <Button 
-                          variant="outline" 
-                          className="w-full border-amber-300 text-amber-700 hover:bg-amber-100"
-                          onClick={() => setAutoCreateBlinds(false)}
-                        >
-                          Настроить позже
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-
-                {autoCreateBlinds && (
-                  <Card className="bg-green-50/50 border-green-200/50">
-                    <CardContent className="p-4">
-                      <div className="flex items-center gap-2 text-green-800">
-                        <CheckCircle className="w-5 h-5" />
-                        <span className="font-medium">Выбрано: Автоматическое создание структуры блайндов</span>
-                      </div>
-                      <p className="text-sm text-green-700 mt-2">
-                        При создании турнира будет автоматически сгенерирована профессиональная структура блайндов, 
-                        адаптированная под количество участников и формат турнира.
-                      </p>
-                    </CardContent>
-                  </Card>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="blinds" className="space-y-6">
-            <Card className="bg-white/80 border-gray-200">
-              <CardHeader>
-                <CardTitle className="text-lg font-medium text-gray-800 flex items-center gap-2">
-                  <Clock className="w-5 h-5" />
-                  Предварительная структура блайндов
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="bg-blue-50/50 border border-blue-200 rounded-lg p-4">
-                    <div className="flex items-center gap-2 text-blue-800 mb-2">
-                      <AlertCircle className="w-4 h-4" />
-                      <span className="font-medium">Информация</span>
-                    </div>
-                    <p className="text-sm text-blue-700">
-                      Детальная настройка блайндов будет доступна после создания турнира в разделе "Управление турниром".
-                      Здесь отображается предварительная структура на основе выбранных параметров.
-                    </p>
-                  </div>
-                  
-                  <div className="grid grid-cols-4 gap-4 text-sm">
-                    <div className="bg-gray-50 p-3 rounded-lg">
-                      <div className="font-medium text-gray-700 mb-1">Начальный стек</div>
-                      <div className="text-lg font-semibold text-gray-900">{formData.starting_chips.toLocaleString()}</div>
-                    </div>
-                    <div className="bg-gray-50 p-3 rounded-lg">
-                      <div className="font-medium text-gray-700 mb-1">Макс. игроки</div>
-                      <div className="text-lg font-semibold text-gray-900">{formData.max_players}</div>
-                    </div>
-                    <div className="bg-gray-50 p-3 rounded-lg">
-                      <div className="font-medium text-gray-700 mb-1">Формат</div>
-                      <div className="text-lg font-semibold text-gray-900 capitalize">{formData.tournament_format}</div>
-                    </div>
-                    <div className="bg-gray-50 p-3 rounded-lg">
-                      <div className="font-medium text-gray-700 mb-1">Длительность уровня</div>
-                      <div className="text-lg font-semibold text-gray-900">{Math.floor(formData.timer_duration / 60)} мин</div>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="analysis" className="space-y-6">
-            <Card className="bg-white/80 border-gray-200">
-              <CardHeader>
-                <CardTitle className="text-lg font-medium text-gray-800 flex items-center gap-2">
-                  <BarChart3 className="w-5 h-5" />
-                  Автоматический анализ турнира
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-6">
+            {/* BASIC TAB */}
+            <TabsContent value="basic" className="space-y-6">
+              <Card className="bg-card/50 border-border backdrop-blur-sm">
+                <CardHeader className="border-b border-border pb-4">
+                  <CardTitle className="text-lg font-display uppercase tracking-wide text-foreground flex items-center gap-2">
+                    <Target className="w-5 h-5 text-primary" />
+                    Основные настройки
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="pt-6 space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <Card className="bg-gradient-to-br from-blue-50 to-blue-100/50 border-blue-200">
-                      <CardContent className="p-4">
-                        <div className="text-center space-y-3">
-                          <div className="text-3xl font-bold text-blue-800">
-                            {calculateScore()}
-                          </div>
-                          <div className="text-sm text-blue-600">из 100</div>
-                          <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200">
-                            Средний риск
-                          </Badge>
-                          <div className="text-xs text-blue-700">Общая оценка</div>
-                        </div>
-                      </CardContent>
-                    </Card>
+                    <div className="space-y-2">
+                      <Label htmlFor="name" className="text-muted-foreground uppercase text-xs tracking-wide">
+                        Название мероприятия *
+                      </Label>
+                      <Input
+                        id="name"
+                        placeholder="Например: Weekly Championship"
+                        value={formData.name}
+                        onChange={(e) => updateFormData('name', e.target.value)}
+                        className="bg-secondary/50 border-border focus:border-primary focus:ring-primary/20 text-foreground placeholder:text-muted-foreground"
+                      />
+                    </div>
 
-                    <div className="space-y-3">
-                      <div className="grid grid-cols-2 gap-3 text-sm">
-                        <div>
-                          <div className="text-gray-600">Скорость:</div>
-                          <div className="font-medium">medium</div>
+                    <div className="space-y-2">
+                      <Label htmlFor="start_time" className="text-muted-foreground uppercase text-xs tracking-wide">
+                        Время начала *
+                      </Label>
+                      <Input
+                        id="start_time"
+                        type="datetime-local"
+                        value={formData.start_time}
+                        onChange={(e) => updateFormData('start_time', e.target.value)}
+                        className="bg-secondary/50 border-border focus:border-primary focus:ring-primary/20 text-foreground"
+                      />
+                    </div>
+
+                    <div className="md:col-span-2 space-y-2">
+                      <Label htmlFor="description" className="text-muted-foreground uppercase text-xs tracking-wide">
+                        Описание
+                      </Label>
+                      <Textarea
+                        id="description"
+                        placeholder="Описание мероприятия..."
+                        value={formData.description}
+                        onChange={(e) => updateFormData('description', e.target.value)}
+                        rows={3}
+                        className="bg-secondary/50 border-border focus:border-primary focus:ring-primary/20 text-foreground placeholder:text-muted-foreground resize-none"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="max_players" className="text-muted-foreground uppercase text-xs tracking-wide">
+                        Максимум участников *
+                      </Label>
+                      <Input
+                        id="max_players"
+                        type="number"
+                        min="2"
+                        max="200"
+                        value={formData.max_players}
+                        onChange={(e) => updateFormData('max_players', parseInt(e.target.value) || 9)}
+                        className="bg-secondary/50 border-border focus:border-primary focus:ring-primary/20 text-foreground"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="participation_fee" className="text-muted-foreground uppercase text-xs tracking-wide">
+                        Организационный взнос *
+                      </Label>
+                      <Input
+                        id="participation_fee"
+                        type="number"
+                        min="0"
+                        step="100"
+                        value={formData.participation_fee}
+                        onChange={(e) => updateFormData('participation_fee', parseInt(e.target.value) || 1000)}
+                        className="bg-secondary/50 border-border focus:border-primary focus:ring-primary/20 text-foreground"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="starting_chips" className="text-muted-foreground uppercase text-xs tracking-wide">
+                        Стартовые фишки *
+                      </Label>
+                      <Input
+                        id="starting_chips"
+                        type="number"
+                        min="1000"
+                        step="1000"
+                        value={formData.starting_chips}
+                        onChange={(e) => updateFormData('starting_chips', parseInt(e.target.value) || 10000)}
+                        className="bg-secondary/50 border-border focus:border-primary focus:ring-primary/20 text-foreground"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="tournament_format" className="text-muted-foreground uppercase text-xs tracking-wide">
+                        Формат турнира
+                      </Label>
+                      <Select 
+                        value={formData.tournament_format} 
+                        onValueChange={(value) => updateFormData('tournament_format', value)}
+                      >
+                        <SelectTrigger className="bg-secondary/50 border-border focus:border-primary focus:ring-primary/20 text-foreground">
+                          <SelectValue placeholder="Выберите формат" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-card border-border">
+                          {TOURNAMENT_FORMATS.map((format) => (
+                            <SelectItem 
+                              key={format.value} 
+                              value={format.value}
+                              className="text-foreground hover:bg-secondary focus:bg-secondary"
+                            >
+                              <div className="flex items-center gap-2">
+                                <span>{format.label}</span>
+                                <Badge variant="outline" className="text-xs border-primary/50 text-primary">
+                                  {format.category}
+                                </Badge>
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {(formData.tournament_format === 'reentry' || formData.tournament_format === 'reentry-additional') && (
+                      <div className="md:col-span-2 grid grid-cols-2 gap-4 p-4 bg-secondary/30 border border-border rounded-sm">
+                        <div className="space-y-2">
+                          <Label className="text-muted-foreground uppercase text-xs tracking-wide">
+                            Стоимость повторного входа
+                          </Label>
+                          <Input
+                            type="number"
+                            min="0"
+                            step="100"
+                            value={formData.reentry_fee}
+                            onChange={(e) => updateFormData('reentry_fee', parseInt(e.target.value) || 1000)}
+                            className="bg-secondary/50 border-border focus:border-primary text-foreground"
+                          />
                         </div>
-                        <div>
-                          <div className="text-gray-600">Навык:</div>
-                          <div className="font-medium">75%</div>
+                        <div className="space-y-2">
+                          <Label className="text-muted-foreground uppercase text-xs tracking-wide">
+                            Фишки при повторном входе
+                          </Label>
+                          <Input
+                            type="number"
+                            min="1000"
+                            step="1000"
+                            value={formData.reentry_chips}
+                            onChange={(e) => updateFormData('reentry_chips', parseInt(e.target.value) || 10000)}
+                            className="bg-secondary/50 border-border focus:border-primary text-foreground"
+                          />
                         </div>
-                        <div>
-                          <div className="text-gray-600">Удача:</div>
-                          <div className="font-medium">25%</div>
+                      </div>
+                    )}
+
+                    {(formData.tournament_format === 'additional' || formData.tournament_format === 'reentry-additional') && (
+                      <div className="md:col-span-2 grid grid-cols-2 gap-4 p-4 bg-secondary/30 border border-border rounded-sm">
+                        <div className="space-y-2">
+                          <Label className="text-muted-foreground uppercase text-xs tracking-wide">
+                            Стоимость дополнительного набора
+                          </Label>
+                          <Input
+                            type="number"
+                            min="0"
+                            step="100"
+                            value={formData.additional_fee}
+                            onChange={(e) => updateFormData('additional_fee', parseInt(e.target.value) || 1000)}
+                            className="bg-secondary/50 border-border focus:border-primary text-foreground"
+                          />
                         </div>
-                        <div>
-                          <div className="text-gray-600">Чипы/Взнос:</div>
-                          <div className="font-medium">{Math.round(formData.starting_chips / Math.max(formData.participation_fee, 1))}</div>
+                        <div className="space-y-2">
+                          <Label className="text-muted-foreground uppercase text-xs tracking-wide">
+                            Фишки дополнительного набора
+                          </Label>
+                          <Input
+                            type="number"
+                            min="1000"
+                            step="1000"
+                            value={formData.additional_chips}
+                            onChange={(e) => updateFormData('additional_chips', parseInt(e.target.value) || 15000)}
+                            className="bg-secondary/50 border-border focus:border-primary text-foreground"
+                          />
                         </div>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* STRUCTURE TAB */}
+            <TabsContent value="structure" className="space-y-6">
+              <Card className="bg-card/50 border-border backdrop-blur-sm">
+                <CardHeader className="border-b border-border pb-4">
+                  <CardTitle className="text-lg font-display uppercase tracking-wide text-foreground flex items-center gap-2">
+                    <Layers className="w-5 h-5 text-primary" />
+                    Структура блайндов
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="pt-6 space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Auto create option */}
+                    <div 
+                      className={`relative cursor-pointer transition-all ${autoCreateBlinds ? 'ring-2 ring-primary' : ''}`}
+                      onClick={() => setAutoCreateBlinds(true)}
+                    >
+                      <Card className="bg-primary/10 border-primary/30 hover:bg-primary/20 transition-colors h-full">
+                        <CardContent className="p-6">
+                          <div className="space-y-4">
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 bg-primary rounded-sm flex items-center justify-center">
+                                <CheckCircle className="w-5 h-5 text-primary-foreground" />
+                              </div>
+                              <h3 className="font-display uppercase tracking-wide text-foreground">Автоматически</h3>
+                            </div>
+                            <div className="space-y-2 text-sm text-muted-foreground">
+                              <div className="flex items-center gap-2">
+                                <CheckCircle className="w-4 h-4 text-primary" />
+                                <span>15 уровней блайндов</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <CheckCircle className="w-4 h-4 text-primary" />
+                                <span>Перерывы на 4, 8, 12 уровнях</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <CheckCircle className="w-4 h-4 text-primary" />
+                                <span>Адаптация под формат</span>
+                              </div>
+                            </div>
+                            {autoCreateBlinds && (
+                              <Badge className="bg-primary text-primary-foreground">ВЫБРАНО</Badge>
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+
+                    {/* Manual option */}
+                    <div 
+                      className={`relative cursor-pointer transition-all ${!autoCreateBlinds ? 'ring-2 ring-accent' : ''}`}
+                      onClick={() => setAutoCreateBlinds(false)}
+                    >
+                      <Card className="bg-accent/10 border-accent/30 hover:bg-accent/20 transition-colors h-full">
+                        <CardContent className="p-6">
+                          <div className="space-y-4">
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 bg-accent rounded-sm flex items-center justify-center">
+                                <Edit className="w-5 h-5 text-accent-foreground" />
+                              </div>
+                              <h3 className="font-display uppercase tracking-wide text-foreground">Вручную</h3>
+                            </div>
+                            <div className="text-sm text-muted-foreground">
+                              <p>Настроить структуру блайндов вручную после создания турнира</p>
+                              <p className="mt-2">Перейдите в "Управление" → "Структура блайндов"</p>
+                            </div>
+                            {!autoCreateBlinds && (
+                              <Badge className="bg-accent text-accent-foreground">ВЫБРАНО</Badge>
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+                  </div>
+
+                  {autoCreateBlinds && (
+                    <div className="p-4 bg-primary/5 border border-primary/20 rounded-sm">
+                      <div className="flex items-center gap-2 text-primary">
+                        <CheckCircle className="w-5 h-5" />
+                        <span className="font-medium">Автоматическое создание структуры блайндов</span>
+                      </div>
+                      <p className="text-sm text-muted-foreground mt-2">
+                        При создании турнира будет сгенерирована профессиональная структура блайндов.
+                      </p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* BLINDS TAB */}
+            <TabsContent value="blinds" className="space-y-6">
+              <Card className="bg-card/50 border-border backdrop-blur-sm">
+                <CardHeader className="border-b border-border pb-4">
+                  <CardTitle className="text-lg font-display uppercase tracking-wide text-foreground flex items-center gap-2">
+                    <Clock className="w-5 h-5 text-primary" />
+                    Предварительная структура
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="pt-6">
+                  <div className="space-y-6">
+                    <div className="p-4 bg-primary/10 border border-primary/30 rounded-sm">
+                      <div className="flex items-center gap-2 text-primary mb-2">
+                        <Info className="w-4 h-4" />
+                        <span className="font-medium uppercase text-xs tracking-wide">Информация</span>
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        Детальная настройка блайндов будет доступна после создания турнира в разделе "Управление турниром".
+                      </p>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div className="bg-secondary/50 border border-border p-4 rounded-sm">
+                        <div className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Начальный стек</div>
+                        <div className="text-xl font-display text-primary">{formData.starting_chips.toLocaleString()}</div>
+                      </div>
+                      <div className="bg-secondary/50 border border-border p-4 rounded-sm">
+                        <div className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Макс. игроки</div>
+                        <div className="text-xl font-display text-foreground">{formData.max_players}</div>
+                      </div>
+                      <div className="bg-secondary/50 border border-border p-4 rounded-sm">
+                        <div className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Формат</div>
+                        <div className="text-xl font-display text-foreground capitalize">{formData.tournament_format}</div>
+                      </div>
+                      <div className="bg-secondary/50 border border-border p-4 rounded-sm">
+                        <div className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Длит. уровня</div>
+                        <div className="text-xl font-display text-foreground">{Math.floor(formData.timer_duration / 60)} мин</div>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* ANALYSIS TAB */}
+            <TabsContent value="analysis" className="space-y-6">
+              <Card className="bg-card/50 border-border backdrop-blur-sm">
+                <CardHeader className="border-b border-border pb-4">
+                  <CardTitle className="text-lg font-display uppercase tracking-wide text-foreground flex items-center gap-2">
+                    <BarChart3 className="w-5 h-5 text-primary" />
+                    Автоматический анализ
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="pt-6">
+                  <div className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {/* Score card */}
+                      <Card className="bg-gradient-to-br from-secondary to-secondary/50 border-border">
+                        <CardContent className="p-6">
+                          <div className="text-center space-y-3">
+                            <div className={`text-5xl font-display ${getScoreColor(calculateScore())}`}>
+                              {calculateScore()}
+                            </div>
+                            <div className="text-sm text-muted-foreground">из 100</div>
+                            <Badge 
+                              className={`${calculateScore() >= 60 ? 'bg-primary/20 text-primary border-primary/30' : 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30'}`}
+                              variant="outline"
+                            >
+                              {calculateScore() >= 80 ? 'Отлично' : calculateScore() >= 60 ? 'Хорошо' : calculateScore() >= 40 ? 'Средний риск' : 'Высокий риск'}
+                            </Badge>
+                            <div className="text-xs text-muted-foreground">Общая оценка</div>
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      {/* Stats */}
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="bg-secondary/50 border border-border p-3 rounded-sm">
+                            <div className="text-xs text-muted-foreground uppercase">Скорость</div>
+                            <div className="font-medium text-foreground">medium</div>
+                          </div>
+                          <div className="bg-secondary/50 border border-border p-3 rounded-sm">
+                            <div className="text-xs text-muted-foreground uppercase">Навык</div>
+                            <div className="font-medium text-primary">75%</div>
+                          </div>
+                          <div className="bg-secondary/50 border border-border p-3 rounded-sm">
+                            <div className="text-xs text-muted-foreground uppercase">Удача</div>
+                            <div className="font-medium text-foreground">25%</div>
+                          </div>
+                          <div className="bg-secondary/50 border border-border p-3 rounded-sm">
+                            <div className="text-xs text-muted-foreground uppercase">Чипы/Взнос</div>
+                            <div className="font-medium text-primary">{Math.round(formData.starting_chips / Math.max(formData.participation_fee, 1))}</div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Warnings */}
+                    {formData.starting_chips / Math.max(formData.participation_fee, 1) < 50 && (
+                      <div className="flex items-center gap-3 text-yellow-400 bg-yellow-500/10 p-4 rounded-sm border border-yellow-500/30">
+                        <AlertCircle className="w-5 h-5 flex-shrink-0" />
+                        <span className="text-sm">Низкий чип-стек увеличивает фактор удачи</span>
+                      </div>
+                    )}
+
+                    {/* Recommendations */}
+                    <div className="bg-primary/10 border border-primary/30 rounded-sm p-4">
+                      <h4 className="font-display uppercase tracking-wide text-primary mb-3">Рекомендации</h4>
+                      <div className="space-y-2 text-sm text-muted-foreground">
+                        <div>• Рассмотрите увеличение стартового стека до 75-100 взносов</div>
+                        <div>• Рекомендуемая структура блайндов: standard</div>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* ADVANCED TAB */}
+            <TabsContent value="advanced" className="space-y-6">
+              <Card className="bg-card/50 border-border backdrop-blur-sm">
+                <CardHeader className="border-b border-border pb-4">
+                  <CardTitle className="text-lg font-display uppercase tracking-wide text-foreground flex items-center gap-2">
+                    <Settings className="w-5 h-5 text-primary" />
+                    Дополнительные настройки
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="pt-6 space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Voice control */}
+                    <div className="bg-secondary/30 border border-border p-4 rounded-sm">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-primary/20 rounded-sm flex items-center justify-center">
+                            <Mic className="w-5 h-5 text-primary" />
+                          </div>
+                          <div>
+                            <Label className="text-foreground font-medium">Голосовое управление</Label>
+                            <p className="text-xs text-muted-foreground">Управление турниром голосом</p>
+                          </div>
+                        </div>
+                        <Switch
+                          checked={formData.voice_control_enabled}
+                          onCheckedChange={(checked) => updateFormData('voice_control_enabled', checked)}
+                          className="data-[state=checked]:bg-primary"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Publish */}
+                    <div className="bg-secondary/30 border border-border p-4 rounded-sm">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-accent/20 rounded-sm flex items-center justify-center">
+                            <Send className="w-5 h-5 text-accent" />
+                          </div>
+                          <div>
+                            <Label className="text-foreground font-medium">Публикация</Label>
+                            <p className="text-xs text-muted-foreground">Опубликовать турнир сразу</p>
+                          </div>
+                        </div>
+                        <Switch
+                          checked={formData.is_published}
+                          onCheckedChange={(checked) => updateFormData('is_published', checked)}
+                          className="data-[state=checked]:bg-accent"
+                        />
                       </div>
                     </div>
                   </div>
 
-                  <div className="space-y-3">
-                    <h4 className="font-medium text-gray-800">Обнаружены потенциальные проблемы:</h4>
-                    <div className="space-y-2">
-                      {formData.starting_chips / Math.max(formData.participation_fee, 1) < 50 && (
-                        <div className="flex items-center gap-2 text-amber-700 bg-amber-50 p-3 rounded-lg border border-amber-200">
-                          <AlertCircle className="w-4 h-4" />
-                          <span className="text-sm">Низкий чип-стек увеличивает фактор удачи</span>
-                        </div>
-                      )}
-                    </div>
-                    <div className="text-sm text-gray-600">
-                      Оценка турнира: {calculateScore()}/100
-                    </div>
-                  </div>
+                  <Separator className="bg-border" />
 
-                  <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                    <h4 className="font-medium text-green-800 mb-2">Основные рекомендации:</h4>
-                    <div className="space-y-1 text-sm text-green-700">
-                      <div>Рассмотрите увеличение стартового стека до 75-100 взносов</div>
-                      <div>Рекомендуемая структура блайндов: standard</div>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="advanced" className="space-y-6">
-            <Card className="bg-white/80 border-gray-200">
-              <CardHeader>
-                <CardTitle className="text-lg font-medium text-gray-800 flex items-center gap-2">
-                  <Settings className="w-5 h-5" />
-                  Дополнительные настройки
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-4">
-                    <Label htmlFor="voice_control" className="text-sm font-medium text-gray-700">
-                      Голосовое управление
-                    </Label>
-                    <div className="flex items-center space-x-2">
-                      <input
-                        type="checkbox"
-                        id="voice_control"
-                        checked={formData.voice_control_enabled}
-                        onChange={(e) => updateFormData('voice_control_enabled', e.target.checked)}
-                        className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
-                      />
-                      <Label htmlFor="voice_control" className="text-sm text-gray-600">
-                        Включить голосовое управление турниром
-                      </Label>
+                  {/* Integrations */}
+                  <div>
+                    <h4 className="font-display uppercase tracking-wide text-foreground mb-4">Интеграции</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <Card className="bg-secondary/30 border-border">
+                        <CardContent className="p-4 text-center">
+                          <Trophy className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+                          <div className="text-sm font-medium text-foreground">EPC Rating</div>
+                          <Badge variant="outline" className="text-xs mt-1 border-muted-foreground/30 text-muted-foreground">Подключено</Badge>
+                        </CardContent>
+                      </Card>
+                      <Card className="bg-secondary/30 border-border">
+                        <CardContent className="p-4 text-center">
+                          <Users className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+                          <div className="text-sm font-medium text-foreground">Telegram</div>
+                          <Badge variant="outline" className="text-xs mt-1 border-muted-foreground/30 text-muted-foreground">Доступно</Badge>
+                        </CardContent>
+                      </Card>
+                      <Card className="bg-secondary/30 border-border">
+                        <CardContent className="p-4 text-center">
+                          <BarChart3 className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+                          <div className="text-sm font-medium text-foreground">Аналитика</div>
+                          <Badge variant="outline" className="text-xs mt-1 border-muted-foreground/30 text-muted-foreground">Включено</Badge>
+                        </CardContent>
+                      </Card>
                     </div>
                   </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
 
-                  <div className="space-y-4">
-                    <Label htmlFor="is_published" className="text-sm font-medium text-gray-700">
-                      Публикация
-                    </Label>
-                    <div className="flex items-center space-x-2">
-                      <input
-                        type="checkbox"
-                        id="is_published"
-                        checked={formData.is_published}
-                        onChange={(e) => updateFormData('is_published', e.target.checked)}
-                        className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
-                      />
-                      <Label htmlFor="is_published" className="text-sm text-gray-600">
-                        Опубликовать турнир сразу
-                      </Label>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="border-t pt-4">
-                  <h4 className="font-medium text-gray-800 mb-3">Интеграции</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <Card className="bg-gray-50 border-gray-200">
-                      <CardContent className="p-3 text-center">
-                        <div className="text-sm text-gray-600 mb-1">Telegram-бот</div>
-                        <Badge variant="outline" className="bg-green-100 text-green-800 border-green-200">
-                          Активен
-                        </Badge>
-                      </CardContent>
-                    </Card>
-                    <Card className="bg-gray-50 border-gray-200">
-                      <CardContent className="p-3 text-center">
-                        <div className="text-sm text-gray-600 mb-1">Фискализация</div>
-                        <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-200">
-                          OrangeData
-                        </Badge>
-                      </CardContent>
-                    </Card>
-                    <Card className="bg-gray-50 border-gray-200">
-                      <CardContent className="p-3 text-center">
-                        <div className="text-sm text-gray-600 mb-1">Голос</div>
-                        <Badge variant="outline" className="bg-purple-100 text-purple-800 border-purple-200">
-                          ElevenLabs
-                        </Badge>
-                      </CardContent>
-                    </Card>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
-
-        <div className="flex justify-between items-center pt-4 border-t">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Отмена
-          </Button>
-          <Button onClick={handleSubmit} disabled={isLoading}>
-            {isLoading ? 'Сохранение...' : (tournament ? 'Обновить' : 'Создать')}
-          </Button>
+          {/* Footer buttons */}
+          <div className="flex justify-end gap-4 pt-6 mt-6 border-t border-border">
+            <Button 
+              variant="outline" 
+              onClick={() => onOpenChange(false)}
+              className="border-border text-muted-foreground hover:bg-secondary hover:text-foreground"
+            >
+              <X className="w-4 h-4 mr-2" />
+              Отмена
+            </Button>
+            <Button 
+              onClick={handleSubmit} 
+              disabled={isLoading}
+              className="bg-primary hover:bg-primary/90 text-primary-foreground font-display uppercase tracking-wide"
+            >
+              {isLoading ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin mr-2" />
+                  Сохранение...
+                </>
+              ) : (
+                <>
+                  <Save className="w-4 h-4 mr-2" />
+                  {tournament ? 'Сохранить' : 'Создать турнир'}
+                </>
+              )}
+            </Button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
