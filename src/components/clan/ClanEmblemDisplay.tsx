@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { getEmblemById, getSealById } from '@/utils/clanEmblems';
+import { ClanEmblemSVG, ClanSealSVG } from './ClanEmblemSVG';
 import { cn } from '@/lib/utils';
 
 interface ClanEmblemDisplayProps {
@@ -12,22 +13,22 @@ interface ClanEmblemDisplayProps {
   className?: string;
 }
 
-const sizeClasses = {
-  sm: 'w-16 h-16',
-  md: 'w-24 h-24',
-  lg: 'w-32 h-32'
+const sizeValues = {
+  sm: 64,
+  md: 96,
+  lg: 128
+};
+
+const sealSizes = {
+  sm: 24,
+  md: 32,
+  lg: 40
 };
 
 const fontSizes = {
   sm: 'text-xs',
   md: 'text-sm',
   lg: 'text-base'
-};
-
-const iconSizes = {
-  sm: 'text-2xl',
-  md: 'text-4xl',
-  lg: 'text-5xl'
 };
 
 export function ClanEmblemDisplay({
@@ -39,53 +40,41 @@ export function ClanEmblemDisplay({
   className
 }: ClanEmblemDisplayProps) {
   const emblem = getEmblemById(emblemId);
-  const seal = getSealById(sealId);
 
-  if (!emblem || !seal) return null;
+  if (!emblem) return null;
 
   return (
     <div className={cn('flex flex-col items-center gap-2', className)}>
-      {/* Герб */}
+      {/* Герб SVG */}
       <motion.div
         initial={{ scale: 0.8, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
-        className={cn(
-          'relative rounded-full flex items-center justify-center',
-          sizeClasses[size]
-        )}
-        style={{
-          background: `linear-gradient(135deg, ${emblem.colors.primary}, ${emblem.colors.secondary})`,
-          boxShadow: `0 0 20px ${emblem.colors.primary}40, inset 0 0 20px ${emblem.colors.accent}20`
-        }}
+        className="relative"
       >
-        {/* Внутреннее кольцо */}
-        <div
-          className="absolute inset-2 rounded-full border-2"
-          style={{ borderColor: emblem.colors.accent }}
+        <ClanEmblemSVG 
+          emblemId={emblemId} 
+          size={sizeValues[size]}
+          primaryColor={emblem.colors.primary}
+          secondaryColor={emblem.colors.secondary}
+          accentColor={emblem.colors.accent}
         />
-        
-        {/* Иконка */}
-        <span className={cn(iconSizes[size], 'drop-shadow-lg')}>
-          {emblem.icon}
-        </span>
 
         {/* Печать в углу */}
         <motion.div
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
           transition={{ delay: 0.2 }}
-          className="absolute -bottom-1 -right-1 w-1/3 h-1/3 rounded-full flex items-center justify-center text-xs"
-          style={{
-            background: `linear-gradient(135deg, ${seal.colors.primary}, ${seal.colors.secondary})`,
-            boxShadow: `0 0 10px ${seal.colors.primary}60`
-          }}
+          className="absolute -bottom-1 -right-1"
         >
-          <span className="text-[0.6em]">{seal.icon}</span>
+          <ClanSealSVG 
+            sealId={sealId} 
+            size={sealSizes[size]}
+          />
         </motion.div>
 
         {/* Анимированное свечение */}
         <motion.div
-          className="absolute inset-0 rounded-full"
+          className="absolute inset-0 rounded-full pointer-events-none"
           animate={{
             boxShadow: [
               `0 0 10px ${emblem.colors.primary}40`,
@@ -124,9 +113,8 @@ export function ClanBadge({
   className
 }: Omit<ClanEmblemDisplayProps, 'size' | 'showName'>) {
   const emblem = getEmblemById(emblemId);
-  const seal = getSealById(sealId);
 
-  if (!emblem || !seal) return null;
+  if (!emblem) return null;
 
   return (
     <motion.div
@@ -141,14 +129,14 @@ export function ClanBadge({
         border: `1px solid ${emblem.colors.primary}40`
       }}
     >
-      <span className="text-sm">{emblem.icon}</span>
+      <ClanEmblemSVG emblemId={emblemId} size={20} />
       <span
         className="text-xs font-semibold"
         style={{ color: emblem.colors.primary }}
       >
         {clanName}
       </span>
-      <span className="text-xs">{seal.icon}</span>
+      <ClanSealSVG sealId={sealId} size={16} />
     </motion.div>
   );
 }

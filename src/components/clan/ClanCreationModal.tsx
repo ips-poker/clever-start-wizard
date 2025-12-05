@@ -13,6 +13,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { CLAN_EMBLEMS, CLAN_SEALS } from '@/utils/clanEmblems';
 import { ClanEmblemDisplay } from './ClanEmblemDisplay';
+import { ClanEmblemSVG, ClanSealSVG } from './ClanEmblemSVG';
 import { Crown, Shield, Stamp, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -117,19 +118,20 @@ export function ClanCreationModal({
             whileTap={{ scale: 0.95 }}
             onClick={() => setSelectedEmblem(emblem.id)}
             className={cn(
-              'relative p-3 rounded-lg border-2 transition-all',
+              'relative p-2 rounded-lg border-2 transition-all',
               selectedEmblem === emblem.id
                 ? 'border-primary bg-primary/10'
                 : 'border-border hover:border-primary/50'
             )}
           >
-            <div
-              className="w-12 h-12 mx-auto rounded-full flex items-center justify-center text-2xl"
-              style={{
-                background: `linear-gradient(135deg, ${emblem.colors.primary}, ${emblem.colors.secondary})`
-              }}
-            >
-              {emblem.icon}
+            <div className="mx-auto">
+              <ClanEmblemSVG 
+                emblemId={emblem.id} 
+                size={48}
+                primaryColor={emblem.colors.primary}
+                secondaryColor={emblem.colors.secondary}
+                accentColor={emblem.colors.accent}
+              />
             </div>
             <p className="text-xs mt-1 text-center truncate">{emblem.nameRu}</p>
             {selectedEmblem === emblem.id && (
@@ -172,19 +174,19 @@ export function ClanCreationModal({
             whileTap={{ scale: 0.95 }}
             onClick={() => setSelectedSeal(seal.id)}
             className={cn(
-              'relative p-3 rounded-lg border-2 transition-all',
+              'relative p-2 rounded-lg border-2 transition-all',
               selectedSeal === seal.id
                 ? 'border-primary bg-primary/10'
                 : 'border-border hover:border-primary/50'
             )}
           >
-            <div
-              className="w-12 h-12 mx-auto rounded-full flex items-center justify-center text-2xl"
-              style={{
-                background: `linear-gradient(135deg, ${seal.colors.primary}, ${seal.colors.secondary})`
-              }}
-            >
-              {seal.icon}
+            <div className="mx-auto">
+              <ClanSealSVG 
+                sealId={seal.id} 
+                size={48}
+                primaryColor={seal.colors.primary}
+                secondaryColor={seal.colors.secondary}
+              />
             </div>
             <p className="text-xs mt-1 text-center truncate">{seal.nameRu}</p>
             {selectedSeal === seal.id && (
