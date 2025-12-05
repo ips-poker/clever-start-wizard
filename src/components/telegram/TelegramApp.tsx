@@ -1480,13 +1480,39 @@ export const TelegramApp = () => {
 
           {/* Podium for top 3 */}
           {players.length >= 3 && (
-            <RatingPodium 
-              topPlayers={players.slice(0, 3)}
-              onPlayerClick={(player) => {
-                setSelectedPlayer(player);
-                setShowPlayerStatsModal(true);
-              }}
-            />
+            <>
+              {/* Decorative header for Top 3 */}
+              <div className="relative py-4 mt-2">
+                {/* Gradient lines */}
+                <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-px bg-gradient-to-r from-transparent via-syndikate-orange/40 to-transparent" />
+                <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 mt-1 h-px bg-gradient-to-r from-transparent via-syndikate-red/20 to-transparent" />
+                
+                {/* Center badge */}
+                <div className="relative flex justify-center">
+                  <div className="px-6 py-2.5 bg-gradient-to-r from-syndikate-metal via-background to-syndikate-metal border border-syndikate-orange/30 flex items-center gap-3">
+                    <div className="w-2 h-2 bg-syndikate-orange rotate-45 animate-pulse" />
+                    <Crown className="h-5 w-5 text-syndikate-orange" />
+                    <span className="text-sm font-display uppercase tracking-[0.2em] text-syndikate-orange">
+                      Топ 3
+                    </span>
+                    <Crown className="h-5 w-5 text-syndikate-orange" />
+                    <div className="w-2 h-2 bg-syndikate-orange rotate-45 animate-pulse" />
+                  </div>
+                </div>
+                
+                {/* Decorative corners */}
+                <div className="absolute left-2 top-1/2 -translate-y-1/2 w-6 h-6 border-l-2 border-t-2 border-syndikate-orange/30" />
+                <div className="absolute right-2 top-1/2 -translate-y-1/2 w-6 h-6 border-r-2 border-b-2 border-syndikate-orange/30" />
+              </div>
+              
+              <RatingPodium 
+                topPlayers={players.slice(0, 3)}
+                onPlayerClick={(player) => {
+                  setSelectedPlayer(player);
+                  setShowPlayerStatsModal(true);
+                }}
+              />
+            </>
           )}
 
           {players.length === 0 ? (
