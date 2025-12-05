@@ -29,7 +29,7 @@ import masterclass from '@/assets/gallery/masterclass.jpg';
 import registration from '@/assets/gallery/registration.jpg';
 import pokerChips from '@/assets/gallery/poker-chips.jpg';
 import { calculateTotalRPSPool, formatRPSPoints } from '@/utils/rpsCalculations';
-import { getCurrentMafiaRank, getRarityInfo } from '@/utils/mafiaRanks';
+import { getEffectiveMafiaRank, getRarityInfo } from '@/utils/mafiaRanks';
 import { GlitchAvatarFrame } from '@/components/ui/glitch-avatar-frame';
 
 interface Tournament {
@@ -58,6 +58,7 @@ interface Player {
   avatar_url?: string;
   created_at?: string;
   telegram?: string;
+  manual_rank?: string | null;
 }
 
 interface TelegramUser {
@@ -839,11 +840,12 @@ export const TelegramApp = () => {
       </div>
 
       {userStats && (() => {
-        const userRank = getCurrentMafiaRank({
+        const effectiveRankData = getEffectiveMafiaRank({
           gamesPlayed: userStats.games_played,
           wins: userStats.wins,
           rating: userStats.elo_rating
-        });
+        }, userStats.manual_rank);
+        const userRank = effectiveRankData.rank;
         const userRarityInfo = getRarityInfo(userRank.rarity);
         
         const rankStyles: Record<string, { cardBg: string; border: string; glow: string; accent: string }> = {

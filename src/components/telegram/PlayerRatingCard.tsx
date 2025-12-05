@@ -3,7 +3,7 @@ import { PlayerLevelBadge } from './PlayerLevelBadge';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Trophy, Target, Gamepad2, Gem, Crown, Flame, Zap, Star, Shield, Swords, Medal, TrendingUp, Award, CircleDot } from 'lucide-react';
 import { fixStorageUrl } from '@/utils/storageUtils';
-import { getCurrentMafiaRank } from '@/utils/mafiaRanks';
+import { getEffectiveMafiaRank } from '@/utils/mafiaRanks';
 import { getRankCardStyle } from './RankProfileStyles';
 import { GlitchAvatarFrame } from '@/components/ui/glitch-avatar-frame';
 
@@ -14,6 +14,7 @@ interface Player {
   games_played: number;
   wins: number;
   avatar_url?: string;
+  manual_rank?: string | null;
 }
 
 interface PlayerRatingCardProps {
@@ -35,8 +36,9 @@ export const PlayerRatingCard: React.FC<PlayerRatingCardProps> = ({
     ? ((player.wins / player.games_played) * 100).toFixed(1) 
     : '0.0';
   
-  // Get player's mafia rank
-  const mafiaRank = getCurrentMafiaRank({ gamesPlayed: player.games_played, wins: player.wins, rating: player.elo_rating });
+  // Get player's mafia rank (with manual rank support)
+  const effectiveRankData = getEffectiveMafiaRank({ gamesPlayed: player.games_played, wins: player.wins, rating: player.elo_rating }, player.manual_rank);
+  const mafiaRank = effectiveRankData.rank;
   const rankStyle = getRankCardStyle(mafiaRank);
   
   // Реальные достижения на основе данных из БД - стилизованные иконки
