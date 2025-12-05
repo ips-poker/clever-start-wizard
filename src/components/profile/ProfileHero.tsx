@@ -3,9 +3,9 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Edit3, Check, X, Shield, Sparkles } from "lucide-react";
+import { Edit3, Check, X, Shield, Sparkles, Crown } from "lucide-react";
 import { motion } from "framer-motion";
-import { getCurrentMafiaRank, getMafiaRankProgress, getTotalRankXP } from "@/utils/mafiaRanks";
+import { getEffectiveMafiaRank, getMafiaRankProgress, getTotalRankXP } from "@/utils/mafiaRanks";
 import { WebRankProfileStyles } from "./WebRankProfileStyles";
 import { GlitchAvatarFrame } from "@/components/ui/glitch-avatar-frame";
 
@@ -16,6 +16,7 @@ interface Player {
   games_played: number;
   wins: number;
   avatar_url?: string;
+  manual_rank?: string | null;
 }
 
 interface ProfileHeroProps {
@@ -56,7 +57,7 @@ export function ProfileHero({
   const winRate = games > 0 ? Math.round((wins / games) * 100) : 0;
   
   const stats = { gamesPlayed: games, wins, rating };
-  const currentRank = getCurrentMafiaRank(stats);
+  const { rank: currentRank, isManual: isManualRank } = getEffectiveMafiaRank(stats, player?.manual_rank);
   const rankProgressData = getMafiaRankProgress(stats);
   const totalXP = getTotalRankXP(stats);
   
@@ -166,7 +167,7 @@ export function ProfileHero({
               
               {/* Rank Badge */}
               <motion.div 
-                className="flex items-center justify-center lg:justify-start gap-2"
+                className="flex items-center justify-center lg:justify-start gap-2 flex-wrap"
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 0.2 }}
@@ -180,6 +181,12 @@ export function ProfileHero({
                   {currentRank.name}
                 </Badge>
                 <span className={`text-sm ${currentRank.textColor}`}>{currentRank.title}</span>
+                {isManualRank && (
+                  <Badge variant="outline" className="text-xs border-amber-500/50 text-amber-400 bg-amber-500/10 rounded-none">
+                    <Crown className="w-3 h-3 mr-1" />
+                    Назначен
+                  </Badge>
+                )}
                 {currentRank.rarity === 'godfather' && (
                   <motion.div
                     animate={{ rotate: [0, 10, -10, 0] }}
