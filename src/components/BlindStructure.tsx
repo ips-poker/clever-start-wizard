@@ -7,7 +7,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Edit, Trash2, Coffee, Clock, Layers, Timer, Zap } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Plus, Edit, Trash2, Coffee, Clock, Layers, Timer, Zap, Save, FolderOpen, Download, Upload } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -21,13 +22,25 @@ interface BlindLevel {
   is_break?: boolean;
 }
 
+interface BlindTemplate {
+  id: string;
+  name: string;
+  description: string | null;
+  levels: any[];
+  is_default: boolean;
+  created_at: string;
+}
+
 interface BlindStructureProps {
   tournamentId: string;
 }
 
 const BlindStructure = ({ tournamentId }: BlindStructureProps) => {
   const [blindLevels, setBlindLevels] = useState<BlindLevel[]>([]);
+  const [templates, setTemplates] = useState<BlindTemplate[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isTemplateDialogOpen, setIsTemplateDialogOpen] = useState(false);
+  const [isSaveTemplateDialogOpen, setIsSaveTemplateDialogOpen] = useState(false);
   const [editingLevel, setEditingLevel] = useState<BlindLevel | null>(null);
   const [newLevel, setNewLevel] = useState({
     small_blind: 100,
@@ -36,10 +49,14 @@ const BlindStructure = ({ tournamentId }: BlindStructureProps) => {
     duration: 1200,
     is_break: false
   });
+  const [newTemplateName, setNewTemplateName] = useState('');
+  const [newTemplateDescription, setNewTemplateDescription] = useState('');
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
   const { toast } = useToast();
 
   useEffect(() => {
     loadBlindLevels();
+    loadTemplates();
   }, [tournamentId]);
 
   const loadBlindLevels = async () => {
@@ -53,6 +70,26 @@ const BlindStructure = ({ tournamentId }: BlindStructureProps) => {
       toast({ title: "Ошибка", description: "Не удалось загрузить структуру блайндов", variant: "destructive" });
     } else {
       setBlindLevels(data || []);
+    }
+  };
+
+  const loadTemplates = async () => {
+    const { data, error } = await supabase
+      .from('blind_structure_templates')
+      .select('*')
+      .order('is_default', { ascending: false })
+      .order('name');
+
+    if (!error && data) {
+      const mappedTemplates: BlindTemplate[] = data.map(t => ({
+        id: t.id,
+        name: t.name,
+        description: t.description,
+        levels: Array.isArray(t.levels) ? t.levels : [],
+        is_default: t.is_default || false,
+        created_at: t.created_at
+      }));
+      setTemplates(mappedTemplates);
     }
   };
 
@@ -72,6 +109,108 @@ const BlindStructure = ({ tournamentId }: BlindStructureProps) => {
 
     loadBlindLevels();
     toast({ title: "Успех", description: "Создана стандартная структура блайндов" });
+  };
+
+  const applyTemplate = async (templateId: string) => {
+    const template = templates.find(t => t.id === templateId);
+    if (!template) return;
+
+    // Удаляем существующие уровни
+    const { error: deleteError } = await supabase
+      .from('blind_levels')
+      .delete()
+      .eq('tournament_id', tournamentId);
+
+    if (deleteError) {
+      toast({ title: "Ошибка", description: "Не удалось применить шаблон", variant: "destructive" });
+      return;
+    }
+
+    // Добавляем уровни из шаблона
+    const levelsToInsert = template.levels.map((level: any) => ({
+      tournament_id: tournamentId,
+      level: level.level,
+      small_blind: level.small_blind,
+      big_blind: level.big_blind,
+      ante: level.ante || 0,
+      duration: level.duration,
+      is_break: level.is_break || false
+    }));
+
+    const { error: insertError } = await supabase
+      .from('blind_levels')
+      .insert(levelsToInsert);
+
+    if (insertError) {
+      toast({ title: "Ошибка", description: "Не удалось добавить уровни", variant: "destructive" });
+      return;
+    }
+
+    toast({ title: "Успех", description: `Применён шаблон: ${template.name}` });
+    setIsTemplateDialogOpen(false);
+    loadBlindLevels();
+  };
+
+  const saveAsTemplate = async () => {
+    if (!newTemplateName.trim()) {
+      toast({ title: "Ошибка", description: "Введите название шаблона", variant: "destructive" });
+      return;
+    }
+
+    if (blindLevels.length === 0) {
+      toast({ title: "Ошибка", description: "Нет уровней для сохранения", variant: "destructive" });
+      return;
+    }
+
+    const levelsData = blindLevels.map(level => ({
+      level: level.level,
+      small_blind: level.small_blind,
+      big_blind: level.big_blind,
+      ante: level.ante,
+      duration: level.duration,
+      is_break: level.is_break || false
+    }));
+
+    const { error } = await supabase
+      .from('blind_structure_templates')
+      .insert([{
+        name: newTemplateName.trim(),
+        description: newTemplateDescription.trim() || null,
+        levels: levelsData,
+        is_default: false
+      }]);
+
+    if (error) {
+      toast({ title: "Ошибка", description: error.message, variant: "destructive" });
+      return;
+    }
+
+    toast({ title: "Успех", description: "Шаблон сохранён" });
+    setIsSaveTemplateDialogOpen(false);
+    setNewTemplateName('');
+    setNewTemplateDescription('');
+    loadTemplates();
+  };
+
+  const deleteTemplate = async (templateId: string) => {
+    const template = templates.find(t => t.id === templateId);
+    if (template?.is_default) {
+      toast({ title: "Ошибка", description: "Нельзя удалить стандартный шаблон", variant: "destructive" });
+      return;
+    }
+
+    const { error } = await supabase
+      .from('blind_structure_templates')
+      .delete()
+      .eq('id', templateId);
+
+    if (error) {
+      toast({ title: "Ошибка", description: error.message, variant: "destructive" });
+      return;
+    }
+
+    toast({ title: "Успех", description: "Шаблон удалён" });
+    loadTemplates();
   };
 
   const addLevel = async () => {
@@ -251,16 +390,26 @@ const BlindStructure = ({ tournamentId }: BlindStructureProps) => {
               <div>
                 <h3 className="text-lg font-semibold text-foreground mb-2">Структура блайндов не создана</h3>
                 <p className="text-muted-foreground text-sm">
-                  Создайте стандартную структуру или добавьте уровни вручную
+                  Создайте стандартную структуру или примените готовый шаблон
                 </p>
               </div>
-              <Button 
-                onClick={createDefaultStructure} 
-                className="bg-primary hover:bg-primary/90 text-primary-foreground"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Создать стандартную структуру
-              </Button>
+              <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                <Button 
+                  onClick={createDefaultStructure} 
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Создать стандартную
+                </Button>
+                <Button 
+                  variant="outline"
+                  onClick={() => setIsTemplateDialogOpen(true)}
+                  className="border-border text-foreground hover:bg-secondary"
+                >
+                  <FolderOpen className="w-4 h-4 mr-2" />
+                  Из шаблона
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -278,7 +427,7 @@ const BlindStructure = ({ tournamentId }: BlindStructureProps) => {
         <Card className="bg-card brutal-border overflow-hidden">
           <CardContent className="p-6">
             {/* Header */}
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6">
               <div className="flex items-center gap-4">
                 <div className="p-3 bg-primary/20 rounded-lg">
                   <Layers className="w-6 h-6 text-primary" />
@@ -301,14 +450,34 @@ const BlindStructure = ({ tournamentId }: BlindStructureProps) => {
                   </div>
                 </div>
               </div>
-              <Button 
-                onClick={openAddDialog} 
-                size="sm" 
-                className="bg-primary hover:bg-primary/90 text-primary-foreground"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Добавить уровень
-              </Button>
+              <div className="flex flex-wrap gap-2">
+                <Button 
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsTemplateDialogOpen(true)}
+                  className="border-border text-foreground hover:bg-secondary"
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  Загрузить шаблон
+                </Button>
+                <Button 
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsSaveTemplateDialogOpen(true)}
+                  className="border-primary/50 text-primary hover:bg-primary/10"
+                >
+                  <Upload className="w-4 h-4 mr-2" />
+                  Сохранить как шаблон
+                </Button>
+                <Button 
+                  onClick={openAddDialog} 
+                  size="sm" 
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Добавить уровень
+                </Button>
+              </div>
             </div>
 
             {/* Stats Cards */}
@@ -429,7 +598,7 @@ const BlindStructure = ({ tournamentId }: BlindStructureProps) => {
         </Card>
       </motion.div>
 
-      {/* Dialog */}
+      {/* Add/Edit Level Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="bg-card border-border max-w-md">
           <DialogHeader>
@@ -559,6 +728,149 @@ const BlindStructure = ({ tournamentId }: BlindStructureProps) => {
                 className="bg-primary hover:bg-primary/90 text-primary-foreground"
               >
                 {editingLevel ? 'Сохранить' : 'Добавить'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Load Template Dialog */}
+      <Dialog open={isTemplateDialogOpen} onOpenChange={setIsTemplateDialogOpen}>
+        <DialogContent className="bg-card border-border max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="text-foreground flex items-center gap-2">
+              <FolderOpen className="w-5 h-5 text-primary" />
+              Выбрать шаблон
+            </DialogTitle>
+            <DialogDescription className="text-muted-foreground">
+              Выберите готовый шаблон структуры блайндов
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-3 max-h-[400px] overflow-y-auto">
+            {templates.map((template) => (
+              <div 
+                key={template.id}
+                className={`p-4 rounded-lg border transition-all cursor-pointer ${
+                  selectedTemplateId === template.id 
+                    ? 'border-primary bg-primary/10' 
+                    : 'border-border hover:border-primary/50 bg-background/50'
+                }`}
+                onClick={() => setSelectedTemplateId(template.id)}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <h4 className="font-medium text-foreground">{template.name}</h4>
+                    {template.is_default && (
+                      <Badge variant="outline" className="text-xs border-primary/50 text-primary">
+                        Стандартный
+                      </Badge>
+                    )}
+                  </div>
+                  {!template.is_default && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        deleteTemplate(template.id);
+                      }}
+                      className="h-8 w-8 p-0 text-destructive hover:bg-destructive/20"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  )}
+                </div>
+                {template.description && (
+                  <p className="text-sm text-muted-foreground mt-1">{template.description}</p>
+                )}
+                <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
+                  <span>{template.levels.length} уровней</span>
+                  <span>{Math.floor(template.levels.reduce((acc: number, l: any) => acc + l.duration, 0) / 60)} мин</span>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="flex justify-end gap-2 pt-4 border-t border-border">
+            <Button
+              variant="outline"
+              onClick={() => setIsTemplateDialogOpen(false)}
+              className="border-border text-foreground"
+            >
+              Отмена
+            </Button>
+            <Button 
+              onClick={() => applyTemplate(selectedTemplateId)}
+              disabled={!selectedTemplateId}
+              className="bg-primary hover:bg-primary/90 text-primary-foreground"
+            >
+              <Download className="w-4 h-4 mr-2" />
+              Применить
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Save Template Dialog */}
+      <Dialog open={isSaveTemplateDialogOpen} onOpenChange={setIsSaveTemplateDialogOpen}>
+        <DialogContent className="bg-card border-border max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-foreground flex items-center gap-2">
+              <Save className="w-5 h-5 text-primary" />
+              Сохранить как шаблон
+            </DialogTitle>
+            <DialogDescription className="text-muted-foreground">
+              Сохраните текущую структуру блайндов как шаблон для повторного использования
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="template_name" className="text-muted-foreground">Название шаблона *</Label>
+              <Input
+                id="template_name"
+                value={newTemplateName}
+                onChange={(e) => setNewTemplateName(e.target.value)}
+                placeholder="Например: Вечерний турнир"
+                className="mt-1 bg-background border-border text-foreground"
+              />
+            </div>
+            <div>
+              <Label htmlFor="template_description" className="text-muted-foreground">Описание</Label>
+              <Input
+                id="template_description"
+                value={newTemplateDescription}
+                onChange={(e) => setNewTemplateDescription(e.target.value)}
+                placeholder="Краткое описание структуры"
+                className="mt-1 bg-background border-border text-foreground"
+              />
+            </div>
+
+            <div className="p-3 bg-background/50 rounded-lg border border-border/50">
+              <div className="text-xs text-muted-foreground uppercase tracking-wide mb-2">Будет сохранено</div>
+              <div className="flex items-center gap-4 text-sm text-foreground">
+                <span>{gameLevelsCount} уровней</span>
+                <span>{breaksCount} перерывов</span>
+                <span>{Math.floor(totalDuration / 60)} мин</span>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-4">
+              <Button
+                variant="outline"
+                onClick={() => setIsSaveTemplateDialogOpen(false)}
+                className="border-border text-foreground"
+              >
+                Отмена
+              </Button>
+              <Button 
+                onClick={saveAsTemplate}
+                disabled={!newTemplateName.trim()}
+                className="bg-primary hover:bg-primary/90 text-primary-foreground"
+              >
+                <Save className="w-4 h-4 mr-2" />
+                Сохранить
               </Button>
             </div>
           </div>

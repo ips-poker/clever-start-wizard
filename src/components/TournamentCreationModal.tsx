@@ -39,7 +39,8 @@ import {
   AlertCircle,
   Mic,
   Send,
-  Layers
+  Layers,
+  FolderOpen
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -54,6 +55,14 @@ interface BlindLevel {
   ante: number;
   duration: number;
   is_break: boolean;
+}
+
+interface BlindTemplate {
+  id: string;
+  name: string;
+  description: string | null;
+  levels: any[];
+  is_default: boolean;
 }
 
 interface ModernTournament {
@@ -142,11 +151,43 @@ export function TournamentCreationModal({
   });
 
   const [blindLevels, setBlindLevels] = useState<BlindLevel[]>(DEFAULT_BLIND_STRUCTURES.standard);
+  const [templates, setTemplates] = useState<BlindTemplate[]>([]);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState('basic');
   const [autoCreateBlinds, setAutoCreateBlinds] = useState(true);
   const { toast } = useToast();
+
+  // Load templates on mount
+  useEffect(() => {
+    const loadTemplates = async () => {
+      const { data, error } = await supabase
+        .from('blind_structure_templates')
+        .select('*')
+        .order('is_default', { ascending: false })
+        .order('name');
+
+      if (!error && data) {
+        const mappedTemplates: BlindTemplate[] = data.map(t => ({
+          id: t.id,
+          name: t.name,
+          description: t.description,
+          levels: Array.isArray(t.levels) ? t.levels : [],
+          is_default: t.is_default || false
+        }));
+        setTemplates(mappedTemplates);
+        // Select first template by default
+        if (mappedTemplates.length > 0) {
+          setSelectedTemplateId(mappedTemplates[0].id);
+        }
+      }
+    };
+    
+    if (open) {
+      loadTemplates();
+    }
+  }, [open]);
 
   useEffect(() => {
     if (tournament) {
@@ -195,14 +236,24 @@ export function TournamentCreationModal({
   const createDefaultBlinds = async (tournamentId: string) => {
     if (!autoCreateBlinds) return;
 
-    const blindLevelsData = DEFAULT_BLIND_STRUCTURES.standard.map(level => ({
+    // Get levels from selected template or use default
+    let levelsToUse = DEFAULT_BLIND_STRUCTURES.standard;
+    
+    if (selectedTemplateId) {
+      const selectedTemplate = templates.find(t => t.id === selectedTemplateId);
+      if (selectedTemplate && selectedTemplate.levels.length > 0) {
+        levelsToUse = selectedTemplate.levels;
+      }
+    }
+
+    const blindLevelsData = levelsToUse.map((level: any) => ({
       tournament_id: tournamentId,
       level: level.level,
       small_blind: level.small_blind,
       big_blind: level.big_blind,
-      ante: level.ante,
+      ante: level.ante || 0,
       duration: level.duration,
-      is_break: level.is_break
+      is_break: level.is_break || false
     }));
 
     const { error } = await supabase
@@ -675,14 +726,47 @@ export function TournamentCreationModal({
                   </div>
 
                   {autoCreateBlinds && (
-                    <div className="p-4 bg-primary/5 border border-primary/20 rounded-sm">
-                      <div className="flex items-center gap-2 text-primary">
-                        <CheckCircle className="w-5 h-5" />
-                        <span className="font-medium">Автоматическое создание структуры блайндов</span>
+                    <div className="space-y-4">
+                      <div className="p-4 bg-primary/5 border border-primary/20 rounded-sm">
+                        <div className="flex items-center gap-2 text-primary mb-3">
+                          <FolderOpen className="w-5 h-5" />
+                          <span className="font-medium uppercase text-xs tracking-wide">Выберите шаблон структуры</span>
+                        </div>
+                        <div className="grid grid-cols-1 gap-2 max-h-[200px] overflow-y-auto">
+                          {templates.map((template) => (
+                            <div
+                              key={template.id}
+                              onClick={() => setSelectedTemplateId(template.id)}
+                              className={`p-3 rounded-sm border cursor-pointer transition-all ${
+                                selectedTemplateId === template.id
+                                  ? 'border-primary bg-primary/10'
+                                  : 'border-border hover:border-primary/50 bg-secondary/30'
+                              }`}
+                            >
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                  <span className="font-medium text-foreground">{template.name}</span>
+                                  {template.is_default && (
+                                    <Badge variant="outline" className="text-xs border-primary/50 text-primary">
+                                      Стандартный
+                                    </Badge>
+                                  )}
+                                </div>
+                                {selectedTemplateId === template.id && (
+                                  <CheckCircle className="w-4 h-4 text-primary" />
+                                )}
+                              </div>
+                              {template.description && (
+                                <p className="text-xs text-muted-foreground mt-1">{template.description}</p>
+                              )}
+                              <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
+                                <span>{template.levels.length} уровней</span>
+                                <span>{Math.floor(template.levels.reduce((acc: number, l: any) => acc + l.duration, 0) / 60)} мин</span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
                       </div>
-                      <p className="text-sm text-muted-foreground mt-2">
-                        При создании турнира будет сгенерирована профессиональная структура блайндов.
-                      </p>
                     </div>
                   )}
                 </CardContent>
