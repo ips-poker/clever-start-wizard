@@ -95,6 +95,131 @@ export type Database = {
         }
         Relationships: []
       }
+      clan_invitations: {
+        Row: {
+          clan_id: string
+          created_at: string
+          expires_at: string | null
+          id: string
+          player_id: string
+          status: string
+        }
+        Insert: {
+          clan_id: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          player_id: string
+          status?: string
+        }
+        Update: {
+          clan_id?: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          player_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clan_invitations_clan_id_fkey"
+            columns: ["clan_id"]
+            isOneToOne: false
+            referencedRelation: "clans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clan_invitations_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      clan_members: {
+        Row: {
+          clan_id: string
+          hierarchy_role: string
+          id: string
+          joined_at: string
+          player_id: string
+        }
+        Insert: {
+          clan_id: string
+          hierarchy_role?: string
+          id?: string
+          joined_at?: string
+          player_id: string
+        }
+        Update: {
+          clan_id?: string
+          hierarchy_role?: string
+          id?: string
+          joined_at?: string
+          player_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clan_members_clan_id_fkey"
+            columns: ["clan_id"]
+            isOneToOne: false
+            referencedRelation: "clans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clan_members_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: true
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      clans: {
+        Row: {
+          created_at: string
+          description: string | null
+          don_player_id: string
+          emblem_id: number
+          id: string
+          name: string
+          seal_id: number
+          total_rating: number | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          don_player_id: string
+          emblem_id?: number
+          id?: string
+          name: string
+          seal_id?: number
+          total_rating?: number | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          don_player_id?: string
+          emblem_id?: number
+          id?: string
+          name?: string
+          seal_id?: number
+          total_rating?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clans_don_player_id_fkey"
+            columns: ["don_player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cms_content: {
         Row: {
           content_key: string

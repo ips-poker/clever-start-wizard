@@ -6,7 +6,7 @@ import { Footer } from "@/components/Footer";
 import { AuthGuard } from "@/components/auth/AuthGuard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { TrendingUp, Calendar, Users, Star, Sparkles } from "lucide-react";
+import { TrendingUp, Calendar, Users, Star, Sparkles, Crown } from "lucide-react";
 import { toast } from "sonner";
 import { PlayerStats } from "@/components/PlayerStats";
 import { AvatarSelector } from "@/components/AvatarSelector";
@@ -16,6 +16,10 @@ import { ProfileHero } from "@/components/profile/ProfileHero";
 import { MafiaAchievements } from "@/components/profile/MafiaAchievements";
 import { ProfileStatsDashboard } from "@/components/profile/ProfileStatsDashboard";
 import { ProfileGameHistory } from "@/components/profile/ProfileGameHistory";
+import { ClanManagementPanel } from "@/components/clan/ClanManagementPanel";
+import { ClanInvitationsPanel } from "@/components/clan/ClanInvitationsPanel";
+import { ProfileClanBadge } from "@/components/clan/ProfileClanBadge";
+import { useClanSystem } from "@/hooks/useClanSystem";
 import { motion } from "framer-motion";
 
 interface Player {
@@ -40,6 +44,7 @@ interface GameResult {
 
 export default function Profile() {
   const { user, userProfile } = useAuth();
+  const { myClan, myMembership } = useClanSystem();
   const [player, setPlayer] = useState<Player | null>(null);
   const [gameResults, setGameResults] = useState<GameResult[]>([]);
   const [loading, setLoading] = useState(true);
@@ -304,6 +309,24 @@ export default function Profile() {
             />
           </motion.div>
 
+          {/* Clan Badge on Profile */}
+          {myClan && myMembership && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.15 }}
+            >
+              <ProfileClanBadge
+                clan={myClan}
+                role={myMembership.hierarchy_role}
+                variant="full"
+              />
+            </motion.div>
+          )}
+
+          {/* Clan Invitations */}
+          <ClanInvitationsPanel />
+
           {/* Main Content Tabs */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -311,7 +334,7 @@ export default function Profile() {
             transition={{ duration: 0.5, delay: 0.2 }}
           >
             <Tabs defaultValue="statistics" className="space-y-6">
-              <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 bg-card border border-border h-auto p-1.5 gap-1">
+              <TabsList className="grid w-full grid-cols-5 bg-card border border-border h-auto p-1.5 gap-1">
                 <TabsTrigger 
                   value="statistics" 
                   className="flex items-center gap-2 text-sm py-3 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-none transition-all"
@@ -319,6 +342,14 @@ export default function Profile() {
                   <TrendingUp className="h-4 w-4" />
                   <span className="hidden sm:inline">Статистика</span>
                   <span className="sm:hidden">Статс</span>
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="clan" 
+                  className="flex items-center gap-2 text-sm py-3 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-none transition-all"
+                >
+                  <Crown className="h-4 w-4" />
+                  <span className="hidden sm:inline">Клан</span>
+                  <span className="sm:hidden">Клан</span>
                 </TabsTrigger>
                 <TabsTrigger 
                   value="tournaments" 
@@ -362,6 +393,10 @@ export default function Profile() {
                   rating={player?.elo_rating || 100}
                   gameResults={gameResults}
                 />
+              </TabsContent>
+
+              <TabsContent value="clan" className="mt-6">
+                <ClanManagementPanel />
               </TabsContent>
 
               <TabsContent value="tournaments" className="mt-6">
