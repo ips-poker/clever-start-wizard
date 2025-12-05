@@ -69,9 +69,9 @@ export const TournamentCard: React.FC<TournamentCardProps> = ({ tournament, inde
   const getFormatIcon = () => {
     switch (tournament.tournament_format) {
       case 'rebuy':
-        return <Zap className="h-3 w-3" />;
+        return <Zap className="h-4 w-4" />;
       case 'reentry':
-        return <Shield className="h-3 w-3" />;
+        return <Shield className="h-4 w-4" />;
       default:
         return null;
     }
@@ -134,10 +134,10 @@ export const TournamentCard: React.FC<TournamentCardProps> = ({ tournament, inde
             <div className="flex-1">
               {/* Status badges with icon */}
               <div className="flex items-center gap-2 mb-2">
-                <div className="w-7 h-7 bg-syndikate-orange brutal-border flex items-center justify-center animate-pulse shadow-neon-orange">
-                  <Target className="h-3.5 w-3.5 text-background" />
+                <div className="w-10 h-10 bg-gradient-to-br from-syndikate-orange to-syndikate-red brutal-border flex items-center justify-center shadow-neon-orange">
+                  <Target className="h-5 w-5 text-background" />
                 </div>
-                <div className={`px-2.5 py-1 text-[10px] uppercase font-bold tracking-wider brutal-border ${
+                <div className={`px-3 py-1.5 text-xs uppercase font-bold tracking-wider brutal-border ${
                   tournament.status === 'active' 
                     ? 'bg-syndikate-red/20 text-syndikate-red border border-syndikate-red/50 animate-pulse' 
                     : 'bg-syndikate-orange/20 text-syndikate-orange border border-syndikate-orange/50'
@@ -145,7 +145,7 @@ export const TournamentCard: React.FC<TournamentCardProps> = ({ tournament, inde
                   {tournament.status === 'active' ? '● LIVE' : '● OPEN'}
                 </div>
                 {tournament.tournament_format && (
-                  <div className="px-2 py-1 bg-syndikate-metal/50 brutal-border border border-border text-[10px] uppercase text-muted-foreground font-bold flex items-center gap-1">
+                  <div className="px-2.5 py-1.5 bg-syndikate-metal/50 brutal-border border border-border text-xs uppercase text-muted-foreground font-bold flex items-center gap-1.5">
                     {getFormatIcon()}
                     {tournament.tournament_format}
                   </div>
@@ -168,14 +168,14 @@ export const TournamentCard: React.FC<TournamentCardProps> = ({ tournament, inde
           {(isFilling || (timeUntilStart > 0 && tournament.status === 'registration')) && (
             <div className="flex gap-2 mb-3">
               {isFilling && (
-                <div className="px-2 py-1 bg-syndikate-red/20 text-syndikate-red border border-syndikate-red/50 brutal-border text-[10px] font-bold uppercase flex items-center gap-1">
-                  <Zap className="h-3 w-3" />
+                <div className="px-3 py-1.5 bg-syndikate-red/20 text-syndikate-red border border-syndikate-red/50 brutal-border text-xs font-bold uppercase flex items-center gap-1.5">
+                  <Zap className="h-4 w-4" />
                   {spotsLeft} мест
                 </div>
               )}
               {timeUntilStart > 0 && tournament.status === 'registration' && (
-                <div className="px-2 py-1 bg-syndikate-metal/50 border border-border brutal-border text-[10px] font-bold uppercase flex items-center gap-1 text-muted-foreground">
-                  <Clock className="h-3 w-3 text-syndikate-orange animate-pulse" />
+                <div className="px-3 py-1.5 bg-syndikate-metal/50 border border-border brutal-border text-xs font-bold uppercase flex items-center gap-1.5 text-muted-foreground">
+                  <Clock className="h-4 w-4 text-syndikate-orange animate-pulse" />
                   {getTimeDisplay()}
                 </div>
               )}
@@ -186,41 +186,41 @@ export const TournamentCard: React.FC<TournamentCardProps> = ({ tournament, inde
           <div className="h-[2px] bg-gradient-to-r from-syndikate-orange via-syndikate-red to-syndikate-orange mb-3 opacity-50" />
           
           {/* Main info grid */}
-          <div className="grid grid-cols-2 gap-2 mb-3">
+          <div className="grid grid-cols-2 gap-3 mb-4">
             {/* Date & Time */}
-            <div className="bg-syndikate-metal/30 brutal-border p-2.5 relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-10 h-10 bg-syndikate-orange/10 rounded-full blur-xl" />
+            <div className="bg-syndikate-metal/30 brutal-border p-3 relative overflow-hidden group/card hover:bg-syndikate-metal/40 transition-colors">
+              <div className="absolute top-0 right-0 w-16 h-16 bg-syndikate-orange/15 rounded-full blur-2xl" />
               <div className="relative">
-                <div className="flex items-center gap-1.5 mb-1.5">
-                  <div className="w-6 h-6 bg-syndikate-orange brutal-border flex items-center justify-center">
-                    <Calendar className="h-3 w-3 text-background" />
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-9 h-9 bg-gradient-to-br from-syndikate-orange to-syndikate-red brutal-border flex items-center justify-center shadow-lg">
+                    <Calendar className="h-5 w-5 text-background" />
                   </div>
-                  <span className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">Дата</span>
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Дата</span>
                 </div>
-                <div className="text-foreground/80 text-xs mb-0.5">
+                <div className="text-foreground/80 text-sm mb-1">
                   {new Date(tournament.start_time).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })}
                 </div>
-                <div className="font-display text-lg text-syndikate-orange">
+                <div className="font-display text-xl text-syndikate-orange">
                   {new Date(tournament.start_time).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}
                 </div>
               </div>
             </div>
             
             {/* Buy-in */}
-            <div className="bg-syndikate-metal/30 brutal-border p-2.5 relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-12 h-12 bg-syndikate-orange/15 rounded-full blur-xl" />
+            <div className="bg-syndikate-metal/30 brutal-border p-3 relative overflow-hidden group/card hover:bg-syndikate-metal/40 transition-colors">
+              <div className="absolute top-0 right-0 w-16 h-16 bg-syndikate-orange/20 rounded-full blur-2xl" />
               <div className="relative">
-                <div className="flex items-center gap-1.5 mb-1.5">
-                  <div className="w-6 h-6 bg-syndikate-orange brutal-border flex items-center justify-center">
-                    <Coins className="h-3 w-3 text-background" />
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-9 h-9 bg-gradient-to-br from-syndikate-orange to-syndikate-red brutal-border flex items-center justify-center shadow-lg">
+                    <Coins className="h-5 w-5 text-background" />
                   </div>
-                  <span className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">Взнос</span>
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Взнос</span>
                 </div>
-                <div className="font-display text-xl text-syndikate-orange">
+                <div className="font-display text-2xl text-syndikate-orange">
                   {tournament.participation_fee.toLocaleString()}₽
                 </div>
                 {tournament.reentry_fee && tournament.reentry_fee > 0 && (
-                  <div className="text-muted-foreground text-[9px] uppercase tracking-wider">
+                  <div className="text-muted-foreground text-[10px] uppercase tracking-wider">
                     Re: {tournament.reentry_fee.toLocaleString()}₽
                   </div>
                 )}
@@ -229,33 +229,33 @@ export const TournamentCard: React.FC<TournamentCardProps> = ({ tournament, inde
           </div>
           
           {/* Secondary info row */}
-          <div className="grid grid-cols-3 gap-1.5 mb-3">
-            <div className="bg-syndikate-metal/30 brutal-border p-2 text-center group/stat hover:bg-syndikate-metal/50 transition-colors">
-              <div className="w-6 h-6 bg-syndikate-orange/80 brutal-border flex items-center justify-center mx-auto mb-1">
-                <Users className="h-3 w-3 text-background" />
+          <div className="grid grid-cols-3 gap-2 mb-4">
+            <div className="bg-syndikate-metal/30 brutal-border p-3 text-center group/stat hover:bg-syndikate-metal/50 transition-all hover:scale-[1.02]">
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 brutal-border flex items-center justify-center mx-auto mb-2 shadow-lg">
+                <Users className="h-5 w-5 text-white" />
               </div>
-              <div className="text-foreground font-bold text-sm">
+              <div className="text-foreground font-bold text-base">
                 {registeredCount}/{maxPlayers}
               </div>
-              <div className="text-[8px] text-muted-foreground uppercase tracking-wider">Игроков</div>
+              <div className="text-[9px] text-muted-foreground uppercase tracking-wider">Игроков</div>
             </div>
-            <div className="bg-syndikate-metal/30 brutal-border p-2 text-center group/stat hover:bg-syndikate-metal/50 transition-colors">
-              <div className="w-6 h-6 bg-syndikate-orange/80 brutal-border flex items-center justify-center mx-auto mb-1">
-                <Gem className="h-3 w-3 text-background" />
+            <div className="bg-syndikate-metal/30 brutal-border p-3 text-center group/stat hover:bg-syndikate-metal/50 transition-all hover:scale-[1.02]">
+              <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-purple-600 brutal-border flex items-center justify-center mx-auto mb-2 shadow-lg">
+                <Gem className="h-5 w-5 text-white" />
               </div>
-              <div className="text-foreground font-bold text-sm">
+              <div className="text-foreground font-bold text-base">
                 {(tournament.starting_chips / 1000).toFixed(0)}K
               </div>
-              <div className="text-[8px] text-muted-foreground uppercase tracking-wider">Стек</div>
+              <div className="text-[9px] text-muted-foreground uppercase tracking-wider">Стек</div>
             </div>
-            <div className="bg-syndikate-metal/30 brutal-border p-2 text-center group/stat hover:bg-syndikate-metal/50 transition-colors">
-              <div className="w-6 h-6 bg-syndikate-orange/80 brutal-border flex items-center justify-center mx-auto mb-1">
-                <Trophy className="h-3 w-3 text-background" />
+            <div className="bg-syndikate-metal/30 brutal-border p-3 text-center group/stat hover:bg-syndikate-metal/50 transition-all hover:scale-[1.02]">
+              <div className="w-10 h-10 bg-gradient-to-br from-syndikate-orange to-syndikate-red brutal-border flex items-center justify-center mx-auto mb-2 shadow-lg">
+                <Trophy className="h-5 w-5 text-white" />
               </div>
-              <div className="text-foreground font-bold text-sm">
+              <div className="text-foreground font-bold text-base">
                 {calculateTotalRPSPool(registeredCount, tournament.participation_fee || 0, 0, tournament.reentry_fee || 0, 0, 0)}
               </div>
-              <div className="text-[8px] text-muted-foreground uppercase tracking-wider">RPS</div>
+              <div className="text-[9px] text-muted-foreground uppercase tracking-wider">RPS</div>
             </div>
           </div>
           
@@ -285,17 +285,17 @@ export const TournamentCard: React.FC<TournamentCardProps> = ({ tournament, inde
           )}
           
           {/* Action Buttons */}
-          <div className="flex gap-2 pt-2 border-t border-syndikate-concrete/20">
+          <div className="flex gap-3 pt-3 border-t border-syndikate-concrete/20">
             {/* Details Button */}
             <button 
               onClick={(e) => {
                 e.stopPropagation();
                 onClick();
               }}
-              className="flex-1 py-2.5 brutal-border bg-syndikate-metal/30 hover:bg-syndikate-metal/50 border border-border transition-all duration-300 flex items-center justify-center gap-1.5"
+              className="flex-1 py-3 brutal-border bg-syndikate-metal/30 hover:bg-syndikate-metal/50 border border-border transition-all duration-300 flex items-center justify-center gap-2 hover:scale-[1.02]"
             >
-              <Target className="h-4 w-4 text-muted-foreground" />
-              <span className="text-muted-foreground font-bold uppercase text-[10px] tracking-wider">Подробнее</span>
+              <Target className="h-5 w-5 text-muted-foreground" />
+              <span className="text-muted-foreground font-bold uppercase text-xs tracking-wider">Подробнее</span>
             </button>
             
             {/* Quick Register Button */}
@@ -308,7 +308,7 @@ export const TournamentCard: React.FC<TournamentCardProps> = ({ tournament, inde
                   }
                 }}
                 disabled={isRegistering || isRegistered}
-                className={`flex-1 py-2.5 brutal-border transition-all duration-300 flex items-center justify-center gap-1.5 ${
+                className={`flex-1 py-3 brutal-border transition-all duration-300 flex items-center justify-center gap-2 hover:scale-[1.02] ${
                   isRegistered 
                     ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-500 cursor-default' 
                     : isRegistering
@@ -318,18 +318,18 @@ export const TournamentCard: React.FC<TournamentCardProps> = ({ tournament, inde
               >
                 {isRegistering ? (
                   <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    <span className="font-bold uppercase text-[10px] tracking-wider">Загрузка...</span>
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    <span className="font-bold uppercase text-xs tracking-wider">Загрузка...</span>
                   </>
                 ) : isRegistered ? (
                   <>
-                    <CheckCircle className="h-4 w-4" />
-                    <span className="font-bold uppercase text-[10px] tracking-wider">Вы в игре</span>
+                    <CheckCircle className="h-5 w-5" />
+                    <span className="font-bold uppercase text-xs tracking-wider">Вы в игре</span>
                   </>
                 ) : (
                   <>
-                    <UserPlus className="h-4 w-4" />
-                    <span className="font-bold uppercase text-[10px] tracking-wider">Участвовать</span>
+                    <UserPlus className="h-5 w-5" />
+                    <span className="font-bold uppercase text-xs tracking-wider">Участвовать</span>
                   </>
                 )}
               </button>
