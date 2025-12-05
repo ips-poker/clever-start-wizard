@@ -12,26 +12,44 @@ import {
   getMafiaRankProgress,
   getRarityInfo,
   getUnlockedRanks,
-  getTotalRankXP 
+  getTotalRankXP,
+  getEffectiveMafiaRank
 } from '@/utils/mafiaRanks';
 
 interface MafiaHierarchyProps {
   gamesPlayed: number;
   wins: number;
   rating: number;
+  manualRank?: string | null;
 }
 
 export const MafiaHierarchy: React.FC<MafiaHierarchyProps> = ({ 
   gamesPlayed, 
   wins, 
-  rating 
+  rating,
+  manualRank
 }) => {
   const stats = { gamesPlayed, wins, rating };
-  const currentRank = getCurrentMafiaRank(stats);
+  
+  // Use effective rank (manual if assigned, otherwise calculated)
+  const effectiveRankData = getEffectiveMafiaRank(stats, manualRank);
+  const currentRank = effectiveRankData.rank;
+  const isManualRank = effectiveRankData.isManual;
+  
   const rankProgress = getMafiaRankProgress(stats);
-  const unlockedRanks = getUnlockedRanks(stats);
   const totalXP = getTotalRankXP(stats);
   const rarityInfo = getRarityInfo(currentRank.rarity);
+  
+  // For manual ranks, show all ranks up to and including that rank as unlocked
+  const getUnlockedRanksForDisplay = () => {
+    if (isManualRank) {
+      const currentIndex = MAFIA_RANKS.findIndex(r => r.id === currentRank.id);
+      return MAFIA_RANKS.slice(0, currentIndex + 1);
+    }
+    return getUnlockedRanks(stats);
+  };
+  
+  const unlockedRanks = getUnlockedRanksForDisplay();
 
   const getRankProgress = (rank: MafiaRank): { percent: number; details: string } => {
     const req = rank.requirement;
@@ -162,7 +180,10 @@ export const MafiaHierarchy: React.FC<MafiaHierarchyProps> = ({
           {/* Compact rank grid */}
           <div className="grid grid-cols-5 gap-2">
             {MAFIA_RANKS.map((rank, index) => {
-              const unlocked = isRankUnlocked(rank, stats);
+              // Check if rank is unlocked (either by achievement or manual assignment)
+              const isUnlockedByAchievement = isRankUnlocked(rank, stats);
+              const isUnlockedByManual = isManualRank && unlockedRanks.some(r => r.id === rank.id);
+              const unlocked = isUnlockedByAchievement || isUnlockedByManual;
               const progress = getRankProgress(rank);
               const isCurrent = rank.id === currentRank.id;
               

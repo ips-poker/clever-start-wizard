@@ -40,7 +40,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { AvatarSelector } from '@/components/AvatarSelector';
 import { toast } from 'sonner';
 import { convertFeeToRPS, formatRPSPoints } from '@/utils/rpsCalculations';
-import { getCurrentMafiaRank, getMafiaRankProgress, getRarityInfo, type MafiaRank } from '@/utils/mafiaRanks';
+import { getCurrentMafiaRank, getMafiaRankProgress, getRarityInfo, getEffectiveMafiaRank, type MafiaRank } from '@/utils/mafiaRanks';
 import { fixStorageUrl } from '@/utils/storageUtils';
 import { MafiaHierarchy } from './MafiaHierarchy';
 import { getRankProfileStyle } from './RankProfileStyles';
@@ -56,6 +56,7 @@ interface Player {
   avatar_url?: string;
   telegram?: string;
   created_at?: string;
+  manual_rank?: string | null;
 }
 
 interface GameResult {
@@ -413,14 +414,17 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate, onUnre
     setNewPlayerName("");
   };
 
-  // Get mafia rank based on player stats
+  // Get mafia rank based on player stats (with manual rank support)
   const getMafiaStats = () => ({
     gamesPlayed: player?.games_played || 0,
     wins: player?.wins || 0,
     rating: player?.elo_rating || 100
   });
 
-  const mafiaRank = player ? getCurrentMafiaRank(getMafiaStats()) : null;
+  // Use getEffectiveMafiaRank to support manual rank assignments
+  const effectiveRankData = player ? getEffectiveMafiaRank(getMafiaStats(), player.manual_rank) : null;
+  const mafiaRank = effectiveRankData?.rank || null;
+  const isManualRank = effectiveRankData?.isManual || false;
   const rankProgress = player ? getMafiaRankProgress(getMafiaStats()) : null;
   const rarityInfo = mafiaRank ? getRarityInfo(mafiaRank.rarity) : null;
 
@@ -627,11 +631,24 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate, onUnre
                       alt={mafiaRank?.name}
                       className={`w-12 h-12 rounded-full shadow-xl ${mafiaRank?.rarity === 'godfather' ? 'ring-2 ring-cyan-400' : mafiaRank?.rarity === 'boss' ? 'ring-2 ring-rose-400' : 'border-2 border-white/20'}`}
                     />
+                    {/* Manual rank crown indicator */}
+                    {isManualRank && (
+                      <div className="absolute -top-1 -right-1 bg-amber-500 rounded-full p-0.5 shadow-lg">
+                        <Crown className="w-3 h-3 text-background" />
+                      </div>
+                    )}
                   </div>
                   <div className="flex flex-col items-start">
-                    <Badge className={`bg-gradient-to-r ${mafiaRank?.bgGradient || 'from-zinc-600 to-zinc-800'} brutal-border border-0 px-4 py-1.5 font-bold text-base uppercase tracking-wider shadow-brutal ${mafiaRank?.rarity === 'godfather' ? 'animate-shimmer' : ''}`}>
-                      {mafiaRank?.name || 'Аутсайдер'}
-                    </Badge>
+                    <div className="flex items-center gap-2">
+                      <Badge className={`bg-gradient-to-r ${mafiaRank?.bgGradient || 'from-zinc-600 to-zinc-800'} brutal-border border-0 px-4 py-1.5 font-bold text-base uppercase tracking-wider shadow-brutal ${mafiaRank?.rarity === 'godfather' ? 'animate-shimmer' : ''}`}>
+                        {mafiaRank?.name || 'Аутсайдер'}
+                      </Badge>
+                      {isManualRank && (
+                        <Badge className="bg-amber-500/20 text-amber-400 border border-amber-500/30 text-[10px] px-1.5 py-0.5">
+                          Назначен
+                        </Badge>
+                      )}
+                    </div>
                     <span className={`text-sm ${mafiaRank?.textColor || 'text-zinc-400'} font-medium mt-1`}>
                       {mafiaRank?.title || 'Ещё не в семье'}
                     </span>
@@ -699,6 +716,7 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate, onUnre
         gamesPlayed={player.games_played}
         wins={player.wins}
         rating={player.elo_rating}
+        manualRank={player.manual_rank}
       />
 
       {/* Advanced Statistics */}
