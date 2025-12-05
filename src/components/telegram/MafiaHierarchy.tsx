@@ -156,7 +156,7 @@ export const MafiaHierarchy: React.FC<MafiaHierarchyProps> = ({
         <CardContent className="p-3">
           <div className="flex items-center gap-2 mb-3">
             <div className="w-1 h-4 bg-gradient-to-b from-syndikate-orange to-syndikate-red rounded-full" />
-            <h3 className="text-sm font-bold text-foreground uppercase tracking-wider">Иерархия Семьи</h3>
+            <h3 className="text-sm font-bold text-foreground uppercase tracking-wider">Иерархия Синдиката</h3>
           </div>
 
           {/* Compact rank grid */}
