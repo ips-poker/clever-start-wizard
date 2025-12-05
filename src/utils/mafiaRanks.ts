@@ -226,6 +226,22 @@ export function getCurrentMafiaRank(stats: { gamesPlayed: number; wins: number; 
   };
 }
 
+// Получает эффективный ранг игрока с учётом ручного назначения
+export function getEffectiveMafiaRank(
+  stats: { gamesPlayed: number; wins: number; rating: number },
+  manualRank?: string | null
+): { rank: MafiaRank; isManual: boolean } {
+  // Если есть ручной ранг, используем его
+  if (manualRank) {
+    const manual = MAFIA_RANKS.find(r => r.id === manualRank);
+    if (manual) {
+      return { rank: manual, isManual: true };
+    }
+  }
+  // Иначе вычисляем автоматически
+  return { rank: getCurrentMafiaRank(stats), isManual: false };
+}
+
 // Получает следующий ранг для достижения
 export function getNextMafiaRank(stats: { gamesPlayed: number; wins: number; rating: number }): MafiaRank | null {
   for (let i = 0; i < MAFIA_RANKS.length; i++) {

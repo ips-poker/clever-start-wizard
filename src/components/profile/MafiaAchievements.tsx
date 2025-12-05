@@ -8,7 +8,7 @@ import {
   MAFIA_RANKS, 
   MafiaRank,
   isRankUnlocked, 
-  getCurrentMafiaRank, 
+  getEffectiveMafiaRank, 
   getRarityInfo,
   getUnlockedRanks,
   getTotalRankXP 
@@ -23,9 +23,10 @@ interface MafiaAchievementsProps {
   wins: number;
   rating: number;
   gameResults: GameResult[];
+  manualRank?: string | null;
 }
 
-export function MafiaAchievements({ gamesPlayed, wins, rating, gameResults }: MafiaAchievementsProps) {
+export function MafiaAchievements({ gamesPlayed, wins, rating, gameResults, manualRank }: MafiaAchievementsProps) {
   const stats = { gamesPlayed, wins, rating };
   
   const getRankProgress = (rank: MafiaRank): { current: number; total: number; percent: number; details?: string } => {
@@ -87,8 +88,21 @@ export function MafiaAchievements({ gamesPlayed, wins, rating, gameResults }: Ma
   };
 
   const unlockedRanks = getUnlockedRanks(stats);
-  const currentRank = getCurrentMafiaRank(stats);
+  const { rank: currentRank, isManual } = getEffectiveMafiaRank(stats, manualRank);
   const totalXP = getTotalRankXP(stats);
+
+  // При ручном ранге показываем все ранги до него как разблокированные
+  const getDisplayUnlockedRanks = () => {
+    if (manualRank) {
+      const manualRankIndex = MAFIA_RANKS.findIndex(r => r.id === manualRank);
+      if (manualRankIndex >= 0) {
+        return MAFIA_RANKS.slice(0, manualRankIndex + 1);
+      }
+    }
+    return unlockedRanks;
+  };
+
+  const displayUnlockedRanks = getDisplayUnlockedRanks();
 
   return (
     <Card className="brutal-border bg-card overflow-hidden">
@@ -112,7 +126,7 @@ export function MafiaAchievements({ gamesPlayed, wins, rating, gameResults }: Ma
               +{totalXP} XP
             </Badge>
             <Badge className="bg-gradient-to-r from-red-600 to-purple-600 text-white rounded-none font-bold px-3">
-              {unlockedRanks.length}/{MAFIA_RANKS.length}
+              {displayUnlockedRanks.length}/{MAFIA_RANKS.length}
             </Badge>
           </div>
         </CardTitle>
@@ -155,7 +169,12 @@ export function MafiaAchievements({ gamesPlayed, wins, rating, gameResults }: Ma
       <CardContent className="p-4">
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
           {MAFIA_RANKS.map((rank, index) => {
-            const unlocked = isRankUnlocked(rank, stats);
+            // Проверяем разблокировку: либо естественная, либо через ручной ранг
+            const naturallyUnlocked = isRankUnlocked(rank, stats);
+            const manuallyUnlocked = manualRank ? (
+              MAFIA_RANKS.findIndex(r => r.id === rank.id) <= MAFIA_RANKS.findIndex(r => r.id === manualRank)
+            ) : false;
+            const unlocked = naturallyUnlocked || manuallyUnlocked;
             const progress = getRankProgress(rank);
             const rarityInfo = getRarityInfo(rank.rarity);
             

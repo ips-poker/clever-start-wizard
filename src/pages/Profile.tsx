@@ -30,6 +30,7 @@ interface Player {
   wins: number;
   email?: string;
   avatar_url?: string;
+  manual_rank?: string | null;
 }
 
 interface GameResult {
@@ -384,6 +385,7 @@ export default function Profile() {
                   wins={player?.wins || 0}
                   rating={player?.elo_rating || 100}
                   gameResults={gameResults}
+                  manualRank={player?.manual_rank}
                 />
                 
                 {/* Stats Dashboard */}
