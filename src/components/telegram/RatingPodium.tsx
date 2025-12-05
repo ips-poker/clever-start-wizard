@@ -1,8 +1,10 @@
 import React from 'react';
-import { Crown, Trophy, Medal, Gamepad2 } from 'lucide-react';
+import { Crown, Trophy, Medal, Gamepad2, Star } from 'lucide-react';
 import { PlayerLevelBadge } from './PlayerLevelBadge';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { GlitchAvatarFrame } from '@/components/ui/glitch-avatar-frame';
 import { fixStorageUrl } from '@/utils/storageUtils';
+import { getCurrentMafiaRank, getRarityInfo, MafiaRank } from '@/utils/mafiaRanks';
 
 interface Player {
   id: string;
@@ -26,6 +28,79 @@ export const RatingPodium: React.FC<RatingPodiumProps> = ({ topPlayers, onPlayer
     return ((wins / games) * 100).toFixed(0);
   };
 
+  const getPlayerRank = (player: Player): MafiaRank => {
+    return getCurrentMafiaRank({
+      gamesPlayed: player.games_played,
+      wins: player.wins,
+      rating: player.elo_rating
+    });
+  };
+
+  const getRankStyles = (rank: MafiaRank) => {
+    const rarity = rank.rarity;
+    const styles = {
+      initiate: {
+        cardBg: 'bg-gradient-to-br from-zinc-800/90 to-zinc-900/90',
+        border: 'border-zinc-500/50',
+        glow: '',
+        accent: 'text-zinc-400',
+        ring: 'ring-zinc-500/30',
+      },
+      soldier: {
+        cardBg: 'bg-gradient-to-br from-amber-900/40 to-amber-950/60',
+        border: 'border-amber-500/60',
+        glow: 'shadow-[0_0_20px_rgba(245,158,11,0.3)]',
+        accent: 'text-amber-400',
+        ring: 'ring-amber-500/40',
+      },
+      captain: {
+        cardBg: 'bg-gradient-to-br from-blue-900/40 to-cyan-950/60',
+        border: 'border-blue-500/60',
+        glow: 'shadow-[0_0_25px_rgba(59,130,246,0.4)]',
+        accent: 'text-blue-400',
+        ring: 'ring-blue-500/50',
+      },
+      underboss: {
+        cardBg: 'bg-gradient-to-br from-purple-900/40 to-pink-950/60',
+        border: 'border-purple-500/60',
+        glow: 'shadow-[0_0_30px_rgba(168,85,247,0.4)]',
+        accent: 'text-purple-400',
+        ring: 'ring-purple-500/50',
+      },
+      boss: {
+        cardBg: 'bg-gradient-to-br from-yellow-900/40 to-amber-950/60',
+        border: 'border-yellow-500/70',
+        glow: 'shadow-[0_0_35px_rgba(234,179,8,0.5)]',
+        accent: 'text-yellow-400',
+        ring: 'ring-yellow-500/60',
+      },
+      godfather: {
+        cardBg: 'bg-gradient-to-br from-cyan-900/40 via-purple-900/40 to-pink-900/40',
+        border: 'border-cyan-400/70',
+        glow: 'shadow-[0_0_40px_rgba(6,182,212,0.5),0_0_60px_rgba(168,85,247,0.3)]',
+        accent: 'text-cyan-300',
+        ring: 'ring-cyan-400/60',
+      },
+    };
+    return styles[rarity] || styles.initiate;
+  };
+
+  const player1 = topPlayers[0];
+  const player2 = topPlayers[1];
+  const player3 = topPlayers[2];
+
+  const rank1 = getPlayerRank(player1);
+  const rank2 = getPlayerRank(player2);
+  const rank3 = getPlayerRank(player3);
+
+  const styles1 = getRankStyles(rank1);
+  const styles2 = getRankStyles(rank2);
+  const styles3 = getRankStyles(rank3);
+
+  const rarityInfo1 = getRarityInfo(rank1.rarity);
+  const rarityInfo2 = getRarityInfo(rank2.rarity);
+  const rarityInfo3 = getRarityInfo(rank3.rarity);
+
   return (
     <div className="relative mb-6">
       {/* Background glow effect */}
@@ -35,37 +110,46 @@ export const RatingPodium: React.FC<RatingPodiumProps> = ({ topPlayers, onPlayer
         {/* 2nd Place - Left */}
         <div 
           className="relative cursor-pointer group"
-          onClick={() => onPlayerClick?.(topPlayers[1])}
+          onClick={() => onPlayerClick?.(player2)}
         >
           {/* Place indicator */}
           <div className="absolute -top-6 left-1/2 -translate-x-1/2 w-10 h-10 bg-gradient-to-br from-gray-300 to-gray-500 rounded-full brutal-border flex items-center justify-center shadow-lg z-20 group-hover:scale-110 transition-transform">
             <Medal className="h-5 w-5 text-background" />
           </div>
           
-          <div className="bg-syndikate-metal/90 brutal-border p-3 pt-8 text-center space-y-2 group-hover:shadow-neon-orange transition-all duration-300 relative overflow-hidden">
-            {/* Background effect */}
-            <div className="absolute inset-0 bg-gradient-to-br from-gray-400/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+          <div className={`${styles2.cardBg} brutal-border ${styles2.border} p-3 pt-8 text-center space-y-2 ${styles2.glow} group-hover:scale-[1.02] transition-all duration-300 relative overflow-hidden`}>
+            {/* Rank-based background pattern */}
+            <div className="absolute inset-0 opacity-20">
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(255,255,255,0.1)_0%,transparent_50%)]" />
+            </div>
             
-            <Avatar className="w-14 h-14 mx-auto brutal-border relative z-10 group-hover:scale-105 transition-transform">
-              <AvatarImage src={topPlayers[1].avatar_url ? fixStorageUrl(topPlayers[1].avatar_url) : undefined} alt={topPlayers[1].name} />
-              <AvatarFallback className="bg-gray-400/20 text-xl font-display text-gray-300">
-                {topPlayers[1].name.charAt(0)}
-              </AvatarFallback>
-            </Avatar>
+            {/* Rank badge */}
+            <div className={`absolute top-1 right-1 px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wider ${rarityInfo2.class} rounded brutal-border`}>
+              {rank2.name}
+            </div>
+            
+            <GlitchAvatarFrame rank={rank2} size="sm">
+              <Avatar className={`w-14 h-14 mx-auto relative z-10 ring-2 ${styles2.ring} ring-offset-1 ring-offset-background`}>
+                <AvatarImage src={player2.avatar_url ? fixStorageUrl(player2.avatar_url) : undefined} alt={player2.name} />
+                <AvatarFallback className={`bg-gradient-to-br ${rank2.bgGradient} text-xl font-display text-white`}>
+                  {player2.name.charAt(0)}
+                </AvatarFallback>
+              </Avatar>
+            </GlitchAvatarFrame>
             
             <div className="relative z-10">
-              <div className="text-sm font-display truncate group-hover:text-syndikate-orange transition-colors">{topPlayers[1].name}</div>
-              <PlayerLevelBadge rating={topPlayers[1].elo_rating} gamesPlayed={topPlayers[1].games_played} wins={topPlayers[1].wins} size="sm" />
-              <div className="text-lg font-display text-syndikate-orange font-bold mt-1">{topPlayers[1].elo_rating}</div>
+              <div className={`text-sm font-display truncate ${styles2.accent} transition-colors`}>{player2.name}</div>
+              <PlayerLevelBadge rating={player2.elo_rating} gamesPlayed={player2.games_played} wins={player2.wins} size="sm" />
+              <div className="text-lg font-display text-syndikate-orange font-bold mt-1">{player2.elo_rating}</div>
               <div className="text-[10px] text-muted-foreground flex items-center justify-center gap-1">
                 <Gamepad2 className="h-3 w-3" />
-                {topPlayers[1].games_played} игр • {getWinRate(topPlayers[1].wins, topPlayers[1].games_played)}% WR
+                {player2.games_played} игр • {getWinRate(player2.wins, player2.games_played)}% WR
               </div>
             </div>
           </div>
           
           {/* Podium stand */}
-          <div className="h-16 bg-gradient-to-b from-gray-400/40 to-gray-600/40 brutal-border mt-1 flex items-center justify-center">
+          <div className={`h-16 bg-gradient-to-b from-gray-400/40 to-gray-600/40 brutal-border mt-1 flex items-center justify-center ${styles2.border}`}>
             <span className="text-3xl font-display text-gray-400/60">2</span>
           </div>
         </div>
@@ -73,7 +157,7 @@ export const RatingPodium: React.FC<RatingPodiumProps> = ({ topPlayers, onPlayer
         {/* 1st Place - Center */}
         <div 
           className="relative -mt-4 cursor-pointer group"
-          onClick={() => onPlayerClick?.(topPlayers[0])}
+          onClick={() => onPlayerClick?.(player1)}
         >
           {/* Crown with glow */}
           <div className="absolute -top-8 left-1/2 -translate-x-1/2 z-20">
@@ -82,76 +166,93 @@ export const RatingPodium: React.FC<RatingPodiumProps> = ({ topPlayers, onPlayer
             </div>
           </div>
           
-          <div className="bg-syndikate-metal/90 brutal-border p-4 pt-10 text-center space-y-2 shadow-neon-orange relative overflow-hidden">
+          <div className={`${styles1.cardBg} brutal-border ${styles1.border} p-4 pt-10 text-center space-y-2 ${styles1.glow} relative overflow-hidden group-hover:scale-[1.02] transition-all duration-300`}>
             {/* Champion background effect */}
             <div className="absolute inset-0 bg-gradient-to-br from-yellow-500/10 via-syndikate-orange/5 to-transparent" />
-            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-yellow-400 via-syndikate-orange to-yellow-400" />
+            <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${rank1.rarity === 'godfather' ? 'from-cyan-400 via-purple-500 to-pink-500' : 'from-yellow-400 via-syndikate-orange to-yellow-400'}`} />
             
-            <Avatar className="w-18 h-18 mx-auto brutal-border relative z-10 group-hover:scale-105 transition-transform ring-2 ring-yellow-500/50 ring-offset-2 ring-offset-background">
-              <AvatarImage src={topPlayers[0].avatar_url ? fixStorageUrl(topPlayers[0].avatar_url) : undefined} alt={topPlayers[0].name} className="w-[72px] h-[72px]" />
-              <AvatarFallback className="bg-syndikate-orange/20 text-2xl font-display text-syndikate-orange w-[72px] h-[72px]">
-                {topPlayers[0].name.charAt(0)}
-              </AvatarFallback>
-            </Avatar>
+            {/* Rank badge */}
+            <div className={`absolute top-2 right-2 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider ${rarityInfo1.class} rounded brutal-border flex items-center gap-1`}>
+              <Star className="h-3 w-3" />
+              {rank1.name}
+            </div>
+            
+            <GlitchAvatarFrame rank={rank1} size="md">
+              <Avatar className={`w-[72px] h-[72px] mx-auto relative z-10 ring-2 ${styles1.ring} ring-offset-2 ring-offset-background`}>
+                <AvatarImage src={player1.avatar_url ? fixStorageUrl(player1.avatar_url) : undefined} alt={player1.name} />
+                <AvatarFallback className={`bg-gradient-to-br ${rank1.bgGradient} text-2xl font-display text-white`}>
+                  {player1.name.charAt(0)}
+                </AvatarFallback>
+              </Avatar>
+            </GlitchAvatarFrame>
             
             <div className="relative z-10">
-              <div className="text-base font-display truncate group-hover:text-syndikate-orange transition-colors font-bold">{topPlayers[0].name}</div>
-              <PlayerLevelBadge rating={topPlayers[0].elo_rating} gamesPlayed={topPlayers[0].games_played} wins={topPlayers[0].wins} size="sm" />
-              <div className="text-2xl font-display text-syndikate-orange font-bold mt-1">{topPlayers[0].elo_rating}</div>
+              <div className={`text-base font-display truncate ${styles1.accent} font-bold transition-colors`}>{player1.name}</div>
+              <PlayerLevelBadge rating={player1.elo_rating} gamesPlayed={player1.games_played} wins={player1.wins} size="sm" />
+              <div className="text-2xl font-display text-syndikate-orange font-bold mt-1">{player1.elo_rating}</div>
               <div className="text-[10px] text-muted-foreground flex items-center justify-center gap-1">
                 <Trophy className="h-3 w-3 text-syndikate-orange" />
-                {topPlayers[0].wins} побед • {getWinRate(topPlayers[0].wins, topPlayers[0].games_played)}% WR
+                {player1.wins} побед • {getWinRate(player1.wins, player1.games_played)}% WR
               </div>
               
               {/* Champion badge */}
-              <div className="mt-2 px-3 py-1 bg-gradient-to-r from-yellow-500/20 to-syndikate-orange/20 brutal-border text-[10px] uppercase tracking-wider inline-flex items-center gap-1">
-                <Crown className="h-3 w-3 text-yellow-500" />
-                <span className="text-yellow-500 font-bold">Чемпион</span>
+              <div className={`mt-2 px-3 py-1 bg-gradient-to-r ${rank1.rarity === 'godfather' ? 'from-cyan-500/30 via-purple-500/30 to-pink-500/30' : 'from-yellow-500/20 to-syndikate-orange/20'} brutal-border text-[10px] uppercase tracking-wider inline-flex items-center gap-1`}>
+                <Crown className={`h-3 w-3 ${rank1.rarity === 'godfather' ? 'text-cyan-400' : 'text-yellow-500'}`} />
+                <span className={`${rank1.rarity === 'godfather' ? 'text-cyan-400' : 'text-yellow-500'} font-bold`}>Чемпион</span>
               </div>
             </div>
           </div>
           
           {/* Podium stand - tallest */}
-          <div className="h-24 bg-gradient-to-b from-yellow-400/40 to-yellow-600/40 brutal-border mt-1 flex items-center justify-center relative overflow-hidden">
+          <div className={`h-24 bg-gradient-to-b ${rank1.rarity === 'godfather' ? 'from-cyan-400/40 via-purple-500/40 to-pink-500/40' : 'from-yellow-400/40 to-yellow-600/40'} brutal-border ${styles1.border} mt-1 flex items-center justify-center relative overflow-hidden`}>
             <div className="absolute inset-0 bg-gradient-to-t from-syndikate-orange/20 to-transparent" />
-            <span className="text-4xl font-display text-yellow-500/60 relative z-10">1</span>
+            <span className={`text-4xl font-display ${rank1.rarity === 'godfather' ? 'text-cyan-400/60' : 'text-yellow-500/60'} relative z-10`}>1</span>
           </div>
         </div>
 
         {/* 3rd Place - Right */}
         <div 
           className="relative cursor-pointer group"
-          onClick={() => onPlayerClick?.(topPlayers[2])}
+          onClick={() => onPlayerClick?.(player3)}
         >
           {/* Place indicator */}
           <div className="absolute -top-6 left-1/2 -translate-x-1/2 w-10 h-10 bg-gradient-to-br from-orange-600 to-orange-800 rounded-full brutal-border flex items-center justify-center shadow-lg z-20 group-hover:scale-110 transition-transform">
             <Medal className="h-5 w-5 text-background" />
           </div>
           
-          <div className="bg-syndikate-metal/90 brutal-border p-3 pt-8 text-center space-y-2 group-hover:shadow-neon-orange transition-all duration-300 relative overflow-hidden">
-            {/* Background effect */}
-            <div className="absolute inset-0 bg-gradient-to-br from-orange-700/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+          <div className={`${styles3.cardBg} brutal-border ${styles3.border} p-3 pt-8 text-center space-y-2 ${styles3.glow} group-hover:scale-[1.02] transition-all duration-300 relative overflow-hidden`}>
+            {/* Rank-based background pattern */}
+            <div className="absolute inset-0 opacity-20">
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(255,255,255,0.1)_0%,transparent_50%)]" />
+            </div>
             
-            <Avatar className="w-14 h-14 mx-auto brutal-border relative z-10 group-hover:scale-105 transition-transform">
-              <AvatarImage src={topPlayers[2].avatar_url ? fixStorageUrl(topPlayers[2].avatar_url) : undefined} alt={topPlayers[2].name} />
-              <AvatarFallback className="bg-orange-700/20 text-xl font-display text-orange-400">
-                {topPlayers[2].name.charAt(0)}
-              </AvatarFallback>
-            </Avatar>
+            {/* Rank badge */}
+            <div className={`absolute top-1 right-1 px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wider ${rarityInfo3.class} rounded brutal-border`}>
+              {rank3.name}
+            </div>
+            
+            <GlitchAvatarFrame rank={rank3} size="sm">
+              <Avatar className={`w-14 h-14 mx-auto relative z-10 ring-2 ${styles3.ring} ring-offset-1 ring-offset-background`}>
+                <AvatarImage src={player3.avatar_url ? fixStorageUrl(player3.avatar_url) : undefined} alt={player3.name} />
+                <AvatarFallback className={`bg-gradient-to-br ${rank3.bgGradient} text-xl font-display text-white`}>
+                  {player3.name.charAt(0)}
+                </AvatarFallback>
+              </Avatar>
+            </GlitchAvatarFrame>
             
             <div className="relative z-10">
-              <div className="text-sm font-display truncate group-hover:text-syndikate-orange transition-colors">{topPlayers[2].name}</div>
-              <PlayerLevelBadge rating={topPlayers[2].elo_rating} gamesPlayed={topPlayers[2].games_played} wins={topPlayers[2].wins} size="sm" />
-              <div className="text-lg font-display text-syndikate-orange font-bold mt-1">{topPlayers[2].elo_rating}</div>
+              <div className={`text-sm font-display truncate ${styles3.accent} transition-colors`}>{player3.name}</div>
+              <PlayerLevelBadge rating={player3.elo_rating} gamesPlayed={player3.games_played} wins={player3.wins} size="sm" />
+              <div className="text-lg font-display text-syndikate-orange font-bold mt-1">{player3.elo_rating}</div>
               <div className="text-[10px] text-muted-foreground flex items-center justify-center gap-1">
                 <Gamepad2 className="h-3 w-3" />
-                {topPlayers[2].games_played} игр • {getWinRate(topPlayers[2].wins, topPlayers[2].games_played)}% WR
+                {player3.games_played} игр • {getWinRate(player3.wins, player3.games_played)}% WR
               </div>
             </div>
           </div>
           
           {/* Podium stand */}
-          <div className="h-12 bg-gradient-to-b from-orange-700/40 to-orange-900/40 brutal-border mt-1 flex items-center justify-center">
+          <div className={`h-12 bg-gradient-to-b from-orange-700/40 to-orange-900/40 brutal-border ${styles3.border} mt-1 flex items-center justify-center`}>
             <span className="text-2xl font-display text-orange-600/60">3</span>
           </div>
         </div>
