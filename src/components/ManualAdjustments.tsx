@@ -100,7 +100,7 @@ const ManualAdjustments = ({ tournaments, selectedTournament, onRefresh }: Manua
         .order('elo_rating', { ascending: false });
 
       if (error) throw error;
-      setPlayers(data || []);
+      setPlayers((data as Player[]) || []);
     } catch (error) {
       console.error('Error loading players:', error);
       toast({
@@ -327,12 +327,16 @@ const ManualAdjustments = ({ tournaments, selectedTournament, onRefresh }: Manua
     try {
       const newRank = selectedRank === 'auto' ? null : selectedRank;
       
+      // Используем any для обхода проблемы с типами до регенерации
       const { error } = await supabase
         .from('players')
-        .update({ manual_rank: newRank })
+        .update({ manual_rank: newRank } as any)
         .eq('id', rankAssignPlayer.id);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
 
       const rankInfo = newRank ? MAFIA_RANKS.find(r => r.id === newRank) : null;
       
