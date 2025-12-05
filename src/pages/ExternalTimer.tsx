@@ -3,9 +3,8 @@ import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Coffee, Clock, Users, Trophy } from "lucide-react";
 import syndikateLogo from "@/assets/syndikate-logo-main.png";
-import telegramQrOriginal from "@/assets/telegram-qr-new.jpg";
+import telegramQr from "@/assets/telegram-qr-new.jpg";
 import { calculateTotalRPSPool } from "@/utils/rpsCalculations";
-import { extractAndConvertQR } from "@/utils/qrExtractor";
 
 interface Tournament {
   id: string;
@@ -48,8 +47,7 @@ const ExternalTimer = () => {
   const [registrations, setRegistrations] = useState<Registration[]>([]);
   const [currentTime, setCurrentTime] = useState(0);
   const [timerActive, setTimerActive] = useState(false);
-  const [slogan, setSlogan] = useState("Престижные турниры. Высокие стандарты.");
-  const [telegramQr, setTelegramQr] = useState<string>("");
+  const [slogan] = useState("Престижные турниры. Высокие стандарты.");
   const [isSyndikateTeme, setIsSyndikateTeme] = useState(() => {
     const saved = localStorage.getItem('timer-theme');
     return saved ? saved === 'syndikate' : true;
@@ -66,20 +64,6 @@ const ExternalTimer = () => {
     loadTournamentData();
     setupRealtimeSubscription();
   }, [tournamentId]);
-
-  // Обработка QR кода при загрузке
-  useEffect(() => {
-    const processQR = async () => {
-      try {
-        const processedQR = await extractAndConvertQR(telegramQrOriginal);
-        setTelegramQr(processedQR);
-      } catch (error) {
-        console.error('Error processing QR code:', error);
-        setTelegramQr(telegramQrOriginal);
-      }
-    };
-    processQR();
-  }, []);
 
   // Синхронизация с localStorage
   useEffect(() => {
@@ -301,16 +285,14 @@ const ExternalTimer = () => {
 
           {/* Right - QR Code and Theme Toggle */}
           <div className="flex items-center gap-4">
-            {telegramQr && (
-              <div className="p-2 bg-white rounded border-2 border-[hsl(0,0%,20%)]"
-                style={{ boxShadow: '0 0 20px rgba(255,106,0,0.2)' }}>
-                <img 
-                  src={telegramQr} 
-                  alt="Telegram QR" 
-                  className="w-24 h-24"
-                />
-              </div>
-            )}
+            <div className="p-2 bg-white rounded border-2 border-[hsl(0,0%,20%)]"
+              style={{ boxShadow: '0 0 20px rgba(255,106,0,0.2)' }}>
+              <img 
+                src={telegramQr} 
+                alt="Telegram QR" 
+                className="w-24 h-24"
+              />
+            </div>
             <button
               onClick={() => setIsSyndikateTeme(false)}
               className="p-3 rounded border-2 border-[hsl(0,0%,25%)] bg-[hsl(0,0%,18%)] hover:border-[hsl(24,100%,50%)] transition-all duration-300"
@@ -598,21 +580,19 @@ const ExternalTimer = () => {
 
         {/* Right - QR Code and Theme Toggle */}
         <div className="flex items-center gap-4">
-          {telegramQr && (
-            <div className="rounded-xl overflow-hidden"
-              style={{
-                background: 'rgba(255, 255, 255, 0.8)',
-                backdropFilter: 'blur(10px)',
-                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
-                padding: '8px'
-              }}>
-              <img 
-                src={telegramQr} 
-                alt="Telegram QR" 
-                className="w-24 h-24 rounded-lg"
-              />
-            </div>
-          )}
+          <div className="rounded-xl overflow-hidden"
+            style={{
+              background: 'rgba(255, 255, 255, 0.8)',
+              backdropFilter: 'blur(10px)',
+              boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
+              padding: '8px'
+            }}>
+            <img 
+              src={telegramQr}
+              alt="Telegram QR" 
+              className="w-24 h-24 rounded-lg"
+            />
+          </div>
           <button
             onClick={() => setIsSyndikateTeme(true)}
             className="p-3 rounded-xl transition-all duration-300 hover:scale-105"
