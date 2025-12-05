@@ -71,7 +71,7 @@ export const PlayerRatingCard: React.FC<PlayerRatingCardProps> = ({
             </span>
           </div>
 
-          {/* Player avatar with rank glow */}
+          {/* Player avatar with rank avatar overlay */}
           <div className={`relative ${rankStyle.avatarGlow}`}>
             <Avatar className={`w-12 h-12 ${rankStyle.avatarRing} group-hover:scale-110 transition-transform`}>
               <AvatarImage src={player.avatar_url ? fixStorageUrl(player.avatar_url) : undefined} alt={player.name} />
@@ -79,6 +79,14 @@ export const PlayerRatingCard: React.FC<PlayerRatingCardProps> = ({
                 {player.name.charAt(0).toUpperCase()}
               </AvatarFallback>
             </Avatar>
+            {/* Rank avatar badge */}
+            <div className={`absolute -bottom-1 -right-1 w-6 h-6 rounded-full overflow-hidden border-2 ${rankStyle.border} bg-background group-hover:scale-110 transition-transform`}>
+              <img 
+                src={mafiaRank.avatar} 
+                alt={mafiaRank.name}
+                className="w-full h-full object-cover"
+              />
+            </div>
           </div>
 
           {/* Player info */}
