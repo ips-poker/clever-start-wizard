@@ -128,14 +128,16 @@ export const RatingPodium: React.FC<RatingPodiumProps> = ({ topPlayers, onPlayer
               {rank2.name}
             </div>
             
-            <GlitchAvatarFrame rank={rank2} size="sm">
-              <Avatar className={`w-14 h-14 mx-auto relative z-10 ring-2 ${styles2.ring} ring-offset-1 ring-offset-background`}>
-                <AvatarImage src={player2.avatar_url ? fixStorageUrl(player2.avatar_url) : undefined} alt={player2.name} />
-                <AvatarFallback className={`bg-gradient-to-br ${rank2.bgGradient} text-xl font-display text-white`}>
-                  {player2.name.charAt(0)}
-                </AvatarFallback>
-              </Avatar>
-            </GlitchAvatarFrame>
+            <div className="flex justify-center">
+              <GlitchAvatarFrame rank={rank2} size="sm">
+                <Avatar className={`w-full h-full ring-2 ${styles2.ring} ring-offset-1 ring-offset-background`}>
+                  <AvatarImage src={player2.avatar_url ? fixStorageUrl(player2.avatar_url) : undefined} alt={player2.name} />
+                  <AvatarFallback className={`bg-gradient-to-br ${rank2.bgGradient} text-lg font-display text-white`}>
+                    {player2.name.charAt(0)}
+                  </AvatarFallback>
+                </Avatar>
+              </GlitchAvatarFrame>
+            </div>
             
             <div className="relative z-10">
               <div className={`text-sm font-display truncate ${styles2.accent} transition-colors`}>{player2.name}</div>
@@ -177,14 +179,16 @@ export const RatingPodium: React.FC<RatingPodiumProps> = ({ topPlayers, onPlayer
               {rank1.name}
             </div>
             
-            <GlitchAvatarFrame rank={rank1} size="md">
-              <Avatar className={`w-[72px] h-[72px] mx-auto relative z-10 ring-2 ${styles1.ring} ring-offset-2 ring-offset-background`}>
-                <AvatarImage src={player1.avatar_url ? fixStorageUrl(player1.avatar_url) : undefined} alt={player1.name} />
-                <AvatarFallback className={`bg-gradient-to-br ${rank1.bgGradient} text-2xl font-display text-white`}>
-                  {player1.name.charAt(0)}
-                </AvatarFallback>
-              </Avatar>
-            </GlitchAvatarFrame>
+            <div className="flex justify-center">
+              <GlitchAvatarFrame rank={rank1} size="sm">
+                <Avatar className={`w-full h-full ring-2 ${styles1.ring} ring-offset-2 ring-offset-background`}>
+                  <AvatarImage src={player1.avatar_url ? fixStorageUrl(player1.avatar_url) : undefined} alt={player1.name} />
+                  <AvatarFallback className={`bg-gradient-to-br ${rank1.bgGradient} text-xl font-display text-white`}>
+                    {player1.name.charAt(0)}
+                  </AvatarFallback>
+                </Avatar>
+              </GlitchAvatarFrame>
+            </div>
             
             <div className="relative z-10">
               <div className={`text-base font-display truncate ${styles1.accent} font-bold transition-colors`}>{player1.name}</div>
@@ -231,14 +235,16 @@ export const RatingPodium: React.FC<RatingPodiumProps> = ({ topPlayers, onPlayer
               {rank3.name}
             </div>
             
-            <GlitchAvatarFrame rank={rank3} size="sm">
-              <Avatar className={`w-14 h-14 mx-auto relative z-10 ring-2 ${styles3.ring} ring-offset-1 ring-offset-background`}>
-                <AvatarImage src={player3.avatar_url ? fixStorageUrl(player3.avatar_url) : undefined} alt={player3.name} />
-                <AvatarFallback className={`bg-gradient-to-br ${rank3.bgGradient} text-xl font-display text-white`}>
-                  {player3.name.charAt(0)}
-                </AvatarFallback>
-              </Avatar>
-            </GlitchAvatarFrame>
+            <div className="flex justify-center">
+              <GlitchAvatarFrame rank={rank3} size="sm">
+                <Avatar className={`w-full h-full ring-2 ${styles3.ring} ring-offset-1 ring-offset-background`}>
+                  <AvatarImage src={player3.avatar_url ? fixStorageUrl(player3.avatar_url) : undefined} alt={player3.name} />
+                  <AvatarFallback className={`bg-gradient-to-br ${rank3.bgGradient} text-lg font-display text-white`}>
+                    {player3.name.charAt(0)}
+                  </AvatarFallback>
+                </Avatar>
+              </GlitchAvatarFrame>
+            </div>
             
             <div className="relative z-10">
               <div className={`text-sm font-display truncate ${styles3.accent} transition-colors`}>{player3.name}</div>
