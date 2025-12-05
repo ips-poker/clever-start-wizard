@@ -3,8 +3,9 @@ import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Coffee, Clock, Users, Trophy } from "lucide-react";
 import syndikateLogo from "@/assets/syndikate-logo-main.png";
-import telegramQr from "@/assets/telegram-qr-new.jpg";
+import telegramQrOriginal from "@/assets/telegram-qr-new.jpg";
 import { calculateTotalRPSPool } from "@/utils/rpsCalculations";
+import { extractAndConvertQR } from "@/utils/qrExtractor";
 
 interface Tournament {
   id: string;
@@ -47,7 +48,8 @@ const ExternalTimer = () => {
   const [registrations, setRegistrations] = useState<Registration[]>([]);
   const [currentTime, setCurrentTime] = useState(0);
   const [timerActive, setTimerActive] = useState(false);
-  const [slogan] = useState("Престижные турниры. Высокие стандарты.");
+  const [slogan, setSlogan] = useState("Престижные турниры. Высокие стандарты.");
+  const [telegramQr, setTelegramQr] = useState<string>("");
   const [isSyndikateTeme, setIsSyndikateTeme] = useState(() => {
     const saved = localStorage.getItem('timer-theme');
     return saved ? saved === 'syndikate' : true;
@@ -64,6 +66,20 @@ const ExternalTimer = () => {
     loadTournamentData();
     setupRealtimeSubscription();
   }, [tournamentId]);
+
+  // Обработка QR кода при загрузке
+  useEffect(() => {
+    const processQR = async () => {
+      try {
+        const processedQR = await extractAndConvertQR(telegramQrOriginal);
+        setTelegramQr(processedQR);
+      } catch (error) {
+        console.error('Error processing QR code:', error);
+        setTelegramQr(telegramQrOriginal);
+      }
+    };
+    processQR();
+  }, []);
 
   // Синхронизация с localStorage
   useEffect(() => {
@@ -285,14 +301,16 @@ const ExternalTimer = () => {
 
           {/* Right - QR Code and Theme Toggle */}
           <div className="flex items-center gap-4">
-            <div className="p-2 bg-white rounded border-2 border-[hsl(0,0%,20%)]"
-              style={{ boxShadow: '0 0 20px rgba(255,106,0,0.2)' }}>
-              <img 
-                src={telegramQr} 
-                alt="Telegram QR" 
-                className="w-24 h-24"
-              />
-            </div>
+            {telegramQr && (
+              <div className="p-2 bg-white rounded border-2 border-[hsl(0,0%,20%)]"
+                style={{ boxShadow: '0 0 20px rgba(255,106,0,0.2)' }}>
+                <img 
+                  src={telegramQr} 
+                  alt="Telegram QR" 
+                  className="w-24 h-24"
+                />
+              </div>
+            )}
             <button
               onClick={() => setIsSyndikateTeme(false)}
               className="p-3 rounded border-2 border-[hsl(0,0%,25%)] bg-[hsl(0,0%,18%)] hover:border-[hsl(24,100%,50%)] transition-all duration-300"
@@ -509,39 +527,27 @@ const ExternalTimer = () => {
 
   // Light Professional Theme
   return (
-    <div className="min-h-screen flex flex-col text-gray-800 relative overflow-hidden"
-      style={{
-        background: 'linear-gradient(135deg, hsl(240, 100%, 97%) 0%, hsl(280, 100%, 98%) 25%, hsl(320, 100%, 98%) 50%, hsl(30, 100%, 98%) 75%, hsl(200, 100%, 97%) 100%)'
-      }}>
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 via-white to-gray-100 text-gray-800 relative overflow-hidden">
+      {/* Diagonal line pattern overlay - similar to site style */}
+      <div className="absolute inset-0 opacity-[0.04] pointer-events-none" style={{
+        backgroundImage: `repeating-linear-gradient(135deg, transparent, transparent 8px, rgba(0,0,0,0.1) 8px, rgba(0,0,0,0.1) 16px)`
+      }} />
       
-      {/* Animated gradient orbs */}
-      <div className="absolute top-[-20%] left-[-10%] w-[600px] h-[600px] rounded-full opacity-30 blur-3xl pointer-events-none"
-        style={{ background: 'radial-gradient(circle, hsl(280, 80%, 85%) 0%, transparent 70%)' }} />
-      <div className="absolute bottom-[-20%] right-[-10%] w-[500px] h-[500px] rounded-full opacity-25 blur-3xl pointer-events-none"
-        style={{ background: 'radial-gradient(circle, hsl(200, 80%, 85%) 0%, transparent 70%)' }} />
-      <div className="absolute top-[30%] right-[20%] w-[400px] h-[400px] rounded-full opacity-20 blur-3xl pointer-events-none"
-        style={{ background: 'radial-gradient(circle, hsl(30, 90%, 85%) 0%, transparent 70%)' }} />
+      {/* Vertical subtle lines */}
+      <div className="absolute inset-0 opacity-[0.02] pointer-events-none" style={{
+        backgroundImage: `repeating-linear-gradient(90deg, transparent, transparent 60px, rgba(0,0,0,0.15) 60px, rgba(0,0,0,0.15) 61px)`
+      }} />
       
-      {/* Subtle grid pattern */}
-      <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{
-        backgroundImage: `repeating-linear-gradient(90deg, transparent, transparent 80px, rgba(0,0,0,0.1) 80px, rgba(0,0,0,0.1) 81px),
-                          repeating-linear-gradient(0deg, transparent, transparent 80px, rgba(0,0,0,0.1) 80px, rgba(0,0,0,0.1) 81px)`
+      {/* Horizontal subtle lines */}
+      <div className="absolute inset-0 opacity-[0.02] pointer-events-none" style={{
+        backgroundImage: `repeating-linear-gradient(0deg, transparent, transparent 60px, rgba(0,0,0,0.15) 60px, rgba(0,0,0,0.15) 61px)`
       }} />
 
-      {/* Header - Glassmorphism */}
-      <div className="flex justify-between items-center p-6 relative z-10 border-b border-white/50"
-        style={{ 
-          background: 'rgba(255, 255, 255, 0.6)',
-          backdropFilter: 'blur(20px)',
-          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.06)'
-        }}>
+      {/* Header */}
+      <div className="flex justify-between items-center p-6 border-b-2 border-gray-200 bg-white/90 backdrop-blur-sm shadow-sm relative z-10">
         {/* Left - Logo and Company */}
         <div className="flex items-center space-x-4">
-          <div className="w-24 h-24 flex items-center justify-center rounded-2xl p-2"
-            style={{
-              background: 'linear-gradient(135deg, hsl(0, 0%, 15%) 0%, hsl(0, 0%, 25%) 100%)',
-              boxShadow: '0 10px 40px rgba(0, 0, 0, 0.2)'
-            }}>
+          <div className="w-24 h-24 flex items-center justify-center bg-gray-900 rounded-lg p-2 shadow-lg">
             <img 
               src={syndikateLogo} 
               alt="Syndikate Logo" 
@@ -549,12 +555,7 @@ const ExternalTimer = () => {
             />
           </div>
           <div className="flex flex-col">
-            <span className="text-3xl font-display tracking-wider"
-              style={{ 
-                background: 'linear-gradient(135deg, hsl(0, 0%, 20%) 0%, hsl(0, 0%, 40%) 100%)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent'
-              }}>
+            <span className="text-3xl font-display tracking-wider text-gray-900">
               SYNDIKATE
             </span>
             <span className="text-sm font-sans font-bold tracking-[0.3em] uppercase text-gray-500">
@@ -565,12 +566,7 @@ const ExternalTimer = () => {
 
         {/* Center - Tournament Name and Slogan */}
         <div className="text-center flex-1 mx-8">
-          <h1 className="text-4xl font-display tracking-wide mb-2"
-            style={{
-              background: 'linear-gradient(135deg, hsl(260, 60%, 40%) 0%, hsl(320, 60%, 40%) 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent'
-            }}>
+          <h1 className="text-4xl font-display tracking-wide mb-2 text-gray-900">
             {tournament.name}
           </h1>
           <p className="text-lg font-sans text-gray-500 italic">
@@ -580,27 +576,18 @@ const ExternalTimer = () => {
 
         {/* Right - QR Code and Theme Toggle */}
         <div className="flex items-center gap-4">
-          <div className="rounded-xl overflow-hidden"
-            style={{
-              background: 'rgba(255, 255, 255, 0.8)',
-              backdropFilter: 'blur(10px)',
-              boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
-              padding: '8px'
-            }}>
-            <img 
-              src={telegramQr}
-              alt="Telegram QR" 
-              className="w-24 h-24 rounded-lg"
-            />
-          </div>
+          {telegramQr && (
+            <div className="border-2 border-gray-200 rounded-lg overflow-hidden shadow-md">
+              <img 
+                src={telegramQr} 
+                alt="Telegram QR" 
+                className="w-24 h-24"
+              />
+            </div>
+          )}
           <button
             onClick={() => setIsSyndikateTeme(true)}
-            className="p-3 rounded-xl transition-all duration-300 hover:scale-105"
-            style={{
-              background: 'rgba(255, 255, 255, 0.6)',
-              backdropFilter: 'blur(10px)',
-              boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)'
-            }}
+            className="p-3 rounded-lg border-2 border-gray-300 bg-gray-100 hover:bg-gray-200 hover:border-gray-400 transition-all duration-300 shadow-sm"
             title="Тёмная тема Syndikate"
           >
             🌙
@@ -612,33 +599,18 @@ const ExternalTimer = () => {
       <div className="flex-1 flex flex-col justify-center items-center space-y-8 p-8 relative z-10">
         {/* Current Level */}
         <div className="text-center">
-          <div className="inline-flex items-center gap-3 rounded-2xl px-6 py-3 mb-6"
-            style={{
-              background: 'rgba(255, 255, 255, 0.7)',
-              backdropFilter: 'blur(20px)',
-              boxShadow: '0 8px 32px rgba(0, 0, 0, 0.08)'
-            }}>
+          <div className="inline-flex items-center gap-3 rounded-lg px-6 py-3 mb-6 bg-gray-100 border-2 border-gray-200">
             {isBreakLevel ? (
               <>
-                <Coffee className="w-7 h-7 text-amber-500" />
-                <span className="text-2xl font-display tracking-wider"
-                  style={{
-                    background: 'linear-gradient(135deg, hsl(35, 90%, 50%) 0%, hsl(25, 90%, 55%) 100%)',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent'
-                  }}>
+                <Coffee className="w-7 h-7 text-amber-600" />
+                <span className="text-2xl font-display tracking-wider text-amber-600">
                   ПЕРЕРЫВ
                 </span>
               </>
             ) : (
               <>
-                <Clock className="w-7 h-7 text-violet-500" />
-                <span className="text-2xl font-display tracking-wider"
-                  style={{
-                    background: 'linear-gradient(135deg, hsl(260, 60%, 50%) 0%, hsl(280, 60%, 55%) 100%)',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent'
-                  }}>
+                <Clock className="w-7 h-7 text-gray-700" />
+                <span className="text-2xl font-display tracking-wider text-gray-800">
                   УРОВЕНЬ {tournament.current_level}
                 </span>
               </>
@@ -647,40 +619,27 @@ const ExternalTimer = () => {
           
           {/* Timer Display */}
           <div className={`text-[20rem] md:text-[24rem] font-mono font-bold leading-none tracking-tight ${
-            currentTime <= 60 ? 'animate-pulse' : ''
-          }`}
-            style={{
-              background: currentTime <= 60 
-                ? 'linear-gradient(135deg, hsl(0, 80%, 55%) 0%, hsl(350, 80%, 50%) 100%)'
-                : currentTime <= 300 
-                  ? 'linear-gradient(135deg, hsl(35, 90%, 50%) 0%, hsl(25, 90%, 55%) 100%)'
-                  : 'linear-gradient(135deg, hsl(260, 50%, 35%) 0%, hsl(280, 50%, 40%) 50%, hsl(320, 50%, 40%) 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              filter: currentTime <= 60 ? 'drop-shadow(0 0 30px hsla(0, 80%, 55%, 0.5))' : 'none'
-            }}>
+            currentTime <= 60 
+              ? 'text-red-600 animate-pulse'
+              : currentTime <= 300 
+                ? 'text-amber-600'
+                : 'text-gray-900'
+          }`}>
             {formatTime(currentTime)}
           </div>
           
           {/* Progress Bar */}
           <div className="w-[500px] max-w-full mt-8">
-            <div className="h-5 rounded-full overflow-hidden"
-              style={{
-                background: 'rgba(255, 255, 255, 0.5)',
-                backdropFilter: 'blur(10px)',
-                boxShadow: 'inset 0 2px 10px rgba(0, 0, 0, 0.1)'
-              }}>
+            <div className="h-5 rounded-full overflow-hidden bg-gray-200 border-2 border-gray-300">
               <div
-                className="h-full transition-all duration-1000 rounded-full"
-                style={{ 
-                  width: `${timerProgress}%`,
-                  background: currentTime <= 60 
-                    ? 'linear-gradient(90deg, hsl(0, 80%, 55%) 0%, hsl(350, 80%, 50%) 100%)'
+                className={`h-full transition-all duration-1000 rounded-full ${
+                  currentTime <= 60 
+                    ? 'bg-gradient-to-r from-red-500 to-red-600'
                     : currentTime <= 300
-                      ? 'linear-gradient(90deg, hsl(35, 90%, 50%) 0%, hsl(25, 90%, 55%) 100%)'
-                      : 'linear-gradient(90deg, hsl(260, 60%, 55%) 0%, hsl(280, 60%, 60%) 50%, hsl(320, 60%, 55%) 100%)',
-                  boxShadow: '0 0 20px rgba(150, 100, 200, 0.4)'
-                }}
+                      ? 'bg-gradient-to-r from-amber-500 to-amber-600'
+                      : 'bg-gradient-to-r from-gray-700 to-gray-800'
+                }`}
+                style={{ width: `${timerProgress}%` }}
               />
             </div>
           </div>
@@ -688,49 +647,34 @@ const ExternalTimer = () => {
 
         {/* Current and Next Blinds */}
         <div className="grid grid-cols-2 gap-8 max-w-4xl w-full">
-          {/* Current Blinds - Glassmorphism */}
-          <div className="text-center p-8 rounded-3xl"
-            style={{
-              background: 'rgba(255, 255, 255, 0.7)',
-              backdropFilter: 'blur(20px)',
-              boxShadow: '0 20px 60px rgba(150, 100, 200, 0.15), inset 0 0 0 1px rgba(255, 255, 255, 0.5)'
-            }}>
-            <p className="text-lg font-display tracking-wider mb-4"
-              style={{
-                background: 'linear-gradient(135deg, hsl(260, 60%, 50%) 0%, hsl(280, 60%, 55%) 100%)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent'
-              }}>
+          {/* Current Blinds */}
+          <div className="text-center p-8 rounded-xl border-4 border-gray-800 bg-white shadow-lg">
+            <p className="text-lg font-display tracking-wider mb-4 text-gray-800">
               ТЕКУЩИЙ УРОВЕНЬ
             </p>
             <div className={`grid gap-4 ${currentLevel?.ante > 0 ? 'grid-cols-3' : 'grid-cols-2'}`}>
               <div className="space-y-2">
-                <p className="text-5xl font-bold text-gray-800">
+                <p className="text-5xl font-bold text-gray-900">
                   {isBreakLevel ? '—' : (currentLevel?.small_blind || tournament.current_small_blind)}
                 </p>
-                <p className="text-sm text-gray-500 uppercase tracking-wider">
+                <p className="text-sm text-gray-600 uppercase tracking-wider">
                   Малый блайнд
                 </p>
               </div>
               <div className="space-y-2">
-                <p className="text-5xl font-bold text-gray-800">
+                <p className="text-5xl font-bold text-gray-900">
                   {isBreakLevel ? '—' : (currentLevel?.big_blind || tournament.current_big_blind)}
                 </p>
-                <p className="text-sm text-gray-500 uppercase tracking-wider">
+                <p className="text-sm text-gray-600 uppercase tracking-wider">
                   Большой блайнд
                 </p>
               </div>
               {currentLevel?.ante > 0 && (
                 <div className="space-y-2">
-                  <p className="text-5xl font-bold"
-                    style={{
-                      background: 'linear-gradient(135deg, hsl(35, 90%, 50%) 0%, hsl(25, 90%, 55%) 100%)',
-                      WebkitBackgroundClip: 'text',
-                      WebkitTextFillColor: 'transparent'
-                    }}>
+                  <p className="text-5xl font-bold text-amber-600">
                     {isBreakLevel ? '—' : currentLevel.ante}
                   </p>
-                  <p className="text-sm text-gray-500 uppercase tracking-wider">
+                  <p className="text-sm text-gray-600 uppercase tracking-wider">
                     Анте
                   </p>
                 </div>
@@ -739,46 +683,41 @@ const ExternalTimer = () => {
           </div>
 
           {/* Next Blinds */}
-          <div className="text-center p-8 rounded-3xl"
-            style={{
-              background: 'rgba(255, 255, 255, 0.4)',
-              backdropFilter: 'blur(15px)',
-              boxShadow: '0 10px 40px rgba(0, 0, 0, 0.06), inset 0 0 0 1px rgba(255, 255, 255, 0.3)'
-            }}>
+          <div className="text-center p-8 rounded-xl border-2 border-gray-300 bg-gray-50">
             <p className="text-lg font-display tracking-wider mb-4 text-gray-500">
               {isBreakLevel ? 'ПОСЛЕ ПЕРЕРЫВА' : (isNextBreakLevel ? 'ПЕРЕРЫВ' : 'СЛЕДУЮЩИЙ УРОВЕНЬ')}
             </p>
             {isNextBreakLevel ? (
               <div className="flex items-center justify-center py-8">
-                <Coffee className="w-16 h-16 mr-4 text-amber-500" />
-                <span className="text-4xl font-display tracking-wider text-gray-500">
+                <Coffee className="w-16 h-16 mr-4 text-amber-600" />
+                <span className="text-4xl font-display tracking-wider text-gray-600">
                   ПЕРЕРЫВ
                 </span>
               </div>
             ) : (
               <div className={`grid gap-4 ${nextLevel?.ante > 0 ? 'grid-cols-3' : 'grid-cols-2'}`}>
                 <div className="space-y-2">
-                  <p className="text-3xl font-medium text-gray-600">
+                  <p className="text-3xl font-medium text-gray-700">
                     {nextSmallBlind}
                   </p>
-                  <p className="text-sm text-gray-400 uppercase tracking-wider">
+                  <p className="text-sm text-gray-500 uppercase tracking-wider">
                     Малый блайнд
                   </p>
                 </div>
                 <div className="space-y-2">
-                  <p className="text-3xl font-medium text-gray-600">
+                  <p className="text-3xl font-medium text-gray-700">
                     {nextBigBlind}
                   </p>
-                  <p className="text-sm text-gray-400 uppercase tracking-wider">
+                  <p className="text-sm text-gray-500 uppercase tracking-wider">
                     Большой блайнд
                   </p>
                 </div>
                 {nextLevel?.ante > 0 && (
                   <div className="space-y-2">
-                    <p className="text-3xl font-medium text-amber-400">
+                    <p className="text-3xl font-medium text-amber-500">
                       {nextLevel.ante}
                     </p>
-                    <p className="text-sm text-gray-400 uppercase tracking-wider">
+                    <p className="text-sm text-gray-500 uppercase tracking-wider">
                       Анте
                     </p>
                   </div>
@@ -788,17 +727,12 @@ const ExternalTimer = () => {
           </div>
         </div>
 
-        {/* Statistics - Glassmorphism */}
-        <div className="rounded-3xl p-6 max-w-6xl w-full"
-          style={{
-            background: 'rgba(255, 255, 255, 0.6)',
-            backdropFilter: 'blur(20px)',
-            boxShadow: '0 15px 50px rgba(0, 0, 0, 0.08), inset 0 0 0 1px rgba(255, 255, 255, 0.4)'
-          }}>
+        {/* Statistics */}
+        <div className="rounded-xl p-6 max-w-6xl w-full bg-white border-2 border-gray-200 shadow-lg">
           <div className="grid grid-cols-4 gap-8 text-center">
             <div>
               <div className="flex items-center justify-center mb-2">
-                <Users className="w-6 h-6 mr-3 text-violet-500" />
+                <Users className="w-6 h-6 mr-3 text-gray-600" />
                 <span className="text-lg text-gray-600">
                   Игроки
                 </span>
@@ -809,17 +743,12 @@ const ExternalTimer = () => {
             </div>
             <div>
               <div className="flex items-center justify-center mb-2">
-                <Trophy className="w-6 h-6 mr-3 text-amber-500" />
+                <Trophy className="w-6 h-6 mr-3 text-amber-600" />
                 <span className="text-lg text-gray-600">
                   Призовой фонд RPS
                 </span>
               </div>
-              <p className="text-3xl font-bold"
-                style={{
-                  background: 'linear-gradient(135deg, hsl(35, 90%, 50%) 0%, hsl(25, 90%, 55%) 100%)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent'
-                }}>
+              <p className="text-3xl font-bold text-amber-600">
                 {rpsPool.toLocaleString()} RPS
               </p>
             </div>
@@ -845,6 +774,13 @@ const ExternalTimer = () => {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Footer */}
+      <div className="border-t-2 border-gray-200 p-4 text-center bg-gray-100">
+        <p className="text-sm text-gray-500">
+          Внешний дисплей турнира • Обновляется автоматически
+        </p>
       </div>
     </div>
   );
