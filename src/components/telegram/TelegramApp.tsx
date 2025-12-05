@@ -888,7 +888,7 @@ export const TelegramApp = () => {
         const currentStyle = rankStyles[userRank.rarity] || rankStyles.initiate;
         
         return (
-          <Card className={`${currentStyle.cardBg} brutal-border ${currentStyle.border} overflow-hidden relative backdrop-blur-xl group hover:scale-[1.02] transition-all duration-500 animate-fade-in ${currentStyle.glow} mx-4`}>
+          <Card className={`${currentStyle.cardBg} brutal-border ${currentStyle.border} overflow-hidden relative backdrop-blur-xl group hover:scale-[1.02] transition-all duration-500 animate-fade-in ${currentStyle.glow}`}>
             {/* Rank-specific top accent line */}
             <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${userRank.rarity === 'godfather' ? 'from-cyan-400 via-purple-500 to-pink-500' : `${userRank.bgGradient}`}`} />
             
