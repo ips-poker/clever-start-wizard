@@ -26,8 +26,13 @@ export function ClanInviteButton({ playerId, className }: ClanInviteButtonProps)
         return;
       }
 
-      // Проверяем, является ли пользователь Доном
-      if (!myClan || myMembership?.hierarchy_role !== 'don') {
+      // Проверяем, является ли пользователь Доном (через membership или как создатель клана)
+      const isDonOfClan = myClan && (
+        myMembership?.hierarchy_role === 'don' || 
+        myClan.don_player_id === playerData?.id
+      );
+      
+      if (!myClan || !isDonOfClan) {
         setCanInvite(false);
         setIsLoading(false);
         return;
@@ -51,8 +56,13 @@ export function ClanInviteButton({ playerId, className }: ClanInviteButtonProps)
     }
   };
 
-  // Не показываем кнопку, если пользователь не Дон
-  if (!myClan || myMembership?.hierarchy_role !== 'don') {
+  // Не показываем кнопку, если пользователь не Дон клана
+  const isDonOfClan = myClan && (
+    myMembership?.hierarchy_role === 'don' || 
+    myClan.don_player_id === playerData?.id
+  );
+  
+  if (!myClan || !isDonOfClan) {
     return null;
   }
 
