@@ -535,6 +535,7 @@ export type Database = {
           email: string | null
           games_played: number
           id: string
+          manual_rank: string | null
           name: string
           phone: string | null
           telegram: string | null
@@ -549,6 +550,7 @@ export type Database = {
           email?: string | null
           games_played?: number
           id?: string
+          manual_rank?: string | null
           name: string
           phone?: string | null
           telegram?: string | null
@@ -563,6 +565,7 @@ export type Database = {
           email?: string | null
           games_played?: number
           id?: string
+          manual_rank?: string | null
           name?: string
           phone?: string | null
           telegram?: string | null
