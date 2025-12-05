@@ -62,6 +62,39 @@ export type Database = {
           },
         ]
       }
+      blind_structure_templates: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          is_default: boolean | null
+          levels: Json
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_default?: boolean | null
+          levels?: Json
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_default?: boolean | null
+          levels?: Json
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       cms_content: {
         Row: {
           content_key: string
