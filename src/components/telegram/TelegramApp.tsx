@@ -29,6 +29,8 @@ import masterclass from '@/assets/gallery/masterclass.jpg';
 import registration from '@/assets/gallery/registration.jpg';
 import pokerChips from '@/assets/gallery/poker-chips.jpg';
 import { calculateTotalRPSPool, formatRPSPoints } from '@/utils/rpsCalculations';
+import { getCurrentMafiaRank, getRarityInfo } from '@/utils/mafiaRanks';
+import { GlitchAvatarFrame } from '@/components/ui/glitch-avatar-frame';
 
 interface Tournament {
   id: string;
@@ -836,91 +838,141 @@ export const TelegramApp = () => {
         )}
       </div>
 
-      {userStats && (
-        <Card className="bg-gradient-to-br from-syndikate-metal/95 to-syndikate-concrete/90 brutal-border overflow-hidden relative shadow-brutal backdrop-blur-xl group hover:shadow-neon-orange transition-all duration-500 animate-fade-in">
-          {/* Animated background gradient */}
-          <div className="absolute inset-0 bg-gradient-to-br from-syndikate-orange/5 via-transparent to-syndikate-red/5 opacity-50 group-hover:opacity-100 transition-opacity duration-500"></div>
-          
-          {/* Subtle pattern */}
-          <div className="absolute inset-0 opacity-[0.02]" style={{
-            backgroundImage: 'radial-gradient(circle at 2px 2px, rgba(255,107,0,0.3) 1px, transparent 0)',
-            backgroundSize: '20px 20px'
-          }}></div>
-          
-          <CardContent className="p-5 relative z-10">
-            {/* Profile Header with Avatar */}
-            <div className="flex items-center gap-4 mb-5">
-              {/* Avatar */}
-              <div className="relative group/avatar">
-                <div className="w-16 h-16 rounded-2xl overflow-hidden brutal-border bg-syndikate-concrete shadow-lg transition-all duration-300 group-hover/avatar:scale-105">
-                  {(userStats.avatar_url || telegramUser?.photoUrl) ? (
-                    <img 
-                      src={userStats.avatar_url || telegramUser?.photoUrl} 
-                      alt="Avatar" 
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full bg-gradient-to-br from-syndikate-orange to-syndikate-red flex items-center justify-center">
-                      <User className="h-8 w-8 text-background" />
-                    </div>
-                  )}
-                </div>
-                {/* Online indicator */}
-                <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-emerald-500 rounded-full border-2 border-background shadow-lg flex items-center justify-center">
-                  <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
-                </div>
-              </div>
-              
-              {/* Name & Info */}
-              <div className="flex-1">
-                <h3 className="text-foreground font-display font-bold text-xl uppercase tracking-wider drop-shadow-lg group-hover:text-syndikate-orange transition-colors duration-300">
-                  <GlitchText text={telegramUser?.username || telegramUser?.firstName || 'ИГРОК'} glitchIntensity="low" />
-                </h3>
-                <div className="flex items-center gap-2 mt-1">
-                  <span className="text-syndikate-orange text-xs font-bold uppercase tracking-wider">#{players.findIndex(p => p.id === userStats.id) + 1 || '—'}</span>
-                  <span className="text-muted-foreground text-xs">в рейтинге</span>
-                </div>
-                <div className="h-[2px] w-16 bg-gradient-to-r from-syndikate-orange to-syndikate-red mt-2 group-hover:w-24 transition-all duration-500"></div>
-              </div>
-              
-              {/* Menu button */}
-              <button 
-                onClick={() => setActiveTab('profile')}
-                className="w-10 h-10 rounded-xl bg-white/5 backdrop-blur-sm border border-white/10 flex items-center justify-center hover:bg-syndikate-orange/20 hover:border-syndikate-orange/40 transition-all duration-300"
-              >
-                <ChevronRight className="h-5 w-5 text-muted-foreground" />
-              </button>
+      {userStats && (() => {
+        const userRank = getCurrentMafiaRank({
+          gamesPlayed: userStats.games_played,
+          wins: userStats.wins,
+          rating: userStats.elo_rating
+        });
+        const userRarityInfo = getRarityInfo(userRank.rarity);
+        
+        const rankStyles: Record<string, { cardBg: string; border: string; glow: string; accent: string }> = {
+          initiate: {
+            cardBg: 'bg-gradient-to-br from-zinc-800/90 to-zinc-900/90',
+            border: 'border-zinc-500/50',
+            glow: '',
+            accent: 'text-zinc-400',
+          },
+          soldier: {
+            cardBg: 'bg-gradient-to-br from-amber-900/40 to-amber-950/60',
+            border: 'border-amber-500/60',
+            glow: 'shadow-[0_0_20px_rgba(245,158,11,0.3)]',
+            accent: 'text-amber-400',
+          },
+          captain: {
+            cardBg: 'bg-gradient-to-br from-blue-900/40 to-cyan-950/60',
+            border: 'border-blue-500/60',
+            glow: 'shadow-[0_0_25px_rgba(59,130,246,0.4)]',
+            accent: 'text-blue-400',
+          },
+          underboss: {
+            cardBg: 'bg-gradient-to-br from-purple-900/40 to-pink-950/60',
+            border: 'border-purple-500/60',
+            glow: 'shadow-[0_0_30px_rgba(168,85,247,0.4)]',
+            accent: 'text-purple-400',
+          },
+          boss: {
+            cardBg: 'bg-gradient-to-br from-yellow-900/40 to-amber-950/60',
+            border: 'border-yellow-500/70',
+            glow: 'shadow-[0_0_35px_rgba(234,179,8,0.5)]',
+            accent: 'text-yellow-400',
+          },
+          godfather: {
+            cardBg: 'bg-gradient-to-br from-cyan-900/40 via-purple-900/40 to-pink-900/40',
+            border: 'border-cyan-400/70',
+            glow: 'shadow-[0_0_40px_rgba(6,182,212,0.5),0_0_60px_rgba(168,85,247,0.3)]',
+            accent: 'text-cyan-300',
+          },
+        };
+        
+        const currentStyle = rankStyles[userRank.rarity] || rankStyles.initiate;
+        
+        return (
+          <Card className={`${currentStyle.cardBg} brutal-border ${currentStyle.border} overflow-hidden relative backdrop-blur-xl group hover:scale-[1.02] transition-all duration-500 animate-fade-in ${currentStyle.glow}`}>
+            {/* Rank-specific top accent line */}
+            <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${userRank.rarity === 'godfather' ? 'from-cyan-400 via-purple-500 to-pink-500' : `${userRank.bgGradient}`}`} />
+            
+            {/* Animated background pattern */}
+            <div className="absolute inset-0 opacity-20">
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(255,255,255,0.1)_0%,transparent_50%)]" />
             </div>
             
-            {/* Stats Grid - Glass Style */}
-            <div className="grid grid-cols-3 gap-2">
-              <div className="text-center p-3 rounded-xl bg-white/5 backdrop-blur-sm border border-white/10 hover:bg-syndikate-orange/10 hover:border-syndikate-orange/30 transition-all duration-300 group/stat">
-                <div className="w-10 h-10 rounded-xl bg-syndikate-orange/20 flex items-center justify-center mx-auto mb-2 group-hover/stat:bg-syndikate-orange/30 transition-colors">
-                  <Trophy className="h-5 w-5 text-syndikate-orange" />
-                </div>
-                <div className="text-foreground font-bold text-xl font-display">{userStats.elo_rating}</div>
-                <div className="text-muted-foreground text-[10px] uppercase tracking-wider">RPS</div>
-              </div>
-              
-              <div className="text-center p-3 rounded-xl bg-white/5 backdrop-blur-sm border border-white/10 hover:bg-syndikate-red/10 hover:border-syndikate-red/30 transition-all duration-300 group/stat">
-                <div className="w-10 h-10 rounded-xl bg-syndikate-red/20 flex items-center justify-center mx-auto mb-2 group-hover/stat:bg-syndikate-red/30 transition-colors">
-                  <Crown className="h-5 w-5 text-syndikate-red" />
-                </div>
-                <div className="text-foreground font-bold text-xl font-display">{userStats.wins}</div>
-                <div className="text-muted-foreground text-[10px] uppercase tracking-wider">Побед</div>
-              </div>
-              
-              <div className="text-center p-3 rounded-xl bg-white/5 backdrop-blur-sm border border-white/10 hover:bg-white/10 transition-all duration-300 group/stat">
-                <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center mx-auto mb-2 group-hover/stat:bg-white/15 transition-colors">
-                  <Target className="h-5 w-5 text-white/70" />
-                </div>
-                <div className="text-foreground font-bold text-xl font-display">{userStats.games_played}</div>
-                <div className="text-muted-foreground text-[10px] uppercase tracking-wider">Игр</div>
-              </div>
+            {/* Rank badge */}
+            <div className={`absolute top-3 right-3 px-2 py-1 text-[9px] font-bold uppercase tracking-wider ${userRarityInfo.class} rounded brutal-border flex items-center gap-1 z-20`}>
+              <Star className="h-3 w-3" />
+              {userRank.name}
             </div>
-          </CardContent>
-        </Card>
-      )}
+            
+            <CardContent className="p-5 relative z-10">
+              {/* Profile Header with Avatar */}
+              <div className="flex items-center gap-4 mb-5">
+                {/* Avatar with GlitchAvatarFrame */}
+                <div className="relative">
+                  <GlitchAvatarFrame rank={userRank} size="sm">
+                    <Avatar className="w-full h-full">
+                      <AvatarImage src={userStats.avatar_url || telegramUser?.photoUrl} alt="Avatar" />
+                      <AvatarFallback className={`bg-gradient-to-br ${userRank.bgGradient} text-xl font-display text-white`}>
+                        {(telegramUser?.firstName || 'П').charAt(0)}
+                      </AvatarFallback>
+                    </Avatar>
+                  </GlitchAvatarFrame>
+                  {/* Online indicator */}
+                  <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-emerald-500 rounded-full border-2 border-background shadow-lg flex items-center justify-center z-20">
+                    <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+                  </div>
+                </div>
+                
+                {/* Name & Info */}
+                <div className="flex-1">
+                  <h3 className={`font-display font-bold text-xl uppercase tracking-wider drop-shadow-lg ${currentStyle.accent}`}>
+                    <GlitchText text={telegramUser?.username || telegramUser?.firstName || 'ИГРОК'} glitchIntensity="low" />
+                  </h3>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className={`text-xs font-bold uppercase tracking-wider ${currentStyle.accent}`}>#{players.findIndex(p => p.id === userStats.id) + 1 || '—'}</span>
+                    <span className="text-muted-foreground text-xs">в рейтинге</span>
+                  </div>
+                  <div className={`text-xs text-muted-foreground mt-1`}>{userRank.title}</div>
+                </div>
+                
+                {/* Menu button */}
+                <button 
+                  onClick={() => setActiveTab('profile')}
+                  className={`w-10 h-10 rounded-xl bg-white/5 backdrop-blur-sm border ${currentStyle.border} flex items-center justify-center hover:bg-white/10 transition-all duration-300`}
+                >
+                  <ChevronRight className={`h-5 w-5 ${currentStyle.accent}`} />
+                </button>
+              </div>
+              
+              {/* Stats Grid - Rank themed */}
+              <div className="grid grid-cols-3 gap-2">
+                <div className={`text-center p-3 rounded-xl bg-white/5 backdrop-blur-sm border ${currentStyle.border} hover:bg-white/10 transition-all duration-300`}>
+                  <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${userRank.bgGradient} flex items-center justify-center mx-auto mb-2`}>
+                    <Trophy className="h-5 w-5 text-white" />
+                  </div>
+                  <div className={`font-bold text-xl font-display ${currentStyle.accent}`}>{userStats.elo_rating}</div>
+                  <div className="text-muted-foreground text-[10px] uppercase tracking-wider">RPS</div>
+                </div>
+                
+                <div className={`text-center p-3 rounded-xl bg-white/5 backdrop-blur-sm border ${currentStyle.border} hover:bg-white/10 transition-all duration-300`}>
+                  <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${userRank.bgGradient} flex items-center justify-center mx-auto mb-2`}>
+                    <Crown className="h-5 w-5 text-white" />
+                  </div>
+                  <div className={`font-bold text-xl font-display ${currentStyle.accent}`}>{userStats.wins}</div>
+                  <div className="text-muted-foreground text-[10px] uppercase tracking-wider">Побед</div>
+                </div>
+                
+                <div className={`text-center p-3 rounded-xl bg-white/5 backdrop-blur-sm border ${currentStyle.border} hover:bg-white/10 transition-all duration-300`}>
+                  <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${userRank.bgGradient} flex items-center justify-center mx-auto mb-2`}>
+                    <Target className="h-5 w-5 text-white" />
+                  </div>
+                  <div className={`font-bold text-xl font-display ${currentStyle.accent}`}>{userStats.games_played}</div>
+                  <div className="text-muted-foreground text-[10px] uppercase tracking-wider">Игр</div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        );
+      })()}
     </div>
   );
 
