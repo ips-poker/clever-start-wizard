@@ -10,7 +10,8 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Edit, 
@@ -26,9 +27,12 @@ import {
   Percent,
   Zap,
   Target,
-  Award
+  Award,
+  Crown,
+  Shield
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { MAFIA_RANKS, getCurrentMafiaRank, MafiaRank } from '@/utils/mafiaRanks';
 
 interface Player {
   id: string;
@@ -36,6 +40,8 @@ interface Player {
   elo_rating: number;
   games_played: number;
   wins: number;
+  manual_rank: string | null;
+  avatar_url?: string | null;
 }
 
 interface GameResult {
@@ -75,6 +81,8 @@ const ManualAdjustments = ({ tournaments, selectedTournament, onRefresh }: Manua
   const [adjustmentReason, setAdjustmentReason] = useState('');
   const [newPlayerRating, setNewPlayerRating] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [rankAssignPlayer, setRankAssignPlayer] = useState<Player | null>(null);
+  const [selectedRank, setSelectedRank] = useState<string>('');
   const { toast } = useToast();
 
   useEffect(() => {
@@ -88,7 +96,7 @@ const ManualAdjustments = ({ tournaments, selectedTournament, onRefresh }: Manua
     try {
       const { data, error } = await supabase
         .from('players')
-        .select('*')
+        .select('id, name, elo_rating, games_played, wins, manual_rank, avatar_url')
         .order('elo_rating', { ascending: false });
 
       if (error) throw error;
@@ -311,6 +319,59 @@ const ManualAdjustments = ({ tournaments, selectedTournament, onRefresh }: Manua
     }
   };
 
+  // Назначить ранг игроку вручную
+  const assignManualRank = async () => {
+    if (!rankAssignPlayer) return;
+
+    setLoading(true);
+    try {
+      const newRank = selectedRank === 'auto' ? null : selectedRank;
+      
+      const { error } = await supabase
+        .from('players')
+        .update({ manual_rank: newRank })
+        .eq('id', rankAssignPlayer.id);
+
+      if (error) throw error;
+
+      const rankInfo = newRank ? MAFIA_RANKS.find(r => r.id === newRank) : null;
+      
+      toast({
+        title: 'Ранг назначен',
+        description: rankInfo 
+          ? `Игроку ${rankAssignPlayer.name} присвоен ранг "${rankInfo.name}"` 
+          : `Игроку ${rankAssignPlayer.name} включен автоматический расчёт ранга`,
+      });
+
+      setRankAssignPlayer(null);
+      setSelectedRank('');
+      loadPlayers();
+      onRefresh();
+    } catch (error: any) {
+      console.error('Error assigning rank:', error);
+      toast({
+        title: 'Ошибка назначения',
+        description: error.message || 'Не удалось назначить ранг',
+        variant: 'destructive'
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Получить текущий ранг игрока (ручной или автоматический)
+  const getPlayerRank = (player: Player): MafiaRank => {
+    if (player.manual_rank) {
+      const manualRank = MAFIA_RANKS.find(r => r.id === player.manual_rank);
+      if (manualRank) return manualRank;
+    }
+    return getCurrentMafiaRank({
+      gamesPlayed: player.games_played,
+      wins: player.wins,
+      rating: player.elo_rating
+    });
+  };
+
   const clearAllPlayers = async () => {
     try {
       const { error: resultsError } = await supabase
@@ -518,16 +579,20 @@ const ManualAdjustments = ({ tournaments, selectedTournament, onRefresh }: Manua
                     <TableHeader>
                       <TableRow className="bg-background/50 border-b border-border/50 hover:bg-background/50">
                         <TableHead className="text-muted-foreground font-medium">Игрок</TableHead>
-                        <TableHead className="text-muted-foreground font-medium">Текущий рейтинг</TableHead>
+                        <TableHead className="text-muted-foreground font-medium">Ранг</TableHead>
+                        <TableHead className="text-muted-foreground font-medium">Рейтинг</TableHead>
                         <TableHead className="text-muted-foreground font-medium">Игр</TableHead>
                         <TableHead className="text-muted-foreground font-medium">Побед</TableHead>
-                        <TableHead className="text-muted-foreground font-medium">Винрейт</TableHead>
                         <TableHead className="text-muted-foreground font-medium text-right">Действия</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       <AnimatePresence>
-                        {players.map((player, index) => (
+                        {players.map((player, index) => {
+                          const playerRank = getPlayerRank(player);
+                          const isManualRank = !!player.manual_rank;
+                          
+                          return (
                           <motion.tr
                             key={player.id}
                             initial={{ opacity: 0, x: -20 }}
@@ -539,11 +604,30 @@ const ManualAdjustments = ({ tournaments, selectedTournament, onRefresh }: Manua
                             <TableCell>
                               <div className="flex items-center gap-3">
                                 <Avatar className="h-9 w-9 border-2 border-primary/30">
+                                  {player.avatar_url ? (
+                                    <AvatarImage src={player.avatar_url} alt={player.name} />
+                                  ) : null}
                                   <AvatarFallback className="bg-primary/20 text-primary font-bold">
                                     {player.name.charAt(0)}
                                   </AvatarFallback>
                                 </Avatar>
                                 <span className="font-medium text-foreground">{player.name}</span>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                <Badge 
+                                  className={`bg-gradient-to-r ${playerRank.bgGradient} text-white border-0 flex items-center gap-1`}
+                                >
+                                  <img src={playerRank.avatar} alt="" className="w-4 h-4 rounded-full" />
+                                  {playerRank.name}
+                                </Badge>
+                                {isManualRank && (
+                                  <Badge variant="outline" className="text-xs border-amber-500/50 text-amber-400 bg-amber-500/10">
+                                    <Crown className="w-3 h-3 mr-1" />
+                                    Ручной
+                                  </Badge>
+                                )}
                               </div>
                             </TableCell>
                             <TableCell>
@@ -553,21 +637,6 @@ const ManualAdjustments = ({ tournaments, selectedTournament, onRefresh }: Manua
                             </TableCell>
                             <TableCell className="text-muted-foreground">{player.games_played}</TableCell>
                             <TableCell className="text-muted-foreground">{player.wins}</TableCell>
-                            <TableCell>
-                              <Badge 
-                                className={`font-mono ${
-                                  player.games_played > 0 && (player.wins / player.games_played) > 0.5 
-                                    ? "bg-green-500/20 text-green-400 border-green-500/30" 
-                                    : "bg-muted/50 text-muted-foreground border-border/30"
-                                }`}
-                              >
-                                <Percent className="w-3 h-3 mr-1" />
-                                {player.games_played > 0 ? 
-                                  `${Math.round((player.wins / player.games_played) * 100)}` : 
-                                  '0'
-                                }
-                              </Badge>
-                            </TableCell>
                             <TableCell>
                               <div className="flex gap-2 justify-end">
                                 <Dialog>
@@ -632,6 +701,83 @@ const ManualAdjustments = ({ tournaments, selectedTournament, onRefresh }: Manua
                                       >
                                         <Save className="w-4 h-4 mr-2" />
                                         Сохранить изменения
+                                      </Button>
+                                    </DialogFooter>
+                                  </DialogContent>
+                                </Dialog>
+
+                                {/* Кнопка назначения ранга */}
+                                <Dialog>
+                                  <DialogTrigger asChild>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      className="bg-background/50 border-amber-500/50 hover:bg-amber-500/20 hover:border-amber-500 hover:text-amber-400"
+                                      onClick={() => {
+                                        setRankAssignPlayer(player);
+                                        setSelectedRank(player.manual_rank || 'auto');
+                                      }}
+                                    >
+                                      <Crown className="w-4 h-4" />
+                                    </Button>
+                                  </DialogTrigger>
+                                  <DialogContent className="bg-card brutal-border max-w-md">
+                                    <DialogHeader>
+                                      <DialogTitle className="text-foreground flex items-center gap-2">
+                                        <Crown className="w-5 h-5 text-amber-400" />
+                                        Назначение ранга
+                                      </DialogTitle>
+                                      <DialogDescription className="text-muted-foreground">
+                                        Назначьте иерархический ранг игроку {player.name}. При назначении все достижения до этого уровня будут считаться разблокированными.
+                                      </DialogDescription>
+                                    </DialogHeader>
+                                    <div className="space-y-4">
+                                      <div>
+                                        <Label className="text-foreground mb-2 block">Выберите ранг</Label>
+                                        <Select 
+                                          value={selectedRank} 
+                                          onValueChange={setSelectedRank}
+                                        >
+                                          <SelectTrigger className="bg-background border-border/50">
+                                            <SelectValue placeholder="Выберите ранг" />
+                                          </SelectTrigger>
+                                          <SelectContent className="bg-card border-border max-h-80">
+                                            <SelectItem value="auto" className="cursor-pointer">
+                                              <div className="flex items-center gap-2">
+                                                <Shield className="w-4 h-4 text-muted-foreground" />
+                                                <span>Автоматический расчёт</span>
+                                              </div>
+                                            </SelectItem>
+                                            {MAFIA_RANKS.map((rank) => (
+                                              <SelectItem key={rank.id} value={rank.id} className="cursor-pointer">
+                                                <div className="flex items-center gap-2">
+                                                  <img src={rank.avatar} alt="" className="w-5 h-5 rounded-full" />
+                                                  <span className={rank.textColor}>{rank.name}</span>
+                                                  <span className="text-xs text-muted-foreground">— {rank.title}</span>
+                                                </div>
+                                              </SelectItem>
+                                            ))}
+                                          </SelectContent>
+                                        </Select>
+                                      </div>
+                                      
+                                      {selectedRank && selectedRank !== 'auto' && (
+                                        <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/30">
+                                          <p className="text-sm text-amber-200">
+                                            <Crown className="w-4 h-4 inline mr-1" />
+                                            При назначении ранга "{MAFIA_RANKS.find(r => r.id === selectedRank)?.name}" все предыдущие достижения будут считаться разблокированными автоматически.
+                                          </p>
+                                        </div>
+                                      )}
+                                    </div>
+                                    <DialogFooter>
+                                      <Button
+                                        onClick={assignManualRank}
+                                        disabled={loading}
+                                        className="bg-amber-500 text-black hover:bg-amber-400 shadow-[0_0_15px_hsl(45_93%_47%/0.3)]"
+                                      >
+                                        <Save className="w-4 h-4 mr-2" />
+                                        Назначить ранг
                                       </Button>
                                     </DialogFooter>
                                   </DialogContent>
@@ -720,7 +866,8 @@ const ManualAdjustments = ({ tournaments, selectedTournament, onRefresh }: Manua
                               </div>
                             </TableCell>
                           </motion.tr>
-                        ))}
+                        );
+                        })}
                       </AnimatePresence>
                     </TableBody>
                   </Table>
