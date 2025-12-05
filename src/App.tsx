@@ -16,6 +16,7 @@ import Gallery from "./pages/Gallery";
 import Tournaments from "./pages/Tournaments";
 import Rating from "./pages/Rating";
 import Profile from "./pages/Profile";
+import Clans from "./pages/Clans";
 import NotFound from "./pages/NotFound";
 import ExternalTimer from "./pages/ExternalTimer";
 import TelegramMiniApp from "./pages/TelegramMiniApp";
@@ -62,6 +63,7 @@ function App() {
                 <Route path="/gallery" element={<Gallery />} />
                 <Route path="/tournaments" element={<Tournaments />} />
                 <Route path="/rating" element={<Rating />} />
+                <Route path="/clans" element={<Clans />} />
                 <Route path="/profile" element={<Profile />} />
                 <Route path="/external-timer" element={<ExternalTimer />} />
                 <Route path="/invitation/:id" element={<InvitationCard />} />

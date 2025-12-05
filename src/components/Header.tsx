@@ -19,6 +19,7 @@ export function Header() {
   const navItems = [
     { name: "Турниры", path: "/tournaments" },
     { name: "Рейтинг", path: "/rating" },
+    { name: "Кланы", path: "/clans" },
     { name: "О клубе", path: "/about" },
     { name: "Галерея", path: "/gallery" },
   ];
