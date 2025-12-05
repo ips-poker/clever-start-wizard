@@ -6,8 +6,9 @@ import { GlitchText } from '@/components/ui/glitch-text';
 import { PlayerLevelBadge } from './PlayerLevelBadge';
 import { GlitchAvatarFrame } from '@/components/ui/glitch-avatar-frame';
 import { getRankProfileStyle } from './RankProfileStyles';
-import { getCurrentMafiaRank, getRarityInfo } from '@/utils/mafiaRanks';
+import { getEffectiveMafiaRank, getRarityInfo } from '@/utils/mafiaRanks';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { ClanInviteButton } from '@/components/clan/ClanInviteButton';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { fixStorageUrl } from '@/utils/storageUtils';
@@ -21,6 +22,7 @@ interface Player {
   wins: number;
   avatar_url?: string;
   telegram?: string;
+  manual_rank?: string | null;
 }
 
 interface GameResult {
@@ -47,13 +49,15 @@ export const RankedPlayerModal: React.FC<RankedPlayerModalProps> = ({ player, on
   const [gameResults, setGameResults] = useState<GameResult[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Calculate rank based on player stats
+  // Calculate rank based on player stats (with manual rank support)
   const stats = {
     gamesPlayed: player.games_played,
     wins: player.wins,
     rating: player.elo_rating
   };
-  const currentRank = getCurrentMafiaRank(stats);
+  const effectiveRankData = getEffectiveMafiaRank(stats, player.manual_rank);
+  const currentRank = effectiveRankData.rank;
+  const isManualRank = effectiveRankData.isManual;
   const rankStyle = getRankProfileStyle(currentRank);
   const rarityInfo = getRarityInfo(currentRank.rarity);
 
@@ -214,13 +218,23 @@ export const RankedPlayerModal: React.FC<RankedPlayerModalProps> = ({ player, on
                   <h2 className={`text-2xl font-display uppercase truncate ${rankStyle.nameClass}`}>
                     <GlitchText text={player.name} />
                   </h2>
-                  <div className="flex items-center gap-2 mt-1 flex-wrap">
+                <div className="flex items-center gap-2 mt-1 flex-wrap">
                     <span className={`text-sm font-bold ${currentRank.textColor}`}>
                       {currentRank.name}
                     </span>
                     <Badge className={`${rarityInfo.class} rounded-none text-[10px] font-bold`}>
                       {rarityInfo.label}
                     </Badge>
+                    {isManualRank && (
+                      <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30 rounded-none text-[10px]">
+                        <Crown className="h-2.5 w-2.5 mr-1" />
+                        Назначен
+                      </Badge>
+                    )}
+                  </div>
+                  {/* Clan Invite Button */}
+                  <div className="mt-2">
+                    <ClanInviteButton playerId={player.id} />
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">{currentRank.title}</p>
                 </div>

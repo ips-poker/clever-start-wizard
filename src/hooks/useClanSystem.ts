@@ -192,6 +192,23 @@ export function useClanSystem() {
       return null;
     }
 
+    // Добавляем создателя как члена клана с ролью 'don'
+    const { error: memberError } = await supabase
+      .from('clan_members')
+      .insert({
+        clan_id: data.id,
+        player_id: playerData.id,
+        hierarchy_role: 'don'
+      });
+
+    if (memberError) {
+      console.error('Error adding don as clan member:', memberError);
+      // Удаляем клан если не удалось добавить создателя
+      await supabase.from('clans').delete().eq('id', data.id);
+      toast.error('Ошибка создания клана');
+      return null;
+    }
+
     toast.success('Клан успешно создан!');
     await loadMyClan();
     return data;
@@ -216,7 +233,13 @@ export function useClanSystem() {
 
   // Пригласить игрока
   const invitePlayer = async (playerId: string) => {
-    if (!myClan || myMembership?.hierarchy_role !== 'don') {
+    // Проверяем, что пользователь - Дон клана (либо через membership, либо как создатель)
+    const isDonOfClan = myClan && (
+      myMembership?.hierarchy_role === 'don' || 
+      myClan.don_player_id === playerData?.id
+    );
+    
+    if (!myClan || !isDonOfClan) {
       toast.error('Только Дон может приглашать игроков');
       return false;
     }

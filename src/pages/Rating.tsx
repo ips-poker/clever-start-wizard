@@ -10,6 +10,7 @@ import { Trophy, Medal, Award, TrendingUp, Users, Clock, Star, ChevronDown, Crow
 import { FloatingParticles } from "@/components/ui/floating-particles";
 import { ScrollProgress } from "@/components/ScrollProgress";
 import { fixStorageUrl } from "@/utils/storageUtils";
+import { getEffectiveMafiaRank } from "@/utils/mafiaRanks";
 
 interface Player {
   id: string;
@@ -18,6 +19,7 @@ interface Player {
   games_played: number;
   wins: number;
   avatar_url?: string;
+  manual_rank?: string | null;
 }
 
 interface RecentTournament {
@@ -87,7 +89,10 @@ export default function Rating() {
 
   const loadData = async () => {
     try {
-      const { data: playersData, error: playersError } = await supabase.rpc('get_players_public');
+      // Загружаем игроков напрямую чтобы получить manual_rank
+      const { data: playersData, error: playersError } = await supabase
+        .from('players')
+        .select('id, name, elo_rating, games_played, wins, avatar_url, manual_rank');
 
       if (playersError) throw playersError;
 
@@ -267,81 +272,109 @@ export default function Rating() {
                 ) : (
                   <>
                     {/* Champion */}
-                    {topPlayers[0] && (
-                      <div className="mb-12">
-                        <div className="brutal-metal brutal-border p-8 relative overflow-hidden group">
-                          {/* Warning Stripe Top */}
-                          <div 
-                            className="absolute top-0 left-0 right-0 h-2"
-                            style={{
-                              backgroundImage: 'repeating-linear-gradient(45deg, rgba(255, 135, 31, 0.5), rgba(255, 135, 31, 0.5) 10px, transparent 10px, transparent 20px)'
-                            }}
-                          />
+                    {topPlayers[0] && (() => {
+                      const championRankData = getEffectiveMafiaRank({
+                        gamesPlayed: topPlayers[0].games_played,
+                        wins: topPlayers[0].wins,
+                        rating: topPlayers[0].elo_rating
+                      }, topPlayers[0].manual_rank);
+                      const championRank = championRankData.rank;
+                      
+                      return (
+                        <div className="mb-12">
+                          <div className="brutal-metal brutal-border p-8 relative overflow-hidden group">
+                            {/* Warning Stripe Top */}
+                            <div 
+                              className="absolute top-0 left-0 right-0 h-2"
+                              style={{
+                                backgroundImage: 'repeating-linear-gradient(45deg, rgba(255, 135, 31, 0.5), rgba(255, 135, 31, 0.5) 10px, transparent 10px, transparent 20px)'
+                              }}
+                            />
 
-                          {/* Corner Brackets */}
-                          <div className="absolute top-0 left-0 w-8 h-8 border-l-2 border-t-2 border-syndikate-orange" />
-                          <div className="absolute top-0 right-0 w-8 h-8 border-r-2 border-t-2 border-syndikate-orange" />
-                          <div className="absolute bottom-0 left-0 w-8 h-8 border-l-2 border-b-2 border-syndikate-orange" />
-                          <div className="absolute bottom-0 right-0 w-8 h-8 border-r-2 border-b-2 border-syndikate-orange" />
+                            {/* Corner Brackets */}
+                            <div className="absolute top-0 left-0 w-8 h-8 border-l-2 border-t-2 border-syndikate-orange" />
+                            <div className="absolute top-0 right-0 w-8 h-8 border-r-2 border-t-2 border-syndikate-orange" />
+                            <div className="absolute bottom-0 left-0 w-8 h-8 border-l-2 border-b-2 border-syndikate-orange" />
+                            <div className="absolute bottom-0 right-0 w-8 h-8 border-r-2 border-b-2 border-syndikate-orange" />
 
-                          <div className="flex items-center gap-6 relative z-10">
-                            <div className="flex-shrink-0">
-                              <div className="relative">
-                                {topPlayers[0].avatar_url ? (
-                                  <img 
-                                    src={fixStorageUrl(topPlayers[0].avatar_url)} 
-                                    alt={topPlayers[0].name}
-                                    className="w-16 h-16 border-2 border-syndikate-orange object-cover"
-                                  />
-                                ) : (
-                                  <div className="w-16 h-16 brutal-metal brutal-border flex items-center justify-center text-2xl">
-                                    👑
+                            <div className="flex items-center gap-6 relative z-10">
+                              <div className="flex-shrink-0">
+                                <div className="relative">
+                                  {topPlayers[0].avatar_url ? (
+                                    <img 
+                                      src={fixStorageUrl(topPlayers[0].avatar_url)} 
+                                      alt={topPlayers[0].name}
+                                      className="w-16 h-16 border-2 border-syndikate-orange object-cover"
+                                    />
+                                  ) : (
+                                    <div className="w-16 h-16 brutal-metal brutal-border flex items-center justify-center text-2xl">
+                                      👑
+                                    </div>
+                                  )}
+                                  <div className="absolute -top-2 -right-2 w-6 h-6 bg-syndikate-orange brutal-border flex items-center justify-center shadow-neon-orange">
+                                    <Crown className="w-3 h-3 text-background" />
                                   </div>
-                                )}
-                                <div className="absolute -top-2 -right-2 w-6 h-6 bg-syndikate-orange brutal-border flex items-center justify-center shadow-neon-orange">
-                                  <Crown className="w-3 h-3 text-background" />
+                                  {/* Rank avatar badge */}
+                                  <div className="absolute -bottom-1 -left-1 w-7 h-7 rounded-full overflow-hidden border-2 border-syndikate-orange bg-background">
+                                    <img 
+                                      src={championRank.avatar} 
+                                      alt={championRank.name}
+                                      className="w-full h-full object-cover"
+                                    />
+                                  </div>
                                 </div>
+                              </div>
+
+                              <div className="flex-grow">
+                                <div className="flex items-center gap-3 mb-2 flex-wrap">
+                                  <h3 className="text-2xl font-bold text-foreground tracking-wider uppercase">
+                                    {topPlayers[0].name}
+                                  </h3>
+                                  <div className={`px-3 py-1 brutal-border ${championRank.bgGradient}`}>
+                                    <span className="text-background text-sm font-bold tracking-wider uppercase">{championRank.name}</span>
+                                  </div>
+                                  {championRankData.isManual && (
+                                    <div className="px-2 py-0.5 bg-amber-500/20 border border-amber-500/30">
+                                      <span className="text-amber-400 text-xs font-bold uppercase">Назначен</span>
+                                    </div>
+                                  )}
+                                </div>
+                                <div className="flex items-center gap-6 text-sm text-muted-foreground font-mono uppercase">
+                                  <span>{topPlayers[0].games_played} ИГР</span>
+                                  <span>{getWinRate(topPlayers[0].wins, topPlayers[0].games_played)}% ПОБЕД</span>
+                                </div>
+                              </div>
+
+                              <div className="text-right">
+                                <div className="text-3xl font-bold text-syndikate-orange mb-1">
+                                  {topPlayers[0].elo_rating}
+                                </div>
+                                <div className="text-xs text-muted-foreground uppercase tracking-widest font-mono">RPS</div>
                               </div>
                             </div>
 
-                            <div className="flex-grow">
-                              <div className="flex items-center gap-3 mb-2">
-                                <h3 className="text-2xl font-bold text-foreground tracking-wider uppercase">
-                                  {topPlayers[0].name}
-                                </h3>
-                                <div className="px-3 py-1 bg-syndikate-orange brutal-border">
-                                  <span className="text-background text-sm font-bold tracking-wider uppercase">Чемпион</span>
-                                </div>
-                              </div>
-                              <div className="flex items-center gap-6 text-sm text-muted-foreground font-mono uppercase">
-                                <span>{topPlayers[0].games_played} ИГР</span>
-                                <span>{getWinRate(topPlayers[0].wins, topPlayers[0].games_played)}% ПОБЕД</span>
-                              </div>
-                            </div>
-
-                            <div className="text-right">
-                              <div className="text-3xl font-bold text-syndikate-orange mb-1">
-                                {topPlayers[0].elo_rating}
-                              </div>
-                              <div className="text-xs text-muted-foreground uppercase tracking-widest font-mono">RPS</div>
-                            </div>
+                            {/* Warning Stripe Bottom */}
+                            <div 
+                              className="absolute bottom-0 left-0 right-0 h-2"
+                              style={{
+                                backgroundImage: 'repeating-linear-gradient(-45deg, rgba(255, 135, 31, 0.5), rgba(255, 135, 31, 0.5) 10px, transparent 10px, transparent 20px)'
+                              }}
+                            />
                           </div>
-
-                          {/* Warning Stripe Bottom */}
-                          <div 
-                            className="absolute bottom-0 left-0 right-0 h-2"
-                            style={{
-                              backgroundImage: 'repeating-linear-gradient(-45deg, rgba(255, 135, 31, 0.5), rgba(255, 135, 31, 0.5) 10px, transparent 10px, transparent 20px)'
-                            }}
-                          />
                         </div>
-                      </div>
-                    )}
+                      );
+                    })()}
 
                     {/* Positions 2-5 */}
                     <div className="space-y-4">
                       {topPlayers.slice(1).map((player, index) => {
                         const position = index + 2;
+                        const playerRankData = getEffectiveMafiaRank({
+                          gamesPlayed: player.games_played,
+                          wins: player.wins,
+                          rating: player.elo_rating
+                        }, player.manual_rank);
+                        const playerRank = playerRankData.rank;
                         
                         return (
                           <div key={player.id} className="group">
@@ -374,22 +407,42 @@ export default function Rating() {
                                     )}
                                   </div>
 
-                                  {player.avatar_url ? (
-                                    <img 
-                                      src={fixStorageUrl(player.avatar_url)} 
-                                      alt={player.name}
-                                      className="w-12 h-12 border-2 border-syndikate-orange object-cover"
-                                    />
-                                  ) : (
-                                    <div className="w-12 h-12 brutal-metal brutal-border flex items-center justify-center text-lg">
-                                      {getPokerAvatar(player.name)}
+                                  <div className="relative">
+                                    {player.avatar_url ? (
+                                      <img 
+                                        src={fixStorageUrl(player.avatar_url)} 
+                                        alt={player.name}
+                                        className="w-12 h-12 border-2 border-syndikate-orange object-cover"
+                                      />
+                                    ) : (
+                                      <div className="w-12 h-12 brutal-metal brutal-border flex items-center justify-center text-lg">
+                                        {getPokerAvatar(player.name)}
+                                      </div>
+                                    )}
+                                    {/* Rank avatar badge */}
+                                    <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full overflow-hidden border-2 border-syndikate-orange bg-background">
+                                      <img 
+                                        src={playerRank.avatar} 
+                                        alt={playerRank.name}
+                                        className="w-full h-full object-cover"
+                                      />
                                     </div>
-                                  )}
+                                  </div>
 
                                   <div>
-                                    <h4 className="text-lg font-bold text-foreground mb-1 tracking-wider uppercase group-hover:text-syndikate-orange transition-colors duration-300">
-                                      {player.name}
-                                    </h4>
+                                    <div className="flex items-center gap-2 mb-1 flex-wrap">
+                                      <h4 className="text-lg font-bold text-foreground tracking-wider uppercase group-hover:text-syndikate-orange transition-colors duration-300">
+                                        {player.name}
+                                      </h4>
+                                      <span className={`text-xs px-2 py-0.5 ${playerRank.bgGradient} text-white font-bold uppercase`}>
+                                        {playerRank.name}
+                                      </span>
+                                      {playerRankData.isManual && (
+                                        <span className="text-[10px] px-1.5 py-0.5 bg-amber-500/20 text-amber-400 border border-amber-500/30 uppercase">
+                                          Назначен
+                                        </span>
+                                      )}
+                                    </div>
                                     <div className="flex items-center gap-4 text-xs text-muted-foreground font-mono uppercase">
                                       <span className="flex items-center gap-1">
                                         <TrendingUp className="w-3 h-3" />
