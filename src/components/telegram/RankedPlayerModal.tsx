@@ -110,7 +110,7 @@ export const RankedPlayerModal: React.FC<RankedPlayerModalProps> = ({ player, on
       }));
   };
 
-  // Calculate achievements
+  // Calculate achievements based on real data
   const getAchievements = () => {
     const wins = player.wins;
     const gamesPlayed = player.games_played;
@@ -119,14 +119,35 @@ export const RankedPlayerModal: React.FC<RankedPlayerModalProps> = ({ player, on
     const winRate = gamesPlayed > 0 ? (wins / gamesPlayed) * 100 : 0;
 
     return [
+      // По победам
       { id: 'first_win', icon: '🏆', title: 'Первая победа', unlocked: wins >= 1, progress: Math.min(wins, 1), max: 1 },
-      { id: 'veteran', icon: '⭐', title: 'Ветеран', unlocked: gamesPlayed >= 50, progress: Math.min(gamesPlayed, 50), max: 50 },
-      { id: 'champion', icon: '👑', title: 'Чемпион', unlocked: wins >= 10, progress: Math.min(wins, 10), max: 10 },
-      { id: 'consistent', icon: '📊', title: 'Стабильный', unlocked: topThreeFinishes >= 20, progress: Math.min(topThreeFinishes, 20), max: 20 },
-      { id: 'rising_star', icon: '📈', title: 'Восходящая звезда', unlocked: biggestRatingGain >= 100, progress: Math.min(biggestRatingGain, 100), max: 100 },
-      { id: 'elite', icon: '💎', title: 'Элитный игрок', unlocked: player.elo_rating >= 2000, progress: Math.min(player.elo_rating, 2000), max: 2000 },
-      { id: 'hot_streak', icon: '🔥', title: 'В ударе', unlocked: winRate >= 60 && gamesPlayed >= 5, progress: Math.round(winRate), max: 60 },
-      { id: 'grinder', icon: '⚡', title: 'Гриндер', unlocked: gamesPlayed >= 100, progress: Math.min(gamesPlayed, 100), max: 100 },
+      { id: 'triple_win', icon: '👑', title: 'Триумфатор', desc: '3 победы', unlocked: wins >= 3, progress: Math.min(wins, 3), max: 3 },
+      { id: 'champion', icon: '🎖️', title: 'Чемпион', desc: '10 побед', unlocked: wins >= 10, progress: Math.min(wins, 10), max: 10 },
+      
+      // По играм
+      { id: 'active', icon: '🎮', title: 'Активный', desc: '3 игры', unlocked: gamesPlayed >= 3, progress: Math.min(gamesPlayed, 3), max: 3 },
+      { id: 'regular', icon: '⭐', title: 'Регуляр', desc: '10 игр', unlocked: gamesPlayed >= 10, progress: Math.min(gamesPlayed, 10), max: 10 },
+      { id: 'veteran', icon: '🌟', title: 'Ветеран', desc: '25 игр', unlocked: gamesPlayed >= 25, progress: Math.min(gamesPlayed, 25), max: 25 },
+      { id: 'legend', icon: '💫', title: 'Легенда', desc: '50 игр', unlocked: gamesPlayed >= 50, progress: Math.min(gamesPlayed, 50), max: 50 },
+      { id: 'grinder', icon: '⚡', title: 'Гриндер', desc: '100 игр', unlocked: gamesPlayed >= 100, progress: Math.min(gamesPlayed, 100), max: 100 },
+      
+      // По призовым местам
+      { id: 'podium', icon: '🥉', title: 'На подиуме', desc: '3 топ-3', unlocked: topThreeFinishes >= 3, progress: Math.min(topThreeFinishes, 3), max: 3 },
+      { id: 'consistent', icon: '📊', title: 'Стабильный', desc: '10 топ-3', unlocked: topThreeFinishes >= 10, progress: Math.min(topThreeFinishes, 10), max: 10 },
+      
+      // По рейтингу
+      { id: 'growth', icon: '📈', title: 'Рост', desc: '500 RPS', unlocked: player.elo_rating >= 500, progress: Math.min(player.elo_rating, 500), max: 500 },
+      { id: 'top_player', icon: '💎', title: 'Топ игрок', desc: '1000 RPS', unlocked: player.elo_rating >= 1000, progress: Math.min(player.elo_rating, 1000), max: 1000 },
+      { id: 'elite', icon: '🔱', title: 'Элита', desc: '1500 RPS', unlocked: player.elo_rating >= 1500, progress: Math.min(player.elo_rating, 1500), max: 1500 },
+      { id: 'master', icon: '⚜️', title: 'Мастер', desc: '2000 RPS', unlocked: player.elo_rating >= 2000, progress: Math.min(player.elo_rating, 2000), max: 2000 },
+      
+      // По росту за турнир
+      { id: 'rising_star', icon: '🚀', title: 'Восходящая звезда', desc: '+50 за турнир', unlocked: biggestRatingGain >= 50, progress: Math.min(biggestRatingGain, 50), max: 50 },
+      { id: 'big_win', icon: '💰', title: 'Большой выигрыш', desc: '+100 за турнир', unlocked: biggestRatingGain >= 100, progress: Math.min(biggestRatingGain, 100), max: 100 },
+      
+      // По винрейту
+      { id: 'accurate', icon: '🎯', title: 'Меткий', desc: '40%+ винрейт', unlocked: winRate >= 40 && gamesPlayed >= 3, progress: Math.round(Math.min(winRate, 40)), max: 40 },
+      { id: 'hot_streak', icon: '🔥', title: 'В ударе', desc: '60%+ винрейт', unlocked: winRate >= 60 && gamesPlayed >= 5, progress: Math.round(Math.min(winRate, 60)), max: 60 },
     ];
   };
 

@@ -39,12 +39,30 @@ export const PlayerRatingCard: React.FC<PlayerRatingCardProps> = ({
   const mafiaRank = getCurrentMafiaRank({ gamesPlayed: player.games_played, wins: player.wins, rating: player.elo_rating });
   const rankStyle = getRankCardStyle(mafiaRank);
   
-  // Реальные достижения на основе данных
+  // Реальные достижения на основе данных из БД
   const achievements = [];
-  if (player.wins >= 5) achievements.push({ icon: '🏆', label: 'Победитель' });
-  if (player.games_played >= 20) achievements.push({ icon: '⭐', label: 'Ветеран' });
-  if (player.elo_rating >= 1500) achievements.push({ icon: '💎', label: 'Топ игрок' });
-  if (Number(winRate) >= 60 && player.games_played >= 5) achievements.push({ icon: '🔥', label: 'На огне' });
+  
+  // Достижения по победам
+  if (player.wins >= 1) achievements.push({ icon: '🏆', label: 'Первая победа' });
+  if (player.wins >= 3) achievements.push({ icon: '👑', label: 'Триумфатор' });
+  if (player.wins >= 10) achievements.push({ icon: '🎖️', label: 'Чемпион' });
+  
+  // Достижения по играм
+  if (player.games_played >= 3) achievements.push({ icon: '🎮', label: 'Активный' });
+  if (player.games_played >= 10) achievements.push({ icon: '⭐', label: 'Регуляр' });
+  if (player.games_played >= 25) achievements.push({ icon: '🌟', label: 'Ветеран' });
+  if (player.games_played >= 50) achievements.push({ icon: '💫', label: 'Легенда' });
+  
+  // Достижения по рейтингу
+  if (player.elo_rating >= 500) achievements.push({ icon: '📈', label: 'Рост' });
+  if (player.elo_rating >= 1000) achievements.push({ icon: '💎', label: 'Топ игрок' });
+  if (player.elo_rating >= 1500) achievements.push({ icon: '🔱', label: 'Элита' });
+  if (player.elo_rating >= 2000) achievements.push({ icon: '⚜️', label: 'Мастер' });
+  
+  // Достижения по винрейту
+  if (Number(winRate) >= 40 && player.games_played >= 3) achievements.push({ icon: '🎯', label: 'Меткий' });
+  if (Number(winRate) >= 60 && player.games_played >= 5) achievements.push({ icon: '🔥', label: 'В ударе' });
+  if (Number(winRate) >= 80 && player.games_played >= 5) achievements.push({ icon: '⚡', label: 'Непобедимый' });
 
   return (
     <div
