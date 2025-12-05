@@ -5,6 +5,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Trophy, Medal, Award, TrendingUp, Users, Target } from "lucide-react";
 import { getCurrentMafiaRank } from "@/utils/mafiaRanks";
+import { ClanInviteButton } from "@/components/clan/ClanInviteButton";
+import { ClanBadge } from "@/components/clan/ClanEmblemDisplay";
 
 interface Player {
   id: string;
@@ -13,6 +15,11 @@ interface Player {
   games_played: number;
   wins: number;
   avatar_url?: string;
+  clan?: {
+    name: string;
+    emblem_id: number;
+    seal_id: number;
+  } | null;
 }
 
 export function PlayerStats() {
@@ -30,19 +37,58 @@ export function PlayerStats() {
 
   const loadPlayers = async () => {
     try {
-      const { data, error } = await supabase
+      // Загружаем игроков
+      const { data: playersData, error } = await supabase
         .from('players')
         .select('*')
         .order('elo_rating', { ascending: false });
 
       if (error) throw error;
 
-      setPlayers(data || []);
+      // Загружаем данные о кланах игроков
+      const { data: clanMembersData } = await supabase
+        .from('clan_members')
+        .select(`
+          player_id,
+          clan:clans(name, emblem_id, seal_id)
+        `);
+
+      // Загружаем донов кланов
+      const { data: clansData } = await supabase
+        .from('clans')
+        .select('don_player_id, name, emblem_id, seal_id');
+
+      // Создаем мапу игрок -> клан
+      const playerClanMap = new Map<string, { name: string; emblem_id: number; seal_id: number }>();
       
-      const totalPlayers = data?.length || 0;
-      const totalGames = data?.reduce((sum, player) => sum + player.games_played, 0) || 0;
+      // Добавляем членов кланов
+      clanMembersData?.forEach(member => {
+        if (member.clan) {
+          playerClanMap.set(member.player_id, member.clan as any);
+        }
+      });
+
+      // Добавляем донов
+      clansData?.forEach(clan => {
+        playerClanMap.set(clan.don_player_id, {
+          name: clan.name,
+          emblem_id: clan.emblem_id,
+          seal_id: clan.seal_id
+        });
+      });
+
+      // Объединяем данные
+      const playersWithClans = (playersData || []).map(player => ({
+        ...player,
+        clan: playerClanMap.get(player.id) || null
+      }));
+
+      setPlayers(playersWithClans);
+      
+      const totalPlayers = playersData?.length || 0;
+      const totalGames = playersData?.reduce((sum, player) => sum + player.games_played, 0) || 0;
       const averageRating = totalPlayers > 0 
-        ? Math.round(data.reduce((sum, player) => sum + player.elo_rating, 0) / totalPlayers)
+        ? Math.round(playersData.reduce((sum, player) => sum + player.elo_rating, 0) / totalPlayers)
         : 0;
 
       setStats({
@@ -214,6 +260,13 @@ export function PlayerStats() {
                             <img src={rankInfo.avatar} alt="" className="h-3 w-3 rounded-full" />
                             {rankInfo.label}
                           </Badge>
+                          {player.clan && (
+                            <ClanBadge
+                              emblemId={player.clan.emblem_id}
+                              sealId={player.clan.seal_id}
+                              clanName={player.clan.name}
+                            />
+                          )}
                         </div>
                         <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
                           <span className="flex items-center gap-1">
@@ -232,14 +285,17 @@ export function PlayerStats() {
                       </div>
                     </div>
                     
-                    {/* RPS Rating */}
-                    <div className="text-right">
-                      <div className={`text-2xl font-bold transition-colors ${
-                        isTopThree ? 'neon-orange' : 'text-foreground'
-                      }`}>
-                        {player.elo_rating}
+                    {/* RPS Rating & Actions */}
+                    <div className="flex items-center gap-3">
+                      <ClanInviteButton playerId={player.id} />
+                      <div className="text-right">
+                        <div className={`text-2xl font-bold transition-colors ${
+                          isTopThree ? 'neon-orange' : 'text-foreground'
+                        }`}>
+                          {player.elo_rating}
+                        </div>
+                        <div className="text-[10px] text-muted-foreground uppercase tracking-widest">RPS</div>
                       </div>
-                      <div className="text-[10px] text-muted-foreground uppercase tracking-widest">RPS</div>
                     </div>
                   </div>
                 );
