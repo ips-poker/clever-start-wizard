@@ -387,3 +387,265 @@ export function getRankProfileStyle(rank: MafiaRank | null): RankProfileStyle {
   
   return styles[rankId] || styles.outsider;
 }
+
+// Card styles for small rating cards
+interface RankCardStyle {
+  cardBg: string;
+  border: string;
+  decorations: React.ReactNode;
+  hoverOverlay: string;
+  rankBadgeBg: string;
+  rankText: string;
+  avatarGlow: string;
+  avatarRing: string;
+  avatarFallback: string;
+  nameClass: string;
+  currentUserBadge: string;
+  ratingText: string;
+  statsBorder: string;
+  statsBg: string;
+  iconColor: string;
+}
+
+export function getRankCardStyle(rank: MafiaRank | null): RankCardStyle {
+  const rankId = rank?.id || 'outsider';
+  
+  const styles: Record<string, RankCardStyle> = {
+    outsider: {
+      cardBg: 'bg-gradient-to-br from-zinc-900 to-zinc-950',
+      border: 'border border-zinc-700/50',
+      decorations: <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_50%_0%,rgba(113,113,122,0.1),transparent_50%)]" />,
+      hoverOverlay: 'bg-gradient-to-r from-zinc-500/10 to-transparent',
+      rankBadgeBg: 'bg-zinc-800/50 border border-zinc-700/50',
+      rankText: 'text-zinc-500',
+      avatarGlow: '',
+      avatarRing: 'ring-2 ring-zinc-700',
+      avatarFallback: 'bg-zinc-800 text-zinc-400',
+      nameClass: 'text-zinc-400 group-hover:text-zinc-300',
+      currentUserBadge: 'bg-zinc-700/50 text-zinc-300',
+      ratingText: 'text-zinc-400',
+      statsBorder: 'border-zinc-800/50',
+      statsBg: 'bg-zinc-800/30 group-hover:bg-zinc-700/30',
+      iconColor: 'text-zinc-500'
+    },
+    picciotto: {
+      cardBg: 'bg-gradient-to-br from-zinc-800 to-neutral-900',
+      border: 'border border-zinc-600/50',
+      decorations: <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_50%_0%,rgba(161,161,170,0.15),transparent_50%)]" />,
+      hoverOverlay: 'bg-gradient-to-r from-zinc-400/10 to-transparent',
+      rankBadgeBg: 'bg-zinc-700/50 border border-zinc-600/50',
+      rankText: 'text-zinc-400',
+      avatarGlow: '',
+      avatarRing: 'ring-2 ring-zinc-500',
+      avatarFallback: 'bg-zinc-700 text-zinc-300',
+      nameClass: 'text-zinc-300 group-hover:text-zinc-200',
+      currentUserBadge: 'bg-zinc-600/50 text-zinc-200',
+      ratingText: 'text-zinc-300',
+      statsBorder: 'border-zinc-700/50',
+      statsBg: 'bg-zinc-700/30 group-hover:bg-zinc-600/30',
+      iconColor: 'text-zinc-400'
+    },
+    soldato: {
+      cardBg: 'bg-gradient-to-br from-stone-800 to-neutral-900',
+      border: 'border border-stone-600/50',
+      decorations: <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_30%_20%,rgba(168,162,158,0.15),transparent_50%)]" />,
+      hoverOverlay: 'bg-gradient-to-r from-stone-400/10 to-transparent',
+      rankBadgeBg: 'bg-stone-700/50 border border-stone-600/50',
+      rankText: 'text-stone-400',
+      avatarGlow: 'drop-shadow-[0_0_6px_rgba(168,162,158,0.3)]',
+      avatarRing: 'ring-2 ring-stone-500',
+      avatarFallback: 'bg-stone-700 text-stone-300',
+      nameClass: 'text-stone-300 group-hover:text-stone-200',
+      currentUserBadge: 'bg-stone-600/50 text-stone-200',
+      ratingText: 'text-stone-300',
+      statsBorder: 'border-stone-700/50',
+      statsBg: 'bg-stone-700/30 group-hover:bg-stone-600/30',
+      iconColor: 'text-stone-400'
+    },
+    sgarrista: {
+      cardBg: 'bg-gradient-to-br from-amber-950 to-zinc-900',
+      border: 'border border-amber-600/40',
+      decorations: (
+        <div className="absolute inset-0">
+          <div className="absolute inset-0 opacity-30 bg-[radial-gradient(circle_at_50%_0%,rgba(251,191,36,0.2),transparent_50%)]" />
+          <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-amber-500/40 to-transparent" />
+        </div>
+      ),
+      hoverOverlay: 'bg-gradient-to-r from-amber-500/15 to-transparent',
+      rankBadgeBg: 'bg-amber-900/50 border border-amber-600/50',
+      rankText: 'text-amber-400',
+      avatarGlow: 'drop-shadow-[0_0_8px_rgba(251,191,36,0.4)]',
+      avatarRing: 'ring-2 ring-amber-500/80',
+      avatarFallback: 'bg-amber-900/50 text-amber-400',
+      nameClass: 'text-amber-300 group-hover:text-amber-200',
+      currentUserBadge: 'bg-amber-600/40 text-amber-200',
+      ratingText: 'text-amber-400',
+      statsBorder: 'border-amber-800/40',
+      statsBg: 'bg-amber-900/30 group-hover:bg-amber-800/30',
+      iconColor: 'text-amber-400'
+    },
+    associato: {
+      cardBg: 'bg-gradient-to-br from-orange-950 to-zinc-900',
+      border: 'border border-orange-500/50',
+      decorations: (
+        <div className="absolute inset-0">
+          <div className="absolute inset-0 opacity-30 bg-[radial-gradient(circle_at_70%_30%,rgba(249,115,22,0.25),transparent_50%)]" />
+          <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-orange-500/50 to-transparent" />
+          <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-orange-500/30 to-transparent" />
+        </div>
+      ),
+      hoverOverlay: 'bg-gradient-to-r from-orange-500/15 to-transparent',
+      rankBadgeBg: 'bg-orange-900/50 border border-orange-500/50',
+      rankText: 'text-orange-400',
+      avatarGlow: 'drop-shadow-[0_0_10px_rgba(249,115,22,0.5)]',
+      avatarRing: 'ring-2 ring-orange-500',
+      avatarFallback: 'bg-orange-900/50 text-orange-400',
+      nameClass: 'text-orange-300 group-hover:text-orange-200',
+      currentUserBadge: 'bg-orange-600/40 text-orange-200',
+      ratingText: 'text-orange-400',
+      statsBorder: 'border-orange-800/40',
+      statsBg: 'bg-orange-900/30 group-hover:bg-orange-800/30',
+      iconColor: 'text-orange-400'
+    },
+    caporegime: {
+      cardBg: 'bg-gradient-to-br from-blue-950 to-slate-900',
+      border: 'border border-blue-500/50',
+      decorations: (
+        <div className="absolute inset-0">
+          <div className="absolute inset-0 opacity-30 bg-[radial-gradient(ellipse_at_top_right,rgba(59,130,246,0.3),transparent_60%)]" />
+          <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-blue-500/60 to-transparent" />
+          <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-blue-500/40 to-transparent" />
+        </div>
+      ),
+      hoverOverlay: 'bg-gradient-to-r from-blue-500/15 to-transparent',
+      rankBadgeBg: 'bg-blue-900/50 border border-blue-500/50',
+      rankText: 'text-blue-400',
+      avatarGlow: 'drop-shadow-[0_0_12px_rgba(59,130,246,0.6)]',
+      avatarRing: 'ring-2 ring-blue-500',
+      avatarFallback: 'bg-blue-900/50 text-blue-400',
+      nameClass: 'text-blue-300 group-hover:text-blue-200',
+      currentUserBadge: 'bg-blue-600/40 text-blue-200',
+      ratingText: 'text-blue-400',
+      statsBorder: 'border-blue-800/40',
+      statsBg: 'bg-blue-900/30 group-hover:bg-blue-800/30',
+      iconColor: 'text-blue-400'
+    },
+    shark: {
+      cardBg: 'bg-gradient-to-br from-purple-950 to-violet-950',
+      border: 'border border-purple-500/50',
+      decorations: (
+        <div className="absolute inset-0">
+          <div className="absolute inset-0 opacity-30 bg-[radial-gradient(circle_at_30%_70%,rgba(147,51,234,0.3),transparent_50%)]" />
+          <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-purple-500/60 via-fuchsia-500/60 to-purple-500/60" />
+          <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-purple-500/40 via-fuchsia-500/40 to-purple-500/40" />
+        </div>
+      ),
+      hoverOverlay: 'bg-gradient-to-r from-purple-500/15 to-fuchsia-500/10',
+      rankBadgeBg: 'bg-purple-900/50 border border-purple-500/50',
+      rankText: 'text-purple-400',
+      avatarGlow: 'drop-shadow-[0_0_14px_rgba(147,51,234,0.6)]',
+      avatarRing: 'ring-2 ring-purple-500',
+      avatarFallback: 'bg-purple-900/50 text-purple-400',
+      nameClass: 'text-purple-300 group-hover:text-purple-200',
+      currentUserBadge: 'bg-purple-600/40 text-purple-200',
+      ratingText: 'text-purple-400',
+      statsBorder: 'border-purple-800/40',
+      statsBg: 'bg-purple-900/30 group-hover:bg-purple-800/30',
+      iconColor: 'text-purple-400'
+    },
+    kapo: {
+      cardBg: 'bg-gradient-to-br from-red-950 to-rose-950',
+      border: 'border border-red-500/50',
+      decorations: (
+        <div className="absolute inset-0">
+          <div className="absolute inset-0 opacity-30 bg-[radial-gradient(circle_at_50%_0%,rgba(239,68,68,0.35),transparent_60%)]" />
+          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-red-500/70 to-transparent" />
+          <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-red-500/50 to-transparent" />
+        </div>
+      ),
+      hoverOverlay: 'bg-gradient-to-r from-red-500/15 to-transparent',
+      rankBadgeBg: 'bg-red-900/50 border border-red-500/50',
+      rankText: 'text-red-400',
+      avatarGlow: 'drop-shadow-[0_0_16px_rgba(239,68,68,0.6)]',
+      avatarRing: 'ring-2 ring-red-500',
+      avatarFallback: 'bg-red-900/50 text-red-400',
+      nameClass: 'text-red-300 group-hover:text-red-200',
+      currentUserBadge: 'bg-red-600/40 text-red-200',
+      ratingText: 'text-red-400',
+      statsBorder: 'border-red-800/40',
+      statsBg: 'bg-red-900/30 group-hover:bg-red-800/30',
+      iconColor: 'text-red-400'
+    },
+    konsigliere: {
+      cardBg: 'bg-gradient-to-br from-yellow-950 to-amber-950',
+      border: 'border border-yellow-500/50',
+      decorations: (
+        <div className="absolute inset-0">
+          <div className="absolute inset-0 opacity-30 bg-[conic-gradient(from_0deg_at_50%_50%,rgba(234,179,8,0.2),transparent,rgba(251,191,36,0.2),transparent,rgba(234,179,8,0.2))]" />
+          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-yellow-500/70 via-amber-400/70 to-yellow-500/70" />
+          <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-yellow-500/50 via-amber-400/50 to-yellow-500/50" />
+        </div>
+      ),
+      hoverOverlay: 'bg-gradient-to-r from-yellow-500/15 to-amber-500/10',
+      rankBadgeBg: 'bg-yellow-900/50 border border-yellow-500/50',
+      rankText: 'text-yellow-400',
+      avatarGlow: 'drop-shadow-[0_0_18px_rgba(234,179,8,0.6)]',
+      avatarRing: 'ring-2 ring-yellow-500',
+      avatarFallback: 'bg-yellow-900/50 text-yellow-400',
+      nameClass: 'text-yellow-300 group-hover:text-yellow-200',
+      currentUserBadge: 'bg-yellow-600/40 text-yellow-200',
+      ratingText: 'text-yellow-400',
+      statsBorder: 'border-yellow-800/40',
+      statsBg: 'bg-yellow-900/30 group-hover:bg-yellow-800/30',
+      iconColor: 'text-yellow-400'
+    },
+    don: {
+      cardBg: 'bg-gradient-to-br from-rose-950 via-fuchsia-950 to-violet-950',
+      border: 'border border-rose-400/50',
+      decorations: (
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute inset-0 opacity-30 bg-[radial-gradient(ellipse_at_center,rgba(244,63,94,0.3),transparent_60%)]" />
+          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-rose-500/80 via-fuchsia-400/80 to-cyan-400/80" />
+          <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-cyan-400/60 via-fuchsia-400/60 to-rose-500/60" />
+        </div>
+      ),
+      hoverOverlay: 'bg-gradient-to-r from-rose-500/15 via-fuchsia-500/10 to-cyan-500/10',
+      rankBadgeBg: 'bg-rose-900/50 border border-rose-400/50',
+      rankText: 'text-rose-400',
+      avatarGlow: 'drop-shadow-[0_0_20px_rgba(244,63,94,0.7)]',
+      avatarRing: 'ring-2 ring-rose-400',
+      avatarFallback: 'bg-rose-900/50 text-rose-400',
+      nameClass: 'text-rose-300 group-hover:text-rose-200',
+      currentUserBadge: 'bg-rose-600/40 text-rose-200',
+      ratingText: 'text-rose-400',
+      statsBorder: 'border-rose-800/40',
+      statsBg: 'bg-rose-900/30 group-hover:bg-rose-800/30',
+      iconColor: 'text-rose-400'
+    },
+    patriarch: {
+      cardBg: 'bg-gradient-to-br from-cyan-950 via-blue-950 to-purple-950',
+      border: 'border border-cyan-400/60',
+      decorations: (
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute inset-0 opacity-40 bg-[linear-gradient(135deg,rgba(34,211,238,0.2)_0%,rgba(147,51,234,0.2)_50%,rgba(236,72,153,0.2)_100%)]" />
+          <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-600 animate-pulse" />
+          <div className="absolute bottom-0 left-0 right-0 h-1.5 bg-gradient-to-r from-purple-600 via-blue-500 to-cyan-400 animate-pulse" />
+        </div>
+      ),
+      hoverOverlay: 'bg-gradient-to-r from-cyan-500/20 via-blue-500/15 to-purple-500/20',
+      rankBadgeBg: 'bg-cyan-900/50 border border-cyan-400/60',
+      rankText: 'text-cyan-300',
+      avatarGlow: 'drop-shadow-[0_0_25px_rgba(34,211,238,0.7)]',
+      avatarRing: 'ring-2 ring-cyan-400',
+      avatarFallback: 'bg-gradient-to-br from-cyan-900/50 to-purple-900/50 text-cyan-300',
+      nameClass: 'text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-blue-300 to-purple-300 group-hover:from-cyan-200 group-hover:to-purple-200',
+      currentUserBadge: 'bg-gradient-to-r from-cyan-600/50 to-purple-600/50 text-cyan-200',
+      ratingText: 'text-cyan-300',
+      statsBorder: 'border-cyan-800/40',
+      statsBg: 'bg-cyan-900/30 group-hover:bg-cyan-800/30',
+      iconColor: 'text-cyan-400'
+    }
+  };
+  
+  return styles[rankId] || styles.outsider;
+}
