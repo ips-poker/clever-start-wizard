@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Menu, X, User, LogOut, Settings, Crown } from "lucide-react";
 import syndikateLogo from "@/assets/syndikate-logo-main.png";
+import { ClanNotificationBell } from "@/components/clan/ClanNotificationBell";
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -79,6 +80,7 @@ export function Header() {
           <div className="hidden md:flex items-center space-x-3">
             {isAuthenticated ? (
               <>
+                <ClanNotificationBell />
                 {isAdmin && (
                   <Link to="/admin">
                     <Button 
@@ -168,6 +170,10 @@ export function Header() {
             
             {isAuthenticated ? (
               <>
+                <div className="flex items-center justify-between px-4 py-2">
+                  <span className="text-sm text-muted-foreground">Уведомления</span>
+                  <ClanNotificationBell />
+                </div>
                 {isAdmin && (
                   <Link to="/admin" onClick={() => setIsMenuOpen(false)}>
                     <Button 
