@@ -5,6 +5,7 @@ import { Trophy, Target, Gamepad2 } from 'lucide-react';
 import { fixStorageUrl } from '@/utils/storageUtils';
 import { getCurrentMafiaRank } from '@/utils/mafiaRanks';
 import { getRankCardStyle } from './RankProfileStyles';
+import { GlitchAvatarFrame } from '@/components/ui/glitch-avatar-frame';
 
 interface Player {
   id: string;
@@ -71,16 +72,18 @@ export const PlayerRatingCard: React.FC<PlayerRatingCardProps> = ({
             </span>
           </div>
 
-          {/* Player avatar with rank avatar overlay */}
+          {/* Player avatar with glitch frame and rank avatar overlay */}
           <div className={`relative ${rankStyle.avatarGlow}`}>
-            <Avatar className={`w-12 h-12 ${rankStyle.avatarRing} group-hover:scale-110 transition-transform`}>
-              <AvatarImage src={player.avatar_url ? fixStorageUrl(player.avatar_url) : undefined} alt={player.name} />
-              <AvatarFallback className={`${rankStyle.avatarFallback} text-xl font-display`}>
-                {player.name.charAt(0).toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
+            <GlitchAvatarFrame rank={mafiaRank} size="sm">
+              <Avatar className={`w-full h-full ${rankStyle.avatarRing} group-hover:scale-105 transition-transform`}>
+                <AvatarImage src={player.avatar_url ? fixStorageUrl(player.avatar_url) : undefined} alt={player.name} />
+                <AvatarFallback className={`${rankStyle.avatarFallback} text-xl font-display`}>
+                  {player.name.charAt(0).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+            </GlitchAvatarFrame>
             {/* Rank avatar badge */}
-            <div className={`absolute -bottom-1 -right-1 w-6 h-6 rounded-full overflow-hidden border-2 ${rankStyle.border} bg-background group-hover:scale-110 transition-transform`}>
+            <div className={`absolute -bottom-0.5 -right-0.5 w-6 h-6 rounded-full overflow-hidden border-2 ${rankStyle.border} bg-background group-hover:scale-110 transition-transform z-20`}>
               <img 
                 src={mafiaRank.avatar} 
                 alt={mafiaRank.name}
