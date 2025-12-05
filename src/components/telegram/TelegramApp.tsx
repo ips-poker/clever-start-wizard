@@ -888,7 +888,7 @@ export const TelegramApp = () => {
         const currentStyle = rankStyles[userRank.rarity] || rankStyles.initiate;
         
         return (
-          <Card className={`${currentStyle.cardBg} brutal-border ${currentStyle.border} overflow-hidden relative backdrop-blur-xl group hover:scale-[1.02] transition-all duration-500 animate-fade-in ${currentStyle.glow}`}>
+          <Card className={`${currentStyle.cardBg} brutal-border ${currentStyle.border} overflow-hidden relative backdrop-blur-xl group hover:scale-[1.02] transition-all duration-500 animate-fade-in ${currentStyle.glow} mx-4`}>
             {/* Rank-specific top accent line */}
             <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${userRank.rarity === 'godfather' ? 'from-cyan-400 via-purple-500 to-pink-500' : `${userRank.bgGradient}`}`} />
             
@@ -897,76 +897,76 @@ export const TelegramApp = () => {
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(255,255,255,0.1)_0%,transparent_50%)]" />
             </div>
             
-            {/* Rank badge */}
-            <div className={`absolute top-3 right-3 px-2 py-1 text-[9px] font-bold uppercase tracking-wider ${userRarityInfo.class} rounded brutal-border flex items-center gap-1 z-20`}>
-              <Star className="h-3 w-3" />
+            {/* Rank badge with rank avatar */}
+            <div className={`absolute top-2 right-2 px-2 py-1 text-[8px] font-bold uppercase tracking-wider ${userRarityInfo.class} rounded brutal-border flex items-center gap-1.5 z-20`}>
+              <img src={userRank.avatar} alt={userRank.name} className="w-4 h-4 rounded-full" />
               {userRank.name}
             </div>
             
-            <CardContent className="p-5 relative z-10">
+            <CardContent className="p-3 relative z-10">
               {/* Profile Header with Avatar */}
-              <div className="flex items-center gap-4 mb-5">
+              <div className="flex items-center gap-3 mb-3">
                 {/* Avatar with GlitchAvatarFrame */}
                 <div className="relative">
                   <GlitchAvatarFrame rank={userRank} size="sm">
                     <Avatar className="w-full h-full">
                       <AvatarImage src={userStats.avatar_url || telegramUser?.photoUrl} alt="Avatar" />
-                      <AvatarFallback className={`bg-gradient-to-br ${userRank.bgGradient} text-xl font-display text-white`}>
+                      <AvatarFallback className={`bg-gradient-to-br ${userRank.bgGradient} text-lg font-display text-white`}>
                         {(telegramUser?.firstName || 'П').charAt(0)}
                       </AvatarFallback>
                     </Avatar>
                   </GlitchAvatarFrame>
                   {/* Online indicator */}
-                  <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-emerald-500 rounded-full border-2 border-background shadow-lg flex items-center justify-center z-20">
-                    <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+                  <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full border-2 border-background shadow-lg flex items-center justify-center z-20">
+                    <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></div>
                   </div>
                 </div>
                 
                 {/* Name & Info */}
-                <div className="flex-1">
-                  <h3 className={`font-display font-bold text-xl uppercase tracking-wider drop-shadow-lg ${currentStyle.accent}`}>
+                <div className="flex-1 min-w-0">
+                  <h3 className={`font-display font-bold text-lg uppercase tracking-wider drop-shadow-lg truncate ${currentStyle.accent}`}>
                     <GlitchText text={telegramUser?.username || telegramUser?.firstName || 'ИГРОК'} glitchIntensity="low" />
                   </h3>
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className={`text-xs font-bold uppercase tracking-wider ${currentStyle.accent}`}>#{players.findIndex(p => p.id === userStats.id) + 1 || '—'}</span>
-                    <span className="text-muted-foreground text-xs">в рейтинге</span>
+                  <div className="flex items-center gap-2">
+                    <span className={`text-[10px] font-bold uppercase tracking-wider ${currentStyle.accent}`}>#{players.findIndex(p => p.id === userStats.id) + 1 || '—'}</span>
+                    <span className="text-muted-foreground text-[10px]">•</span>
+                    <span className="text-muted-foreground text-[10px] truncate">{userRank.title}</span>
                   </div>
-                  <div className={`text-xs text-muted-foreground mt-1`}>{userRank.title}</div>
                 </div>
                 
                 {/* Menu button */}
                 <button 
                   onClick={() => setActiveTab('profile')}
-                  className={`w-10 h-10 rounded-xl bg-white/5 backdrop-blur-sm border ${currentStyle.border} flex items-center justify-center hover:bg-white/10 transition-all duration-300`}
+                  className={`w-8 h-8 rounded-lg bg-white/5 backdrop-blur-sm border ${currentStyle.border} flex items-center justify-center hover:bg-white/10 transition-all duration-300 flex-shrink-0`}
                 >
-                  <ChevronRight className={`h-5 w-5 ${currentStyle.accent}`} />
+                  <ChevronRight className={`h-4 w-4 ${currentStyle.accent}`} />
                 </button>
               </div>
               
-              {/* Stats Grid - Rank themed */}
-              <div className="grid grid-cols-3 gap-2">
-                <div className={`text-center p-3 rounded-xl bg-white/5 backdrop-blur-sm border ${currentStyle.border} hover:bg-white/10 transition-all duration-300`}>
-                  <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${userRank.bgGradient} flex items-center justify-center mx-auto mb-2`}>
-                    <Trophy className="h-5 w-5 text-white" />
+              {/* Stats Grid - Compact */}
+              <div className="grid grid-cols-3 gap-1.5">
+                <div className={`text-center p-2 rounded-lg bg-white/5 backdrop-blur-sm border ${currentStyle.border}`}>
+                  <div className={`w-7 h-7 rounded-lg bg-gradient-to-br ${userRank.bgGradient} flex items-center justify-center mx-auto mb-1`}>
+                    <Trophy className="h-3.5 w-3.5 text-white" />
                   </div>
-                  <div className={`font-bold text-xl font-display ${currentStyle.accent}`}>{userStats.elo_rating}</div>
-                  <div className="text-muted-foreground text-[10px] uppercase tracking-wider">RPS</div>
+                  <div className={`font-bold text-base font-display ${currentStyle.accent}`}>{userStats.elo_rating}</div>
+                  <div className="text-muted-foreground text-[8px] uppercase tracking-wider">RPS</div>
                 </div>
                 
-                <div className={`text-center p-3 rounded-xl bg-white/5 backdrop-blur-sm border ${currentStyle.border} hover:bg-white/10 transition-all duration-300`}>
-                  <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${userRank.bgGradient} flex items-center justify-center mx-auto mb-2`}>
-                    <Crown className="h-5 w-5 text-white" />
+                <div className={`text-center p-2 rounded-lg bg-white/5 backdrop-blur-sm border ${currentStyle.border}`}>
+                  <div className={`w-7 h-7 rounded-lg bg-gradient-to-br ${userRank.bgGradient} flex items-center justify-center mx-auto mb-1`}>
+                    <Crown className="h-3.5 w-3.5 text-white" />
                   </div>
-                  <div className={`font-bold text-xl font-display ${currentStyle.accent}`}>{userStats.wins}</div>
-                  <div className="text-muted-foreground text-[10px] uppercase tracking-wider">Побед</div>
+                  <div className={`font-bold text-base font-display ${currentStyle.accent}`}>{userStats.wins}</div>
+                  <div className="text-muted-foreground text-[8px] uppercase tracking-wider">Побед</div>
                 </div>
                 
-                <div className={`text-center p-3 rounded-xl bg-white/5 backdrop-blur-sm border ${currentStyle.border} hover:bg-white/10 transition-all duration-300`}>
-                  <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${userRank.bgGradient} flex items-center justify-center mx-auto mb-2`}>
-                    <Target className="h-5 w-5 text-white" />
+                <div className={`text-center p-2 rounded-lg bg-white/5 backdrop-blur-sm border ${currentStyle.border}`}>
+                  <div className={`w-7 h-7 rounded-lg bg-gradient-to-br ${userRank.bgGradient} flex items-center justify-center mx-auto mb-1`}>
+                    <Target className="h-3.5 w-3.5 text-white" />
                   </div>
-                  <div className={`font-bold text-xl font-display ${currentStyle.accent}`}>{userStats.games_played}</div>
-                  <div className="text-muted-foreground text-[10px] uppercase tracking-wider">Игр</div>
+                  <div className={`font-bold text-base font-display ${currentStyle.accent}`}>{userStats.games_played}</div>
+                  <div className="text-muted-foreground text-[8px] uppercase tracking-wider">Игр</div>
                 </div>
               </div>
             </CardContent>
