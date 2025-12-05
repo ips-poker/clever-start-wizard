@@ -12,7 +12,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Users, UserX, Trophy, Clock, TrendingUp, TrendingDown, Shuffle, Upload, Plus, Minus, X, UserMinus } from 'lucide-react';
+import { Users, UserX, Trophy, Clock, TrendingUp, TrendingDown, Shuffle, Upload, Plus, Minus, X, UserMinus, Trash2, UserCheck } from 'lucide-react';
 import { calculateTotalRPSPool, formatRPSPoints, formatParticipationFee } from '@/utils/rpsCalculations';
 import TableSeating from './TableSeating';
 
@@ -237,6 +237,52 @@ const TournamentPlayerManagement = ({ tournament, players, registrations, onRegi
     }
   };
 
+  // Удаление игрока из регистрации (без влияния на призовые места)
+  const removeFromRegistration = async (registrationId: string, playerName: string) => {
+    const { error } = await supabase
+      .from('tournament_registrations')
+      .delete()
+      .eq('id', registrationId);
+
+    if (error) {
+      console.error('Error removing registration:', error);
+      toast({
+        title: "Ошибка",
+        description: "Не удалось удалить регистрацию",
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "Регистрация удалена",
+        description: `${playerName} удален из списка участников`,
+      });
+      onRegistrationUpdate();
+    }
+  };
+
+  // Отметить игрока как активного в турнире (пришел и играет)
+  const markAsPlaying = async (registrationId: string, playerName: string) => {
+    const { error } = await supabase
+      .from('tournament_registrations')
+      .update({ status: 'playing' })
+      .eq('id', registrationId);
+
+    if (error) {
+      console.error('Error marking as playing:', error);
+      toast({
+        title: "Ошибка",
+        description: "Не удалось обновить статус",
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "Статус обновлен",
+        description: `${playerName} отмечен как активный участник`,
+      });
+      onRegistrationUpdate();
+    }
+  };
+
   const totalRPSPool = calculateTotalRPSPool(
     registrations.length,
     tournament.participation_fee,
@@ -409,6 +455,19 @@ const TournamentPlayerManagement = ({ tournament, players, registrations, onRegi
                         </div>
                       </div>
                       <div className="flex items-center space-x-1">
+                        {/* Кнопка отметки "В игре" */}
+                        {registration.status !== 'playing' && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => markAsPlaying(registration.id, registration.player.name)}
+                            className="h-8 px-2 border-2 border-green-500/50 text-green-500 hover:bg-green-500/20"
+                            title="Отметить как активного (пришел)"
+                          >
+                            <UserCheck className="h-3 w-3 mr-1" />
+                            <span className="text-xs font-bold">В игре</span>
+                          </Button>
+                        )}
                         <Button
                           variant="outline"
                           size="sm"
@@ -433,12 +492,13 @@ const TournamentPlayerManagement = ({ tournament, players, registrations, onRegi
                             variant="outline"
                             size="sm"
                             onClick={() => updateAdditionalSets(registration.id, 1)}
-                            className="h-8 w-8 p-0 border-2 border-blue-500/50 text-blue-500 hover:bg-blue-500/20 mr-1"
+                            className="h-8 w-8 p-0 border-2 border-blue-500/50 text-blue-500 hover:bg-blue-500/20"
                             title="Добавить дополнительный набор"
                           >
                             <Plus className="h-3 w-3" />
                           </Button>
                         )}
+                        {/* Кнопка исключения (с призовыми местами) */}
                         <Button
                           variant="outline"
                           size="sm"
@@ -462,10 +522,40 @@ const TournamentPlayerManagement = ({ tournament, players, registrations, onRegi
                             }
                           }}
                           className="h-8 w-8 p-0 border-2 border-destructive/50 text-destructive hover:bg-destructive/20"
-                          title="Исключить игрока"
+                          title="Исключить игрока (с присвоением места)"
                         >
                           <UserMinus className="h-3 w-3" />
                         </Button>
+                        {/* Кнопка удаления из регистрации (без призовых) */}
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-8 w-8 p-0 border-2 border-orange-500/50 text-orange-500 hover:bg-orange-500/20"
+                              title="Удалить из регистрации (без призовых)"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Удалить регистрацию?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Игрок {registration.player.name} будет удален из списка участников без присвоения призового места. Это действие нельзя отменить.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Отмена</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => removeFromRegistration(registration.id, registration.player.name)}
+                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                              >
+                                Удалить
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
                       </div>
                     </div>
                   </div>
