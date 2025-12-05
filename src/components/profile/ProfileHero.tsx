@@ -1,11 +1,11 @@
-import React, { useState } from "react";
+import React from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Edit3, Check, X, Shield, Sparkles, ChevronLeft, ChevronRight, FlaskConical } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
-import { getCurrentMafiaRank, getMafiaRankProgress, getTotalRankXP, MAFIA_RANKS } from "@/utils/mafiaRanks";
+import { Edit3, Check, X, Shield, Sparkles } from "lucide-react";
+import { motion } from "framer-motion";
+import { getCurrentMafiaRank, getMafiaRankProgress, getTotalRankXP } from "@/utils/mafiaRanks";
 import { WebRankProfileStyles } from "./WebRankProfileStyles";
 import { GlitchAvatarFrame } from "@/components/ui/glitch-avatar-frame";
 
@@ -50,20 +50,14 @@ export function ProfileHero({
   onNameUpdate,
   onCancelNameEdit
 }: ProfileHeroProps) {
-  const [testRankIndex, setTestRankIndex] = useState(0);
-  const [isTestMode, setIsTestMode] = useState(false);
-
   const rating = player?.elo_rating || 100;
   const games = player?.games_played || 0;
   const wins = player?.wins || 0;
   const winRate = games > 0 ? Math.round((wins / games) * 100) : 0;
   
   const stats = { gamesPlayed: games, wins, rating };
-  const realRank = getCurrentMafiaRank(stats);
-  const currentRank = isTestMode ? MAFIA_RANKS[testRankIndex] : realRank;
-  const rankProgressData = isTestMode 
-    ? { progress: 50, current: currentRank, next: MAFIA_RANKS[testRankIndex + 1] || null, details: ['Тестовый режим'] }
-    : getMafiaRankProgress(stats);
+  const currentRank = getCurrentMafiaRank(stats);
+  const rankProgressData = getMafiaRankProgress(stats);
   const totalXP = getTotalRankXP(stats);
   
   const level = getLevel(games, wins, rating);
@@ -295,77 +289,6 @@ export function ProfileHero({
           </div>
         </div>
 
-        {/* Test Mode Controls */}
-        <div className="mt-6 pt-4 border-t border-border/50">
-          <AnimatePresence mode="wait">
-            {!isTestMode ? (
-              <motion.div
-                key="test-button"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="flex justify-center"
-              >
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setIsTestMode(true)}
-                  className="text-muted-foreground hover:text-foreground gap-2"
-                >
-                  <FlaskConical className="h-4 w-4" />
-                  Тест рангов
-                </Button>
-              </motion.div>
-            ) : (
-              <motion.div
-                key="test-controls"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                className="flex flex-col sm:flex-row items-center justify-center gap-4"
-              >
-                <div className="flex items-center gap-3 bg-secondary/50 border border-border px-4 py-2">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setTestRankIndex(Math.max(0, testRankIndex - 1))}
-                    disabled={testRankIndex === 0}
-                    className="h-8 w-8 p-0"
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                  </Button>
-                  
-                  <div className="text-center min-w-[120px]">
-                    <p className="text-xs text-muted-foreground">Ранг {testRankIndex + 1}/{MAFIA_RANKS.length}</p>
-                    <p className={`font-bold ${currentRank.textColor}`}>{currentRank.name}</p>
-                  </div>
-                  
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setTestRankIndex(Math.min(MAFIA_RANKS.length - 1, testRankIndex + 1))}
-                    disabled={testRankIndex === MAFIA_RANKS.length - 1}
-                    className="h-8 w-8 p-0"
-                  >
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
-                </div>
-                
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    setIsTestMode(false);
-                    setTestRankIndex(0);
-                  }}
-                  className="text-muted-foreground border-border"
-                >
-                  Выйти из теста
-                </Button>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
       </div>
     </div>
   );
