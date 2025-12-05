@@ -327,15 +327,21 @@ const ManualAdjustments = ({ tournaments, selectedTournament, onRefresh }: Manua
     try {
       const newRank = selectedRank === 'auto' ? null : selectedRank;
       
-      // Используем any для обхода проблемы с типами до регенерации
-      const { error } = await supabase
-        .from('players')
-        .update({ manual_rank: newRank } as any)
-        .eq('id', rankAssignPlayer.id);
+      // Используем безопасную RPC функцию
+      const { data, error } = await supabase.rpc('assign_player_rank_safe', {
+        p_player_id: rankAssignPlayer.id,
+        p_rank: newRank
+      });
 
       if (error) {
-        console.error('Supabase error:', error);
+        console.error('Supabase RPC error:', error);
         throw error;
+      }
+
+      const result = data as { success: boolean; error?: string; player_name?: string; new_rank?: string };
+      
+      if (!result.success) {
+        throw new Error(result.error || 'Не удалось назначить ранг');
       }
 
       const rankInfo = newRank ? MAFIA_RANKS.find(r => r.id === newRank) : null;
@@ -343,8 +349,8 @@ const ManualAdjustments = ({ tournaments, selectedTournament, onRefresh }: Manua
       toast({
         title: 'Ранг назначен',
         description: rankInfo 
-          ? `Игроку ${rankAssignPlayer.name} присвоен ранг "${rankInfo.name}"` 
-          : `Игроку ${rankAssignPlayer.name} включен автоматический расчёт ранга`,
+          ? `Игроку ${result.player_name} присвоен ранг "${rankInfo.name}"` 
+          : `Игроку ${result.player_name} включен автоматический расчёт ранга`,
       });
 
       setRankAssignPlayer(null);

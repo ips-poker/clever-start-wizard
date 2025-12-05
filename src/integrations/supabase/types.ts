@@ -1253,6 +1253,10 @@ export type Database = {
         Args: { tournament_id_param: string }
         Returns: boolean
       }
+      assign_player_rank_safe: {
+        Args: { p_player_id: string; p_rank: string }
+        Returns: Json
+      }
       calculate_final_positions: {
         Args: { tournament_id_param: string }
         Returns: undefined
