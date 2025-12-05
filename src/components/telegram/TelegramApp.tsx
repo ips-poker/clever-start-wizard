@@ -1503,6 +1503,29 @@ export const TelegramApp = () => {
             </div>
           ) : (
             <div className="space-y-3">
+              {/* Эффектный разделитель перед списком */}
+              {players.length >= 3 && (
+                <div className="relative py-6 my-4">
+                  {/* Gradient line */}
+                  <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-px bg-gradient-to-r from-transparent via-syndikate-orange/60 to-transparent" />
+                  
+                  {/* Center badge */}
+                  <div className="relative flex justify-center">
+                    <div className="px-4 py-2 bg-background border border-syndikate-orange/30 flex items-center gap-2 animate-fade-in">
+                      <div className="w-2 h-2 bg-syndikate-orange rounded-full animate-pulse" />
+                      <span className="text-xs font-display uppercase tracking-wider text-syndikate-orange/80">
+                        Остальные участники
+                      </span>
+                      <div className="w-2 h-2 bg-syndikate-orange rounded-full animate-pulse" />
+                    </div>
+                  </div>
+                  
+                  {/* Decorative corners */}
+                  <div className="absolute left-4 top-1/2 -translate-y-1/2 w-8 h-8 border-l-2 border-t-2 border-syndikate-orange/20" />
+                  <div className="absolute right-4 top-1/2 -translate-y-1/2 w-8 h-8 border-r-2 border-b-2 border-syndikate-orange/20" />
+                </div>
+              )}
+              
               {/* Show remaining players (after top 3 if podium shown, or all if less than 3) */}
               {(players.length >= 3 ? players.slice(3) : players).map((player, index) => {
                 const actualRank = players.length >= 3 ? index + 4 : index + 1;
