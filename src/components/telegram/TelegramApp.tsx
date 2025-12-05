@@ -17,7 +17,8 @@ import { GlitchText } from '@/components/ui/glitch-text';
 import { TournamentCard } from './TournamentCard';
 import { RatingPodium } from './RatingPodium';
 import { PlayerRatingCard } from './PlayerRatingCard';
-import { PlayerStatsModal } from './PlayerStatsModal';
+import { RankedPlayerModal } from './RankedPlayerModal';
+import { MafiaHierarchy } from './MafiaHierarchy';
 import mainPokerRoom from '@/assets/gallery/main-poker-room.jpg';
 import tournamentTable from '@/assets/gallery/tournament-table.jpg';
 import vipZone from '@/assets/gallery/vip-zone.jpg';
@@ -1444,9 +1445,8 @@ export const TelegramApp = () => {
 
       {activeTab === 'rating' && (
         <div className="space-y-4 pb-20 px-4 pt-24 bg-transparent min-h-screen relative z-10">
-          {/* Header with level info */}
+          {/* Header */}
           <div className="relative p-4 bg-syndikate-metal/90 brutal-border backdrop-blur-xl overflow-hidden">
-            {/* Background pattern */}
             <div className="absolute inset-0 opacity-5">
               <div className="absolute inset-0" style={{
                 backgroundImage: 'linear-gradient(0deg, transparent 24%, rgba(255, 107, 0, 0.05) 25%, rgba(255, 107, 0, 0.05) 26%, transparent 27%, transparent 74%, rgba(255, 107, 0, 0.05) 75%, rgba(255, 107, 0, 0.05) 76%, transparent 77%, transparent), linear-gradient(90deg, transparent 24%, rgba(255, 107, 0, 0.05) 25%, rgba(255, 107, 0, 0.05) 26%, transparent 27%, transparent 74%, rgba(255, 107, 0, 0.05) 75%, rgba(255, 107, 0, 0.05) 76%, transparent 77%, transparent)',
@@ -1467,26 +1467,16 @@ export const TelegramApp = () => {
                 </p>
               </div>
             </div>
-            
-            {/* Mafia Ranks explanation */}
-            <div className="mt-4 grid grid-cols-3 gap-2 relative z-10">
-              <div className="text-center p-2 rounded bg-gradient-to-br from-zinc-700/30 to-zinc-900/30 border border-zinc-600/50">
-                <span className="text-sm">🎴</span>
-                <div className="text-[10px] text-zinc-400 uppercase font-bold">Инициация</div>
-                <div className="text-[9px] text-muted-foreground">0+ игр</div>
-              </div>
-              <div className="text-center p-2 rounded bg-gradient-to-br from-amber-700/30 to-amber-900/30 border border-amber-700/50">
-                <span className="text-sm">🔫</span>
-                <div className="text-[10px] text-amber-400 uppercase font-bold">Солдат</div>
-                <div className="text-[9px] text-muted-foreground">5+ игр</div>
-              </div>
-              <div className="text-center p-2 rounded bg-gradient-to-br from-purple-600/30 to-purple-900/30 border border-purple-500/50">
-                <span className="text-sm">👑</span>
-                <div className="text-[10px] text-purple-400 uppercase font-bold">Босс</div>
-                <div className="text-[9px] text-muted-foreground">20+ игр</div>
-              </div>
-            </div>
           </div>
+
+          {/* Mafia Hierarchy - показываем для текущего пользователя */}
+          {userStats && (
+            <MafiaHierarchy 
+              gamesPlayed={userStats.games_played} 
+              wins={userStats.wins} 
+              rating={userStats.elo_rating} 
+            />
+          )}
 
           {/* Podium for top 3 */}
           {players.length >= 3 && (
@@ -2004,7 +1994,7 @@ export const TelegramApp = () => {
       />
 
       {showPlayerStatsModal && selectedPlayer && (
-        <PlayerStatsModal
+        <RankedPlayerModal
           player={selectedPlayer}
           onClose={() => {
             setShowPlayerStatsModal(false);
