@@ -167,15 +167,27 @@ const BlindStructure = ({ tournamentId }: BlindStructureProps) => {
       return;
     }
 
-    const levelsToUpdate = blindLevels.filter(l => l.level > levelNumber);
-    for (const level of levelsToUpdate) {
-      await supabase
-        .from('blind_levels')
-        .update({ level: level.level - 1 })
-        .eq('id', level.id);
+    // Получаем все оставшиеся уровни из БД и пересчитываем их номера с 1
+    const { data: remainingLevels } = await supabase
+      .from('blind_levels')
+      .select('*')
+      .eq('tournament_id', tournamentId)
+      .order('level', { ascending: true });
+
+    if (remainingLevels && remainingLevels.length > 0) {
+      // Пересчитываем все уровни последовательно начиная с 1
+      for (let i = 0; i < remainingLevels.length; i++) {
+        const newLevelNumber = i + 1;
+        if (remainingLevels[i].level !== newLevelNumber) {
+          await supabase
+            .from('blind_levels')
+            .update({ level: newLevelNumber })
+            .eq('id', remainingLevels[i].id);
+        }
+      }
     }
     
-    toast({ title: "Успех", description: "Уровень удален" });
+    toast({ title: "Успех", description: "Уровень удален, нумерация обновлена" });
     loadBlindLevels();
   };
 
