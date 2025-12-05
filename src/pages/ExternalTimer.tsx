@@ -527,12 +527,27 @@ const ExternalTimer = () => {
 
   // Light Professional Theme
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 via-white to-gray-100 text-gray-800">
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 via-white to-gray-100 text-gray-800 relative overflow-hidden">
+      {/* Diagonal line pattern overlay - similar to site style */}
+      <div className="absolute inset-0 opacity-[0.04] pointer-events-none" style={{
+        backgroundImage: `repeating-linear-gradient(135deg, transparent, transparent 8px, rgba(0,0,0,0.1) 8px, rgba(0,0,0,0.1) 16px)`
+      }} />
+      
+      {/* Vertical subtle lines */}
+      <div className="absolute inset-0 opacity-[0.02] pointer-events-none" style={{
+        backgroundImage: `repeating-linear-gradient(90deg, transparent, transparent 60px, rgba(0,0,0,0.15) 60px, rgba(0,0,0,0.15) 61px)`
+      }} />
+      
+      {/* Horizontal subtle lines */}
+      <div className="absolute inset-0 opacity-[0.02] pointer-events-none" style={{
+        backgroundImage: `repeating-linear-gradient(0deg, transparent, transparent 60px, rgba(0,0,0,0.15) 60px, rgba(0,0,0,0.15) 61px)`
+      }} />
+
       {/* Header */}
-      <div className="flex justify-between items-center p-6 border-b-2 border-gray-200 bg-white shadow-sm">
+      <div className="flex justify-between items-center p-6 border-b-2 border-gray-200 bg-white/90 backdrop-blur-sm shadow-sm relative z-10">
         {/* Left - Logo and Company */}
         <div className="flex items-center space-x-4">
-          <div className="w-24 h-24 flex items-center justify-center bg-gray-900 rounded-lg p-2">
+          <div className="w-24 h-24 flex items-center justify-center bg-gray-900 rounded-lg p-2 shadow-lg">
             <img 
               src={syndikateLogo} 
               alt="Syndikate Logo" 
@@ -562,7 +577,7 @@ const ExternalTimer = () => {
         {/* Right - QR Code and Theme Toggle */}
         <div className="flex items-center gap-4">
           {telegramQr && (
-            <div className="border-2 border-gray-200 rounded-lg overflow-hidden">
+            <div className="border-2 border-gray-200 rounded-lg overflow-hidden shadow-md">
               <img 
                 src={telegramQr} 
                 alt="Telegram QR" 
@@ -572,7 +587,7 @@ const ExternalTimer = () => {
           )}
           <button
             onClick={() => setIsSyndikateTeme(true)}
-            className="p-3 rounded-lg border-2 border-gray-300 bg-gray-100 hover:bg-gray-200 hover:border-gray-400 transition-all duration-300"
+            className="p-3 rounded-lg border-2 border-gray-300 bg-gray-100 hover:bg-gray-200 hover:border-gray-400 transition-all duration-300 shadow-sm"
             title="Тёмная тема Syndikate"
           >
             🌙
@@ -581,7 +596,7 @@ const ExternalTimer = () => {
       </div>
 
       {/* Main Timer Display */}
-      <div className="flex-1 flex flex-col justify-center items-center space-y-8 p-8">
+      <div className="flex-1 flex flex-col justify-center items-center space-y-8 p-8 relative z-10">
         {/* Current Level */}
         <div className="text-center">
           <div className="inline-flex items-center gap-3 rounded-lg px-6 py-3 mb-6 bg-gray-100 border-2 border-gray-200">
