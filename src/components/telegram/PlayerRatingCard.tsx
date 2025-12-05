@@ -1,7 +1,7 @@
 import React from 'react';
 import { PlayerLevelBadge } from './PlayerLevelBadge';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Trophy, Target, Gamepad2 } from 'lucide-react';
+import { Trophy, Target, Gamepad2, Gem, Crown, Flame, Zap, Star, Shield, Swords, Medal, TrendingUp, Award, CircleDot } from 'lucide-react';
 import { fixStorageUrl } from '@/utils/storageUtils';
 import { getCurrentMafiaRank } from '@/utils/mafiaRanks';
 import { getRankCardStyle } from './RankProfileStyles';
@@ -39,30 +39,30 @@ export const PlayerRatingCard: React.FC<PlayerRatingCardProps> = ({
   const mafiaRank = getCurrentMafiaRank({ gamesPlayed: player.games_played, wins: player.wins, rating: player.elo_rating });
   const rankStyle = getRankCardStyle(mafiaRank);
   
-  // Реальные достижения на основе данных из БД
-  const achievements = [];
+  // Реальные достижения на основе данных из БД - стилизованные иконки
+  const achievements: { Icon: React.ComponentType<{ className?: string }>; label: string; color: string }[] = [];
   
   // Достижения по победам
-  if (player.wins >= 1) achievements.push({ icon: '🏆', label: 'Первая победа' });
-  if (player.wins >= 3) achievements.push({ icon: '👑', label: 'Триумфатор' });
-  if (player.wins >= 10) achievements.push({ icon: '🎖️', label: 'Чемпион' });
+  if (player.wins >= 1) achievements.push({ Icon: Trophy, label: 'Первая победа', color: 'text-syndikate-orange' });
+  if (player.wins >= 3) achievements.push({ Icon: Crown, label: 'Триумфатор', color: 'text-yellow-500' });
+  if (player.wins >= 10) achievements.push({ Icon: Medal, label: 'Чемпион', color: 'text-amber-400' });
   
   // Достижения по играм
-  if (player.games_played >= 3) achievements.push({ icon: '🎮', label: 'Активный' });
-  if (player.games_played >= 10) achievements.push({ icon: '⭐', label: 'Регуляр' });
-  if (player.games_played >= 25) achievements.push({ icon: '🌟', label: 'Ветеран' });
-  if (player.games_played >= 50) achievements.push({ icon: '💫', label: 'Легенда' });
+  if (player.games_played >= 3) achievements.push({ Icon: CircleDot, label: 'Активный', color: 'text-blue-400' });
+  if (player.games_played >= 10) achievements.push({ Icon: Star, label: 'Регуляр', color: 'text-purple-400' });
+  if (player.games_played >= 25) achievements.push({ Icon: Shield, label: 'Ветеран', color: 'text-emerald-400' });
+  if (player.games_played >= 50) achievements.push({ Icon: Swords, label: 'Легенда', color: 'text-rose-400' });
   
   // Достижения по рейтингу
-  if (player.elo_rating >= 500) achievements.push({ icon: '📈', label: 'Рост' });
-  if (player.elo_rating >= 1000) achievements.push({ icon: '💎', label: 'Топ игрок' });
-  if (player.elo_rating >= 1500) achievements.push({ icon: '🔱', label: 'Элита' });
-  if (player.elo_rating >= 2000) achievements.push({ icon: '⚜️', label: 'Мастер' });
+  if (player.elo_rating >= 500) achievements.push({ Icon: TrendingUp, label: 'Рост', color: 'text-green-400' });
+  if (player.elo_rating >= 1000) achievements.push({ Icon: Gem, label: 'Топ игрок', color: 'text-cyan-400' });
+  if (player.elo_rating >= 1500) achievements.push({ Icon: Award, label: 'Элита', color: 'text-indigo-400' });
+  if (player.elo_rating >= 2000) achievements.push({ Icon: Crown, label: 'Мастер', color: 'text-yellow-300' });
   
   // Достижения по винрейту
-  if (Number(winRate) >= 40 && player.games_played >= 3) achievements.push({ icon: '🎯', label: 'Меткий' });
-  if (Number(winRate) >= 60 && player.games_played >= 5) achievements.push({ icon: '🔥', label: 'В ударе' });
-  if (Number(winRate) >= 80 && player.games_played >= 5) achievements.push({ icon: '⚡', label: 'Непобедимый' });
+  if (Number(winRate) >= 40 && player.games_played >= 3) achievements.push({ Icon: Target, label: 'Меткий', color: 'text-orange-400' });
+  if (Number(winRate) >= 60 && player.games_played >= 5) achievements.push({ Icon: Flame, label: 'В ударе', color: 'text-red-500' });
+  if (Number(winRate) >= 80 && player.games_played >= 5) achievements.push({ Icon: Zap, label: 'Непобедимый', color: 'text-yellow-400' });
 
   return (
     <div
@@ -126,11 +126,15 @@ export const PlayerRatingCard: React.FC<PlayerRatingCardProps> = ({
               <PlayerLevelBadge rating={player.elo_rating} gamesPlayed={player.games_played} wins={player.wins} size="sm" />
               {/* Achievement badges */}
               {achievements.length > 0 && (
-                <div className="flex gap-0.5">
-                  {achievements.slice(0, 2).map((achievement, i) => (
-                    <span key={i} className="text-xs" title={achievement.label}>
-                      {achievement.icon}
-                    </span>
+                <div className="flex gap-1">
+                  {achievements.slice(0, 3).map((achievement, i) => (
+                    <div 
+                      key={i} 
+                      className={`p-0.5 rounded bg-background/50 ${achievement.color}`}
+                      title={achievement.label}
+                    >
+                      <achievement.Icon className="h-3 w-3" />
+                    </div>
                   ))}
                 </div>
               )}

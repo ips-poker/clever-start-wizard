@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Trophy, TrendingUp, Award, Calendar, Target, Zap, Crown, Star, Gamepad2 } from 'lucide-react';
+import { X, Trophy, TrendingUp, Award, Calendar, Target, Zap, Crown, Star, Gamepad2, Gem, Flame, Shield, Swords, Medal, CircleDot, Rocket, Coins } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { GlitchText } from '@/components/ui/glitch-text';
@@ -120,34 +120,34 @@ export const RankedPlayerModal: React.FC<RankedPlayerModalProps> = ({ player, on
 
     return [
       // По победам
-      { id: 'first_win', icon: '🏆', title: 'Первая победа', unlocked: wins >= 1, progress: Math.min(wins, 1), max: 1 },
-      { id: 'triple_win', icon: '👑', title: 'Триумфатор', desc: '3 победы', unlocked: wins >= 3, progress: Math.min(wins, 3), max: 3 },
-      { id: 'champion', icon: '🎖️', title: 'Чемпион', desc: '10 побед', unlocked: wins >= 10, progress: Math.min(wins, 10), max: 10 },
+      { id: 'first_win', Icon: Trophy, title: 'Первая победа', color: 'text-syndikate-orange', unlocked: wins >= 1, progress: Math.min(wins, 1), max: 1 },
+      { id: 'triple_win', Icon: Crown, title: 'Триумфатор', desc: '3 победы', color: 'text-yellow-500', unlocked: wins >= 3, progress: Math.min(wins, 3), max: 3 },
+      { id: 'champion', Icon: Medal, title: 'Чемпион', desc: '10 побед', color: 'text-amber-400', unlocked: wins >= 10, progress: Math.min(wins, 10), max: 10 },
       
       // По играм
-      { id: 'active', icon: '🎮', title: 'Активный', desc: '3 игры', unlocked: gamesPlayed >= 3, progress: Math.min(gamesPlayed, 3), max: 3 },
-      { id: 'regular', icon: '⭐', title: 'Регуляр', desc: '10 игр', unlocked: gamesPlayed >= 10, progress: Math.min(gamesPlayed, 10), max: 10 },
-      { id: 'veteran', icon: '🌟', title: 'Ветеран', desc: '25 игр', unlocked: gamesPlayed >= 25, progress: Math.min(gamesPlayed, 25), max: 25 },
-      { id: 'legend', icon: '💫', title: 'Легенда', desc: '50 игр', unlocked: gamesPlayed >= 50, progress: Math.min(gamesPlayed, 50), max: 50 },
-      { id: 'grinder', icon: '⚡', title: 'Гриндер', desc: '100 игр', unlocked: gamesPlayed >= 100, progress: Math.min(gamesPlayed, 100), max: 100 },
+      { id: 'active', Icon: CircleDot, title: 'Активный', desc: '3 игры', color: 'text-blue-400', unlocked: gamesPlayed >= 3, progress: Math.min(gamesPlayed, 3), max: 3 },
+      { id: 'regular', Icon: Star, title: 'Регуляр', desc: '10 игр', color: 'text-purple-400', unlocked: gamesPlayed >= 10, progress: Math.min(gamesPlayed, 10), max: 10 },
+      { id: 'veteran', Icon: Shield, title: 'Ветеран', desc: '25 игр', color: 'text-emerald-400', unlocked: gamesPlayed >= 25, progress: Math.min(gamesPlayed, 25), max: 25 },
+      { id: 'legend', Icon: Swords, title: 'Легенда', desc: '50 игр', color: 'text-rose-400', unlocked: gamesPlayed >= 50, progress: Math.min(gamesPlayed, 50), max: 50 },
+      { id: 'grinder', Icon: Zap, title: 'Гриндер', desc: '100 игр', color: 'text-yellow-400', unlocked: gamesPlayed >= 100, progress: Math.min(gamesPlayed, 100), max: 100 },
       
       // По призовым местам
-      { id: 'podium', icon: '🥉', title: 'На подиуме', desc: '3 топ-3', unlocked: topThreeFinishes >= 3, progress: Math.min(topThreeFinishes, 3), max: 3 },
-      { id: 'consistent', icon: '📊', title: 'Стабильный', desc: '10 топ-3', unlocked: topThreeFinishes >= 10, progress: Math.min(topThreeFinishes, 10), max: 10 },
+      { id: 'podium', Icon: Award, title: 'На подиуме', desc: '3 топ-3', color: 'text-bronze', unlocked: topThreeFinishes >= 3, progress: Math.min(topThreeFinishes, 3), max: 3 },
+      { id: 'consistent', Icon: TrendingUp, title: 'Стабильный', desc: '10 топ-3', color: 'text-green-400', unlocked: topThreeFinishes >= 10, progress: Math.min(topThreeFinishes, 10), max: 10 },
       
       // По рейтингу
-      { id: 'growth', icon: '📈', title: 'Рост', desc: '500 RPS', unlocked: player.elo_rating >= 500, progress: Math.min(player.elo_rating, 500), max: 500 },
-      { id: 'top_player', icon: '💎', title: 'Топ игрок', desc: '1000 RPS', unlocked: player.elo_rating >= 1000, progress: Math.min(player.elo_rating, 1000), max: 1000 },
-      { id: 'elite', icon: '🔱', title: 'Элита', desc: '1500 RPS', unlocked: player.elo_rating >= 1500, progress: Math.min(player.elo_rating, 1500), max: 1500 },
-      { id: 'master', icon: '⚜️', title: 'Мастер', desc: '2000 RPS', unlocked: player.elo_rating >= 2000, progress: Math.min(player.elo_rating, 2000), max: 2000 },
+      { id: 'growth', Icon: TrendingUp, title: 'Рост', desc: '500 RPS', color: 'text-green-400', unlocked: player.elo_rating >= 500, progress: Math.min(player.elo_rating, 500), max: 500 },
+      { id: 'top_player', Icon: Gem, title: 'Топ игрок', desc: '1000 RPS', color: 'text-cyan-400', unlocked: player.elo_rating >= 1000, progress: Math.min(player.elo_rating, 1000), max: 1000 },
+      { id: 'elite', Icon: Award, title: 'Элита', desc: '1500 RPS', color: 'text-indigo-400', unlocked: player.elo_rating >= 1500, progress: Math.min(player.elo_rating, 1500), max: 1500 },
+      { id: 'master', Icon: Crown, title: 'Мастер', desc: '2000 RPS', color: 'text-yellow-300', unlocked: player.elo_rating >= 2000, progress: Math.min(player.elo_rating, 2000), max: 2000 },
       
       // По росту за турнир
-      { id: 'rising_star', icon: '🚀', title: 'Восходящая звезда', desc: '+50 за турнир', unlocked: biggestRatingGain >= 50, progress: Math.min(biggestRatingGain, 50), max: 50 },
-      { id: 'big_win', icon: '💰', title: 'Большой выигрыш', desc: '+100 за турнир', unlocked: biggestRatingGain >= 100, progress: Math.min(biggestRatingGain, 100), max: 100 },
+      { id: 'rising_star', Icon: Rocket, title: 'Восходящая звезда', desc: '+50 за турнир', color: 'text-orange-400', unlocked: biggestRatingGain >= 50, progress: Math.min(biggestRatingGain, 50), max: 50 },
+      { id: 'big_win', Icon: Coins, title: 'Большой выигрыш', desc: '+100 за турнир', color: 'text-yellow-500', unlocked: biggestRatingGain >= 100, progress: Math.min(biggestRatingGain, 100), max: 100 },
       
       // По винрейту
-      { id: 'accurate', icon: '🎯', title: 'Меткий', desc: '40%+ винрейт', unlocked: winRate >= 40 && gamesPlayed >= 3, progress: Math.round(Math.min(winRate, 40)), max: 40 },
-      { id: 'hot_streak', icon: '🔥', title: 'В ударе', desc: '60%+ винрейт', unlocked: winRate >= 60 && gamesPlayed >= 5, progress: Math.round(Math.min(winRate, 60)), max: 60 },
+      { id: 'accurate', Icon: Target, title: 'Меткий', desc: '40%+ винрейт', color: 'text-orange-400', unlocked: winRate >= 40 && gamesPlayed >= 3, progress: Math.round(Math.min(winRate, 40)), max: 40 },
+      { id: 'hot_streak', Icon: Flame, title: 'В ударе', desc: '60%+ винрейт', color: 'text-red-500', unlocked: winRate >= 60 && gamesPlayed >= 5, progress: Math.round(Math.min(winRate, 60)), max: 60 },
     ];
   };
 
@@ -427,7 +427,9 @@ export const RankedPlayerModal: React.FC<RankedPlayerModalProps> = ({ player, on
                           whileHover={{ scale: 1.02 }}
                         >
                           <div className="flex items-center gap-2 mb-2">
-                            <span className="text-xl">{achievement.icon}</span>
+                            <div className={`p-1 rounded ${achievement.unlocked ? achievement.color : 'text-muted-foreground'}`}>
+                              <achievement.Icon className="h-5 w-5" />
+                            </div>
                             <span className={`text-sm font-display ${achievement.unlocked ? 'text-syndikate-orange' : 'text-muted-foreground'}`}>
                               {achievement.title}
                             </span>
