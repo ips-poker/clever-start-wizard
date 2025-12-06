@@ -46,8 +46,6 @@ import { MafiaHierarchy } from './MafiaHierarchy';
 import { getRankProfileStyle } from './RankProfileStyles';
 import { GlitchAvatarFrame } from '@/components/ui/glitch-avatar-frame';
 import { TelegramClanPanel } from './TelegramClanPanel';
-import { useClanSystem } from '@/hooks/useClanSystem';
-import { getEmblemImageById, getSealImageById } from '@/utils/clanEmblemsImages';
 
 interface Player {
   id: string;
@@ -136,11 +134,6 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate, onUnre
   const [editingName, setEditingName] = useState(false);
   const [newPlayerName, setNewPlayerName] = useState("");
   const [unregistering, setUnregistering] = useState<string>("");
-  
-  // Clan data
-  const { myClan, myMembership } = useClanSystem();
-  const clanEmblem = myClan ? getEmblemImageById(myClan.emblem_id) : null;
-  const clanSeal = myClan ? getSealImageById(myClan.seal_id) : null;
   
 
   // Инициализируем игрока только один раз
@@ -715,75 +708,6 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate, onUnre
                 <p className="text-xs text-muted-foreground uppercase tracking-wider font-bold">Винрейт</p>
               </div>
             </div>
-            
-            {/* Clan Family Values - Emblem & Seal */}
-            {myClan && clanEmblem && clanSeal && (
-              <div className="mt-6 pt-4 border-t-2 border-dashed border-amber-500/30">
-                <div className="text-center mb-3">
-                  <p className="text-[10px] uppercase tracking-[0.3em] text-amber-400/70 font-bold">Семейные ценности</p>
-                  <p className="text-sm font-display text-amber-400 mt-1">{myClan.name}</p>
-                </div>
-                
-                <div className="flex items-center justify-center gap-6">
-                  {/* Clan Emblem - Left */}
-                  <div className="relative group">
-                    <div className="absolute inset-0 bg-gradient-to-br from-amber-500/20 to-orange-600/20 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                    <div className="relative">
-                      <div className="absolute -inset-1 bg-gradient-to-br from-amber-500/30 via-orange-500/20 to-amber-600/30 rounded-lg blur-sm"></div>
-                      <div className="relative w-16 h-16 bg-gradient-to-br from-zinc-900 via-zinc-800 to-zinc-900 rounded-lg p-2 border-2 border-amber-500/40 shadow-lg shadow-amber-500/20 group-hover:scale-105 transition-transform duration-300">
-                        <img 
-                          src={clanEmblem.image} 
-                          alt={clanEmblem.nameRu}
-                          className="w-full h-full object-contain drop-shadow-[0_2px_4px_rgba(251,191,36,0.3)]"
-                        />
-                      </div>
-                    </div>
-                    <p className="text-[9px] text-amber-400/60 text-center mt-1.5 uppercase tracking-wider font-medium">Герб</p>
-                  </div>
-                  
-                  {/* Decorative Center - Family Crest */}
-                  <div className="flex flex-col items-center">
-                    <div className="w-8 h-px bg-gradient-to-r from-transparent via-amber-500/50 to-transparent"></div>
-                    <div className="w-6 h-6 my-2 flex items-center justify-center">
-                      <svg viewBox="0 0 24 24" className="w-full h-full text-amber-500/40" fill="currentColor">
-                        <path d="M12 2L14.5 9H22L16 13.5L18 21L12 17L6 21L8 13.5L2 9H9.5L12 2Z"/>
-                      </svg>
-                    </div>
-                    <div className="w-8 h-px bg-gradient-to-r from-transparent via-amber-500/50 to-transparent"></div>
-                  </div>
-                  
-                  {/* Clan Seal - Right */}
-                  <div className="relative group">
-                    <div className="absolute inset-0 bg-gradient-to-br from-rose-500/20 to-red-600/20 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                    <div className="relative">
-                      <div className="absolute -inset-1 bg-gradient-to-br from-rose-500/30 via-red-500/20 to-rose-600/30 rounded-full blur-sm"></div>
-                      <div className="relative w-16 h-16 bg-gradient-to-br from-zinc-900 via-zinc-800 to-zinc-900 rounded-full p-2 border-2 border-rose-500/40 shadow-lg shadow-rose-500/20 group-hover:scale-105 transition-transform duration-300">
-                        <img 
-                          src={clanSeal.image} 
-                          alt={clanSeal.nameRu}
-                          className="w-full h-full object-contain drop-shadow-[0_2px_4px_rgba(244,63,94,0.3)]"
-                        />
-                      </div>
-                    </div>
-                    <p className="text-[9px] text-rose-400/60 text-center mt-1.5 uppercase tracking-wider font-medium">Печать</p>
-                  </div>
-                </div>
-                
-                {/* Role in clan */}
-                {myMembership && (
-                  <div className="mt-3 text-center">
-                    <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                      {myMembership.hierarchy_role === 'don' ? '👑 Дон семьи' :
-                       myMembership.hierarchy_role === 'consigliere' ? '🎩 Консильере' :
-                       myMembership.hierarchy_role === 'underboss' ? '🔫 Андербосс' :
-                       myMembership.hierarchy_role === 'capo' ? '💼 Капо' :
-                       myMembership.hierarchy_role === 'soldier' ? '🎯 Солдат' :
-                       '🤝 Ассоциат'}
-                    </span>
-                  </div>
-                )}
-              </div>
-            )}
           </div>
         </CardContent>
       </Card>
