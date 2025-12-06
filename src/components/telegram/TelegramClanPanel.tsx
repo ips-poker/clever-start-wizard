@@ -6,7 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import { Crown, Users, Plus, LogOut, Loader2, Shield, Stamp, Check, ChevronLeft, ChevronRight, Mail, UserPlus, Trophy, Zap, Star, Swords, TrendingUp, UserMinus } from 'lucide-react';
+import { Crown, Users, Plus, LogOut, Loader2, Shield, Stamp, Check, ChevronLeft, ChevronRight, Mail, UserPlus, Trophy, Zap, Star, Swords, TrendingUp, UserMinus, Pencil } from 'lucide-react';
+import { ClanEditModal } from '@/components/clan/ClanEditModal';
 import { ClanEmblemDisplay } from '@/components/clan/ClanEmblemDisplay';
 import { ClanEmblemSVG, ClanSealSVG } from '@/components/clan/ClanEmblemSVG';
 import { useClanSystem, ClanMember, ClanInvitation } from '@/hooks/useClanSystem';
@@ -57,12 +58,14 @@ export function TelegramClanPanel({ canCreateClan, playerId }: TelegramClanPanel
     isDon,
     pendingInvitations,
     createClan,
+    updateClan,
     leaveClan,
     loadClanMembers,
     acceptInvitation,
     declineInvitation,
     removeMember,
-    updateMemberRole
+    updateMemberRole,
+    setMyClan
   } = useClanSystem();
 
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -77,6 +80,16 @@ export function TelegramClanPanel({ canCreateClan, playerId }: TelegramClanPanel
   const [loadingMembers, setLoadingMembers] = useState(false);
   const [showInvitations, setShowInvitations] = useState(false);
   const [processingInvite, setProcessingInvite] = useState<string | null>(null);
+  const [showEditModal, setShowEditModal] = useState(false);
+
+  const handleSaveClan = async (updates: { name?: string; emblem_id?: number; seal_id?: number; description?: string }) => {
+    if (!myClan) return false;
+    const success = await updateClan(myClan.id, updates);
+    if (success && myClan) {
+      setMyClan({ ...myClan, ...updates });
+    }
+    return success;
+  };
 
   const handleCreateClan = async () => {
     if (!clanName.trim()) {
@@ -542,18 +555,29 @@ export function TelegramClanPanel({ canCreateClan, playerId }: TelegramClanPanel
                   </div>
                 </div>
                 
-                {/* Подсказка для Дона */}
+                {/* Кнопки управления для Дона */}
                 {isLeader && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="p-2 rounded-lg bg-yellow-500/10 border border-yellow-500/30"
-                  >
-                    <p className="text-[11px] text-yellow-400 flex items-center gap-1.5">
-                      <Crown className="w-3.5 h-3.5" />
-                      Нажмите на карточку игрока в рейтинге, чтобы пригласить
-                    </p>
-                  </motion.div>
+                  <div className="flex flex-col gap-2">
+                    <Button
+                      onClick={() => setShowEditModal(true)}
+                      variant="outline"
+                      className="w-full brutal-border border-yellow-500/50 text-yellow-400 hover:bg-yellow-500/10"
+                    >
+                      <Pencil className="w-4 h-4 mr-2" />
+                      Редактировать клан
+                    </Button>
+                    
+                    <motion.div
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="p-2 rounded-lg bg-yellow-500/10 border border-yellow-500/30"
+                    >
+                      <p className="text-[11px] text-yellow-400 flex items-center gap-1.5">
+                        <Crown className="w-3.5 h-3.5" />
+                        Нажмите на карточку игрока в рейтинге, чтобы пригласить
+                      </p>
+                    </motion.div>
+                  </div>
                 )}
                 
                 {/* Члены клана */}
@@ -704,6 +728,16 @@ export function TelegramClanPanel({ canCreateClan, playerId }: TelegramClanPanel
             </ScrollArea>
           </DialogContent>
         </Dialog>
+
+        {/* Модалка редактирования клана */}
+        {myClan && isLeader && (
+          <ClanEditModal
+            open={showEditModal}
+            onOpenChange={setShowEditModal}
+            clan={myClan}
+            onSave={handleSaveClan}
+          />
+        )}
       </>
     );
   }
