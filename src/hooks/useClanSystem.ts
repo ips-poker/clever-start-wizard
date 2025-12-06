@@ -250,6 +250,14 @@ export function useClanSystem() {
       return false;
     }
 
+    // Удаляем старые declined/expired приглашения этому игроку от этого клана
+    await supabase
+      .from('clan_invitations')
+      .delete()
+      .eq('clan_id', myClan.id)
+      .eq('player_id', playerId)
+      .in('status', ['declined', 'expired']);
+
     const { error } = await supabase
       .from('clan_invitations')
       .insert({
@@ -261,6 +269,7 @@ export function useClanSystem() {
       if (error.code === '23505') {
         toast.error('Приглашение уже отправлено этому игроку');
       } else {
+        console.error('Invite error:', error);
         toast.error('Ошибка отправки приглашения');
       }
       return false;
