@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Trophy, Calendar, Users, Star, MessageSquare, User, Home, TrendingUp, Clock, MapPin, Coins, ChevronRight, Award, Target, CheckCircle, UserPlus, Loader2, Crown, Gem, Zap, Shield, Play, Pause, CircleDot, ArrowLeft, Heart, Globe, Camera, ChevronLeft, Download, X } from 'lucide-react';
+import { Trophy, Calendar, Users, Star, MessageSquare, User, Home, TrendingUp, Clock, MapPin, Coins, ChevronRight, Award, Target, CheckCircle, UserPlus, Loader2, Crown, Gem, Zap, Shield, Play, Pause, CircleDot, ArrowLeft, Heart, Globe, Camera, ChevronLeft, Download, X, Bell } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { TelegramAuth } from './TelegramAuth';
 import { TelegramTournamentModal } from './TelegramTournamentModal';
@@ -31,6 +31,10 @@ import pokerChips from '@/assets/gallery/poker-chips.jpg';
 import { calculateTotalRPSPool, formatRPSPoints } from '@/utils/rpsCalculations';
 import { getEffectiveMafiaRank, getRarityInfo } from '@/utils/mafiaRanks';
 import { GlitchAvatarFrame } from '@/components/ui/glitch-avatar-frame';
+import { useClanRealtimeNotifications } from '@/hooks/useClanRealtimeNotifications';
+import { useClanSystem } from '@/hooks/useClanSystem';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { CLAN_EMBLEMS } from '@/utils/clanEmblems';
 
 interface Tournament {
   id: string;
@@ -95,6 +99,10 @@ export const TelegramApp = () => {
   const [canAddToHomeScreen, setCanAddToHomeScreen] = useState(false);
   const [userRegistrations, setUserRegistrations] = useState<Set<string>>(new Set());
   const [scrollY, setScrollY] = useState(0);
+  
+  // Clan notifications
+  const { pendingInvitations, acceptInvitation, declineInvitation, refresh: refreshClan } = useClanSystem();
+  const { newInvitations, unreadCount, clearNotifications } = useClanRealtimeNotifications(userStats?.id || null);
   
   // Refs for parallax effects
   const glowTopRef = useRef<HTMLDivElement>(null);
@@ -2094,6 +2102,86 @@ export const TelegramApp = () => {
               </button>
             );
           })}
+          
+          {/* Notification Bell */}
+          {isAuthenticated && (
+            <Popover>
+              <PopoverTrigger asChild>
+                <button
+                  className="relative flex flex-col items-center justify-center gap-0.5 px-4 py-2 transition-all duration-300 backdrop-blur-md bg-background/40 border border-border/30 rounded-lg hover:scale-105 hover:bg-background/60 hover:border-syndikate-orange/40"
+                  style={{ boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)' }}
+                >
+                  <Bell className="h-5 w-5 text-muted-foreground transition-all duration-300" strokeWidth={2} />
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-destructive text-destructive-foreground text-[10px] flex items-center justify-center animate-pulse">
+                      {unreadCount}
+                    </span>
+                  )}
+                  <span className="text-[9px] font-semibold uppercase tracking-wide transition-all duration-300 font-mono whitespace-nowrap text-muted-foreground">
+                    Клан
+                  </span>
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-80 p-0 bg-syndikate-metal brutal-border" align="end">
+                <div className="p-3 border-b border-border">
+                  <h4 className="font-semibold text-sm text-foreground">Приглашения в семью</h4>
+                </div>
+                <div className="max-h-[300px] overflow-y-auto">
+                  {newInvitations.length === 0 ? (
+                    <div className="p-4 text-center text-muted-foreground text-sm">
+                      Нет новых приглашений
+                    </div>
+                  ) : (
+                    <div className="divide-y divide-border">
+                      {newInvitations.map((invitation) => {
+                        const emblem = CLAN_EMBLEMS.find(e => e.id === invitation.clan?.emblem_id);
+                        return (
+                          <div key={invitation.id} className="p-3 hover:bg-muted/50 transition-colors">
+                            <div className="flex items-center gap-3 mb-2">
+                              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-xl">
+                                {emblem?.icon || '🏠'}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="font-medium text-sm truncate text-foreground">
+                                  {invitation.clan?.name || 'Неизвестная семья'}
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                  Приглашение в клан
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex gap-2">
+                              <Button
+                                size="sm"
+                                className="flex-1 bg-syndikate-orange hover:bg-syndikate-orange-glow"
+                                onClick={async () => {
+                                  await acceptInvitation(invitation.id, invitation.clan_id);
+                                  refreshClan();
+                                }}
+                              >
+                                Принять
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="flex-1"
+                                onClick={async () => {
+                                  await declineInvitation(invitation.id);
+                                  refreshClan();
+                                }}
+                              >
+                                Отклонить
+                              </Button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              </PopoverContent>
+            </Popover>
+          )}
         </div>
       </div>
 
