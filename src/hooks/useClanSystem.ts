@@ -275,6 +275,21 @@ export function useClanSystem() {
       return false;
     }
 
+    // Отправляем push-уведомление в Telegram
+    try {
+      await supabase.functions.invoke('send-clan-notification', {
+        body: {
+          type: 'clan_invitation',
+          player_id: playerId,
+          clan_name: myClan.name,
+          don_name: playerData?.name
+        }
+      });
+    } catch (notifyError) {
+      console.log('Failed to send notification:', notifyError);
+      // Не блокируем основной процесс
+    }
+
     toast.success('Приглашение отправлено!');
     return true;
   };
