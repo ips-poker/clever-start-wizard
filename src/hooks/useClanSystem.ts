@@ -501,6 +501,7 @@ export function useClanSystem() {
     loadAllClans,
     loadClanMembers,
     canInvitePlayer,
+    setMyClan,
     refresh: async () => {
       await loadPlayerData();
       await loadMyClan();
