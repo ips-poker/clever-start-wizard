@@ -11,6 +11,8 @@ import { FloatingParticles } from "@/components/ui/floating-particles";
 import { ScrollProgress } from "@/components/ScrollProgress";
 import { fixStorageUrl } from "@/utils/storageUtils";
 import { getEffectiveMafiaRank } from "@/utils/mafiaRanks";
+import { ClanInviteButton } from "@/components/clan/ClanInviteButton";
+import { RankedPlayerModal } from "@/components/telegram/RankedPlayerModal";
 
 interface Player {
   id: string;
@@ -42,6 +44,7 @@ export default function Rating() {
   const [allPlayers, setAllPlayers] = useState<Player[]>([]);
   const [recentTournaments, setRecentTournaments] = useState<RecentTournament[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
   const baseTextureRef = useRef<HTMLDivElement>(null);
   const gridRef = useRef<HTMLDivElement>(null);
 
@@ -282,7 +285,10 @@ export default function Rating() {
                       
                       return (
                         <div className="mb-12">
-                          <div className="brutal-metal brutal-border p-8 relative overflow-hidden group">
+                          <div 
+                            className="brutal-metal brutal-border p-8 relative overflow-hidden group cursor-pointer"
+                            onClick={() => setSelectedPlayer(topPlayers[0])}
+                          >
                             {/* Warning Stripe Top */}
                             <div 
                               className="absolute top-0 left-0 right-0 h-2"
@@ -377,8 +383,8 @@ export default function Rating() {
                         const playerRank = playerRankData.rank;
                         
                         return (
-                          <div key={player.id} className="group">
-                            <div className="brutal-metal brutal-border p-6 transition-all duration-300 hover:shadow-neon-orange relative overflow-hidden">
+                          <div key={player.id} className="group" onClick={() => setSelectedPlayer(player)}>
+                            <div className="brutal-metal brutal-border p-6 transition-all duration-300 hover:shadow-neon-orange relative overflow-hidden cursor-pointer">
                               {/* Corner Brackets */}
                               <div className="absolute top-0 left-0 w-6 h-6 border-l-2 border-t-2 border-border opacity-30" />
                               <div className="absolute top-0 right-0 w-6 h-6 border-r-2 border-t-2 border-border opacity-30" />
@@ -476,6 +482,14 @@ export default function Rating() {
         </main>
         <Footer />
       </div>
+
+      {/* Player Modal */}
+      {selectedPlayer && (
+        <RankedPlayerModal
+          player={selectedPlayer}
+          onClose={() => setSelectedPlayer(null)}
+        />
+      )}
     </>
   );
 }
