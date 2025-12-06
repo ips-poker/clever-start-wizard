@@ -11,9 +11,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { CLAN_EMBLEMS, CLAN_SEALS } from '@/utils/clanEmblems';
+import { CLAN_EMBLEM_IMAGES, CLAN_SEAL_IMAGES } from '@/utils/clanEmblemsImages';
 import { ClanEmblemDisplay } from './ClanEmblemDisplay';
-import { ClanEmblemSVG, ClanSealSVG } from './ClanEmblemSVG';
 import { Crown, Shield, Stamp, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -111,29 +110,25 @@ export function ClanCreationModal({
       </div>
 
       <div className="grid grid-cols-5 gap-2">
-        {CLAN_EMBLEMS.map((emblem) => (
+        {CLAN_EMBLEM_IMAGES.map((emblem) => (
           <motion.button
             key={emblem.id}
-            whileHover={{ scale: 1.1 }}
+            whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={() => setSelectedEmblem(emblem.id)}
             className={cn(
-              'relative p-2 rounded-lg border-2 transition-all',
+              'relative p-1 rounded-lg border-2 transition-all',
               selectedEmblem === emblem.id
                 ? 'border-primary bg-primary/10'
                 : 'border-border hover:border-primary/50'
             )}
           >
-            <div className="mx-auto">
-              <ClanEmblemSVG 
-                emblemId={emblem.id} 
-                size={48}
-                primaryColor={emblem.colors.primary}
-                secondaryColor={emblem.colors.secondary}
-                accentColor={emblem.colors.accent}
-              />
-            </div>
-            <p className="text-xs mt-1 text-center truncate">{emblem.nameRu}</p>
+            <img 
+              src={emblem.image} 
+              alt={emblem.nameRu}
+              className="w-12 h-12 mx-auto rounded object-cover"
+            />
+            <p className="text-[10px] mt-1 text-center truncate">{emblem.nameRu}</p>
             {selectedEmblem === emblem.id && (
               <div className="absolute -top-1 -right-1 w-5 h-5 bg-primary rounded-full flex items-center justify-center">
                 <Check className="w-3 h-3 text-primary-foreground" />
@@ -167,28 +162,25 @@ export function ClanCreationModal({
       </div>
 
       <div className="grid grid-cols-5 gap-2">
-        {CLAN_SEALS.map((seal) => (
+        {CLAN_SEAL_IMAGES.map((seal) => (
           <motion.button
             key={seal.id}
-            whileHover={{ scale: 1.1 }}
+            whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={() => setSelectedSeal(seal.id)}
             className={cn(
-              'relative p-2 rounded-lg border-2 transition-all',
+              'relative p-1 rounded-lg border-2 transition-all',
               selectedSeal === seal.id
                 ? 'border-primary bg-primary/10'
                 : 'border-border hover:border-primary/50'
             )}
           >
-            <div className="mx-auto">
-              <ClanSealSVG 
-                sealId={seal.id} 
-                size={48}
-                primaryColor={seal.colors.primary}
-                secondaryColor={seal.colors.secondary}
-              />
-            </div>
-            <p className="text-xs mt-1 text-center truncate">{seal.nameRu}</p>
+            <img 
+              src={seal.image} 
+              alt={seal.nameRu}
+              className="w-12 h-12 mx-auto rounded-full object-cover"
+            />
+            <p className="text-[10px] mt-1 text-center truncate">{seal.nameRu}</p>
             {selectedSeal === seal.id && (
               <div className="absolute -top-1 -right-1 w-5 h-5 bg-primary rounded-full flex items-center justify-center">
                 <Check className="w-3 h-3 text-primary-foreground" />

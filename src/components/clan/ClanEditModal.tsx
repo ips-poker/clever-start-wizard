@@ -5,10 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Badge } from '@/components/ui/badge';
-import { Loader2, Save, Shield, Stamp, Pencil, Check } from 'lucide-react';
-import { ClanEmblemSVG, ClanSealSVG } from './ClanEmblemSVG';
-import { CLAN_EMBLEMS, CLAN_SEALS, getEmblemById } from '@/utils/clanEmblems';
+import { Loader2, Save, Pencil, Check } from 'lucide-react';
+import { CLAN_EMBLEM_IMAGES, CLAN_SEAL_IMAGES, getEmblemImageById } from '@/utils/clanEmblemsImages';
 import { Clan } from '@/hooks/useClanSystem';
 import { cn } from '@/lib/utils';
 
@@ -27,8 +25,8 @@ export function ClanEditModal({ open, onOpenChange, clan, onSave }: ClanEditModa
   const [sealId, setSealId] = useState(clan.seal_id);
   const [saving, setSaving] = useState(false);
 
-  const emblem = getEmblemById(emblemId);
-  const primaryColor = emblem?.colors.primary || '#FFD700';
+  const emblem = getEmblemImageById(emblemId);
+  const seal = CLAN_SEAL_IMAGES.find(s => s.id === sealId);
 
   const hasChanges = 
     name !== clan.name || 
@@ -69,8 +67,14 @@ export function ClanEditModal({ open, onOpenChange, clan, onSave }: ClanEditModa
           onClick={() => setStep('emblem')}
           className="relative cursor-pointer group"
         >
-          <ClanEmblemSVG emblemId={emblemId} size={80} />
-          <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+          {emblem && (
+            <img 
+              src={emblem.image} 
+              alt={emblem.nameRu}
+              className="w-20 h-20 rounded-lg object-cover drop-shadow-lg"
+            />
+          )}
+          <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity">
             <Pencil className="w-5 h-5 text-white" />
           </div>
           <div className="absolute -bottom-5 left-1/2 -translate-x-1/2 text-[10px] text-muted-foreground whitespace-nowrap">
@@ -84,7 +88,13 @@ export function ClanEditModal({ open, onOpenChange, clan, onSave }: ClanEditModa
           onClick={() => setStep('seal')}
           className="relative cursor-pointer group"
         >
-          <ClanSealSVG sealId={sealId} size={60} />
+          {seal && (
+            <img 
+              src={seal.image} 
+              alt={seal.nameRu}
+              className="w-16 h-16 rounded-full object-cover drop-shadow-lg"
+            />
+          )}
           <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
             <Pencil className="w-4 h-4 text-white" />
           </div>
@@ -125,12 +135,10 @@ export function ClanEditModal({ open, onOpenChange, clan, onSave }: ClanEditModa
       <Button
         onClick={handleSave}
         disabled={saving || !name.trim()}
-        className="w-full brutal-border"
-        style={{ 
-          background: hasChanges 
-            ? `linear-gradient(135deg, ${primaryColor}, ${primaryColor}80)` 
-            : undefined 
-        }}
+        className={cn(
+          "w-full",
+          hasChanges && "bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400"
+        )}
       >
         {saving ? (
           <>
@@ -161,9 +169,9 @@ export function ClanEditModal({ open, onOpenChange, clan, onSave }: ClanEditModa
         <span className="text-sm font-medium">Выбор герба</span>
       </div>
 
-      <ScrollArea className="h-[300px]">
+      <ScrollArea className="h-[350px]">
         <div className="grid grid-cols-2 gap-3 p-1">
-          {CLAN_EMBLEMS.map((emb) => (
+          {CLAN_EMBLEM_IMAGES.map((emb) => (
             <motion.div
               key={emb.id}
               whileHover={{ scale: 1.02 }}
@@ -173,21 +181,25 @@ export function ClanEditModal({ open, onOpenChange, clan, onSave }: ClanEditModa
                 setStep('main');
               }}
               className={cn(
-                'relative p-4 rounded-lg border cursor-pointer transition-all',
+                'relative p-3 rounded-lg border cursor-pointer transition-all',
                 emblemId === emb.id
-                  ? 'border-primary bg-primary/10'
-                  : 'border-border/50 bg-background/30 hover:border-primary/50'
+                  ? 'border-amber-500 bg-amber-500/10 ring-2 ring-amber-500/30'
+                  : 'border-border/50 bg-background/30 hover:border-amber-500/50'
               )}
             >
               {emblemId === emb.id && (
-                <div className="absolute top-2 right-2">
-                  <Check className="w-4 h-4 text-primary" />
+                <div className="absolute top-2 right-2 bg-amber-500 rounded-full p-0.5">
+                  <Check className="w-3 h-3 text-black" />
                 </div>
               )}
               <div className="flex flex-col items-center gap-2">
-                <ClanEmblemSVG emblemId={emb.id} size={64} />
+                <img 
+                  src={emb.image} 
+                  alt={emb.nameRu}
+                  className="w-20 h-20 rounded-lg object-cover drop-shadow-lg"
+                />
                 <div className="text-center">
-                  <div className="text-xs font-medium">{emb.nameRu}</div>
+                  <div className="text-xs font-medium text-foreground">{emb.nameRu}</div>
                   <div className="text-[10px] text-muted-foreground">{emb.description}</div>
                 </div>
               </div>
@@ -212,34 +224,38 @@ export function ClanEditModal({ open, onOpenChange, clan, onSave }: ClanEditModa
         <span className="text-sm font-medium">Выбор печати</span>
       </div>
 
-      <ScrollArea className="h-[300px]">
+      <ScrollArea className="h-[350px]">
         <div className="grid grid-cols-2 gap-3 p-1">
-          {CLAN_SEALS.map((seal) => (
+          {CLAN_SEAL_IMAGES.map((s) => (
             <motion.div
-              key={seal.id}
+              key={s.id}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={() => {
-                setSealId(seal.id);
+                setSealId(s.id);
                 setStep('main');
               }}
               className={cn(
-                'relative p-4 rounded-lg border cursor-pointer transition-all',
-                sealId === seal.id
-                  ? 'border-primary bg-primary/10'
-                  : 'border-border/50 bg-background/30 hover:border-primary/50'
+                'relative p-3 rounded-lg border cursor-pointer transition-all',
+                sealId === s.id
+                  ? 'border-amber-500 bg-amber-500/10 ring-2 ring-amber-500/30'
+                  : 'border-border/50 bg-background/30 hover:border-amber-500/50'
               )}
             >
-              {sealId === seal.id && (
-                <div className="absolute top-2 right-2">
-                  <Check className="w-4 h-4 text-primary" />
+              {sealId === s.id && (
+                <div className="absolute top-2 right-2 bg-amber-500 rounded-full p-0.5">
+                  <Check className="w-3 h-3 text-black" />
                 </div>
               )}
               <div className="flex flex-col items-center gap-2">
-                <ClanSealSVG sealId={seal.id} size={56} />
+                <img 
+                  src={s.image} 
+                  alt={s.nameRu}
+                  className="w-16 h-16 rounded-full object-cover drop-shadow-lg"
+                />
                 <div className="text-center">
-                  <div className="text-xs font-medium">{seal.nameRu}</div>
-                  <div className="text-[10px] text-muted-foreground">{seal.description}</div>
+                  <div className="text-xs font-medium text-foreground">{s.nameRu}</div>
+                  <div className="text-[10px] text-muted-foreground">{s.description}</div>
                 </div>
               </div>
             </motion.div>
@@ -253,8 +269,8 @@ export function ClanEditModal({ open, onOpenChange, clan, onSave }: ClanEditModa
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="bg-gradient-to-b from-card to-background border-border/50 max-w-sm">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Pencil className="w-4 h-4" style={{ color: primaryColor }} />
+          <DialogTitle className="flex items-center gap-2 text-amber-400">
+            <Pencil className="w-4 h-4" />
             Редактирование клана
           </DialogTitle>
         </DialogHeader>

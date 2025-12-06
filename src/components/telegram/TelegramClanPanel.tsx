@@ -9,9 +9,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Crown, Users, Plus, LogOut, Loader2, Shield, Stamp, Check, ChevronLeft, ChevronRight, Mail, UserPlus, Trophy, Zap, Star, Swords, TrendingUp, UserMinus, Pencil } from 'lucide-react';
 import { ClanEditModal } from '@/components/clan/ClanEditModal';
 import { ClanEmblemDisplay } from '@/components/clan/ClanEmblemDisplay';
-import { ClanEmblemSVG, ClanSealSVG } from '@/components/clan/ClanEmblemSVG';
 import { useClanSystem, ClanMember, ClanInvitation } from '@/hooks/useClanSystem';
-import { CLAN_HIERARCHY, CLAN_EMBLEMS, CLAN_SEALS, getEmblemById, ClanRole } from '@/utils/clanEmblems';
+import { CLAN_HIERARCHY, ClanRole } from '@/utils/clanEmblems';
+import { CLAN_EMBLEM_IMAGES, CLAN_SEAL_IMAGES, getEmblemImageById } from '@/utils/clanEmblemsImages';
 import { fixStorageUrl } from '@/utils/storageUtils';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -282,8 +282,8 @@ export function TelegramClanPanel({ canCreateClan, playerId }: TelegramClanPanel
   if (myClan && myMembership) {
     const roleInfo = CLAN_HIERARCHY[myMembership.hierarchy_role as keyof typeof CLAN_HIERARCHY];
     const colors = ROLE_COLORS[myMembership.hierarchy_role] || ROLE_COLORS.soldier;
-    const emblem = getEmblemById(myClan.emblem_id);
-    const primaryColor = emblem?.colors.primary || '#FFD700';
+    const emblem = getEmblemImageById(myClan.emblem_id);
+    const primaryColor = '#FFD700';
     const isLeader = myMembership.hierarchy_role === 'don';
     
     // Вычисляем силу клана
@@ -843,18 +843,22 @@ export function TelegramClanPanel({ canCreateClan, playerId }: TelegramClanPanel
                   <p className="text-sm text-muted-foreground">Выберите герб семьи</p>
                 </div>
                 <div className="grid grid-cols-5 gap-2">
-                  {CLAN_EMBLEMS.map((emblem) => (
+                  {CLAN_EMBLEM_IMAGES.map((emblem) => (
                     <button
                       key={emblem.id}
                       onClick={() => setSelectedEmblem(emblem.id)}
                       className={cn(
-                        'relative p-2 rounded-lg border-2 transition-all',
+                        'relative p-1 rounded-lg border-2 transition-all',
                         selectedEmblem === emblem.id
                           ? 'border-cyan-400 bg-cyan-400/10'
                           : 'border-border hover:border-cyan-400/50'
                       )}
                     >
-                      <ClanEmblemSVG emblemId={emblem.id} size={36} />
+                      <img 
+                        src={emblem.image} 
+                        alt={emblem.nameRu}
+                        className="w-10 h-10 rounded object-cover"
+                      />
                       {selectedEmblem === emblem.id && (
                         <div className="absolute -top-1 -right-1 w-4 h-4 bg-cyan-400 rounded-full flex items-center justify-center">
                           <Check className="w-3 h-3 text-background" />
@@ -864,7 +868,7 @@ export function TelegramClanPanel({ canCreateClan, playerId }: TelegramClanPanel
                   ))}
                 </div>
                 <div className="text-center text-xs text-muted-foreground">
-                  {CLAN_EMBLEMS.find(e => e.id === selectedEmblem)?.nameRu}
+                  {CLAN_EMBLEM_IMAGES.find(e => e.id === selectedEmblem)?.nameRu}
                 </div>
                 <div className="flex gap-2">
                   <Button variant="outline" onClick={() => setCreateStep(1)} className="flex-1 brutal-border">
@@ -887,18 +891,22 @@ export function TelegramClanPanel({ canCreateClan, playerId }: TelegramClanPanel
                   <p className="text-sm text-muted-foreground">Выберите печать семьи</p>
                 </div>
                 <div className="grid grid-cols-5 gap-2">
-                  {CLAN_SEALS.map((seal) => (
+                  {CLAN_SEAL_IMAGES.map((seal) => (
                     <button
                       key={seal.id}
                       onClick={() => setSelectedSeal(seal.id)}
                       className={cn(
-                        'relative p-2 rounded-lg border-2 transition-all',
+                        'relative p-1 rounded-lg border-2 transition-all',
                         selectedSeal === seal.id
                           ? 'border-cyan-400 bg-cyan-400/10'
                           : 'border-border hover:border-cyan-400/50'
                       )}
                     >
-                      <ClanSealSVG sealId={seal.id} size={36} />
+                      <img 
+                        src={seal.image} 
+                        alt={seal.nameRu}
+                        className="w-10 h-10 rounded-full object-cover"
+                      />
                       {selectedSeal === seal.id && (
                         <div className="absolute -top-1 -right-1 w-4 h-4 bg-cyan-400 rounded-full flex items-center justify-center">
                           <Check className="w-3 h-3 text-background" />
@@ -908,7 +916,7 @@ export function TelegramClanPanel({ canCreateClan, playerId }: TelegramClanPanel
                   ))}
                 </div>
                 <div className="text-center text-xs text-muted-foreground">
-                  {CLAN_SEALS.find(s => s.id === selectedSeal)?.nameRu}
+                  {CLAN_SEAL_IMAGES.find(s => s.id === selectedSeal)?.nameRu}
                 </div>
                 <div className="flex gap-2">
                   <Button variant="outline" onClick={() => setCreateStep(2)} className="flex-1 brutal-border">
