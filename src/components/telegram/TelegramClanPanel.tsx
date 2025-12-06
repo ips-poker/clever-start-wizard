@@ -1,18 +1,39 @@
 import React, { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import { Crown, Users, Plus, LogOut, Loader2, Shield, Stamp, Check, ChevronLeft, ChevronRight, Mail, UserPlus } from 'lucide-react';
+import { Crown, Users, Plus, LogOut, Loader2, Shield, Stamp, Check, ChevronLeft, ChevronRight, Mail, UserPlus, Trophy, Zap, Star, Swords, TrendingUp, UserMinus } from 'lucide-react';
 import { ClanEmblemDisplay } from '@/components/clan/ClanEmblemDisplay';
 import { ClanEmblemSVG, ClanSealSVG } from '@/components/clan/ClanEmblemSVG';
 import { useClanSystem, ClanMember, ClanInvitation } from '@/hooks/useClanSystem';
-import { CLAN_HIERARCHY, CLAN_EMBLEMS, CLAN_SEALS } from '@/utils/clanEmblems';
+import { CLAN_HIERARCHY, CLAN_EMBLEMS, CLAN_SEALS, getEmblemById, ClanRole } from '@/utils/clanEmblems';
 import { fixStorageUrl } from '@/utils/storageUtils';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Progress } from '@/components/ui/progress';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 interface TelegramClanPanelProps {
   canCreateClan: boolean;
@@ -20,13 +41,13 @@ interface TelegramClanPanelProps {
 }
 
 // Цвета для ролей
-const ROLE_COLORS: Record<string, string> = {
-  don: 'bg-gradient-to-r from-cyan-500 to-purple-500 text-white',
-  consigliere: 'bg-gradient-to-r from-amber-500 to-orange-500 text-white',
-  caporegime: 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white',
-  underboss: 'bg-gradient-to-r from-purple-500 to-pink-500 text-white',
-  soldier: 'bg-zinc-600 text-white',
-  associate: 'bg-zinc-700 text-zinc-300'
+const ROLE_COLORS: Record<string, { bg: string; text: string; border: string; badge: string }> = {
+  don: { bg: 'bg-yellow-500/20', text: 'text-yellow-400', border: 'border-yellow-500/50', badge: 'bg-gradient-to-r from-yellow-500 to-amber-500 text-black' },
+  consigliere: { bg: 'bg-purple-500/20', text: 'text-purple-400', border: 'border-purple-500/50', badge: 'bg-gradient-to-r from-purple-500 to-pink-500 text-white' },
+  underboss: { bg: 'bg-blue-500/20', text: 'text-blue-400', border: 'border-blue-500/50', badge: 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white' },
+  capo: { bg: 'bg-orange-500/20', text: 'text-orange-400', border: 'border-orange-500/50', badge: 'bg-gradient-to-r from-orange-500 to-red-500 text-white' },
+  soldier: { bg: 'bg-zinc-500/20', text: 'text-zinc-400', border: 'border-zinc-500/50', badge: 'bg-zinc-600 text-white' },
+  associate: { bg: 'bg-stone-500/20', text: 'text-stone-400', border: 'border-stone-500/50', badge: 'bg-stone-600 text-white' },
 };
 
 export function TelegramClanPanel({ canCreateClan, playerId }: TelegramClanPanelProps) {
@@ -39,7 +60,9 @@ export function TelegramClanPanel({ canCreateClan, playerId }: TelegramClanPanel
     leaveClan,
     loadClanMembers,
     acceptInvitation,
-    declineInvitation
+    declineInvitation,
+    removeMember,
+    updateMemberRole
   } = useClanSystem();
 
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -128,6 +151,28 @@ export function TelegramClanPanel({ canCreateClan, playerId }: TelegramClanPanel
       toast.error('Ошибка отклонения приглашения');
     } finally {
       setProcessingInvite(null);
+    }
+  };
+
+  const handleRemoveMember = async (memberId: string) => {
+    try {
+      await removeMember(memberId);
+      setMembers(prev => prev.filter(m => m.id !== memberId));
+      toast.success('Участник исключён');
+    } catch (error) {
+      toast.error('Ошибка при исключении участника');
+    }
+  };
+
+  const handleRoleChange = async (memberId: string, newRole: string) => {
+    try {
+      await updateMemberRole(memberId, newRole);
+      setMembers(prev => prev.map(m => 
+        m.id === memberId ? { ...m, hierarchy_role: newRole } : m
+      ));
+      toast.success('Роль изменена');
+    } catch (error) {
+      toast.error('Ошибка при изменении роли');
     }
   };
 
@@ -223,109 +268,443 @@ export function TelegramClanPanel({ canCreateClan, playerId }: TelegramClanPanel
   // Если у игрока уже есть клан
   if (myClan && myMembership) {
     const roleInfo = CLAN_HIERARCHY[myMembership.hierarchy_role as keyof typeof CLAN_HIERARCHY];
-    const roleColor = ROLE_COLORS[myMembership.hierarchy_role] || 'bg-zinc-600 text-white';
+    const colors = ROLE_COLORS[myMembership.hierarchy_role] || ROLE_COLORS.soldier;
+    const emblem = getEmblemById(myClan.emblem_id);
+    const primaryColor = emblem?.colors.primary || '#FFD700';
+    const isLeader = myMembership.hierarchy_role === 'don';
+    
+    // Вычисляем силу клана
+    const totalRating = myClan.total_rating || 0;
+    const maxPossibleRating = 20 * 2000;
+    const clanStrength = Math.min(100, Math.round((totalRating / maxPossibleRating) * 100));
+    
+    // Статистика по ролям
+    const roleStats = members.reduce((acc, m) => {
+      const role = m.hierarchy_role || 'soldier';
+      acc[role] = (acc[role] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+    
+    // Средний рейтинг
+    const avgRating = members.length > 0 
+      ? Math.round(members.reduce((sum, m) => sum + (m.player?.elo_rating || 0), 0) / members.length)
+      : 0;
 
     return (
-      <Card className="bg-gradient-to-br from-amber-900/30 to-amber-950/50 brutal-border border-amber-500/50 overflow-hidden">
-        <CardContent className="p-4 space-y-4">
-          {/* Clan Header */}
-          <div className="flex items-center gap-3">
-            <ClanEmblemDisplay
-              emblemId={myClan.emblem_id}
-              sealId={myClan.seal_id}
-              clanName={myClan.name}
-              size="sm"
-              showName={false}
-            />
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 flex-wrap">
-                <h3 className="text-lg font-display text-amber-400 truncate">{myClan.name}</h3>
-                <Badge className={`text-[10px] ${roleColor}`}>
-                  {roleInfo?.name || myMembership.hierarchy_role}
-                </Badge>
+      <>
+        {/* Красивая карточка клана */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          whileTap={{ scale: 0.98 }}
+          onClick={handleShowMembers}
+          className="relative cursor-pointer overflow-hidden rounded-lg bg-gradient-to-br from-card via-secondary/50 to-card border border-border/50 backdrop-blur-sm"
+          style={{
+            boxShadow: `0 0 20px ${primaryColor}20, inset 0 1px 0 ${primaryColor}20`
+          }}
+        >
+          {/* Фоновый эффект */}
+          <div 
+            className="absolute inset-0 opacity-10"
+            style={{
+              backgroundImage: `radial-gradient(circle at 30% 20%, ${primaryColor} 0%, transparent 50%),
+                               radial-gradient(circle at 70% 80%, ${primaryColor} 0%, transparent 50%)`
+            }}
+          />
+          
+          {/* Анимированная линия */}
+          <motion.div
+            className="absolute top-0 left-0 right-0 h-1"
+            style={{ background: `linear-gradient(90deg, transparent, ${primaryColor}, transparent)` }}
+            animate={{ opacity: [0.5, 1, 0.5] }}
+            transition={{ duration: 2, repeat: Infinity }}
+          />
+          
+          <div className="relative p-4">
+            <div className="flex items-start gap-3">
+              {/* Герб */}
+              <div className="flex-shrink-0">
+                <ClanEmblemDisplay
+                  emblemId={myClan.emblem_id}
+                  sealId={myClan.seal_id}
+                  clanName=""
+                  size="md"
+                  showName={false}
+                />
               </div>
-              {myClan.description && (
-                <p className="text-xs text-muted-foreground truncate">{myClan.description}</p>
-              )}
-            </div>
-          </div>
-
-          {/* Clan Stats */}
-          <div className="grid grid-cols-2 gap-2">
-            <div className="bg-background/30 p-2 rounded brutal-border border-amber-500/20 text-center">
-              <div className="text-amber-400 font-bold text-lg">{myClan.total_rating || 0}</div>
-              <div className="text-[10px] text-muted-foreground uppercase">Рейтинг</div>
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleShowMembers}
-              disabled={loadingMembers}
-              className="brutal-border border-amber-500/30 hover:bg-amber-500/10"
-            >
-              {loadingMembers ? (
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
-              ) : (
-                <Users className="h-4 w-4 mr-2" />
-              )}
-              Участники
-            </Button>
-          </div>
-
-          {/* Actions */}
-          {!isDon && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleLeaveClan}
-              className="w-full brutal-border border-red-500/30 text-red-400 hover:bg-red-500/10"
-            >
-              <LogOut className="h-4 w-4 mr-2" />
-              Покинуть клан
-            </Button>
-          )}
-        </CardContent>
-
-        {/* Members Dialog */}
-        <Dialog open={showMembers} onOpenChange={setShowMembers}>
-          <DialogContent className="bg-syndikate-metal border-amber-500/50 max-w-sm">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2 text-amber-400">
-                <Users className="h-5 w-5" />
-                Участники клана
-              </DialogTitle>
-            </DialogHeader>
-            <div className="space-y-2 max-h-60 overflow-y-auto">
-              {members.map((member) => {
-                const memberRoleInfo = CLAN_HIERARCHY[member.hierarchy_role as keyof typeof CLAN_HIERARCHY];
-                const memberRoleColor = ROLE_COLORS[member.hierarchy_role] || 'bg-zinc-600 text-white';
-                return (
-                  <div key={member.id} className="flex items-center gap-3 p-2 bg-background/30 rounded brutal-border">
-                    <Avatar className="w-8 h-8">
-                      <AvatarImage src={member.player?.avatar_url ? fixStorageUrl(member.player.avatar_url) : undefined} />
-                      <AvatarFallback className="bg-amber-500 text-background">
-                        {member.player?.name?.charAt(0) || '?'}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-sm font-medium truncate">{member.player?.name}</div>
-                      <Badge className={`text-[9px] ${memberRoleColor}`}>
-                        {memberRoleInfo?.name || member.hierarchy_role}
-                      </Badge>
-                    </div>
-                    <div className="text-xs text-amber-400 font-bold">
-                      {member.player?.elo_rating || 0} RPS
-                    </div>
+              
+              <div className="flex-1 min-w-0">
+                {/* Заголовок */}
+                <div className="flex items-start justify-between gap-2 mb-1">
+                  <div>
+                    <h3 
+                      className="font-bold text-lg truncate"
+                      style={{ color: primaryColor }}
+                    >
+                      {myClan.name}
+                    </h3>
+                    {isLeader && (
+                      <motion.div
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        className="flex items-center gap-1 mt-0.5"
+                      >
+                        <Crown className="w-3 h-3 text-yellow-500" />
+                        <span className="text-[10px] text-yellow-500 font-semibold uppercase tracking-wider">
+                          Вы — Дон
+                        </span>
+                      </motion.div>
+                    )}
                   </div>
-                );
-              })}
-              {members.length === 0 && (
-                <p className="text-center text-muted-foreground text-sm py-4">Нет участников</p>
-              )}
+                  
+                  {/* Индикатор силы */}
+                  <motion.div
+                    className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-background/50 backdrop-blur-sm"
+                    whileHover={{ scale: 1.05 }}
+                  >
+                    <Zap className="w-3 h-3 text-primary" />
+                    <span className="text-[10px] font-bold" style={{ color: primaryColor }}>
+                      {clanStrength}%
+                    </span>
+                  </motion.div>
+                </div>
+                
+                {/* Описание */}
+                {myClan.description && (
+                  <p className="text-[11px] text-muted-foreground italic truncate mb-2">
+                    "{myClan.description}"
+                  </p>
+                )}
+                
+                {/* Статистика */}
+                <div className="flex flex-wrap items-center gap-3">
+                  <div className="flex items-center gap-1">
+                    <Users className="w-3.5 h-3.5" style={{ color: primaryColor }} />
+                    <span className="text-xs font-bold" style={{ color: primaryColor }}>
+                      {myClan.members_count || 0}/20
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Trophy className="w-3.5 h-3.5 text-yellow-500" />
+                    <span className="text-xs font-bold text-yellow-500">
+                      {myClan.total_rating || 0} RPS
+                    </span>
+                  </div>
+                  <Badge className={`text-[9px] ${colors.badge}`}>
+                    {roleInfo?.name || myMembership.hierarchy_role}
+                  </Badge>
+                </div>
+              </div>
             </div>
+            
+            {/* Подсказка */}
+            <motion.div
+              className="absolute bottom-1.5 right-2 text-[10px] text-muted-foreground/50"
+              animate={{ opacity: [0.3, 0.6, 0.3] }}
+              transition={{ duration: 2, repeat: Infinity }}
+            >
+              Нажмите для управления →
+            </motion.div>
+          </div>
+        </motion.div>
+
+        {/* Модальное окно управления кланом */}
+        <Dialog open={showMembers} onOpenChange={setShowMembers}>
+          <DialogContent className="bg-gradient-to-b from-card to-background border-border/50 max-w-md max-h-[85vh] p-0 overflow-hidden">
+            {/* Header */}
+            <div 
+              className="relative p-4"
+              style={{ background: `linear-gradient(180deg, ${primaryColor}15, transparent)` }}
+            >
+              <motion.div
+                className="absolute top-0 left-0 right-0 h-1"
+                style={{ background: `linear-gradient(90deg, transparent, ${primaryColor}, transparent)` }}
+                animate={{ opacity: [0.5, 1, 0.5] }}
+                transition={{ duration: 2, repeat: Infinity }}
+              />
+              
+              <div className="flex items-start gap-3">
+                <ClanEmblemDisplay
+                  emblemId={myClan.emblem_id}
+                  sealId={myClan.seal_id}
+                  clanName=""
+                  size="md"
+                  showName={false}
+                />
+                
+                <div className="flex-1">
+                  <DialogHeader className="text-left p-0">
+                    <DialogTitle 
+                      className="text-xl font-bold"
+                      style={{ color: primaryColor }}
+                    >
+                      {myClan.name}
+                    </DialogTitle>
+                  </DialogHeader>
+                  
+                  {myClan.description && (
+                    <p className="text-xs text-muted-foreground italic mt-0.5">
+                      "{myClan.description}"
+                    </p>
+                  )}
+                  
+                  {isLeader && (
+                    <motion.div
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      className="flex items-center gap-1 mt-1"
+                    >
+                      <Crown className="w-3 h-3 text-yellow-500" />
+                      <span className="text-[10px] text-yellow-500 font-semibold uppercase tracking-wider">
+                        Режим управления
+                      </span>
+                    </motion.div>
+                  )}
+                </div>
+              </div>
+            </div>
+            
+            {/* Контент */}
+            <ScrollArea className="max-h-[55vh] px-4 pb-4">
+              <div className="space-y-4">
+                {/* Сила клана */}
+                <div className="p-3 rounded-lg bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/20">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <div className="flex items-center gap-1.5">
+                      <Zap className="w-4 h-4 text-primary" />
+                      <span className="text-sm font-semibold">Сила Семьи</span>
+                    </div>
+                    <span className="text-lg font-bold" style={{ color: primaryColor }}>
+                      {clanStrength}%
+                    </span>
+                  </div>
+                  <Progress value={clanStrength} className="h-2" />
+                </div>
+                
+                {/* Статистика */}
+                <div className="grid grid-cols-4 gap-2">
+                  <div className="p-2 rounded-lg bg-muted/50 border border-border/50 text-center">
+                    <Users className="w-4 h-4 mx-auto mb-0.5" style={{ color: primaryColor }} />
+                    <div className="text-sm font-bold" style={{ color: primaryColor }}>{myClan.members_count || members.length}/20</div>
+                    <div className="text-[8px] text-muted-foreground uppercase">Членов</div>
+                  </div>
+                  <div className="p-2 rounded-lg bg-muted/50 border border-border/50 text-center">
+                    <Trophy className="w-4 h-4 mx-auto mb-0.5 text-yellow-500" />
+                    <div className="text-sm font-bold text-yellow-500">{myClan.total_rating || 0}</div>
+                    <div className="text-[8px] text-muted-foreground uppercase">RPS</div>
+                  </div>
+                  <div className="p-2 rounded-lg bg-muted/50 border border-border/50 text-center">
+                    <TrendingUp className="w-4 h-4 mx-auto mb-0.5 text-emerald-500" />
+                    <div className="text-sm font-bold text-emerald-500">{avgRating}</div>
+                    <div className="text-[8px] text-muted-foreground uppercase">Средний</div>
+                  </div>
+                  <div className="p-2 rounded-lg bg-muted/50 border border-border/50 text-center">
+                    <Star className="w-4 h-4 mx-auto mb-0.5 text-blue-500" />
+                    <div className="text-sm font-bold text-blue-500">{20 - (myClan.members_count || members.length)}</div>
+                    <div className="text-[8px] text-muted-foreground uppercase">Мест</div>
+                  </div>
+                </div>
+                
+                {/* Структура */}
+                <div>
+                  <h4 className="text-xs font-semibold mb-2 flex items-center gap-1.5">
+                    <Swords className="w-3.5 h-3.5" />
+                    Структура Семьи
+                  </h4>
+                  <div className="grid grid-cols-3 gap-1.5">
+                    {Object.entries(CLAN_HIERARCHY).map(([key, value]) => {
+                      const count = roleStats[key] || 0;
+                      const roleColors = ROLE_COLORS[key] || ROLE_COLORS.soldier;
+                      
+                      return (
+                        <div
+                          key={key}
+                          className={cn(
+                            'p-2 rounded-lg border backdrop-blur-sm',
+                            roleColors.bg,
+                            roleColors.border
+                          )}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className={cn('text-[10px] font-medium', roleColors.text)}>
+                              {value.name}
+                            </span>
+                            <Badge 
+                              variant="outline" 
+                              className={cn('text-[9px] h-4 px-1', roleColors.text, roleColors.border)}
+                            >
+                              {count}
+                            </Badge>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+                
+                {/* Подсказка для Дона */}
+                {isLeader && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="p-2 rounded-lg bg-yellow-500/10 border border-yellow-500/30"
+                  >
+                    <p className="text-[11px] text-yellow-400 flex items-center gap-1.5">
+                      <Crown className="w-3.5 h-3.5" />
+                      Нажмите на карточку игрока в рейтинге, чтобы пригласить
+                    </p>
+                  </motion.div>
+                )}
+                
+                {/* Члены клана */}
+                <div>
+                  <h4 className="text-xs font-semibold mb-2 flex items-center gap-1.5">
+                    <Users className="w-3.5 h-3.5" />
+                    Члены семьи ({members.length})
+                  </h4>
+                  
+                  {loadingMembers ? (
+                    <div className="text-center py-4 text-muted-foreground text-sm">
+                      <Loader2 className="w-5 h-5 animate-spin mx-auto mb-2" />
+                      Загрузка...
+                    </div>
+                  ) : (
+                    <div className="space-y-1.5">
+                      {members
+                        .sort((a, b) => {
+                          const roleOrder = ['don', 'consigliere', 'underboss', 'capo', 'soldier', 'associate'];
+                          return roleOrder.indexOf(a.hierarchy_role) - roleOrder.indexOf(b.hierarchy_role);
+                        })
+                        .map((member, index) => {
+                          const memberRoleInfo = CLAN_HIERARCHY[member.hierarchy_role as ClanRole] || CLAN_HIERARCHY.soldier;
+                          const memberColors = ROLE_COLORS[member.hierarchy_role] || ROLE_COLORS.soldier;
+                          const memberIsDon = member.hierarchy_role === 'don';
+                          
+                          return (
+                            <motion.div
+                              key={member.id}
+                              initial={{ opacity: 0, y: 10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ delay: index * 0.05 }}
+                              className={cn(
+                                'flex items-center gap-2 p-2 rounded-lg border backdrop-blur-sm',
+                                memberColors.bg,
+                                memberColors.border
+                              )}
+                            >
+                              <Avatar className="w-9 h-9 border" style={{ borderColor: memberIsDon ? '#FFD700' : primaryColor }}>
+                                <AvatarImage src={member.player?.avatar_url ? fixStorageUrl(member.player.avatar_url) : undefined} />
+                                <AvatarFallback>{member.player?.name?.charAt(0) || '?'}</AvatarFallback>
+                              </Avatar>
+                              
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-1">
+                                  <span className="text-sm font-medium truncate">{member.player?.name}</span>
+                                  {memberIsDon && <Crown className="w-3 h-3 text-yellow-500 flex-shrink-0" />}
+                                </div>
+                                <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                                  <Trophy className="w-2.5 h-2.5" />
+                                  {member.player?.elo_rating || 0} RPS
+                                  <span className="text-muted-foreground/50">•</span>
+                                  {member.player?.games_played || 0} игр
+                                </div>
+                              </div>
+                              
+                              {isLeader && !memberIsDon ? (
+                                <div className="flex items-center gap-1">
+                                  <Select 
+                                    value={member.hierarchy_role} 
+                                    onValueChange={(role) => handleRoleChange(member.id, role)}
+                                  >
+                                    <SelectTrigger className="w-20 h-7 text-[10px]">
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {Object.entries(CLAN_HIERARCHY)
+                                        .filter(([key]) => key !== 'don')
+                                        .map(([key, value]) => (
+                                          <SelectItem key={key} value={key} className="text-xs">
+                                            {value.name}
+                                          </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                  </Select>
+                                  
+                                  <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                      <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:bg-destructive/20">
+                                        <UserMinus className="w-3.5 h-3.5" />
+                                      </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                      <AlertDialogHeader>
+                                        <AlertDialogTitle>Исключить из клана?</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                          Вы уверены, что хотите исключить {member.player?.name}?
+                                        </AlertDialogDescription>
+                                      </AlertDialogHeader>
+                                      <AlertDialogFooter>
+                                        <AlertDialogCancel>Отмена</AlertDialogCancel>
+                                        <AlertDialogAction 
+                                          onClick={() => handleRemoveMember(member.id)}
+                                          className="bg-destructive hover:bg-destructive/90"
+                                        >
+                                          Исключить
+                                        </AlertDialogAction>
+                                      </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                  </AlertDialog>
+                                </div>
+                              ) : (
+                                <Badge className={cn('text-[9px]', memberColors.badge)}>
+                                  {memberRoleInfo.name}
+                                </Badge>
+                              )}
+                            </motion.div>
+                          );
+                        })}
+                      
+                      {members.length === 0 && !loadingMembers && (
+                        <p className="text-center text-muted-foreground text-sm py-4">Нет участников</p>
+                      )}
+                    </div>
+                  )}
+                </div>
+                
+                {/* Кнопка выхода */}
+                {!isLeader && (
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full border-red-500/30 text-red-400 hover:bg-red-500/10"
+                      >
+                        <LogOut className="w-4 h-4 mr-2" />
+                        Покинуть клан
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Покинуть клан?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Вы уверены, что хотите покинуть "{myClan.name}"?
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Отмена</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleLeaveClan}>
+                          Покинуть
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                )}
+              </div>
+            </ScrollArea>
           </DialogContent>
         </Dialog>
-      </Card>
+      </>
     );
   }
 
