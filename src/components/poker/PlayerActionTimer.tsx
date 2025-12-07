@@ -162,6 +162,59 @@ export const PlayerActionTimer = memo(function PlayerActionTimer({
   );
 });
 
+// Circular timer for player seat overlay
+interface CircularTimerProps {
+  timeRemaining: number;
+  maxTime: number;
+  size?: number;
+  strokeWidth?: number;
+}
+
+export const CircularTimer = memo(function CircularTimer({
+  timeRemaining,
+  maxTime,
+  size = 72,
+  strokeWidth = 4
+}: CircularTimerProps) {
+  const progress = timeRemaining / maxTime;
+  const radius = (size - strokeWidth) / 2;
+  const circumference = 2 * Math.PI * radius;
+  
+  const timerColor = progress > 0.5 ? '#22c55e' : progress > 0.25 ? '#fbbf24' : '#ef4444';
+
+  return (
+    <svg 
+      width={size} 
+      height={size}
+      style={{ filter: `drop-shadow(0 0 8px ${timerColor}40)` }}
+    >
+      {/* Background ring */}
+      <circle 
+        cx={size / 2} 
+        cy={size / 2} 
+        r={radius}
+        fill="none" 
+        stroke="rgba(255,255,255,0.1)" 
+        strokeWidth={strokeWidth} 
+      />
+      {/* Progress ring */}
+      <circle
+        cx={size / 2} 
+        cy={size / 2} 
+        r={radius}
+        fill="none"
+        stroke={timerColor}
+        strokeWidth={strokeWidth}
+        strokeLinecap="round"
+        strokeDasharray={circumference}
+        strokeDashoffset={circumference - (circumference * progress)}
+        transform={`rotate(-90 ${size / 2} ${size / 2})`}
+        style={{ transition: 'stroke-dashoffset 0.5s ease-out, stroke 0.3s ease' }}
+      />
+    </svg>
+  );
+});
+
 // Compact timer bar for inline display
 interface TimerBarProps {
   timeRemaining: number | null;

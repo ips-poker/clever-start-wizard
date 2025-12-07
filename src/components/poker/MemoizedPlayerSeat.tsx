@@ -3,10 +3,12 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Crown, Plus, WifiOff } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { MemoizedPokerCard } from './MemoizedPokerCard';
+import { CircularTimer } from './PlayerActionTimer';
+import { PlayerBet } from './AnimatedChips';
 import type { PokerPlayer, TableState } from '@/hooks/usePokerTable';
 
 // PPPoker-style 6-max seat positions (percentage-based, oval layout)
-const SEAT_POSITIONS_6MAX = [
+export const SEAT_POSITIONS_6MAX = [
   { top: '82%', left: '50%' },   // 1 - Hero (bottom center)
   { top: '60%', left: '8%' },    // 2 - Left bottom
   { top: '22%', left: '8%' },    // 3 - Left top
@@ -81,40 +83,16 @@ export const MemoizedPlayerSeat = memo(function MemoizedPlayerSeat({
         zIndex: isCurrentPlayer ? 20 : 10,
       }}
     >
-      {/* Timer ring for current player - PPPoker style */}
+      {/* Timer ring for current player - using CircularTimer */}
       {isCurrentPlayer && (
-        <svg 
-          className="absolute"
-          style={{ 
-            width: 72, 
-            height: 72, 
-            top: -6, 
-            left: '50%', 
-            transform: 'translateX(-50%)',
-            filter: 'drop-shadow(0 0 8px rgba(34, 197, 94, 0.4))'
-          }}
-          viewBox="0 0 72 72"
-        >
-          {/* Background ring */}
-          <circle 
-            cx="36" cy="36" r="32" 
-            fill="none" 
-            stroke="rgba(255,255,255,0.1)" 
-            strokeWidth="4" 
+        <div className="absolute" style={{ top: -6, left: '50%', transform: 'translateX(-50%)' }}>
+          <CircularTimer 
+            timeRemaining={timeRemaining} 
+            maxTime={actionTime} 
+            size={72}
+            strokeWidth={4}
           />
-          {/* Progress ring */}
-          <circle
-            cx="36" cy="36" r="32"
-            fill="none"
-            stroke={timerColor}
-            strokeWidth="4"
-            strokeLinecap="round"
-            strokeDasharray={201}
-            strokeDashoffset={201 - (201 * timerProgress)}
-            transform="rotate(-90 36 36)"
-            style={{ transition: 'stroke-dashoffset 0.5s ease-out, stroke 0.3s ease' }}
-          />
-        </svg>
+        </div>
       )}
 
       {/* Avatar with status - PPPoker style */}
@@ -235,27 +213,17 @@ export const MemoizedPlayerSeat = memo(function MemoizedPlayerSeat({
         </p>
       </div>
 
-      {/* Current bet chip - PPPoker style */}
+      {/* Current bet chip - using PlayerBet component */}
       {(player.betAmount || 0) > 0 && !player.isFolded && (
         <div
-          className="absolute flex items-center gap-1.5 px-2 py-1 rounded-full shadow-xl"
+          className="absolute"
           style={{
-            background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
             top: isTop ? '110%' : isHero ? '-45%' : '50%',
             left: isLeft ? '120%' : isRight ? '-20%' : '50%',
             transform: isLeft || isRight ? 'translateY(-50%)' : 'translateX(-50%)',
-            boxShadow: '0 4px 12px rgba(217, 119, 6, 0.4), inset 0 1px 0 rgba(255,255,255,0.2)'
           }}
         >
-          {/* Chip stack icon */}
-          <div className="relative w-4 h-4">
-            <div className="absolute w-4 h-1 rounded-full bg-red-600 top-0 left-0 border border-red-400" />
-            <div className="absolute w-4 h-1 rounded-full bg-blue-600 top-1 left-0 border border-blue-400" />
-            <div className="absolute w-4 h-1 rounded-full bg-green-600 top-2 left-0 border border-green-400" />
-          </div>
-          <span className="text-[11px] font-black text-white drop-shadow-md">
-            {player.betAmount.toLocaleString()}
-          </span>
+          <PlayerBet amount={player.betAmount} />
         </div>
       )}
 
