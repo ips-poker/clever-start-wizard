@@ -172,6 +172,7 @@ export const TelegramApp = () => {
     if (!userStats) return;
     
     try {
+      // First try to get existing balance
       const { data, error } = await supabase
         .from('player_balances')
         .select('balance')
@@ -180,20 +181,21 @@ export const TelegramApp = () => {
       
       if (data) {
         setPlayerBalance(data.balance);
-      } else if (!error) {
-        // Создаем баланс если не существует
-        const { data: newBalance } = await supabase
-          .from('player_balances')
-          .insert({ player_id: userStats.id, balance: 10000 })
-          .select('balance')
-          .single();
+      } else if (!error || error.code === 'PGRST116') {
+        // No balance exists - use RPC function to create it (bypasses RLS)
+        const { data: newBalance, error: rpcError } = await supabase
+          .rpc('ensure_player_balance', { p_player_id: userStats.id });
         
-        if (newBalance) {
-          setPlayerBalance(newBalance.balance);
+        if (!rpcError && newBalance !== null) {
+          setPlayerBalance(newBalance);
+        } else {
+          // Fallback: set default balance in UI
+          setPlayerBalance(10000);
         }
       }
     } catch (error) {
       console.error('Error fetching player balance:', error);
+      setPlayerBalance(10000); // Default fallback
     }
   };
 
