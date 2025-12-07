@@ -154,6 +154,53 @@ export function usePokerTable(options: UsePokerTableOptions | null) {
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const channelRef = useRef<any>(null);
+  const autoStartAttemptedRef = useRef<boolean>(false);
+  const autoStartTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Auto-start hand via edge function (stateless, reliable)
+  const autoStartViaEngine = useCallback(async () => {
+    if (!tableId || !playerId) return;
+    if (autoStartAttemptedRef.current) {
+      console.log('⏸️ Auto-start already attempted, skipping...');
+      return;
+    }
+    
+    autoStartAttemptedRef.current = true;
+    
+    try {
+      console.log('🚀 Auto-starting hand via poker-game-engine...');
+      const { data, error } = await supabase.functions.invoke('poker-game-engine', {
+        body: {
+          action: 'start_hand',
+          tableId,
+          playerId
+        }
+      });
+      
+      if (error) {
+        console.error('Auto-start error:', error);
+        autoStartAttemptedRef.current = false;
+        return;
+      }
+      
+      if (data?.success) {
+        console.log('✅ Hand started successfully via engine');
+        // Reset flag for next hand
+        setTimeout(() => {
+          autoStartAttemptedRef.current = false;
+        }, 5000);
+      } else if (data?.error === 'Need at least 2 players') {
+        console.log('⏸️ Waiting for more players...');
+        autoStartAttemptedRef.current = false;
+      } else {
+        console.log('ℹ️ Start hand result:', data);
+        autoStartAttemptedRef.current = false;
+      }
+    } catch (err) {
+      console.error('Auto-start exception:', err);
+      autoStartAttemptedRef.current = false;
+    }
+  }, [tableId, playerId]);
 
   // Load players from DB and sync via Realtime
   const loadPlayersFromDB = useCallback(async () => {
@@ -277,10 +324,13 @@ export function usePokerTable(options: UsePokerTableOptions | null) {
         }
       }
 
+      const newPhase = phase;
+      const playersCount = activePlayers.length;
+
       setTableState(prev => ({
         ...(prev || {}),
         tableId,
-        phase,
+        phase: newPhase,
         pot,
         currentBet,
         currentPlayerSeat,
@@ -292,14 +342,30 @@ export function usePokerTable(options: UsePokerTableOptions | null) {
         smallBlindAmount: tableData.small_blind,
         bigBlindAmount: tableData.big_blind,
         minRaise: currentBet > 0 ? currentBet : tableData.big_blind,
-        actionTimer: 30
+        actionTimer: 30,
+        playersNeeded: playersCount < 2 ? 2 - playersCount : 0
       }));
 
-      console.log('📊 Loaded', players.length, 'players from DB for table', tableId);
+      console.log('📊 Loaded', players.length, 'players from DB for table', tableId, 'phase:', newPhase);
+
+      // AUTO-START LOGIC: If phase is 'waiting' and we have 2+ active players, start hand
+      if (newPhase === 'waiting' && playersCount >= 2 && !tableData.current_hand_id) {
+        console.log('🎮 Conditions met for auto-start: phase=waiting, players=', playersCount);
+        
+        // Clear any existing timeout
+        if (autoStartTimeoutRef.current) {
+          clearTimeout(autoStartTimeoutRef.current);
+        }
+        
+        // Small delay to let UI update, then start
+        autoStartTimeoutRef.current = setTimeout(() => {
+          autoStartViaEngine();
+        }, 2000);
+      }
     } catch (err) {
       console.error('Error in loadPlayersFromDB:', err);
     }
-  }, [tableId, playerId]);
+  }, [tableId, playerId, autoStartViaEngine]);
 
   // Get WebSocket URL
   const getWsUrl = useCallback(() => {
@@ -371,6 +437,9 @@ export function usePokerTable(options: UsePokerTableOptions | null) {
 
     setIsConnecting(true);
     setError(null);
+    
+    // Reset auto-start flag on new connection
+    autoStartAttemptedRef.current = false;
 
     // Setup Realtime sync first
     setupRealtimeSync();
