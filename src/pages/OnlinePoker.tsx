@@ -3,11 +3,12 @@ import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { PokerTableLobby } from '@/components/poker/PokerTableLobby';
 import { OnlinePokerTable } from '@/components/poker/OnlinePokerTable';
+import { PlayerBalanceCard } from '@/components/poker/PlayerBalanceCard';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ArrowLeft, User } from 'lucide-react';
+import { ArrowLeft, User, LogOut } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -15,6 +16,7 @@ import { toast } from 'sonner';
 export default function OnlinePoker() {
   const [playerId, setPlayerId] = useState<string | null>(null);
   const [playerName, setPlayerName] = useState('');
+  const [playerBalance, setPlayerBalance] = useState(0);
   const [activeTable, setActiveTable] = useState<{ id: string; buyIn: number } | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -83,11 +85,23 @@ export default function OnlinePoker() {
   };
 
   const handleJoinTable = (tableId: string, buyIn: number) => {
+    if (buyIn > playerBalance) {
+      toast.error('Недостаточно фишек для входа');
+      return;
+    }
     setActiveTable({ id: tableId, buyIn });
   };
 
   const handleLeaveTable = () => {
     setActiveTable(null);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('poker_player_id');
+    setPlayerId(null);
+    setPlayerName('');
+    setPlayerBalance(0);
+    toast.success('Вы вышли из аккаунта');
   };
 
   if (loading) {
@@ -112,9 +126,14 @@ export default function OnlinePoker() {
           </Link>
           
           {playerId && (
-            <div className="flex items-center gap-2 text-sm">
-              <User className="h-4 w-4" />
-              <span>{playerName}</span>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2 text-sm">
+                <User className="h-4 w-4" />
+                <span className="font-medium">{playerName}</span>
+              </div>
+              <Button variant="ghost" size="sm" onClick={handleLogout}>
+                <LogOut className="h-4 w-4" />
+              </Button>
             </div>
           )}
         </div>
@@ -161,9 +180,14 @@ export default function OnlinePoker() {
           </div>
         ) : (
           // Table lobby
-          <div className="max-w-4xl mx-auto">
+          <div className="max-w-4xl mx-auto space-y-6">
+            <PlayerBalanceCard 
+              playerId={playerId} 
+              onBalanceUpdate={setPlayerBalance}
+            />
             <PokerTableLobby
               playerId={playerId}
+              playerBalance={playerBalance}
               onJoinTable={handleJoinTable}
             />
           </div>

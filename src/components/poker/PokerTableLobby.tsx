@@ -38,10 +38,11 @@ interface PokerTable {
 
 interface PokerTableLobbyProps {
   playerId: string | null;
+  playerBalance?: number;
   onJoinTable: (tableId: string, buyIn: number) => void;
 }
 
-export function PokerTableLobby({ playerId, onJoinTable }: PokerTableLobbyProps) {
+export function PokerTableLobby({ playerId, playerBalance = 0, onJoinTable }: PokerTableLobbyProps) {
   const [tables, setTables] = useState<PokerTable[]>([]);
   const [loading, setLoading] = useState(true);
   const [createOpen, setCreateOpen] = useState(false);
@@ -155,6 +156,11 @@ export function PokerTableLobby({ playerId, onJoinTable }: PokerTableLobbyProps)
     
     if (buyInAmount < selectedTable.min_buy_in || buyInAmount > selectedTable.max_buy_in) {
       toast.error(`Buy-in должен быть от ${selectedTable.min_buy_in} до ${selectedTable.max_buy_in}`);
+      return;
+    }
+
+    if (buyInAmount > playerBalance) {
+      toast.error(`Недостаточно фишек! Ваш баланс: ${playerBalance}`);
       return;
     }
 
@@ -354,13 +360,18 @@ export function PokerTableLobby({ playerId, onJoinTable }: PokerTableLobbyProps)
                   min={selectedTable.min_buy_in}
                   max={selectedTable.max_buy_in}
                 />
-                <p className="text-xs text-muted-foreground">
-                  От {selectedTable.min_buy_in} до {selectedTable.max_buy_in}
-                </p>
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span>От {selectedTable.min_buy_in} до {selectedTable.max_buy_in}</span>
+                  <span className="text-primary">Ваш баланс: {playerBalance.toLocaleString()}</span>
+                </div>
               </div>
               
-              <Button onClick={handleConfirmJoin} className="w-full">
-                Подтвердить
+              <Button 
+                onClick={handleConfirmJoin} 
+                className="w-full"
+                disabled={buyInAmount > playerBalance}
+              >
+                {buyInAmount > playerBalance ? 'Недостаточно фишек' : 'Подтвердить'}
               </Button>
             </div>
           )}
