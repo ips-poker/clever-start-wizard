@@ -3,7 +3,7 @@
  * PLO4, PLO5, PLO6, Hi/Lo Split Games, Mixed Games
  */
 
-import { Card, createDeck, shuffleDeckSecure, evaluateHand, HandEvaluation } from './pokerEngine';
+import { Card, evaluateHand, HandEvaluation, HandRank, Rank, RANK_NAMES } from './pokerEngine';
 
 export type ExtendedGameType = 
   | 'holdem'
@@ -167,9 +167,9 @@ export interface HiLoEvaluation {
  */
 export function evaluateLowHand(cards: Card[]): HandEvaluation | null {
   // For low hand, we need 5 cards 8 or lower, no pairs
+  // Card.rank is a number (2-14), where 14 = Ace
   const lowCards = cards.filter(c => {
-    const rankValue = getRankValue(c.rank);
-    return rankValue <= 8 || c.rank === 'A'; // Ace counts as 1 for low
+    return c.rank <= 8 || c.rank === 14; // Ace counts as 1 for low
   });
   
   if (lowCards.length < 5) {
@@ -177,9 +177,9 @@ export function evaluateLowHand(cards: Card[]): HandEvaluation | null {
   }
   
   // Get unique ranks (no pairs)
-  const uniqueRanks = new Map<string, Card>();
+  const uniqueRanks = new Map<number, Card>();
   for (const card of lowCards) {
-    const value = card.rank === 'A' ? '1' : card.rank;
+    const value = card.rank === 14 ? 1 : card.rank; // Ace as 1
     if (!uniqueRanks.has(value)) {
       uniqueRanks.set(value, card);
     }
@@ -192,25 +192,29 @@ export function evaluateLowHand(cards: Card[]): HandEvaluation | null {
   // Sort by rank value (low to high)
   const sortedCards = Array.from(uniqueRanks.values())
     .sort((a, b) => {
-      const aVal = a.rank === 'A' ? 1 : getRankValue(a.rank);
-      const bVal = b.rank === 'A' ? 1 : getRankValue(b.rank);
+      const aVal = a.rank === 14 ? 1 : a.rank;
+      const bVal = b.rank === 14 ? 1 : b.rank;
       return aVal - bVal;
     })
     .slice(0, 5);
   
   // Create tiebreakers (highest cards first for low comparison)
   const tiebreakers = sortedCards
-    .map(c => c.rank === 'A' ? 1 : getRankValue(c.rank))
+    .map(c => c.rank === 14 ? 1 : c.rank)
     .reverse();
   
   const handName = `${tiebreakers[0]}-low`;
   
   return {
-    rank: 1, // Low hands
+    rank: HandRank.HIGH_CARD, // Low hands use HIGH_CARD rank
     name: handName,
+    nameEn: `${tiebreakers[0]}-low`,
     cards: sortedCards,
-    tiebreakers,
-    description: `Low: ${sortedCards.map(c => c.rank).join('-')}`
+    kickers: [],
+    value: 1000000 - tiebreakers.reduce((acc, v, i) => acc + v * Math.pow(15, 4-i), 0),
+    description: `Лоу: ${sortedCards.map(c => RANK_NAMES[c.rank as Rank]).join('-')}`,
+    descriptionEn: `Low: ${sortedCards.map(c => RANK_NAMES[c.rank as Rank]).join('-')}`,
+    tiebreakers
   };
 }
 
@@ -220,12 +224,12 @@ export function evaluateLowHand(cards: Card[]): HandEvaluation | null {
 export function evaluateBadugiHand(cards: Card[]): HandEvaluation {
   // Badugi: 4 cards of different suits and different ranks
   const suits = new Set<string>();
-  const ranks = new Set<string>();
+  const ranks = new Set<number>();
   const validCards: Card[] = [];
   
   const sortedCards = [...cards].sort((a, b) => {
-    const aVal = a.rank === 'A' ? 1 : getRankValue(a.rank);
-    const bVal = b.rank === 'A' ? 1 : getRankValue(b.rank);
+    const aVal = a.rank === 14 ? 1 : a.rank;
+    const bVal = b.rank === 14 ? 1 : b.rank;
     return aVal - bVal;
   });
   
@@ -239,16 +243,20 @@ export function evaluateBadugiHand(cards: Card[]): HandEvaluation {
   }
   
   const numCards = validCards.length;
-  const tiebreakers = validCards.map(c => c.rank === 'A' ? 1 : getRankValue(c.rank)).reverse();
+  const tiebreakers = validCards.map(c => c.rank === 14 ? 1 : c.rank).reverse();
   
   const name = numCards === 4 ? `${tiebreakers[0]}-high Badugi` : `${numCards}-card`;
   
   return {
-    rank: numCards,
+    rank: HandRank.HIGH_CARD,
     name,
+    nameEn: name,
     cards: validCards,
-    tiebreakers: [numCards, ...tiebreakers],
-    description: `Badugi: ${validCards.map(c => `${c.rank}${getSuitSymbol(c.suit)}`).join(' ')}`
+    kickers: [],
+    value: numCards * 100000 - tiebreakers.reduce((acc, v, i) => acc + v * Math.pow(15, 3-i), 0),
+    description: `Badugi: ${validCards.map(c => RANK_NAMES[c.rank as Rank]).join(' ')}`,
+    descriptionEn: `Badugi: ${validCards.map(c => RANK_NAMES[c.rank as Rank]).join(' ')}`,
+    tiebreakers: [numCards, ...tiebreakers]
   };
 }
 
@@ -257,28 +265,35 @@ export function evaluateBadugiHand(cards: Card[]): HandEvaluation {
  */
 export function evaluate27Lowball(cards: Card[]): HandEvaluation {
   const regularEval = evaluateHand(cards);
-  const isStraight = regularEval.rank === 4;
-  const isFlush = regularEval.rank === 5;
+  const isStraight = regularEval.rank === HandRank.STRAIGHT;
+  const isFlush = regularEval.rank === HandRank.FLUSH;
   
   if (isStraight || isFlush) {
     return {
-      rank: 0,
+      rank: HandRank.HIGH_CARD,
       name: `${regularEval.name} (не подходит)`,
+      nameEn: `${regularEval.nameEn} (doesn't qualify)`,
       cards: regularEval.cards,
-      tiebreakers: regularEval.tiebreakers.map(t => -t),
-      description: `2-7: не подходит для лоу`
+      kickers: regularEval.kickers,
+      value: -regularEval.value,
+      description: `2-7: не подходит для лоу`,
+      descriptionEn: `2-7: doesn't qualify for low`,
+      tiebreakers: regularEval.tiebreakers.map(t => -t)
     };
   }
   
-  const lowRank = 100 - regularEval.rank;
   const invertedTiebreakers = regularEval.tiebreakers.map(t => 14 - t);
   
   return {
-    rank: lowRank,
+    rank: HandRank.HIGH_CARD,
     name: `${regularEval.tiebreakers[0]}-high`,
+    nameEn: `${regularEval.tiebreakers[0]}-high`,
     cards: regularEval.cards,
-    tiebreakers: invertedTiebreakers,
-    description: `2-7 Low: ${regularEval.cards.map(c => c.rank).join('-')}`
+    kickers: regularEval.kickers,
+    value: 1000000 - regularEval.value,
+    description: `2-7 Low: ${regularEval.cards.map(c => RANK_NAMES[c.rank as Rank]).join('-')}`,
+    descriptionEn: `2-7 Low: ${regularEval.cards.map(c => RANK_NAMES[c.rank as Rank]).join('-')}`,
+    tiebreakers: invertedTiebreakers
   };
 }
 
@@ -466,26 +481,7 @@ export function calculateHiLoPotSplit(
   return distribution;
 }
 
-// Helper functions
-function getRankValue(rank: string): number {
-  const values: Record<string, number> = {
-    '2': 2, '3': 3, '4': 4, '5': 5, '6': 6,
-    '7': 7, '8': 8, '9': 9, '10': 10,
-    'J': 11, 'Q': 12, 'K': 13, 'A': 14
-  };
-  return values[rank] || 0;
-}
-
-function getSuitSymbol(suit: string): string {
-  const symbols: Record<string, string> = {
-    'spades': '♠',
-    'hearts': '♥',
-    'diamonds': '♦',
-    'clubs': '♣'
-  };
-  return symbols[suit] || suit;
-}
-
+// Helper function for combinations
 function getCombinations<T>(array: T[], size: number): T[][] {
   if (size === 0) return [[]];
   if (array.length < size) return [];
