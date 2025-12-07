@@ -20,6 +20,9 @@ import { StablePokerCard } from './stable/StablePokerCard';
 import { StableChipStack } from './stable/StableChipStack';
 import { StableActionPanel } from './stable/StableActionPanel';
 
+// Avatar resolver utility
+import { resolveAvatarUrl } from '@/utils/avatarResolver';
+
 // Syndikate branding
 import syndikateLogo from '@/assets/syndikate-logo-main.png';
 
@@ -241,6 +244,9 @@ const PlayerSeat = memo(function PlayerSeat({
 
   const avatarSize = isHero ? 'w-14 h-14' : 'w-12 h-12';
   const showTurnTimer = isCurrentTurn && !player.isFolded && !player.isAllIn;
+  
+  // Resolve avatar URL - handles Vite hashed paths and fallbacks
+  const resolvedAvatarUrl = resolveAvatarUrl(player.avatarUrl, player.playerId);
 
   return (
     <motion.div
@@ -291,24 +297,16 @@ const PlayerSeat = memo(function PlayerSeat({
           ? "border-amber-400 shadow-lg shadow-amber-400/40" 
           : "border-white/30"
       )}>
-        {/* Avatar background */}
+        {/* Avatar background - always use resolvedAvatarUrl */}
         <div 
-          className="absolute inset-0"
+          className="absolute inset-0 bg-cover bg-center"
           style={{
-            background: player.avatarUrl 
-              ? `url(${player.avatarUrl}) center/cover` 
-              : `linear-gradient(135deg, 
-                  hsl(${(player.seatNumber * 45) % 360}, 50%, 35%), 
-                  hsl(${(player.seatNumber * 45 + 40) % 360}, 50%, 25%))`
+            backgroundImage: `url(${resolvedAvatarUrl})`
           }}
         />
         
-        {/* Initials fallback */}
-        {!player.avatarUrl && (
-          <div className="absolute inset-0 flex items-center justify-center text-white font-bold text-sm">
-            {(player.name || 'P').charAt(0).toUpperCase()}
-          </div>
-        )}
+        {/* Dark overlay for better visibility */}
+        <div className="absolute inset-0 bg-black/20" />
 
         {/* Folded overlay */}
         {player.isFolded && (
