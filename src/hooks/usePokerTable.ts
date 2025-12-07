@@ -13,10 +13,23 @@ export interface PokerPlayer {
   seatNumber: number;
   stack: number;
   betAmount: number;
+  totalBetInHand?: number;
   holeCards: string[];
   isFolded: boolean;
   isAllIn: boolean;
   isActive: boolean;
+}
+
+export interface SidePotInfo {
+  amount: number;
+  eligiblePlayers: string[];
+  contributors: string[];
+}
+
+export interface SidePotsDisplay {
+  mainPot: SidePotInfo;
+  sidePots: SidePotInfo[];
+  totalPot: number;
 }
 
 export interface TableState {
@@ -30,6 +43,7 @@ export interface TableState {
   smallBlindSeat: number;
   bigBlindSeat: number;
   players: PokerPlayer[];
+  sidePots?: SidePotsDisplay;
 }
 
 interface UsePokerTableOptions {
