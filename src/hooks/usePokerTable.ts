@@ -53,6 +53,10 @@ export interface TableState {
   timeRemaining?: number | null;
   lastRaiserSeat?: number | null;
   runItTwiceEnabled?: boolean;
+  // Rake configuration
+  rakePercent?: number;
+  rakeCap?: number;
+  totalRakeCollected?: number;
 }
 
 interface UsePokerTableOptions {
