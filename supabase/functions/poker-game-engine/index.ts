@@ -376,10 +376,16 @@ serve(async (req) => {
     // ACTION: START_HAND
     // ==========================================
     else if (action === 'start_hand') {
-      // First: Clean up players with 0 chips (set to sitting_out)
+      // STEP 1: Global cleanup - call the cleanup function to remove ALL stuck hands
+      const { data: cleanupResult } = await supabase.rpc('cleanup_stuck_poker_hands');
+      if (cleanupResult && cleanupResult > 0) {
+        console.log(`[Engine] Cleaned up ${cleanupResult} stuck hands via DB function`);
+      }
+
+      // STEP 2: Clean up players with 0 chips (set to sitting_out)
       const zeroChipPlayers = tablePlayers?.filter(p => p.status === 'active' && p.stack <= 0) || [];
       if (zeroChipPlayers.length > 0) {
-        console.log(`[Engine] Cleaning up ${zeroChipPlayers.length} players with 0 chips`);
+        console.log(`[Engine] Setting ${zeroChipPlayers.length} players with 0 chips to sitting_out`);
         for (const p of zeroChipPlayers) {
           await supabase.from('poker_table_players')
             .update({ status: 'sitting_out' })
@@ -387,34 +393,49 @@ serve(async (req) => {
         }
       }
 
-      // Second: Clean up any stuck hands (completed more than 60 seconds ago)
+      // STEP 3: Check current hand - be aggressive with cleanup (45 seconds = stuck)
       if (table.current_hand_id) {
         const { data: currentHand } = await supabase
           .from('poker_hands')
           .select('*')
           .eq('id', table.current_hand_id)
-          .single();
+          .maybeSingle();
         
         if (currentHand) {
           const handAge = Date.now() - new Date(currentHand.action_started_at || currentHand.created_at).getTime();
-          const isStuck = handAge > 120000; // 2 minutes = stuck
+          const isStuck = handAge > 45000; // 45 seconds = stuck (more aggressive)
           const isCompleted = currentHand.completed_at !== null;
           
           if (isStuck || isCompleted) {
-            console.log(`[Engine] Cleaning up stuck/completed hand (age: ${Math.round(handAge/1000)}s)`);
+            console.log(`[Engine] Force-completing stuck hand (age: ${Math.round(handAge/1000)}s)`);
+            // Force complete the hand
+            await supabase.from('poker_hands')
+              .update({ completed_at: new Date().toISOString(), phase: 'showdown', pot: 0 })
+              .eq('id', table.current_hand_id);
             await supabase.from('poker_tables')
               .update({ current_hand_id: null, status: 'waiting' })
               .eq('id', tableId);
           } else {
-            console.log(`[Engine] Hand already in progress, cannot start new one`);
-            return new Response(JSON.stringify({ success: false, error: 'Hand already in progress' }), {
+            // Hand is actively in progress - don't interrupt
+            console.log(`[Engine] Active hand in progress (age: ${Math.round(handAge/1000)}s), skipping start`);
+            return new Response(JSON.stringify({ 
+              success: false, 
+              error: 'Hand already in progress',
+              handAge: Math.round(handAge/1000)
+            }), {
               headers: { ...corsHeaders, 'Content-Type': 'application/json' }
             });
           }
+        } else {
+          // Hand ID exists but hand not found - clear it
+          console.log(`[Engine] Orphaned hand ID, clearing...`);
+          await supabase.from('poker_tables')
+            .update({ current_hand_id: null, status: 'waiting' })
+            .eq('id', tableId);
         }
       }
 
-      // Re-fetch players after cleanup
+      // STEP 4: Re-fetch players after all cleanup
       const { data: freshPlayers } = await supabase
         .from('poker_table_players')
         .select('*, players(name, avatar_url)')

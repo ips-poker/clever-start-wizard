@@ -161,19 +161,19 @@ export function usePokerTable(options: UsePokerTableOptions | null) {
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const lastLoadTimeRef = useRef<number>(0);
 
-  // Auto-start hand via edge function (stateless, reliable)
+  // Auto-start hand via edge function (stateless, reliable, PPPoker-style)
   const autoStartViaEngine = useCallback(async () => {
     if (!tableId || !playerId) {
-      console.log('❌ Auto-start blocked: missing tableId or playerId', { tableId, playerId });
+      console.log('❌ Auto-start blocked: missing tableId or playerId');
       return;
     }
     if (autoStartAttemptedRef.current) {
-      console.log('⏸️ Auto-start already attempted, skipping...');
+      console.log('⏸️ Auto-start already in progress, skipping...');
       return;
     }
     
     autoStartAttemptedRef.current = true;
-    console.log('🎯 Calling poker-game-engine start_hand...');
+    console.log('🎯 [PPPoker] Calling start_hand...');
     
     try {
       const { data, error } = await supabase.functions.invoke('poker-game-engine', {
@@ -184,44 +184,46 @@ export function usePokerTable(options: UsePokerTableOptions | null) {
         }
       });
       
-      console.log('📨 poker-game-engine response:', { data, error });
-      
       if (error) {
-        console.error('❌ Auto-start error:', error);
-        autoStartAttemptedRef.current = false;
+        console.error('❌ Auto-start network error:', error);
+        // Reset after short delay to allow retry
+        setTimeout(() => { autoStartAttemptedRef.current = false; }, 2000);
         return;
       }
       
       if (data?.success) {
-        console.log('✅ Hand started successfully via engine, reloading state...');
-        // Immediately reload state to get the new hand
+        console.log('✅ Hand started! Reloading state in 500ms...');
+        // Reload state after short delay to let DB propagate
         setTimeout(() => {
           loadPlayersFromDBRef.current?.();
-        }, 300);
-        // Reset flag for next hand after delay
+        }, 500);
+        // Reset flag for next hand after longer delay (hand must complete first)
         setTimeout(() => {
           autoStartAttemptedRef.current = false;
-        }, 4000);
-      } else if (data?.error === 'Need at least 2 players') {
-        console.log('⏸️ Waiting for more players...');
-        // Update UI to show waiting state
+        }, 5000);
+      } else if (data?.error?.includes('2 players')) {
+        console.log('⏸️ Need more players, resetting...');
         setTableState(prev => prev ? {
           ...prev,
           gameStartingCountdown: 0,
           playersNeeded: 2
         } : null);
         autoStartAttemptedRef.current = false;
-      } else if (data?.error === 'Hand already in progress') {
-        console.log('🎴 Hand already running, reloading state...');
-        loadPlayersFromDBRef.current?.();
-        autoStartAttemptedRef.current = false;
+      } else if (data?.error?.includes('in progress')) {
+        console.log('🎴 Hand already running (age: ' + (data?.handAge || '?') + 's), syncing...');
+        // Just reload current state
+        setTimeout(() => {
+          loadPlayersFromDBRef.current?.();
+        }, 300);
+        // Reset flag quickly since we're not starting a new hand
+        setTimeout(() => { autoStartAttemptedRef.current = false; }, 1500);
       } else {
-        console.log('ℹ️ Start hand result:', data);
+        console.log('ℹ️ Engine response:', data);
         autoStartAttemptedRef.current = false;
       }
     } catch (err) {
       console.error('❌ Auto-start exception:', err);
-      autoStartAttemptedRef.current = false;
+      setTimeout(() => { autoStartAttemptedRef.current = false; }, 2000);
     }
   }, [tableId, playerId]);
 
@@ -350,9 +352,9 @@ export function usePokerTable(options: UsePokerTableOptions | null) {
       const newPhase = phase;
       const playersCount = activePlayers.length;
 
-      // Only update state if data actually changed (prevents unnecessary re-renders)
+      // Only update state if data actually changed (PPPoker-level stability - no JSON.stringify)
       setTableState(prev => {
-        const newState = {
+        const newState: TableState = {
           ...(prev || {}),
           tableId,
           phase: newPhase,
@@ -371,17 +373,36 @@ export function usePokerTable(options: UsePokerTableOptions | null) {
           playersNeeded: playersCount < 2 ? 2 - playersCount : 0
         };
         
-        // Deep compare key fields to avoid unnecessary updates
-        if (prev && 
-            prev.phase === newState.phase &&
-            prev.pot === newState.pot &&
-            prev.currentBet === newState.currentBet &&
-            prev.currentPlayerSeat === newState.currentPlayerSeat &&
-            JSON.stringify(prev.communityCards) === JSON.stringify(newState.communityCards) &&
-            prev.players.length === newState.players.length &&
-            JSON.stringify(prev.players.map(p => ({ id: p.playerId, stack: p.stack, bet: p.betAmount, folded: p.isFolded }))) === 
-            JSON.stringify(newState.players.map(p => ({ id: p.playerId, stack: p.stack, bet: p.betAmount, folded: p.isFolded })))) {
-          return prev; // No change, don't trigger re-render
+        // Fast deep compare - avoid JSON.stringify which causes GC pressure
+        if (prev) {
+          // Compare primitives first (fastest)
+          if (prev.phase !== newState.phase) return newState;
+          if (prev.pot !== newState.pot) return newState;
+          if (prev.currentBet !== newState.currentBet) return newState;
+          if (prev.currentPlayerSeat !== newState.currentPlayerSeat) return newState;
+          if (prev.dealerSeat !== newState.dealerSeat) return newState;
+          if (prev.players.length !== newState.players.length) return newState;
+          
+          // Compare community cards
+          if (prev.communityCards.length !== newState.communityCards.length) return newState;
+          for (let i = 0; i < prev.communityCards.length; i++) {
+            if (prev.communityCards[i] !== newState.communityCards[i]) return newState;
+          }
+          
+          // Compare players (key fields only)
+          for (let i = 0; i < prev.players.length; i++) {
+            const prevP = prev.players[i];
+            const newP = newState.players[i];
+            if (!prevP || !newP) return newState;
+            if (prevP.playerId !== newP.playerId) return newState;
+            if (prevP.stack !== newP.stack) return newState;
+            if (prevP.betAmount !== newP.betAmount) return newState;
+            if (prevP.isFolded !== newP.isFolded) return newState;
+            if (prevP.isAllIn !== newP.isAllIn) return newState;
+          }
+          
+          // No meaningful changes detected - keep previous state to prevent re-render
+          return prev;
         }
         
         return newState;
@@ -479,10 +500,10 @@ export function usePokerTable(options: UsePokerTableOptions | null) {
     }
   }, []);
 
-  // Debounced load - prevents rapid reloads (increased to 2500ms for maximum stability)
+  // Debounced load - prevents rapid reloads (3000ms for maximum stability like PPPoker)
   const debouncedLoadPlayers = useCallback(() => {
     const now = Date.now();
-    const MIN_INTERVAL = 2500; // Increased to 2500ms to prevent flickering completely
+    const MIN_INTERVAL = 3000; // 3 seconds - PPPoker-level stability
     
     // Clear any pending debounce
     if (debounceTimerRef.current) {
@@ -493,7 +514,7 @@ export function usePokerTable(options: UsePokerTableOptions | null) {
     const timeSinceLastLoad = now - lastLoadTimeRef.current;
     
     if (timeSinceLastLoad < MIN_INTERVAL) {
-      // Schedule load after remaining time
+      // Schedule load after remaining time - but only if no pending load
       const delay = MIN_INTERVAL - timeSinceLastLoad;
       debounceTimerRef.current = setTimeout(() => {
         lastLoadTimeRef.current = Date.now();
