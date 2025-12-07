@@ -313,6 +313,33 @@ interface TableState {
   mississippiStraddleEnabled: boolean; // Allow straddle from any position
   pendingStraddles: Map<number, number>; // seat -> straddle amount (for multiple straddles)
   maxStraddleCount: number; // Maximum number of straddles allowed
+  // ===== BOMB POT MODE =====
+  bombPotEnabled: boolean; // Enable bomb pot mode
+  bombPotFrequency: number; // Every N hands is a bomb pot (0 = manual only)
+  bombPotMultiplier: number; // Ante multiplier for bomb pot (e.g., 2x BB)
+  bombPotNextHand: boolean; // Next hand will be a bomb pot
+  bombPotCurrentHand: boolean; // Current hand is a bomb pot
+  handsPlayedCount: number; // Count hands for bomb pot frequency
+  bombPotDoubleBoard: boolean; // Use double board for bomb pots
+  // ===== CHAT SYSTEM =====
+  chatEnabled: boolean; // Enable table chat
+  chatMessages: ChatMessage[]; // Recent chat messages
+  mutedPlayers: Set<string>; // Players who are muted
+  chatCooldowns: Map<string, number>; // Player cooldowns (spam prevention)
+  chatBannedWords: string[]; // Banned words list
+  chatSlowMode: boolean; // Slow mode enabled
+  chatSlowModeInterval: number; // Seconds between messages in slow mode
+}
+
+// ===== CHAT MESSAGE TYPE =====
+interface ChatMessage {
+  id: string;
+  playerId: string;
+  playerName: string;
+  message: string;
+  timestamp: number;
+  type: 'chat' | 'system' | 'dealer' | 'action';
+  isModerated?: boolean;
 }
 
 interface PlayerState {
@@ -334,6 +361,9 @@ interface PlayerState {
   timeBank: number; // Extra time bank in seconds
   timeBankUsed: number; // Time bank used this hand
   lastPingAt: number; // Last ping timestamp
+  // ===== CHAT =====
+  isChatMuted: boolean; // Player is muted
+  chatWarnings: number; // Number of warnings received
 }
 
 interface WSMessage {
@@ -799,6 +829,31 @@ serve(async (req) => {
           }
           break;
 
+        case "bomb_pot":
+          await handleBombPot(socket, message);
+          break;
+
+        case "mute_player":
+          await handleMutePlayer(socket, message);
+          break;
+
+        case "chat_settings":
+          await handleChatSettings(socket, message);
+          break;
+
+        case "get_chat_history":
+          // Return recent chat messages
+          if (message.tableId) {
+            const tableState = tableStates.get(message.tableId);
+            if (tableState) {
+              sendToSocket(socket, {
+                type: "chat_history",
+                messages: tableState.chatMessages.slice(-20)
+              });
+            }
+          }
+          break;
+
         default:
           sendToSocket(socket, { type: "error", message: "Unknown message type" });
       }
@@ -912,7 +967,10 @@ async function handleJoinTable(socket: WebSocket, message: WSMessage, supabase: 
     reconnectGracePeriod: DEFAULT_RECONNECT_GRACE,
     timeBank: DEFAULT_TIME_BANK,
     timeBankUsed: 0,
-    lastPingAt: Date.now()
+    lastPingAt: Date.now(),
+    // Chat fields
+    isChatMuted: false,
+    chatWarnings: 0
   });
 
   // Update database
@@ -1173,6 +1231,26 @@ async function handleStartHand(socket: WebSocket, message: WSMessage, supabase: 
   tableState.currentBet = 0;
   tableState.communityCards = [];
   tableState.totalRakeCollected = 0; // Reset rake for new hand
+  tableState.handsPlayedCount++; // Increment hand counter
+
+  // ===== BOMB POT DETECTION =====
+  const isBombPot = tableState.bombPotNextHand || 
+    (tableState.bombPotFrequency > 0 && tableState.handsPlayedCount % tableState.bombPotFrequency === 0);
+  
+  tableState.bombPotCurrentHand = isBombPot;
+  tableState.bombPotNextHand = false; // Reset flag
+
+  if (isBombPot) {
+    console.log(`💣 BOMB POT hand #${tableState.handsPlayedCount}! Multiplier: ${tableState.bombPotMultiplier}x BB`);
+    
+    // Broadcast bomb pot start
+    broadcastToTable(tableId, {
+      type: "bomb_pot_started",
+      handNumber: tableState.handsPlayedCount,
+      multiplier: tableState.bombPotMultiplier,
+      doubleBoard: tableState.bombPotDoubleBoard
+    });
+  }
 
   // Reset player states
   tableState.players.forEach(player => {
@@ -1223,8 +1301,29 @@ async function handleStartHand(socket: WebSocket, message: WSMessage, supabase: 
   tableState.straddleAmount = 0;
   tableState.pendingStraddles = new Map();
 
+  // ===== BOMB POT - SPECIAL ANTES =====
+  if (isBombPot) {
+    const bombPotAnte = bigBlind * tableState.bombPotMultiplier;
+    let totalBombPotAntes = 0;
+    
+    tableState.players.forEach(player => {
+      if (player.isActive && player.stack > 0) {
+        const bombAnteAmount = Math.min(bombPotAnte, player.stack);
+        player.stack -= bombAnteAmount;
+        player.totalBetInHand += bombAnteAmount;
+        totalBombPotAntes += bombAnteAmount;
+        if (player.stack === 0) player.isAllIn = true;
+      }
+    });
+    
+    tableState.pot += totalBombPotAntes;
+    console.log(`💣 Bomb Pot: Collected ${totalBombPotAntes} (${bombPotAnte} x ${activePlayersList.length} players)`);
+    
+    // In bomb pot, skip preflop betting - deal flop immediately
+    // But first deal hole cards
+  }
   // ===== BUTTON ANTE (dealer pays ante for all) =====
-  if (tableState.buttonAnteEnabled && tableState.buttonAnteAmount > 0) {
+  else if (tableState.buttonAnteEnabled && tableState.buttonAnteAmount > 0) {
     const dealerPlayer = getPlayerBySeat(tableState, tableState.dealerSeat);
     if (dealerPlayer && !dealerPlayer.isAllIn) {
       const totalButtonAnte = tableState.buttonAnteAmount * activePlayersList.length;
@@ -1451,17 +1550,217 @@ async function handleGetState(socket: WebSocket, message: WSMessage) {
   });
 }
 
-// Handle chat message
+// Handle chat message with moderation
 async function handleChat(socket: WebSocket, message: WSMessage) {
   const { tableId, playerId, data } = message;
   
-  if (!tableId || !data?.text) return;
+  if (!tableId || !data?.text || !playerId) return;
 
+  const tableState = tableStates.get(tableId);
+  if (!tableState) return;
+
+  // Check if chat is enabled
+  if (!tableState.chatEnabled) {
+    sendToSocket(socket, { type: "error", message: "Chat is disabled at this table" });
+    return;
+  }
+
+  const player = tableState.players.get(playerId);
+  if (!player) return;
+
+  // Check if player is muted
+  if (player.isChatMuted || tableState.mutedPlayers.has(playerId)) {
+    sendToSocket(socket, { type: "error", message: "You are muted" });
+    return;
+  }
+
+  // Check cooldown (spam prevention)
+  const now = Date.now();
+  const lastMessage = tableState.chatCooldowns.get(playerId) || 0;
+  const cooldownTime = tableState.chatSlowMode ? tableState.chatSlowModeInterval * 1000 : 2000;
+  
+  if (now - lastMessage < cooldownTime) {
+    const remaining = Math.ceil((cooldownTime - (now - lastMessage)) / 1000);
+    sendToSocket(socket, { type: "error", message: `Wait ${remaining}s before sending another message` });
+    return;
+  }
+
+  // Moderate message content
+  let messageText = data.text.trim();
+  if (messageText.length === 0) return;
+  if (messageText.length > 200) {
+    messageText = messageText.substring(0, 200);
+  }
+
+  // Check for banned words
+  let isModerated = false;
+  const lowerMessage = messageText.toLowerCase();
+  for (const bannedWord of tableState.chatBannedWords) {
+    if (lowerMessage.includes(bannedWord.toLowerCase())) {
+      isModerated = true;
+      // Replace banned word with asterisks
+      const regex = new RegExp(bannedWord, 'gi');
+      messageText = messageText.replace(regex, '*'.repeat(bannedWord.length));
+    }
+  }
+
+  // Add warning if message was moderated
+  if (isModerated) {
+    player.chatWarnings++;
+    if (player.chatWarnings >= 3) {
+      player.isChatMuted = true;
+      tableState.mutedPlayers.add(playerId);
+      sendToSocket(socket, { type: "chat_muted", reason: "Too many warnings" });
+    }
+  }
+
+  // Create chat message
+  const chatMessage: ChatMessage = {
+    id: crypto.randomUUID(),
+    playerId,
+    playerName: player.name || `Seat ${player.seatNumber}`,
+    message: messageText,
+    timestamp: now,
+    type: 'chat',
+    isModerated
+  };
+
+  // Store message (keep last 50 messages)
+  tableState.chatMessages.push(chatMessage);
+  if (tableState.chatMessages.length > 50) {
+    tableState.chatMessages.shift();
+  }
+
+  // Update cooldown
+  tableState.chatCooldowns.set(playerId, now);
+
+  // Broadcast to all players
   broadcastToTable(tableId, {
     type: "chat",
-    playerId,
-    text: data.text,
-    timestamp: Date.now()
+    ...chatMessage
+  });
+}
+
+// Handle bomb pot trigger
+async function handleBombPot(socket: WebSocket, message: WSMessage) {
+  const { tableId, playerId, data } = message;
+  
+  if (!tableId || !playerId) {
+    sendToSocket(socket, { type: "error", message: "tableId and playerId required" });
+    return;
+  }
+
+  const tableState = tableStates.get(tableId);
+  if (!tableState) {
+    sendToSocket(socket, { type: "error", message: "Table not found" });
+    return;
+  }
+
+  if (!tableState.bombPotEnabled) {
+    sendToSocket(socket, { type: "error", message: "Bomb pots are not enabled" });
+    return;
+  }
+
+  if (tableState.phase !== 'waiting') {
+    sendToSocket(socket, { type: "error", message: "Can only trigger bomb pot between hands" });
+    return;
+  }
+
+  tableState.bombPotNextHand = true;
+
+  console.log(`💣 BOMB POT triggered for table ${tableId} by player ${playerId}`);
+
+  // Broadcast bomb pot announcement
+  broadcastToTable(tableId, {
+    type: "bomb_pot_announced",
+    multiplier: tableState.bombPotMultiplier,
+    doubleBoard: tableState.bombPotDoubleBoard,
+    message: `💣 BOMB POT next hand! Everyone antes ${tableState.bombPotMultiplier}x BB!`
+  });
+
+  // Add system chat message
+  const systemMessage: ChatMessage = {
+    id: crypto.randomUUID(),
+    playerId: 'system',
+    playerName: 'Dealer',
+    message: `💣 BOMB POT next hand! ${tableState.bombPotMultiplier}x BB ante from all players!`,
+    timestamp: Date.now(),
+    type: 'dealer'
+  };
+  tableState.chatMessages.push(systemMessage);
+  broadcastToTable(tableId, { type: "chat", ...systemMessage });
+
+  sendToSocket(socket, { type: "bomb_pot_triggered" });
+}
+
+// Handle mute/unmute player
+async function handleMutePlayer(socket: WebSocket, message: WSMessage) {
+  const { tableId, playerId, data } = message;
+  
+  if (!tableId || !playerId || !data?.targetPlayerId) {
+    sendToSocket(socket, { type: "error", message: "Invalid mute request" });
+    return;
+  }
+
+  const tableState = tableStates.get(tableId);
+  if (!tableState) return;
+
+  // For now, any player can mute others for themselves (personal mute)
+  // Server-wide mute would require admin check
+  if (data.mute) {
+    tableState.mutedPlayers.add(data.targetPlayerId);
+    const targetPlayer = tableState.players.get(data.targetPlayerId);
+    if (targetPlayer) {
+      targetPlayer.isChatMuted = true;
+    }
+    
+    broadcastToTable(tableId, {
+      type: "player_muted",
+      playerId: data.targetPlayerId,
+      mutedBy: playerId
+    });
+  } else {
+    tableState.mutedPlayers.delete(data.targetPlayerId);
+    const targetPlayer = tableState.players.get(data.targetPlayerId);
+    if (targetPlayer) {
+      targetPlayer.isChatMuted = false;
+      targetPlayer.chatWarnings = 0;
+    }
+    
+    broadcastToTable(tableId, {
+      type: "player_unmuted",
+      playerId: data.targetPlayerId
+    });
+  }
+}
+
+// Handle chat settings update
+async function handleChatSettings(socket: WebSocket, message: WSMessage) {
+  const { tableId, playerId, data } = message;
+  
+  if (!tableId || !data) return;
+
+  const tableState = tableStates.get(tableId);
+  if (!tableState) return;
+
+  if (data.chatEnabled !== undefined) {
+    tableState.chatEnabled = data.chatEnabled;
+  }
+  if (data.slowMode !== undefined) {
+    tableState.chatSlowMode = data.slowMode;
+  }
+  if (data.slowModeInterval !== undefined) {
+    tableState.chatSlowModeInterval = Math.max(3, Math.min(60, data.slowModeInterval));
+  }
+  if (data.bannedWords !== undefined && Array.isArray(data.bannedWords)) {
+    tableState.chatBannedWords = data.bannedWords;
+  }
+
+  broadcastToTable(tableId, {
+    type: "chat_settings_changed",
+    chatEnabled: tableState.chatEnabled,
+    slowMode: tableState.chatSlowMode,
+    slowModeInterval: tableState.chatSlowModeInterval
   });
 }
 
@@ -1708,7 +2007,23 @@ function createInitialTableState(tableId: string): TableState {
     bigBlindAnteAmount: 0,
     mississippiStraddleEnabled: false, // Only UTG straddle by default
     pendingStraddles: new Map(),
-    maxStraddleCount: 3 // Allow up to 3 straddles (double straddle, etc.)
+    maxStraddleCount: 3, // Allow up to 3 straddles (double straddle, etc.)
+    // ===== BOMB POT =====
+    bombPotEnabled: true,
+    bombPotFrequency: 0, // Manual only by default
+    bombPotMultiplier: 2, // 2x BB ante
+    bombPotNextHand: false,
+    bombPotCurrentHand: false,
+    handsPlayedCount: 0,
+    bombPotDoubleBoard: false,
+    // ===== CHAT =====
+    chatEnabled: true,
+    chatMessages: [],
+    mutedPlayers: new Set(),
+    chatCooldowns: new Map(),
+    chatBannedWords: ['cheat', 'scam', 'hack', 'rigged'], // Default banned words
+    chatSlowMode: false,
+    chatSlowModeInterval: 5
   };
 }
 
