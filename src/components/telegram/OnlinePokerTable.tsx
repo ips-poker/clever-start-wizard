@@ -24,6 +24,8 @@ import { RabbitHuntPanel } from '@/components/poker/RabbitHuntPanel';
 import { SidePotsDisplay } from '@/components/poker/SidePotsDisplay';
 import { MemoizedPokerCard } from '@/components/poker/MemoizedPokerCard';
 import { MemoizedPlayerSeat } from '@/components/poker/MemoizedPlayerSeat';
+import { PPPokerTable } from '@/components/poker/PPPokerTable';
+import { PPPokerActionButtons } from '@/components/poker/PPPokerActionButtons';
 
 interface OnlinePokerTableProps {
   tableId: string;
@@ -443,26 +445,15 @@ export function OnlinePokerTable({
 
       {/* Poker Table Area */}
       <div className="flex-1 relative overflow-hidden">
-        {/* Felt Table - PPPoker style */}
-        <div 
-          className="absolute inset-4 rounded-[100px] overflow-hidden"
-          style={{
-            background: isBombPot 
-              ? 'radial-gradient(ellipse at center, #4a3728 0%, #2d1f14 70%, #1a1209 100%)' 
-              : 'radial-gradient(ellipse at center, #1a7f4d 0%, #0d5c33 50%, #083d22 100%)',
-            boxShadow: isBombPot
-              ? 'inset 0 0 80px rgba(0,0,0,0.5), 0 0 0 6px #4a3728, 0 0 0 10px #2d1f14, 0 8px 32px rgba(0,0,0,0.5)'
-              : 'inset 0 0 80px rgba(0,0,0,0.4), 0 0 0 6px #0d5c33, 0 0 0 10px #083d22, 0 8px 32px rgba(0,0,0,0.5)',
-          }}
-        >
-          {/* Table border decoration */}
-          <div 
-            className="absolute inset-2 rounded-[92px] pointer-events-none"
-            style={{
-              border: isBombPot ? '2px solid rgba(255, 165, 0, 0.3)' : '2px solid rgba(255,255,255,0.1)',
-            }}
-          />
-        </div>
+        {/* PPPoker-style felt table */}
+        <PPPokerTable
+          communityCards={tableState?.communityCards || []}
+          pot={tableState?.pot || 0}
+          phase={tableState?.phase || 'waiting'}
+          isBombPot={isBombPot}
+          winners={showdownResult?.winners}
+          nextHandCountdown={nextHandCountdown}
+        />
 
         {/* Game Status Overlay - Waiting/Starting */}
         {tableState?.phase === 'waiting' && (
@@ -527,60 +518,16 @@ export function OnlinePokerTable({
           </div>
         )}
 
-        {/* Pot Display */}
-        {(tableState?.pot || 0) > 0 && (
-          <div className="absolute top-[28%] left-1/2 -translate-x-1/2 z-10">
-            <motion.div 
-              initial={{ scale: 0 }} 
-              animate={{ scale: 1 }} 
-              className="flex items-center gap-1.5 px-4 py-1.5 bg-black/60 backdrop-blur-sm rounded-full border border-white/10"
-            >
-              {/* Chip stack visual */}
-              <div className="relative w-5 h-5">
-                <div className="absolute bottom-0 w-5 h-2 rounded-full bg-gradient-to-b from-red-400 to-red-600 border border-red-800" />
-                <div className="absolute bottom-1 w-5 h-2 rounded-full bg-gradient-to-b from-blue-400 to-blue-600 border border-blue-800" />
-                <div className="absolute bottom-2 w-5 h-2 rounded-full bg-gradient-to-b from-green-400 to-green-600 border border-green-800" />
-              </div>
-              <div className="text-center">
-                <p className="text-[9px] text-white/60 uppercase tracking-wide">Pot</p>
-                <p className="text-white font-bold text-sm">{tableState?.pot.toLocaleString()}</p>
-              </div>
-            </motion.div>
-            
-            {/* Side Pots */}
-            {tableState?.sidePots && (
-              <SidePotsDisplay sidePots={tableState.sidePots} className="mt-1" />
-            )}
+        {/* Side Pots - shown above table center */}
+        {tableState?.sidePots && (
+          <div className="absolute top-[20%] left-1/2 -translate-x-1/2 z-10">
+            <SidePotsDisplay sidePots={tableState.sidePots} />
           </div>
         )}
 
-        {/* Community Cards */}
-        <div className="absolute top-[42%] left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
-          <AnimatePresence mode="popLayout">
-            {(tableState?.communityCards || []).map((card, i) => (
-              <motion.div 
-                key={`${card}-${i}`} 
-                initial={{ y: -30, opacity: 0, rotateY: 180 }} 
-                animate={{ y: 0, opacity: 1, rotateY: 0 }} 
-                transition={{ delay: i * 0.12, type: 'spring', stiffness: 300 }}
-              >
-                <MemoizedPokerCard card={card} size="md" />
-              </motion.div>
-            ))}
-          </AnimatePresence>
-          {/* Placeholder cards when waiting */}
-          {(!tableState?.communityCards || tableState.communityCards.length === 0) && tableState?.phase === 'waiting' && (
-            <div className="flex gap-1.5 opacity-20">
-              {[1, 2, 3, 4, 5].map(i => (
-                <MemoizedPokerCard key={i} card="??" faceDown size="md" animate={false} />
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Blinds info */}
-        <div className="absolute top-[56%] left-1/2 -translate-x-1/2 z-10">
-          <div className="text-[10px] text-white/50 text-center">
+        {/* Blinds info - below community cards */}
+        <div className="absolute top-[58%] left-1/2 -translate-x-1/2 z-10">
+          <div className="text-[10px] text-white/40 text-center bg-black/30 px-3 py-0.5 rounded-full">
             Blinds: {tableState?.smallBlindAmount || 10}/{tableState?.bigBlindAmount || 20}
             {tableState?.anteAmount ? ` • Ante: ${tableState.anteAmount}` : ''}
           </div>
@@ -758,116 +705,64 @@ export function OnlinePokerTable({
         )}
       </div>
 
-      {/* Action Panel */}
-      <div className="bg-slate-900/95 border-t border-white/10 p-3 pb-safe z-20">
-        {error && <p className="text-red-400 text-xs mb-2 text-center">{error}</p>}
+      {/* Action Panel - PPPoker style */}
+      <div className="z-20">
+        {error && <p className="text-red-400 text-xs mb-2 text-center bg-black/50 py-1">{error}</p>}
         
         {!isConnected && !isConnecting ? (
-          <div className="flex items-center justify-center py-3 text-red-400">
+          <div className="flex items-center justify-center py-4 bg-black/90 text-red-400">
             <WifiOff className="h-4 w-4 mr-2" />
-            Reconnecting...
+            Переподключение...
           </div>
         ) : isConnecting ? (
-          <div className="flex items-center justify-center py-3 text-white/50">
+          <div className="flex items-center justify-center py-4 bg-black/90 text-white/50">
             <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-            Connecting...
+            Подключение...
           </div>
         ) : tableState?.phase === 'waiting' ? (
-          <div className="flex gap-2">
+          <div className="flex gap-2 p-3 bg-gradient-to-t from-black to-black/90">
             <Button
               onClick={startHand}
               disabled={players.length < 2}
-              className="flex-1 h-12 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-500 hover:to-green-400 text-white font-bold rounded-xl shadow-lg"
+              className="flex-1 h-14 bg-gradient-to-b from-green-500 to-green-600 hover:from-green-400 hover:to-green-500 text-white font-bold rounded-xl shadow-lg shadow-green-500/30 border-t border-green-400/50"
             >
               <Zap className="h-5 w-5 mr-2" />
               {players.length < 2 ? `Нужно 2+ игрока (${players.length}/2)` : 'Начать игру'}
             </Button>
-            <Button onClick={handleLeave} variant="outline" className="h-12 px-4 border-white/20 text-white rounded-xl">
+            <Button 
+              onClick={handleLeave} 
+              className="h-14 px-5 bg-gradient-to-b from-slate-600 to-slate-700 hover:from-slate-500 hover:to-slate-600 text-white rounded-xl border-t border-slate-500/50"
+            >
               <X className="h-5 w-5" />
             </Button>
           </div>
-        ) : isMyTurn ? (
-          <div className="space-y-2.5">
-            {/* Bet Slider */}
-            <div className="flex items-center gap-2 bg-white/5 rounded-xl p-2.5">
-              <Button 
-                size="sm" 
-                variant="ghost" 
-                onClick={() => setBetAmount(minRaise)} 
-                className="text-white/70 text-[10px] h-7 px-2"
-              >
-                Min
-              </Button>
-              <Button 
-                size="sm" 
-                variant="ghost" 
-                onClick={() => setBetAmount(Math.floor((tableState?.pot || 0) / 2))} 
-                className="text-white/70 text-[10px] h-7 px-2"
-              >
-                ½ Pot
-              </Button>
-              <Slider
-                value={[betAmount]}
-                min={minRaise}
-                max={myPlayer?.stack || 1000}
-                step={Math.max(1, Math.floor(minRaise / 10))}
-                onValueChange={([val]) => setBetAmount(val)}
-                className="flex-1"
-              />
-              <Button 
-                size="sm" 
-                variant="ghost" 
-                onClick={() => setBetAmount(tableState?.pot || minRaise)} 
-                className="text-white/70 text-[10px] h-7 px-2"
-              >
-                Pot
-              </Button>
-              <div className="min-w-[55px] text-right">
-                <span className="text-amber-400 font-bold text-sm">{betAmount.toLocaleString()}</span>
-              </div>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="grid grid-cols-4 gap-2">
-              <Button 
-                onClick={fold} 
-                className="h-11 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl"
-              >
-                Fold
-              </Button>
-              <Button 
-                onClick={canCheck ? check : call} 
-                className="h-11 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl"
-              >
-                {canCheck ? 'Check' : `Call ${callAmount}`}
-              </Button>
-              <Button 
-                onClick={() => raise(betAmount)} 
-                className="h-11 bg-green-600 hover:bg-green-500 text-white font-bold rounded-xl"
-              >
-                Raise
-              </Button>
-              <Button 
-                onClick={allIn} 
-                className="h-11 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-bold rounded-xl"
-              >
-                All-In
-              </Button>
-            </div>
-          </div>
         ) : tableState?.phase === 'showdown' ? (
-          <Button 
-            onClick={startHand} 
-            className="w-full h-12 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white font-bold rounded-xl shadow-lg"
-          >
-            <RotateCcw className="h-5 w-5 mr-2" />
-            Новая раздача
-          </Button>
-        ) : (
-          <div className="flex items-center justify-center py-3 text-white/50">
-            <Timer className="h-4 w-4 mr-2 animate-pulse" />
-            Ожидание хода: {players.find(p => p.seatNumber === tableState?.currentPlayerSeat)?.name || 'оппонент'}...
+          <div className="p-3 bg-gradient-to-t from-black to-black/90">
+            <Button 
+              onClick={startHand} 
+              className="w-full h-14 bg-gradient-to-b from-blue-500 to-blue-600 hover:from-blue-400 hover:to-blue-500 text-white font-bold rounded-xl shadow-lg shadow-blue-500/30 border-t border-blue-400/50"
+            >
+              <RotateCcw className="h-5 w-5 mr-2" />
+              Новая раздача {nextHandCountdown > 0 ? `(${nextHandCountdown}s)` : ''}
+            </Button>
           </div>
+        ) : (
+          <PPPokerActionButtons
+            isMyTurn={isMyTurn}
+            canCheck={canCheck}
+            callAmount={callAmount}
+            minRaise={minRaise}
+            maxRaise={myPlayer?.stack || 1000}
+            currentBet={tableState?.currentBet || 0}
+            pot={tableState?.pot || 0}
+            myStack={myPlayer?.stack || 0}
+            onFold={fold}
+            onCheck={check}
+            onCall={call}
+            onRaise={raise}
+            onAllIn={allIn}
+            disabled={!isConnected}
+          />
         )}
       </div>
     </div>
