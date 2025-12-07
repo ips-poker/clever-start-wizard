@@ -72,101 +72,62 @@ const SEAT_POSITIONS_6MAX = [
 // Import Syndikate logo
 import syndikateLogo from '@/assets/syndikate-logo-main.png';
 
-// Memoized table felt component - SYNDIKATE Brutal Industrial Style
+// Memoized table felt component - PPPoker Authentic Green Style
 const TableFelt = memo(function TableFelt() {
   return (
     <div className="absolute inset-0">
-      {/* Outer frame - brutal industrial metal */}
+      {/* Dark outer background - PPPoker dark gray/navy */}
       <div 
         className="absolute inset-0 rounded-[42%]"
         style={{
-          background: 'linear-gradient(180deg, #1a1a1a 0%, #0d0d0d 30%, #0a0a0a 50%, #0d0d0d 70%, #1a1a1a 100%)',
-          boxShadow: '0 30px 100px rgba(0,0,0,0.98), inset 0 0 60px rgba(0,0,0,0.8)'
+          background: 'linear-gradient(180deg, #1a1f2e 0%, #0d1117 50%, #1a1f2e 100%)',
+          boxShadow: '0 30px 100px rgba(0,0,0,0.9)'
         }}
       />
-      {/* Orange neon accent rail */}
+      
+      {/* Outer rail - dark with subtle purple tint like PPPoker */}
       <div 
-        className="absolute inset-[1%] rounded-[43%]"
+        className="absolute inset-[2%] rounded-[44%]"
         style={{
-          background: 'linear-gradient(180deg, #2d2d2d 0%, #1a1a1a 20%, #141414 50%, #1a1a1a 80%, #2d2d2d 100%)',
-          boxShadow: 'inset 0 0 20px rgba(255, 122, 0, 0.15), inset 0 2px 10px rgba(255,255,255,0.05)'
+          background: 'linear-gradient(180deg, #2d3548 0%, #1a1f2e 50%, #2d3548 100%)',
+          boxShadow: 'inset 0 0 30px rgba(0,0,0,0.5), 0 10px 40px rgba(0,0,0,0.6)'
         }}
       />
-      {/* Secondary rail - metal with rust tint */}
-      <div 
-        className="absolute inset-[2.5%] rounded-[44%]"
-        style={{
-          background: 'linear-gradient(180deg, #3d3029 0%, #2a2218 50%, #3d3029 100%)',
-          boxShadow: 'inset 0 3px 15px rgba(0,0,0,0.6)'
-        }}
-      />
-      {/* Neon orange glow line */}
-      <div 
-        className="absolute inset-[3.5%] rounded-[45%] pointer-events-none"
-        style={{
-          boxShadow: '0 0 25px rgba(255, 122, 0, 0.3), inset 0 0 20px rgba(255, 122, 0, 0.1)'
-        }}
-      />
-      {/* Main felt - Syndikate dark green with industrial tint */}
+      
+      {/* Table felt - rich PPPoker green */}
       <div 
         className="absolute inset-[4%] rounded-[46%]"
         style={{
-          background: 'radial-gradient(ellipse at 50% 40%, #1e4d30 0%, #163d25 30%, #0f2d1a 60%, #0a2012 100%)',
-          boxShadow: 'inset 0 0 100px rgba(0,0,0,0.6), inset 0 10px 50px rgba(255,255,255,0.02)'
+          background: 'radial-gradient(ellipse at 50% 40%, #2d8f4e 0%, #1f6b3a 30%, #156b2d 60%, #0f5522 100%)',
+          boxShadow: `
+            inset 0 0 60px rgba(0,0,0,0.4),
+            inset 0 -20px 60px rgba(0,0,0,0.3),
+            0 15px 50px rgba(0,0,0,0.7)
+          `
         }}
       >
-        {/* Industrial texture overlay */}
+        {/* Felt texture overlay */}
         <div 
           className="absolute inset-0 rounded-[46%] opacity-20"
           style={{
-            backgroundImage: `
-              repeating-linear-gradient(45deg, transparent, transparent 3px, rgba(0,0,0,0.1) 3px, rgba(0,0,0,0.1) 6px),
-              url("data:image/svg+xml,%3Csvg viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23f)'/%3E%3C/svg%3E")
-            `
+            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`
           }}
         />
         
-        {/* Decorative orange accent lines */}
+        {/* Inner decorative line */}
         <div 
-          className="absolute inset-[12%] rounded-[50%] pointer-events-none"
-          style={{ border: '1px solid rgba(255, 122, 0, 0.08)' }}
-        />
-        <div 
-          className="absolute inset-[22%] rounded-[50%] pointer-events-none"
-          style={{ border: '1px solid rgba(255, 122, 0, 0.05)' }}
+          className="absolute inset-[8%] rounded-[50%] border border-white/5 pointer-events-none"
         />
         
-        {/* Center Syndikate Logo */}
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none" style={{ top: '10%' }}>
-          <div className="relative w-32 h-32 opacity-15">
-            <img 
-              src={syndikateLogo} 
-              alt="" 
-              className="w-full h-full object-contain"
-              style={{ filter: 'brightness(0.8) sepia(0.3) hue-rotate(-10deg)' }}
-            />
-          </div>
-        </div>
-        
-        {/* SYNDIKATE text watermark */}
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none" style={{ top: '55%' }}>
-          <div 
-            className="text-xl font-display uppercase tracking-[0.5em] font-bold"
-            style={{ 
-              color: 'rgba(255, 122, 0, 0.06)',
-              textShadow: '0 0 30px rgba(255, 122, 0, 0.03)'
-            }}
-          >
-            SYNDIKATE
-          </div>
+        {/* Center Syndikate Logo watermark */}
+        <div className="absolute inset-[25%] rounded-[50%] flex items-center justify-center pointer-events-none opacity-10">
+          <img 
+            src={syndikateLogo} 
+            alt="" 
+            className="w-full h-full object-contain"
+          />
         </div>
       </div>
-      
-      {/* Corner accent bolts */}
-      <div className="absolute top-[8%] left-[15%] w-3 h-3 rounded-full bg-gradient-to-br from-zinc-400 to-zinc-700" style={{ boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.3), 0 2px 4px rgba(0,0,0,0.5)' }} />
-      <div className="absolute top-[8%] right-[15%] w-3 h-3 rounded-full bg-gradient-to-br from-zinc-400 to-zinc-700" style={{ boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.3), 0 2px 4px rgba(0,0,0,0.5)' }} />
-      <div className="absolute bottom-[8%] left-[15%] w-3 h-3 rounded-full bg-gradient-to-br from-zinc-400 to-zinc-700" style={{ boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.3), 0 2px 4px rgba(0,0,0,0.5)' }} />
-      <div className="absolute bottom-[8%] right-[15%] w-3 h-3 rounded-full bg-gradient-to-br from-zinc-400 to-zinc-700" style={{ boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.3), 0 2px 4px rgba(0,0,0,0.5)' }} />
     </div>
   );
 });
