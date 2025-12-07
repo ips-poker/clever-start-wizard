@@ -221,6 +221,9 @@ export function TelegramPokerLobby({
       if (error) throw error;
 
       toast.success(`Вы присоединились к столу ${table.name}!`);
+      
+      // Open the table after successful join
+      setActiveTableId(table.id);
       onJoinTable?.(table.id, table.min_buy_in);
     } catch (error: any) {
       console.error('Error joining table:', error);
@@ -301,6 +304,20 @@ export function TelegramPokerLobby({
   const filteredTournaments = tournaments.filter(t =>
     t.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  // Если открыт активный стол (после присоединения)
+  if (activeTableId) {
+    return (
+      <TelegramProPokerTable
+        playerId={playerId}
+        playerName={playerName}
+        playerAvatar={playerAvatar}
+        playerStack={playerBalance}
+        tableId={activeTableId}
+        onLeave={() => setActiveTableId(null)}
+      />
+    );
+  }
 
   // Если открыт демо-стол
   if (showDemoTable) {
