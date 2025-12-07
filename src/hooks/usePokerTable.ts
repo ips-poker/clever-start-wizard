@@ -52,6 +52,7 @@ export interface TableState {
   actionTimer?: number;
   timeRemaining?: number | null;
   lastRaiserSeat?: number | null;
+  runItTwiceEnabled?: boolean;
 }
 
 interface UsePokerTableOptions {
@@ -303,6 +304,15 @@ export function usePokerTable(options: UsePokerTableOptions | null) {
       case 'timeout_fold':
         // Player timed out and auto-folded
         console.log(`⏰ Player at seat ${data.seatNumber} timed out and folded`);
+        break;
+
+      case 'run_it_twice':
+        // All-in equity run - board dealt twice
+        console.log(`🎲 Run It Twice:`, data.runs);
+        setShowdownResult({
+          winners: data.combinedWinners || [],
+          pot: tableState?.pot || 0
+        });
         break;
 
       case 'error':
