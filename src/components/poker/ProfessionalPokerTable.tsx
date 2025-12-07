@@ -1,9 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { PokerPlayer, SidePotsDisplay as SidePotsData } from '@/hooks/usePokerTable';
 import { PokerCard, CardHand, CommunityCards } from './PokerCard';
 import { SidePotsDisplay } from './SidePotsDisplay';
+import { EquityDisplay, PlayerEquityBadge } from './EquityDisplay';
+import { useEquityCalculator } from '@/hooks/useEquityCalculator';
 import { Timer, Crown, Coins, User } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
@@ -67,6 +69,20 @@ export function ProfessionalPokerTable({
   const [actionTimer, setActionTimer] = useState(serverActionTimer);
   const [isTimerRunning, setIsTimerRunning] = useState(false);
 
+  // Equity calculator hook
+  const { 
+    equityResult, 
+    isAllIn, 
+    shouldShowEquity, 
+    getPlayerEquity 
+  } = useEquityCalculator({
+    players: tableState?.players || [],
+    communityCards: tableState?.communityCards || [],
+    phase: tableState?.phase || 'waiting',
+    enabled: true,
+    autoCalculate: true
+  });
+
   // Sync with server time remaining
   useEffect(() => {
     if (serverTimeRemaining !== null && serverTimeRemaining !== undefined) {
@@ -115,7 +131,16 @@ export function ProfessionalPokerTable({
         
         {/* Center area with pot and community cards */}
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
-          {/* Pot display */}
+          {/* Equity display */}
+          {shouldShowEquity && tableState && (
+            <EquityDisplay
+              players={tableState.players}
+              communityCards={tableState.communityCards}
+              phase={tableState.phase}
+              showAlways={false}
+            />
+          )}
+
           {/* Pot display with side pots */}
           {tableState && tableState.pot > 0 && (
             <SidePotsDisplay sidePots={tableState.sidePots} />
@@ -156,6 +181,7 @@ export function ProfessionalPokerTable({
         const isCurrentPlayer = tableState?.currentPlayerSeat === seatNumber;
         const isMe = player?.oderId === playerId;
         const betPos = getBetPosition(index);
+        const playerEquity = player ? getPlayerEquity(player.oderId) : null;
 
         return (
           <React.Fragment key={seatNumber}>
@@ -323,6 +349,11 @@ export function ProfessionalPokerTable({
                     >
                       <CardHand cards={myCards} size="md" overlap />
                     </motion.div>
+                  )}
+
+                  {/* Equity badge for all-in players */}
+                  {isAllIn && player.isAllIn && playerEquity !== null && (
+                    <PlayerEquityBadge equity={playerEquity} isAllIn={true} />
                   )}
                 </div>
               ) : (
