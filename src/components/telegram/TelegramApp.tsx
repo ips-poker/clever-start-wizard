@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Trophy, Calendar, Users, Star, MessageSquare, User, Home, TrendingUp, Clock, MapPin, Coins, ChevronRight, Award, Target, CheckCircle, UserPlus, Loader2, Crown, Gem, Zap, Shield, Play, Pause, CircleDot, ArrowLeft, Heart, Globe, Camera, ChevronLeft, Download, X, Bell } from 'lucide-react';
+import { Trophy, Calendar, Users, Star, MessageSquare, User, Home, TrendingUp, Clock, MapPin, Coins, ChevronRight, Award, Target, CheckCircle, UserPlus, Loader2, Crown, Gem, Zap, Shield, Play, Pause, CircleDot, ArrowLeft, Heart, Globe, Camera, ChevronLeft, Download, X, Bell, Spade } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { TelegramAuth } from './TelegramAuth';
 import { TelegramTournamentModal } from './TelegramTournamentModal';
@@ -35,6 +35,7 @@ import { useClanRealtimeNotifications } from '@/hooks/useClanRealtimeNotificatio
 import { useClanSystem } from '@/hooks/useClanSystem';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { CLAN_EMBLEMS } from '@/utils/clanEmblems';
+import { TelegramPokerDemo } from './TelegramPokerDemo';
 
 interface Tournament {
   id: string;
@@ -1703,6 +1704,12 @@ export const TelegramApp = () => {
         />
       )}
 
+      {activeTab === 'poker' && (
+        <div className="pb-28 pt-20 min-h-screen relative z-10">
+          <TelegramPokerDemo />
+        </div>
+      )}
+
       {activeTab === 'qa' && (
         <div className="space-y-6 pb-28 px-4 pt-24 bg-transparent min-h-screen relative z-10">
           {/* Industrial header with glitch effect */}
@@ -2085,6 +2092,7 @@ export const TelegramApp = () => {
           {[
             { value: 'home', icon: Home, title: 'Главная' },
             { value: 'tournaments', icon: Trophy, title: 'Турниры' },
+            { value: 'poker', icon: Spade, title: 'Покер' },
             { value: 'rating', icon: Crown, title: 'Рейтинг' },
             { value: 'profile', icon: User, title: 'Профиль' },
           ].map((item) => {
