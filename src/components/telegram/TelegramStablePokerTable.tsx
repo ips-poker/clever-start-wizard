@@ -659,7 +659,19 @@ function TelegramStablePokerTableInner({
     setMyHandEvaluation(null);
   }, [players, playerId, sounds, triggerPhaseTransition]);
 
-  // Handle player action
+  // Auto-start game in demo mode when players are loaded
+  const hasAutoStarted = useRef(false);
+  useEffect(() => {
+    if (!tableId && players.length >= 2 && gamePhase === 'waiting' && !hasAutoStarted.current) {
+      hasAutoStarted.current = true;
+      // Small delay to let UI render first
+      const timer = setTimeout(() => {
+        startNewHand();
+      }, 800);
+      return () => clearTimeout(timer);
+    }
+  }, [players.length, gamePhase, tableId, startNewHand]);
+
   const handleAction = useCallback((action: ActionType, amount?: number) => {
     if (timerRef.current) {
       clearInterval(timerRef.current);
