@@ -197,13 +197,23 @@ export function usePokerTable(options: UsePokerTableOptions | null) {
         // Immediately reload state to get the new hand
         setTimeout(() => {
           loadPlayersFromDBRef.current?.();
-        }, 500);
+        }, 300);
         // Reset flag for next hand after delay
         setTimeout(() => {
           autoStartAttemptedRef.current = false;
-        }, 5000);
+        }, 4000);
       } else if (data?.error === 'Need at least 2 players') {
         console.log('⏸️ Waiting for more players...');
+        // Update UI to show waiting state
+        setTableState(prev => prev ? {
+          ...prev,
+          gameStartingCountdown: 0,
+          playersNeeded: 2
+        } : null);
+        autoStartAttemptedRef.current = false;
+      } else if (data?.error === 'Hand already in progress') {
+        console.log('🎴 Hand already running, reloading state...');
+        loadPlayersFromDBRef.current?.();
         autoStartAttemptedRef.current = false;
       } else {
         console.log('ℹ️ Start hand result:', data);

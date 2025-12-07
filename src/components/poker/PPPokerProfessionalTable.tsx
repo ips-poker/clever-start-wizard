@@ -675,7 +675,7 @@ const PPPokerActionPanel = memo(function PPPokerActionPanel({
   );
 });
 
-// ============= WINNER OVERLAY =============
+// ============= WINNER OVERLAY - Syndikate Style =============
 const WinnerOverlay = memo(function WinnerOverlay({
   winners,
   onClose
@@ -683,9 +683,26 @@ const WinnerOverlay = memo(function WinnerOverlay({
   winners: Array<{ name?: string; amount: number; handRank?: string }>;
   onClose: () => void;
 }) {
+  const [countdown, setCountdown] = useState(3);
+
   useEffect(() => {
-    const timer = setTimeout(onClose, 4000);
-    return () => clearTimeout(timer);
+    // Countdown for next hand
+    const interval = setInterval(() => {
+      setCountdown(prev => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    // Auto-close after 3 seconds
+    const timer = setTimeout(onClose, 3000);
+    return () => {
+      clearInterval(interval);
+      clearTimeout(timer);
+    };
   }, [onClose]);
 
   if (!winners.length) return null;
@@ -695,26 +712,54 @@ const WinnerOverlay = memo(function WinnerOverlay({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="absolute inset-0 z-30 flex items-center justify-center bg-black/40"
+      className="absolute inset-0 z-30 flex items-center justify-center bg-black/60"
     >
       <motion.div
         initial={{ scale: 0, rotate: -10 }}
         animate={{ scale: 1, rotate: 0 }}
-        className="bg-gradient-to-br from-amber-500 via-yellow-400 to-amber-600 
-                   rounded-2xl p-6 shadow-2xl text-center"
+        className="rounded-xl p-6 shadow-2xl text-center"
+        style={{
+          background: 'linear-gradient(180deg, rgba(20,20,20,0.98) 0%, rgba(10,10,10,0.99) 100%)',
+          border: '2px solid rgba(255, 122, 0, 0.6)',
+          boxShadow: '0 0 40px rgba(255, 122, 0, 0.3), 0 20px 60px rgba(0,0,0,0.8)'
+        }}
       >
-        <div className="text-3xl mb-2">🏆</div>
-        <div className="text-gray-900 font-bold text-lg">
-          {winners[0].name || 'Победитель'}
+        <div 
+          className="text-4xl mb-3 font-black"
+          style={{ color: '#FF7A00', textShadow: '0 0 20px rgba(255,122,0,0.5)' }}
+        >
+          🏆 ПОБЕДА
         </div>
-        <div className="text-gray-800 text-xl font-bold">
+        <div className="text-white font-bold text-lg mb-1">
+          {winners[0].name || 'Игрок'}
+        </div>
+        <div 
+          className="text-2xl font-black mb-2"
+          style={{ color: '#FF7A00' }}
+        >
           +{winners[0].amount.toLocaleString()}
         </div>
         {winners[0].handRank && (
-          <div className="text-gray-700 text-sm mt-1">
+          <div className="text-white/70 text-sm mb-3 uppercase tracking-wider">
             {winners[0].handRank}
           </div>
         )}
+        
+        {/* Next hand countdown */}
+        <div className="mt-4 pt-3 border-t border-white/10">
+          <div className="text-white/50 text-xs uppercase tracking-wider">
+            Следующая раздача через
+          </div>
+          <motion.div 
+            key={countdown}
+            initial={{ scale: 1.3, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="text-2xl font-bold mt-1"
+            style={{ color: '#FF7A00' }}
+          >
+            {countdown}
+          </motion.div>
+        </div>
       </motion.div>
     </motion.div>
   );
