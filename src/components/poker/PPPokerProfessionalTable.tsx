@@ -15,6 +15,14 @@ import { usePokerSounds } from '@/hooks/usePokerSounds';
 import { PokerErrorBoundary } from './PokerErrorBoundary';
 import { ConnectionStatusBanner } from './ConnectionStatusBanner';
 
+// Stable optimized components - Syndikate style
+import { StablePokerCard } from './stable/StablePokerCard';
+import { StableChipStack } from './stable/StableChipStack';
+import { StableActionPanel } from './stable/StableActionPanel';
+
+// Syndikate branding
+import syndikateLogo from '@/assets/syndikate-logo-main.png';
+
 // PPPoker-style seat positions (6-max optimized for mobile)
 const SEAT_POSITIONS_6MAX = [
   { x: 50, y: 88, angle: 0 },     // Seat 1 (bottom center - hero)
@@ -38,8 +46,8 @@ const SEAT_POSITIONS_9MAX = [
   { x: 85, y: 78 },    // 9
 ];
 
-// ============= PPPOKER STYLE CARD COMPONENT =============
-const PPCard = memo(function PPCard({
+// ============= SYNDIKATE CARD - uses stable component =============
+const SyndikatePPCard = memo(function SyndikatePPCard({
   card,
   faceDown = false,
   size = 'md',
@@ -52,80 +60,17 @@ const PPCard = memo(function PPCard({
   delay?: number;
   isWinning?: boolean;
 }) {
-  const sizeClasses = {
-    xs: 'w-6 h-9 text-[8px]',
-    sm: 'w-8 h-11 text-[10px]',
-    md: 'w-11 h-16 text-sm',
-    lg: 'w-14 h-20 text-base'
-  };
-
-  const getSuitSymbol = (suit: string) => {
-    const suits: Record<string, string> = { 
-      h: '♥', d: '♦', c: '♣', s: '♠',
-      H: '♥', D: '♦', C: '♣', S: '♠'
-    };
-    return suits[suit] || suit;
-  };
-
-  const getSuitColor = (suit: string) => {
-    return ['h', 'd', 'H', 'D'].includes(suit) ? 'text-red-500' : 'text-gray-900';
-  };
-
-  if (faceDown) {
-    return (
-      <motion.div
-        initial={{ opacity: 0, y: -30, rotateY: 180 }}
-        animate={{ opacity: 1, y: 0, rotateY: 0 }}
-        transition={{ duration: 0.3, delay: delay * 0.1 }}
-        className={cn(
-          sizeClasses[size],
-          "rounded-md bg-gradient-to-br from-blue-800 via-blue-900 to-blue-950",
-          "border border-blue-600 shadow-lg",
-          "flex items-center justify-center"
-        )}
-        style={{
-          backgroundImage: `repeating-linear-gradient(
-            45deg,
-            transparent,
-            transparent 3px,
-            rgba(255,255,255,0.03) 3px,
-            rgba(255,255,255,0.03) 6px
-          )`
-        }}
-      >
-        <div className="w-3/5 h-3/5 rounded border border-blue-400/30" />
-      </motion.div>
-    );
-  }
-
-  const rank = card.slice(0, -1);
-  const suit = card.slice(-1);
-
+  const sizeMap = { xs: 'xs', sm: 'sm', md: 'md', lg: 'lg' } as const;
   return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.5, y: -20 }}
-      animate={{ 
-        opacity: 1, 
-        scale: isWinning ? 1.05 : 1, 
-        y: 0,
-        boxShadow: isWinning ? '0 0 20px rgba(255,215,0,0.6)' : '0 4px 12px rgba(0,0,0,0.4)'
-      }}
-      transition={{ duration: 0.25, delay: delay * 0.08 }}
-      className={cn(
-        sizeClasses[size],
-        "rounded-md bg-white shadow-xl",
-        "border border-gray-200",
-        "flex flex-col items-center justify-center font-bold",
-        getSuitColor(suit),
-        isWinning && "ring-2 ring-yellow-400"
-      )}
-    >
-      <span className="leading-none">{rank}</span>
-      <span className="leading-none text-lg">{getSuitSymbol(suit)}</span>
-    </motion.div>
+    <StablePokerCard 
+      card={card} 
+      faceDown={faceDown} 
+      size={sizeMap[size]} 
+      dealDelay={delay}
+      isWinning={isWinning}
+    />
   );
 });
-
 // ============= CHIP DISPLAY =============
 const ChipDisplay = memo(function ChipDisplay({ 
   amount, 
@@ -315,7 +260,7 @@ const PlayerSeat = memo(function PlayerSeat({
           isHero ? "-top-14 left-1/2 -translate-x-1/2" : "-top-10 left-1/2 -translate-x-1/2"
         )}>
           {player.holeCards.map((card, idx) => (
-            <PPCard
+            <SyndikatePPCard
               key={`${card}-${idx}`}
               card={card}
               faceDown={!showCards && !isHero}
@@ -448,39 +393,66 @@ const PlayerSeat = memo(function PlayerSeat({
   );
 });
 
-// ============= PPPOKER TABLE FELT =============
-const PPPokerTableFelt = memo(function PPPokerTableFelt() {
+// ============= SYNDIKATE TABLE FELT =============
+const SyndikatetTableFelt = memo(function SyndikatetTableFelt() {
   return (
     <div className="absolute inset-0 overflow-hidden rounded-2xl">
-      {/* Dark background */}
-      <div className="absolute inset-0 bg-gray-900" />
+      {/* Dark industrial background */}
+      <div 
+        className="absolute inset-0"
+        style={{
+          background: 'linear-gradient(180deg, #0a0a0a 0%, #1a1a1a 50%, #0a0a0a 100%)'
+        }}
+      />
       
-      {/* Table oval */}
+      {/* Table oval - dark industrial felt */}
       <div 
         className="absolute inset-[5%] rounded-[50%]"
         style={{
-          background: 'linear-gradient(180deg, #1a4a30 0%, #0d2818 50%, #1a4a30 100%)',
+          background: 'linear-gradient(180deg, #1a2a20 0%, #0d1810 50%, #1a2a20 100%)',
           boxShadow: `
-            inset 0 0 80px rgba(0,0,0,0.5),
-            inset 0 2px 10px rgba(255,255,255,0.05),
-            0 20px 60px rgba(0,0,0,0.8)
+            inset 0 0 80px rgba(0,0,0,0.7),
+            inset 0 0 30px rgba(255, 122, 0, 0.05),
+            0 20px 60px rgba(0,0,0,0.9)
           `
         }}
       >
-        {/* Felt texture */}
+        {/* Industrial noise texture */}
         <div 
-          className="absolute inset-0 rounded-[50%] opacity-40"
+          className="absolute inset-0 rounded-[50%] opacity-30"
           style={{
             backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`
           }}
         />
         
-        {/* Rail highlight */}
-        <div className="absolute inset-0 rounded-[50%] border-4 border-amber-900/30" />
+        {/* Orange neon rail */}
+        <div 
+          className="absolute inset-0 rounded-[50%] border-2"
+          style={{ 
+            borderColor: 'rgba(255, 122, 0, 0.3)',
+            boxShadow: '0 0 20px rgba(255, 122, 0, 0.1)'
+          }}
+        />
         
-        {/* Center decorative rings */}
-        <div className="absolute inset-[20%] rounded-[50%] border border-white/5" />
-        <div className="absolute inset-[30%] rounded-[50%] border border-white/3" />
+        {/* Center logo area */}
+        <div className="absolute inset-[35%] rounded-[50%] flex items-center justify-center opacity-20">
+          <img src={syndikateLogo} alt="" className="w-full h-auto" />
+        </div>
+        
+        {/* Corner bolts */}
+        {[0, 90, 180, 270].map(angle => (
+          <div 
+            key={angle}
+            className="absolute w-3 h-3 rounded-full bg-zinc-700 border border-zinc-600"
+            style={{
+              top: '15%',
+              left: '50%',
+              transform: `rotate(${angle}deg) translateY(-120px) translateX(-50%)`
+            }}
+          >
+            <div className="absolute inset-1 rounded-full bg-zinc-800" />
+          </div>
+        ))}
       </div>
     </div>
   );
@@ -513,7 +485,7 @@ const CommunityCards = memo(function CommunityCards({
         return (
           <div key={idx} className="relative">
             {isVisible && card ? (
-              <PPCard card={card} size="md" delay={idx} />
+              <SyndikatePPCard card={card} size="md" delay={idx} />
             ) : (
               <div 
                 className="w-11 h-16 rounded-md border border-white/10 bg-black/20"
@@ -527,41 +499,33 @@ const CommunityCards = memo(function CommunityCards({
   );
 });
 
-// ============= POT DISPLAY =============
-const PotDisplay = memo(function PotDisplay({ pot }: { pot: number }) {
+// ============= SYNDIKATE POT DISPLAY =============
+const SyndikatePotDisplay = memo(function SyndikatePotDisplay({ pot }: { pot: number }) {
   if (pot <= 0) return null;
-
-  const formatAmount = (n: number) => {
-    if (n >= 1000000) return `${(n / 1000000).toFixed(1)}M`;
-    if (n >= 1000) return `${(n / 1000).toFixed(0)}K`;
-    return n.toLocaleString();
-  };
 
   return (
     <motion.div
       initial={{ scale: 0 }}
       animate={{ scale: 1 }}
-      className="flex flex-col items-center gap-1"
+      className="flex flex-col items-center gap-2"
     >
-      {/* Chip stack visual */}
-      <div className="relative w-10 h-6">
-        {[0, 1, 2].map((i) => (
-          <div
-            key={i}
-            className="absolute w-6 h-6 rounded-full border-2 border-amber-400 bg-gradient-to-br from-amber-500 to-amber-700"
-            style={{
-              left: `${i * 6}px`,
-              top: `${-i * 2}px`,
-              boxShadow: '0 2px 4px rgba(0,0,0,0.4)'
-            }}
-          />
-        ))}
-      </div>
+      {/* Use StableChipStack for visual */}
+      <StableChipStack amount={pot} size="md" />
       
-      {/* Pot amount */}
-      <div className="px-3 py-1 bg-black/60 rounded-full">
-        <span className="text-amber-400 font-bold text-sm">
-          Pot: {formatAmount(pot)}
+      {/* Syndikate-style pot label */}
+      <div 
+        className="px-4 py-1.5 rounded-sm"
+        style={{
+          background: 'linear-gradient(180deg, rgba(0,0,0,0.8) 0%, rgba(26,26,26,0.9) 100%)',
+          border: '1px solid rgba(255, 122, 0, 0.3)',
+          boxShadow: '0 0 15px rgba(255, 122, 0, 0.15)'
+        }}
+      >
+        <span 
+          className="font-bold text-sm"
+          style={{ color: '#FF7A00' }}
+        >
+          POT: {pot.toLocaleString()}
         </span>
       </div>
     </motion.div>
@@ -984,12 +948,12 @@ export function PPPokerProfessionalTable({
 
         {/* Table area */}
         <div className="relative w-full aspect-[4/3] max-h-[65vh]">
-          <PPPokerTableFelt />
+          <SyndikatetTableFelt />
 
           {/* Pot */}
           {tableState && (
             <div className="absolute left-1/2 top-[30%] -translate-x-1/2 -translate-y-1/2 z-10">
-              <PotDisplay pot={tableState.pot} />
+              <SyndikatePotDisplay pot={tableState.pot} />
             </div>
           )}
 
@@ -1053,28 +1017,33 @@ export function PPPokerProfessionalTable({
           )}
         </div>
 
-        {/* Start hand button */}
+        {/* Start hand button - Syndikate style */}
         {tableState?.phase === 'waiting' && !tableState.playersNeeded && (
           <div className="flex justify-center px-4 py-4">
             <Button 
               onClick={startHand} 
-              className="gap-2 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600"
+              className="gap-2 font-bold uppercase tracking-wide"
+              style={{
+                background: 'linear-gradient(180deg, #FF7A00 0%, #cc6200 100%)',
+                boxShadow: '0 0 20px rgba(255, 122, 0, 0.4), inset 0 1px 0 rgba(255,255,255,0.2)',
+                border: '1px solid rgba(255, 122, 0, 0.5)'
+              }}
             >
               Начать раздачу
             </Button>
           </div>
         )}
 
-        {/* Action panel */}
+        {/* Syndikate Action panel */}
         <AnimatePresence>
           {isMyTurn && tableState && tableState.phase !== 'waiting' && myPlayer && (
-            <PPPokerActionPanel
+            <StableActionPanel
               isVisible={true}
               canCheck={canCheck}
               callAmount={callAmount}
               minRaise={tableState.minRaise || tableState.bigBlindAmount || 40}
               maxBet={myPlayer.stack}
-              pot={tableState.pot}
+              currentPot={tableState.pot}
               onAction={handleAction}
             />
           )}
