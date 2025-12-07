@@ -629,7 +629,7 @@ export function TelegramMobilePokerTable({
 
     // Deal cards
     const dealtResult = dealToPlayers(deckRef.current, resetPlayers.length, 2);
-    const dealtCards = dealtResult.hands;
+    const dealtCards = dealtResult.playerHands;
     const playersWithCards = resetPlayers.map((p, i) => ({
       ...p,
       cards: dealtCards[i].map(cardToString),
@@ -797,7 +797,8 @@ export function TelegramMobilePokerTable({
   const advancePhase = useCallback((currentPlayers: Player[]) => {
     const burnAndDeal = (count: number) => {
       deckRef.current.shift(); // Burn
-      return dealCards(deckRef.current, count).map(cardToString);
+      const dealt = dealCards(deckRef.current, count);
+      return dealt.dealtCards.map(cardToString);
     };
 
     // Reset bets for new round
