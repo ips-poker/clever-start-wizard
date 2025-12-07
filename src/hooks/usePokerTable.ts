@@ -339,24 +339,42 @@ export function usePokerTable(options: UsePokerTableOptions | null) {
       const newPhase = phase;
       const playersCount = activePlayers.length;
 
-      setTableState(prev => ({
-        ...(prev || {}),
-        tableId,
-        phase: newPhase,
-        pot,
-        currentBet,
-        currentPlayerSeat,
-        communityCards,
-        dealerSeat,
-        smallBlindSeat,
-        bigBlindSeat,
-        players,
-        smallBlindAmount: tableData.small_blind,
-        bigBlindAmount: tableData.big_blind,
-        minRaise: currentBet > 0 ? currentBet : tableData.big_blind,
-        actionTimer: 30,
-        playersNeeded: playersCount < 2 ? 2 - playersCount : 0
-      }));
+      // Only update state if data actually changed (prevents unnecessary re-renders)
+      setTableState(prev => {
+        const newState = {
+          ...(prev || {}),
+          tableId,
+          phase: newPhase,
+          pot,
+          currentBet,
+          currentPlayerSeat,
+          communityCards,
+          dealerSeat,
+          smallBlindSeat,
+          bigBlindSeat,
+          players,
+          smallBlindAmount: tableData.small_blind,
+          bigBlindAmount: tableData.big_blind,
+          minRaise: currentBet > 0 ? currentBet : tableData.big_blind,
+          actionTimer: 30,
+          playersNeeded: playersCount < 2 ? 2 - playersCount : 0
+        };
+        
+        // Deep compare key fields to avoid unnecessary updates
+        if (prev && 
+            prev.phase === newState.phase &&
+            prev.pot === newState.pot &&
+            prev.currentBet === newState.currentBet &&
+            prev.currentPlayerSeat === newState.currentPlayerSeat &&
+            JSON.stringify(prev.communityCards) === JSON.stringify(newState.communityCards) &&
+            prev.players.length === newState.players.length &&
+            JSON.stringify(prev.players.map(p => ({ id: p.oderId, stack: p.stack, bet: p.betAmount, folded: p.isFolded }))) === 
+            JSON.stringify(newState.players.map(p => ({ id: p.oderId, stack: p.stack, bet: p.betAmount, folded: p.isFolded })))) {
+          return prev; // No change, don't trigger re-render
+        }
+        
+        return newState;
+      });
 
       console.log('📊 Loaded', players.length, 'players from DB for table', tableId, 
         'phase:', newPhase, 'currentPlayerSeat:', currentPlayerSeat, 'mySeat:', mySeat,
@@ -410,19 +428,26 @@ export function usePokerTable(options: UsePokerTableOptions | null) {
     }
   }, []);
 
-  // Debounced load - prevents rapid reloads
+  // Debounced load - prevents rapid reloads (increased to 1500ms for stability)
   const debouncedLoadPlayers = useCallback(() => {
     const now = Date.now();
-    // Minimum 500ms between loads
-    if (now - lastLoadTimeRef.current < 500) {
-      // Already loading or just loaded, debounce
-      if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current);
-      }
+    const MIN_INTERVAL = 1500; // Increased from 500ms to reduce flickering
+    
+    // Clear any pending debounce
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+      debounceTimerRef.current = null;
+    }
+    
+    const timeSinceLastLoad = now - lastLoadTimeRef.current;
+    
+    if (timeSinceLastLoad < MIN_INTERVAL) {
+      // Schedule load after remaining time
+      const delay = MIN_INTERVAL - timeSinceLastLoad;
       debounceTimerRef.current = setTimeout(() => {
         lastLoadTimeRef.current = Date.now();
         loadPlayersFromDB();
-      }, 500);
+      }, delay);
       return;
     }
     
