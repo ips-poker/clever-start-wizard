@@ -176,12 +176,14 @@ export default function OnlinePoker() {
             </Card>
           </div>
         ) : activeTable ? (
-          // Active poker table
+          // Active poker table or tournament
           <div className="max-w-4xl mx-auto">
             <OnlinePokerTable
               tableId={activeTable.id}
               playerId={playerId}
               buyIn={activeTable.buyIn}
+              isTournament={activeTable.isTournament}
+              tournamentId={activeTable.isTournament ? activeTable.id : undefined}
               onLeave={handleLeaveTable}
             />
           </div>

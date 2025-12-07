@@ -12,6 +12,8 @@ import { HandHistory } from './HandHistory';
 import { WinnerDisplay } from './WinnerDisplay';
 import { SpectatorBadge } from './SpectatorBadge';
 import { MobilePokerControls } from './MobilePokerControls';
+import { TournamentTimer } from './TournamentTimer';
+import { TournamentTableHeader } from './TournamentTableHeader';
 import { MobilePokerTable } from './MobilePokerTable';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { 
@@ -37,10 +39,20 @@ interface OnlinePokerTableProps {
   playerId: string;
   buyIn: number;
   isSpectator?: boolean;
+  isTournament?: boolean;
+  tournamentId?: string;
   onLeave: () => void;
 }
 
-export function OnlinePokerTable({ tableId, playerId, buyIn, isSpectator = false, onLeave }: OnlinePokerTableProps) {
+export function OnlinePokerTable({ 
+  tableId, 
+  playerId, 
+  buyIn, 
+  isSpectator = false, 
+  isTournament = false,
+  tournamentId,
+  onLeave 
+}: OnlinePokerTableProps) {
   const isMobile = useIsMobile();
   const pokerTable = usePokerTable({ tableId, playerId, buyIn });
   const sounds = usePokerSounds();
@@ -440,6 +452,11 @@ export function OnlinePokerTable({ tableId, playerId, buyIn, isSpectator = false
   // Desktop view
   return (
     <div className="space-y-4">
+      {/* Tournament Header */}
+      {isTournament && tournamentId && (
+        <TournamentTableHeader tournamentId={tournamentId} />
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -483,6 +500,21 @@ export function OnlinePokerTable({ tableId, playerId, buyIn, isSpectator = false
           </Button>
         </div>
       </div>
+
+      {/* Tournament Timer */}
+      {isTournament && tournamentId && (
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+          <div className="lg:col-span-3">
+            {/* Table will be rendered below */}
+          </div>
+          <div className="lg:col-span-1">
+            <TournamentTimer 
+              tournamentId={tournamentId}
+              isAdmin={false}
+            />
+          </div>
+        </div>
+      )}
 
       {/* Spectator notice */}
       {isSpectator && (
