@@ -5,7 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Slider } from '@/components/ui/slider';
 import { 
   ArrowLeft, Volume2, VolumeX, Settings, MessageSquare,
-  Coins, Timer, Users, Crown, Zap, X, RotateCcw,
+  Timer, Users, Crown, Zap, X, RotateCcw,
   Eye, EyeOff, Maximize2, Gift, Smile, TrendingUp
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
@@ -25,6 +25,8 @@ import {
   getSuitColor
 } from '@/utils/pokerEngine';
 import { cn } from '@/lib/utils';
+import { PotDisplay } from '@/components/poker/AnimatedChips';
+import { CommunityCards } from '@/components/poker/PokerCard';
 
 interface TelegramProPokerTableProps {
   tableId?: string;
@@ -687,36 +689,17 @@ export function TelegramProPokerTable({
             />
           </div>
 
-          {/* Pot display */}
-          <div className="absolute top-[35%] left-1/2 -translate-x-1/2 z-10">
-            {pot > 0 && (
-              <motion.div
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                className="flex flex-col items-center"
-              >
-                <div className="flex items-center gap-1.5 px-4 py-1.5 bg-black/60 rounded-full backdrop-blur-sm border border-white/10">
-                  <Coins className="h-4 w-4 text-yellow-400" />
-                  <span className="text-white font-bold text-sm">{pot.toLocaleString()}</span>
-                </div>
-              </motion.div>
-            )}
+          {/* Pot display - using AnimatedChips PotDisplay */}
+          <div className="absolute top-[32%] left-1/2 -translate-x-1/2 z-10">
+            <PotDisplay mainPot={pot} sidePots={sidePots} />
           </div>
 
-          {/* Community Cards */}
-          <div className="absolute top-[45%] left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
-            <AnimatePresence mode="popLayout">
-              {communityCards.map((card, i) => (
-                <motion.div
-                  key={card.id}
-                  initial={{ y: -30, opacity: 0, rotateY: 180 }}
-                  animate={{ y: 0, opacity: 1, rotateY: 0 }}
-                  transition={{ delay: i * 0.15, type: 'spring', stiffness: 300 }}
-                >
-                  {renderCard(card, false, 'md')}
-                </motion.div>
-              ))}
-            </AnimatePresence>
+          {/* Community Cards - using PokerCard CommunityCards */}
+          <div className="absolute top-[45%] left-1/2 -translate-x-1/2 z-10">
+            <CommunityCards 
+              cards={communityCards.map(c => `${RANK_NAMES[c.rank]}${c.suit.charAt(0)}`)} 
+              phase={gamePhase === 'waiting' ? 'preflop' : gamePhase}
+            />
           </div>
 
           {/* Player Seats */}
