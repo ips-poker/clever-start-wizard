@@ -2,22 +2,23 @@ import React, { memo, useRef, useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
-// Suit configuration - stable reference
+// Suit configuration - PPPoker authentic colors
 const SUITS = {
-  h: { symbol: '♥', color: '#ef4444', name: 'hearts' },
-  d: { symbol: '♦', color: '#3b82f6', name: 'diamonds' },
-  c: { symbol: '♣', color: '#22c55e', name: 'clubs' },
-  s: { symbol: '♠', color: '#1f2937', name: 'spades' }
+  h: { symbol: '♥', color: '#dc2626', name: 'hearts' },      // Red hearts
+  d: { symbol: '♦', color: '#dc2626', name: 'diamonds' },    // Red diamonds (PPPoker style)
+  c: { symbol: '♣', color: '#16a34a', name: 'clubs' },       // Green clubs (PPPoker style)
+  s: { symbol: '♠', color: '#1e293b', name: 'spades' }       // Black spades
 } as const;
 
 type SuitKey = keyof typeof SUITS;
 
+// PPPoker style card sizes - more prominent
 const SIZE_CONFIG = {
-  xs: { w: 28, h: 40, rank: 10, suit: 12 },
-  sm: { w: 36, h: 50, rank: 13, suit: 15 },
-  md: { w: 48, h: 68, rank: 16, suit: 20 },
-  lg: { w: 64, h: 90, rank: 22, suit: 28 },
-  xl: { w: 80, h: 112, rank: 28, suit: 36 }
+  xs: { w: 32, h: 44, rank: 12, suit: 14 },
+  sm: { w: 40, h: 56, rank: 15, suit: 18 },
+  md: { w: 52, h: 72, rank: 18, suit: 22 },
+  lg: { w: 68, h: 94, rank: 26, suit: 32 },
+  xl: { w: 88, h: 120, rank: 32, suit: 40 }
 } as const;
 
 interface StablePokerCardProps {
@@ -65,7 +66,7 @@ const CardBack = memo(function CardBack({ size }: { size: keyof typeof SIZE_CONF
   );
 });
 
-// Memoized card face - only re-renders when card value changes
+// Memoized card face - PPPoker authentic style
 const CardFace = memo(function CardFace({ 
   rank, 
   suit, 
@@ -81,22 +82,32 @@ const CardFace = memo(function CardFace({
 
   return (
     <div 
-      className="absolute inset-0 rounded-lg overflow-hidden bg-white"
+      className="absolute inset-0 rounded-lg overflow-hidden"
       style={{ 
         width: config.w, 
         height: config.h,
-        boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
+        background: 'linear-gradient(180deg, #ffffff 0%, #f8fafc 50%, #f1f5f9 100%)',
+        boxShadow: '0 4px 12px rgba(0,0,0,0.25), 0 1px 3px rgba(0,0,0,0.1)'
       }}
     >
-      {/* Center */}
-      <div className="absolute inset-0 flex flex-col items-center justify-center">
+      {/* Card border */}
+      <div 
+        className="absolute inset-0 rounded-lg pointer-events-none"
+        style={{ border: '1px solid rgba(0,0,0,0.08)' }}
+      />
+      
+      {/* Center - larger suit symbol */}
+      <div className="absolute inset-0 flex flex-col items-center justify-center gap-0.5">
         <span 
-          className="font-bold leading-none"
-          style={{ fontSize: config.rank, color: suitInfo.color }}
+          className="font-black leading-none tracking-tight"
+          style={{ fontSize: config.rank * 1.1, color: suitInfo.color }}
         >
           {displayRank}
         </span>
-        <span style={{ fontSize: config.suit, color: suitInfo.color }}>
+        <span 
+          className="leading-none"
+          style={{ fontSize: config.suit * 1.2, color: suitInfo.color }}
+        >
           {suitInfo.symbol}
         </span>
       </div>
@@ -106,10 +117,10 @@ const CardFace = memo(function CardFace({
         className="absolute top-1 left-1.5 flex flex-col items-center leading-none"
         style={{ color: suitInfo.color }}
       >
-        <span className="font-semibold" style={{ fontSize: config.rank * 0.5 }}>
+        <span className="font-bold" style={{ fontSize: config.rank * 0.55 }}>
           {displayRank}
         </span>
-        <span style={{ fontSize: config.suit * 0.5 }}>
+        <span style={{ fontSize: config.suit * 0.55 }}>
           {suitInfo.symbol}
         </span>
       </div>
@@ -119,18 +130,20 @@ const CardFace = memo(function CardFace({
         className="absolute bottom-1 right-1.5 flex flex-col items-center leading-none rotate-180"
         style={{ color: suitInfo.color }}
       >
-        <span className="font-semibold" style={{ fontSize: config.rank * 0.5 }}>
+        <span className="font-bold" style={{ fontSize: config.rank * 0.55 }}>
           {displayRank}
         </span>
-        <span style={{ fontSize: config.suit * 0.5 }}>
+        <span style={{ fontSize: config.suit * 0.55 }}>
           {suitInfo.symbol}
         </span>
       </div>
 
-      {/* Gloss */}
+      {/* Subtle gloss effect */}
       <div 
-        className="absolute inset-0 pointer-events-none"
-        style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.4) 0%, transparent 40%)' }}
+        className="absolute inset-0 pointer-events-none rounded-lg"
+        style={{ 
+          background: 'linear-gradient(135deg, rgba(255,255,255,0.5) 0%, transparent 30%, transparent 70%, rgba(0,0,0,0.02) 100%)'
+        }}
       />
     </div>
   );
