@@ -352,15 +352,15 @@ const [activeTableId, setActiveTableId] = useState<string | null>(null);
     onTableStateChange?.(isAtTable);
   }, [activeTableId, showDemoTable, onTableStateChange]);
 
-  // Если открыт активный стол - используем стабильный компонент
+  // Если открыт активный стол - используем реальный онлайн компонент с движком
   if (activeTableId && playerId) {
     return (
-      <TelegramStablePokerTable
+      <OnlinePokerTableComponent
         tableId={activeTableId}
         playerId={playerId}
         playerName={playerName}
         playerAvatar={playerAvatar}
-        playerStack={activeBuyIn}
+        buyIn={activeBuyIn}
         onLeave={() => {
           setActiveTableId(null);
           setActiveBuyIn(10000);
@@ -369,7 +369,7 @@ const [activeTableId, setActiveTableId] = useState<string | null>(null);
     );
   }
 
-  // Демо-стол
+  // Демо-стол - используем стабильный компонент с локальной симуляцией
   if (showDemoTable) {
     return (
       <TelegramStablePokerTable
