@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { StablePokerCard } from './StablePokerCard';
 import { StableChipStack } from './StableChipStack';
+import { resolveAvatarUrl } from '@/utils/avatarResolver';
 
 interface Player {
   id: string;
@@ -183,7 +184,10 @@ export const StablePlayerSeat = memo(function StablePlayerSeat({
   const avatarSize = isHero ? 'w-16 h-16' : 'w-14 h-14';
   const ringSize = isHero ? 72 : 62;
 
-  // Syndikate themed avatar backgrounds
+  // Resolve avatar URL - handles Vite hashed paths
+  const resolvedAvatar = resolveAvatarUrl(player.avatar, player.id);
+
+  // Syndikate themed avatar backgrounds (fallback only)
   const avatarBg = useMemo(() => {
     const syndikatePalette = [
       'linear-gradient(135deg, #ff7a00 0%, #cc5500 100%)', // Syndikate orange
@@ -227,17 +231,23 @@ export const StablePlayerSeat = memo(function StablePlayerSeat({
               : '2px solid rgba(255, 122, 0, 0.3)',
             boxShadow: isTurn 
               ? '0 0 25px rgba(255, 122, 0, 0.6), 0 4px 15px rgba(0,0,0,0.5), inset 0 0 20px rgba(255, 122, 0, 0.2)' 
-              : '0 4px 15px rgba(0,0,0,0.5), inset 0 0 10px rgba(0,0,0,0.3)',
-            background: player.avatar 
-              ? `url(${player.avatar}) center/cover` 
-              : avatarBg
+              : '0 4px 15px rgba(0,0,0,0.5), inset 0 0 10px rgba(0,0,0,0.3)'
           }}
         >
-          {!player.avatar && (
-            <div className="absolute inset-0 flex items-center justify-center text-white font-display text-2xl drop-shadow-lg">
-              {player.name.charAt(0).toUpperCase()}
-            </div>
-          )}
+          {/* Avatar image - always use resolved URL */}
+          <div 
+            className="absolute inset-0 bg-cover bg-center"
+            style={{ backgroundImage: `url(${resolvedAvatar})` }}
+          />
+          
+          {/* Fallback gradient overlay for non-existent images */}
+          <div 
+            className="absolute inset-0" 
+            style={{ 
+              background: avatarBg, 
+              opacity: 0.3 
+            }} 
+          />
           
           {/* Folded overlay - Syndikate style */}
           {player.isFolded && (

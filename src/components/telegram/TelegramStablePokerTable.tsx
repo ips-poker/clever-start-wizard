@@ -19,6 +19,7 @@ import {
 import { cn } from '@/lib/utils';
 import { usePokerSounds } from '@/hooks/usePokerSounds';
 import { useReconnectManager } from '@/hooks/useReconnectManager';
+import { getAvatarByNumber } from '@/utils/avatarResolver';
 
 // Simple hand name for display
 interface HandInfo {
@@ -480,12 +481,12 @@ function TelegramStablePokerTableInner({
   useEffect(() => {
     const loadTablePlayers = async () => {
       if (!tableId) {
-        // Demo mode
+        // Demo mode - with proper avatars
         const demoPlayers: Player[] = [
-          { id: playerId, name: playerName, avatar: playerAvatar, stack: playerStack, seatNumber: 0, isDealer: true },
-          { id: 'p2', name: 'Viktor_Pro', stack: 15420, seatNumber: 1 },
-          { id: 'p3', name: 'PokerKing', stack: 8750, seatNumber: 3 },
-          { id: 'p4', name: 'LuckyAce', stack: 12300, seatNumber: 4 },
+          { id: playerId, name: playerName, avatar: playerAvatar || getAvatarByNumber(1), stack: playerStack, seatNumber: 0, isDealer: true },
+          { id: 'p2', name: 'Viktor_Pro', avatar: getAvatarByNumber(5), stack: 15420, seatNumber: 1 },
+          { id: 'p3', name: 'PokerKing', avatar: getAvatarByNumber(12), stack: 8750, seatNumber: 3 },
+          { id: 'p4', name: 'LuckyAce', avatar: getAvatarByNumber(18), stack: 12300, seatNumber: 4 },
         ];
         setPlayers(demoPlayers);
         return;
