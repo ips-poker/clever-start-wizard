@@ -16,7 +16,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { GlitchText } from '@/components/ui/glitch-text';
 import { motion, AnimatePresence } from 'framer-motion';
-import { TelegramMobileTable } from './TelegramMobileTable';
+import { TelegramProPokerTable } from './TelegramProPokerTable';
 
 interface OnlinePokerTable {
   id: string;
@@ -83,6 +83,8 @@ export function TelegramPokerLobby({
   const [searchQuery, setSearchQuery] = useState('');
   const [joiningId, setJoiningId] = useState<string | null>(null);
   const [registeredTournaments, setRegisteredTournaments] = useState<Set<string>>(new Set());
+  const [activeTableId, setActiveTableId] = useState<string | null>(null);
+  const [showDemoTable, setShowDemoTable] = useState(false);
 
   const fetchData = useCallback(async () => {
     try {
@@ -300,6 +302,19 @@ export function TelegramPokerLobby({
     t.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  // Если открыт демо-стол
+  if (showDemoTable) {
+    return (
+      <TelegramProPokerTable
+        playerId={playerId}
+        playerName={playerName}
+        playerAvatar={playerAvatar}
+        playerStack={playerBalance}
+        onLeave={() => setShowDemoTable(false)}
+      />
+    );
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -354,6 +369,15 @@ export function TelegramPokerLobby({
             </span>
           </div>
         </div>
+
+        {/* Quick Play Button */}
+        <Button
+          onClick={() => setShowDemoTable(true)}
+          className="w-full mt-3 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-500 hover:to-green-400 text-white font-bold h-12 rounded-xl shadow-lg"
+        >
+          <Play className="h-5 w-5 mr-2" />
+          Быстрая игра (Demo)
+        </Button>
       </div>
 
       {/* Search */}
