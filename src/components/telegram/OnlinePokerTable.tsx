@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -6,12 +6,22 @@ import { Slider } from '@/components/ui/slider';
 import { Input } from '@/components/ui/input';
 import { 
   ArrowLeft, Volume2, VolumeX, MessageSquare, Send,
-  Coins, Timer, Users, Crown, Zap, X, RotateCcw, Wifi, WifiOff
+  Coins, Timer, Users, Crown, Zap, X, RotateCcw, Wifi, WifiOff,
+  Shield, Rabbit, TrendingUp, Percent
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { usePokerWebSocket, WsPlayerState } from '@/hooks/usePokerWebSocket';
+
+// Import pro features components
+import { EquityDisplay, PlayerEquityBadge } from '@/components/poker/EquityDisplay';
+import { EVCashoutPanel, EVIndicator } from '@/components/poker/EVCashoutPanel';
+import { SmartHUD, MiniHUD } from '@/components/poker/SmartHUD';
+import { RabbitHuntPanel, RunItTwicePanel } from '@/components/poker/RabbitHuntPanel';
+import { AllInInsurance } from '@/components/poker/AllInInsurance';
+import { SqueezeCard, SqueezeHand } from '@/components/poker/SqueezeCard';
+import { PokerPlayer } from '@/hooks/usePokerTable';
 
 interface OnlinePokerTableProps {
   tableId: string;
@@ -62,6 +72,12 @@ export function OnlinePokerTable({
   const [playerEmojis, setPlayerEmojis] = useState<PlayerEmoji[]>([]);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const emojiIdRef = useRef(0);
+  
+  // Pro features state
+  const [showEVCashout, setShowEVCashout] = useState(false);
+  const [showInsurance, setShowInsurance] = useState(false);
+  const [showRabbitHunt, setShowRabbitHunt] = useState(false);
+  const [useSqueeze, setUseSqueeze] = useState(true);
 
   const {
     isConnected,
@@ -116,6 +132,40 @@ export function OnlinePokerTable({
   useEffect(() => {
     setBetAmount(minRaise);
   }, [minRaise]);
+
+  // Detect all-in situation for showing equity/insurance
+  const isAllInSituation = useMemo(() => {
+    if (!gameState || gameState.phase === 'waiting' || gameState.phase === 'preflop') return false;
+    const activePlayers = gameState.players.filter(p => !p.isFolded);
+    const allInPlayers = activePlayers.filter(p => p.isAllIn);
+    return allInPlayers.length >= 1 && activePlayers.length >= 2;
+  }, [gameState]);
+
+  // Convert WsPlayerState to PokerPlayer for EquityDisplay
+  const pokerPlayersForEquity = useMemo((): PokerPlayer[] => {
+    if (!gameState) return [];
+    return gameState.players
+      .filter(p => !p.isFolded && p.holeCards && p.holeCards.length === 2 && p.holeCards[0] !== '??')
+      .map(p => ({
+        oderId: p.playerId,
+        seatNumber: p.seatNumber,
+        name: p.playerName,
+        stack: p.stack,
+        holeCards: p.holeCards || [],
+        betAmount: p.currentBet,
+        isFolded: p.isFolded,
+        isAllIn: p.isAllIn,
+        isActive: !p.isFolded && p.stack > 0,
+      }));
+  }, [gameState]);
+
+  // My equity for insurance/cashout
+  const myEquity = useMemo(() => {
+    if (!isAllInSituation || !myPlayer || myPlayer.isFolded) return 0;
+    // Simplified equity based on number of active players
+    const activePlayers = gameState?.players.filter(p => !p.isFolded) || [];
+    return 100 / Math.max(1, activePlayers.length);
+  }, [isAllInSituation, myPlayer, gameState]);
 
   // Таймер хода
   useEffect(() => {
@@ -441,16 +491,125 @@ export function OnlinePokerTable({
         </div>
       </div>
 
-      {/* Hero Cards */}
+      {/* Hero Cards - with optional squeeze */}
       {myPlayer?.holeCards && myPlayer.holeCards.length > 0 && myPlayer.holeCards[0] !== '??' && (
         <div className="absolute bottom-32 left-1/2 -translate-x-1/2 z-30">
-          <div className="flex gap-2">
-            {myPlayer.holeCards.map((card, idx) => (
-              <motion.div key={idx} initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: idx * 0.1 }}>
-                {renderCard(card, false, 'lg')}
-              </motion.div>
-            ))}
-          </div>
+          {useSqueeze && gameState?.phase === 'preflop' ? (
+            <SqueezeHand 
+              cards={myPlayer.holeCards} 
+              size="lg"
+              onRevealComplete={() => setUseSqueeze(false)}
+            />
+          ) : (
+            <div className="flex gap-2">
+              {myPlayer.holeCards.map((card, idx) => (
+                <motion.div key={idx} initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: idx * 0.1 }}>
+                  {renderCard(card, false, 'lg')}
+                </motion.div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Equity Display - shows during all-in situations */}
+      {isAllInSituation && pokerPlayersForEquity.length >= 2 && (
+        <EquityDisplay
+          players={pokerPlayersForEquity}
+          communityCards={gameState?.communityCards || []}
+          phase={gameState?.phase || 'waiting'}
+          showAlways={true}
+        />
+      )}
+
+      {/* EV Cashout Panel - shows when player is all-in */}
+      {showEVCashout && myPlayer?.isAllIn && gameState && (
+        <div className="absolute top-20 left-4 z-40">
+          <EVCashoutPanel
+            scenario={{
+              pot: gameState.pot,
+              phase: gameState.phase as 'flop' | 'turn' | 'river',
+              communityCards: gameState.communityCards,
+              players: gameState.players.filter(p => !p.isFolded).map(p => ({
+                playerId: p.playerId,
+                playerName: p.playerName,
+                cards: p.holeCards || [],
+                stack: p.stack,
+                contribution: p.currentBet,
+              }))
+            }}
+            playerId={playerId}
+            onAcceptCashout={(amount) => {
+              toast.success(`Cashout accepted: ${amount}`);
+              setShowEVCashout(false);
+            }}
+            onDeclineCashout={() => setShowEVCashout(false)}
+          />
+        </div>
+      )}
+
+      {/* All-In Insurance Modal */}
+      <AllInInsurance
+        isOpen={showInsurance}
+        onClose={() => setShowInsurance(false)}
+        onPurchase={(coverage) => {
+          toast.success(`Insurance purchased: ${coverage}`);
+          setShowInsurance(false);
+        }}
+        potAmount={gameState?.pot || 0}
+        playerEquity={myEquity}
+        maxInsurable={Math.floor((gameState?.pot || 0) * (myEquity / 100))}
+        playerStack={myPlayer?.stack || 0}
+        communityCards={gameState?.communityCards || []}
+        holeCards={myPlayer?.holeCards || []}
+      />
+
+      {/* Pro Features Buttons */}
+      {isAllInSituation && myPlayer && !myPlayer.isFolded && (
+        <div className="absolute top-16 right-4 z-30 flex flex-col gap-2">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setShowEVCashout(!showEVCashout)}
+            className="bg-amber-500/20 border-amber-500/50 text-amber-400 text-xs"
+          >
+            <Shield className="w-3 h-3 mr-1" />
+            EV Cashout
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setShowInsurance(true)}
+            className="bg-blue-500/20 border-blue-500/50 text-blue-400 text-xs"
+          >
+            <Shield className="w-3 h-3 mr-1" />
+            Insurance
+          </Button>
+        </div>
+      )}
+
+      {/* Rabbit Hunt (after fold) */}
+      {myPlayer?.isFolded && gameState?.phase !== 'showdown' && gameState?.phase !== 'waiting' && (
+        <div className="absolute top-20 left-4 z-30">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setShowRabbitHunt(!showRabbitHunt)}
+            className="bg-purple-500/20 border-purple-500/50 text-purple-400 text-xs"
+          >
+            <Rabbit className="w-3 h-3 mr-1" />
+            Rabbit Hunt
+          </Button>
+          {showRabbitHunt && (
+            <RabbitHuntPanel
+              foldedPlayerCards={myPlayer.holeCards || []}
+              communityCards={gameState.communityCards}
+              usedCards={gameState.players.flatMap(p => p.holeCards || [])}
+              potSize={gameState.pot}
+              onPurchase={(cost) => toast.info(`Rabbit hunt: -${cost} chips`)}
+              className="mt-2"
+            />
+          )}
         </div>
       )}
 
