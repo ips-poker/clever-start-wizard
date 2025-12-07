@@ -6,37 +6,22 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Типы карт
-const SUITS = ['h', 'd', 'c', 's'] as const; // hearts, diamonds, clubs, spades
+// Card types
+const SUITS = ['h', 'd', 'c', 's'] as const;
 const RANKS = ['2', '3', '4', '5', '6', '7', '8', '9', 'T', 'J', 'Q', 'K', 'A'] as const;
-
-interface GameState {
-  tableId: string;
-  handId: string | null;
-  phase: 'waiting' | 'preflop' | 'flop' | 'turn' | 'river' | 'showdown';
-  pot: number;
-  currentBet: number;
-  communityCards: string[];
-  dealerSeat: number;
-  currentPlayerSeat: number | null;
-  players: PlayerState[];
-  deck: string[];
-  sidePots: SidePot[];
-}
+const RANK_VALUES: Record<string, number> = {
+  '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8, '9': 9,
+  'T': 10, 'J': 11, 'Q': 12, 'K': 13, 'A': 14
+};
 
 interface PlayerState {
   oderId: string;
-  oderId: string;
-  oderId: string;
-  oderId: string;
   playerId: string;
-  oderId: string;
-  oderId: string;
-  oderId: string;
   seatNumber: number;
   stack: number;
   holeCards: string[];
   currentBet: number;
+  totalBet: number;
   isFolded: boolean;
   isAllIn: boolean;
   hasActed: boolean;
@@ -48,6 +33,15 @@ interface PlayerState {
 interface SidePot {
   amount: number;
   eligiblePlayers: string[];
+  cappedAt: number;
+}
+
+interface HandResult {
+  playerId: string;
+  handRank: number;
+  handName: string;
+  bestCards: string[];
+  kickers: number[];
 }
 
 interface ActionRequest {
@@ -58,7 +52,272 @@ interface ActionRequest {
   seatNumber?: number;
 }
 
-// Создание и перемешивание колоды
+// ==========================================
+// SIDE POT CALCULATION - Professional Grade
+// ==========================================
+
+interface PlayerContribution {
+  playerId: string;
+  totalBet: number;
+  isFolded: boolean;
+  isAllIn: boolean;
+}
+
+interface PotResult {
+  mainPot: SidePot;
+  sidePots: SidePot[];
+  totalPot: number;
+}
+
+function calculateSidePots(contributions: PlayerContribution[]): PotResult {
+  if (contributions.length === 0) {
+    return {
+      mainPot: { amount: 0, eligiblePlayers: [], cappedAt: 0 },
+      sidePots: [],
+      totalPot: 0
+    };
+  }
+
+  const activeBettors = contributions.filter(c => c.totalBet > 0);
+  if (activeBettors.length === 0) {
+    return {
+      mainPot: { amount: 0, eligiblePlayers: [], cappedAt: 0 },
+      sidePots: [],
+      totalPot: 0
+    };
+  }
+
+  // Get unique bet levels from all-in players
+  const allInLevels = new Set<number>();
+  for (const c of activeBettors) {
+    if (c.isAllIn && c.totalBet > 0) {
+      allInLevels.add(c.totalBet);
+    }
+  }
+
+  const maxBet = Math.max(...activeBettors.map(c => c.totalBet));
+  allInLevels.add(maxBet);
+
+  const levels = Array.from(allInLevels).sort((a, b) => a - b);
+  const pots: SidePot[] = [];
+  let previousLevel = 0;
+
+  for (const level of levels) {
+    const increment = level - previousLevel;
+    if (increment <= 0) continue;
+
+    let potAmount = 0;
+    const eligiblePlayers: string[] = [];
+
+    for (const contribution of activeBettors) {
+      if (contribution.totalBet > previousLevel) {
+        const contributionAtLevel = Math.min(
+          contribution.totalBet - previousLevel,
+          increment
+        );
+        potAmount += contributionAtLevel;
+
+        // Only non-folded players can win
+        if (!contribution.isFolded && contribution.totalBet >= level) {
+          if (!eligiblePlayers.includes(contribution.playerId)) {
+            eligiblePlayers.push(contribution.playerId);
+          }
+        }
+      }
+    }
+
+    if (potAmount > 0) {
+      pots.push({
+        amount: potAmount,
+        eligiblePlayers,
+        cappedAt: level
+      });
+    }
+
+    previousLevel = level;
+  }
+
+  const [mainPot, ...sidePots] = pots;
+  const totalPot = pots.reduce((sum, pot) => sum + pot.amount, 0);
+
+  return {
+    mainPot: mainPot || { amount: 0, eligiblePlayers: [], cappedAt: 0 },
+    sidePots,
+    totalPot
+  };
+}
+
+// ==========================================
+// HAND EVALUATION - Professional Grade
+// ==========================================
+
+function parseCard(card: string): { rank: string; suit: string; value: number } {
+  const rank = card[0];
+  const suit = card[1];
+  return { rank, suit, value: RANK_VALUES[rank] };
+}
+
+function getSortedValues(cards: string[]): number[] {
+  return cards.map(c => RANK_VALUES[c[0]]).sort((a, b) => b - a);
+}
+
+function isFlush(cards: string[]): boolean {
+  const suit = cards[0][1];
+  return cards.every(c => c[1] === suit);
+}
+
+function isStraight(values: number[]): { isStraight: boolean; highCard: number } {
+  const sorted = [...new Set(values)].sort((a, b) => b - a);
+  
+  // Check for regular straight
+  for (let i = 0; i <= sorted.length - 5; i++) {
+    if (sorted[i] - sorted[i + 4] === 4) {
+      return { isStraight: true, highCard: sorted[i] };
+    }
+  }
+  
+  // Check wheel (A-2-3-4-5)
+  if (sorted.includes(14) && sorted.includes(5) && sorted.includes(4) && 
+      sorted.includes(3) && sorted.includes(2)) {
+    return { isStraight: true, highCard: 5 };
+  }
+  
+  return { isStraight: false, highCard: 0 };
+}
+
+function getRankCounts(cards: string[]): Map<number, number> {
+  const counts = new Map<number, number>();
+  for (const card of cards) {
+    const value = RANK_VALUES[card[0]];
+    counts.set(value, (counts.get(value) || 0) + 1);
+  }
+  return counts;
+}
+
+function evaluateHand(holeCards: string[], communityCards: string[]): HandResult {
+  const allCards = [...holeCards, ...communityCards];
+  if (allCards.length < 5) {
+    return {
+      playerId: '',
+      handRank: 0,
+      handName: 'Unknown',
+      bestCards: [],
+      kickers: []
+    };
+  }
+
+  // Generate all 5-card combinations
+  const combinations: string[][] = [];
+  for (let i = 0; i < allCards.length - 4; i++) {
+    for (let j = i + 1; j < allCards.length - 3; j++) {
+      for (let k = j + 1; k < allCards.length - 2; k++) {
+        for (let l = k + 1; l < allCards.length - 1; l++) {
+          for (let m = l + 1; m < allCards.length; m++) {
+            combinations.push([allCards[i], allCards[j], allCards[k], allCards[l], allCards[m]]);
+          }
+        }
+      }
+    }
+  }
+
+  let bestResult: HandResult = {
+    playerId: '',
+    handRank: 0,
+    handName: 'High Card',
+    bestCards: [],
+    kickers: []
+  };
+
+  for (const combo of combinations) {
+    const result = evaluateFiveCards(combo);
+    if (result.handRank > bestResult.handRank || 
+       (result.handRank === bestResult.handRank && compareKickers(result.kickers, bestResult.kickers) > 0)) {
+      bestResult = result;
+    }
+  }
+
+  return bestResult;
+}
+
+function compareKickers(a: number[], b: number[]): number {
+  for (let i = 0; i < Math.min(a.length, b.length); i++) {
+    if (a[i] !== b[i]) return a[i] - b[i];
+  }
+  return 0;
+}
+
+function evaluateFiveCards(cards: string[]): HandResult {
+  const values = getSortedValues(cards);
+  const flush = isFlush(cards);
+  const straightResult = isStraight(values);
+  const rankCounts = getRankCounts(cards);
+  
+  const countsArray = Array.from(rankCounts.entries())
+    .sort((a, b) => b[1] - a[1] || b[0] - a[0]);
+  const counts = countsArray.map(c => c[1]);
+  const rankedValues = countsArray.map(c => c[0]);
+
+  // Royal Flush
+  if (flush && straightResult.isStraight && straightResult.highCard === 14) {
+    return { playerId: '', handRank: 10, handName: 'Royal Flush', bestCards: cards, kickers: [14] };
+  }
+
+  // Straight Flush
+  if (flush && straightResult.isStraight) {
+    return { playerId: '', handRank: 9, handName: 'Straight Flush', bestCards: cards, kickers: [straightResult.highCard] };
+  }
+
+  // Four of a Kind
+  if (counts[0] === 4) {
+    return { playerId: '', handRank: 8, handName: 'Four of a Kind', bestCards: cards, kickers: rankedValues };
+  }
+
+  // Full House
+  if (counts[0] === 3 && counts[1] >= 2) {
+    return { playerId: '', handRank: 7, handName: 'Full House', bestCards: cards, kickers: rankedValues.slice(0, 2) };
+  }
+
+  // Flush
+  if (flush) {
+    return { playerId: '', handRank: 6, handName: 'Flush', bestCards: cards, kickers: values.slice(0, 5) };
+  }
+
+  // Straight
+  if (straightResult.isStraight) {
+    return { playerId: '', handRank: 5, handName: 'Straight', bestCards: cards, kickers: [straightResult.highCard] };
+  }
+
+  // Three of a Kind
+  if (counts[0] === 3) {
+    return { playerId: '', handRank: 4, handName: 'Three of a Kind', bestCards: cards, kickers: rankedValues };
+  }
+
+  // Two Pair
+  if (counts[0] === 2 && counts[1] === 2) {
+    return { playerId: '', handRank: 3, handName: 'Two Pair', bestCards: cards, kickers: rankedValues };
+  }
+
+  // One Pair
+  if (counts[0] === 2) {
+    return { playerId: '', handRank: 2, handName: 'One Pair', bestCards: cards, kickers: rankedValues };
+  }
+
+  // High Card
+  return { playerId: '', handRank: 1, handName: 'High Card', bestCards: cards, kickers: values.slice(0, 5) };
+}
+
+// Compare two hand results, returns positive if a wins, negative if b wins, 0 for tie
+function compareHands(a: HandResult, b: HandResult): number {
+  if (a.handRank !== b.handRank) {
+    return a.handRank - b.handRank;
+  }
+  return compareKickers(a.kickers, b.kickers);
+}
+
+// ==========================================
+// DECK MANAGEMENT
+// ==========================================
+
 function createDeck(): string[] {
   const deck: string[] = [];
   for (const suit of SUITS) {
@@ -74,67 +333,9 @@ function createDeck(): string[] {
   return deck;
 }
 
-// Получение следующего активного игрока
-function getNextActivePlayer(players: PlayerState[], currentSeat: number): PlayerState | null {
-  const activePlayers = players.filter(p => !p.isFolded && !p.isAllIn);
-  if (activePlayers.length === 0) return null;
-  
-  const sortedPlayers = [...activePlayers].sort((a, b) => a.seatNumber - b.seatNumber);
-  const nextPlayer = sortedPlayers.find(p => p.seatNumber > currentSeat) || sortedPlayers[0];
-  return nextPlayer;
-}
-
-// Проверка завершения раунда ставок
-function isBettingRoundComplete(players: PlayerState[], currentBet: number): boolean {
-  const activePlayers = players.filter(p => !p.isFolded && !p.isAllIn);
-  return activePlayers.every(p => p.hasActed && p.currentBet === currentBet);
-}
-
-// Расчет силы руки (упрощенный)
-function evaluateHand(holeCards: string[], communityCards: string[]): { rank: number; name: string } {
-  const allCards = [...holeCards, ...communityCards];
-  const ranks = allCards.map(c => c[0]);
-  const suits = allCards.map(c => c[1]);
-  
-  // Подсчет рангов
-  const rankCount: Record<string, number> = {};
-  ranks.forEach(r => rankCount[r] = (rankCount[r] || 0) + 1);
-  const counts = Object.values(rankCount).sort((a, b) => b - a);
-  
-  // Подсчет мастей
-  const suitCount: Record<string, number> = {};
-  suits.forEach(s => suitCount[s] = (suitCount[s] || 0) + 1);
-  const isFlush = Object.values(suitCount).some(c => c >= 5);
-  
-  // Проверка стрита
-  const rankOrder = '23456789TJQKA';
-  const uniqueRanks = [...new Set(ranks)].sort((a, b) => rankOrder.indexOf(a) - rankOrder.indexOf(b));
-  let isStraight = false;
-  for (let i = 0; i <= uniqueRanks.length - 5; i++) {
-    const slice = uniqueRanks.slice(i, i + 5);
-    const indices = slice.map(r => rankOrder.indexOf(r));
-    if (indices[4] - indices[0] === 4) {
-      isStraight = true;
-      break;
-    }
-  }
-  // Wheel straight (A-2-3-4-5)
-  if (uniqueRanks.includes('A') && uniqueRanks.includes('2') && uniqueRanks.includes('3') && 
-      uniqueRanks.includes('4') && uniqueRanks.includes('5')) {
-    isStraight = true;
-  }
-  
-  // Определение комбинации
-  if (isFlush && isStraight) return { rank: 8, name: 'Straight Flush' };
-  if (counts[0] === 4) return { rank: 7, name: 'Four of a Kind' };
-  if (counts[0] === 3 && counts[1] >= 2) return { rank: 6, name: 'Full House' };
-  if (isFlush) return { rank: 5, name: 'Flush' };
-  if (isStraight) return { rank: 4, name: 'Straight' };
-  if (counts[0] === 3) return { rank: 3, name: 'Three of a Kind' };
-  if (counts[0] === 2 && counts[1] === 2) return { rank: 2, name: 'Two Pair' };
-  if (counts[0] === 2) return { rank: 1, name: 'One Pair' };
-  return { rank: 0, name: 'High Card' };
-}
+// ==========================================
+// MAIN HANDLER
+// ==========================================
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -151,7 +352,7 @@ serve(async (req) => {
 
     console.log(`[Poker Engine] Action: ${action}, Table: ${tableId}, Player: ${playerId}`);
 
-    // Получаем текущее состояние стола
+    // Get current table state
     const { data: table, error: tableError } = await supabase
       .from('poker_tables')
       .select('*')
@@ -166,7 +367,7 @@ serve(async (req) => {
       });
     }
 
-    // Получаем игроков за столом
+    // Get players at table
     const { data: tablePlayers, error: playersError } = await supabase
       .from('poker_table_players')
       .select('*, players(name, avatar_url)')
@@ -180,7 +381,6 @@ serve(async (req) => {
 
     switch (action) {
       case 'join': {
-        // Проверяем, есть ли свободное место
         const occupiedSeats = (tablePlayers || []).map(p => p.seat_number);
         const availableSeat = seatNumber || 
           Array.from({ length: table.max_players }, (_, i) => i + 1)
@@ -191,7 +391,6 @@ serve(async (req) => {
           break;
         }
 
-        // Получаем баланс игрока
         const { data: balance } = await supabase
           .from('player_balances')
           .select('balance')
@@ -200,7 +399,6 @@ serve(async (req) => {
 
         const buyIn = Math.min(balance?.balance || table.min_buy_in, table.max_buy_in);
 
-        // Добавляем игрока
         const { error: joinError } = await supabase
           .from('poker_table_players')
           .upsert({
@@ -239,23 +437,22 @@ serve(async (req) => {
           break;
         }
 
-        // Создаем новую колоду
         const deck = createDeck();
-        
-        // Определяем позиции
         const sortedPlayers = [...activePlayers].sort((a, b) => a.seat_number - b.seat_number);
+        
+        // Determine positions
         const dealerIndex = (table.current_dealer_seat 
           ? sortedPlayers.findIndex(p => p.seat_number > table.current_dealer_seat) 
           : 0) % sortedPlayers.length;
         
-        const dealerSeat = sortedPlayers[dealerIndex].seat_number;
+        const dealerSeat = sortedPlayers[dealerIndex >= 0 ? dealerIndex : 0].seat_number;
         const sbIndex = (dealerIndex + 1) % sortedPlayers.length;
         const bbIndex = (dealerIndex + 2) % sortedPlayers.length;
         
         const sbPlayer = sortedPlayers[sbIndex];
         const bbPlayer = sortedPlayers[bbIndex];
         
-        // Создаем запись раздачи
+        // Create hand record
         const { data: hand, error: handError } = await supabase
           .from('poker_hands')
           .insert({
@@ -267,6 +464,7 @@ serve(async (req) => {
             pot: table.small_blind + table.big_blind,
             current_bet: table.big_blind,
             deck_state: JSON.stringify(deck),
+            side_pots: JSON.stringify([])
           })
           .select()
           .single();
@@ -277,14 +475,13 @@ serve(async (req) => {
           break;
         }
 
-        // Раздаем карты и снимаем блайнды
+        // Deal cards and post blinds
         const playerUpdates = [];
         const handPlayers = [];
         let deckIndex = 0;
 
         for (const player of sortedPlayers) {
           const holeCards = [deck[deckIndex++], deck[deckIndex++]];
-          const isDealer = player.seat_number === dealerSeat;
           const isSB = player.seat_number === sbPlayer.seat_number;
           const isBB = player.seat_number === bbPlayer.seat_number;
           
@@ -312,15 +509,13 @@ serve(async (req) => {
           }
         }
 
-        // Сохраняем игроков раздачи
         await supabase.from('poker_hand_players').insert(handPlayers);
         await Promise.all(playerUpdates);
 
-        // Определяем первого игрока (после BB)
+        // First to act (after BB)
         const firstToActIndex = (bbIndex + 1) % sortedPlayers.length;
         const firstToAct = sortedPlayers[firstToActIndex];
 
-        // Обновляем стол
         await supabase
           .from('poker_tables')
           .update({
@@ -330,7 +525,6 @@ serve(async (req) => {
           })
           .eq('id', tableId);
 
-        // Обновляем раздачу с текущим игроком
         await supabase
           .from('poker_hands')
           .update({ current_player_seat: firstToAct.seat_number })
@@ -353,7 +547,7 @@ serve(async (req) => {
       case 'call':
       case 'raise':
       case 'all_in': {
-        // Получаем текущую раздачу
+        // Get current hand
         const { data: currentHand } = await supabase
           .from('poker_hands')
           .select('*')
@@ -365,7 +559,7 @@ serve(async (req) => {
           break;
         }
 
-        // Получаем игрока раздачи
+        // Get hand player
         const { data: handPlayer } = await supabase
           .from('poker_hand_players')
           .select('*')
@@ -378,7 +572,7 @@ serve(async (req) => {
           break;
         }
 
-        // Получаем игрока стола
+        // Get table player
         const tablePlayer = (tablePlayers || []).find(p => p.player_id === playerId);
         if (!tablePlayer) {
           result = { success: false, error: 'Player not at table' };
@@ -429,7 +623,9 @@ serve(async (req) => {
             break;
         }
 
-        // Обновляем игрока раздачи
+        if (!result.success && result.error) break;
+
+        // Update hand player
         await supabase
           .from('poker_hand_players')
           .update({
@@ -439,13 +635,13 @@ serve(async (req) => {
           })
           .eq('id', handPlayer.id);
 
-        // Обновляем стек
+        // Update stack
         await supabase
           .from('poker_table_players')
           .update({ stack: newStack })
           .eq('id', tablePlayer.id);
 
-        // Записываем действие
+        // Record action
         const { data: actionsCount } = await supabase
           .from('poker_actions')
           .select('id', { count: 'exact' })
@@ -461,22 +657,21 @@ serve(async (req) => {
           action_order: (actionsCount?.length || 0) + 1,
         });
 
-        // Обновляем пот и текущую ставку
+        // Update pot and current bet
         const newPot = currentHand.pot + actionAmount;
         const newCurrentBet = Math.max(currentHand.current_bet, newBet);
 
-        // Получаем всех игроков раздачи для определения следующего
+        // Get all hand players
         const { data: allHandPlayers } = await supabase
           .from('poker_hand_players')
           .select('*')
           .eq('hand_id', currentHand.id);
 
         const activePlayers = (allHandPlayers || []).filter(p => !p.is_folded && !p.is_all_in);
-        
-        // Проверяем, остался ли один игрок
         const remainingPlayers = (allHandPlayers || []).filter(p => !p.is_folded);
+
+        // Check if only one player remains
         if (remainingPlayers.length === 1) {
-          // Победитель определен
           const winner = remainingPlayers[0];
           const winnerTablePlayer = (tablePlayers || []).find(p => p.player_id === winner.player_id);
           
@@ -512,12 +707,12 @@ serve(async (req) => {
           break;
         }
 
-        // Находим следующего игрока
+        // Find next player
         const currentSeat = tablePlayer.seat_number;
         const sortedActive = [...activePlayers].sort((a, b) => a.seat_number - b.seat_number);
         let nextPlayer = sortedActive.find(p => p.seat_number > currentSeat) || sortedActive[0];
 
-        // Проверяем, завершен ли раунд ставок
+        // Check if betting round is complete
         const allActed = activePlayers.every(p => {
           if (p.player_id === playerId) return true;
           return p.bet_amount === newCurrentBet;
@@ -528,14 +723,14 @@ serve(async (req) => {
         const deck = JSON.parse(currentHand.deck_state || '[]');
 
         if (allActed && activePlayers.length > 0) {
-          // Переход к следующей улице
+          // Move to next street
           const phases = ['preflop', 'flop', 'turn', 'river', 'showdown'];
           const currentPhaseIndex = phases.indexOf(currentHand.phase);
           
           if (currentPhaseIndex < phases.length - 1) {
             newPhase = phases[currentPhaseIndex + 1];
             
-            // Добавляем карты на стол
+            // Deal community cards
             const usedCards = (allHandPlayers?.length || 0) * 2;
             if (newPhase === 'flop') {
               newCommunityCards = [deck[usedCards], deck[usedCards + 1], deck[usedCards + 2]];
@@ -545,7 +740,7 @@ serve(async (req) => {
               newCommunityCards = [...(currentHand.community_cards || []), deck[usedCards + 4]];
             }
 
-            // Сбрасываем ставки для новой улицы
+            // Reset bets for new street
             for (const hp of (allHandPlayers || [])) {
               if (!hp.is_folded) {
                 await supabase
@@ -555,35 +750,94 @@ serve(async (req) => {
               }
             }
 
-            // Первым ходит игрок после дилера
+            // First to act is player after dealer
             const dealerIndex = sortedActive.findIndex(p => p.seat_number >= currentHand.dealer_seat);
             nextPlayer = sortedActive[(dealerIndex + 1) % sortedActive.length] || sortedActive[0];
           }
 
-          // Showdown
+          // ==========================================
+          // SHOWDOWN WITH SIDE POTS
+          // ==========================================
           if (newPhase === 'showdown') {
-            // Определяем победителя
-            let bestRank = -1;
-            let winners: { playerId: string; rank: number; name: string }[] = [];
+            // Calculate side pots
+            const contributions: PlayerContribution[] = (allHandPlayers || []).map(hp => ({
+              playerId: hp.player_id,
+              totalBet: hp.bet_amount + (hp.stack_start - (tablePlayers?.find(tp => tp.player_id === hp.player_id)?.stack || 0)),
+              isFolded: hp.is_folded,
+              isAllIn: hp.is_all_in
+            }));
 
+            const potResult = calculateSidePots(contributions);
+            
+            // Evaluate all remaining hands
+            const handResults: (HandResult & { playerId: string })[] = [];
             for (const hp of remainingPlayers) {
-              const hand = evaluateHand(hp.hole_cards || [], newCommunityCards);
-              if (hand.rank > bestRank) {
-                bestRank = hand.rank;
-                winners = [{ playerId: hp.player_id, ...hand }];
-              } else if (hand.rank === bestRank) {
-                winners.push({ playerId: hp.player_id, ...hand });
-              }
+              const evalResult = evaluateHand(hp.hole_cards || [], newCommunityCards);
+              handResults.push({
+                ...evalResult,
+                playerId: hp.player_id
+              });
             }
 
-            const winAmount = Math.floor(newPot / winners.length);
-            for (const winner of winners) {
-              const winnerTablePlayer = (tablePlayers || []).find(p => p.player_id === winner.playerId);
+            // Distribute winnings
+            const winnings = new Map<string, number>();
+            const allPots = [potResult.mainPot, ...potResult.sidePots];
+            const winnersInfo: { playerId: string; amount: number; handName: string; potType: string }[] = [];
+
+            for (let i = 0; i < allPots.length; i++) {
+              const pot = allPots[i];
+              if (pot.amount === 0) continue;
+
+              // Find eligible players who have the best hand
+              const eligibleResults = handResults.filter(hr => pot.eligiblePlayers.includes(hr.playerId));
+              if (eligibleResults.length === 0) continue;
+
+              // Sort by hand strength
+              eligibleResults.sort((a, b) => compareHands(b, a));
+              const bestRank = eligibleResults[0].handRank;
+              const bestKickers = eligibleResults[0].kickers;
+
+              // Find all players with the winning hand
+              const potWinners = eligibleResults.filter(hr => 
+                hr.handRank === bestRank && compareKickers(hr.kickers, bestKickers) === 0
+              );
+
+              const winAmount = Math.floor(pot.amount / potWinners.length);
+              const remainder = pot.amount % potWinners.length;
+
+              potWinners.forEach((winner, index) => {
+                const extra = index === 0 ? remainder : 0;
+                const total = winAmount + extra;
+                winnings.set(winner.playerId, (winnings.get(winner.playerId) || 0) + total);
+                winnersInfo.push({
+                  playerId: winner.playerId,
+                  amount: total,
+                  handName: winner.handName,
+                  potType: i === 0 ? 'main' : `side-${i}`
+                });
+              });
+            }
+
+            // Update player stacks
+            for (const [winnerId, amount] of winnings) {
+              const winnerTablePlayer = (tablePlayers || []).find(p => p.player_id === winnerId);
               await supabase
                 .from('poker_table_players')
-                .update({ stack: (winnerTablePlayer?.stack || 0) + winAmount })
-                .eq('player_id', winner.playerId)
+                .update({ stack: (winnerTablePlayer?.stack || 0) + amount })
+                .eq('player_id', winnerId)
                 .eq('table_id', tableId);
+            }
+
+            // Update hand players with final results
+            for (const hr of handResults) {
+              await supabase
+                .from('poker_hand_players')
+                .update({
+                  hand_rank: hr.handName,
+                  won_amount: winnings.get(hr.playerId) || 0
+                })
+                .eq('hand_id', currentHand.id)
+                .eq('player_id', hr.playerId);
             }
 
             await supabase
@@ -593,7 +847,8 @@ serve(async (req) => {
                 phase: 'showdown',
                 community_cards: newCommunityCards,
                 completed_at: new Date().toISOString(),
-                winners: JSON.stringify(winners.map(w => ({ playerId: w.playerId, amount: winAmount }))),
+                winners: JSON.stringify(winnersInfo),
+                side_pots: JSON.stringify(allPots)
               })
               .eq('id', currentHand.id);
 
@@ -607,14 +862,20 @@ serve(async (req) => {
               action,
               amount: actionAmount,
               handComplete: true,
-              winners: winners.map(w => ({ playerId: w.playerId, amount: winAmount, handName: w.name })),
+              winners: winnersInfo,
               communityCards: newCommunityCards,
+              sidePots: allPots,
+              handResults: handResults.map(hr => ({
+                playerId: hr.playerId,
+                handName: hr.handName,
+                bestCards: hr.bestCards
+              }))
             };
             break;
           }
         }
 
-        // Обновляем раздачу
+        // Update hand
         await supabase
           .from('poker_hands')
           .update({

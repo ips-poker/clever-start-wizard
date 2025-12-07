@@ -1,5 +1,11 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 
+export interface WsSidePot {
+  amount: number;
+  eligiblePlayers: string[];
+  cappedAt: number;
+}
+
 export interface WsGameState {
   tableId: string;
   handId: string | null;
@@ -12,6 +18,7 @@ export interface WsGameState {
   players: WsPlayerState[];
   smallBlind: number;
   bigBlind: number;
+  sidePots?: WsSidePot[];
 }
 
 export interface WsPlayerState {
