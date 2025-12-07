@@ -20,6 +20,8 @@ import { TournamentLeaderboard } from './TournamentLeaderboard';
 import { ProfessionalPokerTable } from './ProfessionalPokerTable';
 import { EnhancedPokerControls } from './EnhancedPokerControls';
 import { MobilePokerTable } from './MobilePokerTable';
+import { HandHistoryExport } from './HandHistoryExport';
+import { TableStatistics } from './TableStatistics';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { 
   Loader2, 
@@ -35,7 +37,8 @@ import {
   VolumeX,
   History,
   Eye,
-  Trophy
+  Trophy,
+  BarChart3
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -66,6 +69,7 @@ export function OnlinePokerTable({
   const [chatInput, setChatInput] = useState('');
   const [showChat, setShowChat] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  const [showStats, setShowStats] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [spectatorCount, setSpectatorCount] = useState(0);
   const prevPhaseRef = useRef<string | null>(null);
@@ -498,6 +502,19 @@ export function OnlinePokerTable({
           {!isSpectator && spectatorCount > 0 && <SpectatorBadge count={spectatorCount} />}
         </div>
         <div className="flex items-center gap-2">
+          {/* Hand History Export */}
+          <HandHistoryExport handHistory={handHistory} />
+          
+          {/* Statistics Toggle */}
+          <Button 
+            variant={showStats ? "default" : "ghost"}
+            size="icon"
+            onClick={() => setShowStats(!showStats)}
+            title="Статистика"
+          >
+            <BarChart3 className="h-4 w-4" />
+          </Button>
+          
           <Button 
             variant="ghost" 
             size="icon"
@@ -677,6 +694,23 @@ export function OnlinePokerTable({
                   playerId: w.playerId
                 }))
               }))}
+              playerId={playerId}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Statistics panel */}
+      <AnimatePresence>
+        {showStats && (
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            className="fixed top-24 left-4 w-72 z-40"
+          >
+            <TableStatistics 
+              handHistory={handHistory}
               playerId={playerId}
             />
           </motion.div>
