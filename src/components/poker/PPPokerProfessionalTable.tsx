@@ -201,10 +201,11 @@ const ActionBadge = memo(function ActionBadge({
   );
 });
 
-// ============= PLAYER SEAT (PPPoker Style) =============
+// ============= PLAYER SEAT (PPPoker Authentic Style) =============
 const PlayerSeat = memo(function PlayerSeat({
   player,
   position,
+  seatIndex,
   isHero,
   showCards,
   isDealer,
@@ -217,6 +218,7 @@ const PlayerSeat = memo(function PlayerSeat({
 }: {
   player: PokerPlayer | null;
   position: { x: number; y: number };
+  seatIndex: number;
   isHero: boolean;
   showCards: boolean;
   isDealer: boolean;
@@ -227,31 +229,60 @@ const PlayerSeat = memo(function PlayerSeat({
   turnDuration?: number;
   lastAction?: { action: string; amount?: number } | null;
 }) {
+  // Calculate bet position - BETWEEN player and table center (PPPoker style)
+  const getBetPosition = useMemo(() => {
+    // Direction towards center based on seat position
+    const centerX = 50;
+    const centerY = 45;
+    const dirX = centerX - position.x;
+    const dirY = centerY - position.y;
+    const dist = Math.sqrt(dirX * dirX + dirY * dirY);
+    
+    // Normalize and scale - bet chips appear 30-40% towards center
+    const scale = 0.35;
+    return {
+      x: dirX / dist * 35 * scale,
+      y: dirY / dist * 35 * scale
+    };
+  }, [position.x, position.y]);
+
+  // Get cards position based on seat (PPPoker: cards shown beside avatar, not above)
+  const getCardsPosition = useMemo(() => {
+    // Left side players: cards on right
+    // Right side players: cards on left
+    // Top/bottom: cards beside
+    if (position.x < 30) return 'right';
+    if (position.x > 70) return 'left';
+    if (position.y < 30) return 'below';
+    return 'above';
+  }, [position.x, position.y]);
+
   // Empty seat
   if (!player) {
     return (
       <div
-        className="absolute -translate-x-1/2 -translate-y-1/2 w-12 h-12"
+        className="absolute -translate-x-1/2 -translate-y-1/2"
         style={{ left: `${position.x}%`, top: `${position.y}%` }}
       >
-        <div className="w-full h-full rounded-full border-2 border-dashed border-white/20 
-                        flex items-center justify-center text-white/30 text-[10px]">
+        <div className="w-12 h-12 rounded-full border-2 border-dashed border-white/20 
+                        flex items-center justify-center text-white/30 text-lg cursor-pointer
+                        hover:border-white/40 hover:text-white/50 transition-colors">
           +
         </div>
       </div>
     );
   }
 
-  const avatarSize = isHero ? 'w-14 h-14' : 'w-12 h-12';
+  const avatarSize = isHero ? 'w-16 h-16' : 'w-14 h-14';
   const showTurnTimer = isCurrentTurn && !player.isFolded && !player.isAllIn;
   
-  // Resolve avatar URL - handles Vite hashed paths and fallbacks
+  // Resolve avatar URL
   const resolvedAvatarUrl = resolveAvatarUrl(player.avatarUrl, player.playerId);
 
   return (
     <motion.div
       className={cn(
-        "absolute -translate-x-1/2 -translate-y-1/2 z-10",
+        "absolute -translate-x-1/2 -translate-y-1/2",
         isHero ? "z-20" : "z-10"
       )}
       style={{ left: `${position.x}%`, top: `${position.y}%` }}
@@ -259,9 +290,123 @@ const PlayerSeat = memo(function PlayerSeat({
       animate={{ scale: 1, opacity: 1 }}
       transition={{ type: 'spring', stiffness: 260, damping: 25 }}
     >
-      {/* Player cards - only show for opponents, hero cards shown at bottom of table */}
+      {/* Action badge - above avatar like PPPoker */}
+      <AnimatePresence>
+        {lastAction && (
+          <motion.div 
+            className="absolute -top-7 left-1/2 -translate-x-1/2 z-30"
+            initial={{ opacity: 0, y: 5, scale: 0.8 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -5, scale: 0.8 }}
+          >
+            <div className={cn(
+              "px-3 py-1 rounded text-[10px] font-bold text-white shadow-lg",
+              lastAction.action === 'fold' && "bg-gray-600",
+              lastAction.action === 'check' && "bg-blue-600",
+              lastAction.action === 'call' && "bg-green-600",
+              (lastAction.action === 'raise' || lastAction.action === 'bet') && "bg-amber-600",
+              lastAction.action === 'allin' && "bg-red-600"
+            )}>
+              {lastAction.action === 'fold' ? 'Fold' :
+               lastAction.action === 'check' ? 'Check' :
+               lastAction.action === 'call' ? `Call` :
+               lastAction.action === 'allin' ? 'All-In' :
+               `${lastAction.action} ${lastAction.amount || ''}`}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Turn timer ring - around avatar */}
+      {showTurnTimer && turnTimeRemaining !== undefined && (
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <TimerRing 
+            remaining={turnTimeRemaining} 
+            total={turnDuration} 
+            size={isHero ? 72 : 62}
+          />
+        </div>
+      )}
+
+      {/* Avatar container - PPPoker round style */}
+      <div className={cn(
+        avatarSize,
+        "relative rounded-full overflow-hidden",
+        "border-3 transition-all duration-200",
+        player.isFolded && "opacity-50 grayscale",
+        player.isAllIn && "ring-2 ring-red-500 ring-offset-2 ring-offset-black/50",
+        isCurrentTurn && !player.isFolded 
+          ? "border-green-400 shadow-lg shadow-green-400/50" 
+          : "border-gray-600"
+      )}>
+        {/* Avatar image */}
+        <div 
+          className="absolute inset-0 bg-cover bg-center"
+          style={{ backgroundImage: `url(${resolvedAvatarUrl})` }}
+        />
+        
+        {/* Fold overlay on avatar - PPPoker style */}
+        {player.isFolded && (
+          <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+            <span className="text-white/90 text-[10px] font-bold">Fold</span>
+          </div>
+        )}
+      </div>
+
+      {/* Dealer button - PPPoker white circle with D */}
+      {isDealer && (
+        <div className="absolute -right-1 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full 
+                        bg-white text-gray-900 text-[9px] font-black 
+                        flex items-center justify-center shadow-lg z-20">
+          D
+        </div>
+      )}
+
+      {/* Player info plate - PPPoker dark bar style */}
+      <div className="absolute top-full mt-1 left-1/2 -translate-x-1/2 z-10">
+        <div 
+          className="flex flex-col items-center px-3 py-1 rounded-md min-w-[70px]"
+          style={{
+            background: 'linear-gradient(180deg, rgba(40,40,40,0.95) 0%, rgba(20,20,20,0.98) 100%)',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.5)'
+          }}
+        >
+          {/* Name */}
+          <div className="text-white text-[10px] font-medium truncate max-w-[75px]">
+            {isHero ? 'Вы' : (player.name || 'Player')}
+          </div>
+          {/* Stack - green/yellow for active, red pulse for all-in */}
+          <div className={cn(
+            "text-[12px] font-bold",
+            player.isAllIn 
+              ? "text-red-400 animate-pulse" 
+              : "text-green-400"
+          )}>
+            {player.isAllIn ? 'ALL-IN' : player.stack.toLocaleString()}
+          </div>
+        </div>
+      </div>
+
+      {/* SB/BB indicator - small colored badge */}
+      {(isSB || isBB) && (
+        <div className={cn(
+          "absolute -left-1 -bottom-1 w-4 h-4 rounded-full text-white text-[7px] font-bold",
+          "flex items-center justify-center shadow z-20",
+          isBB ? "bg-amber-500" : "bg-blue-500"
+        )}>
+          {isBB ? 'B' : 'S'}
+        </div>
+      )}
+
+      {/* Player cards - for opponents only (hero cards shown at bottom) */}
       {player.holeCards && player.holeCards.length > 0 && !player.isFolded && !isHero && (
-        <div className="absolute flex gap-0.5 z-5 -top-10 left-1/2 -translate-x-1/2">
+        <div className={cn(
+          "absolute flex gap-0.5 z-5",
+          getCardsPosition === 'right' && "left-full ml-1 top-1/2 -translate-y-1/2",
+          getCardsPosition === 'left' && "right-full mr-1 top-1/2 -translate-y-1/2",
+          getCardsPosition === 'above' && "-top-12 left-1/2 -translate-x-1/2",
+          getCardsPosition === 'below' && "top-full mt-10 left-1/2 -translate-x-1/2"
+        )}>
           {player.holeCards.map((card, idx) => (
             <SyndikatePPCard
               key={`${card}-${idx}`}
@@ -274,103 +419,28 @@ const PlayerSeat = memo(function PlayerSeat({
         </div>
       )}
 
-      {/* Turn timer ring */}
-      {showTurnTimer && turnTimeRemaining !== undefined && (
-        <TimerRing 
-          remaining={turnTimeRemaining} 
-          total={turnDuration} 
-          size={isHero ? 64 : 54}
-        />
-      )}
-
-      {/* Avatar container */}
-      <div className={cn(
-        avatarSize,
-        "relative rounded-full overflow-hidden",
-        "border-2 transition-all duration-300",
-        player.isFolded && "opacity-40 grayscale",
-        player.isAllIn && "ring-2 ring-red-500 ring-offset-1 ring-offset-black",
-        isCurrentTurn && !player.isFolded 
-          ? "border-amber-400 shadow-lg shadow-amber-400/40" 
-          : "border-white/30"
-      )}>
-        {/* Avatar background - always use resolvedAvatarUrl */}
-        <div 
-          className="absolute inset-0 bg-cover bg-center"
-          style={{
-            backgroundImage: `url(${resolvedAvatarUrl})`
-          }}
-        />
-        
-        {/* Dark overlay for better visibility */}
-        <div className="absolute inset-0 bg-black/20" />
-
-        {/* Folded overlay */}
-        {player.isFolded && (
-          <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-            <span className="text-[8px] text-white/70 font-medium">FOLD</span>
-          </div>
-        )}
-      </div>
-
-      {/* Dealer button */}
-      {isDealer && (
-        <div className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-white 
-                        text-gray-900 text-[8px] font-black flex items-center justify-center 
-                        shadow-lg border border-gray-200">
-          D
-        </div>
-      )}
-
-      {/* SB/BB badge */}
-      {(isSB || isBB) && (
-        <div className={cn(
-          "absolute -bottom-1 -left-1 w-5 h-5 rounded-full text-white text-[7px] font-bold",
-          "flex items-center justify-center shadow",
-          isBB ? "bg-amber-500" : "bg-blue-500"
-        )}>
-          {isBB ? 'BB' : 'SB'}
-        </div>
-      )}
-
-      {/* Player name & stack */}
-      <div className="absolute top-full mt-0.5 left-1/2 -translate-x-1/2 text-center min-w-[60px]">
-        <div className="text-white text-[9px] font-medium truncate max-w-[70px]">
-          {isHero ? 'Вы' : (player.name || 'Player')}
-        </div>
-        <div className={cn(
-          "text-[10px] font-bold px-2 py-0.5 rounded-full mt-0.5 inline-block",
-          player.isAllIn 
-            ? "bg-red-600 text-white animate-pulse" 
-            : "bg-black/60 text-amber-400"
-        )}>
-          {player.isAllIn ? 'ALL-IN' : player.stack.toLocaleString()}
-        </div>
-      </div>
-
-      {/* Current bet */}
+      {/* Current bet - positioned BETWEEN player and center (PPPoker authentic) */}
       {player.betAmount > 0 && (
-        <div className={cn(
-          "absolute",
-          isHero ? "top-[80%] left-1/2 -translate-x-1/2" : "top-[75%]",
-          position.x > 50 ? "left-[-50%]" : "left-[150%] -translate-x-full"
-        )}>
-          <ChipDisplay amount={player.betAmount} size="sm" />
-        </div>
-      )}
-
-      {/* Action badge */}
-      <AnimatePresence>
-        {lastAction && (
-          <div className="absolute -bottom-6 left-1/2 -translate-x-1/2">
-            <ActionBadge action={lastAction.action} amount={lastAction.amount} />
+        <motion.div
+          className="absolute z-15"
+          style={{
+            left: `${getBetPosition.x}px`,
+            top: `${getBetPosition.y}px`
+          }}
+          initial={{ scale: 0, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+        >
+          <div className="flex items-center gap-1 bg-black/70 rounded-full px-2 py-0.5">
+            <div className="w-3 h-3 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 shadow" />
+            <span className="text-amber-400 text-[11px] font-bold">
+              {player.betAmount.toLocaleString()}
+            </span>
           </div>
-        )}
-      </AnimatePresence>
+        </motion.div>
+      )}
     </motion.div>
   );
 }, (prev, next) => {
-  // Strict deep equality check to prevent ANY unnecessary re-renders (PPPoker-level stability)
   if (prev.player?.playerId !== next.player?.playerId) return false;
   if (prev.player?.stack !== next.player?.stack) return false;
   if (prev.player?.isFolded !== next.player?.isFolded) return false;
@@ -384,7 +454,6 @@ const PlayerSeat = memo(function PlayerSeat({
   if (prev.turnTimeRemaining !== next.turnTimeRemaining) return false;
   if (prev.lastAction?.action !== next.lastAction?.action) return false;
   
-  // Deep compare hole cards - only if both have cards
   const prevCards = prev.player?.holeCards || [];
   const nextCards = next.player?.holeCards || [];
   if (prevCards.length !== nextCards.length) return false;
@@ -392,69 +461,59 @@ const PlayerSeat = memo(function PlayerSeat({
     if (prevCards[i] !== nextCards[i]) return false;
   }
   
-  return true; // No changes detected
+  return true;
 });
 
-// ============= SYNDIKATE TABLE FELT =============
+// ============= PPPOKER STYLE TABLE FELT (Green like reference) =============
 const SyndikatetTableFelt = memo(function SyndikatetTableFelt() {
   return (
     <div className="absolute inset-0 overflow-hidden rounded-2xl">
-      {/* Dark industrial background */}
+      {/* Dark outer background - PPPoker dark gray/navy */}
       <div 
         className="absolute inset-0"
         style={{
-          background: 'linear-gradient(180deg, #0a0a0a 0%, #1a1a1a 50%, #0a0a0a 100%)'
+          background: 'linear-gradient(180deg, #1a1f2e 0%, #0d1117 50%, #1a1f2e 100%)'
         }}
       />
       
-      {/* Table oval - dark industrial felt */}
+      {/* Outer rail - dark with subtle purple tint like PPPoker */}
+      <div 
+        className="absolute inset-[3%] rounded-[50%]"
+        style={{
+          background: 'linear-gradient(180deg, #2d3548 0%, #1a1f2e 50%, #2d3548 100%)',
+          boxShadow: 'inset 0 0 30px rgba(0,0,0,0.5), 0 10px 40px rgba(0,0,0,0.8)'
+        }}
+      />
+      
+      {/* Table felt - rich PPPoker green */}
       <div 
         className="absolute inset-[5%] rounded-[50%]"
         style={{
-          background: 'linear-gradient(180deg, #1a2a20 0%, #0d1810 50%, #1a2a20 100%)',
+          background: 'radial-gradient(ellipse at 50% 40%, #2d8f4e 0%, #1f6b3a 30%, #156b2d 60%, #0f5522 100%)',
           boxShadow: `
-            inset 0 0 80px rgba(0,0,0,0.7),
-            inset 0 0 30px rgba(255, 122, 0, 0.05),
-            0 20px 60px rgba(0,0,0,0.9)
+            inset 0 0 60px rgba(0,0,0,0.4),
+            inset 0 -20px 60px rgba(0,0,0,0.3),
+            0 15px 50px rgba(0,0,0,0.7)
           `
         }}
       >
-        {/* Industrial noise texture */}
+        {/* Felt texture overlay */}
         <div 
-          className="absolute inset-0 rounded-[50%] opacity-30"
+          className="absolute inset-0 rounded-[50%] opacity-20"
           style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`
+            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`
           }}
         />
         
-        {/* Orange neon rail */}
+        {/* Inner decorative line */}
         <div 
-          className="absolute inset-0 rounded-[50%] border-2"
-          style={{ 
-            borderColor: 'rgba(255, 122, 0, 0.3)',
-            boxShadow: '0 0 20px rgba(255, 122, 0, 0.1)'
-          }}
+          className="absolute inset-[8%] rounded-[50%] border border-white/5"
         />
         
-        {/* Center logo area */}
-        <div className="absolute inset-[35%] rounded-[50%] flex items-center justify-center opacity-20">
+        {/* Center logo watermark */}
+        <div className="absolute inset-[30%] rounded-[50%] flex items-center justify-center opacity-10">
           <img src={syndikateLogo} alt="" className="w-full h-auto" />
         </div>
-        
-        {/* Corner bolts */}
-        {[0, 90, 180, 270].map(angle => (
-          <div 
-            key={angle}
-            className="absolute w-3 h-3 rounded-full bg-zinc-700 border border-zinc-600"
-            style={{
-              top: '15%',
-              left: '50%',
-              transform: `rotate(${angle}deg) translateY(-120px) translateX(-50%)`
-            }}
-          >
-            <div className="absolute inset-1 rounded-full bg-zinc-800" />
-          </div>
-        ))}
       </div>
     </div>
   );
@@ -1033,11 +1092,12 @@ export function PPPokerProfessionalTable({
           )}
 
           {/* Player seats */}
-          {players.map(({ position, seatNumber, player }) => (
+          {players.map(({ position, seatNumber, player }, idx) => (
             <PlayerSeat
               key={seatNumber}
               player={player || null}
               position={position}
+              seatIndex={idx}
               isHero={player?.playerId === playerId}
               showCards={tableState?.phase === 'showdown'}
               isDealer={tableState?.dealerSeat === seatNumber}
