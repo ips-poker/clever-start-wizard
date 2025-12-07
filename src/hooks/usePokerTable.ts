@@ -18,6 +18,9 @@ export interface PokerPlayer {
   isFolded: boolean;
   isAllIn: boolean;
   isActive: boolean;
+  // Disconnect protection
+  isDisconnected?: boolean;
+  timeBankRemaining?: number;
 }
 
 export interface SidePotInfo {
@@ -449,6 +452,34 @@ export function usePokerTable(options: UsePokerTableOptions | null) {
     });
   }, [tableId, playerId, sendMessage]);
 
+  // Use time bank
+  const useTimeBank = useCallback((seconds: number = 30) => {
+    sendMessage({
+      type: 'use_time_bank',
+      tableId,
+      playerId,
+      data: { seconds }
+    });
+  }, [tableId, playerId, sendMessage]);
+
+  // Send ping (for connection health)
+  const sendPing = useCallback(() => {
+    sendMessage({
+      type: 'ping',
+      tableId,
+      playerId
+    });
+  }, [tableId, playerId, sendMessage]);
+
+  // Reconnect after disconnect
+  const reconnect = useCallback(() => {
+    sendMessage({
+      type: 'reconnect',
+      tableId,
+      playerId
+    });
+  }, [tableId, playerId, sendMessage]);
+
   // Get current player info
   const myPlayer = tableState?.players.find(p => p.oderId === playerId);
   const isMyTurn = tableState?.currentPlayerSeat === mySeat;
@@ -464,6 +495,21 @@ export function usePokerTable(options: UsePokerTableOptions | null) {
     const myPlayerObj = tableState?.players.find(p => p.oderId === playerId);
     return myPlayerObj && s.seat === myPlayerObj.seatNumber;
   });
+
+  // Time bank info
+  const timeBankRemaining = myPlayer?.timeBankRemaining || 0;
+  const isDisconnected = myPlayer?.isDisconnected || false;
+
+  // Auto-ping for connection health
+  useEffect(() => {
+    if (!isConnected) return;
+    
+    const pingInterval = setInterval(() => {
+      sendPing();
+    }, 5000); // Ping every 5 seconds
+    
+    return () => clearInterval(pingInterval);
+  }, [isConnected, sendPing]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -503,6 +549,10 @@ export function usePokerTable(options: UsePokerTableOptions | null) {
     straddleAmount,
     hasPostedStraddle,
     
+    // Time bank & disconnect info
+    timeBankRemaining,
+    isDisconnected,
+    
     // Actions
     connect,
     disconnect,
@@ -515,6 +565,9 @@ export function usePokerTable(options: UsePokerTableOptions | null) {
     sendChat,
     clearShowdown,
     postStraddle,
-    configureTable
+    configureTable,
+    useTimeBank,
+    sendPing,
+    reconnect
   };
 }

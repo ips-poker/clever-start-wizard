@@ -327,6 +327,13 @@ interface PlayerState {
   isFolded: boolean;
   isAllIn: boolean;
   isActive: boolean;
+  // ===== DISCONNECT PROTECTION =====
+  isDisconnected: boolean; // Player has disconnected
+  disconnectedAt: number | null; // Timestamp when player disconnected
+  reconnectGracePeriod: number; // Seconds to wait before auto-folding
+  timeBank: number; // Extra time bank in seconds
+  timeBankUsed: number; // Time bank used this hand
+  lastPingAt: number; // Last ping timestamp
 }
 
 interface WSMessage {
@@ -340,6 +347,11 @@ interface WSMessage {
 // TIMER MANAGEMENT FOR AUTO-FOLD
 // ==========================================
 const tableTimers: Map<string, number> = new Map(); // tableId -> timer ID
+const disconnectTimers: Map<string, number> = new Map(); // playerId -> disconnect timer ID
+const DEFAULT_TIME_BANK = 60; // 60 seconds time bank per player
+const DEFAULT_RECONNECT_GRACE = 30; // 30 seconds to reconnect
+const PING_INTERVAL = 5000; // 5 seconds ping interval
+const PING_TIMEOUT = 15000; // 15 seconds without ping = disconnected
 
 function clearTableTimer(tableId: string) {
   const existingTimer = tableTimers.get(tableId);
@@ -347,6 +359,15 @@ function clearTableTimer(tableId: string) {
     clearTimeout(existingTimer);
     tableTimers.delete(tableId);
     console.log(`⏱️ Timer cleared for table ${tableId}`);
+  }
+}
+
+function clearDisconnectTimer(playerId: string) {
+  const existingTimer = disconnectTimers.get(playerId);
+  if (existingTimer) {
+    clearTimeout(existingTimer);
+    disconnectTimers.delete(playerId);
+    console.log(`🔌 Disconnect timer cleared for player ${playerId}`);
   }
 }
 
@@ -364,18 +385,61 @@ function startActionTimer(tableId: string, supabase: any) {
     return;
   }
   
+  // Get current player
+  const currentPlayer = getPlayerBySeat(tableState, tableState.currentPlayerSeat);
+  if (!currentPlayer) return;
+  
   // Set turn start time
   tableState.turnStartTime = Date.now();
   
-  const timerDuration = tableState.actionTimer * 1000; // Convert to ms
+  // Calculate total time: base timer + available time bank (if disconnected, use time bank automatically)
+  let totalTime = tableState.actionTimer;
   
-  console.log(`⏱️ Starting ${tableState.actionTimer}s timer for seat ${tableState.currentPlayerSeat} on table ${tableId}`);
+  // If player is disconnected, start using time bank immediately
+  if (currentPlayer.isDisconnected) {
+    const remainingTimeBank = currentPlayer.timeBank - currentPlayer.timeBankUsed;
+    if (remainingTimeBank > 0) {
+      totalTime += remainingTimeBank;
+      console.log(`⏱️ Disconnected player using time bank: ${remainingTimeBank}s added`);
+    }
+  }
+  
+  const timerDuration = totalTime * 1000; // Convert to ms
+  
+  console.log(`⏱️ Starting ${totalTime}s timer for seat ${tableState.currentPlayerSeat} on table ${tableId} (disconnected: ${currentPlayer.isDisconnected})`);
   
   const timerId = setTimeout(async () => {
     await handleAutoFold(tableId, supabase);
   }, timerDuration);
   
   tableTimers.set(tableId, timerId);
+}
+
+// Start time bank timer (when base timer expires)
+function startTimeBankTimer(tableId: string, playerId: string, supabase: any) {
+  const tableState = tableStates.get(tableId);
+  if (!tableState) return;
+  
+  const player = tableState.players.get(playerId);
+  if (!player) return;
+  
+  const remainingTimeBank = player.timeBank - player.timeBankUsed;
+  
+  if (remainingTimeBank <= 0) {
+    // No time bank left, auto-fold
+    handleAutoFold(tableId, supabase);
+    return;
+  }
+  
+  console.log(`⏳ Time bank activated for player ${playerId}: ${remainingTimeBank}s remaining`);
+  
+  // Notify players about time bank usage
+  broadcastToTable(tableId, {
+    type: "time_bank_started",
+    playerId,
+    seatNumber: player.seatNumber,
+    remainingTimeBank
+  });
 }
 
 async function handleAutoFold(tableId: string, supabase: any) {
@@ -397,6 +461,15 @@ async function handleAutoFold(tableId: string, supabase: any) {
     if (p.seatNumber === currentSeat) {
       timedOutPlayerId = pid;
       break;
+    }
+  }
+  
+  // Check if player has time bank remaining and is disconnected
+  if (player.isDisconnected) {
+    const remainingTimeBank = player.timeBank - player.timeBankUsed;
+    if (remainingTimeBank > 0) {
+      // Use all remaining time bank
+      player.timeBankUsed = player.timeBank;
     }
   }
   
@@ -439,6 +512,7 @@ async function handleAutoFold(tableId: string, supabase: any) {
     seatNumber: currentSeat,
     action: "fold",
     isAutoFold: true,
+    isDisconnectFold: player.isDisconnected,
     state: serializeTableState(tableState)
   });
   
@@ -446,8 +520,185 @@ async function handleAutoFold(tableId: string, supabase: any) {
     type: "timeout_fold",
     seatNumber: currentSeat,
     playerId: timedOutPlayerId,
-    message: `Player at seat ${currentSeat} timed out and folded`
+    message: `Player at seat ${currentSeat} timed out and folded`,
+    wasDisconnected: player.isDisconnected
   });
+}
+
+// Handle player disconnect
+function handlePlayerDisconnect(tableId: string, playerId: string, supabase: any) {
+  const tableState = tableStates.get(tableId);
+  if (!tableState) return;
+  
+  const player = tableState.players.get(playerId);
+  if (!player) return;
+  
+  // Mark player as disconnected
+  player.isDisconnected = true;
+  player.disconnectedAt = Date.now();
+  
+  console.log(`🔌 Player ${playerId} disconnected from table ${tableId}`);
+  
+  // Notify other players
+  broadcastToTable(tableId, {
+    type: "player_disconnected",
+    playerId,
+    seatNumber: player.seatNumber,
+    gracePeriod: player.reconnectGracePeriod
+  }, playerId);
+  
+  // Start disconnect timer
+  const timerId = setTimeout(() => {
+    handleDisconnectTimeout(tableId, playerId, supabase);
+  }, player.reconnectGracePeriod * 1000);
+  
+  disconnectTimers.set(playerId, timerId);
+}
+
+// Handle disconnect timeout (player didn't reconnect)
+async function handleDisconnectTimeout(tableId: string, playerId: string, supabase: any) {
+  const tableState = tableStates.get(tableId);
+  if (!tableState) return;
+  
+  const player = tableState.players.get(playerId);
+  if (!player || !player.isDisconnected) return;
+  
+  console.log(`⏰ Disconnect timeout for player ${playerId} on table ${tableId}`);
+  
+  // If it's this player's turn, they'll fold when their action timer expires
+  // If they're waiting, mark them as sitting out
+  if (tableState.currentPlayerSeat !== player.seatNumber) {
+    // Player is not acting, just keep them marked as disconnected
+    // They will auto-fold when it's their turn
+    broadcastToTable(tableId, {
+      type: "player_sitting_out",
+      playerId,
+      seatNumber: player.seatNumber,
+      reason: "disconnect_timeout"
+    });
+  }
+  
+  clearDisconnectTimer(playerId);
+}
+
+// Handle player reconnect
+function handlePlayerReconnect(tableId: string, playerId: string, socket: WebSocket) {
+  const tableState = tableStates.get(tableId);
+  if (!tableState) return;
+  
+  const player = tableState.players.get(playerId);
+  if (!player) return;
+  
+  // Clear disconnect timer
+  clearDisconnectTimer(playerId);
+  
+  // Calculate time spent disconnected
+  const disconnectDuration = player.disconnectedAt 
+    ? Math.floor((Date.now() - player.disconnectedAt) / 1000) 
+    : 0;
+  
+  // Mark player as reconnected
+  player.isDisconnected = false;
+  player.disconnectedAt = null;
+  player.lastPingAt = Date.now();
+  
+  console.log(`🔄 Player ${playerId} reconnected to table ${tableId} (was disconnected for ${disconnectDuration}s)`);
+  
+  // Notify other players
+  broadcastToTable(tableId, {
+    type: "player_reconnected",
+    playerId,
+    seatNumber: player.seatNumber,
+    disconnectDuration,
+    timeBankRemaining: player.timeBank - player.timeBankUsed
+  }, playerId);
+  
+  // Send full state to reconnected player
+  sendToSocket(socket, {
+    type: "reconnected",
+    tableId,
+    seatNumber: player.seatNumber,
+    disconnectDuration,
+    timeBankRemaining: player.timeBank - player.timeBankUsed,
+    yourCards: player.holeCards,
+    state: serializeTableState(tableState, playerId)
+  });
+  
+  // If it's this player's turn, restart their timer with remaining time
+  if (tableState.currentPlayerSeat === player.seatNumber && tableState.turnStartTime) {
+    const elapsed = Math.floor((Date.now() - tableState.turnStartTime) / 1000);
+    const remaining = tableState.actionTimer - elapsed;
+    
+    if (remaining > 0) {
+      // Restart timer with remaining time
+      clearTableTimer(tableId);
+      const timerId = setTimeout(async () => {
+        await handleAutoFold(tableId, null); // No supabase needed for this call
+      }, remaining * 1000);
+      tableTimers.set(tableId, timerId);
+      
+      sendToSocket(socket, {
+        type: "your_turn",
+        timeRemaining: remaining,
+        timeBankRemaining: player.timeBank - player.timeBankUsed
+      });
+    }
+  }
+}
+
+// Handle ping from client
+function handlePing(tableId: string, playerId: string) {
+  const tableState = tableStates.get(tableId);
+  if (!tableState) return;
+  
+  const player = tableState.players.get(playerId);
+  if (!player) return;
+  
+  player.lastPingAt = Date.now();
+}
+
+// Use time bank action
+function handleUseTimeBank(tableId: string, playerId: string, seconds: number) {
+  const tableState = tableStates.get(tableId);
+  if (!tableState) return { success: false, reason: "Table not found" };
+  
+  const player = tableState.players.get(playerId);
+  if (!player) return { success: false, reason: "Player not found" };
+  
+  // Check if it's player's turn
+  if (tableState.currentPlayerSeat !== player.seatNumber) {
+    return { success: false, reason: "Not your turn" };
+  }
+  
+  const remainingTimeBank = player.timeBank - player.timeBankUsed;
+  const actualSeconds = Math.min(seconds, remainingTimeBank);
+  
+  if (actualSeconds <= 0) {
+    return { success: false, reason: "No time bank remaining" };
+  }
+  
+  player.timeBankUsed += actualSeconds;
+  
+  console.log(`⏳ Player ${playerId} using ${actualSeconds}s from time bank (${remainingTimeBank - actualSeconds}s remaining)`);
+  
+  // Extend the current timer
+  clearTableTimer(tableId);
+  
+  const timerId = setTimeout(async () => {
+    await handleAutoFold(tableId, null);
+  }, actualSeconds * 1000);
+  
+  tableTimers.set(tableId, timerId);
+  
+  broadcastToTable(tableId, {
+    type: "time_bank_used",
+    playerId,
+    seatNumber: player.seatNumber,
+    secondsUsed: actualSeconds,
+    remainingTimeBank: remainingTimeBank - actualSeconds
+  });
+  
+  return { success: true, secondsUsed: actualSeconds, remaining: remainingTimeBank - actualSeconds };
 }
 
 serve(async (req) => {
@@ -517,6 +768,37 @@ serve(async (req) => {
           await handleConfigureTable(socket, message);
           break;
 
+        case "ping":
+          // Handle heartbeat ping
+          if (message.tableId && message.playerId) {
+            handlePing(message.tableId, message.playerId);
+            sendToSocket(socket, { type: "pong", timestamp: Date.now() });
+          }
+          break;
+
+        case "use_time_bank":
+          // Player wants to use time bank
+          if (message.tableId && message.playerId && message.data?.seconds) {
+            const result = handleUseTimeBank(message.tableId, message.playerId, message.data.seconds);
+            sendToSocket(socket, { type: "time_bank_result", ...result });
+          }
+          break;
+
+        case "reconnect":
+          // Player is reconnecting after disconnect
+          if (message.tableId && message.playerId) {
+            handlePlayerReconnect(message.tableId, message.playerId, socket);
+            currentTableId = message.tableId;
+            currentPlayerId = message.playerId;
+            
+            // Re-add to connections
+            if (!tableConnections.has(message.tableId)) {
+              tableConnections.set(message.tableId, new Map());
+            }
+            tableConnections.get(message.tableId)!.set(message.playerId, socket);
+          }
+          break;
+
         default:
           sendToSocket(socket, { type: "error", message: "Unknown message type" });
       }
@@ -529,7 +811,20 @@ serve(async (req) => {
   socket.onclose = () => {
     console.log("🔌 WebSocket connection closed");
     if (currentTableId && currentPlayerId) {
-      removePlayerFromTable(currentTableId, currentPlayerId);
+      // Don't remove player immediately - mark as disconnected and start grace period
+      const tableState = tableStates.get(currentTableId);
+      if (tableState) {
+        const player = tableState.players.get(currentPlayerId);
+        if (player && !player.isFolded && tableState.phase !== 'waiting') {
+          // Player disconnected during a hand - start disconnect protection
+          handlePlayerDisconnect(currentTableId, currentPlayerId, supabase);
+        } else {
+          // Player left between hands or already folded - remove them
+          removePlayerFromTable(currentTableId, currentPlayerId);
+        }
+      } else {
+        removePlayerFromTable(currentTableId, currentPlayerId);
+      }
     }
   };
 
@@ -591,6 +886,14 @@ async function handleJoinTable(socket: WebSocket, message: WSMessage, supabase: 
     console.error("Error fetching player data:", error);
   }
 
+  // Check if player is reconnecting (already exists in table)
+  const existingPlayer = tableState.players.get(playerId);
+  if (existingPlayer) {
+    // Player is reconnecting
+    handlePlayerReconnect(tableId, playerId, socket);
+    return;
+  }
+
   tableState.players.set(playerId, {
     oderId: playerId,
     name: playerName,
@@ -602,7 +905,14 @@ async function handleJoinTable(socket: WebSocket, message: WSMessage, supabase: 
     totalBetInHand: 0,
     isFolded: false,
     isAllIn: false,
-    isActive: true
+    isActive: true,
+    // Disconnect protection fields
+    isDisconnected: false,
+    disconnectedAt: null,
+    reconnectGracePeriod: DEFAULT_RECONNECT_GRACE,
+    timeBank: DEFAULT_TIME_BANK,
+    timeBankUsed: 0,
+    lastPingAt: Date.now()
   });
 
   // Update database
@@ -2058,7 +2368,10 @@ function serializeTableState(tableState: TableState, forPlayerId?: string): any 
       isActive: player.isActive,
       // Only show hole cards to the player themselves
       holeCards: oderId === forPlayerId ? player.holeCards : 
-        (tableState.phase === 'showdown' && !player.isFolded ? player.holeCards : [])
+        (tableState.phase === 'showdown' && !player.isFolded ? player.holeCards : []),
+      // Disconnect protection info
+      isDisconnected: player.isDisconnected,
+      timeBankRemaining: player.timeBank - player.timeBankUsed
     });
   });
 
