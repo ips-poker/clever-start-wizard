@@ -14,6 +14,7 @@ import { SpectatorBadge } from './SpectatorBadge';
 import { MobilePokerControls } from './MobilePokerControls';
 import { TournamentTimer } from './TournamentTimer';
 import { TournamentTableHeader } from './TournamentTableHeader';
+import { TournamentElimination } from './TournamentElimination';
 import { MobilePokerTable } from './MobilePokerTable';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { 
@@ -451,7 +452,19 @@ export function OnlinePokerTable({
 
   // Desktop view
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 relative">
+      {/* Tournament Elimination Tracker */}
+      {isTournament && tournamentId && (
+        <TournamentElimination
+          tournamentId={tournamentId}
+          playerId={playerId}
+          playerStack={myPlayer?.stack || 0}
+          onEliminated={(position, prize) => {
+            console.log(`Eliminated at position ${position} with prize ${prize}`);
+          }}
+        />
+      )}
+
       {/* Tournament Header */}
       {isTournament && tournamentId && (
         <TournamentTableHeader tournamentId={tournamentId} />

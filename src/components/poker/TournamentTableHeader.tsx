@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Trophy, Users, Coins, Clock } from 'lucide-react';
+import { Trophy, Users, Coins, Clock, Skull } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { Badge } from '@/components/ui/badge';
 
 interface TournamentTableHeaderProps {
   tournamentId: string;
@@ -10,6 +11,7 @@ export const TournamentTableHeader = ({ tournamentId }: TournamentTableHeaderPro
   const [tournament, setTournament] = useState<any>(null);
   const [participantsCount, setParticipantsCount] = useState(0);
   const [activePlayers, setActivePlayers] = useState(0);
+  const [eliminatedCount, setEliminatedCount] = useState(0);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -31,7 +33,16 @@ export const TournamentTableHeader = ({ tournamentId }: TournamentTableHeaderPro
         .eq('tournament_id', tournamentId);
 
       setParticipantsCount(count || 0);
-      setActivePlayers(participants?.filter(p => p.status === 'playing').length || 0);
+      
+      const active = participants?.filter(p => 
+        p.status === 'playing' || p.status === 'registered'
+      ).length || 0;
+      setActivePlayers(active);
+      
+      const eliminated = participants?.filter(p => 
+        p.status === 'eliminated' || p.status === 'winner'
+      ).length || 0;
+      setEliminatedCount(eliminated);
     };
 
     fetchData();
@@ -117,9 +128,20 @@ export const TournamentTableHeader = ({ tournamentId }: TournamentTableHeaderPro
             <Users className="h-5 w-5 text-muted-foreground" />
             <div>
               <div className="font-bold">{activePlayers}/{participantsCount}</div>
-              <div className="text-xs text-muted-foreground">Игроков</div>
+              <div className="text-xs text-muted-foreground">В игре</div>
             </div>
           </div>
+
+          {/* Выбывшие */}
+          {eliminatedCount > 0 && (
+            <div className="flex items-center gap-2">
+              <Skull className="h-5 w-5 text-destructive" />
+              <div>
+                <div className="font-bold text-destructive">{eliminatedCount}</div>
+                <div className="text-xs text-muted-foreground">Выбыло</div>
+              </div>
+            </div>
+          )}
 
           {/* Призовой фонд */}
           <div className="flex items-center gap-2">
