@@ -66,6 +66,7 @@ interface TelegramPokerLobbyProps {
   playerBalance?: number;
   onJoinTable?: (tableId: string, buyIn: number) => void;
   onJoinTournament?: (tournamentId: string) => void;
+  onTableStateChange?: (isAtTable: boolean) => void;
 }
 
 export function TelegramPokerLobby({
@@ -74,7 +75,8 @@ export function TelegramPokerLobby({
   playerAvatar,
   playerBalance = 10000,
   onJoinTable,
-  onJoinTournament
+  onJoinTournament,
+  onTableStateChange
 }: TelegramPokerLobbyProps) {
   const [activeTab, setActiveTab] = useState('tournaments');
   const [tables, setTables] = useState<OnlinePokerTable[]>([]);
@@ -343,6 +345,12 @@ const [activeTableId, setActiveTableId] = useState<string | null>(null);
   const filteredTournaments = tournaments.filter(t =>
     t.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  // Notify parent about table state changes
+  useEffect(() => {
+    const isAtTable = !!(activeTableId || showDemoTable);
+    onTableStateChange?.(isAtTable);
+  }, [activeTableId, showDemoTable, onTableStateChange]);
 
   // Если открыт активный стол (после присоединения) - используем онлайн движок
   if (activeTableId && playerId) {

@@ -101,6 +101,7 @@ export const TelegramApp = () => {
   const [userRegistrations, setUserRegistrations] = useState<Set<string>>(new Set());
   const [scrollY, setScrollY] = useState(0);
   const [playerBalance, setPlayerBalance] = useState(10000);
+  const [isAtPokerTable, setIsAtPokerTable] = useState(false);
   
   // Clan notifications
   const { pendingInvitations, acceptInvitation, declineInvitation, refresh: refreshClan } = useClanSystem();
@@ -1738,12 +1739,13 @@ export const TelegramApp = () => {
       )}
 
       {activeTab === 'poker' && (
-        <div className="pb-28 pt-20 min-h-screen relative z-10">
+        <div className={isAtPokerTable ? "min-h-screen relative z-10" : "pb-28 pt-20 min-h-screen relative z-10"}>
           <TelegramPokerLobby 
             playerId={userStats?.id}
             playerName={userStats?.name || telegramUser?.firstName || 'Гость'}
             playerAvatar={userStats?.avatar_url || telegramUser?.photoUrl}
             playerBalance={playerBalance}
+            onTableStateChange={setIsAtPokerTable}
           />
         </div>
       )}
@@ -2124,7 +2126,8 @@ export const TelegramApp = () => {
         </div>
       )}
 
-      {/* Fixed bottom navigation - site style */}
+      {/* Fixed bottom navigation - site style - hidden when at poker table */}
+      {!isAtPokerTable && (
       <div className="fixed bottom-4 left-4 right-4 z-50 pb-safe">
         <div className="flex items-center justify-center gap-2">
           {[
@@ -2261,6 +2264,7 @@ export const TelegramApp = () => {
           )}
         </div>
       </div>
+      )}
 
         </div>
       </div>
