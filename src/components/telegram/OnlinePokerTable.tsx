@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback, memo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -22,6 +22,8 @@ import { AllInInsurance } from '@/components/poker/AllInInsurance';
 import { SqueezeHand } from '@/components/poker/SqueezeCard';
 import { RabbitHuntPanel } from '@/components/poker/RabbitHuntPanel';
 import { SidePotsDisplay } from '@/components/poker/SidePotsDisplay';
+import { MemoizedPokerCard } from '@/components/poker/MemoizedPokerCard';
+import { MemoizedPlayerSeat } from '@/components/poker/MemoizedPlayerSeat';
 
 interface OnlinePokerTableProps {
   tableId: string;
@@ -31,23 +33,6 @@ interface OnlinePokerTableProps {
   buyIn?: number;
   onLeave: () => void;
 }
-
-// Позиции для 6-max стола в стиле PPPoker (процентные)
-const SEAT_POSITIONS_6MAX = [
-  { top: '85%', left: '50%' },   // 1 - Hero (внизу по центру)
-  { top: '65%', left: '5%' },    // 2 - Слева внизу
-  { top: '25%', left: '5%' },    // 3 - Слева вверху
-  { top: '8%', left: '50%' },    // 4 - Сверху по центру
-  { top: '25%', left: '95%' },   // 5 - Справа вверху
-  { top: '65%', left: '95%' },   // 6 - Справа внизу
-];
-
-const SUIT_SYMBOLS: Record<string, { symbol: string; color: string }> = { 
-  h: { symbol: '♥', color: '#ef4444' }, 
-  d: { symbol: '♦', color: '#3b82f6' }, 
-  c: { symbol: '♣', color: '#22c55e' }, 
-  s: { symbol: '♠', color: '#1f2937' } 
-};
 
 const QUICK_EMOJIS = ['👍', '👎', '😂', '😡', '🎉', '💰', '🔥', '💀'];
 
@@ -159,56 +144,55 @@ export function OnlinePokerTable({
   const ACTION_TIME = 15;
   const opponentTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
+  // Stable fold callback to avoid re-triggering effect
+  const stableFold = useCallback(() => {
+    fold();
+  }, [fold]);
+  
+  const stableCheckTimeout = useCallback(() => {
+    checkTimeout();
+  }, [checkTimeout]);
+
   useEffect(() => {
-    if (isMyTurn && tableState?.phase !== 'waiting' && tableState?.phase !== 'showdown') {
-      // My turn - local timer
+    // Clear existing timers
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+    if (opponentTimeoutRef.current) {
+      clearTimeout(opponentTimeoutRef.current);
+      opponentTimeoutRef.current = null;
+    }
+    
+    const phase = tableState?.phase;
+    const currentPlayerSeat = tableState?.currentPlayerSeat;
+    
+    if (phase === 'waiting' || phase === 'showdown' || !currentPlayerSeat) {
       setTimeRemaining(ACTION_TIME);
-      timerRef.current = setInterval(() => {
-        setTimeRemaining(prev => {
-          if (prev <= 1) {
-            // Auto-fold on timeout
+      return;
+    }
+    
+    setTimeRemaining(ACTION_TIME);
+    
+    timerRef.current = setInterval(() => {
+      setTimeRemaining(prev => {
+        if (prev <= 1) {
+          if (isMyTurn) {
             console.log('⏰ Time expired, auto-folding...');
-            fold();
-            return 0;
+            stableFold();
           }
-          return prev - 1;
-        });
-      }, 1000);
-    } else if (!isMyTurn && tableState?.phase !== 'waiting' && tableState?.phase !== 'showdown' && tableState?.currentPlayerSeat) {
-      // Opponent's turn - watch for timeout and call server check
-      setTimeRemaining(ACTION_TIME);
-      
-      // Clear any existing opponent timeout
-      if (opponentTimeoutRef.current) {
-        clearTimeout(opponentTimeoutRef.current);
-      }
-      
-      // Start countdown display
-      timerRef.current = setInterval(() => {
-        setTimeRemaining(prev => {
-          if (prev <= 1) {
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-      
-      // After ACTION_TIME + 2 seconds buffer, call server to check timeout
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    
+    // Opponent timeout check (only if not my turn)
+    if (!isMyTurn) {
       opponentTimeoutRef.current = setTimeout(() => {
         console.log('⏰ Opponent timeout - calling server check_timeout...');
-        checkTimeout();
+        stableCheckTimeout();
       }, (ACTION_TIME + 2) * 1000);
-      
-    } else {
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-        timerRef.current = null;
-      }
-      if (opponentTimeoutRef.current) {
-        clearTimeout(opponentTimeoutRef.current);
-        opponentTimeoutRef.current = null;
-      }
-      setTimeRemaining(ACTION_TIME);
     }
     
     return () => {
@@ -221,7 +205,7 @@ export function OnlinePokerTable({
         opponentTimeoutRef.current = null;
       }
     };
-  }, [isMyTurn, tableState?.phase, tableState?.currentPlayerSeat, fold, checkTimeout]);
+  }, [isMyTurn, tableState?.phase, tableState?.currentPlayerSeat, stableFold, stableCheckTimeout]);
 
   // Auto-start next hand after showdown (PPPoker style - 5 second countdown)
   const NEXT_HAND_DELAY = 5;
@@ -274,277 +258,23 @@ export function OnlinePokerTable({
     onLeave();
   };
 
-  // Professional Card Component
-  const PokerCard = ({ card, faceDown = false, size = 'md' }: { card: string; faceDown?: boolean; size?: 'sm' | 'md' | 'lg' }) => {
-    const sizeStyles = {
-      sm: { width: 32, height: 44, fontSize: 12, suitSize: 14 },
-      md: { width: 44, height: 62, fontSize: 16, suitSize: 20 },
-      lg: { width: 56, height: 78, fontSize: 20, suitSize: 26 },
-    };
-    const s = sizeStyles[size];
-
-    if (faceDown || !card || card === '??') {
-      return (
-        <div 
-          className="rounded-md shadow-lg flex items-center justify-center"
-          style={{
-            width: s.width,
-            height: s.height,
-            background: 'linear-gradient(135deg, #1e40af 0%, #1e3a8a 50%, #1e40af 100%)',
-            border: '2px solid #3b82f6',
-          }}
-        >
-          <div className="w-full h-full rounded-md bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCI+PGRlZnM+PHBhdHRlcm4gaWQ9ImEiIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTTAgMGgyMHYyMEgweiIgZmlsbD0ibm9uZSIvPjxjaXJjbGUgY3g9IjEwIiBjeT0iMTAiIHI9IjIiIGZpbGw9InJnYmEoMjU1LDI1NSwyNTUsMC4xKSIvPjwvcGF0dGVybj48L2RlZnM+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0idXJsKCNhKSIvPjwvc3ZnPg==')] opacity-50" />
-        </div>
-      );
+  // Memoized player data for seats
+  const seatPlayers = useMemo(() => {
+    const seatMap: Record<number, PokerPlayer | undefined> = {};
+    for (let i = 1; i <= 6; i++) {
+      seatMap[i] = players.find(p => p.seatNumber === i);
     }
+    return seatMap;
+  }, [players]);
 
-    const rank = card[0] === 'T' ? '10' : card[0];
-    const suit = card[1]?.toLowerCase() as keyof typeof SUIT_SYMBOLS;
-    const suitInfo = SUIT_SYMBOLS[suit] || { symbol: '?', color: '#000' };
-
-    return (
-      <motion.div
-        initial={{ rotateY: 180, scale: 0.8 }}
-        animate={{ rotateY: 0, scale: 1 }}
-        transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-        className="rounded-md shadow-xl relative overflow-hidden"
-        style={{
-          width: s.width,
-          height: s.height,
-          background: 'linear-gradient(145deg, #ffffff 0%, #f0f0f0 100%)',
-          border: '1px solid #e5e7eb',
-        }}
-      >
-        <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span 
-            style={{ 
-              fontSize: s.fontSize, 
-              fontWeight: 700, 
-              color: suitInfo.color,
-              lineHeight: 1 
-            }}
-          >
-            {rank}
-          </span>
-          <span style={{ fontSize: s.suitSize, color: suitInfo.color }}>
-            {suitInfo.symbol}
-          </span>
-        </div>
-        {/* Corner pip */}
-        <div className="absolute top-0.5 left-0.5 flex flex-col items-center leading-none" style={{ color: suitInfo.color }}>
-          <span style={{ fontSize: s.fontSize * 0.6, fontWeight: 600 }}>{rank}</span>
-          <span style={{ fontSize: s.suitSize * 0.5 }}>{suitInfo.symbol}</span>
-        </div>
-      </motion.div>
-    );
-  };
-
-  // Player Seat Component - PPPoker style
-  const PlayerSeat = ({ seatNumber }: { seatNumber: number }) => {
-    const position = SEAT_POSITIONS_6MAX[seatNumber - 1];
-    const player = players.find(p => p.seatNumber === seatNumber);
-    const isHero = player?.seatNumber === mySeat;
-    const isCurrentPlayer = tableState?.currentPlayerSeat === seatNumber;
-    const isWinner = showdownResult?.winners?.some(w => w.seatNumber === seatNumber);
-    const isDealer = tableState?.dealerSeat === seatNumber;
-    const isSB = tableState?.smallBlindSeat === seatNumber;
-    const isBB = tableState?.bigBlindSeat === seatNumber;
-
-    // Вычисляем позицию для карт и ставки
-    const isLeft = seatNumber === 2 || seatNumber === 3;
-    const isRight = seatNumber === 5 || seatNumber === 6;
-    const isTop = seatNumber === 3 || seatNumber === 4 || seatNumber === 5;
-    
-    if (!player) {
-      // Empty seat
-      return (
-        <div 
-          className="absolute flex flex-col items-center"
-          style={{
-            top: position.top,
-            left: position.left,
-            transform: 'translate(-50%, -50%)',
-          }}
-        >
-          <div className="w-12 h-12 rounded-full border-2 border-dashed border-white/30 bg-black/20 flex items-center justify-center">
-            <Plus className="w-4 h-4 text-white/30" />
-          </div>
-          <span className="text-[9px] text-white/40 mt-1">Seat {seatNumber}</span>
-        </div>
-      );
+  // Check winners for each seat
+  const seatWinners = useMemo(() => {
+    const winners: Record<number, boolean> = {};
+    for (let i = 1; i <= 6; i++) {
+      winners[i] = showdownResult?.winners?.some(w => w.seatNumber === i) || false;
     }
-
-    return (
-      <div
-        className="absolute flex flex-col items-center"
-        style={{
-          top: position.top,
-          left: position.left,
-          transform: 'translate(-50%, -50%)',
-          zIndex: isCurrentPlayer ? 20 : 10,
-        }}
-      >
-        {/* Timer ring for current player */}
-        {isCurrentPlayer && (
-          <svg 
-            className="absolute w-16 h-16"
-            style={{ top: -4, left: '50%', transform: 'translateX(-50%)' }}
-            viewBox="0 0 64 64"
-          >
-            <circle 
-              cx="32" cy="32" r="28" 
-              fill="none" 
-              stroke="rgba(251, 191, 36, 0.3)" 
-              strokeWidth="3" 
-            />
-            <motion.circle
-              cx="32" cy="32" r="28"
-              fill="none"
-              stroke="#fbbf24"
-              strokeWidth="3"
-              strokeLinecap="round"
-              strokeDasharray={176}
-              strokeDashoffset={176 - (176 * timeRemaining) / ACTION_TIME}
-              transform="rotate(-90 32 32)"
-            />
-          </svg>
-        )}
-
-        {/* Avatar with status */}
-        <div className="relative">
-          {/* Avatar container */}
-          <div 
-            className={cn(
-              "w-12 h-12 rounded-full overflow-hidden border-2 shadow-lg",
-              isWinner ? "border-yellow-400 ring-2 ring-yellow-400/50" :
-              isCurrentPlayer ? "border-yellow-400" :
-              player.isFolded ? "border-gray-600 opacity-50" :
-              isHero ? "border-green-500" : "border-slate-500"
-            )}
-          >
-            <Avatar className="w-full h-full">
-              <AvatarImage src={player.avatarUrl || ''} />
-              <AvatarFallback className="bg-gradient-to-br from-slate-600 to-slate-800 text-white text-sm font-bold">
-                {(player.name || 'P').charAt(0).toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
-          </div>
-
-          {/* Position badge (D, SB, BB) */}
-          {(isDealer || isSB || isBB) && (
-            <div 
-              className={cn(
-                "absolute -bottom-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-[8px] font-bold shadow-lg",
-                isDealer ? "bg-white text-gray-900" :
-                isSB ? "bg-blue-500 text-white" : "bg-amber-500 text-white"
-              )}
-            >
-              {isDealer ? 'D' : isSB ? 'SB' : 'BB'}
-            </div>
-          )}
-
-          {/* Disconnected indicator */}
-          {player.isDisconnected && (
-            <div className="absolute -top-1 -right-1">
-              <WifiOff className="w-3 h-3 text-red-500" />
-            </div>
-          )}
-
-          {/* Winner crown */}
-          {isWinner && (
-            <motion.div 
-              initial={{ scale: 0, y: 10 }} 
-              animate={{ scale: 1, y: 0 }} 
-              className="absolute -top-3 left-1/2 -translate-x-1/2"
-            >
-              <Crown className="w-5 h-5 text-yellow-400 drop-shadow-glow" />
-            </motion.div>
-          )}
-
-          {/* Action label (Fold/All-In) */}
-          {(player.isFolded || player.isAllIn) && (
-            <div 
-              className={cn(
-                "absolute -top-2 left-1/2 -translate-x-1/2 px-1.5 py-0.5 rounded text-[7px] font-bold shadow",
-                player.isAllIn ? "bg-purple-600 text-white" : "bg-gray-700 text-gray-300"
-              )}
-            >
-              {player.isAllIn ? 'ALL-IN' : 'FOLD'}
-            </div>
-          )}
-        </div>
-
-        {/* Name plate with stack */}
-        <div 
-          className={cn(
-            "mt-1 px-2.5 py-0.5 rounded-md min-w-[68px] text-center shadow-lg",
-            isWinner ? "bg-yellow-500" :
-            isHero ? "bg-green-700" : 
-            player.isFolded ? "bg-gray-800/80" : "bg-slate-800"
-          )}
-        >
-          <p className={cn(
-            "text-[10px] font-medium truncate max-w-[68px]",
-            isWinner ? "text-gray-900" : "text-white"
-          )}>
-            {isHero ? 'Вы' : player.name || `Player ${seatNumber}`}
-          </p>
-          <p className={cn(
-            "text-[11px] font-bold",
-            isWinner ? "text-gray-900" : "text-green-400"
-          )}>
-            {player.stack.toLocaleString()}
-          </p>
-        </div>
-
-        {/* Current bet chip */}
-        {(player.betAmount || 0) > 0 && !player.isFolded && (
-          <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            className={cn(
-              "absolute flex items-center gap-1 px-1.5 py-0.5 rounded-full shadow-lg",
-              "bg-gradient-to-r from-amber-600 to-amber-500"
-            )}
-            style={{
-              top: isTop ? '100%' : isHero ? '-35%' : '50%',
-              left: isLeft ? '110%' : isRight ? '-10%' : '50%',
-              transform: isLeft || isRight ? 'translateY(-50%)' : 'translateX(-50%)',
-            }}
-          >
-            <div className="w-3 h-3 rounded-full bg-gradient-to-br from-red-500 to-red-700 border border-white/30" />
-            <span className="text-[10px] font-bold text-white">{player.betAmount}</span>
-          </motion.div>
-        )}
-
-        {/* Hole cards - show for hero or during showdown */}
-        {player.holeCards && player.holeCards.length > 0 && !player.isFolded && (
-          <div 
-            className={cn(
-              "absolute flex gap-0.5",
-              isTop ? "-bottom-10" : "-top-10",
-              isLeft ? "left-full ml-2" : isRight ? "right-full mr-2" : "left-1/2 -translate-x-1/2"
-            )}
-            style={{
-              transform: (isLeft || isRight) ? 'translateY(-50%)' : isTop ? undefined : 'translateX(-50%)',
-              top: isLeft || isRight ? '50%' : isTop ? '100%' : undefined,
-              bottom: !isTop && !isLeft && !isRight ? '100%' : undefined,
-            }}
-          >
-            {player.holeCards.map((card, idx) => (
-              <PokerCard 
-                key={idx} 
-                card={isHero || tableState?.phase === 'showdown' ? card : '??'} 
-                faceDown={!isHero && tableState?.phase !== 'showdown'} 
-                size="sm" 
-              />
-            ))}
-          </div>
-        )}
-      </div>
-    );
-  };
+    return winners;
+  }, [showdownResult]);
 
   // Send chat
   const handleSendChat = () => {
@@ -834,7 +564,7 @@ export function OnlinePokerTable({
                 animate={{ y: 0, opacity: 1, rotateY: 0 }} 
                 transition={{ delay: i * 0.12, type: 'spring', stiffness: 300 }}
               >
-                <PokerCard card={card} size="md" />
+                <MemoizedPokerCard card={card} size="md" />
               </motion.div>
             ))}
           </AnimatePresence>
@@ -842,7 +572,7 @@ export function OnlinePokerTable({
           {(!tableState?.communityCards || tableState.communityCards.length === 0) && tableState?.phase === 'waiting' && (
             <div className="flex gap-1.5 opacity-20">
               {[1, 2, 3, 4, 5].map(i => (
-                <PokerCard key={i} card="??" faceDown size="md" />
+                <MemoizedPokerCard key={i} card="??" faceDown size="md" animate={false} />
               ))}
             </div>
           )}
@@ -856,9 +586,18 @@ export function OnlinePokerTable({
           </div>
         </div>
 
-        {/* Player Seats */}
+        {/* Player Seats - using memoized component */}
         {[1, 2, 3, 4, 5, 6].map(seat => (
-          <PlayerSeat key={seat} seatNumber={seat} />
+          <MemoizedPlayerSeat 
+            key={seat} 
+            seatNumber={seat}
+            player={seatPlayers[seat]}
+            mySeat={mySeat}
+            tableState={tableState}
+            isWinner={seatWinners[seat]}
+            timeRemaining={timeRemaining}
+            actionTime={ACTION_TIME}
+          />
         ))}
 
         {/* Hero Cards - Large display at bottom */}
@@ -871,15 +610,11 @@ export function OnlinePokerTable({
                 onRevealComplete={() => setUseSqueeze(false)}
               />
             ) : (
-              <motion.div 
-                className="flex gap-2"
-                initial={{ y: 30, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-              >
+              <div className="flex gap-2">
                 {myCards.map((card, idx) => (
-                  <PokerCard key={idx} card={card} size="lg" />
+                  <MemoizedPokerCard key={idx} card={card} size="lg" />
                 ))}
-              </motion.div>
+              </div>
             )}
           </div>
         )}
