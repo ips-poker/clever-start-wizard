@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Slider } from '@/components/ui/slider';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { usePokerTable, PokerPlayer } from '@/hooks/usePokerTable';
 import { usePokerSounds } from '@/hooks/usePokerSounds';
 import { PokerCard, CommunityCards, CardHand } from './PokerCard';
@@ -268,13 +269,20 @@ export function OnlinePokerTable({
         {/* Player avatar */}
         <motion.div 
           className={cn(
-            "w-14 h-14 rounded-full bg-gradient-to-br from-muted to-muted-foreground/20 flex items-center justify-center mx-auto shadow-lg",
+            "w-14 h-14 rounded-full bg-gradient-to-br from-muted to-muted-foreground/20 flex items-center justify-center mx-auto shadow-lg overflow-hidden",
             player.isAllIn && "ring-2 ring-yellow-500 ring-offset-1",
             isCurrentPlayer && "animate-pulse"
           )}
           whileHover={{ scale: 1.05 }}
         >
-          <span className="text-xl">{isMe ? '😎' : '👤'}</span>
+          {player.avatarUrl ? (
+            <Avatar className="w-full h-full">
+              <AvatarImage src={player.avatarUrl} className="object-cover" />
+              <AvatarFallback className="text-xl">{isMe ? '😎' : '👤'}</AvatarFallback>
+            </Avatar>
+          ) : (
+            <span className="text-xl">{isMe ? '😎' : '👤'}</span>
+          )}
         </motion.div>
 
         {/* Stack */}

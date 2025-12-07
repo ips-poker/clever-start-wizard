@@ -9,6 +9,7 @@ export interface Spectator {
 export interface PokerPlayer {
   oderId: string;
   name?: string;
+  avatarUrl?: string;
   seatNumber: number;
   stack: number;
   betAmount: number;

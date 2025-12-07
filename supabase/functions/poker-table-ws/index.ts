@@ -154,6 +154,8 @@ interface TableState {
 
 interface PlayerState {
   oderId: string;
+  name?: string;
+  avatarUrl?: string;
   seatNumber: number;
   stack: number;
   holeCards: string[];
@@ -284,8 +286,29 @@ async function handleJoinTable(socket: WebSocket, message: WSMessage, supabase: 
     return;
   }
 
+  // Fetch player name and avatar from database
+  let playerName = `Player ${seatNumber}`;
+  let playerAvatarUrl: string | undefined;
+  
+  try {
+    const { data: playerData } = await supabase
+      .from('players')
+      .select('name, avatar_url')
+      .eq('id', playerId)
+      .single();
+    
+    if (playerData) {
+      playerName = playerData.name || playerName;
+      playerAvatarUrl = playerData.avatar_url || undefined;
+    }
+  } catch (error) {
+    console.error("Error fetching player data:", error);
+  }
+
   tableState.players.set(playerId, {
     oderId: playerId,
+    name: playerName,
+    avatarUrl: playerAvatarUrl,
     seatNumber,
     stack: data?.buyIn || 10000,
     holeCards: [],
@@ -308,7 +331,7 @@ async function handleJoinTable(socket: WebSocket, message: WSMessage, supabase: 
     console.error("DB error:", error);
   }
 
-  console.log(`✅ Player ${playerId} joined table ${tableId} at seat ${seatNumber}`);
+  console.log(`✅ Player ${playerName} (${playerId}) joined table ${tableId} at seat ${seatNumber}`);
 
   // Notify player of successful join
   sendToSocket(socket, {
@@ -322,6 +345,8 @@ async function handleJoinTable(socket: WebSocket, message: WSMessage, supabase: 
   broadcastToTable(tableId, {
     type: "player_joined",
     playerId,
+    playerName,
+    playerAvatarUrl,
     seatNumber,
     stack: data?.buyIn || 10000
   }, playerId);
@@ -917,6 +942,8 @@ function serializeTableState(tableState: TableState, forPlayerId?: string): any 
   tableState.players.forEach((player, oderId) => {
     players.push({
       oderId,
+      name: player.name,
+      avatarUrl: player.avatarUrl,
       seatNumber: player.seatNumber,
       stack: player.stack,
       betAmount: player.betAmount,
