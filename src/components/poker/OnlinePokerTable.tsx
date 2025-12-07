@@ -8,6 +8,8 @@ import { usePokerTable, PokerPlayer } from '@/hooks/usePokerTable';
 import { usePokerSounds } from '@/hooks/usePokerSounds';
 import { PokerCard, CommunityCards, CardHand } from './PokerCard';
 import { PokerChips, PotDisplay } from './PokerChips';
+import { HandHistory } from './HandHistory';
+import { WinnerDisplay } from './WinnerDisplay';
 import { 
   Loader2, 
   LogOut, 
@@ -19,7 +21,8 @@ import {
   MessageCircle,
   Send,
   Volume2,
-  VolumeX
+  VolumeX,
+  History
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -37,6 +40,7 @@ export function OnlinePokerTable({ tableId, playerId, buyIn, onLeave }: OnlinePo
   const [raiseAmount, setRaiseAmount] = useState(0);
   const [chatInput, setChatInput] = useState('');
   const [showChat, setShowChat] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(true);
   const prevPhaseRef = useRef<string | null>(null);
 
@@ -53,6 +57,8 @@ export function OnlinePokerTable({ tableId, playerId, buyIn, onLeave }: OnlinePo
     callAmount,
     chatMessages,
     lastAction,
+    showdownResult,
+    handHistory,
     connect,
     disconnect,
     fold,
@@ -60,7 +66,8 @@ export function OnlinePokerTable({ tableId, playerId, buyIn, onLeave }: OnlinePo
     call,
     raise,
     allIn,
-    startHand
+    startHand,
+    clearShowdown
   } = pokerTable;
 
   // Connect on mount
@@ -106,6 +113,13 @@ export function OnlinePokerTable({ tableId, playerId, buyIn, onLeave }: OnlinePo
       }
     }
   }, [lastAction, sounds]);
+
+  // Play win sound on showdown
+  useEffect(() => {
+    if (showdownResult && showdownResult.winners.some(w => w.oderId === playerId)) {
+      sounds.playWin();
+    }
+  }, [showdownResult, playerId, sounds]);
 
   // Toggle sound
   useEffect(() => {
@@ -341,6 +355,19 @@ export function OnlinePokerTable({ tableId, playerId, buyIn, onLeave }: OnlinePo
           <Button 
             variant="ghost" 
             size="icon"
+            onClick={() => setShowHistory(!showHistory)}
+            title="История раздач"
+          >
+            <History className="h-4 w-4" />
+            {handHistory.length > 0 && (
+              <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-primary text-[10px] text-primary-foreground flex items-center justify-center">
+                {handHistory.length}
+              </span>
+            )}
+          </Button>
+          <Button 
+            variant="ghost" 
+            size="icon"
             onClick={() => setSoundEnabled(!soundEnabled)}
           >
             {soundEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
@@ -550,6 +577,47 @@ export function OnlinePokerTable({ tableId, playerId, buyIn, onLeave }: OnlinePo
               </CardContent>
             </Card>
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* History panel */}
+      <AnimatePresence>
+        {showHistory && (
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 20 }}
+            className="fixed top-24 right-4 w-80 z-40"
+          >
+            <HandHistory 
+              history={handHistory.map(h => ({
+                ...h,
+                winners: h.winners.map(w => ({
+                  ...w,
+                  playerId: w.playerId
+                }))
+              }))}
+              playerId={playerId}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Winner display overlay */}
+      <AnimatePresence>
+        {showdownResult && showdownResult.winners.length > 0 && (
+          <WinnerDisplay
+            winners={showdownResult.winners.map(w => ({
+              playerId: w.oderId,
+              playerName: w.name,
+              seatNumber: w.seatNumber,
+              amount: w.amount,
+              handRank: w.handRank,
+              cards: w.cards
+            }))}
+            playerId={playerId}
+            onClose={clearShowdown}
+          />
         )}
       </AnimatePresence>
     </div>

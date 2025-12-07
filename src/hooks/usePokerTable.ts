@@ -39,6 +39,39 @@ interface ChatMessage {
   timestamp: number;
 }
 
+export interface ShowdownResult {
+  winners: Array<{
+    oderId: string;
+    name?: string;
+    seatNumber: number;
+    amount: number;
+    handRank?: string;
+    cards?: string[];
+  }>;
+  pot: number;
+}
+
+export interface HandHistoryItem {
+  handNumber: number;
+  timestamp: number;
+  pot: number;
+  winners: Array<{
+    playerId: string;
+    playerName?: string;
+    amount: number;
+    handRank?: string;
+  }>;
+  communityCards: string[];
+  myCards?: string[];
+  myResult?: 'win' | 'lose' | 'fold';
+  actions: Array<{
+    playerId: string;
+    action: string;
+    amount?: number;
+    phase: string;
+  }>;
+}
+
 export function usePokerTable(options: UsePokerTableOptions | null) {
   const { tableId, playerId, buyIn = 10000, seatNumber } = options || {};
   
@@ -50,6 +83,9 @@ export function usePokerTable(options: UsePokerTableOptions | null) {
   const [error, setError] = useState<string | null>(null);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [lastAction, setLastAction] = useState<any>(null);
+  const [showdownResult, setShowdownResult] = useState<ShowdownResult | null>(null);
+  const [handHistory, setHandHistory] = useState<HandHistoryItem[]>([]);
+  const [currentHandActions, setCurrentHandActions] = useState<any[]>([]);
   
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -160,6 +196,8 @@ export function usePokerTable(options: UsePokerTableOptions | null) {
 
       case 'hand_started':
         setMyCards(data.yourCards || []);
+        setShowdownResult(null);
+        setCurrentHandActions([]);
         if (data.state) {
           setTableState(data.state);
         }
@@ -167,6 +205,13 @@ export function usePokerTable(options: UsePokerTableOptions | null) {
 
       case 'player_action':
         setLastAction(data);
+        // Track action for history
+        setCurrentHandActions(prev => [...prev, {
+          playerId: data.playerId,
+          action: data.action,
+          amount: data.amount,
+          phase: tableState?.phase || 'unknown'
+        }]);
         if (data.state) {
           setTableState(data.state);
         }
@@ -183,7 +228,36 @@ export function usePokerTable(options: UsePokerTableOptions | null) {
         break;
 
       case 'showdown':
+      case 'hand_complete':
         // Update with showdown results
+        const result: ShowdownResult = {
+          winners: data.winners || [],
+          pot: data.pot || tableState?.pot || 0
+        };
+        setShowdownResult(result);
+        
+        // Add to history
+        if (data.handNumber || tableState) {
+          const historyEntry: HandHistoryItem = {
+            handNumber: data.handNumber || Date.now(),
+            timestamp: Date.now(),
+            pot: data.pot || tableState?.pot || 0,
+            winners: (data.winners || []).map((w: any) => ({
+              playerId: w.oderId || w.playerId,
+              playerName: w.name,
+              amount: w.amount,
+              handRank: w.handRank
+            })),
+            communityCards: tableState?.communityCards || [],
+            myCards: myCards,
+            myResult: data.winners?.some((w: any) => (w.oderId || w.playerId) === playerId) 
+              ? 'win' 
+              : myCards.length > 0 ? 'lose' : 'fold',
+            actions: currentHandActions
+          };
+          setHandHistory(prev => [...prev, historyEntry]);
+        }
+        
         setTableState(prev => prev ? {
           ...prev,
           phase: 'showdown'
@@ -296,6 +370,11 @@ export function usePokerTable(options: UsePokerTableOptions | null) {
     };
   }, [disconnect]);
 
+  // Clear showdown result
+  const clearShowdown = useCallback(() => {
+    setShowdownResult(null);
+  }, []);
+
   return {
     // Connection state
     isConnected,
@@ -312,6 +391,8 @@ export function usePokerTable(options: UsePokerTableOptions | null) {
     callAmount,
     chatMessages,
     lastAction,
+    showdownResult,
+    handHistory,
     
     // Actions
     connect,
@@ -322,6 +403,7 @@ export function usePokerTable(options: UsePokerTableOptions | null) {
     raise,
     allIn,
     startHand,
-    sendChat
+    sendChat,
+    clearShowdown
   };
 }
