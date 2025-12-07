@@ -594,7 +594,10 @@ serve(async (req) => {
 
         await supabase
           .from('poker_hands')
-          .update({ current_player_seat: firstToAct.seat_number })
+          .update({ 
+            current_player_seat: firstToAct.seat_number,
+            action_started_at: new Date().toISOString()
+          })
           .eq('id', hand.id);
 
         result = {
@@ -621,6 +624,23 @@ serve(async (req) => {
 
         if (!currentHandTimeout) {
           result = { success: false, error: 'No active hand' };
+          break;
+        }
+
+        // Check if enough time has passed (15 seconds + 2 second buffer)
+        const actionStarted = new Date(currentHandTimeout.action_started_at || currentHandTimeout.created_at);
+        const now = new Date();
+        const elapsedSeconds = (now.getTime() - actionStarted.getTime()) / 1000;
+        
+        console.log(`[Poker Engine] Timeout check: elapsed=${elapsedSeconds}s, required=${ACTION_TIME_SECONDS}s`);
+        
+        if (elapsedSeconds < ACTION_TIME_SECONDS) {
+          result = { 
+            success: false, 
+            error: 'Time not expired yet', 
+            elapsedSeconds,
+            requiredSeconds: ACTION_TIME_SECONDS 
+          };
           break;
         }
 
@@ -724,9 +744,13 @@ serve(async (req) => {
             const currentSeat = currentHandTimeout.current_player_seat;
             const nextPlayer = sortedActive.find(p => p.seat_number > currentSeat) || sortedActive[0];
 
+            // Update next player's action timer
             await supabase
               .from('poker_hands')
-              .update({ current_player_seat: nextPlayer?.seat_number })
+              .update({ 
+                current_player_seat: nextPlayer?.seat_number,
+                action_started_at: new Date().toISOString()
+              })
               .eq('id', currentHandTimeout.id);
 
             result = {
@@ -1076,7 +1100,7 @@ serve(async (req) => {
           }
         }
 
-        // Update hand
+        // Update hand with action_started_at for new player's turn
         await supabase
           .from('poker_hands')
           .update({
@@ -1085,6 +1109,7 @@ serve(async (req) => {
             current_player_seat: nextPlayer?.seat_number,
             phase: newPhase,
             community_cards: newCommunityCards,
+            action_started_at: new Date().toISOString(), // Reset timer for next player
           })
           .eq('id', currentHand.id);
 
