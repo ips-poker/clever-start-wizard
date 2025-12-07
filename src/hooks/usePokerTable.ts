@@ -159,16 +159,19 @@ export function usePokerTable(options: UsePokerTableOptions | null) {
 
   // Auto-start hand via edge function (stateless, reliable)
   const autoStartViaEngine = useCallback(async () => {
-    if (!tableId || !playerId) return;
+    if (!tableId || !playerId) {
+      console.log('❌ Auto-start blocked: missing tableId or playerId', { tableId, playerId });
+      return;
+    }
     if (autoStartAttemptedRef.current) {
       console.log('⏸️ Auto-start already attempted, skipping...');
       return;
     }
     
     autoStartAttemptedRef.current = true;
+    console.log('🎯 Calling poker-game-engine start_hand...');
     
     try {
-      console.log('🚀 Auto-starting hand via poker-game-engine...');
       const { data, error } = await supabase.functions.invoke('poker-game-engine', {
         body: {
           action: 'start_hand',
@@ -177,15 +180,17 @@ export function usePokerTable(options: UsePokerTableOptions | null) {
         }
       });
       
+      console.log('📨 poker-game-engine response:', { data, error });
+      
       if (error) {
-        console.error('Auto-start error:', error);
+        console.error('❌ Auto-start error:', error);
         autoStartAttemptedRef.current = false;
         return;
       }
       
       if (data?.success) {
         console.log('✅ Hand started successfully via engine');
-        // Reset flag for next hand
+        // Reset flag for next hand after delay
         setTimeout(() => {
           autoStartAttemptedRef.current = false;
         }, 5000);
@@ -197,7 +202,7 @@ export function usePokerTable(options: UsePokerTableOptions | null) {
         autoStartAttemptedRef.current = false;
       }
     } catch (err) {
-      console.error('Auto-start exception:', err);
+      console.error('❌ Auto-start exception:', err);
       autoStartAttemptedRef.current = false;
     }
   }, [tableId, playerId]);
@@ -346,11 +351,17 @@ export function usePokerTable(options: UsePokerTableOptions | null) {
         playersNeeded: playersCount < 2 ? 2 - playersCount : 0
       }));
 
-      console.log('📊 Loaded', players.length, 'players from DB for table', tableId, 'phase:', newPhase);
+      console.log('📊 Loaded', players.length, 'players from DB for table', tableId, 
+        'phase:', newPhase, 'current_hand_id:', tableData.current_hand_id);
 
       // AUTO-START LOGIC: If phase is 'waiting' and we have 2+ active players, start hand
       if (newPhase === 'waiting' && playersCount >= 2 && !tableData.current_hand_id) {
-        console.log('🎮 Conditions met for auto-start: phase=waiting, players=', playersCount);
+        console.log('🎮 AUTO-START CONDITIONS MET:', { 
+          phase: newPhase, 
+          players: playersCount, 
+          hasHand: !!tableData.current_hand_id,
+          alreadyAttempted: autoStartAttemptedRef.current
+        });
         
         // Clear any existing timeout
         if (autoStartTimeoutRef.current) {
@@ -359,8 +370,15 @@ export function usePokerTable(options: UsePokerTableOptions | null) {
         
         // Small delay to let UI update, then start
         autoStartTimeoutRef.current = setTimeout(() => {
+          console.log('⏰ Auto-start timeout triggered, calling autoStartViaEngine...');
           autoStartViaEngine();
         }, 2000);
+      } else {
+        console.log('⏸️ Auto-start conditions NOT met:', { 
+          phase: newPhase, 
+          players: playersCount, 
+          hasHand: !!tableData.current_hand_id 
+        });
       }
     } catch (err) {
       console.error('Error in loadPlayersFromDB:', err);
