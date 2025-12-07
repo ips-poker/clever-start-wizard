@@ -157,6 +157,8 @@ export function usePokerTable(options: UsePokerTableOptions | null) {
   const autoStartAttemptedRef = useRef<boolean>(false);
   const autoStartTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const loadPlayersFromDBRef = useRef<() => Promise<void>>();
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const lastLoadTimeRef = useRef<number>(0);
 
   // Auto-start hand via edge function (stateless, reliable)
   const autoStartViaEngine = useCallback(async () => {
@@ -408,6 +410,26 @@ export function usePokerTable(options: UsePokerTableOptions | null) {
     }
   }, []);
 
+  // Debounced load - prevents rapid reloads
+  const debouncedLoadPlayers = useCallback(() => {
+    const now = Date.now();
+    // Minimum 500ms between loads
+    if (now - lastLoadTimeRef.current < 500) {
+      // Already loading or just loaded, debounce
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+      debounceTimerRef.current = setTimeout(() => {
+        lastLoadTimeRef.current = Date.now();
+        loadPlayersFromDB();
+      }, 500);
+      return;
+    }
+    
+    lastLoadTimeRef.current = now;
+    loadPlayersFromDB();
+  }, [loadPlayersFromDB]);
+
   // Setup Supabase Realtime for player sync
   const setupRealtimeSync = useCallback(() => {
     if (!tableId || channelRef.current) return;
@@ -425,8 +447,8 @@ export function usePokerTable(options: UsePokerTableOptions | null) {
           filter: `table_id=eq.${tableId}`
         },
         (payload) => {
-          console.log('🔄 Player change:', payload.eventType, payload);
-          loadPlayersFromDB();
+          console.log('🔄 Player change:', payload.eventType);
+          debouncedLoadPlayers();
         }
       )
       .on(
@@ -438,8 +460,8 @@ export function usePokerTable(options: UsePokerTableOptions | null) {
           filter: `id=eq.${tableId}`
         },
         (payload) => {
-          console.log('🎲 Table change:', payload.eventType, payload);
-          loadPlayersFromDB();
+          console.log('🎲 Table change:', payload.eventType);
+          debouncedLoadPlayers();
         }
       )
       .on(
@@ -451,20 +473,8 @@ export function usePokerTable(options: UsePokerTableOptions | null) {
           filter: `table_id=eq.${tableId}`
         },
         (payload) => {
-          console.log('🎴 Hand change:', payload.eventType, payload);
-          loadPlayersFromDB();
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'poker_hand_players'
-        },
-        (payload) => {
-          console.log('👤 Hand player change:', payload.eventType, payload);
-          loadPlayersFromDB();
+          console.log('🎴 Hand change:', payload.eventType);
+          debouncedLoadPlayers();
         }
       )
       .on('broadcast', { event: 'game_action' }, (payload) => {
@@ -479,7 +489,7 @@ export function usePokerTable(options: UsePokerTableOptions | null) {
       });
 
     channelRef.current = channel;
-  }, [tableId, loadPlayersFromDB]);
+  }, [tableId, loadPlayersFromDB, debouncedLoadPlayers]);
 
   // Connect to table
   const connect = useCallback(() => {
@@ -516,12 +526,12 @@ export function usePokerTable(options: UsePokerTableOptions | null) {
       ws.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
-          console.log('📨 Received:', data.type, data);
+          console.log('📨 Received:', data.type);
           handleMessage(data);
           
-          // Reload players from DB to stay in sync
-          if (['joined_table', 'player_joined', 'player_left', 'hand_started', 'player_action', 'showdown'].includes(data.type)) {
-            loadPlayersFromDB();
+          // Only reload for critical events, with debounce
+          if (['joined_table', 'hand_started', 'showdown'].includes(data.type)) {
+            debouncedLoadPlayers();
           }
         } catch (e) {
           console.error('Failed to parse message:', e);
@@ -553,7 +563,7 @@ export function usePokerTable(options: UsePokerTableOptions | null) {
       setError('Failed to connect');
       setIsConnecting(false);
     }
-  }, [tableId, playerId, buyIn, seatNumber, getWsUrl, sendMessage, setupRealtimeSync, loadPlayersFromDB, isConnected, isConnecting]);
+  }, [tableId, playerId, buyIn, seatNumber, getWsUrl, sendMessage, setupRealtimeSync, debouncedLoadPlayers, isConnected, isConnecting]);
 
   // Handle incoming messages
   const handleMessage = useCallback((data: any) => {
@@ -952,21 +962,16 @@ export function usePokerTable(options: UsePokerTableOptions | null) {
     return () => clearInterval(pingInterval);
   }, [isConnected, sendPing]);
 
-  // Periodic refresh of players from DB (every 5 seconds)
-  useEffect(() => {
-    if (!tableId || !isConnected) return;
-    
-    const refreshInterval = setInterval(() => {
-      loadPlayersFromDB();
-    }, 5000);
-    
-    return () => clearInterval(refreshInterval);
-  }, [tableId, isConnected, loadPlayersFromDB]);
-
   // Cleanup on unmount
   useEffect(() => {
     return () => {
       disconnect();
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+      if (autoStartTimeoutRef.current) {
+        clearTimeout(autoStartTimeoutRef.current);
+      }
     };
   }, [disconnect]);
 
