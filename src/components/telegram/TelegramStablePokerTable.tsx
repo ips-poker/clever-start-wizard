@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useCallback, useRef, memo, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
-import { Slider } from '@/components/ui/slider';
 import { 
-  ArrowLeft, Volume2, VolumeX, Settings, MessageSquare,
-  Timer, Users, RotateCcw, Zap, X
+  ArrowLeft, Volume2, VolumeX, MessageSquare,
+  Users, RotateCcw, Zap, Loader2
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -15,11 +14,11 @@ import {
   dealCards,
   evaluateHand,
   Card as PokerEngineCard,
-  HandEvaluation,
   RANK_NAMES
 } from '@/utils/pokerEngine';
 import { cn } from '@/lib/utils';
 import { usePokerSounds } from '@/hooks/usePokerSounds';
+import { useReconnectManager } from '@/hooks/useReconnectManager';
 
 // Simple hand name for display
 interface HandInfo {
@@ -29,6 +28,10 @@ interface HandInfo {
 // Import stable components
 import { StablePokerCard, StableChipStack, StablePlayerSeat, StableActionPanel } from '@/components/poker/stable';
 import { PhaseTransition, ActionBubble } from '@/components/poker/animations';
+
+// Import error boundary and connection status
+import { PokerErrorBoundary } from '@/components/poker/PokerErrorBoundary';
+import { ConnectionStatusBanner } from '@/components/poker/ConnectionStatusBanner';
 
 // Types
 interface Player {
@@ -290,7 +293,7 @@ interface TelegramStablePokerTableProps {
   onLeave: () => void;
 }
 
-export function TelegramStablePokerTable({
+function TelegramStablePokerTableInner({
   tableId,
   playerId = 'hero',
   playerName = 'You',
@@ -312,6 +315,7 @@ export function TelegramStablePokerTable({
   const [showPhaseTransition, setShowPhaseTransition] = useState(false);
   const [actionBubbles, setActionBubbles] = useState<Array<{id: string; action: string; amount?: number; x: number; y: number}>>([]);
   const [myHandEvaluation, setMyHandEvaluation] = useState<HandInfo | null>(null);
+  const [isConnecting, setIsConnecting] = useState(false);
   
   // Winner state
   const [winner, setWinner] = useState<{ name: string; id: string; amount: number; handRank: string } | null>(null);
@@ -323,6 +327,35 @@ export function TelegramStablePokerTable({
 
   // Sounds
   const sounds = usePokerSounds();
+
+  // Reconnection manager for real tables
+  const reconnectManager = useReconnectManager({
+    maxRetries: 5,
+    baseDelay: 1000,
+    maxDelay: 30000,
+    onReconnect: async () => {
+      if (tableId) {
+        setIsConnecting(true);
+        // Reload table data
+        try {
+          const { data } = await supabase
+            .from('poker_table_players')
+            .select('*')
+            .eq('table_id', tableId);
+          if (data) {
+            reconnectManager.markConnected();
+          }
+        } catch (err) {
+          console.error('Reconnect failed:', err);
+        } finally {
+          setIsConnecting(false);
+        }
+      }
+    },
+    onMaxRetriesReached: () => {
+      toast.error('Не удалось подключиться к столу');
+    }
+  });
   
   useEffect(() => {
     sounds.setEnabled(soundEnabled);
@@ -714,8 +747,31 @@ export function TelegramStablePokerTable({
   const canCheck = currentBet === 0 || (heroPlayer?.currentBet || 0) >= currentBet;
   const activePlayerCount = players.filter(p => !p.isFolded).length;
 
+  // Loading state for real tables
+  if (tableId && isConnecting) {
+    return (
+      <div className="fixed inset-0 bg-[#0a1628] flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-10 w-10 text-amber-400 animate-spin mx-auto" />
+          <p className="text-white/60 mt-4">Подключение к столу...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="fixed inset-0 bg-[#0a1628] flex flex-col overflow-hidden">
+      {/* Connection status banner for real tables */}
+      {tableId && (
+        <ConnectionStatusBanner
+          status={reconnectManager.status}
+          retryCount={reconnectManager.retryCount}
+          nextRetryIn={reconnectManager.nextRetryIn}
+          onReconnectNow={reconnectManager.reconnectNow}
+          onCancel={reconnectManager.cancelReconnect}
+        />
+      )}
+
       {/* Header */}
       <TableHeader
         onLeave={onLeave}
@@ -869,6 +925,18 @@ export function TelegramStablePokerTable({
         </div>
       )}
     </div>
+  );
+}
+
+// Wrapper with Error Boundary and Connection Status
+export function TelegramStablePokerTable(props: TelegramStablePokerTableProps) {
+  return (
+    <PokerErrorBoundary 
+      onReset={() => window.location.reload()} 
+      onGoHome={props.onLeave}
+    >
+      <TelegramStablePokerTableInner {...props} />
+    </PokerErrorBoundary>
   );
 }
 

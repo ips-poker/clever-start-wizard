@@ -10,6 +10,12 @@ export type {
   ActionResult 
 } from '../useUnifiedPoker';
 
+// Optimized Poker State (batched updates, deduplication)
+export { useOptimizedPokerState } from './useOptimizedPokerState';
+
+// Local Poker Game (for demo/offline mode)
+export { useLocalPokerGame } from './useLocalPokerGame';
+
 // WebSocket Connection Manager
 export { usePokerWebSocket } from '../usePokerWebSocket';
 
