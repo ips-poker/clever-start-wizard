@@ -20,3 +20,6 @@ verify_jwt = false
 
 [functions.poker-game-engine]
 verify_jwt = false
+
+[functions.poker-realtime]
+verify_jwt = false
