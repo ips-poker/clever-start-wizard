@@ -22,12 +22,13 @@ import { AllInInsurance } from '@/components/poker/AllInInsurance';
 import { SqueezeHand } from '@/components/poker/SqueezeCard';
 import { RabbitHuntPanel } from '@/components/poker/RabbitHuntPanel';
 import { SidePotsDisplay } from '@/components/poker/SidePotsDisplay';
-import { MemoizedPokerCard } from '@/components/poker/MemoizedPokerCard';
-import { MemoizedPlayerSeat } from '@/components/poker/MemoizedPlayerSeat';
 import { PPPokerTable } from '@/components/poker/PPPokerTable';
 import { PPPokerActionButtons } from '@/components/poker/PPPokerActionButtons';
 import { PokerErrorBoundary } from '@/components/poker/PokerErrorBoundary';
 import { ConnectionStatusBanner } from '@/components/poker/ConnectionStatusBanner';
+
+// Import stable optimized components - PPPoker quality
+import { StablePokerCard, StablePlayerSeat, StableChipStack } from '@/components/poker/stable';
 
 interface OnlinePokerTableProps {
   tableId: string;
@@ -39,6 +40,16 @@ interface OnlinePokerTableProps {
 }
 
 const QUICK_EMOJIS = ['👍', '👎', '😂', '😡', '🎉', '💰', '🔥', '💀'];
+
+// Seat positions for 6-max table - PPPoker authentic layout
+const SEAT_POSITIONS_6MAX = [
+  { x: 50, y: 88 },  // Seat 0 - Hero (bottom center)
+  { x: 10, y: 60 },  // Seat 1 - Left middle
+  { x: 10, y: 28 },  // Seat 2 - Left top
+  { x: 50, y: 10 },  // Seat 3 - Top center
+  { x: 90, y: 28 },  // Seat 4 - Right top
+  { x: 90, y: 60 },  // Seat 5 - Right middle
+];
 
 export function OnlinePokerTable({
   tableId,
@@ -552,19 +563,37 @@ export function OnlinePokerTable({
           </div>
         </div>
 
-        {/* Player Seats - using memoized component */}
-        {[1, 2, 3, 4, 5, 6].map(seat => (
-          <MemoizedPlayerSeat 
-            key={seat} 
-            seatNumber={seat}
-            player={seatPlayers[seat]}
-            mySeat={mySeat}
-            tableState={tableState}
-            isWinner={seatWinners[seat]}
-            timeRemaining={timeRemaining}
-            actionTime={ACTION_TIME}
-          />
-        ))}
+        {/* Player Seats - using stable optimized component */}
+        {[1, 2, 3, 4, 5, 6].map(seat => {
+          const player = seatPlayers[seat];
+          const isMyPlayerSeat = mySeat === seat;
+          const isCurrentTurn = tableState?.currentPlayerSeat === seat;
+          
+          return (
+            <StablePlayerSeat 
+              key={seat} 
+              player={player ? {
+                id: player.playerId,
+                name: player.name,
+                avatar: undefined,
+                stack: player.stack,
+                cards: player.holeCards,
+                isDealer: tableState?.dealerSeat === seat,
+                isFolded: player.isFolded,
+                isAllIn: player.isAllIn,
+                isTurn: isCurrentTurn,
+                currentBet: player.betAmount,
+                lastAction: undefined
+              } : null}
+              position={SEAT_POSITIONS_6MAX[seat - 1] || { x: 50, y: 50 }}
+              isHero={isMyPlayerSeat}
+              showCards={tableState?.phase === 'showdown'}
+              timeRemaining={isCurrentTurn ? timeRemaining : undefined}
+              timeDuration={ACTION_TIME}
+              seatIndex={seat - 1}
+            />
+          );
+        })}
 
         {/* Hero Cards - Large display at bottom */}
         {myCards && myCards.length > 0 && myCards[0] !== '??' && (
@@ -578,7 +607,7 @@ export function OnlinePokerTable({
             ) : (
               <div className="flex gap-2">
                 {myCards.map((card, idx) => (
-                  <MemoizedPokerCard key={idx} card={card} size="lg" />
+                  <StablePokerCard key={idx} card={card} size="lg" dealDelay={idx} />
                 ))}
               </div>
             )}
