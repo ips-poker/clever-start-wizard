@@ -183,7 +183,7 @@ export function TelegramPokerLobby({
     setJoiningId(table.id);
     try {
       // Проверяем, не сидит ли игрок уже за этим столом
-      const { data: existingPlayer } = await supabase
+      const { data: existingPlayer, error: checkError } = await supabase
         .from('poker_table_players')
         .select('id, seat_number, stack')
         .eq('table_id', table.id)
@@ -191,9 +191,13 @@ export function TelegramPokerLobby({
         .eq('status', 'active')
         .maybeSingle();
 
+      console.log('Check existing player:', existingPlayer, 'error:', checkError);
+
       // Если игрок уже за столом - просто открываем стол
       if (existingPlayer) {
+        console.log('Player already at table, opening table');
         setActiveTableId(table.id);
+        setJoiningId(null);
         onJoinTable?.(table.id, existingPlayer.stack);
         return;
       }
@@ -201,6 +205,7 @@ export function TelegramPokerLobby({
       // Проверяем баланс только если нужно садиться за стол
       if (playerBalance < table.min_buy_in) {
         toast.error(`Недостаточно фишек. Минимум: ${table.min_buy_in.toLocaleString()}`);
+        setJoiningId(null);
         return;
       }
 
@@ -222,6 +227,7 @@ export function TelegramPokerLobby({
 
       if (occupiedSeats.size >= table.max_players) {
         toast.error('Стол заполнен');
+        setJoiningId(null);
         return;
       }
 
@@ -235,7 +241,18 @@ export function TelegramPokerLobby({
           status: 'active'
         });
 
-      if (error) throw error;
+      // Если ошибка duplicate key - игрок уже за столом, просто открываем
+      if (error) {
+        console.log('Insert error:', error);
+        if (error.code === '23505' || error.message?.includes('duplicate')) {
+          console.log('Duplicate key - player already at table, opening anyway');
+          setActiveTableId(table.id);
+          setJoiningId(null);
+          onJoinTable?.(table.id, table.min_buy_in);
+          return;
+        }
+        throw error;
+      }
 
       toast.success(`Вы присоединились к столу ${table.name}!`);
       
