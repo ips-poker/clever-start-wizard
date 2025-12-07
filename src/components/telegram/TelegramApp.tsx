@@ -35,7 +35,7 @@ import { useClanRealtimeNotifications } from '@/hooks/useClanRealtimeNotificatio
 import { useClanSystem } from '@/hooks/useClanSystem';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { CLAN_EMBLEMS } from '@/utils/clanEmblems';
-import { TelegramPokerDemo } from './TelegramPokerDemo';
+import { TelegramPokerLobby } from './TelegramPokerLobby';
 
 interface Tournament {
   id: string;
@@ -100,6 +100,7 @@ export const TelegramApp = () => {
   const [canAddToHomeScreen, setCanAddToHomeScreen] = useState(false);
   const [userRegistrations, setUserRegistrations] = useState<Set<string>>(new Set());
   const [scrollY, setScrollY] = useState(0);
+  const [playerBalance, setPlayerBalance] = useState(10000);
   
   // Clan notifications
   const { pendingInvitations, acceptInvitation, declineInvitation, refresh: refreshClan } = useClanSystem();
@@ -163,8 +164,38 @@ export const TelegramApp = () => {
   useEffect(() => {
     if (userStats) {
       fetchUserRegistrations();
+      fetchPlayerBalance();
     }
   }, [userStats]);
+
+  const fetchPlayerBalance = async () => {
+    if (!userStats) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('player_balances')
+        .select('balance')
+        .eq('player_id', userStats.id)
+        .maybeSingle();
+      
+      if (data) {
+        setPlayerBalance(data.balance);
+      } else if (!error) {
+        // Создаем баланс если не существует
+        const { data: newBalance } = await supabase
+          .from('player_balances')
+          .insert({ player_id: userStats.id, balance: 10000 })
+          .select('balance')
+          .single();
+        
+        if (newBalance) {
+          setPlayerBalance(newBalance.balance);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching player balance:', error);
+    }
+  };
 
   const handleAddToHomeScreen = () => {
     console.log('=== ADD TO HOME SCREEN CLICKED ===');
@@ -1706,7 +1737,12 @@ export const TelegramApp = () => {
 
       {activeTab === 'poker' && (
         <div className="pb-28 pt-20 min-h-screen relative z-10">
-          <TelegramPokerDemo />
+          <TelegramPokerLobby 
+            playerId={userStats?.id}
+            playerName={userStats?.name || telegramUser?.firstName || 'Гость'}
+            playerAvatar={userStats?.avatar_url || telegramUser?.photoUrl}
+            playerBalance={playerBalance}
+          />
         </div>
       )}
 
