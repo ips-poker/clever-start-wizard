@@ -856,51 +856,82 @@ export const TelegramApp = () => {
         const userRank = effectiveRankData.rank;
         const userRarityInfo = getRarityInfo(userRank.rarity);
         
+        // Стили карточек по конкретному рангу (id), а не по rarity - синхронизировано с getRankCardStyle
         const rankStyles: Record<string, { cardBg: string; border: string; glow: string; accent: string }> = {
-          initiate: {
-            cardBg: 'bg-gradient-to-br from-zinc-800/90 to-zinc-900/90',
-            border: 'border-zinc-500/50',
+          outsider: {
+            cardBg: 'bg-gradient-to-br from-zinc-900/90 to-zinc-950/90',
+            border: 'border-zinc-700/50',
             glow: '',
             accent: 'text-zinc-400',
           },
-          soldier: {
-            cardBg: 'bg-gradient-to-br from-amber-900/40 to-amber-950/60',
-            border: 'border-amber-500/60',
-            glow: 'shadow-[0_0_20px_rgba(245,158,11,0.3)]',
+          picciotto: {
+            cardBg: 'bg-gradient-to-br from-zinc-800/90 to-neutral-900/90',
+            border: 'border-zinc-600/50',
+            glow: '',
+            accent: 'text-zinc-300',
+          },
+          soldato: {
+            cardBg: 'bg-gradient-to-br from-stone-800/90 to-neutral-900/90',
+            border: 'border-stone-600/50',
+            glow: 'shadow-[0_0_15px_rgba(168,162,158,0.3)]',
+            accent: 'text-stone-300',
+          },
+          sgarrista: {
+            cardBg: 'bg-gradient-to-br from-amber-950/90 to-zinc-900/90',
+            border: 'border-amber-600/40',
+            glow: 'shadow-[0_0_20px_rgba(251,191,36,0.4)]',
             accent: 'text-amber-400',
           },
-          captain: {
-            cardBg: 'bg-gradient-to-br from-blue-900/40 to-cyan-950/60',
-            border: 'border-blue-500/60',
-            glow: 'shadow-[0_0_25px_rgba(59,130,246,0.4)]',
+          associato: {
+            cardBg: 'bg-gradient-to-br from-orange-950/90 to-zinc-900/90',
+            border: 'border-orange-500/50',
+            glow: 'shadow-[0_0_25px_rgba(249,115,22,0.5)]',
+            accent: 'text-orange-400',
+          },
+          caporegime: {
+            cardBg: 'bg-gradient-to-br from-blue-950/90 to-slate-900/90',
+            border: 'border-blue-500/50',
+            glow: 'shadow-[0_0_25px_rgba(59,130,246,0.5)]',
             accent: 'text-blue-400',
           },
-          underboss: {
-            cardBg: 'bg-gradient-to-br from-purple-900/40 to-pink-950/60',
-            border: 'border-purple-500/60',
-            glow: 'shadow-[0_0_30px_rgba(168,85,247,0.4)]',
+          shark: {
+            cardBg: 'bg-gradient-to-br from-purple-950/90 to-violet-950/90',
+            border: 'border-purple-500/50',
+            glow: 'shadow-[0_0_30px_rgba(147,51,234,0.5)]',
             accent: 'text-purple-400',
           },
-          boss: {
-            cardBg: 'bg-gradient-to-br from-yellow-900/40 to-amber-950/60',
-            border: 'border-yellow-500/70',
+          kapo: {
+            cardBg: 'bg-gradient-to-br from-red-950/90 to-rose-950/90',
+            border: 'border-red-500/50',
+            glow: 'shadow-[0_0_30px_rgba(239,68,68,0.5)]',
+            accent: 'text-red-400',
+          },
+          konsigliere: {
+            cardBg: 'bg-gradient-to-br from-yellow-950/90 to-amber-950/90',
+            border: 'border-yellow-500/50',
             glow: 'shadow-[0_0_35px_rgba(234,179,8,0.5)]',
             accent: 'text-yellow-400',
           },
-          godfather: {
-            cardBg: 'bg-gradient-to-br from-cyan-900/40 via-purple-900/40 to-pink-900/40',
-            border: 'border-cyan-400/70',
-            glow: 'shadow-[0_0_40px_rgba(6,182,212,0.5),0_0_60px_rgba(168,85,247,0.3)]',
+          don: {
+            cardBg: 'bg-gradient-to-br from-rose-950/90 via-fuchsia-950/90 to-violet-950/90',
+            border: 'border-rose-400/50',
+            glow: 'shadow-[0_0_35px_rgba(244,63,94,0.6)]',
+            accent: 'text-rose-400',
+          },
+          patriarch: {
+            cardBg: 'bg-gradient-to-br from-cyan-950/90 via-blue-950/90 to-purple-950/90',
+            border: 'border-cyan-400/60',
+            glow: 'shadow-[0_0_40px_rgba(34,211,238,0.5),0_0_60px_rgba(168,85,247,0.3)]',
             accent: 'text-cyan-300',
           },
         };
         
-        const currentStyle = rankStyles[userRank.rarity] || rankStyles.initiate;
+        const currentStyle = rankStyles[userRank.id] || rankStyles.outsider;
         
         return (
           <Card className={`${currentStyle.cardBg} brutal-border ${currentStyle.border} overflow-hidden relative backdrop-blur-xl group hover:scale-[1.02] transition-all duration-500 animate-fade-in ${currentStyle.glow}`}>
             {/* Rank-specific top accent line */}
-            <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${userRank.rarity === 'godfather' ? 'from-cyan-400 via-purple-500 to-pink-500' : `${userRank.bgGradient}`}`} />
+            <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${userRank.id === 'patriarch' ? 'from-cyan-400 via-purple-500 to-pink-500' : userRank.id === 'don' ? 'from-rose-500 via-fuchsia-400 to-cyan-400' : `${userRank.bgGradient}`}`} />
             
             {/* Animated background pattern */}
             <div className="absolute inset-0 opacity-20">
