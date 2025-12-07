@@ -6,10 +6,13 @@ const corsHeaders = {
 }
 
 interface NotificationPayload {
-  type: 'clan_invitation' | 'clan_accepted' | 'clan_removed';
+  type: 'clan_invitation' | 'clan_accepted' | 'clan_removed' | 'invitation_accepted' | 'invitation_declined';
   player_id: string;
   clan_name: string;
   don_name?: string;
+  // Для уведомлений Дону
+  don_player_id?: string;
+  player_name?: string;
 }
 
 Deno.serve(async (req) => {
@@ -35,11 +38,19 @@ Deno.serve(async (req) => {
     const payload: NotificationPayload = await req.json()
     console.log('Notification payload:', payload)
 
-    // Получаем telegram ID игрока
+    // Определяем получателя уведомления
+    let targetPlayerId = payload.player_id
+    
+    // Для уведомлений Дону (принятие/отклонение приглашения)
+    if ((payload.type === 'invitation_accepted' || payload.type === 'invitation_declined') && payload.don_player_id) {
+      targetPlayerId = payload.don_player_id
+    }
+
+    // Получаем telegram ID получателя
     const { data: player, error: playerError } = await supabase
       .from('players')
       .select('telegram, name')
-      .eq('id', payload.player_id)
+      .eq('id', targetPlayerId)
       .single()
 
     if (playerError || !player?.telegram) {
@@ -68,6 +79,14 @@ Deno.serve(async (req) => {
       case 'clan_removed':
         emoji = '😔'
         message = `${emoji} Вы были исключены из клана «${payload.clan_name}».`
+        break
+      case 'invitation_accepted':
+        emoji = '✅'
+        message = `${emoji} Приглашение принято!\n\n👤 Игрок <b>${payload.player_name || 'Неизвестный'}</b> принял ваше приглашение и вступил в клан «${payload.clan_name}»!\n\n🎉 Новый член семьи!`
+        break
+      case 'invitation_declined':
+        emoji = '❌'
+        message = `${emoji} Приглашение отклонено\n\n👤 Игрок <b>${payload.player_name || 'Неизвестный'}</b> отклонил приглашение в клан «${payload.clan_name}».`
         break
       default:
         message = `📢 Уведомление от клана «${payload.clan_name}»`

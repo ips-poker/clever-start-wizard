@@ -298,6 +298,13 @@ export function useClanSystem() {
   const acceptInvitation = async (invitationId: string, clanId: string) => {
     if (!playerData?.id) return false;
 
+    // Получаем информацию о клане и Доне
+    const { data: clanData } = await supabase
+      .from('clans')
+      .select('name, don_player_id')
+      .eq('id', clanId)
+      .single();
+
     // Обновляем статус приглашения
     const { error: updateError } = await supabase
       .from('clan_invitations')
@@ -323,6 +330,23 @@ export function useClanSystem() {
       return false;
     }
 
+    // Отправляем уведомление Дону
+    if (clanData?.don_player_id) {
+      try {
+        await supabase.functions.invoke('send-clan-notification', {
+          body: {
+            type: 'invitation_accepted',
+            player_id: playerData.id,
+            player_name: playerData.name,
+            don_player_id: clanData.don_player_id,
+            clan_name: clanData.name
+          }
+        });
+      } catch (notifyError) {
+        console.log('Failed to notify don:', notifyError);
+      }
+    }
+
     toast.success('Вы вступили в клан!');
     await loadMyClan();
     await loadInvitations();
@@ -330,7 +354,34 @@ export function useClanSystem() {
   };
 
   // Отклонить приглашение
-  const declineInvitation = async (invitationId: string) => {
+  const declineInvitation = async (invitationId: string, clanId?: string) => {
+    // Получаем информацию о клане и Доне если не передан clanId
+    let clanData = null;
+    if (clanId) {
+      const { data } = await supabase
+        .from('clans')
+        .select('name, don_player_id')
+        .eq('id', clanId)
+        .single();
+      clanData = data;
+    } else {
+      // Получаем clan_id из приглашения
+      const { data: invitation } = await supabase
+        .from('clan_invitations')
+        .select('clan_id')
+        .eq('id', invitationId)
+        .single();
+      
+      if (invitation?.clan_id) {
+        const { data } = await supabase
+          .from('clans')
+          .select('name, don_player_id')
+          .eq('id', invitation.clan_id)
+          .single();
+        clanData = data;
+      }
+    }
+
     const { error } = await supabase
       .from('clan_invitations')
       .update({ status: 'declined' })
@@ -339,6 +390,23 @@ export function useClanSystem() {
     if (error) {
       toast.error('Ошибка отклонения приглашения');
       return false;
+    }
+
+    // Отправляем уведомление Дону
+    if (clanData?.don_player_id && playerData?.id) {
+      try {
+        await supabase.functions.invoke('send-clan-notification', {
+          body: {
+            type: 'invitation_declined',
+            player_id: playerData.id,
+            player_name: playerData.name,
+            don_player_id: clanData.don_player_id,
+            clan_name: clanData.name
+          }
+        });
+      } catch (notifyError) {
+        console.log('Failed to notify don:', notifyError);
+      }
     }
 
     toast.success('Приглашение отклонено');
