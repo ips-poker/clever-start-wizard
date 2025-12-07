@@ -2,7 +2,7 @@ import React, { useState, useCallback } from 'react';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { PokerEngineDemo } from '@/components/poker/PokerEngineDemo';
-import { PPPokerTableComplete } from '@/components/poker/PPPokerTableComplete';
+import { StablePokerTable } from '@/components/poker/StablePokerTable';
 import { ArrowLeft, Globe, Users, Sparkles, Play } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -10,20 +10,20 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export default function PokerDemo() {
-  const [showPPPokerDemo, setShowPPPokerDemo] = useState(false);
+  const [showPokerTable, setShowPokerTable] = useState(false);
 
-  const handleLeavePPPoker = useCallback(() => {
-    setShowPPPokerDemo(false);
+  const handleLeaveTable = useCallback(() => {
+    setShowPokerTable(false);
   }, []);
 
-  // Show fullscreen PPPoker table when active
-  if (showPPPokerDemo) {
+  // Show fullscreen poker table when active
+  if (showPokerTable) {
     return (
-      <PPPokerTableComplete
+      <StablePokerTable
         playerId="demo-player-1"
         playerName="You"
         playerStack={10000}
-        onLeave={handleLeavePPPoker}
+        onLeave={handleLeaveTable}
       />
     );
   }
@@ -61,19 +61,19 @@ export default function PokerDemo() {
                   <div>
                     <h3 className="font-semibold flex items-center gap-2">
                       PPPoker-стиль стол
-                      <span className="text-xs px-2 py-0.5 rounded-full bg-amber-500 text-white">NEW</span>
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-amber-500 text-white">STABLE</span>
                     </h3>
                     <p className="text-sm text-muted-foreground">
-                      Полный стол с анимациями как в PPPoker/GGPoker
+                      Оптимизированный стол без миганий и лагов
                     </p>
                   </div>
                 </div>
                 <Button 
-                  onClick={() => setShowPPPokerDemo(true)}
+                  onClick={() => setShowPokerTable(true)}
                   className="gap-2 bg-gradient-to-r from-amber-600 to-yellow-600 hover:from-amber-500 hover:to-yellow-500"
                 >
                   <Play className="h-4 w-4" />
-                  Попробовать
+                  Играть
                 </Button>
               </div>
             </CardContent>
@@ -127,13 +127,13 @@ export default function PokerDemo() {
                 </div>
                 
                 <div>
-                  <h3 className="font-semibold text-foreground mb-2">Улучшения PPPoker-стиля:</h3>
+                  <h3 className="font-semibold text-foreground mb-2">Оптимизации стола:</h3>
                   <ul className="list-disc list-inside space-y-1">
-                    <li>Плавные анимации карт с 3D-переворотом</li>
-                    <li>Реалистичные фишки с разными номиналами</li>
-                    <li>Таймер хода с визуальным индикатором</li>
-                    <li>Эффектные экраны победы с конфетти</li>
-                    <li>Оптимизированный рендеринг без мерцаний</li>
+                    <li>Глубокая мемоизация компонентов — нет лишних ре-рендеров</li>
+                    <li>Стабильные ключи для анимаций без миганий</li>
+                    <li>Оптимизированный таймер хода</li>
+                    <li>Плавные анимации карт и фишек</li>
+                    <li>CSS-переходы вместо постоянных анимаций</li>
                   </ul>
                 </div>
               </div>
