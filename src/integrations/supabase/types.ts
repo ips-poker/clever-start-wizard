@@ -1087,7 +1087,21 @@ export type Database = {
       }
       poker_tables: {
         Row: {
+          action_time_seconds: number | null
+          ante: number | null
+          auto_start_delay_seconds: number | null
+          auto_start_enabled: boolean | null
           big_blind: number
+          big_blind_ante_amount: number | null
+          big_blind_ante_enabled: boolean | null
+          bomb_pot_double_board: boolean | null
+          bomb_pot_enabled: boolean | null
+          bomb_pot_multiplier: number | null
+          button_ante_amount: number | null
+          button_ante_enabled: boolean | null
+          chat_enabled: boolean | null
+          chat_slow_mode: boolean | null
+          chat_slow_mode_interval: number | null
           created_at: string
           created_by: string | null
           current_dealer_seat: number | null
@@ -1096,15 +1110,36 @@ export type Database = {
           id: string
           max_buy_in: number
           max_players: number
+          max_straddle_count: number | null
           min_buy_in: number
+          mississippi_straddle_enabled: boolean | null
           name: string
+          rake_cap: number | null
+          rake_percent: number | null
+          run_it_twice_enabled: boolean | null
           small_blind: number
           status: string
+          straddle_enabled: boolean | null
           table_type: string
+          time_bank_seconds: number | null
           updated_at: string
         }
         Insert: {
+          action_time_seconds?: number | null
+          ante?: number | null
+          auto_start_delay_seconds?: number | null
+          auto_start_enabled?: boolean | null
           big_blind?: number
+          big_blind_ante_amount?: number | null
+          big_blind_ante_enabled?: boolean | null
+          bomb_pot_double_board?: boolean | null
+          bomb_pot_enabled?: boolean | null
+          bomb_pot_multiplier?: number | null
+          button_ante_amount?: number | null
+          button_ante_enabled?: boolean | null
+          chat_enabled?: boolean | null
+          chat_slow_mode?: boolean | null
+          chat_slow_mode_interval?: number | null
           created_at?: string
           created_by?: string | null
           current_dealer_seat?: number | null
@@ -1113,15 +1148,36 @@ export type Database = {
           id?: string
           max_buy_in?: number
           max_players?: number
+          max_straddle_count?: number | null
           min_buy_in?: number
+          mississippi_straddle_enabled?: boolean | null
           name: string
+          rake_cap?: number | null
+          rake_percent?: number | null
+          run_it_twice_enabled?: boolean | null
           small_blind?: number
           status?: string
+          straddle_enabled?: boolean | null
           table_type?: string
+          time_bank_seconds?: number | null
           updated_at?: string
         }
         Update: {
+          action_time_seconds?: number | null
+          ante?: number | null
+          auto_start_delay_seconds?: number | null
+          auto_start_enabled?: boolean | null
           big_blind?: number
+          big_blind_ante_amount?: number | null
+          big_blind_ante_enabled?: boolean | null
+          bomb_pot_double_board?: boolean | null
+          bomb_pot_enabled?: boolean | null
+          bomb_pot_multiplier?: number | null
+          button_ante_amount?: number | null
+          button_ante_enabled?: boolean | null
+          chat_enabled?: boolean | null
+          chat_slow_mode?: boolean | null
+          chat_slow_mode_interval?: number | null
           created_at?: string
           created_by?: string | null
           current_dealer_seat?: number | null
@@ -1130,11 +1186,18 @@ export type Database = {
           id?: string
           max_buy_in?: number
           max_players?: number
+          max_straddle_count?: number | null
           min_buy_in?: number
+          mississippi_straddle_enabled?: boolean | null
           name?: string
+          rake_cap?: number | null
+          rake_percent?: number | null
+          run_it_twice_enabled?: boolean | null
           small_blind?: number
           status?: string
+          straddle_enabled?: boolean | null
           table_type?: string
+          time_bank_seconds?: number | null
           updated_at?: string
         }
         Relationships: [

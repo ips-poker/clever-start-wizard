@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useRef, memo, useMemo } from '
 import { Button } from '@/components/ui/button';
 import { 
   ArrowLeft, Volume2, VolumeX, MessageSquare,
-  Users, RotateCcw, Zap, Loader2, Sparkles
+  Users, RotateCcw, Zap, Loader2, Sparkles, Settings2
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -37,9 +37,10 @@ import { PhaseTransition, ActionBubble } from '@/components/poker/animations';
 import { PokerErrorBoundary } from '@/components/poker/PokerErrorBoundary';
 import { ConnectionStatusBanner } from '@/components/poker/ConnectionStatusBanner';
 
-// Import chat and emoji components
+// Import chat, emoji and settings components
 import { TableChat } from '@/components/poker/TableChat';
 import { TableReactions, QuickReactionButton, useTableReactions, ReactionType } from '@/components/poker/TableEmojis';
+import { TableSettingsPanel, TableSettings } from '@/components/poker/TableSettingsPanel';
 
 // Types
 interface Player {
@@ -218,7 +219,8 @@ const TableHeader = memo(function TableHeader({
   onNewHand,
   showChat,
   onToggleChat,
-  onReact
+  onReact,
+  onOpenSettings
 }: {
   onLeave: () => void;
   soundEnabled: boolean;
@@ -229,6 +231,7 @@ const TableHeader = memo(function TableHeader({
   showChat: boolean;
   onToggleChat: () => void;
   onReact?: (type: ReactionType) => void;
+  onOpenSettings?: () => void;
 }) {
   return (
     <div className="flex items-center justify-between px-3 py-2 bg-gradient-to-b from-gray-900/98 to-gray-900/90 z-20">
@@ -286,6 +289,16 @@ const TableHeader = memo(function TableHeader({
         >
           <MessageSquare className="h-4 w-4" />
         </Button>
+        {onOpenSettings && (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onOpenSettings}
+            className="h-9 w-9 text-white/80 hover:text-white hover:bg-white/10"
+          >
+            <Settings2 className="h-4 w-4" />
+          </Button>
+        )}
       </div>
     </div>
   );
@@ -407,12 +420,23 @@ function TelegramStablePokerTableInner({
   const [timeRemaining, setTimeRemaining] = useState(30);
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [showChat, setShowChat] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const [showPhaseTransition, setShowPhaseTransition] = useState(false);
   const [actionBubbles, setActionBubbles] = useState<Array<{id: string; action: string; amount?: number; x: number; y: number}>>([]);
   const [myHandEvaluation, setMyHandEvaluation] = useState<HandInfo | null>(null);
   const [isConnecting, setIsConnecting] = useState(false);
   const [chatMessages, setChatMessages] = useState<Array<{id: string; playerId: string; playerName: string; message: string; timestamp: number; type: 'chat' | 'system' | 'dealer' | 'action'}>>([]);
   const [mutedPlayers, setMutedPlayers] = useState<Set<string>>(new Set());
+  const [tableSettings, setTableSettings] = useState<Partial<TableSettings>>({
+    smallBlind: 10,
+    bigBlind: 20,
+    ante: 0,
+    actionTimeSeconds: 15,
+    timeBankSeconds: 30,
+    chatEnabled: true,
+    bombPotEnabled: false,
+    autoStartEnabled: true
+  });
   
   // Winner state
   const [winner, setWinner] = useState<{ name: string; id: string; amount: number; handRank: string } | null>(null);
@@ -898,6 +922,7 @@ function TelegramStablePokerTableInner({
           const heroSeat = players.find(p => p.id === playerId)?.seatNumber ?? 0;
           addReaction(playerId, playerName, heroSeat, type);
         }}
+        onOpenSettings={() => setShowSettings(true)}
       />
 
       {/* Main Table Area */}
@@ -1100,13 +1125,22 @@ function TelegramStablePokerTableInner({
             });
           }}
           mutedPlayers={mutedPlayers}
-          isChatEnabled={true}
-          isSlowMode={false}
-          slowModeInterval={5}
+          isChatEnabled={tableSettings.chatEnabled}
+          isSlowMode={tableSettings.chatSlowMode}
+          slowModeInterval={tableSettings.chatSlowModeInterval}
           currentPlayerId={playerId}
-          bombPotEnabled={false}
+          bombPotEnabled={tableSettings.bombPotEnabled}
         />
       )}
+
+      {/* Table Settings Panel */}
+      <TableSettingsPanel
+        isOpen={showSettings}
+        onClose={() => setShowSettings(false)}
+        settings={tableSettings}
+        onSave={(newSettings) => setTableSettings(prev => ({ ...prev, ...newSettings }))}
+        isHost={true}
+      />
     </div>
   );
 }
