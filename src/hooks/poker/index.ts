@@ -23,3 +23,4 @@ export {
 
 // Reconnection Manager
 export { useReconnectManager } from '../useReconnectManager';
+export type { ConnectionStatus } from '../useReconnectManager';
