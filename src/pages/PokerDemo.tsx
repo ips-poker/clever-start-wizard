@@ -2,9 +2,10 @@ import React from 'react';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { PokerEngineDemo } from '@/components/poker/PokerEngineDemo';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Globe, Users } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 
 export default function PokerDemo() {
   return (
@@ -12,7 +13,7 @@ export default function PokerDemo() {
       <Header />
       
       <main className="container mx-auto px-4 py-8 pt-24">
-        <div className="mb-6">
+        <div className="mb-6 flex items-center justify-between">
           <Link to="/">
             <Button variant="ghost" size="sm" className="gap-2">
               <ArrowLeft className="h-4 w-4" />
@@ -28,6 +29,31 @@ export default function PokerDemo() {
               Демонстрация работы игрового движка: раздача карт, оценка комбинаций
             </p>
           </div>
+
+          {/* Online Poker CTA */}
+          <Card className="border-primary/50 bg-primary/5">
+            <CardContent className="p-6">
+              <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 rounded-full bg-primary/10">
+                    <Globe className="h-6 w-6 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold">Онлайн покер</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Играйте с другими игроками в реальном времени
+                    </p>
+                  </div>
+                </div>
+                <Link to="/online-poker">
+                  <Button className="gap-2">
+                    <Users className="h-4 w-4" />
+                    Играть онлайн
+                  </Button>
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
           
           <PokerEngineDemo />
           
