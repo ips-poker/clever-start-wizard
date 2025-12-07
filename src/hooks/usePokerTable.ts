@@ -1,6 +1,11 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
+export interface Spectator {
+  id: string;
+  name?: string;
+}
+
 export interface PokerPlayer {
   oderId: string;
   name?: string;

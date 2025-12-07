@@ -10,6 +10,10 @@ import { PokerCard, CommunityCards, CardHand } from './PokerCard';
 import { PokerChips, PotDisplay } from './PokerChips';
 import { HandHistory } from './HandHistory';
 import { WinnerDisplay } from './WinnerDisplay';
+import { SpectatorBadge } from './SpectatorBadge';
+import { MobilePokerControls } from './MobilePokerControls';
+import { MobilePokerTable } from './MobilePokerTable';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { 
   Loader2, 
   LogOut, 
@@ -22,7 +26,8 @@ import {
   Send,
   Volume2,
   VolumeX,
-  History
+  History,
+  Eye
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -31,10 +36,12 @@ interface OnlinePokerTableProps {
   tableId: string;
   playerId: string;
   buyIn: number;
+  isSpectator?: boolean;
   onLeave: () => void;
 }
 
-export function OnlinePokerTable({ tableId, playerId, buyIn, onLeave }: OnlinePokerTableProps) {
+export function OnlinePokerTable({ tableId, playerId, buyIn, isSpectator = false, onLeave }: OnlinePokerTableProps) {
+  const isMobile = useIsMobile();
   const pokerTable = usePokerTable({ tableId, playerId, buyIn });
   const sounds = usePokerSounds();
   const [raiseAmount, setRaiseAmount] = useState(0);
@@ -42,6 +49,7 @@ export function OnlinePokerTable({ tableId, playerId, buyIn, onLeave }: OnlinePo
   const [showChat, setShowChat] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(true);
+  const [spectatorCount, setSpectatorCount] = useState(0);
   const prevPhaseRef = useRef<string | null>(null);
 
   const {
@@ -138,8 +146,8 @@ export function OnlinePokerTable({ tableId, playerId, buyIn, onLeave }: OnlinePo
     call();
   };
 
-  const handleRaise = () => {
-    raise(raiseAmount);
+  const handleRaise = (amount?: number) => {
+    raise(amount || raiseAmount);
   };
 
   const handleAllIn = () => {
@@ -336,6 +344,100 @@ export function OnlinePokerTable({ tableId, playerId, buyIn, onLeave }: OnlinePo
     );
   }
 
+  // Mobile view
+  if (isMobile) {
+    return (
+      <div className="space-y-3 pb-32">
+        {/* Mobile Header */}
+        <div className="flex items-center justify-between px-2">
+          <div className="flex items-center gap-2">
+            <Badge variant={isConnected ? 'default' : 'destructive'} className="gap-1 text-xs">
+              <span className={cn("w-1.5 h-1.5 rounded-full", isConnected ? "bg-green-400" : "bg-red-400")} />
+              {isConnected ? 'Онлайн' : 'Офлайн'}
+            </Badge>
+            {isSpectator && <SpectatorBadge count={0} isSpectator />}
+          </div>
+          <div className="flex items-center gap-1">
+            <Button 
+              variant="ghost" 
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => setSoundEnabled(!soundEnabled)}
+            >
+              {soundEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
+            </Button>
+            <Button variant="ghost" size="sm" onClick={handleLeave} className="h-8 text-xs">
+              <LogOut className="h-3 w-3 mr-1" />
+              Выйти
+            </Button>
+          </div>
+        </div>
+
+        {/* Mobile Table */}
+        <MobilePokerTable 
+          tableState={tableState}
+          myCards={myCards}
+          playerId={playerId}
+        />
+
+        {/* Start Hand Button (waiting phase) */}
+        {tableState?.phase === 'waiting' && !isSpectator && (
+          <div className="flex justify-center px-4">
+            <Button onClick={startHand} className="w-full gap-2">
+              <Play className="h-4 w-4" />
+              Начать раздачу
+            </Button>
+          </div>
+        )}
+
+        {/* Spectator notice */}
+        {isSpectator && (
+          <div className="text-center p-3 bg-muted/30 rounded-lg mx-4">
+            <div className="flex items-center justify-center gap-2 text-muted-foreground">
+              <Eye className="h-4 w-4" />
+              <span className="text-sm">Режим наблюдения</span>
+            </div>
+          </div>
+        )}
+
+        {/* Mobile Controls */}
+        {!isSpectator && (
+          <MobilePokerControls
+            isMyTurn={isMyTurn}
+            canCheck={canCheck}
+            callAmount={callAmount}
+            currentBet={tableState?.currentBet || 0}
+            myStack={myPlayer?.stack || 0}
+            onFold={handleFold}
+            onCheck={handleCheck}
+            onCall={handleCall}
+            onRaise={handleRaise}
+            onAllIn={handleAllIn}
+          />
+        )}
+
+        {/* Winner display overlay */}
+        <AnimatePresence>
+          {showdownResult && showdownResult.winners.length > 0 && (
+            <WinnerDisplay
+              winners={showdownResult.winners.map(w => ({
+                playerId: w.oderId,
+                playerName: w.name,
+                seatNumber: w.seatNumber,
+                amount: w.amount,
+                handRank: w.handRank,
+                cards: w.cards
+              }))}
+              playerId={playerId}
+              onClose={clearShowdown}
+            />
+          )}
+        </AnimatePresence>
+      </div>
+    );
+  }
+
+  // Desktop view
   return (
     <div className="space-y-4">
       {/* Header */}
@@ -350,6 +452,8 @@ export function OnlinePokerTable({ tableId, playerId, buyIn, onLeave }: OnlinePo
               {tableState.phase === 'waiting' ? 'Ожидание' : tableState.phase}
             </Badge>
           )}
+          {isSpectator && <SpectatorBadge count={spectatorCount} isSpectator />}
+          {!isSpectator && spectatorCount > 0 && <SpectatorBadge count={spectatorCount} />}
         </div>
         <div className="flex items-center gap-2">
           <Button 
@@ -357,6 +461,7 @@ export function OnlinePokerTable({ tableId, playerId, buyIn, onLeave }: OnlinePo
             size="icon"
             onClick={() => setShowHistory(!showHistory)}
             title="История раздач"
+            className="relative"
           >
             <History className="h-4 w-4" />
             {handHistory.length > 0 && (
@@ -378,6 +483,16 @@ export function OnlinePokerTable({ tableId, playerId, buyIn, onLeave }: OnlinePo
           </Button>
         </div>
       </div>
+
+      {/* Spectator notice */}
+      {isSpectator && (
+        <Card className="bg-blue-500/10 border-blue-500/30">
+          <CardContent className="py-3 flex items-center justify-center gap-2">
+            <Eye className="h-4 w-4 text-blue-400" />
+            <span className="text-sm text-blue-400">Вы наблюдаете за игрой. Карты игроков скрыты.</span>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Table */}
       <Card className="relative overflow-hidden bg-gradient-to-br from-green-900/40 via-green-800/30 to-green-900/40 border-green-700/50">
@@ -408,9 +523,9 @@ export function OnlinePokerTable({ tableId, playerId, buyIn, onLeave }: OnlinePo
               </div>
             )}
 
-            {/* My Cards */}
+            {/* My Cards (only for players, not spectators) */}
             <AnimatePresence>
-              {myCards.length > 0 && (
+              {myCards.length > 0 && !isSpectator && (
                 <motion.div
                   initial={{ y: 50, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
@@ -438,87 +553,89 @@ export function OnlinePokerTable({ tableId, playerId, buyIn, onLeave }: OnlinePo
         </CardContent>
       </Card>
 
-      {/* Action Buttons */}
-      <Card>
-        <CardContent className="p-4">
-          {tableState?.phase === 'waiting' ? (
-            <div className="flex justify-center">
-              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                <Button onClick={startHand} size="lg" className="gap-2">
-                  <Play className="h-5 w-5" />
-                  Начать раздачу
-                </Button>
+      {/* Action Buttons (only for players, not spectators) */}
+      {!isSpectator && (
+        <Card>
+          <CardContent className="p-4">
+            {tableState?.phase === 'waiting' ? (
+              <div className="flex justify-center">
+                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                  <Button onClick={startHand} size="lg" className="gap-2">
+                    <Play className="h-5 w-5" />
+                    Начать раздачу
+                  </Button>
+                </motion.div>
+              </div>
+            ) : isMyTurn ? (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="space-y-4"
+              >
+                <div className="flex gap-2 justify-center flex-wrap">
+                  <Button variant="destructive" onClick={handleFold} className="gap-1">
+                    <X className="h-4 w-4" />
+                    Fold
+                  </Button>
+                  
+                  {canCheck ? (
+                    <Button variant="secondary" onClick={handleCheck} className="gap-1">
+                      <Check className="h-4 w-4" />
+                      Check
+                    </Button>
+                  ) : (
+                    <Button variant="secondary" onClick={handleCall} className="gap-1">
+                      <Check className="h-4 w-4" />
+                      Call {callAmount}
+                    </Button>
+                  )}
+                  
+                  <Button onClick={() => handleRaise(raiseAmount)} className="gap-1">
+                    <ArrowUp className="h-4 w-4" />
+                    Raise {raiseAmount}
+                  </Button>
+                  
+                  <Button 
+                    variant="outline" 
+                    onClick={handleAllIn}
+                    className="bg-gradient-to-r from-amber-500/20 to-yellow-500/20 hover:from-amber-500/30 hover:to-yellow-500/30"
+                  >
+                    All-in
+                  </Button>
+                </div>
+                
+                {/* Raise slider */}
+                <div className="flex items-center gap-4 max-w-md mx-auto">
+                  <span className="text-sm text-muted-foreground w-16 text-right">
+                    {(tableState.currentBet * 2 || 40).toLocaleString()}
+                  </span>
+                  <Slider
+                    value={[raiseAmount]}
+                    onValueChange={([val]) => setRaiseAmount(val)}
+                    min={tableState.currentBet * 2 || 40}
+                    max={myPlayer?.stack || 10000}
+                    step={tableState.currentBet || 20}
+                    className="flex-1"
+                  />
+                  <span className="text-sm font-bold w-20">
+                    {myPlayer?.stack.toLocaleString()}
+                  </span>
+                </div>
               </motion.div>
-            </div>
-          ) : isMyTurn ? (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="space-y-4"
-            >
-              <div className="flex gap-2 justify-center flex-wrap">
-                <Button variant="destructive" onClick={handleFold} className="gap-1">
-                  <X className="h-4 w-4" />
-                  Fold
-                </Button>
-                
-                {canCheck ? (
-                  <Button variant="secondary" onClick={handleCheck} className="gap-1">
-                    <Check className="h-4 w-4" />
-                    Check
-                  </Button>
-                ) : (
-                  <Button variant="secondary" onClick={handleCall} className="gap-1">
-                    <Check className="h-4 w-4" />
-                    Call {callAmount}
-                  </Button>
-                )}
-                
-                <Button onClick={handleRaise} className="gap-1">
-                  <ArrowUp className="h-4 w-4" />
-                  Raise {raiseAmount}
-                </Button>
-                
-                <Button 
-                  variant="outline" 
-                  onClick={handleAllIn}
-                  className="bg-gradient-to-r from-amber-500/20 to-yellow-500/20 hover:from-amber-500/30 hover:to-yellow-500/30"
-                >
-                  All-in
-                </Button>
+            ) : (
+              <div className="text-center py-4">
+                <p className="text-muted-foreground">
+                  {tableState?.phase === 'showdown' 
+                    ? '🎉 Вскрытие карт' 
+                    : tableState?.currentPlayerSeat
+                      ? `Ходит игрок на месте ${tableState.currentPlayerSeat}...`
+                      : 'Ожидание хода...'}
+                </p>
               </div>
-              
-              {/* Raise slider */}
-              <div className="flex items-center gap-4 max-w-md mx-auto">
-                <span className="text-sm text-muted-foreground w-16 text-right">
-                  {(tableState.currentBet * 2 || 40).toLocaleString()}
-                </span>
-                <Slider
-                  value={[raiseAmount]}
-                  onValueChange={([val]) => setRaiseAmount(val)}
-                  min={tableState.currentBet * 2 || 40}
-                  max={myPlayer?.stack || 10000}
-                  step={tableState.currentBet || 20}
-                  className="flex-1"
-                />
-                <span className="text-sm font-bold w-20">
-                  {myPlayer?.stack.toLocaleString()}
-                </span>
-              </div>
-            </motion.div>
-          ) : (
-            <div className="text-center py-4">
-              <p className="text-muted-foreground">
-                {tableState?.phase === 'showdown' 
-                  ? '🎉 Вскрытие карт' 
-                  : tableState?.currentPlayerSeat
-                    ? `Ходит игрок на месте ${tableState.currentPlayerSeat}...`
-                    : 'Ожидание хода...'}
-              </p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Chat toggle */}
       <Button 

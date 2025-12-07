@@ -121,24 +121,34 @@ export function CardHand({ cards, hidden = false, size = 'md', overlap = true, c
 
 interface CommunityCardsProps {
   cards: string[];
+  size?: 'sm' | 'md' | 'lg';
   className?: string;
 }
 
-export function CommunityCards({ cards, className }: CommunityCardsProps) {
+export function CommunityCards({ cards, size = 'lg', className }: CommunityCardsProps) {
   // Pad to 5 cards for layout consistency
   const displayCards = [...cards];
   while (displayCards.length < 5) {
     displayCards.push('');
   }
 
+  const sizeClasses = {
+    sm: 'w-10 h-14',
+    md: 'w-12 h-16',
+    lg: 'w-16 h-24'
+  };
+
   return (
-    <div className={cn('flex gap-2 justify-center', className)}>
+    <div className={cn('flex gap-2 justify-center', size === 'sm' && 'gap-1', className)}>
       {displayCards.map((card, index) => (
         <div key={index} className="relative">
           {card ? (
-            <PokerCard card={card} size="lg" index={index} />
+            <PokerCard card={card} size={size} index={index} />
           ) : (
-            <div className="w-16 h-24 rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20" />
+            <div className={cn(
+              sizeClasses[size],
+              'rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20'
+            )} />
           )}
         </div>
       ))}
