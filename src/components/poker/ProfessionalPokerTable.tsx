@@ -180,9 +180,9 @@ export function ProfessionalPokerTable({
         const isSB = tableState?.smallBlindSeat === seatNumber;
         const isBB = tableState?.bigBlindSeat === seatNumber;
         const isCurrentPlayer = tableState?.currentPlayerSeat === seatNumber;
-        const isMe = player?.oderId === playerId;
+        const isMe = player?.playerId === playerId;
         const betPos = getBetPosition(index);
-        const playerEquity = player ? getPlayerEquity(player.oderId) : null;
+        const playerEquity = player ? getPlayerEquity(player.playerId) : null;
 
         return (
           <React.Fragment key={seatNumber}>

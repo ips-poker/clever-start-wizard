@@ -32,11 +32,11 @@ export function MobilePokerTable({ tableState, myCards, playerId }: MobilePokerT
     const isSB = tableState.smallBlindSeat === player.seatNumber;
     const isBB = tableState.bigBlindSeat === player.seatNumber;
     const isCurrentPlayer = tableState.currentPlayerSeat === player.seatNumber;
-    const isMe = player.oderId === playerId;
+    const isMe = player.playerId === playerId;
 
     return (
       <motion.div
-        key={player.oderId}
+        key={player.playerId}
         initial={{ opacity: 0, scale: 0.8 }}
         animate={{ opacity: 1, scale: 1 }}
         className={cn(

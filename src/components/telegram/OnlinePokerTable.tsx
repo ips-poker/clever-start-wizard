@@ -131,7 +131,7 @@ export function OnlinePokerTable({
     return players
       .filter(p => !p.isFolded && p.holeCards && p.holeCards.length === 2 && p.holeCards[0] !== '??')
       .map(p => ({
-        oderId: p.oderId,
+        playerId: p.playerId,
         seatNumber: p.seatNumber,
         name: p.name,
         stack: p.stack,
@@ -255,7 +255,7 @@ export function OnlinePokerTable({
   // Show winner toast
   useEffect(() => {
     if (showdownResult?.winners && showdownResult.winners.length > 0) {
-      const myWin = showdownResult.winners.find(w => w.oderId === playerId);
+      const myWin = showdownResult.winners.find(w => w.playerId === playerId);
       if (myWin) {
         toast.success(`Вы выиграли ${myWin.amount}! ${myWin.handRank || ''}`);
       }
@@ -604,7 +604,7 @@ export function OnlinePokerTable({
                 phase: tableState.phase as 'flop' | 'turn' | 'river',
                 communityCards: tableState.communityCards,
                 players: players.filter(p => !p.isFolded).map(p => ({
-                  playerId: p.oderId,
+                  playerId: p.playerId,
                   playerName: p.name || '',
                   cards: p.holeCards || [],
                   stack: p.stack,
