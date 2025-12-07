@@ -27,6 +27,8 @@ import {
 import { cn } from '@/lib/utils';
 import { PotDisplay } from '@/components/poker/AnimatedChips';
 import { CommunityCards } from '@/components/poker/PokerCard';
+import { ProFeaturesToolbar } from '@/components/poker/ProFeaturesToolbar';
+import { usePokerProFeatures } from '@/hooks/usePokerProFeatures';
 
 interface TelegramProPokerTableProps {
   tableId?: string;
@@ -91,7 +93,21 @@ export function TelegramProPokerTable({
   const [showEmojis, setShowEmojis] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState(30);
   const [showCardPeek, setShowCardPeek] = useState(true);
+  const [allInPlayers, setAllInPlayers] = useState<{ playerId: string; name: string; cards: string[]; contribution: number }[]>([]);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Pro features hook
+  const proFeatures = usePokerProFeatures({
+    playerId: playerId || '',
+    playerStack: myStack,
+    communityCards: communityCards.map(c => `${RANK_NAMES[c.rank]}${c.suit.charAt(0)}`),
+    holeCards: myCards.map(c => `${RANK_NAMES[c.rank]}${c.suit.charAt(0)}`),
+    pot,
+    phase: gamePhase === 'waiting' ? 'preflop' : gamePhase as any,
+    allInPlayers,
+    usedCards: [...communityCards, ...myCards].map(c => `${RANK_NAMES[c.rank]}${c.suit.charAt(0)}`),
+    onChipsChange: (amount) => setMyStack(prev => prev + amount)
+  });
 
   // Загрузка реальных игроков со стола
   useEffect(() => {
@@ -300,6 +316,15 @@ export function TelegramProPokerTable({
           myPlayer.currentBet = myStack;
           myPlayer.lastAction = 'ALL-IN';
           setPot(p => p + myStack);
+          // Track all-in player for pro features
+          if (myPlayer.cards) {
+            setAllInPlayers(prev => [...prev, {
+              playerId: myPlayer.id,
+              name: myPlayer.name,
+              cards: myPlayer.cards!.map(c => `${RANK_NAMES[c.rank]}${c.suit.charAt(0)}`),
+              contribution: myStack
+            }]);
+          }
           setMyStack(0);
         }
         toast.info('ALL-IN!');
@@ -386,6 +411,8 @@ export function TelegramProPokerTable({
     setMyHandEvaluation(null);
     setShowActions(false);
     setIsMyTurn(false);
+    setAllInPlayers([]);
+    proFeatures.resetProFeatures();
     setPlayers(prev => prev.map(p => ({
       ...p,
       cards: [],
@@ -692,6 +719,26 @@ export function TelegramProPokerTable({
           {/* Pot display - using AnimatedChips PotDisplay */}
           <div className="absolute top-[32%] left-1/2 -translate-x-1/2 z-10">
             <PotDisplay mainPot={pot} sidePots={sidePots} />
+          </div>
+
+          {/* Pro Features Toolbar */}
+          <div className="absolute top-[22%] left-1/2 -translate-x-1/2 z-20">
+            <ProFeaturesToolbar
+              canRabbitHunt={proFeatures.canRabbitHunt && gamePhase !== 'waiting'}
+              rabbitHuntCost={proFeatures.rabbitHuntCost}
+              onRabbitHunt={proFeatures.purchaseRabbitHunt}
+              rabbitHuntActive={proFeatures.rabbitHuntActive}
+              canRunItTwice={proFeatures.canUseRunItTwice}
+              onRunItTwice={proFeatures.requestRunItTwice}
+              runItTwiceActive={proFeatures.runItTwiceActive}
+              hasInsuranceOptions={proFeatures.insuranceOptions.length > 0}
+              onOpenInsurance={proFeatures.openInsuranceModal}
+              hasCashoutOffer={!!proFeatures.myCashoutOffer}
+              cashoutAmount={proFeatures.myCashoutOffer?.cashoutAmount}
+              onOpenCashout={proFeatures.openCashoutModal}
+              playerStack={myStack}
+              compact
+            />
           </div>
 
           {/* Community Cards - using PokerCard CommunityCards */}
