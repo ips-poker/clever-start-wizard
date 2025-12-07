@@ -28,7 +28,7 @@ interface StablePlayerSeatProps {
   seatIndex: number;
 }
 
-// Stable timer ring - only updates on time change
+// Stable timer ring - PPPoker style with pulse animation
 const TimerRing = memo(function TimerRing({ 
   remaining, 
   duration, 
@@ -39,45 +39,69 @@ const TimerRing = memo(function TimerRing({
   size: number;
 }) {
   const progress = remaining / duration;
-  const circumference = (size - 4) * Math.PI;
-  const offset = circumference * (1 - progress);
+  const r = (size - 6) / 2;
+  const circumference = 2 * Math.PI * r;
+  const offset = circumference * (1 - Math.max(0, Math.min(1, progress)));
   
-  const color = progress > 0.5 
-    ? '#22c55e' 
-    : progress > 0.25 
+  const isWarning = progress < 0.25;
+  const isCritical = progress < 0.1;
+  
+  const color = isCritical 
+    ? '#ef4444' 
+    : isWarning 
       ? '#f59e0b' 
-      : '#ef4444';
+      : '#22c55e';
 
   return (
     <svg 
-      className="absolute -inset-1 -rotate-90 pointer-events-none"
-      width={size} 
-      height={size}
+      className="absolute -inset-1.5 -rotate-90 pointer-events-none"
+      width={size + 6} 
+      height={size + 6}
     >
+      {/* Background track */}
       <circle
-        cx={size / 2}
-        cy={size / 2}
-        r={(size - 4) / 2}
+        cx={(size + 6) / 2}
+        cy={(size + 6) / 2}
+        r={r}
         fill="none"
-        stroke="rgba(255,255,255,0.2)"
-        strokeWidth="2"
+        stroke="rgba(255,255,255,0.15)"
+        strokeWidth="3"
       />
+      {/* Progress ring */}
       <circle
-        cx={size / 2}
-        cy={size / 2}
-        r={(size - 4) / 2}
+        cx={(size + 6) / 2}
+        cy={(size + 6) / 2}
+        r={r}
         fill="none"
         stroke={color}
         strokeWidth="3"
         strokeLinecap="round"
         strokeDasharray={circumference}
         strokeDashoffset={offset}
-        style={{ transition: 'stroke-dashoffset 0.3s linear, stroke 0.3s' }}
+        className={cn(
+          'transition-all duration-200',
+          isCritical && 'animate-pulse'
+        )}
+        style={{
+          filter: isCritical ? 'drop-shadow(0 0 6px rgba(239, 68, 68, 0.6))' : 
+                 isWarning ? 'drop-shadow(0 0 4px rgba(245, 158, 11, 0.4))' : 
+                 'drop-shadow(0 0 3px rgba(34, 197, 94, 0.3))'
+        }}
       />
+      {/* Center glow when critical */}
+      {isCritical && (
+        <circle
+          cx={(size + 6) / 2}
+          cy={(size + 6) / 2}
+          r={r - 8}
+          fill="rgba(239, 68, 68, 0.15)"
+          className="animate-pulse"
+        />
+      )}
     </svg>
   );
 }, (prev, next) => 
-  prev.remaining === next.remaining && 
+  Math.abs(prev.remaining - next.remaining) < 0.5 && 
   prev.duration === next.duration && 
   prev.size === next.size
 );
