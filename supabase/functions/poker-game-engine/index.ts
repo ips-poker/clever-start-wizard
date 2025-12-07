@@ -747,32 +747,59 @@ serve(async (req) => {
                   nextPlayer = sortedActive.find(p => p.player_id !== playerId) || sortedActive[0];
                 }
 
-                // Check if betting round complete - all non-folded players must have:
-                // 1. Made at least one action this street (or posted blind)
-                // 2. Have equal bet amounts OR be all-in
+                // Check if betting round complete
                 const { data: currentStreetActions } = await supabase
                   .from('poker_actions')
-                  .select('player_id')
+                  .select('player_id, action_type')
                   .eq('hand_id', hand.id)
                   .eq('phase', hand.phase);
                 
-                const playersActedThisStreet = new Set(currentStreetActions?.map(a => a.player_id) || []);
+                const actionsThisStreet = currentStreetActions || [];
+                const playersActedThisStreet = new Set(actionsThisStreet.map(a => a.player_id));
                 // Add current player who just acted
                 playersActedThisStreet.add(playerId);
                 
-                // All remaining active (non-all-in) players must have acted and matched current bet
-                const allActed = active.every(p => {
-                  // Current player just acted
+                // Count meaningful actions (not just blinds)
+                const meaningfulActions = actionsThisStreet.filter(a => 
+                  ['fold', 'check', 'call', 'raise', 'all_in'].includes(a.action_type)
+                );
+                const meaningfulActedPlayers = new Set(meaningfulActions.map(a => a.player_id));
+                meaningfulActedPlayers.add(playerId); // Current player just acted
+                
+                // Check if all active players have acted AND matched bets
+                let allActed = true;
+                for (const p of active) {
                   if (p.player_id === playerId) {
-                    return newBet === newCurrentBet || isAllIn;
+                    // Current player just acted - check bet matches
+                    if (newBet !== newCurrentBet && !isAllIn) {
+                      allActed = false;
+                      break;
+                    }
+                  } else {
+                    // Other players: must have acted meaningfully AND matched current bet
+                    const hasActedMeaningfully = meaningfulActedPlayers.has(p.player_id);
+                    const betsMatch = p.bet_amount === newCurrentBet;
+                    
+                    // Special case: preflop BB option - if current bet is just BB and no one raised,
+                    // BB gets the option to raise (so round not complete until BB acts)
+                    const isBBOption = hand.phase === 'preflop' && 
+                      p.seat_number === hand.big_blind_seat && 
+                      newCurrentBet === table.big_blind &&
+                      !meaningfulActedPlayers.has(p.player_id);
+                    
+                    if (!hasActedMeaningfully || !betsMatch || isBBOption) {
+                      allActed = false;
+                      break;
+                    }
                   }
-                  // Other players must have acted AND matched bet (or be all-in which is tracked separately)
-                  const hasActed = playersActedThisStreet.has(p.player_id) || 
-                    // BB and SB count as acted if they've only posted blinds and no one raised
-                    (p.seat_number === hand.big_blind_seat && hand.current_bet === table.big_blind) ||
-                    (p.seat_number === hand.small_blind_seat && hand.current_bet === table.big_blind);
-                  return hasActed && p.bet_amount === newCurrentBet;
-                });
+                }
+                
+                // If only 1 active player and others are all-in, round is complete
+                if (active.length === 1 && remaining.length > 1) {
+                  allActed = true;
+                }
+                
+                console.log(`[Engine] Round check: allActed=${allActed}, active=${active.length}, remaining=${remaining.length}, currentBet=${newCurrentBet}, phase=${hand.phase}`);
 
                 let newPhase = hand.phase;
                 let newCommunityCards = hand.community_cards || [];
@@ -781,6 +808,8 @@ serve(async (req) => {
 
                 if (allActed && active.length > 0) {
                   newPhase = getNextPhase(hand.phase);
+                  
+                  console.log(`[Engine] Phase transition: ${hand.phase} -> ${newPhase}`);
                   
                   // Deal community cards (after player hole cards)
                   const deckStart = playerCount * 2;
@@ -799,11 +828,11 @@ serve(async (req) => {
                     }
                   }
 
-                  // First to act after dealer (or first non-folded/non-all-in player after dealer)
+                  // First to act on postflop: first active player after dealer
                   const sortedRemaining = [...remaining].filter(p => !p.is_all_in).sort((a, b) => a.seat_number - b.seat_number);
                   nextPlayer = sortedRemaining.find(p => p.seat_number > hand.dealer_seat) || sortedRemaining[0];
                   
-                  console.log(`[Engine] Phase transition: ${hand.phase} -> ${newPhase}, next player: seat ${nextPlayer?.seat_number}`);
+                  console.log(`[Engine] Next to act: seat ${nextPlayer?.seat_number}`);
                 }
 
                 // SHOWDOWN
