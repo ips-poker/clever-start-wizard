@@ -24,7 +24,7 @@ import InvitationCard from "./pages/InvitationCard";
 import TermsOfService from "./pages/TermsOfService";
 import Privacy from "./pages/Privacy";
 import PokerDemo from "./pages/PokerDemo";
-
+import OnlinePoker from "./pages/OnlinePoker";
 const queryClient = new QueryClient();
 
 function App() {
@@ -73,6 +73,7 @@ function App() {
                 <Route path="/terms" element={<TermsOfService />} />
                 <Route path="/privacy" element={<Privacy />} />
                 <Route path="/poker-demo" element={<PokerDemo />} />
+                <Route path="/online-poker" element={<OnlinePoker />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
               <MobileBottomNav />

@@ -1,0 +1,176 @@
+import React, { useState, useEffect } from 'react';
+import { Header } from '@/components/Header';
+import { Footer } from '@/components/Footer';
+import { PokerTableLobby } from '@/components/poker/PokerTableLobby';
+import { OnlinePokerTable } from '@/components/poker/OnlinePokerTable';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { ArrowLeft, User } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+
+export default function OnlinePoker() {
+  const [playerId, setPlayerId] = useState<string | null>(null);
+  const [playerName, setPlayerName] = useState('');
+  const [activeTable, setActiveTable] = useState<{ id: string; buyIn: number } | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  // Check for existing player
+  useEffect(() => {
+    const checkPlayer = async () => {
+      // Check localStorage for saved player
+      const savedPlayerId = localStorage.getItem('poker_player_id');
+      
+      if (savedPlayerId) {
+        // Verify player exists
+        const { data } = await supabase
+          .from('players')
+          .select('id, name')
+          .eq('id', savedPlayerId)
+          .single();
+        
+        if (data) {
+          setPlayerId(data.id);
+          setPlayerName(data.name);
+        } else {
+          localStorage.removeItem('poker_player_id');
+        }
+      }
+      
+      setLoading(false);
+    };
+
+    checkPlayer();
+  }, []);
+
+  const handleCreatePlayer = async () => {
+    if (!playerName.trim()) {
+      toast.error('Введите имя');
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase.rpc('create_player_safe', {
+        p_name: playerName.trim()
+      });
+
+      if (error) throw error;
+
+      const result = data as any;
+      if (result.success) {
+        const newPlayerId = result.player.id;
+        setPlayerId(newPlayerId);
+        localStorage.setItem('poker_player_id', newPlayerId);
+        
+        // Create initial balance
+        await supabase.rpc('ensure_player_balance', { p_player_id: newPlayerId });
+        
+        toast.success('Профиль создан!');
+      } else {
+        // Player exists, use existing
+        if (result.player_id) {
+          setPlayerId(result.player_id);
+          localStorage.setItem('poker_player_id', result.player_id);
+        }
+      }
+    } catch (error: any) {
+      console.error('Error creating player:', error);
+      toast.error('Ошибка создания профиля');
+    }
+  };
+
+  const handleJoinTable = (tableId: string, buyIn: number) => {
+    setActiveTable({ id: tableId, buyIn });
+  };
+
+  const handleLeaveTable = () => {
+    setActiveTable(null);
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-background">
+      <Header />
+      
+      <main className="container mx-auto px-4 py-8 pt-24">
+        <div className="mb-6 flex items-center justify-between">
+          <Link to="/">
+            <Button variant="ghost" size="sm" className="gap-2">
+              <ArrowLeft className="h-4 w-4" />
+              Назад
+            </Button>
+          </Link>
+          
+          {playerId && (
+            <div className="flex items-center gap-2 text-sm">
+              <User className="h-4 w-4" />
+              <span>{playerName}</span>
+            </div>
+          )}
+        </div>
+
+        {!playerId ? (
+          // Player registration
+          <div className="max-w-md mx-auto">
+            <Card>
+              <CardContent className="p-6">
+                <h1 className="text-2xl font-bold text-center mb-6">
+                  Онлайн Покер
+                </h1>
+                <p className="text-muted-foreground text-center mb-6">
+                  Введите ваше имя, чтобы начать играть
+                </p>
+                
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>Ваше имя</Label>
+                    <Input
+                      value={playerName}
+                      onChange={(e) => setPlayerName(e.target.value)}
+                      placeholder="Введите имя..."
+                      onKeyDown={(e) => e.key === 'Enter' && handleCreatePlayer()}
+                    />
+                  </div>
+                  
+                  <Button onClick={handleCreatePlayer} className="w-full">
+                    Начать играть
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        ) : activeTable ? (
+          // Active poker table
+          <div className="max-w-4xl mx-auto">
+            <OnlinePokerTable
+              tableId={activeTable.id}
+              playerId={playerId}
+              buyIn={activeTable.buyIn}
+              onLeave={handleLeaveTable}
+            />
+          </div>
+        ) : (
+          // Table lobby
+          <div className="max-w-4xl mx-auto">
+            <PokerTableLobby
+              playerId={playerId}
+              onJoinTable={handleJoinTable}
+            />
+          </div>
+        )}
+      </main>
+      
+      <Footer />
+    </div>
+  );
+}
