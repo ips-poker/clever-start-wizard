@@ -965,6 +965,7 @@ export type Database = {
       }
       poker_hands: {
         Row: {
+          action_started_at: string | null
           big_blind_seat: number
           community_cards: string[] | null
           completed_at: string | null
@@ -984,6 +985,7 @@ export type Database = {
           winners: Json | null
         }
         Insert: {
+          action_started_at?: string | null
           big_blind_seat: number
           community_cards?: string[] | null
           completed_at?: string | null
@@ -1003,6 +1005,7 @@ export type Database = {
           winners?: Json | null
         }
         Update: {
+          action_started_at?: string | null
           big_blind_seat?: number
           community_cards?: string[] | null
           completed_at?: string | null

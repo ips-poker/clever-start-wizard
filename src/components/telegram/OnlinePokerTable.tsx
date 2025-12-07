@@ -111,7 +111,8 @@ export function OnlinePokerTable({
     straddleAmount,
     hasPostedStraddle,
     configureTable,
-    refreshPlayers
+    refreshPlayers,
+    checkTimeout
   } = pokerTable;
 
   const players = tableState?.players || [];
@@ -156,9 +157,11 @@ export function OnlinePokerTable({
 
   // PPPoker-style action timer (15 seconds default)
   const ACTION_TIME = 15;
+  const opponentTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   useEffect(() => {
     if (isMyTurn && tableState?.phase !== 'waiting' && tableState?.phase !== 'showdown') {
+      // My turn - local timer
       setTimeRemaining(ACTION_TIME);
       timerRef.current = setInterval(() => {
         setTimeRemaining(prev => {
@@ -171,10 +174,39 @@ export function OnlinePokerTable({
           return prev - 1;
         });
       }, 1000);
+    } else if (!isMyTurn && tableState?.phase !== 'waiting' && tableState?.phase !== 'showdown' && tableState?.currentPlayerSeat) {
+      // Opponent's turn - watch for timeout and call server check
+      setTimeRemaining(ACTION_TIME);
+      
+      // Clear any existing opponent timeout
+      if (opponentTimeoutRef.current) {
+        clearTimeout(opponentTimeoutRef.current);
+      }
+      
+      // Start countdown display
+      timerRef.current = setInterval(() => {
+        setTimeRemaining(prev => {
+          if (prev <= 1) {
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+      
+      // After ACTION_TIME + 2 seconds buffer, call server to check timeout
+      opponentTimeoutRef.current = setTimeout(() => {
+        console.log('⏰ Opponent timeout - calling server check_timeout...');
+        checkTimeout();
+      }, (ACTION_TIME + 2) * 1000);
+      
     } else {
       if (timerRef.current) {
         clearInterval(timerRef.current);
         timerRef.current = null;
+      }
+      if (opponentTimeoutRef.current) {
+        clearTimeout(opponentTimeoutRef.current);
+        opponentTimeoutRef.current = null;
       }
       setTimeRemaining(ACTION_TIME);
     }
@@ -184,8 +216,12 @@ export function OnlinePokerTable({
         clearInterval(timerRef.current);
         timerRef.current = null;
       }
+      if (opponentTimeoutRef.current) {
+        clearTimeout(opponentTimeoutRef.current);
+        opponentTimeoutRef.current = null;
+      }
     };
-  }, [isMyTurn, tableState?.phase, tableState?.currentPlayerSeat, fold]);
+  }, [isMyTurn, tableState?.phase, tableState?.currentPlayerSeat, fold, checkTimeout]);
 
   // Auto-start next hand after showdown (PPPoker style - 5 second countdown)
   const NEXT_HAND_DELAY = 5;
