@@ -7,27 +7,26 @@ import { Input } from '@/components/ui/input';
 import { 
   ArrowLeft, Volume2, VolumeX, MessageSquare, Send,
   Coins, Timer, Users, Crown, Zap, X, RotateCcw, Wifi, WifiOff,
-  Shield, Rabbit, TrendingUp, Percent
+  Shield, Rabbit
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
-import { usePokerWebSocket, WsPlayerState } from '@/hooks/usePokerWebSocket';
+import { usePokerTable, PokerPlayer } from '@/hooks/usePokerTable';
 
 // Import pro features components
-import { EquityDisplay, PlayerEquityBadge } from '@/components/poker/EquityDisplay';
-import { EVCashoutPanel, EVIndicator } from '@/components/poker/EVCashoutPanel';
-import { SmartHUD, MiniHUD } from '@/components/poker/SmartHUD';
-import { RabbitHuntPanel, RunItTwicePanel } from '@/components/poker/RabbitHuntPanel';
+import { EquityDisplay } from '@/components/poker/EquityDisplay';
+import { EVCashoutPanel } from '@/components/poker/EVCashoutPanel';
 import { AllInInsurance } from '@/components/poker/AllInInsurance';
-import { SqueezeCard, SqueezeHand } from '@/components/poker/SqueezeCard';
-import { PokerPlayer } from '@/hooks/usePokerTable';
+import { SqueezeHand } from '@/components/poker/SqueezeCard';
+import { RabbitHuntPanel } from '@/components/poker/RabbitHuntPanel';
 
 interface OnlinePokerTableProps {
   tableId: string;
   playerId: string;
   playerName?: string;
   playerAvatar?: string;
+  buyIn?: number;
   onLeave: () => void;
 }
 
@@ -51,7 +50,7 @@ interface ChatMessage {
 }
 
 interface PlayerEmoji {
-  playerId: string;
+  oderId: string;
   emoji: string;
   id: number;
 }
@@ -61,12 +60,12 @@ export function OnlinePokerTable({
   playerId,
   playerName = 'Player',
   playerAvatar,
+  buyIn = 10000,
   onLeave
 }: OnlinePokerTableProps) {
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [showChat, setShowChat] = useState(false);
   const [chatInput, setChatInput] = useState('');
-  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [betAmount, setBetAmount] = useState(40);
   const [timeRemaining, setTimeRemaining] = useState(30);
   const [playerEmojis, setPlayerEmojis] = useState<PlayerEmoji[]>([]);
@@ -79,56 +78,37 @@ export function OnlinePokerTable({
   const [showRabbitHunt, setShowRabbitHunt] = useState(false);
   const [useSqueeze, setUseSqueeze] = useState(true);
 
+  // Use the main poker table hook
+  const pokerTable = usePokerTable({ tableId, playerId, buyIn });
+  
   const {
     isConnected,
-    gameState,
-    myPlayer,
-    isMyTurn,
-    canCheck,
-    callAmount,
-    minRaise,
+    tableState,
+    myCards,
+    mySeat,
     error,
-    lastActionResult,
+    chatMessages: tableChatMessages,
+    showdownResult,
     fold,
     check,
     call,
     raise,
     allIn,
     startHand,
-    sendChat,
-    sendEmoji,
-  } = usePokerWebSocket({
-    tableId,
-    playerId,
-    onChat: (data) => {
-      const player = gameState?.players.find(p => p.playerId === data.playerId);
-      setChatMessages(prev => [...prev.slice(-50), {
-        playerId: data.playerId,
-        playerName: player?.playerName || 'Unknown',
-        message: data.message,
-        timestamp: Date.now()
-      }]);
-    },
-    onEmoji: (data) => {
-      const id = emojiIdRef.current++;
-      setPlayerEmojis(prev => [...prev, { ...data, id }]);
-      setTimeout(() => {
-        setPlayerEmojis(prev => prev.filter(e => e.id !== id));
-      }, 3000);
-    },
-    onPlayerConnected: (pid) => {
-      if (pid !== playerId) {
-        toast.info('Игрок присоединился');
-      }
-    },
-    onPlayerDisconnected: (pid) => {
-      if (pid !== playerId) {
-        toast.info('Игрок отключился');
-      }
-    },
-  });
+    sendChat: sendTableChat,
+    disconnect
+  } = pokerTable;
 
-  // Обновляем bet amount при изменении minRaise
+  // Map tableState to familiar interface
+  const gameState = tableState;
+  const players = tableState?.players || [];
+  const myPlayer = players.find(p => p.seatNumber === mySeat);
+  const isMyTurn = tableState?.currentPlayerSeat === mySeat;
+  const canCheck = isMyTurn && (tableState?.currentBet || 0) <= (myPlayer?.betAmount || 0);
+  const callAmount = Math.max(0, (tableState?.currentBet || 0) - (myPlayer?.betAmount || 0));
+  const minRaise = tableState?.minRaise || (tableState?.bigBlindAmount || 20) * 2;
+
+  // Update bet amount when minRaise changes
   useEffect(() => {
     setBetAmount(minRaise);
   }, [minRaise]);
@@ -136,41 +116,39 @@ export function OnlinePokerTable({
   // Detect all-in situation for showing equity/insurance
   const isAllInSituation = useMemo(() => {
     if (!gameState || gameState.phase === 'waiting' || gameState.phase === 'preflop') return false;
-    const activePlayers = gameState.players.filter(p => !p.isFolded);
+    const activePlayers = players.filter(p => !p.isFolded);
     const allInPlayers = activePlayers.filter(p => p.isAllIn);
     return allInPlayers.length >= 1 && activePlayers.length >= 2;
-  }, [gameState]);
+  }, [gameState, players]);
 
-  // Convert WsPlayerState to PokerPlayer for EquityDisplay
+  // Convert players for EquityDisplay
   const pokerPlayersForEquity = useMemo((): PokerPlayer[] => {
-    if (!gameState) return [];
-    return gameState.players
+    return players
       .filter(p => !p.isFolded && p.holeCards && p.holeCards.length === 2 && p.holeCards[0] !== '??')
       .map(p => ({
-        oderId: p.playerId,
+        oderId: p.oderId,
         seatNumber: p.seatNumber,
-        name: p.playerName,
+        name: p.name,
         stack: p.stack,
         holeCards: p.holeCards || [],
-        betAmount: p.currentBet,
+        betAmount: p.betAmount || 0,
         isFolded: p.isFolded,
         isAllIn: p.isAllIn,
         isActive: !p.isFolded && p.stack > 0,
       }));
-  }, [gameState]);
+  }, [players]);
 
   // My equity for insurance/cashout
   const myEquity = useMemo(() => {
     if (!isAllInSituation || !myPlayer || myPlayer.isFolded) return 0;
-    // Simplified equity based on number of active players
-    const activePlayers = gameState?.players.filter(p => !p.isFolded) || [];
+    const activePlayers = players.filter(p => !p.isFolded);
     return 100 / Math.max(1, activePlayers.length);
-  }, [isAllInSituation, myPlayer, gameState]);
+  }, [isAllInSituation, myPlayer, players]);
 
-  // Таймер хода
+  // Turn timer
   useEffect(() => {
     if (isMyTurn) {
-      setTimeRemaining(30);
+      setTimeRemaining(tableState?.actionTimer || 30);
       timerRef.current = setInterval(() => {
         setTimeRemaining(prev => {
           if (prev <= 1) {
@@ -187,24 +165,25 @@ export function OnlinePokerTable({
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [isMyTurn, fold]);
+  }, [isMyTurn, tableState?.actionTimer, fold]);
 
-  // Обработка результатов
+  // Show winner toast
   useEffect(() => {
-    if (lastActionResult?.handComplete) {
-      if (lastActionResult.winners) {
-        const isWinner = lastActionResult.winners.some(w => w.playerId === playerId);
-        if (isWinner) {
-          const myWin = lastActionResult.winners.find(w => w.playerId === playerId);
-          toast.success(`Вы выиграли ${myWin?.amount}! ${myWin?.handName || ''}`);
-        }
-      } else if (lastActionResult.winner === playerId) {
-        toast.success(`Вы выиграли!`);
+    if (showdownResult?.winners && showdownResult.winners.length > 0) {
+      const myWin = showdownResult.winners.find(w => w.oderId === playerId);
+      if (myWin) {
+        toast.success(`Вы выиграли ${myWin.amount}! ${myWin.handRank || ''}`);
       }
     }
-  }, [lastActionResult, playerId]);
+  }, [showdownResult, playerId]);
 
-  // Рендер карты
+  // Handle leave
+  const handleLeave = () => {
+    disconnect();
+    onLeave();
+  };
+
+  // Render card
   const renderCard = (cardStr: string, faceDown = false, size: 'sm' | 'md' | 'lg' = 'md') => {
     const sizeClasses = { sm: 'w-8 h-11', md: 'w-11 h-15', lg: 'w-14 h-19' };
     
@@ -236,14 +215,14 @@ export function OnlinePokerTable({
     );
   };
 
-  // Рендер игрока
+  // Render player seat
   const renderPlayerSeat = (seatNumber: number) => {
     const position = SEAT_POSITIONS_6MAX[seatNumber - 1];
-    const player = gameState?.players.find(p => p.seatNumber === seatNumber);
-    const isHero = player?.playerId === playerId;
+    const player = players.find(p => p.seatNumber === seatNumber);
+    const isHero = player?.seatNumber === mySeat;
     const isCurrentPlayer = gameState?.currentPlayerSeat === seatNumber;
-    const isWinner = lastActionResult?.winners?.some(w => w.playerId === player?.playerId) || lastActionResult?.winner === player?.playerId;
-    const playerEmojiData = playerEmojis.find(e => e.playerId === player?.playerId);
+    const isWinner = showdownResult?.winners?.some(w => w.seatNumber === seatNumber);
+    const playerEmojiData = playerEmojis.find(e => e.oderId === player?.oderId);
     
     if (!player) {
       return (
@@ -301,11 +280,11 @@ export function OnlinePokerTable({
           <Avatar className="w-full h-full">
             <AvatarImage src={player.avatarUrl || ''} />
             <AvatarFallback className="bg-gradient-to-br from-gray-700 to-gray-900 text-white text-sm">
-              {player.playerName.charAt(0).toUpperCase()}
+              {(player.name || 'P').charAt(0).toUpperCase()}
             </AvatarFallback>
           </Avatar>
           
-          {player.isDealer && (
+          {gameState?.dealerSeat === seatNumber && (
             <div className="absolute -top-1 -right-1 w-5 h-5 bg-white rounded-full flex items-center justify-center text-[10px] font-bold text-gray-900 shadow-lg">D</div>
           )}
           
@@ -319,7 +298,7 @@ export function OnlinePokerTable({
         {/* Info */}
         <div className={cn("mt-1 px-2 py-1 rounded-lg min-w-[70px] text-center", isWinner ? "bg-yellow-500/90" : player.isFolded ? "bg-gray-800/80" : "bg-gray-900/90")}>
           <p className={cn("text-[10px] font-medium truncate max-w-[70px]", isWinner ? "text-gray-900" : "text-white")}>
-            {isHero ? 'You' : player.playerName}
+            {isHero ? 'You' : player.name || `Player ${seatNumber}`}
           </p>
           <div className={cn("flex items-center justify-center gap-0.5 text-[11px] font-bold", isWinner ? "text-gray-900" : "text-yellow-400")}>
             <span>{player.stack.toLocaleString()}</span>
@@ -327,9 +306,9 @@ export function OnlinePokerTable({
         </div>
         
         {/* Current bet */}
-        {player.currentBet > 0 && (
+        {(player.betAmount || 0) > 0 && (
           <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="mt-1 px-2 py-0.5 bg-yellow-500/80 rounded text-[9px] font-bold text-black">
-            {player.currentBet}
+            {player.betAmount}
           </motion.div>
         )}
         
@@ -337,11 +316,11 @@ export function OnlinePokerTable({
         {player.isAllIn && <Badge className="mt-1 bg-purple-600 text-white text-[9px]">ALL-IN</Badge>}
         {player.isFolded && <Badge className="mt-1 bg-red-600/50 text-white text-[9px]">FOLD</Badge>}
 
-        {/* Cards */}
+        {/* Cards - show ?? for opponents, real cards for hero or at showdown */}
         {player.holeCards && player.holeCards.length > 0 && !player.isFolded && (
           <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 flex gap-0.5">
             {player.holeCards.map((card, idx) => (
-              <div key={idx}>{renderCard(card, card === '??', 'sm')}</div>
+              <div key={idx}>{renderCard(isHero ? card : (gameState?.phase === 'showdown' ? card : '??'), false, 'sm')}</div>
             ))}
           </div>
         )}
@@ -349,22 +328,22 @@ export function OnlinePokerTable({
     );
   };
 
-  // Отправка чата
+  // Send chat
   const handleSendChat = () => {
     if (chatInput.trim()) {
-      sendChat(chatInput.trim());
+      sendTableChat(chatInput.trim());
       setChatInput('');
     }
   };
 
-  // Быстрые эмодзи
+  // Quick emojis
   const quickEmojis = ['👍', '👎', '😂', '😡', '🎉', '💰'];
 
   return (
     <div className="fixed inset-0 bg-[#0a1628] flex flex-col overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between px-3 py-2 bg-gradient-to-b from-gray-900/90 to-transparent z-20">
-        <Button variant="ghost" size="icon" onClick={onLeave} className="h-9 w-9 text-white/70 hover:text-white">
+        <Button variant="ghost" size="icon" onClick={handleLeave} className="h-9 w-9 text-white/70 hover:text-white">
           <ArrowLeft className="h-5 w-5" />
         </Button>
         
@@ -374,9 +353,9 @@ export function OnlinePokerTable({
             {isConnected ? <Wifi className="w-3 h-3 text-green-400" /> : <WifiOff className="w-3 h-3 text-red-400" />}
           </div>
           <div className="flex items-center justify-center gap-2 text-[10px] text-white/60">
-            <span>{gameState?.smallBlind || 10}/{gameState?.bigBlind || 20}</span>
+            <span>{gameState?.smallBlindAmount || 10}/{gameState?.bigBlindAmount || 20}</span>
             <span className="w-1 h-1 rounded-full bg-white/40" />
-            <span>{gameState?.players.length || 0} players</span>
+            <span>{players.length} players</span>
             <span className="w-1 h-1 rounded-full bg-white/40" />
             <span className="capitalize">{gameState?.phase || 'connecting...'}</span>
           </div>
@@ -388,7 +367,7 @@ export function OnlinePokerTable({
           </Button>
           <Button variant="ghost" size="icon" onClick={() => setShowChat(!showChat)} className="h-9 w-9 text-white/70 relative">
             <MessageSquare className="h-4 w-4" />
-            {chatMessages.length > 0 && <div className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />}
+            {tableChatMessages.length > 0 && <div className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />}
           </Button>
         </div>
       </div>
@@ -403,18 +382,11 @@ export function OnlinePokerTable({
             className="absolute right-0 top-12 bottom-32 w-64 bg-gray-900/95 backdrop-blur-lg z-30 flex flex-col border-l border-white/10"
           >
             <div className="flex-1 overflow-y-auto p-2 space-y-2">
-              {chatMessages.map((msg, i) => (
+              {tableChatMessages.map((msg, i) => (
                 <div key={i} className={cn("text-xs", msg.playerId === playerId ? "text-right" : "")}>
-                  <span className="text-blue-400 font-medium">{msg.playerName}: </span>
-                  <span className="text-white/80">{msg.message}</span>
+                  <span className="text-blue-400 font-medium">{msg.playerName || 'Player'}: </span>
+                  <span className="text-white/80">{msg.text || msg.message}</span>
                 </div>
-              ))}
-            </div>
-            <div className="flex gap-1 p-2 border-t border-white/10">
-              {quickEmojis.map(emoji => (
-                <button key={emoji} onClick={() => sendEmoji(emoji)} className="text-lg hover:scale-125 transition-transform">
-                  {emoji}
-                </button>
               ))}
             </div>
             <div className="flex gap-2 p-2">
@@ -452,13 +424,13 @@ export function OnlinePokerTable({
               {/* Main Pot */}
               <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="flex items-center gap-1.5 px-4 py-1.5 bg-black/60 rounded-full">
                 <Coins className="h-4 w-4 text-yellow-400" />
-                <span className="text-white font-bold text-sm">{gameState?.pot.toLocaleString()}</span>
+                <span className="text-white font-bold text-sm">{gameState.pot.toLocaleString()}</span>
               </motion.div>
               
               {/* Side Pots */}
-              {gameState?.sidePots && gameState.sidePots.length > 0 && (
+              {gameState?.sidePots?.sidePots && gameState.sidePots.sidePots.length > 0 && (
                 <div className="flex gap-1.5 flex-wrap justify-center">
-                  {gameState.sidePots.map((sidePot, i) => (
+                  {gameState.sidePots.sidePots.map((sidePot, i) => (
                     <motion.div 
                       key={i}
                       initial={{ scale: 0, y: -10 }}
@@ -492,17 +464,17 @@ export function OnlinePokerTable({
       </div>
 
       {/* Hero Cards - with optional squeeze */}
-      {myPlayer?.holeCards && myPlayer.holeCards.length > 0 && myPlayer.holeCards[0] !== '??' && (
+      {myCards && myCards.length > 0 && myCards[0] !== '??' && (
         <div className="absolute bottom-32 left-1/2 -translate-x-1/2 z-30">
           {useSqueeze && gameState?.phase === 'preflop' ? (
             <SqueezeHand 
-              cards={myPlayer.holeCards} 
+              cards={myCards} 
               size="lg"
               onRevealComplete={() => setUseSqueeze(false)}
             />
           ) : (
             <div className="flex gap-2">
-              {myPlayer.holeCards.map((card, idx) => (
+              {myCards.map((card, idx) => (
                 <motion.div key={idx} initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: idx * 0.1 }}>
                   {renderCard(card, false, 'lg')}
                 </motion.div>
@@ -530,12 +502,12 @@ export function OnlinePokerTable({
               pot: gameState.pot,
               phase: gameState.phase as 'flop' | 'turn' | 'river',
               communityCards: gameState.communityCards,
-              players: gameState.players.filter(p => !p.isFolded).map(p => ({
-                playerId: p.playerId,
-                playerName: p.playerName,
+              players: players.filter(p => !p.isFolded).map(p => ({
+                playerId: p.oderId,
+                playerName: p.name || '',
                 cards: p.holeCards || [],
                 stack: p.stack,
-                contribution: p.currentBet,
+                contribution: p.betAmount || 0,
               }))
             }}
             playerId={playerId}
@@ -561,7 +533,7 @@ export function OnlinePokerTable({
         maxInsurable={Math.floor((gameState?.pot || 0) * (myEquity / 100))}
         playerStack={myPlayer?.stack || 0}
         communityCards={gameState?.communityCards || []}
-        holeCards={myPlayer?.holeCards || []}
+        holeCards={myCards || []}
       />
 
       {/* Pro Features Buttons */}
@@ -602,9 +574,9 @@ export function OnlinePokerTable({
           </Button>
           {showRabbitHunt && (
             <RabbitHuntPanel
-              foldedPlayerCards={myPlayer.holeCards || []}
+              foldedPlayerCards={myCards || []}
               communityCards={gameState.communityCards}
-              usedCards={gameState.players.flatMap(p => p.holeCards || [])}
+              usedCards={players.flatMap(p => p.holeCards || [])}
               potSize={gameState.pot}
               onPurchase={(cost) => toast.info(`Rabbit hunt: -${cost} chips`)}
               className="mt-2"
@@ -626,13 +598,13 @@ export function OnlinePokerTable({
           <div className="flex gap-3">
             <Button
               onClick={startHand}
-              disabled={(gameState?.players.length || 0) < 2}
+              disabled={players.length < 2}
               className="flex-1 h-12 bg-gradient-to-r from-green-600 to-green-500 text-white font-bold rounded-xl"
             >
               <Zap className="h-5 w-5 mr-2" />
-              {(gameState?.players.length || 0) < 2 ? 'Need 2+ Players' : 'Start Game'}
+              {players.length < 2 ? 'Need 2+ Players' : 'Start Game'}
             </Button>
-            <Button onClick={onLeave} variant="outline" className="h-12 px-6 border-white/20 text-white rounded-xl">
+            <Button onClick={handleLeave} variant="outline" className="h-12 px-6 border-white/20 text-white rounded-xl">
               <X className="h-5 w-5" />
             </Button>
           </div>
@@ -673,7 +645,7 @@ export function OnlinePokerTable({
         ) : (
           <div className="flex items-center justify-center py-3 text-white/50">
             <Timer className="h-4 w-4 mr-2 animate-pulse" />
-            Waiting for {gameState?.players.find(p => p.seatNumber === gameState?.currentPlayerSeat)?.playerName || 'opponent'}...
+            Waiting for {players.find(p => p.seatNumber === gameState?.currentPlayerSeat)?.name || 'opponent'}...
           </div>
         )}
       </div>
