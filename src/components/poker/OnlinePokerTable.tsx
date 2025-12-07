@@ -22,6 +22,8 @@ import { EnhancedPokerControls } from './EnhancedPokerControls';
 import { MobilePokerTable } from './MobilePokerTable';
 import { HandHistoryExport } from './HandHistoryExport';
 import { TableStatistics } from './TableStatistics';
+import { TableChat } from './TableChat';
+import { BombPotIndicator } from './BombPotIndicator';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { 
   Loader2, 
@@ -38,7 +40,8 @@ import {
   History,
   Eye,
   Trophy,
-  BarChart3
+  BarChart3,
+  Bomb
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -72,6 +75,7 @@ export function OnlinePokerTable({
   const [showStats, setShowStats] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [spectatorCount, setSpectatorCount] = useState(0);
+  const [mutedPlayers, setMutedPlayers] = useState<Set<string>>(new Set());
   const prevPhaseRef = useRef<string | null>(null);
 
   const {
@@ -97,7 +101,16 @@ export function OnlinePokerTable({
     raise,
     allIn,
     startHand,
-    clearShowdown
+    clearShowdown,
+    // Bomb Pot & Chat
+    isBombPot,
+    bombPotEnabled,
+    bombPotMultiplier,
+    triggerBombPot,
+    mutePlayer,
+    chatEnabled,
+    chatSlowMode,
+    chatSlowModeInterval
   } = pokerTable;
 
   // Connect on mount
@@ -176,12 +189,30 @@ export function OnlinePokerTable({
     allIn();
   };
 
-  const handleSendChat = () => {
-    if (chatInput.trim()) {
-      pokerTable.sendChat(chatInput.trim());
+  const handleSendChat = (text?: string) => {
+    const message = text || chatInput.trim();
+    if (message) {
+      pokerTable.sendChat(message);
       setChatInput('');
       sounds.playChat();
     }
+  };
+
+  const handleMutePlayer = (targetPlayerId: string, mute: boolean) => {
+    if (mute) {
+      setMutedPlayers(prev => new Set([...prev, targetPlayerId]));
+    } else {
+      setMutedPlayers(prev => {
+        const next = new Set(prev);
+        next.delete(targetPlayerId);
+        return next;
+      });
+    }
+    mutePlayer?.(targetPlayerId, mute);
+  };
+
+  const handleTriggerBombPot = () => {
+    triggerBombPot?.();
   };
 
   const handleLeave = () => {
@@ -580,10 +611,39 @@ export function OnlinePokerTable({
 
       {/* Professional Poker Table */}
       <div className="relative">
+        {/* Bomb Pot Indicator */}
+        <BombPotIndicator
+          isActive={isBombPot || false}
+          multiplier={bombPotMultiplier || 2}
+          isDoubleBoard={tableState?.bombPotDoubleBoard}
+        />
+
         <ProfessionalPokerTable
           tableState={tableState}
           myCards={isSpectator ? [] : myCards}
           playerId={playerId}
+        />
+
+        {/* Enhanced Table Chat */}
+        <TableChat
+          messages={chatMessages.map(m => ({
+            id: m.id || String(m.timestamp),
+            playerId: m.playerId,
+            playerName: m.playerName || 'Player',
+            message: m.message || m.text || '',
+            timestamp: m.timestamp,
+            type: m.type || 'chat',
+            isModerated: m.isModerated
+          }))}
+          onSendMessage={handleSendChat}
+          onMutePlayer={handleMutePlayer}
+          onTriggerBombPot={bombPotEnabled ? handleTriggerBombPot : undefined}
+          mutedPlayers={mutedPlayers}
+          isChatEnabled={chatEnabled}
+          isSlowMode={chatSlowMode}
+          slowModeInterval={chatSlowModeInterval}
+          currentPlayerId={playerId}
+          bombPotEnabled={bombPotEnabled}
         />
       </div>
 
@@ -667,7 +727,7 @@ export function OnlinePokerTable({
                     onKeyDown={(e) => e.key === 'Enter' && handleSendChat()}
                     className="text-sm"
                   />
-                  <Button size="icon" onClick={handleSendChat}>
+                  <Button size="icon" onClick={() => handleSendChat()}>
                     <Send className="h-4 w-4" />
                   </Button>
                 </div>
