@@ -1601,12 +1601,15 @@ async function finalizeHand(
   activePlayers: [string, PlayerState][],
   rakeCollected: number = 0
 ) {
-  // Update database
+  // Update database with complete hand data
   if (tableState.currentHandId) {
+    // Update hand record
     await supabase.from('poker_hands')
       .update({ 
         phase: 'showdown',
         completed_at: new Date().toISOString(),
+        community_cards: tableState.communityCards,
+        pot: tableState.pot,
         winners: JSON.stringify(winnerResults.map(w => ({ 
           playerId: w.oderId, 
           amount: w.amount,
@@ -1614,6 +1617,33 @@ async function finalizeHand(
         })))
       })
       .eq('id', tableState.currentHandId);
+
+    // Save all player data for hand history
+    const allPlayers = Array.from(tableState.players.entries());
+    const handPlayersData = allPlayers.map(([playerId, player]) => {
+      const winResult = winnerResults.find(w => w.oderId === playerId);
+      return {
+        hand_id: tableState.currentHandId,
+        player_id: playerId,
+        seat_number: player.seatNumber,
+        stack_start: player.totalBetInHand + player.stack + (winResult?.amount || 0), // Approximate start
+        stack_end: player.stack,
+        hole_cards: player.holeCards,
+        bet_amount: player.totalBetInHand,
+        is_folded: player.isFolded,
+        is_all_in: player.isAllIn,
+        hand_rank: winResult?.handName || null,
+        won_amount: winResult?.amount || 0
+      };
+    });
+
+    // Insert player records
+    try {
+      await supabase.from('poker_hand_players').insert(handPlayersData);
+      console.log(`📝 Saved ${handPlayersData.length} player records for hand history`);
+    } catch (error) {
+      console.error("DB error saving hand players:", error);
+    }
 
     // Update player stacks in database
     for (const winner of winnerResults) {
@@ -1630,13 +1660,14 @@ async function finalizeHand(
   // Broadcast showdown result with rake info
   broadcastToTable(tableState.tableId, {
     type: "showdown",
+    handId: tableState.currentHandId,
     winners: winnerResults.map(w => ({ 
       playerId: w.oderId, 
       amount: w.amount,
       handName: w.handName 
     })),
     playerCards: Object.fromEntries(
-      activePlayers.map(([id, p]) => [id, p.holeCards])
+      Array.from(tableState.players.entries()).map(([id, p]) => [id, p.holeCards])
     ),
     communityCards: tableState.communityCards,
     pot: tableState.pot,

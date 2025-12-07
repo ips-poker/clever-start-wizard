@@ -5,13 +5,14 @@ import { PokerTableLobby } from '@/components/poker/PokerTableLobby';
 import { OnlinePokerTable } from '@/components/poker/OnlinePokerTable';
 import { PlayerBalanceCard } from '@/components/poker/PlayerBalanceCard';
 import { OnlineTournamentLobby } from '@/components/poker/OnlineTournamentLobby';
+import { FullHandHistory } from '@/components/poker/FullHandHistory';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { ArrowLeft, User, LogOut, Trophy, Table2 } from 'lucide-react';
+import { ArrowLeft, User, LogOut, Trophy, Table2, History } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -269,7 +270,7 @@ export default function OnlinePoker() {
             />
             
             <Tabs value={lobbyTab} onValueChange={setLobbyTab}>
-              <TabsList className="grid grid-cols-2 w-full max-w-md mx-auto">
+              <TabsList className="grid grid-cols-3 w-full max-w-lg mx-auto">
                 <TabsTrigger value="cash" className="gap-2">
                   <Table2 className="h-4 w-4" />
                   Кэш-игры
@@ -277,6 +278,10 @@ export default function OnlinePoker() {
                 <TabsTrigger value="tournaments" className="gap-2">
                   <Trophy className="h-4 w-4" />
                   Турниры
+                </TabsTrigger>
+                <TabsTrigger value="history" className="gap-2">
+                  <History className="h-4 w-4" />
+                  История
                 </TabsTrigger>
               </TabsList>
 
@@ -294,6 +299,10 @@ export default function OnlinePoker() {
                   playerBalance={playerBalance}
                   onJoinTournament={handleJoinTournament}
                 />
+              </TabsContent>
+
+              <TabsContent value="history" className="mt-6">
+                <FullHandHistory playerId={playerId} />
               </TabsContent>
             </Tabs>
           </div>
