@@ -259,18 +259,15 @@ const PlayerSeat = memo(function PlayerSeat({
       animate={{ scale: 1, opacity: 1 }}
       transition={{ type: 'spring', stiffness: 260, damping: 25 }}
     >
-      {/* Player cards */}
-      {player.holeCards && player.holeCards.length > 0 && !player.isFolded && (
-        <div className={cn(
-          "absolute flex gap-0.5 z-5",
-          isHero ? "-top-14 left-1/2 -translate-x-1/2" : "-top-10 left-1/2 -translate-x-1/2"
-        )}>
+      {/* Player cards - only show for opponents, hero cards shown at bottom of table */}
+      {player.holeCards && player.holeCards.length > 0 && !player.isFolded && !isHero && (
+        <div className="absolute flex gap-0.5 z-5 -top-10 left-1/2 -translate-x-1/2">
           {player.holeCards.map((card, idx) => (
             <SyndikatePPCard
               key={`${card}-${idx}`}
               card={card}
-              faceDown={!showCards && !isHero}
-              size={isHero ? 'sm' : 'xs'}
+              faceDown={!showCards}
+              size="xs"
               delay={idx}
             />
           ))}
@@ -1121,6 +1118,20 @@ export function PPPokerProfessionalTable({
                   Раздача начнётся
                 </p>
               </motion.div>
+            </div>
+          )}
+
+          {/* Hero cards display at bottom - large cards for hero */}
+          {myPlayer && myPlayer.holeCards && myPlayer.holeCards.length > 0 && !myPlayer.isFolded && (
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-30 flex gap-2">
+              {myPlayer.holeCards.map((card, idx) => (
+                <SyndikatePPCard
+                  key={`hero-${idx}-${card}`}
+                  card={card}
+                  size="lg"
+                  delay={idx}
+                />
+              ))}
             </div>
           )}
         </div>

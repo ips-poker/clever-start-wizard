@@ -131,7 +131,72 @@ const EmptySeat = memo(function EmptySeat({
   );
 });
 
-// Action badge component - PPPoker style
+// Bet display component - positioned between player and table center
+const BetDisplay = memo(function BetDisplay({ 
+  amount, 
+  seatIndex
+}: { 
+  amount: number;
+  seatIndex: number;
+}) {
+  // Calculate bet position based on seat - move towards table center
+  const getBetOffset = () => {
+    switch (seatIndex) {
+      case 0: return { x: 0, y: -45 };     // Hero (bottom) - bet above
+      case 1: return { x: 35, y: -15 };    // Left middle - bet right & up
+      case 2: return { x: 35, y: 15 };     // Left top - bet right & down
+      case 3: return { x: 0, y: 35 };      // Top center - bet below
+      case 4: return { x: -35, y: 15 };    // Right top - bet left & down
+      case 5: return { x: -35, y: -15 };   // Right middle - bet left & up
+      default: return { x: 0, y: -35 };
+    }
+  };
+
+  const offset = getBetOffset();
+
+  return (
+    <motion.div
+      className="absolute z-20"
+      style={{
+        left: `${offset.x}px`,
+        top: `${offset.y}px`,
+      }}
+      initial={{ scale: 0, opacity: 0 }}
+      animate={{ scale: 1, opacity: 1 }}
+      transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+    >
+      <div 
+        className="flex items-center gap-1.5 px-2 py-1"
+        style={{
+          background: 'linear-gradient(135deg, rgba(20,20,20,0.95) 0%, rgba(10,10,10,0.95) 100%)',
+          border: '1px solid rgba(255, 122, 0, 0.3)',
+          borderRadius: '4px',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.5)'
+        }}
+      >
+        {/* Chip icon */}
+        <div 
+          className="w-4 h-4 rounded-full flex-shrink-0"
+          style={{
+            background: 'linear-gradient(135deg, #ff7a00 0%, #cc5500 100%)',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.3)'
+          }}
+        >
+          <div className="w-full h-full rounded-full border border-black/20" />
+        </div>
+        {/* Amount */}
+        <span 
+          className="text-orange-400 text-xs font-bold"
+          style={{ textShadow: '0 0 5px rgba(255, 122, 0, 0.3)' }}
+        >
+          {amount.toLocaleString()}
+        </span>
+      </div>
+    </motion.div>
+  );
+});
+
+
 const ActionBadge = memo(function ActionBadge({ action }: { action: string }) {
   const actionLower = action.toLowerCase();
   
@@ -346,33 +411,27 @@ export const StablePlayerSeat = memo(function StablePlayerSeat({
         )}
       </AnimatePresence>
 
-      {/* Player cards - positioned above avatar */}
-      {player.cards && player.cards.length > 0 && !player.isFolded && (
-        <div className={cn(
-          'absolute flex gap-1',
-          isHero ? '-top-[85px] left-1/2 -translate-x-1/2' : '-top-14 left-1/2 -translate-x-1/2'
-        )}>
+      {/* Player cards - positioned above avatar - only show for opponents, hero cards shown at bottom */}
+      {player.cards && player.cards.length > 0 && !player.isFolded && !isHero && (
+        <div className="absolute flex gap-1 -top-14 left-1/2 -translate-x-1/2">
           {player.cards.map((card, idx) => (
             <StablePokerCard
               key={`${player.id}-${idx}-${card}`}
               card={card}
-              faceDown={!showCards && !isHero}
-              size={isHero ? 'md' : 'sm'}
+              faceDown={!showCards}
+              size="sm"
               dealDelay={idx}
             />
           ))}
         </div>
       )}
 
-      {/* Current bet chip stack */}
+      {/* Current bet chip stack - positioned towards table center */}
       {player.currentBet && player.currentBet > 0 && (
-        <div className="absolute top-full mt-16 left-1/2 -translate-x-1/2">
-          <StableChipStack 
-            amount={player.currentBet} 
-            size="sm" 
-            showLabel={true}
-          />
-        </div>
+        <BetDisplay 
+          amount={player.currentBet} 
+          seatIndex={seatIndex}
+        />
       )}
     </div>
   );
