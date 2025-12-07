@@ -288,6 +288,7 @@ interface TableState {
   // Betting configuration
   smallBlindAmount: number;
   bigBlindAmount: number;
+  anteAmount: number; // Ante for all players
   minRaise: number; // Minimum raise amount
   lastRaiserSeat: number | null; // Track who made last raise
   lastRaiseAmount: number; // Track last raise size
@@ -870,9 +871,10 @@ async function handleStartHand(socket: WebSocket, message: WSMessage, supabase: 
     console.log(`🎯 NORMAL: Dealer=${tableState.dealerSeat}, SB=${tableState.smallBlindSeat}, BB=${tableState.bigBlindSeat}`);
   }
 
-  // Post blinds using table configuration
+  // Post blinds and antes using table configuration
   const smallBlind = tableState.smallBlindAmount;
   const bigBlind = tableState.bigBlindAmount;
+  const ante = tableState.anteAmount;
   
   // Reset betting state for new hand
   tableState.minRaise = bigBlind;
@@ -880,26 +882,42 @@ async function handleStartHand(socket: WebSocket, message: WSMessage, supabase: 
   tableState.lastRaiseAmount = bigBlind;
   tableState.bbHasActed = false; // BB hasn't acted yet
 
+  // Collect antes from all active players first
+  if (ante > 0) {
+    let totalAntes = 0;
+    tableState.players.forEach(player => {
+      if (player.isActive && player.stack > 0) {
+        const anteAmount = Math.min(ante, player.stack);
+        player.stack -= anteAmount;
+        player.totalBetInHand += anteAmount;
+        totalAntes += anteAmount;
+        if (player.stack === 0) player.isAllIn = true;
+      }
+    });
+    tableState.pot += totalAntes;
+    console.log(`💰 Collected ${totalAntes} in antes from ${Array.from(tableState.players.values()).filter(p => p.isActive).length} players`);
+  }
+
   const sbPlayer = getPlayerBySeat(tableState, tableState.smallBlindSeat);
   const bbPlayer = getPlayerBySeat(tableState, tableState.bigBlindSeat);
 
-  if (sbPlayer) {
+  if (sbPlayer && !sbPlayer.isAllIn) {
     const sbAmount = Math.min(smallBlind, sbPlayer.stack);
     sbPlayer.betAmount = sbAmount;
-    sbPlayer.totalBetInHand = sbAmount;
+    sbPlayer.totalBetInHand += sbAmount;
     sbPlayer.stack -= sbAmount;
     tableState.pot += sbAmount;
-    if (sbAmount < smallBlind) sbPlayer.isAllIn = true;
+    if (sbPlayer.stack === 0) sbPlayer.isAllIn = true;
   }
 
-  if (bbPlayer) {
+  if (bbPlayer && !bbPlayer.isAllIn) {
     const bbAmount = Math.min(bigBlind, bbPlayer.stack);
     bbPlayer.betAmount = bbAmount;
-    bbPlayer.totalBetInHand = bbAmount;
+    bbPlayer.totalBetInHand += bbAmount;
     bbPlayer.stack -= bbAmount;
     tableState.pot += bbAmount;
     tableState.currentBet = bbAmount;
-    if (bbAmount < bigBlind) bbPlayer.isAllIn = true;
+    if (bbPlayer.stack === 0) bbPlayer.isAllIn = true;
   }
 
   // Deal hole cards
@@ -1022,6 +1040,7 @@ function createInitialTableState(tableId: string): TableState {
     // Betting configuration
     smallBlindAmount: 50,
     bigBlindAmount: 100,
+    anteAmount: 0, // No ante by default
     minRaise: 100, // BB is min raise initially
     lastRaiserSeat: null,
     lastRaiseAmount: 0,
@@ -1482,6 +1501,7 @@ function serializeTableState(tableState: TableState, forPlayerId?: string): any 
     minRaise: tableState.minRaise,
     smallBlindAmount: tableState.smallBlindAmount,
     bigBlindAmount: tableState.bigBlindAmount,
+    anteAmount: tableState.anteAmount,
     actionTimer: tableState.actionTimer,
     timeRemaining,
     lastRaiserSeat: tableState.lastRaiserSeat
