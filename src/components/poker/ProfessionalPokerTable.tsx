@@ -8,6 +8,7 @@ import { EquityDisplay, PlayerEquityBadge } from './EquityDisplay';
 import { useEquityCalculator } from '@/hooks/useEquityCalculator';
 import { Timer, Crown, Coins, User } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 interface ProfessionalPokerTableProps {
   tableState: {
@@ -277,14 +278,21 @@ export function ProfessionalPokerTable({
                     isMe ? "border-primary" : "border-slate-600",
                     player.isAllIn && "border-amber-500 ring-2 ring-amber-500/50"
                   )}>
-                    {/* Avatar image placeholder */}
-                    <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-slate-600 to-slate-800">
-                      <User className="w-8 h-8 text-slate-400" />
-                    </div>
+                    {/* Avatar image */}
+                    <Avatar className="w-full h-full">
+                      <AvatarImage 
+                        src={player.avatarUrl} 
+                        alt={player.name} 
+                        className="object-cover"
+                      />
+                      <AvatarFallback className="bg-gradient-to-br from-slate-600 to-slate-800 text-white">
+                        {isMe ? '😎' : player.name?.charAt(0)?.toUpperCase() || <User className="w-8 h-8 text-slate-400" />}
+                      </AvatarFallback>
+                    </Avatar>
 
                     {/* Fold overlay */}
                     {player.isFolded && (
-                      <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                      <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-10">
                         <span className="text-xs font-bold text-white/80">FOLD</span>
                       </div>
                     )}
@@ -294,7 +302,7 @@ export function ProfessionalPokerTable({
                       <motion.div
                         initial={{ scale: 0 }}
                         animate={{ scale: 1 }}
-                        className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-amber-500/80 to-orange-600/80"
+                        className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-amber-500/80 to-orange-600/80 z-10"
                       >
                         <span className="text-xs font-bold text-white">ALL-IN</span>
                       </motion.div>
