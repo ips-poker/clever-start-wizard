@@ -1042,6 +1042,20 @@ function findAvailableSeat(tableState: TableState): number {
   return -1;
 }
 
+// Cryptographically secure random number generator
+function getSecureRandomInt(max: number): number {
+  const randomBuffer = new Uint32Array(1);
+  crypto.getRandomValues(randomBuffer);
+  // Use rejection sampling to avoid modulo bias
+  const maxValid = Math.floor(0xFFFFFFFF / max) * max;
+  let randomValue = randomBuffer[0];
+  while (randomValue >= maxValid) {
+    crypto.getRandomValues(randomBuffer);
+    randomValue = randomBuffer[0];
+  }
+  return randomValue % max;
+}
+
 function createShuffledDeck(): string[] {
   const suits = ['h', 'd', 'c', 's'];
   const ranks = ['2', '3', '4', '5', '6', '7', '8', '9', 'T', 'J', 'Q', 'K', 'A'];
@@ -1053,11 +1067,13 @@ function createShuffledDeck(): string[] {
     }
   }
   
-  // Fisher-Yates shuffle
+  // Fisher-Yates shuffle with cryptographically secure random
   for (let i = deck.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
+    const j = getSecureRandomInt(i + 1);
     [deck[i], deck[j]] = [deck[j], deck[i]];
   }
+  
+  console.log(`🎴 Deck shuffled with crypto.getRandomValues (${deck.length} cards)`);
   
   return deck;
 }
