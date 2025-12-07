@@ -108,7 +108,8 @@ export function OnlinePokerTable({
     canPostStraddle,
     straddleAmount,
     hasPostedStraddle,
-    configureTable
+    configureTable,
+    refreshPlayers
   } = pokerTable;
 
   const players = tableState?.players || [];
@@ -564,6 +565,15 @@ export function OnlinePokerTable({
         </div>
 
         <div className="flex gap-0.5">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={() => refreshPlayers()} 
+            className="h-8 w-8 text-white/70"
+            title="Обновить игроков"
+          >
+            <RotateCcw className="h-4 w-4" />
+          </Button>
           <Button variant="ghost" size="icon" onClick={() => setSoundEnabled(!soundEnabled)} className="h-8 w-8 text-white/70">
             {soundEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
           </Button>
