@@ -14,6 +14,11 @@ const RANK_VALUES: Record<string, number> = {
   'T': 10, 'J': 11, 'Q': 12, 'K': 13, 'A': 14
 };
 
+// PPPoker-style timing constants
+const ACTION_TIME_SECONDS = 15;
+const TIME_BANK_SECONDS = 30;
+const NEXT_HAND_DELAY_SECONDS = 5;
+
 interface PlayerState {
   oderId: string;
   playerId: string;
@@ -45,7 +50,7 @@ interface HandResult {
 }
 
 interface ActionRequest {
-  action: 'join' | 'leave' | 'start_hand' | 'fold' | 'check' | 'call' | 'raise' | 'all_in';
+  action: 'join' | 'leave' | 'start_hand' | 'fold' | 'check' | 'call' | 'raise' | 'all_in' | 'check_timeout';
   tableId: string;
   playerId: string;
   amount?: number;
@@ -538,7 +543,141 @@ serve(async (req) => {
           bigBlindSeat: bbPlayer.seat_number,
           currentPlayerSeat: firstToAct.seat_number,
           pot: table.small_blind + table.big_blind,
+          actionTime: ACTION_TIME_SECONDS,
+          timeBankTotal: TIME_BANK_SECONDS,
         };
+        break;
+      }
+
+      case 'check_timeout': {
+        // Server-side timeout check - auto-fold the timed out player
+        const { data: currentHandTimeout } = await supabase
+          .from('poker_hands')
+          .select('*')
+          .eq('id', table.current_hand_id)
+          .single();
+
+        if (!currentHandTimeout) {
+          result = { success: false, error: 'No active hand' };
+          break;
+        }
+
+        // Find the current player who timed out
+        const { data: timeoutPlayer } = await supabase
+          .from('poker_hand_players')
+          .select('*')
+          .eq('hand_id', currentHandTimeout.id)
+          .eq('seat_number', currentHandTimeout.current_player_seat)
+          .single();
+
+        if (!timeoutPlayer || timeoutPlayer.is_folded) {
+          result = { success: false, error: 'No player to timeout' };
+          break;
+        }
+
+        console.log(`[Poker Engine] Auto-folding player at seat ${currentHandTimeout.current_player_seat} due to timeout`);
+        
+        // Perform auto-fold by calling the engine recursively with fold action
+        // We need to find the player_id for the timed-out player
+        const { data: timedOutTablePlayer } = await supabase
+          .from('poker_table_players')
+          .select('player_id')
+          .eq('table_id', tableId)
+          .eq('seat_number', currentHandTimeout.current_player_seat)
+          .single();
+
+        if (timedOutTablePlayer) {
+          // Mark as folded
+          await supabase
+            .from('poker_hand_players')
+            .update({ is_folded: true })
+            .eq('id', timeoutPlayer.id);
+
+          // Record the auto-fold action
+          const { data: actionsCount } = await supabase
+            .from('poker_actions')
+            .select('id', { count: 'exact' })
+            .eq('hand_id', currentHandTimeout.id);
+
+          await supabase.from('poker_actions').insert({
+            hand_id: currentHandTimeout.id,
+            player_id: timedOutTablePlayer.player_id,
+            seat_number: currentHandTimeout.current_player_seat,
+            action_type: 'fold',
+            amount: 0,
+            phase: currentHandTimeout.phase,
+            action_order: (actionsCount?.length || 0) + 1,
+          });
+
+          // Check remaining players and advance game
+          const { data: allHandPlayers } = await supabase
+            .from('poker_hand_players')
+            .select('*')
+            .eq('hand_id', currentHandTimeout.id);
+
+          const remainingPlayers = (allHandPlayers || []).filter(p => !p.is_folded);
+          const activePlayers = (allHandPlayers || []).filter(p => !p.is_folded && !p.is_all_in);
+
+          if (remainingPlayers.length === 1) {
+            // Winner by fold
+            const winner = remainingPlayers[0];
+            const { data: winnerTablePlayer } = await supabase
+              .from('poker_table_players')
+              .select('stack')
+              .eq('player_id', winner.player_id)
+              .eq('table_id', tableId)
+              .single();
+
+            await supabase
+              .from('poker_table_players')
+              .update({ stack: (winnerTablePlayer?.stack || 0) + currentHandTimeout.pot })
+              .eq('player_id', winner.player_id)
+              .eq('table_id', tableId);
+
+            await supabase
+              .from('poker_hands')
+              .update({
+                pot: 0,
+                phase: 'showdown',
+                completed_at: new Date().toISOString(),
+                winners: JSON.stringify([{ playerId: winner.player_id, amount: currentHandTimeout.pot }]),
+              })
+              .eq('id', currentHandTimeout.id);
+
+            await supabase
+              .from('poker_tables')
+              .update({ current_hand_id: null, status: 'waiting' })
+              .eq('id', tableId);
+
+            result = {
+              success: true,
+              action: 'timeout_fold',
+              handComplete: true,
+              winner: winner.player_id,
+              winAmount: currentHandTimeout.pot,
+            };
+          } else {
+            // Find next player
+            const sortedActive = [...activePlayers].sort((a, b) => a.seat_number - b.seat_number);
+            const currentSeat = currentHandTimeout.current_player_seat;
+            const nextPlayer = sortedActive.find(p => p.seat_number > currentSeat) || sortedActive[0];
+
+            await supabase
+              .from('poker_hands')
+              .update({ current_player_seat: nextPlayer?.seat_number })
+              .eq('id', currentHandTimeout.id);
+
+            result = {
+              success: true,
+              action: 'timeout_fold',
+              foldedSeat: currentSeat,
+              nextPlayerSeat: nextPlayer?.seat_number,
+              actionTime: ACTION_TIME_SECONDS,
+            };
+          }
+        } else {
+          result = { success: false, error: 'Could not find timed out player' };
+        }
         break;
       }
 
@@ -896,6 +1035,7 @@ serve(async (req) => {
           nextPlayerSeat: nextPlayer?.seat_number,
           phase: newPhase,
           communityCards: newCommunityCards,
+          actionTime: ACTION_TIME_SECONDS,
         };
         break;
       }
