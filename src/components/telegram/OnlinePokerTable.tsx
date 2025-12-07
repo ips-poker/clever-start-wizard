@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { 
   ArrowLeft, Volume2, VolumeX, MessageSquare, Send,
   Coins, Timer, Users, Crown, Zap, X, RotateCcw, Wifi, WifiOff,
-  Shield, Rabbit, Clock, Bomb, Layers, Settings, AlertTriangle
+  Shield, Rabbit, Clock, Bomb, Layers, Settings, AlertTriangle, Loader2
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -380,6 +380,43 @@ export function OnlinePokerTable({
           <AlertTriangle className="h-12 w-12 mx-auto mb-4 text-yellow-500" />
           <p>Player ID required to join table</p>
           <Button onClick={onLeave} className="mt-4">Go Back</Button>
+        </div>
+      </div>
+    );
+  }
+
+  // Loading state while connecting
+  if (!isConnected && isConnecting) {
+    return (
+      <div className="fixed inset-0 bg-[#0a1628] flex items-center justify-center">
+        <div className="text-center text-white">
+          <Loader2 className="h-12 w-12 mx-auto mb-4 animate-spin text-syndikate-orange" />
+          <p className="text-lg font-semibold">Подключение к столу...</p>
+          <p className="text-sm text-white/60 mt-2">Пожалуйста, подождите</p>
+          <Button onClick={onLeave} variant="ghost" className="mt-6 text-white/70">
+            Отмена
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // Connection error state
+  if (!isConnected && !isConnecting && error) {
+    return (
+      <div className="fixed inset-0 bg-[#0a1628] flex items-center justify-center">
+        <div className="text-center text-white">
+          <WifiOff className="h-12 w-12 mx-auto mb-4 text-red-500" />
+          <p className="text-lg font-semibold">Ошибка подключения</p>
+          <p className="text-sm text-white/60 mt-2">{error}</p>
+          <div className="flex gap-2 mt-6 justify-center">
+            <Button onClick={() => window.location.reload()} className="bg-syndikate-orange">
+              Повторить
+            </Button>
+            <Button onClick={onLeave} variant="ghost" className="text-white/70">
+              Назад
+            </Button>
+          </div>
         </div>
       </div>
     );
