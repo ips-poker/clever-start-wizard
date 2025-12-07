@@ -286,7 +286,11 @@ export function PokerTableLobby({ playerId, playerBalance = 0, onJoinTable }: Po
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {tables.map((table) => (
-            <Card key={table.id} className="hover:border-primary/50 transition-colors">
+            <Card 
+              key={table.id} 
+              className="hover:border-primary/50 transition-colors cursor-pointer"
+              onClick={() => handleJoinClick(table)}
+            >
               <CardHeader className="pb-2">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-lg">{table.name}</CardTitle>
@@ -324,7 +328,10 @@ export function PokerTableLobby({ playerId, playerBalance = 0, onJoinTable }: Po
                   
                   <Button 
                     className="w-full mt-2"
-                    onClick={() => handleJoinClick(table)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleJoinClick(table);
+                    }}
                     disabled={!playerId || (table.player_count || 0) >= table.max_players}
                   >
                     <Play className="h-4 w-4 mr-2" />
