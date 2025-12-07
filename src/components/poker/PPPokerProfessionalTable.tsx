@@ -770,7 +770,6 @@ export function PPPokerProfessionalTable({
     call,
     raise,
     allIn,
-    startHand,
     clearShowdown
   } = pokerTable;
 
@@ -1007,32 +1006,61 @@ export function PPPokerProfessionalTable({
           {/* Waiting for players */}
           {tableState?.playersNeeded && tableState.playersNeeded > 0 && (
             <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-20">
-              <div className="bg-black/80 rounded-xl px-6 py-4 text-center">
-                <Users className="h-8 w-8 text-amber-500 mx-auto mb-2" />
-                <p className="text-white text-sm">
-                  Ожидание игроков ({tableState.playersNeeded})
+              <div 
+                className="rounded-xl px-6 py-4 text-center"
+                style={{
+                  background: 'linear-gradient(180deg, rgba(0,0,0,0.9) 0%, rgba(26,26,26,0.95) 100%)',
+                  border: '1px solid rgba(255, 122, 0, 0.3)',
+                  boxShadow: '0 0 30px rgba(0,0,0,0.8)'
+                }}
+              >
+                <Users className="h-8 w-8 mx-auto mb-2" style={{ color: '#FF7A00' }} />
+                <p className="text-white text-sm font-medium">
+                  Ожидание игроков
+                </p>
+                <p className="text-white/60 text-xs mt-1">
+                  Нужно ещё {tableState.playersNeeded} игрок(а)
                 </p>
               </div>
             </div>
           )}
-        </div>
 
-        {/* Start hand button - Syndikate style */}
-        {tableState?.phase === 'waiting' && !tableState.playersNeeded && (
-          <div className="flex justify-center px-4 py-4">
-            <Button 
-              onClick={startHand} 
-              className="gap-2 font-bold uppercase tracking-wide"
-              style={{
-                background: 'linear-gradient(180deg, #FF7A00 0%, #cc6200 100%)',
-                boxShadow: '0 0 20px rgba(255, 122, 0, 0.4), inset 0 1px 0 rgba(255,255,255,0.2)',
-                border: '1px solid rgba(255, 122, 0, 0.5)'
-              }}
-            >
-              Начать раздачу
-            </Button>
-          </div>
-        )}
+          {/* Auto-start countdown - PPPoker style */}
+          {tableState?.phase === 'waiting' && tableState?.gameStartingCountdown && tableState.gameStartingCountdown > 0 && (
+            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-20">
+              <motion.div 
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                className="rounded-xl px-8 py-6 text-center"
+                style={{
+                  background: 'linear-gradient(180deg, rgba(0,0,0,0.95) 0%, rgba(26,26,26,0.98) 100%)',
+                  border: '2px solid rgba(255, 122, 0, 0.5)',
+                  boxShadow: '0 0 40px rgba(255, 122, 0, 0.3), 0 0 80px rgba(0,0,0,0.9)'
+                }}
+              >
+                <div 
+                  className="text-5xl font-black mb-2"
+                  style={{ 
+                    color: '#FF7A00',
+                    textShadow: '0 0 20px rgba(255, 122, 0, 0.5)'
+                  }}
+                >
+                  <motion.span
+                    key={tableState.gameStartingCountdown}
+                    initial={{ scale: 1.5, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+                  >
+                    {tableState.gameStartingCountdown}
+                  </motion.span>
+                </div>
+                <p className="text-white text-sm font-medium uppercase tracking-wider">
+                  Раздача начнётся
+                </p>
+              </motion.div>
+            </div>
+          )}
+        </div>
 
         {/* Syndikate Action panel */}
         <AnimatePresence>

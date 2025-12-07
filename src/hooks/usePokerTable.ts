@@ -156,6 +156,7 @@ export function usePokerTable(options: UsePokerTableOptions | null) {
   const channelRef = useRef<any>(null);
   const autoStartAttemptedRef = useRef<boolean>(false);
   const autoStartTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const loadPlayersFromDBRef = useRef<() => Promise<void>>();
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const lastLoadTimeRef = useRef<number>(0);
@@ -380,7 +381,7 @@ export function usePokerTable(options: UsePokerTableOptions | null) {
         'phase:', newPhase, 'currentPlayerSeat:', currentPlayerSeat, 'mySeat:', mySeat,
         'current_hand_id:', tableData.current_hand_id);
 
-      // AUTO-START LOGIC: If phase is 'waiting' and we have 2+ active players, start hand
+      // AUTO-START LOGIC: If phase is 'waiting' and we have 2+ active players, start hand after 3 seconds
       if (newPhase === 'waiting' && playersCount >= 2 && !tableData.current_hand_id) {
         console.log('🎮 AUTO-START CONDITIONS MET:', { 
           phase: newPhase, 
@@ -389,17 +390,57 @@ export function usePokerTable(options: UsePokerTableOptions | null) {
           alreadyAttempted: autoStartAttemptedRef.current
         });
         
-        // Clear any existing timeout
+        // Clear any existing timeouts/intervals
         if (autoStartTimeoutRef.current) {
           clearTimeout(autoStartTimeoutRef.current);
         }
+        if (countdownIntervalRef.current) {
+          clearInterval(countdownIntervalRef.current);
+        }
         
-        // Small delay to let UI update, then start
+        // Start countdown from 3
+        let countdown = 3;
+        
+        // Update state immediately with countdown
+        setTableState(prev => prev ? {
+          ...prev,
+          gameStartingCountdown: countdown,
+          playersNeeded: 0
+        } : null);
+        
+        // Tick countdown every second
+        countdownIntervalRef.current = setInterval(() => {
+          countdown -= 1;
+          if (countdown > 0) {
+            setTableState(prev => prev ? {
+              ...prev,
+              gameStartingCountdown: countdown
+            } : null);
+          } else {
+            // Clear interval when done
+            if (countdownIntervalRef.current) {
+              clearInterval(countdownIntervalRef.current);
+              countdownIntervalRef.current = null;
+            }
+          }
+        }, 1000);
+        
+        // Auto-start after 3 seconds
         autoStartTimeoutRef.current = setTimeout(() => {
           console.log('⏰ Auto-start timeout triggered, calling autoStartViaEngine...');
+          // Clear countdown
+          setTableState(prev => prev ? {
+            ...prev,
+            gameStartingCountdown: 0
+          } : null);
           autoStartViaEngine();
-        }, 2000);
+        }, 3000);
       } else {
+        // Clear countdown if conditions not met
+        if (countdownIntervalRef.current) {
+          clearInterval(countdownIntervalRef.current);
+          countdownIntervalRef.current = null;
+        }
         console.log('⏸️ Auto-start conditions NOT met:', { 
           phase: newPhase, 
           players: playersCount, 
@@ -428,10 +469,10 @@ export function usePokerTable(options: UsePokerTableOptions | null) {
     }
   }, []);
 
-  // Debounced load - prevents rapid reloads (increased to 1500ms for stability)
+  // Debounced load - prevents rapid reloads (increased to 2500ms for maximum stability)
   const debouncedLoadPlayers = useCallback(() => {
     const now = Date.now();
-    const MIN_INTERVAL = 1500; // Increased from 500ms to reduce flickering
+    const MIN_INTERVAL = 2500; // Increased to 2500ms to prevent flickering completely
     
     // Clear any pending debounce
     if (debounceTimerRef.current) {
@@ -789,6 +830,15 @@ export function usePokerTable(options: UsePokerTableOptions | null) {
     }
     if (reconnectTimeoutRef.current) {
       clearTimeout(reconnectTimeoutRef.current);
+    }
+    if (autoStartTimeoutRef.current) {
+      clearTimeout(autoStartTimeoutRef.current);
+    }
+    if (countdownIntervalRef.current) {
+      clearInterval(countdownIntervalRef.current);
+    }
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
     }
     setIsConnected(false);
     setTableState(null);
