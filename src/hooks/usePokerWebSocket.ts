@@ -1,58 +1,103 @@
-import { useRef, useCallback, useState, useEffect } from 'react';
+import { useRef, useCallback, useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useReconnectManager } from './useReconnectManager';
 
 type ConnectionStatus = 'disconnected' | 'connecting' | 'connected' | 'reconnecting' | 'failed';
 
 interface WebSocketMessage {
   type: string;
-  payload: any;
+  payload?: any;
+  data?: any;
+  playerId?: string;
+  tableId?: string;
   timestamp: number;
+}
+
+interface GameState {
+  table: {
+    id: string;
+    name: string;
+    smallBlind: number;
+    bigBlind: number;
+    status: string;
+  };
+  players: Array<{
+    id: string;
+    name: string;
+    avatar?: string;
+    seatNumber: number;
+    stack: number;
+    isDealer: boolean;
+  }>;
+  hand: {
+    id: string;
+    phase: string;
+    pot: number;
+    currentBet: number;
+    communityCards: string[];
+    currentPlayerSeat: number | null;
+  } | null;
+  myCards: string[];
 }
 
 interface UsePokerWebSocketOptions {
   tableId: string;
   playerId: string;
   onMessage?: (message: WebSocketMessage) => void;
-  onStatusChange?: (status: ConnectionStatus) => void;
-  onError?: (error: Error) => void;
-  autoReconnect?: boolean;
-  maxReconnectAttempts?: number;
-  reconnectDelay?: number;
+  onGameStateUpdate?: (state: GameState) => void;
+  onPlayerAction?: (data: any) => void;
+  onHandUpdate?: (data: any) => void;
+  onTurnUpdate?: (seatNumber: number) => void;
+  onPlayerJoined?: (playerId: string) => void;
+  onPlayerLeft?: (playerId: string) => void;
+  onError?: (error: Error | string) => void;
 }
 
 /**
- * Unified WebSocket manager for poker tables
- * Handles connection, reconnection, and message routing
+ * Optimized WebSocket manager for poker tables
+ * Features: auto-reconnection, message queuing, heartbeat, game state sync
  */
 export function usePokerWebSocket({
   tableId,
   playerId,
   onMessage,
-  onStatusChange,
-  onError,
-  autoReconnect = true,
-  maxReconnectAttempts = 5,
-  reconnectDelay = 2000
+  onGameStateUpdate,
+  onPlayerAction,
+  onHandUpdate,
+  onTurnUpdate,
+  onPlayerJoined,
+  onPlayerLeft,
+  onError
 }: UsePokerWebSocketOptions) {
-  const [status, setStatus] = useState<ConnectionStatus>('disconnected');
+  const [gameState, setGameState] = useState<GameState | null>(null);
   const [lastMessage, setLastMessage] = useState<WebSocketMessage | null>(null);
-  const [reconnectAttempt, setReconnectAttempt] = useState(0);
+  const [latency, setLatency] = useState<number>(0);
 
   const wsRef = useRef<WebSocket | null>(null);
-  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const heartbeatRef = useRef<NodeJS.Timeout | null>(null);
   const messageQueueRef = useRef<WebSocketMessage[]>([]);
+  const lastPingRef = useRef<number>(0);
 
-  const updateStatus = useCallback((newStatus: ConnectionStatus) => {
-    setStatus(newStatus);
-    onStatusChange?.(newStatus);
-  }, [onStatusChange]);
+  // Use reconnect manager for robust connection handling
+  const reconnect = useReconnectManager({
+    maxRetries: 5,
+    baseDelay: 1000,
+    maxDelay: 15000,
+    onReconnect: async () => {
+      await connect();
+    },
+    onMaxRetriesReached: () => {
+      onError?.('Connection failed after maximum retries');
+    }
+  });
+
+  // Build WebSocket URL
+  const wsUrl = useMemo(() => {
+    const base = 'wss://mokhssmnorrhohrowxvu.functions.supabase.co';
+    return `${base}/poker-realtime-ws?tableId=${tableId}&playerId=${playerId}`;
+  }, [tableId, playerId]);
 
   const clearTimers = useCallback(() => {
-    if (reconnectTimeoutRef.current) {
-      clearTimeout(reconnectTimeoutRef.current);
-      reconnectTimeoutRef.current = null;
-    }
     if (heartbeatRef.current) {
       clearInterval(heartbeatRef.current);
       heartbeatRef.current = null;
@@ -68,122 +113,180 @@ export function usePokerWebSocket({
     }
   }, []);
 
+  // Handle incoming messages
+  const handleMessage = useCallback((event: MessageEvent) => {
+    try {
+      const message = JSON.parse(event.data) as WebSocketMessage;
+      setLastMessage(message);
+      onMessage?.(message);
+
+      // Calculate latency from pong
+      if (message.type === 'pong' && lastPingRef.current) {
+        setLatency(Date.now() - lastPingRef.current);
+      }
+
+      switch (message.type) {
+        case 'ping':
+          // Respond to server ping
+          wsRef.current?.send(JSON.stringify({ type: 'pong', timestamp: Date.now() }));
+          break;
+
+        case 'game_state':
+          const state = message.data as GameState;
+          setGameState(state);
+          onGameStateUpdate?.(state);
+          break;
+
+        case 'player_action':
+          onPlayerAction?.(message.data);
+          // Optimistic update for pot
+          if (message.data?.pot !== undefined) {
+            setGameState(prev => prev ? {
+              ...prev,
+              hand: prev.hand ? { ...prev.hand, pot: message.data.pot } : null
+            } : null);
+          }
+          break;
+
+        case 'hand_update':
+          onHandUpdate?.(message.data);
+          // Update local state
+          setGameState(prev => {
+            if (!prev?.hand) return prev;
+            return {
+              ...prev,
+              hand: {
+                ...prev.hand,
+                phase: message.data.phase ?? prev.hand.phase,
+                communityCards: message.data.communityCards ?? prev.hand.communityCards,
+                pot: message.data.pot ?? prev.hand.pot,
+                currentBet: message.data.currentBet ?? prev.hand.currentBet,
+                currentPlayerSeat: message.data.currentPlayerSeat ?? prev.hand.currentPlayerSeat
+              }
+            };
+          });
+          break;
+
+        case 'turn_update':
+          const seat = message.data?.currentPlayerSeat;
+          if (seat !== undefined) {
+            onTurnUpdate?.(seat);
+            setGameState(prev => prev?.hand ? {
+              ...prev,
+              hand: { ...prev.hand, currentPlayerSeat: seat }
+            } : prev);
+          }
+          break;
+
+        case 'player_joined':
+          onPlayerJoined?.(message.playerId || '');
+          break;
+
+        case 'player_left':
+          onPlayerLeft?.(message.playerId || '');
+          break;
+
+        case 'error':
+          const errorMsg = message.data?.message || 'Unknown error';
+          console.error('[WS] Server error:', errorMsg);
+          onError?.(errorMsg);
+          break;
+      }
+    } catch (err) {
+      console.error('[WS] Message parse error:', err);
+    }
+  }, [onMessage, onGameStateUpdate, onPlayerAction, onHandUpdate, onTurnUpdate, onPlayerJoined, onPlayerLeft, onError]);
+
   const connect = useCallback(async () => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
       return;
     }
 
-    updateStatus('connecting');
-
     try {
-      // Get Supabase session for auth
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      // Build WebSocket URL
-      const wsUrl = new URL(
-        `${process.env.NODE_ENV === 'production' ? 'wss' : 'wss'}://mokhssmnorrhohrowxvu.supabase.co/functions/v1/poker-table-ws`
-      );
-      wsUrl.searchParams.set('tableId', tableId);
-      wsUrl.searchParams.set('playerId', playerId);
-      if (session?.access_token) {
-        wsUrl.searchParams.set('token', session.access_token);
-      }
-
-      const ws = new WebSocket(wsUrl.toString());
+      console.log('[WS] Connecting to:', wsUrl);
+      const ws = new WebSocket(wsUrl);
       wsRef.current = ws;
 
       ws.onopen = () => {
-        updateStatus('connected');
-        setReconnectAttempt(0);
-        
-        // Process any queued messages
+        console.log('[WS] Connected');
+        reconnect.markConnected();
         processMessageQueue();
 
-        // Start heartbeat
+        // Start heartbeat (every 25 seconds)
         heartbeatRef.current = setInterval(() => {
           if (ws.readyState === WebSocket.OPEN) {
-            ws.send(JSON.stringify({ type: 'ping', timestamp: Date.now() }));
+            lastPingRef.current = Date.now();
+            ws.send(JSON.stringify({ type: 'ping', timestamp: lastPingRef.current }));
           }
-        }, 30000);
+        }, 25000);
       };
 
-      ws.onmessage = (event) => {
-        try {
-          const message = JSON.parse(event.data) as WebSocketMessage;
-          setLastMessage(message);
-          onMessage?.(message);
-        } catch (err) {
-          console.error('Failed to parse WebSocket message:', err);
-        }
-      };
+      ws.onmessage = handleMessage;
 
       ws.onclose = (event) => {
         clearTimers();
+        console.log('[WS] Closed:', event.code, event.reason);
         
-        if (event.wasClean) {
-          updateStatus('disconnected');
-        } else if (autoReconnect && reconnectAttempt < maxReconnectAttempts) {
-          updateStatus('reconnecting');
-          setReconnectAttempt(prev => prev + 1);
-          
-          const delay = reconnectDelay * Math.pow(2, reconnectAttempt);
-          reconnectTimeoutRef.current = setTimeout(connect, delay);
-        } else {
-          updateStatus('failed');
+        if (!event.wasClean) {
+          reconnect.markDisconnected('Connection lost unexpectedly');
         }
       };
 
       ws.onerror = (event) => {
-        console.error('WebSocket error:', event);
+        console.error('[WS] Error:', event);
         onError?.(new Error('WebSocket connection error'));
       };
 
     } catch (err) {
-      console.error('Failed to connect WebSocket:', err);
-      updateStatus('failed');
-      onError?.(err as Error);
+      console.error('[WS] Connection error:', err);
+      reconnect.markDisconnected('Failed to connect');
     }
-  }, [
-    tableId, 
-    playerId, 
-    updateStatus, 
-    clearTimers, 
-    processMessageQueue, 
-    autoReconnect, 
-    reconnectAttempt, 
-    maxReconnectAttempts, 
-    reconnectDelay, 
-    onMessage, 
-    onError
-  ]);
+  }, [wsUrl, handleMessage, clearTimers, processMessageQueue, reconnect, onError]);
 
   const disconnect = useCallback(() => {
     clearTimers();
+    reconnect.cancelReconnect();
     
     if (wsRef.current) {
       wsRef.current.close(1000, 'Client disconnect');
       wsRef.current = null;
     }
     
-    updateStatus('disconnected');
-    setReconnectAttempt(0);
+    setGameState(null);
     messageQueueRef.current = [];
-  }, [clearTimers, updateStatus]);
+  }, [clearTimers, reconnect]);
 
   const send = useCallback((type: string, payload: any = {}) => {
     const message: WebSocketMessage = {
       type,
       payload,
+      data: payload,
+      tableId,
+      playerId,
       timestamp: Date.now()
     };
 
     if (wsRef.current?.readyState === WebSocket.OPEN) {
       wsRef.current.send(JSON.stringify(message));
+      return true;
     } else {
-      // Queue message for when connection is restored
       messageQueueRef.current.push(message);
+      return false;
     }
-  }, []);
+  }, [tableId, playerId]);
+
+  // Game action shortcuts
+  const sendAction = useCallback((action: string, amount?: number) => {
+    return send('action', { action, amount });
+  }, [send]);
+
+  const fold = useCallback(() => sendAction('fold'), [sendAction]);
+  const check = useCallback(() => sendAction('check'), [sendAction]);
+  const call = useCallback(() => sendAction('call'), [sendAction]);
+  const raise = useCallback((amount: number) => sendAction('raise', amount), [sendAction]);
+  const allIn = useCallback(() => sendAction('all_in'), [sendAction]);
+  const sendChat = useCallback((message: string) => send('chat', { message }), [send]);
+  const sendEmoji = useCallback((emoji: string) => send('emoji', { emoji }), [send]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -204,19 +307,34 @@ export function usePokerWebSocket({
   }, [tableId, playerId]);
 
   return {
-    status,
-    isConnected: status === 'connected',
-    isReconnecting: status === 'reconnecting',
-    lastMessage,
-    reconnectAttempt,
+    // Connection state
+    status: reconnect.status,
+    isConnected: reconnect.isConnected,
+    isReconnecting: reconnect.isReconnecting,
+    retryCount: reconnect.retryCount,
+    nextRetryIn: reconnect.nextRetryIn,
+    latency,
     
+    // Game state
+    gameState,
+    lastMessage,
+    
+    // Connection methods
     connect,
     disconnect,
+    reconnectNow: reconnect.reconnectNow,
+    
+    // Raw send
     send,
     
     // Action shortcuts
-    sendAction: (action: string, amount?: number) => send('action', { action, amount }),
-    sendChat: (message: string) => send('chat', { message }),
-    sendEmoji: (emoji: string) => send('emoji', { emoji })
+    sendAction,
+    fold,
+    check,
+    call,
+    raise,
+    allIn,
+    sendChat,
+    sendEmoji
   };
 }
