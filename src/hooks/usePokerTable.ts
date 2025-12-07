@@ -156,6 +156,7 @@ export function usePokerTable(options: UsePokerTableOptions | null) {
   const channelRef = useRef<any>(null);
   const autoStartAttemptedRef = useRef<boolean>(false);
   const autoStartTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const loadPlayersFromDBRef = useRef<() => Promise<void>>();
 
   // Auto-start hand via edge function (stateless, reliable)
   const autoStartViaEngine = useCallback(async () => {
@@ -189,7 +190,11 @@ export function usePokerTable(options: UsePokerTableOptions | null) {
       }
       
       if (data?.success) {
-        console.log('✅ Hand started successfully via engine');
+        console.log('✅ Hand started successfully via engine, reloading state...');
+        // Immediately reload state to get the new hand
+        setTimeout(() => {
+          loadPlayersFromDBRef.current?.();
+        }, 500);
         // Reset flag for next hand after delay
         setTimeout(() => {
           autoStartAttemptedRef.current = false;
@@ -285,6 +290,7 @@ export function usePokerTable(options: UsePokerTableOptions | null) {
       }
 
       // Convert to TableState format with hand player data
+      // Stack calculation: use actual table_player stack (which gets updated by engine)
       const players: PokerPlayer[] = (tablePlayers || []).map(p => {
         const handPlayer = handPlayersMap.get(p.player_id);
         return {
@@ -292,9 +298,8 @@ export function usePokerTable(options: UsePokerTableOptions | null) {
           name: p.player?.name || 'Player',
           avatarUrl: p.player?.avatar_url,
           seatNumber: handPlayer?.seat_number || p.seat_number,
-          stack: handPlayer?.stack_start !== undefined 
-            ? handPlayer.stack_start - (handPlayer.bet_amount || 0) + (handPlayer.won_amount || 0)
-            : p.stack,
+          // Use the actual stack from poker_table_players (engine updates this)
+          stack: p.stack,
           betAmount: handPlayer?.bet_amount || 0,
           totalBetInHand: handPlayer?.bet_amount || 0,
           holeCards: p.player_id === playerId ? (handPlayer?.hole_cards || []) : 
@@ -352,7 +357,8 @@ export function usePokerTable(options: UsePokerTableOptions | null) {
       }));
 
       console.log('📊 Loaded', players.length, 'players from DB for table', tableId, 
-        'phase:', newPhase, 'current_hand_id:', tableData.current_hand_id);
+        'phase:', newPhase, 'currentPlayerSeat:', currentPlayerSeat, 'mySeat:', mySeat,
+        'current_hand_id:', tableData.current_hand_id);
 
       // AUTO-START LOGIC: If phase is 'waiting' and we have 2+ active players, start hand
       if (newPhase === 'waiting' && playersCount >= 2 && !tableData.current_hand_id) {
@@ -385,7 +391,9 @@ export function usePokerTable(options: UsePokerTableOptions | null) {
     }
   }, [tableId, playerId, autoStartViaEngine]);
 
-  // Get WebSocket URL
+  // Store loadPlayersFromDB in ref for use in autoStartViaEngine
+  loadPlayersFromDBRef.current = loadPlayersFromDB;
+
   const getWsUrl = useCallback(() => {
     return `wss://mokhssmnorrhohrowxvu.functions.supabase.co/poker-table-ws`;
   }, []);
@@ -426,11 +434,36 @@ export function usePokerTable(options: UsePokerTableOptions | null) {
         {
           event: '*',
           schema: 'public',
+          table: 'poker_tables',
+          filter: `id=eq.${tableId}`
+        },
+        (payload) => {
+          console.log('🎲 Table change:', payload.eventType, payload);
+          loadPlayersFromDB();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
           table: 'poker_hands',
           filter: `table_id=eq.${tableId}`
         },
         (payload) => {
           console.log('🎴 Hand change:', payload.eventType, payload);
+          loadPlayersFromDB();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'poker_hand_players'
+        },
+        (payload) => {
+          console.log('👤 Hand player change:', payload.eventType, payload);
           loadPlayersFromDB();
         }
       )
@@ -712,59 +745,70 @@ export function usePokerTable(options: UsePokerTableOptions | null) {
     setMyCards([]);
   }, [tableId, playerId, sendMessage]);
 
-  // Player actions
-  const fold = useCallback(() => {
-    sendMessage({
-      type: 'player_action',
-      tableId,
-      playerId,
-      data: { action: 'fold' }
-    });
-  }, [tableId, playerId, sendMessage]);
+  // Player actions - send directly to poker-game-engine for reliability
+  const executeAction = useCallback(async (action: string, amount?: number) => {
+    if (!tableId || !playerId) {
+      console.warn('⚠️ Cannot execute action: missing tableId or playerId');
+      return;
+    }
 
-  const check = useCallback(() => {
-    sendMessage({
-      type: 'player_action',
-      tableId,
-      playerId,
-      data: { action: 'check' }
-    });
-  }, [tableId, playerId, sendMessage]);
+    console.log(`🎯 Executing action: ${action}, amount: ${amount}`);
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('poker-game-engine', {
+        body: {
+          action,
+          tableId,
+          playerId,
+          amount
+        }
+      });
 
-  const call = useCallback(() => {
-    sendMessage({
-      type: 'player_action',
-      tableId,
-      playerId,
-      data: { action: 'call' }
-    });
-  }, [tableId, playerId, sendMessage]);
+      console.log(`📨 Action result:`, { data, error });
 
-  const raise = useCallback((amount: number) => {
-    sendMessage({
-      type: 'player_action',
-      tableId,
-      playerId,
-      data: { action: 'raise', amount }
-    });
-  }, [tableId, playerId, sendMessage]);
+      if (error) {
+        console.error('❌ Action error:', error);
+        return;
+      }
 
-  const allIn = useCallback(() => {
-    sendMessage({
-      type: 'player_action',
-      tableId,
-      playerId,
-      data: { action: 'all-in' }
-    });
-  }, [tableId, playerId, sendMessage]);
+      if (data?.success) {
+        console.log('✅ Action successful');
+        // Reload state immediately
+        loadPlayersFromDBRef.current?.();
+      } else {
+        console.log('⚠️ Action failed:', data?.error);
+      }
+    } catch (err) {
+      console.error('❌ Action exception:', err);
+    }
+  }, [tableId, playerId]);
 
-  const startHand = useCallback(() => {
-    sendMessage({
-      type: 'start_hand',
-      tableId,
-      playerId
-    });
-  }, [tableId, playerId, sendMessage]);
+  const fold = useCallback(() => executeAction('fold'), [executeAction]);
+  const check = useCallback(() => executeAction('check'), [executeAction]);
+  const call = useCallback(() => executeAction('call'), [executeAction]);
+  const raise = useCallback((amount: number) => executeAction('raise', amount), [executeAction]);
+  const allIn = useCallback(() => executeAction('all_in'), [executeAction]);
+  
+  const startHand = useCallback(async () => {
+    console.log('🚀 Starting hand via engine...');
+    try {
+      const { data, error } = await supabase.functions.invoke('poker-game-engine', {
+        body: {
+          action: 'start_hand',
+          tableId,
+          playerId
+        }
+      });
+      console.log('📨 Start hand result:', { data, error });
+      if (data?.success) {
+        setTimeout(() => {
+          loadPlayersFromDBRef.current?.();
+        }, 500);
+      }
+    } catch (err) {
+      console.error('❌ Start hand error:', err);
+    }
+  }, [tableId, playerId]);
 
   const sendChat = useCallback((text: string) => {
     sendMessage({
@@ -868,7 +912,11 @@ export function usePokerTable(options: UsePokerTableOptions | null) {
 
   // Get current player info
   const myPlayer = tableState?.players.find(p => p.oderId === playerId);
-  const isMyTurn = tableState?.currentPlayerSeat === mySeat;
+  // Use myPlayer.seatNumber for isMyTurn check - more reliable than mySeat state
+  const isMyTurn = tableState?.phase !== 'waiting' && 
+                   tableState?.phase !== 'showdown' && 
+                   tableState?.currentPlayerSeat !== null &&
+                   tableState?.currentPlayerSeat === (myPlayer?.seatNumber || mySeat);
   const canCheck = tableState?.currentBet === (myPlayer?.betAmount || 0);
   const callAmount = (tableState?.currentBet || 0) - (myPlayer?.betAmount || 0);
   const minRaiseAmount = tableState?.minRaise || tableState?.bigBlindAmount || 100;
