@@ -19,3 +19,6 @@ export {
   TimerRing,
   CardDealAnimation
 } from './PPPokerTableAnimations';
+
+// Complete PPPoker-style table
+export { PPPokerTableComplete } from './PPPokerTableComplete';
