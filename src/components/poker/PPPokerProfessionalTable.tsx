@@ -464,40 +464,41 @@ const PlayerSeat = memo(function PlayerSeat({
   return true;
 });
 
-// ============= PPPOKER STYLE TABLE FELT (Green like reference) =============
+// ============= SYNDIKATE ORANGE INDUSTRIAL TABLE FELT =============
 const SyndikatetTableFelt = memo(function SyndikatetTableFelt() {
   return (
     <div className="absolute inset-0 overflow-hidden rounded-2xl">
-      {/* Dark outer background - PPPoker dark gray/navy */}
+      {/* Dark industrial background */}
       <div 
         className="absolute inset-0"
         style={{
-          background: 'linear-gradient(180deg, #1a1f2e 0%, #0d1117 50%, #1a1f2e 100%)'
+          background: 'linear-gradient(180deg, #1a1410 0%, #0d0a08 50%, #1a1410 100%)'
         }}
       />
       
-      {/* Outer rail - dark with subtle purple tint like PPPoker */}
+      {/* Metallic rail - dark with orange tint */}
       <div 
         className="absolute inset-[3%] rounded-[50%]"
         style={{
-          background: 'linear-gradient(180deg, #2d3548 0%, #1a1f2e 50%, #2d3548 100%)',
-          boxShadow: 'inset 0 0 30px rgba(0,0,0,0.5), 0 10px 40px rgba(0,0,0,0.8)'
+          background: 'linear-gradient(180deg, #2d2520 0%, #1a1410 50%, #2d2520 100%)',
+          boxShadow: 'inset 0 0 30px rgba(0,0,0,0.6), 0 10px 40px rgba(0,0,0,0.8), 0 0 60px rgba(249,115,22,0.1)'
         }}
       />
       
-      {/* Table felt - rich PPPoker green */}
+      {/* Table felt - Syndikate dark orange-brown industrial */}
       <div 
         className="absolute inset-[5%] rounded-[50%]"
         style={{
-          background: 'radial-gradient(ellipse at 50% 40%, #2d8f4e 0%, #1f6b3a 30%, #156b2d 60%, #0f5522 100%)',
+          background: 'radial-gradient(ellipse at 50% 40%, #3d2a1a 0%, #2a1d12 30%, #1f150d 60%, #140d08 100%)',
           boxShadow: `
-            inset 0 0 60px rgba(0,0,0,0.4),
-            inset 0 -20px 60px rgba(0,0,0,0.3),
-            0 15px 50px rgba(0,0,0,0.7)
+            inset 0 0 60px rgba(0,0,0,0.5),
+            inset 0 -20px 60px rgba(0,0,0,0.4),
+            0 15px 50px rgba(0,0,0,0.8),
+            0 0 80px rgba(249,115,22,0.15)
           `
         }}
       >
-        {/* Felt texture overlay */}
+        {/* Industrial texture overlay */}
         <div 
           className="absolute inset-0 rounded-[50%] opacity-20"
           style={{
@@ -505,13 +506,20 @@ const SyndikatetTableFelt = memo(function SyndikatetTableFelt() {
           }}
         />
         
-        {/* Inner decorative line */}
+        {/* Inner orange decorative line */}
         <div 
-          className="absolute inset-[8%] rounded-[50%] border border-white/5"
+          className="absolute inset-[8%] rounded-[50%] border border-orange-500/10"
+        />
+        
+        {/* Orange accent glow */}
+        <div className="absolute inset-[8%] rounded-[50%]"
+          style={{
+            background: 'radial-gradient(ellipse at 50% 30%, rgba(249,115,22,0.08) 0%, transparent 50%)'
+          }}
         />
         
         {/* Center logo watermark */}
-        <div className="absolute inset-[30%] rounded-[50%] flex items-center justify-center opacity-10">
+        <div className="absolute inset-[30%] rounded-[50%] flex items-center justify-center opacity-15">
           <img src={syndikateLogo} alt="" className="w-full h-auto" />
         </div>
       </div>
