@@ -17,3 +17,6 @@ verify_jwt = false
 
 [functions.poker-table-ws]
 verify_jwt = false
+
+[functions.poker-game-engine]
+verify_jwt = false
