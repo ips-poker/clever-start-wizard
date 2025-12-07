@@ -19,6 +19,12 @@ interface ProfessionalPokerTableProps {
     bigBlindSeat: number;
     players: PokerPlayer[];
     sidePots?: SidePotsData;
+    // New betting info
+    minRaise?: number;
+    smallBlindAmount?: number;
+    bigBlindAmount?: number;
+    actionTimer?: number;
+    timeRemaining?: number | null;
   } | null;
   myCards: string[];
   playerId: string;
@@ -54,18 +60,31 @@ export function ProfessionalPokerTable({
   playerId,
   onSeatClick 
 }: ProfessionalPokerTableProps) {
-  const [actionTimer, setActionTimer] = useState(30);
+  // Use server-provided timer or fallback to local
+  const serverActionTimer = tableState?.actionTimer || 30;
+  const serverTimeRemaining = tableState?.timeRemaining;
+  
+  const [actionTimer, setActionTimer] = useState(serverActionTimer);
   const [isTimerRunning, setIsTimerRunning] = useState(false);
+
+  // Sync with server time remaining
+  useEffect(() => {
+    if (serverTimeRemaining !== null && serverTimeRemaining !== undefined) {
+      setActionTimer(Math.ceil(serverTimeRemaining));
+    }
+  }, [serverTimeRemaining]);
 
   // Action timer logic
   useEffect(() => {
     if (tableState?.currentPlayerSeat !== null && tableState?.phase !== 'waiting') {
-      setActionTimer(30);
+      if (serverTimeRemaining === null || serverTimeRemaining === undefined) {
+        setActionTimer(serverActionTimer);
+      }
       setIsTimerRunning(true);
     } else {
       setIsTimerRunning(false);
     }
-  }, [tableState?.currentPlayerSeat, tableState?.phase]);
+  }, [tableState?.currentPlayerSeat, tableState?.phase, serverActionTimer, serverTimeRemaining]);
 
   useEffect(() => {
     if (!isTimerRunning) return;
@@ -210,8 +229,10 @@ export function ProfessionalPokerTable({
                           strokeWidth="4"
                           strokeLinecap="round"
                           initial={{ pathLength: 1 }}
-                          animate={{ pathLength: actionTimer / 30 }}
-                          transition={{ duration: 0.5 }}
+                          animate={{ pathLength: actionTimer / serverActionTimer }}
+                          className={cn(
+                            actionTimer <= 10 ? "stroke-red-500" : "stroke-green-500"
+                          )}
                           style={{
                             strokeDasharray: '283',
                             strokeDashoffset: '0'
