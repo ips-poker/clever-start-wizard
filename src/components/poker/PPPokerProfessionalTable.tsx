@@ -375,22 +375,29 @@ const PlayerSeat = memo(function PlayerSeat({
     </motion.div>
   );
 }, (prev, next) => {
-  // Deep equality check to prevent unnecessary re-renders
-  return (
-    prev.player?.playerId === next.player?.playerId &&
-    prev.player?.stack === next.player?.stack &&
-    prev.player?.isFolded === next.player?.isFolded &&
-    prev.player?.isAllIn === next.player?.isAllIn &&
-    prev.player?.betAmount === next.player?.betAmount &&
-    JSON.stringify(prev.player?.holeCards) === JSON.stringify(next.player?.holeCards) &&
-    prev.showCards === next.showCards &&
-    prev.isDealer === next.isDealer &&
-    prev.isSB === next.isSB &&
-    prev.isBB === next.isBB &&
-    prev.isCurrentTurn === next.isCurrentTurn &&
-    prev.turnTimeRemaining === next.turnTimeRemaining &&
-    prev.lastAction?.action === next.lastAction?.action
-  );
+  // Strict deep equality check to prevent ANY unnecessary re-renders (PPPoker-level stability)
+  if (prev.player?.playerId !== next.player?.playerId) return false;
+  if (prev.player?.stack !== next.player?.stack) return false;
+  if (prev.player?.isFolded !== next.player?.isFolded) return false;
+  if (prev.player?.isAllIn !== next.player?.isAllIn) return false;
+  if (prev.player?.betAmount !== next.player?.betAmount) return false;
+  if (prev.showCards !== next.showCards) return false;
+  if (prev.isDealer !== next.isDealer) return false;
+  if (prev.isSB !== next.isSB) return false;
+  if (prev.isBB !== next.isBB) return false;
+  if (prev.isCurrentTurn !== next.isCurrentTurn) return false;
+  if (prev.turnTimeRemaining !== next.turnTimeRemaining) return false;
+  if (prev.lastAction?.action !== next.lastAction?.action) return false;
+  
+  // Deep compare hole cards - only if both have cards
+  const prevCards = prev.player?.holeCards || [];
+  const nextCards = next.player?.holeCards || [];
+  if (prevCards.length !== nextCards.length) return false;
+  for (let i = 0; i < prevCards.length; i++) {
+    if (prevCards[i] !== nextCards[i]) return false;
+  }
+  
+  return true; // No changes detected
 });
 
 // ============= SYNDIKATE TABLE FELT =============
@@ -458,7 +465,7 @@ const SyndikatetTableFelt = memo(function SyndikatetTableFelt() {
   );
 });
 
-// ============= COMMUNITY CARDS =============
+// ============= COMMUNITY CARDS (Optimized - no JSON.stringify) =============
 const CommunityCards = memo(function CommunityCards({
   cards,
   phase
@@ -476,27 +483,40 @@ const CommunityCards = memo(function CommunityCards({
     }
   }, [phase]);
 
+  // Memoize the rendered cards to prevent re-renders
+  const renderedCards = useMemo(() => {
+    return [0, 1, 2, 3, 4].map((idx) => {
+      const card = cards[idx];
+      const isVisible = idx < visibleCount;
+
+      return (
+        <div key={`card-slot-${idx}`} className="relative">
+          {isVisible && card ? (
+            <SyndikatePPCard card={card} size="md" delay={idx} />
+          ) : (
+            <div 
+              className="w-11 h-16 rounded-md border border-white/10 bg-black/20"
+              style={{ boxShadow: 'inset 0 2px 6px rgba(0,0,0,0.3)' }}
+            />
+          )}
+        </div>
+      );
+    });
+  }, [cards, visibleCount]);
+
   return (
     <div className="flex items-center justify-center gap-1.5">
-      {[0, 1, 2, 3, 4].map((idx) => {
-        const card = cards[idx];
-        const isVisible = idx < visibleCount;
-
-        return (
-          <div key={idx} className="relative">
-            {isVisible && card ? (
-              <SyndikatePPCard card={card} size="md" delay={idx} />
-            ) : (
-              <div 
-                className="w-11 h-16 rounded-md border border-white/10 bg-black/20"
-                style={{ boxShadow: 'inset 0 2px 6px rgba(0,0,0,0.3)' }}
-              />
-            )}
-          </div>
-        );
-      })}
+      {renderedCards}
     </div>
   );
+}, (prev, next) => {
+  // Custom equality check - avoid JSON.stringify
+  if (prev.phase !== next.phase) return false;
+  if (prev.cards.length !== next.cards.length) return false;
+  for (let i = 0; i < prev.cards.length; i++) {
+    if (prev.cards[i] !== next.cards[i]) return false;
+  }
+  return true;
 });
 
 // ============= SYNDIKATE POT DISPLAY =============

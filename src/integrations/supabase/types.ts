@@ -1845,6 +1845,7 @@ export type Database = {
         Args: { player_record: Database["public"]["Tables"]["players"]["Row"] }
         Returns: boolean
       }
+      cleanup_stuck_poker_hands: { Args: never; Returns: number }
       complete_tournament: {
         Args: { tournament_id_param: string }
         Returns: boolean
