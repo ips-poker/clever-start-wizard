@@ -33,7 +33,7 @@ export function ClanInvitationsPanel() {
               key={invitation.id}
               invitation={invitation}
               onAccept={() => acceptInvitation(invitation.id, invitation.clan_id)}
-              onDecline={() => declineInvitation(invitation.id)}
+              onDecline={() => declineInvitation(invitation.id, invitation.clan_id)}
             />
           ))}
         </AnimatePresence>

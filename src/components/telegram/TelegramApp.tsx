@@ -2197,7 +2197,7 @@ export const TelegramApp = () => {
                                 variant="outline"
                                 className="flex-1"
                                 onClick={async () => {
-                                  await declineInvitation(invitation.id);
+                                  await declineInvitation(invitation.id, invitation.clan_id);
                                   refreshClan();
                                 }}
                               >

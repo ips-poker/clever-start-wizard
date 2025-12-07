@@ -158,7 +158,7 @@ export function TelegramClanPanel({ canCreateClan, playerId }: TelegramClanPanel
   const handleDeclineInvitation = async (invitation: ClanInvitation) => {
     setProcessingInvite(invitation.id);
     try {
-      await declineInvitation(invitation.id);
+      await declineInvitation(invitation.id, invitation.clan_id);
       toast.success('Приглашение отклонено');
     } catch (error) {
       toast.error('Ошибка отклонения приглашения');

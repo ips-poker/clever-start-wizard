@@ -22,8 +22,8 @@ export function ClanNotificationBell() {
     }
   };
 
-  const handleDecline = async (invitationId: string) => {
-    const success = await declineInvitation(invitationId);
+  const handleDecline = async (invitationId: string, clanId: string) => {
+    const success = await declineInvitation(invitationId, clanId);
     if (success) {
       refresh();
     }
@@ -83,7 +83,7 @@ export function ClanNotificationBell() {
                         size="sm"
                         variant="outline"
                         className="flex-1"
-                        onClick={() => handleDecline(invitation.id)}
+                        onClick={() => handleDecline(invitation.id, invitation.clan_id)}
                       >
                         Отклонить
                       </Button>
