@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useRef, memo, useMemo } from '
 import { Button } from '@/components/ui/button';
 import { 
   ArrowLeft, Volume2, VolumeX, MessageSquare,
-  Users, RotateCcw, Zap, Loader2
+  Users, RotateCcw, Zap, Loader2, Sparkles
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -36,6 +36,10 @@ import { PhaseTransition, ActionBubble } from '@/components/poker/animations';
 // Import error boundary and connection status
 import { PokerErrorBoundary } from '@/components/poker/PokerErrorBoundary';
 import { ConnectionStatusBanner } from '@/components/poker/ConnectionStatusBanner';
+
+// Import chat and emoji components
+import { TableChat } from '@/components/poker/TableChat';
+import { TableReactions, QuickReactionButton, useTableReactions, ReactionType } from '@/components/poker/TableEmojis';
 
 // Types
 interface Player {
@@ -213,7 +217,8 @@ const TableHeader = memo(function TableHeader({
   blinds,
   onNewHand,
   showChat,
-  onToggleChat
+  onToggleChat,
+  onReact
 }: {
   onLeave: () => void;
   soundEnabled: boolean;
@@ -223,6 +228,7 @@ const TableHeader = memo(function TableHeader({
   onNewHand: () => void;
   showChat: boolean;
   onToggleChat: () => void;
+  onReact?: (type: ReactionType) => void;
 }) {
   return (
     <div className="flex items-center justify-between px-3 py-2 bg-gradient-to-b from-gray-900/98 to-gray-900/90 z-20">
@@ -248,6 +254,10 @@ const TableHeader = memo(function TableHeader({
       </div>
 
       <div className="flex gap-1">
+        {/* Emoji reactions */}
+        {onReact && (
+          <QuickReactionButton onReact={onReact} />
+        )}
         <Button
           variant="ghost"
           size="icon"
@@ -269,7 +279,10 @@ const TableHeader = memo(function TableHeader({
           variant="ghost"
           size="icon"
           onClick={onToggleChat}
-          className="h-9 w-9 text-white/80 hover:text-white hover:bg-white/10"
+          className={cn(
+            "h-9 w-9 text-white/80 hover:text-white hover:bg-white/10",
+            showChat && "text-orange-400"
+          )}
         >
           <MessageSquare className="h-4 w-4" />
         </Button>
@@ -398,9 +411,14 @@ function TelegramStablePokerTableInner({
   const [actionBubbles, setActionBubbles] = useState<Array<{id: string; action: string; amount?: number; x: number; y: number}>>([]);
   const [myHandEvaluation, setMyHandEvaluation] = useState<HandInfo | null>(null);
   const [isConnecting, setIsConnecting] = useState(false);
+  const [chatMessages, setChatMessages] = useState<Array<{id: string; playerId: string; playerName: string; message: string; timestamp: number; type: 'chat' | 'system' | 'dealer' | 'action'}>>([]);
+  const [mutedPlayers, setMutedPlayers] = useState<Set<string>>(new Set());
   
   // Winner state
   const [winner, setWinner] = useState<{ name: string; id: string; amount: number; handRank: string } | null>(null);
+  
+  // Emoji reactions
+  const { reactions, addReaction, removeReaction } = useTableReactions();
   
   // Refs
   const deckRef = useRef<PokerEngineCard[]>([]);
@@ -876,6 +894,10 @@ function TelegramStablePokerTableInner({
         onNewHand={startNewHand}
         showChat={showChat}
         onToggleChat={() => setShowChat(!showChat)}
+        onReact={(type: ReactionType) => {
+          const heroSeat = players.find(p => p.id === playerId)?.seatNumber ?? 0;
+          addReaction(playerId, playerName, heroSeat, type);
+        }}
       />
 
       {/* Main Table Area */}
@@ -1045,6 +1067,45 @@ function TelegramStablePokerTableInner({
             New Hand
           </Button>
         </div>
+      )}
+
+      {/* Emoji reactions display */}
+      <TableReactions
+        reactions={reactions}
+        seatPositions={SEAT_POSITIONS_6MAX.map(p => ({ x: p.x, y: p.y }))}
+        onReactionComplete={removeReaction}
+      />
+
+      {/* Table Chat */}
+      {showChat && (
+        <TableChat
+          messages={chatMessages}
+          onSendMessage={(text) => {
+            const newMessage = {
+              id: `${playerId}-${Date.now()}`,
+              playerId,
+              playerName,
+              message: text,
+              timestamp: Date.now(),
+              type: 'chat' as const
+            };
+            setChatMessages(prev => [...prev, newMessage]);
+          }}
+          onMutePlayer={(pid, mute) => {
+            setMutedPlayers(prev => {
+              const next = new Set(prev);
+              if (mute) next.add(pid);
+              else next.delete(pid);
+              return next;
+            });
+          }}
+          mutedPlayers={mutedPlayers}
+          isChatEnabled={true}
+          isSlowMode={false}
+          slowModeInterval={5}
+          currentPlayerId={playerId}
+          bombPotEnabled={false}
+        />
       )}
     </div>
   );
