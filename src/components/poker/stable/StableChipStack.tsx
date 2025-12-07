@@ -2,16 +2,16 @@ import React, { memo, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
-// Chip denominations - SYNDIKATE theme colors
+// Chip denominations - SYNDIKATE brutal industrial colors
 const CHIP_DENOMS = [
-  { value: 10000, color: '#ff7a00', border: '#ffaa44', label: '10K' },  // Syndikate orange
-  { value: 5000, color: '#b91c1c', border: '#ef4444', label: '5K' },    // Syndikate red
-  { value: 1000, color: '#854d0e', border: '#d97706', label: '1K' },    // Rust gold
-  { value: 500, color: '#1f2937', border: '#4b5563', label: '500' },    // Metal dark
-  { value: 100, color: '#0f172a', border: '#334155', label: '100' },    // Dark metal
+  { value: 10000, color: '#ff7a00', border: '#ffaa44', label: '10K' },  // Syndikate orange (primary)
+  { value: 5000, color: '#dc2626', border: '#f87171', label: '5K' },    // Syndikate red
+  { value: 1000, color: '#854d0e', border: '#d97706', label: '1K' },    // Rust/bronze
+  { value: 500, color: '#1f2937', border: '#4b5563', label: '500' },    // Industrial metal
+  { value: 100, color: '#0a0a0a', border: '#374151', label: '100' },    // Dark metal
   { value: 25, color: '#166534', border: '#22c55e', label: '25' },      // Green
-  { value: 5, color: '#991b1b', border: '#dc2626', label: '5' },        // Dark red
-  { value: 1, color: '#374151', border: '#6b7280', label: '1' }         // Gray
+  { value: 5, color: '#7f1d1d', border: '#dc2626', label: '5' },        // Dark red
+  { value: 1, color: '#27272a', border: '#52525b', label: '1' }         // Zinc
 ] as const;
 
 interface StableChipStackProps {
@@ -124,14 +124,20 @@ export const StableChipStack = memo(function StableChipStack({
         </div>
       ))}
       
-      {/* Amount label */}
+      {/* Amount label - Syndikate brutal style */}
       {showLabel && (
         <div 
-          className="absolute -bottom-5 left-1/2 -translate-x-1/2 whitespace-nowrap"
+          className="absolute -bottom-6 left-1/2 -translate-x-1/2 whitespace-nowrap"
         >
           <span 
-            className="px-1.5 py-0.5 rounded bg-black/70 text-white font-bold"
-            style={{ fontSize: config.fontSize }}
+            className="px-2 py-0.5 font-black text-white uppercase"
+            style={{ 
+              fontSize: config.fontSize,
+              background: 'linear-gradient(135deg, rgba(10,10,10,0.95) 0%, rgba(26,26,26,0.95) 100%)',
+              border: '1px solid rgba(255, 122, 0, 0.4)',
+              boxShadow: '0 0 10px rgba(255, 122, 0, 0.2)',
+              clipPath: 'polygon(5% 0%, 95% 0%, 100% 50%, 95% 100%, 5% 100%, 0% 50%)'
+            }}
           >
             {amount.toLocaleString()}
           </span>
