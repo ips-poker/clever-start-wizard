@@ -850,10 +850,25 @@ async function handleStartHand(socket: WebSocket, message: WSMessage, supabase: 
   tableState.sidePots = [];
   tableState.totalBetsPerPlayer = new Map();
 
+  // Count active players for heads-up detection
+  const activePlayersList = Array.from(tableState.players.values()).filter(p => p.isActive && p.stack > 0);
+  const isHeadsUp = activePlayersList.length === 2;
+
   // Move dealer button
   tableState.dealerSeat = getNextActiveSeat(tableState, tableState.dealerSeat);
-  tableState.smallBlindSeat = getNextActiveSeat(tableState, tableState.dealerSeat);
-  tableState.bigBlindSeat = getNextActiveSeat(tableState, tableState.smallBlindSeat);
+  
+  if (isHeadsUp) {
+    // HEADS-UP RULES: Dealer is Small Blind, other player is Big Blind
+    // Dealer (SB) acts first preflop, BB acts first postflop
+    tableState.smallBlindSeat = tableState.dealerSeat;
+    tableState.bigBlindSeat = getNextActiveSeat(tableState, tableState.dealerSeat);
+    console.log(`🎯 HEADS-UP: Dealer/SB=${tableState.smallBlindSeat}, BB=${tableState.bigBlindSeat}`);
+  } else {
+    // NORMAL RULES: SB is left of dealer, BB is left of SB
+    tableState.smallBlindSeat = getNextActiveSeat(tableState, tableState.dealerSeat);
+    tableState.bigBlindSeat = getNextActiveSeat(tableState, tableState.smallBlindSeat);
+    console.log(`🎯 NORMAL: Dealer=${tableState.dealerSeat}, SB=${tableState.smallBlindSeat}, BB=${tableState.bigBlindSeat}`);
+  }
 
   // Post blinds using table configuration
   const smallBlind = tableState.smallBlindAmount;
@@ -894,8 +909,14 @@ async function handleStartHand(socket: WebSocket, message: WSMessage, supabase: 
     }
   });
 
-  // Set first to act (UTG - after big blind)
-  tableState.currentPlayerSeat = getNextActiveSeat(tableState, tableState.bigBlindSeat);
+  // Set first to act:
+  // - Heads-up preflop: SB (dealer) acts first
+  // - Normal preflop: UTG (left of BB) acts first
+  if (isHeadsUp) {
+    tableState.currentPlayerSeat = tableState.smallBlindSeat; // Dealer/SB acts first in heads-up
+  } else {
+    tableState.currentPlayerSeat = getNextActiveSeat(tableState, tableState.bigBlindSeat); // UTG
+  }
 
   // Create hand in database
   try {
@@ -1181,8 +1202,27 @@ async function advancePhase(tableState: TableState, supabase: any) {
         return;
     }
 
-    // First to act is small blind (or next active after dealer)
-    tableState.currentPlayerSeat = getNextActiveSeat(tableState, tableState.dealerSeat);
+    // Determine first to act post-flop
+    // In heads-up: BB acts first (not dealer/SB)
+    // Normal: First active player after dealer acts first
+    const activePlayersPostflop = Array.from(tableState.players.values())
+      .filter(p => p.isActive && !p.isFolded && !p.isAllIn);
+    const isHeadsUpPostflop = activePlayersPostflop.length === 2 && 
+      Array.from(tableState.players.values()).filter(p => p.isActive && p.stack >= 0).length === 2;
+    
+    if (isHeadsUpPostflop) {
+      // Heads-up postflop: BB acts first
+      const bbPlayer = getPlayerBySeat(tableState, tableState.bigBlindSeat);
+      if (bbPlayer && !bbPlayer.isFolded && !bbPlayer.isAllIn) {
+        tableState.currentPlayerSeat = tableState.bigBlindSeat;
+      } else {
+        tableState.currentPlayerSeat = getNextActiveSeat(tableState, tableState.dealerSeat);
+      }
+      console.log(`🎯 HEADS-UP postflop: First to act = seat ${tableState.currentPlayerSeat}`);
+    } else {
+      // Normal: First active player after dealer
+      tableState.currentPlayerSeat = getNextActiveSeat(tableState, tableState.dealerSeat);
+    }
     
     // Start timer for first player in new phase
     startActionTimer(tableState.tableId, supabase);
