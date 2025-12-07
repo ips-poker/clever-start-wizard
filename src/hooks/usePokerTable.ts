@@ -57,6 +57,16 @@ export interface TableState {
   rakePercent?: number;
   rakeCap?: number;
   totalRakeCollected?: number;
+  // Straddle & Advanced Blinds
+  straddleEnabled?: boolean;
+  straddleSeat?: number | null;
+  straddleAmount?: number;
+  buttonAnteEnabled?: boolean;
+  buttonAnteAmount?: number;
+  bigBlindAnteEnabled?: boolean;
+  bigBlindAnteAmount?: number;
+  mississippiStraddleEnabled?: boolean;
+  pendingStraddles?: Array<{ seat: number; amount: number }>;
 }
 
 interface UsePokerTableOptions {
@@ -404,6 +414,41 @@ export function usePokerTable(options: UsePokerTableOptions | null) {
     });
   }, [tableId, playerId, sendMessage]);
 
+  // Post straddle for next hand
+  const postStraddle = useCallback((amount?: number) => {
+    sendMessage({
+      type: 'post_straddle',
+      tableId,
+      playerId,
+      data: { amount: amount || (tableState?.bigBlindAmount || 100) * 2 }
+    });
+  }, [tableId, playerId, sendMessage, tableState?.bigBlindAmount]);
+
+  // Configure table settings
+  const configureTable = useCallback((config: {
+    smallBlindAmount?: number;
+    bigBlindAmount?: number;
+    anteAmount?: number;
+    straddleEnabled?: boolean;
+    mississippiStraddleEnabled?: boolean;
+    maxStraddleCount?: number;
+    buttonAnteEnabled?: boolean;
+    buttonAnteAmount?: number;
+    bigBlindAnteEnabled?: boolean;
+    bigBlindAnteAmount?: number;
+    actionTimer?: number;
+    runItTwiceEnabled?: boolean;
+    rakePercent?: number;
+    rakeCap?: number;
+  }) => {
+    sendMessage({
+      type: 'configure_table',
+      tableId,
+      playerId,
+      data: config
+    });
+  }, [tableId, playerId, sendMessage]);
+
   // Get current player info
   const myPlayer = tableState?.players.find(p => p.oderId === playerId);
   const isMyTurn = tableState?.currentPlayerSeat === mySeat;
@@ -411,6 +456,14 @@ export function usePokerTable(options: UsePokerTableOptions | null) {
   const callAmount = (tableState?.currentBet || 0) - (myPlayer?.betAmount || 0);
   const minRaiseAmount = tableState?.minRaise || tableState?.bigBlindAmount || 100;
   const minRaiseTotal = (tableState?.currentBet || 0) + minRaiseAmount;
+
+  // Straddle info
+  const canPostStraddle = tableState?.phase === 'waiting' && tableState?.straddleEnabled;
+  const straddleAmount = (tableState?.bigBlindAmount || 100) * 2;
+  const hasPostedStraddle = tableState?.pendingStraddles?.some(s => {
+    const myPlayerObj = tableState?.players.find(p => p.oderId === playerId);
+    return myPlayerObj && s.seat === myPlayerObj.seatNumber;
+  });
 
   // Cleanup on unmount
   useEffect(() => {
@@ -445,6 +498,11 @@ export function usePokerTable(options: UsePokerTableOptions | null) {
     showdownResult,
     handHistory,
     
+    // Straddle info
+    canPostStraddle,
+    straddleAmount,
+    hasPostedStraddle,
+    
     // Actions
     connect,
     disconnect,
@@ -455,6 +513,8 @@ export function usePokerTable(options: UsePokerTableOptions | null) {
     allIn,
     startHand,
     sendChat,
-    clearShowdown
+    clearShowdown,
+    postStraddle,
+    configureTable
   };
 }

@@ -302,6 +302,17 @@ interface TableState {
   rakePercent: number; // Rake percentage (e.g., 5 for 5%)
   rakeCap: number; // Maximum rake per hand
   totalRakeCollected: number; // Accumulated rake for this hand
+  // ===== STRADDLE & ADVANCED BLINDS =====
+  straddleEnabled: boolean; // Allow straddle bets
+  straddleSeat: number | null; // Seat that posted straddle
+  straddleAmount: number; // Straddle amount (typically 2x BB)
+  buttonAnteEnabled: boolean; // Button pays ante for all (speeds up game)
+  buttonAnteAmount: number; // Button ante amount
+  bigBlindAnteEnabled: boolean; // BB pays ante for all (common in tournaments)
+  bigBlindAnteAmount: number; // BB ante amount (usually = 1 BB per player)
+  mississippiStraddleEnabled: boolean; // Allow straddle from any position
+  pendingStraddles: Map<number, number>; // seat -> straddle amount (for multiple straddles)
+  maxStraddleCount: number; // Maximum number of straddles allowed
 }
 
 interface PlayerState {
@@ -496,6 +507,14 @@ serve(async (req) => {
 
         case "chat":
           await handleChat(socket, message);
+          break;
+
+        case "post_straddle":
+          await handlePostStraddle(socket, message);
+          break;
+
+        case "configure_table":
+          await handleConfigureTable(socket, message);
           break;
 
         default:
@@ -888,9 +907,40 @@ async function handleStartHand(socket: WebSocket, message: WSMessage, supabase: 
   tableState.lastRaiserSeat = null;
   tableState.lastRaiseAmount = bigBlind;
   tableState.bbHasActed = false; // BB hasn't acted yet
+  
+  // Reset straddle state
+  tableState.straddleSeat = null;
+  tableState.straddleAmount = 0;
+  tableState.pendingStraddles = new Map();
 
-  // Collect antes from all active players first
-  if (ante > 0) {
+  // ===== BUTTON ANTE (dealer pays ante for all) =====
+  if (tableState.buttonAnteEnabled && tableState.buttonAnteAmount > 0) {
+    const dealerPlayer = getPlayerBySeat(tableState, tableState.dealerSeat);
+    if (dealerPlayer && !dealerPlayer.isAllIn) {
+      const totalButtonAnte = tableState.buttonAnteAmount * activePlayersList.length;
+      const actualAnte = Math.min(totalButtonAnte, dealerPlayer.stack);
+      dealerPlayer.stack -= actualAnte;
+      dealerPlayer.totalBetInHand += actualAnte;
+      tableState.pot += actualAnte;
+      if (dealerPlayer.stack === 0) dealerPlayer.isAllIn = true;
+      console.log(`🔘 Button Ante: Dealer paid ${actualAnte} for ${activePlayersList.length} players`);
+    }
+  }
+  // ===== BIG BLIND ANTE (BB pays ante for all - tournament style) =====
+  else if (tableState.bigBlindAnteEnabled && tableState.bigBlindAnteAmount > 0) {
+    const bbPlayerForAnte = getPlayerBySeat(tableState, tableState.bigBlindSeat);
+    if (bbPlayerForAnte && !bbPlayerForAnte.isAllIn) {
+      const totalBBAnte = tableState.bigBlindAnteAmount * activePlayersList.length;
+      const actualAnte = Math.min(totalBBAnte, bbPlayerForAnte.stack);
+      bbPlayerForAnte.stack -= actualAnte;
+      bbPlayerForAnte.totalBetInHand += actualAnte;
+      tableState.pot += actualAnte;
+      if (bbPlayerForAnte.stack === 0) bbPlayerForAnte.isAllIn = true;
+      console.log(`🎯 BB Ante: Big Blind paid ${actualAnte} for ${activePlayersList.length} players`);
+    }
+  }
+  // ===== STANDARD ANTES (each player pays) =====
+  else if (ante > 0) {
     let totalAntes = 0;
     tableState.players.forEach(player => {
       if (player.isActive && player.stack > 0) {
@@ -927,6 +977,90 @@ async function handleStartHand(socket: WebSocket, message: WSMessage, supabase: 
     if (bbPlayer.stack === 0) bbPlayer.isAllIn = true;
   }
 
+  // ===== STRADDLE HANDLING =====
+  let firstToActSeat = isHeadsUp ? tableState.smallBlindSeat : getNextActiveSeat(tableState, tableState.bigBlindSeat);
+  
+  if (tableState.straddleEnabled && !isHeadsUp) {
+    // UTG Straddle (traditional) - player left of BB
+    const utgSeat = getNextActiveSeat(tableState, tableState.bigBlindSeat);
+    const utgPlayer = getPlayerBySeat(tableState, utgSeat);
+    
+    // Check for pending straddles (set before hand started)
+    if (tableState.pendingStraddles.has(utgSeat) && utgPlayer && !utgPlayer.isAllIn) {
+      const straddleAmount = tableState.pendingStraddles.get(utgSeat)!;
+      const actualStraddle = Math.min(straddleAmount, utgPlayer.stack);
+      
+      if (actualStraddle >= bigBlind * 2) { // Valid straddle must be at least 2x BB
+        utgPlayer.betAmount = actualStraddle;
+        utgPlayer.totalBetInHand += actualStraddle;
+        utgPlayer.stack -= actualStraddle;
+        tableState.pot += actualStraddle;
+        tableState.currentBet = actualStraddle;
+        tableState.straddleSeat = utgSeat;
+        tableState.straddleAmount = actualStraddle;
+        tableState.minRaise = actualStraddle; // Min raise is now straddle amount
+        
+        if (utgPlayer.stack === 0) utgPlayer.isAllIn = true;
+        
+        // First to act is now left of straddler
+        firstToActSeat = getNextActiveSeat(tableState, utgSeat);
+        
+        console.log(`🎰 UTG Straddle: Seat ${utgSeat} posted ${actualStraddle}`);
+        
+        // ===== DOUBLE/TRIPLE STRADDLE (Mississippi) =====
+        if (tableState.mississippiStraddleEnabled) {
+          let currentStraddleSeat = utgSeat;
+          let currentStraddleAmount = actualStraddle;
+          let straddleCount = 1;
+          
+          while (straddleCount < tableState.maxStraddleCount) {
+            const nextStraddleSeat = getNextActiveSeat(tableState, currentStraddleSeat);
+            
+            // Don't allow straddle from blinds
+            if (nextStraddleSeat === tableState.smallBlindSeat || 
+                nextStraddleSeat === tableState.bigBlindSeat) {
+              break;
+            }
+            
+            if (tableState.pendingStraddles.has(nextStraddleSeat)) {
+              const nextStraddleAmount = tableState.pendingStraddles.get(nextStraddleSeat)!;
+              const nextPlayer = getPlayerBySeat(tableState, nextStraddleSeat);
+              
+              if (nextPlayer && !nextPlayer.isAllIn && nextStraddleAmount >= currentStraddleAmount * 2) {
+                const actualNextStraddle = Math.min(nextStraddleAmount, nextPlayer.stack);
+                
+                nextPlayer.betAmount = actualNextStraddle;
+                nextPlayer.totalBetInHand += actualNextStraddle;
+                nextPlayer.stack -= actualNextStraddle;
+                tableState.pot += actualNextStraddle;
+                tableState.currentBet = actualNextStraddle;
+                tableState.straddleSeat = nextStraddleSeat;
+                tableState.straddleAmount = actualNextStraddle;
+                tableState.minRaise = actualNextStraddle;
+                
+                if (nextPlayer.stack === 0) nextPlayer.isAllIn = true;
+                
+                firstToActSeat = getNextActiveSeat(tableState, nextStraddleSeat);
+                currentStraddleSeat = nextStraddleSeat;
+                currentStraddleAmount = actualNextStraddle;
+                straddleCount++;
+                
+                console.log(`🎰 Straddle #${straddleCount + 1}: Seat ${nextStraddleSeat} posted ${actualNextStraddle}`);
+              } else {
+                break;
+              }
+            } else {
+              break;
+            }
+          }
+        }
+      }
+    }
+    
+    // Clear pending straddles
+    tableState.pendingStraddles.clear();
+  }
+
   // Deal hole cards
   tableState.players.forEach(player => {
     if (player.isActive && player.stack >= 0) {
@@ -934,14 +1068,8 @@ async function handleStartHand(socket: WebSocket, message: WSMessage, supabase: 
     }
   });
 
-  // Set first to act:
-  // - Heads-up preflop: SB (dealer) acts first
-  // - Normal preflop: UTG (left of BB) acts first
-  if (isHeadsUp) {
-    tableState.currentPlayerSeat = tableState.smallBlindSeat; // Dealer/SB acts first in heads-up
-  } else {
-    tableState.currentPlayerSeat = getNextActiveSeat(tableState, tableState.bigBlindSeat); // UTG
-  }
+  // Set first to act (adjusted for straddles)
+  tableState.currentPlayerSeat = firstToActSeat;
 
   // Create hand in database
   try {
@@ -1027,6 +1155,207 @@ async function handleChat(socket: WebSocket, message: WSMessage) {
   });
 }
 
+// ===== STRADDLE HANDLER =====
+async function handlePostStraddle(socket: WebSocket, message: WSMessage) {
+  const { tableId, playerId, data } = message;
+  
+  if (!tableId || !playerId) {
+    sendToSocket(socket, { type: "error", message: "tableId and playerId required" });
+    return;
+  }
+
+  const tableState = tableStates.get(tableId);
+  if (!tableState) {
+    sendToSocket(socket, { type: "error", message: "Table not found" });
+    return;
+  }
+
+  // Can only post straddle during waiting phase
+  if (tableState.phase !== 'waiting') {
+    sendToSocket(socket, { type: "error", message: "Can only post straddle before hand starts" });
+    return;
+  }
+
+  if (!tableState.straddleEnabled) {
+    sendToSocket(socket, { type: "error", message: "Straddle is not enabled at this table" });
+    return;
+  }
+
+  const player = tableState.players.get(playerId);
+  if (!player) {
+    sendToSocket(socket, { type: "error", message: "Player not found" });
+    return;
+  }
+
+  const straddleAmount = data?.amount || (tableState.bigBlindAmount * 2);
+  
+  // Validate straddle amount (must be at least 2x BB)
+  if (straddleAmount < tableState.bigBlindAmount * 2) {
+    sendToSocket(socket, { type: "error", message: `Straddle must be at least ${tableState.bigBlindAmount * 2}` });
+    return;
+  }
+
+  // Check if player has enough chips
+  if (player.stack < straddleAmount) {
+    sendToSocket(socket, { type: "error", message: "Not enough chips for straddle" });
+    return;
+  }
+
+  // Check straddle count limit
+  if (tableState.pendingStraddles.size >= tableState.maxStraddleCount) {
+    sendToSocket(socket, { type: "error", message: `Maximum ${tableState.maxStraddleCount} straddles allowed` });
+    return;
+  }
+
+  // Register pending straddle
+  tableState.pendingStraddles.set(player.seatNumber, straddleAmount);
+
+  console.log(`🎰 Straddle registered: Seat ${player.seatNumber} will post ${straddleAmount}`);
+
+  sendToSocket(socket, {
+    type: "straddle_registered",
+    seatNumber: player.seatNumber,
+    amount: straddleAmount
+  });
+
+  broadcastToTable(tableId, {
+    type: "straddle_pending",
+    playerId,
+    seatNumber: player.seatNumber,
+    amount: straddleAmount
+  }, playerId);
+}
+
+// ===== TABLE CONFIGURATION HANDLER =====
+async function handleConfigureTable(socket: WebSocket, message: WSMessage) {
+  const { tableId, playerId, data } = message;
+  
+  if (!tableId || !data) {
+    sendToSocket(socket, { type: "error", message: "tableId and data required" });
+    return;
+  }
+
+  const tableState = tableStates.get(tableId);
+  if (!tableState) {
+    sendToSocket(socket, { type: "error", message: "Table not found" });
+    return;
+  }
+
+  // Can only configure during waiting phase
+  if (tableState.phase !== 'waiting') {
+    sendToSocket(socket, { type: "error", message: "Can only configure table between hands" });
+    return;
+  }
+
+  // Apply configuration updates
+  if (data.smallBlindAmount !== undefined) {
+    tableState.smallBlindAmount = data.smallBlindAmount;
+  }
+  if (data.bigBlindAmount !== undefined) {
+    tableState.bigBlindAmount = data.bigBlindAmount;
+    tableState.minRaise = data.bigBlindAmount;
+  }
+  if (data.anteAmount !== undefined) {
+    tableState.anteAmount = data.anteAmount;
+  }
+  
+  // Straddle settings
+  if (data.straddleEnabled !== undefined) {
+    tableState.straddleEnabled = data.straddleEnabled;
+  }
+  if (data.mississippiStraddleEnabled !== undefined) {
+    tableState.mississippiStraddleEnabled = data.mississippiStraddleEnabled;
+  }
+  if (data.maxStraddleCount !== undefined) {
+    tableState.maxStraddleCount = Math.min(5, Math.max(1, data.maxStraddleCount));
+  }
+  
+  // Button Ante settings
+  if (data.buttonAnteEnabled !== undefined) {
+    tableState.buttonAnteEnabled = data.buttonAnteEnabled;
+    // Disable other ante types when button ante is enabled
+    if (data.buttonAnteEnabled) {
+      tableState.bigBlindAnteEnabled = false;
+      tableState.anteAmount = 0;
+    }
+  }
+  if (data.buttonAnteAmount !== undefined) {
+    tableState.buttonAnteAmount = data.buttonAnteAmount;
+  }
+  
+  // Big Blind Ante settings
+  if (data.bigBlindAnteEnabled !== undefined) {
+    tableState.bigBlindAnteEnabled = data.bigBlindAnteEnabled;
+    // Disable other ante types when BB ante is enabled
+    if (data.bigBlindAnteEnabled) {
+      tableState.buttonAnteEnabled = false;
+      tableState.anteAmount = 0;
+    }
+  }
+  if (data.bigBlindAnteAmount !== undefined) {
+    tableState.bigBlindAnteAmount = data.bigBlindAnteAmount;
+  }
+  
+  // Timer settings
+  if (data.actionTimer !== undefined) {
+    tableState.actionTimer = Math.min(120, Math.max(5, data.actionTimer));
+  }
+  
+  // Run it twice
+  if (data.runItTwiceEnabled !== undefined) {
+    tableState.runItTwiceEnabled = data.runItTwiceEnabled;
+  }
+  
+  // Rake settings
+  if (data.rakePercent !== undefined) {
+    tableState.rakePercent = Math.min(10, Math.max(0, data.rakePercent));
+  }
+  if (data.rakeCap !== undefined) {
+    tableState.rakeCap = Math.max(0, data.rakeCap);
+  }
+
+  console.log(`⚙️ Table ${tableId} configured:`, {
+    blinds: `${tableState.smallBlindAmount}/${tableState.bigBlindAmount}`,
+    ante: tableState.anteAmount,
+    buttonAnte: tableState.buttonAnteEnabled ? tableState.buttonAnteAmount : 'disabled',
+    bbAnte: tableState.bigBlindAnteEnabled ? tableState.bigBlindAnteAmount : 'disabled',
+    straddle: tableState.straddleEnabled,
+    mississippi: tableState.mississippiStraddleEnabled
+  });
+
+  sendToSocket(socket, {
+    type: "table_configured",
+    config: {
+      smallBlindAmount: tableState.smallBlindAmount,
+      bigBlindAmount: tableState.bigBlindAmount,
+      anteAmount: tableState.anteAmount,
+      straddleEnabled: tableState.straddleEnabled,
+      mississippiStraddleEnabled: tableState.mississippiStraddleEnabled,
+      maxStraddleCount: tableState.maxStraddleCount,
+      buttonAnteEnabled: tableState.buttonAnteEnabled,
+      buttonAnteAmount: tableState.buttonAnteAmount,
+      bigBlindAnteEnabled: tableState.bigBlindAnteEnabled,
+      bigBlindAnteAmount: tableState.bigBlindAnteAmount,
+      actionTimer: tableState.actionTimer,
+      runItTwiceEnabled: tableState.runItTwiceEnabled,
+      rakePercent: tableState.rakePercent,
+      rakeCap: tableState.rakeCap
+    }
+  });
+
+  broadcastToTable(tableId, {
+    type: "table_settings_changed",
+    config: {
+      smallBlindAmount: tableState.smallBlindAmount,
+      bigBlindAmount: tableState.bigBlindAmount,
+      anteAmount: tableState.anteAmount,
+      straddleEnabled: tableState.straddleEnabled,
+      buttonAnteEnabled: tableState.buttonAnteEnabled,
+      bigBlindAnteEnabled: tableState.bigBlindAnteEnabled
+    }
+  }, playerId);
+}
+
 // Helper functions
 function createInitialTableState(tableId: string): TableState {
   return {
@@ -1058,7 +1387,18 @@ function createInitialTableState(tableId: string): TableState {
     // Rake configuration
     rakePercent: 5, // 5% rake by default
     rakeCap: 500, // Max 500 chips rake per hand
-    totalRakeCollected: 0 // Reset at start of each hand
+    totalRakeCollected: 0, // Reset at start of each hand
+    // ===== STRADDLE & ADVANCED BLINDS =====
+    straddleEnabled: true, // Allow straddle bets by default
+    straddleSeat: null,
+    straddleAmount: 0,
+    buttonAnteEnabled: false, // Button ante disabled by default
+    buttonAnteAmount: 0,
+    bigBlindAnteEnabled: false, // BB ante disabled by default
+    bigBlindAnteAmount: 0,
+    mississippiStraddleEnabled: false, // Only UTG straddle by default
+    pendingStraddles: new Map(),
+    maxStraddleCount: 3 // Allow up to 3 straddles (double straddle, etc.)
   };
 }
 
@@ -1766,7 +2106,18 @@ function serializeTableState(tableState: TableState, forPlayerId?: string): any 
     // Rake configuration
     rakePercent: tableState.rakePercent,
     rakeCap: tableState.rakeCap,
-    totalRakeCollected: tableState.totalRakeCollected
+    totalRakeCollected: tableState.totalRakeCollected,
+    // ===== STRADDLE & ADVANCED BLINDS INFO =====
+    straddleEnabled: tableState.straddleEnabled,
+    straddleSeat: tableState.straddleSeat,
+    straddleAmount: tableState.straddleAmount,
+    buttonAnteEnabled: tableState.buttonAnteEnabled,
+    buttonAnteAmount: tableState.buttonAnteAmount,
+    bigBlindAnteEnabled: tableState.bigBlindAnteEnabled,
+    bigBlindAnteAmount: tableState.bigBlindAnteAmount,
+    mississippiStraddleEnabled: tableState.mississippiStraddleEnabled,
+    pendingStraddles: Array.from(tableState.pendingStraddles.entries()).map(([seat, amount]) => ({ seat, amount })),
+    runItTwiceEnabled: tableState.runItTwiceEnabled
   };
 }
 
