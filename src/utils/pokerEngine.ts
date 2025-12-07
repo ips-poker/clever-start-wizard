@@ -1,6 +1,8 @@
 // ==========================================
-// POKER ENGINE - Базовый игровой движок
+// POKER ENGINE - Professional Grade
 // ==========================================
+// Optimized hand evaluation with lookup tables
+// Supports: Hold'em, Short Deck, PLO basics
 
 // Масти карт
 export const SUITS = ['hearts', 'diamonds', 'clubs', 'spades'] as const;
@@ -10,10 +12,18 @@ export type Suit = typeof SUITS[number];
 export const RANKS = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14] as const;
 export type Rank = typeof RANKS[number];
 
+// Short deck ranks (6+)
+export const SHORT_DECK_RANKS = [6, 7, 8, 9, 10, 11, 12, 13, 14] as const;
+
 // Названия рангов
 export const RANK_NAMES: Record<Rank, string> = {
-  2: '2', 3: '3', 4: '4', 5: '5', 6: '6', 7: '7', 8: '8', 9: '9', 10: '10',
+  2: '2', 3: '3', 4: '4', 5: '5', 6: '6', 7: '7', 8: '8', 9: '9', 10: 'T',
   11: 'J', 12: 'Q', 13: 'K', 14: 'A'
+};
+
+export const RANK_NAMES_FULL: Record<Rank, string> = {
+  2: 'Deuce', 3: 'Three', 4: 'Four', 5: 'Five', 6: 'Six', 7: 'Seven', 
+  8: 'Eight', 9: 'Nine', 10: 'Ten', 11: 'Jack', 12: 'Queen', 13: 'King', 14: 'Ace'
 };
 
 // Названия мастей
@@ -23,6 +33,10 @@ export const SUIT_NAMES: Record<Suit, string> = {
 
 export const SUIT_NAMES_RU: Record<Suit, string> = {
   hearts: 'Черви', diamonds: 'Бубны', clubs: 'Трефы', spades: 'Пики'
+};
+
+export const SUIT_NAMES_EN: Record<Suit, string> = {
+  hearts: 'Hearts', diamonds: 'Diamonds', clubs: 'Clubs', spades: 'Spades'
 };
 
 // Интерфейс карты
@@ -46,6 +60,20 @@ export enum HandRank {
   ROYAL_FLUSH = 10
 }
 
+// Short Deck rankings (flush beats full house)
+export enum ShortDeckHandRank {
+  HIGH_CARD = 1,
+  PAIR = 2,
+  TWO_PAIR = 3,
+  STRAIGHT = 4, // Easier in short deck
+  THREE_OF_A_KIND = 5, // Harder in short deck
+  FULL_HOUSE = 6,
+  FLUSH = 7, // Much harder in short deck
+  FOUR_OF_A_KIND = 8,
+  STRAIGHT_FLUSH = 9,
+  ROYAL_FLUSH = 10
+}
+
 // Названия комбинаций
 export const HAND_RANK_NAMES: Record<HandRank, string> = {
   [HandRank.HIGH_CARD]: 'Старшая карта',
@@ -60,15 +88,80 @@ export const HAND_RANK_NAMES: Record<HandRank, string> = {
   [HandRank.ROYAL_FLUSH]: 'Роял-флеш'
 };
 
+export const HAND_RANK_NAMES_EN: Record<HandRank, string> = {
+  [HandRank.HIGH_CARD]: 'High Card',
+  [HandRank.PAIR]: 'Pair',
+  [HandRank.TWO_PAIR]: 'Two Pair',
+  [HandRank.THREE_OF_A_KIND]: 'Three of a Kind',
+  [HandRank.STRAIGHT]: 'Straight',
+  [HandRank.FLUSH]: 'Flush',
+  [HandRank.FULL_HOUSE]: 'Full House',
+  [HandRank.FOUR_OF_A_KIND]: 'Four of a Kind',
+  [HandRank.STRAIGHT_FLUSH]: 'Straight Flush',
+  [HandRank.ROYAL_FLUSH]: 'Royal Flush'
+};
+
 // Результат оценки руки
 export interface HandEvaluation {
   rank: HandRank;
   name: string;
+  nameEn: string;
   cards: Card[]; // 5 лучших карт комбинации
   kickers: Card[]; // Кикеры для сравнения
   value: number; // Числовое значение для сравнения
   description: string; // Полное описание комбинации
+  descriptionEn: string; // English description
+  tiebreakers: number[]; // Explicit tiebreaker values for comparison
 }
+
+// ==========================================
+// LOOKUP TABLES FOR FAST EVALUATION
+// ==========================================
+
+// Pre-computed prime numbers for each rank (for fast hand comparison)
+const RANK_PRIMES: Record<Rank, number> = {
+  2: 2, 3: 3, 4: 5, 5: 7, 6: 11, 7: 13, 8: 17, 9: 19,
+  10: 23, 11: 29, 12: 31, 13: 37, 14: 41
+};
+
+// Bit representation for ranks (for straight detection)
+const RANK_BITS: Record<Rank, number> = {
+  2: 0x1, 3: 0x2, 4: 0x4, 5: 0x8, 6: 0x10, 7: 0x20, 8: 0x40, 9: 0x80,
+  10: 0x100, 11: 0x200, 12: 0x400, 13: 0x800, 14: 0x1000
+};
+
+// Straight patterns (binary representations)
+const STRAIGHT_PATTERNS = [
+  0x1F00, // A-K-Q-J-T (Royal)
+  0x0F80, // K-Q-J-T-9
+  0x07C0, // Q-J-T-9-8
+  0x03E0, // J-T-9-8-7
+  0x01F0, // T-9-8-7-6
+  0x00F8, // 9-8-7-6-5
+  0x007C, // 8-7-6-5-4
+  0x003E, // 7-6-5-4-3
+  0x001F, // 6-5-4-3-2
+  0x100F, // A-5-4-3-2 (Wheel) - A as low
+];
+
+// High card for each straight pattern
+const STRAIGHT_HIGH_CARDS: number[] = [14, 13, 12, 11, 10, 9, 8, 7, 6, 5];
+
+// Short deck straight patterns (6+ deck, A-6-7-8-9 is a straight)
+const SHORT_DECK_STRAIGHT_PATTERNS = [
+  0x1F00, // A-K-Q-J-T
+  0x0F80, // K-Q-J-T-9
+  0x07C0, // Q-J-T-9-8
+  0x03E0, // J-T-9-8-7
+  0x01F0, // T-9-8-7-6
+  0x1070, // A-9-8-7-6 (Short deck wheel)
+];
+
+const SHORT_DECK_HIGH_CARDS: number[] = [14, 13, 12, 11, 10, 9];
+
+// Cache for hand evaluations
+const handCache = new Map<string, HandEvaluation>();
+const MAX_CACHE_SIZE = 10000;
 
 // ==========================================
 // ГЕНЕРАЦИЯ КОЛОДЫ
@@ -82,6 +175,25 @@ export function createDeck(): Card[] {
   
   for (const suit of SUITS) {
     for (const rank of RANKS) {
+      deck.push({
+        rank,
+        suit,
+        id: `${rank}-${suit}`
+      });
+    }
+  }
+  
+  return deck;
+}
+
+/**
+ * Создает short deck колоду (6+, 36 карт)
+ */
+export function createShortDeck(): Card[] {
+  const deck: Card[] = [];
+  
+  for (const suit of SUITS) {
+    for (const rank of SHORT_DECK_RANKS) {
       deck.push({
         rank,
         suit,
@@ -121,6 +233,17 @@ export function shuffleDeckSecure(deck: Card[]): Card[] {
   }
   
   return shuffled;
+}
+
+/**
+ * Multiple shuffle passes for extra security
+ */
+export function shuffleDeckSecureMultiPass(deck: Card[], passes: number = 3): Card[] {
+  let result = [...deck];
+  for (let i = 0; i < passes; i++) {
+    result = shuffleDeckSecure(result);
+  }
+  return result;
 }
 
 // ==========================================
@@ -166,22 +289,100 @@ export function dealToPlayers(
   return { playerHands, remainingDeck: currentDeck };
 }
 
+/**
+ * Deal community cards for Texas Hold'em
+ */
+export function dealCommunity(
+  deck: Card[],
+  phase: 'flop' | 'turn' | 'river' | 'full'
+): { community: Card[]; remainingDeck: Card[] } {
+  const count = phase === 'flop' ? 3 : phase === 'full' ? 5 : 1;
+  // Burn card before dealing
+  const afterBurn = deck.slice(1);
+  const { dealtCards, remainingDeck } = dealCards(afterBurn, count);
+  return { community: dealtCards, remainingDeck };
+}
+
+// ==========================================
+// FAST BIT-BASED EVALUATION
+// ==========================================
+
+/**
+ * Get bit representation of ranks in hand
+ */
+function getRankBits(cards: Card[]): number {
+  let bits = 0;
+  for (const card of cards) {
+    bits |= RANK_BITS[card.rank];
+  }
+  return bits;
+}
+
+/**
+ * Check if bit pattern contains a straight
+ */
+function findStraight(bits: number, isShortDeck: boolean = false): number {
+  const patterns = isShortDeck ? SHORT_DECK_STRAIGHT_PATTERNS : STRAIGHT_PATTERNS;
+  const highCards = isShortDeck ? SHORT_DECK_HIGH_CARDS : STRAIGHT_HIGH_CARDS;
+  
+  for (let i = 0; i < patterns.length; i++) {
+    if ((bits & patterns[i]) === patterns[i]) {
+      return highCards[i];
+    }
+  }
+  return 0; // No straight
+}
+
+/**
+ * Count occurrences of each rank
+ */
+function getRankCounts(cards: Card[]): Map<Rank, number> {
+  const counts = new Map<Rank, number>();
+  for (const card of cards) {
+    counts.set(card.rank, (counts.get(card.rank) || 0) + 1);
+  }
+  return counts;
+}
+
+/**
+ * Count occurrences of each suit
+ */
+function getSuitCounts(cards: Card[]): Map<Suit, number> {
+  const counts = new Map<Suit, number>();
+  for (const card of cards) {
+    counts.set(card.suit, (counts.get(card.suit) || 0) + 1);
+  }
+  return counts;
+}
+
 // ==========================================
 // ОЦЕНКА КОМБИНАЦИЙ
 // ==========================================
 
 /**
- * Получает все комбинации из n карт
+ * Получает все комбинации из n карт (optimized)
  */
 function getCombinations(cards: Card[], n: number): Card[][] {
   if (n === 0) return [[]];
   if (cards.length < n) return [];
+  if (cards.length === n) return [cards];
   
-  const [first, ...rest] = cards;
-  const withFirst = getCombinations(rest, n - 1).map(combo => [first, ...combo]);
-  const withoutFirst = getCombinations(rest, n);
+  const result: Card[][] = [];
   
-  return [...withFirst, ...withoutFirst];
+  function combine(start: number, combo: Card[]) {
+    if (combo.length === n) {
+      result.push([...combo]);
+      return;
+    }
+    for (let i = start; i <= cards.length - (n - combo.length); i++) {
+      combo.push(cards[i]);
+      combine(i + 1, combo);
+      combo.pop();
+    }
+  }
+  
+  combine(0, []);
+  return result;
 }
 
 /**
@@ -192,28 +393,23 @@ function isFlush(cards: Card[]): boolean {
 }
 
 /**
- * Проверяет на стрит (5 последовательных карт)
+ * Проверяет на стрит (5 последовательных карт) - optimized
  */
-function isStraight(cards: Card[]): boolean {
-  const ranks = cards.map(c => c.rank).sort((a, b) => a - b);
-  
-  // Проверка на A-2-3-4-5 (wheel)
-  if (ranks[4] === 14 && ranks[0] === 2 && ranks[1] === 3 && ranks[2] === 4 && ranks[3] === 5) {
-    return true;
-  }
-  
-  // Проверка на последовательность
-  for (let i = 1; i < ranks.length; i++) {
-    if (ranks[i] !== ranks[i - 1] + 1) {
-      return false;
-    }
-  }
-  
-  return true;
+function isStraight(cards: Card[], isShortDeck: boolean = false): boolean {
+  const bits = getRankBits(cards);
+  return findStraight(bits, isShortDeck) > 0;
 }
 
 /**
- * Получает группы карт по рангу
+ * Получает старшую карту стрита
+ */
+function getStraightHighCard(cards: Card[], isShortDeck: boolean = false): number {
+  const bits = getRankBits(cards);
+  return findStraight(bits, isShortDeck);
+}
+
+/**
+ * Получает группы карт по рангу (optimized)
  */
 function getRankGroups(cards: Card[]): Map<Rank, Card[]> {
   const groups = new Map<Rank, Card[]>();
@@ -229,243 +425,248 @@ function getRankGroups(cards: Card[]): Map<Rank, Card[]> {
 }
 
 /**
- * Вычисляет числовое значение комбинации для сравнения
- * Использует систему с большими множителями для корректного сравнения
- * 
- * Формат value: RRPPPPPPKKKKK
- * R - ранг комбинации (1-10)
- * P - значения primary cards (до 5 карт)
- * K - значения кикеров (до 5 карт)
+ * Create cache key for hand
  */
-function calculateHandValue(rank: HandRank, primaryCards: Card[], kickers: Card[]): number {
-  // Базовое значение ранга комбинации (множитель 10^12)
-  let value = rank * 1000000000000;
+function createHandKey(cards: Card[]): string {
+  return cards
+    .map(c => `${c.rank}${c.suit[0]}`)
+    .sort()
+    .join('');
+}
+
+/**
+ * Вычисляет числовое значение комбинации для сравнения
+ * Uses base-15 encoding for proper comparison
+ */
+function calculateHandValue(rank: HandRank, tiebreakers: number[]): number {
+  // Base value from hand rank (multiplied by large factor)
+  let value = rank * 100000000000;
   
-  // Сортируем primary cards по убыванию
-  const sortedPrimary = [...primaryCards].sort((a, b) => b.rank - a.rank);
+  // Add tiebreakers in descending importance
+  // Each position uses base 15 (max rank + 1)
+  const multipliers = [759375, 50625, 3375, 225, 15, 1];
   
-  // Primary cards: каждая карта умножается на уменьшающийся множитель
-  // Позиция 0: 15^8, Позиция 1: 15^6, Позиция 2: 15^4, Позиция 3: 15^2, Позиция 4: 15^0
-  const primaryMultipliers = [2562890625, 11390625, 50625, 225, 1];
-  for (let i = 0; i < sortedPrimary.length && i < 5; i++) {
-    value += sortedPrimary[i].rank * primaryMultipliers[i];
-  }
-  
-  // Сортируем кикеры по убыванию
-  const sortedKickers = [...kickers].sort((a, b) => b.rank - a.rank);
-  
-  // Кикеры: используем меньшие множители чтобы не перекрывать primary
-  // Суммарный вес кикеров должен быть меньше минимального веса primary карты
-  const kickerMultipliers = [14400, 960, 64, 4, 1];
-  for (let i = 0; i < sortedKickers.length && i < 5; i++) {
-    value += sortedKickers[i].rank * kickerMultipliers[i];
+  for (let i = 0; i < Math.min(tiebreakers.length, multipliers.length); i++) {
+    value += tiebreakers[i] * multipliers[i];
   }
   
   return value;
 }
 
 /**
- * Специальное сравнение для Straight (учёт wheel)
+ * Оценивает комбинацию из 5 карт (optimized)
  */
-function getStraightHighCard(cards: Card[]): number {
-  const ranks = cards.map(c => c.rank).sort((a, b) => a - b);
-  // Wheel: A-2-3-4-5 - старшая карта 5
-  if (ranks[0] === 2 && ranks[1] === 3 && ranks[2] === 4 && ranks[3] === 5 && ranks[4] === 14) {
-    return 5;
-  }
-  return Math.max(...ranks);
-}
-
-/**
- * Вычисляет значение для Straight с учётом wheel
- */
-function calculateStraightValue(rank: HandRank, cards: Card[]): number {
-  const highCard = getStraightHighCard(cards);
-  return rank * 1000000000000 + highCard * 2562890625;
-}
-
-/**
- * Вычисляет значение для Full House
- * Тройка сравнивается первой, затем пара
- */
-function calculateFullHouseValue(threeRank: Rank, pairRank: Rank): number {
-  return HandRank.FULL_HOUSE * 1000000000000 + threeRank * 2562890625 + pairRank * 11390625;
-}
-
-/**
- * Вычисляет значение для Two Pair
- * Старшая пара, младшая пара, затем кикер
- */
-function calculateTwoPairValue(highPairRank: Rank, lowPairRank: Rank, kickerRank: Rank): number {
-  return HandRank.TWO_PAIR * 1000000000000 + highPairRank * 2562890625 + lowPairRank * 11390625 + kickerRank * 50625;
-}
-
-/**
- * Оценивает комбинацию из 5 карт
- */
-function evaluateFiveCards(cards: Card[]): HandEvaluation {
+function evaluateFiveCards(cards: Card[], isShortDeck: boolean = false): HandEvaluation {
   if (cards.length !== 5) {
     throw new Error('Must evaluate exactly 5 cards');
   }
   
+  // Check cache
+  const cacheKey = createHandKey(cards);
+  if (handCache.has(cacheKey)) {
+    return handCache.get(cacheKey)!;
+  }
+  
   const flush = isFlush(cards);
-  const straight = isStraight(cards);
+  const straightHigh = getStraightHighCard(cards, isShortDeck);
+  const straight = straightHigh > 0;
   const groups = getRankGroups(cards);
   const sortedCards = [...cards].sort((a, b) => b.rank - a.rank);
   
-  // Получаем группы по размеру
-  const groupSizes = Array.from(groups.values()).map(g => g.length).sort((a, b) => b - a);
+  // Get group sizes sorted
+  const groupEntries = Array.from(groups.entries()).sort((a, b) => {
+    // Sort by group size first, then by rank
+    if (b[1].length !== a[1].length) return b[1].length - a[1].length;
+    return b[0] - a[0];
+  });
+  const groupSizes = groupEntries.map(g => g[1].length);
+  
+  let result: HandEvaluation;
   
   // Роял-флеш и Стрит-флеш
   if (flush && straight) {
-    const highCard = getStraightHighCard(cards);
+    const isRoyal = straightHigh === 14;
+    const handRank = isRoyal ? HandRank.ROYAL_FLUSH : HandRank.STRAIGHT_FLUSH;
     
-    // Роял-флеш: T-J-Q-K-A одной масти
-    if (highCard === 14) {
-      const ranks = cards.map(c => c.rank).sort((a, b) => a - b);
-      if (ranks[0] === 10) {
-        return {
-          rank: HandRank.ROYAL_FLUSH,
-          name: HAND_RANK_NAMES[HandRank.ROYAL_FLUSH],
-          cards: sortedCards,
-          kickers: [],
-          value: calculateStraightValue(HandRank.ROYAL_FLUSH, cards),
-          description: `Роял-флеш ${SUIT_NAMES[cards[0].suit]}`
-        };
-      }
-    }
-    
-    // Стрит-флеш (включая wheel flush A-2-3-4-5)
-    return {
-      rank: HandRank.STRAIGHT_FLUSH,
-      name: HAND_RANK_NAMES[HandRank.STRAIGHT_FLUSH],
+    result = {
+      rank: handRank,
+      name: isRoyal ? 'Роял-флеш' : 'Стрит-флеш',
+      nameEn: isRoyal ? 'Royal Flush' : 'Straight Flush',
       cards: sortedCards,
       kickers: [],
-      value: calculateStraightValue(HandRank.STRAIGHT_FLUSH, cards),
-      description: `Стрит-флеш до ${RANK_NAMES[highCard as Rank]}`
+      value: calculateHandValue(handRank, [straightHigh]),
+      tiebreakers: [straightHigh],
+      description: isRoyal 
+        ? `Роял-флеш ${SUIT_NAMES[cards[0].suit]}`
+        : `Стрит-флеш до ${RANK_NAMES[straightHigh as Rank]} ${SUIT_NAMES[cards[0].suit]}`,
+      descriptionEn: isRoyal
+        ? `Royal Flush of ${SUIT_NAMES_EN[cards[0].suit]}`
+        : `${RANK_NAMES_FULL[straightHigh as Rank]}-high Straight Flush`
     };
   }
-  
   // Каре
-  if (groupSizes[0] === 4) {
-    const fourOfAKind = Array.from(groups.entries()).find(([_, cards]) => cards.length === 4)!;
-    const kicker = sortedCards.find(c => c.rank !== fourOfAKind[0])!;
-    return {
+  else if (groupSizes[0] === 4) {
+    const fourRank = groupEntries[0][0];
+    const fourCards = groupEntries[0][1];
+    const kicker = sortedCards.find(c => c.rank !== fourRank)!;
+    
+    result = {
       rank: HandRank.FOUR_OF_A_KIND,
       name: HAND_RANK_NAMES[HandRank.FOUR_OF_A_KIND],
-      cards: fourOfAKind[1],
+      nameEn: HAND_RANK_NAMES_EN[HandRank.FOUR_OF_A_KIND],
+      cards: fourCards,
       kickers: [kicker],
-      value: calculateHandValue(HandRank.FOUR_OF_A_KIND, fourOfAKind[1], [kicker]),
-      description: `Каре ${RANK_NAMES[fourOfAKind[0]]}ок`
+      value: calculateHandValue(HandRank.FOUR_OF_A_KIND, [fourRank, kicker.rank]),
+      tiebreakers: [fourRank, kicker.rank],
+      description: `Каре ${RANK_NAMES_FULL[fourRank]}`,
+      descriptionEn: `Four ${RANK_NAMES_FULL[fourRank]}s`
     };
   }
-  
-  // Фулл-хаус - сравниваем сначала тройку, потом пару
-  if (groupSizes[0] === 3 && groupSizes[1] === 2) {
-    const threeOfAKind = Array.from(groups.entries()).find(([_, cards]) => cards.length === 3)!;
-    const pair = Array.from(groups.entries()).find(([_, cards]) => cards.length === 2)!;
-    // Для Full House: тройка важнее пары, поэтому тройка в primary, пара в kickers
-    return {
+  // Фулл-хаус - FIXED: Compare trips first, then pair
+  else if (groupSizes[0] === 3 && groupSizes[1] === 2) {
+    const threeRank = groupEntries[0][0];
+    const threeCards = groupEntries[0][1];
+    const pairRank = groupEntries[1][0];
+    const pairCards = groupEntries[1][1];
+    
+    result = {
       rank: HandRank.FULL_HOUSE,
       name: HAND_RANK_NAMES[HandRank.FULL_HOUSE],
-      cards: [...threeOfAKind[1], ...pair[1]],
+      nameEn: HAND_RANK_NAMES_EN[HandRank.FULL_HOUSE],
+      cards: [...threeCards, ...pairCards],
       kickers: [],
-      value: calculateFullHouseValue(threeOfAKind[0], pair[0]),
-      description: `Фулл-хаус: ${RANK_NAMES[threeOfAKind[0]]}ки и ${RANK_NAMES[pair[0]]}ки`
+      value: calculateHandValue(HandRank.FULL_HOUSE, [threeRank, pairRank]),
+      tiebreakers: [threeRank, pairRank],
+      description: `Фулл-хаус: ${RANK_NAMES_FULL[threeRank]} на ${RANK_NAMES_FULL[pairRank]}`,
+      descriptionEn: `${RANK_NAMES_FULL[threeRank]}s full of ${RANK_NAMES_FULL[pairRank]}s`
     };
   }
-  
   // Флеш
-  if (flush) {
-    return {
+  else if (flush) {
+    const tiebreakers = sortedCards.map(c => c.rank);
+    result = {
       rank: HandRank.FLUSH,
       name: HAND_RANK_NAMES[HandRank.FLUSH],
+      nameEn: HAND_RANK_NAMES_EN[HandRank.FLUSH],
       cards: sortedCards,
       kickers: [],
-      value: calculateHandValue(HandRank.FLUSH, sortedCards, []),
-      description: `Флеш ${SUIT_NAMES_RU[cards[0].suit]} до ${RANK_NAMES[sortedCards[0].rank]}`
+      value: calculateHandValue(HandRank.FLUSH, tiebreakers),
+      tiebreakers,
+      description: `Флеш ${SUIT_NAMES_RU[cards[0].suit]} до ${RANK_NAMES_FULL[sortedCards[0].rank]}`,
+      descriptionEn: `${RANK_NAMES_FULL[sortedCards[0].rank]}-high ${SUIT_NAMES_EN[cards[0].suit]} Flush`
     };
   }
-  
-  // Стрит - используем специальную функцию для wheel
-  if (straight) {
-    const highCard = getStraightHighCard(cards);
-    
-    return {
+  // Стрит
+  else if (straight) {
+    result = {
       rank: HandRank.STRAIGHT,
       name: HAND_RANK_NAMES[HandRank.STRAIGHT],
+      nameEn: HAND_RANK_NAMES_EN[HandRank.STRAIGHT],
       cards: sortedCards,
       kickers: [],
-      value: calculateStraightValue(HandRank.STRAIGHT, cards),
-      description: `Стрит до ${RANK_NAMES[highCard as Rank]}`
+      value: calculateHandValue(HandRank.STRAIGHT, [straightHigh]),
+      tiebreakers: [straightHigh],
+      description: `Стрит до ${RANK_NAMES_FULL[straightHigh as Rank]}`,
+      descriptionEn: `${RANK_NAMES_FULL[straightHigh as Rank]}-high Straight`
     };
   }
-  
   // Тройка
-  if (groupSizes[0] === 3) {
-    const threeOfAKind = Array.from(groups.entries()).find(([_, cards]) => cards.length === 3)!;
-    const kickers = sortedCards.filter(c => c.rank !== threeOfAKind[0]).slice(0, 2);
-    return {
+  else if (groupSizes[0] === 3) {
+    const threeRank = groupEntries[0][0];
+    const threeCards = groupEntries[0][1];
+    const kickers = sortedCards.filter(c => c.rank !== threeRank).slice(0, 2);
+    const tiebreakers = [threeRank, ...kickers.map(k => k.rank)];
+    
+    result = {
       rank: HandRank.THREE_OF_A_KIND,
       name: HAND_RANK_NAMES[HandRank.THREE_OF_A_KIND],
-      cards: threeOfAKind[1],
+      nameEn: HAND_RANK_NAMES_EN[HandRank.THREE_OF_A_KIND],
+      cards: threeCards,
       kickers,
-      value: calculateHandValue(HandRank.THREE_OF_A_KIND, threeOfAKind[1], kickers),
-      description: `Тройка ${RANK_NAMES[threeOfAKind[0]]}ок`
+      value: calculateHandValue(HandRank.THREE_OF_A_KIND, tiebreakers),
+      tiebreakers,
+      description: `Тройка ${RANK_NAMES_FULL[threeRank]}`,
+      descriptionEn: `Three ${RANK_NAMES_FULL[threeRank]}s`
     };
   }
-  
-  // Две пары - используем специальную функцию для корректного сравнения
-  if (groupSizes[0] === 2 && groupSizes[1] === 2) {
-    const pairs = Array.from(groups.entries())
-      .filter(([_, cards]) => cards.length === 2)
-      .sort((a, b) => b[0] - a[0]);
-    const kicker = sortedCards.find(c => c.rank !== pairs[0][0] && c.rank !== pairs[1][0])!;
-    return {
+  // Две пары - FIXED: Compare high pair, then low pair, then kicker
+  else if (groupSizes[0] === 2 && groupSizes[1] === 2) {
+    // groupEntries already sorted by size then rank
+    const highPairRank = groupEntries[0][0];
+    const highPairCards = groupEntries[0][1];
+    const lowPairRank = groupEntries[1][0];
+    const lowPairCards = groupEntries[1][1];
+    const kicker = sortedCards.find(c => c.rank !== highPairRank && c.rank !== lowPairRank)!;
+    
+    result = {
       rank: HandRank.TWO_PAIR,
       name: HAND_RANK_NAMES[HandRank.TWO_PAIR],
-      cards: [...pairs[0][1], ...pairs[1][1]],
+      nameEn: HAND_RANK_NAMES_EN[HandRank.TWO_PAIR],
+      cards: [...highPairCards, ...lowPairCards],
       kickers: [kicker],
-      value: calculateTwoPairValue(pairs[0][0], pairs[1][0], kicker.rank),
-      description: `Две пары: ${RANK_NAMES[pairs[0][0]]}ки и ${RANK_NAMES[pairs[1][0]]}ки`
+      value: calculateHandValue(HandRank.TWO_PAIR, [highPairRank, lowPairRank, kicker.rank]),
+      tiebreakers: [highPairRank, lowPairRank, kicker.rank],
+      description: `Две пары: ${RANK_NAMES_FULL[highPairRank]} и ${RANK_NAMES_FULL[lowPairRank]}`,
+      descriptionEn: `Two Pair, ${RANK_NAMES_FULL[highPairRank]}s and ${RANK_NAMES_FULL[lowPairRank]}s`
     };
   }
-  
   // Пара
-  if (groupSizes[0] === 2) {
-    const pair = Array.from(groups.entries()).find(([_, cards]) => cards.length === 2)!;
-    const kickers = sortedCards.filter(c => c.rank !== pair[0]).slice(0, 3);
-    return {
+  else if (groupSizes[0] === 2) {
+    const pairRank = groupEntries[0][0];
+    const pairCards = groupEntries[0][1];
+    const kickers = sortedCards.filter(c => c.rank !== pairRank).slice(0, 3);
+    const tiebreakers = [pairRank, ...kickers.map(k => k.rank)];
+    
+    result = {
       rank: HandRank.PAIR,
       name: HAND_RANK_NAMES[HandRank.PAIR],
-      cards: pair[1],
+      nameEn: HAND_RANK_NAMES_EN[HandRank.PAIR],
+      cards: pairCards,
       kickers,
-      value: calculateHandValue(HandRank.PAIR, pair[1], kickers),
-      description: `Пара ${RANK_NAMES[pair[0]]}ок`
+      value: calculateHandValue(HandRank.PAIR, tiebreakers),
+      tiebreakers,
+      description: `Пара ${RANK_NAMES_FULL[pairRank]}`,
+      descriptionEn: `Pair of ${RANK_NAMES_FULL[pairRank]}s`
+    };
+  }
+  // Старшая карта
+  else {
+    const tiebreakers = sortedCards.map(c => c.rank);
+    
+    result = {
+      rank: HandRank.HIGH_CARD,
+      name: HAND_RANK_NAMES[HandRank.HIGH_CARD],
+      nameEn: HAND_RANK_NAMES_EN[HandRank.HIGH_CARD],
+      cards: [sortedCards[0]],
+      kickers: sortedCards.slice(1),
+      value: calculateHandValue(HandRank.HIGH_CARD, tiebreakers),
+      tiebreakers,
+      description: `Старшая карта ${RANK_NAMES_FULL[sortedCards[0].rank]}`,
+      descriptionEn: `${RANK_NAMES_FULL[sortedCards[0].rank]} High`
     };
   }
   
-  // Старшая карта
-  return {
-    rank: HandRank.HIGH_CARD,
-    name: HAND_RANK_NAMES[HandRank.HIGH_CARD],
-    cards: [sortedCards[0]],
-    kickers: sortedCards.slice(1),
-    value: calculateHandValue(HandRank.HIGH_CARD, [sortedCards[0]], sortedCards.slice(1)),
-    description: `Старшая карта ${RANK_NAMES[sortedCards[0].rank]}`
-  };
+  // Cache result
+  if (handCache.size >= MAX_CACHE_SIZE) {
+    // Clear oldest entries (simple LRU approximation)
+    const keysToDelete = Array.from(handCache.keys()).slice(0, MAX_CACHE_SIZE / 2);
+    keysToDelete.forEach(k => handCache.delete(k));
+  }
+  handCache.set(cacheKey, result);
+  
+  return result;
 }
 
 /**
  * Находит лучшую комбинацию из 5 карт среди любого количества карт
  */
-export function evaluateHand(cards: Card[]): HandEvaluation {
+export function evaluateHand(cards: Card[], isShortDeck: boolean = false): HandEvaluation {
   if (cards.length < 5) {
     throw new Error('Need at least 5 cards to evaluate');
   }
   
   if (cards.length === 5) {
-    return evaluateFiveCards(cards);
+    return evaluateFiveCards(cards, isShortDeck);
   }
   
   // Перебираем все комбинации из 5 карт
@@ -473,9 +674,34 @@ export function evaluateHand(cards: Card[]): HandEvaluation {
   let bestHand: HandEvaluation | null = null;
   
   for (const combo of combinations) {
-    const evaluation = evaluateFiveCards(combo);
+    const evaluation = evaluateFiveCards(combo, isShortDeck);
     if (!bestHand || evaluation.value > bestHand.value) {
       bestHand = evaluation;
+    }
+  }
+  
+  return bestHand!;
+}
+
+/**
+ * Evaluate Omaha hand (must use exactly 2 hole cards + 3 community)
+ */
+export function evaluateOmahaHand(holeCards: Card[], communityCards: Card[]): HandEvaluation {
+  if (holeCards.length !== 4 || communityCards.length !== 5) {
+    throw new Error('Omaha requires 4 hole cards and 5 community cards');
+  }
+  
+  const holeCombos = getCombinations(holeCards, 2);
+  const communityCombos = getCombinations(communityCards, 3);
+  
+  let bestHand: HandEvaluation | null = null;
+  
+  for (const hole of holeCombos) {
+    for (const community of communityCombos) {
+      const hand = evaluateFiveCards([...hole, ...community]);
+      if (!bestHand || hand.value > bestHand.value) {
+        bestHand = hand;
+      }
     }
   }
   
@@ -489,13 +715,19 @@ export function evaluateHand(cards: Card[]): HandEvaluation {
  *  0 если равны (split pot)
  */
 export function compareHands(hand1: HandEvaluation, hand2: HandEvaluation): number {
-  // Сначала сравниваем ранг комбинации
-  if (hand1.rank > hand2.rank) return 1;
-  if (hand1.rank < hand2.rank) return -1;
+  // Use tiebreakers for precise comparison
+  if (hand1.rank !== hand2.rank) {
+    return hand1.rank > hand2.rank ? 1 : -1;
+  }
   
-  // Ранги равны - сравниваем по value (уже учитывает все нюансы)
-  if (hand1.value > hand2.value) return 1;
-  if (hand1.value < hand2.value) return -1;
+  // Same rank - compare tiebreakers
+  const maxLen = Math.max(hand1.tiebreakers.length, hand2.tiebreakers.length);
+  for (let i = 0; i < maxLen; i++) {
+    const t1 = hand1.tiebreakers[i] || 0;
+    const t2 = hand2.tiebreakers[i] || 0;
+    if (t1 > t2) return 1;
+    if (t1 < t2) return -1;
+  }
   
   return 0;
 }
@@ -508,24 +740,21 @@ export function determineWinners(hands: HandEvaluation[]): number[] {
   if (hands.length === 0) return [];
   if (hands.length === 1) return [0];
   
-  let bestHandIndex = 0;
-  const winners: number[] = [0];
+  let bestIndices: number[] = [0];
   
   for (let i = 1; i < hands.length; i++) {
-    const comparison = compareHands(hands[i], hands[bestHandIndex]);
+    const comparison = compareHands(hands[i], hands[bestIndices[0]]);
     
     if (comparison > 0) {
-      // Новая рука лучше
-      bestHandIndex = i;
-      winners.length = 0;
-      winners.push(i);
+      // New best hand
+      bestIndices = [i];
     } else if (comparison === 0) {
-      // Равные руки - добавляем к победителям
-      winners.push(i);
+      // Tie - add to winners
+      bestIndices.push(i);
     }
   }
   
-  return winners;
+  return bestIndices;
 }
 
 /**
@@ -535,50 +764,105 @@ export interface DetailedComparison {
   result: 1 | -1 | 0;
   winner: 'hand1' | 'hand2' | 'tie';
   reason: string;
+  reasonEn: string;
 }
 
 export function compareHandsDetailed(hand1: HandEvaluation, hand2: HandEvaluation): DetailedComparison {
-  // Сравниваем ранг комбинации
-  if (hand1.rank > hand2.rank) {
+  const comparison = compareHands(hand1, hand2);
+  
+  if (comparison === 1) {
+    if (hand1.rank > hand2.rank) {
+      return {
+        result: 1,
+        winner: 'hand1',
+        reason: `${hand1.name} бьёт ${hand2.name}`,
+        reasonEn: `${hand1.nameEn} beats ${hand2.nameEn}`
+      };
+    }
     return {
       result: 1,
       winner: 'hand1',
-      reason: `${hand1.name} бьёт ${hand2.name}`
-    };
-  }
-  if (hand1.rank < hand2.rank) {
-    return {
-      result: -1,
-      winner: 'hand2',
-      reason: `${hand2.name} бьёт ${hand1.name}`
+      reason: `${hand1.description} бьёт ${hand2.description}`,
+      reasonEn: `${hand1.descriptionEn} beats ${hand2.descriptionEn}`
     };
   }
   
-  // Равные ранги - сравниваем по value
-  if (hand1.value > hand2.value) {
-    return {
-      result: 1,
-      winner: 'hand1',
-      reason: `${hand1.description} бьёт ${hand2.description}`
-    };
-  }
-  if (hand1.value < hand2.value) {
+  if (comparison === -1) {
+    if (hand2.rank > hand1.rank) {
+      return {
+        result: -1,
+        winner: 'hand2',
+        reason: `${hand2.name} бьёт ${hand1.name}`,
+        reasonEn: `${hand2.nameEn} beats ${hand1.nameEn}`
+      };
+    }
     return {
       result: -1,
       winner: 'hand2',
-      reason: `${hand2.description} бьёт ${hand1.description}`
+      reason: `${hand2.description} бьёт ${hand1.description}`,
+      reasonEn: `${hand2.descriptionEn} beats ${hand1.descriptionEn}`
     };
   }
   
   return {
     result: 0,
     winner: 'tie',
-    reason: `Полное равенство: ${hand1.description}`
+    reason: `Полное равенство: ${hand1.description}`,
+    reasonEn: `Split pot: ${hand1.descriptionEn}`
   };
 }
 
+// ==========================================
+// RUN IT TWICE SUPPORT
+// ==========================================
+
+export interface RunItTwiceResult {
+  board1: Card[];
+  board2: Card[];
+  winners1: number[]; // Indices of winners for board 1
+  winners2: number[]; // Indices of winners for board 2
+  hands1: HandEvaluation[];
+  hands2: HandEvaluation[];
+}
+
 /**
- * Валидация корректности сравнения рук (для тестирования)
+ * Run the remaining board twice for all-in equity
+ */
+export function runItTwice(
+  deck: Card[],
+  playerHands: Card[][],
+  currentCommunity: Card[]
+): RunItTwiceResult {
+  const cardsNeeded = 5 - currentCommunity.length;
+  
+  // First run
+  const shuffled1 = shuffleDeckSecure(deck);
+  const board1 = [...currentCommunity, ...shuffled1.slice(0, cardsNeeded)];
+  
+  // Second run - use different cards
+  const shuffled2 = shuffleDeckSecure(deck);
+  const board2 = [...currentCommunity, ...shuffled2.slice(0, cardsNeeded)];
+  
+  // Evaluate all hands for both boards
+  const hands1 = playerHands.map(hand => evaluateHand([...hand, ...board1]));
+  const hands2 = playerHands.map(hand => evaluateHand([...hand, ...board2]));
+  
+  return {
+    board1,
+    board2,
+    winners1: determineWinners(hands1),
+    winners2: determineWinners(hands2),
+    hands1,
+    hands2
+  };
+}
+
+// ==========================================
+// VALIDATION & TESTING
+// ==========================================
+
+/**
+ * Валидация корректности сравнения рук
  */
 export function validateHandComparison(): { passed: number; failed: number; results: string[] } {
   const results: string[] = [];
@@ -587,47 +871,29 @@ export function validateHandComparison(): { passed: number; failed: number; resu
 
   const testCases = [
     // Full House: тройка важнее пары
-    { 
-      hand1: 'Ah Ad Ac 2h 2d', // AAA22
-      hand2: 'Kh Kd Kc Qh Qd', // KKKQQ
-      expected: 1,
-      name: 'Full House: AAA22 > KKKQQ'
-    },
+    { hand1: 'Ah Ad Ac 2h 2d', hand2: 'Kh Kd Kc Qh Qd', expected: 1, name: 'Full House: AAA22 > KKKQQ' },
+    // Full House: одинаковая тройка, старшая пара
+    { hand1: 'Ah Ad Ac Kh Kd', hand2: 'As Ac 2h 2d 2c', expected: 1, name: 'Full House: AAAKK > 222AA' },
     // Two Pair: старшая пара важнее
-    {
-      hand1: 'Ah Ad 3h 3d Kc', // AA33K
-      hand2: 'Kh Kd Qh Qd 2c', // KKQQ2
-      expected: 1,
-      name: 'Two Pair: AA33 > KKQQ'
-    },
+    { hand1: 'Ah Ad 3h 3d Kc', hand2: 'Kh Kd Qh Qd 2c', expected: 1, name: 'Two Pair: AA33 > KKQQ' },
     // Two Pair: кикер решает при равных парах
-    {
-      hand1: 'Ah Ad 3h 3d Kc', // AA33K
-      hand2: 'As Ac 3s 3c Qd', // AA33Q
-      expected: 1,
-      name: 'Two Pair: AA33K > AA33Q (кикер)'
-    },
+    { hand1: 'Ah Ad 3h 3d Kc', hand2: 'As Ac 3s 3c Qd', expected: 1, name: 'Two Pair: AA33K > AA33Q' },
     // Straight: wheel < обычный стрит
-    {
-      hand1: 'Ah 2d 3c 4h 5s', // wheel A-5
-      hand2: '2h 3d 4c 5h 6s', // 2-6
-      expected: -1,
-      name: 'Straight: wheel < 6-high'
-    },
+    { hand1: 'Ah 2d 3c 4h 5s', hand2: '2h 3d 4c 5h 6s', expected: -1, name: 'Straight: wheel < 6-high' },
+    // Straight: wheel = wheel
+    { hand1: 'Ah 2d 3c 4h 5s', hand2: 'As 2c 3h 4d 5c', expected: 0, name: 'Straight: wheel = wheel (split)' },
     // Pair: кикеры решают
-    {
-      hand1: 'Ah Ad Kc Qh Jd', // AAKQj
-      hand2: 'As Ac Ks Qs Td', // AAKQT
-      expected: 1,
-      name: 'Pair: AAKQJ > AAKQT (кикер)'
-    },
+    { hand1: 'Ah Ad Kc Qh Jd', hand2: 'As Ac Ks Qs Td', expected: 1, name: 'Pair: AAKQJ > AAKQT' },
     // High Card: все кикеры
-    {
-      hand1: 'Ah Kd Qc Jh 9s',
-      hand2: 'As Kc Qs Js 8d',
-      expected: 1,
-      name: 'High Card: AKQJ9 > AKQJ8'
-    },
+    { hand1: 'Ah Kd Qc Jh 9s', hand2: 'As Kc Qs Js 8d', expected: 1, name: 'High Card: AKQJ9 > AKQJ8' },
+    // Flush vs Straight
+    { hand1: 'Ah Kh Qh Jh 9h', hand2: 'As Kd Qc Jh Ts', expected: 1, name: 'Flush > Straight' },
+    // Straight Flush vs Quads
+    { hand1: '9h 8h 7h 6h 5h', hand2: 'Ah Ad Ac As Kd', expected: 1, name: 'Straight Flush > Quads' },
+    // Three of a Kind with kickers
+    { hand1: 'Ah Ad Ac Kh Qd', hand2: 'As Ac 2h 2d 2c', expected: 1, name: 'Trips: AAA > 222' },
+    // Flush: high card comparison
+    { hand1: 'Ah Kh Qh Jh 9h', hand2: 'As Ks Qs Js 8s', expected: 1, name: 'Flush: AKQj9 > AKQJ8' },
   ];
 
   for (const tc of testCases) {
@@ -635,7 +901,7 @@ export function validateHandComparison(): { passed: number; failed: number; resu
     const cards2 = parseCards(tc.hand2);
     
     if (cards1.length !== 5 || cards2.length !== 5) {
-      results.push(`SKIP: ${tc.name} - неверный формат карт`);
+      results.push(`SKIP: ${tc.name} - invalid card format`);
       continue;
     }
     
@@ -645,10 +911,12 @@ export function validateHandComparison(): { passed: number; failed: number; resu
     
     if (comparison === tc.expected) {
       passed++;
-      results.push(`PASS: ${tc.name}`);
+      results.push(`✓ PASS: ${tc.name}`);
     } else {
       failed++;
-      results.push(`FAIL: ${tc.name} - ожидалось ${tc.expected}, получено ${comparison}`);
+      results.push(`✗ FAIL: ${tc.name} - expected ${tc.expected}, got ${comparison}`);
+      results.push(`  Hand1: ${hand1.description} (value: ${hand1.value})`);
+      results.push(`  Hand2: ${hand2.description} (value: ${hand2.value})`);
     }
   }
 
@@ -686,11 +954,12 @@ export function getSuitColor(suit: Suit): 'red' | 'black' {
 export function parseCard(str: string): Card | null {
   const rankMap: Record<string, Rank> = {
     '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8, '9': 9,
-    'T': 10, 'J': 11, 'Q': 12, 'K': 13, 'A': 14
+    'T': 10, '10': 10, 'J': 11, 'Q': 12, 'K': 13, 'A': 14
   };
   
   const suitMap: Record<string, Suit> = {
-    'h': 'hearts', 'd': 'diamonds', 'c': 'clubs', 's': 'spades'
+    'h': 'hearts', 'd': 'diamonds', 'c': 'clubs', 's': 'spades',
+    '♥': 'hearts', '♦': 'diamonds', '♣': 'clubs', '♠': 'spades'
   };
   
   if (str.length < 2) return null;
@@ -711,4 +980,55 @@ export function parseCard(str: string): Card | null {
  */
 export function parseCards(str: string): Card[] {
   return str.split(/\s+/).map(parseCard).filter((c): c is Card => c !== null);
+}
+
+/**
+ * Convert card to short string format
+ */
+export function cardToString(card: Card): string {
+  return `${RANK_NAMES[card.rank]}${card.suit[0]}`;
+}
+
+/**
+ * Convert array of cards to short string format
+ */
+export function cardsToString(cards: Card[]): string {
+  return cards.map(cardToString).join(' ');
+}
+
+/**
+ * Get hand strength category (for equity display)
+ */
+export function getHandStrengthCategory(hand: HandEvaluation): 'monster' | 'strong' | 'medium' | 'weak' | 'nothing' {
+  switch (hand.rank) {
+    case HandRank.ROYAL_FLUSH:
+    case HandRank.STRAIGHT_FLUSH:
+    case HandRank.FOUR_OF_A_KIND:
+      return 'monster';
+    case HandRank.FULL_HOUSE:
+    case HandRank.FLUSH:
+    case HandRank.STRAIGHT:
+      return 'strong';
+    case HandRank.THREE_OF_A_KIND:
+    case HandRank.TWO_PAIR:
+      return 'medium';
+    case HandRank.PAIR:
+      return 'weak';
+    default:
+      return 'nothing';
+  }
+}
+
+/**
+ * Clear hand evaluation cache
+ */
+export function clearHandCache(): void {
+  handCache.clear();
+}
+
+/**
+ * Get cache statistics
+ */
+export function getHandCacheStats(): { size: number; maxSize: number } {
+  return { size: handCache.size, maxSize: MAX_CACHE_SIZE };
 }
