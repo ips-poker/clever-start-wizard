@@ -15,6 +15,7 @@ import { MobilePokerControls } from './MobilePokerControls';
 import { TournamentTimer } from './TournamentTimer';
 import { TournamentTableHeader } from './TournamentTableHeader';
 import { TournamentElimination } from './TournamentElimination';
+import { TournamentLeaderboard } from './TournamentLeaderboard';
 import { MobilePokerTable } from './MobilePokerTable';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { 
@@ -514,18 +515,28 @@ export function OnlinePokerTable({
         </div>
       </div>
 
-      {/* Tournament Timer */}
+      {/* Tournament Timer & Leaderboard */}
       {isTournament && tournamentId && (
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
-          <div className="lg:col-span-3">
-            {/* Table will be rendered below */}
-          </div>
           <div className="lg:col-span-1">
             <TournamentTimer 
               tournamentId={tournamentId}
               isAdmin={false}
             />
           </div>
+          <div className="lg:col-span-3">
+            {/* Table will be rendered below */}
+          </div>
+        </div>
+      )}
+
+      {/* Tournament Leaderboard - Side panel */}
+      {isTournament && tournamentId && (
+        <div className="fixed right-4 top-24 z-40 w-72 hidden xl:block">
+          <TournamentLeaderboard 
+            tournamentId={tournamentId}
+            currentPlayerId={playerId}
+          />
         </div>
       )}
 
