@@ -412,9 +412,9 @@ export function usePokerTable(options: UsePokerTableOptions | null) {
         'phase:', newPhase, 'currentPlayerSeat:', currentPlayerSeat, 'mySeat:', mySeat,
         'current_hand_id:', tableData.current_hand_id);
 
-      // AUTO-START LOGIC: If phase is 'waiting' and we have 2+ active players, start hand after 3 seconds
+      // AUTO-START LOGIC: If phase is 'waiting' and we have 2+ active players, start IMMEDIATELY
       if (newPhase === 'waiting' && playersCount >= 2 && !tableData.current_hand_id) {
-        console.log('🎮 AUTO-START CONDITIONS MET:', { 
+        console.log('🎮 AUTO-START: Starting hand immediately', { 
           phase: newPhase, 
           players: playersCount, 
           hasHand: !!tableData.current_hand_id,
@@ -429,43 +429,8 @@ export function usePokerTable(options: UsePokerTableOptions | null) {
           clearInterval(countdownIntervalRef.current);
         }
         
-        // Start countdown from 3
-        let countdown = 3;
-        
-        // Update state immediately with countdown
-        setTableState(prev => prev ? {
-          ...prev,
-          gameStartingCountdown: countdown,
-          playersNeeded: 0
-        } : null);
-        
-        // Tick countdown every second
-        countdownIntervalRef.current = setInterval(() => {
-          countdown -= 1;
-          if (countdown > 0) {
-            setTableState(prev => prev ? {
-              ...prev,
-              gameStartingCountdown: countdown
-            } : null);
-          } else {
-            // Clear interval when done
-            if (countdownIntervalRef.current) {
-              clearInterval(countdownIntervalRef.current);
-              countdownIntervalRef.current = null;
-            }
-          }
-        }, 1000);
-        
-        // Auto-start after 3 seconds
-        autoStartTimeoutRef.current = setTimeout(() => {
-          console.log('⏰ Auto-start timeout triggered, calling autoStartViaEngine...');
-          // Clear countdown
-          setTableState(prev => prev ? {
-            ...prev,
-            gameStartingCountdown: 0
-          } : null);
-          autoStartViaEngine();
-        }, 3000);
+        // Start immediately - no countdown delay
+        autoStartViaEngine();
       } else {
         // Clear countdown if conditions not met
         if (countdownIntervalRef.current) {
