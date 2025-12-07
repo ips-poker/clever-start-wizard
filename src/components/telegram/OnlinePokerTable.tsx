@@ -26,6 +26,8 @@ import { MemoizedPokerCard } from '@/components/poker/MemoizedPokerCard';
 import { MemoizedPlayerSeat } from '@/components/poker/MemoizedPlayerSeat';
 import { PPPokerTable } from '@/components/poker/PPPokerTable';
 import { PPPokerActionButtons } from '@/components/poker/PPPokerActionButtons';
+import { PokerErrorBoundary } from '@/components/poker/PokerErrorBoundary';
+import { ConnectionStatusBanner } from '@/components/poker/ConnectionStatusBanner';
 
 interface OnlinePokerTableProps {
   tableId: string;
@@ -99,7 +101,13 @@ export function OnlinePokerTable({
     hasPostedStraddle,
     configureTable,
     refreshPlayers,
-    checkTimeout
+    checkTimeout,
+    // New reconnect features
+    connectionStatus,
+    retryCount,
+    nextRetryIn,
+    reconnectNow,
+    cancelReconnect,
   } = pokerTable;
 
   const players = tableState?.players || [];
@@ -343,7 +351,18 @@ export function OnlinePokerTable({
   }
 
   return (
+    <PokerErrorBoundary onReset={() => reconnectNow()} onGoHome={onLeave}>
     <div className="fixed inset-0 bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 flex flex-col overflow-hidden">
+      {/* Connection Status Banner */}
+      <ConnectionStatusBanner
+        status={connectionStatus}
+        retryCount={retryCount}
+        maxRetries={5}
+        nextRetryIn={nextRetryIn}
+        lastError={error}
+        onReconnectNow={reconnectNow}
+        onCancel={cancelReconnect}
+      />
       {/* Header */}
       <div className="flex items-center justify-between px-3 py-2 bg-slate-900/90 z-20 border-b border-white/5">
         <Button variant="ghost" size="icon" onClick={handleLeave} className="h-9 w-9 text-white/70 hover:text-white">
@@ -766,5 +785,6 @@ export function OnlinePokerTable({
         )}
       </div>
     </div>
+    </PokerErrorBoundary>
   );
 }

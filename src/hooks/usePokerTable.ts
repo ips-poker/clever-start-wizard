@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-
+import { useReconnectManager, ConnectionStatus } from '@/hooks/useReconnectManager';
 export interface Spectator {
   id: string;
   name?: string;
@@ -1033,6 +1033,15 @@ export function usePokerTable(options: UsePokerTableOptions | null) {
     isConnected,
     isConnecting,
     error,
+    
+    // Reconnect state (from reconnect manager, will be added later if needed)
+    connectionStatus: isConnected ? 'connected' as ConnectionStatus : 
+                      isConnecting ? 'connecting' as ConnectionStatus : 
+                      error ? 'failed' as ConnectionStatus : 'disconnected' as ConnectionStatus,
+    retryCount: 0,
+    nextRetryIn: null as number | null,
+    reconnectNow: connect,
+    cancelReconnect: disconnect,
     
     // Table state
     tableState,
