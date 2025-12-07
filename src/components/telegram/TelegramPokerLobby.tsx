@@ -16,7 +16,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { GlitchText } from '@/components/ui/glitch-text';
 import { motion, AnimatePresence } from 'framer-motion';
-import { TelegramProPokerTable } from './TelegramProPokerTable';
+import { TelegramStablePokerTable } from './TelegramStablePokerTable';
 import { OnlinePokerTable as OnlinePokerTableComponent } from './OnlinePokerTable';
 
 interface OnlinePokerTable {
@@ -369,10 +369,10 @@ const [activeTableId, setActiveTableId] = useState<string | null>(null);
     );
   }
 
-  // Если открыт демо-стол
+  // Если открыт демо-стол - используем улучшенный стабильный компонент
   if (showDemoTable) {
     return (
-      <TelegramProPokerTable
+      <TelegramStablePokerTable
         playerId={playerId}
         playerName={playerName}
         playerAvatar={playerAvatar}
