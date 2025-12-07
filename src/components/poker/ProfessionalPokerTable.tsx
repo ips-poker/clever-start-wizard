@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
-import { PokerPlayer } from '@/hooks/usePokerTable';
+import { PokerPlayer, SidePotsDisplay as SidePotsData } from '@/hooks/usePokerTable';
 import { PokerCard, CardHand, CommunityCards } from './PokerCard';
+import { SidePotsDisplay } from './SidePotsDisplay';
 import { Timer, Crown, Coins, User } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
@@ -17,6 +18,7 @@ interface ProfessionalPokerTableProps {
     smallBlindSeat: number;
     bigBlindSeat: number;
     players: PokerPlayer[];
+    sidePots?: SidePotsData;
   } | null;
   myCards: string[];
   playerId: string;
@@ -95,29 +97,10 @@ export function ProfessionalPokerTable({
         {/* Center area with pot and community cards */}
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
           {/* Pot display */}
-          <AnimatePresence>
-            {tableState && tableState.pot > 0 && (
-              <motion.div
-                initial={{ scale: 0, y: -20 }}
-                animate={{ scale: 1, y: 0 }}
-                exit={{ scale: 0, y: -20 }}
-                className="flex items-center gap-2 px-4 py-2 rounded-full bg-black/40 backdrop-blur-sm border border-amber-500/30"
-              >
-                <div className="flex -space-x-1">
-                  {[0, 1, 2].map(i => (
-                    <div
-                      key={i}
-                      className="w-5 h-5 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 border-2 border-amber-300 shadow-lg"
-                      style={{ zIndex: 3 - i }}
-                    />
-                  ))}
-                </div>
-                <span className="font-bold text-amber-400 text-lg drop-shadow-lg">
-                  {tableState.pot.toLocaleString()}
-                </span>
-              </motion.div>
-            )}
-          </AnimatePresence>
+          {/* Pot display with side pots */}
+          {tableState && tableState.pot > 0 && (
+            <SidePotsDisplay sidePots={tableState.sidePots} />
+          )}
 
           {/* Community cards */}
           <div className="flex gap-2">

@@ -134,6 +134,99 @@ function evaluateHand(cardStrings: string[]): HandEvaluation {
 }
 
 // ==========================================
+// SIDE POT TYPES AND CALCULATOR
+// ==========================================
+
+interface SidePot {
+  amount: number;
+  eligiblePlayers: string[];
+  contributors: string[];
+}
+
+interface PlayerContribution {
+  playerId: string;
+  totalBet: number;
+  isFolded: boolean;
+  isAllIn: boolean;
+}
+
+function calculateSidePots(contributions: PlayerContribution[]): { mainPot: SidePot; sidePots: SidePot[]; totalPot: number } {
+  if (contributions.length === 0) {
+    return {
+      mainPot: { amount: 0, eligiblePlayers: [], contributors: [] },
+      sidePots: [],
+      totalPot: 0
+    };
+  }
+
+  const sortedContributions = [...contributions]
+    .filter(c => c.totalBet > 0)
+    .sort((a, b) => a.totalBet - b.totalBet);
+
+  if (sortedContributions.length === 0) {
+    return {
+      mainPot: { amount: 0, eligiblePlayers: [], contributors: [] },
+      sidePots: [],
+      totalPot: 0
+    };
+  }
+
+  const pots: SidePot[] = [];
+  let previousLevel = 0;
+
+  const allInLevels = sortedContributions
+    .filter(c => c.isAllIn)
+    .map(c => c.totalBet);
+  
+  const maxBet = Math.max(...sortedContributions.map(c => c.totalBet));
+  const uniqueLevels = [...new Set([...allInLevels, maxBet])].sort((a, b) => a - b);
+
+  for (const level of uniqueLevels) {
+    const increment = level - previousLevel;
+    if (increment <= 0) continue;
+
+    let potAmount = 0;
+    const contributors: string[] = [];
+
+    for (const contribution of sortedContributions) {
+      if (contribution.totalBet >= previousLevel + 1) {
+        const contributionAtLevel = Math.min(contribution.totalBet - previousLevel, increment);
+        potAmount += contributionAtLevel;
+        contributors.push(contribution.playerId);
+      }
+    }
+
+    const eligiblePlayers = sortedContributions
+      .filter(c => !c.isFolded && c.totalBet >= level)
+      .map(c => c.playerId);
+
+    // Add all-in players at their level
+    for (const contribution of sortedContributions) {
+      if (contribution.isAllIn && contribution.totalBet === level && !contribution.isFolded) {
+        if (!eligiblePlayers.includes(contribution.playerId)) {
+          eligiblePlayers.push(contribution.playerId);
+        }
+      }
+    }
+
+    if (potAmount > 0) {
+      pots.push({ amount: potAmount, eligiblePlayers, contributors });
+    }
+
+    previousLevel = level;
+  }
+
+  const [mainPot, ...sidePots] = pots;
+  const totalPot = pots.reduce((sum, pot) => sum + pot.amount, 0);
+
+  return {
+    mainPot: mainPot || { amount: 0, eligiblePlayers: [], contributors: [] },
+    sidePots,
+    totalPot
+  };
+}
+
+// ==========================================
 // TABLE STATE TYPES
 // ==========================================
 
@@ -150,6 +243,8 @@ interface TableState {
   smallBlindSeat: number;
   bigBlindSeat: number;
   deck: string[];
+  sidePots: SidePot[];
+  totalBetsPerPlayer: Map<string, number>; // Track total bets across all rounds
 }
 
 interface PlayerState {
@@ -159,7 +254,8 @@ interface PlayerState {
   seatNumber: number;
   stack: number;
   holeCards: string[];
-  betAmount: number;
+  betAmount: number; // Current round bet
+  totalBetInHand: number; // Total bet across all rounds
   isFolded: boolean;
   isAllIn: boolean;
   isActive: boolean;
@@ -313,6 +409,7 @@ async function handleJoinTable(socket: WebSocket, message: WSMessage, supabase: 
     stack: data?.buyIn || 10000,
     holeCards: [],
     betAmount: 0,
+    totalBetInHand: 0,
     isFolded: false,
     isAllIn: false,
     isActive: true
@@ -426,13 +523,16 @@ async function handlePlayerAction(socket: WebSocket, message: WSMessage, supabas
       const callAmount = tableState.currentBet - player.betAmount;
       if (callAmount > player.stack) {
         // All-in
-        player.betAmount += player.stack;
-        tableState.pot += player.stack;
+        const allInCallAmount = player.stack;
+        player.betAmount += allInCallAmount;
+        player.totalBetInHand += allInCallAmount;
+        tableState.pot += allInCallAmount;
         player.stack = 0;
         player.isAllIn = true;
         actionResult.action = "all-in";
-        actionResult.amount = callAmount;
+        actionResult.amount = allInCallAmount;
       } else {
+        player.totalBetInHand += callAmount;
         player.betAmount = tableState.currentBet;
         player.stack -= callAmount;
         tableState.pot += callAmount;
@@ -453,6 +553,7 @@ async function handlePlayerAction(socket: WebSocket, message: WSMessage, supabas
       
       player.stack -= toAdd;
       player.betAmount = totalBet;
+      player.totalBetInHand += toAdd;
       tableState.pot += toAdd;
       tableState.currentBet = totalBet;
       actionResult.action = "raise";
@@ -462,6 +563,7 @@ async function handlePlayerAction(socket: WebSocket, message: WSMessage, supabas
     case "all-in":
       const allInAmount = player.stack;
       player.betAmount += allInAmount;
+      player.totalBetInHand += allInAmount;
       tableState.pot += allInAmount;
       player.stack = 0;
       player.isAllIn = true;
@@ -546,9 +648,14 @@ async function handleStartHand(socket: WebSocket, message: WSMessage, supabase: 
   tableState.players.forEach(player => {
     player.holeCards = [];
     player.betAmount = 0;
+    player.totalBetInHand = 0;
     player.isFolded = false;
     player.isAllIn = false;
   });
+  
+  // Reset side pots
+  tableState.sidePots = [];
+  tableState.totalBetsPerPlayer = new Map();
 
   // Move dealer button
   tableState.dealerSeat = getNextActiveSeat(tableState, tableState.dealerSeat);
@@ -563,16 +670,20 @@ async function handleStartHand(socket: WebSocket, message: WSMessage, supabase: 
   const bbPlayer = getPlayerBySeat(tableState, tableState.bigBlindSeat);
 
   if (sbPlayer) {
-    sbPlayer.betAmount = Math.min(smallBlind, sbPlayer.stack);
-    sbPlayer.stack -= sbPlayer.betAmount;
-    tableState.pot += sbPlayer.betAmount;
+    const sbAmount = Math.min(smallBlind, sbPlayer.stack);
+    sbPlayer.betAmount = sbAmount;
+    sbPlayer.totalBetInHand = sbAmount;
+    sbPlayer.stack -= sbAmount;
+    tableState.pot += sbAmount;
   }
 
   if (bbPlayer) {
-    bbPlayer.betAmount = Math.min(bigBlind, bbPlayer.stack);
-    bbPlayer.stack -= bbPlayer.betAmount;
-    tableState.pot += bbPlayer.betAmount;
-    tableState.currentBet = bbPlayer.betAmount;
+    const bbAmount = Math.min(bigBlind, bbPlayer.stack);
+    bbPlayer.betAmount = bbAmount;
+    bbPlayer.totalBetInHand = bbAmount;
+    bbPlayer.stack -= bbAmount;
+    tableState.pot += bbAmount;
+    tableState.currentBet = bbAmount;
   }
 
   // Deal hole cards
@@ -680,7 +791,9 @@ function createInitialTableState(tableId: string): TableState {
     dealerSeat: 0,
     smallBlindSeat: 0,
     bigBlindSeat: 0,
-    deck: []
+    deck: [],
+    sidePots: [],
+    totalBetsPerPlayer: new Map()
   };
 }
 
@@ -817,10 +930,10 @@ async function advancePhase(tableState: TableState, supabase: any) {
 async function handleShowdown(tableState: TableState, supabase: any) {
   tableState.phase = 'showdown';
   
-  const activePlayers = Array.from(tableState.players.entries())
-    .filter(([_, p]) => !p.isFolded);
+  const allPlayers = Array.from(tableState.players.entries());
+  const activePlayers = allPlayers.filter(([_, p]) => !p.isFolded);
 
-  // If only one player left, they win by default
+  // If only one player left, they win by default (all pots)
   if (activePlayers.length === 1) {
     const [winnerId, winnerState] = activePlayers[0];
     winnerState.stack += tableState.pot;
@@ -829,7 +942,19 @@ async function handleShowdown(tableState: TableState, supabase: any) {
     return;
   }
 
-  // Evaluate all hands using the poker engine
+  // Build contributions for side pot calculation
+  const contributions: PlayerContribution[] = allPlayers.map(([playerId, player]) => ({
+    playerId,
+    totalBet: player.totalBetInHand || player.betAmount,
+    isFolded: player.isFolded,
+    isAllIn: player.isAllIn
+  }));
+
+  // Calculate side pots
+  const potResult = calculateSidePots(contributions);
+  console.log(`💰 Pot calculation: Main=${potResult.mainPot.amount}, SidePots=${potResult.sidePots.map(p => p.amount).join(',')}`);
+
+  // Evaluate all active hands
   const playerEvaluations: { oderId: string; state: PlayerState; eval: HandEvaluation }[] = [];
   
   for (const [oderId, playerState] of activePlayers) {
@@ -839,29 +964,52 @@ async function handleShowdown(tableState: TableState, supabase: any) {
     console.log(`🃏 Player ${oderId}: ${evaluation.name} (value: ${evaluation.value})`);
   }
 
-  // Find the best hand value
-  const maxValue = Math.max(...playerEvaluations.map(p => p.eval.value));
-  
-  // Get all winners (can be multiple in case of split pot)
-  const winners = playerEvaluations.filter(p => p.eval.value === maxValue);
-  
-  // Split pot among winners
-  const potPerWinner = Math.floor(tableState.pot / winners.length);
-  const remainder = tableState.pot % winners.length;
-  
-  const winnerResults: { oderId: string; amount: number; handName: string }[] = [];
-  
-  winners.forEach((winner, index) => {
-    const amount = potPerWinner + (index === 0 ? remainder : 0);
-    winner.state.stack += amount;
-    winnerResults.push({ 
-      oderId: winner.oderId, 
-      amount, 
-      handName: winner.eval.name 
+  // Distribute each pot to winners
+  const winnerResults: { oderId: string; amount: number; handName: string; potType: string }[] = [];
+  const allPots = [potResult.mainPot, ...potResult.sidePots];
+
+  allPots.forEach((pot, potIndex) => {
+    if (pot.amount <= 0) return;
+
+    // Find eligible players for this pot
+    const eligibleEvaluations = playerEvaluations.filter(p => pot.eligiblePlayers.includes(p.oderId));
+    
+    if (eligibleEvaluations.length === 0) {
+      console.log(`⚠️ No eligible players for pot ${potIndex}, returning to contributors`);
+      return;
+    }
+
+    // Find best hand among eligible players
+    const maxValue = Math.max(...eligibleEvaluations.map(p => p.eval.value));
+    const potWinners = eligibleEvaluations.filter(p => p.eval.value === maxValue);
+
+    // Split pot among winners
+    const amountPerWinner = Math.floor(pot.amount / potWinners.length);
+    const remainder = pot.amount % potWinners.length;
+
+    potWinners.forEach((winner, idx) => {
+      const amount = amountPerWinner + (idx === 0 ? remainder : 0);
+      winner.state.stack += amount;
+      
+      // Check if already in results (can win multiple pots)
+      const existing = winnerResults.find(w => w.oderId === winner.oderId);
+      if (existing) {
+        existing.amount += amount;
+        existing.potType += potIndex === 0 ? '' : `, Side Pot ${potIndex}`;
+      } else {
+        winnerResults.push({
+          oderId: winner.oderId,
+          amount,
+          handName: winner.eval.name,
+          potType: potIndex === 0 ? 'Main Pot' : `Side Pot ${potIndex}`
+        });
+      }
     });
+
+    console.log(`🏆 Pot ${potIndex} (${pot.amount}): ${potWinners.map(w => w.oderId).join(', ')}`);
   });
 
-  console.log(`🏆 Winners: ${winnerResults.map(w => `${w.oderId}: ${w.handName}`).join(', ')}`);
+  console.log(`🏆 Final winners: ${winnerResults.map(w => `${w.oderId}: ${w.amount} (${w.handName})`).join(', ')}`);
 
   await finalizeHand(tableState, supabase, winnerResults, activePlayers);
 }
@@ -947,6 +1095,7 @@ function serializeTableState(tableState: TableState, forPlayerId?: string): any 
       seatNumber: player.seatNumber,
       stack: player.stack,
       betAmount: player.betAmount,
+      totalBetInHand: player.totalBetInHand,
       isFolded: player.isFolded,
       isAllIn: player.isAllIn,
       isActive: player.isActive,
@@ -955,6 +1104,16 @@ function serializeTableState(tableState: TableState, forPlayerId?: string): any 
         (tableState.phase === 'showdown' && !player.isFolded ? player.holeCards : [])
     });
   });
+
+  // Calculate current side pots for display
+  const contributions: PlayerContribution[] = Array.from(tableState.players.entries()).map(([playerId, player]) => ({
+    playerId,
+    totalBet: player.totalBetInHand || 0,
+    isFolded: player.isFolded,
+    isAllIn: player.isAllIn
+  }));
+  
+  const potResult = calculateSidePots(contributions);
 
   return {
     tableId: tableState.tableId,
@@ -966,7 +1125,12 @@ function serializeTableState(tableState: TableState, forPlayerId?: string): any 
     dealerSeat: tableState.dealerSeat,
     smallBlindSeat: tableState.smallBlindSeat,
     bigBlindSeat: tableState.bigBlindSeat,
-    players
+    players,
+    sidePots: {
+      mainPot: potResult.mainPot,
+      sidePots: potResult.sidePots,
+      totalPot: potResult.totalPot
+    }
   };
 }
 
