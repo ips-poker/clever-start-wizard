@@ -180,13 +180,30 @@ export function TelegramPokerLobby({
       return;
     }
 
-    if (playerBalance < table.min_buy_in) {
-      toast.error(`Недостаточно фишек. Минимум: ${table.min_buy_in.toLocaleString()}`);
-      return;
-    }
-
     setJoiningId(table.id);
     try {
+      // Проверяем, не сидит ли игрок уже за этим столом
+      const { data: existingPlayer } = await supabase
+        .from('poker_table_players')
+        .select('id, seat_number, stack')
+        .eq('table_id', table.id)
+        .eq('player_id', playerId)
+        .eq('status', 'active')
+        .maybeSingle();
+
+      // Если игрок уже за столом - просто открываем стол
+      if (existingPlayer) {
+        setActiveTableId(table.id);
+        onJoinTable?.(table.id, existingPlayer.stack);
+        return;
+      }
+
+      // Проверяем баланс только если нужно садиться за стол
+      if (playerBalance < table.min_buy_in) {
+        toast.error(`Недостаточно фишек. Минимум: ${table.min_buy_in.toLocaleString()}`);
+        return;
+      }
+
       // Находим свободное место
       const { data: existingPlayers } = await supabase
         .from('poker_table_players')
