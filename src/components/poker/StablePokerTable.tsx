@@ -11,9 +11,11 @@ import {
   RANK_NAMES
 } from '@/utils/pokerEngine';
 import { cn } from '@/lib/utils';
+import { usePokerSounds } from '@/hooks/usePokerSounds';
 
 // Import stable components
 import { StablePokerCard, StableChipStack, StablePlayerSeat, StableActionPanel } from './stable';
+import { PhaseTransition, ActionBubble } from './animations';
 
 // Types
 interface Player {
@@ -88,27 +90,53 @@ const TableFelt = memo(function TableFelt() {
   );
 });
 
-// Memoized community cards display
+// Memoized community cards display with staggered animation
 const CommunityCards = memo(function CommunityCards({
   cards,
-  winningCards = []
+  winningCards = [],
+  phase
 }: {
   cards: string[];
   winningCards?: string[];
+  phase: GamePhase;
 }) {
+  // Determine which cards to show based on phase
+  const visibleCount = useMemo(() => {
+    switch (phase) {
+      case 'preflop': return 0;
+      case 'flop': return 3;
+      case 'turn': return 4;
+      case 'river':
+      case 'showdown': return 5;
+      default: return 0;
+    }
+  }, [phase]);
+
   return (
     <div className="flex items-center justify-center gap-1.5">
       {[0, 1, 2, 3, 4].map((idx) => {
         const card = cards[idx];
         const isWinning = card && winningCards.includes(card);
+        const shouldShow = idx < visibleCount && card;
         
         return (
-          <div key={idx} className="relative">
-            {card ? (
+          <motion.div 
+            key={idx} 
+            className="relative"
+            initial={shouldShow ? { scale: 0, rotateY: 180 } : { scale: 1 }}
+            animate={shouldShow ? { scale: 1, rotateY: 0 } : { scale: 1 }}
+            transition={{ 
+              type: "spring", 
+              stiffness: 300, 
+              damping: 20,
+              delay: (idx % 3) * 0.1 // Stagger for flop cards
+            }}
+          >
+            {shouldShow ? (
               <StablePokerCard
                 card={card}
                 size="md"
-                dealDelay={idx}
+                dealDelay={0}
                 isWinning={isWinning}
                 isHighlighted={isWinning}
               />
@@ -118,14 +146,15 @@ const CommunityCards = memo(function CommunityCards({
                 style={{ boxShadow: 'inset 0 2px 6px rgba(0,0,0,0.3)' }}
               />
             )}
-          </div>
+          </motion.div>
         );
       })}
     </div>
   );
 }, (prev, next) => 
   JSON.stringify(prev.cards) === JSON.stringify(next.cards) &&
-  JSON.stringify(prev.winningCards) === JSON.stringify(next.winningCards)
+  JSON.stringify(prev.winningCards) === JSON.stringify(next.winningCards) &&
+  prev.phase === next.phase
 );
 
 // Header component
@@ -269,6 +298,8 @@ export function StablePokerTable({
   const [isMyTurn, setIsMyTurn] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState(30);
   const [soundEnabled, setSoundEnabled] = useState(true);
+  const [showPhaseTransition, setShowPhaseTransition] = useState(false);
+  const [actionBubbles, setActionBubbles] = useState<Array<{id: string; action: string; amount?: number; x: number; y: number}>>([]);
   
   // Winner state
   const [winner, setWinner] = useState<{ name: string; id: string; amount: number; handRank: string } | null>(null);
@@ -276,6 +307,14 @@ export function StablePokerTable({
   // Refs
   const deckRef = useRef<PokerEngineCard[]>([]);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const prevPhaseRef = useRef<GamePhase>('waiting');
+
+  // Sounds
+  const sounds = usePokerSounds();
+  
+  useEffect(() => {
+    sounds.setEnabled(soundEnabled);
+  }, [soundEnabled, sounds]);
 
   // Hero player
   const heroPlayer = useMemo(() => players.find(p => p.id === playerId), [players, playerId]);
@@ -315,6 +354,45 @@ export function StablePokerTable({
     };
   }, [isMyTurn, gamePhase]);
 
+  // Show phase transition effect
+  const triggerPhaseTransition = useCallback((newPhase: GamePhase) => {
+    if (newPhase !== 'waiting' && newPhase !== prevPhaseRef.current) {
+      setShowPhaseTransition(true);
+      
+      // Play sound based on phase
+      if (newPhase === 'flop' || newPhase === 'turn' || newPhase === 'river') {
+        sounds.playDeal();
+      } else if (newPhase === 'showdown') {
+        sounds.playWin();
+      }
+      
+      setTimeout(() => setShowPhaseTransition(false), 1500);
+    }
+    prevPhaseRef.current = newPhase;
+  }, [sounds]);
+
+  // Show action bubble
+  const showActionBubble = useCallback((playerId: string, action: string, amount?: number) => {
+    const player = players.find(p => p.id === playerId);
+    if (!player) return;
+    
+    const pos = SEAT_POSITIONS[player.seatNumber];
+    const id = `action-${Date.now()}`;
+    
+    setActionBubbles(prev => [...prev, { 
+      id, 
+      action, 
+      amount, 
+      x: pos.x, 
+      y: pos.y - 8 
+    }]);
+    
+    // Remove after animation
+    setTimeout(() => {
+      setActionBubbles(prev => prev.filter(b => b.id !== id));
+    }, 2500);
+  }, [players]);
+
   // Start new hand
   const startNewHand = useCallback(() => {
     // Clear timer
@@ -330,7 +408,9 @@ export function StablePokerTable({
     const activePlayers = players.filter(p => p.stack > 0);
     if (activePlayers.length < 2) return;
 
-    // Deal cards
+    // Deal cards with sound
+    sounds.playDeal();
+    
     const { playerHands, remainingDeck } = dealToPlayers(deck, activePlayers.length, 2);
     deckRef.current = remainingDeck;
 
@@ -355,9 +435,11 @@ export function StablePokerTable({
     setCurrentBet(20);
     setMinRaise(40);
     setGamePhase('preflop');
+    triggerPhaseTransition('preflop');
     setIsMyTurn(true);
     setWinner(null);
-  }, [players, playerId]);
+    setActionBubbles([]);
+  }, [players, playerId, sounds, triggerPhaseTransition]);
 
   // Handle player action
   const handleAction = useCallback((action: ActionType, amount?: number) => {
@@ -372,26 +454,35 @@ export function StablePokerTable({
     let betAmount = 0;
     let newStack = myPlayer.stack;
 
+    // Play appropriate sound
     switch (action) {
       case 'fold':
+        sounds.playFold();
         break;
       case 'check':
+        sounds.playCheck();
         break;
       case 'call':
+        sounds.playCall();
         betAmount = Math.min(currentBet - (myPlayer.currentBet || 0), myPlayer.stack);
         newStack = myPlayer.stack - betAmount;
         break;
       case 'raise':
+        sounds.playRaise();
         betAmount = amount || minRaise;
         newStack = myPlayer.stack - betAmount;
         setCurrentBet(betAmount);
         setMinRaise(betAmount * 2);
         break;
       case 'allin':
+        sounds.playAllIn();
         betAmount = myPlayer.stack;
         newStack = 0;
         break;
     }
+
+    // Show action bubble
+    showActionBubble(playerId, action, betAmount > 0 ? betAmount : undefined);
 
     // Update pot
     setPot(p => p + betAmount);
@@ -416,7 +507,7 @@ export function StablePokerTable({
 
     // Simulate opponents after delay
     setTimeout(() => simulateOpponents(), 600);
-  }, [players, playerId, currentBet, minRaise]);
+  }, [players, playerId, currentBet, minRaise, sounds, showActionBubble]);
 
   // Simulate opponent actions
   const simulateOpponents = useCallback(() => {
@@ -472,27 +563,29 @@ export function StablePokerTable({
     setPlayers(prev => prev.map(p => ({ ...p, lastAction: undefined, currentBet: 0 })));
     setCurrentBet(0);
 
+    let newPhase: GamePhase = gamePhase;
+
     switch (gamePhase) {
       case 'preflop': {
         // Burn and deal flop
         const flop = dealCards(deck.slice(1), 3);
         deckRef.current = flop.remainingDeck;
         setCommunityCards(flop.dealtCards.map(cardToString));
-        setGamePhase('flop');
+        newPhase = 'flop';
         break;
       }
       case 'flop': {
         const turn = dealCards(deckRef.current.slice(1), 1);
         deckRef.current = turn.remainingDeck;
         setCommunityCards(prev => [...prev, cardToString(turn.dealtCards[0])]);
-        setGamePhase('turn');
+        newPhase = 'turn';
         break;
       }
       case 'turn': {
         const river = dealCards(deckRef.current.slice(1), 1);
         deckRef.current = river.remainingDeck;
         setCommunityCards(prev => [...prev, cardToString(river.dealtCards[0])]);
-        setGamePhase('river');
+        newPhase = 'river';
         break;
       }
       case 'river': {
@@ -500,6 +593,8 @@ export function StablePokerTable({
         const activePlayers = players.filter(p => !p.isFolded);
         if (activePlayers.length > 0) {
           const winnerPlayer = activePlayers[Math.floor(Math.random() * activePlayers.length)];
+          
+          sounds.playWin();
           
           setWinner({
             id: winnerPlayer.id,
@@ -515,13 +610,17 @@ export function StablePokerTable({
             ));
           }
         }
-        setGamePhase('showdown');
+        newPhase = 'showdown';
+        setGamePhase(newPhase);
+        triggerPhaseTransition(newPhase);
         return;
       }
     }
 
+    setGamePhase(newPhase);
+    triggerPhaseTransition(newPhase);
     setIsMyTurn(true);
-  }, [gamePhase, players, playerId, pot]);
+  }, [gamePhase, players, playerId, pot, sounds, triggerPhaseTransition]);
 
   // Close winner overlay
   const handleCloseWinner = useCallback(() => {
@@ -578,8 +677,26 @@ export function StablePokerTable({
 
           {/* Community cards */}
           <div className="absolute top-[42%] left-1/2 -translate-x-1/2 z-20">
-            <CommunityCards cards={communityCards} />
+            <CommunityCards cards={communityCards} phase={gamePhase} />
           </div>
+
+          {/* Phase transition overlay */}
+          <AnimatePresence>
+            {showPhaseTransition && gamePhase !== 'waiting' && (
+              <PhaseTransition phase={gamePhase} />
+            )}
+          </AnimatePresence>
+
+          {/* Action bubbles */}
+          {actionBubbles.map(bubble => (
+            <ActionBubble
+              key={bubble.id}
+              action={bubble.action}
+              amount={bubble.amount}
+              x={bubble.x}
+              y={bubble.y}
+            />
+          ))}
 
           {/* Player seats */}
           {SEAT_POSITIONS.map((pos, idx) => {
