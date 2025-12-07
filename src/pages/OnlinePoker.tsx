@@ -157,10 +157,8 @@ export default function OnlinePoker() {
   };
 
   const handleJoinTable = (tableId: string, buyIn: number) => {
-    if (buyIn > playerBalance) {
-      toast.error('Недостаточно фишек для входа');
-      return;
-    }
+    // Allow joining if balance check passed in PokerTableLobby
+    // The lobby already validates buy-in against player balance
     setActiveTable({ id: tableId, buyIn, isTournament: false });
   };
 

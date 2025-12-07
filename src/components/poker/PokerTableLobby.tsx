@@ -159,7 +159,8 @@ export function PokerTableLobby({ playerId, playerBalance = 0, onJoinTable }: Po
       return;
     }
 
-    if (buyInAmount > playerBalance) {
+    // Only check balance if it's loaded (> 0)
+    if (playerBalance > 0 && buyInAmount > playerBalance) {
       toast.error(`Недостаточно фишек! Ваш баланс: ${playerBalance}`);
       return;
     }
@@ -369,9 +370,9 @@ export function PokerTableLobby({ playerId, playerBalance = 0, onJoinTable }: Po
               <Button 
                 onClick={handleConfirmJoin} 
                 className="w-full"
-                disabled={buyInAmount > playerBalance}
+                disabled={buyInAmount > playerBalance && playerBalance > 0}
               >
-                {buyInAmount > playerBalance ? 'Недостаточно фишек' : 'Подтвердить'}
+                {playerBalance === 0 ? 'Загрузка баланса...' : buyInAmount > playerBalance ? 'Недостаточно фишек' : 'Подтвердить'}
               </Button>
             </div>
           )}
