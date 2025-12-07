@@ -79,6 +79,10 @@ export interface TableState {
   chatEnabled?: boolean;
   chatSlowMode?: boolean;
   chatSlowModeInterval?: number;
+  // Auto-start (PPPoker style)
+  gameStartingCountdown?: number;
+  nextHandCountdown?: number;
+  playersNeeded?: number;
 }
 
 interface UsePokerTableOptions {
@@ -566,6 +570,33 @@ export function usePokerTable(options: UsePokerTableOptions | null) {
           winners: data.combinedWinners || [],
           pot: tableState?.pot || 0
         });
+        break;
+
+      // ===== AUTO-START EVENTS (PPPoker Style) =====
+      case 'game_starting':
+        console.log(`🚀 Game starting in ${data.countdown}s with ${data.playerCount} players`);
+        setTableState(prev => prev ? {
+          ...prev,
+          phase: 'waiting',
+          gameStartingCountdown: data.countdown
+        } : null);
+        break;
+
+      case 'next_hand_countdown':
+        console.log(`⏱️ Next hand in ${data.countdown}s`);
+        setTableState(prev => prev ? {
+          ...prev,
+          nextHandCountdown: data.countdown
+        } : null);
+        break;
+
+      case 'waiting_for_players':
+        console.log(`⏸️ Waiting for ${data.playersNeeded} more player(s)`);
+        setTableState(prev => prev ? {
+          ...prev,
+          phase: 'waiting',
+          playersNeeded: data.playersNeeded
+        } : null);
         break;
 
       case 'error':

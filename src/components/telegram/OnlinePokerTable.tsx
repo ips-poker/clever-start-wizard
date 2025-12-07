@@ -650,6 +650,69 @@ export function OnlinePokerTable({
           />
         </div>
 
+        {/* Game Status Overlay - Waiting/Starting */}
+        {tableState?.phase === 'waiting' && (
+          <div className="absolute top-[25%] left-1/2 -translate-x-1/2 z-20">
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className="flex flex-col items-center"
+            >
+              {/* Waiting for players */}
+              {(tableState?.playersNeeded ?? 0) > 0 && (
+                <div className="bg-black/70 backdrop-blur-sm px-6 py-3 rounded-xl border border-amber-500/30">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Users className="w-5 h-5 text-amber-400" />
+                    <span className="text-white font-semibold">Ожидание игроков</span>
+                  </div>
+                  <p className="text-amber-400/80 text-sm text-center">
+                    Нужно ещё {tableState.playersNeeded} игрок(а)
+                  </p>
+                </div>
+              )}
+
+              {/* Game starting countdown */}
+              {(tableState?.gameStartingCountdown ?? 0) > 0 && (
+                <div className="bg-black/70 backdrop-blur-sm px-8 py-4 rounded-xl border border-green-500/50">
+                  <div className="flex flex-col items-center">
+                    <p className="text-green-400 text-sm font-semibold mb-1">Игра начинается</p>
+                    <motion.div
+                      key={tableState.gameStartingCountdown}
+                      initial={{ scale: 1.5, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      className="text-4xl font-bold text-white"
+                    >
+                      {tableState.gameStartingCountdown}
+                    </motion.div>
+                  </div>
+                </div>
+              )}
+
+              {/* Next hand countdown */}
+              {(tableState?.nextHandCountdown ?? 0) > 0 && (
+                <div className="bg-black/70 backdrop-blur-sm px-6 py-3 rounded-xl border border-blue-500/30">
+                  <div className="flex items-center gap-2">
+                    <Timer className="w-4 h-4 text-blue-400" />
+                    <span className="text-white text-sm">
+                      Следующая раздача через <span className="font-bold text-blue-400">{tableState.nextHandCountdown}s</span>
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {/* Ready to play - waiting for 2nd player */}
+              {players.length >= 2 && !tableState?.playersNeeded && !tableState?.gameStartingCountdown && !tableState?.nextHandCountdown && (
+                <div className="bg-black/70 backdrop-blur-sm px-6 py-3 rounded-xl border border-green-500/30">
+                  <div className="flex items-center gap-2">
+                    <Loader2 className="w-4 h-4 text-green-400 animate-spin" />
+                    <span className="text-green-400 text-sm font-medium">Запуск раздачи...</span>
+                  </div>
+                </div>
+              )}
+            </motion.div>
+          </div>
+        )}
+
         {/* Pot Display */}
         {(tableState?.pot || 0) > 0 && (
           <div className="absolute top-[28%] left-1/2 -translate-x-1/2 z-10">
