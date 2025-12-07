@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo, memo } from 'react';
 import { Button } from '@/components/ui/button';
 import { 
-  ArrowLeft, Volume2, VolumeX, MessageSquare, Users, Loader2, Clock
+  ArrowLeft, Volume2, VolumeX, MessageSquare, Users, Loader2, Clock, Sparkles, Settings2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -19,6 +19,10 @@ import { ConnectionStatusBanner } from './ConnectionStatusBanner';
 import { StablePokerCard } from './stable/StablePokerCard';
 import { StableChipStack } from './stable/StableChipStack';
 import { StableActionPanel } from './stable/StableActionPanel';
+
+// Chat and Emoji components
+import { TableChat } from './TableChat';
+import { TableReactions, QuickReactionButton, useTableReactions, ReactionType } from './TableEmojis';
 
 // Avatar resolver utility
 import { resolveAvatarUrl } from '@/utils/avatarResolver';
@@ -868,11 +872,16 @@ export function PPPokerProfessionalTable({
   maxSeats = 6
 }: PPPokerProfessionalTableProps) {
   const [soundEnabled, setSoundEnabled] = useState(true);
+  const [showChat, setShowChat] = useState(false);
   const [turnTimeRemaining, setTurnTimeRemaining] = useState<number | null>(null);
   const [playerActions, setPlayerActions] = useState<Record<string, { action: string; amount?: number }>>({});
+  const [mutedPlayers, setMutedPlayers] = useState<Set<string>>(new Set());
 
   const sounds = usePokerSounds();
   const SEAT_POSITIONS = maxSeats === 6 ? SEAT_POSITIONS_6MAX : SEAT_POSITIONS_9MAX;
+
+  // Emoji reactions hook
+  const { reactions, addReaction, removeReaction } = useTableReactions();
 
   // Poker table hook
   const pokerTable = usePokerTable({ tableId, playerId, buyIn });
@@ -890,6 +899,11 @@ export function PPPokerProfessionalTable({
     callAmount,
     lastAction,
     showdownResult,
+    chatMessages,
+    chatEnabled,
+    chatSlowMode,
+    chatSlowModeInterval,
+    bombPotEnabled,
     connect,
     disconnect,
     fold,
@@ -897,7 +911,10 @@ export function PPPokerProfessionalTable({
     call,
     raise,
     allIn,
-    clearShowdown
+    clearShowdown,
+    sendChat,
+    triggerBombPot,
+    mutePlayer
   } = pokerTable;
 
   // Reconnection manager
@@ -1062,14 +1079,40 @@ export function PPPokerProfessionalTable({
             {tableState?.smallBlindAmount}/{tableState?.bigBlindAmount}
           </div>
           
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setSoundEnabled(!soundEnabled)}
-            className="h-8 w-8 text-white/70 hover:text-white hover:bg-white/10"
-          >
-            {soundEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
-          </Button>
+          <div className="flex items-center gap-1">
+            {/* Emoji reactions button */}
+            <QuickReactionButton
+              onReact={(type: ReactionType) => {
+                if (mySeat && myPlayer) {
+                  addReaction(playerId, myPlayer.name, mySeat, type);
+                }
+              }}
+              disabled={!isConnected}
+            />
+            
+            {/* Chat toggle */}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setShowChat(!showChat)}
+              className={cn(
+                "h-8 w-8 text-white/70 hover:text-white hover:bg-white/10",
+                showChat && "text-orange-400"
+              )}
+            >
+              <MessageSquare className="h-4 w-4" />
+            </Button>
+            
+            {/* Sound toggle */}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setSoundEnabled(!soundEnabled)}
+              className="h-8 w-8 text-white/70 hover:text-white hover:bg-white/10"
+            >
+              {soundEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
+            </Button>
+          </div>
         </div>
 
         {/* Table area */}
@@ -1232,6 +1275,45 @@ export function PPPokerProfessionalTable({
             />
           )}
         </AnimatePresence>
+
+        {/* Emoji reactions display */}
+        <TableReactions
+          reactions={reactions}
+          seatPositions={SEAT_POSITIONS.map(p => ({ x: p.x, y: p.y }))}
+          onReactionComplete={removeReaction}
+        />
+
+        {/* Table Chat */}
+        {showChat && (
+          <TableChat
+            messages={chatMessages.map(m => ({
+              id: m.id || `${m.playerId}-${m.timestamp}`,
+              playerId: m.playerId,
+              playerName: m.playerName || 'Игрок',
+              message: m.text || m.message || '',
+              timestamp: m.timestamp,
+              type: m.type || 'chat',
+              isModerated: m.isModerated
+            }))}
+            onSendMessage={sendChat}
+            onMutePlayer={(pid, mute) => {
+              mutePlayer(pid, mute);
+              setMutedPlayers(prev => {
+                const next = new Set(prev);
+                if (mute) next.add(pid);
+                else next.delete(pid);
+                return next;
+              });
+            }}
+            onTriggerBombPot={bombPotEnabled ? triggerBombPot : undefined}
+            mutedPlayers={mutedPlayers}
+            isChatEnabled={chatEnabled}
+            isSlowMode={chatSlowMode}
+            slowModeInterval={chatSlowModeInterval}
+            currentPlayerId={playerId}
+            bombPotEnabled={bombPotEnabled}
+          />
+        )}
       </div>
     </PokerErrorBoundary>
   );
