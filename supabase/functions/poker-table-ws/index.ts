@@ -285,7 +285,7 @@ interface TableState {
   deck: string[];
   sidePots: SidePot[];
   totalBetsPerPlayer: Map<string, number>;
-  // New fields for proper betting
+  // Betting configuration
   smallBlindAmount: number;
   bigBlindAmount: number;
   minRaise: number; // Minimum raise amount
@@ -293,6 +293,8 @@ interface TableState {
   lastRaiseAmount: number; // Track last raise size
   actionTimer: number; // Seconds for player to act
   turnStartTime: number | null; // When current player's turn started
+  // BB option tracking
+  bbHasActed: boolean; // Has BB used their option (check/raise)?
 }
 
 interface PlayerState {
@@ -679,6 +681,11 @@ async function handlePlayerAction(socket: WebSocket, message: WSMessage, supabas
         return;
       }
       actionResult.action = "check";
+      // If BB checks, they've used their option
+      if (tableState.phase === 'preflop' && player.seatNumber === tableState.bigBlindSeat) {
+        tableState.bbHasActed = true;
+        console.log(`🎯 BB used option: check`);
+      }
       break;
 
     case "call":
@@ -856,6 +863,7 @@ async function handleStartHand(socket: WebSocket, message: WSMessage, supabase: 
   tableState.minRaise = bigBlind;
   tableState.lastRaiserSeat = null;
   tableState.lastRaiseAmount = bigBlind;
+  tableState.bbHasActed = false; // BB hasn't acted yet
 
   const sbPlayer = getPlayerBySeat(tableState, tableState.smallBlindSeat);
   const bbPlayer = getPlayerBySeat(tableState, tableState.bigBlindSeat);
@@ -997,7 +1005,8 @@ function createInitialTableState(tableId: string): TableState {
     lastRaiserSeat: null,
     lastRaiseAmount: 0,
     actionTimer: 30, // 30 seconds default
-    turnStartTime: null
+    turnStartTime: null,
+    bbHasActed: false // BB hasn't had their option yet
   };
 }
 
@@ -1098,15 +1107,24 @@ function moveToNextPlayer(tableState: TableState): { phaseComplete: boolean } {
   if (tableState.phase === 'preflop' && 
       tableState.lastRaiserSeat === null && 
       nextSeat === tableState.bigBlindSeat &&
-      allMatched) {
-    // BB hasn't had their option yet if this is their first action
+      allMatched &&
+      !tableState.bbHasActed) { // BB hasn't used their option yet
     const bbPlayer = getPlayerBySeat(tableState, tableState.bigBlindSeat);
-    if (bbPlayer && !bbPlayer.isAllIn) {
-      // Give BB option to raise
+    if (bbPlayer && !bbPlayer.isAllIn && !bbPlayer.isFolded) {
+      // Give BB option to check or raise
+      console.log(`🎯 BB Option: giving seat ${tableState.bigBlindSeat} the option to check/raise`);
       tableState.currentPlayerSeat = nextSeat;
       tableState.turnStartTime = Date.now();
       return { phaseComplete: false };
     }
+  }
+  
+  // If BB has acted (checked), and all matched, phase is complete
+  if (tableState.phase === 'preflop' && 
+      tableState.bbHasActed && 
+      tableState.lastRaiserSeat === null && 
+      allMatched) {
+    return { phaseComplete: true };
   }
   
   // If all matched and we've completed a round
