@@ -18,7 +18,6 @@ import { GlitchText } from '@/components/ui/glitch-text';
 import { motion, AnimatePresence } from 'framer-motion';
 import { TelegramStablePokerTable } from './TelegramStablePokerTable';
 import { OnlinePokerTable as OnlinePokerTableComponent } from './OnlinePokerTable';
-import { UltimatePPPokerTable } from '@/components/poker/UltimatePPPokerTable';
 
 interface OnlinePokerTable {
   id: string;
@@ -353,15 +352,15 @@ const [activeTableId, setActiveTableId] = useState<string | null>(null);
     onTableStateChange?.(isAtTable);
   }, [activeTableId, showDemoTable, onTableStateChange]);
 
-  // Если открыт активный стол (после присоединения) - используем улучшенный PPPoker стол
+  // Если открыт активный стол - используем стабильный компонент
   if (activeTableId && playerId) {
     return (
-      <UltimatePPPokerTable
+      <TelegramStablePokerTable
         tableId={activeTableId}
         playerId={playerId}
         playerName={playerName}
         playerAvatar={playerAvatar}
-        balance={activeBuyIn}
+        playerStack={activeBuyIn}
         onLeave={() => {
           setActiveTableId(null);
           setActiveBuyIn(10000);
@@ -370,15 +369,14 @@ const [activeTableId, setActiveTableId] = useState<string | null>(null);
     );
   }
 
-  // Если открыт демо-стол - используем улучшенный PPPoker стол
+  // Демо-стол
   if (showDemoTable) {
     return (
-      <UltimatePPPokerTable
-        tableId="demo"
-        playerId={playerId || 'demo-player'}
+      <TelegramStablePokerTable
+        playerId={playerId}
         playerName={playerName}
         playerAvatar={playerAvatar}
-        balance={playerBalance}
+        playerStack={playerBalance}
         onLeave={() => setShowDemoTable(false)}
       />
     );

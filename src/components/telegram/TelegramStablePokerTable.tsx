@@ -68,36 +68,48 @@ const SEAT_POSITIONS_6MAX = [
   { x: 88, y: 65 },  // Seat 5 - Right bottom
 ];
 
-// Memoized table felt component
+// Memoized table felt component - PPPoker premium style
 const TableFelt = memo(function TableFelt() {
   return (
     <div className="absolute inset-0">
-      {/* Outer wood frame */}
+      {/* Outer dark frame */}
       <div 
-        className="absolute inset-0 rounded-[45%]"
+        className="absolute inset-0 rounded-[42%]"
         style={{
-          background: 'linear-gradient(180deg, #3d2817 0%, #2a1a0f 50%, #3d2817 100%)',
-          boxShadow: '0 20px 60px rgba(0,0,0,0.8), inset 0 0 30px rgba(0,0,0,0.5)'
+          background: 'linear-gradient(180deg, #1a1a2e 0%, #0f0f1a 50%, #1a1a2e 100%)',
+          boxShadow: '0 25px 80px rgba(0,0,0,0.9), inset 0 0 40px rgba(0,0,0,0.6)'
         }}
       />
-      {/* Inner felt */}
+      {/* Wood rail */}
       <div 
-        className="absolute inset-[2.5%] rounded-[45%]"
+        className="absolute inset-[1%] rounded-[43%]"
         style={{
-          background: 'radial-gradient(ellipse at 50% 35%, #2d8a52 0%, #1e6b3d 45%, #145530 100%)',
-          boxShadow: 'inset 0 0 80px rgba(0,0,0,0.4), inset 0 4px 20px rgba(255,255,255,0.03)'
+          background: 'linear-gradient(180deg, #5d4037 0%, #3e2723 50%, #5d4037 100%)',
+          boxShadow: 'inset 0 2px 8px rgba(255,255,255,0.1), inset 0 -2px 8px rgba(0,0,0,0.4)'
+        }}
+      />
+      {/* Inner felt - rich green */}
+      <div 
+        className="absolute inset-[3%] rounded-[44%]"
+        style={{
+          background: 'radial-gradient(ellipse at 50% 30%, #2e7d4a 0%, #1b5e30 50%, #145028 100%)',
+          boxShadow: 'inset 0 0 100px rgba(0,0,0,0.5), inset 0 6px 30px rgba(255,255,255,0.03)'
         }}
       >
         {/* Felt texture overlay */}
         <div 
-          className="absolute inset-0 rounded-[45%] opacity-20"
+          className="absolute inset-0 rounded-[44%] opacity-25"
           style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`
+            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`
           }}
         />
-        {/* Decorative rings */}
-        <div className="absolute inset-[12%] rounded-[50%] border border-white/5" />
-        <div className="absolute inset-[22%] rounded-[50%] border border-white/3" />
+        {/* Decorative gold lines */}
+        <div className="absolute inset-[15%] rounded-[50%] border border-amber-600/10" />
+        <div className="absolute inset-[25%] rounded-[50%] border border-amber-600/5" />
+        {/* Center logo area */}
+        <div className="absolute inset-[38%] rounded-[50%] border border-white/5 flex items-center justify-center">
+          <div className="text-white/10 text-xs font-bold tracking-widest">POKER</div>
+        </div>
       </div>
     </div>
   );
@@ -237,7 +249,7 @@ const TableHeader = memo(function TableHeader({
   );
 });
 
-// Winner overlay
+// Winner overlay with celebration effect
 const WinnerOverlay = memo(function WinnerOverlay({
   winner,
   amount,
@@ -259,25 +271,56 @@ const WinnerOverlay = memo(function WinnerOverlay({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="absolute inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+      className="absolute inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md"
       onClick={onClose}
     >
       <motion.div
-        initial={{ scale: 0.8, y: 20 }}
-        animate={{ scale: 1, y: 0 }}
-        exit={{ scale: 0.8, y: 20 }}
-        className="text-center p-8 rounded-2xl bg-gradient-to-b from-amber-900/90 to-gray-900/90 border border-amber-500/50"
-        style={{ boxShadow: '0 0 60px rgba(251, 191, 36, 0.3)' }}
+        initial={{ scale: 0.5, y: 30, rotateX: -20 }}
+        animate={{ scale: 1, y: 0, rotateX: 0 }}
+        exit={{ scale: 0.8, y: 20, opacity: 0 }}
+        transition={{ type: 'spring', stiffness: 200, damping: 20 }}
+        className="text-center p-10 rounded-3xl bg-gradient-to-b from-amber-900/95 to-gray-900/95 border-2 border-amber-500/60"
+        style={{ 
+          boxShadow: '0 0 80px rgba(251, 191, 36, 0.4), inset 0 1px 0 rgba(255,255,255,0.2)'
+        }}
       >
-        <div className="text-amber-400 text-xl font-bold mb-2">
-          🏆 {winner.name} Wins!
-        </div>
-        <div className="text-white text-3xl font-black mb-2">
+        {/* Trophy icon */}
+        <motion.div
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          transition={{ delay: 0.2, type: 'spring', stiffness: 300 }}
+          className="text-5xl mb-3"
+        >
+          🏆
+        </motion.div>
+        
+        <motion.div 
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          className="text-amber-400 text-2xl font-bold mb-2"
+        >
+          {winner.name} Wins!
+        </motion.div>
+        
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.4 }}
+          className="text-white text-4xl font-black mb-3"
+          style={{ textShadow: '0 0 20px rgba(251, 191, 36, 0.5)' }}
+        >
           +{amount.toLocaleString()}
-        </div>
-        <div className="text-amber-300/80 text-sm">
+        </motion.div>
+        
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.5 }}
+          className="text-amber-300/80 text-sm font-medium"
+        >
           {handRank}
-        </div>
+        </motion.div>
       </motion.div>
     </motion.div>
   );
