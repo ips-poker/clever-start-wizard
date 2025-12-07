@@ -10,11 +10,11 @@ interface PokerCardProps {
   className?: string;
 }
 
-const SUITS: Record<string, { symbol: string; color: string }> = {
-  's': { symbol: '♠', color: 'text-foreground' },
-  'h': { symbol: '♥', color: 'text-red-500' },
-  'd': { symbol: '♦', color: 'text-red-500' },
-  'c': { symbol: '♣', color: 'text-foreground' },
+const SUITS: Record<string, { symbol: string; color: string; bgColor: string }> = {
+  's': { symbol: '♠', color: 'text-slate-900', bgColor: 'bg-white' },
+  'h': { symbol: '♥', color: 'text-red-600', bgColor: 'bg-white' },
+  'd': { symbol: '♦', color: 'text-red-600', bgColor: 'bg-white' },
+  'c': { symbol: '♣', color: 'text-slate-900', bgColor: 'bg-white' },
 };
 
 const RANKS: Record<string, string> = {
@@ -25,9 +25,15 @@ const RANKS: Record<string, string> = {
 
 export function PokerCard({ card, hidden = false, size = 'md', index = 0, className }: PokerCardProps) {
   const sizeClasses = {
-    sm: 'w-8 h-12 text-xs',
-    md: 'w-12 h-16 text-sm',
+    sm: 'w-10 h-14 text-sm',
+    md: 'w-14 h-20 text-base',
     lg: 'w-16 h-24 text-lg'
+  };
+
+  const innerSizes = {
+    sm: 'text-xs',
+    md: 'text-sm',
+    lg: 'text-base'
   };
 
   if (hidden || !card || card.length < 2) {
@@ -43,21 +49,34 @@ export function PokerCard({ card, hidden = false, size = 'md', index = 0, classN
         }}
         className={cn(
           sizeClasses[size],
-          'rounded-lg shadow-lg',
-          'bg-gradient-to-br from-blue-600 to-blue-800',
-          'border-2 border-blue-400/50',
+          'rounded-lg shadow-xl',
+          'bg-gradient-to-br from-blue-700 via-blue-800 to-blue-900',
+          'border-2 border-blue-500/50',
           'flex items-center justify-center',
+          'relative overflow-hidden',
           className
         )}
       >
-        <div className="w-3/4 h-3/4 rounded border border-blue-400/30 bg-blue-700/50" />
+        {/* Card back pattern */}
+        <div className="absolute inset-1 rounded border border-blue-400/30">
+          <div className="absolute inset-0 opacity-30" style={{
+            backgroundImage: `repeating-linear-gradient(
+              45deg,
+              transparent,
+              transparent 4px,
+              rgba(255,255,255,0.1) 4px,
+              rgba(255,255,255,0.1) 8px
+            )`
+          }} />
+        </div>
+        <div className="w-1/2 h-1/2 rounded-sm border border-blue-300/40 bg-blue-600/30" />
       </motion.div>
     );
   }
 
   const rank = card[0].toUpperCase();
   const suit = card[1].toLowerCase();
-  const suitInfo = SUITS[suit] || { symbol: '?', color: 'text-muted-foreground' };
+  const suitInfo = SUITS[suit] || { symbol: '?', color: 'text-muted-foreground', bgColor: 'bg-white' };
   const rankDisplay = RANKS[rank] || rank;
 
   return (
@@ -70,27 +89,51 @@ export function PokerCard({ card, hidden = false, size = 'md', index = 0, classN
         type: 'spring',
         stiffness: 150
       }}
-      whileHover={{ y: -4, scale: 1.05 }}
+      whileHover={{ y: -6, scale: 1.05 }}
       className={cn(
         sizeClasses[size],
-        'rounded-lg shadow-lg cursor-pointer',
-        'bg-gradient-to-br from-white to-gray-100',
-        'border border-gray-300',
-        'flex flex-col items-center justify-center gap-0.5',
+        'rounded-lg shadow-xl cursor-pointer',
+        'bg-gradient-to-br from-white via-gray-50 to-gray-100',
+        'border border-gray-200',
         'relative overflow-hidden',
         className
       )}
     >
-      {/* Rank and suit in corner */}
-      <span className={cn('font-bold leading-none', suitInfo.color)}>
-        {rankDisplay}
-      </span>
-      <span className={cn('leading-none', suitInfo.color, size === 'lg' ? 'text-2xl' : 'text-lg')}>
-        {suitInfo.symbol}
-      </span>
+      {/* Top left corner */}
+      <div className={cn(
+        'absolute top-1 left-1.5 flex flex-col items-center leading-none',
+        suitInfo.color,
+        innerSizes[size]
+      )}>
+        <span className="font-bold">{rankDisplay}</span>
+        <span className={size === 'lg' ? 'text-base' : 'text-sm'}>{suitInfo.symbol}</span>
+      </div>
+
+      {/* Center suit */}
+      <div className="absolute inset-0 flex items-center justify-center">
+        <span className={cn(
+          suitInfo.color,
+          size === 'lg' ? 'text-4xl' : size === 'md' ? 'text-3xl' : 'text-2xl'
+        )}>
+          {suitInfo.symbol}
+        </span>
+      </div>
+
+      {/* Bottom right corner (upside down) */}
+      <div className={cn(
+        'absolute bottom-1 right-1.5 flex flex-col items-center leading-none rotate-180',
+        suitInfo.color,
+        innerSizes[size]
+      )}>
+        <span className="font-bold">{rankDisplay}</span>
+        <span className={size === 'lg' ? 'text-base' : 'text-sm'}>{suitInfo.symbol}</span>
+      </div>
       
       {/* Decorative shine */}
-      <div className="absolute inset-0 bg-gradient-to-br from-white/50 via-transparent to-transparent pointer-events-none" />
+      <div className="absolute inset-0 bg-gradient-to-br from-white/60 via-transparent to-transparent pointer-events-none rounded-lg" />
+      
+      {/* Edge shadow */}
+      <div className="absolute inset-0 rounded-lg shadow-inner pointer-events-none" />
     </motion.div>
   );
 }
@@ -134,23 +177,29 @@ export function CommunityCards({ cards, size = 'lg', className }: CommunityCards
 
   const sizeClasses = {
     sm: 'w-10 h-14',
-    md: 'w-12 h-16',
+    md: 'w-14 h-20',
     lg: 'w-16 h-24'
   };
 
   return (
     <div className={cn('flex gap-2 justify-center', size === 'sm' && 'gap-1', className)}>
       {displayCards.map((card, index) => (
-        <div key={index} className="relative">
+        <motion.div 
+          key={index} 
+          className="relative"
+          initial={{ y: -20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: index * 0.1 }}
+        >
           {card ? (
             <PokerCard card={card} size={size} index={index} />
           ) : (
             <div className={cn(
               sizeClasses[size],
-              'rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20'
+              'rounded-lg border border-white/10 bg-black/20 backdrop-blur-sm'
             )} />
           )}
-        </div>
+        </motion.div>
       ))}
     </div>
   );
