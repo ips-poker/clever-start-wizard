@@ -561,6 +561,13 @@ export function usePokerTable(options: UsePokerTableOptions | null) {
   const timeBankRemaining = myPlayer?.timeBankRemaining || 0;
   const isDisconnected = myPlayer?.isDisconnected || false;
 
+  // Auto-connect when options are provided
+  useEffect(() => {
+    if (tableId && playerId && !isConnected && !isConnecting) {
+      connect();
+    }
+  }, [tableId, playerId, isConnected, isConnecting, connect]);
+
   // Auto-ping for connection health
   useEffect(() => {
     if (!isConnected) return;
