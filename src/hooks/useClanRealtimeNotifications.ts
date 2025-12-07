@@ -44,6 +44,19 @@ export function useClanRealtimeNotifications(playerId: string | null) {
         }));
         setNewInvitations(formattedData);
         setUnreadCount(formattedData.length);
+        
+        // Показываем toast при входе, если есть приглашения
+        const count = formattedData.length;
+        const clanNames = formattedData.map(inv => inv.clan?.name).filter(Boolean).join(', ');
+        toast.info(
+          count === 1 
+            ? `У вас есть приглашение в семью "${clanNames}"` 
+            : `У вас ${count} приглашений в семьи`,
+          {
+            description: 'Нажмите на колокольчик, чтобы ответить',
+            duration: 5000
+          }
+        );
       }
     };
 
