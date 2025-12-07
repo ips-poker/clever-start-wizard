@@ -378,10 +378,218 @@ interface WSMessage {
 // ==========================================
 const tableTimers: Map<string, number> = new Map(); // tableId -> timer ID
 const disconnectTimers: Map<string, number> = new Map(); // playerId -> disconnect timer ID
+const autoStartTimers: Map<string, number> = new Map(); // tableId -> auto-start timer ID
 const DEFAULT_TIME_BANK = 60; // 60 seconds time bank per player
 const DEFAULT_RECONNECT_GRACE = 30; // 30 seconds to reconnect
 const PING_INTERVAL = 5000; // 5 seconds ping interval
 const PING_TIMEOUT = 15000; // 15 seconds without ping = disconnected
+const AUTO_START_DELAY = 3000; // 3 seconds delay before auto-starting next hand
+
+// ===== AUTO-START HAND FUNCTION (PPPoker Style) =====
+async function autoStartHand(tableId: string, supabase: any) {
+  const tableState = tableStates.get(tableId);
+  if (!tableState) {
+    console.log(`❌ Cannot auto-start: table ${tableId} not found`);
+    return;
+  }
+
+  const activePlayers = Array.from(tableState.players.values()).filter(p => p.isActive && p.stack > 0);
+  
+  if (activePlayers.length < 2) {
+    console.log(`⏸️ Cannot auto-start: only ${activePlayers.length} active player(s)`);
+    tableState.phase = 'waiting';
+    broadcastToTable(tableId, {
+      type: "waiting_for_players",
+      playersNeeded: 2 - activePlayers.length,
+      state: serializeTableState(tableState)
+    });
+    return;
+  }
+
+  if (tableState.phase !== 'waiting') {
+    console.log(`⏸️ Cannot auto-start: game already in progress (phase: ${tableState.phase})`);
+    return;
+  }
+
+  console.log(`🚀 Auto-starting hand for table ${tableId} with ${activePlayers.length} players`);
+
+  // Create new deck and shuffle
+  tableState.deck = createShuffledDeck();
+  tableState.phase = 'preflop';
+  tableState.pot = 0;
+  tableState.currentBet = 0;
+  tableState.communityCards = [];
+  tableState.totalRakeCollected = 0;
+  tableState.handsPlayedCount++;
+
+  // Reset player states
+  tableState.players.forEach(player => {
+    player.holeCards = [];
+    player.betAmount = 0;
+    player.totalBetInHand = 0;
+    player.isFolded = false;
+    player.isAllIn = false;
+    player.timeBankUsed = 0; // Reset time bank usage for new hand
+  });
+
+  // Reset side pots
+  tableState.sidePots = [];
+  tableState.totalBetsPerPlayer = new Map();
+
+  // Move dealer button
+  tableState.dealerSeat = getNextActiveSeat(tableState, tableState.dealerSeat);
+
+  // Set blinds (handle heads-up)
+  const isHeadsUp = activePlayers.length === 2;
+  
+  if (isHeadsUp) {
+    tableState.smallBlindSeat = tableState.dealerSeat;
+    tableState.bigBlindSeat = getNextActiveSeat(tableState, tableState.dealerSeat);
+  } else {
+    tableState.smallBlindSeat = getNextActiveSeat(tableState, tableState.dealerSeat);
+    tableState.bigBlindSeat = getNextActiveSeat(tableState, tableState.smallBlindSeat);
+  }
+
+  // Post blinds
+  const smallBlind = tableState.smallBlindAmount;
+  const bigBlind = tableState.bigBlindAmount;
+  
+  tableState.minRaise = bigBlind;
+  tableState.lastRaiserSeat = null;
+  tableState.lastRaiseAmount = bigBlind;
+  tableState.bbHasActed = false;
+
+  const sbPlayer = getPlayerBySeat(tableState, tableState.smallBlindSeat);
+  const bbPlayer = getPlayerBySeat(tableState, tableState.bigBlindSeat);
+
+  if (sbPlayer && !sbPlayer.isAllIn) {
+    const sbAmount = Math.min(smallBlind, sbPlayer.stack);
+    sbPlayer.betAmount = sbAmount;
+    sbPlayer.totalBetInHand += sbAmount;
+    sbPlayer.stack -= sbAmount;
+    tableState.pot += sbAmount;
+    if (sbPlayer.stack === 0) sbPlayer.isAllIn = true;
+  }
+
+  if (bbPlayer && !bbPlayer.isAllIn) {
+    const bbAmount = Math.min(bigBlind, bbPlayer.stack);
+    bbPlayer.betAmount = bbAmount;
+    bbPlayer.totalBetInHand += bbAmount;
+    bbPlayer.stack -= bbAmount;
+    tableState.pot += bbAmount;
+    tableState.currentBet = bbAmount;
+    if (bbPlayer.stack === 0) bbPlayer.isAllIn = true;
+  }
+
+  // Deal hole cards
+  tableState.players.forEach(player => {
+    if (player.isActive && player.stack >= 0) {
+      player.holeCards = [tableState.deck.pop()!, tableState.deck.pop()!];
+    }
+  });
+
+  // Set first to act
+  const firstToActSeat = isHeadsUp ? tableState.smallBlindSeat : getNextActiveSeat(tableState, tableState.bigBlindSeat);
+  tableState.currentPlayerSeat = firstToActSeat;
+
+  // Create hand in database
+  try {
+    const { data: handData } = await supabase.from('poker_hands').insert({
+      table_id: tableId,
+      dealer_seat: tableState.dealerSeat,
+      small_blind_seat: tableState.smallBlindSeat,
+      big_blind_seat: tableState.bigBlindSeat,
+      pot: tableState.pot,
+      phase: 'preflop'
+    }).select().single();
+
+    if (handData) {
+      tableState.currentHandId = handData.id;
+      await supabase.from('poker_tables')
+        .update({ current_hand_id: handData.id, status: 'playing' })
+        .eq('id', tableId);
+
+      // Insert hand players
+      const handPlayers = Array.from(tableState.players.values())
+        .filter(p => p.isActive)
+        .map(p => ({
+          hand_id: handData.id,
+          player_id: p.oderId,
+          seat_number: p.seatNumber,
+          stack_start: p.stack + p.betAmount,
+          hole_cards: p.holeCards
+        }));
+
+      await supabase.from('poker_hand_players').insert(handPlayers);
+    }
+  } catch (error) {
+    console.error("DB error creating hand:", error);
+  }
+
+  console.log(`🎴 Hand #${tableState.handsPlayedCount} started! Dealer: ${tableState.dealerSeat}, SB: ${tableState.smallBlindSeat}, BB: ${tableState.bigBlindSeat}`);
+
+  // Broadcast new hand to all players
+  const connections = tableConnections.get(tableId);
+  if (connections) {
+    connections.forEach((socket, oderId) => {
+      const player = tableState.players.get(oderId);
+      sendToSocket(socket, {
+        type: "hand_started",
+        handNumber: tableState.handsPlayedCount,
+        dealerSeat: tableState.dealerSeat,
+        smallBlindSeat: tableState.smallBlindSeat,
+        bigBlindSeat: tableState.bigBlindSeat,
+        yourCards: player?.holeCards || [],
+        pot: tableState.pot,
+        currentBet: tableState.currentBet,
+        currentPlayerSeat: tableState.currentPlayerSeat,
+        state: serializeTableState(tableState, oderId)
+      });
+    });
+  }
+
+  // Start action timer
+  startActionTimer(tableId, supabase);
+}
+
+// Schedule next hand auto-start after current hand ends
+function scheduleNextHandStart(tableId: string, supabase: any) {
+  // Clear any existing auto-start timer
+  const existingTimer = autoStartTimers.get(tableId);
+  if (existingTimer) {
+    clearTimeout(existingTimer);
+  }
+
+  const tableState = tableStates.get(tableId);
+  if (!tableState) return;
+
+  const activePlayers = Array.from(tableState.players.values()).filter(p => p.isActive && p.stack > 0);
+  
+  if (activePlayers.length < 2) {
+    console.log(`⏸️ Not enough players for next hand, waiting...`);
+    tableState.phase = 'waiting';
+    broadcastToTable(tableId, {
+      type: "waiting_for_players",
+      playersNeeded: 2 - activePlayers.length,
+      state: serializeTableState(tableState)
+    });
+    return;
+  }
+
+  console.log(`⏱️ Scheduling next hand in ${AUTO_START_DELAY / 1000}s...`);
+  
+  broadcastToTable(tableId, {
+    type: "next_hand_countdown",
+    countdown: AUTO_START_DELAY / 1000,
+    playerCount: activePlayers.length
+  });
+
+  const timerId = setTimeout(async () => {
+    await autoStartHand(tableId, supabase);
+  }, AUTO_START_DELAY);
+
+  autoStartTimers.set(tableId, timerId);
+}
 
 function clearTableTimer(tableId: string) {
   const existingTimer = tableTimers.get(tableId);
@@ -1005,6 +1213,38 @@ async function handleJoinTable(socket: WebSocket, message: WSMessage, supabase: 
     seatNumber,
     stack: data?.buyIn || 10000
   }, playerId);
+
+  // ===== AUTO-START GAME (like PPPoker) =====
+  // Check if we have enough players and game is not running
+  const activePlayers = Array.from(tableState.players.values()).filter(p => p.isActive && p.stack > 0);
+  
+  if (tableState.phase === 'waiting' && activePlayers.length >= 2) {
+    console.log(`🎯 Auto-starting game with ${activePlayers.length} players...`);
+    
+    // Small delay before starting (like PPPoker countdown)
+    setTimeout(async () => {
+      const currentState = tableStates.get(tableId);
+      if (!currentState) return;
+      
+      // Re-check conditions
+      const currentActivePlayers = Array.from(currentState.players.values()).filter(p => p.isActive && p.stack > 0);
+      if (currentState.phase !== 'waiting' || currentActivePlayers.length < 2) {
+        return;
+      }
+      
+      // Broadcast countdown
+      broadcastToTable(tableId, {
+        type: "game_starting",
+        countdown: 3,
+        playerCount: currentActivePlayers.length
+      });
+      
+      // Start the hand after brief countdown
+      setTimeout(async () => {
+        await autoStartHand(tableId, supabase);
+      }, 3000);
+    }, 2000); // 2 second delay for players to settle
+  }
 }
 
 // Handle player leaving table
@@ -2646,6 +2886,10 @@ async function finalizeHand(
   tableState.currentHandId = null;
   tableState.pot = 0;
   tableState.communityCards = [];
+
+  // ===== AUTO-START NEXT HAND (PPPoker Style) =====
+  // Schedule next hand after short delay
+  scheduleNextHandStart(tableState.tableId, supabase);
 }
 
 function removePlayerFromTable(tableId: string, playerId: string) {
