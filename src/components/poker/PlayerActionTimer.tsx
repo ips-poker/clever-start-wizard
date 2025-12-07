@@ -1,58 +1,94 @@
-import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import React, { useState, useEffect, memo, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { Timer, AlertTriangle } from 'lucide-react';
 
 interface PlayerActionTimerProps {
-  isActive: boolean;
+  isActive?: boolean;
   duration?: number;
+  timeRemaining?: number | null;
   onTimeout?: () => void;
+  isMyTurn?: boolean;
+  showWarning?: boolean;
+  size?: 'sm' | 'md' | 'lg';
   className?: string;
 }
 
-export function PlayerActionTimer({ 
+export const PlayerActionTimer = memo(function PlayerActionTimer({ 
   isActive, 
-  duration = 30, 
+  duration = 15, 
+  timeRemaining: externalTimeRemaining,
   onTimeout,
+  isMyTurn = false,
+  showWarning = true,
+  size = 'md',
   className 
 }: PlayerActionTimerProps) {
-  const [timeLeft, setTimeLeft] = useState(duration);
-  const [isWarning, setIsWarning] = useState(false);
+  const [internalTimeLeft, setInternalTimeLeft] = useState(duration);
+  const [isFlashing, setIsFlashing] = useState(false);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  useEffect(() => {
-    if (isActive) {
-      setTimeLeft(duration);
-      setIsWarning(false);
-    }
-  }, [isActive, duration]);
+  // Use external time if provided, otherwise internal
+  const timeLeft = externalTimeRemaining !== undefined && externalTimeRemaining !== null 
+    ? externalTimeRemaining 
+    : internalTimeLeft;
 
+  // Internal timer (when no external time provided)
   useEffect(() => {
+    if (externalTimeRemaining !== undefined) return;
     if (!isActive) return;
 
-    const interval = setInterval(() => {
-      setTimeLeft(prev => {
+    setInternalTimeLeft(duration);
+    
+    intervalRef.current = setInterval(() => {
+      setInternalTimeLeft(prev => {
         if (prev <= 1) {
           onTimeout?.();
           return 0;
-        }
-        if (prev <= 10) {
-          setIsWarning(true);
         }
         return prev - 1;
       });
     }, 1000);
 
-    return () => clearInterval(interval);
-  }, [isActive, onTimeout]);
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, [isActive, duration, onTimeout, externalTimeRemaining]);
 
-  if (!isActive) return null;
+  // Reset on active change
+  useEffect(() => {
+    if (isActive && externalTimeRemaining === undefined) {
+      setInternalTimeLeft(duration);
+    }
+  }, [isActive, duration, externalTimeRemaining]);
+
+  // Flash effect for critical time
+  useEffect(() => {
+    if (timeLeft <= 5 && showWarning) {
+      setIsFlashing(true);
+    } else {
+      setIsFlashing(false);
+    }
+  }, [timeLeft, showWarning]);
+
+  if (!isActive && externalTimeRemaining === null) return null;
 
   const progress = timeLeft / duration;
+  const isCritical = timeLeft <= 5;
+  const isWarning = timeLeft <= 10;
+  
+  const sizeClasses = {
+    sm: { container: 'w-12 h-12', text: 'text-sm', icon: 'w-3 h-3' },
+    md: { container: 'w-16 h-16', text: 'text-lg', icon: 'w-4 h-4' },
+    lg: { container: 'w-20 h-20', text: 'text-xl', icon: 'w-5 h-5' }
+  };
+
+  const currentSize = sizeClasses[size];
   const circumference = 2 * Math.PI * 45;
   const strokeDashoffset = circumference * (1 - progress);
 
   return (
-    <div className={cn("relative w-20 h-20", className)}>
+    <div className={cn("relative", currentSize.container, className)}>
       {/* Background circle */}
       <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
         <circle
@@ -68,34 +104,93 @@ export function PlayerActionTimer({
           cy="50"
           r="45"
           fill="none"
-          stroke={isWarning ? "#ef4444" : "#22c55e"}
+          stroke={isCritical ? "#ef4444" : isWarning ? "#f59e0b" : "#22c55e"}
           strokeWidth="6"
           strokeLinecap="round"
           strokeDasharray={circumference}
-          strokeDashoffset={strokeDashoffset}
-          className="transition-all duration-300"
+          initial={{ strokeDashoffset: 0 }}
+          animate={{ strokeDashoffset }}
+          transition={{ duration: 0.3 }}
         />
       </svg>
 
-      {/* Timer text */}
+      {/* Timer content */}
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        {isWarning ? (
-          <motion.div
-            animate={{ scale: [1, 1.1, 1] }}
-            transition={{ repeat: Infinity, duration: 0.5 }}
-          >
-            <AlertTriangle className="w-5 h-5 text-red-500" />
-          </motion.div>
-        ) : (
-          <Timer className="w-4 h-4 text-muted-foreground" />
-        )}
-        <span className={cn(
-          "text-lg font-bold",
-          isWarning ? "text-red-500" : "text-white"
-        )}>
-          {timeLeft}
-        </span>
+        <AnimatePresence mode="wait">
+          {isWarning ? (
+            <motion.div
+              key="warning"
+              initial={{ scale: 0.8 }}
+              animate={{ scale: isFlashing ? [1, 1.2, 1] : 1 }}
+              transition={{ repeat: isFlashing ? Infinity : 0, duration: 0.5 }}
+            >
+              <AlertTriangle className={cn(currentSize.icon, "text-red-500")} />
+            </motion.div>
+          ) : (
+            <motion.div key="timer" initial={{ scale: 0.8 }} animate={{ scale: 1 }}>
+              <Timer className={cn(currentSize.icon, "text-muted-foreground")} />
+            </motion.div>
+          )}
+        </AnimatePresence>
+        
+        <motion.span 
+          className={cn(
+            currentSize.text,
+            "font-bold",
+            isCritical ? "text-red-500" : isWarning ? "text-amber-400" : "text-white"
+          )}
+          animate={isFlashing ? { scale: [1, 1.1, 1] } : {}}
+          transition={{ repeat: isFlashing ? Infinity : 0, duration: 0.5 }}
+        >
+          {Math.ceil(timeLeft)}
+        </motion.span>
       </div>
+
+      {/* Critical pulse ring */}
+      <AnimatePresence>
+        {isCritical && isMyTurn && (
+          <motion.div
+            initial={{ scale: 1, opacity: 0.8 }}
+            animate={{ scale: 1.3, opacity: 0 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.8, repeat: Infinity }}
+            className="absolute inset-0 rounded-full border-2 border-red-500"
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
+});
+
+// Compact timer bar for inline display
+interface TimerBarProps {
+  timeRemaining: number | null;
+  totalTime?: number;
+  className?: string;
 }
+
+export const TimerBar = memo(function TimerBar({
+  timeRemaining,
+  totalTime = 15,
+  className
+}: TimerBarProps) {
+  if (timeRemaining === null) return null;
+
+  const progress = (timeRemaining / totalTime) * 100;
+  const isCritical = timeRemaining <= 5;
+  const isWarning = timeRemaining <= 10;
+
+  return (
+    <div className={cn("relative h-1.5 bg-white/10 rounded-full overflow-hidden", className)}>
+      <motion.div
+        className={cn(
+          "absolute inset-y-0 left-0 rounded-full",
+          isCritical ? "bg-red-500" : isWarning ? "bg-amber-500" : "bg-emerald-500"
+        )}
+        initial={{ width: "100%" }}
+        animate={{ width: `${progress}%` }}
+        transition={{ duration: 0.1 }}
+      />
+    </div>
+  );
+});
