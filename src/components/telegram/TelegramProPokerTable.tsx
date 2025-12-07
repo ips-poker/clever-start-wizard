@@ -91,16 +91,97 @@ export function TelegramProPokerTable({
   const [showCardPeek, setShowCardPeek] = useState(true);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Инициализация демо-игроков
+  // Загрузка реальных игроков со стола
   useEffect(() => {
-    const demoPlayers: TablePlayer[] = [
-      { id: '1', name: playerName, avatar: playerAvatar, stack: myStack, seatNumber: 1, isDealer: false },
-      { id: '2', name: 'Viktor_Pro', avatar: '', stack: 15420, seatNumber: 2 },
-      { id: '3', name: 'PokerKing', avatar: '', stack: 8750, seatNumber: 4 },
-      { id: '4', name: 'LuckyAce', avatar: '', stack: 12300, seatNumber: 5 },
-    ];
-    setPlayers(demoPlayers);
-  }, [playerName, playerAvatar, myStack]);
+    const loadTablePlayers = async () => {
+      if (!tableId) {
+        // Демо режим - используем демо-игроков
+        const demoPlayers: TablePlayer[] = [
+          { id: playerId || '1', name: playerName, avatar: playerAvatar, stack: myStack, seatNumber: 1, isDealer: false },
+          { id: '2', name: 'Viktor_Pro', avatar: '', stack: 15420, seatNumber: 2 },
+          { id: '3', name: 'PokerKing', avatar: '', stack: 8750, seatNumber: 4 },
+          { id: '4', name: 'LuckyAce', avatar: '', stack: 12300, seatNumber: 5 },
+        ];
+        setPlayers(demoPlayers);
+        return;
+      }
+
+      try {
+        // Загружаем реальных игроков со стола
+        const { data: tablePlayers, error } = await supabase
+          .from('poker_table_players')
+          .select(`
+            id,
+            seat_number,
+            stack,
+            is_dealer,
+            status,
+            player_id,
+            players!poker_table_players_player_id_fkey (
+              id,
+              name,
+              avatar_url
+            )
+          `)
+          .eq('table_id', tableId)
+          .eq('status', 'active');
+
+        if (error) {
+          console.error('Error loading table players:', error);
+          return;
+        }
+
+        if (tablePlayers && tablePlayers.length > 0) {
+          const realPlayers: TablePlayer[] = tablePlayers.map((tp: any) => {
+            const isHero = tp.player_id === playerId;
+            return {
+              id: tp.player_id,
+              name: tp.players?.name || 'Unknown',
+              avatar: tp.players?.avatar_url || undefined,
+              stack: tp.stack,
+              seatNumber: tp.seat_number,
+              isDealer: tp.is_dealer,
+              isFolded: false,
+              isAllIn: false,
+              currentBet: 0,
+            };
+          });
+          
+          // Если текущий игрок есть за столом, обновляем его стек
+          const heroPlayer = realPlayers.find(p => p.id === playerId);
+          if (heroPlayer) {
+            setMyStack(heroPlayer.stack);
+          }
+          
+          setPlayers(realPlayers);
+          console.log('Loaded real players:', realPlayers);
+        }
+      } catch (err) {
+        console.error('Error fetching table players:', err);
+      }
+    };
+
+    loadTablePlayers();
+
+    // Realtime подписка на изменения игроков за столом
+    if (tableId) {
+      const channel = supabase
+        .channel(`table-players-${tableId}`)
+        .on('postgres_changes', { 
+          event: '*', 
+          schema: 'public', 
+          table: 'poker_table_players',
+          filter: `table_id=eq.${tableId}`
+        }, () => {
+          loadTablePlayers();
+        })
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    }
+  }, [tableId, playerId, playerName, playerAvatar, myStack]);
 
   // Таймер хода
   useEffect(() => {
@@ -127,6 +208,9 @@ export function TelegramProPokerTable({
     const numPlayers = players.length;
     const { playerHands, remainingDeck } = dealToPlayers(deck, numPlayers, 2);
     
+    // Находим индекс hero игрока
+    const heroIndex = players.findIndex(p => p.id === playerId);
+    
     // Раздаём карты игрокам
     const updatedPlayers = players.map((p, idx) => ({
       ...p,
@@ -136,11 +220,12 @@ export function TelegramProPokerTable({
       currentBet: 0,
       lastAction: undefined,
       isWinner: false,
-      isTurn: idx === 0
+      isTurn: p.id === playerId
     }));
     
     setPlayers(updatedPlayers);
-    setMyCards(playerHands[0] || []);
+    // Устанавливаем карты hero
+    setMyCards(heroIndex >= 0 ? playerHands[heroIndex] || [] : []);
     setCommunityCards([]);
     setPot(30); // SB + BB
     setCurrentBet(20);
@@ -157,7 +242,7 @@ export function TelegramProPokerTable({
     if (timerRef.current) clearInterval(timerRef.current);
     
     const updatedPlayers = [...players];
-    const myPlayer = updatedPlayers.find(p => p.seatNumber === 1);
+    const myPlayer = updatedPlayers.find(p => p.id === playerId);
     
     switch (action) {
       case 'fold':
@@ -228,7 +313,7 @@ export function TelegramProPokerTable({
   const simulateOpponentsAndAdvance = () => {
     // Симуляция действий оппонентов
     const updatedPlayers = players.map(p => {
-      if (p.seatNumber !== 1 && !p.isFolded) {
+      if (p.id !== playerId && !p.isFolded) {
         const actions = ['CALL', 'CHECK', 'FOLD'];
         const randomAction = actions[Math.floor(Math.random() * actions.length)];
         return { ...p, lastAction: randomAction, isFolded: randomAction === 'FOLD' };
@@ -275,7 +360,7 @@ export function TelegramProPokerTable({
         const winnerId = activePlayers[Math.floor(Math.random() * activePlayers.length)].id;
         setWinnerIds([winnerId]);
         
-        if (winnerId === '1') {
+        if (winnerId === playerId) {
           toast.success(`Вы выиграли ${pot}!`);
           setMyStack(prev => prev + pot);
         } else {
@@ -383,7 +468,7 @@ export function TelegramProPokerTable({
   const renderPlayerSeat = (seatNumber: number) => {
     const position = SEAT_POSITIONS_6MAX[seatNumber - 1];
     const player = players.find(p => p.seatNumber === seatNumber);
-    const isHero = seatNumber === 1;
+    const isHero = player?.id === playerId;
     const isWinner = player && winnerIds.includes(player.id);
     
     if (!player) {
