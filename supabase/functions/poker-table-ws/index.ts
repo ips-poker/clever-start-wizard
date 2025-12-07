@@ -316,6 +316,120 @@ interface WSMessage {
   data?: any;
 }
 
+// ==========================================
+// TIMER MANAGEMENT FOR AUTO-FOLD
+// ==========================================
+const tableTimers: Map<string, number> = new Map(); // tableId -> timer ID
+
+function clearTableTimer(tableId: string) {
+  const existingTimer = tableTimers.get(tableId);
+  if (existingTimer) {
+    clearTimeout(existingTimer);
+    tableTimers.delete(tableId);
+    console.log(`⏱️ Timer cleared for table ${tableId}`);
+  }
+}
+
+function startActionTimer(tableId: string, supabase: any) {
+  // Clear any existing timer
+  clearTableTimer(tableId);
+  
+  const tableState = tableStates.get(tableId);
+  if (!tableState || tableState.phase === 'waiting' || tableState.phase === 'showdown') {
+    return;
+  }
+  
+  // Don't start timer if no current player
+  if (tableState.currentPlayerSeat === null) {
+    return;
+  }
+  
+  // Set turn start time
+  tableState.turnStartTime = Date.now();
+  
+  const timerDuration = tableState.actionTimer * 1000; // Convert to ms
+  
+  console.log(`⏱️ Starting ${tableState.actionTimer}s timer for seat ${tableState.currentPlayerSeat} on table ${tableId}`);
+  
+  const timerId = setTimeout(async () => {
+    await handleAutoFold(tableId, supabase);
+  }, timerDuration);
+  
+  tableTimers.set(tableId, timerId);
+}
+
+async function handleAutoFold(tableId: string, supabase: any) {
+  const tableState = tableStates.get(tableId);
+  if (!tableState) return;
+  
+  const currentSeat = tableState.currentPlayerSeat;
+  if (currentSeat === null) return;
+  
+  // Find the player who timed out
+  const player = getPlayerBySeat(tableState, currentSeat);
+  if (!player || player.isFolded || player.isAllIn) {
+    return;
+  }
+  
+  // Find player ID
+  let timedOutPlayerId: string | null = null;
+  for (const [pid, p] of tableState.players.entries()) {
+    if (p.seatNumber === currentSeat) {
+      timedOutPlayerId = pid;
+      break;
+    }
+  }
+  
+  console.log(`⏰ AUTO-FOLD: Player at seat ${currentSeat} timed out on table ${tableId}`);
+  
+  // Execute fold
+  player.isFolded = true;
+  
+  // Log action to database
+  try {
+    if (tableState.currentHandId && timedOutPlayerId) {
+      await supabase.from('poker_actions').insert({
+        hand_id: tableState.currentHandId,
+        player_id: timedOutPlayerId,
+        seat_number: player.seatNumber,
+        action_type: 'fold',
+        amount: 0,
+        phase: tableState.phase,
+        action_order: Date.now()
+      });
+    }
+  } catch (error) {
+    console.error("DB error logging auto-fold:", error);
+  }
+  
+  // Move to next player or next phase
+  const nextResult = moveToNextPlayer(tableState);
+  
+  if (nextResult.phaseComplete) {
+    await advancePhase(tableState, supabase);
+  } else {
+    // Start timer for next player
+    startActionTimer(tableId, supabase);
+  }
+  
+  // Broadcast to all players
+  broadcastToTable(tableId, {
+    type: "player_action",
+    playerId: timedOutPlayerId,
+    seatNumber: currentSeat,
+    action: "fold",
+    isAutoFold: true,
+    state: serializeTableState(tableState)
+  });
+  
+  broadcastToTable(tableId, {
+    type: "timeout_fold",
+    seatNumber: currentSeat,
+    playerId: timedOutPlayerId,
+    message: `Player at seat ${currentSeat} timed out and folded`
+  });
+}
+
 serve(async (req) => {
   const { headers } = req;
   const upgradeHeader = headers.get("upgrade") || "";
@@ -662,15 +776,21 @@ async function handlePlayerAction(socket: WebSocket, message: WSMessage, supabas
     console.error("DB error logging action:", error);
   }
 
+  // Clear current timer since player acted
+  clearTableTimer(tableId!);
+  
   // Move to next player or next phase
   const nextResult = moveToNextPlayer(tableState);
   
   if (nextResult.phaseComplete) {
     await advancePhase(tableState, supabase);
+  } else {
+    // Start timer for next player
+    startActionTimer(tableId!, supabase);
   }
 
   // Broadcast action to all players
-  broadcastToTable(tableId, {
+  broadcastToTable(tableId!, {
     type: "player_action",
     playerId,
     seatNumber: player.seatNumber,
@@ -813,6 +933,9 @@ async function handleStartHand(socket: WebSocket, message: WSMessage, supabase: 
       });
     });
   }
+  
+  // Start action timer for first player
+  startActionTimer(tableId, supabase);
 }
 
 // Get current state
@@ -1034,12 +1157,17 @@ async function advancePhase(tableState: TableState, supabase: any) {
         tableState.communityCards.push(tableState.deck.pop()!);
         break;
       case 'showdown':
+        // Clear timer before showdown
+        clearTableTimer(tableState.tableId);
         await handleShowdown(tableState, supabase);
         return;
     }
 
     // First to act is small blind (or next active after dealer)
     tableState.currentPlayerSeat = getNextActiveSeat(tableState, tableState.dealerSeat);
+    
+    // Start timer for first player in new phase
+    startActionTimer(tableState.tableId, supabase);
 
     // Update database
     if (tableState.currentHandId) {
@@ -1209,6 +1337,8 @@ function removePlayerFromTable(tableId: string, playerId: string) {
   if (connections) {
     connections.delete(playerId);
     if (connections.size === 0) {
+      // Clear timer when table is empty
+      clearTableTimer(tableId);
       tableConnections.delete(tableId);
       tableStates.delete(tableId);
     }

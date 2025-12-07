@@ -299,6 +299,11 @@ export function usePokerTable(options: UsePokerTableOptions | null) {
         }]);
         break;
 
+      case 'timeout_fold':
+        // Player timed out and auto-folded
+        console.log(`⏰ Player at seat ${data.seatNumber} timed out and folded`);
+        break;
+
       case 'error':
         setError(data.message);
         break;
