@@ -6,13 +6,14 @@ import { OnlinePokerTable } from '@/components/poker/OnlinePokerTable';
 import { PlayerBalanceCard } from '@/components/poker/PlayerBalanceCard';
 import { OnlineTournamentLobby } from '@/components/poker/OnlineTournamentLobby';
 import { FullHandHistory } from '@/components/poker/FullHandHistory';
+import { PokerCraftDashboard } from '@/components/poker/PokerCraftDashboard';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { ArrowLeft, User, LogOut, Trophy, Table2, History } from 'lucide-react';
+import { ArrowLeft, User, LogOut, Trophy, Table2, History, BarChart3 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -270,7 +271,7 @@ export default function OnlinePoker() {
             />
             
             <Tabs value={lobbyTab} onValueChange={setLobbyTab}>
-              <TabsList className="grid grid-cols-3 w-full max-w-lg mx-auto">
+              <TabsList className="grid grid-cols-4 w-full max-w-xl mx-auto">
                 <TabsTrigger value="cash" className="gap-2">
                   <Table2 className="h-4 w-4" />
                   Кэш-игры
@@ -278,6 +279,10 @@ export default function OnlinePoker() {
                 <TabsTrigger value="tournaments" className="gap-2">
                   <Trophy className="h-4 w-4" />
                   Турниры
+                </TabsTrigger>
+                <TabsTrigger value="analytics" className="gap-2">
+                  <BarChart3 className="h-4 w-4" />
+                  Аналитика
                 </TabsTrigger>
                 <TabsTrigger value="history" className="gap-2">
                   <History className="h-4 w-4" />
@@ -299,6 +304,16 @@ export default function OnlinePoker() {
                   playerBalance={playerBalance}
                   onJoinTournament={handleJoinTournament}
                 />
+              </TabsContent>
+
+              <TabsContent value="analytics" className="mt-6">
+                <Card className="p-6 text-center">
+                  <BarChart3 className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">PokerCraft Analytics</h3>
+                  <p className="text-muted-foreground">
+                    Статистика будет доступна после игры минимум 50 рук
+                  </p>
+                </Card>
               </TabsContent>
 
               <TabsContent value="history" className="mt-6">

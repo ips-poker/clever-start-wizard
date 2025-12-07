@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -24,6 +24,15 @@ import { HandHistoryExport } from './HandHistoryExport';
 import { TableStatistics } from './TableStatistics';
 import { TableChat } from './TableChat';
 import { BombPotIndicator } from './BombPotIndicator';
+// Pro features integration
+import { SqueezeHand } from './SqueezeCard';
+import { TableReactions, QuickReactionButton, useTableReactions, ReactionType } from './TableEmojis';
+import { HandReplayer, HandReplay } from './HandReplayer';
+import { AutoMuckButton, useAutoMuckSettings } from './AutoMuckSettings';
+import { SmartHUD } from './SmartHUD';
+import { EVCashoutPanel } from './EVCashoutPanel';
+import { RabbitHuntPanel } from './RabbitHuntPanel';
+import { JackpotWidget, JackpotWinOverlay, useJackpotSystem, JackpotInfo } from './JackpotSystem';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { 
   Loader2, 
@@ -41,7 +50,12 @@ import {
   Eye,
   Trophy,
   BarChart3,
-  Bomb
+  Bomb,
+  Sparkles,
+  Shield,
+  Target,
+  Rabbit,
+  TrendingUp
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -77,6 +91,25 @@ export function OnlinePokerTable({
   const [spectatorCount, setSpectatorCount] = useState(0);
   const [mutedPlayers, setMutedPlayers] = useState<Set<string>>(new Set());
   const prevPhaseRef = useRef<string | null>(null);
+  
+  // Pro features state
+  const [showSqueezeCards, setShowSqueezeCards] = useState(false);
+  const [showEVCashout, setShowEVCashout] = useState(false);
+  const [showRabbitHunt, setShowRabbitHunt] = useState(false);
+  const [showHandReplayer, setShowHandReplayer] = useState(false);
+  const [selectedReplayHand, setSelectedReplayHand] = useState<HandReplay | null>(null);
+  const [showHUD, setShowHUD] = useState(true);
+  
+  // Pro hooks
+  const { reactions, addReaction, removeReaction } = useTableReactions();
+  const { settings: autoMuckSettings, updateSettings: updateAutoMuckSettings } = useAutoMuckSettings();
+  const { jackpots, currentEvent: jackpotEvent, dismissEvent: dismissJackpotEvent } = useJackpotSystem(tableId);
+  
+  // Demo jackpots for display
+  const demoJackpots: JackpotInfo[] = [
+    { id: '1', type: 'bad-beat', name: 'Bad Beat Jackpot', description: 'Проиграйте с квадами или выше', amount: 125000, currency: 'chips', contributionPerHand: 1, qualifyingCondition: 'Квады JJ+' },
+    { id: '2', type: 'high-hand', name: 'High Hand', description: 'Лучшая рука часа', amount: 5000, currency: 'chips', contributionPerHand: 0, qualifyingCondition: 'Фулл-хаус+' }
+  ];
 
   const {
     isConnected,
@@ -219,6 +252,25 @@ export function OnlinePokerTable({
     disconnect();
     onLeave();
   };
+
+  // Handle emoji reaction
+  const handleReaction = useCallback((type: ReactionType) => {
+    if (mySeat && myPlayer) {
+      addReaction(playerId, myPlayer.name, mySeat, type);
+    }
+  }, [mySeat, myPlayer, playerId, addReaction]);
+
+  // Seat positions for reactions overlay
+  const seatPositions = [
+    { x: 400, y: 450 }, { x: 120, y: 380 }, { x: 40, y: 220 },
+    { x: 120, y: 80 }, { x: 280, y: 30 }, { x: 520, y: 30 },
+    { x: 680, y: 80 }, { x: 760, y: 220 }, { x: 680, y: 380 }
+  ];
+
+  // Check if all-in situation for EV Cashout
+  const isAllInSituation = tableState?.players.some(p => p.isAllIn && !p.isFolded);
+  const activePlayers = tableState?.players.filter(p => !p.isFolded) || [];
+  const canShowEVCashout = isAllInSituation && activePlayers.length >= 2 && tableState?.phase !== 'waiting';
 
   // Seat positions for oval layout
   const getSeatPosition = (seat: number, total: number = 9) => {
@@ -517,9 +569,9 @@ export function OnlinePokerTable({
         <TournamentTableHeader tournamentId={tournamentId} />
       )}
 
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
+      {/* Header with Pro Features */}
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <Badge variant={isConnected ? 'default' : 'destructive'} className="gap-1">
             <span className={cn("w-2 h-2 rounded-full", isConnected ? "bg-green-400" : "bg-red-400")} />
             {isConnected ? 'Онлайн' : 'Офлайн'}
@@ -531,8 +583,58 @@ export function OnlinePokerTable({
           )}
           {isSpectator && <SpectatorBadge count={spectatorCount} isSpectator />}
           {!isSpectator && spectatorCount > 0 && <SpectatorBadge count={spectatorCount} />}
+          
+          {/* Jackpot Widget */}
+          <JackpotWidget jackpots={demoJackpots} />
         </div>
-        <div className="flex items-center gap-2">
+        
+        <div className="flex items-center gap-1 flex-wrap">
+          {/* Pro Feature Toggles */}
+          <Button 
+            variant={showHUD ? "default" : "ghost"}
+            size="sm"
+            onClick={() => setShowHUD(!showHUD)}
+            title="Smart HUD"
+            className="gap-1 text-xs"
+          >
+            <TrendingUp className="h-3 w-3" />
+            HUD
+          </Button>
+          
+          {canShowEVCashout && (
+            <Button 
+              variant={showEVCashout ? "default" : "secondary"}
+              size="sm"
+              onClick={() => setShowEVCashout(!showEVCashout)}
+              title="EV Cashout & Insurance"
+              className="gap-1 text-xs bg-gradient-to-r from-amber-500/20 to-green-500/20"
+            >
+              <Shield className="h-3 w-3" />
+              Insurance
+            </Button>
+          )}
+          
+          {tableState?.phase !== 'waiting' && tableState?.phase !== 'showdown' && (
+            <Button 
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowRabbitHunt(!showRabbitHunt)}
+              title="Rabbit Hunt"
+              className="gap-1 text-xs"
+            >
+              <Rabbit className="h-3 w-3" />
+            </Button>
+          )}
+          
+          {/* Auto Muck Settings */}
+          <AutoMuckButton 
+            settings={autoMuckSettings} 
+            onSettingsChange={updateAutoMuckSettings} 
+          />
+          
+          {/* Emoji Reactions */}
+          <QuickReactionButton onReact={handleReaction} />
+          
           {/* Hand History Export */}
           <HandHistoryExport handHistory={handHistory} />
           
@@ -541,7 +643,7 @@ export function OnlinePokerTable({
             variant={showStats ? "default" : "ghost"}
             size="icon"
             onClick={() => setShowStats(!showStats)}
-            title="Статистика"
+            title="Аналитика"
           >
             <BarChart3 className="h-4 w-4" />
           </Button>
@@ -609,7 +711,7 @@ export function OnlinePokerTable({
         </Card>
       )}
 
-      {/* Professional Poker Table */}
+      {/* Professional Poker Table with Pro Features */}
       <div className="relative">
         {/* Bomb Pot Indicator */}
         <BombPotIndicator
@@ -618,11 +720,92 @@ export function OnlinePokerTable({
           isDoubleBoard={tableState?.bombPotDoubleBoard}
         />
 
+        {/* Table Reactions Overlay */}
+        <TableReactions 
+          reactions={reactions}
+          seatPositions={seatPositions}
+          onReactionComplete={removeReaction}
+        />
+
+        {/* Smart HUD overlay - show for first opponent */}
+        {showHUD && tableState && tableState.players.length > 1 && (
+          <div className="absolute top-2 left-2 z-30 space-y-1">
+            {tableState.players
+              .filter(p => p.oderId !== playerId && !p.isFolded)
+              .slice(0, 2)
+              .map(player => (
+                <SmartHUD 
+                  key={player.oderId}
+                  playerId={player.oderId}
+                  playerName={player.name || `Player ${player.seatNumber}`}
+                  stats={null} // Would come from real stats tracking
+                  isActive={tableState.currentPlayerSeat === player.seatNumber}
+                  compact
+                />
+              ))}
+          </div>
+        )}
+
         <ProfessionalPokerTable
           tableState={tableState}
           myCards={isSpectator ? [] : myCards}
           playerId={playerId}
         />
+
+        {/* EV Cashout Panel - Right side when all-in */}
+        <AnimatePresence>
+          {showEVCashout && canShowEVCashout && tableState && (
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 20 }}
+              className="absolute top-0 right-0 z-40 w-80"
+            >
+              <EVCashoutPanel
+                scenario={{
+                  players: activePlayers.map(p => ({
+                    playerId: p.oderId,
+                    playerName: p.name || `Player ${p.seatNumber}`,
+                    cards: p.holeCards || [],
+                    stack: p.stack,
+                    contribution: p.betAmount
+                  })),
+                  communityCards: tableState.communityCards,
+                  pot: tableState.pot,
+                  phase: tableState.phase as 'preflop' | 'flop' | 'turn' | 'river'
+                }}
+                playerId={playerId}
+                onAcceptCashout={(amount) => {
+                  console.log(`Accepted cashout: ${amount}`);
+                  setShowEVCashout(false);
+                }}
+                onDeclineCashout={() => setShowEVCashout(false)}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Rabbit Hunt Panel */}
+        <AnimatePresence>
+          {showRabbitHunt && tableState && myCards.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 20 }}
+              className="absolute bottom-4 left-4 z-40"
+            >
+              <RabbitHuntPanel
+                foldedPlayerCards={myCards}
+                communityCards={tableState.communityCards}
+                usedCards={tableState.players.flatMap(p => p.holeCards || [])}
+                potSize={tableState.pot}
+                onPurchase={(cost) => {
+                  console.log(`Purchased rabbit hunt for ${cost}`);
+                }}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Enhanced Table Chat */}
         <TableChat
@@ -646,6 +829,40 @@ export function OnlinePokerTable({
           bombPotEnabled={bombPotEnabled}
         />
       </div>
+
+      {/* Squeeze Cards Modal for new hand */}
+      <AnimatePresence>
+        {showSqueezeCards && myCards.length >= 2 && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center"
+            onClick={() => setShowSqueezeCards(false)}
+          >
+            <div onClick={e => e.stopPropagation()}>
+              <SqueezeHand 
+                cards={myCards} 
+                size="xl"
+                onRevealComplete={() => {
+                  setTimeout(() => setShowSqueezeCards(false), 500);
+                }}
+              />
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Jackpot Win Overlay */}
+      <AnimatePresence>
+        {jackpotEvent && (
+          <JackpotWinOverlay
+            event={jackpotEvent}
+            currentPlayerId={playerId}
+            onClose={dismissJackpotEvent}
+          />
+        )}
+      </AnimatePresence>
 
       {/* Action Buttons (only for players, not spectators) */}
       {!isSpectator && (
