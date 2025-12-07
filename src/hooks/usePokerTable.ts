@@ -44,6 +44,13 @@ export interface TableState {
   bigBlindSeat: number;
   players: PokerPlayer[];
   sidePots?: SidePotsDisplay;
+  // Betting info
+  minRaise?: number;
+  smallBlindAmount?: number;
+  bigBlindAmount?: number;
+  actionTimer?: number;
+  timeRemaining?: number | null;
+  lastRaiserSeat?: number | null;
 }
 
 interface UsePokerTableOptions {
@@ -382,6 +389,8 @@ export function usePokerTable(options: UsePokerTableOptions | null) {
   const isMyTurn = tableState?.currentPlayerSeat === mySeat;
   const canCheck = tableState?.currentBet === (myPlayer?.betAmount || 0);
   const callAmount = (tableState?.currentBet || 0) - (myPlayer?.betAmount || 0);
+  const minRaiseAmount = tableState?.minRaise || tableState?.bigBlindAmount || 100;
+  const minRaiseTotal = (tableState?.currentBet || 0) + minRaiseAmount;
 
   // Cleanup on unmount
   useEffect(() => {
@@ -409,6 +418,8 @@ export function usePokerTable(options: UsePokerTableOptions | null) {
     isMyTurn,
     canCheck,
     callAmount,
+    minRaiseAmount,
+    minRaiseTotal,
     chatMessages,
     lastAction,
     showdownResult,

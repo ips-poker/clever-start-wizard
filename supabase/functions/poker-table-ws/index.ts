@@ -68,11 +68,22 @@ function isFlush(cards: PokerCard[]): boolean {
 
 function isStraight(cards: PokerCard[]): boolean {
   const ranks = cards.map(c => c.rank).sort((a, b) => a - b);
+  // Wheel straight: A-2-3-4-5
   if (ranks[4] === 14 && ranks[0] === 2 && ranks[1] === 3 && ranks[2] === 4 && ranks[3] === 5) return true;
   for (let i = 1; i < ranks.length; i++) {
     if (ranks[i] !== ranks[i - 1] + 1) return false;
   }
   return true;
+}
+
+// Get high card for straight (handles wheel)
+function getStraightHighCard(cards: PokerCard[]): number {
+  const ranks = cards.map(c => c.rank).sort((a, b) => a - b);
+  // Wheel straight: A-2-3-4-5 - high card is 5, not Ace
+  if (ranks[4] === 14 && ranks[0] === 2 && ranks[1] === 3 && ranks[2] === 4 && ranks[3] === 5) {
+    return 5;
+  }
+  return Math.max(...ranks);
 }
 
 function evaluateFiveCards(cards: PokerCard[]): HandEvaluation {
@@ -90,27 +101,56 @@ function evaluateFiveCards(cards: PokerCard[]): HandEvaluation {
   if (flush && straight) {
     const ranks = cards.map(c => c.rank).sort((a, b) => a - b);
     rank = (ranks[0] === 10 && ranks[4] === 14) ? HandRank.ROYAL_FLUSH : HandRank.STRAIGHT_FLUSH;
+    // For straight flush, use high card value (wheel = 5)
+    const highCard = getStraightHighCard(cards);
+    value = rank * 1000000000 + highCard * 10000;
   } else if (sizes[0] === 4) {
     rank = HandRank.FOUR_OF_A_KIND;
+    value = rank * 1000000000;
+    for (let i = 0; i < sortedCards.length; i++) {
+      value += sortedCards[i].rank * Math.pow(15, 4 - i);
+    }
   } else if (sizes[0] === 3 && sizes[1] === 2) {
     rank = HandRank.FULL_HOUSE;
+    value = rank * 1000000000;
+    for (let i = 0; i < sortedCards.length; i++) {
+      value += sortedCards[i].rank * Math.pow(15, 4 - i);
+    }
   } else if (flush) {
     rank = HandRank.FLUSH;
+    value = rank * 1000000000;
+    for (let i = 0; i < sortedCards.length; i++) {
+      value += sortedCards[i].rank * Math.pow(15, 4 - i);
+    }
   } else if (straight) {
     rank = HandRank.STRAIGHT;
+    // For straight, use high card value (wheel = 5)
+    const highCard = getStraightHighCard(cards);
+    value = rank * 1000000000 + highCard * 10000;
   } else if (sizes[0] === 3) {
     rank = HandRank.THREE_OF_A_KIND;
+    value = rank * 1000000000;
+    for (let i = 0; i < sortedCards.length; i++) {
+      value += sortedCards[i].rank * Math.pow(15, 4 - i);
+    }
   } else if (sizes[0] === 2 && sizes[1] === 2) {
     rank = HandRank.TWO_PAIR;
+    value = rank * 1000000000;
+    for (let i = 0; i < sortedCards.length; i++) {
+      value += sortedCards[i].rank * Math.pow(15, 4 - i);
+    }
   } else if (sizes[0] === 2) {
     rank = HandRank.PAIR;
+    value = rank * 1000000000;
+    for (let i = 0; i < sortedCards.length; i++) {
+      value += sortedCards[i].rank * Math.pow(15, 4 - i);
+    }
   } else {
     rank = HandRank.HIGH_CARD;
-  }
-  
-  value = rank * 1000000000;
-  for (let i = 0; i < sortedCards.length; i++) {
-    value += sortedCards[i].rank * Math.pow(15, 4 - i);
+    value = rank * 1000000000;
+    for (let i = 0; i < sortedCards.length; i++) {
+      value += sortedCards[i].rank * Math.pow(15, 4 - i);
+    }
   }
   
   return { rank, name: HAND_RANK_NAMES[rank], value };
@@ -244,7 +284,15 @@ interface TableState {
   bigBlindSeat: number;
   deck: string[];
   sidePots: SidePot[];
-  totalBetsPerPlayer: Map<string, number>; // Track total bets across all rounds
+  totalBetsPerPlayer: Map<string, number>;
+  // New fields for proper betting
+  smallBlindAmount: number;
+  bigBlindAmount: number;
+  minRaise: number; // Minimum raise amount
+  lastRaiserSeat: number | null; // Track who made last raise
+  lastRaiseAmount: number; // Track last raise size
+  actionTimer: number; // Seconds for player to act
+  turnStartTime: number | null; // When current player's turn started
 }
 
 interface PlayerState {
@@ -542,7 +590,18 @@ async function handlePlayerAction(socket: WebSocket, message: WSMessage, supabas
       break;
 
     case "raise":
-      const raiseAmount = amount || tableState.currentBet * 2;
+      const raiseAmount = amount || (tableState.currentBet + tableState.minRaise);
+      
+      // Validate minimum raise
+      const actualRaise = raiseAmount - tableState.currentBet;
+      if (actualRaise < tableState.minRaise && raiseAmount < player.stack + player.betAmount) {
+        sendToSocket(socket, { 
+          type: "error", 
+          message: `Minimum raise is ${tableState.minRaise}. Current bet: ${tableState.currentBet}, min raise to: ${tableState.currentBet + tableState.minRaise}` 
+        });
+        return;
+      }
+      
       const totalBet = raiseAmount;
       const toAdd = totalBet - player.betAmount;
       
@@ -555,9 +614,16 @@ async function handlePlayerAction(socket: WebSocket, message: WSMessage, supabas
       player.betAmount = totalBet;
       player.totalBetInHand += toAdd;
       tableState.pot += toAdd;
+      
+      // Update betting state
+      tableState.lastRaiserSeat = player.seatNumber;
+      tableState.lastRaiseAmount = actualRaise;
+      tableState.minRaise = Math.max(tableState.minRaise, actualRaise); // Min raise increases
       tableState.currentBet = totalBet;
+      
       actionResult.action = "raise";
       actionResult.amount = totalBet;
+      actionResult.raiseSize = actualRaise;
       break;
 
     case "all-in":
@@ -662,9 +728,14 @@ async function handleStartHand(socket: WebSocket, message: WSMessage, supabase: 
   tableState.smallBlindSeat = getNextActiveSeat(tableState, tableState.dealerSeat);
   tableState.bigBlindSeat = getNextActiveSeat(tableState, tableState.smallBlindSeat);
 
-  // Post blinds (simplified: 50/100)
-  const smallBlind = 50;
-  const bigBlind = 100;
+  // Post blinds using table configuration
+  const smallBlind = tableState.smallBlindAmount;
+  const bigBlind = tableState.bigBlindAmount;
+  
+  // Reset betting state for new hand
+  tableState.minRaise = bigBlind;
+  tableState.lastRaiserSeat = null;
+  tableState.lastRaiseAmount = bigBlind;
 
   const sbPlayer = getPlayerBySeat(tableState, tableState.smallBlindSeat);
   const bbPlayer = getPlayerBySeat(tableState, tableState.bigBlindSeat);
@@ -675,6 +746,7 @@ async function handleStartHand(socket: WebSocket, message: WSMessage, supabase: 
     sbPlayer.totalBetInHand = sbAmount;
     sbPlayer.stack -= sbAmount;
     tableState.pot += sbAmount;
+    if (sbAmount < smallBlind) sbPlayer.isAllIn = true;
   }
 
   if (bbPlayer) {
@@ -684,6 +756,7 @@ async function handleStartHand(socket: WebSocket, message: WSMessage, supabase: 
     bbPlayer.stack -= bbAmount;
     tableState.pot += bbAmount;
     tableState.currentBet = bbAmount;
+    if (bbAmount < bigBlind) bbPlayer.isAllIn = true;
   }
 
   // Deal hole cards
@@ -793,7 +866,15 @@ function createInitialTableState(tableId: string): TableState {
     bigBlindSeat: 0,
     deck: [],
     sidePots: [],
-    totalBetsPerPlayer: new Map()
+    totalBetsPerPlayer: new Map(),
+    // Betting configuration
+    smallBlindAmount: 50,
+    bigBlindAmount: 100,
+    minRaise: 100, // BB is min raise initially
+    lastRaiserSeat: null,
+    lastRaiseAmount: 0,
+    actionTimer: 30, // 30 seconds default
+    turnStartTime: null
   };
 }
 
@@ -850,19 +931,71 @@ function moveToNextPlayer(tableState: TableState): { phaseComplete: boolean } {
   const activePlayers = Array.from(tableState.players.values())
     .filter(p => p.isActive && !p.isFolded && !p.isAllIn);
   
+  // Only one player left who can act - they win
   if (activePlayers.length <= 1) {
-    return { phaseComplete: true };
+    // Check if there are any all-in players
+    const allInPlayers = Array.from(tableState.players.values())
+      .filter(p => p.isActive && !p.isFolded && p.isAllIn);
+    
+    if (allInPlayers.length > 0 && activePlayers.length === 0) {
+      // All remaining players are all-in, proceed to showdown
+      return { phaseComplete: true };
+    }
+    
+    if (activePlayers.length === 0 && allInPlayers.length === 0) {
+      // Everyone folded except maybe one
+      return { phaseComplete: true };
+    }
+    
+    if (activePlayers.length === 1 && allInPlayers.length === 0) {
+      // Only one player left, check if they matched
+      const remaining = activePlayers[0];
+      if (remaining.betAmount >= tableState.currentBet) {
+        return { phaseComplete: true };
+      }
+    }
   }
 
+  // Find next seat
+  const nextSeat = getNextActiveSeat(tableState, tableState.currentPlayerSeat || 0);
+  
+  // If we've gone back to the last raiser, betting is complete
+  if (tableState.lastRaiserSeat !== null && nextSeat === tableState.lastRaiserSeat) {
+    // Check if everyone has matched
+    const allMatched = activePlayers.every(p => p.betAmount === tableState.currentBet);
+    if (allMatched) {
+      return { phaseComplete: true };
+    }
+  }
+  
   // Check if all active players have matched the current bet
   const allMatched = activePlayers.every(p => p.betAmount === tableState.currentBet);
   
+  // Preflop special case: BB gets option if no raise and action returns to them
+  if (tableState.phase === 'preflop' && 
+      tableState.lastRaiserSeat === null && 
+      nextSeat === tableState.bigBlindSeat &&
+      allMatched) {
+    // BB hasn't had their option yet if this is their first action
+    const bbPlayer = getPlayerBySeat(tableState, tableState.bigBlindSeat);
+    if (bbPlayer && !bbPlayer.isAllIn) {
+      // Give BB option to raise
+      tableState.currentPlayerSeat = nextSeat;
+      tableState.turnStartTime = Date.now();
+      return { phaseComplete: false };
+    }
+  }
+  
+  // If all matched and we've completed a round
   if (allMatched && tableState.currentPlayerSeat !== null) {
-    // Everyone has acted and matched
-    return { phaseComplete: true };
+    // Need to make sure everyone has had a chance to act after last raise
+    if (tableState.lastRaiserSeat === null || nextSeat === tableState.lastRaiserSeat) {
+      return { phaseComplete: true };
+    }
   }
 
-  tableState.currentPlayerSeat = getNextActiveSeat(tableState, tableState.currentPlayerSeat || 0);
+  tableState.currentPlayerSeat = nextSeat;
+  tableState.turnStartTime = Date.now();
   return { phaseComplete: false };
 }
 
@@ -872,6 +1005,9 @@ async function advancePhase(tableState: TableState, supabase: any) {
     p.betAmount = 0;
   });
   tableState.currentBet = 0;
+  tableState.lastRaiserSeat = null;
+  tableState.lastRaiseAmount = 0;
+  tableState.minRaise = tableState.bigBlindAmount; // Reset min raise to BB
 
   const phases: TableState['phase'][] = ['preflop', 'flop', 'turn', 'river', 'showdown'];
   const currentIndex = phases.indexOf(tableState.phase);
@@ -1115,6 +1251,13 @@ function serializeTableState(tableState: TableState, forPlayerId?: string): any 
   
   const potResult = calculateSidePots(contributions);
 
+  // Calculate time remaining for current player
+  let timeRemaining: number | null = null;
+  if (tableState.turnStartTime && tableState.currentPlayerSeat !== null) {
+    const elapsed = (Date.now() - tableState.turnStartTime) / 1000;
+    timeRemaining = Math.max(0, tableState.actionTimer - elapsed);
+  }
+
   return {
     tableId: tableState.tableId,
     phase: tableState.phase,
@@ -1130,7 +1273,14 @@ function serializeTableState(tableState: TableState, forPlayerId?: string): any 
       mainPot: potResult.mainPot,
       sidePots: potResult.sidePots,
       totalPot: potResult.totalPot
-    }
+    },
+    // Additional betting info
+    minRaise: tableState.minRaise,
+    smallBlindAmount: tableState.smallBlindAmount,
+    bigBlindAmount: tableState.bigBlindAmount,
+    actionTimer: tableState.actionTimer,
+    timeRemaining,
+    lastRaiserSeat: tableState.lastRaiserSeat
   };
 }
 
