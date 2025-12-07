@@ -273,7 +273,7 @@ const PlayerSeat = memo(function PlayerSeat({
   );
 }, (prev, next) => {
   return (
-    prev.player?.oderId === next.player?.oderId &&
+    prev.player?.playerId === next.player?.playerId &&
     prev.player?.stack === next.player?.stack &&
     prev.player?.isFolded === next.player?.isFolded &&
     prev.player?.isAllIn === next.player?.isAllIn &&
@@ -697,13 +697,13 @@ export function ProductionPokerTable({
               key={seatNumber}
               player={player || null}
               position={position}
-              isHero={player?.oderId === playerId}
+              isHero={player?.playerId === playerId}
               showCards={tableState?.phase === 'showdown'}
               isDealer={tableState?.dealerSeat === seatNumber}
               isSB={tableState?.smallBlindSeat === seatNumber}
               isBB={tableState?.bigBlindSeat === seatNumber}
               turnTimeRemaining={
-                tableState?.currentPlayerSeat === seatNumber && player?.oderId === playerId 
+                tableState?.currentPlayerSeat === seatNumber && player?.playerId === playerId 
                   ? turnTimeRemaining || undefined 
                   : undefined
               }

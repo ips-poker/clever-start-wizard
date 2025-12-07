@@ -7,7 +7,7 @@ export interface Spectator {
 }
 
 export interface PokerPlayer {
-  oderId: string;
+  playerId: string;
   name?: string;
   avatarUrl?: string;
   seatNumber: number;
@@ -105,7 +105,7 @@ interface ChatMessage {
 
 export interface ShowdownResult {
   winners: Array<{
-    oderId: string;
+    playerId: string;
     name?: string;
     seatNumber: number;
     amount: number;
@@ -296,7 +296,7 @@ export function usePokerTable(options: UsePokerTableOptions | null) {
       const players: PokerPlayer[] = (tablePlayers || []).map(p => {
         const handPlayer = handPlayersMap.get(p.player_id);
         return {
-          oderId: p.player_id,
+          playerId: p.player_id,
           name: p.player?.name || 'Player',
           avatarUrl: p.player?.avatar_url,
           seatNumber: handPlayer?.seat_number || p.seat_number,
@@ -315,7 +315,7 @@ export function usePokerTable(options: UsePokerTableOptions | null) {
       });
 
       // Find my seat from players
-      const myPlayerData = players.find(p => p.oderId === playerId);
+      const myPlayerData = players.find(p => p.playerId === playerId);
       if (myPlayerData) {
         setMySeat(myPlayerData.seatNumber);
       }
@@ -368,8 +368,8 @@ export function usePokerTable(options: UsePokerTableOptions | null) {
             prev.currentPlayerSeat === newState.currentPlayerSeat &&
             JSON.stringify(prev.communityCards) === JSON.stringify(newState.communityCards) &&
             prev.players.length === newState.players.length &&
-            JSON.stringify(prev.players.map(p => ({ id: p.oderId, stack: p.stack, bet: p.betAmount, folded: p.isFolded }))) === 
-            JSON.stringify(newState.players.map(p => ({ id: p.oderId, stack: p.stack, bet: p.betAmount, folded: p.isFolded })))) {
+            JSON.stringify(prev.players.map(p => ({ id: p.playerId, stack: p.stack, bet: p.betAmount, folded: p.isFolded }))) === 
+            JSON.stringify(newState.players.map(p => ({ id: p.playerId, stack: p.stack, bet: p.betAmount, folded: p.isFolded })))) {
           return prev; // No change, don't trigger re-render
         }
         
@@ -651,9 +651,17 @@ export function usePokerTable(options: UsePokerTableOptions | null) {
 
       case 'showdown':
       case 'hand_complete':
-        // Update with showdown results
+        // Update with showdown results - normalize playerId
+        const normalizedWinners = (data.winners || []).map((w: any) => ({
+          playerId: w.playerId || w.oderId,
+          name: w.name,
+          seatNumber: w.seatNumber,
+          amount: w.amount,
+          handRank: w.handRank,
+          cards: w.cards
+        }));
         const result: ShowdownResult = {
-          winners: data.winners || [],
+          winners: normalizedWinners,
           pot: data.pot || tableState?.pot || 0
         };
         setShowdownResult(result);
@@ -721,8 +729,16 @@ export function usePokerTable(options: UsePokerTableOptions | null) {
       case 'run_it_twice':
         // All-in equity run - board dealt twice
         console.log(`🎲 Run It Twice:`, data.runs);
+        const ritWinners = (data.combinedWinners || []).map((w: any) => ({
+          playerId: w.playerId || w.oderId,
+          name: w.name,
+          seatNumber: w.seatNumber,
+          amount: w.amount,
+          handRank: w.handRank,
+          cards: w.cards
+        }));
         setShowdownResult({
-          winners: data.combinedWinners || [],
+          winners: ritWinners,
           pot: tableState?.pot || 0
         });
         break;
@@ -969,7 +985,7 @@ export function usePokerTable(options: UsePokerTableOptions | null) {
   }, [tableId, playerId, sendMessage]);
 
   // Get current player info
-  const myPlayer = tableState?.players.find(p => p.oderId === playerId);
+  const myPlayer = tableState?.players.find(p => p.playerId === playerId);
   // Use myPlayer.seatNumber for isMyTurn check - more reliable than mySeat state
   const isMyTurn = tableState?.phase !== 'waiting' && 
                    tableState?.phase !== 'showdown' && 
@@ -984,7 +1000,7 @@ export function usePokerTable(options: UsePokerTableOptions | null) {
   const canPostStraddle = tableState?.phase === 'waiting' && tableState?.straddleEnabled;
   const straddleAmount = (tableState?.bigBlindAmount || 100) * 2;
   const hasPostedStraddle = tableState?.pendingStraddles?.some(s => {
-    const myPlayerObj = tableState?.players.find(p => p.oderId === playerId);
+    const myPlayerObj = tableState?.players.find(p => p.playerId === playerId);
     return myPlayerObj && s.seat === myPlayerObj.seatNumber;
   });
 

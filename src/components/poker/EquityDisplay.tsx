@@ -52,7 +52,7 @@ export function EquityDisplay({
     }
 
     const playerHands = activePlayers.map(p => ({
-      playerId: p.oderId,
+      playerId: p.playerId,
       cards: p.holeCards || []
     }));
 
@@ -100,7 +100,7 @@ export function EquityDisplay({
 
           <div className="space-y-2">
             {equityResult.players.map((playerEquity, index) => {
-              const player = activePlayers.find(p => p.oderId === playerEquity.playerId);
+              const player = activePlayers.find(p => p.playerId === playerEquity.playerId);
               if (!player) return null;
 
               return (

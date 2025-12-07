@@ -262,7 +262,7 @@ export const MemoizedPlayerSeat = memo(function MemoizedPlayerSeat({
     prevProps.tableState?.phase === nextProps.tableState?.phase &&
     prevProps.tableState?.currentPlayerSeat === nextProps.tableState?.currentPlayerSeat &&
     prevProps.tableState?.dealerSeat === nextProps.tableState?.dealerSeat &&
-    prevProps.player?.oderId === nextProps.player?.oderId &&
+    prevProps.player?.playerId === nextProps.player?.playerId &&
     prevProps.player?.stack === nextProps.player?.stack &&
     prevProps.player?.betAmount === nextProps.player?.betAmount &&
     prevProps.player?.isFolded === nextProps.player?.isFolded &&

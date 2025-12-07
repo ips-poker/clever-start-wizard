@@ -58,9 +58,9 @@ export function useEquityCalculator({
       return;
     }
 
-    // FIXED: Use correct property name 'oderId' consistently
+    // Use correct property name 'playerId' consistently
     const playerHands = activePlayers.map(p => ({
-      playerId: p.oderId || (p as any).playerId || `player-${p.seatNumber}`,
+      playerId: p.playerId || (p as any).oderId || `player-${p.seatNumber}`,
       cards: p.holeCards || []
     }));
 

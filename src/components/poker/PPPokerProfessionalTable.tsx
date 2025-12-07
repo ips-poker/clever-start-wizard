@@ -432,7 +432,7 @@ const PlayerSeat = memo(function PlayerSeat({
 }, (prev, next) => {
   // Deep equality check to prevent unnecessary re-renders
   return (
-    prev.player?.oderId === next.player?.oderId &&
+    prev.player?.playerId === next.player?.playerId &&
     prev.player?.stack === next.player?.stack &&
     prev.player?.isFolded === next.player?.isFolded &&
     prev.player?.isAllIn === next.player?.isAllIn &&
@@ -1015,19 +1015,19 @@ export function PPPokerProfessionalTable({
               key={seatNumber}
               player={player || null}
               position={position}
-              isHero={player?.oderId === playerId}
+              isHero={player?.playerId === playerId}
               showCards={tableState?.phase === 'showdown'}
               isDealer={tableState?.dealerSeat === seatNumber}
               isSB={tableState?.smallBlindSeat === seatNumber}
               isBB={tableState?.bigBlindSeat === seatNumber}
               isCurrentTurn={tableState?.currentPlayerSeat === seatNumber}
               turnTimeRemaining={
-                tableState?.currentPlayerSeat === seatNumber && player?.oderId === playerId
+                tableState?.currentPlayerSeat === seatNumber && player?.playerId === playerId
                   ? turnTimeRemaining || undefined
                   : undefined
               }
               turnDuration={tableState?.actionTimer || 30}
-              lastAction={player ? playerActions[player.oderId] : null}
+              lastAction={player ? playerActions[player.playerId] : null}
             />
           ))}
 
