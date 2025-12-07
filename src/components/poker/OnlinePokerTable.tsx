@@ -1,8 +1,8 @@
-// Re-export the production-ready poker table with all improvements
-// This file wraps ProductionPokerTable for backward compatibility
+// Re-export the PPPoker-style professional table
+// This file wraps PPPokerProfessionalTable for backward compatibility
 
 import React from 'react';
-import { ProductionPokerTable } from './ProductionPokerTable';
+import { PPPokerProfessionalTable } from './PPPokerProfessionalTable';
 
 interface OnlinePokerTableProps {
   tableId: string;
@@ -24,13 +24,14 @@ export function OnlinePokerTable({
   onLeave 
 }: OnlinePokerTableProps) {
   return (
-    <ProductionPokerTable
+    <PPPokerProfessionalTable
       tableId={tableId}
       playerId={playerId}
       buyIn={buyIn}
       isTournament={isTournament}
       tournamentId={tournamentId}
       onLeave={onLeave}
+      maxSeats={6}
     />
   );
 }
