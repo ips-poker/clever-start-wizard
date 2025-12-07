@@ -14,3 +14,6 @@ verify_jwt = false
 
 [functions.send-clan-notification]
 verify_jwt = false
+
+[functions.poker-table-ws]
+verify_jwt = false
