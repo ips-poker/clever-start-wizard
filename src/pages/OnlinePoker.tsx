@@ -4,11 +4,13 @@ import { Footer } from '@/components/Footer';
 import { PokerTableLobby } from '@/components/poker/PokerTableLobby';
 import { OnlinePokerTable } from '@/components/poker/OnlinePokerTable';
 import { PlayerBalanceCard } from '@/components/poker/PlayerBalanceCard';
+import { OnlineTournamentLobby } from '@/components/poker/OnlineTournamentLobby';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ArrowLeft, User, LogOut } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ArrowLeft, User, LogOut, Trophy, Table2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -17,8 +19,9 @@ export default function OnlinePoker() {
   const [playerId, setPlayerId] = useState<string | null>(null);
   const [playerName, setPlayerName] = useState('');
   const [playerBalance, setPlayerBalance] = useState(0);
-  const [activeTable, setActiveTable] = useState<{ id: string; buyIn: number } | null>(null);
+  const [activeTable, setActiveTable] = useState<{ id: string; buyIn: number; isTournament?: boolean } | null>(null);
   const [loading, setLoading] = useState(true);
+  const [lobbyTab, setLobbyTab] = useState('cash');
 
   // Check for existing player
   useEffect(() => {
@@ -89,7 +92,11 @@ export default function OnlinePoker() {
       toast.error('Недостаточно фишек для входа');
       return;
     }
-    setActiveTable({ id: tableId, buyIn });
+    setActiveTable({ id: tableId, buyIn, isTournament: false });
+  };
+
+  const handleJoinTournament = (tournamentId: string) => {
+    setActiveTable({ id: tournamentId, buyIn: 0, isTournament: true });
   };
 
   const handleLeaveTable = () => {
@@ -179,17 +186,41 @@ export default function OnlinePoker() {
             />
           </div>
         ) : (
-          // Table lobby
+          // Lobby with Cash Games and Tournaments tabs
           <div className="max-w-4xl mx-auto space-y-6">
             <PlayerBalanceCard 
               playerId={playerId} 
               onBalanceUpdate={setPlayerBalance}
             />
-            <PokerTableLobby
-              playerId={playerId}
-              playerBalance={playerBalance}
-              onJoinTable={handleJoinTable}
-            />
+            
+            <Tabs value={lobbyTab} onValueChange={setLobbyTab}>
+              <TabsList className="grid grid-cols-2 w-full max-w-md mx-auto">
+                <TabsTrigger value="cash" className="gap-2">
+                  <Table2 className="h-4 w-4" />
+                  Кэш-игры
+                </TabsTrigger>
+                <TabsTrigger value="tournaments" className="gap-2">
+                  <Trophy className="h-4 w-4" />
+                  Турниры
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="cash" className="mt-6">
+                <PokerTableLobby
+                  playerId={playerId}
+                  playerBalance={playerBalance}
+                  onJoinTable={handleJoinTable}
+                />
+              </TabsContent>
+
+              <TabsContent value="tournaments" className="mt-6">
+                <OnlineTournamentLobby
+                  playerId={playerId}
+                  playerBalance={playerBalance}
+                  onJoinTournament={handleJoinTournament}
+                />
+              </TabsContent>
+            </Tabs>
           </div>
         )}
       </main>

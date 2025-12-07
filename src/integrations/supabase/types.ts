@@ -527,6 +527,236 @@ export type Database = {
           },
         ]
       }
+      online_poker_tournament_levels: {
+        Row: {
+          ante: number | null
+          big_blind: number
+          duration: number | null
+          id: string
+          is_break: boolean | null
+          level: number
+          small_blind: number
+          tournament_id: string
+        }
+        Insert: {
+          ante?: number | null
+          big_blind: number
+          duration?: number | null
+          id?: string
+          is_break?: boolean | null
+          level: number
+          small_blind: number
+          tournament_id: string
+        }
+        Update: {
+          ante?: number | null
+          big_blind?: number
+          duration?: number | null
+          id?: string
+          is_break?: boolean | null
+          level?: number
+          small_blind?: number
+          tournament_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "online_poker_tournament_levels_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: false
+            referencedRelation: "online_poker_tournaments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      online_poker_tournament_participants: {
+        Row: {
+          chips: number | null
+          eliminated_at: string | null
+          eliminated_by: string | null
+          finish_position: number | null
+          id: string
+          player_id: string
+          prize_amount: number | null
+          registered_at: string
+          seat_number: number | null
+          status: string
+          tournament_id: string
+        }
+        Insert: {
+          chips?: number | null
+          eliminated_at?: string | null
+          eliminated_by?: string | null
+          finish_position?: number | null
+          id?: string
+          player_id: string
+          prize_amount?: number | null
+          registered_at?: string
+          seat_number?: number | null
+          status?: string
+          tournament_id: string
+        }
+        Update: {
+          chips?: number | null
+          eliminated_at?: string | null
+          eliminated_by?: string | null
+          finish_position?: number | null
+          id?: string
+          player_id?: string
+          prize_amount?: number | null
+          registered_at?: string
+          seat_number?: number | null
+          status?: string
+          tournament_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "online_poker_tournament_participants_eliminated_by_fkey"
+            columns: ["eliminated_by"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "online_poker_tournament_participants_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "online_poker_tournament_participants_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: false
+            referencedRelation: "online_poker_tournaments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      online_poker_tournament_payouts: {
+        Row: {
+          amount: number | null
+          id: string
+          paid_at: string | null
+          percentage: number
+          player_id: string | null
+          position: number
+          tournament_id: string
+        }
+        Insert: {
+          amount?: number | null
+          id?: string
+          paid_at?: string | null
+          percentage: number
+          player_id?: string | null
+          position: number
+          tournament_id: string
+        }
+        Update: {
+          amount?: number | null
+          id?: string
+          paid_at?: string | null
+          percentage?: number
+          player_id?: string | null
+          position?: number
+          tournament_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "online_poker_tournament_payouts_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "online_poker_tournament_payouts_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: false
+            referencedRelation: "online_poker_tournaments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      online_poker_tournaments: {
+        Row: {
+          ante: number | null
+          big_blind: number | null
+          buy_in: number
+          created_at: string
+          created_by: string | null
+          current_level: number | null
+          description: string | null
+          finished_at: string | null
+          id: string
+          level_duration: number | null
+          max_players: number
+          min_players: number
+          name: string
+          prize_pool: number | null
+          registration_end: string | null
+          registration_start: string | null
+          small_blind: number | null
+          started_at: string | null
+          starting_chips: number
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          ante?: number | null
+          big_blind?: number | null
+          buy_in?: number
+          created_at?: string
+          created_by?: string | null
+          current_level?: number | null
+          description?: string | null
+          finished_at?: string | null
+          id?: string
+          level_duration?: number | null
+          max_players?: number
+          min_players?: number
+          name: string
+          prize_pool?: number | null
+          registration_end?: string | null
+          registration_start?: string | null
+          small_blind?: number | null
+          started_at?: string | null
+          starting_chips?: number
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          ante?: number | null
+          big_blind?: number | null
+          buy_in?: number
+          created_at?: string
+          created_by?: string | null
+          current_level?: number | null
+          description?: string | null
+          finished_at?: string | null
+          id?: string
+          level_duration?: number | null
+          max_players?: number
+          min_players?: number
+          name?: string
+          prize_pool?: number | null
+          registration_end?: string | null
+          registration_start?: string | null
+          small_blind?: number | null
+          started_at?: string | null
+          starting_chips?: number
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "online_poker_tournaments_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       player_balances: {
         Row: {
           balance: number
@@ -1600,6 +1830,10 @@ export type Database = {
         Args: { tournament_id_param: string }
         Returns: undefined
       }
+      calculate_online_tournament_prize_pool: {
+        Args: { tournament_id_param: string }
+        Returns: number
+      }
       calculate_tournament_rps_pool: {
         Args: { tournament_id_param: string }
         Returns: number
@@ -1634,6 +1868,10 @@ export type Database = {
           p_user_id?: string
         }
         Returns: Json
+      }
+      create_tournament_blind_structure: {
+        Args: { tournament_id_param: string }
+        Returns: undefined
       }
       create_tournament_safe: {
         Args: {
@@ -1672,6 +1910,10 @@ export type Database = {
         Returns: undefined
       }
       ensure_player_balance: { Args: { p_player_id: string }; Returns: number }
+      generate_tournament_payouts: {
+        Args: { tournament_id_param: string }
+        Returns: undefined
+      }
       get_player_safe: {
         Args: { player_id_param: string }
         Returns: {
