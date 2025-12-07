@@ -376,7 +376,51 @@ serve(async (req) => {
     // ACTION: START_HAND
     // ==========================================
     else if (action === 'start_hand') {
-      const activePlayers = tablePlayers?.filter(p => p.status === 'active' && p.stack > 0) || [];
+      // First: Clean up players with 0 chips (set to sitting_out)
+      const zeroChipPlayers = tablePlayers?.filter(p => p.status === 'active' && p.stack <= 0) || [];
+      if (zeroChipPlayers.length > 0) {
+        console.log(`[Engine] Cleaning up ${zeroChipPlayers.length} players with 0 chips`);
+        for (const p of zeroChipPlayers) {
+          await supabase.from('poker_table_players')
+            .update({ status: 'sitting_out' })
+            .eq('id', p.id);
+        }
+      }
+
+      // Second: Clean up any stuck hands (completed more than 60 seconds ago)
+      if (table.current_hand_id) {
+        const { data: currentHand } = await supabase
+          .from('poker_hands')
+          .select('*')
+          .eq('id', table.current_hand_id)
+          .single();
+        
+        if (currentHand) {
+          const handAge = Date.now() - new Date(currentHand.action_started_at || currentHand.created_at).getTime();
+          const isStuck = handAge > 120000; // 2 minutes = stuck
+          const isCompleted = currentHand.completed_at !== null;
+          
+          if (isStuck || isCompleted) {
+            console.log(`[Engine] Cleaning up stuck/completed hand (age: ${Math.round(handAge/1000)}s)`);
+            await supabase.from('poker_tables')
+              .update({ current_hand_id: null, status: 'waiting' })
+              .eq('id', tableId);
+          } else {
+            console.log(`[Engine] Hand already in progress, cannot start new one`);
+            return new Response(JSON.stringify({ success: false, error: 'Hand already in progress' }), {
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+            });
+          }
+        }
+      }
+
+      // Re-fetch players after cleanup
+      const { data: freshPlayers } = await supabase
+        .from('poker_table_players')
+        .select('*, players(name, avatar_url)')
+        .eq('table_id', tableId);
+
+      const activePlayers = freshPlayers?.filter(p => p.status === 'active' && p.stack > 0) || [];
       
       if (activePlayers.length < 2) {
         result = { success: false, error: 'Need at least 2 players' };
