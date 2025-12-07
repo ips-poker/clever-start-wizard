@@ -10,36 +10,83 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ArrowLeft, User, LogOut, Trophy, Table2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 
 export default function OnlinePoker() {
+  const { user, userProfile, isAuthenticated, loading: authLoading } = useAuth();
   const [playerId, setPlayerId] = useState<string | null>(null);
   const [playerName, setPlayerName] = useState('');
+  const [playerAvatar, setPlayerAvatar] = useState<string | null>(null);
   const [playerBalance, setPlayerBalance] = useState(0);
   const [activeTable, setActiveTable] = useState<{ id: string; buyIn: number; isTournament?: boolean } | null>(null);
   const [loading, setLoading] = useState(true);
   const [lobbyTab, setLobbyTab] = useState('cash');
 
-  // Check for existing player
+  // Check for existing player - prioritize authenticated user
   useEffect(() => {
     const checkPlayer = async () => {
-      // Check localStorage for saved player
+      // If user is authenticated, find their player profile
+      if (isAuthenticated && user) {
+        const { data: playerData } = await supabase
+          .from('players')
+          .select('id, name, avatar_url, telegram')
+          .eq('user_id', user.id)
+          .single();
+        
+        if (playerData) {
+          setPlayerId(playerData.id);
+          setPlayerName(playerData.name);
+          setPlayerAvatar(playerData.avatar_url);
+          localStorage.setItem('poker_player_id', playerData.id);
+          setLoading(false);
+          return;
+        }
+        
+        // Check if there's a player linked by telegram_id
+        const telegramId = user.user_metadata?.telegram_id;
+        if (telegramId) {
+          const { data: telegramPlayer } = await supabase
+            .from('players')
+            .select('id, name, avatar_url')
+            .eq('telegram', String(telegramId))
+            .single();
+          
+          if (telegramPlayer) {
+            // Link player to user_id if not already linked
+            await supabase
+              .from('players')
+              .update({ user_id: user.id })
+              .eq('id', telegramPlayer.id);
+            
+            setPlayerId(telegramPlayer.id);
+            setPlayerName(telegramPlayer.name);
+            setPlayerAvatar(telegramPlayer.avatar_url);
+            localStorage.setItem('poker_player_id', telegramPlayer.id);
+            setLoading(false);
+            return;
+          }
+        }
+      }
+      
+      // Fallback to localStorage for non-authenticated users
       const savedPlayerId = localStorage.getItem('poker_player_id');
       
       if (savedPlayerId) {
-        // Verify player exists
         const { data } = await supabase
           .from('players')
-          .select('id, name')
+          .select('id, name, avatar_url')
           .eq('id', savedPlayerId)
           .single();
         
         if (data) {
           setPlayerId(data.id);
           setPlayerName(data.name);
+          setPlayerAvatar(data.avatar_url);
         } else {
           localStorage.removeItem('poker_player_id');
         }
@@ -48,8 +95,10 @@ export default function OnlinePoker() {
       setLoading(false);
     };
 
-    checkPlayer();
-  }, []);
+    if (!authLoading) {
+      checkPlayer();
+    }
+  }, [isAuthenticated, user, authLoading]);
 
   const handleCreatePlayer = async () => {
     if (!playerName.trim()) {
@@ -58,9 +107,16 @@ export default function OnlinePoker() {
     }
 
     try {
-      const { data, error } = await supabase.rpc('create_player_safe', {
-        p_name: playerName.trim()
-      });
+      // If authenticated, create player linked to user
+      const createParams: any = {
+        p_name: playerName.trim(),
+        p_user_id: isAuthenticated && user ? user.id : null,
+        p_avatar_url: userProfile?.avatar_url || null,
+        p_email: user?.email || null,
+        p_telegram: user?.user_metadata?.telegram_id ? String(user.user_metadata.telegram_id) : null
+      };
+
+      const { data, error } = await supabase.rpc('create_player_safe', createParams);
 
       if (error) throw error;
 
@@ -68,6 +124,7 @@ export default function OnlinePoker() {
       if (result.success) {
         const newPlayerId = result.player.id;
         setPlayerId(newPlayerId);
+        setPlayerAvatar(result.player.avatar_url);
         localStorage.setItem('poker_player_id', newPlayerId);
         
         // Create initial balance
@@ -79,6 +136,16 @@ export default function OnlinePoker() {
         if (result.player_id) {
           setPlayerId(result.player_id);
           localStorage.setItem('poker_player_id', result.player_id);
+          
+          // Fetch avatar for existing player
+          const { data: existingPlayer } = await supabase
+            .from('players')
+            .select('avatar_url')
+            .eq('id', result.player_id)
+            .single();
+          if (existingPlayer) {
+            setPlayerAvatar(existingPlayer.avatar_url);
+          }
         }
       }
     } catch (error: any) {
@@ -107,11 +174,12 @@ export default function OnlinePoker() {
     localStorage.removeItem('poker_player_id');
     setPlayerId(null);
     setPlayerName('');
+    setPlayerAvatar(null);
     setPlayerBalance(0);
     toast.success('Вы вышли из аккаунта');
   };
 
-  if (loading) {
+  if (loading || authLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -135,7 +203,12 @@ export default function OnlinePoker() {
           {playerId && (
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2 text-sm">
-                <User className="h-4 w-4" />
+                <Avatar className="h-8 w-8">
+                  <AvatarImage src={playerAvatar || undefined} />
+                  <AvatarFallback>
+                    <User className="h-4 w-4" />
+                  </AvatarFallback>
+                </Avatar>
                 <span className="font-medium">{playerName}</span>
               </div>
               <Button variant="ghost" size="sm" onClick={handleLogout}>
