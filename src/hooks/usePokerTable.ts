@@ -48,6 +48,7 @@ export interface TableState {
   minRaise?: number;
   smallBlindAmount?: number;
   bigBlindAmount?: number;
+  anteAmount?: number;
   actionTimer?: number;
   timeRemaining?: number | null;
   lastRaiserSeat?: number | null;
