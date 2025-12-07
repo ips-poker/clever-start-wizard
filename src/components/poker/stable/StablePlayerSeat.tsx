@@ -165,7 +165,7 @@ const ActionBadge = memo(function ActionBadge({ action }: { action: string }) {
   );
 }, (prev, next) => prev.action === next.action);
 
-// Main player seat component - PPPoker authentic style
+// Main player seat component - SYNDIKATE Brutal Industrial Style
 export const StablePlayerSeat = memo(function StablePlayerSeat({
   player,
   position,
@@ -183,17 +183,17 @@ export const StablePlayerSeat = memo(function StablePlayerSeat({
   const avatarSize = isHero ? 'w-16 h-16' : 'w-14 h-14';
   const ringSize = isHero ? 72 : 62;
 
-  // Generate stable avatar color based on seat
+  // Syndikate themed avatar backgrounds
   const avatarBg = useMemo(() => {
-    const colors = [
-      'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
-      'linear-gradient(135deg, #22c55e 0%, #15803d 100%)',
-      'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
-      'linear-gradient(135deg, #ef4444 0%, #b91c1c 100%)',
-      'linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%)',
-      'linear-gradient(135deg, #ec4899 0%, #be185d 100%)',
+    const syndikatePalette = [
+      'linear-gradient(135deg, #ff7a00 0%, #cc5500 100%)', // Syndikate orange
+      'linear-gradient(135deg, #b91c1c 0%, #7f1d1d 100%)', // Syndikate red
+      'linear-gradient(135deg, #374151 0%, #1f2937 100%)', // Metal gray
+      'linear-gradient(135deg, #854d0e 0%, #451a03 100%)', // Rust
+      'linear-gradient(135deg, #166534 0%, #052e16 100%)', // Dark green
+      'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)', // Dark metal
     ];
-    return colors[seatIndex % colors.length];
+    return syndikatePalette[seatIndex % syndikatePalette.length];
   }, [seatIndex]);
 
   return (
@@ -213,60 +213,76 @@ export const StablePlayerSeat = memo(function StablePlayerSeat({
         />
       )}
 
-      {/* Avatar with PPPoker style frame */}
+      {/* Avatar with Syndikate brutal frame */}
       <div className="relative">
         <div 
           className={cn(
-            'relative rounded-full overflow-hidden transition-all duration-200',
+            'relative rounded-lg overflow-hidden transition-all duration-200',
             avatarSize,
             player.isFolded && 'opacity-40 grayscale',
           )}
           style={{
-            border: isTurn ? '3px solid #fbbf24' : '3px solid rgba(255,255,255,0.3)',
+            border: isTurn 
+              ? '3px solid #ff7a00' 
+              : '2px solid rgba(255, 122, 0, 0.3)',
             boxShadow: isTurn 
-              ? '0 0 20px rgba(251, 191, 36, 0.5), 0 4px 12px rgba(0,0,0,0.4)' 
-              : '0 4px 12px rgba(0,0,0,0.4)',
+              ? '0 0 25px rgba(255, 122, 0, 0.6), 0 4px 15px rgba(0,0,0,0.5), inset 0 0 20px rgba(255, 122, 0, 0.2)' 
+              : '0 4px 15px rgba(0,0,0,0.5), inset 0 0 10px rgba(0,0,0,0.3)',
             background: player.avatar 
               ? `url(${player.avatar}) center/cover` 
               : avatarBg
           }}
         >
           {!player.avatar && (
-            <div className="absolute inset-0 flex items-center justify-center text-white font-bold text-xl drop-shadow-lg">
+            <div className="absolute inset-0 flex items-center justify-center text-white font-display text-2xl drop-shadow-lg">
               {player.name.charAt(0).toUpperCase()}
             </div>
           )}
           
-          {/* Folded overlay */}
+          {/* Folded overlay - Syndikate style */}
           {player.isFolded && (
-            <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-              <span className="text-white/80 text-[10px] font-bold">Fold</span>
+            <div 
+              className="absolute inset-0 flex items-center justify-center"
+              style={{ background: 'rgba(0,0,0,0.6)' }}
+            >
+              <span className="text-orange-500/80 text-[10px] font-bold uppercase tracking-wider">Fold</span>
             </div>
+          )}
+          
+          {/* Industrial corner accents when active */}
+          {isTurn && (
+            <>
+              <div className="absolute top-0 left-0 w-2 h-2 border-l-2 border-t-2 border-orange-500" />
+              <div className="absolute top-0 right-0 w-2 h-2 border-r-2 border-t-2 border-orange-500" />
+              <div className="absolute bottom-0 left-0 w-2 h-2 border-l-2 border-b-2 border-orange-500" />
+              <div className="absolute bottom-0 right-0 w-2 h-2 border-r-2 border-b-2 border-orange-500" />
+            </>
           )}
         </div>
         
-        {/* Dealer button - PPPoker style positioned to the side */}
+        {/* Dealer button - Syndikate brutal style */}
         {player.isDealer && (
           <div 
-            className="absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-black shadow-lg"
+            className="absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-6 flex items-center justify-center text-[10px] font-black"
             style={{
-              background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
-              color: '#1e293b',
-              border: '2px solid #94a3b8',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.3)'
+              background: 'linear-gradient(135deg, #ff7a00 0%, #cc5500 100%)',
+              color: '#000',
+              boxShadow: '0 0 10px rgba(255, 122, 0, 0.5), 0 2px 6px rgba(0,0,0,0.4)',
+              clipPath: 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)'
             }}
           >
             D
           </div>
         )}
         
-        {/* All-in badge */}
+        {/* All-in badge - Syndikate neon style */}
         {player.isAllIn && !player.isFolded && (
           <div 
-            className="absolute -top-2 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded text-[9px] font-bold text-white"
+            className="absolute -top-3 left-1/2 -translate-x-1/2 px-2 py-0.5 text-[9px] font-black text-black uppercase tracking-wider"
             style={{
-              background: 'linear-gradient(135deg, #dc2626 0%, #991b1b 100%)',
-              boxShadow: '0 2px 8px rgba(220, 38, 38, 0.5)'
+              background: 'linear-gradient(135deg, #ff7a00 0%, #ff4500 100%)',
+              boxShadow: '0 0 15px rgba(255, 122, 0, 0.7), 0 2px 6px rgba(0,0,0,0.4)',
+              clipPath: 'polygon(5% 0%, 95% 0%, 100% 50%, 95% 100%, 5% 100%, 0% 50%)'
             }}
           >
             ALL IN
@@ -274,31 +290,38 @@ export const StablePlayerSeat = memo(function StablePlayerSeat({
         )}
       </div>
 
-      {/* Player info plate - PPPoker style dark bar */}
+      {/* Player info plate - Syndikate brutal industrial bar */}
       <div 
-        className="absolute left-1/2 -translate-x-1/2 mt-1"
+        className="absolute left-1/2 -translate-x-1/2 mt-1.5"
         style={{ top: '100%' }}
       >
         <div 
-          className="flex flex-col items-center min-w-[70px] rounded overflow-hidden"
+          className="flex flex-col items-center min-w-[75px] overflow-hidden"
           style={{
-            background: 'linear-gradient(180deg, rgba(30,41,59,0.95) 0%, rgba(15,23,42,0.98) 100%)',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05)'
+            background: 'linear-gradient(180deg, rgba(26,26,26,0.95) 0%, rgba(10,10,10,0.98) 100%)',
+            boxShadow: '0 4px 15px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255, 122, 0, 0.1)',
+            border: '1px solid rgba(255, 122, 0, 0.15)',
+            clipPath: 'polygon(0% 0%, 100% 0%, 95% 100%, 5% 100%)'
           }}
         >
           {/* Name */}
-          <div className="w-full px-2 py-1 text-center border-b border-white/10">
-            <span className="text-white text-[11px] font-medium truncate block max-w-[80px]">
+          <div className="w-full px-3 py-1 text-center border-b border-orange-500/20">
+            <span className="text-white text-[11px] font-bold truncate block max-w-[85px] uppercase tracking-wide">
               {player.name}
             </span>
           </div>
           {/* Stack */}
-          <div className="w-full px-2 py-1 text-center">
+          <div className="w-full px-3 py-1.5 text-center">
             <span 
               className={cn(
-                'text-[12px] font-bold',
-                player.isAllIn ? 'text-red-400' : 'text-amber-400'
+                'text-[13px] font-black',
+                player.isAllIn ? 'text-orange-400' : 'text-orange-500'
               )}
+              style={{ 
+                textShadow: player.isAllIn 
+                  ? '0 0 10px rgba(255, 122, 0, 0.5)' 
+                  : 'none'
+              }}
             >
               {player.stack.toLocaleString()}
             </span>
