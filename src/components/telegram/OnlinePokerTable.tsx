@@ -396,13 +396,32 @@ export function OnlinePokerTable({
             }}
           />
 
-          {/* Pot */}
+          {/* Pot & Side Pots */}
           {(gameState?.pot || 0) > 0 && (
-            <div className="absolute top-[35%] left-1/2 -translate-x-1/2 z-10">
+            <div className="absolute top-[30%] left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-1">
+              {/* Main Pot */}
               <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="flex items-center gap-1.5 px-4 py-1.5 bg-black/60 rounded-full">
                 <Coins className="h-4 w-4 text-yellow-400" />
                 <span className="text-white font-bold text-sm">{gameState?.pot.toLocaleString()}</span>
               </motion.div>
+              
+              {/* Side Pots */}
+              {gameState?.sidePots && gameState.sidePots.length > 0 && (
+                <div className="flex gap-1.5 flex-wrap justify-center">
+                  {gameState.sidePots.map((sidePot, i) => (
+                    <motion.div 
+                      key={i}
+                      initial={{ scale: 0, y: -10 }}
+                      animate={{ scale: 1, y: 0 }}
+                      transition={{ delay: i * 0.1 }}
+                      className="flex items-center gap-1 px-2 py-0.5 bg-purple-600/70 rounded-full"
+                    >
+                      <span className="text-[10px] text-white/70">Side {i + 1}:</span>
+                      <span className="text-white font-bold text-xs">{sidePot.amount.toLocaleString()}</span>
+                    </motion.div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
