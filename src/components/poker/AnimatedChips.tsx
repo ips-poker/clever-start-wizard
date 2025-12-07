@@ -90,7 +90,7 @@ export const ChipStack = memo(function ChipStack({
           {formatChipAmount(amount)}
         </motion.span>
       )}
-    </Wrapper>
+    </motion.div>
   );
 });
 
