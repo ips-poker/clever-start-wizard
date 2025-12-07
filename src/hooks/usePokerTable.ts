@@ -70,6 +70,15 @@ export interface TableState {
   bigBlindAnteAmount?: number;
   mississippiStraddleEnabled?: boolean;
   pendingStraddles?: Array<{ seat: number; amount: number }>;
+  // Bomb Pot
+  bombPotEnabled?: boolean;
+  bombPotMultiplier?: number;
+  bombPotCurrentHand?: boolean;
+  bombPotDoubleBoard?: boolean;
+  // Chat
+  chatEnabled?: boolean;
+  chatSlowMode?: boolean;
+  chatSlowModeInterval?: number;
 }
 
 interface UsePokerTableOptions {
@@ -80,9 +89,14 @@ interface UsePokerTableOptions {
 }
 
 interface ChatMessage {
+  id?: string;
   playerId: string;
-  text: string;
+  playerName?: string;
+  text?: string;
+  message?: string;
   timestamp: number;
+  type?: 'chat' | 'system' | 'dealer' | 'action';
+  isModerated?: boolean;
 }
 
 export interface ShowdownResult {
@@ -312,10 +326,29 @@ export function usePokerTable(options: UsePokerTableOptions | null) {
 
       case 'chat':
         setChatMessages(prev => [...prev, {
+          id: data.id,
           playerId: data.playerId,
-          text: data.text,
-          timestamp: data.timestamp
+          playerName: data.playerName,
+          text: data.text || data.message,
+          message: data.message || data.text,
+          timestamp: data.timestamp,
+          type: data.type || 'chat',
+          isModerated: data.isModerated
         }]);
+        break;
+
+      case 'chat_history':
+        setChatMessages(data.messages || []);
+        break;
+
+      case 'bomb_pot_announced':
+      case 'bomb_pot_started':
+        console.log(`💣 Bomb Pot: ${data.multiplier}x BB, doubleBoard: ${data.doubleBoard}`);
+        break;
+
+      case 'player_muted':
+      case 'player_unmuted':
+        console.log(`🔇 Player ${data.playerId} ${data.type === 'player_muted' ? 'muted' : 'unmuted'}`);
         break;
 
       case 'timeout_fold':
@@ -480,6 +513,34 @@ export function usePokerTable(options: UsePokerTableOptions | null) {
     });
   }, [tableId, playerId, sendMessage]);
 
+  // Trigger bomb pot for next hand
+  const triggerBombPot = useCallback(() => {
+    sendMessage({
+      type: 'bomb_pot',
+      tableId,
+      playerId
+    });
+  }, [tableId, playerId, sendMessage]);
+
+  // Mute/unmute player in chat
+  const mutePlayer = useCallback((targetPlayerId: string, mute: boolean) => {
+    sendMessage({
+      type: 'mute_player',
+      tableId,
+      playerId,
+      data: { targetPlayerId, mute }
+    });
+  }, [tableId, playerId, sendMessage]);
+
+  // Get chat history
+  const getChatHistory = useCallback(() => {
+    sendMessage({
+      type: 'get_chat_history',
+      tableId,
+      playerId
+    });
+  }, [tableId, playerId, sendMessage]);
+
   // Get current player info
   const myPlayer = tableState?.players.find(p => p.oderId === playerId);
   const isMyTurn = tableState?.currentPlayerSeat === mySeat;
@@ -553,6 +614,16 @@ export function usePokerTable(options: UsePokerTableOptions | null) {
     timeBankRemaining,
     isDisconnected,
     
+    // Bomb pot info
+    isBombPot: tableState?.bombPotCurrentHand || false,
+    bombPotEnabled: tableState?.bombPotEnabled || false,
+    bombPotMultiplier: tableState?.bombPotMultiplier || 2,
+    
+    // Chat info
+    chatEnabled: tableState?.chatEnabled !== false,
+    chatSlowMode: tableState?.chatSlowMode || false,
+    chatSlowModeInterval: tableState?.chatSlowModeInterval || 5,
+    
     // Actions
     connect,
     disconnect,
@@ -568,6 +639,9 @@ export function usePokerTable(options: UsePokerTableOptions | null) {
     configureTable,
     useTimeBank,
     sendPing,
-    reconnect
+    reconnect,
+    triggerBombPot,
+    mutePlayer,
+    getChatHistory
   };
 }
