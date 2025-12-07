@@ -23,6 +23,7 @@ import TelegramMiniApp from "./pages/TelegramMiniApp";
 import InvitationCard from "./pages/InvitationCard";
 import TermsOfService from "./pages/TermsOfService";
 import Privacy from "./pages/Privacy";
+import PokerDemo from "./pages/PokerDemo";
 
 const queryClient = new QueryClient();
 
@@ -71,6 +72,7 @@ function App() {
                 <Route path="/telegram-mini-app" element={<TelegramMiniApp />} />
                 <Route path="/terms" element={<TermsOfService />} />
                 <Route path="/privacy" element={<Privacy />} />
+                <Route path="/poker-demo" element={<PokerDemo />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
               <MobileBottomNav />
