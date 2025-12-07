@@ -5,3 +5,17 @@ export { OptimizedCommunityCards, HeroCards } from './OptimizedCommunityCards';
 export { OptimizedPotDisplay, PlayerBetDisplay } from './OptimizedPotDisplay';
 export { OptimizedActionPanel } from './OptimizedActionPanel';
 export { MemoizedPokerCard } from './MemoizedPokerCard';
+
+// PPPoker-style animated components
+export { PPPokerCard } from './PPPokerCard';
+export { PPPokerChips, FlyingChips } from './PPPokerChips';
+export { PPPokerWinnerDisplay } from './PPPokerWinnerDisplay';
+export {
+  AnimatedValue,
+  DealerButton,
+  ActionIndicator,
+  PotCollectionAnimation,
+  WinDistributionAnimation,
+  TimerRing,
+  CardDealAnimation
+} from './PPPokerTableAnimations';
