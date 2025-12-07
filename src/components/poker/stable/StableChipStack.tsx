@@ -2,16 +2,16 @@ import React, { memo, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
-// Chip denominations with stable colors
+// Chip denominations - SYNDIKATE theme colors
 const CHIP_DENOMS = [
-  { value: 10000, color: '#7c3aed', border: '#a78bfa', label: '10K' },
-  { value: 5000, color: '#ec4899', border: '#f472b6', label: '5K' },
-  { value: 1000, color: '#f59e0b', border: '#fbbf24', label: '1K' },
-  { value: 500, color: '#8b5cf6', border: '#a78bfa', label: '500' },
-  { value: 100, color: '#1f2937', border: '#4b5563', label: '100' },
-  { value: 25, color: '#22c55e', border: '#4ade80', label: '25' },
-  { value: 5, color: '#ef4444', border: '#f87171', label: '5' },
-  { value: 1, color: '#f8fafc', border: '#e2e8f0', label: '1' }
+  { value: 10000, color: '#ff7a00', border: '#ffaa44', label: '10K' },  // Syndikate orange
+  { value: 5000, color: '#b91c1c', border: '#ef4444', label: '5K' },    // Syndikate red
+  { value: 1000, color: '#854d0e', border: '#d97706', label: '1K' },    // Rust gold
+  { value: 500, color: '#1f2937', border: '#4b5563', label: '500' },    // Metal dark
+  { value: 100, color: '#0f172a', border: '#334155', label: '100' },    // Dark metal
+  { value: 25, color: '#166534', border: '#22c55e', label: '25' },      // Green
+  { value: 5, color: '#991b1b', border: '#dc2626', label: '5' },        // Dark red
+  { value: 1, color: '#374151', border: '#6b7280', label: '1' }         // Gray
 ] as const;
 
 interface StableChipStackProps {

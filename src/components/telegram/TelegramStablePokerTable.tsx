@@ -68,54 +68,104 @@ const SEAT_POSITIONS_6MAX = [
   { x: 90, y: 60 },  // Seat 5 - Right middle
 ];
 
-// Memoized table felt component - PPPoker authentic style
+// Import Syndikate logo
+import syndikateLogo from '@/assets/syndikate-logo-main.png';
+
+// Memoized table felt component - SYNDIKATE Brutal Industrial Style
 const TableFelt = memo(function TableFelt() {
   return (
     <div className="absolute inset-0">
-      {/* Outer dark frame - darker like PPPoker */}
+      {/* Outer frame - brutal industrial metal */}
       <div 
-        className="absolute inset-0 rounded-[45%]"
+        className="absolute inset-0 rounded-[42%]"
         style={{
-          background: 'linear-gradient(180deg, #2d3748 0%, #1a202c 30%, #171923 50%, #1a202c 70%, #2d3748 100%)',
-          boxShadow: '0 30px 100px rgba(0,0,0,0.95), inset 0 0 60px rgba(0,0,0,0.7)'
+          background: 'linear-gradient(180deg, #1a1a1a 0%, #0d0d0d 30%, #0a0a0a 50%, #0d0d0d 70%, #1a1a1a 100%)',
+          boxShadow: '0 30px 100px rgba(0,0,0,0.98), inset 0 0 60px rgba(0,0,0,0.8)'
         }}
       />
-      {/* Purple/blue rail accent - PPPoker style */}
+      {/* Orange neon accent rail */}
       <div 
-        className="absolute inset-[1.5%] rounded-[46%]"
+        className="absolute inset-[1%] rounded-[43%]"
         style={{
-          background: 'linear-gradient(180deg, #4a5568 0%, #2d3748 20%, #252d3d 50%, #2d3748 80%, #4a5568 100%)',
-          boxShadow: 'inset 0 3px 12px rgba(255,255,255,0.08), inset 0 -3px 12px rgba(0,0,0,0.5)'
+          background: 'linear-gradient(180deg, #2d2d2d 0%, #1a1a1a 20%, #141414 50%, #1a1a1a 80%, #2d2d2d 100%)',
+          boxShadow: 'inset 0 0 20px rgba(255, 122, 0, 0.15), inset 0 2px 10px rgba(255,255,255,0.05)'
         }}
       />
-      {/* Inner edge - subtle leather/wood look */}
+      {/* Secondary rail - metal with rust tint */}
       <div 
-        className="absolute inset-[3%] rounded-[47%]"
+        className="absolute inset-[2.5%] rounded-[44%]"
         style={{
-          background: 'linear-gradient(180deg, #3d4a5c 0%, #2a3544 50%, #3d4a5c 100%)',
-          boxShadow: 'inset 0 2px 6px rgba(0,0,0,0.4)'
+          background: 'linear-gradient(180deg, #3d3029 0%, #2a2218 50%, #3d3029 100%)',
+          boxShadow: 'inset 0 3px 15px rgba(0,0,0,0.6)'
         }}
       />
-      {/* Main felt - vibrant PPPoker green */}
+      {/* Neon orange glow line */}
       <div 
-        className="absolute inset-[4%] rounded-[48%]"
+        className="absolute inset-[3.5%] rounded-[45%] pointer-events-none"
         style={{
-          background: 'linear-gradient(180deg, #35a050 0%, #2d8a45 20%, #258a3d 50%, #2d8a45 80%, #35a050 100%)',
-          boxShadow: 'inset 0 0 80px rgba(0,0,0,0.35), inset 0 8px 40px rgba(255,255,255,0.04)'
+          boxShadow: '0 0 25px rgba(255, 122, 0, 0.3), inset 0 0 20px rgba(255, 122, 0, 0.1)'
+        }}
+      />
+      {/* Main felt - Syndikate dark green with industrial tint */}
+      <div 
+        className="absolute inset-[4%] rounded-[46%]"
+        style={{
+          background: 'radial-gradient(ellipse at 50% 40%, #1e4d30 0%, #163d25 30%, #0f2d1a 60%, #0a2012 100%)',
+          boxShadow: 'inset 0 0 100px rgba(0,0,0,0.6), inset 0 10px 50px rgba(255,255,255,0.02)'
         }}
       >
-        {/* Subtle felt texture */}
+        {/* Industrial texture overlay */}
         <div 
-          className="absolute inset-0 rounded-[48%] opacity-15"
+          className="absolute inset-0 rounded-[46%] opacity-20"
           style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='felt'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23felt)'/%3E%3C/svg%3E")`
+            backgroundImage: `
+              repeating-linear-gradient(45deg, transparent, transparent 3px, rgba(0,0,0,0.1) 3px, rgba(0,0,0,0.1) 6px),
+              url("data:image/svg+xml,%3Csvg viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23f)'/%3E%3C/svg%3E")
+            `
           }}
         />
-        {/* Center logo watermark - like PPPoker */}
+        
+        {/* Decorative orange accent lines */}
+        <div 
+          className="absolute inset-[12%] rounded-[50%] pointer-events-none"
+          style={{ border: '1px solid rgba(255, 122, 0, 0.08)' }}
+        />
+        <div 
+          className="absolute inset-[22%] rounded-[50%] pointer-events-none"
+          style={{ border: '1px solid rgba(255, 122, 0, 0.05)' }}
+        />
+        
+        {/* Center Syndikate Logo */}
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none" style={{ top: '10%' }}>
+          <div className="relative w-32 h-32 opacity-15">
+            <img 
+              src={syndikateLogo} 
+              alt="" 
+              className="w-full h-full object-contain"
+              style={{ filter: 'brightness(0.8) sepia(0.3) hue-rotate(-10deg)' }}
+            />
+          </div>
+        </div>
+        
+        {/* SYNDIKATE text watermark */}
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none" style={{ top: '55%' }}>
-          <div className="text-white/5 text-sm font-bold tracking-[0.3em]">SYNDIKATE</div>
+          <div 
+            className="text-xl font-display uppercase tracking-[0.5em] font-bold"
+            style={{ 
+              color: 'rgba(255, 122, 0, 0.06)',
+              textShadow: '0 0 30px rgba(255, 122, 0, 0.03)'
+            }}
+          >
+            SYNDIKATE
+          </div>
         </div>
       </div>
+      
+      {/* Corner accent bolts */}
+      <div className="absolute top-[8%] left-[15%] w-3 h-3 rounded-full bg-gradient-to-br from-zinc-400 to-zinc-700" style={{ boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.3), 0 2px 4px rgba(0,0,0,0.5)' }} />
+      <div className="absolute top-[8%] right-[15%] w-3 h-3 rounded-full bg-gradient-to-br from-zinc-400 to-zinc-700" style={{ boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.3), 0 2px 4px rgba(0,0,0,0.5)' }} />
+      <div className="absolute bottom-[8%] left-[15%] w-3 h-3 rounded-full bg-gradient-to-br from-zinc-400 to-zinc-700" style={{ boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.3), 0 2px 4px rgba(0,0,0,0.5)' }} />
+      <div className="absolute bottom-[8%] right-[15%] w-3 h-3 rounded-full bg-gradient-to-br from-zinc-400 to-zinc-700" style={{ boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.3), 0 2px 4px rgba(0,0,0,0.5)' }} />
     </div>
   );
 });
@@ -257,7 +307,7 @@ const TableHeader = memo(function TableHeader({
   );
 });
 
-// Winner overlay with celebration effect
+// Winner overlay - SYNDIKATE brutal celebration
 const WinnerOverlay = memo(function WinnerOverlay({
   winner,
   amount,
@@ -279,7 +329,7 @@ const WinnerOverlay = memo(function WinnerOverlay({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="absolute inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md"
+      className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md"
       onClick={onClose}
     >
       <motion.div
@@ -287,11 +337,20 @@ const WinnerOverlay = memo(function WinnerOverlay({
         animate={{ scale: 1, y: 0, rotateX: 0 }}
         exit={{ scale: 0.8, y: 20, opacity: 0 }}
         transition={{ type: 'spring', stiffness: 200, damping: 20 }}
-        className="text-center p-10 rounded-3xl bg-gradient-to-b from-amber-900/95 to-gray-900/95 border-2 border-amber-500/60"
+        className="text-center p-10 relative"
         style={{ 
-          boxShadow: '0 0 80px rgba(251, 191, 36, 0.4), inset 0 1px 0 rgba(255,255,255,0.2)'
+          background: 'linear-gradient(135deg, rgba(26,26,26,0.98) 0%, rgba(10,10,10,0.98) 100%)',
+          border: '2px solid rgba(255, 122, 0, 0.5)',
+          boxShadow: '0 0 60px rgba(255, 122, 0, 0.4), 0 0 100px rgba(255, 122, 0, 0.2), inset 0 1px 0 rgba(255,255,255,0.1)',
+          clipPath: 'polygon(0% 5%, 5% 0%, 95% 0%, 100% 5%, 100% 95%, 95% 100%, 5% 100%, 0% 95%)'
         }}
       >
+        {/* Corner accents */}
+        <div className="absolute top-2 left-2 w-4 h-4 border-l-2 border-t-2 border-orange-500" />
+        <div className="absolute top-2 right-2 w-4 h-4 border-r-2 border-t-2 border-orange-500" />
+        <div className="absolute bottom-2 left-2 w-4 h-4 border-l-2 border-b-2 border-orange-500" />
+        <div className="absolute bottom-2 right-2 w-4 h-4 border-r-2 border-b-2 border-orange-500" />
+        
         {/* Trophy icon */}
         <motion.div
           initial={{ scale: 0 }}
@@ -306,7 +365,8 @@ const WinnerOverlay = memo(function WinnerOverlay({
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
-          className="text-amber-400 text-2xl font-bold mb-2"
+          className="text-orange-400 text-2xl font-display uppercase tracking-wider mb-2"
+          style={{ textShadow: '0 0 20px rgba(255, 122, 0, 0.5)' }}
         >
           {winner.name} Wins!
         </motion.div>
@@ -315,8 +375,8 @@ const WinnerOverlay = memo(function WinnerOverlay({
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.4 }}
-          className="text-white text-4xl font-black mb-3"
-          style={{ textShadow: '0 0 20px rgba(251, 191, 36, 0.5)' }}
+          className="text-white text-5xl font-black mb-3"
+          style={{ textShadow: '0 0 30px rgba(255, 122, 0, 0.6)' }}
         >
           +{amount.toLocaleString()}
         </motion.div>
@@ -325,7 +385,7 @@ const WinnerOverlay = memo(function WinnerOverlay({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.5 }}
-          className="text-amber-300/80 text-sm font-medium"
+          className="text-orange-300/70 text-sm font-bold uppercase tracking-wider"
         >
           {handRank}
         </motion.div>
@@ -841,35 +901,42 @@ function TelegramStablePokerTableInner({
           {/* Table felt */}
           <TableFelt />
 
-          {/* Pot display - PPPoker style with chip icon */}
+          {/* Pot display - SYNDIKATE brutal style with neon orange */}
           {pot > 0 && (
             <div className="absolute top-[28%] left-1/2 -translate-x-1/2 z-20">
               <motion.div 
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full"
+                className="flex items-center gap-2 px-4 py-2"
                 style={{
-                  background: 'linear-gradient(135deg, rgba(0,0,0,0.85) 0%, rgba(20,20,30,0.9) 100%)',
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.1)'
+                  background: 'linear-gradient(135deg, rgba(10,10,10,0.95) 0%, rgba(26,26,26,0.95) 100%)',
+                  boxShadow: '0 0 20px rgba(255, 122, 0, 0.3), 0 4px 15px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255, 122, 0, 0.2)',
+                  border: '1px solid rgba(255, 122, 0, 0.3)',
+                  clipPath: 'polygon(5% 0%, 95% 0%, 100% 50%, 95% 100%, 5% 100%, 0% 50%)'
                 }}
                 initial={{ scale: 0, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 transition={{ type: 'spring', stiffness: 400, damping: 25 }}
               >
-                {/* Chip icon - red like PPPoker */}
+                {/* Chip icon - Syndikate orange */}
                 <div 
-                  className="w-6 h-6 rounded-full flex items-center justify-center"
+                  className="w-7 h-7 rounded-full flex items-center justify-center"
                   style={{
-                    background: 'radial-gradient(circle at 30% 30%, #ef4444 0%, #dc2626 50%, #b91c1c 100%)',
-                    boxShadow: '0 2px 4px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.3)'
+                    background: 'linear-gradient(135deg, #ff7a00 0%, #cc5500 100%)',
+                    boxShadow: '0 0 10px rgba(255, 122, 0, 0.5), 0 2px 4px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.3)'
                   }}
                 >
-                  <div className="w-4 h-4 rounded-full border border-white/40 border-dashed" />
+                  <div className="w-4 h-4 rounded-full border-2 border-black/30" />
                 </div>
-                <span className="text-white font-bold text-base tracking-wide">
-                  {pot.toLocaleString()}
-                </span>
+                <div className="flex flex-col">
+                  <span 
+                    className="text-orange-400 font-black text-lg tracking-wide"
+                    style={{ textShadow: '0 0 10px rgba(255, 122, 0, 0.4)' }}
+                  >
+                    {pot.toLocaleString()}
+                  </span>
+                </div>
               </motion.div>
               <div className="text-center mt-1">
-                <span className="text-white/60 text-xs">Pot: {pot.toLocaleString()}</span>
+                <span className="text-orange-500/50 text-[10px] font-bold uppercase tracking-wider">Pot</span>
               </div>
             </div>
           )}

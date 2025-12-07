@@ -31,7 +31,7 @@ interface StablePokerCardProps {
   className?: string;
 }
 
-// Memoized card back - never re-renders
+// Memoized card back - SYNDIKATE brutal industrial style
 const CardBack = memo(function CardBack({ size }: { size: keyof typeof SIZE_CONFIG }) {
   const config = SIZE_CONFIG[size];
   
@@ -40,27 +40,52 @@ const CardBack = memo(function CardBack({ size }: { size: keyof typeof SIZE_CONF
       className="absolute inset-0 rounded-lg overflow-hidden"
       style={{ width: config.w, height: config.h }}
     >
+      {/* Base - dark industrial gradient */}
       <div 
         className="w-full h-full"
         style={{
-          background: 'linear-gradient(135deg, #1e40af 0%, #1e3a8a 50%, #1e40af 100%)'
+          background: 'linear-gradient(135deg, #1a1a1a 0%, #0d0d0d 50%, #1a1a1a 100%)'
         }}
       >
-        <svg className="absolute inset-0 w-full h-full opacity-20" viewBox="0 0 40 40">
-          <defs>
-            <pattern id="stableCardPattern" x="0" y="0" width="8" height="8" patternUnits="userSpaceOnUse">
-              <circle cx="4" cy="4" r="1" fill="white" />
-            </pattern>
-          </defs>
-          <rect width="100%" height="100%" fill="url(#stableCardPattern)" />
-        </svg>
+        {/* Industrial grid pattern */}
+        <div 
+          className="absolute inset-0 opacity-30"
+          style={{
+            backgroundImage: `
+              repeating-linear-gradient(0deg, transparent, transparent 4px, rgba(255,122,0,0.1) 4px, rgba(255,122,0,0.1) 5px),
+              repeating-linear-gradient(90deg, transparent, transparent 4px, rgba(255,122,0,0.1) 4px, rgba(255,122,0,0.1) 5px)
+            `
+          }}
+        />
+        {/* Center S logo */}
         <div className="absolute inset-0 flex items-center justify-center">
-          <div className="w-1/2 h-1/2 rounded-full border-2 border-white/20" />
+          <div 
+            className="font-display text-2xl font-black"
+            style={{ 
+              color: 'rgba(255, 122, 0, 0.4)',
+              textShadow: '0 0 10px rgba(255, 122, 0, 0.3)'
+            }}
+          >
+            S
+          </div>
         </div>
+        {/* Corner accents */}
+        <div className="absolute top-1 left-1 w-2 h-2 border-l border-t border-orange-500/30" />
+        <div className="absolute top-1 right-1 w-2 h-2 border-r border-t border-orange-500/30" />
+        <div className="absolute bottom-1 left-1 w-2 h-2 border-l border-b border-orange-500/30" />
+        <div className="absolute bottom-1 right-1 w-2 h-2 border-r border-b border-orange-500/30" />
       </div>
+      {/* Orange neon edge glow */}
+      <div 
+        className="absolute inset-0 rounded-lg pointer-events-none"
+        style={{ 
+          boxShadow: 'inset 0 0 15px rgba(255, 122, 0, 0.15), 0 0 8px rgba(255, 122, 0, 0.2)'
+        }}
+      />
+      {/* Subtle gloss */}
       <div 
         className="absolute inset-0"
-        style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.1) 0%, transparent 50%)' }}
+        style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.08) 0%, transparent 50%)' }}
       />
     </div>
   );
