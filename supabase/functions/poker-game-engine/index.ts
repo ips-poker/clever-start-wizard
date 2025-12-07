@@ -386,14 +386,55 @@ serve(async (req) => {
 
     switch (action) {
       case 'join': {
+        // Check if player already at this table
+        const existingPlayer = (tablePlayers || []).find(p => p.player_id === playerId);
+        
+        if (existingPlayer) {
+          console.log(`[Poker Engine] Player ${playerId} already at table, returning existing seat`);
+          result = { 
+            success: true, 
+            seatNumber: existingPlayer.seat_number, 
+            stack: existingPlayer.stack,
+            alreadySeated: true 
+          };
+          break;
+        }
+
         const occupiedSeats = (tablePlayers || []).map(p => p.seat_number);
-        const availableSeat = seatNumber || 
+        
+        // If requested seat is occupied, find another
+        let targetSeat = seatNumber;
+        if (targetSeat && occupiedSeats.includes(targetSeat)) {
+          console.log(`[Poker Engine] Requested seat ${targetSeat} is occupied, finding alternative`);
+          targetSeat = undefined;
+        }
+        
+        const availableSeat = targetSeat || 
           Array.from({ length: table.max_players }, (_, i) => i + 1)
             .find(s => !occupiedSeats.includes(s));
 
         if (!availableSeat) {
           result = { success: false, error: 'No available seats' };
           break;
+        }
+
+        // Double-check seat is really available (race condition prevention)
+        const { data: seatCheck } = await supabase
+          .from('poker_table_players')
+          .select('id')
+          .eq('table_id', tableId)
+          .eq('seat_number', availableSeat)
+          .single();
+
+        if (seatCheck) {
+          console.log(`[Poker Engine] Race condition: seat ${availableSeat} taken, finding new seat`);
+          const newAvailableSeat = Array.from({ length: table.max_players }, (_, i) => i + 1)
+            .find(s => !occupiedSeats.includes(s) && s !== availableSeat);
+          
+          if (!newAvailableSeat) {
+            result = { success: false, error: 'No available seats (race condition)' };
+            break;
+          }
         }
 
         const { data: balance } = await supabase
@@ -404,20 +445,41 @@ serve(async (req) => {
 
         const buyIn = Math.min(balance?.balance || table.min_buy_in, table.max_buy_in);
 
+        // Use INSERT instead of UPSERT to avoid seat conflicts
         const { error: joinError } = await supabase
           .from('poker_table_players')
-          .upsert({
+          .insert({
             table_id: tableId,
             player_id: playerId,
             seat_number: availableSeat,
             stack: buyIn,
             status: 'active'
-          }, { onConflict: 'table_id,player_id' });
+          });
 
         if (joinError) {
           console.error('Join error:', joinError);
+          // If duplicate player error, they're already seated
+          if (joinError.message.includes('duplicate') || joinError.message.includes('unique')) {
+            const { data: existingAfterError } = await supabase
+              .from('poker_table_players')
+              .select('*')
+              .eq('table_id', tableId)
+              .eq('player_id', playerId)
+              .single();
+            
+            if (existingAfterError) {
+              result = { 
+                success: true, 
+                seatNumber: existingAfterError.seat_number, 
+                stack: existingAfterError.stack,
+                alreadySeated: true 
+              };
+              break;
+            }
+          }
           result = { success: false, error: joinError.message };
         } else {
+          console.log(`[Poker Engine] Player ${playerId} joined at seat ${availableSeat} with ${buyIn} chips`);
           result = { success: true, seatNumber: availableSeat, stack: buyIn };
         }
         break;
