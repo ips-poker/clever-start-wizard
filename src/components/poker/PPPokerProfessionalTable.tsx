@@ -20,9 +20,10 @@ import { StablePokerCard } from './stable/StablePokerCard';
 import { StableChipStack } from './stable/StableChipStack';
 import { StableActionPanel } from './stable/StableActionPanel';
 
-// Chat and Emoji components
+// Chat, Emoji and Settings components
 import { TableChat } from './TableChat';
 import { TableReactions, QuickReactionButton, useTableReactions, ReactionType } from './TableEmojis';
+import { TableSettingsPanel, TableSettings } from './TableSettingsPanel';
 
 // Avatar resolver utility
 import { resolveAvatarUrl } from '@/utils/avatarResolver';
@@ -873,9 +874,20 @@ export function PPPokerProfessionalTable({
 }: PPPokerProfessionalTableProps) {
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [showChat, setShowChat] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const [turnTimeRemaining, setTurnTimeRemaining] = useState<number | null>(null);
   const [playerActions, setPlayerActions] = useState<Record<string, { action: string; amount?: number }>>({});
   const [mutedPlayers, setMutedPlayers] = useState<Set<string>>(new Set());
+  const [tableSettings, setTableSettings] = useState<Partial<TableSettings>>({
+    smallBlind: 10,
+    bigBlind: 20,
+    ante: 0,
+    actionTimeSeconds: 15,
+    timeBankSeconds: 30,
+    chatEnabled: true,
+    bombPotEnabled: false,
+    autoStartEnabled: true
+  });
 
   const sounds = usePokerSounds();
   const SEAT_POSITIONS = maxSeats === 6 ? SEAT_POSITIONS_6MAX : SEAT_POSITIONS_9MAX;
@@ -1112,6 +1124,16 @@ export function PPPokerProfessionalTable({
             >
               {soundEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
             </Button>
+            
+            {/* Settings toggle */}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setShowSettings(true)}
+              className="h-8 w-8 text-white/70 hover:text-white hover:bg-white/10"
+            >
+              <Settings2 className="h-4 w-4" />
+            </Button>
           </div>
         </div>
 
@@ -1314,6 +1336,15 @@ export function PPPokerProfessionalTable({
             bombPotEnabled={bombPotEnabled}
           />
         )}
+
+        {/* Table Settings Panel */}
+        <TableSettingsPanel
+          isOpen={showSettings}
+          onClose={() => setShowSettings(false)}
+          settings={tableSettings}
+          onSave={(newSettings) => setTableSettings(prev => ({ ...prev, ...newSettings }))}
+          isHost={true}
+        />
       </div>
     </PokerErrorBoundary>
   );
