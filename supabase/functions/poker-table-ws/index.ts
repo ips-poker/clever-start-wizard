@@ -296,6 +296,8 @@ interface TableState {
   turnStartTime: number | null; // When current player's turn started
   // BB option tracking
   bbHasActed: boolean; // Has BB used their option (check/raise)?
+  // Run it twice
+  runItTwiceEnabled: boolean; // Allow running board twice when all-in
 }
 
 interface PlayerState {
@@ -1046,7 +1048,8 @@ function createInitialTableState(tableId: string): TableState {
     lastRaiseAmount: 0,
     actionTimer: 30, // 30 seconds default
     turnStartTime: null,
-    bbHasActed: false // BB hasn't had their option yet
+    bbHasActed: false, // BB hasn't had their option yet
+    runItTwiceEnabled: true // Run it twice enabled by default
   };
 }
 
@@ -1299,6 +1302,157 @@ async function handleShowdown(tableState: TableState, supabase: any) {
     return;
   }
 
+  // Check if we should run it twice (all remaining players are all-in and more cards to deal)
+  const allActiveAreAllIn = activePlayers.every(([_, p]) => p.isAllIn);
+  const cardsRemaining = 5 - tableState.communityCards.length;
+  const shouldRunItTwice = tableState.runItTwiceEnabled && allActiveAreAllIn && cardsRemaining > 0;
+
+  if (shouldRunItTwice) {
+    console.log(`🎲 RUN IT TWICE: All players all-in, ${cardsRemaining} cards remaining`);
+    await handleRunItTwice(tableState, supabase, activePlayers, allPlayers, cardsRemaining);
+    return;
+  }
+
+  // Standard single-board showdown
+  await handleStandardShowdown(tableState, supabase, activePlayers, allPlayers);
+}
+
+// Run It Twice - deal remaining cards twice and split pot
+async function handleRunItTwice(
+  tableState: TableState,
+  supabase: any,
+  activePlayers: [string, PlayerState][],
+  allPlayers: [string, PlayerState][],
+  cardsRemaining: number
+) {
+  // Save original deck state
+  const originalDeck = [...tableState.deck];
+  const originalCommunityCards = [...tableState.communityCards];
+  
+  // Build contributions for side pot calculation
+  const contributions: PlayerContribution[] = allPlayers.map(([playerId, player]) => ({
+    playerId,
+    totalBet: player.totalBetInHand || player.betAmount,
+    isFolded: player.isFolded,
+    isAllIn: player.isAllIn
+  }));
+  const potResult = calculateSidePots(contributions);
+  const allPots = [potResult.mainPot, ...potResult.sidePots];
+  
+  // Results for both runs
+  const runResults: { run: number; communityCards: string[]; winners: { oderId: string; amount: number; handName: string }[] }[] = [];
+  
+  // Run 1 - deal remaining cards
+  const run1Cards = [...originalCommunityCards];
+  const deck1 = [...originalDeck];
+  for (let i = 0; i < cardsRemaining; i++) {
+    if (i === 0 || i === 1 || i === 2) deck1.pop(); // Burn before each street
+    run1Cards.push(deck1.pop()!);
+  }
+  
+  // Evaluate hands for run 1
+  const run1Winners = evaluateAndDistributePots(activePlayers, run1Cards, allPots, 0.5);
+  runResults.push({ run: 1, communityCards: run1Cards, winners: run1Winners });
+  
+  // Run 2 - deal remaining cards from remaining deck
+  const run2Cards = [...originalCommunityCards];
+  for (let i = 0; i < cardsRemaining; i++) {
+    if (i === 0 || i === 1 || i === 2) deck1.pop(); // Burn
+    run2Cards.push(deck1.pop()!);
+  }
+  
+  // Evaluate hands for run 2
+  const run2Winners = evaluateAndDistributePots(activePlayers, run2Cards, allPots, 0.5);
+  runResults.push({ run: 2, communityCards: run2Cards, winners: run2Winners });
+  
+  // Combine results and update stacks
+  const combinedResults: { oderId: string; amount: number; handName: string; runs: string }[] = [];
+  
+  [...run1Winners, ...run2Winners].forEach(winner => {
+    const existing = combinedResults.find(w => w.oderId === winner.oderId);
+    if (existing) {
+      existing.amount += winner.amount;
+      existing.runs += `, Run ${runResults.findIndex(r => r.winners.includes(winner)) + 1}`;
+    } else {
+      combinedResults.push({
+        ...winner,
+        runs: `Run ${runResults.findIndex(r => r.winners.includes(winner)) + 1}`
+      });
+    }
+    
+    // Update player stack
+    const playerState = tableState.players.get(winner.oderId);
+    if (playerState) {
+      playerState.stack += winner.amount;
+    }
+  });
+  
+  console.log(`🎲 RUN IT TWICE Results:`);
+  console.log(`   Run 1: ${run1Cards.join(' ')} - Winners: ${run1Winners.map(w => `${w.oderId}: ${w.amount}`).join(', ')}`);
+  console.log(`   Run 2: ${run2Cards.join(' ')} - Winners: ${run2Winners.map(w => `${w.oderId}: ${w.amount}`).join(', ')}`);
+  
+  // Broadcast run it twice result
+  broadcastToTable(tableState.tableId, {
+    type: "run_it_twice",
+    runs: runResults,
+    combinedWinners: combinedResults,
+    playerCards: Object.fromEntries(activePlayers.map(([id, p]) => [id, p.holeCards]))
+  });
+  
+  await finalizeHand(tableState, supabase, combinedResults, activePlayers);
+}
+
+// Helper function to evaluate hands and distribute pots
+function evaluateAndDistributePots(
+  activePlayers: [string, PlayerState][],
+  communityCards: string[],
+  allPots: { amount: number; eligiblePlayers: string[] }[],
+  potFraction: number
+): { oderId: string; amount: number; handName: string }[] {
+  const playerEvaluations: { oderId: string; state: PlayerState; eval: HandEvaluation }[] = [];
+  
+  for (const [oderId, playerState] of activePlayers) {
+    const allCards = [...playerState.holeCards, ...communityCards];
+    const evaluation = evaluateHand(allCards);
+    playerEvaluations.push({ oderId, state: playerState, eval: evaluation });
+  }
+  
+  const winners: { oderId: string; amount: number; handName: string }[] = [];
+  
+  allPots.forEach((pot) => {
+    if (pot.amount <= 0) return;
+    
+    const eligibleEvaluations = playerEvaluations.filter(p => pot.eligiblePlayers.includes(p.oderId));
+    if (eligibleEvaluations.length === 0) return;
+    
+    const maxValue = Math.max(...eligibleEvaluations.map(p => p.eval.value));
+    const potWinners = eligibleEvaluations.filter(p => p.eval.value === maxValue);
+    
+    const potAmount = Math.floor(pot.amount * potFraction);
+    const amountPerWinner = Math.floor(potAmount / potWinners.length);
+    const remainder = potAmount % potWinners.length;
+    
+    potWinners.forEach((winner, idx) => {
+      const amount = amountPerWinner + (idx === 0 ? remainder : 0);
+      const existing = winners.find(w => w.oderId === winner.oderId);
+      if (existing) {
+        existing.amount += amount;
+      } else {
+        winners.push({ oderId: winner.oderId, amount, handName: winner.eval.name });
+      }
+    });
+  });
+  
+  return winners;
+}
+
+// Standard single-board showdown
+async function handleStandardShowdown(
+  tableState: TableState,
+  supabase: any,
+  activePlayers: [string, PlayerState][],
+  allPlayers: [string, PlayerState][]
+) {
   // Build contributions for side pot calculation
   const contributions: PlayerContribution[] = allPlayers.map(([playerId, player]) => ({
     playerId,
