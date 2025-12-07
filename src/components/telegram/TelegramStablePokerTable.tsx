@@ -58,64 +58,69 @@ function cardToString(card: PokerEngineCard): string {
   return `${RANK_NAMES[card.rank]}${suitChar}`;
 }
 
-// Seat positions for 6-max table (овальный стол PPPoker style)
+// Seat positions for 6-max table - PPPoker authentic layout
 const SEAT_POSITIONS_6MAX = [
-  { x: 50, y: 85 },  // Seat 0 - Hero (bottom center)
-  { x: 12, y: 65 },  // Seat 1 - Left bottom
-  { x: 12, y: 30 },  // Seat 2 - Left top
-  { x: 50, y: 12 },  // Seat 3 - Top center
-  { x: 88, y: 30 },  // Seat 4 - Right top
-  { x: 88, y: 65 },  // Seat 5 - Right bottom
+  { x: 50, y: 88 },  // Seat 0 - Hero (bottom center)
+  { x: 10, y: 60 },  // Seat 1 - Left middle
+  { x: 10, y: 28 },  // Seat 2 - Left top
+  { x: 50, y: 10 },  // Seat 3 - Top center
+  { x: 90, y: 28 },  // Seat 4 - Right top
+  { x: 90, y: 60 },  // Seat 5 - Right middle
 ];
 
-// Memoized table felt component - PPPoker premium style
+// Memoized table felt component - PPPoker authentic style
 const TableFelt = memo(function TableFelt() {
   return (
     <div className="absolute inset-0">
-      {/* Outer dark frame */}
+      {/* Outer dark frame - darker like PPPoker */}
       <div 
-        className="absolute inset-0 rounded-[42%]"
+        className="absolute inset-0 rounded-[45%]"
         style={{
-          background: 'linear-gradient(180deg, #1a1a2e 0%, #0f0f1a 50%, #1a1a2e 100%)',
-          boxShadow: '0 25px 80px rgba(0,0,0,0.9), inset 0 0 40px rgba(0,0,0,0.6)'
+          background: 'linear-gradient(180deg, #2d3748 0%, #1a202c 30%, #171923 50%, #1a202c 70%, #2d3748 100%)',
+          boxShadow: '0 30px 100px rgba(0,0,0,0.95), inset 0 0 60px rgba(0,0,0,0.7)'
         }}
       />
-      {/* Wood rail */}
+      {/* Purple/blue rail accent - PPPoker style */}
       <div 
-        className="absolute inset-[1%] rounded-[43%]"
+        className="absolute inset-[1.5%] rounded-[46%]"
         style={{
-          background: 'linear-gradient(180deg, #5d4037 0%, #3e2723 50%, #5d4037 100%)',
-          boxShadow: 'inset 0 2px 8px rgba(255,255,255,0.1), inset 0 -2px 8px rgba(0,0,0,0.4)'
+          background: 'linear-gradient(180deg, #4a5568 0%, #2d3748 20%, #252d3d 50%, #2d3748 80%, #4a5568 100%)',
+          boxShadow: 'inset 0 3px 12px rgba(255,255,255,0.08), inset 0 -3px 12px rgba(0,0,0,0.5)'
         }}
       />
-      {/* Inner felt - rich green */}
+      {/* Inner edge - subtle leather/wood look */}
       <div 
-        className="absolute inset-[3%] rounded-[44%]"
+        className="absolute inset-[3%] rounded-[47%]"
         style={{
-          background: 'radial-gradient(ellipse at 50% 30%, #2e7d4a 0%, #1b5e30 50%, #145028 100%)',
-          boxShadow: 'inset 0 0 100px rgba(0,0,0,0.5), inset 0 6px 30px rgba(255,255,255,0.03)'
+          background: 'linear-gradient(180deg, #3d4a5c 0%, #2a3544 50%, #3d4a5c 100%)',
+          boxShadow: 'inset 0 2px 6px rgba(0,0,0,0.4)'
+        }}
+      />
+      {/* Main felt - vibrant PPPoker green */}
+      <div 
+        className="absolute inset-[4%] rounded-[48%]"
+        style={{
+          background: 'linear-gradient(180deg, #35a050 0%, #2d8a45 20%, #258a3d 50%, #2d8a45 80%, #35a050 100%)',
+          boxShadow: 'inset 0 0 80px rgba(0,0,0,0.35), inset 0 8px 40px rgba(255,255,255,0.04)'
         }}
       >
-        {/* Felt texture overlay */}
+        {/* Subtle felt texture */}
         <div 
-          className="absolute inset-0 rounded-[44%] opacity-25"
+          className="absolute inset-0 rounded-[48%] opacity-15"
           style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`
+            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='felt'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23felt)'/%3E%3C/svg%3E")`
           }}
         />
-        {/* Decorative gold lines */}
-        <div className="absolute inset-[15%] rounded-[50%] border border-amber-600/10" />
-        <div className="absolute inset-[25%] rounded-[50%] border border-amber-600/5" />
-        {/* Center logo area */}
-        <div className="absolute inset-[38%] rounded-[50%] border border-white/5 flex items-center justify-center">
-          <div className="text-white/10 text-xs font-bold tracking-widest">POKER</div>
+        {/* Center logo watermark - like PPPoker */}
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none" style={{ top: '55%' }}>
+          <div className="text-white/5 text-sm font-bold tracking-[0.3em]">SYNDIKATE</div>
         </div>
       </div>
     </div>
   );
 });
 
-// Memoized community cards display with staggered animation
+// Memoized community cards display - PPPoker style larger cards
 const CommunityCards = memo(function CommunityCards({
   cards,
   phase
@@ -135,7 +140,7 @@ const CommunityCards = memo(function CommunityCards({
   }, [phase]);
 
   return (
-    <div className="flex items-center justify-center gap-1.5">
+    <div className="flex items-center justify-center gap-2">
       {[0, 1, 2, 3, 4].map((idx) => {
         const card = cards[idx];
         const shouldShow = idx < visibleCount && card;
@@ -144,25 +149,28 @@ const CommunityCards = memo(function CommunityCards({
           <motion.div 
             key={idx} 
             className="relative"
-            initial={shouldShow ? { scale: 0, rotateY: 180 } : { scale: 1 }}
-            animate={shouldShow ? { scale: 1, rotateY: 0 } : { scale: 1 }}
+            initial={shouldShow ? { scale: 0, rotateY: 180, y: -20 } : { scale: 1 }}
+            animate={shouldShow ? { scale: 1, rotateY: 0, y: 0 } : { scale: 1 }}
             transition={{ 
               type: "spring", 
-              stiffness: 300, 
-              damping: 20,
-              delay: (idx % 3) * 0.1
+              stiffness: 350, 
+              damping: 22,
+              delay: (idx % 3) * 0.08
             }}
           >
             {shouldShow ? (
               <StablePokerCard
                 card={card}
-                size="md"
+                size="lg"
                 dealDelay={0}
               />
             ) : (
               <div 
-                className="w-12 h-[68px] rounded-lg border border-white/10 bg-black/20"
-                style={{ boxShadow: 'inset 0 2px 6px rgba(0,0,0,0.3)' }}
+                className="w-14 h-[80px] rounded-lg"
+                style={{ 
+                  background: 'rgba(0,0,0,0.15)',
+                  border: '1px solid rgba(255,255,255,0.05)'
+                }}
               />
             )}
           </motion.div>
@@ -833,14 +841,35 @@ function TelegramStablePokerTableInner({
           {/* Table felt */}
           <TableFelt />
 
-          {/* Pot display */}
+          {/* Pot display - PPPoker style with chip icon */}
           {pot > 0 && (
-            <div className="absolute top-[26%] left-1/2 -translate-x-1/2 z-20">
-              <div className="flex flex-col items-center gap-2">
-                <StableChipStack amount={pot} size="md" />
-                <div className="px-3 py-1 rounded-full bg-black/70 text-amber-400 font-bold text-sm">
-                  Pot: {pot.toLocaleString()}
+            <div className="absolute top-[28%] left-1/2 -translate-x-1/2 z-20">
+              <motion.div 
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full"
+                style={{
+                  background: 'linear-gradient(135deg, rgba(0,0,0,0.85) 0%, rgba(20,20,30,0.9) 100%)',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.1)'
+                }}
+                initial={{ scale: 0, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+              >
+                {/* Chip icon - red like PPPoker */}
+                <div 
+                  className="w-6 h-6 rounded-full flex items-center justify-center"
+                  style={{
+                    background: 'radial-gradient(circle at 30% 30%, #ef4444 0%, #dc2626 50%, #b91c1c 100%)',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.3)'
+                  }}
+                >
+                  <div className="w-4 h-4 rounded-full border border-white/40 border-dashed" />
                 </div>
+                <span className="text-white font-bold text-base tracking-wide">
+                  {pot.toLocaleString()}
+                </span>
+              </motion.div>
+              <div className="text-center mt-1">
+                <span className="text-white/60 text-xs">Pot: {pot.toLocaleString()}</span>
               </div>
             </div>
           )}
