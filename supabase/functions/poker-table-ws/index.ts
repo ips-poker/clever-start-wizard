@@ -10,6 +10,133 @@ const tableConnections = new Map<string, Map<string, WebSocket>>();
 // Store game state per table
 const tableStates = new Map<string, TableState>();
 
+// ==========================================
+// POKER HAND EVALUATION (встроенный движок)
+// ==========================================
+
+type Suit = 'h' | 'd' | 'c' | 's';
+type Rank = 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14;
+
+interface PokerCard {
+  rank: Rank;
+  suit: Suit;
+}
+
+enum HandRank {
+  HIGH_CARD = 1, PAIR = 2, TWO_PAIR = 3, THREE_OF_A_KIND = 4,
+  STRAIGHT = 5, FLUSH = 6, FULL_HOUSE = 7, FOUR_OF_A_KIND = 8,
+  STRAIGHT_FLUSH = 9, ROYAL_FLUSH = 10
+}
+
+const HAND_RANK_NAMES: Record<HandRank, string> = {
+  [HandRank.HIGH_CARD]: 'High Card', [HandRank.PAIR]: 'Pair',
+  [HandRank.TWO_PAIR]: 'Two Pair', [HandRank.THREE_OF_A_KIND]: 'Three of a Kind',
+  [HandRank.STRAIGHT]: 'Straight', [HandRank.FLUSH]: 'Flush',
+  [HandRank.FULL_HOUSE]: 'Full House', [HandRank.FOUR_OF_A_KIND]: 'Four of a Kind',
+  [HandRank.STRAIGHT_FLUSH]: 'Straight Flush', [HandRank.ROYAL_FLUSH]: 'Royal Flush'
+};
+
+interface HandEvaluation {
+  rank: HandRank;
+  name: string;
+  value: number;
+}
+
+function parseCardString(str: string): PokerCard | null {
+  const rankMap: Record<string, Rank> = {
+    '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8, '9': 9,
+    'T': 10, 'J': 11, 'Q': 12, 'K': 13, 'A': 14
+  };
+  const suitMap: Record<string, Suit> = { 'h': 'h', 'd': 'd', 'c': 'c', 's': 's' };
+  if (str.length < 2) return null;
+  const rank = rankMap[str[0].toUpperCase()];
+  const suit = suitMap[str[1].toLowerCase()];
+  if (!rank || !suit) return null;
+  return { rank, suit };
+}
+
+function getCombinations(cards: PokerCard[], n: number): PokerCard[][] {
+  if (n === 0) return [[]];
+  if (cards.length < n) return [];
+  const [first, ...rest] = cards;
+  return [...getCombinations(rest, n - 1).map(c => [first, ...c]), ...getCombinations(rest, n)];
+}
+
+function isFlush(cards: PokerCard[]): boolean {
+  return cards.every(c => c.suit === cards[0].suit);
+}
+
+function isStraight(cards: PokerCard[]): boolean {
+  const ranks = cards.map(c => c.rank).sort((a, b) => a - b);
+  if (ranks[4] === 14 && ranks[0] === 2 && ranks[1] === 3 && ranks[2] === 4 && ranks[3] === 5) return true;
+  for (let i = 1; i < ranks.length; i++) {
+    if (ranks[i] !== ranks[i - 1] + 1) return false;
+  }
+  return true;
+}
+
+function evaluateFiveCards(cards: PokerCard[]): HandEvaluation {
+  const flush = isFlush(cards);
+  const straight = isStraight(cards);
+  const sortedCards = [...cards].sort((a, b) => b.rank - a.rank);
+  
+  const groups = new Map<Rank, number>();
+  for (const c of cards) groups.set(c.rank, (groups.get(c.rank) || 0) + 1);
+  const sizes = Array.from(groups.values()).sort((a, b) => b - a);
+  
+  let rank: HandRank;
+  let value = 0;
+  
+  if (flush && straight) {
+    const ranks = cards.map(c => c.rank).sort((a, b) => a - b);
+    rank = (ranks[0] === 10 && ranks[4] === 14) ? HandRank.ROYAL_FLUSH : HandRank.STRAIGHT_FLUSH;
+  } else if (sizes[0] === 4) {
+    rank = HandRank.FOUR_OF_A_KIND;
+  } else if (sizes[0] === 3 && sizes[1] === 2) {
+    rank = HandRank.FULL_HOUSE;
+  } else if (flush) {
+    rank = HandRank.FLUSH;
+  } else if (straight) {
+    rank = HandRank.STRAIGHT;
+  } else if (sizes[0] === 3) {
+    rank = HandRank.THREE_OF_A_KIND;
+  } else if (sizes[0] === 2 && sizes[1] === 2) {
+    rank = HandRank.TWO_PAIR;
+  } else if (sizes[0] === 2) {
+    rank = HandRank.PAIR;
+  } else {
+    rank = HandRank.HIGH_CARD;
+  }
+  
+  value = rank * 1000000000;
+  for (let i = 0; i < sortedCards.length; i++) {
+    value += sortedCards[i].rank * Math.pow(15, 4 - i);
+  }
+  
+  return { rank, name: HAND_RANK_NAMES[rank], value };
+}
+
+function evaluateHand(cardStrings: string[]): HandEvaluation {
+  const cards = cardStrings.map(parseCardString).filter((c): c is PokerCard => c !== null);
+  if (cards.length < 5) return { rank: HandRank.HIGH_CARD, name: 'Invalid', value: 0 };
+  
+  if (cards.length === 5) return evaluateFiveCards(cards);
+  
+  const combinations = getCombinations(cards, 5);
+  let best: HandEvaluation = { rank: HandRank.HIGH_CARD, name: '', value: 0 };
+  
+  for (const combo of combinations) {
+    const eval_ = evaluateFiveCards(combo);
+    if (eval_.value > best.value) best = eval_;
+  }
+  
+  return best;
+}
+
+// ==========================================
+// TABLE STATE TYPES
+// ==========================================
+
 interface TableState {
   tableId: string;
   currentHandId: string | null;
@@ -27,12 +154,7 @@ interface TableState {
 
 interface PlayerState {
   oderId: string;
-  oderId: string;
-  oderId: string;
-  oderId: string;
-  oderId: string;
   seatNumber: number;
-  oderId: string;
   stack: number;
   holeCards: string[];
   betAmount: number;
@@ -673,46 +795,104 @@ async function handleShowdown(tableState: TableState, supabase: any) {
   const activePlayers = Array.from(tableState.players.entries())
     .filter(([_, p]) => !p.isFolded);
 
-  // For now, just pick first active player as winner (TODO: implement hand evaluation)
-  const winner = activePlayers[0];
-  
-  if (winner) {
-    const [winnerId, winnerState] = winner;
+  // If only one player left, they win by default
+  if (activePlayers.length === 1) {
+    const [winnerId, winnerState] = activePlayers[0];
     winnerState.stack += tableState.pot;
-
-    // Update database
-    if (tableState.currentHandId) {
-      await supabase.from('poker_hands')
-        .update({ 
-          phase: 'showdown',
-          completed_at: new Date().toISOString(),
-          winners: JSON.stringify([{ playerId: winnerId, amount: tableState.pot }])
-        })
-        .eq('id', tableState.currentHandId);
-
-      // Update player stack
-      await supabase.from('poker_table_players')
-        .update({ stack: winnerState.stack })
-        .eq('table_id', tableState.tableId)
-        .eq('player_id', winnerId);
-    }
-
-    // Broadcast showdown result
-    broadcastToTable(tableState.tableId, {
-      type: "showdown",
-      winners: [{ playerId: winnerId, amount: tableState.pot }],
-      playerCards: Object.fromEntries(
-        activePlayers.map(([id, p]) => [id, p.holeCards])
-      ),
-      communityCards: tableState.communityCards,
-      pot: tableState.pot
-    });
+    
+    await finalizeHand(tableState, supabase, [{ oderId: winnerId, amount: tableState.pot }], activePlayers);
+    return;
   }
+
+  // Evaluate all hands using the poker engine
+  const playerEvaluations: { oderId: string; state: PlayerState; eval: HandEvaluation }[] = [];
+  
+  for (const [oderId, playerState] of activePlayers) {
+    const allCards = [...playerState.holeCards, ...tableState.communityCards];
+    const evaluation = evaluateHand(allCards);
+    playerEvaluations.push({ oderId, state: playerState, eval: evaluation });
+    console.log(`🃏 Player ${oderId}: ${evaluation.name} (value: ${evaluation.value})`);
+  }
+
+  // Find the best hand value
+  const maxValue = Math.max(...playerEvaluations.map(p => p.eval.value));
+  
+  // Get all winners (can be multiple in case of split pot)
+  const winners = playerEvaluations.filter(p => p.eval.value === maxValue);
+  
+  // Split pot among winners
+  const potPerWinner = Math.floor(tableState.pot / winners.length);
+  const remainder = tableState.pot % winners.length;
+  
+  const winnerResults: { oderId: string; amount: number; handName: string }[] = [];
+  
+  winners.forEach((winner, index) => {
+    const amount = potPerWinner + (index === 0 ? remainder : 0);
+    winner.state.stack += amount;
+    winnerResults.push({ 
+      oderId: winner.oderId, 
+      amount, 
+      handName: winner.eval.name 
+    });
+  });
+
+  console.log(`🏆 Winners: ${winnerResults.map(w => `${w.oderId}: ${w.handName}`).join(', ')}`);
+
+  await finalizeHand(tableState, supabase, winnerResults, activePlayers);
+}
+
+async function finalizeHand(
+  tableState: TableState, 
+  supabase: any, 
+  winnerResults: { oderId: string; amount: number; handName?: string }[],
+  activePlayers: [string, PlayerState][]
+) {
+  // Update database
+  if (tableState.currentHandId) {
+    await supabase.from('poker_hands')
+      .update({ 
+        phase: 'showdown',
+        completed_at: new Date().toISOString(),
+        winners: JSON.stringify(winnerResults.map(w => ({ 
+          playerId: w.oderId, 
+          amount: w.amount,
+          handName: w.handName 
+        })))
+      })
+      .eq('id', tableState.currentHandId);
+
+    // Update player stacks in database
+    for (const winner of winnerResults) {
+      const playerState = tableState.players.get(winner.oderId);
+      if (playerState) {
+        await supabase.from('poker_table_players')
+          .update({ stack: playerState.stack })
+          .eq('table_id', tableState.tableId)
+          .eq('player_id', winner.oderId);
+      }
+    }
+  }
+
+  // Broadcast showdown result
+  broadcastToTable(tableState.tableId, {
+    type: "showdown",
+    winners: winnerResults.map(w => ({ 
+      playerId: w.oderId, 
+      amount: w.amount,
+      handName: w.handName 
+    })),
+    playerCards: Object.fromEntries(
+      activePlayers.map(([id, p]) => [id, p.holeCards])
+    ),
+    communityCards: tableState.communityCards,
+    pot: tableState.pot
+  });
 
   // Reset for next hand
   tableState.phase = 'waiting';
   tableState.currentHandId = null;
   tableState.pot = 0;
+  tableState.communityCards = [];
 }
 
 function removePlayerFromTable(tableId: string, playerId: string) {
