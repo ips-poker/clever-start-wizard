@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 
 export interface PokerPlayer {
   oderId: string;
+  name?: string;
   seatNumber: number;
   stack: number;
   betAmount: number;

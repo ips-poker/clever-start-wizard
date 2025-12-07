@@ -1,10 +1,13 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Slider } from '@/components/ui/slider';
 import { usePokerTable, PokerPlayer } from '@/hooks/usePokerTable';
+import { usePokerSounds } from '@/hooks/usePokerSounds';
+import { PokerCard, CommunityCards, CardHand } from './PokerCard';
+import { PokerChips, PotDisplay } from './PokerChips';
 import { 
   Loader2, 
   LogOut, 
@@ -14,9 +17,12 @@ import {
   ArrowUp,
   Coins,
   MessageCircle,
-  Send
+  Send,
+  Volume2,
+  VolumeX
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface OnlinePokerTableProps {
   tableId: string;
@@ -25,19 +31,14 @@ interface OnlinePokerTableProps {
   onLeave: () => void;
 }
 
-const SUIT_SYMBOLS: Record<string, string> = {
-  'h': '♥', 'd': '♦', 'c': '♣', 's': '♠'
-};
-
-const RANK_DISPLAY: Record<string, string> = {
-  'T': '10', 'J': 'J', 'Q': 'Q', 'K': 'K', 'A': 'A'
-};
-
 export function OnlinePokerTable({ tableId, playerId, buyIn, onLeave }: OnlinePokerTableProps) {
   const pokerTable = usePokerTable({ tableId, playerId, buyIn });
+  const sounds = usePokerSounds();
   const [raiseAmount, setRaiseAmount] = useState(0);
   const [chatInput, setChatInput] = useState('');
   const [showChat, setShowChat] = useState(false);
+  const [soundEnabled, setSoundEnabled] = useState(true);
+  const prevPhaseRef = useRef<string | null>(null);
 
   const {
     isConnected,
@@ -51,6 +52,7 @@ export function OnlinePokerTable({ tableId, playerId, buyIn, onLeave }: OnlinePo
     canCheck,
     callAmount,
     chatMessages,
+    lastAction,
     connect,
     disconnect,
     fold,
@@ -70,18 +72,71 @@ export function OnlinePokerTable({ tableId, playerId, buyIn, onLeave }: OnlinePo
   // Update raise amount when current bet changes
   useEffect(() => {
     if (tableState) {
-      setRaiseAmount(tableState.currentBet * 2 || tableState.bigBlindSeat || 40);
+      const minRaise = tableState.currentBet * 2 || 40;
+      setRaiseAmount(minRaise);
     }
   }, [tableState?.currentBet]);
 
+  // Play sound on phase change
+  useEffect(() => {
+    if (tableState?.phase && tableState.phase !== prevPhaseRef.current) {
+      if (prevPhaseRef.current !== null) {
+        sounds.playDeal();
+      }
+      prevPhaseRef.current = tableState.phase;
+    }
+  }, [tableState?.phase, sounds]);
+
+  // Play sound on my turn
+  useEffect(() => {
+    if (isMyTurn) {
+      sounds.playTurn();
+    }
+  }, [isMyTurn, sounds]);
+
+  // Play sound on actions
+  useEffect(() => {
+    if (lastAction) {
+      switch (lastAction.action) {
+        case 'fold': sounds.playFold(); break;
+        case 'check': sounds.playCheck(); break;
+        case 'call': sounds.playCall(); break;
+        case 'raise': sounds.playRaise(); break;
+        case 'all-in': sounds.playAllIn(); break;
+      }
+    }
+  }, [lastAction, sounds]);
+
+  // Toggle sound
+  useEffect(() => {
+    sounds.setEnabled(soundEnabled);
+  }, [soundEnabled, sounds]);
+
+  const handleFold = () => {
+    fold();
+  };
+
+  const handleCheck = () => {
+    check();
+  };
+
+  const handleCall = () => {
+    call();
+  };
+
   const handleRaise = () => {
     raise(raiseAmount);
+  };
+
+  const handleAllIn = () => {
+    allIn();
   };
 
   const handleSendChat = () => {
     if (chatInput.trim()) {
       pokerTable.sendChat(chatInput.trim());
       setChatInput('');
+      sounds.playChat();
     }
   };
 
@@ -90,32 +145,20 @@ export function OnlinePokerTable({ tableId, playerId, buyIn, onLeave }: OnlinePo
     onLeave();
   };
 
-  // Render card
-  const renderCard = (cardStr: string, size: 'sm' | 'lg' = 'sm') => {
-    if (!cardStr) return null;
-    
-    const rank = cardStr[0];
-    const suit = cardStr[1];
-    const suitSymbol = SUIT_SYMBOLS[suit] || suit;
-    const rankDisplay = RANK_DISPLAY[rank] || rank;
-    const isRed = suit === 'h' || suit === 'd';
-    
-    const sizeClasses = size === 'lg' 
-      ? 'w-14 h-20 text-xl' 
-      : 'w-10 h-14 text-sm';
-
-    return (
-      <div 
-        className={cn(
-          sizeClasses,
-          "bg-white rounded-lg shadow-md flex flex-col items-center justify-center font-bold border border-border",
-          isRed ? "text-red-500" : "text-foreground"
-        )}
-      >
-        <span>{rankDisplay}</span>
-        <span className="text-lg">{suitSymbol}</span>
-      </div>
-    );
+  // Seat positions for oval layout
+  const getSeatPosition = (seat: number, total: number = 9) => {
+    const positions: Record<number, string> = {
+      1: 'bottom-0 left-1/2 -translate-x-1/2',
+      2: 'bottom-12 left-8',
+      3: 'top-1/2 left-0 -translate-y-1/2',
+      4: 'top-12 left-8',
+      5: 'top-0 left-1/2 -translate-x-1/2',
+      6: 'top-12 right-8',
+      7: 'top-1/2 right-0 -translate-y-1/2',
+      8: 'bottom-12 right-8',
+      9: 'bottom-0 right-1/4',
+    };
+    return positions[seat] || '';
   };
 
   // Render player seat
@@ -128,93 +171,137 @@ export function OnlinePokerTable({ tableId, playerId, buyIn, onLeave }: OnlinePo
 
     if (!player) {
       return (
-        <div className="w-24 h-24 rounded-full bg-muted/30 border-2 border-dashed border-muted-foreground/20 flex items-center justify-center">
-          <span className="text-xs text-muted-foreground">Место {seatNumber}</span>
-        </div>
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="w-20 h-20 rounded-full bg-muted/20 border-2 border-dashed border-muted-foreground/20 flex items-center justify-center"
+        >
+          <span className="text-xs text-muted-foreground">{seatNumber}</span>
+        </motion.div>
       );
     }
 
     return (
-      <div className={cn(
-        "relative p-3 rounded-xl transition-all",
-        isCurrentPlayer && "ring-2 ring-primary animate-pulse",
-        player.isFolded && "opacity-50",
-        isMe && "bg-primary/10"
-      )}>
+      <motion.div 
+        layout
+        initial={{ scale: 0.8, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        className={cn(
+          "relative p-2 rounded-xl transition-all",
+          isCurrentPlayer && "ring-2 ring-primary ring-offset-2 ring-offset-background",
+          player.isFolded && "opacity-40 grayscale",
+          isMe && "bg-primary/10 border border-primary/30"
+        )}
+      >
         {/* Dealer/Blind badges */}
-        <div className="absolute -top-2 left-1/2 -translate-x-1/2 flex gap-1">
-          {isDealer && (
-            <Badge variant="default" className="text-[10px] h-5">D</Badge>
-          )}
-          {isSB && (
-            <Badge variant="secondary" className="text-[10px] h-5">SB</Badge>
-          )}
-          {isBB && (
-            <Badge variant="secondary" className="text-[10px] h-5">BB</Badge>
-          )}
-        </div>
+        <AnimatePresence>
+          <div className="absolute -top-3 left-1/2 -translate-x-1/2 flex gap-1">
+            {isDealer && (
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                exit={{ scale: 0 }}
+              >
+                <Badge className="text-[10px] h-5 bg-amber-500 hover:bg-amber-600">D</Badge>
+              </motion.div>
+            )}
+            {isSB && (
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                exit={{ scale: 0 }}
+              >
+                <Badge variant="secondary" className="text-[10px] h-5">SB</Badge>
+              </motion.div>
+            )}
+            {isBB && (
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                exit={{ scale: 0 }}
+              >
+                <Badge variant="secondary" className="text-[10px] h-5">BB</Badge>
+              </motion.div>
+            )}
+          </div>
+        </AnimatePresence>
 
         {/* Player avatar */}
-        <div className={cn(
-          "w-16 h-16 rounded-full bg-muted flex items-center justify-center mx-auto",
-          player.isAllIn && "ring-2 ring-yellow-500"
-        )}>
-          <span className="text-2xl">👤</span>
-        </div>
+        <motion.div 
+          className={cn(
+            "w-14 h-14 rounded-full bg-gradient-to-br from-muted to-muted-foreground/20 flex items-center justify-center mx-auto shadow-lg",
+            player.isAllIn && "ring-2 ring-yellow-500 ring-offset-1",
+            isCurrentPlayer && "animate-pulse"
+          )}
+          whileHover={{ scale: 1.05 }}
+        >
+          <span className="text-xl">{isMe ? '😎' : '👤'}</span>
+        </motion.div>
 
         {/* Stack */}
         <div className="text-center mt-1">
-          <p className="text-xs font-medium truncate max-w-20">
-            {isMe ? 'Вы' : `Игрок ${seatNumber}`}
+          <p className="text-xs font-medium truncate max-w-16">
+            {isMe ? 'Вы' : player.name || `#${seatNumber}`}
           </p>
-          <p className="text-sm font-bold flex items-center justify-center gap-1">
-            <Coins className="h-3 w-3" />
-            {player.stack.toLocaleString()}
-          </p>
+          <div className="flex items-center justify-center gap-1">
+            <Coins className="h-3 w-3 text-amber-500" />
+            <span className="text-xs font-bold">{player.stack.toLocaleString()}</span>
+          </div>
         </div>
 
         {/* Current bet */}
-        {player.betAmount > 0 && (
-          <div className="absolute -bottom-4 left-1/2 -translate-x-1/2">
-            <Badge variant="outline" className="bg-background">
-              {player.betAmount}
-            </Badge>
-          </div>
-        )}
-
-        {/* Hole cards (only show for self or at showdown) */}
-        {player.holeCards.length > 0 && (isMe || tableState?.phase === 'showdown') && (
-          <div className="absolute -right-6 top-1/2 -translate-y-1/2 flex gap-0.5">
-            {player.holeCards.map((card, i) => (
-              <div key={i} className="scale-75">
-                {renderCard(card)}
-              </div>
-            ))}
-          </div>
-        )}
+        <AnimatePresence>
+          {player.betAmount > 0 && (
+            <motion.div
+              initial={{ scale: 0, y: 10 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0, y: 10 }}
+              className="absolute -bottom-6 left-1/2 -translate-x-1/2"
+            >
+              <PokerChips amount={player.betAmount} size="sm" />
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Status badges */}
-        {player.isFolded && (
-          <Badge variant="destructive" className="absolute top-0 right-0 text-[10px]">
-            Fold
-          </Badge>
-        )}
-        {player.isAllIn && (
-          <Badge className="absolute top-0 right-0 text-[10px] bg-yellow-500">
-            All-in
-          </Badge>
-        )}
-      </div>
+        <AnimatePresence>
+          {player.isFolded && (
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              exit={{ scale: 0 }}
+              className="absolute -top-1 -right-1"
+            >
+              <Badge variant="destructive" className="text-[9px] px-1">FOLD</Badge>
+            </motion.div>
+          )}
+          {player.isAllIn && !player.isFolded && (
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              exit={{ scale: 0 }}
+              className="absolute -top-1 -right-1"
+            >
+              <Badge className="text-[9px] px-1 bg-gradient-to-r from-amber-500 to-yellow-500">ALL-IN</Badge>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </motion.div>
     );
   };
 
   // Loading state
   if (isConnecting) {
     return (
-      <Card>
-        <CardContent className="py-12 flex flex-col items-center justify-center gap-4">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p>Подключение к столу...</p>
+      <Card className="border-primary/20">
+        <CardContent className="py-16 flex flex-col items-center justify-center gap-4">
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}
+          >
+            <Loader2 className="h-10 w-10 text-primary" />
+          </motion.div>
+          <p className="text-muted-foreground">Подключение к столу...</p>
         </CardContent>
       </Card>
     );
@@ -223,7 +310,7 @@ export function OnlinePokerTable({ tableId, playerId, buyIn, onLeave }: OnlinePo
   // Error state
   if (error && !isConnected) {
     return (
-      <Card>
+      <Card className="border-destructive/50">
         <CardContent className="py-12 text-center">
           <p className="text-destructive mb-4">{error}</p>
           <div className="flex gap-2 justify-center">
@@ -240,66 +327,82 @@ export function OnlinePokerTable({ tableId, playerId, buyIn, onLeave }: OnlinePo
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Badge variant={isConnected ? 'default' : 'destructive'}>
-            {isConnected ? 'Подключено' : 'Отключено'}
+          <Badge variant={isConnected ? 'default' : 'destructive'} className="gap-1">
+            <span className={cn("w-2 h-2 rounded-full", isConnected ? "bg-green-400" : "bg-red-400")} />
+            {isConnected ? 'Онлайн' : 'Офлайн'}
           </Badge>
           {tableState && (
-            <Badge variant="outline">{tableState.phase}</Badge>
+            <Badge variant="outline" className="capitalize">
+              {tableState.phase === 'waiting' ? 'Ожидание' : tableState.phase}
+            </Badge>
           )}
         </div>
-        <Button variant="outline" size="sm" onClick={handleLeave}>
-          <LogOut className="h-4 w-4 mr-2" />
-          Выйти
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button 
+            variant="ghost" 
+            size="icon"
+            onClick={() => setSoundEnabled(!soundEnabled)}
+          >
+            {soundEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
+          </Button>
+          <Button variant="outline" size="sm" onClick={handleLeave}>
+            <LogOut className="h-4 w-4 mr-2" />
+            Выйти
+          </Button>
+        </div>
       </div>
 
       {/* Table */}
-      <Card className="bg-green-900/20 border-green-800/50 overflow-hidden">
-        <CardContent className="p-6">
-          {/* Community Cards & Pot */}
-          <div className="flex flex-col items-center justify-center min-h-40 gap-4">
+      <Card className="relative overflow-hidden bg-gradient-to-br from-green-900/40 via-green-800/30 to-green-900/40 border-green-700/50">
+        {/* Felt texture overlay */}
+        <div className="absolute inset-0 opacity-10 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI1IiBoZWlnaHQ9IjUiPgo8cmVjdCB3aWR0aD0iNSIgaGVpZ2h0PSI1IiBmaWxsPSIjZmZmIj48L3JlY3Q+CjxyZWN0IHdpZHRoPSIxIiBoZWlnaHQ9IjEiIGZpbGw9IiNjY2MiPjwvcmVjdD4KPC9zdmc+')] pointer-events-none" />
+        
+        <CardContent className="p-6 relative">
+          {/* Center area - Pot & Community Cards */}
+          <div className="flex flex-col items-center justify-center min-h-48 gap-4">
             {/* Pot */}
-            {tableState && tableState.pot > 0 && (
-              <div className="flex items-center gap-2 bg-background/80 rounded-full px-4 py-2">
-                <Coins className="h-5 w-5 text-yellow-500" />
-                <span className="font-bold">{tableState.pot.toLocaleString()}</span>
-              </div>
-            )}
+            <AnimatePresence>
+              {tableState && tableState.pot > 0 && (
+                <PotDisplay pot={tableState.pot} />
+              )}
+            </AnimatePresence>
 
             {/* Community Cards */}
-            <div className="flex gap-2">
-              {tableState?.communityCards.length ? (
-                tableState.communityCards.map((card, i) => (
-                  <div key={i}>{renderCard(card, 'lg')}</div>
-                ))
-              ) : (
-                <div className="text-muted-foreground text-sm">
-                  {tableState?.phase === 'waiting' 
-                    ? 'Ожидание начала раздачи' 
-                    : 'Карты на столе появятся здесь'}
-                </div>
-              )}
-            </div>
-
-            {/* My Cards */}
-            {myCards.length > 0 && (
-              <div className="mt-4">
-                <p className="text-xs text-muted-foreground text-center mb-2">Ваши карты:</p>
-                <div className="flex gap-2">
-                  {myCards.map((card, i) => (
-                    <div key={i}>{renderCard(card, 'lg')}</div>
-                  ))}
-                </div>
+            {tableState?.communityCards && tableState.communityCards.length > 0 ? (
+              <CommunityCards cards={tableState.communityCards} />
+            ) : (
+              <div className="flex gap-2">
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <div 
+                    key={i}
+                    className="w-16 h-24 rounded-lg border-2 border-dashed border-green-600/30 bg-green-800/20"
+                  />
+                ))}
               </div>
             )}
+
+            {/* My Cards */}
+            <AnimatePresence>
+              {myCards.length > 0 && (
+                <motion.div
+                  initial={{ y: 50, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  exit={{ y: 50, opacity: 0 }}
+                  className="mt-4 p-3 rounded-xl bg-background/80 backdrop-blur border border-primary/30 shadow-lg"
+                >
+                  <p className="text-xs text-muted-foreground text-center mb-2">Ваши карты</p>
+                  <CardHand cards={myCards} size="lg" overlap={false} />
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
 
-          {/* Players around the table */}
-          <div className="mt-6 grid grid-cols-3 gap-4 justify-items-center">
-            {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((seat) => {
+          {/* Players Grid */}
+          <div className="mt-8 grid grid-cols-5 gap-4 justify-items-center">
+            {[5, 4, 6, 3, 7, 2, 8, 1, 9].map((seat, idx) => {
               const player = tableState?.players.find(p => p.seatNumber === seat);
               return (
-                <div key={seat}>
+                <div key={seat} className={idx === 4 ? 'col-start-3' : ''}>
                   {renderPlayerSeat(player, seat)}
                 </div>
               );
@@ -313,44 +416,56 @@ export function OnlinePokerTable({ tableId, playerId, buyIn, onLeave }: OnlinePo
         <CardContent className="p-4">
           {tableState?.phase === 'waiting' ? (
             <div className="flex justify-center">
-              <Button onClick={startHand} size="lg">
-                <Play className="h-4 w-4 mr-2" />
-                Начать раздачу
-              </Button>
+              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                <Button onClick={startHand} size="lg" className="gap-2">
+                  <Play className="h-5 w-5" />
+                  Начать раздачу
+                </Button>
+              </motion.div>
             </div>
           ) : isMyTurn ? (
-            <div className="space-y-4">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="space-y-4"
+            >
               <div className="flex gap-2 justify-center flex-wrap">
-                <Button variant="destructive" onClick={fold}>
-                  <X className="h-4 w-4 mr-2" />
+                <Button variant="destructive" onClick={handleFold} className="gap-1">
+                  <X className="h-4 w-4" />
                   Fold
                 </Button>
                 
                 {canCheck ? (
-                  <Button variant="secondary" onClick={check}>
-                    <Check className="h-4 w-4 mr-2" />
+                  <Button variant="secondary" onClick={handleCheck} className="gap-1">
+                    <Check className="h-4 w-4" />
                     Check
                   </Button>
                 ) : (
-                  <Button variant="secondary" onClick={call}>
-                    <Check className="h-4 w-4 mr-2" />
+                  <Button variant="secondary" onClick={handleCall} className="gap-1">
+                    <Check className="h-4 w-4" />
                     Call {callAmount}
                   </Button>
                 )}
                 
-                <Button onClick={handleRaise}>
-                  <ArrowUp className="h-4 w-4 mr-2" />
+                <Button onClick={handleRaise} className="gap-1">
+                  <ArrowUp className="h-4 w-4" />
                   Raise {raiseAmount}
                 </Button>
                 
-                <Button variant="outline" onClick={allIn}>
+                <Button 
+                  variant="outline" 
+                  onClick={handleAllIn}
+                  className="bg-gradient-to-r from-amber-500/20 to-yellow-500/20 hover:from-amber-500/30 hover:to-yellow-500/30"
+                >
                   All-in
                 </Button>
               </div>
               
               {/* Raise slider */}
               <div className="flex items-center gap-4 max-w-md mx-auto">
-                <span className="text-sm">{tableState.currentBet * 2 || 40}</span>
+                <span className="text-sm text-muted-foreground w-16 text-right">
+                  {(tableState.currentBet * 2 || 40).toLocaleString()}
+                </span>
                 <Slider
                   value={[raiseAmount]}
                   onValueChange={([val]) => setRaiseAmount(val)}
@@ -359,15 +474,19 @@ export function OnlinePokerTable({ tableId, playerId, buyIn, onLeave }: OnlinePo
                   step={tableState.currentBet || 20}
                   className="flex-1"
                 />
-                <span className="text-sm">{myPlayer?.stack}</span>
+                <span className="text-sm font-bold w-20">
+                  {myPlayer?.stack.toLocaleString()}
+                </span>
               </div>
-            </div>
+            </motion.div>
           ) : (
             <div className="text-center py-4">
               <p className="text-muted-foreground">
                 {tableState?.phase === 'showdown' 
-                  ? 'Вскрытие карт' 
-                  : `Ход игрока на месте ${tableState?.currentPlayerSeat}`}
+                  ? '🎉 Вскрытие карт' 
+                  : tableState?.currentPlayerSeat
+                    ? `Ходит игрок на месте ${tableState.currentPlayerSeat}...`
+                    : 'Ожидание хода...'}
               </p>
             </div>
           )}
@@ -377,41 +496,62 @@ export function OnlinePokerTable({ tableId, playerId, buyIn, onLeave }: OnlinePo
       {/* Chat toggle */}
       <Button 
         variant="outline" 
-        size="sm"
-        className="fixed bottom-4 right-4"
+        size="icon"
+        className="fixed bottom-4 right-4 h-12 w-12 rounded-full shadow-lg"
         onClick={() => setShowChat(!showChat)}
       >
-        <MessageCircle className="h-4 w-4" />
+        <MessageCircle className="h-5 w-5" />
+        {chatMessages.length > 0 && (
+          <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-primary text-primary-foreground text-xs flex items-center justify-center">
+            {chatMessages.length}
+          </span>
+        )}
       </Button>
 
       {/* Chat panel */}
-      {showChat && (
-        <Card className="fixed bottom-16 right-4 w-80">
-          <CardContent className="p-3">
-            <div className="h-40 overflow-y-auto mb-2 space-y-1">
-              {chatMessages.map((msg, i) => (
-                <div key={i} className="text-sm">
-                  <span className="font-medium">
-                    {msg.playerId === playerId ? 'Вы' : 'Игрок'}:
-                  </span>{' '}
-                  {msg.text}
+      <AnimatePresence>
+        {showChat && (
+          <motion.div
+            initial={{ opacity: 0, y: 20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.95 }}
+            className="fixed bottom-20 right-4 w-80"
+          >
+            <Card className="shadow-xl">
+              <CardContent className="p-3">
+                <div className="h-40 overflow-y-auto mb-2 space-y-1 scrollbar-thin">
+                  {chatMessages.length === 0 ? (
+                    <p className="text-center text-muted-foreground text-sm py-4">
+                      Нет сообщений
+                    </p>
+                  ) : (
+                    chatMessages.map((msg, i) => (
+                      <div key={i} className="text-sm p-1 rounded hover:bg-muted/50">
+                        <span className="font-medium text-primary">
+                          {msg.playerId === playerId ? 'Вы' : 'Игрок'}:
+                        </span>{' '}
+                        <span>{msg.text}</span>
+                      </div>
+                    ))
+                  )}
                 </div>
-              ))}
-            </div>
-            <div className="flex gap-2">
-              <Input
-                value={chatInput}
-                onChange={(e) => setChatInput(e.target.value)}
-                placeholder="Сообщение..."
-                onKeyDown={(e) => e.key === 'Enter' && handleSendChat()}
-              />
-              <Button size="icon" onClick={handleSendChat}>
-                <Send className="h-4 w-4" />
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+                <div className="flex gap-2">
+                  <Input
+                    value={chatInput}
+                    onChange={(e) => setChatInput(e.target.value)}
+                    placeholder="Сообщение..."
+                    onKeyDown={(e) => e.key === 'Enter' && handleSendChat()}
+                    className="text-sm"
+                  />
+                  <Button size="icon" onClick={handleSendChat}>
+                    <Send className="h-4 w-4" />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
