@@ -298,6 +298,10 @@ interface TableState {
   bbHasActed: boolean; // Has BB used their option (check/raise)?
   // Run it twice
   runItTwiceEnabled: boolean; // Allow running board twice when all-in
+  // Rake configuration
+  rakePercent: number; // Rake percentage (e.g., 5 for 5%)
+  rakeCap: number; // Maximum rake per hand
+  totalRakeCollected: number; // Accumulated rake for this hand
 }
 
 interface PlayerState {
@@ -839,6 +843,7 @@ async function handleStartHand(socket: WebSocket, message: WSMessage, supabase: 
   tableState.pot = 0;
   tableState.currentBet = 0;
   tableState.communityCards = [];
+  tableState.totalRakeCollected = 0; // Reset rake for new hand
 
   // Reset player states
   tableState.players.forEach(player => {
@@ -1049,8 +1054,21 @@ function createInitialTableState(tableId: string): TableState {
     actionTimer: 30, // 30 seconds default
     turnStartTime: null,
     bbHasActed: false, // BB hasn't had their option yet
-    runItTwiceEnabled: true // Run it twice enabled by default
+    runItTwiceEnabled: true, // Run it twice enabled by default
+    // Rake configuration
+    rakePercent: 5, // 5% rake by default
+    rakeCap: 500, // Max 500 chips rake per hand
+    totalRakeCollected: 0 // Reset at start of each hand
   };
+}
+
+// Calculate rake from a pot amount
+function calculateRake(potAmount: number, rakePercent: number, rakeCap: number, alreadyCollected: number): { rake: number; netPot: number } {
+  const remainingCap = Math.max(0, rakeCap - alreadyCollected);
+  const calculatedRake = Math.floor(potAmount * (rakePercent / 100));
+  const rake = Math.min(calculatedRake, remainingCap);
+  const netPot = potAmount - rake;
+  return { rake, netPot };
 }
 
 function findAvailableSeat(tableState: TableState): number {
@@ -1293,12 +1311,26 @@ async function handleShowdown(tableState: TableState, supabase: any) {
   const allPlayers = Array.from(tableState.players.entries());
   const activePlayers = allPlayers.filter(([_, p]) => !p.isFolded);
 
-  // If only one player left, they win by default (all pots)
+  // If only one player left, they win by default (all pots minus rake)
   if (activePlayers.length === 1) {
     const [winnerId, winnerState] = activePlayers[0];
-    winnerState.stack += tableState.pot;
     
-    await finalizeHand(tableState, supabase, [{ oderId: winnerId, amount: tableState.pot }], activePlayers);
+    // Calculate rake even for uncontested pots
+    const { rake, netPot } = calculateRake(
+      tableState.pot, 
+      tableState.rakePercent, 
+      tableState.rakeCap, 
+      tableState.totalRakeCollected
+    );
+    tableState.totalRakeCollected += rake;
+    
+    if (rake > 0) {
+      console.log(`💸 Rake from uncontested pot: ${rake} chips (${tableState.rakePercent}% of ${tableState.pot})`);
+    }
+    
+    winnerState.stack += netPot;
+    
+    await finalizeHand(tableState, supabase, [{ oderId: winnerId, amount: netPot }], activePlayers, rake);
     return;
   }
 
@@ -1339,6 +1371,25 @@ async function handleRunItTwice(
   const potResult = calculateSidePots(contributions);
   const allPots = [potResult.mainPot, ...potResult.sidePots];
   
+  // Calculate total rake BEFORE running boards (rake taken from full pot, not per run)
+  let totalRakeThisHand = 0;
+  const potsAfterRake = allPots.map(pot => {
+    if (pot.amount <= 0) return { ...pot, netAmount: 0 };
+    const { rake, netPot } = calculateRake(
+      pot.amount, 
+      tableState.rakePercent, 
+      tableState.rakeCap, 
+      tableState.totalRakeCollected
+    );
+    tableState.totalRakeCollected += rake;
+    totalRakeThisHand += rake;
+    return { ...pot, netAmount: netPot };
+  });
+  
+  if (totalRakeThisHand > 0) {
+    console.log(`💸 Total rake from Run It Twice pots: ${totalRakeThisHand} chips`);
+  }
+  
   // Results for both runs
   const runResults: { run: number; communityCards: string[]; winners: { oderId: string; amount: number; handName: string }[] }[] = [];
   
@@ -1350,8 +1401,8 @@ async function handleRunItTwice(
     run1Cards.push(deck1.pop()!);
   }
   
-  // Evaluate hands for run 1
-  const run1Winners = evaluateAndDistributePots(activePlayers, run1Cards, allPots, 0.5);
+  // Evaluate hands for run 1 (use netAmount after rake, 50% each)
+  const run1Winners = evaluateAndDistributePotsWithRake(activePlayers, run1Cards, potsAfterRake, 0.5);
   runResults.push({ run: 1, communityCards: run1Cards, winners: run1Winners });
   
   // Run 2 - deal remaining cards from remaining deck
@@ -1361,8 +1412,8 @@ async function handleRunItTwice(
     run2Cards.push(deck1.pop()!);
   }
   
-  // Evaluate hands for run 2
-  const run2Winners = evaluateAndDistributePots(activePlayers, run2Cards, allPots, 0.5);
+  // Evaluate hands for run 2 (use netAmount after rake, 50% each)
+  const run2Winners = evaluateAndDistributePotsWithRake(activePlayers, run2Cards, potsAfterRake, 0.5);
   runResults.push({ run: 2, communityCards: run2Cards, winners: run2Winners });
   
   // Combine results and update stacks
@@ -1390,23 +1441,25 @@ async function handleRunItTwice(
   console.log(`🎲 RUN IT TWICE Results:`);
   console.log(`   Run 1: ${run1Cards.join(' ')} - Winners: ${run1Winners.map(w => `${w.oderId}: ${w.amount}`).join(', ')}`);
   console.log(`   Run 2: ${run2Cards.join(' ')} - Winners: ${run2Winners.map(w => `${w.oderId}: ${w.amount}`).join(', ')}`);
+  console.log(`💰 Total rake collected: ${totalRakeThisHand} chips`);
   
   // Broadcast run it twice result
   broadcastToTable(tableState.tableId, {
     type: "run_it_twice",
     runs: runResults,
     combinedWinners: combinedResults,
-    playerCards: Object.fromEntries(activePlayers.map(([id, p]) => [id, p.holeCards]))
+    playerCards: Object.fromEntries(activePlayers.map(([id, p]) => [id, p.holeCards])),
+    rake: totalRakeThisHand
   });
   
-  await finalizeHand(tableState, supabase, combinedResults, activePlayers);
+  await finalizeHand(tableState, supabase, combinedResults, activePlayers, totalRakeThisHand);
 }
 
-// Helper function to evaluate hands and distribute pots
-function evaluateAndDistributePots(
+// Helper function to evaluate hands and distribute pots (with netAmount after rake)
+function evaluateAndDistributePotsWithRake(
   activePlayers: [string, PlayerState][],
   communityCards: string[],
-  allPots: { amount: number; eligiblePlayers: string[] }[],
+  allPots: { amount: number; eligiblePlayers: string[]; netAmount: number }[],
   potFraction: number
 ): { oderId: string; amount: number; handName: string }[] {
   const playerEvaluations: { oderId: string; state: PlayerState; eval: HandEvaluation }[] = [];
@@ -1420,7 +1473,7 @@ function evaluateAndDistributePots(
   const winners: { oderId: string; amount: number; handName: string }[] = [];
   
   allPots.forEach((pot) => {
-    if (pot.amount <= 0) return;
+    if (pot.netAmount <= 0) return;
     
     const eligibleEvaluations = playerEvaluations.filter(p => pot.eligiblePlayers.includes(p.oderId));
     if (eligibleEvaluations.length === 0) return;
@@ -1428,7 +1481,7 @@ function evaluateAndDistributePots(
     const maxValue = Math.max(...eligibleEvaluations.map(p => p.eval.value));
     const potWinners = eligibleEvaluations.filter(p => p.eval.value === maxValue);
     
-    const potAmount = Math.floor(pot.amount * potFraction);
+    const potAmount = Math.floor(pot.netAmount * potFraction);
     const amountPerWinner = Math.floor(potAmount / potWinners.length);
     const remainder = potAmount % potWinners.length;
     
@@ -1475,12 +1528,27 @@ async function handleStandardShowdown(
     console.log(`🃏 Player ${oderId}: ${evaluation.name} (value: ${evaluation.value})`);
   }
 
-  // Distribute each pot to winners
+  // Distribute each pot to winners (with rake deduction)
   const winnerResults: { oderId: string; amount: number; handName: string; potType: string }[] = [];
   const allPots = [potResult.mainPot, ...potResult.sidePots];
+  let totalRakeThisHand = 0;
 
   allPots.forEach((pot, potIndex) => {
     if (pot.amount <= 0) return;
+
+    // Calculate rake for this pot
+    const { rake, netPot } = calculateRake(
+      pot.amount, 
+      tableState.rakePercent, 
+      tableState.rakeCap, 
+      tableState.totalRakeCollected
+    );
+    tableState.totalRakeCollected += rake;
+    totalRakeThisHand += rake;
+    
+    if (rake > 0) {
+      console.log(`💸 Rake from ${potIndex === 0 ? 'Main Pot' : `Side Pot ${potIndex}`}: ${rake} chips (${tableState.rakePercent}% of ${pot.amount}, cap: ${tableState.rakeCap})`);
+    }
 
     // Find eligible players for this pot
     const eligibleEvaluations = playerEvaluations.filter(p => pot.eligiblePlayers.includes(p.oderId));
@@ -1494,9 +1562,9 @@ async function handleStandardShowdown(
     const maxValue = Math.max(...eligibleEvaluations.map(p => p.eval.value));
     const potWinners = eligibleEvaluations.filter(p => p.eval.value === maxValue);
 
-    // Split pot among winners
-    const amountPerWinner = Math.floor(pot.amount / potWinners.length);
-    const remainder = pot.amount % potWinners.length;
+    // Split NET pot (after rake) among winners
+    const amountPerWinner = Math.floor(netPot / potWinners.length);
+    const remainder = netPot % potWinners.length;
 
     potWinners.forEach((winner, idx) => {
       const amount = amountPerWinner + (idx === 0 ? remainder : 0);
@@ -1517,19 +1585,21 @@ async function handleStandardShowdown(
       }
     });
 
-    console.log(`🏆 Pot ${potIndex} (${pot.amount}): ${potWinners.map(w => w.oderId).join(', ')}`);
+    console.log(`🏆 Pot ${potIndex} (${pot.amount} - ${rake} rake = ${netPot}): ${potWinners.map(w => w.oderId).join(', ')}`);
   });
 
+  console.log(`💰 Total rake collected: ${totalRakeThisHand} chips`);
   console.log(`🏆 Final winners: ${winnerResults.map(w => `${w.oderId}: ${w.amount} (${w.handName})`).join(', ')}`);
 
-  await finalizeHand(tableState, supabase, winnerResults, activePlayers);
+  await finalizeHand(tableState, supabase, winnerResults, activePlayers, totalRakeThisHand);
 }
 
 async function finalizeHand(
   tableState: TableState, 
   supabase: any, 
   winnerResults: { oderId: string; amount: number; handName?: string }[],
-  activePlayers: [string, PlayerState][]
+  activePlayers: [string, PlayerState][],
+  rakeCollected: number = 0
 ) {
   // Update database
   if (tableState.currentHandId) {
@@ -1557,7 +1627,7 @@ async function finalizeHand(
     }
   }
 
-  // Broadcast showdown result
+  // Broadcast showdown result with rake info
   broadcastToTable(tableState.tableId, {
     type: "showdown",
     winners: winnerResults.map(w => ({ 
@@ -1569,7 +1639,10 @@ async function finalizeHand(
       activePlayers.map(([id, p]) => [id, p.holeCards])
     ),
     communityCards: tableState.communityCards,
-    pot: tableState.pot
+    pot: tableState.pot,
+    rake: rakeCollected,
+    rakePercent: tableState.rakePercent,
+    rakeCap: tableState.rakeCap
   });
 
   // Reset for next hand
@@ -1658,7 +1731,11 @@ function serializeTableState(tableState: TableState, forPlayerId?: string): any 
     anteAmount: tableState.anteAmount,
     actionTimer: tableState.actionTimer,
     timeRemaining,
-    lastRaiserSeat: tableState.lastRaiserSeat
+    lastRaiserSeat: tableState.lastRaiserSeat,
+    // Rake configuration
+    rakePercent: tableState.rakePercent,
+    rakeCap: tableState.rakeCap,
+    totalRakeCollected: tableState.totalRakeCollected
   };
 }
 
