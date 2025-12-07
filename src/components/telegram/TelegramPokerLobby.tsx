@@ -17,6 +17,7 @@ import { toast } from 'sonner';
 import { GlitchText } from '@/components/ui/glitch-text';
 import { motion, AnimatePresence } from 'framer-motion';
 import { TelegramProPokerTable } from './TelegramProPokerTable';
+import { OnlinePokerTable as OnlinePokerTableComponent } from './OnlinePokerTable';
 
 interface OnlinePokerTable {
   id: string;
@@ -339,15 +340,14 @@ export function TelegramPokerLobby({
     t.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // Если открыт активный стол (после присоединения)
+  // Если открыт активный стол (после присоединения) - используем онлайн движок
   if (activeTableId) {
     return (
-      <TelegramProPokerTable
+      <OnlinePokerTableComponent
+        tableId={activeTableId}
         playerId={playerId}
         playerName={playerName}
         playerAvatar={playerAvatar}
-        playerStack={playerBalance}
-        tableId={activeTableId}
         onLeave={() => setActiveTableId(null)}
       />
     );
