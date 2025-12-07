@@ -63,8 +63,10 @@ export function OnlinePokerTable({
   const [showChat, setShowChat] = useState(false);
   const [chatInput, setChatInput] = useState('');
   const [betAmount, setBetAmount] = useState(40);
-  const [timeRemaining, setTimeRemaining] = useState(30);
+  const [timeRemaining, setTimeRemaining] = useState(15);
+  const [nextHandCountdown, setNextHandCountdown] = useState(0);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const nextHandTimerRef = useRef<NodeJS.Timeout | null>(null);
   
   // Pro features state
   const [showEVCashout, setShowEVCashout] = useState(false);
@@ -152,13 +154,17 @@ export function OnlinePokerTable({
     return 100 / Math.max(1, activePlayers.length);
   }, [isAllInSituation, myPlayer, players]);
 
-  // Turn timer
+  // PPPoker-style action timer (15 seconds default)
+  const ACTION_TIME = 15;
+  
   useEffect(() => {
-    if (isMyTurn) {
-      setTimeRemaining(tableState?.actionTimer || 30);
+    if (isMyTurn && tableState?.phase !== 'waiting' && tableState?.phase !== 'showdown') {
+      setTimeRemaining(ACTION_TIME);
       timerRef.current = setInterval(() => {
         setTimeRemaining(prev => {
           if (prev <= 1) {
+            // Auto-fold on timeout
+            console.log('⏰ Time expired, auto-folding...');
             fold();
             return 0;
           }
@@ -166,13 +172,55 @@ export function OnlinePokerTable({
         });
       }, 1000);
     } else {
-      if (timerRef.current) clearInterval(timerRef.current);
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+      setTimeRemaining(ACTION_TIME);
     }
     
     return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
     };
-  }, [isMyTurn, tableState?.actionTimer, fold]);
+  }, [isMyTurn, tableState?.phase, tableState?.currentPlayerSeat, fold]);
+
+  // Auto-start next hand after showdown (PPPoker style - 5 second countdown)
+  const NEXT_HAND_DELAY = 5;
+  
+  useEffect(() => {
+    if (tableState?.phase === 'showdown' || (tableState?.phase === 'waiting' && showdownResult)) {
+      // Start countdown for next hand
+      setNextHandCountdown(NEXT_HAND_DELAY);
+      
+      nextHandTimerRef.current = setInterval(() => {
+        setNextHandCountdown(prev => {
+          if (prev <= 1) {
+            // Auto-start next hand
+            console.log('🎲 Auto-starting next hand...');
+            startHand();
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    } else {
+      if (nextHandTimerRef.current) {
+        clearInterval(nextHandTimerRef.current);
+        nextHandTimerRef.current = null;
+      }
+      setNextHandCountdown(0);
+    }
+    
+    return () => {
+      if (nextHandTimerRef.current) {
+        clearInterval(nextHandTimerRef.current);
+        nextHandTimerRef.current = null;
+      }
+    };
+  }, [tableState?.phase, showdownResult, startHand]);
 
   // Show winner toast
   useEffect(() => {
@@ -321,7 +369,7 @@ export function OnlinePokerTable({
               strokeWidth="3"
               strokeLinecap="round"
               strokeDasharray={176}
-              strokeDashoffset={176 - (176 * timeRemaining) / (tableState?.actionTimer || 30)}
+              strokeDashoffset={176 - (176 * timeRemaining) / ACTION_TIME}
               transform="rotate(-90 32 32)"
             />
           </svg>
@@ -688,20 +736,20 @@ export function OnlinePokerTable({
                 </div>
               )}
 
-              {/* Next hand countdown */}
-              {(tableState?.nextHandCountdown ?? 0) > 0 && (
+              {/* Next hand countdown - using local state */}
+              {nextHandCountdown > 0 && (
                 <div className="bg-black/70 backdrop-blur-sm px-6 py-3 rounded-xl border border-blue-500/30">
                   <div className="flex items-center gap-2">
                     <Timer className="w-4 h-4 text-blue-400" />
                     <span className="text-white text-sm">
-                      Следующая раздача через <span className="font-bold text-blue-400">{tableState.nextHandCountdown}s</span>
+                      Следующая раздача через <span className="font-bold text-blue-400">{nextHandCountdown}s</span>
                     </span>
                   </div>
                 </div>
               )}
 
-              {/* Ready to play - waiting for 2nd player */}
-              {players.length >= 2 && !tableState?.playersNeeded && !tableState?.gameStartingCountdown && !tableState?.nextHandCountdown && (
+              {/* Ready to play - waiting for game start */}
+              {players.length >= 2 && !tableState?.playersNeeded && !tableState?.gameStartingCountdown && nextHandCountdown === 0 && tableState?.phase === 'waiting' && (
                 <div className="bg-black/70 backdrop-blur-sm px-6 py-3 rounded-xl border border-green-500/30">
                   <div className="flex items-center gap-2">
                     <Loader2 className="w-4 h-4 text-green-400 animate-spin" />
@@ -900,8 +948,8 @@ export function OnlinePokerTable({
           </div>
         )}
 
-        {/* Time Bank Button */}
-        {isMyTurn && timeBankRemaining > 0 && timeRemaining <= 10 && (
+        {/* Time Bank Button - shows when less than 5 seconds remaining */}
+        {isMyTurn && timeBankRemaining > 0 && timeRemaining <= 5 && (
           <div className="absolute top-16 left-2 z-30">
             <Button
               size="sm"
