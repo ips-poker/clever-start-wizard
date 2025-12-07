@@ -740,14 +740,38 @@ serve(async (req) => {
 
                 result = { success: true, action, amount: actionAmount, handComplete: true, winner: winner.player_id, winAmount: newPot };
               } else {
-                // Find next player
+                // Find next player who can still act
                 const sortedActive = [...active].sort((a, b) => a.seat_number - b.seat_number);
-                let nextPlayer = sortedActive.find(p => p.seat_number > tp.seat_number) || sortedActive[0];
+                let nextPlayer = sortedActive.find(p => p.seat_number > tp.seat_number && p.player_id !== playerId);
+                if (!nextPlayer) {
+                  nextPlayer = sortedActive.find(p => p.player_id !== playerId) || sortedActive[0];
+                }
 
-                // Check if betting round complete
-                const allActed = active.length === 0 || active.every(p => {
-                  if (p.player_id === playerId) return true;
-                  return p.bet_amount === newCurrentBet;
+                // Check if betting round complete - all non-folded players must have:
+                // 1. Made at least one action this street (or posted blind)
+                // 2. Have equal bet amounts OR be all-in
+                const { data: currentStreetActions } = await supabase
+                  .from('poker_actions')
+                  .select('player_id')
+                  .eq('hand_id', hand.id)
+                  .eq('phase', hand.phase);
+                
+                const playersActedThisStreet = new Set(currentStreetActions?.map(a => a.player_id) || []);
+                // Add current player who just acted
+                playersActedThisStreet.add(playerId);
+                
+                // All remaining active (non-all-in) players must have acted and matched current bet
+                const allActed = active.every(p => {
+                  // Current player just acted
+                  if (p.player_id === playerId) {
+                    return newBet === newCurrentBet || isAllIn;
+                  }
+                  // Other players must have acted AND matched bet (or be all-in which is tracked separately)
+                  const hasActed = playersActedThisStreet.has(p.player_id) || 
+                    // BB and SB count as acted if they've only posted blinds and no one raised
+                    (p.seat_number === hand.big_blind_seat && hand.current_bet === table.big_blind) ||
+                    (p.seat_number === hand.small_blind_seat && hand.current_bet === table.big_blind);
+                  return hasActed && p.bet_amount === newCurrentBet;
                 });
 
                 let newPhase = hand.phase;
@@ -775,9 +799,11 @@ serve(async (req) => {
                     }
                   }
 
-                  // First to act after dealer
+                  // First to act after dealer (or first non-folded/non-all-in player after dealer)
                   const sortedRemaining = [...remaining].filter(p => !p.is_all_in).sort((a, b) => a.seat_number - b.seat_number);
                   nextPlayer = sortedRemaining.find(p => p.seat_number > hand.dealer_seat) || sortedRemaining[0];
+                  
+                  console.log(`[Engine] Phase transition: ${hand.phase} -> ${newPhase}, next player: seat ${nextPlayer?.seat_number}`);
                 }
 
                 // SHOWDOWN
