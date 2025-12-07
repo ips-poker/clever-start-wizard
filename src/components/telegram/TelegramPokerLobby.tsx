@@ -84,7 +84,8 @@ export function TelegramPokerLobby({
   const [searchQuery, setSearchQuery] = useState('');
   const [joiningId, setJoiningId] = useState<string | null>(null);
   const [registeredTournaments, setRegisteredTournaments] = useState<Set<string>>(new Set());
-  const [activeTableId, setActiveTableId] = useState<string | null>(null);
+const [activeTableId, setActiveTableId] = useState<string | null>(null);
+  const [activeBuyIn, setActiveBuyIn] = useState<number>(10000);
   const [showDemoTable, setShowDemoTable] = useState(false);
 
   const fetchData = useCallback(async () => {
@@ -198,6 +199,7 @@ export function TelegramPokerLobby({
       if (existingPlayer) {
         console.log('Player already at table, opening table');
         setActiveTableId(table.id);
+        setActiveBuyIn(existingPlayer.stack);
         setJoiningId(null);
         onJoinTable?.(table.id, existingPlayer.stack);
         return;
@@ -248,6 +250,7 @@ export function TelegramPokerLobby({
         if (error.code === '23505' || error.message?.includes('duplicate')) {
           console.log('Duplicate key - player already at table, opening anyway');
           setActiveTableId(table.id);
+          setActiveBuyIn(table.min_buy_in);
           setJoiningId(null);
           onJoinTable?.(table.id, table.min_buy_in);
           return;
@@ -259,6 +262,7 @@ export function TelegramPokerLobby({
       
       // Open the table after successful join
       setActiveTableId(table.id);
+      setActiveBuyIn(table.min_buy_in);
       onJoinTable?.(table.id, table.min_buy_in);
     } catch (error: any) {
       console.error('Error joining table:', error);
@@ -341,14 +345,18 @@ export function TelegramPokerLobby({
   );
 
   // Если открыт активный стол (после присоединения) - используем онлайн движок
-  if (activeTableId) {
+  if (activeTableId && playerId) {
     return (
       <OnlinePokerTableComponent
         tableId={activeTableId}
         playerId={playerId}
         playerName={playerName}
         playerAvatar={playerAvatar}
-        onLeave={() => setActiveTableId(null)}
+        buyIn={activeBuyIn}
+        onLeave={() => {
+          setActiveTableId(null);
+          setActiveBuyIn(10000);
+        }}
       />
     );
   }

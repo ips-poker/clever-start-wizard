@@ -7,12 +7,12 @@ import { Input } from '@/components/ui/input';
 import { 
   ArrowLeft, Volume2, VolumeX, MessageSquare, Send,
   Coins, Timer, Users, Crown, Zap, X, RotateCcw, Wifi, WifiOff,
-  Shield, Rabbit
+  Shield, Rabbit, Clock, Bomb, Layers, Settings, AlertTriangle
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
-import { usePokerTable, PokerPlayer } from '@/hooks/usePokerTable';
+import { usePokerTable, PokerPlayer, TableState } from '@/hooks/usePokerTable';
 
 // Import pro features components
 import { EquityDisplay } from '@/components/poker/EquityDisplay';
@@ -20,10 +20,11 @@ import { EVCashoutPanel } from '@/components/poker/EVCashoutPanel';
 import { AllInInsurance } from '@/components/poker/AllInInsurance';
 import { SqueezeHand } from '@/components/poker/SqueezeCard';
 import { RabbitHuntPanel } from '@/components/poker/RabbitHuntPanel';
+import { SidePotsDisplay } from '@/components/poker/SidePotsDisplay';
 
 interface OnlinePokerTableProps {
   tableId: string;
-  playerId: string;
+  playerId?: string;
   playerName?: string;
   playerAvatar?: string;
   buyIn?: number;
@@ -41,19 +42,7 @@ const SEAT_POSITIONS_6MAX = [
 ];
 
 const SUIT_SYMBOLS: Record<string, string> = { h: '♥', d: '♦', c: '♣', s: '♠' };
-
-interface ChatMessage {
-  playerId: string;
-  playerName: string;
-  message: string;
-  timestamp: number;
-}
-
-interface PlayerEmoji {
-  oderId: string;
-  emoji: string;
-  id: number;
-}
+const QUICK_EMOJIS = ['👍', '👎', '😂', '😡', '🎉', '💰', '🔥', '💀'];
 
 export function OnlinePokerTable({
   tableId,
@@ -68,27 +57,33 @@ export function OnlinePokerTable({
   const [chatInput, setChatInput] = useState('');
   const [betAmount, setBetAmount] = useState(40);
   const [timeRemaining, setTimeRemaining] = useState(30);
-  const [playerEmojis, setPlayerEmojis] = useState<PlayerEmoji[]>([]);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
-  const emojiIdRef = useRef(0);
   
   // Pro features state
   const [showEVCashout, setShowEVCashout] = useState(false);
   const [showInsurance, setShowInsurance] = useState(false);
   const [showRabbitHunt, setShowRabbitHunt] = useState(false);
   const [useSqueeze, setUseSqueeze] = useState(true);
+  const [showSettings, setShowSettings] = useState(false);
 
   // Use the main poker table hook
-  const pokerTable = usePokerTable({ tableId, playerId, buyIn });
+  const pokerTable = usePokerTable(playerId ? { tableId, playerId, buyIn } : null);
   
   const {
     isConnected,
+    isConnecting,
     tableState,
     myCards,
     mySeat,
+    myPlayer,
+    isMyTurn,
+    canCheck,
+    callAmount,
+    minRaiseAmount,
     error,
-    chatMessages: tableChatMessages,
+    chatMessages,
     showdownResult,
+    lastAction,
     fold,
     check,
     call,
@@ -96,17 +91,21 @@ export function OnlinePokerTable({
     allIn,
     startHand,
     sendChat: sendTableChat,
-    disconnect
+    disconnect,
+    postStraddle,
+    useTimeBank,
+    triggerBombPot,
+    isBombPot,
+    bombPotEnabled,
+    timeBankRemaining,
+    canPostStraddle,
+    straddleAmount,
+    hasPostedStraddle,
+    configureTable
   } = pokerTable;
 
-  // Map tableState to familiar interface
-  const gameState = tableState;
   const players = tableState?.players || [];
-  const myPlayer = players.find(p => p.seatNumber === mySeat);
-  const isMyTurn = tableState?.currentPlayerSeat === mySeat;
-  const canCheck = isMyTurn && (tableState?.currentBet || 0) <= (myPlayer?.betAmount || 0);
-  const callAmount = Math.max(0, (tableState?.currentBet || 0) - (myPlayer?.betAmount || 0));
-  const minRaise = tableState?.minRaise || (tableState?.bigBlindAmount || 20) * 2;
+  const minRaise = tableState?.minRaise || minRaiseAmount || 40;
 
   // Update bet amount when minRaise changes
   useEffect(() => {
@@ -115,11 +114,11 @@ export function OnlinePokerTable({
 
   // Detect all-in situation for showing equity/insurance
   const isAllInSituation = useMemo(() => {
-    if (!gameState || gameState.phase === 'waiting' || gameState.phase === 'preflop') return false;
+    if (!tableState || tableState.phase === 'waiting' || tableState.phase === 'preflop') return false;
     const activePlayers = players.filter(p => !p.isFolded);
     const allInPlayers = activePlayers.filter(p => p.isAllIn);
     return allInPlayers.length >= 1 && activePlayers.length >= 2;
-  }, [gameState, players]);
+  }, [tableState, players]);
 
   // Convert players for EquityDisplay
   const pokerPlayersForEquity = useMemo((): PokerPlayer[] => {
@@ -152,6 +151,7 @@ export function OnlinePokerTable({
       timerRef.current = setInterval(() => {
         setTimeRemaining(prev => {
           if (prev <= 1) {
+            // Auto-fold when time runs out
             fold();
             return 0;
           }
@@ -220,9 +220,11 @@ export function OnlinePokerTable({
     const position = SEAT_POSITIONS_6MAX[seatNumber - 1];
     const player = players.find(p => p.seatNumber === seatNumber);
     const isHero = player?.seatNumber === mySeat;
-    const isCurrentPlayer = gameState?.currentPlayerSeat === seatNumber;
+    const isCurrentPlayer = tableState?.currentPlayerSeat === seatNumber;
     const isWinner = showdownResult?.winners?.some(w => w.seatNumber === seatNumber);
-    const playerEmojiData = playerEmojis.find(e => e.oderId === player?.oderId);
+    const isDealer = tableState?.dealerSeat === seatNumber;
+    const isSB = tableState?.smallBlindSeat === seatNumber;
+    const isBB = tableState?.bigBlindSeat === seatNumber;
     
     if (!player) {
       return (
@@ -242,20 +244,6 @@ export function OnlinePokerTable({
         style={position}
         animate={{ scale: isCurrentPlayer ? 1.05 : 1, opacity: player.isFolded ? 0.5 : 1 }}
       >
-        {/* Emoji */}
-        <AnimatePresence>
-          {playerEmojiData && (
-            <motion.div
-              initial={{ scale: 0, y: 20 }}
-              animate={{ scale: 1.5, y: -30 }}
-              exit={{ scale: 0, opacity: 0 }}
-              className="absolute -top-8 text-3xl z-50"
-            >
-              {playerEmojiData.emoji}
-            </motion.div>
-          )}
-        </AnimatePresence>
-
         {/* Timer ring */}
         {isCurrentPlayer && isHero && (
           <svg className="absolute -inset-1 w-[calc(100%+8px)] h-[calc(100%+8px)]" viewBox="0 0 100 100">
@@ -263,10 +251,17 @@ export function OnlinePokerTable({
             <motion.circle
               cx="50" cy="50" r="45" fill="none" stroke="#ffc800" strokeWidth="3"
               strokeLinecap="round" strokeDasharray={283}
-              strokeDashoffset={283 - (283 * timeRemaining) / 30}
+              strokeDashoffset={283 - (283 * timeRemaining) / (tableState?.actionTimer || 30)}
               transform="rotate(-90 50 50)"
             />
           </svg>
+        )}
+        
+        {/* Disconnected indicator */}
+        {player.isDisconnected && (
+          <div className="absolute -top-2 -right-2 z-20">
+            <WifiOff className="w-4 h-4 text-red-500" />
+          </div>
         )}
         
         {/* Avatar */}
@@ -284,8 +279,17 @@ export function OnlinePokerTable({
             </AvatarFallback>
           </Avatar>
           
-          {gameState?.dealerSeat === seatNumber && (
+          {/* Dealer button */}
+          {isDealer && (
             <div className="absolute -top-1 -right-1 w-5 h-5 bg-white rounded-full flex items-center justify-center text-[10px] font-bold text-gray-900 shadow-lg">D</div>
+          )}
+          
+          {/* Small/Big blind indicator */}
+          {isSB && !isDealer && (
+            <div className="absolute -top-1 -left-1 w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center text-[8px] font-bold text-white shadow-lg">SB</div>
+          )}
+          {isBB && (
+            <div className="absolute -top-1 -left-1 w-5 h-5 bg-amber-500 rounded-full flex items-center justify-center text-[8px] font-bold text-white shadow-lg">BB</div>
           )}
           
           {isWinner && (
@@ -303,6 +307,13 @@ export function OnlinePokerTable({
           <div className={cn("flex items-center justify-center gap-0.5 text-[11px] font-bold", isWinner ? "text-gray-900" : "text-yellow-400")}>
             <span>{player.stack.toLocaleString()}</span>
           </div>
+          {/* Time bank indicator */}
+          {isHero && timeBankRemaining > 0 && (
+            <div className="flex items-center justify-center gap-1 text-[8px] text-blue-400">
+              <Clock className="w-2 h-2" />
+              <span>{timeBankRemaining}s</span>
+            </div>
+          )}
         </div>
         
         {/* Current bet */}
@@ -312,15 +323,17 @@ export function OnlinePokerTable({
           </motion.div>
         )}
         
-        {/* Status */}
-        {player.isAllIn && <Badge className="mt-1 bg-purple-600 text-white text-[9px]">ALL-IN</Badge>}
-        {player.isFolded && <Badge className="mt-1 bg-red-600/50 text-white text-[9px]">FOLD</Badge>}
+        {/* Status badges */}
+        <div className="flex gap-1 mt-1">
+          {player.isAllIn && <Badge className="bg-purple-600 text-white text-[8px] px-1 py-0">ALL-IN</Badge>}
+          {player.isFolded && <Badge className="bg-red-600/50 text-white text-[8px] px-1 py-0">FOLD</Badge>}
+        </div>
 
-        {/* Cards - show ?? for opponents, real cards for hero or at showdown */}
+        {/* Cards */}
         {player.holeCards && player.holeCards.length > 0 && !player.isFolded && (
           <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 flex gap-0.5">
             {player.holeCards.map((card, idx) => (
-              <div key={idx}>{renderCard(isHero ? card : (gameState?.phase === 'showdown' ? card : '??'), false, 'sm')}</div>
+              <div key={idx}>{renderCard(isHero ? card : (tableState?.phase === 'showdown' ? card : '??'), false, 'sm')}</div>
             ))}
           </div>
         )}
@@ -336,8 +349,41 @@ export function OnlinePokerTable({
     }
   };
 
-  // Quick emojis
-  const quickEmojis = ['👍', '👎', '😂', '😡', '🎉', '💰'];
+  // Handle use time bank
+  const handleUseTimeBank = () => {
+    if (timeBankRemaining > 0) {
+      useTimeBank(30);
+      toast.info('Time bank activated: +30s');
+    }
+  };
+
+  // Handle straddle
+  const handlePostStraddle = () => {
+    if (canPostStraddle && !hasPostedStraddle) {
+      postStraddle(straddleAmount);
+      toast.info(`Straddle posted: ${straddleAmount}`);
+    }
+  };
+
+  // Handle bomb pot
+  const handleTriggerBombPot = () => {
+    if (bombPotEnabled) {
+      triggerBombPot();
+      toast.info('Bomb pot triggered for next hand!');
+    }
+  };
+
+  if (!playerId) {
+    return (
+      <div className="fixed inset-0 bg-[#0a1628] flex items-center justify-center">
+        <div className="text-center text-white">
+          <AlertTriangle className="h-12 w-12 mx-auto mb-4 text-yellow-500" />
+          <p>Player ID required to join table</p>
+          <Button onClick={onLeave} className="mt-4">Go Back</Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 bg-[#0a1628] flex flex-col overflow-hidden">
@@ -350,14 +396,24 @@ export function OnlinePokerTable({
         <div className="text-center flex-1">
           <div className="flex items-center justify-center gap-2">
             <h1 className="text-sm font-semibold text-white">Texas Hold'em</h1>
-            {isConnected ? <Wifi className="w-3 h-3 text-green-400" /> : <WifiOff className="w-3 h-3 text-red-400" />}
+            {isConnected ? <Wifi className="w-3 h-3 text-green-400" /> : 
+             isConnecting ? <Wifi className="w-3 h-3 text-yellow-400 animate-pulse" /> : 
+             <WifiOff className="w-3 h-3 text-red-400" />}
           </div>
           <div className="flex items-center justify-center gap-2 text-[10px] text-white/60">
-            <span>{gameState?.smallBlindAmount || 10}/{gameState?.bigBlindAmount || 20}</span>
+            <span>{tableState?.smallBlindAmount || 10}/{tableState?.bigBlindAmount || 20}</span>
             <span className="w-1 h-1 rounded-full bg-white/40" />
             <span>{players.length} players</span>
             <span className="w-1 h-1 rounded-full bg-white/40" />
-            <span className="capitalize">{gameState?.phase || 'connecting...'}</span>
+            <span className="capitalize">{tableState?.phase || 'connecting...'}</span>
+            {isBombPot && (
+              <>
+                <span className="w-1 h-1 rounded-full bg-white/40" />
+                <span className="text-orange-400 flex items-center gap-1">
+                  <Bomb className="w-3 h-3" /> Bomb Pot
+                </span>
+              </>
+            )}
           </div>
         </div>
 
@@ -367,7 +423,10 @@ export function OnlinePokerTable({
           </Button>
           <Button variant="ghost" size="icon" onClick={() => setShowChat(!showChat)} className="h-9 w-9 text-white/70 relative">
             <MessageSquare className="h-4 w-4" />
-            {tableChatMessages.length > 0 && <div className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />}
+            {chatMessages.length > 0 && <div className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />}
+          </Button>
+          <Button variant="ghost" size="icon" onClick={() => setShowSettings(!showSettings)} className="h-9 w-9 text-white/70">
+            <Settings className="h-4 w-4" />
           </Button>
         </div>
       </div>
@@ -382,11 +441,18 @@ export function OnlinePokerTable({
             className="absolute right-0 top-12 bottom-32 w-64 bg-gray-900/95 backdrop-blur-lg z-30 flex flex-col border-l border-white/10"
           >
             <div className="flex-1 overflow-y-auto p-2 space-y-2">
-              {tableChatMessages.map((msg, i) => (
+              {chatMessages.map((msg, i) => (
                 <div key={i} className={cn("text-xs", msg.playerId === playerId ? "text-right" : "")}>
                   <span className="text-blue-400 font-medium">{msg.playerName || 'Player'}: </span>
                   <span className="text-white/80">{msg.text || msg.message}</span>
                 </div>
+              ))}
+            </div>
+            <div className="flex gap-1 p-2 border-t border-white/10 flex-wrap">
+              {QUICK_EMOJIS.map(emoji => (
+                <button key={emoji} onClick={() => sendTableChat(emoji)} className="text-lg hover:scale-125 transition-transform">
+                  {emoji}
+                </button>
               ))}
             </div>
             <div className="flex gap-2 p-2">
@@ -412,37 +478,26 @@ export function OnlinePokerTable({
           <div 
             className="absolute inset-0 rounded-[50%] overflow-hidden"
             style={{
-              background: 'linear-gradient(180deg, #1a5a3a 0%, #0d3d28 50%, #1a5a3a 100%)',
+              background: isBombPot 
+                ? 'linear-gradient(180deg, #5a3a1a 0%, #3d2810 50%, #5a3a1a 100%)' 
+                : 'linear-gradient(180deg, #1a5a3a 0%, #0d3d28 50%, #1a5a3a 100%)',
               boxShadow: 'inset 0 0 60px rgba(0,0,0,0.5), 0 0 0 8px #2d1810, 0 0 0 12px #1a0f0a',
-              border: '4px solid #3d2518'
+              border: isBombPot ? '4px solid #ff6b35' : '4px solid #3d2518'
             }}
           />
 
           {/* Pot & Side Pots */}
-          {(gameState?.pot || 0) > 0 && (
+          {(tableState?.pot || 0) > 0 && (
             <div className="absolute top-[30%] left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-1">
               {/* Main Pot */}
               <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="flex items-center gap-1.5 px-4 py-1.5 bg-black/60 rounded-full">
                 <Coins className="h-4 w-4 text-yellow-400" />
-                <span className="text-white font-bold text-sm">{gameState.pot.toLocaleString()}</span>
+                <span className="text-white font-bold text-sm">{tableState?.pot.toLocaleString()}</span>
               </motion.div>
               
-              {/* Side Pots */}
-              {gameState?.sidePots?.sidePots && gameState.sidePots.sidePots.length > 0 && (
-                <div className="flex gap-1.5 flex-wrap justify-center">
-                  {gameState.sidePots.sidePots.map((sidePot, i) => (
-                    <motion.div 
-                      key={i}
-                      initial={{ scale: 0, y: -10 }}
-                      animate={{ scale: 1, y: 0 }}
-                      transition={{ delay: i * 0.1 }}
-                      className="flex items-center gap-1 px-2 py-0.5 bg-purple-600/70 rounded-full"
-                    >
-                      <span className="text-[10px] text-white/70">Side {i + 1}:</span>
-                      <span className="text-white font-bold text-xs">{sidePot.amount.toLocaleString()}</span>
-                    </motion.div>
-                  ))}
-                </div>
+              {/* Side Pots with component */}
+              {tableState?.sidePots && (
+                <SidePotsDisplay sidePots={tableState.sidePots} className="mt-1" />
               )}
             </div>
           )}
@@ -450,7 +505,7 @@ export function OnlinePokerTable({
           {/* Community Cards */}
           <div className="absolute top-[45%] left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
             <AnimatePresence mode="popLayout">
-              {(gameState?.communityCards || []).map((card, i) => (
+              {(tableState?.communityCards || []).map((card, i) => (
                 <motion.div key={i} initial={{ y: -30, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: i * 0.15 }}>
                   {renderCard(card, false, 'md')}
                 </motion.div>
@@ -466,7 +521,7 @@ export function OnlinePokerTable({
       {/* Hero Cards - with optional squeeze */}
       {myCards && myCards.length > 0 && myCards[0] !== '??' && (
         <div className="absolute bottom-32 left-1/2 -translate-x-1/2 z-30">
-          {useSqueeze && gameState?.phase === 'preflop' ? (
+          {useSqueeze && tableState?.phase === 'preflop' ? (
             <SqueezeHand 
               cards={myCards} 
               size="lg"
@@ -488,20 +543,20 @@ export function OnlinePokerTable({
       {isAllInSituation && pokerPlayersForEquity.length >= 2 && (
         <EquityDisplay
           players={pokerPlayersForEquity}
-          communityCards={gameState?.communityCards || []}
-          phase={gameState?.phase || 'waiting'}
+          communityCards={tableState?.communityCards || []}
+          phase={tableState?.phase || 'waiting'}
           showAlways={true}
         />
       )}
 
       {/* EV Cashout Panel - shows when player is all-in */}
-      {showEVCashout && myPlayer?.isAllIn && gameState && (
+      {showEVCashout && myPlayer?.isAllIn && tableState && (
         <div className="absolute top-20 left-4 z-40">
           <EVCashoutPanel
             scenario={{
-              pot: gameState.pot,
-              phase: gameState.phase as 'flop' | 'turn' | 'river',
-              communityCards: gameState.communityCards,
+              pot: tableState.pot,
+              phase: tableState.phase as 'flop' | 'turn' | 'river',
+              communityCards: tableState.communityCards,
               players: players.filter(p => !p.isFolded).map(p => ({
                 playerId: p.oderId,
                 playerName: p.name || '',
@@ -528,11 +583,11 @@ export function OnlinePokerTable({
           toast.success(`Insurance purchased: ${coverage}`);
           setShowInsurance(false);
         }}
-        potAmount={gameState?.pot || 0}
+        potAmount={tableState?.pot || 0}
         playerEquity={myEquity}
-        maxInsurable={Math.floor((gameState?.pot || 0) * (myEquity / 100))}
+        maxInsurable={Math.floor((tableState?.pot || 0) * (myEquity / 100))}
         playerStack={myPlayer?.stack || 0}
-        communityCards={gameState?.communityCards || []}
+        communityCards={tableState?.communityCards || []}
         holeCards={myCards || []}
       />
 
@@ -560,8 +615,51 @@ export function OnlinePokerTable({
         </div>
       )}
 
+      {/* Special Actions (Straddle, Bomb Pot, Time Bank) */}
+      {tableState?.phase === 'waiting' && (
+        <div className="absolute top-16 left-4 z-30 flex flex-col gap-2">
+          {canPostStraddle && !hasPostedStraddle && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handlePostStraddle}
+              className="bg-green-500/20 border-green-500/50 text-green-400 text-xs"
+            >
+              <Layers className="w-3 h-3 mr-1" />
+              Straddle {straddleAmount}
+            </Button>
+          )}
+          {bombPotEnabled && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleTriggerBombPot}
+              className="bg-orange-500/20 border-orange-500/50 text-orange-400 text-xs"
+            >
+              <Bomb className="w-3 h-3 mr-1" />
+              Bomb Pot
+            </Button>
+          )}
+        </div>
+      )}
+
+      {/* Time Bank Button (when it's my turn) */}
+      {isMyTurn && timeBankRemaining > 0 && timeRemaining <= 10 && (
+        <div className="absolute top-16 left-4 z-30">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={handleUseTimeBank}
+            className="bg-blue-500/20 border-blue-500/50 text-blue-400 text-xs animate-pulse"
+          >
+            <Clock className="w-3 h-3 mr-1" />
+            Time Bank ({timeBankRemaining}s)
+          </Button>
+        </div>
+      )}
+
       {/* Rabbit Hunt (after fold) */}
-      {myPlayer?.isFolded && gameState?.phase !== 'showdown' && gameState?.phase !== 'waiting' && (
+      {myPlayer?.isFolded && tableState?.phase !== 'showdown' && tableState?.phase !== 'waiting' && (
         <div className="absolute top-20 left-4 z-30">
           <Button
             size="sm"
@@ -575,9 +673,9 @@ export function OnlinePokerTable({
           {showRabbitHunt && (
             <RabbitHuntPanel
               foldedPlayerCards={myCards || []}
-              communityCards={gameState.communityCards}
+              communityCards={tableState?.communityCards || []}
               usedCards={players.flatMap(p => p.holeCards || [])}
-              potSize={gameState.pot}
+              potSize={tableState?.pot || 0}
               onPurchase={(cost) => toast.info(`Rabbit hunt: -${cost} chips`)}
               className="mt-2"
             />
@@ -589,12 +687,17 @@ export function OnlinePokerTable({
       <div className="bg-gradient-to-t from-gray-900 via-gray-900/95 to-gray-900/90 border-t border-white/10 p-3 pb-safe z-20">
         {error && <p className="text-red-400 text-xs mb-2">{error}</p>}
         
-        {!isConnected ? (
+        {!isConnected && !isConnecting ? (
+          <div className="flex items-center justify-center py-3 text-red-400">
+            <WifiOff className="h-4 w-4 mr-2" />
+            Disconnected. Reconnecting...
+          </div>
+        ) : isConnecting ? (
           <div className="flex items-center justify-center py-3 text-white/50">
             <Timer className="h-4 w-4 mr-2 animate-spin" />
-            Подключение...
+            Connecting...
           </div>
-        ) : gameState?.phase === 'waiting' ? (
+        ) : tableState?.phase === 'waiting' ? (
           <div className="flex gap-3">
             <Button
               onClick={startHand}
@@ -637,7 +740,7 @@ export function OnlinePokerTable({
               <Button onClick={allIn} className="h-12 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl">All-In</Button>
             </div>
           </div>
-        ) : gameState?.phase === 'showdown' ? (
+        ) : tableState?.phase === 'showdown' ? (
           <Button onClick={startHand} className="w-full h-12 bg-gradient-to-r from-blue-600 to-blue-500 text-white font-bold rounded-xl">
             <RotateCcw className="h-5 w-5 mr-2" />
             New Hand
@@ -645,7 +748,7 @@ export function OnlinePokerTable({
         ) : (
           <div className="flex items-center justify-center py-3 text-white/50">
             <Timer className="h-4 w-4 mr-2 animate-pulse" />
-            Waiting for {players.find(p => p.seatNumber === gameState?.currentPlayerSeat)?.name || 'opponent'}...
+            Waiting for {players.find(p => p.seatNumber === tableState?.currentPlayerSeat)?.name || 'opponent'}...
           </div>
         )}
       </div>
