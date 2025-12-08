@@ -160,6 +160,12 @@ export function usePokerTable(options: UsePokerTableOptions | null) {
   const loadPlayersFromDBRef = useRef<() => Promise<void>>();
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const lastLoadTimeRef = useRef<number>(0);
+  
+  // Reconnection state with exponential backoff
+  const reconnectAttemptRef = useRef<number>(0);
+  const MAX_RECONNECT_ATTEMPTS = 5;
+  const BASE_RECONNECT_DELAY = 2000; // 2 seconds
+  const MAX_RECONNECT_DELAY = 30000; // 30 seconds
 
   // Auto-start hand via edge function (stateless, reliable, PPPoker-style)
   const autoStartViaEngine = useCallback(async () => {
@@ -588,6 +594,9 @@ export function usePokerTable(options: UsePokerTableOptions | null) {
         setIsConnected(true);
         setIsConnecting(false);
         
+        // Reset reconnect counter on successful connection
+        reconnectAttemptRef.current = 0;
+        
         // Join table
         sendMessage({
           type: 'join_table',
@@ -628,12 +637,27 @@ export function usePokerTable(options: UsePokerTableOptions | null) {
         setIsConnecting(false);
         wsRef.current = null;
 
-        // Auto-reconnect after 5 seconds if not clean close
+        // Auto-reconnect with exponential backoff if not clean close
         if (!event.wasClean && event.code !== 1000) {
-          reconnectTimeoutRef.current = setTimeout(() => {
-            console.log('🔄 Attempting to reconnect...');
-            connect();
-          }, 5000);
+          if (reconnectAttemptRef.current < MAX_RECONNECT_ATTEMPTS) {
+            // Calculate delay with exponential backoff + jitter
+            const delay = Math.min(
+              BASE_RECONNECT_DELAY * Math.pow(2, reconnectAttemptRef.current) + Math.random() * 1000,
+              MAX_RECONNECT_DELAY
+            );
+            reconnectAttemptRef.current++;
+            console.log(`🔄 Reconnect attempt ${reconnectAttemptRef.current}/${MAX_RECONNECT_ATTEMPTS} in ${Math.round(delay/1000)}s...`);
+            
+            reconnectTimeoutRef.current = setTimeout(() => {
+              connect();
+            }, delay);
+          } else {
+            console.log('❌ Max reconnection attempts reached, giving up');
+            setError('Connection failed after multiple attempts. Please refresh the page.');
+          }
+        } else {
+          // Clean close - reset attempt counter
+          reconnectAttemptRef.current = 0;
         }
       };
     } catch (e) {
@@ -832,9 +856,12 @@ export function usePokerTable(options: UsePokerTableOptions | null) {
 
   // Disconnect from table
   const disconnect = useCallback(() => {
+    // Cancel any pending reconnection attempts
+    reconnectAttemptRef.current = MAX_RECONNECT_ATTEMPTS; // Prevent auto-reconnect
+    
     if (wsRef.current) {
       sendMessage({ type: 'leave_table', tableId, playerId });
-      wsRef.current.close();
+      wsRef.current.close(1000, 'Client disconnect'); // Clean close
       wsRef.current = null;
     }
     if (channelRef.current) {
@@ -843,6 +870,7 @@ export function usePokerTable(options: UsePokerTableOptions | null) {
     }
     if (reconnectTimeoutRef.current) {
       clearTimeout(reconnectTimeoutRef.current);
+      reconnectTimeoutRef.current = null;
     }
     if (autoStartTimeoutRef.current) {
       clearTimeout(autoStartTimeoutRef.current);
@@ -853,6 +881,10 @@ export function usePokerTable(options: UsePokerTableOptions | null) {
     if (debounceTimerRef.current) {
       clearTimeout(debounceTimerRef.current);
     }
+    
+    // Reset state
+    connectingRef.current = false;
+    reconnectAttemptRef.current = 0;
     setIsConnected(false);
     setTableState(null);
     setMySeat(null);
