@@ -1,9 +1,10 @@
 /**
  * Hook for connecting to Node.js Poker WebSocket Server
  * Production-ready with reconnection, ping/pong, and state management
+ * Now includes Supabase Realtime for cross-client synchronization
  */
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-
+import { supabase } from '@/integrations/supabase/client';
 export interface PokerPlayer {
   playerId: string;
   name?: string;
@@ -373,12 +374,48 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
     const ws = new WebSocket(url);
     wsRef.current = ws;
 
-    ws.onopen = () => {
+    ws.onopen = async () => {
       if (!mountedRef.current) return;
       log('✅ WebSocket connected to', url);
       setConnectionStatus('connected');
       setError(null);
       reconnectAttemptRef.current = 0;
+
+      // Load initial players from database
+      const { data: players } = await supabase
+        .from('poker_table_players')
+        .select('*, players(name, avatar_url)')
+        .eq('table_id', tableId)
+        .eq('status', 'active');
+      
+      if (players && players.length > 0) {
+        log('📥 Loaded initial players:', players.length);
+        setTableState(prev => ({
+          tableId,
+          phase: prev?.phase || 'waiting',
+          pot: prev?.pot || 0,
+          currentBet: prev?.currentBet || 0,
+          currentPlayerSeat: prev?.currentPlayerSeat || null,
+          communityCards: prev?.communityCards || [],
+          dealerSeat: prev?.dealerSeat || 1,
+          smallBlindSeat: prev?.smallBlindSeat || 1,
+          bigBlindSeat: prev?.bigBlindSeat || 2,
+          players: players.map(p => ({
+            playerId: p.player_id,
+            name: p.players?.name || 'Player',
+            avatarUrl: p.players?.avatar_url,
+            seatNumber: p.seat_number,
+            stack: p.stack,
+            betAmount: 0,
+            holeCards: [],
+            isFolded: false,
+            isAllIn: false,
+            isActive: p.status === 'active',
+            isDisconnected: false
+          })),
+          playersNeeded: players.length < 2 ? 2 - players.length : 0
+        }));
+      }
 
       // Subscribe to table
       sendMessage({
@@ -577,6 +614,181 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
     
     return () => {
       mountedRef.current = false;
+    };
+  }, [tableId, playerId]);
+
+  // Effect: Supabase Realtime for cross-client player sync
+  useEffect(() => {
+    if (!tableId) return;
+
+    // Subscribe to player changes at this table
+    const channel = supabase
+      .channel(`poker_table_players_${tableId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // INSERT, UPDATE, DELETE
+          schema: 'public',
+          table: 'poker_table_players',
+          filter: `table_id=eq.${tableId}`
+        },
+        async (payload) => {
+          console.log('[NodePoker] Realtime player change:', payload.eventType, payload);
+          
+          // Fetch fresh player list from database
+          const { data: players } = await supabase
+            .from('poker_table_players')
+            .select('*, players(name, avatar_url)')
+            .eq('table_id', tableId)
+            .eq('status', 'active');
+          
+          if (players && players.length > 0) {
+            setTableState(prev => {
+              if (!prev) {
+                // Create initial state if none exists
+                return {
+                  tableId,
+                  phase: 'waiting',
+                  pot: 0,
+                  currentBet: 0,
+                  currentPlayerSeat: null,
+                  communityCards: [],
+                  dealerSeat: 1,
+                  smallBlindSeat: 1,
+                  bigBlindSeat: 2,
+                  players: players.map(p => ({
+                    playerId: p.player_id,
+                    name: p.players?.name || 'Player',
+                    avatarUrl: p.players?.avatar_url,
+                    seatNumber: p.seat_number,
+                    stack: p.stack,
+                    betAmount: 0,
+                    holeCards: [],
+                    isFolded: false,
+                    isAllIn: false,
+                    isActive: p.status === 'active',
+                    isDisconnected: false
+                  })),
+                  playersNeeded: players.length < 2 ? 2 - players.length : 0
+                };
+              }
+              
+              // Update players list in existing state
+              return {
+                ...prev,
+                players: players.map(p => {
+                  // Preserve existing player data if available
+                  const existing = prev.players.find(ep => ep.playerId === p.player_id);
+                  return {
+                    playerId: p.player_id,
+                    name: p.players?.name || existing?.name || 'Player',
+                    avatarUrl: p.players?.avatar_url || existing?.avatarUrl,
+                    seatNumber: p.seat_number,
+                    stack: p.stack,
+                    betAmount: existing?.betAmount || 0,
+                    holeCards: existing?.holeCards || [],
+                    isFolded: existing?.isFolded || false,
+                    isAllIn: existing?.isAllIn || false,
+                    isActive: p.status === 'active',
+                    isDisconnected: false
+                  };
+                }),
+                playersNeeded: players.length < 2 ? 2 - players.length : 0
+              };
+            });
+          } else if (payload.eventType === 'DELETE') {
+            // Handle player leaving
+            setTableState(prev => {
+              if (!prev) return prev;
+              const remainingPlayers = prev.players.filter(
+                p => p.playerId !== (payload.old as any)?.player_id
+              );
+              return {
+                ...prev,
+                players: remainingPlayers,
+                playersNeeded: remainingPlayers.length < 2 ? 2 - remainingPlayers.length : 0
+              };
+            });
+          }
+        }
+      )
+      .subscribe();
+
+    // Also subscribe to hand changes
+    const handChannel = supabase
+      .channel(`poker_hands_${tableId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'poker_hands',
+          filter: `table_id=eq.${tableId}`
+        },
+        async (payload) => {
+          console.log('[NodePoker] Realtime hand change:', payload.eventType, payload);
+          
+          const hand = payload.new as any;
+          if (!hand) return;
+          
+          // Update game state with hand data
+          setTableState(prev => {
+            if (!prev) return prev;
+            
+            return {
+              ...prev,
+              phase: hand.phase || prev.phase,
+              pot: hand.pot || prev.pot,
+              currentBet: hand.current_bet || prev.currentBet,
+              communityCards: hand.community_cards || prev.communityCards,
+              dealerSeat: hand.dealer_seat || prev.dealerSeat,
+              smallBlindSeat: hand.small_blind_seat || prev.smallBlindSeat,
+              bigBlindSeat: hand.big_blind_seat || prev.bigBlindSeat,
+              currentPlayerSeat: hand.current_player_seat
+            };
+          });
+          
+          // Fetch hand players for bet amounts and cards
+          if (hand.id) {
+            const { data: handPlayers } = await supabase
+              .from('poker_hand_players')
+              .select('*')
+              .eq('hand_id', hand.id);
+            
+            if (handPlayers) {
+              setTableState(prev => {
+                if (!prev) return prev;
+                
+                return {
+                  ...prev,
+                  players: prev.players.map(p => {
+                    const hp = handPlayers.find(hp => hp.player_id === p.playerId);
+                    if (hp) {
+                      // Set my cards if this is my player
+                      if (p.playerId === playerId && hp.hole_cards) {
+                        setMyCards(hp.hole_cards);
+                      }
+                      return {
+                        ...p,
+                        betAmount: hp.bet_amount || 0,
+                        holeCards: p.playerId === playerId ? (hp.hole_cards || []) : [],
+                        isFolded: hp.is_folded || false,
+                        isAllIn: hp.is_all_in || false
+                      };
+                    }
+                    return p;
+                  })
+                };
+              });
+            }
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+      supabase.removeChannel(handChannel);
     };
   }, [tableId, playerId]);
 
