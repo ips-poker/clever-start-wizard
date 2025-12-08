@@ -15,7 +15,7 @@ import {
 import { 
   Users, 
   Plus, 
-  DollarSign, 
+  Diamond, 
   Play,
   RefreshCw,
   Loader2
@@ -51,12 +51,12 @@ export function PokerTableLobby({ playerId, playerBalance = 0, onJoinTable }: Po
   const [buyInAmount, setBuyInAmount] = useState(1000);
   const [creating, setCreating] = useState(false);
   
-  // New table form
+  // New table form - default values based on user requirements
   const [newTableName, setNewTableName] = useState('');
-  const [newTableSmallBlind, setNewTableSmallBlind] = useState(10);
-  const [newTableBigBlind, setNewTableBigBlind] = useState(20);
-  const [newTableMinBuyIn, setNewTableMinBuyIn] = useState(400);
-  const [newTableMaxBuyIn, setNewTableMaxBuyIn] = useState(2000);
+  const [newTableSmallBlind, setNewTableSmallBlind] = useState(1);
+  const [newTableBigBlind, setNewTableBigBlind] = useState(2);
+  const [newTableMinBuyIn, setNewTableMinBuyIn] = useState(200);
+  const [newTableMaxBuyIn, setNewTableMaxBuyIn] = useState(400);
 
   const fetchTables = async () => {
     setLoading(true);
@@ -159,9 +159,9 @@ export function PokerTableLobby({ playerId, playerBalance = 0, onJoinTable }: Po
       return;
     }
 
-    // Only check balance if it's loaded (> 0)
-    if (playerBalance > 0 && buyInAmount > playerBalance) {
-      toast.error(`Недостаточно фишек! Ваш баланс: ${playerBalance}`);
+    // Check diamond balance
+    if (buyInAmount > playerBalance) {
+      toast.error(`Недостаточно алмазов! Ваш баланс: ${playerBalance} 💎`);
       return;
     }
 
@@ -318,11 +318,11 @@ export function PokerTableLobby({ playerId, playerBalance = 0, onJoinTable }: Po
                   
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-muted-foreground flex items-center gap-1">
-                      <DollarSign className="h-4 w-4" />
+                      <Diamond className="h-4 w-4 text-cyan-400" />
                       Buy-in
                     </span>
-                    <span className="font-medium">
-                      {table.min_buy_in} - {table.max_buy_in}
+                    <span className="font-medium text-cyan-400">
+                      {table.min_buy_in} - {table.max_buy_in} 💎
                     </span>
                   </div>
                   
@@ -369,17 +369,17 @@ export function PokerTableLobby({ playerId, playerBalance = 0, onJoinTable }: Po
                   max={selectedTable.max_buy_in}
                 />
                 <div className="flex justify-between text-xs text-muted-foreground">
-                  <span>От {selectedTable.min_buy_in} до {selectedTable.max_buy_in}</span>
-                  <span className="text-primary">Ваш баланс: {playerBalance.toLocaleString()}</span>
+                  <span>От {selectedTable.min_buy_in} до {selectedTable.max_buy_in} 💎</span>
+                  <span className="text-cyan-400">Ваш баланс: {playerBalance.toLocaleString()} 💎</span>
                 </div>
               </div>
               
               <Button 
                 onClick={handleConfirmJoin} 
                 className="w-full"
-                disabled={buyInAmount > playerBalance && playerBalance > 0}
+                disabled={buyInAmount > playerBalance}
               >
-                {playerBalance === 0 ? 'Загрузка баланса...' : buyInAmount > playerBalance ? 'Недостаточно фишек' : 'Подтвердить'}
+                {buyInAmount > playerBalance ? 'Недостаточно алмазов 💎' : 'Подтвердить'}
               </Button>
             </div>
           )}

@@ -330,13 +330,31 @@ serve(async (req) => {
         if (!availableSeat) {
           result = { success: false, error: 'No available seats' };
         } else {
-          const { data: balance } = await supabase
-            .from('player_balances')
+          // Use diamond wallet for buy-in
+          const { data: wallet } = await supabase
+            .from('diamond_wallets')
             .select('balance')
             .eq('player_id', playerId)
             .single();
 
-          const buyIn = Math.min(balance?.balance || table.min_buy_in, table.max_buy_in);
+          const diamondBalance = wallet?.balance || 0;
+          
+          // Buy-in comes from request or defaults to min
+          const requestedBuyIn = amount || table.min_buy_in;
+          
+          if (diamondBalance < requestedBuyIn) {
+            result = { success: false, error: `Недостаточно алмазов. Баланс: ${diamondBalance}, требуется: ${requestedBuyIn}` };
+          } else {
+            const buyIn = Math.min(Math.max(requestedBuyIn, table.min_buy_in), table.max_buy_in);
+            
+            // Deduct diamonds from wallet
+            await supabase
+              .from('diamond_wallets')
+              .update({ 
+                balance: diamondBalance - buyIn,
+                total_spent: (wallet?.balance || 0) + buyIn
+              })
+              .eq('player_id', playerId);
 
           const { error: joinError } = await supabase
             .from('poker_table_players')
@@ -357,19 +375,45 @@ serve(async (req) => {
           } else if (joinError) {
             result = { success: false, error: joinError.message };
           } else {
-            console.log(`[Engine] Player joined seat ${availableSeat} with ${buyIn} chips`);
+            console.log(`[Engine] Player joined seat ${availableSeat} with ${buyIn} diamonds`);
             result = { success: true, seatNumber: availableSeat, stack: buyIn };
+          }
           }
         }
       }
     }
 
     // ==========================================
-    // ACTION: LEAVE
+    // ACTION: LEAVE - Return remaining stack to diamond wallet
     // ==========================================
     else if (action === 'leave') {
+      // Get player's current stack
+      const playerAtTable = tablePlayers?.find(p => p.player_id === playerId);
+      const remainingStack = playerAtTable?.stack || 0;
+      
+      if (remainingStack > 0) {
+        // Return diamonds to wallet
+        const { data: wallet } = await supabase
+          .from('diamond_wallets')
+          .select('balance, total_won')
+          .eq('player_id', playerId)
+          .single();
+        
+        if (wallet) {
+          await supabase
+            .from('diamond_wallets')
+            .update({ 
+              balance: wallet.balance + remainingStack,
+              total_won: wallet.total_won + remainingStack
+            })
+            .eq('player_id', playerId);
+          
+          console.log(`[Engine] Returned ${remainingStack} diamonds to player wallet`);
+        }
+      }
+      
       await supabase.from('poker_table_players').delete().eq('table_id', tableId).eq('player_id', playerId);
-      result = { success: true };
+      result = { success: true, returnedDiamonds: remainingStack };
     }
 
     // ==========================================
