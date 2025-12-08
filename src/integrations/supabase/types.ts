@@ -418,6 +418,107 @@ export type Database = {
         }
         Relationships: []
       }
+      diamond_transactions: {
+        Row: {
+          amount: number
+          balance_after: number
+          balance_before: number
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          payment_amount: number | null
+          player_id: string
+          reference_id: string | null
+          transaction_type: string
+          wallet_id: string
+        }
+        Insert: {
+          amount: number
+          balance_after: number
+          balance_before: number
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          payment_amount?: number | null
+          player_id: string
+          reference_id?: string | null
+          transaction_type: string
+          wallet_id: string
+        }
+        Update: {
+          amount?: number
+          balance_after?: number
+          balance_before?: number
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          payment_amount?: number | null
+          player_id?: string
+          reference_id?: string | null
+          transaction_type?: string
+          wallet_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "diamond_transactions_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "diamond_transactions_wallet_id_fkey"
+            columns: ["wallet_id"]
+            isOneToOne: false
+            referencedRelation: "diamond_wallets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      diamond_wallets: {
+        Row: {
+          balance: number
+          created_at: string
+          id: string
+          player_id: string
+          total_purchased: number
+          total_spent: number
+          total_won: number
+          updated_at: string
+        }
+        Insert: {
+          balance?: number
+          created_at?: string
+          id?: string
+          player_id: string
+          total_purchased?: number
+          total_spent?: number
+          total_won?: number
+          updated_at?: string
+        }
+        Update: {
+          balance?: number
+          created_at?: string
+          id?: string
+          player_id?: string
+          total_purchased?: number
+          total_spent?: number
+          total_won?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "diamond_wallets_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: true
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       fiscal_receipts: {
         Row: {
           amount: number
@@ -1884,6 +1985,17 @@ export type Database = {
       }
     }
     Functions: {
+      admin_diamond_transaction: {
+        Args: {
+          p_amount: number
+          p_description?: string
+          p_payment_amount?: number
+          p_player_id: string
+          p_reference_id?: string
+          p_type: string
+        }
+        Returns: Json
+      }
       archive_tournament: {
         Args: { tournament_id_param: string }
         Returns: boolean
@@ -1976,6 +2088,7 @@ export type Database = {
         Args: { p_tournament_id: string }
         Returns: undefined
       }
+      ensure_diamond_wallet: { Args: { p_player_id: string }; Returns: number }
       ensure_player_balance: { Args: { p_player_id: string }; Returns: number }
       generate_tournament_payouts: {
         Args: { tournament_id_param: string }
@@ -2062,6 +2175,10 @@ export type Database = {
       publish_tournament: {
         Args: { tournament_id_param: string }
         Returns: boolean
+      }
+      purchase_diamonds: {
+        Args: { p_player_id: string; p_rubles: number }
+        Returns: Json
       }
       redistribute_chips_on_elimination: {
         Args: { eliminated_player_id: string; tournament_id_param: string }
