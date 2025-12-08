@@ -193,16 +193,28 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
               return newState;
             });
 
-            // Extract my cards
+            // Extract my cards and seat from server state
             const stateData = data.state as Record<string, unknown>;
+            
+            // Check for myCards and mySeat in root state (from getPlayerState)
+            if (stateData.myCards) {
+              setMyCards(stateData.myCards as string[]);
+            }
+            if (stateData.mySeat !== undefined && stateData.mySeat !== null) {
+              setMySeat(stateData.mySeat as number);
+            }
+            
+            // Also check players array
             const playersData = stateData.players as Record<string, unknown>[] | undefined;
             if (playersData && playerId) {
-              const myPlayer = playersData.find((p) => p.playerId === playerId || p.id === playerId);
-              if (myPlayer) {
-                const cards = myPlayer.holeCards as string[] | undefined;
-                if (cards) {
+              const myPlayerData = playersData.find((p) => p.playerId === playerId || p.id === playerId);
+              if (myPlayerData) {
+                const cards = myPlayerData.holeCards as string[] | undefined;
+                if (cards && cards.length > 0) {
                   setMyCards(cards);
-                  setMySeat(myPlayer.seatNumber as number);
+                }
+                if (myPlayerData.seatNumber !== undefined) {
+                  setMySeat(myPlayerData.seatNumber as number);
                 }
               }
             }
@@ -215,17 +227,42 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
           }
           break;
 
+        case 'player_joined':
+        case 'player_left':
+        case 'hand_started':
+        case 'phase_change':
+          // These events include updated state - process it
+          if (data.state && tableId) {
+            setTableState(prev => {
+              const newState = transformServerState(data.state, tableId);
+              return newState;
+            });
+            
+            // Update my cards if included
+            const stateData = data.state as Record<string, unknown>;
+            if (stateData.myCards) {
+              setMyCards(stateData.myCards as string[]);
+            }
+          }
+          break;
+
         case 'action_accepted':
           log('✅ Action accepted:', data.actionType, data.amount);
           break;
 
+        case 'action':
         case 'player_action':
           setLastAction({
             playerId: data.playerId as string,
-            action: data.actionType as string,
+            action: (data.actionType || data.action) as string,
             amount: data.amount as number | undefined
           });
           setTimeout(() => setLastAction(null), 2000);
+          
+          // Update state if included
+          if (data.state && tableId) {
+            setTableState(transformServerState(data.state, tableId));
+          }
           break;
 
         case 'showdown':
@@ -241,6 +278,11 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
             });
           }
           setTimeout(() => setShowdownResult(null), 5000);
+          
+          // Update state
+          if (data.state && tableId) {
+            setTableState(transformServerState(data.state, tableId));
+          }
           break;
 
         case 'chat':

@@ -198,6 +198,7 @@ const PlayerSeat = memo(function PlayerSeat({
   player,
   position,
   seatIndex,
+  seatNumber,
   isHero,
   showCards,
   isDealer,
@@ -209,12 +210,15 @@ const PlayerSeat = memo(function PlayerSeat({
   lastAction,
   isMobile = false,
   onPlayerClick,
+  onSeatClick,
   gamePhase = 'waiting',
-  heroCards
+  heroCards,
+  canJoin = false
 }: {
   player: PokerPlayer | null;
   position: { x: number; y: number };
   seatIndex: number;
+  seatNumber: number;
   isHero: boolean;
   showCards: boolean;
   isDealer: boolean;
@@ -226,8 +230,10 @@ const PlayerSeat = memo(function PlayerSeat({
   lastAction?: { action: string; amount?: number } | null;
   isMobile?: boolean;
   onPlayerClick?: (player: PokerPlayer) => void;
+  onSeatClick?: (seatNumber: number) => void;
   gamePhase?: 'waiting' | 'preflop' | 'flop' | 'turn' | 'river' | 'showdown';
   heroCards?: string[];
+  canJoin?: boolean;
 }) {
   const avatarSize = isMobile ? (isHero ? 52 : 40) : (isHero ? 58 : 46);
   const showTurnTimer = isCurrentTurn && !player?.isFolded && !player?.isAllIn;
@@ -254,7 +260,7 @@ const PlayerSeat = memo(function PlayerSeat({
     return 'right';
   }, [position.x, position.y, isHero]);
 
-  // Empty seat - PPPoker Premium style
+  // Empty seat - PPPoker Premium style (clickable for joining)
   if (!player) {
     return (
       <div
@@ -262,23 +268,37 @@ const PlayerSeat = memo(function PlayerSeat({
         style={{ left: `${position.x}%`, top: `${position.y}%` }}
       >
         <motion.div 
-          whileHover={{ scale: 1.08 }}
+          whileHover={{ scale: 1.08, borderColor: 'rgba(34,197,94,0.8)' }}
           whileTap={{ scale: 0.95 }}
+          onClick={() => canJoin && onSeatClick?.(seatNumber)}
           className={cn(
-            "rounded-full cursor-pointer flex items-center justify-center relative overflow-hidden",
-            isMobile ? "w-11 h-11" : "w-14 h-14"
+            "rounded-full flex items-center justify-center relative overflow-hidden transition-all",
+            isMobile ? "w-11 h-11" : "w-14 h-14",
+            canJoin ? "cursor-pointer" : "cursor-default"
           )}
           style={{
-            background: 'radial-gradient(ellipse at 30% 30%, rgba(60,60,60,0.6), rgba(20,20,20,0.9))',
-            border: '2px dashed rgba(100,100,100,0.4)',
+            background: canJoin 
+              ? 'radial-gradient(ellipse at 30% 30%, rgba(34,197,94,0.2), rgba(20,20,20,0.9))'
+              : 'radial-gradient(ellipse at 30% 30%, rgba(60,60,60,0.6), rgba(20,20,20,0.9))',
+            border: canJoin 
+              ? '2px dashed rgba(34,197,94,0.6)' 
+              : '2px dashed rgba(100,100,100,0.4)',
             boxShadow: 'inset 0 2px 10px rgba(0,0,0,0.5)'
           }}
         >
-          <span className={cn("font-semibold text-gray-500/70", isMobile ? "text-[9px]" : "text-[10px]")}>Empty</span>
-          {/* Subtle glow on hover */}
-          <div className="absolute inset-0 opacity-0 hover:opacity-100 transition-opacity rounded-full"
-            style={{ background: 'radial-gradient(circle, rgba(34,197,94,0.1) 0%, transparent 70%)' }}
-          />
+          <span className={cn(
+            "font-semibold", 
+            isMobile ? "text-[9px]" : "text-[10px]",
+            canJoin ? "text-emerald-400/80" : "text-gray-500/70"
+          )}>
+            {canJoin ? 'Сесть' : 'Empty'}
+          </span>
+          {/* Glow on hover for available seats */}
+          {canJoin && (
+            <div className="absolute inset-0 opacity-0 hover:opacity-100 transition-opacity rounded-full"
+              style={{ background: 'radial-gradient(circle, rgba(34,197,94,0.3) 0%, transparent 70%)' }}
+            />
+          )}
         </motion.div>
       </div>
     );
@@ -1494,8 +1514,13 @@ export function SyndikatetPokerTable({
   
   const {
     isConnected, isConnecting, error, tableState, myCards, mySeat, myPlayer, isMyTurn, canCheck, callAmount, lastAction, showdownResult,
-    connect, disconnect, fold, check, call, raise, allIn
+    connect, disconnect, joinTable, fold, check, call, raise, allIn
   } = pokerTable;
+  
+  // Check if player can join (not yet seated)
+  const canJoinTable = useMemo(() => {
+    return isConnected && !myPlayer;
+  }, [isConnected, myPlayer]);
 
   const hasConnectedRef = useRef(false);
 
@@ -1565,6 +1590,14 @@ export function SyndikatetPokerTable({
   }, [fold, check, call, raise, allIn]);
 
   const handleLeave = useCallback(() => { disconnect(); onLeave(); }, [disconnect, onLeave]);
+  
+  // Handle seat click to join table
+  const handleSeatClick = useCallback((seatNumber: number) => {
+    if (canJoinTable) {
+      console.log('[Poker] Joining table at seat', seatNumber);
+      joinTable(seatNumber);
+    }
+  }, [canJoinTable, joinTable]);
 
   const handleSettingsSave = useCallback((settings: Partial<TableSettings>) => {
     // Settings will be handled via WebSocket in future update
@@ -1731,6 +1764,7 @@ export function SyndikatetPokerTable({
                 player={player || null}
                 position={position}
                 seatIndex={idx}
+                seatNumber={seatNumber}
                 isHero={isHeroSeat}
                 showCards={tableState?.phase === 'showdown'}
                 isDealer={tableState?.dealerSeat === seatNumber}
@@ -1742,8 +1776,10 @@ export function SyndikatetPokerTable({
                 lastAction={player ? playerActions[player.playerId] : null}
                 isMobile={isMobile}
                 onPlayerClick={setSelectedPlayer}
+                onSeatClick={handleSeatClick}
                 gamePhase={tableState?.phase}
                 heroCards={isHeroSeat ? myCards : undefined}
+                canJoin={canJoinTable && !player}
               />
             );
           })}
