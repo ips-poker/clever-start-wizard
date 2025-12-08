@@ -420,9 +420,18 @@ export class PokerWebSocketHandler {
    */
   private broadcastToTable(tableId: string, event: TableEvent): void {
     const subscribers = this.tableSubscribers.get(tableId);
-    if (!subscribers) return;
+    if (!subscribers) {
+      logger.warn('No subscribers for table', { tableId, eventType: event.type });
+      return;
+    }
     
     const table = this.gameManager.getTable(tableId);
+    logger.info('Broadcasting to table', { 
+      tableId, 
+      eventType: event.type, 
+      subscriberCount: subscribers.size,
+      hasTable: !!table
+    });
     
     for (const ws of subscribers) {
       const connection = this.clients.get(ws);

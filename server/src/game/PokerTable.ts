@@ -485,7 +485,24 @@ export class PokerTable {
    * Get public table state (visible to all players)
    */
   getPublicState(): object {
+    const players = Array.from(this.players.values()).map(p => ({
+      playerId: p.id,
+      id: p.id,
+      name: p.name,
+      seatNumber: p.seatNumber,
+      stack: p.stack,
+      status: p.status,
+      betAmount: p.currentBet,
+      currentBet: p.currentBet,
+      isFolded: p.isFolded,
+      isAllIn: p.isAllIn,
+      isActive: p.status === 'active',
+      hasCards: p.holeCards.length > 0,
+      holeCards: [] // Hidden for public state
+    }));
+
     return {
+      tableId: this.id,
       id: this.id,
       name: this.config.name,
       gameType: this.config.gameType,
@@ -493,44 +510,68 @@ export class PokerTable {
       smallBlind: this.config.smallBlind,
       bigBlind: this.config.bigBlind,
       ante: this.config.ante,
-      players: Array.from(this.players.values()).map(p => ({
-        id: p.id,
-        name: p.name,
-        seatNumber: p.seatNumber,
-        stack: p.stack,
-        status: p.status,
-        currentBet: p.currentBet,
-        isFolded: p.isFolded,
-        isAllIn: p.isAllIn,
-        hasCards: p.holeCards.length > 0
-      })),
-      hand: this.currentHand ? {
-        handNumber: this.currentHand.handNumber,
-        phase: this.currentHand.phase,
-        pot: this.currentHand.pot,
-        communityCards: this.currentHand.communityCards,
-        currentBet: this.currentHand.currentBet,
-        dealerSeat: this.currentHand.dealerSeat,
-        currentPlayerSeat: this.currentHand.currentPlayerSeat,
-        minRaise: this.currentHand.minRaise
-      } : null
+      actionTimer: this.config.actionTimeSeconds,
+      players,
+      // Hand state (flattened for easier client consumption)
+      phase: this.currentHand?.phase || 'waiting',
+      pot: this.currentHand?.pot || 0,
+      communityCards: this.currentHand?.communityCards || [],
+      currentBet: this.currentHand?.currentBet || 0,
+      dealerSeat: this.currentHand?.dealerSeat || this.dealerSeat || 1,
+      smallBlindSeat: this.currentHand?.smallBlindSeat || 1,
+      bigBlindSeat: this.currentHand?.bigBlindSeat || 2,
+      currentPlayerSeat: this.currentHand?.currentPlayerSeat || null,
+      minRaise: this.currentHand?.minRaise || this.config.bigBlind,
+      handNumber: this.currentHand?.handNumber || 0,
+      // Countdown info
+      playersNeeded: this.getPlayersNeededToStart()
     };
   }
   
   /**
    * Get player-specific state (includes hole cards)
    */
-  getPlayerState(playerId: string): object | null {
+  getPlayerState(playerId: string): object {
+    const publicState = this.getPublicState() as Record<string, unknown>;
     const player = this.players.get(playerId);
-    if (!player) return null;
+    
+    if (!player) {
+      return {
+        ...publicState,
+        myCards: [],
+        mySeat: null,
+        myStack: 0,
+        myTimeBank: 0,
+        isMyTurn: false
+      };
+    }
+    
+    // Update players array with hero's cards visible
+    const players = (publicState.players as Array<Record<string, unknown>>).map(p => {
+      if (p.playerId === playerId) {
+        return { ...p, holeCards: player.holeCards };
+      }
+      return p;
+    });
     
     return {
-      ...this.getPublicState(),
+      ...publicState,
+      players,
       myCards: player.holeCards,
+      mySeat: player.seatNumber,
       myStack: player.stack,
       myTimeBank: player.timeBank,
       isMyTurn: this.currentHand?.currentPlayerSeat === player.seatNumber
     };
+  }
+  
+  /**
+   * Get number of players needed to start
+   */
+  private getPlayersNeededToStart(): number {
+    const activePlayers = Array.from(this.players.values())
+      .filter(p => p.status === 'active' && p.stack > 0);
+    return Math.max(0, 2 - activePlayers.length);
   }
   
   /**
