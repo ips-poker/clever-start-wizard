@@ -72,26 +72,78 @@ export class PokerWebSocketHandler {
    */
   handleConnection(ws: WebSocket, req: IncomingMessage): void {
     const clientIp = req.socket.remoteAddress || 'unknown';
+    const url = new URL(req.url || '/', `http://${req.headers.host}`);
+    const tableId = url.searchParams.get('tableId');
+    const playerId = url.searchParams.get('playerId');
+    
+    logger.info('New WebSocket connection', { 
+      ip: clientIp, 
+      tableId, 
+      playerId,
+      url: req.url,
+      readyState: ws.readyState
+    });
     
     const connection: ClientConnection = {
       ws,
-      playerId: null,
+      playerId: playerId,
       subscribedTables: new Set(),
       lastPing: Date.now()
     };
     
     this.clients.set(ws, connection);
     
-    logger.info('WebSocket client connected', { ip: clientIp });
+    // Send welcome message immediately
+    const welcomeMsg = { 
+      type: 'connected', 
+      timestamp: Date.now(),
+      tableId,
+      playerId,
+      serverVersion: '1.0.0'
+    };
     
-    // Send welcome message
-    this.send(ws, { type: 'connected', timestamp: Date.now() });
+    logger.info('Sending welcome message', welcomeMsg);
+    
+    try {
+      if (ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify(welcomeMsg));
+        logger.info('Welcome message sent successfully');
+      } else {
+        logger.error('WebSocket not ready', { readyState: ws.readyState });
+      }
+    } catch (error) {
+      logger.error('Failed to send welcome message', { error: String(error) });
+    }
+    
+    // Auto-subscribe to table if provided in URL
+    if (tableId) {
+      const table = this.gameManager.getTable(tableId);
+      if (table) {
+        this.subscribeToTable(ws, tableId);
+        connection.subscribedTables.add(tableId);
+        this.setupTableListeners(table);
+        
+        // Send current state
+        const state = playerId ? table.getPlayerState(playerId) : table.getPublicState();
+        this.send(ws, { type: 'state', tableId, state });
+        logger.info('Sent initial state for table', { tableId });
+      } else {
+        logger.warn('Table not found', { tableId });
+        this.send(ws, { type: 'error', error: 'Table not found', tableId });
+      }
+    }
     
     // Handle messages
-    ws.on('message', (data) => this.handleMessage(ws, data));
+    ws.on('message', (data) => {
+      logger.info('Received message', { data: data.toString().substring(0, 200) });
+      this.handleMessage(ws, data);
+    });
     
     // Handle close
-    ws.on('close', () => this.handleClose(ws));
+    ws.on('close', (code, reason) => {
+      logger.info('WebSocket closed', { code, reason: reason.toString() });
+      this.handleClose(ws);
+    });
     
     // Handle errors
     ws.on('error', (error) => {
