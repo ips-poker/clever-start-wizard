@@ -258,14 +258,33 @@ serve(async (req) => {
           break;
         }
 
-        case 'get_state': {
+        case 'get_state':
+        case 'subscribe': {
           const { tableId, playerId } = message;
-          if (!tableId || !playerId) return;
+          if (!tableId || !playerId) {
+            socket.send(JSON.stringify({ type: 'error', message: 'Missing tableId or playerId' }));
+            return;
+          }
+
+          currentTableId = tableId;
+          currentPlayerId = playerId;
+
+          // Add to connections map for subscribe
+          if (message.type === 'subscribe') {
+            if (!tableConnections.has(tableId)) {
+              tableConnections.set(tableId, new Map());
+            }
+            tableConnections.get(tableId)!.set(playerId, socket);
+            console.log(`📡 Player ${playerId} subscribed to table ${tableId}`);
+          }
 
           const tableState = await fetchTableState(supabase, tableId, playerId);
+          
+          // Send state with appropriate type
           socket.send(JSON.stringify({
-            type: 'table_state',
-            ...tableState
+            type: message.type === 'subscribe' ? 'subscribed' : 'state',
+            tableId,
+            state: tableState
           }));
           break;
         }

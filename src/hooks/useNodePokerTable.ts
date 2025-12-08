@@ -131,40 +131,66 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
   // Transform server state to client format
   const transformServerState = useCallback((serverState: unknown, tblId: string): TableState => {
     const state = serverState as Record<string, unknown>;
+    
+    // Handle Edge Function format: { table: {...}, players: [...], hand: {...} }
+    const tableData = state.table as Record<string, unknown> | undefined;
+    const handData = state.hand as Record<string, unknown> | undefined;
+    
+    // Players can be at root or inside state
     const playersArr = (state.players || []) as Record<string, unknown>[];
     
-    const players: PokerPlayer[] = playersArr.map((p) => ({
-      playerId: (p.playerId || p.id) as string,
-      name: (p.name || p.playerName || 'Player') as string,
-      avatarUrl: p.avatarUrl as string | undefined,
-      seatNumber: (p.seatNumber || p.seat || 0) as number,
-      stack: (p.stack || p.chips || 0) as number,
-      betAmount: (p.betAmount || p.bet || 0) as number,
-      totalBetInHand: (p.totalBetInHand || p.betAmount || 0) as number,
-      holeCards: (p.holeCards || p.cards || []) as string[],
-      isFolded: (p.isFolded || p.folded || false) as boolean,
-      isAllIn: (p.isAllIn || p.allIn || false) as boolean,
-      isActive: p.isActive !== false,
-      isDisconnected: (p.isDisconnected || false) as boolean,
-      timeBankRemaining: (p.timeBankRemaining || 60) as number
-    }));
+    // Extract values from nested structure if present
+    const phase = handData?.phase || state.phase || 'waiting';
+    const pot = handData?.pot || state.pot || 0;
+    const currentBet = handData?.currentBet || state.currentBet || 0;
+    const communityCards = handData?.communityCards || state.communityCards || state.board || [];
+    const dealerSeat = handData?.dealerSeat || tableData?.currentDealerSeat || state.dealerSeat || state.buttonSeat || 1;
+    const smallBlindSeat = handData?.smallBlindSeat || state.smallBlindSeat || 1;
+    const bigBlindSeat = handData?.bigBlindSeat || state.bigBlindSeat || 2;
+    const currentPlayerSeat = handData?.currentPlayerSeat || state.currentPlayerSeat || state.activePlayerSeat || null;
+    const smallBlind = tableData?.smallBlind || state.smallBlind || 10;
+    const bigBlind = tableData?.bigBlind || state.bigBlind || 20;
+    
+    // Map hand players data to regular players if available
+    const handPlayers = handData?.players as Record<string, unknown>[] | undefined;
+    
+    const players: PokerPlayer[] = playersArr.map((p) => {
+      // Find hand data for this player if exists
+      const handPlayer = handPlayers?.find(hp => hp.playerId === (p.id || p.playerId));
+      
+      return {
+        playerId: (p.id || p.playerId) as string,
+        name: (p.name || p.playerName || 'Player') as string,
+        avatarUrl: (p.avatar || p.avatarUrl) as string | undefined,
+        seatNumber: (p.seatNumber || p.seat || 0) as number,
+        stack: (p.stack || p.chips || 0) as number,
+        betAmount: (handPlayer?.betAmount || p.betAmount || p.bet || 0) as number,
+        totalBetInHand: (handPlayer?.betAmount || p.totalBetInHand || p.betAmount || 0) as number,
+        holeCards: (handPlayer?.cards || p.holeCards || p.cards || []) as string[],
+        isFolded: (handPlayer?.isFolded || p.isFolded || p.folded || false) as boolean,
+        isAllIn: (handPlayer?.isAllIn || p.isAllIn || p.allIn || false) as boolean,
+        isActive: p.status !== 'disconnected' && p.isActive !== false,
+        isDisconnected: (p.status === 'disconnected' || p.isDisconnected || false) as boolean,
+        timeBankRemaining: (p.timeBankRemaining || 60) as number
+      };
+    });
 
     return {
       tableId: tblId,
-      phase: (state.phase || 'waiting') as TableState['phase'],
-      pot: (state.pot || 0) as number,
-      currentBet: (state.currentBet || 0) as number,
-      currentPlayerSeat: (state.currentPlayerSeat ?? state.activePlayerSeat ?? null) as number | null,
-      communityCards: (state.communityCards || state.board || []) as string[],
-      dealerSeat: (state.dealerSeat || state.buttonSeat || 1) as number,
-      smallBlindSeat: (state.smallBlindSeat || 1) as number,
-      bigBlindSeat: (state.bigBlindSeat || 2) as number,
+      phase: phase as TableState['phase'],
+      pot: pot as number,
+      currentBet: currentBet as number,
+      currentPlayerSeat: currentPlayerSeat as number | null,
+      communityCards: communityCards as string[],
+      dealerSeat: dealerSeat as number,
+      smallBlindSeat: smallBlindSeat as number,
+      bigBlindSeat: bigBlindSeat as number,
       players,
-      minRaise: (state.minRaise || state.currentBet || 20) as number,
-      smallBlindAmount: (state.smallBlind || 10) as number,
-      bigBlindAmount: (state.bigBlind || 20) as number,
+      minRaise: (state.minRaise || currentBet || bigBlind) as number,
+      smallBlindAmount: smallBlind as number,
+      bigBlindAmount: bigBlind as number,
       anteAmount: (state.ante || 0) as number,
-      actionTimer: (state.actionTimer || 30) as number,
+      actionTimer: (tableData?.actionTimeSeconds || state.actionTimer || 30) as number,
       timeRemaining: state.timeRemaining as number | null | undefined,
       playersNeeded: players.filter(p => p.isActive).length < 2 ? 2 - players.filter(p => p.isActive).length : 0
     };
