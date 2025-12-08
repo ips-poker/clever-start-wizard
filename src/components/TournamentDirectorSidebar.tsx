@@ -11,7 +11,9 @@ import {
   ArrowLeft,
   Mic,
   Globe,
-  Calculator
+  Calculator,
+  Gamepad2,
+  CreditCard
 } from "lucide-react";
 import {
   Sidebar,
@@ -38,6 +40,12 @@ const tournamentSections = [
       { title: "Управление", id: "control", icon: Settings },
       { title: "Игроки", id: "players", icon: Users },
       { title: "Голосовое управление", id: "voice", icon: Mic },
+    ]
+  },
+  {
+    label: "Онлайн-покер",
+    items: [
+      { title: "Управление", id: "online-poker", icon: Gamepad2 },
     ]
   },
   {

@@ -54,6 +54,7 @@ import OfflinePokerProfileManager from '@/components/OfflinePokerProfileManager'
 import IntegratedTournamentRatingSettings from '@/components/IntegratedTournamentRatingSettings';
 import { RecalculateRatings } from '@/components/RecalculateRatings';
 import { useVoiceAnnouncements } from "@/hooks/useVoiceAnnouncements";
+import { OnlinePokerManagement } from '@/components/poker/OnlinePokerManagement';
 
 // Используем типы из базы данных
 type Tournament = {
@@ -1348,6 +1349,10 @@ const TournamentDirector = () => {
                 selectedTournament={selectedTournament} 
                 onVoiceAction={handleVoiceAction}
               />
+            </TabsContent>
+
+            <TabsContent value="online-poker" className="space-y-6 animate-fade-in">
+              <OnlinePokerManagement />
             </TabsContent>
           </Tabs>
 
