@@ -894,7 +894,12 @@ serve(async (req) => {
                 // deck[2*playerCount+6] = burn, deck[2*playerCount+7] = river
                 const deckStart = playerCount * 2;
 
-                if (roundComplete && active.length > 0) {
+                // Determine if we should move to next phase
+                // River + roundComplete = SHOWDOWN (not next phase)
+                const shouldAdvancePhase = roundComplete && hand.phase !== 'river';
+                const shouldShowdown = roundComplete && (hand.phase === 'river' || active.length === 0);
+                
+                if (shouldAdvancePhase && !shouldShowdown) {
                   newPhase = getNextPhase(hand.phase);
                   
                   console.log(`[Engine] Phase transition: ${hand.phase} -> ${newPhase}`);
@@ -925,8 +930,8 @@ serve(async (req) => {
                   console.log(`[Engine] New street, first to act: seat ${nextPlayer?.seat_number}`);
                 }
 
-                // SHOWDOWN - when no more active players or phase is showdown
-                if (newPhase === 'showdown' || (roundComplete && active.length === 0 && remaining.length > 1)) {
+                // SHOWDOWN - after river is complete OR all players all-in
+                if (shouldShowdown || newPhase === 'showdown') {
                   // Deal remaining cards if needed
                   while (newCommunityCards.length < 5) {
                     if (newCommunityCards.length === 0) {
