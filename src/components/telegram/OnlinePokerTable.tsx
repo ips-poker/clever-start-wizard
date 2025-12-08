@@ -8,12 +8,17 @@ import {
   ArrowLeft, Volume2, VolumeX, MessageSquare, Send,
   Coins, Timer, Users, Crown, Zap, X, RotateCcw, Wifi, WifiOff,
   Shield, Rabbit, Clock, Bomb, Layers, Settings, AlertTriangle, Loader2,
-  Plus, ChevronUp, ChevronDown
+  Plus, ChevronUp, ChevronDown, Sparkles, Settings2
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { usePokerTable, PokerPlayer, TableState } from '@/hooks/usePokerTable';
+
+// Import chat, emoji reactions and settings components
+import { TableChat } from '@/components/poker/TableChat';
+import { TableReactions, QuickReactionButton, useTableReactions, ReactionType } from '@/components/poker/TableEmojis';
+import { TableSettingsPanel, TableSettings } from '@/components/poker/TableSettingsPanel';
 
 // Import pro features components
 import { EquityDisplay } from '@/components/poker/EquityDisplay';
@@ -39,7 +44,6 @@ interface OnlinePokerTableProps {
   onLeave: () => void;
 }
 
-const QUICK_EMOJIS = ['👍', '👎', '😂', '😡', '🎉', '💰', '🔥', '💀'];
 
 // Seat positions for 6-max table - PPPoker authentic layout
 const SEAT_POSITIONS_6MAX = [
@@ -61,7 +65,6 @@ export function OnlinePokerTable({
 }: OnlinePokerTableProps) {
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [showChat, setShowChat] = useState(false);
-  const [chatInput, setChatInput] = useState('');
   const [betAmount, setBetAmount] = useState(40);
   const [timeRemaining, setTimeRemaining] = useState(15);
   const [nextHandCountdown, setNextHandCountdown] = useState(0);
@@ -74,6 +77,20 @@ export function OnlinePokerTable({
   const [showRabbitHunt, setShowRabbitHunt] = useState(false);
   const [useSqueeze, setUseSqueeze] = useState(true);
   const [showSettings, setShowSettings] = useState(false);
+  const [mutedPlayers, setMutedPlayers] = useState<Set<string>>(new Set());
+  const [tableSettings, setTableSettings] = useState<Partial<TableSettings>>({
+    smallBlind: 10,
+    bigBlind: 20,
+    ante: 0,
+    actionTimeSeconds: 15,
+    timeBankSeconds: 30,
+    chatEnabled: true,
+    bombPotEnabled: false,
+    autoStartEnabled: true
+  });
+  
+  // Emoji reactions hook
+  const { reactions, addReaction, removeReaction } = useTableReactions();
 
   // Use the main poker table hook
   const pokerTable = usePokerTable(playerId ? { tableId, playerId, buyIn } : null);
@@ -297,13 +314,6 @@ export function OnlinePokerTable({
     return winners;
   }, [showdownResult]);
 
-  // Send chat
-  const handleSendChat = () => {
-    if (chatInput.trim()) {
-      sendTableChat(chatInput.trim());
-      setChatInput('');
-    }
-  };
 
   // Handle use time bank
   const handleUseTimeBank = () => {
@@ -411,6 +421,13 @@ export function OnlinePokerTable({
         </div>
 
         <div className="flex gap-0.5">
+          {/* Emoji reactions button */}
+          <QuickReactionButton 
+            onReact={(type: ReactionType) => {
+              const heroSeat = mySeat ?? 0;
+              addReaction(playerId || 'hero', playerName, heroSeat, type);
+            }} 
+          />
           <Button 
             variant="ghost" 
             size="icon" 
@@ -423,55 +440,61 @@ export function OnlinePokerTable({
           <Button variant="ghost" size="icon" onClick={() => setSoundEnabled(!soundEnabled)} className="h-8 w-8 text-white/70">
             {soundEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
           </Button>
-          <Button variant="ghost" size="icon" onClick={() => setShowChat(!showChat)} className="h-8 w-8 text-white/70 relative">
+          <Button variant="ghost" size="icon" onClick={() => setShowChat(!showChat)} className={cn("h-8 w-8 text-white/70 relative", showChat && "text-orange-400")}>
             <MessageSquare className="h-4 w-4" />
             {chatMessages.length > 0 && <div className="absolute top-1 right-1 w-1.5 h-1.5 bg-red-500 rounded-full" />}
+          </Button>
+          <Button variant="ghost" size="icon" onClick={() => setShowSettings(true)} className="h-8 w-8 text-white/70">
+            <Settings2 className="h-4 w-4" />
           </Button>
         </div>
       </div>
 
-      {/* Chat Panel */}
-      <AnimatePresence>
-        {showChat && (
-          <motion.div
-            initial={{ x: '100%' }}
-            animate={{ x: 0 }}
-            exit={{ x: '100%' }}
-            className="absolute right-0 top-12 bottom-32 w-64 bg-slate-900/95 backdrop-blur-lg z-30 flex flex-col border-l border-white/10"
-          >
-            <div className="flex-1 overflow-y-auto p-2 space-y-2">
-              {chatMessages.length === 0 && (
-                <p className="text-center text-white/30 text-xs py-4">Нет сообщений</p>
-              )}
-              {chatMessages.map((msg, i) => (
-                <div key={i} className={cn("text-xs", msg.playerId === playerId ? "text-right" : "")}>
-                  <span className="text-green-400 font-medium">{msg.playerName || 'Player'}: </span>
-                  <span className="text-white/80">{msg.text || msg.message}</span>
-                </div>
-              ))}
-            </div>
-            <div className="flex gap-1 p-2 border-t border-white/10 flex-wrap">
-              {QUICK_EMOJIS.map(emoji => (
-                <button key={emoji} onClick={() => sendTableChat(emoji)} className="text-lg hover:scale-125 transition-transform">
-                  {emoji}
-                </button>
-              ))}
-            </div>
-            <div className="flex gap-2 p-2">
-              <Input
-                value={chatInput}
-                onChange={(e) => setChatInput(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleSendChat()}
-                placeholder="Сообщение..."
-                className="flex-1 h-8 text-xs bg-white/10 border-white/20 text-white"
-              />
-              <Button size="icon" onClick={handleSendChat} className="h-8 w-8 bg-green-600">
-                <Send className="h-3 w-3" />
-              </Button>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* Enhanced Chat with TableChat component */}
+      {showChat && (
+        <TableChat
+          messages={chatMessages.map(msg => ({
+            id: `${msg.playerId}-${Date.now()}-${Math.random()}`,
+            playerId: msg.playerId || '',
+            playerName: msg.playerName || 'Player',
+            message: msg.text || msg.message || '',
+            timestamp: Date.now(),
+            type: 'chat' as const
+          }))}
+          onSendMessage={(text) => sendTableChat(text)}
+          onMutePlayer={(pid, mute) => {
+            setMutedPlayers(prev => {
+              const next = new Set(prev);
+              if (mute) next.add(pid);
+              else next.delete(pid);
+              return next;
+            });
+          }}
+          mutedPlayers={mutedPlayers}
+          isChatEnabled={tableSettings.chatEnabled}
+          isSlowMode={tableSettings.chatSlowMode}
+          slowModeInterval={tableSettings.chatSlowModeInterval}
+          currentPlayerId={playerId || ''}
+          bombPotEnabled={tableSettings.bombPotEnabled}
+          onTriggerBombPot={triggerBombPot}
+        />
+      )}
+
+      {/* Emoji Reactions display */}
+      <TableReactions
+        reactions={reactions}
+        seatPositions={SEAT_POSITIONS_6MAX.map(p => ({ x: p.x, y: p.y }))}
+        onReactionComplete={removeReaction}
+      />
+
+      {/* Table Settings Panel */}
+      <TableSettingsPanel
+        isOpen={showSettings}
+        onClose={() => setShowSettings(false)}
+        settings={tableSettings}
+        onSave={(newSettings) => setTableSettings(prev => ({ ...prev, ...newSettings }))}
+        isHost={true}
+      />
 
       {/* Poker Table Area */}
       <div className="flex-1 relative overflow-hidden">
