@@ -381,21 +381,26 @@ const PlayerSeat = memo(function PlayerSeat({
         )}
       </div>
 
-      {/* Dealer button - PPPoker white D */}
+      {/* Dealer button - PPPoker Premium Style */}
       {isDealer && (
         <motion.div 
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
+          initial={{ scale: 0, rotate: -180 }}
+          animate={{ scale: 1, rotate: 0 }}
+          transition={{ type: 'spring', stiffness: 400, damping: 20 }}
           className={cn("absolute rounded-full flex items-center justify-center z-20",
-            isMobile ? "-right-1 -top-1 w-4 h-4" : "-right-1 top-0 w-5 h-5"
+            isMobile ? "-right-2 -top-2 w-6 h-6" : "-right-2 -top-1 w-7 h-7"
           )}
           style={{
-            background: 'linear-gradient(135deg, #fff 0%, #ddd 100%)',
-            boxShadow: '0 2px 6px rgba(0,0,0,0.4)',
-            border: '1px solid #333'
+            background: 'linear-gradient(145deg, #fef3c7 0%, #fbbf24 30%, #f59e0b 70%, #d97706 100%)',
+            boxShadow: '0 2px 8px rgba(245,158,11,0.5), 0 4px 12px rgba(0,0,0,0.3), inset 0 1px 2px rgba(255,255,255,0.6)',
+            border: '2px solid #92400e'
           }}
         >
-          <span className={cn("font-black text-gray-800", isMobile ? "text-[7px]" : "text-[9px]")}>D</span>
+          <span className={cn("font-black text-amber-900", isMobile ? "text-[9px]" : "text-[11px]")}>D</span>
+          {/* Shine effect */}
+          <div className="absolute inset-[2px] rounded-full overflow-hidden pointer-events-none">
+            <div className="absolute -top-1/2 -left-1/2 w-full h-full bg-gradient-to-br from-white/40 to-transparent rotate-45"/>
+          </div>
         </motion.div>
       )}
 
@@ -493,7 +498,7 @@ const PlayerSeat = memo(function PlayerSeat({
         </div>
       )}
 
-      {/* Bet chip + amount - PPPoker style with chip stack icon */}
+      {/* Bet chip + amount - PPPoker Premium Style with animated chip stack */}
       {player.betAmount > 0 && (
         <motion.div
           className="absolute z-15"
@@ -502,25 +507,50 @@ const PlayerSeat = memo(function PlayerSeat({
             top: `calc(50% + ${betOffset.y}px)`,
             transform: 'translate(-50%, -50%)'
           }}
-          initial={{ scale: 0, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
+          initial={{ scale: 0, opacity: 0, y: 10 }}
+          animate={{ scale: 1, opacity: 1, y: 0 }}
+          transition={{ type: 'spring', stiffness: 400, damping: 25 }}
         >
-          <div className={cn("flex items-center gap-1 rounded-full",
-            isMobile ? "px-1.5 py-0.5" : "px-2 py-0.5"
+          <div className={cn("flex items-center gap-1.5 rounded-full",
+            isMobile ? "px-2 py-1" : "px-3 py-1.5"
           )}
           style={{
-            background: 'rgba(0,0,0,0.85)',
-            border: '1px solid rgba(255,200,0,0.5)',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.4)'
+            background: 'linear-gradient(135deg, rgba(0,0,0,0.9) 0%, rgba(30,30,30,0.9) 100%)',
+            border: '1.5px solid rgba(251,191,36,0.6)',
+            boxShadow: '0 4px 15px rgba(0,0,0,0.5), 0 0 10px rgba(251,191,36,0.2)'
           }}>
-            {/* Chip stack icon - PPPoker style */}
-            <div className="relative flex">
-              <div className={cn("rounded-full", isMobile ? "w-2.5 h-2.5" : "w-3.5 h-3.5")} 
-                style={{ background: 'linear-gradient(135deg, #ef4444, #dc2626)', border: '1px solid rgba(255,255,255,0.3)' }}/>
-              <div className={cn("rounded-full absolute", isMobile ? "w-2.5 h-2.5 -left-1" : "w-3.5 h-3.5 -left-1.5")} 
-                style={{ background: 'linear-gradient(135deg, #22c55e, #16a34a)', border: '1px solid rgba(255,255,255,0.3)', top: '-2px' }}/>
+            {/* Animated chip stack - PPPoker style */}
+            <div className="relative flex items-end" style={{ height: isMobile ? 14 : 18 }}>
+              {[0, 1, 2].map((i) => (
+                <motion.div 
+                  key={i}
+                  initial={{ y: 10, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: i * 0.05 }}
+                  className="absolute rounded-full"
+                  style={{ 
+                    width: isMobile ? 10 : 14,
+                    height: isMobile ? 10 : 14,
+                    background: i === 0 
+                      ? 'linear-gradient(135deg, #ef4444, #dc2626)' 
+                      : i === 1 
+                        ? 'linear-gradient(135deg, #22c55e, #16a34a)'
+                        : 'linear-gradient(135deg, #3b82f6, #2563eb)',
+                    border: '1.5px solid rgba(255,255,255,0.4)',
+                    left: i * (isMobile ? 4 : 5),
+                    bottom: i * (isMobile ? 2 : 3),
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.3)'
+                  }}
+                />
+              ))}
             </div>
-            <span className={cn("font-bold text-amber-400", isMobile ? "text-[9px]" : "text-[11px]")}>
+            <span className={cn("font-bold ml-2", isMobile ? "text-[10px]" : "text-xs")}
+              style={{
+                background: 'linear-gradient(135deg, #fbbf24, #f59e0b)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent'
+              }}
+            >
               {(player.betAmount / 20).toFixed(1)} BB
             </span>
           </div>
@@ -641,37 +671,110 @@ const PPPokerTableFelt = memo(function PPPokerTableFelt() {
   );
 });
 
-// ============= COMMUNITY CARDS - PPPoker Style =============
+// ============= COMMUNITY CARDS - PPPoker Premium Style =============
 const CommunityCards = memo(function CommunityCards({ 
   cards, 
   phase,
-  isMobile = false 
+  isMobile = false,
+  winningCards = []
 }: { 
   cards: string[]; 
   phase: string;
   isMobile?: boolean;
+  winningCards?: string[];
 }) {
   const visibleCount = phase === 'flop' ? 3 : phase === 'turn' ? 4 : (phase === 'river' || phase === 'showdown') ? 5 : 0;
   const cardSize = isMobile ? 'sm' : 'md';
+  const [revealedCards, setRevealedCards] = useState(0);
+
+  // Animate card reveals one by one
+  useEffect(() => {
+    if (visibleCount > revealedCards) {
+      const timer = setTimeout(() => {
+        setRevealedCards(prev => Math.min(prev + 1, visibleCount));
+      }, 150);
+      return () => clearTimeout(timer);
+    } else if (visibleCount < revealedCards) {
+      setRevealedCards(visibleCount);
+    }
+  }, [visibleCount, revealedCards]);
 
   return (
-    <div className={cn("flex items-center justify-center", isMobile ? "gap-1" : "gap-1.5")}>
-      {[0, 1, 2, 3, 4].map((idx) => (
+    <div className="relative">
+      {/* Glow behind cards during showdown */}
+      {phase === 'showdown' && (
         <motion.div 
-          key={`card-slot-${idx}`}
-          initial={idx < visibleCount ? { y: -30, opacity: 0, rotateY: 180 } : false}
-          animate={idx < visibleCount ? { y: 0, opacity: 1, rotateY: 0 } : undefined}
-          transition={{ delay: idx * 0.1, type: 'spring', stiffness: 200, damping: 20 }}
-        >
-          {idx < visibleCount && cards[idx] ? (
-            <PPPokerCard card={cards[idx]} size={cardSize} delay={idx}/>
-          ) : (
-            <div className={cn("rounded-md border border-white/5 bg-white/5",
-              isMobile ? "w-9 h-[50px]" : "w-12 h-[68px]"
-            )}/>
-          )}
-        </motion.div>
-      ))}
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="absolute inset-[-20px] rounded-xl pointer-events-none"
+          style={{
+            background: 'radial-gradient(ellipse, rgba(34,197,94,0.2) 0%, transparent 70%)',
+            filter: 'blur(10px)'
+          }}
+        />
+      )}
+      
+      <div className={cn("flex items-center justify-center relative", isMobile ? "gap-1" : "gap-1.5")}>
+        {[0, 1, 2, 3, 4].map((idx) => {
+          const isRevealed = idx < revealedCards;
+          const isWinning = winningCards.includes(cards[idx]);
+          
+          return (
+            <motion.div 
+              key={`card-slot-${idx}`}
+              initial={{ y: -50, opacity: 0, rotateX: 90 }}
+              animate={isRevealed ? { 
+                y: 0, 
+                opacity: 1, 
+                rotateX: 0,
+                scale: isWinning && phase === 'showdown' ? [1, 1.1, 1] : 1
+              } : { y: 0, opacity: 0.3, rotateX: 0 }}
+              transition={{ 
+                delay: isRevealed ? idx * 0.12 : 0, 
+                type: 'spring', 
+                stiffness: 300, 
+                damping: 20 
+              }}
+              className="relative"
+            >
+              {isRevealed && cards[idx] ? (
+                <>
+                  <PPPokerCard 
+                    card={cards[idx]} 
+                    size={cardSize} 
+                    delay={0}
+                    isWinning={isWinning && phase === 'showdown'}
+                  />
+                  {/* Winning card highlight */}
+                  {isWinning && phase === 'showdown' && (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: [0, 1, 0.5, 1] }}
+                      transition={{ repeat: Infinity, duration: 1.5 }}
+                      className="absolute inset-0 rounded-md pointer-events-none"
+                      style={{
+                        border: '2px solid #22c55e',
+                        boxShadow: '0 0 15px rgba(34,197,94,0.6)'
+                      }}
+                    />
+                  )}
+                </>
+              ) : (
+                <div 
+                  className={cn(
+                    "rounded-md border",
+                    isMobile ? "w-9 h-[50px]" : "w-12 h-[68px]"
+                  )}
+                  style={{
+                    background: 'rgba(255,255,255,0.03)',
+                    border: '1px dashed rgba(255,255,255,0.1)'
+                  }}
+                />
+              )}
+            </motion.div>
+          );
+        })}
+      </div>
     </div>
   );
 });
@@ -1090,46 +1193,209 @@ const ActionPanel = memo(function ActionPanel({
   );
 });
 
-// ============= WINNER OVERLAY =============
+// ============= WINNER OVERLAY - PPPoker Premium Style =============
 const WinnerOverlay = memo(function WinnerOverlay({
   winners, onClose
-}: { winners: Array<{ name?: string; amount: number; handRank?: string }>; onClose: () => void; }) {
-  const [countdown, setCountdown] = useState(3);
+}: { winners: Array<{ name?: string; amount: number; handRank?: string; avatarUrl?: string; playerId?: string }>; onClose: () => void; }) {
+  const [countdown, setCountdown] = useState(4);
+  const [showChipsAnimation, setShowChipsAnimation] = useState(true);
 
   useEffect(() => {
     const interval = setInterval(() => setCountdown(prev => prev <= 1 ? 0 : prev - 1), 1000);
-    const timer = setTimeout(onClose, 3000);
-    return () => { clearInterval(interval); clearTimeout(timer); };
+    const timer = setTimeout(onClose, 4000);
+    const chipsTimer = setTimeout(() => setShowChipsAnimation(false), 1500);
+    return () => { clearInterval(interval); clearTimeout(timer); clearTimeout(chipsTimer); };
   }, [onClose]);
 
   if (!winners.length) return null;
+  const winner = winners[0];
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} 
-      className="absolute inset-0 z-30 flex items-center justify-center bg-black/60">
+    <motion.div 
+      initial={{ opacity: 0 }} 
+      animate={{ opacity: 1 }} 
+      exit={{ opacity: 0 }} 
+      className="absolute inset-0 z-40 flex items-center justify-center pointer-events-none"
+    >
+      {/* Flying chips animation - PPPoker style */}
+      <AnimatePresence>
+        {showChipsAnimation && (
+          <>
+            {[...Array(12)].map((_, i) => (
+              <motion.div
+                key={`chip-${i}`}
+                initial={{ 
+                  x: 0, 
+                  y: 0, 
+                  scale: 0,
+                  rotate: Math.random() * 360
+                }}
+                animate={{ 
+                  x: (Math.random() - 0.5) * 200,
+                  y: (Math.random() - 0.5) * 150 - 50,
+                  scale: [0, 1.2, 0.8],
+                  rotate: Math.random() * 720
+                }}
+                exit={{ scale: 0, opacity: 0 }}
+                transition={{ 
+                  duration: 1, 
+                  delay: i * 0.05,
+                  ease: [0.25, 0.46, 0.45, 0.94]
+                }}
+                className="absolute z-50"
+                style={{ 
+                  left: '50%', 
+                  top: '50%',
+                  width: 24,
+                  height: 24
+                }}
+              >
+                <div 
+                  className="w-full h-full rounded-full shadow-lg"
+                  style={{
+                    background: i % 3 === 0 
+                      ? 'linear-gradient(135deg, #ef4444, #dc2626)' 
+                      : i % 3 === 1
+                        ? 'linear-gradient(135deg, #22c55e, #16a34a)'
+                        : 'linear-gradient(135deg, #3b82f6, #2563eb)',
+                    border: '2px solid rgba(255,255,255,0.5)'
+                  }}
+                />
+              </motion.div>
+            ))}
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* Winner card - PPPoker premium style */}
       <motion.div
-        initial={{ scale: 0 }}
-        animate={{ scale: 1 }}
-        className="rounded-2xl p-6 text-center max-w-[280px]"
+        initial={{ scale: 0.5, opacity: 0, y: 50 }}
+        animate={{ scale: 1, opacity: 1, y: 0 }}
+        exit={{ scale: 0.8, opacity: 0, y: -30 }}
+        transition={{ type: 'spring', stiffness: 300, damping: 25, delay: 0.3 }}
+        className="relative rounded-2xl overflow-hidden text-center max-w-[320px] w-[90%] pointer-events-auto"
         style={{
-          background: 'linear-gradient(180deg, #1a1f26 0%, #0f1419 100%)',
-          border: '2px solid rgba(34,197,94,0.5)',
-          boxShadow: '0 0 40px rgba(34,197,94,0.2)'
+          background: 'linear-gradient(180deg, #1e2530 0%, #12171f 100%)',
+          border: '2px solid rgba(34,197,94,0.6)',
+          boxShadow: '0 0 60px rgba(34,197,94,0.4), 0 20px 60px rgba(0,0,0,0.5)'
         }}
       >
-        <div className="text-4xl mb-3">🏆</div>
-        <div className="text-2xl font-black text-emerald-400 mb-2">ПОБЕДА</div>
-        <div className="text-white font-bold text-lg mb-1">{winners[0].name || 'Игрок'}</div>
-        <div className="text-3xl font-black text-emerald-400 mb-2">+{winners[0].amount.toLocaleString()}</div>
-        {winners[0].handRank && (
-          <div className="inline-block px-3 py-1 rounded-full bg-white/10 text-white/70 text-sm mb-3">{winners[0].handRank}</div>
-        )}
-        <div className="mt-3 pt-3 border-t border-white/10">
-          <div className="text-white/50 text-xs">Следующая раздача</div>
-          <motion.div key={countdown} initial={{ scale: 1.3, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="text-2xl font-bold text-emerald-400 mt-1">
-            {countdown}
+        {/* Confetti effect */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          {[...Array(20)].map((_, i) => (
+            <motion.div
+              key={`conf-${i}`}
+              initial={{ y: -20, opacity: 0 }}
+              animate={{ 
+                y: [0, 200],
+                opacity: [0, 1, 1, 0],
+                x: [0, (Math.random() - 0.5) * 100]
+              }}
+              transition={{ 
+                duration: 3, 
+                delay: 0.5 + i * 0.1,
+                repeat: Infinity,
+                repeatDelay: Math.random() * 2
+              }}
+              className="absolute w-2 h-2"
+              style={{
+                left: `${Math.random() * 100}%`,
+                background: ['#ef4444', '#22c55e', '#3b82f6', '#f59e0b', '#8b5cf6'][i % 5],
+                borderRadius: Math.random() > 0.5 ? '50%' : '2px',
+                transform: `rotate(${Math.random() * 360}deg)`
+              }}
+            />
+          ))}
+        </div>
+
+        {/* Winner header with glow */}
+        <div className="relative pt-5 pb-3">
+          <motion.div 
+            initial={{ scale: 0 }}
+            animate={{ scale: [0, 1.3, 1] }}
+            transition={{ delay: 0.4, duration: 0.5 }}
+            className="text-5xl mb-2"
+          >
+            🏆
+          </motion.div>
+          <motion.div 
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5 }}
+            className="text-3xl font-black tracking-wider"
+            style={{ 
+              background: 'linear-gradient(135deg, #22c55e 0%, #4ade80 50%, #22c55e 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              textShadow: '0 0 30px rgba(34,197,94,0.5)'
+            }}
+          >
+            ПОБЕДА!
           </motion.div>
         </div>
+
+        {/* Winner info */}
+        <div className="px-6 pb-4">
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.6 }}
+            className="text-white font-bold text-xl mb-1"
+          >
+            {winner.name || 'Игрок'}
+          </motion.div>
+          
+          {/* Winning amount with animation */}
+          <motion.div 
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ delay: 0.7, type: 'spring', stiffness: 400 }}
+            className="flex items-center justify-center gap-2 mb-3"
+          >
+            <div className="flex">
+              <div className="w-5 h-5 rounded-full" style={{ background: 'linear-gradient(135deg, #22c55e, #16a34a)', border: '1.5px solid rgba(255,255,255,0.4)' }}/>
+              <div className="w-5 h-5 rounded-full -ml-2" style={{ background: 'linear-gradient(135deg, #4ade80, #22c55e)', border: '1.5px solid rgba(255,255,255,0.4)' }}/>
+            </div>
+            <span className="text-4xl font-black text-emerald-400">
+              +{winner.amount.toLocaleString()}
+            </span>
+          </motion.div>
+          
+          {/* Hand rank badge */}
+          {winner.handRank && (
+            <motion.div 
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.8 }}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-3"
+              style={{
+                background: 'linear-gradient(135deg, rgba(59,130,246,0.3), rgba(139,92,246,0.3))',
+                border: '1px solid rgba(139,92,246,0.5)'
+              }}
+            >
+              <span className="text-white/90 font-semibold text-sm">{winner.handRank}</span>
+            </motion.div>
+          )}
+        </div>
+
+        {/* Countdown footer */}
+        <motion.div 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.9 }}
+          className="px-6 py-4 border-t border-white/10"
+          style={{ background: 'rgba(0,0,0,0.3)' }}
+        >
+          <div className="text-white/50 text-xs mb-1">Следующая раздача через</div>
+          <motion.div 
+            key={countdown} 
+            initial={{ scale: 1.5, opacity: 0 }} 
+            animate={{ scale: 1, opacity: 1 }} 
+            className="text-3xl font-black text-emerald-400"
+          >
+            {countdown}
+          </motion.div>
+        </motion.div>
       </motion.div>
     </motion.div>
   );
