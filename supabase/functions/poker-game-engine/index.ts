@@ -958,9 +958,90 @@ serve(async (req) => {
                   
                   const potResult = calculateSidePots(contributions);
 
-                  // Evaluate hands
+                  // Get all actions to determine showdown order
+                  const { data: allActions } = await supabase
+                    .from('poker_actions')
+                    .select('*')
+                    .eq('hand_id', hand.id)
+                    .order('action_order', { ascending: true });
+
+                  // Determine showdown order per poker rules:
+                  // 1. All-in players show first (earliest all-in first)
+                  // 2. Last aggressor (bet/raise) shows next
+                  // 3. Others in clockwise order from dealer
+                  
+                  interface ShowdownPlayer {
+                    playerId: string;
+                    seatNumber: number;
+                    allInPhase: number; // 0=preflop, 1=flop, 2=turn, 3=river, 99=not all-in
+                    allInOrder: number;
+                    isLastAggressor: boolean;
+                  }
+                  
+                  const phaseOrder: Record<string, number> = { 'preflop': 0, 'flop': 1, 'turn': 2, 'river': 3 };
+                  
+                  // Find all-in actions per player
+                  const playerAllIns = new Map<string, { phase: number; order: number }>();
+                  allActions?.forEach((a, idx) => {
+                    if (a.action_type === 'all_in' && !playerAllIns.has(a.player_id)) {
+                      playerAllIns.set(a.player_id, { 
+                        phase: phaseOrder[a.phase] ?? 99, 
+                        order: idx 
+                      });
+                    }
+                  });
+                  
+                  // Find last aggressor (last bet/raise on river, or last street with aggression)
+                  let lastAggressor: string | null = null;
+                  const phases = ['river', 'turn', 'flop', 'preflop'];
+                  for (const phase of phases) {
+                    const phaseActions = allActions?.filter(a => a.phase === phase) || [];
+                    const aggressiveActions = phaseActions.filter(a => 
+                      a.action_type === 'raise' || a.action_type === 'bet' || a.action_type === 'all_in'
+                    );
+                    if (aggressiveActions.length > 0) {
+                      lastAggressor = aggressiveActions[aggressiveActions.length - 1].player_id;
+                      break;
+                    }
+                  }
+                  
+                  // Build showdown order
+                  const showdownPlayers: ShowdownPlayer[] = remaining.map(p => {
+                    const allInInfo = playerAllIns.get(p.player_id);
+                    return {
+                      playerId: p.player_id,
+                      seatNumber: p.seat_number,
+                      allInPhase: allInInfo?.phase ?? 99,
+                      allInOrder: allInInfo?.order ?? 999,
+                      isLastAggressor: p.player_id === lastAggressor
+                    };
+                  });
+                  
+                  // Sort: all-in (earliest first) -> last aggressor -> clockwise from dealer
+                  showdownPlayers.sort((a, b) => {
+                    // All-in players first (earlier phase/order wins)
+                    if (a.allInPhase !== b.allInPhase) return a.allInPhase - b.allInPhase;
+                    if (a.allInPhase < 99 && a.allInOrder !== b.allInOrder) return a.allInOrder - b.allInOrder;
+                    
+                    // Last aggressor next
+                    if (a.isLastAggressor && !b.isLastAggressor) return -1;
+                    if (!a.isLastAggressor && b.isLastAggressor) return 1;
+                    
+                    // Clockwise from dealer (seats after dealer first)
+                    const aAfterDealer = a.seatNumber > hand.dealer_seat ? 0 : 1;
+                    const bAfterDealer = b.seatNumber > hand.dealer_seat ? 0 : 1;
+                    if (aAfterDealer !== bAfterDealer) return aAfterDealer - bAfterDealer;
+                    
+                    return a.seatNumber - b.seatNumber;
+                  });
+                  
+                  const showdownOrder = showdownPlayers.map(sp => sp.playerId);
+                  console.log(`[Engine] Showdown order: ${showdownOrder.map(id => id.slice(0,8)).join(' -> ')}`);
+
+                  // Evaluate hands in showdown order
                   const handResults: HandResult[] = [];
-                  for (const p of remaining) {
+                  for (const pid of showdownOrder) {
+                    const p = remaining.find(r => r.player_id === pid)!;
                     const ev = evaluateHand(p.hole_cards || [], newCommunityCards);
                     handResults.push({ ...ev, playerId: p.player_id });
                   }
@@ -1023,6 +1104,7 @@ serve(async (req) => {
                   result = {
                     success: true, action, amount: actionAmount, handComplete: true,
                     winners: winnersInfo, communityCards: newCommunityCards, sidePots: allPots,
+                    showdownOrder, // Order in which cards are revealed
                     handResults: handResults.map(hr => ({ playerId: hr.playerId, handName: hr.handName, bestCards: hr.bestCards }))
                   };
                 } else {
