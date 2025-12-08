@@ -554,10 +554,15 @@ export function usePokerTable(options: UsePokerTableOptions | null) {
   }, [tableId, loadPlayersFromDB, debouncedLoadPlayers]);
 
   // Connect to table
+  const connectingRef = useRef(false);
+  
   const connect = useCallback(() => {
     if (!tableId || !playerId) return;
-    if (isConnected || isConnecting) return;
+    if (wsRef.current?.readyState === WebSocket.OPEN) return;
+    if (wsRef.current?.readyState === WebSocket.CONNECTING) return;
+    if (connectingRef.current) return;
 
+    connectingRef.current = true;
     setIsConnecting(true);
     setError(null);
     
@@ -568,11 +573,18 @@ export function usePokerTable(options: UsePokerTableOptions | null) {
     setupRealtimeSync();
 
     try {
+      // Close existing connection if any
+      if (wsRef.current) {
+        wsRef.current.close();
+        wsRef.current = null;
+      }
+      
       const ws = new WebSocket(getWsUrl());
       wsRef.current = ws;
 
       ws.onopen = () => {
         console.log('🎰 WebSocket connected');
+        connectingRef.current = false;
         setIsConnected(true);
         setIsConnecting(false);
         
@@ -588,7 +600,9 @@ export function usePokerTable(options: UsePokerTableOptions | null) {
       ws.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
-          console.log('📨 Received:', data.type);
+          if (data.type !== 'pong') {
+            console.log('📨 Received:', data.type);
+          }
           handleMessage(data);
           
           // Only reload for critical events, with debounce
@@ -601,31 +615,34 @@ export function usePokerTable(options: UsePokerTableOptions | null) {
       };
 
       ws.onerror = (event) => {
-        console.error('❌ WebSocket error:', event);
+        console.error('❌ WebSocket error');
+        connectingRef.current = false;
         setError('Connection error');
         setIsConnecting(false);
       };
 
       ws.onclose = (event) => {
-        console.log('🔌 WebSocket closed:', event.code, event.reason);
+        console.log('🔌 WebSocket closed:', event.code);
+        connectingRef.current = false;
         setIsConnected(false);
         setIsConnecting(false);
         wsRef.current = null;
 
-        // Auto-reconnect after 3 seconds
-        if (!event.wasClean) {
+        // Auto-reconnect after 5 seconds if not clean close
+        if (!event.wasClean && event.code !== 1000) {
           reconnectTimeoutRef.current = setTimeout(() => {
             console.log('🔄 Attempting to reconnect...');
             connect();
-          }, 3000);
+          }, 5000);
         }
       };
     } catch (e) {
       console.error('Failed to create WebSocket:', e);
+      connectingRef.current = false;
       setError('Failed to connect');
       setIsConnecting(false);
     }
-  }, [tableId, playerId, buyIn, seatNumber, getWsUrl, sendMessage, setupRealtimeSync, debouncedLoadPlayers, isConnected, isConnecting]);
+  }, [tableId, playerId, buyIn, seatNumber, getWsUrl, sendMessage, setupRealtimeSync, debouncedLoadPlayers]);
 
   // Handle incoming messages
   const handleMessage = useCallback((data: any) => {
