@@ -1,14 +1,14 @@
 // ============================================
-// SYNDIKATE POKER TABLE - Premium Design
+// SYNDIKATE POKER TABLE - PPPoker Premium Design
 // ============================================
-// PPPoker-inspired layout with Syndikate branding
+// Максимально приближенный к PPPoker дизайн
 
-import React, { useState, useEffect, useCallback, useMemo, memo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, memo, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { 
-  ArrowLeft, Volume2, VolumeX, MessageSquare, Users, Loader2, 
-  Settings2, Wifi, WifiOff, Eye, EyeOff, History, Gift,
-  ChevronUp, ChevronDown, Menu, X, Send, Info, Trophy
+  ArrowLeft, Volume2, VolumeX, MessageSquare, Loader2, 
+  Settings2, Menu, X, Send, Trophy, Eye, EyeOff, 
+  LogOut, Wallet, HelpCircle, Palette, Users, BarChart2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -24,29 +24,28 @@ import { resolveAvatarUrl } from '@/utils/avatarResolver';
 import syndikateLogo from '@/assets/syndikate-logo-main.png';
 
 // ============= CONSTANTS =============
-// Mobile-optimized seat positions (PPPoker style - compact for vertical screens)
+// PPPoker style 6-max positions - vertically oriented table
 const SEAT_POSITIONS_6MAX_MOBILE = [
-  { x: 50, y: 92 },  // Seat 1 - Hero (bottom center)
-  { x: 6, y: 68 },   // Seat 2 - Left bottom
-  { x: 6, y: 32 },   // Seat 3 - Left top
-  { x: 50, y: 8 },   // Seat 4 - Top center
-  { x: 94, y: 32 },  // Seat 5 - Right top
-  { x: 94, y: 68 },  // Seat 6 - Right bottom
+  { x: 50, y: 88 },  // Seat 1 - Hero (bottom center)
+  { x: 8, y: 62 },   // Seat 2 - Left bottom
+  { x: 8, y: 32 },   // Seat 3 - Left top
+  { x: 50, y: 10 },  // Seat 4 - Top center
+  { x: 92, y: 32 },  // Seat 5 - Right top
+  { x: 92, y: 62 },  // Seat 6 - Right bottom
 ];
 
-// Desktop seat positions
 const SEAT_POSITIONS_6MAX_DESKTOP = [
-  { x: 50, y: 85 },  // Seat 1 - Hero (bottom center)
-  { x: 10, y: 60 },  // Seat 2 - Left bottom
-  { x: 10, y: 30 },  // Seat 3 - Left top
-  { x: 50, y: 10 },  // Seat 4 - Top center
-  { x: 90, y: 30 },  // Seat 5 - Right top
-  { x: 90, y: 60 },  // Seat 6 - Right bottom
+  { x: 50, y: 82 },  // Seat 1 - Hero
+  { x: 12, y: 58 },  // Seat 2
+  { x: 12, y: 28 },  // Seat 3
+  { x: 50, y: 10 },  // Seat 4
+  { x: 88, y: 28 },  // Seat 5
+  { x: 88, y: 58 },  // Seat 6
 ];
 
 const SUIT_COLORS: Record<string, string> = {
   h: '#ef4444', // Red hearts
-  d: '#3b82f6', // Blue diamonds
+  d: '#3b82f6', // Blue diamonds  
   c: '#22c55e', // Green clubs
   s: '#1f2937', // Dark spades
 };
@@ -55,8 +54,11 @@ const SUIT_SYMBOLS: Record<string, string> = {
   h: '♥', d: '♦', c: '♣', s: '♠'
 };
 
-// ============= CARD COMPONENT =============
-const SyndikatetCard = memo(function SyndikatetCard({
+// PPPoker style emojis
+const POKER_EMOJIS = ['😀', '😂', '😎', '🤔', '😡', '😭', '👍', '👎', '🔥', '💪', '🙏', '💰'];
+
+// ============= CARD COMPONENT - PPPoker Style =============
+const PPPokerCard = memo(function PPPokerCard({
   card,
   faceDown = false,
   size = 'md',
@@ -70,118 +72,104 @@ const SyndikatetCard = memo(function SyndikatetCard({
   isWinning?: boolean;
 }) {
   const sizeConfig = {
-    xs: { w: 32, h: 44, rank: 'text-xs', suit: 'text-[8px]' },
-    sm: { w: 40, h: 56, rank: 'text-sm', suit: 'text-xs' },
-    md: { w: 48, h: 68, rank: 'text-base', suit: 'text-sm' },
-    lg: { w: 60, h: 84, rank: 'text-xl', suit: 'text-base' },
+    xs: { w: 28, h: 40, rank: 'text-[10px]', suit: 'text-[8px]', center: 'text-sm' },
+    sm: { w: 36, h: 50, rank: 'text-xs', suit: 'text-[10px]', center: 'text-base' },
+    md: { w: 44, h: 62, rank: 'text-sm', suit: 'text-xs', center: 'text-lg' },
+    lg: { w: 56, h: 78, rank: 'text-lg', suit: 'text-sm', center: 'text-2xl' },
   };
   
   const cfg = sizeConfig[size];
   const rank = card[0] === 'T' ? '10' : card[0];
   const suit = card[1];
-  const color = SUIT_COLORS[suit] || '#fff';
+  const color = SUIT_COLORS[suit] || '#1f2937';
   const symbol = SUIT_SYMBOLS[suit] || '';
 
-  // Card back - Syndikate industrial style
   if (faceDown) {
     return (
       <motion.div
         initial={{ rotateY: 180, scale: 0.5, opacity: 0 }}
         animate={{ rotateY: 0, scale: 1, opacity: 1 }}
-        transition={{ delay: delay * 0.1, type: 'spring', stiffness: 200, damping: 20 }}
-        className="rounded-md shadow-lg"
+        transition={{ delay: delay * 0.08, type: 'spring', stiffness: 200, damping: 20 }}
+        className="rounded shadow-lg relative"
         style={{
           width: cfg.w,
           height: cfg.h,
-          background: 'linear-gradient(145deg, #1a1410 0%, #2d2520 50%, #1a1410 100%)',
-          border: '2px solid rgba(255, 122, 0, 0.4)',
-          boxShadow: isWinning 
-            ? '0 0 15px rgba(34, 197, 94, 0.5)' 
-            : '0 4px 12px rgba(0,0,0,0.5)'
+          background: 'linear-gradient(135deg, #1a365d 0%, #2c5282 50%, #1a365d 100%)',
+          border: '1.5px solid rgba(255,255,255,0.2)',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.4)'
         }}
       >
-        {/* Syndikate pattern */}
-        <div className="absolute inset-1 rounded flex items-center justify-center"
-          style={{
-            background: 'repeating-linear-gradient(45deg, rgba(255,122,0,0.05) 0px, rgba(255,122,0,0.05) 2px, transparent 2px, transparent 6px)'
-          }}
-        >
-          <div className="text-lg font-black" style={{ color: 'rgba(255, 122, 0, 0.3)' }}>S</div>
-        </div>
+        <div className="absolute inset-0.5 rounded flex items-center justify-center"
+          style={{ background: 'repeating-linear-gradient(45deg, rgba(255,255,255,0.03) 0px, rgba(255,255,255,0.03) 2px, transparent 2px, transparent 6px)' }}
+        />
       </motion.div>
     );
   }
 
-  // Card face
   return (
     <motion.div
       initial={{ rotateY: 180, scale: 0.5, opacity: 0 }}
       animate={{ rotateY: 0, scale: 1, opacity: 1 }}
-      transition={{ delay: delay * 0.1, type: 'spring', stiffness: 200, damping: 20 }}
-      className="rounded-md shadow-lg relative flex flex-col justify-between p-1"
+      transition={{ delay: delay * 0.08, type: 'spring', stiffness: 200, damping: 20 }}
+      className="rounded shadow-lg relative flex flex-col p-0.5"
       style={{
         width: cfg.w,
         height: cfg.h,
-        background: 'linear-gradient(145deg, #ffffff 0%, #f8f8f8 100%)',
-        border: isWinning ? '2px solid #22c55e' : '1px solid #ddd',
-        boxShadow: isWinning 
-          ? '0 0 20px rgba(34, 197, 94, 0.5)' 
-          : '0 4px 12px rgba(0,0,0,0.3)'
+        background: '#fff',
+        border: isWinning ? '2px solid #22c55e' : '1px solid #e5e7eb',
+        boxShadow: isWinning ? '0 0 15px rgba(34,197,94,0.5)' : '0 4px 12px rgba(0,0,0,0.25)'
       }}
     >
-      {/* Top left */}
-      <div className="flex flex-col items-center leading-none">
+      <div className="flex flex-col items-center leading-none ml-0.5">
         <span className={cn(cfg.rank, 'font-bold')} style={{ color }}>{rank}</span>
         <span className={cfg.suit} style={{ color }}>{symbol}</span>
       </div>
-      
-      {/* Center suit */}
       <div className="absolute inset-0 flex items-center justify-center">
-        <span className="text-2xl" style={{ color, opacity: 0.3 }}>{symbol}</span>
+        <span className={cfg.center} style={{ color, opacity: 0.25 }}>{symbol}</span>
       </div>
     </motion.div>
   );
 });
 
-// ============= TIMER RING =============
+// ============= TIMER RING - PPPoker Style =============
 const TimerRing = memo(function TimerRing({ 
   remaining, 
   total,
-  size = 64
+  size = 56
 }: { 
   remaining: number; 
   total: number;
   size?: number;
 }) {
   const progress = Math.max(0, Math.min(1, remaining / total));
-  const circumference = 2 * Math.PI * (size / 2 - 3);
+  const circumference = 2 * Math.PI * (size / 2 - 2);
   const strokeDashoffset = circumference * (1 - progress);
-  const isWarning = progress < 0.25;
-  const isCritical = progress < 0.1;
+  const isWarning = progress < 0.3;
+  const isCritical = progress < 0.15;
 
   return (
     <svg 
-      className="absolute inset-0 pointer-events-none"
+      className="absolute pointer-events-none"
       width={size}
       height={size}
       style={{ left: '50%', top: '50%', transform: 'translate(-50%, -50%) rotate(-90deg)' }}
     >
-      <circle cx={size/2} cy={size/2} r={size/2 - 3} fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth="3"/>
+      <circle cx={size/2} cy={size/2} r={size/2 - 2} fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="2.5"/>
       <circle
-        cx={size/2} cy={size/2} r={size/2 - 3}
+        cx={size/2} cy={size/2} r={size/2 - 2}
         fill="none"
         stroke={isCritical ? "#ef4444" : isWarning ? "#f59e0b" : "#22c55e"}
-        strokeWidth="3"
+        strokeWidth="2.5"
         strokeLinecap="round"
         strokeDasharray={circumference}
         strokeDashoffset={strokeDashoffset}
-        className={cn("transition-all duration-500", isCritical && "animate-pulse")}
+        className={cn("transition-all duration-300", isCritical && "animate-pulse")}
       />
     </svg>
   );
 });
 
-// ============= PLAYER SEAT (PPPoker Style - Mobile Optimized) =============
+// ============= PLAYER SEAT - PPPoker Premium Style =============
 const PlayerSeat = memo(function PlayerSeat({
   player,
   position,
@@ -195,7 +183,8 @@ const PlayerSeat = memo(function PlayerSeat({
   turnTimeRemaining,
   turnDuration = 30,
   lastAction,
-  isMobile = false
+  isMobile = false,
+  onPlayerClick
 }: {
   player: PokerPlayer | null;
   position: { x: number; y: number };
@@ -210,12 +199,9 @@ const PlayerSeat = memo(function PlayerSeat({
   turnDuration?: number;
   lastAction?: { action: string; amount?: number } | null;
   isMobile?: boolean;
+  onPlayerClick?: (player: PokerPlayer) => void;
 }) {
-  // PPPoker-style avatar sizes - larger for better visibility on mobile
-  const avatarSize = isMobile 
-    ? (isHero ? 56 : 48)  // Mobile: smaller but still visible
-    : (isHero ? 64 : 52); // Desktop: larger
-    
+  const avatarSize = isMobile ? (isHero ? 48 : 42) : (isHero ? 56 : 48);
   const showTurnTimer = isCurrentTurn && !player?.isFolded && !player?.isAllIn;
   
   // Calculate bet position towards center
@@ -223,15 +209,15 @@ const PlayerSeat = memo(function PlayerSeat({
     const cx = 50, cy = 45;
     const dx = cx - position.x, dy = cy - position.y;
     const dist = Math.sqrt(dx*dx + dy*dy);
-    const multiplier = isMobile ? 18 : 25;
+    const multiplier = isMobile ? 14 : 20;
     return { x: (dx/dist) * multiplier, y: (dy/dist) * multiplier };
   }, [position.x, position.y, isMobile]);
 
-  // Cards position based on seat (PPPoker style - cards beside avatar)
+  // Cards position based on seat
   const cardsPosition = useMemo(() => {
-    if (position.x < 30) return 'right';
-    if (position.x > 70) return 'left';
-    if (position.y < 30) return 'below';
+    if (position.x < 25) return 'right';
+    if (position.x > 75) return 'left';
+    if (position.y < 25) return 'below';
     return 'above';
   }, [position.x, position.y]);
 
@@ -247,15 +233,14 @@ const PlayerSeat = memo(function PlayerSeat({
           whileTap={{ scale: 0.95 }}
           className={cn(
             "rounded-full cursor-pointer flex items-center justify-center",
-            isMobile ? "w-11 h-11" : "w-14 h-14"
+            isMobile ? "w-10 h-10" : "w-12 h-12"
           )}
           style={{
-            background: 'linear-gradient(145deg, rgba(40,40,40,0.9), rgba(20,20,20,0.95))',
-            border: '2px solid rgba(255,122,0,0.2)',
-            boxShadow: 'inset 0 2px 8px rgba(0,0,0,0.5)'
+            background: 'linear-gradient(145deg, rgba(40,40,40,0.8), rgba(25,25,25,0.9))',
+            border: '2px dashed rgba(100,100,100,0.5)',
           }}
         >
-          <span className={cn("font-medium opacity-40", isMobile ? "text-sm" : "text-lg")} style={{ color: 'hsl(var(--primary))' }}>Empty</span>
+          <span className={cn("font-medium opacity-50 text-gray-400", isMobile ? "text-[10px]" : "text-xs")}>Empty</span>
         </motion.div>
       </div>
     );
@@ -269,182 +254,161 @@ const PlayerSeat = memo(function PlayerSeat({
       style={{ left: `${position.x}%`, top: `${position.y}%` }}
       initial={{ scale: 0, opacity: 0 }}
       animate={{ scale: 1, opacity: 1 }}
-      transition={{ type: 'spring', stiffness: 260, damping: 25, delay: seatIndex * 0.03 }}
+      transition={{ type: 'spring', stiffness: 260, damping: 25, delay: seatIndex * 0.02 }}
     >
-      {/* PPPoker-style Action badge overlay on avatar */}
+      {/* Action badge - PPPoker style */}
       <AnimatePresence>
         {lastAction && (
           <motion.div 
-            className={cn(
-              "absolute left-1/2 -translate-x-1/2 z-30",
-              isMobile ? "-top-6" : "-top-8"
-            )}
+            className={cn("absolute left-1/2 -translate-x-1/2 z-30", isMobile ? "-top-5" : "-top-7")}
             initial={{ opacity: 0, y: 5, scale: 0.8 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -5, scale: 0.8 }}
           >
             <div className={cn(
-              "px-2 py-0.5 rounded font-bold text-white uppercase tracking-wide shadow-lg",
-              isMobile ? "text-[8px]" : "text-[10px]",
-              lastAction.action === 'fold' && "bg-gray-700/95",
-              lastAction.action === 'check' && "bg-blue-600/95",
-              lastAction.action === 'call' && "bg-green-600/95",
-              (lastAction.action === 'raise' || lastAction.action === 'bet') && "bg-amber-600/95",
-              lastAction.action === 'allin' && "bg-red-600/95 animate-pulse"
+              "px-2 py-0.5 rounded font-bold text-white uppercase tracking-wider shadow-lg",
+              isMobile ? "text-[7px]" : "text-[9px]",
+              lastAction.action === 'fold' && "bg-gray-600/95",
+              lastAction.action === 'check' && "bg-blue-500/95",
+              lastAction.action === 'call' && "bg-emerald-500/95",
+              (lastAction.action === 'raise' || lastAction.action === 'bet') && "bg-amber-500/95",
+              lastAction.action === 'allin' && "bg-red-500/95 animate-pulse"
             )}>
-              {lastAction.action === 'allin' ? 'ALL-IN' : lastAction.action.toUpperCase()}
-              {lastAction.amount ? ` ${lastAction.amount.toLocaleString()}` : ''}
+              {lastAction.action === 'allin' ? 'ALL-IN' : 
+               lastAction.action === 'fold' ? 'Фолд' :
+               lastAction.action === 'check' ? 'Чек' :
+               lastAction.action === 'call' ? 'Колл' :
+               lastAction.action === 'raise' ? 'Рейз' :
+               lastAction.action === 'bet' ? 'Бет' :
+               lastAction.action.toUpperCase()}
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Timer ring - PPPoker style around avatar */}
+      {/* Timer ring around avatar */}
       {showTurnTimer && turnTimeRemaining !== undefined && (
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <TimerRing remaining={turnTimeRemaining} total={turnDuration} size={avatarSize + 10}/>
-        </div>
+        <TimerRing remaining={turnTimeRemaining} total={turnDuration} size={avatarSize + 8}/>
       )}
 
-      {/* Avatar - PPPoker Premium round style */}
+      {/* Avatar container */}
       <div 
-        className={cn(
-          "relative rounded-full overflow-hidden transition-all duration-200",
-          player.isFolded && "opacity-35 grayscale"
-        )}
+        className={cn("relative rounded-full overflow-hidden cursor-pointer transition-all duration-200", player.isFolded && "opacity-40 grayscale")}
         style={{
           width: avatarSize,
           height: avatarSize,
           border: isCurrentTurn && !player.isFolded
-            ? `${isMobile ? '2px' : '3px'} solid hsl(var(--primary))`
+            ? '3px solid #22c55e'
             : player.isAllIn
-              ? `${isMobile ? '2px' : '3px'} solid #ef4444`
-              : `${isMobile ? '2px' : '3px'} solid rgba(80,80,80,0.9)`,
+              ? '3px solid #ef4444'
+              : '2px solid rgba(100,100,100,0.8)',
           boxShadow: isCurrentTurn && !player.isFolded
-            ? '0 0 20px hsl(var(--primary) / 0.7), 0 0 40px hsl(var(--primary) / 0.3)'
+            ? '0 0 20px rgba(34,197,94,0.6), 0 0 40px rgba(34,197,94,0.3)'
             : player.isAllIn
-              ? '0 0 15px rgba(239, 68, 68, 0.6)'
-              : '0 4px 16px rgba(0,0,0,0.6)',
-          background: 'linear-gradient(145deg, #3a3a3a, #1a1a1a)'
+              ? '0 0 15px rgba(239,68,68,0.5)'
+              : '0 4px 15px rgba(0,0,0,0.5)',
+          background: '#2a2a2a'
         }}
+        onClick={() => player && onPlayerClick?.(player)}
       >
         <img 
           src={resolvedAvatarUrl}
           alt={player.name || 'Player'}
-          className="absolute inset-0 w-full h-full object-cover rounded-full"
+          className="absolute inset-0 w-full h-full object-cover"
           onError={(e) => { e.currentTarget.src = resolveAvatarUrl(null, player.playerId); }}
         />
         
-        {/* Fold overlay on avatar - PPPoker style */}
+        {/* Fold overlay */}
         {player.isFolded && (
-          <div className="absolute inset-0 bg-black/60 flex items-center justify-center rounded-full">
-            <span className={cn("text-white/90 font-bold uppercase", isMobile ? "text-[8px]" : "text-[10px]")}>Fold</span>
+          <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+            <span className={cn("text-white/90 font-bold", isMobile ? "text-[7px]" : "text-[9px]")}>Фолд</span>
           </div>
         )}
       </div>
 
-      {/* Dealer button - PPPoker style */}
+      {/* Dealer button - PPPoker white D */}
       {isDealer && (
         <motion.div 
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
-          className={cn(
-            "absolute rounded-full flex items-center justify-center z-20",
-            isMobile 
-              ? "-right-0.5 -top-0.5 w-5 h-5" 
-              : "-right-1 top-0 w-6 h-6"
+          className={cn("absolute rounded-full flex items-center justify-center z-20",
+            isMobile ? "-right-1 -top-1 w-4 h-4" : "-right-1 top-0 w-5 h-5"
           )}
           style={{
-            background: 'linear-gradient(135deg, #ffffff 0%, #d0d0d0 100%)',
-            boxShadow: '0 2px 6px rgba(0,0,0,0.5)',
-            border: '1.5px solid #222'
+            background: 'linear-gradient(135deg, #fff 0%, #ddd 100%)',
+            boxShadow: '0 2px 6px rgba(0,0,0,0.4)',
+            border: '1px solid #333'
           }}
         >
-          <span className={cn("font-black text-gray-900", isMobile ? "text-[8px]" : "text-[10px]")}>D</span>
+          <span className={cn("font-black text-gray-800", isMobile ? "text-[7px]" : "text-[9px]")}>D</span>
         </motion.div>
       )}
 
-      {/* Player info plate - PPPoker compact style */}
-      <div className="absolute top-full mt-1 left-1/2 -translate-x-1/2 z-10">
-        <motion.div 
-          initial={{ opacity: 0, y: -3 }}
-          animate={{ opacity: 1, y: 0 }}
-          className={cn(
-            "flex flex-col items-center rounded",
-            isMobile ? "px-2 py-1 min-w-[56px]" : "px-3 py-1.5 min-w-[70px]"
-          )}
-          style={{
-            background: 'linear-gradient(180deg, rgba(30,30,30,0.95) 0%, rgba(15,15,15,0.98) 100%)',
-            boxShadow: '0 3px 12px rgba(0,0,0,0.6)',
-            border: '1px solid rgba(255,122,0,0.15)'
-          }}
-        >
-          <div className={cn(
-            "text-white font-medium truncate",
-            isMobile ? "text-[8px] max-w-[55px]" : "text-[10px] max-w-[70px]"
-          )}>
-            {isHero ? 'Вы' : (player.name?.slice(0, 8) || 'Игрок')}
-            {!isMobile && player.name && player.name.length > 8 && '...'}
-          </div>
-          <div 
-            className={cn(
-              "font-bold",
-              isMobile ? "text-[10px]" : "text-[12px]",
-              player.isAllIn && "animate-pulse"
-            )}
-            style={{ color: player.isAllIn ? '#ef4444' : 'hsl(var(--primary))' }}
-          >
-            {player.isAllIn ? 'ALL-IN' : player.stack.toLocaleString()}
-          </div>
-        </motion.div>
-      </div>
-
-      {/* SB/BB indicator - PPPoker style */}
+      {/* SB/BB indicator */}
       {(isSB || isBB) && (
         <motion.div 
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
-          className={cn(
-            "absolute rounded-full text-white font-bold flex items-center justify-center z-20",
-            isMobile 
-              ? "-left-0.5 bottom-0 w-4 h-4 text-[6px]" 
-              : "-left-1 -bottom-0 w-5 h-5 text-[8px]"
+          className={cn("absolute rounded-full text-white font-bold flex items-center justify-center z-20",
+            isMobile ? "-left-1 -bottom-1 w-4 h-4 text-[6px]" : "-left-1 bottom-0 w-5 h-5 text-[8px]"
           )}
           style={{
             background: isBB 
               ? 'linear-gradient(135deg, #f59e0b, #d97706)' 
               : 'linear-gradient(135deg, #3b82f6, #2563eb)',
-            boxShadow: '0 2px 6px rgba(0,0,0,0.5)'
+            boxShadow: '0 2px 6px rgba(0,0,0,0.4)'
           }}
         >
           {isBB ? 'BB' : 'SB'}
         </motion.div>
       )}
 
-      {/* Player cards beside avatar - PPPoker style (opponents only) */}
+      {/* Player name plate - PPPoker style */}
+      <div className="absolute top-full mt-0.5 left-1/2 -translate-x-1/2 z-10">
+        <motion.div 
+          initial={{ opacity: 0, y: -2 }}
+          animate={{ opacity: 1, y: 0 }}
+          className={cn("flex flex-col items-center rounded px-1.5 py-0.5",
+            isMobile ? "min-w-[48px]" : "min-w-[60px]"
+          )}
+          style={{
+            background: 'linear-gradient(180deg, rgba(20,20,20,0.95) 0%, rgba(10,10,10,0.98) 100%)',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.5)',
+            border: '1px solid rgba(255,255,255,0.1)'
+          }}
+        >
+          <div className={cn("text-white font-medium truncate",
+            isMobile ? "text-[7px] max-w-[46px]" : "text-[9px] max-w-[58px]"
+          )}>
+            {isHero ? 'Вы' : (player.name?.slice(0, 7) || 'Игрок')}
+            {!isMobile && player.name && player.name.length > 7 && '...'}
+          </div>
+          <div 
+            className={cn("font-bold", isMobile ? "text-[9px]" : "text-[11px]")}
+            style={{ color: player.isAllIn ? '#ef4444' : '#22c55e' }}
+          >
+            {player.isAllIn ? 'ALL-IN' : `${(player.stack / (20)).toFixed(1)} BB`}
+          </div>
+        </motion.div>
+      </div>
+
+      {/* Cards beside avatar - opponents only */}
       {player.holeCards && player.holeCards.length > 0 && !player.isFolded && !isHero && (
-        <div className={cn(
-          "absolute flex z-5",
-          isMobile ? "gap-0" : "gap-0.5",
-          cardsPosition === 'right' && (isMobile ? "left-full ml-1 top-1/2 -translate-y-1/2" : "left-full ml-2 top-1/2 -translate-y-1/2"),
-          cardsPosition === 'left' && (isMobile ? "right-full mr-1 top-1/2 -translate-y-1/2" : "right-full mr-2 top-1/2 -translate-y-1/2"),
-          cardsPosition === 'above' && (isMobile ? "-top-10 left-1/2 -translate-x-1/2" : "-top-14 left-1/2 -translate-x-1/2"),
-          cardsPosition === 'below' && (isMobile ? "top-full mt-10 left-1/2 -translate-x-1/2" : "top-full mt-12 left-1/2 -translate-x-1/2")
+        <div className={cn("absolute flex gap-0 z-5",
+          cardsPosition === 'right' && "left-full ml-1 top-1/2 -translate-y-1/2",
+          cardsPosition === 'left' && "right-full mr-1 top-1/2 -translate-y-1/2",
+          cardsPosition === 'above' && "-top-12 left-1/2 -translate-x-1/2",
+          cardsPosition === 'below' && "top-full mt-10 left-1/2 -translate-x-1/2"
         )}>
           {player.holeCards.map((card, idx) => (
-            <SyndikatetCard 
-              key={`${card}-${idx}`} 
-              card={card} 
-              faceDown={!showCards} 
-              size={isMobile ? "xs" : "sm"} 
-              delay={idx} 
-              isWinning={showCards}
-            />
+            <div key={`${card}-${idx}`} style={{ marginLeft: idx > 0 ? '-4px' : 0 }}>
+              <PPPokerCard card={card} faceDown={!showCards} size={isMobile ? "xs" : "sm"} delay={idx} isWinning={showCards}/>
+            </div>
           ))}
         </div>
       )}
 
-      {/* Current bet chip+amount - PPPoker style towards center */}
+      {/* Bet chip + amount - PPPoker style */}
       {player.betAmount > 0 && (
         <motion.div
           className="absolute z-15"
@@ -452,26 +416,17 @@ const PlayerSeat = memo(function PlayerSeat({
           initial={{ scale: 0, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
         >
-          <div 
-            className={cn(
-              "flex items-center rounded-full",
-              isMobile ? "gap-1 px-1.5 py-0.5" : "gap-1.5 px-2.5 py-1"
-            )}
-            style={{
-              background: 'linear-gradient(135deg, rgba(25,25,25,0.95), rgba(10,10,10,0.98))',
-              border: '1px solid hsl(var(--primary) / 0.3)',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.6)'
-            }}
-          >
-            <div 
-              className={cn("rounded-full", isMobile ? "w-2.5 h-2.5" : "w-3.5 h-3.5")} 
-              style={{ background: 'linear-gradient(135deg, #fbbf24, #f59e0b)' }}
-            />
-            <span 
-              className={cn("font-bold", isMobile ? "text-[9px]" : "text-[11px]")} 
-              style={{ color: 'hsl(var(--primary))' }}
-            >
-              {player.betAmount.toLocaleString()}
+          <div className={cn("flex items-center rounded-full",
+            isMobile ? "gap-0.5 px-1 py-0.5" : "gap-1 px-2 py-0.5"
+          )}
+          style={{
+            background: 'rgba(0,0,0,0.8)',
+            border: '1px solid rgba(255,200,0,0.4)'
+          }}>
+            <div className={cn("rounded-full", isMobile ? "w-2 h-2" : "w-3 h-3")} 
+              style={{ background: 'linear-gradient(135deg, #fcd34d, #f59e0b)' }}/>
+            <span className={cn("font-bold text-amber-400", isMobile ? "text-[8px]" : "text-[10px]")}>
+              {(player.betAmount / 20).toFixed(1)} BB
             </span>
           </div>
         </motion.div>
@@ -486,59 +441,54 @@ const PlayerSeat = memo(function PlayerSeat({
   if (prev.player?.betAmount !== next.player?.betAmount) return false;
   if (prev.showCards !== next.showCards) return false;
   if (prev.isDealer !== next.isDealer) return false;
-  if (prev.isSB !== next.isSB) return false;
-  if (prev.isBB !== next.isBB) return false;
   if (prev.isCurrentTurn !== next.isCurrentTurn) return false;
   if (prev.turnTimeRemaining !== next.turnTimeRemaining) return false;
   if (prev.lastAction?.action !== next.lastAction?.action) return false;
   return true;
 });
 
-// ============= TABLE FELT - Syndikate Premium =============
-const SyndikatetTableFelt = memo(function SyndikatetTableFelt() {
+// ============= TABLE FELT - PPPoker Premium Green =============
+const PPPokerTableFelt = memo(function PPPokerTableFelt() {
   return (
-    <div className="absolute inset-0 overflow-hidden rounded-2xl">
-      {/* Deep dark industrial background */}
-      <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, #1a1410 0%, #0d0a08 50%, #1a1410 100%)' }}/>
+    <div className="absolute inset-0 overflow-hidden">
+      {/* Dark outer background */}
+      <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, #0f1419 0%, #1a1f26 50%, #0f1419 100%)' }}/>
       
-      {/* Metallic rail with orange tint */}
+      {/* Metallic rail */}
       <div 
-        className="absolute inset-[3%] rounded-[50%]"
+        className="absolute inset-[2%] rounded-[50%]"
         style={{
-          background: 'linear-gradient(180deg, #2d2520 0%, #1a1410 50%, #2d2520 100%)',
-          boxShadow: 'inset 0 0 30px rgba(0,0,0,0.6), 0 10px 40px rgba(0,0,0,0.8), 0 0 60px hsl(var(--primary) / 0.1)'
+          background: 'linear-gradient(180deg, #3a4049 0%, #252a31 50%, #3a4049 100%)',
+          boxShadow: 'inset 0 0 20px rgba(0,0,0,0.5), 0 10px 40px rgba(0,0,0,0.7)'
         }}
       />
       
-      {/* Premium felt - dark industrial orange-brown */}
+      {/* Premium green felt - PPPoker signature */}
       <div 
-        className="absolute inset-[5%] rounded-[50%]"
+        className="absolute inset-[4%] rounded-[50%]"
         style={{
-          background: 'radial-gradient(ellipse at 50% 40%, #3d2a1a 0%, #2a1d12 30%, #1f150d 60%, #140d08 100%)',
-          boxShadow: 'inset 0 0 60px rgba(0,0,0,0.5), inset 0 -20px 60px rgba(0,0,0,0.4), 0 15px 50px rgba(0,0,0,0.8), 0 0 80px hsl(var(--primary) / 0.15)'
+          background: 'radial-gradient(ellipse at 50% 35%, #1a6b3c 0%, #145a30 35%, #0f4726 60%, #0a3a1e 100%)',
+          boxShadow: 'inset 0 0 50px rgba(0,0,0,0.4), inset 0 -15px 50px rgba(0,0,0,0.3)'
         }}
       >
-        {/* Texture overlay */}
-        <div className="absolute inset-0 rounded-[50%] opacity-20"
-          style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")` }}
+        {/* Subtle texture */}
+        <div className="absolute inset-0 rounded-[50%] opacity-10"
+          style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")` }}
         />
         
-        {/* Inner decorative line */}
-        <div className="absolute inset-[8%] rounded-[50%] border border-primary/10"/>
+        {/* Inner line */}
+        <div className="absolute inset-[6%] rounded-[50%] border border-white/5"/>
         
-        {/* Orange accent glow */}
-        <div className="absolute inset-[8%] rounded-[50%]" style={{ background: 'radial-gradient(ellipse at 50% 30%, hsl(var(--primary) / 0.08) 0%, transparent 50%)' }}/>
-        
-        {/* Center logo watermark */}
-        <div className="absolute inset-[30%] rounded-[50%] flex items-center justify-center opacity-15">
-          <img src={syndikateLogo} alt="" className="w-full h-auto"/>
+        {/* Center watermark */}
+        <div className="absolute inset-[25%] flex items-center justify-center opacity-8">
+          <img src={syndikateLogo} alt="" className="w-full h-auto opacity-10"/>
         </div>
       </div>
     </div>
   );
 });
 
-// ============= COMMUNITY CARDS (PPPoker style) =============
+// ============= COMMUNITY CARDS =============
 const CommunityCards = memo(function CommunityCards({ 
   cards, 
   phase,
@@ -550,20 +500,17 @@ const CommunityCards = memo(function CommunityCards({
 }) {
   const visibleCount = phase === 'flop' ? 3 : phase === 'turn' ? 4 : (phase === 'river' || phase === 'showdown') ? 5 : 0;
   const cardSize = isMobile ? 'sm' : 'md';
-  const emptyW = isMobile ? 'w-10' : 'w-12';
-  const emptyH = isMobile ? 'h-[56px]' : 'h-[68px]';
 
   return (
-    <div className={cn("flex items-center justify-center", isMobile ? "gap-1" : "gap-1.5")}>
+    <div className={cn("flex items-center justify-center", isMobile ? "gap-0.5" : "gap-1")}>
       {[0, 1, 2, 3, 4].map((idx) => (
         <div key={`card-slot-${idx}`}>
           {idx < visibleCount && cards[idx] ? (
-            <SyndikatetCard card={cards[idx]} size={cardSize} delay={idx}/>
+            <PPPokerCard card={cards[idx]} size={cardSize} delay={idx}/>
           ) : (
-            <div 
-              className={cn(emptyW, emptyH, "rounded-md border border-white/10 bg-black/20")} 
-              style={{ boxShadow: 'inset 0 2px 6px rgba(0,0,0,0.3)' }}
-            />
+            <div className={cn("rounded border border-white/10 bg-black/20",
+              isMobile ? "w-9 h-[50px]" : "w-11 h-[62px]"
+            )}/>
           )}
         </div>
       ))}
@@ -571,211 +518,101 @@ const CommunityCards = memo(function CommunityCards({
   );
 });
 
-// ============= POT DISPLAY (PPPoker style) =============
-const PotDisplay = memo(function PotDisplay({ 
-  pot,
-  isMobile = false 
-}: { 
-  pot: number;
-  isMobile?: boolean;
-}) {
+// ============= POT DISPLAY - PPPoker Style =============
+const PotDisplay = memo(function PotDisplay({ pot, bigBlind, isMobile = false }: { pot: number; bigBlind: number; isMobile?: boolean; }) {
   if (pot <= 0) return null;
+  const potBB = (pot / bigBlind).toFixed(1);
 
   return (
-    <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className={cn("flex flex-col items-center", isMobile ? "gap-1" : "gap-2")}>
-      {/* Chip stack visual - smaller on mobile */}
+    <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="flex flex-col items-center gap-1">
+      {/* Chip stack */}
       <div className="flex gap-0.5">
         {[0, 1, 2].map(i => (
-          <div 
-            key={i} 
-            className={cn("rounded-full", isMobile ? "w-3 h-3" : "w-4 h-4")} 
+          <div key={i} className={cn("rounded-full", isMobile ? "w-2.5 h-2.5" : "w-3 h-3")}
             style={{ 
-              background: `linear-gradient(135deg, ${['#fbbf24', '#ef4444', '#22c55e'][i]} 0%, ${['#d97706', '#dc2626', '#16a34a'][i]} 100%)`, 
-              boxShadow: '0 2px 4px rgba(0,0,0,0.3)', 
-              marginTop: `${i * -2}px` 
-            }}
-          />
+              background: `linear-gradient(135deg, ${['#fcd34d', '#ef4444', '#22c55e'][i]}, ${['#f59e0b', '#dc2626', '#16a34a'][i]})`,
+              marginTop: `${i * -1.5}px`,
+              boxShadow: '0 1px 3px rgba(0,0,0,0.3)'
+            }}/>
         ))}
       </div>
       
-      {/* Pot label - PPPoker compact style */}
-      <div 
-        className={cn("rounded-sm", isMobile ? "px-2.5 py-1" : "px-4 py-1.5")}
-        style={{
-          background: 'linear-gradient(180deg, rgba(0,0,0,0.85) 0%, rgba(26,26,26,0.9) 100%)',
-          border: '1px solid hsl(var(--primary) / 0.3)',
-          boxShadow: '0 0 12px hsl(var(--primary) / 0.15)'
-        }}
+      {/* Pot amount */}
+      <div className={cn("rounded-full", isMobile ? "px-2 py-0.5" : "px-3 py-1")}
+        style={{ background: 'rgba(0,0,0,0.75)', border: '1px solid rgba(255,200,0,0.3)' }}
       >
-        <span className={cn("font-bold", isMobile ? "text-xs" : "text-sm")} style={{ color: 'hsl(var(--primary))' }}>
-          POT: {pot.toLocaleString()}
+        <span className={cn("font-bold text-amber-400", isMobile ? "text-[10px]" : "text-xs")}>
+          Банк: {potBB} BB
         </span>
       </div>
     </motion.div>
   );
 });
 
-// ============= HERO CARDS (PPPoker style - bottom positioned) =============
-const HeroCards = memo(function HeroCards({ 
-  cards, 
-  isWinning = false,
-  isMobile = false
-}: { 
-  cards: string[];
-  isWinning?: boolean;
-  isMobile?: boolean;
-}) {
+// ============= HERO CARDS - PPPoker Bottom Style =============
+const HeroCards = memo(function HeroCards({ cards, isWinning = false, isMobile = false }: { cards: string[]; isWinning?: boolean; isMobile?: boolean; }) {
   if (!cards || cards.length === 0) return null;
 
   return (
     <motion.div 
-      className={cn("flex items-center", isMobile ? "gap-0.5" : "gap-1")}
+      className="flex items-center gap-0.5"
       initial={{ y: 30, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
-      transition={{ type: 'spring', stiffness: 300, damping: 25 }}
     >
       {cards.map((card, idx) => (
-        <SyndikatetCard 
-          key={`hero-${card}-${idx}`} 
-          card={card} 
-          size={isMobile ? "md" : "lg"} 
-          delay={idx} 
-          isWinning={isWinning}
-        />
+        <PPPokerCard key={`hero-${card}-${idx}`} card={card} size={isMobile ? "md" : "lg"} delay={idx} isWinning={isWinning}/>
       ))}
     </motion.div>
   );
 });
 
-// ============= TABLE HEADER =============
-const TableHeader = memo(function TableHeader({
-  onLeave,
-  isConnected,
-  blinds,
-  tableName,
-  playersCount,
-  onMenuClick,
-  onSettingsClick
-}: {
-  onLeave: () => void;
-  isConnected: boolean;
-  blinds: string;
-  tableName?: string;
-  playersCount: number;
-  onMenuClick: () => void;
-  onSettingsClick: () => void;
-}) {
-  return (
-    <div className="absolute top-0 left-0 right-0 z-30 flex items-center justify-between px-2 py-2 safe-area-inset-top">
-      {/* Left: Back button */}
-      <Button 
-        variant="ghost" 
-        size="icon" 
-        onClick={onLeave} 
-        className="h-10 w-10 rounded-xl bg-black/40 backdrop-blur-sm text-white hover:bg-black/60"
-      >
-        <ArrowLeft className="h-5 w-5"/>
-      </Button>
-      
-      {/* Center: Table info */}
-      <div className="flex flex-col items-center">
-        <div className="flex items-center gap-2">
-          <span className={cn("w-2 h-2 rounded-full", isConnected ? "bg-green-500" : "bg-red-500 animate-pulse")}/>
-          <span className="text-white font-bold text-sm">{blinds}</span>
-        </div>
-        {tableName && (
-          <span className="text-white/60 text-[10px]">{tableName}</span>
-        )}
-      </div>
-      
-      {/* Right: Menu & Settings */}
-      <div className="flex items-center gap-1">
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          onClick={onSettingsClick}
-          className="h-10 w-10 rounded-xl bg-black/40 backdrop-blur-sm text-white hover:bg-black/60"
-        >
-          <Settings2 className="h-5 w-5"/>
-        </Button>
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          onClick={onMenuClick}
-          className="h-10 w-10 rounded-xl bg-black/40 backdrop-blur-sm text-white hover:bg-black/60"
-        >
-          <Menu className="h-5 w-5"/>
-        </Button>
-      </div>
-    </div>
-  );
-});
-
-// ============= QUICK MENU =============
-const QuickMenu = memo(function QuickMenu({
+// ============= LEFT MENU - PPPoker Style =============
+const LeftMenu = memo(function LeftMenu({
   isOpen,
   onClose,
+  onLeave,
   soundEnabled,
   onSoundToggle,
-  showCards,
-  onShowCardsToggle,
-  onHistoryClick,
-  onLeaderboardClick
+  onSettingsClick,
+  onViewClick,
+  onRulesClick
 }: {
   isOpen: boolean;
   onClose: () => void;
+  onLeave: () => void;
   soundEnabled: boolean;
   onSoundToggle: () => void;
-  showCards: boolean;
-  onShowCardsToggle: () => void;
-  onHistoryClick: () => void;
-  onLeaderboardClick: () => void;
+  onSettingsClick: () => void;
+  onViewClick: () => void;
+  onRulesClick: () => void;
 }) {
   return (
     <AnimatePresence>
       {isOpen && (
         <>
-          {/* Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40"
+            className="fixed inset-0 bg-black/40 z-40"
             onClick={onClose}
           />
-          
-          {/* Menu panel */}
           <motion.div
-            initial={{ x: '100%' }}
+            initial={{ x: '-100%' }}
             animate={{ x: 0 }}
-            exit={{ x: '100%' }}
-            transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            className="fixed right-0 top-0 bottom-0 w-72 z-50 bg-gradient-to-b from-background via-background/98 to-card border-l border-primary/20"
+            exit={{ x: '-100%' }}
+            transition={{ type: 'spring', damping: 28, stiffness: 300 }}
+            className="fixed left-0 top-0 bottom-0 w-56 z-50 bg-gradient-to-b from-[#1a1f26] to-[#0f1419] border-r border-white/10"
           >
-            {/* Header */}
-            <div className="flex items-center justify-between p-4 border-b border-white/10">
-              <h3 className="text-white font-bold">Меню</h3>
-              <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8">
-                <X className="h-4 w-4"/>
-              </Button>
-            </div>
-            
-            {/* Menu items */}
-            <div className="p-2 space-y-1">
-              <MenuButton 
-                icon={soundEnabled ? Volume2 : VolumeX} 
-                label={soundEnabled ? 'Выключить звук' : 'Включить звук'} 
-                onClick={onSoundToggle}
-              />
-              <MenuButton 
-                icon={showCards ? EyeOff : Eye} 
-                label={showCards ? 'Скрыть карты' : 'Показать карты'} 
-                onClick={onShowCardsToggle}
-              />
-              <MenuButton icon={History} label="История раздач" onClick={onHistoryClick}/>
-              <MenuButton icon={Trophy} label="Лидерборд" onClick={onLeaderboardClick}/>
-              <MenuButton icon={Gift} label="Бонусы" onClick={() => {}}/>
-              <MenuButton icon={Info} label="Правила" onClick={() => {}}/>
+            <div className="py-4">
+              <MenuItem icon={Eye} label="Встать" onClick={() => {}}/>
+              <MenuItem icon={Wallet} label="Пополнить" onClick={() => {}}/>
+              <MenuItem icon={Settings2} label="Настройки" onClick={onSettingsClick}/>
+              <MenuItem icon={Palette} label="Вид" hasNotification onClick={onViewClick}/>
+              <MenuItem icon={Users} label="Стол полон" onClick={() => {}}/>
+              <MenuItem icon={HelpCircle} label="Правила" onClick={onRulesClick}/>
+              <div className="border-t border-white/10 my-2"/>
+              <MenuItem icon={LogOut} label="Выход" danger onClick={onLeave}/>
             </div>
           </motion.div>
         </>
@@ -784,116 +621,146 @@ const QuickMenu = memo(function QuickMenu({
   );
 });
 
-const MenuButton = memo(function MenuButton({
-  icon: Icon,
-  label,
-  onClick,
-  danger = false
+const MenuItem = memo(function MenuItem({
+  icon: Icon, label, onClick, danger = false, hasNotification = false
 }: {
-  icon: React.ElementType;
-  label: string;
-  onClick: () => void;
-  danger?: boolean;
+  icon: React.ElementType; label: string; onClick: () => void; danger?: boolean; hasNotification?: boolean;
 }) {
   return (
-    <button
-      onClick={onClick}
-      className={cn(
-        "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors",
-        danger 
-          ? "text-red-400 hover:bg-red-500/10" 
-          : "text-white/80 hover:bg-white/5"
-      )}
-    >
-      <Icon className="h-5 w-5"/>
-      <span className="font-medium">{label}</span>
+    <button onClick={onClick} className={cn(
+      "w-full flex items-center gap-3 px-5 py-3.5 transition-colors",
+      danger ? "text-red-400 hover:bg-red-500/10" : "text-white/90 hover:bg-white/5"
+    )}>
+      <Icon className="h-5 w-5" style={{ color: '#22c55e' }}/>
+      <span className="font-medium text-sm">{label}</span>
+      {hasNotification && <div className="w-2 h-2 rounded-full bg-red-500 ml-auto"/>}
     </button>
   );
 });
 
-// ============= CHAT BUBBLE =============
-const ChatBubble = memo(function ChatBubble({
+// ============= EMOJI PANEL - PPPoker Style =============
+const EmojiPanel = memo(function EmojiPanel({
   isOpen,
-  onToggle,
-  messages,
-  onSendMessage
+  onClose,
+  onSendEmoji
 }: {
   isOpen: boolean;
-  onToggle: () => void;
-  messages: Array<{ id: string; name: string; text: string }>;
-  onSendMessage: (text: string) => void;
+  onClose: () => void;
+  onSendEmoji: (emoji: string) => void;
 }) {
-  const [inputValue, setInputValue] = useState('');
-  
-  const handleSend = () => {
-    if (inputValue.trim()) {
-      onSendMessage(inputValue.trim());
-      setInputValue('');
-    }
-  };
-
   return (
-    <div className="absolute left-3 bottom-36 z-25">
-      {/* Toggle button */}
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={onToggle}
-        className="h-12 w-12 rounded-full bg-black/60 backdrop-blur-sm text-white hover:bg-black/80 shadow-lg"
-      >
-        <MessageSquare className="h-5 w-5"/>
-        {messages.length > 0 && (
-          <span className="absolute -top-1 -right-1 w-5 h-5 bg-primary rounded-full text-[10px] font-bold flex items-center justify-center">
-            {messages.length > 9 ? '9+' : messages.length}
-          </span>
-        )}
-      </Button>
-      
-      {/* Chat panel */}
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: 20, scale: 0.9 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 20, scale: 0.9 }}
-            className="absolute bottom-14 left-0 w-64 bg-black/90 backdrop-blur-md rounded-xl overflow-hidden shadow-xl border border-white/10"
-          >
-            {/* Messages */}
-            <div className="h-40 overflow-y-auto p-3 space-y-2">
-              {messages.length === 0 ? (
-                <p className="text-white/40 text-xs text-center">Нет сообщений</p>
-              ) : (
-                messages.map(msg => (
-                  <div key={msg.id} className="text-xs">
-                    <span className="text-primary font-medium">{msg.name}: </span>
-                    <span className="text-white/80">{msg.text}</span>
-                  </div>
-                ))
-              )}
-            </div>
-            
-            {/* Input */}
-            <div className="flex items-center gap-2 p-2 border-t border-white/10">
-              <input
-                type="text"
-                value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-                placeholder="Сообщение..."
-                className="flex-1 bg-white/10 rounded-lg px-3 py-2 text-xs text-white placeholder:text-white/40 focus:outline-none focus:ring-1 focus:ring-primary"
-              />
-              <Button size="icon" onClick={handleSend} className="h-8 w-8 bg-primary hover:bg-primary/80">
-                <Send className="h-3 w-3"/>
-              </Button>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div
+          initial={{ opacity: 0, y: 20, scale: 0.9 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: 20, scale: 0.9 }}
+          className="absolute bottom-16 right-3 w-48 p-2 rounded-xl bg-[#1a1f26]/95 backdrop-blur-md border border-white/10 shadow-xl z-30"
+        >
+          <div className="text-[10px] text-white/50 mb-1 px-1">Эмодзи</div>
+          <div className="grid grid-cols-6 gap-1">
+            {POKER_EMOJIS.map((emoji, idx) => (
+              <button
+                key={idx}
+                onClick={() => { onSendEmoji(emoji); onClose(); }}
+                className="w-7 h-7 flex items-center justify-center text-lg hover:bg-white/10 rounded transition-colors"
+              >
+                {emoji}
+              </button>
+            ))}
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 });
 
-// ============= ACTION PANEL =============
+// ============= PLAYER PROFILE MODAL - PPPoker Style =============
+const PlayerProfileModal = memo(function PlayerProfileModal({
+  player,
+  onClose
+}: {
+  player: PokerPlayer | null;
+  onClose: () => void;
+}) {
+  if (!player) return null;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ scale: 0.9, y: 20 }}
+        animate={{ scale: 1, y: 0 }}
+        exit={{ scale: 0.9, y: 20 }}
+        onClick={(e) => e.stopPropagation()}
+        className="w-full max-w-sm bg-gradient-to-b from-[#1a1f26] to-[#0f1419] rounded-2xl overflow-hidden border border-white/10"
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between p-4 border-b border-white/10">
+          <HelpCircle className="h-5 w-5 text-emerald-500"/>
+          <span className="text-white font-bold">Профиль</span>
+          <button onClick={onClose} className="text-emerald-500 hover:text-emerald-400">
+            <X className="h-5 w-5"/>
+          </button>
+        </div>
+        
+        {/* Player info */}
+        <div className="p-4 bg-gradient-to-r from-emerald-800/30 to-emerald-600/20">
+          <div className="flex items-center gap-3">
+            <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-emerald-500/50">
+              <img 
+                src={resolveAvatarUrl(player.avatarUrl, player.playerId)} 
+                alt="" 
+                className="w-full h-full object-cover"
+              />
+            </div>
+            <div>
+              <div className="text-white font-bold text-lg">{player.name || 'Игрок'}</div>
+              <div className="text-white/50 text-xs">ID: {player.playerId.slice(0, 8)}</div>
+              <div className="text-emerald-400 text-xs mt-0.5">Lvl. 1</div>
+            </div>
+          </div>
+        </div>
+        
+        {/* Stats grid */}
+        <div className="grid grid-cols-4 gap-2 p-4 border-b border-white/10">
+          {[
+            { label: 'VPIP', value: '0%' },
+            { label: 'PFR', value: '0%' },
+            { label: '3-Bet', value: '0%' },
+            { label: 'C-Bet', value: '0%' },
+          ].map((stat, idx) => (
+            <div key={idx} className="text-center">
+              <div className="text-white font-bold text-sm">{stat.value}</div>
+              <div className="text-white/50 text-[10px]">{stat.label}</div>
+            </div>
+          ))}
+        </div>
+        
+        <div className="grid grid-cols-4 gap-2 p-4">
+          {[
+            { label: 'Всего раздач', value: '0' },
+            { label: 'Всего игр', value: '0' },
+            { label: 'Победитель', value: '0' },
+            { label: 'Рыба', value: '0' },
+          ].map((stat, idx) => (
+            <div key={idx} className="text-center">
+              <div className="text-white font-bold text-sm">{stat.value}</div>
+              <div className="text-white/40 text-[9px]">{stat.label}</div>
+            </div>
+          ))}
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+});
+
+// ============= ACTION PANEL - PPPoker 3-Button Style =============
 const ActionPanel = memo(function ActionPanel({
   isVisible,
   canCheck,
@@ -901,6 +768,7 @@ const ActionPanel = memo(function ActionPanel({
   minRaise,
   maxBet,
   pot,
+  bigBlind,
   onAction
 }: {
   isVisible: boolean;
@@ -909,10 +777,11 @@ const ActionPanel = memo(function ActionPanel({
   minRaise: number;
   maxBet: number;
   pot: number;
+  bigBlind: number;
   onAction: (action: 'fold' | 'check' | 'call' | 'raise' | 'allin', amount?: number) => void;
 }) {
   const [raiseAmount, setRaiseAmount] = useState(minRaise);
-  const [showSlider, setShowSlider] = useState(false);
+  const [showRaisePanel, setShowRaisePanel] = useState(false);
 
   useEffect(() => {
     setRaiseAmount(Math.max(minRaise, callAmount * 2));
@@ -920,199 +789,126 @@ const ActionPanel = memo(function ActionPanel({
 
   if (!isVisible) return null;
 
-  const presets = [
-    { label: '½', amount: Math.floor(pot / 2), desc: 'Pot' },
-    { label: '¾', amount: Math.floor(pot * 0.75), desc: 'Pot' },
-    { label: 'Pot', amount: pot, desc: '' },
-    { label: '2x', amount: callAmount * 2, desc: '' },
-  ].filter(p => p.amount >= minRaise && p.amount <= maxBet);
+  const callAmountBB = (callAmount / bigBlind).toFixed(1);
 
   return (
     <motion.div
       initial={{ y: 100, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       exit={{ y: 100, opacity: 0 }}
-      transition={{ type: 'spring', stiffness: 300, damping: 30 }}
       className="fixed bottom-0 left-0 right-0 z-50 pb-safe"
     >
-      {/* Background gradient */}
-      <div className="absolute inset-0 bg-gradient-to-t from-background via-background/95 to-transparent pointer-events-none"/>
-      
-      <div className="relative p-3 space-y-2">
-        {/* Slider toggle & presets */}
-        <AnimatePresence>
-          {showSlider && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              className="overflow-hidden"
-            >
-              {/* Presets */}
-              <div className="flex justify-center gap-2 mb-2">
-                {presets.map((preset, i) => (
+      {/* Raise panel */}
+      <AnimatePresence>
+        {showRaisePanel && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            className="mx-3 mb-2 p-3 rounded-xl bg-[#1a1f26]/95 border border-white/10"
+          >
+            {/* Quick presets */}
+            <div className="flex justify-center gap-2 mb-3">
+              {[
+                { label: '2x', mult: 2 },
+                { label: '3x', mult: 3 },
+                { label: '½ Pot', mult: pot / 2 / callAmount || 2 },
+                { label: 'Pot', mult: pot / callAmount || 4 },
+              ].map((preset, i) => {
+                const amount = Math.min(Math.max(callAmount * preset.mult, minRaise), maxBet);
+                return (
                   <button
                     key={i}
-                    onClick={() => setRaiseAmount(preset.amount)}
+                    onClick={() => setRaiseAmount(Math.floor(amount))}
                     className={cn(
-                      "flex flex-col items-center px-3 py-1.5 rounded-lg text-xs transition-all",
-                      raiseAmount === preset.amount 
-                        ? "bg-primary text-white" 
-                        : "bg-white/10 text-white/70 hover:bg-white/20"
+                      "px-3 py-1.5 rounded-lg text-xs font-bold transition-colors",
+                      Math.abs(raiseAmount - amount) < 1 ? "bg-emerald-500 text-white" : "bg-white/10 text-white/70 hover:bg-white/20"
                     )}
                   >
-                    <span className="font-bold">{preset.label}</span>
-                    {preset.desc && <span className="text-[9px] opacity-70">{preset.desc}</span>}
+                    {preset.label}
                   </button>
-                ))}
+                );
+              })}
+            </div>
+            
+            {/* Slider */}
+            <div className="flex items-center gap-3">
+              <input
+                type="range"
+                min={minRaise}
+                max={maxBet}
+                value={raiseAmount}
+                onChange={(e) => setRaiseAmount(Number(e.target.value))}
+                className="flex-1 h-1.5 bg-white/20 rounded-full appearance-none [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-emerald-500"
+              />
+              <div className="text-emerald-400 font-bold text-sm min-w-[60px] text-right">
+                {(raiseAmount / bigBlind).toFixed(1)} BB
               </div>
-
-              {/* Slider */}
-              <div className="mx-auto max-w-[300px] px-4">
-                <input
-                  type="range"
-                  min={minRaise}
-                  max={maxBet}
-                  value={raiseAmount}
-                  onChange={(e) => setRaiseAmount(Number(e.target.value))}
-                  className="w-full h-2 rounded-full appearance-none bg-white/20 cursor-pointer
-                             [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-6 
-                             [&::-webkit-slider-thumb]:h-6 [&::-webkit-slider-thumb]:rounded-full 
-                             [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:shadow-lg
-                             [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-white"
-                />
-                <div className="flex justify-between text-[10px] text-white/50 mt-1">
-                  <span>{minRaise.toLocaleString()}</span>
-                  <span className="text-primary font-bold text-sm">{raiseAmount.toLocaleString()}</span>
-                  <span>{maxBet.toLocaleString()}</span>
-                </div>
-              </div>
-            </motion.div>
+            </div>
+            
+            {/* Confirm raise */}
+            <button
+              onClick={() => { onAction('raise', raiseAmount); setShowRaisePanel(false); }}
+              className="w-full mt-3 py-3 bg-gradient-to-b from-amber-500 to-amber-600 text-white font-bold rounded-xl"
+            >
+              Рейз {(raiseAmount / bigBlind).toFixed(1)} BB
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      
+      {/* Main action buttons - PPPoker 3-button style */}
+      <div className="flex gap-2 px-3 pb-4 pt-2" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.95), transparent)' }}>
+        {/* Fold / Check */}
+        <button
+          onClick={() => canCheck ? onAction('check') : onAction('fold')}
+          className={cn(
+            "flex-1 py-4 rounded-xl font-bold text-sm border-2 transition-all",
+            canCheck 
+              ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/50 active:bg-emerald-500/30"
+              : "bg-red-500/20 text-red-400 border-red-500/50 active:bg-red-500/30"
           )}
-        </AnimatePresence>
-
-        {/* Action buttons - PPPoker style */}
-        <div className="flex justify-center items-center gap-2">
-          {/* Fold */}
-          <ActionButton 
-            onClick={() => onAction('fold')} 
-            color="red"
-            label="ФОЛД"
-          />
-
-          {/* Check/Call */}
-          {canCheck ? (
-            <ActionButton 
-              onClick={() => onAction('check')} 
-              color="blue"
-              label="ЧЕК"
-            />
-          ) : (
-            <ActionButton 
-              onClick={() => onAction('call')} 
-              color="green"
-              label="КОЛЛ"
-              amount={callAmount}
-            />
-          )}
-
-          {/* Raise toggle */}
-          <ActionButton 
-            onClick={() => setShowSlider(!showSlider)} 
-            color="yellow"
-            label="РЕЙЗ"
-            amount={showSlider ? raiseAmount : undefined}
-            icon={showSlider ? ChevronDown : ChevronUp}
-          />
-
-          {/* Raise confirm (when slider is open) */}
-          {showSlider && (
-            <ActionButton 
-              onClick={() => onAction('raise', raiseAmount)} 
-              color="yellow"
-              label="ОК"
-              filled
-            />
-          )}
-
-          {/* All-in */}
-          <ActionButton 
-            onClick={() => onAction('allin')} 
-            color="purple"
-            label="ALL-IN"
-          />
-        </div>
+        >
+          <div className="flex items-center justify-center gap-1">
+            <div className={cn("w-3 h-3 rounded border-2", canCheck ? "border-emerald-400" : "border-red-400")}/>
+            <span>{canCheck ? 'Фолд/Чек' : 'Фолд/Чек'}</span>
+          </div>
+        </button>
+        
+        {/* Call */}
+        <button
+          onClick={() => canCheck ? onAction('check') : onAction('call')}
+          className="flex-1 py-4 rounded-xl font-bold text-sm bg-amber-500/20 text-amber-400 border-2 border-amber-500/50 active:bg-amber-500/30"
+        >
+          <div className="flex items-center justify-center gap-1">
+            <div className="w-3 h-3 rounded border-2 border-amber-400"/>
+            <span>{canCheck ? 'Чек' : `Колл ${callAmountBB} BB`}</span>
+          </div>
+        </button>
+        
+        {/* Raise / All-in */}
+        <button
+          onClick={() => setShowRaisePanel(!showRaisePanel)}
+          className="flex-1 py-4 rounded-xl font-bold text-sm bg-emerald-500/20 text-emerald-400 border-2 border-emerald-500/50 active:bg-emerald-500/30"
+        >
+          <div className="flex items-center justify-center gap-1">
+            <div className="w-3 h-3 rounded border-2 border-emerald-400"/>
+            <span>Колл всё</span>
+          </div>
+        </button>
       </div>
     </motion.div>
   );
 });
 
-const ActionButton = memo(function ActionButton({
-  onClick,
-  color,
-  label,
-  amount,
-  icon: Icon,
-  filled = false
-}: {
-  onClick: () => void;
-  color: 'red' | 'green' | 'blue' | 'yellow' | 'purple';
-  label: string;
-  amount?: number;
-  icon?: React.ElementType;
-  filled?: boolean;
-}) {
-  const colorStyles = {
-    red: filled 
-      ? 'bg-gradient-to-b from-red-500 to-red-600 text-white border-red-400' 
-      : 'bg-red-500/20 text-red-400 border-red-500/50',
-    green: filled 
-      ? 'bg-gradient-to-b from-green-500 to-green-600 text-white border-green-400' 
-      : 'bg-green-500/20 text-green-400 border-green-500/50',
-    blue: filled 
-      ? 'bg-gradient-to-b from-blue-500 to-blue-600 text-white border-blue-400' 
-      : 'bg-blue-500/20 text-blue-400 border-blue-500/50',
-    yellow: filled 
-      ? 'bg-gradient-to-b from-amber-500 to-amber-600 text-white border-amber-400' 
-      : 'bg-amber-500/20 text-amber-400 border-amber-500/50',
-    purple: filled 
-      ? 'bg-gradient-to-b from-purple-500 to-purple-600 text-white border-purple-400' 
-      : 'bg-purple-500/20 text-purple-400 border-purple-500/50',
-  };
-
-  return (
-    <motion.button
-      onClick={onClick}
-      whileTap={{ scale: 0.95 }}
-      className={cn(
-        "flex flex-col items-center justify-center min-w-[60px] h-14 px-3 rounded-xl border-2 transition-all",
-        "backdrop-blur-sm shadow-lg",
-        colorStyles[color]
-      )}
-    >
-      {Icon && <Icon className="h-3 w-3 mb-0.5"/>}
-      <span className="text-[10px] font-bold tracking-wide">{label}</span>
-      {amount !== undefined && (
-        <span className="text-[9px] opacity-80">{amount.toLocaleString()}</span>
-      )}
-    </motion.button>
-  );
-});
-
 // ============= WINNER OVERLAY =============
 const WinnerOverlay = memo(function WinnerOverlay({
-  winners,
-  onClose
-}: {
-  winners: Array<{ name?: string; amount: number; handRank?: string }>;
-  onClose: () => void;
-}) {
+  winners, onClose
+}: { winners: Array<{ name?: string; amount: number; handRank?: string }>; onClose: () => void; }) {
   const [countdown, setCountdown] = useState(3);
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setCountdown(prev => prev <= 1 ? 0 : prev - 1);
-    }, 1000);
+    const interval = setInterval(() => setCountdown(prev => prev <= 1 ? 0 : prev - 1), 1000);
     const timer = setTimeout(onClose, 3000);
     return () => { clearInterval(interval); clearTimeout(timer); };
   }, [onClose]);
@@ -1120,31 +916,28 @@ const WinnerOverlay = memo(function WinnerOverlay({
   if (!winners.length) return null;
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 z-30 flex items-center justify-center bg-black/60">
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} 
+      className="absolute inset-0 z-30 flex items-center justify-center bg-black/60">
       <motion.div
-        initial={{ scale: 0, rotate: -10 }}
-        animate={{ scale: 1, rotate: 0 }}
-        className="rounded-2xl p-6 shadow-2xl text-center max-w-[280px]"
+        initial={{ scale: 0 }}
+        animate={{ scale: 1 }}
+        className="rounded-2xl p-6 text-center max-w-[280px]"
         style={{
-          background: 'linear-gradient(180deg, hsl(var(--card)) 0%, hsl(var(--background)) 100%)',
-          border: '2px solid hsl(var(--primary) / 0.6)',
-          boxShadow: '0 0 40px hsl(var(--primary) / 0.3), 0 20px 60px rgba(0,0,0,0.8)'
+          background: 'linear-gradient(180deg, #1a1f26 0%, #0f1419 100%)',
+          border: '2px solid rgba(34,197,94,0.5)',
+          boxShadow: '0 0 40px rgba(34,197,94,0.2)'
         }}
       >
         <div className="text-4xl mb-3">🏆</div>
-        <div className="text-2xl font-black text-primary mb-2" style={{ textShadow: '0 0 20px hsl(var(--primary) / 0.5)' }}>
-          ПОБЕДА
-        </div>
-        <div className="text-foreground font-bold text-lg mb-1">{winners[0].name || 'Игрок'}</div>
-        <div className="text-3xl font-black text-primary mb-2">+{winners[0].amount.toLocaleString()}</div>
+        <div className="text-2xl font-black text-emerald-400 mb-2">ПОБЕДА</div>
+        <div className="text-white font-bold text-lg mb-1">{winners[0].name || 'Игрок'}</div>
+        <div className="text-3xl font-black text-emerald-400 mb-2">+{winners[0].amount.toLocaleString()}</div>
         {winners[0].handRank && (
-          <div className="inline-block px-3 py-1 rounded-full bg-white/10 text-muted-foreground text-sm mb-3 uppercase tracking-wider">
-            {winners[0].handRank}
-          </div>
+          <div className="inline-block px-3 py-1 rounded-full bg-white/10 text-white/70 text-sm mb-3">{winners[0].handRank}</div>
         )}
-        <div className="mt-4 pt-3 border-t border-border">
-          <div className="text-muted-foreground text-xs uppercase tracking-wider">Следующая раздача</div>
-          <motion.div key={countdown} initial={{ scale: 1.3, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="text-3xl font-bold mt-1 text-primary">
+        <div className="mt-3 pt-3 border-t border-white/10">
+          <div className="text-white/50 text-xs">Следующая раздача</div>
+          <motion.div key={countdown} initial={{ scale: 1.3, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="text-2xl font-bold text-emerald-400 mt-1">
             {countdown}
           </motion.div>
         </div>
@@ -1178,11 +971,10 @@ export function SyndikatetPokerTable({
   const [playerActions, setPlayerActions] = useState<Record<string, { action: string; amount?: number }>>({});
   const [showMenu, setShowMenu] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
-  const [showChat, setShowChat] = useState(false);
+  const [showEmoji, setShowEmoji] = useState(false);
   const [showMyCards, setShowMyCards] = useState(true);
-  const [chatMessages, setChatMessages] = useState<Array<{ id: string; name: string; text: string }>>([]);
+  const [selectedPlayer, setSelectedPlayer] = useState<PokerPlayer | null>(null);
   
-  // Detect mobile/Telegram environment
   const [isMobile, setIsMobile] = useState(false);
   
   useEffect(() => {
@@ -1202,96 +994,48 @@ export function SyndikatetPokerTable({
   const sounds = usePokerSounds();
   const SEAT_POSITIONS = isMobile ? SEAT_POSITIONS_6MAX_MOBILE : SEAT_POSITIONS_6MAX_DESKTOP;
 
-  // Poker table hook
   const pokerTable = usePokerTable({ tableId, playerId, buyIn });
   
   const {
-    isConnected,
-    isConnecting,
-    error,
-    tableState,
-    myCards,
-    mySeat,
-    myPlayer,
-    isMyTurn,
-    canCheck,
-    callAmount,
-    lastAction,
-    showdownResult,
-    connect,
-    disconnect,
-    fold,
-    check,
-    call,
-    raise,
-    allIn,
-    clearShowdown,
-    configureTable
+    isConnected, isConnecting, error, tableState, myCards, mySeat, myPlayer, isMyTurn, canCheck, callAmount, lastAction, showdownResult,
+    connect, disconnect, fold, check, call, raise, allIn, clearShowdown, configureTable
   } = pokerTable;
 
-  // Reconnection manager
   const reconnectManager = useReconnectManager({
-    maxRetries: 5,
-    baseDelay: 2000,
-    maxDelay: 30000,
+    maxRetries: 5, baseDelay: 2000, maxDelay: 30000,
     onReconnect: connect,
-    onMaxRetriesReached: () => console.log('[SyndikatetTable] Max retries reached')
+    onMaxRetriesReached: () => console.log('[SyndikatetTable] Max retries')
   });
 
-  // Single connection effect with cleanup
-  const hasConnectedRef = React.useRef(false);
+  const hasConnectedRef = useRef(false);
   
   useEffect(() => {
-    // Prevent double connection in StrictMode
     if (hasConnectedRef.current) return;
     hasConnectedRef.current = true;
-    
-    const timeoutId = setTimeout(() => {
-      connect();
-    }, 100); // Small delay to prevent race conditions
-    
-    return () => {
-      clearTimeout(timeoutId);
-      hasConnectedRef.current = false;
-      disconnect();
-      reconnectManager.reset();
-    };
+    const timeoutId = setTimeout(() => connect(), 100);
+    return () => { clearTimeout(timeoutId); hasConnectedRef.current = false; disconnect(); reconnectManager.reset(); };
   }, [tableId, playerId]);
 
-  // Track connection status
   useEffect(() => {
-    if (isConnected) {
-      reconnectManager.markConnected();
-    } else if (!isConnecting && error) {
-      reconnectManager.markDisconnected(error);
-    }
+    if (isConnected) reconnectManager.markConnected();
+    else if (!isConnecting && error) reconnectManager.markDisconnected(error);
   }, [isConnected, isConnecting, error]);
 
-  // Sound effects
   useEffect(() => { sounds.setEnabled(soundEnabled); }, [soundEnabled]);
 
-  // Turn timer
   useEffect(() => {
     if (isMyTurn) {
       sounds.playTurn();
       setTurnTimeRemaining(tableState?.actionTimer || 30);
-      const interval = setInterval(() => {
-        setTurnTimeRemaining(prev => (prev === null || prev <= 0) ? null : prev - 1);
-      }, 1000);
+      const interval = setInterval(() => setTurnTimeRemaining(prev => (prev === null || prev <= 0) ? null : prev - 1), 1000);
       return () => clearInterval(interval);
-    } else {
-      setTurnTimeRemaining(null);
-    }
+    } else { setTurnTimeRemaining(null); }
   }, [isMyTurn, tableState?.currentPlayerSeat]);
 
-  // Track actions for badges
   useEffect(() => {
     if (lastAction?.playerId) {
       setPlayerActions(prev => ({ ...prev, [lastAction.playerId]: { action: lastAction.action, amount: lastAction.amount }}));
-      setTimeout(() => {
-        setPlayerActions(prev => { const next = { ...prev }; delete next[lastAction.playerId]; return next; });
-      }, 2000);
-      
+      setTimeout(() => setPlayerActions(prev => { const next = { ...prev }; delete next[lastAction.playerId]; return next; }), 2000);
       switch (lastAction.action) {
         case 'fold': sounds.playFold(); break;
         case 'check': sounds.playCheck(); break;
@@ -1302,7 +1046,6 @@ export function SyndikatetPokerTable({
     }
   }, [lastAction]);
 
-  // Handle actions
   const handleAction = useCallback((action: 'fold' | 'check' | 'call' | 'raise' | 'allin', amount?: number) => {
     switch (action) {
       case 'fold': fold(); break;
@@ -1329,11 +1072,6 @@ export function SyndikatetPokerTable({
     setShowSettings(false);
   }, [configureTable]);
 
-  const handleSendMessage = useCallback((text: string) => {
-    setChatMessages(prev => [...prev, { id: Date.now().toString(), name: 'Вы', text }]);
-  }, []);
-
-  // Memoized players
   const players = useMemo(() => {
     if (!tableState) return [];
     return SEAT_POSITIONS.map((pos, idx) => {
@@ -1343,27 +1081,26 @@ export function SyndikatetPokerTable({
     });
   }, [tableState?.players, SEAT_POSITIONS]);
 
-  const blindsText = tableState ? `${tableState.smallBlindAmount}/${tableState.bigBlindAmount}` : '-/-';
+  const bigBlind = tableState?.bigBlindAmount || 20;
+  const smallBlind = tableState?.smallBlindAmount || 10;
 
-  // Loading state
   if (isConnecting) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[500px] bg-background rounded-2xl">
-        <Loader2 className="h-12 w-12 text-primary animate-spin"/>
-        <p className="text-muted-foreground mt-4 text-sm">Подключение к столу...</p>
+      <div className="flex flex-col items-center justify-center min-h-[100dvh] bg-[#0f1419]">
+        <Loader2 className="h-12 w-12 text-emerald-500 animate-spin"/>
+        <p className="text-white/60 mt-4 text-sm">Подключение к столу...</p>
       </div>
     );
   }
 
-  // Error state
   if (error && !isConnected) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[500px] bg-background rounded-2xl p-6">
+      <div className="flex flex-col items-center justify-center min-h-[100dvh] bg-[#0f1419] p-6">
         <div className="text-6xl mb-4">😔</div>
-        <p className="text-destructive mb-4 text-center">{error}</p>
+        <p className="text-red-400 mb-4 text-center">{error}</p>
         <div className="flex gap-2">
-          <Button onClick={connect} className="bg-primary hover:bg-primary/80">Переподключиться</Button>
-          <Button variant="outline" onClick={onLeave}>Выйти</Button>
+          <Button onClick={connect} className="bg-emerald-500 hover:bg-emerald-600">Переподключиться</Button>
+          <Button variant="outline" onClick={onLeave} className="border-white/20 text-white">Выйти</Button>
         </div>
       </div>
     );
@@ -1371,77 +1108,64 @@ export function SyndikatetPokerTable({
 
   return (
     <PokerErrorBoundary onReset={connect} onGoHome={handleLeave}>
-      <div className="relative w-full min-h-[100dvh] bg-background overflow-hidden">
-        {/* Connection status */}
-        <ConnectionStatusBanner
-          status={reconnectManager.status}
-          retryCount={reconnectManager.retryCount}
-          nextRetryIn={reconnectManager.nextRetryIn}
-          onReconnectNow={reconnectManager.reconnectNow}
-          onCancel={reconnectManager.cancelReconnect}
-        />
+      <div className="relative w-full min-h-[100dvh] overflow-hidden" style={{ background: 'linear-gradient(180deg, #0f1419 0%, #1a1f26 50%, #0f1419 100%)' }}>
+        <ConnectionStatusBanner status={reconnectManager.status} retryCount={reconnectManager.retryCount} nextRetryIn={reconnectManager.nextRetryIn} onReconnectNow={reconnectManager.reconnectNow} onCancel={reconnectManager.cancelReconnect}/>
 
-        {/* Header */}
-        <TableHeader
-          onLeave={handleLeave}
-          isConnected={isConnected}
-          blinds={blindsText}
-          playersCount={tableState?.players.length || 0}
-          onMenuClick={() => setShowMenu(true)}
-          onSettingsClick={() => setShowSettings(true)}
-        />
+        {/* Top bar - PPPoker style */}
+        <div className="absolute top-0 left-0 right-0 z-30 flex items-center justify-between px-2 py-2 safe-area-inset-top">
+          {/* Left: Menu button */}
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={() => setShowMenu(true)}
+            className="h-10 w-10 rounded-full text-white hover:bg-white/10 relative"
+          >
+            <Menu className="h-5 w-5"/>
+            <div className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full"/>
+          </Button>
+          
+          {/* Center: Game type badge */}
+          <div className="flex items-center gap-2">
+            <div className="px-4 py-1.5 rounded-full text-white font-bold text-sm" style={{ background: 'linear-gradient(135deg, #22c55e, #16a34a)' }}>
+              NLH
+            </div>
+            <button className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white text-lg">+</button>
+          </div>
+          
+          {/* Right: Stats */}
+          <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full text-white hover:bg-white/10">
+            <BarChart2 className="h-5 w-5"/>
+          </Button>
+        </div>
 
-        {/* Table area - responsive height for mobile */}
-        <div className={cn(
-          "relative w-full mt-12",
-          isMobile ? "h-[55vh]" : "h-[60vh]"
-        )}>
-          <SyndikatetTableFelt/>
+        {/* Table area */}
+        <div className={cn("relative w-full", isMobile ? "h-[60vh] mt-14" : "h-[65vh] mt-14")}>
+          <PPPokerTableFelt/>
 
-          {/* Pot - PPPoker centered position */}
+          {/* Pot */}
           {tableState && (
-            <div className={cn(
-              "absolute left-1/2 -translate-x-1/2 -translate-y-1/2 z-10",
-              isMobile ? "top-[25%]" : "top-[30%]"
-            )}>
-              <PotDisplay pot={tableState.pot} isMobile={isMobile}/>
+            <div className={cn("absolute left-1/2 -translate-x-1/2 z-10", isMobile ? "top-[22%]" : "top-[25%]")}>
+              <PotDisplay pot={tableState.pot} bigBlind={bigBlind} isMobile={isMobile}/>
             </div>
           )}
 
-          {/* Community cards - PPPoker centered */}
+          {/* Community cards */}
           {tableState && (
-            <div className={cn(
-              "absolute left-1/2 -translate-x-1/2 -translate-y-1/2 z-10",
-              isMobile ? "top-[42%]" : "top-[45%]"
-            )}>
+            <div className={cn("absolute left-1/2 -translate-x-1/2 z-10", isMobile ? "top-[38%]" : "top-[42%]")}>
               <CommunityCards cards={tableState.communityCards} phase={tableState.phase} isMobile={isMobile}/>
             </div>
           )}
 
-          {/* Blinds/Ante info - PPPoker style below cards */}
+          {/* Blinds info - PPPoker style */}
           {tableState && (
-            <div className={cn(
-              "absolute left-1/2 -translate-x-1/2 z-10",
-              isMobile ? "top-[56%]" : "top-[58%]"
-            )}>
-              <div 
-                className={cn(
-                  "px-3 py-1 rounded-full font-medium",
-                  isMobile ? "text-[9px]" : "text-[10px]"
-                )}
-                style={{ 
-                  background: 'rgba(0,0,0,0.5)', 
-                  color: 'rgba(255,255,255,0.7)',
-                  border: '1px solid rgba(255,255,255,0.1)'
-                }}
-              >
-                Blinds: {tableState.smallBlindAmount}/{tableState.bigBlindAmount}
-                {tableState.anteAmount ? ` Ante: ${tableState.anteAmount}` : ''}
+            <div className={cn("absolute left-1/2 -translate-x-1/2 z-10", isMobile ? "top-[52%]" : "top-[55%]")}>
+              <div className="text-white/60 text-[10px] font-medium">
+                Блайнды: {smallBlind.toLocaleString()}/{bigBlind.toLocaleString()} {tableState.anteAmount ? `анте: ${tableState.anteAmount.toLocaleString()}` : ''}
               </div>
             </div>
           )}
 
-          {/* Player seats - with mobile optimization */}
+          {/* Player seats */}
           {players.map(({ position, seatNumber, player }, idx) => (
             <PlayerSeat
               key={seatNumber}
@@ -1458,67 +1182,40 @@ export function SyndikatetPokerTable({
               turnDuration={tableState?.actionTimer || 30}
               lastAction={player ? playerActions[player.playerId] : null}
               isMobile={isMobile}
+              onPlayerClick={setSelectedPlayer}
             />
           ))}
-
-          {/* Phase indicator - smaller on mobile */}
-          {tableState && tableState.phase !== 'waiting' && (
-            <div className={cn(
-              "absolute left-1/2 -translate-x-1/2 z-10",
-              isMobile ? "top-12" : "top-16"
-            )}>
-              <div 
-                className={cn(
-                  "rounded-full font-bold uppercase tracking-wider",
-                  isMobile ? "px-2 py-0.5 text-[8px]" : "px-3 py-1 text-[10px]"
-                )}
-                style={{ 
-                  background: 'rgba(0,0,0,0.6)', 
-                  color: 'hsl(var(--primary))',
-                  border: '1px solid hsl(var(--primary) / 0.3)'
-                }}
-              >
-                {tableState.phase === 'preflop' ? 'Префлоп' : 
-                 tableState.phase === 'flop' ? 'Флоп' :
-                 tableState.phase === 'turn' ? 'Тёрн' :
-                 tableState.phase === 'river' ? 'Ривер' :
-                 tableState.phase === 'showdown' ? 'Вскрытие' : tableState.phase}
-              </div>
-            </div>
-          )}
 
           {/* Winner overlay */}
           <AnimatePresence>
             {showdownResult && showdownResult.winners.length > 0 && (
-              <WinnerOverlay
-                winners={showdownResult.winners.map(w => ({
-                  name: w.name,
-                  amount: w.amount,
-                  handRank: w.handRank
-                }))}
-                onClose={clearShowdown}
-              />
+              <WinnerOverlay winners={showdownResult.winners.map(w => ({ name: w.name, amount: w.amount, handRank: w.handRank }))} onClose={clearShowdown}/>
             )}
           </AnimatePresence>
         </div>
 
-        {/* Hero cards section - PPPoker style positioned above action buttons */}
+        {/* Hero cards */}
         {myCards && myCards.length > 0 && showMyCards && (
-          <div className={cn(
-            "absolute left-1/2 -translate-x-1/2 z-20",
-            isMobile ? "bottom-28" : "bottom-32"
-          )}>
+          <div className={cn("absolute left-1/2 -translate-x-1/2 z-20", isMobile ? "bottom-28" : "bottom-32")}>
             <HeroCards cards={myCards} isWinning={tableState?.phase === 'showdown'} isMobile={isMobile}/>
           </div>
         )}
 
-        {/* Chat bubble */}
-        <ChatBubble
-          isOpen={showChat}
-          onToggle={() => setShowChat(!showChat)}
-          messages={chatMessages}
-          onSendMessage={handleSendMessage}
-        />
+        {/* Side buttons - PPPoker style */}
+        <div className="absolute left-3 bottom-28 z-25 flex flex-col gap-2">
+          <button className="w-10 h-10 rounded-full bg-black/60 flex items-center justify-center text-white" onClick={() => setSoundEnabled(!soundEnabled)}>
+            {soundEnabled ? <Volume2 className="h-4 w-4"/> : <VolumeX className="h-4 w-4"/>}
+          </button>
+        </div>
+        
+        <div className="absolute right-3 bottom-28 z-25 flex flex-col gap-2">
+          <button className="w-10 h-10 rounded-full bg-black/60 flex items-center justify-center text-white" onClick={() => setShowEmoji(!showEmoji)}>
+            <MessageSquare className="h-4 w-4"/>
+          </button>
+        </div>
+
+        {/* Emoji panel */}
+        <EmojiPanel isOpen={showEmoji} onClose={() => setShowEmoji(false)} onSendEmoji={(emoji) => console.log('Emoji:', emoji)}/>
 
         {/* Action panel */}
         <AnimatePresence>
@@ -1530,22 +1227,30 @@ export function SyndikatetPokerTable({
               minRaise={tableState.currentBet * 2}
               maxBet={myPlayer?.stack || 0}
               pot={tableState.pot}
+              bigBlind={bigBlind}
               onAction={handleAction}
             />
           )}
         </AnimatePresence>
 
-        {/* Quick menu */}
-        <QuickMenu
+        {/* Left menu */}
+        <LeftMenu
           isOpen={showMenu}
           onClose={() => setShowMenu(false)}
+          onLeave={handleLeave}
           soundEnabled={soundEnabled}
           onSoundToggle={() => setSoundEnabled(!soundEnabled)}
-          showCards={showMyCards}
-          onShowCardsToggle={() => setShowMyCards(!showMyCards)}
-          onHistoryClick={() => { setShowMenu(false); }}
-          onLeaderboardClick={() => { setShowMenu(false); }}
+          onSettingsClick={() => { setShowMenu(false); setShowSettings(true); }}
+          onViewClick={() => setShowMenu(false)}
+          onRulesClick={() => setShowMenu(false)}
         />
+
+        {/* Player profile modal */}
+        <AnimatePresence>
+          {selectedPlayer && (
+            <PlayerProfileModal player={selectedPlayer} onClose={() => setSelectedPlayer(null)}/>
+          )}
+        </AnimatePresence>
 
         {/* Settings panel */}
         <TableSettingsPanel
