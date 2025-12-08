@@ -185,7 +185,8 @@ const PlayerSeat = memo(function PlayerSeat({
   turnDuration = 30,
   lastAction,
   isMobile = false,
-  onPlayerClick
+  onPlayerClick,
+  gamePhase = 'waiting'
 }: {
   player: PokerPlayer | null;
   position: { x: number; y: number };
@@ -201,6 +202,7 @@ const PlayerSeat = memo(function PlayerSeat({
   lastAction?: { action: string; amount?: number } | null;
   isMobile?: boolean;
   onPlayerClick?: (player: PokerPlayer) => void;
+  gamePhase?: 'waiting' | 'preflop' | 'flop' | 'turn' | 'river' | 'showdown';
 }) {
   const avatarSize = isMobile ? (isHero ? 48 : 42) : (isHero ? 56 : 48);
   const showTurnTimer = isCurrentTurn && !player?.isFolded && !player?.isAllIn;
@@ -214,11 +216,16 @@ const PlayerSeat = memo(function PlayerSeat({
     return { x: (dx/dist) * multiplier, y: (dy/dist) * multiplier };
   }, [position.x, position.y, isMobile]);
 
-  // Cards position based on seat
+  // Cards position based on seat - PPPoker style: cards near avatar
+  // For side players - cards towards center, for top players - below avatar
   const cardsPosition = useMemo(() => {
+    // Left side players (x < 25) - cards to the right
     if (position.x < 25) return 'right';
+    // Right side players (x > 75) - cards to the left
     if (position.x > 75) return 'left';
-    if (position.y < 25) return 'below';
+    // Top center player (y < 30) - cards below
+    if (position.y < 30) return 'below';
+    // Bottom (hero position) - cards are shown separately
     return 'above';
   }, [position.x, position.y]);
 
@@ -393,17 +400,24 @@ const PlayerSeat = memo(function PlayerSeat({
         </motion.div>
       </div>
 
-      {/* Cards beside avatar - opponents only */}
-      {player.holeCards && player.holeCards.length > 0 && !player.isFolded && !isHero && (
-        <div className={cn("absolute flex gap-0 z-5",
-          cardsPosition === 'right' && "left-full ml-1 top-1/2 -translate-y-1/2",
-          cardsPosition === 'left' && "right-full mr-1 top-1/2 -translate-y-1/2",
-          cardsPosition === 'above' && "-top-12 left-1/2 -translate-x-1/2",
-          cardsPosition === 'below' && "top-full mt-10 left-1/2 -translate-x-1/2"
+      {/* Cards beside avatar - opponents show card backs during active game phases */}
+      {!isHero && !player.isFolded && gamePhase !== 'waiting' && (
+        <div className={cn("absolute flex gap-0.5 z-5",
+          cardsPosition === 'right' && "left-full ml-2 top-1/2 -translate-y-1/2",
+          cardsPosition === 'left' && "right-full mr-2 top-1/2 -translate-y-1/2",
+          cardsPosition === 'above' && "-top-14 left-1/2 -translate-x-1/2",
+          cardsPosition === 'below' && "top-full mt-12 left-1/2 -translate-x-1/2"
         )}>
-          {player.holeCards.map((card, idx) => (
-            <div key={`${card}-${idx}`} style={{ marginLeft: idx > 0 ? '-4px' : 0 }}>
-              <PPPokerCard card={card} faceDown={!showCards} size={isMobile ? "xs" : "sm"} delay={idx} isWinning={showCards}/>
+          {/* Always show 2 cards for active opponents - faceDown unless showdown */}
+          {['1', '2'].map((_, idx) => (
+            <div key={`card-${idx}`} style={{ marginLeft: idx > 0 ? '-6px' : 0 }}>
+              <PPPokerCard 
+                card={showCards && player.holeCards?.[idx] ? player.holeCards[idx] : 'XX'} 
+                faceDown={!showCards} 
+                size={isMobile ? "xs" : "sm"} 
+                delay={idx} 
+                isWinning={showCards}
+              />
             </div>
           ))}
         </div>
@@ -445,6 +459,8 @@ const PlayerSeat = memo(function PlayerSeat({
   if (prev.isCurrentTurn !== next.isCurrentTurn) return false;
   if (prev.turnTimeRemaining !== next.turnTimeRemaining) return false;
   if (prev.lastAction?.action !== next.lastAction?.action) return false;
+  if (prev.gamePhase !== next.gamePhase) return false;
+  if (prev.isHero !== next.isHero) return false;
   return true;
 });
 
@@ -1148,14 +1164,30 @@ export function SyndikatetPokerTable({
     setShowSettings(false);
   }, [configureTable]);
 
+  // Rotate seats so Hero (mySeat) is always at position 0 (bottom center)
+  // This matches PPPoker where you always see yourself at the bottom
   const players = useMemo(() => {
     if (!tableState) return [];
-    return SEAT_POSITIONS.map((pos, idx) => {
-      const seatNumber = idx + 1;
-      const player = tableState.players.find(p => p.seatNumber === seatNumber);
-      return { position: pos, seatNumber, player };
-    });
-  }, [tableState?.players, SEAT_POSITIONS]);
+    
+    const totalSeats = 6;
+    const heroSeat = mySeat || 1; // Default to seat 1 if not set
+    
+    // Create array of seat numbers rotated so hero is at index 0
+    const rotatedSeats: { position: { x: number; y: number }; seatNumber: number; player: PokerPlayer | undefined }[] = [];
+    
+    for (let i = 0; i < totalSeats; i++) {
+      // Calculate actual seat number by rotating
+      const actualSeatNumber = ((heroSeat - 1 + i) % totalSeats) + 1;
+      const player = tableState.players.find(p => p.seatNumber === actualSeatNumber);
+      rotatedSeats.push({
+        position: SEAT_POSITIONS[i],
+        seatNumber: actualSeatNumber,
+        player
+      });
+    }
+    
+    return rotatedSeats;
+  }, [tableState?.players, SEAT_POSITIONS, mySeat]);
 
   const bigBlind = tableState?.bigBlindAmount || 20;
   const smallBlind = tableState?.smallBlindAmount || 10;
@@ -1281,6 +1313,7 @@ export function SyndikatetPokerTable({
               lastAction={player ? playerActions[player.playerId] : null}
               isMobile={isMobile}
               onPlayerClick={setSelectedPlayer}
+              gamePhase={tableState?.phase}
             />
           ))}
 
