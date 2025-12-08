@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Gem, Plus, History, TrendingUp, TrendingDown, Gift, Trophy, ShoppingCart, Loader2, Sparkles, Wallet } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Gem, Plus, History, TrendingUp, TrendingDown, Gift, Trophy, ShoppingCart, Loader2, Wallet, ChevronDown } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
@@ -41,26 +41,24 @@ const PURCHASE_OPTIONS = [
   { rubles: 200, diamonds: 1000 },
   { rubles: 500, diamonds: 2500 },
   { rubles: 1000, diamonds: 5000 },
-  { rubles: 2000, diamonds: 10000 },
-  { rubles: 5000, diamonds: 25000 },
 ];
 
 const getTransactionIcon = (type: string) => {
   switch (type) {
     case 'purchase':
-      return <ShoppingCart className="h-4 w-4 text-green-500" />;
+      return <ShoppingCart className="h-3 w-3 text-green-500" />;
     case 'admin_add':
     case 'bonus':
-      return <Gift className="h-4 w-4 text-purple-500" />;
+      return <Gift className="h-3 w-3 text-purple-500" />;
     case 'admin_remove':
     case 'tournament_entry':
-      return <TrendingDown className="h-4 w-4 text-red-500" />;
+      return <TrendingDown className="h-3 w-3 text-red-500" />;
     case 'tournament_prize':
-      return <Trophy className="h-4 w-4 text-yellow-500" />;
+      return <Trophy className="h-3 w-3 text-yellow-500" />;
     case 'refund':
-      return <TrendingUp className="h-4 w-4 text-blue-500" />;
+      return <TrendingUp className="h-3 w-3 text-blue-500" />;
     default:
-      return <Gem className="h-4 w-4" />;
+      return <Gem className="h-3 w-3" />;
   }
 };
 
@@ -73,7 +71,7 @@ const getTransactionLabel = (type: string) => {
     case 'admin_remove':
       return 'Списание';
     case 'tournament_entry':
-      return 'Вступ. взнос';
+      return 'Взнос';
     case 'tournament_prize':
       return 'Приз';
     case 'refund':
@@ -93,6 +91,7 @@ export const DiamondWallet: React.FC<DiamondWalletProps> = ({ playerId, playerNa
   const [purchaseDialogOpen, setPurchaseDialogOpen] = useState(false);
   const [selectedAmount, setSelectedAmount] = useState<number | null>(null);
   const [customAmount, setCustomAmount] = useState('');
+  const [historyOpen, setHistoryOpen] = useState(false);
 
   useEffect(() => {
     loadWalletData();
@@ -100,10 +99,8 @@ export const DiamondWallet: React.FC<DiamondWalletProps> = ({ playerId, playerNa
 
   const loadWalletData = async () => {
     try {
-      // Ensure wallet exists
       await supabase.rpc('ensure_diamond_wallet', { p_player_id: playerId });
 
-      // Load wallet
       const { data: walletData } = await supabase
         .from('diamond_wallets')
         .select('*')
@@ -114,13 +111,12 @@ export const DiamondWallet: React.FC<DiamondWalletProps> = ({ playerId, playerNa
         setWallet(walletData);
       }
 
-      // Load transactions
       const { data: txData } = await supabase
         .from('diamond_transactions')
         .select('*')
         .eq('player_id', playerId)
         .order('created_at', { ascending: false })
-        .limit(50);
+        .limit(20);
 
       if (txData) {
         setTransactions(txData);
@@ -135,7 +131,7 @@ export const DiamondWallet: React.FC<DiamondWalletProps> = ({ playerId, playerNa
   const handlePurchase = async () => {
     const amount = selectedAmount || parseInt(customAmount);
     if (!amount || amount < 100) {
-      toast.error('Минимальная сумма покупки: 100 ₽');
+      toast.error('Минимальная сумма: 100 ₽');
       return;
     }
 
@@ -151,16 +147,16 @@ export const DiamondWallet: React.FC<DiamondWalletProps> = ({ playerId, playerNa
       const result = data as { success: boolean; error?: string; balance_after?: number };
       
       if (result.success) {
-        toast.success(`Успешно приобретено ${(amount / 100) * 500} алмазов!`);
+        toast.success(`+${(amount / 100) * 500} 💎`);
         setPurchaseDialogOpen(false);
         setSelectedAmount(null);
         setCustomAmount('');
         loadWalletData();
       } else {
-        toast.error(result.error || 'Ошибка покупки');
+        toast.error(result.error || 'Ошибка');
       }
     } catch (error: any) {
-      toast.error(error.message || 'Ошибка покупки');
+      toast.error(error.message || 'Ошибка');
     } finally {
       setPurchasing(false);
     }
@@ -168,48 +164,51 @@ export const DiamondWallet: React.FC<DiamondWalletProps> = ({ playerId, playerNa
 
   if (loading) {
     return (
-      <Card className="bg-gradient-to-br from-background to-muted/30 border-primary/20">
-        <CardContent className="flex items-center justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <Card className="bg-syndikate-metal/90 brutal-border">
+        <CardContent className="flex items-center justify-center py-6">
+          <Loader2 className="h-5 w-5 animate-spin text-cyan-400" />
         </CardContent>
       </Card>
     );
   }
 
   return (
-    <Card className="bg-gradient-to-br from-background via-background to-cyan-950/20 border-cyan-500/30 overflow-hidden">
-      <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-5" />
-      
-      <CardHeader className="relative">
+    <Card className="bg-syndikate-metal/90 brutal-border backdrop-blur-xl overflow-hidden">
+      <CardContent className="p-4 space-y-3">
+        {/* Compact Header with Balance */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="p-3 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 shadow-lg shadow-cyan-500/25">
-              <Gem className="h-6 w-6 text-white" />
+            <div className="w-10 h-10 bg-gradient-to-br from-cyan-500 to-blue-600 brutal-border flex items-center justify-center shadow-lg">
+              <Gem className="h-5 w-5 text-white" />
             </div>
             <div>
-              <CardTitle className="text-xl">Кошелёк алмазов</CardTitle>
-              <p className="text-sm text-muted-foreground">Игровая валюта</p>
+              <div className="flex items-baseline gap-2">
+                <span className="text-2xl font-bold text-cyan-400">
+                  {wallet?.balance.toLocaleString() || 0}
+                </span>
+                <span className="text-sm text-muted-foreground">💎</span>
+              </div>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Алмазы</p>
             </div>
           </div>
           
           <Dialog open={purchaseDialogOpen} onOpenChange={setPurchaseDialogOpen}>
             <DialogTrigger asChild>
-              <Button className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700">
-                <Plus className="h-4 w-4 mr-2" />
-                Купить
+              <Button size="sm" className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 brutal-border h-8">
+                <Plus className="h-4 w-4" />
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-md">
+            <DialogContent className="max-w-sm">
               <DialogHeader>
-                <DialogTitle className="flex items-center gap-2">
-                  <Gem className="h-5 w-5 text-cyan-500" />
+                <DialogTitle className="flex items-center gap-2 text-base">
+                  <Gem className="h-4 w-4 text-cyan-500" />
                   Покупка алмазов
                 </DialogTitle>
               </DialogHeader>
               
-              <div className="space-y-4 py-4">
-                <p className="text-sm text-muted-foreground text-center">
-                  Курс: <span className="text-cyan-500 font-semibold">100 ₽ = 500 💎</span>
+              <div className="space-y-3 py-2">
+                <p className="text-xs text-muted-foreground text-center">
+                  100 ₽ = <span className="text-cyan-400 font-semibold">500 💎</span>
                 </p>
                 
                 <div className="grid grid-cols-2 gap-2">
@@ -217,186 +216,118 @@ export const DiamondWallet: React.FC<DiamondWalletProps> = ({ playerId, playerNa
                     <Button
                       key={option.rubles}
                       variant={selectedAmount === option.rubles ? "default" : "outline"}
-                      className={`h-auto py-3 flex-col ${
+                      size="sm"
+                      className={`h-auto py-2 flex-col ${
                         selectedAmount === option.rubles 
-                          ? 'bg-gradient-to-r from-cyan-500 to-blue-600 border-cyan-500' 
-                          : 'hover:border-cyan-500/50'
+                          ? 'bg-gradient-to-r from-cyan-500 to-blue-600' 
+                          : ''
                       }`}
                       onClick={() => {
                         setSelectedAmount(option.rubles);
                         setCustomAmount('');
                       }}
                     >
-                      <span className="text-lg font-bold">{option.diamonds.toLocaleString()} 💎</span>
-                      <span className="text-xs opacity-80">{option.rubles} ₽</span>
+                      <span className="font-bold">{option.diamonds.toLocaleString()} 💎</span>
+                      <span className="text-[10px] opacity-70">{option.rubles} ₽</span>
                     </Button>
                   ))}
                 </div>
                 
-                <div className="relative">
-                  <div className="absolute inset-0 flex items-center">
-                    <span className="w-full border-t" />
-                  </div>
-                  <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-background px-2 text-muted-foreground">или своя сумма</span>
-                  </div>
-                </div>
-                
-                <div className="flex gap-2">
-                  <Input
-                    type="number"
-                    placeholder="Сумма в рублях (мин. 100)"
-                    value={customAmount}
-                    onChange={(e) => {
-                      setCustomAmount(e.target.value);
-                      setSelectedAmount(null);
-                    }}
-                    min={100}
-                    step={100}
-                  />
-                </div>
-                
-                {(selectedAmount || customAmount) && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="p-3 bg-cyan-500/10 rounded-lg border border-cyan-500/30 text-center"
-                  >
-                    <p className="text-sm text-muted-foreground">Вы получите:</p>
-                    <p className="text-2xl font-bold text-cyan-400">
-                      {((selectedAmount || parseInt(customAmount) || 0) / 100 * 500).toLocaleString()} 💎
-                    </p>
-                  </motion.div>
-                )}
+                <Input
+                  type="number"
+                  placeholder="Своя сумма (мин. 100 ₽)"
+                  value={customAmount}
+                  onChange={(e) => {
+                    setCustomAmount(e.target.value);
+                    setSelectedAmount(null);
+                  }}
+                  min={100}
+                  className="h-9 text-sm"
+                />
                 
                 <Button 
-                  className="w-full bg-gradient-to-r from-cyan-500 to-blue-600"
+                  className="w-full bg-gradient-to-r from-cyan-500 to-blue-600 h-9"
                   onClick={handlePurchase}
                   disabled={purchasing || (!selectedAmount && (!customAmount || parseInt(customAmount) < 100))}
                 >
-                  {purchasing ? (
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  ) : (
-                    <ShoppingCart className="h-4 w-4 mr-2" />
+                  {purchasing ? <Loader2 className="h-4 w-4 animate-spin" /> : (
+                    <>Купить {((selectedAmount || parseInt(customAmount) || 0) / 100 * 500).toLocaleString()} 💎</>
                   )}
-                  Оплатить {selectedAmount || customAmount || 0} ₽
                 </Button>
               </div>
             </DialogContent>
           </Dialog>
         </div>
-      </CardHeader>
-      
-      <CardContent className="relative space-y-6">
-        {/* Balance Display */}
-        <div className="relative p-6 rounded-2xl bg-gradient-to-br from-cyan-500/10 via-blue-500/10 to-purple-500/10 border border-cyan-500/20 overflow-hidden">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-cyan-500/20 to-transparent rounded-full blur-2xl" />
-          <Sparkles className="absolute top-4 right-4 h-6 w-6 text-cyan-500/30" />
-          
-          <div className="relative">
-            <p className="text-sm text-muted-foreground mb-1">Текущий баланс</p>
-            <div className="flex items-baseline gap-2">
-              <span className="text-5xl font-bold bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">
-                {wallet?.balance.toLocaleString() || 0}
+
+        {/* Mini Stats Row */}
+        <div className="flex gap-2 text-[10px]">
+          <div className="flex items-center gap-1 px-2 py-1 bg-green-500/10 rounded border border-green-500/20">
+            <ShoppingCart className="h-3 w-3 text-green-500" />
+            <span className="text-green-400">{wallet?.total_purchased.toLocaleString() || 0}</span>
+          </div>
+          <div className="flex items-center gap-1 px-2 py-1 bg-red-500/10 rounded border border-red-500/20">
+            <TrendingDown className="h-3 w-3 text-red-500" />
+            <span className="text-red-400">{wallet?.total_spent.toLocaleString() || 0}</span>
+          </div>
+          <div className="flex items-center gap-1 px-2 py-1 bg-yellow-500/10 rounded border border-yellow-500/20">
+            <Trophy className="h-3 w-3 text-yellow-500" />
+            <span className="text-yellow-400">{wallet?.total_won.toLocaleString() || 0}</span>
+          </div>
+        </div>
+
+        {/* Collapsible History */}
+        <Collapsible open={historyOpen} onOpenChange={setHistoryOpen}>
+          <CollapsibleTrigger asChild>
+            <Button variant="ghost" size="sm" className="w-full h-8 justify-between text-xs text-muted-foreground hover:text-foreground">
+              <span className="flex items-center gap-2">
+                <History className="h-3 w-3" />
+                История ({transactions.length})
               </span>
-              <Gem className="h-8 w-8 text-cyan-400" />
-            </div>
-          </div>
-        </div>
-
-        {/* Stats */}
-        <div className="grid grid-cols-3 gap-3">
-          <div className="p-4 rounded-xl bg-muted/50 border border-border/50">
-            <div className="flex items-center gap-2 text-muted-foreground mb-1">
-              <ShoppingCart className="h-4 w-4 text-green-500" />
-              <span className="text-xs">Куплено</span>
-            </div>
-            <p className="text-lg font-semibold text-green-500">
-              {wallet?.total_purchased.toLocaleString() || 0}
-            </p>
-          </div>
+              <ChevronDown className={`h-3 w-3 transition-transform ${historyOpen ? 'rotate-180' : ''}`} />
+            </Button>
+          </CollapsibleTrigger>
           
-          <div className="p-4 rounded-xl bg-muted/50 border border-border/50">
-            <div className="flex items-center gap-2 text-muted-foreground mb-1">
-              <TrendingDown className="h-4 w-4 text-red-500" />
-              <span className="text-xs">Потрачено</span>
-            </div>
-            <p className="text-lg font-semibold text-red-500">
-              {wallet?.total_spent.toLocaleString() || 0}
-            </p>
-          </div>
-          
-          <div className="p-4 rounded-xl bg-muted/50 border border-border/50">
-            <div className="flex items-center gap-2 text-muted-foreground mb-1">
-              <Trophy className="h-4 w-4 text-yellow-500" />
-              <span className="text-xs">Выиграно</span>
-            </div>
-            <p className="text-lg font-semibold text-yellow-500">
-              {wallet?.total_won.toLocaleString() || 0}
-            </p>
-          </div>
-        </div>
-
-        {/* Transactions */}
-        <div>
-          <div className="flex items-center gap-2 mb-3">
-            <History className="h-4 w-4 text-muted-foreground" />
-            <h3 className="font-medium">История операций</h3>
-          </div>
-          
-          <ScrollArea className="h-[300px]">
-            <div className="space-y-2">
-              <AnimatePresence>
-                {transactions.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <Wallet className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                    <p>Нет операций</p>
-                  </div>
-                ) : (
-                  transactions.map((tx, index) => (
-                    <motion.div
-                      key={tx.id}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: index * 0.05 }}
-                      className="flex items-center justify-between p-3 rounded-lg bg-muted/30 border border-border/30 hover:bg-muted/50 transition-colors"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 rounded-lg bg-background">
+          <CollapsibleContent>
+            <ScrollArea className="h-[200px] mt-2">
+              <div className="space-y-1">
+                <AnimatePresence>
+                  {transactions.length === 0 ? (
+                    <div className="text-center py-4 text-muted-foreground text-xs">
+                      <Wallet className="h-8 w-8 mx-auto mb-1 opacity-50" />
+                      <p>Нет операций</p>
+                    </div>
+                  ) : (
+                    transactions.map((tx, index) => (
+                      <motion.div
+                        key={tx.id}
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: index * 0.03 }}
+                        className="flex items-center justify-between p-2 rounded bg-background/30 border border-border/20 text-xs"
+                      >
+                        <div className="flex items-center gap-2">
                           {getTransactionIcon(tx.transaction_type)}
-                        </div>
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <Badge variant="outline" className="text-xs">
+                          <div>
+                            <Badge variant="outline" className="text-[9px] px-1 py-0">
                               {getTransactionLabel(tx.transaction_type)}
                             </Badge>
-                            {tx.payment_amount && (
-                              <span className="text-xs text-muted-foreground">
-                                {tx.payment_amount} ₽
-                              </span>
-                            )}
+                            <p className="text-[9px] text-muted-foreground mt-0.5">
+                              {format(new Date(tx.created_at), 'd MMM, HH:mm', { locale: ru })}
+                            </p>
                           </div>
-                          <p className="text-xs text-muted-foreground mt-0.5">
-                            {format(new Date(tx.created_at), 'd MMM, HH:mm', { locale: ru })}
-                          </p>
                         </div>
-                      </div>
-                      
-                      <div className="text-right">
-                        <p className={`font-semibold ${tx.amount >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                          {tx.amount >= 0 ? '+' : ''}{tx.amount.toLocaleString()} 💎
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          → {tx.balance_after.toLocaleString()}
-                        </p>
-                      </div>
-                    </motion.div>
-                  ))
-                )}
-              </AnimatePresence>
-            </div>
-          </ScrollArea>
-        </div>
+                        
+                        <span className={`font-semibold ${tx.amount >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                          {tx.amount >= 0 ? '+' : ''}{tx.amount.toLocaleString()}
+                        </span>
+                      </motion.div>
+                    ))
+                  )}
+                </AnimatePresence>
+              </div>
+            </ScrollArea>
+          </CollapsibleContent>
+        </Collapsible>
       </CardContent>
     </Card>
   );
