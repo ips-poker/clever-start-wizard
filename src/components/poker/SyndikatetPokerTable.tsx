@@ -25,23 +25,23 @@ import syndikateLogo from '@/assets/syndikate-logo-main.png';
 
 // ============= CONSTANTS =============
 // PPPoker style 6-max positions - optimized for octagonal table
-// Hero always at bottom center, opponents arranged around
+// Hero always at bottom center (position 0), opponents arranged around
 const SEAT_POSITIONS_6MAX_MOBILE = [
-  { x: 50, y: 78 },  // Seat 1 - Hero (bottom center, inside table)
-  { x: 8, y: 55 },   // Seat 2 - Left bottom
-  { x: 8, y: 22 },   // Seat 3 - Left top  
-  { x: 50, y: 5 },   // Seat 4 - Top center
-  { x: 92, y: 22 },  // Seat 5 - Right top
-  { x: 92, y: 55 },  // Seat 6 - Right bottom
+  { x: 50, y: 82 },  // Seat 0 - Hero (bottom center, below table)
+  { x: 5, y: 60 },   // Seat 1 - Left bottom
+  { x: 5, y: 28 },   // Seat 2 - Left top  
+  { x: 50, y: 8 },   // Seat 3 - Top center
+  { x: 95, y: 28 },  // Seat 4 - Right top
+  { x: 95, y: 60 },  // Seat 5 - Right bottom
 ];
 
 const SEAT_POSITIONS_6MAX_DESKTOP = [
-  { x: 50, y: 75 },  // Seat 1 - Hero (inside table)
-  { x: 10, y: 55 },  // Seat 2 - Left bottom
-  { x: 10, y: 22 },  // Seat 3 - Left top
-  { x: 50, y: 5 },   // Seat 4 - Top center
-  { x: 90, y: 22 },  // Seat 5 - Right top
-  { x: 90, y: 55 },  // Seat 6 - Right bottom
+  { x: 50, y: 80 },  // Seat 0 - Hero (bottom center)
+  { x: 8, y: 58 },   // Seat 1 - Left bottom
+  { x: 8, y: 25 },   // Seat 2 - Left top
+  { x: 50, y: 6 },   // Seat 3 - Top center
+  { x: 92, y: 25 },  // Seat 4 - Right top
+  { x: 92, y: 58 },  // Seat 5 - Right bottom
 ];
 
 const SUIT_COLORS: Record<string, string> = {
@@ -85,24 +85,35 @@ const PPPokerCard = memo(function PPPokerCard({
   const color = SUIT_COLORS[suit] || '#1f2937';
   const symbol = SUIT_SYMBOLS[suit] || '';
 
+  // PPPoker-style card back - blue with diamond pattern
   if (faceDown) {
     return (
       <motion.div
         initial={{ rotateY: 180, scale: 0.5, opacity: 0 }}
         animate={{ rotateY: 0, scale: 1, opacity: 1 }}
         transition={{ delay: delay * 0.08, type: 'spring', stiffness: 200, damping: 20 }}
-        className="rounded shadow-lg relative"
+        className="rounded-md shadow-lg relative overflow-hidden"
         style={{
           width: cfg.w,
           height: cfg.h,
-          background: 'linear-gradient(135deg, #1a365d 0%, #2c5282 50%, #1a365d 100%)',
-          border: '1.5px solid rgba(255,255,255,0.2)',
-          boxShadow: '0 4px 12px rgba(0,0,0,0.4)'
+          background: 'linear-gradient(145deg, #3b82f6 0%, #1d4ed8 50%, #1e40af 100%)',
+          border: '2px solid #60a5fa',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.2)'
         }}
       >
-        <div className="absolute inset-0.5 rounded flex items-center justify-center"
-          style={{ background: 'repeating-linear-gradient(45deg, rgba(255,255,255,0.03) 0px, rgba(255,255,255,0.03) 2px, transparent 2px, transparent 6px)' }}
-        />
+        {/* Diamond pattern like PPPoker */}
+        <svg className="absolute inset-0 w-full h-full opacity-30" viewBox="0 0 20 20">
+          <defs>
+            <pattern id="ppCardPattern" x="0" y="0" width="6" height="6" patternUnits="userSpaceOnUse">
+              <rect x="2" y="2" width="2" height="2" fill="white" opacity="0.5"/>
+            </pattern>
+          </defs>
+          <rect width="100%" height="100%" fill="url(#ppCardPattern)"/>
+        </svg>
+        {/* Center glow */}
+        <div className="absolute inset-[15%] rounded-full" style={{ 
+          background: 'radial-gradient(ellipse, rgba(255,255,255,0.15) 0%, transparent 70%)'
+        }}/>
       </motion.div>
     );
   }
@@ -112,41 +123,45 @@ const PPPokerCard = memo(function PPPokerCard({
       initial={{ rotateY: 180, scale: 0.5, opacity: 0 }}
       animate={{ rotateY: 0, scale: 1, opacity: 1 }}
       transition={{ delay: delay * 0.08, type: 'spring', stiffness: 200, damping: 20 }}
-      className="rounded shadow-lg relative flex flex-col p-0.5"
+      className="rounded-md shadow-lg relative flex flex-col p-0.5"
       style={{
         width: cfg.w,
         height: cfg.h,
-        background: '#fff',
-        border: isWinning ? '2px solid #22c55e' : '1px solid #e5e7eb',
-        boxShadow: isWinning ? '0 0 15px rgba(34,197,94,0.5)' : '0 4px 12px rgba(0,0,0,0.25)'
+        background: 'linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%)',
+        border: isWinning ? '2px solid #22c55e' : '1.5px solid #d1d5db',
+        boxShadow: isWinning ? '0 0 20px rgba(34,197,94,0.6)' : '0 4px 12px rgba(0,0,0,0.25)'
       }}
     >
-      <div className="flex flex-col items-center leading-none ml-0.5">
+      <div className="flex flex-col items-center leading-none ml-0.5 mt-0.5">
         <span className={cn(cfg.rank, 'font-bold')} style={{ color }}>{rank}</span>
         <span className={cfg.suit} style={{ color }}>{symbol}</span>
       </div>
       <div className="absolute inset-0 flex items-center justify-center">
-        <span className={cfg.center} style={{ color, opacity: 0.25 }}>{symbol}</span>
+        <span className={cfg.center} style={{ color, opacity: 0.2 }}>{symbol}</span>
       </div>
     </motion.div>
   );
 });
 
-// ============= TIMER RING - PPPoker Style =============
+// ============= TIMER RING - PPPoker Style (Green circular timer) =============
 const TimerRing = memo(function TimerRing({ 
   remaining, 
   total,
-  size = 56
+  size = 64
 }: { 
   remaining: number; 
   total: number;
   size?: number;
 }) {
   const progress = Math.max(0, Math.min(1, remaining / total));
-  const circumference = 2 * Math.PI * (size / 2 - 2);
+  const radius = size / 2 - 3;
+  const circumference = 2 * Math.PI * radius;
   const strokeDashoffset = circumference * (1 - progress);
   const isWarning = progress < 0.3;
   const isCritical = progress < 0.15;
+  
+  // PPPoker uses thick bright green ring
+  const strokeColor = isCritical ? "#ef4444" : isWarning ? "#f59e0b" : "#22c55e";
 
   return (
     <svg 
@@ -155,16 +170,24 @@ const TimerRing = memo(function TimerRing({
       height={size}
       style={{ left: '50%', top: '50%', transform: 'translate(-50%, -50%) rotate(-90deg)' }}
     >
-      <circle cx={size/2} cy={size/2} r={size/2 - 2} fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="2.5"/>
+      {/* Background ring */}
+      <circle 
+        cx={size/2} cy={size/2} r={radius} 
+        fill="none" 
+        stroke="rgba(0,0,0,0.4)" 
+        strokeWidth="4"
+      />
+      {/* Progress ring */}
       <circle
-        cx={size/2} cy={size/2} r={size/2 - 2}
+        cx={size/2} cy={size/2} r={radius}
         fill="none"
-        stroke={isCritical ? "#ef4444" : isWarning ? "#f59e0b" : "#22c55e"}
-        strokeWidth="2.5"
+        stroke={strokeColor}
+        strokeWidth="4"
         strokeLinecap="round"
         strokeDasharray={circumference}
         strokeDashoffset={strokeDashoffset}
-        className={cn("transition-all duration-300", isCritical && "animate-pulse")}
+        className={cn("transition-all duration-200", isCritical && "animate-pulse")}
+        style={{ filter: `drop-shadow(0 0 6px ${strokeColor})` }}
       />
     </svg>
   );
@@ -618,7 +641,7 @@ const PPPokerTableFelt = memo(function PPPokerTableFelt() {
   );
 });
 
-// ============= COMMUNITY CARDS =============
+// ============= COMMUNITY CARDS - PPPoker Style =============
 const CommunityCards = memo(function CommunityCards({ 
   cards, 
   phase,
@@ -632,46 +655,88 @@ const CommunityCards = memo(function CommunityCards({
   const cardSize = isMobile ? 'sm' : 'md';
 
   return (
-    <div className={cn("flex items-center justify-center", isMobile ? "gap-0.5" : "gap-1")}>
+    <div className={cn("flex items-center justify-center", isMobile ? "gap-1" : "gap-1.5")}>
       {[0, 1, 2, 3, 4].map((idx) => (
-        <div key={`card-slot-${idx}`}>
+        <motion.div 
+          key={`card-slot-${idx}`}
+          initial={idx < visibleCount ? { y: -30, opacity: 0, rotateY: 180 } : false}
+          animate={idx < visibleCount ? { y: 0, opacity: 1, rotateY: 0 } : undefined}
+          transition={{ delay: idx * 0.1, type: 'spring', stiffness: 200, damping: 20 }}
+        >
           {idx < visibleCount && cards[idx] ? (
             <PPPokerCard card={cards[idx]} size={cardSize} delay={idx}/>
           ) : (
-            <div className={cn("rounded border border-white/10 bg-black/20",
-              isMobile ? "w-9 h-[50px]" : "w-11 h-[62px]"
+            <div className={cn("rounded-md border border-white/5 bg-white/5",
+              isMobile ? "w-9 h-[50px]" : "w-12 h-[68px]"
             )}/>
           )}
-        </div>
+        </motion.div>
       ))}
     </div>
   );
 });
 
-// ============= POT DISPLAY - PPPoker Style =============
-const PotDisplay = memo(function PotDisplay({ pot, bigBlind, isMobile = false }: { pot: number; bigBlind: number; isMobile?: boolean; }) {
+// ============= POT DISPLAY - PPPoker Style with chip icon =============
+const PotDisplay = memo(function PotDisplay({ 
+  pot, 
+  bigBlind, 
+  isMobile = false 
+}: { 
+  pot: number; 
+  bigBlind: number; 
+  isMobile?: boolean;
+}) {
   if (pot <= 0) return null;
   const potBB = (pot / bigBlind).toFixed(1);
 
   return (
-    <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="flex flex-col items-center gap-1">
-      {/* Chip stack */}
-      <div className="flex gap-0.5">
-        {[0, 1, 2].map(i => (
-          <div key={i} className={cn("rounded-full", isMobile ? "w-2.5 h-2.5" : "w-3 h-3")}
+    <motion.div 
+      initial={{ scale: 0, opacity: 0 }} 
+      animate={{ scale: 1, opacity: 1 }} 
+      className="flex flex-col items-center gap-1"
+    >
+      {/* Main pot with PPPoker red chip stack */}
+      <div className="flex items-center gap-1.5">
+        {/* Stacked chips icon */}
+        <div className="relative" style={{ width: isMobile ? 18 : 22, height: isMobile ? 14 : 18 }}>
+          <div 
+            className="absolute rounded-full"
             style={{ 
-              background: `linear-gradient(135deg, ${['#fcd34d', '#ef4444', '#22c55e'][i]}, ${['#f59e0b', '#dc2626', '#16a34a'][i]})`,
-              marginTop: `${i * -1.5}px`,
-              boxShadow: '0 1px 3px rgba(0,0,0,0.3)'
-            }}/>
-        ))}
+              width: isMobile ? 12 : 16, 
+              height: isMobile ? 12 : 16,
+              background: 'linear-gradient(135deg, #ef4444, #b91c1c)',
+              border: '1.5px solid rgba(255,255,255,0.4)',
+              bottom: 0,
+              left: 0
+            }}
+          />
+          <div 
+            className="absolute rounded-full"
+            style={{ 
+              width: isMobile ? 12 : 16, 
+              height: isMobile ? 12 : 16,
+              background: 'linear-gradient(135deg, #f87171, #dc2626)',
+              border: '1.5px solid rgba(255,255,255,0.4)',
+              bottom: isMobile ? 3 : 4,
+              left: isMobile ? 3 : 4
+            }}
+          />
+        </div>
+        
+        <span className={cn("font-bold text-white", isMobile ? "text-xs" : "text-sm")}>
+          {potBB} BB
+        </span>
       </div>
       
-      {/* Pot amount */}
-      <div className={cn("rounded-full", isMobile ? "px-2 py-0.5" : "px-3 py-1")}
-        style={{ background: 'rgba(0,0,0,0.75)', border: '1px solid rgba(255,200,0,0.3)' }}
+      {/* "Банк:" label like PPPoker */}
+      <div 
+        className={cn("rounded-full", isMobile ? "px-2 py-0.5" : "px-3 py-1")}
+        style={{ 
+          background: 'rgba(0,0,0,0.7)', 
+          border: '1px solid rgba(255,255,255,0.1)' 
+        }}
       >
-        <span className={cn("font-bold text-amber-400", isMobile ? "text-[10px]" : "text-xs")}>
+        <span className={cn("font-medium text-white/70", isMobile ? "text-[9px]" : "text-[10px]")}>
           Банк: {potBB} BB
         </span>
       </div>
@@ -914,19 +979,20 @@ const ActionPanel = memo(function ActionPanel({
   const [showRaisePanel, setShowRaisePanel] = useState(false);
 
   useEffect(() => {
-    setRaiseAmount(Math.max(minRaise, callAmount * 2));
-  }, [minRaise, callAmount]);
+    setRaiseAmount(Math.max(minRaise, callAmount * 2 || bigBlind * 2));
+  }, [minRaise, callAmount, bigBlind]);
 
   if (!isVisible) return null;
 
   const callAmountBB = (callAmount / bigBlind).toFixed(1);
+  const raiseAmountBB = (raiseAmount / bigBlind).toFixed(1);
 
   return (
     <motion.div
       initial={{ y: 100, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       exit={{ y: 100, opacity: 0 }}
-      className="fixed bottom-0 left-0 right-0 z-50 pb-safe"
+      className="fixed bottom-0 left-0 right-0 z-50"
     >
       {/* Raise panel */}
       <AnimatePresence>
@@ -935,24 +1001,28 @@ const ActionPanel = memo(function ActionPanel({
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 20 }}
-            className="mx-3 mb-2 p-3 rounded-xl bg-[#1a1f26]/95 border border-white/10"
+            className="mx-3 mb-2 p-3 rounded-xl"
+            style={{ background: 'rgba(20,25,32,0.98)', border: '1px solid rgba(34,197,94,0.3)' }}
           >
-            {/* Quick presets */}
+            {/* Quick presets - PPPoker style */}
             <div className="flex justify-center gap-2 mb-3">
               {[
-                { label: '2x', mult: 2 },
-                { label: '3x', mult: 3 },
-                { label: '½ Pot', mult: pot / 2 / callAmount || 2 },
-                { label: 'Pot', mult: pot / callAmount || 4 },
+                { label: '2×', mult: 2 },
+                { label: '2.5×', mult: 2.5 },
+                { label: '3×', mult: 3 },
+                { label: '4×', mult: 4 },
               ].map((preset, i) => {
-                const amount = Math.min(Math.max(callAmount * preset.mult, minRaise), maxBet);
+                const amount = Math.min(Math.max((callAmount || bigBlind) * preset.mult, minRaise), maxBet);
+                const isActive = Math.abs(raiseAmount - amount) < bigBlind / 2;
                 return (
                   <button
                     key={i}
                     onClick={() => setRaiseAmount(Math.floor(amount))}
                     className={cn(
-                      "px-3 py-1.5 rounded-lg text-xs font-bold transition-colors",
-                      Math.abs(raiseAmount - amount) < 1 ? "bg-emerald-500 text-white" : "bg-white/10 text-white/70 hover:bg-white/20"
+                      "px-4 py-2 rounded-full text-xs font-bold transition-all border",
+                      isActive 
+                        ? "bg-emerald-500 text-white border-emerald-400" 
+                        : "bg-transparent text-emerald-400 border-emerald-500/50 hover:bg-emerald-500/20"
                     )}
                   >
                     {preset.label}
@@ -961,18 +1031,21 @@ const ActionPanel = memo(function ActionPanel({
               })}
             </div>
             
-            {/* Slider */}
-            <div className="flex items-center gap-3">
+            {/* Slider with green accent */}
+            <div className="flex items-center gap-3 mb-3">
               <input
                 type="range"
                 min={minRaise}
                 max={maxBet}
                 value={raiseAmount}
                 onChange={(e) => setRaiseAmount(Number(e.target.value))}
-                className="flex-1 h-1.5 bg-white/20 rounded-full appearance-none [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-emerald-500"
+                className="flex-1 h-2 rounded-full appearance-none cursor-pointer"
+                style={{ 
+                  background: `linear-gradient(to right, #22c55e 0%, #22c55e ${((raiseAmount - minRaise) / (maxBet - minRaise)) * 100}%, rgba(255,255,255,0.2) ${((raiseAmount - minRaise) / (maxBet - minRaise)) * 100}%, rgba(255,255,255,0.2) 100%)`
+                }}
               />
-              <div className="text-emerald-400 font-bold text-sm min-w-[60px] text-right">
-                {(raiseAmount / bigBlind).toFixed(1)} BB
+              <div className="text-emerald-400 font-bold text-lg min-w-[70px] text-right">
+                {raiseAmountBB} BB
               </div>
             </div>
             
