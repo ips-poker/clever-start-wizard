@@ -6,7 +6,7 @@ import { Slider } from '@/components/ui/slider';
 import { 
   ArrowLeft, Volume2, VolumeX, Settings, MessageSquare,
   Timer, Users, Crown, Zap, X, RotateCcw,
-  Eye, EyeOff, Maximize2, Gift, Smile, TrendingUp
+  Eye, EyeOff, Maximize2, Gift, Smile, TrendingUp, Gem
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -493,7 +493,7 @@ export function TelegramProPokerTable({
     );
   };
 
-  // Рендер игрока за столом
+  // Рендер игрока за столом - Syndikate Industrial Style
   const renderPlayerSeat = (seatNumber: number) => {
     const position = SEAT_POSITIONS_6MAX[seatNumber - 1];
     const player = players.find(p => p.seatNumber === seatNumber);
@@ -501,17 +501,17 @@ export function TelegramProPokerTable({
     const isWinner = player && winnerIds.includes(player.id);
     
     if (!player) {
-      // Пустое место
+      // Пустое место - Syndikate style
       return (
         <div
           key={seatNumber}
           className="absolute flex flex-col items-center"
           style={position}
         >
-          <div className="w-14 h-14 rounded-full border-2 border-dashed border-white/20 bg-white/5 flex items-center justify-center">
-            <Users className="w-5 h-5 text-white/30" />
+          <div className="w-14 h-14 rounded-full border-2 border-dashed border-syndikate-orange/30 bg-syndikate-metal/30 flex items-center justify-center backdrop-blur-sm">
+            <Users className="w-5 h-5 text-syndikate-orange/40" />
           </div>
-          <span className="text-[10px] text-white/30 mt-1">Sit</span>
+          <span className="text-[10px] text-muted-foreground mt-1 font-medium">Сесть</span>
         </div>
       );
     }
@@ -523,115 +523,157 @@ export function TelegramProPokerTable({
         style={position}
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ 
-          scale: player.isTurn ? 1.05 : 1, 
-          opacity: player.isFolded ? 0.5 : 1 
+          scale: player.isTurn ? 1.08 : 1, 
+          opacity: player.isFolded ? 0.4 : 1 
         }}
+        transition={{ type: 'spring', stiffness: 300, damping: 20 }}
       >
-        {/* Timer ring for active player */}
+        {/* Timer ring for active player - Syndikate orange glow */}
         {player.isTurn && isHero && (
-          <svg className="absolute -inset-1 w-[calc(100%+8px)] h-[calc(100%+8px)]" viewBox="0 0 100 100">
+          <svg className="absolute -inset-1.5 w-[calc(100%+12px)] h-[calc(100%+12px)]" viewBox="0 0 100 100">
             <circle
               cx="50"
               cy="50"
               r="45"
               fill="none"
-              stroke="rgba(255,200,0,0.3)"
-              strokeWidth="3"
+              stroke="hsla(24, 100%, 50%, 0.2)"
+              strokeWidth="4"
             />
             <motion.circle
               cx="50"
               cy="50"
               r="45"
               fill="none"
-              stroke="#ffc800"
-              strokeWidth="3"
+              stroke="hsl(24, 100%, 50%)"
+              strokeWidth="4"
               strokeLinecap="round"
               strokeDasharray={283}
               strokeDashoffset={283 - (283 * timeRemaining) / 30}
               transform="rotate(-90 50 50)"
+              style={{ filter: 'drop-shadow(0 0 8px hsl(24, 100%, 50%))' }}
             />
           </svg>
         )}
         
-        {/* Avatar */}
+        {/* Avatar - Syndikate circular design with glow effects */}
         <div className={cn(
-          "relative w-14 h-14 rounded-full overflow-hidden border-2",
-          isWinner ? "border-yellow-400 ring-2 ring-yellow-400/50" :
-          player.isTurn ? "border-yellow-500" :
-          player.isFolded ? "border-gray-600" :
-          isHero ? "border-blue-500" : "border-gray-500"
+          "relative w-14 h-14 rounded-full overflow-hidden transition-all duration-300",
+          isWinner 
+            ? "ring-[3px] ring-yellow-400 shadow-[0_0_20px_rgba(250,204,21,0.5)]" 
+            : player.isTurn 
+              ? "ring-[3px] ring-syndikate-orange shadow-[0_0_20px_hsla(24,100%,50%,0.5)]" 
+              : player.isFolded 
+                ? "ring-2 ring-border/30 grayscale" 
+                : isHero 
+                  ? "ring-[3px] ring-syndikate-orange/70" 
+                  : "ring-2 ring-border/50"
         )}>
-          <Avatar className="w-full h-full">
-            <AvatarImage src={player.avatar} />
-            <AvatarFallback className="bg-gradient-to-br from-gray-700 to-gray-900 text-white text-sm">
+          {/* Avatar Image - круглый, не квадратный */}
+          <Avatar className="w-full h-full rounded-full">
+            <AvatarImage 
+              src={player.avatar} 
+              className="object-cover w-full h-full rounded-full"
+            />
+            <AvatarFallback className="bg-gradient-to-br from-syndikate-metal to-syndikate-concrete text-foreground text-sm font-bold rounded-full w-full h-full flex items-center justify-center">
               {player.name.charAt(0).toUpperCase()}
             </AvatarFallback>
           </Avatar>
           
-          {/* Dealer button */}
+          {/* Dealer button - Syndikate style */}
           {player.isDealer && (
-            <div className="absolute -top-1 -right-1 w-5 h-5 bg-white rounded-full flex items-center justify-center text-[10px] font-bold text-gray-900 shadow-lg">
+            <div className="absolute -top-1 -right-1 w-5 h-5 bg-syndikate-orange rounded-full flex items-center justify-center text-[10px] font-black text-white shadow-[0_0_10px_hsla(24,100%,50%,0.7)]">
               D
             </div>
           )}
           
-          {/* Winner crown */}
+          {/* Winner crown - animated glow */}
           {isWinner && (
             <motion.div
-              initial={{ scale: 0, y: -10 }}
-              animate={{ scale: 1, y: 0 }}
-              className="absolute -top-3 left-1/2 -translate-x-1/2"
+              initial={{ scale: 0, y: -10, rotate: -15 }}
+              animate={{ scale: 1, y: 0, rotate: 0 }}
+              className="absolute -top-4 left-1/2 -translate-x-1/2"
             >
-              <Crown className="w-5 h-5 text-yellow-400 drop-shadow-lg" />
+              <Crown className="w-6 h-6 text-yellow-400 drop-shadow-[0_0_10px_rgba(250,204,21,0.8)]" />
             </motion.div>
+          )}
+          
+          {/* All-in indicator */}
+          {player.isAllIn && (
+            <div className="absolute inset-0 bg-gradient-to-t from-purple-600/60 to-transparent flex items-end justify-center pb-1">
+              <span className="text-[8px] font-black text-white uppercase tracking-wider">All-In</span>
+            </div>
           )}
         </div>
         
-        {/* Player info panel */}
+        {/* Player info panel - Syndikate industrial style */}
         <div className={cn(
-          "mt-1 px-2 py-1 rounded-lg min-w-[70px] text-center",
-          isWinner ? "bg-yellow-500/90" :
-          player.isFolded ? "bg-gray-800/80" :
-          "bg-gray-900/90"
+          "mt-1.5 px-3 py-1.5 rounded-lg min-w-[75px] text-center backdrop-blur-md transition-all duration-300",
+          isWinner 
+            ? "bg-gradient-to-r from-yellow-500/90 to-amber-500/90 shadow-[0_0_15px_rgba(250,204,21,0.4)]" 
+            : player.isFolded 
+              ? "bg-syndikate-metal/60" 
+              : "bg-syndikate-metal/80 border border-border/30"
         )}>
           <p className={cn(
-            "text-[10px] font-medium truncate max-w-[70px]",
-            isWinner ? "text-gray-900" : "text-white"
+            "text-[10px] font-bold truncate max-w-[70px] uppercase tracking-wide",
+            isWinner ? "text-background" : "text-foreground"
           )}>
-            {isHero ? 'You' : player.name}
+            {isHero ? 'Вы' : player.name}
           </p>
           <div className={cn(
-            "flex items-center justify-center gap-0.5 text-[11px] font-bold",
-            isWinner ? "text-gray-900" : "text-yellow-400"
+            "flex items-center justify-center gap-1 text-[11px] font-black",
+            isWinner ? "text-background" : "text-syndikate-orange"
           )}>
+            <Gem className="w-3 h-3" />
             <span>{player.stack.toLocaleString()}</span>
           </div>
         </div>
         
-        {/* Last action */}
+        {/* Current bet indicator */}
+        {player.currentBet && player.currentBet > 0 && (
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-syndikate-orange/90 text-white text-[9px] font-bold px-2 py-0.5 rounded-full shadow-lg"
+          >
+            {player.currentBet.toLocaleString()}
+          </motion.div>
+        )}
+        
+        {/* Last action badge - Syndikate style */}
         {player.lastAction && (
           <motion.div
-            initial={{ opacity: 0, y: 5 }}
-            animate={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0, scale: 0.8, y: 5 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.8 }}
             className={cn(
-              "mt-1 px-2 py-0.5 rounded text-[9px] font-bold uppercase",
-              player.lastAction.includes('FOLD') ? "bg-red-600 text-white" :
-              player.lastAction.includes('ALL-IN') ? "bg-purple-600 text-white" :
-              player.lastAction.includes('RAISE') ? "bg-green-600 text-white" :
-              "bg-blue-600 text-white"
+              "mt-1 px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider shadow-lg",
+              player.lastAction.includes('FOLD') 
+                ? "bg-syndikate-red text-white" 
+                : player.lastAction.includes('ALL-IN') 
+                  ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-[0_0_10px_rgba(168,85,247,0.5)]" 
+                  : player.lastAction.includes('RAISE') 
+                    ? "bg-green-600 text-white" 
+                    : "bg-syndikate-metal-light text-foreground"
             )}
           >
             {player.lastAction}
           </motion.div>
         )}
         
-        {/* Player cards (only show for hero or at showdown) */}
+        {/* Player cards - show for hero or at showdown */}
         {player.cards && player.cards.length > 0 && (isHero || gamePhase === 'showdown') && !player.isFolded && (
-          <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 flex gap-0.5">
+          <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 flex gap-0.5">
             {player.cards.map((card, idx) => (
-              <div key={idx} className="transform hover:scale-110 transition-transform">
+              <motion.div 
+                key={idx} 
+                className="transform hover:scale-110 transition-transform"
+                initial={{ rotateY: 180, y: 20 }}
+                animate={{ rotateY: 0, y: 0 }}
+                transition={{ delay: idx * 0.1 }}
+              >
                 {renderCard(card, !isHero && gamePhase !== 'showdown', 'sm')}
-              </div>
+              </motion.div>
             ))}
           </div>
         )}
@@ -640,24 +682,24 @@ export function TelegramProPokerTable({
   };
 
   return (
-    <div className="fixed inset-0 bg-[#0a1628] flex flex-col overflow-hidden">
-      {/* Header */}
-      <div className="flex items-center justify-between px-3 py-2 bg-gradient-to-b from-gray-900/90 to-transparent z-20">
+    <div className="fixed inset-0 bg-background flex flex-col overflow-hidden">
+      {/* Header - Syndikate Industrial Style */}
+      <div className="flex items-center justify-between px-3 py-2 bg-gradient-to-b from-syndikate-metal/95 to-transparent backdrop-blur-sm z-20 border-b border-border/30">
         <Button
           variant="ghost"
           size="icon"
           onClick={onLeave}
-          className="h-9 w-9 text-white/70 hover:text-white hover:bg-white/10"
+          className="h-9 w-9 text-muted-foreground hover:text-foreground hover:bg-syndikate-metal"
         >
           <ArrowLeft className="h-5 w-5" />
         </Button>
         
         <div className="text-center flex-1">
-          <h1 className="text-sm font-semibold text-white">Texas Hold'em</h1>
-          <div className="flex items-center justify-center gap-2 text-[10px] text-white/60">
-            <span>10/20</span>
-            <span className="w-1 h-1 rounded-full bg-white/40" />
-            <span>{players.filter(p => !p.isFolded).length} players</span>
+          <h1 className="text-sm font-bold text-foreground uppercase tracking-wider">Texas Hold'em</h1>
+          <div className="flex items-center justify-center gap-2 text-[10px] text-muted-foreground">
+            <span className="text-syndikate-orange font-bold">10/20</span>
+            <span className="w-1 h-1 rounded-full bg-syndikate-orange/60" />
+            <span>{players.filter(p => !p.isFolded).length} игроков</span>
           </div>
         </div>
 
@@ -666,7 +708,7 @@ export function TelegramProPokerTable({
             variant="ghost"
             size="icon"
             onClick={() => setSoundEnabled(!soundEnabled)}
-            className="h-9 w-9 text-white/70 hover:text-white hover:bg-white/10"
+            className="h-9 w-9 text-muted-foreground hover:text-foreground hover:bg-syndikate-metal"
           >
             {soundEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
           </Button>
@@ -674,7 +716,7 @@ export function TelegramProPokerTable({
             variant="ghost"
             size="icon"
             onClick={() => setShowChat(!showChat)}
-            className="h-9 w-9 text-white/70 hover:text-white hover:bg-white/10"
+            className="h-9 w-9 text-muted-foreground hover:text-foreground hover:bg-syndikate-metal"
           >
             <MessageSquare className="h-4 w-4" />
           </Button>
@@ -683,27 +725,39 @@ export function TelegramProPokerTable({
 
       {/* Main Table Area */}
       <div className="flex-1 relative">
-        {/* Poker Table */}
+        {/* Poker Table - Syndikate Industrial Style */}
         <div className="absolute inset-4 md:inset-8">
-          {/* Table shape - овальный стол PPPoker style */}
+          {/* Table shape - овальный стол Syndikate style */}
           <div 
             className="absolute inset-0 rounded-[50%] overflow-hidden"
             style={{
-              background: 'linear-gradient(180deg, #1a5a3a 0%, #0d3d28 50%, #1a5a3a 100%)',
+              background: 'linear-gradient(180deg, hsl(140, 50%, 18%) 0%, hsl(140, 60%, 12%) 50%, hsl(140, 50%, 18%) 100%)',
               boxShadow: `
-                inset 0 0 60px rgba(0,0,0,0.5),
-                0 0 0 8px #2d1810,
-                0 0 0 12px #1a0f0a,
-                0 10px 40px rgba(0,0,0,0.6)
+                inset 0 0 80px rgba(0,0,0,0.6),
+                0 0 0 6px hsl(var(--syndikate-rust)),
+                0 0 0 10px hsl(var(--syndikate-concrete)),
+                0 0 0 14px hsl(24, 100%, 50%, 0.3),
+                0 10px 50px rgba(0,0,0,0.7)
               `,
-              border: '4px solid #3d2518'
+              border: '3px solid hsl(var(--syndikate-metal-light))'
             }}
           >
-            {/* Table felt pattern */}
+            {/* Table felt pattern with industrial texture */}
             <div 
-              className="absolute inset-0 opacity-10"
+              className="absolute inset-0 opacity-20"
               style={{
-                backgroundImage: `radial-gradient(circle at 50% 50%, transparent 0%, rgba(0,0,0,0.3) 100%)`
+                backgroundImage: `
+                  radial-gradient(circle at 50% 50%, transparent 0%, rgba(0,0,0,0.4) 100%),
+                  url("data:image/svg+xml,%3Csvg viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.15'/%3E%3C/svg%3E")
+                `
+              }}
+            />
+            
+            {/* Syndikate orange accent glow on edge */}
+            <div 
+              className="absolute inset-0 rounded-[50%]"
+              style={{
+                boxShadow: 'inset 0 0 40px hsla(24, 100%, 50%, 0.1)'
               }}
             />
             
@@ -711,7 +765,7 @@ export function TelegramProPokerTable({
             <div 
               className="absolute inset-2 rounded-[50%]"
               style={{
-                boxShadow: 'inset 0 2px 10px rgba(255,255,255,0.1)'
+                boxShadow: 'inset 0 2px 15px rgba(255,255,255,0.08)'
               }}
             />
           </div>
@@ -779,7 +833,7 @@ export function TelegramProPokerTable({
               animate={{ opacity: 1, y: 0 }}
               className="mt-2 text-center"
             >
-              <Badge className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white px-3">
+              <Badge className="bg-gradient-to-r from-syndikate-orange to-syndikate-red text-white px-4 py-1 font-bold uppercase tracking-wide shadow-[0_0_15px_hsla(24,100%,50%,0.5)]">
                 {myHandEvaluation.name}
               </Badge>
             </motion.div>
@@ -787,36 +841,36 @@ export function TelegramProPokerTable({
         </div>
       )}
 
-      {/* Action Panel */}
-      <div className="bg-gradient-to-t from-gray-900 via-gray-900/95 to-gray-900/90 backdrop-blur-lg border-t border-white/10 p-3 pb-safe z-20">
+      {/* Action Panel - Syndikate Industrial Style */}
+      <div className="bg-gradient-to-t from-syndikate-concrete via-syndikate-metal/95 to-syndikate-metal/80 backdrop-blur-lg border-t border-syndikate-orange/20 p-3 pb-safe z-20">
         {gamePhase === 'waiting' ? (
           <div className="flex gap-3">
             <Button
               onClick={startNewHand}
-              className="flex-1 h-12 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-500 hover:to-green-400 text-white font-bold text-base rounded-xl shadow-lg"
+              className="flex-1 h-12 bg-gradient-to-r from-syndikate-orange to-syndikate-orange-glow hover:from-syndikate-orange-glow hover:to-syndikate-orange text-white font-black text-base rounded-lg shadow-[0_0_20px_hsla(24,100%,50%,0.4)] uppercase tracking-wide"
             >
               <Zap className="h-5 w-5 mr-2" />
-              Start Game
+              Начать игру
             </Button>
             <Button
               onClick={onLeave}
               variant="outline"
-              className="h-12 px-6 border-white/20 text-white hover:bg-white/10 rounded-xl"
+              className="h-12 px-6 border-border text-foreground hover:bg-syndikate-metal rounded-lg"
             >
               <X className="h-5 w-5" />
             </Button>
           </div>
         ) : showActions && isMyTurn ? (
           <div className="space-y-3">
-            {/* Bet slider */}
-            <div className="flex items-center gap-3 bg-white/5 rounded-xl p-3">
+            {/* Bet slider - Syndikate style */}
+            <div className="flex items-center gap-3 bg-syndikate-concrete/50 rounded-lg p-3 border border-border/30">
               <Button
                 size="sm"
                 variant="ghost"
                 onClick={() => setBetAmount(minBet)}
-                className="text-white/70 hover:text-white text-xs"
+                className="text-muted-foreground hover:text-foreground text-xs font-bold"
               >
-                Min
+                Мин
               </Button>
               <Slider
                 value={[betAmount]}
@@ -830,40 +884,41 @@ export function TelegramProPokerTable({
                 size="sm"
                 variant="ghost"
                 onClick={() => setBetAmount(myStack)}
-                className="text-white/70 hover:text-white text-xs"
+                className="text-muted-foreground hover:text-foreground text-xs font-bold"
               >
-                Max
+                Макс
               </Button>
-              <div className="min-w-[60px] text-right">
-                <span className="text-yellow-400 font-bold">{betAmount.toLocaleString()}</span>
+              <div className="min-w-[70px] text-right flex items-center justify-end gap-1">
+                <Gem className="w-4 h-4 text-syndikate-orange" />
+                <span className="text-syndikate-orange font-black">{betAmount.toLocaleString()}</span>
               </div>
             </div>
 
-            {/* Action buttons */}
+            {/* Action buttons - Syndikate style */}
             <div className="grid grid-cols-4 gap-2">
               <Button
                 onClick={() => handleAction('fold')}
-                className="h-12 bg-red-600/80 hover:bg-red-600 text-white font-bold rounded-xl"
+                className="h-12 bg-syndikate-red/90 hover:bg-syndikate-red text-white font-black rounded-lg uppercase text-sm"
               >
-                Fold
+                Фолд
               </Button>
               <Button
                 onClick={() => handleAction(currentBet === 0 ? 'check' : 'call')}
-                className="h-12 bg-blue-600/80 hover:bg-blue-600 text-white font-bold rounded-xl"
+                className="h-12 bg-syndikate-metal-light hover:bg-syndikate-metal text-foreground font-black rounded-lg uppercase text-sm border border-border/30"
               >
-                {currentBet === 0 ? 'Check' : `Call ${currentBet}`}
+                {currentBet === 0 ? 'Чек' : `Колл`}
               </Button>
               <Button
                 onClick={() => handleAction('raise')}
-                className="h-12 bg-green-600/80 hover:bg-green-600 text-white font-bold rounded-xl"
+                className="h-12 bg-green-700/90 hover:bg-green-600 text-white font-black rounded-lg uppercase text-sm"
               >
-                Raise
+                Рейз
               </Button>
               <Button
                 onClick={() => handleAction('all-in')}
-                className="h-12 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-bold rounded-xl"
+                className="h-12 bg-gradient-to-r from-purple-600 to-syndikate-orange hover:from-purple-500 hover:to-syndikate-orange-glow text-white font-black rounded-lg uppercase text-xs shadow-[0_0_15px_rgba(168,85,247,0.4)]"
               >
-                All-In
+                Ол-Ин
               </Button>
             </div>
           </div>
@@ -871,16 +926,16 @@ export function TelegramProPokerTable({
           <div className="flex gap-3">
             <Button
               onClick={resetGame}
-              className="flex-1 h-12 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white font-bold text-base rounded-xl"
+              className="flex-1 h-12 bg-gradient-to-r from-syndikate-orange to-syndikate-orange-glow hover:from-syndikate-orange-glow hover:to-syndikate-orange text-white font-black text-base rounded-lg shadow-[0_0_20px_hsla(24,100%,50%,0.4)] uppercase tracking-wide"
             >
               <RotateCcw className="h-5 w-5 mr-2" />
-              New Hand
+              Новая раздача
             </Button>
           </div>
         ) : (
-          <div className="flex items-center justify-center py-3 text-white/50">
-            <Timer className="h-4 w-4 mr-2 animate-pulse" />
-            Waiting for opponents...
+          <div className="flex items-center justify-center py-3 text-muted-foreground">
+            <Timer className="h-4 w-4 mr-2 animate-pulse text-syndikate-orange" />
+            <span className="font-medium">Ожидание хода оппонентов...</span>
           </div>
         )}
       </div>
