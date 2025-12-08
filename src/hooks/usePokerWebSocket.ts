@@ -91,10 +91,10 @@ export function usePokerWebSocket({
     }
   });
 
-  // Build WebSocket URL
+  // Build WebSocket URL - Production Node.js server
   const wsUrl = useMemo(() => {
-    const base = 'wss://mokhssmnorrhohrowxvu.functions.supabase.co';
-    return `${base}/poker-realtime-ws?tableId=${tableId}&playerId=${playerId}`;
+    const base = 'wss://poker.syndicate-poker.ru';
+    return `${base}/ws/poker?tableId=${tableId}&playerId=${playerId}`;
   }, [tableId, playerId]);
 
   const clearTimers = useCallback(() => {
