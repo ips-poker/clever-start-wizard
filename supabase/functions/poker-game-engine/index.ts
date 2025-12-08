@@ -184,6 +184,26 @@ serve(async (req) => {
             } else {
               console.log(`[Engine] Player joined seat ${availableSeat} with ${buyIn} diamonds`);
               result = { success: true, seatNumber: availableSeat, stack: buyIn };
+              
+              // Check for auto-start if enabled
+              if (table.auto_start_enabled && !table.current_hand_id) {
+                const { data: currentPlayers } = await supabase
+                  .from('poker_table_players')
+                  .select('id, player_id, seat_number, stack, status')
+                  .eq('table_id', tableId)
+                  .eq('status', 'active');
+                
+                const activeCount = currentPlayers?.filter(p => p.stack > 0).length || 0;
+                
+                if (activeCount >= 2) {
+                  console.log(`[Engine] Auto-starting hand with ${activeCount} players`);
+                  result.autoStarting = true;
+                  result.activePlayerCount = activeCount;
+                  
+                  // Trigger start_hand internally
+                  // We'll return success and let the client know to start
+                }
+              }
             }
           }
         }

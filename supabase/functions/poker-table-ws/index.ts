@@ -119,7 +119,7 @@ serve(async (req) => {
           }
 
           // Fetch full table state
-          const tableState = await fetchTableState(supabase, tableId, playerId);
+          let tableState = await fetchTableState(supabase, tableId, playerId);
 
           // Send state to joining player
           socket.send(JSON.stringify({
@@ -138,6 +138,26 @@ serve(async (req) => {
           }, playerId);
 
           console.log(`✅ Player ${playerName} (${playerId}) joined table ${tableId} at seat ${joinResult?.seatNumber}`);
+          
+          // Auto-start hand if conditions met
+          if (joinResult?.autoStarting) {
+            console.log(`🎲 Auto-starting hand for table ${tableId}`);
+            
+            // Small delay for other clients to receive join notification
+            await new Promise(resolve => setTimeout(resolve, 1500));
+            
+            const { data: startResult, error: startError } = await supabase.functions.invoke('poker-game-engine', {
+              body: { action: 'start_hand', tableId, playerId }
+            });
+            
+            if (startResult?.success) {
+              console.log(`🃏 Auto-started hand at table ${tableId}`);
+              await broadcastTableState(supabase, tableId);
+            } else {
+              console.log(`⚠️ Auto-start failed: ${startError?.message || startResult?.error}`);
+            }
+          }
+          
           break;
         }
 
