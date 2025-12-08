@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,6 +8,8 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import {
   CreditCard,
@@ -18,7 +20,7 @@ import {
   Minus,
   RefreshCw,
   Trash2,
-  Edit,
+  Eye,
   Play,
   Pause,
   DollarSign,
@@ -26,7 +28,16 @@ import {
   Clock,
   Gamepad2,
   Shield,
-  Zap
+  Zap,
+  Ban,
+  History,
+  AlertTriangle,
+  CheckCircle,
+  XCircle,
+  Activity,
+  Send,
+  UserX,
+  Coins
 } from 'lucide-react';
 import {
   Dialog,
@@ -34,7 +45,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
   DialogFooter,
 } from '@/components/ui/dialog';
 import {
@@ -45,6 +55,16 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface PlayerBalance {
   id: string;
@@ -78,19 +98,59 @@ interface PokerTable {
   rake_percent: number;
   rake_cap: number;
   players_count?: number;
+  current_hand_id?: string;
+}
+
+interface ActivePlayer {
+  id: string;
+  player_id: string;
+  player_name: string;
+  table_id: string;
+  table_name: string;
+  seat_number: number;
+  stack: number;
+  status: string;
+  joined_at: string;
+}
+
+interface HandHistory {
+  id: string;
+  hand_number: number;
+  table_name: string;
+  phase: string;
+  pot: number;
+  created_at: string;
+  completed_at: string | null;
+  winners: any;
 }
 
 export function OnlinePokerManagement() {
-  const [activeTab, setActiveTab] = useState('credits');
+  const [activeTab, setActiveTab] = useState('monitor');
   const [players, setPlayers] = useState<PlayerBalance[]>([]);
   const [tables, setTables] = useState<PokerTable[]>([]);
+  const [activePlayers, setActivePlayers] = useState<ActivePlayer[]>([]);
+  const [handHistory, setHandHistory] = useState<HandHistory[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedPlayer, setSelectedPlayer] = useState<PlayerBalance | null>(null);
   const [creditAmount, setCreditAmount] = useState('1000');
   const [showAddCreditsDialog, setShowAddCreditsDialog] = useState(false);
   const [showCreateTableDialog, setShowCreateTableDialog] = useState(false);
-  const [editingTable, setEditingTable] = useState<PokerTable | null>(null);
+  const [showMassCreditsDialog, setShowMassCreditsDialog] = useState(false);
+  const [showKickPlayerDialog, setShowKickPlayerDialog] = useState(false);
+  const [playerToKick, setPlayerToKick] = useState<ActivePlayer | null>(null);
+  const [massCreditsAmount, setMassCreditsAmount] = useState('5000');
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Stats
+  const [stats, setStats] = useState({
+    totalCredits: 0,
+    totalWon: 0,
+    totalLost: 0,
+    activeTables: 0,
+    activePlayersCount: 0,
+    handsToday: 0,
+    stuckHands: 0
+  });
 
   // New table form state
   const [newTable, setNewTable] = useState({
@@ -111,14 +171,72 @@ export function OnlinePokerManagement() {
     rake_cap: 0,
   });
 
-  useEffect(() => {
-    loadData();
+  const loadData = useCallback(async () => {
+    setLoading(true);
+    await Promise.all([
+      loadPlayers(),
+      loadTables(),
+      loadActivePlayers(),
+      loadHandHistory(),
+      loadStats()
+    ]);
+    setLoading(false);
   }, []);
 
-  const loadData = async () => {
-    setLoading(true);
-    await Promise.all([loadPlayers(), loadTables()]);
-    setLoading(false);
+  useEffect(() => {
+    loadData();
+
+    // Real-time subscription for live updates
+    const channel = supabase
+      .channel('poker-admin-monitor')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'poker_table_players' }, () => {
+        loadActivePlayers();
+        loadTables();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'poker_hands' }, () => {
+        loadHandHistory();
+        loadStats();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'player_balances' }, () => {
+        loadPlayers();
+        loadStats();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [loadData]);
+
+  const loadStats = async () => {
+    // Get totals
+    const { data: balances } = await supabase.from('player_balances').select('balance, total_won, total_lost');
+    const { data: tableData } = await supabase.from('poker_tables').select('status');
+    const { data: playerData } = await supabase.from('poker_table_players').select('status').eq('status', 'active');
+    
+    // Get hands today
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const { count: handsToday } = await supabase
+      .from('poker_hands')
+      .select('*', { count: 'exact', head: true })
+      .gte('created_at', today.toISOString());
+
+    // Get stuck hands
+    const { count: stuckHands } = await supabase
+      .from('poker_hands')
+      .select('*', { count: 'exact', head: true })
+      .is('completed_at', null);
+
+    setStats({
+      totalCredits: balances?.reduce((sum, b) => sum + b.balance, 0) || 0,
+      totalWon: balances?.reduce((sum, b) => sum + b.total_won, 0) || 0,
+      totalLost: balances?.reduce((sum, b) => sum + b.total_lost, 0) || 0,
+      activeTables: tableData?.filter(t => t.status === 'playing').length || 0,
+      activePlayersCount: playerData?.length || 0,
+      handsToday: handsToday || 0,
+      stuckHands: stuckHands || 0
+    });
   };
 
   const loadPlayers = async () => {
@@ -163,7 +281,6 @@ export function OnlinePokerManagement() {
       return;
     }
 
-    // Get player counts for each table
     const tablesWithCounts = await Promise.all(
       (tablesData || []).map(async (table) => {
         const { count } = await supabase
@@ -177,6 +294,77 @@ export function OnlinePokerManagement() {
     );
 
     setTables(tablesWithCounts);
+  };
+
+  const loadActivePlayers = async () => {
+    const { data, error } = await supabase
+      .from('poker_table_players')
+      .select(`
+        id,
+        player_id,
+        table_id,
+        seat_number,
+        stack,
+        status,
+        joined_at,
+        players!inner(name),
+        poker_tables!inner(name)
+      `)
+      .order('joined_at', { ascending: false });
+
+    if (error) {
+      console.error('Error loading active players:', error);
+      return;
+    }
+
+    const activePlayersData = data?.map(ap => ({
+      id: ap.id,
+      player_id: ap.player_id,
+      player_name: (ap.players as any)?.name || 'Unknown',
+      table_id: ap.table_id,
+      table_name: (ap.poker_tables as any)?.name || 'Unknown',
+      seat_number: ap.seat_number,
+      stack: ap.stack,
+      status: ap.status,
+      joined_at: ap.joined_at
+    })) || [];
+
+    setActivePlayers(activePlayersData);
+  };
+
+  const loadHandHistory = async () => {
+    const { data, error } = await supabase
+      .from('poker_hands')
+      .select(`
+        id,
+        hand_number,
+        phase,
+        pot,
+        created_at,
+        completed_at,
+        winners,
+        poker_tables!inner(name)
+      `)
+      .order('created_at', { ascending: false })
+      .limit(50);
+
+    if (error) {
+      console.error('Error loading hand history:', error);
+      return;
+    }
+
+    const historyData = data?.map(h => ({
+      id: h.id,
+      hand_number: h.hand_number,
+      table_name: (h.poker_tables as any)?.name || 'Unknown',
+      phase: h.phase,
+      pot: h.pot,
+      created_at: h.created_at,
+      completed_at: h.completed_at,
+      winners: h.winners
+    })) || [];
+
+    setHandHistory(historyData);
   };
 
   const handleAddCredits = async () => {
@@ -201,6 +389,34 @@ export function OnlinePokerManagement() {
     toast.success(`Добавлено ${amount} кредитов игроку ${selectedPlayer.player_name}`);
     setShowAddCreditsDialog(false);
     loadPlayers();
+    loadStats();
+  };
+
+  const handleMassCredits = async () => {
+    const amount = parseInt(massCreditsAmount);
+    if (isNaN(amount) || amount <= 0) {
+      toast.error('Укажите корректную сумму');
+      return;
+    }
+
+    // Get all players and update their balances
+    const { data: allBalances } = await supabase.from('player_balances').select('id, balance');
+    
+    if (!allBalances || allBalances.length === 0) {
+      toast.error('Нет игроков для начисления');
+      return;
+    }
+
+    const updates = allBalances.map(b => 
+      supabase.from('player_balances').update({ balance: b.balance + amount }).eq('id', b.id)
+    );
+
+    await Promise.all(updates);
+
+    toast.success(`Начислено ${amount} кредитов ${allBalances.length} игрокам`);
+    setShowMassCreditsDialog(false);
+    loadPlayers();
+    loadStats();
   };
 
   const handleRemoveCredits = async (player: PlayerBalance, amount: number) => {
@@ -218,6 +434,7 @@ export function OnlinePokerManagement() {
 
     toast.success(`Снято ${amount} кредитов у игрока ${player.player_name}`);
     loadPlayers();
+    loadStats();
   };
 
   const handleResetBalance = async (player: PlayerBalance) => {
@@ -233,6 +450,41 @@ export function OnlinePokerManagement() {
 
     toast.success(`Баланс игрока ${player.player_name} сброшен до 10,000`);
     loadPlayers();
+    loadStats();
+  };
+
+  const handleKickPlayer = async () => {
+    if (!playerToKick) return;
+
+    const { error } = await supabase
+      .from('poker_table_players')
+      .delete()
+      .eq('id', playerToKick.id);
+
+    if (error) {
+      toast.error('Ошибка при удалении игрока со стола');
+      return;
+    }
+
+    toast.success(`Игрок ${playerToKick.player_name} удален со стола ${playerToKick.table_name}`);
+    setShowKickPlayerDialog(false);
+    setPlayerToKick(null);
+    loadActivePlayers();
+    loadTables();
+  };
+
+  const handleCleanupStuckHands = async () => {
+    const { data, error } = await supabase.rpc('cleanup_stuck_poker_hands');
+    
+    if (error) {
+      toast.error('Ошибка при очистке застрявших рук');
+      return;
+    }
+
+    toast.success(`Очищено застрявших рук: ${data || 0}`);
+    loadHandHistory();
+    loadStats();
+    loadTables();
   };
 
   const handleCreateTable = async () => {
@@ -290,6 +542,9 @@ export function OnlinePokerManagement() {
   };
 
   const handleDeleteTable = async (tableId: string) => {
+    // First remove all players from the table
+    await supabase.from('poker_table_players').delete().eq('table_id', tableId);
+    
     const { error } = await supabase.from('poker_tables').delete().eq('id', tableId);
 
     if (error) {
@@ -320,74 +575,104 @@ export function OnlinePokerManagement() {
     p.player_name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const totalCredits = players.reduce((sum, p) => sum + p.balance, 0);
-  const totalWon = players.reduce((sum, p) => sum + p.total_won, 0);
-  const totalLost = players.reduce((sum, p) => sum + p.total_lost, 0);
-  const activeTables = tables.filter(t => t.status === 'playing').length;
+  const formatTime = (dateStr: string) => {
+    const date = new Date(dateStr);
+    return date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+  };
+
+  const formatDate = (dateStr: string) => {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+  };
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold">Управление онлайн-покером</h2>
-          <p className="text-muted-foreground">Кредиты игроков, столы и настройки движка</p>
+          <p className="text-muted-foreground">Мониторинг, кредиты, столы и история</p>
         </div>
-        <Button onClick={loadData} variant="outline" size="sm">
-          <RefreshCw className="h-4 w-4 mr-2" />
+        <Button onClick={loadData} variant="outline" size="sm" disabled={loading}>
+          <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
           Обновить
         </Button>
       </div>
 
-      {/* Stats Overview */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="pt-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-green-500/20 rounded-lg">
-                <DollarSign className="h-5 w-5 text-green-500" />
-              </div>
+      {/* Live Stats Overview */}
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
+        <Card className="bg-gradient-to-br from-green-500/10 to-green-600/5 border-green-500/20">
+          <CardContent className="pt-4 pb-3">
+            <div className="flex items-center gap-2">
+              <DollarSign className="h-4 w-4 text-green-500" />
               <div>
-                <p className="text-sm text-muted-foreground">Всего кредитов</p>
-                <p className="text-xl font-bold">{totalCredits.toLocaleString()}</p>
+                <p className="text-xs text-muted-foreground">Кредиты</p>
+                <p className="text-lg font-bold">{stats.totalCredits.toLocaleString()}</p>
               </div>
             </div>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="pt-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-500/20 rounded-lg">
-                <Table2 className="h-5 w-5 text-blue-500" />
-              </div>
+        <Card className="bg-gradient-to-br from-blue-500/10 to-blue-600/5 border-blue-500/20">
+          <CardContent className="pt-4 pb-3">
+            <div className="flex items-center gap-2">
+              <Table2 className="h-4 w-4 text-blue-500" />
               <div>
-                <p className="text-sm text-muted-foreground">Активных столов</p>
-                <p className="text-xl font-bold">{activeTables} / {tables.length}</p>
+                <p className="text-xs text-muted-foreground">Столы</p>
+                <p className="text-lg font-bold">{stats.activeTables}/{tables.length}</p>
               </div>
             </div>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="pt-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-purple-500/20 rounded-lg">
-                <TrendingUp className="h-5 w-5 text-purple-500" />
-              </div>
+        <Card className="bg-gradient-to-br from-purple-500/10 to-purple-600/5 border-purple-500/20">
+          <CardContent className="pt-4 pb-3">
+            <div className="flex items-center gap-2">
+              <Users className="h-4 w-4 text-purple-500" />
               <div>
-                <p className="text-sm text-muted-foreground">Выиграно всего</p>
-                <p className="text-xl font-bold">{totalWon.toLocaleString()}</p>
+                <p className="text-xs text-muted-foreground">За столами</p>
+                <p className="text-lg font-bold">{stats.activePlayersCount}</p>
               </div>
             </div>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="pt-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-red-500/20 rounded-lg">
-                <Users className="h-5 w-5 text-red-500" />
-              </div>
+        <Card className="bg-gradient-to-br from-amber-500/10 to-amber-600/5 border-amber-500/20">
+          <CardContent className="pt-4 pb-3">
+            <div className="flex items-center gap-2">
+              <Activity className="h-4 w-4 text-amber-500" />
               <div>
-                <p className="text-sm text-muted-foreground">Игроков</p>
-                <p className="text-xl font-bold">{players.length}</p>
+                <p className="text-xs text-muted-foreground">Рук сегодня</p>
+                <p className="text-lg font-bold">{stats.handsToday}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="bg-gradient-to-br from-emerald-500/10 to-emerald-600/5 border-emerald-500/20">
+          <CardContent className="pt-4 pb-3">
+            <div className="flex items-center gap-2">
+              <TrendingUp className="h-4 w-4 text-emerald-500" />
+              <div>
+                <p className="text-xs text-muted-foreground">Выиграно</p>
+                <p className="text-lg font-bold">{stats.totalWon.toLocaleString()}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="bg-gradient-to-br from-red-500/10 to-red-600/5 border-red-500/20">
+          <CardContent className="pt-4 pb-3">
+            <div className="flex items-center gap-2">
+              <Coins className="h-4 w-4 text-red-500" />
+              <div>
+                <p className="text-xs text-muted-foreground">Проиграно</p>
+                <p className="text-lg font-bold">{stats.totalLost.toLocaleString()}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className={`${stats.stuckHands > 0 ? 'bg-gradient-to-br from-orange-500/10 to-orange-600/5 border-orange-500/20' : 'border-border/50'}`}>
+          <CardContent className="pt-4 pb-3">
+            <div className="flex items-center gap-2">
+              <AlertTriangle className={`h-4 w-4 ${stats.stuckHands > 0 ? 'text-orange-500' : 'text-muted-foreground'}`} />
+              <div>
+                <p className="text-xs text-muted-foreground">Застряло</p>
+                <p className="text-lg font-bold">{stats.stuckHands}</p>
               </div>
             </div>
           </CardContent>
@@ -395,7 +680,11 @@ export function OnlinePokerManagement() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
+          <TabsTrigger value="monitor" className="gap-2">
+            <Eye className="h-4 w-4" />
+            <span className="hidden sm:inline">Мониторинг</span>
+          </TabsTrigger>
           <TabsTrigger value="credits" className="gap-2">
             <CreditCard className="h-4 w-4" />
             <span className="hidden sm:inline">Кредиты</span>
@@ -404,9 +693,9 @@ export function OnlinePokerManagement() {
             <Table2 className="h-4 w-4" />
             <span className="hidden sm:inline">Столы</span>
           </TabsTrigger>
-          <TabsTrigger value="engine" className="gap-2">
-            <Gamepad2 className="h-4 w-4" />
-            <span className="hidden sm:inline">Движок</span>
+          <TabsTrigger value="history" className="gap-2">
+            <History className="h-4 w-4" />
+            <span className="hidden sm:inline">История</span>
           </TabsTrigger>
           <TabsTrigger value="tools" className="gap-2">
             <Settings className="h-4 w-4" />
@@ -414,17 +703,159 @@ export function OnlinePokerManagement() {
           </TabsTrigger>
         </TabsList>
 
+        {/* Monitor Tab - Live View */}
+        <TabsContent value="monitor" className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-2">
+            {/* Active Tables */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Table2 className="h-5 w-5" />
+                  Активные столы
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ScrollArea className="h-[300px]">
+                  <div className="space-y-2">
+                    {tables.map((table) => (
+                      <div 
+                        key={table.id} 
+                        className={`p-3 rounded-lg border ${table.status === 'playing' ? 'bg-green-500/5 border-green-500/20' : 'bg-muted/30'}`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <div className="font-medium flex items-center gap-2">
+                              {table.name}
+                              {table.status === 'playing' && (
+                                <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                              )}
+                            </div>
+                            <div className="text-sm text-muted-foreground">
+                              {table.small_blind}/{table.big_blind} • {table.players_count}/{table.max_players} игроков
+                            </div>
+                          </div>
+                          <Badge variant={table.status === 'playing' ? 'default' : 'secondary'}>
+                            {table.status === 'playing' ? 'Игра' : 'Ожидание'}
+                          </Badge>
+                        </div>
+                      </div>
+                    ))}
+                    {tables.length === 0 && (
+                      <div className="text-center text-muted-foreground py-8">Нет столов</div>
+                    )}
+                  </div>
+                </ScrollArea>
+              </CardContent>
+            </Card>
+
+            {/* Players at Tables */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Users className="h-5 w-5" />
+                  Игроки за столами
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ScrollArea className="h-[300px]">
+                  <div className="space-y-2">
+                    {activePlayers.map((player) => (
+                      <div 
+                        key={player.id} 
+                        className={`p-3 rounded-lg border flex items-center justify-between ${player.status === 'active' ? 'bg-blue-500/5 border-blue-500/20' : 'bg-muted/30'}`}
+                      >
+                        <div>
+                          <div className="font-medium">{player.player_name}</div>
+                          <div className="text-sm text-muted-foreground">
+                            {player.table_name} • Место {player.seat_number} • {player.stack.toLocaleString()} фишек
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Badge variant={player.status === 'active' ? 'default' : 'secondary'}>
+                            {player.status === 'active' ? 'Активен' : 'Sit Out'}
+                          </Badge>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="text-red-500 hover:text-red-600 hover:bg-red-500/10"
+                            onClick={() => {
+                              setPlayerToKick(player);
+                              setShowKickPlayerDialog(true);
+                            }}
+                          >
+                            <UserX className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                    {activePlayers.length === 0 && (
+                      <div className="text-center text-muted-foreground py-8">Нет игроков за столами</div>
+                    )}
+                  </div>
+                </ScrollArea>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Recent Hands */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Activity className="h-5 w-5" />
+                Последние раздачи (Live)
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ScrollArea className="h-[200px]">
+                <div className="space-y-1">
+                  {handHistory.slice(0, 20).map((hand) => (
+                    <div 
+                      key={hand.id} 
+                      className={`p-2 rounded text-sm flex items-center justify-between ${!hand.completed_at ? 'bg-yellow-500/10 border border-yellow-500/20' : 'hover:bg-muted/50'}`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="font-mono text-muted-foreground">#{hand.hand_number}</span>
+                        <span>{hand.table_name}</span>
+                        <Badge variant="outline" className="text-xs">
+                          {hand.phase}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span className="font-mono">{hand.pot} pot</span>
+                        <span className="text-muted-foreground text-xs">{formatTime(hand.created_at)}</span>
+                        {hand.completed_at ? (
+                          <CheckCircle className="h-4 w-4 text-green-500" />
+                        ) : (
+                          <Clock className="h-4 w-4 text-yellow-500 animate-pulse" />
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </ScrollArea>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
         {/* Credits Tab */}
         <TabsContent value="credits" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <CreditCard className="h-5 w-5" />
-                Управление кредитами игроков
-              </CardTitle>
-              <CardDescription>
-                Добавляйте и снимайте кредиты с балансов игроков
-              </CardDescription>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <CreditCard className="h-5 w-5" />
+                    Управление кредитами
+                  </CardTitle>
+                  <CardDescription>
+                    Добавляйте и снимайте кредиты с балансов игроков
+                  </CardDescription>
+                </div>
+                <Button onClick={() => setShowMassCreditsDialog(true)} variant="outline">
+                  <Coins className="h-4 w-4 mr-2" />
+                  Массовое начисление
+                </Button>
+              </div>
             </CardHeader>
             <CardContent className="space-y-4">
               <Input
@@ -574,7 +1005,7 @@ export function OnlinePokerManagement() {
                         {table.run_it_twice_enabled && <Badge variant="outline">Run It Twice</Badge>}
                         {table.bomb_pot_enabled && <Badge variant="outline">Bomb Pot</Badge>}
                         {table.chat_enabled && <Badge variant="outline">Чат</Badge>}
-                        {table.rake_percent > 0 && <Badge variant="outline">Рейк {table.rake_percent}%</Badge>}
+                        {Number(table.rake_percent) > 0 && <Badge variant="outline">Рейк {table.rake_percent}%</Badge>}
                       </div>
                     </CardContent>
                   </Card>
@@ -589,100 +1020,60 @@ export function OnlinePokerManagement() {
           </Card>
         </TabsContent>
 
-        {/* Engine Tab */}
-        <TabsContent value="engine" className="space-y-4">
+        {/* History Tab */}
+        <TabsContent value="history" className="space-y-4">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Gamepad2 className="h-5 w-5" />
-                Покерный движок - Функционал
+                <History className="h-5 w-5" />
+                История рук
               </CardTitle>
               <CardDescription>
-                Текущие возможности и статус движка
+                Последние 50 раздач на всех столах
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-3">
-                  <h4 className="font-semibold text-green-500 flex items-center gap-2">
-                    <Shield className="h-4 w-4" />
-                    Реализовано ✓
-                  </h4>
-                  <ul className="space-y-2 text-sm">
-                    <li className="flex items-center gap-2">
-                      <Badge variant="default" className="bg-green-500">✓</Badge>
-                      Texas Hold'em (No Limit)
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <Badge variant="default" className="bg-green-500">✓</Badge>
-                      Криптографическая тасовка карт
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <Badge variant="default" className="bg-green-500">✓</Badge>
-                      Расчет побочных банков (Side Pots)
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <Badge variant="default" className="bg-green-500">✓</Badge>
-                      Автоматический расчет победителей
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <Badge variant="default" className="bg-green-500">✓</Badge>
-                      Таймауты и авто-фолд
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <Badge variant="default" className="bg-green-500">✓</Badge>
-                      Real-time синхронизация
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <Badge variant="default" className="bg-green-500">✓</Badge>
-                      Авто-старт раздачи
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <Badge variant="default" className="bg-green-500">✓</Badge>
-                      Чат и эмодзи реакции
-                    </li>
-                  </ul>
-                </div>
-                <div className="space-y-3">
-                  <h4 className="font-semibold text-yellow-500 flex items-center gap-2">
-                    <Zap className="h-4 w-4" />
-                    Требует доработки
-                  </h4>
-                  <ul className="space-y-2 text-sm">
-                    <li className="flex items-center gap-2">
-                      <Badge variant="outline">○</Badge>
-                      Транзакции в БД (атомарность)
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <Badge variant="outline">○</Badge>
-                      Корректный минимальный рейз
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <Badge variant="outline">○</Badge>
-                      Опция BB (чек на большом блайнде)
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <Badge variant="outline">○</Badge>
-                      Run It Twice/Three
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <Badge variant="outline">○</Badge>
-                      Страддл / Mississippi Straddle
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <Badge variant="outline">○</Badge>
-                      Bomb Pot механика
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <Badge variant="outline">○</Badge>
-                      Персистентный Time Bank
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <Badge variant="outline">○</Badge>
-                      История рук с реплеером
-                    </li>
-                  </ul>
-                </div>
+            <CardContent>
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>#</TableHead>
+                      <TableHead>Стол</TableHead>
+                      <TableHead>Фаза</TableHead>
+                      <TableHead className="text-right">Банк</TableHead>
+                      <TableHead>Время</TableHead>
+                      <TableHead>Статус</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {handHistory.map((hand) => (
+                      <TableRow key={hand.id}>
+                        <TableCell className="font-mono">{hand.hand_number}</TableCell>
+                        <TableCell>{hand.table_name}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline">{hand.phase}</Badge>
+                        </TableCell>
+                        <TableCell className="text-right font-mono">{hand.pot}</TableCell>
+                        <TableCell className="text-muted-foreground text-sm">
+                          {formatDate(hand.created_at)}
+                        </TableCell>
+                        <TableCell>
+                          {hand.completed_at ? (
+                            <Badge variant="default" className="bg-green-500">
+                              <CheckCircle className="h-3 w-3 mr-1" />
+                              Завершена
+                            </Badge>
+                          ) : (
+                            <Badge variant="secondary" className="bg-yellow-500/20 text-yellow-600">
+                              <Clock className="h-3 w-3 mr-1" />
+                              В процессе
+                            </Badge>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               </div>
             </CardContent>
           </Card>
@@ -690,117 +1081,130 @@ export function OnlinePokerManagement() {
 
         {/* Tools Tab */}
         <TabsContent value="tools" className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-2">
+            {/* Quick Actions */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Zap className="h-5 w-5" />
+                  Быстрые действия
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <Button 
+                  variant="outline" 
+                  className="w-full justify-start"
+                  onClick={handleCleanupStuckHands}
+                >
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Очистить застрявшие руки ({stats.stuckHands})
+                </Button>
+                <Button 
+                  variant="outline" 
+                  className="w-full justify-start"
+                  onClick={() => setShowMassCreditsDialog(true)}
+                >
+                  <Coins className="h-4 w-4 mr-2" />
+                  Массовое начисление кредитов
+                </Button>
+                <Button 
+                  variant="outline" 
+                  className="w-full justify-start"
+                  onClick={() => setShowCreateTableDialog(true)}
+                >
+                  <Table2 className="h-4 w-4 mr-2" />
+                  Создать новый стол
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Engine Status */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Gamepad2 className="h-5 w-5" />
+                  Статус движка
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="flex items-center justify-between p-3 rounded-lg bg-green-500/10 border border-green-500/20">
+                  <span>Poker Engine</span>
+                  <Badge variant="default" className="bg-green-500">Online</Badge>
+                </div>
+                <div className="flex items-center justify-between p-3 rounded-lg bg-green-500/10 border border-green-500/20">
+                  <span>Realtime Sync</span>
+                  <Badge variant="default" className="bg-green-500">Active</Badge>
+                </div>
+                <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30 border">
+                  <span>Активных игр</span>
+                  <span className="font-bold">{stats.activeTables}</span>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Feature Roadmap */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Settings className="h-5 w-5" />
-                Инструменты администратора
+                <Shield className="h-5 w-5" />
+                Roadmap функций
               </CardTitle>
-              <CardDescription>
-                Поэтапный план инструментов для полного управления
-              </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6">
-              {/* Stage 1 */}
-              <div className="space-y-3">
-                <h4 className="font-semibold flex items-center gap-2">
-                  <Badge>Этап 1</Badge>
-                  Базовое управление (Реализовано)
-                </h4>
-                <div className="grid gap-2 md:grid-cols-2">
-                  <div className="p-3 border rounded-lg bg-green-500/10">
-                    <div className="font-medium">✓ Управление кредитами</div>
-                    <div className="text-sm text-muted-foreground">Добавление/снятие баланса игроков</div>
-                  </div>
-                  <div className="p-3 border rounded-lg bg-green-500/10">
-                    <div className="font-medium">✓ Создание столов</div>
-                    <div className="text-sm text-muted-foreground">Настройка блайндов, buy-in, лимитов</div>
-                  </div>
-                  <div className="p-3 border rounded-lg bg-green-500/10">
-                    <div className="font-medium">✓ Статистика игроков</div>
-                    <div className="text-sm text-muted-foreground">Просмотр выигрышей и проигрышей</div>
-                  </div>
-                  <div className="p-3 border rounded-lg bg-green-500/10">
-                    <div className="font-medium">✓ Управление статусом столов</div>
-                    <div className="text-sm text-muted-foreground">Старт/пауза/удаление столов</div>
+            <CardContent>
+              <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+                <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/20">
+                  <div className="font-medium flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-green-500" />
+                    Мониторинг в реальном времени
                   </div>
                 </div>
-              </div>
-
-              {/* Stage 2 */}
-              <div className="space-y-3">
-                <h4 className="font-semibold flex items-center gap-2">
-                  <Badge variant="secondary">Этап 2</Badge>
-                  Расширенное управление (Запланировано)
-                </h4>
-                <div className="grid gap-2 md:grid-cols-2">
-                  <div className="p-3 border rounded-lg">
-                    <div className="font-medium">○ Массовое начисление кредитов</div>
-                    <div className="text-sm text-muted-foreground">Начисление всем игрокам сразу</div>
-                  </div>
-                  <div className="p-3 border rounded-lg">
-                    <div className="font-medium">○ История транзакций</div>
-                    <div className="text-sm text-muted-foreground">Лог всех операций с балансами</div>
-                  </div>
-                  <div className="p-3 border rounded-lg">
-                    <div className="font-medium">○ Бан/кик игроков</div>
-                    <div className="text-sm text-muted-foreground">Блокировка нарушителей</div>
-                  </div>
-                  <div className="p-3 border rounded-lg">
-                    <div className="font-medium">○ Шаблоны столов</div>
-                    <div className="text-sm text-muted-foreground">Быстрое создание из шаблонов</div>
+                <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/20">
+                  <div className="font-medium flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-green-500" />
+                    Управление кредитами
                   </div>
                 </div>
-              </div>
-
-              {/* Stage 3 */}
-              <div className="space-y-3">
-                <h4 className="font-semibold flex items-center gap-2">
-                  <Badge variant="outline">Этап 3</Badge>
-                  Продвинутые инструменты
-                </h4>
-                <div className="grid gap-2 md:grid-cols-2">
-                  <div className="p-3 border rounded-lg">
-                    <div className="font-medium">○ Мониторинг игр в реальном времени</div>
-                    <div className="text-sm text-muted-foreground">Наблюдение за активными столами</div>
-                  </div>
-                  <div className="p-3 border rounded-lg">
-                    <div className="font-medium">○ Анти-коллюзия система</div>
-                    <div className="text-sm text-muted-foreground">Детекция сговора игроков</div>
-                  </div>
-                  <div className="p-3 border rounded-lg">
-                    <div className="font-medium">○ Реплеер рук</div>
-                    <div className="text-sm text-muted-foreground">Просмотр истории раздач</div>
-                  </div>
-                  <div className="p-3 border rounded-lg">
-                    <div className="font-medium">○ Экспорт статистики</div>
-                    <div className="text-sm text-muted-foreground">CSV/PDF отчеты</div>
+                <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/20">
+                  <div className="font-medium flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-green-500" />
+                    Массовое начисление
                   </div>
                 </div>
-              </div>
-
-              {/* Stage 4 */}
-              <div className="space-y-3">
-                <h4 className="font-semibold flex items-center gap-2">
-                  <Badge variant="outline">Этап 4</Badge>
-                  Турнирный покер онлайн
-                </h4>
-                <div className="grid gap-2 md:grid-cols-2">
-                  <div className="p-3 border rounded-lg">
-                    <div className="font-medium">○ Создание MTT турниров</div>
-                    <div className="text-sm text-muted-foreground">Multi-table tournaments</div>
+                <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/20">
+                  <div className="font-medium flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-green-500" />
+                    Кик игроков со столов
                   </div>
-                  <div className="p-3 border rounded-lg">
-                    <div className="font-medium">○ Sit & Go турниры</div>
-                    <div className="text-sm text-muted-foreground">Быстрые турниры на 1 стол</div>
+                </div>
+                <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/20">
+                  <div className="font-medium flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-green-500" />
+                    История рук
                   </div>
-                  <div className="p-3 border rounded-lg">
-                    <div className="font-medium">○ Структура блайндов онлайн</div>
-                    <div className="text-sm text-muted-foreground">Авто-повышение уровней</div>
+                </div>
+                <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/20">
+                  <div className="font-medium flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-green-500" />
+                    Очистка застрявших рук
                   </div>
-                  <div className="p-3 border rounded-lg">
-                    <div className="font-medium">○ Призовые выплаты</div>
-                    <div className="text-sm text-muted-foreground">Автоматическое распределение</div>
+                </div>
+                <div className="p-3 rounded-lg border">
+                  <div className="font-medium flex items-center gap-2 text-muted-foreground">
+                    <Clock className="h-4 w-4" />
+                    Реплеер рук
+                  </div>
+                </div>
+                <div className="p-3 rounded-lg border">
+                  <div className="font-medium flex items-center gap-2 text-muted-foreground">
+                    <Clock className="h-4 w-4" />
+                    Бан-лист игроков
+                  </div>
+                </div>
+                <div className="p-3 rounded-lg border">
+                  <div className="font-medium flex items-center gap-2 text-muted-foreground">
+                    <Clock className="h-4 w-4" />
+                    Экспорт статистики
                   </div>
                 </div>
               </div>
@@ -815,7 +1219,7 @@ export function OnlinePokerManagement() {
           <DialogHeader>
             <DialogTitle>Добавить кредиты</DialogTitle>
             <DialogDescription>
-              Игрок: {selectedPlayer?.player_name} (текущий баланс: {selectedPlayer?.balance.toLocaleString()})
+              Игрок: {selectedPlayer?.player_name} (баланс: {selectedPlayer?.balance.toLocaleString()})
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
@@ -828,7 +1232,7 @@ export function OnlinePokerManagement() {
                 placeholder="1000"
               />
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap">
               {[1000, 5000, 10000, 50000].map((amount) => (
                 <Button
                   key={amount}
@@ -848,6 +1252,43 @@ export function OnlinePokerManagement() {
             <Button onClick={handleAddCredits}>
               <Plus className="h-4 w-4 mr-2" />
               Добавить
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Mass Credits Dialog */}
+      <Dialog open={showMassCreditsDialog} onOpenChange={setShowMassCreditsDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Массовое начисление кредитов</DialogTitle>
+            <DialogDescription>
+              Начислить кредиты всем {players.length} игрокам
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>Сумма на каждого игрока</Label>
+              <Input
+                type="number"
+                value={massCreditsAmount}
+                onChange={(e) => setMassCreditsAmount(e.target.value)}
+                placeholder="5000"
+              />
+            </div>
+            <div className="p-3 bg-muted rounded-lg">
+              <p className="text-sm text-muted-foreground">
+                Общая сумма: <span className="font-bold text-foreground">{(parseInt(massCreditsAmount) * players.length).toLocaleString()}</span> кредитов
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowMassCreditsDialog(false)}>
+              Отмена
+            </Button>
+            <Button onClick={handleMassCredits}>
+              <Coins className="h-4 w-4 mr-2" />
+              Начислить всем
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -970,6 +1411,26 @@ export function OnlinePokerManagement() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Kick Player Confirmation */}
+      <AlertDialog open={showKickPlayerDialog} onOpenChange={setShowKickPlayerDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Удалить игрока со стола?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Игрок <strong>{playerToKick?.player_name}</strong> будет удален со стола <strong>{playerToKick?.table_name}</strong>. 
+              Его фишки ({playerToKick?.stack.toLocaleString()}) будут потеряны.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Отмена</AlertDialogCancel>
+            <AlertDialogAction onClick={handleKickPlayer} className="bg-red-500 hover:bg-red-600">
+              <UserX className="h-4 w-4 mr-2" />
+              Удалить
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
