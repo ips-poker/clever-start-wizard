@@ -263,6 +263,9 @@ export function usePokerTable(options: UsePokerTableOptions | null) {
       let dealerSeat = tableData.current_dealer_seat || 1;
       let currentPlayerSeat: number | null = null;
       let handPlayersMap = new Map<string, any>();
+      let actionTimeSeconds = tableData.action_time_seconds || 30;
+      let timeRemaining: number | null = null;
+      let actionStartedAt: string | null = null;
 
       if (tableData.current_hand_id) {
         const { data: handData } = await supabase
@@ -278,6 +281,13 @@ export function usePokerTable(options: UsePokerTableOptions | null) {
           phase = handData.phase as any || 'waiting';
           dealerSeat = handData.dealer_seat || 1;
           currentPlayerSeat = handData.current_player_seat;
+          actionStartedAt = handData.action_started_at;
+
+          // Calculate time remaining based on action_started_at
+          if (actionStartedAt && currentPlayerSeat !== null) {
+            const elapsed = (Date.now() - new Date(actionStartedAt).getTime()) / 1000;
+            timeRemaining = Math.max(0, actionTimeSeconds - elapsed);
+          }
 
           // Load all hand players for bet info
           const { data: handPlayers } = await supabase
@@ -367,7 +377,8 @@ export function usePokerTable(options: UsePokerTableOptions | null) {
           smallBlindAmount: tableData.small_blind,
           bigBlindAmount: tableData.big_blind,
           minRaise: currentBet > 0 ? currentBet : tableData.big_blind,
-          actionTimer: 30,
+          actionTimer: actionTimeSeconds,
+          timeRemaining: timeRemaining,
           playersNeeded: playersCount < 2 ? 2 - playersCount : 0
         };
         

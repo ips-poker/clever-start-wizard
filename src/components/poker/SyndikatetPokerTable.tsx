@@ -1040,7 +1040,7 @@ export function SyndikatetPokerTable({
   
   const {
     isConnected, isConnecting, error, tableState, myCards, mySeat, myPlayer, isMyTurn, canCheck, callAmount, lastAction, showdownResult,
-    connect, disconnect, fold, check, call, raise, allIn, clearShowdown, configureTable
+    connect, disconnect, fold, check, call, raise, allIn, clearShowdown, configureTable, checkTimeout
   } = pokerTable;
 
   const reconnectManager = useReconnectManager({
@@ -1065,14 +1065,48 @@ export function SyndikatetPokerTable({
 
   useEffect(() => { sounds.setEnabled(soundEnabled); }, [soundEnabled]);
 
+  // Timer effect - sync with server time and auto-fold on timeout
   useEffect(() => {
+    const actionTimer = tableState?.actionTimer || 30;
+    
+    // Use server-calculated timeRemaining if available, otherwise calculate locally
+    if (tableState?.timeRemaining !== null && tableState?.timeRemaining !== undefined) {
+      setTurnTimeRemaining(Math.ceil(tableState.timeRemaining));
+    } else if (tableState?.currentPlayerSeat !== null) {
+      setTurnTimeRemaining(actionTimer);
+    } else {
+      setTurnTimeRemaining(null);
+      return;
+    }
+    
     if (isMyTurn) {
       sounds.playTurn();
-      setTurnTimeRemaining(tableState?.actionTimer || 30);
-      const interval = setInterval(() => setTurnTimeRemaining(prev => (prev === null || prev <= 0) ? null : prev - 1), 1000);
-      return () => clearInterval(interval);
-    } else { setTurnTimeRemaining(null); }
-  }, [isMyTurn, tableState?.currentPlayerSeat]);
+    }
+    
+    // Countdown interval
+    const interval = setInterval(() => {
+      setTurnTimeRemaining(prev => {
+        if (prev === null || prev <= 0) return null;
+        const newTime = prev - 1;
+        
+        // Auto-fold when time runs out
+        if (newTime <= 0) {
+          if (isMyTurn) {
+            console.log('⏰ Time expired, auto-folding...');
+            fold();
+          } else {
+            // Check if opponent timed out (any client can trigger this)
+            console.log('⏰ Opponent time expired, checking timeout...');
+            checkTimeout();
+          }
+        }
+        
+        return newTime;
+      });
+    }, 1000);
+    
+    return () => clearInterval(interval);
+  }, [isMyTurn, tableState?.currentPlayerSeat, tableState?.timeRemaining, tableState?.actionTimer, fold, checkTimeout, sounds]);
 
   useEffect(() => {
     if (lastAction?.playerId) {
@@ -1242,7 +1276,7 @@ export function SyndikatetPokerTable({
               isSB={tableState?.smallBlindSeat === seatNumber}
               isBB={tableState?.bigBlindSeat === seatNumber}
               isCurrentTurn={tableState?.currentPlayerSeat === seatNumber}
-              turnTimeRemaining={tableState?.currentPlayerSeat === seatNumber && player?.playerId === playerId ? turnTimeRemaining || undefined : undefined}
+              turnTimeRemaining={tableState?.currentPlayerSeat === seatNumber ? turnTimeRemaining || undefined : undefined}
               turnDuration={tableState?.actionTimer || 30}
               lastAction={player ? playerActions[player.playerId] : null}
               isMobile={isMobile}
