@@ -186,7 +186,7 @@ const [activeTableId, setActiveTableId] = useState<string | null>(null);
     setJoiningId(table.id);
     try {
       // Проверяем, не сидит ли игрок уже за этим столом
-      const { data: existingPlayer, error: checkError } = await supabase
+      const { data: existingPlayer } = await supabase
         .from('poker_table_players')
         .select('id, seat_number, stack')
         .eq('table_id', table.id)
@@ -194,77 +194,42 @@ const [activeTableId, setActiveTableId] = useState<string | null>(null);
         .eq('status', 'active')
         .maybeSingle();
 
-      console.log('Check existing player:', existingPlayer, 'error:', checkError);
-
       // Если игрок уже за столом - просто открываем стол
       if (existingPlayer) {
         console.log('Player already at table, opening table');
         setActiveTableId(table.id);
         setActiveBuyIn(existingPlayer.stack);
-        setJoiningId(null);
         onJoinTable?.(table.id, existingPlayer.stack);
         return;
       }
 
-      // Проверяем баланс только если нужно садиться за стол
-      if (playerBalance < table.min_buy_in) {
-        toast.error(`Недостаточно фишек. Минимум: ${table.min_buy_in.toLocaleString()}`);
-        setJoiningId(null);
+      // Используем Edge Function для корректной обработки баланса
+      const { data: joinResult, error: joinError } = await supabase.functions.invoke('poker-game-engine', {
+        body: {
+          action: 'join',
+          tableId: table.id,
+          playerId: playerId,
+          amount: table.min_buy_in
+        }
+      });
+
+      if (joinError) {
+        console.error('Join error:', joinError);
+        toast.error('Ошибка при присоединении к столу');
         return;
       }
 
-      // Находим свободное место
-      const { data: existingPlayers } = await supabase
-        .from('poker_table_players')
-        .select('seat_number')
-        .eq('table_id', table.id)
-        .eq('status', 'active');
-
-      const occupiedSeats = new Set(existingPlayers?.map(p => p.seat_number) || []);
-      let freeSeat = 1;
-      for (let i = 1; i <= table.max_players; i++) {
-        if (!occupiedSeats.has(i)) {
-          freeSeat = i;
-          break;
-        }
-      }
-
-      if (occupiedSeats.size >= table.max_players) {
-        toast.error('Стол заполнен');
-        setJoiningId(null);
+      if (!joinResult?.success) {
+        toast.error(joinResult?.error || 'Не удалось присоединиться к столу');
         return;
-      }
-
-      const { error } = await supabase
-        .from('poker_table_players')
-        .insert({
-          table_id: table.id,
-          player_id: playerId,
-          seat_number: freeSeat,
-          stack: table.min_buy_in,
-          status: 'active'
-        });
-
-      // Если ошибка duplicate key - игрок уже за столом, просто открываем
-      if (error) {
-        console.log('Insert error:', error);
-        if (error.code === '23505' || error.message?.includes('duplicate')) {
-          console.log('Duplicate key - player already at table, opening anyway');
-          setActiveTableId(table.id);
-          setActiveBuyIn(table.min_buy_in);
-          setJoiningId(null);
-          onJoinTable?.(table.id, table.min_buy_in);
-          return;
-        }
-        throw error;
       }
 
       toast.success(`Вы присоединились к столу ${table.name}!`);
       
       // Open the table after successful join
       setActiveTableId(table.id);
-      setActiveBuyIn(table.min_buy_in);
-      onJoinTable?.(table.id, table.min_buy_in);
+      setActiveBuyIn(joinResult.stack || table.min_buy_in);
+      onJoinTable?.(table.id, joinResult.stack || table.min_buy_in);
     } catch (error: any) {
       console.error('Error joining table:', error);
       toast.error(error.message || 'Не удалось присоединиться к столу');
