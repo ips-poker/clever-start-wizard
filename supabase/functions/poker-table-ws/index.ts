@@ -6,8 +6,8 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Store active connections per table
-const tableConnections = new Map<string, Map<string, WebSocket>>();
+// Local connections for this Edge Function instance
+const localConnections = new Map<string, Map<string, WebSocket>>();
 
 interface WSMessage {
   type: string;
@@ -18,36 +18,114 @@ interface WSMessage {
   data?: any;
 }
 
-// Broadcast message to all players at a table
-function broadcastToTable(tableId: string, message: any, excludePlayerId?: string) {
-  const connections = tableConnections.get(tableId);
-  if (!connections) return;
+// Supabase client for broadcast between instances
+let supabaseAdmin: any = null;
+const broadcastChannels = new Map<string, any>();
 
-  const payload = JSON.stringify(message);
-  for (const [playerId, socket] of connections) {
-    if (playerId !== excludePlayerId && socket.readyState === WebSocket.OPEN) {
-      try {
-        socket.send(payload);
-      } catch (e) {
-        console.error(`Error sending to ${playerId}:`, e);
+function getSupabase() {
+  if (!supabaseAdmin) {
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    supabaseAdmin = createClient(supabaseUrl, supabaseKey, {
+      realtime: {
+        params: {
+          eventsPerSecond: 10
+        }
+      }
+    });
+  }
+  return supabaseAdmin;
+}
+
+// Subscribe to broadcast channel for a table (for cross-instance communication)
+function subscribeToBroadcast(tableId: string, currentPlayerId: string) {
+  const channelKey = `${tableId}_${currentPlayerId}`;
+  if (broadcastChannels.has(channelKey)) return;
+  
+  const supabase = getSupabase();
+  const channel = supabase
+    .channel(`poker_table_${tableId}`)
+    .on('broadcast', { event: 'table_update' }, (payload: any) => {
+      console.log(`📡 Broadcast received for table ${tableId}:`, payload.payload?.type);
+      
+      // Send to local connection for this player
+      const connections = localConnections.get(tableId);
+      if (connections) {
+        const playerSocket = connections.get(currentPlayerId);
+        if (playerSocket && playerSocket.readyState === WebSocket.OPEN) {
+          try {
+            playerSocket.send(JSON.stringify(payload.payload));
+          } catch (e) {
+            console.error('Error forwarding broadcast to local socket:', e);
+          }
+        }
+      }
+    })
+    .subscribe((status: string) => {
+      console.log(`📡 Broadcast subscription status for ${tableId}:`, status);
+    });
+  
+  broadcastChannels.set(channelKey, channel);
+  console.log(`📡 Subscribed to broadcast channel for table ${tableId}, player ${currentPlayerId}`);
+}
+
+// Unsubscribe from broadcast channel
+function unsubscribeFromBroadcast(tableId: string, playerId: string) {
+  const channelKey = `${tableId}_${playerId}`;
+  const channel = broadcastChannels.get(channelKey);
+  if (channel) {
+    getSupabase().removeChannel(channel);
+    broadcastChannels.delete(channelKey);
+    console.log(`📡 Unsubscribed from broadcast channel for ${tableId}, player ${playerId}`);
+  }
+}
+
+// Broadcast message to all instances via Supabase Realtime
+async function broadcastToAllInstances(tableId: string, message: any) {
+  const supabase = getSupabase();
+  
+  try {
+    await supabase.channel(`poker_table_${tableId}`).send({
+      type: 'broadcast',
+      event: 'table_update',
+      payload: message
+    });
+    console.log(`📢 Broadcasted to table ${tableId}:`, message.type);
+  } catch (e) {
+    console.error('Broadcast error:', e);
+  }
+  
+  // Also send to local connections directly
+  const connections = localConnections.get(tableId);
+  if (connections) {
+    const payload = JSON.stringify(message);
+    for (const [, socket] of connections) {
+      if (socket.readyState === WebSocket.OPEN) {
+        try {
+          socket.send(payload);
+        } catch (e) {
+          console.error('Error sending to local socket:', e);
+        }
       }
     }
   }
 }
 
-// Send message to specific player
-function sendToPlayer(tableId: string, playerId: string, message: any) {
-  const connections = tableConnections.get(tableId);
-  if (!connections) return;
+// Send message to specific local player
+function sendToLocalPlayer(tableId: string, playerId: string, message: any) {
+  const connections = localConnections.get(tableId);
+  if (!connections) return false;
 
   const socket = connections.get(playerId);
   if (socket && socket.readyState === WebSocket.OPEN) {
     try {
       socket.send(JSON.stringify(message));
+      return true;
     } catch (e) {
       console.error(`Error sending to ${playerId}:`, e);
     }
   }
+  return false;
 }
 
 serve(async (req) => {
@@ -101,11 +179,14 @@ serve(async (req) => {
           currentTableId = tableId;
           currentPlayerId = playerId;
 
-          // Add to connections map
-          if (!tableConnections.has(tableId)) {
-            tableConnections.set(tableId, new Map());
+          // Add to local connections
+          if (!localConnections.has(tableId)) {
+            localConnections.set(tableId, new Map());
           }
-          tableConnections.get(tableId)!.set(playerId, socket);
+          localConnections.get(tableId)!.set(playerId, socket);
+          
+          // Subscribe to broadcast channel for cross-instance updates
+          subscribeToBroadcast(tableId, playerId);
 
           // Call poker-game-engine to join
           const { data: joinResult, error: joinError } = await supabase.functions.invoke('poker-game-engine', {
@@ -119,7 +200,7 @@ serve(async (req) => {
           }
 
           // Fetch full table state
-          let tableState = await fetchTableState(supabase, tableId, playerId);
+          const tableState = await fetchTableState(supabase, tableId, playerId);
 
           // Send state to joining player
           socket.send(JSON.stringify({
@@ -128,14 +209,15 @@ serve(async (req) => {
             joinResult
           }));
 
-          // Notify other players
-          broadcastToTable(tableId, {
+          // Broadcast player joined to ALL instances
+          await broadcastToAllInstances(tableId, {
             type: 'player_joined',
             playerId,
             playerName,
             seatNumber: joinResult?.seatNumber,
-            stack: joinResult?.stack
-          }, playerId);
+            stack: joinResult?.stack,
+            tableState: await fetchTableState(supabase, tableId, playerId)
+          });
 
           console.log(`✅ Player ${playerName} (${playerId}) joined table ${tableId} at seat ${joinResult?.seatNumber}`);
           
@@ -152,7 +234,7 @@ serve(async (req) => {
             
             if (startResult?.success) {
               console.log(`🃏 Auto-started hand at table ${tableId}`);
-              await broadcastTableState(supabase, tableId);
+              await broadcastTableStateToAll(supabase, tableId);
             } else {
               console.log(`⚠️ Auto-start failed: ${startError?.message || startResult?.error}`);
             }
@@ -170,16 +252,20 @@ serve(async (req) => {
             body: { action: 'leave', tableId, playerId }
           });
 
-          // Remove from connections
-          tableConnections.get(tableId)?.delete(playerId);
-          if (tableConnections.get(tableId)?.size === 0) {
-            tableConnections.delete(tableId);
+          // Remove from local connections
+          localConnections.get(tableId)?.delete(playerId);
+          if (localConnections.get(tableId)?.size === 0) {
+            localConnections.delete(tableId);
           }
+          
+          // Unsubscribe from broadcast
+          unsubscribeFromBroadcast(tableId, playerId);
 
-          // Notify others
-          broadcastToTable(tableId, {
+          // Broadcast player left to all instances
+          await broadcastToAllInstances(tableId, {
             type: 'player_left',
-            playerId
+            playerId,
+            tableState: await fetchTableState(supabase, tableId, '')
           });
 
           console.log(`🚪 Player ${playerId} left table ${tableId}`);
@@ -203,8 +289,8 @@ serve(async (req) => {
             return;
           }
 
-          // Fetch updated state and broadcast to all
-          await broadcastTableState(supabase, tableId);
+          // Broadcast updated state to all instances
+          await broadcastTableStateToAll(supabase, tableId);
 
           console.log(`🃏 Hand started at table ${tableId}`);
           break;
@@ -245,8 +331,8 @@ serve(async (req) => {
             return;
           }
 
-          // Broadcast action to all players
-          broadcastToTable(tableId, {
+          // Broadcast action and updated state to all instances
+          await broadcastToAllInstances(tableId, {
             type: 'player_action',
             playerId,
             action: data.action,
@@ -254,8 +340,8 @@ serve(async (req) => {
             result: actionResult
           });
 
-          // Fetch and broadcast updated state
-          await broadcastTableState(supabase, tableId);
+          // Broadcast updated state
+          await broadcastTableStateToAll(supabase, tableId);
           break;
         }
 
@@ -263,11 +349,11 @@ serve(async (req) => {
           const { tableId, playerId, data } = message;
           if (!tableId || !playerId || !data?.message) return;
 
-          // Broadcast chat to all at table
-          broadcastToTable(tableId, {
+          // Broadcast chat to all instances
+          await broadcastToAllInstances(tableId, {
             type: 'chat',
             playerId,
-            message: data.message.slice(0, 200), // Limit length
+            message: data.message.slice(0, 200),
             timestamp: Date.now()
           });
           break;
@@ -289,14 +375,16 @@ serve(async (req) => {
           currentTableId = tableId;
           currentPlayerId = playerId;
 
-          // Add to connections map for subscribe
-          if (message.type === 'subscribe') {
-            if (!tableConnections.has(tableId)) {
-              tableConnections.set(tableId, new Map());
-            }
-            tableConnections.get(tableId)!.set(playerId, socket);
-            console.log(`📡 Player ${playerId} subscribed to table ${tableId}`);
+          // Add to local connections
+          if (!localConnections.has(tableId)) {
+            localConnections.set(tableId, new Map());
           }
+          localConnections.get(tableId)!.set(playerId, socket);
+          
+          // Subscribe to broadcast channel
+          subscribeToBroadcast(tableId, playerId);
+          
+          console.log(`📡 Player ${playerId} subscribed to table ${tableId}`);
 
           const tableState = await fetchTableState(supabase, tableId, playerId);
           
@@ -322,14 +410,17 @@ serve(async (req) => {
     console.log('🔌 WebSocket connection closed');
     
     if (currentTableId && currentPlayerId) {
-      // Remove from connections
-      tableConnections.get(currentTableId)?.delete(currentPlayerId);
-      if (tableConnections.get(currentTableId)?.size === 0) {
-        tableConnections.delete(currentTableId);
+      // Remove from local connections
+      localConnections.get(currentTableId)?.delete(currentPlayerId);
+      if (localConnections.get(currentTableId)?.size === 0) {
+        localConnections.delete(currentTableId);
       }
+      
+      // Unsubscribe from broadcast
+      unsubscribeFromBroadcast(currentTableId, currentPlayerId);
 
-      // Notify others (player might reconnect)
-      broadcastToTable(currentTableId, {
+      // Notify all instances that player disconnected
+      await broadcastToAllInstances(currentTableId, {
         type: 'player_disconnected',
         playerId: currentPlayerId
       });
@@ -360,7 +451,8 @@ async function fetchTableState(supabase: any, tableId: string, playerId: string)
   const { data: players } = await supabase
     .from('poker_table_players')
     .select('*, players(name, avatar_url)')
-    .eq('table_id', tableId);
+    .eq('table_id', tableId)
+    .eq('status', 'active');
 
   // Get current hand if exists
   let handData = null;
@@ -437,21 +529,47 @@ async function fetchTableState(supabase: any, tableId: string, playerId: string)
   };
 }
 
-// Broadcast table state to all connected players
-async function broadcastTableState(supabase: any, tableId: string) {
-  const connections = tableConnections.get(tableId);
-  if (!connections) return;
-
-  for (const [playerId, socket] of connections) {
-    if (socket.readyState === WebSocket.OPEN) {
-      const state = await fetchTableState(supabase, tableId, playerId);
-      try {
-        socket.send(JSON.stringify({
-          type: 'table_state',
-          ...state
-        }));
-      } catch (e) {
-        console.error(`Error broadcasting to ${playerId}:`, e);
+// Broadcast table state to all connected players across all instances
+async function broadcastTableStateToAll(supabase: any, tableId: string) {
+  // Get all players at this table from database
+  const { data: tablePlayers } = await supabase
+    .from('poker_table_players')
+    .select('player_id')
+    .eq('table_id', tableId)
+    .eq('status', 'active');
+  
+  if (!tablePlayers || tablePlayers.length === 0) return;
+  
+  // Broadcast a refresh signal with full state for each player
+  // Each player will receive their own personalized state
+  for (const tp of tablePlayers) {
+    const playerState = await fetchTableState(supabase, tableId, tp.player_id);
+    
+    await getSupabase().channel(`poker_table_${tableId}`).send({
+      type: 'broadcast',
+      event: 'table_update',
+      payload: {
+        type: 'table_state',
+        targetPlayerId: tp.player_id,
+        ...playerState
+      }
+    });
+  }
+  
+  // Also send to local connections
+  const connections = localConnections.get(tableId);
+  if (connections) {
+    for (const [playerId, socket] of connections) {
+      if (socket.readyState === WebSocket.OPEN) {
+        const state = await fetchTableState(supabase, tableId, playerId);
+        try {
+          socket.send(JSON.stringify({
+            type: 'table_state',
+            ...state
+          }));
+        } catch (e) {
+          console.error(`Error broadcasting to ${playerId}:`, e);
+        }
       }
     }
   }
