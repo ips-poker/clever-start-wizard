@@ -16,7 +16,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { GlitchText } from '@/components/ui/glitch-text';
 import { motion, AnimatePresence } from 'framer-motion';
-import { TelegramStablePokerTable } from './TelegramStablePokerTable';
 import { OnlinePokerTable as OnlinePokerTableComponent } from './OnlinePokerTable';
 
 interface OnlinePokerTable {
@@ -352,7 +351,7 @@ const [activeTableId, setActiveTableId] = useState<string | null>(null);
     onTableStateChange?.(isAtTable);
   }, [activeTableId, showDemoTable, onTableStateChange]);
 
-  // Если открыт активный стол - используем реальный онлайн компонент с движком
+  // Если открыт активный стол или демо-режим - используем OnlinePokerTable
   if (activeTableId && playerId) {
     return (
       <OnlinePokerTableComponent
@@ -369,14 +368,15 @@ const [activeTableId, setActiveTableId] = useState<string | null>(null);
     );
   }
 
-  // Демо-стол - используем стабильный компонент с локальной симуляцией
-  if (showDemoTable) {
+  // Быстрая игра - создаем/присоединяемся к демо-столу через OnlinePokerTable
+  if (showDemoTable && playerId) {
     return (
-      <TelegramStablePokerTable
+      <OnlinePokerTableComponent
+        tableId="demo-table"
         playerId={playerId}
         playerName={playerName}
         playerAvatar={playerAvatar}
-        playerStack={playerBalance}
+        buyIn={playerBalance}
         onLeave={() => setShowDemoTable(false)}
       />
     );
@@ -440,10 +440,11 @@ const [activeTableId, setActiveTableId] = useState<string | null>(null);
         {/* Quick Play Button */}
         <Button
           onClick={() => setShowDemoTable(true)}
-          className="w-full mt-3 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-500 hover:to-green-400 text-white font-bold h-12 rounded-xl shadow-lg"
+          disabled={!playerId}
+          className="w-full mt-3 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-500 hover:to-green-400 text-white font-bold h-12 rounded-xl shadow-lg disabled:opacity-50"
         >
           <Play className="h-5 w-5 mr-2" />
-          Быстрая игра (Demo)
+          Быстрая игра
         </Button>
       </div>
 
