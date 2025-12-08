@@ -50,11 +50,12 @@ interface HandResult {
 }
 
 interface ActionRequest {
-  action: 'join' | 'leave' | 'start_hand' | 'fold' | 'check' | 'call' | 'raise' | 'all_in' | 'check_timeout';
+  action: 'join' | 'join_table' | 'leave' | 'leave_table' | 'start_hand' | 'fold' | 'check' | 'call' | 'raise' | 'all_in' | 'check_timeout';
   tableId: string;
   playerId: string;
   amount?: number;
   seatNumber?: number;
+  buyIn?: number;
 }
 
 // ==========================================
@@ -296,9 +297,9 @@ serve(async (req) => {
 
   try {
     const request: ActionRequest = await req.json();
-    const { action, tableId, playerId, amount, seatNumber } = request;
+    const { action, tableId, playerId, amount, seatNumber, buyIn: requestBuyIn } = request;
     
-    console.log(`[Engine] ${action} | table=${tableId?.slice(0,8)} | player=${playerId?.slice(0,8)} | amount=${amount}`);
+    console.log(`[Engine] ${action} | table=${tableId?.slice(0,8)} | player=${playerId?.slice(0,8)} | amount=${amount || requestBuyIn}`);
 
     // Validate input
     if (!tableId || !playerId) {
@@ -329,9 +330,9 @@ serve(async (req) => {
     let result: any = { success: false };
 
     // ==========================================
-    // ACTION: JOIN
+    // ACTION: JOIN / JOIN_TABLE
     // ==========================================
-    if (action === 'join') {
+    if (action === 'join' || action === 'join_table') {
       const existingPlayer = tablePlayers?.find(p => p.player_id === playerId);
       if (existingPlayer) {
         result = { success: true, seatNumber: existingPlayer.seat_number, stack: existingPlayer.stack, alreadySeated: true };
@@ -356,8 +357,8 @@ serve(async (req) => {
 
           const diamondBalance = wallet?.balance || 0;
           
-          // Buy-in comes from request or defaults to min
-          const requestedBuyIn = amount || table.min_buy_in;
+          // Buy-in comes from request (buyIn or amount) or defaults to min
+          const requestedBuyIn = requestBuyIn || amount || table.min_buy_in;
           
           if (diamondBalance < requestedBuyIn) {
             result = { success: false, error: `Недостаточно алмазов. Баланс: ${diamondBalance}, требуется: ${requestedBuyIn}` };
@@ -417,9 +418,9 @@ serve(async (req) => {
     }
 
     // ==========================================
-    // ACTION: LEAVE - Return remaining stack to diamond wallet
+    // ACTION: LEAVE / LEAVE_TABLE - Return remaining stack to diamond wallet
     // ==========================================
-    else if (action === 'leave') {
+    else if (action === 'leave' || action === 'leave_table') {
       const playerAtTable = tablePlayers?.find(p => p.player_id === playerId);
       const remainingStack = playerAtTable?.stack || 0;
       

@@ -151,8 +151,6 @@ export function usePokerTable(options: UsePokerTableOptions | null) {
   const [handHistory, setHandHistory] = useState<HandHistoryItem[]>([]);
   const [currentHandActions, setCurrentHandActions] = useState<any[]>([]);
   
-  const wsRef = useRef<WebSocket | null>(null);
-  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const channelRef = useRef<any>(null);
   const autoStartAttemptedRef = useRef<boolean>(false);
   const autoStartTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -160,12 +158,6 @@ export function usePokerTable(options: UsePokerTableOptions | null) {
   const loadPlayersFromDBRef = useRef<() => Promise<void>>();
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const lastLoadTimeRef = useRef<number>(0);
-  
-  // Reconnection state with exponential backoff
-  const reconnectAttemptRef = useRef<number>(0);
-  const MAX_RECONNECT_ATTEMPTS = 5;
-  const BASE_RECONNECT_DELAY = 2000; // 2 seconds
-  const MAX_RECONNECT_DELAY = 30000; // 30 seconds
 
   // Auto-start hand via edge function (stateless, reliable, PPPoker-style)
   const autoStartViaEngine = useCallback(async () => {
@@ -457,17 +449,17 @@ export function usePokerTable(options: UsePokerTableOptions | null) {
   // Store loadPlayersFromDB in ref for use in autoStartViaEngine
   loadPlayersFromDBRef.current = loadPlayersFromDB;
 
-  const getWsUrl = useCallback(() => {
-    return `wss://mokhssmnorrhohrowxvu.functions.supabase.co/poker-table-ws`;
-  }, []);
-
-  // Send message to WebSocket
+  // Send message via Supabase Realtime broadcast (no WebSocket)
   const sendMessage = useCallback((message: any) => {
-    if (wsRef.current?.readyState === WebSocket.OPEN) {
-      wsRef.current.send(JSON.stringify(message));
-      console.log('📤 Sent:', message.type);
+    if (channelRef.current) {
+      channelRef.current.send({
+        type: 'broadcast',
+        event: 'game_action',
+        payload: message
+      });
+      console.log('📤 Broadcast sent:', message.type);
     } else {
-      console.warn('⚠️ WebSocket not connected');
+      console.warn('⚠️ Realtime channel not connected');
     }
   }, []);
 
@@ -559,14 +551,14 @@ export function usePokerTable(options: UsePokerTableOptions | null) {
     channelRef.current = channel;
   }, [tableId, loadPlayersFromDB, debouncedLoadPlayers]);
 
-  // Connect to table
+  // Connect to table - Using Supabase Realtime only (no WebSocket edge function)
+  // This avoids "Insufficient resources" errors from WebSocket limits
   const connectingRef = useRef(false);
   
-  const connect = useCallback(() => {
+  const connect = useCallback(async () => {
     if (!tableId || !playerId) return;
-    if (wsRef.current?.readyState === WebSocket.OPEN) return;
-    if (wsRef.current?.readyState === WebSocket.CONNECTING) return;
     if (connectingRef.current) return;
+    if (isConnected) return;
 
     connectingRef.current = true;
     setIsConnecting(true);
@@ -575,98 +567,51 @@ export function usePokerTable(options: UsePokerTableOptions | null) {
     // Reset auto-start flag on new connection
     autoStartAttemptedRef.current = false;
 
-    // Setup Realtime sync first
-    setupRealtimeSync();
+    console.log('🎰 Connecting via Supabase Realtime (no WebSocket)...');
 
     try {
-      // Close existing connection if any
-      if (wsRef.current) {
-        wsRef.current.close();
-        wsRef.current = null;
-      }
-      
-      const ws = new WebSocket(getWsUrl());
-      wsRef.current = ws;
+      // Setup Realtime sync
+      setupRealtimeSync();
 
-      ws.onopen = () => {
-        console.log('🎰 WebSocket connected');
-        connectingRef.current = false;
-        setIsConnected(true);
-        setIsConnecting(false);
-        
-        // Reset reconnect counter on successful connection
-        reconnectAttemptRef.current = 0;
-        
-        // Join table
-        sendMessage({
-          type: 'join_table',
+      // Join table via HTTP
+      const { data, error: joinError } = await supabase.functions.invoke('poker-game-engine', {
+        body: {
+          action: 'join_table',
           tableId,
           playerId,
-          data: { buyIn, seatNumber }
-        });
-      };
-
-      ws.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data);
-          if (data.type !== 'pong') {
-            console.log('📨 Received:', data.type);
-          }
-          handleMessage(data);
-          
-          // Only reload for critical events, with debounce
-          if (['joined_table', 'hand_started', 'showdown'].includes(data.type)) {
-            debouncedLoadPlayers();
-          }
-        } catch (e) {
-          console.error('Failed to parse message:', e);
+          buyIn,
+          seatNumber
         }
-      };
+      });
 
-      ws.onerror = (event) => {
-        console.error('❌ WebSocket error');
+      if (joinError) {
+        console.error('❌ Join error:', joinError);
+        setError('Failed to join table');
         connectingRef.current = false;
-        setError('Connection error');
         setIsConnecting(false);
-      };
+        return;
+      }
 
-      ws.onclose = (event) => {
-        console.log('🔌 WebSocket closed:', event.code);
-        connectingRef.current = false;
-        setIsConnected(false);
-        setIsConnecting(false);
-        wsRef.current = null;
-
-        // Auto-reconnect with exponential backoff if not clean close
-        if (!event.wasClean && event.code !== 1000) {
-          if (reconnectAttemptRef.current < MAX_RECONNECT_ATTEMPTS) {
-            // Calculate delay with exponential backoff + jitter
-            const delay = Math.min(
-              BASE_RECONNECT_DELAY * Math.pow(2, reconnectAttemptRef.current) + Math.random() * 1000,
-              MAX_RECONNECT_DELAY
-            );
-            reconnectAttemptRef.current++;
-            console.log(`🔄 Reconnect attempt ${reconnectAttemptRef.current}/${MAX_RECONNECT_ATTEMPTS} in ${Math.round(delay/1000)}s...`);
-            
-            reconnectTimeoutRef.current = setTimeout(() => {
-              connect();
-            }, delay);
-          } else {
-            console.log('❌ Max reconnection attempts reached, giving up');
-            setError('Connection failed after multiple attempts. Please refresh the page.');
-          }
-        } else {
-          // Clean close - reset attempt counter
-          reconnectAttemptRef.current = 0;
-        }
-      };
+      console.log('✅ Joined table:', data);
+      
+      connectingRef.current = false;
+      setIsConnected(true);
+      setIsConnecting(false);
+      
+      if (data?.seatNumber) {
+        setMySeat(data.seatNumber);
+      }
+      
+      // Load initial state
+      await loadPlayersFromDB();
+      
     } catch (e) {
-      console.error('Failed to create WebSocket:', e);
+      console.error('Failed to connect:', e);
       connectingRef.current = false;
       setError('Failed to connect');
       setIsConnecting(false);
     }
-  }, [tableId, playerId, buyIn, seatNumber, getWsUrl, sendMessage, setupRealtimeSync, debouncedLoadPlayers]);
+  }, [tableId, playerId, buyIn, seatNumber, setupRealtimeSync, loadPlayersFromDB, isConnected]);
 
   // Handle incoming messages
   const handleMessage = useCallback((data: any) => {
@@ -855,22 +800,26 @@ export function usePokerTable(options: UsePokerTableOptions | null) {
   }, [tableId, playerId, sendMessage]);
 
   // Disconnect from table
-  const disconnect = useCallback(() => {
-    // Cancel any pending reconnection attempts
-    reconnectAttemptRef.current = MAX_RECONNECT_ATTEMPTS; // Prevent auto-reconnect
-    
-    if (wsRef.current) {
-      sendMessage({ type: 'leave_table', tableId, playerId });
-      wsRef.current.close(1000, 'Client disconnect'); // Clean close
-      wsRef.current = null;
+  const disconnect = useCallback(async () => {
+    // Leave table via HTTP
+    if (tableId && playerId) {
+      try {
+        await supabase.functions.invoke('poker-game-engine', {
+          body: {
+            action: 'leave_table',
+            tableId,
+            playerId
+          }
+        });
+      } catch (e) {
+        console.error('Leave table error:', e);
+      }
     }
+    
+    // Cleanup Realtime channel
     if (channelRef.current) {
       supabase.removeChannel(channelRef.current);
       channelRef.current = null;
-    }
-    if (reconnectTimeoutRef.current) {
-      clearTimeout(reconnectTimeoutRef.current);
-      reconnectTimeoutRef.current = null;
     }
     if (autoStartTimeoutRef.current) {
       clearTimeout(autoStartTimeoutRef.current);
@@ -884,12 +833,11 @@ export function usePokerTable(options: UsePokerTableOptions | null) {
     
     // Reset state
     connectingRef.current = false;
-    reconnectAttemptRef.current = 0;
     setIsConnected(false);
     setTableState(null);
     setMySeat(null);
     setMyCards([]);
-  }, [tableId, playerId, sendMessage]);
+  }, [tableId, playerId]);
 
   // Player actions - send directly to poker-game-engine for reliability
   const executeAction = useCallback(async (action: string, amount?: number) => {
