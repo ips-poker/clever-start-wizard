@@ -1,53 +1,33 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
+// Import core engine (relative path for Deno)
+import {
+  createDeck,
+  calculateSidePots,
+  evaluateHand,
+  compareHands,
+  compareKickers,
+  getNextPhase,
+  validateAndProcessAction,
+  determineShowdownOrder,
+  isBettingRoundComplete,
+  findFirstToActPostflop,
+  dealRemainingCards,
+  type PlayerContribution,
+  type HandResult,
+  type SidePot,
+  type GamePlayer,
+  type GamePhase,
+  PHASES,
+} from "../_shared/poker-engine-core.ts";
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// ==========================================
-// CONSTANTS
-// ==========================================
-const SUITS = ['h', 'd', 'c', 's'] as const;
-const RANKS = ['2', '3', '4', '5', '6', '7', '8', '9', 'T', 'J', 'Q', 'K', 'A'] as const;
-const RANK_VALUES: Record<string, number> = {
-  '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8, '9': 9,
-  'T': 10, 'J': 11, 'Q': 12, 'K': 13, 'A': 14
-};
-
 const ACTION_TIME_SECONDS = 30;
-const PHASES = ['preflop', 'flop', 'turn', 'river', 'showdown'] as const;
-
-// ==========================================
-// TYPES
-// ==========================================
-interface PlayerContribution {
-  playerId: string;
-  totalBet: number;
-  isFolded: boolean;
-  isAllIn: boolean;
-}
-
-interface SidePot {
-  amount: number;
-  eligiblePlayers: string[];
-  cappedAt: number;
-}
-
-interface PotResult {
-  mainPot: SidePot;
-  sidePots: SidePot[];
-  totalPot: number;
-}
-
-interface HandResult {
-  playerId: string;
-  handRank: number;
-  handName: string;
-  bestCards: string[];
-  kickers: number[];
-}
 
 interface ActionRequest {
   action: 'join' | 'join_table' | 'leave' | 'leave_table' | 'start_hand' | 'fold' | 'check' | 'call' | 'raise' | 'all_in' | 'check_timeout';
@@ -58,212 +38,24 @@ interface ActionRequest {
   buyIn?: number;
 }
 
-// ==========================================
-// SIDE POT CALCULATION
-// ==========================================
-function calculateSidePots(contributions: PlayerContribution[]): PotResult {
-  const empty = { mainPot: { amount: 0, eligiblePlayers: [], cappedAt: 0 }, sidePots: [], totalPot: 0 };
-  if (contributions.length === 0) return empty;
-
-  const activeBettors = contributions.filter(c => c.totalBet > 0);
-  if (activeBettors.length === 0) return empty;
-
-  // Get unique bet levels from all-in players
-  const allInLevels = new Set<number>();
-  for (const c of activeBettors) {
-    if (c.isAllIn && c.totalBet > 0) allInLevels.add(c.totalBet);
-  }
-  allInLevels.add(Math.max(...activeBettors.map(c => c.totalBet)));
-
-  const levels = Array.from(allInLevels).sort((a, b) => a - b);
-  const pots: SidePot[] = [];
-  let previousLevel = 0;
-
-  for (const level of levels) {
-    const increment = level - previousLevel;
-    if (increment <= 0) continue;
-
-    let potAmount = 0;
-    const eligiblePlayers: string[] = [];
-
-    for (const c of activeBettors) {
-      if (c.totalBet > previousLevel) {
-        potAmount += Math.min(c.totalBet - previousLevel, increment);
-        if (!c.isFolded && c.totalBet >= level && !eligiblePlayers.includes(c.playerId)) {
-          eligiblePlayers.push(c.playerId);
-        }
-      }
-    }
-
-    if (potAmount > 0) pots.push({ amount: potAmount, eligiblePlayers, cappedAt: level });
-    previousLevel = level;
-  }
-
-  const [mainPot, ...sidePots] = pots;
+// Helper to convert DB player to GamePlayer
+function toGamePlayer(dbPlayer: any, handPlayer?: any): GamePlayer {
   return {
-    mainPot: mainPot || { amount: 0, eligiblePlayers: [], cappedAt: 0 },
-    sidePots,
-    totalPot: pots.reduce((sum, pot) => sum + pot.amount, 0)
+    id: dbPlayer.player_id,
+    seatNumber: dbPlayer.seat_number || handPlayer?.seat_number,
+    stack: dbPlayer.stack,
+    betAmount: handPlayer?.bet_amount || 0,
+    holeCards: handPlayer?.hole_cards || [],
+    isFolded: handPlayer?.is_folded || false,
+    isAllIn: handPlayer?.is_all_in || false,
+    isSittingOut: dbPlayer.status === 'sitting_out'
   };
 }
 
-// ==========================================
-// HAND EVALUATION
-// ==========================================
-function getSortedValues(cards: string[]): number[] {
-  return cards.map(c => RANK_VALUES[c[0]]).sort((a, b) => b - a);
-}
-
-function isFlush(cards: string[]): boolean {
-  const suit = cards[0][1];
-  return cards.every(c => c[1] === suit);
-}
-
-function isStraight(values: number[]): { isStraight: boolean; highCard: number } {
-  const sorted = [...new Set(values)].sort((a, b) => b - a);
-  
-  for (let i = 0; i <= sorted.length - 5; i++) {
-    if (sorted[i] - sorted[i + 4] === 4) {
-      return { isStraight: true, highCard: sorted[i] };
-    }
-  }
-  
-  // Wheel (A-5-4-3-2)
-  if (sorted.includes(14) && sorted.includes(5) && sorted.includes(4) && 
-      sorted.includes(3) && sorted.includes(2)) {
-    return { isStraight: true, highCard: 5 };
-  }
-  
-  return { isStraight: false, highCard: 0 };
-}
-
-function getRankCounts(cards: string[]): Map<number, number> {
-  const counts = new Map<number, number>();
-  for (const card of cards) {
-    const value = RANK_VALUES[card[0]];
-    counts.set(value, (counts.get(value) || 0) + 1);
-  }
-  return counts;
-}
-
-function compareKickers(a: number[], b: number[]): number {
-  for (let i = 0; i < Math.min(a.length, b.length); i++) {
-    if (a[i] !== b[i]) return a[i] - b[i];
-  }
-  return 0;
-}
-
-function evaluateFiveCards(cards: string[]): HandResult {
-  const values = getSortedValues(cards);
-  const flush = isFlush(cards);
-  const straightResult = isStraight(values);
-  const rankCounts = getRankCounts(cards);
-  
-  const countsArray = Array.from(rankCounts.entries()).sort((a, b) => b[1] - a[1] || b[0] - a[0]);
-  const counts = countsArray.map(c => c[1]);
-  const rankedValues = countsArray.map(c => c[0]);
-
-  if (flush && straightResult.isStraight && straightResult.highCard === 14) {
-    return { playerId: '', handRank: 10, handName: 'Royal Flush', bestCards: cards, kickers: [14] };
-  }
-  if (flush && straightResult.isStraight) {
-    return { playerId: '', handRank: 9, handName: 'Straight Flush', bestCards: cards, kickers: [straightResult.highCard] };
-  }
-  if (counts[0] === 4) {
-    return { playerId: '', handRank: 8, handName: 'Four of a Kind', bestCards: cards, kickers: rankedValues };
-  }
-  if (counts[0] === 3 && counts[1] >= 2) {
-    return { playerId: '', handRank: 7, handName: 'Full House', bestCards: cards, kickers: rankedValues.slice(0, 2) };
-  }
-  if (flush) {
-    return { playerId: '', handRank: 6, handName: 'Flush', bestCards: cards, kickers: values.slice(0, 5) };
-  }
-  if (straightResult.isStraight) {
-    return { playerId: '', handRank: 5, handName: 'Straight', bestCards: cards, kickers: [straightResult.highCard] };
-  }
-  if (counts[0] === 3) {
-    return { playerId: '', handRank: 4, handName: 'Three of a Kind', bestCards: cards, kickers: rankedValues };
-  }
-  if (counts[0] === 2 && counts[1] === 2) {
-    return { playerId: '', handRank: 3, handName: 'Two Pair', bestCards: cards, kickers: rankedValues };
-  }
-  if (counts[0] === 2) {
-    return { playerId: '', handRank: 2, handName: 'One Pair', bestCards: cards, kickers: rankedValues };
-  }
-  return { playerId: '', handRank: 1, handName: 'High Card', bestCards: cards, kickers: values.slice(0, 5) };
-}
-
-function evaluateHand(holeCards: string[], communityCards: string[]): HandResult {
-  const allCards = [...holeCards, ...communityCards];
-  if (allCards.length < 5) {
-    return { playerId: '', handRank: 0, handName: 'Unknown', bestCards: [], kickers: [] };
-  }
-
-  // Generate all 5-card combinations
-  const combinations: string[][] = [];
-  for (let i = 0; i < allCards.length - 4; i++) {
-    for (let j = i + 1; j < allCards.length - 3; j++) {
-      for (let k = j + 1; k < allCards.length - 2; k++) {
-        for (let l = k + 1; l < allCards.length - 1; l++) {
-          for (let m = l + 1; m < allCards.length; m++) {
-            combinations.push([allCards[i], allCards[j], allCards[k], allCards[l], allCards[m]]);
-          }
-        }
-      }
-    }
-  }
-
-  let bestResult: HandResult = { playerId: '', handRank: 0, handName: 'High Card', bestCards: [], kickers: [] };
-
-  for (const combo of combinations) {
-    const result = evaluateFiveCards(combo);
-    if (result.handRank > bestResult.handRank || 
-       (result.handRank === bestResult.handRank && compareKickers(result.kickers, bestResult.kickers) > 0)) {
-      bestResult = result;
-    }
-  }
-
-  return bestResult;
-}
-
-function compareHands(a: HandResult, b: HandResult): number {
-  if (a.handRank !== b.handRank) return a.handRank - b.handRank;
-  return compareKickers(a.kickers, b.kickers);
-}
-
-// ==========================================
-// DECK MANAGEMENT
-// ==========================================
-function createDeck(): string[] {
-  const deck: string[] = [];
-  for (const suit of SUITS) {
-    for (const rank of RANKS) {
-      deck.push(`${rank}${suit}`);
-    }
-  }
-  // Cryptographically secure shuffle using Web Crypto API
-  const array = new Uint32Array(deck.length);
-  crypto.getRandomValues(array);
-  for (let i = deck.length - 1; i > 0; i--) {
-    const j = array[i] % (i + 1);
-    [deck[i], deck[j]] = [deck[j], deck[i]];
-  }
-  return deck;
-}
-
-// ==========================================
-// HELPER FUNCTIONS
-// ==========================================
-function getNextPhase(current: string): string {
-  const idx = PHASES.indexOf(current as typeof PHASES[number]);
-  return idx < PHASES.length - 1 ? PHASES[idx + 1] : 'showdown';
-}
-
-// Find next active player to act (clockwise from current seat)
+// Find next active player
 function findNextActivePlayer(players: any[], currentSeat: number, excludePlayerId?: string): any {
   const sorted = [...players].sort((a, b) => a.seat_number - b.seat_number);
   
-  // First try to find player after current seat
   let next = sorted.find(p => 
     p.seat_number > currentSeat && 
     !p.is_folded && 
@@ -271,7 +63,6 @@ function findNextActivePlayer(players: any[], currentSeat: number, excludePlayer
     p.player_id !== excludePlayerId
   );
   
-  // If not found, wrap around to beginning
   if (!next) {
     next = sorted.find(p => 
       !p.is_folded && 
@@ -283,9 +74,6 @@ function findNextActivePlayer(players: any[], currentSeat: number, excludePlayer
   return next;
 }
 
-// ==========================================
-// MAIN HANDLER
-// ==========================================
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -301,14 +89,12 @@ serve(async (req) => {
     
     console.log(`[Engine] ${action} | table=${tableId?.slice(0,8)} | player=${playerId?.slice(0,8)} | amount=${amount || requestBuyIn}`);
 
-    // Validate input
     if (!tableId || !playerId) {
       return new Response(JSON.stringify({ success: false, error: 'Missing tableId or playerId' }), {
         status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
 
-    // Get table
     const { data: table, error: tableError } = await supabase
       .from('poker_tables')
       .select('*')
@@ -321,7 +107,6 @@ serve(async (req) => {
       });
     }
 
-    // Get players
     const { data: tablePlayers } = await supabase
       .from('poker_table_players')
       .select('*, players(name, avatar_url)')
@@ -348,7 +133,6 @@ serve(async (req) => {
         if (!availableSeat) {
           result = { success: false, error: 'No available seats' };
         } else {
-          // Use diamond wallet for buy-in
           const { data: wallet } = await supabase
             .from('diamond_wallets')
             .select('balance, total_spent')
@@ -356,8 +140,6 @@ serve(async (req) => {
             .single();
 
           const diamondBalance = wallet?.balance || 0;
-          
-          // Buy-in comes from request (buyIn or amount) or defaults to min
           const requestedBuyIn = requestBuyIn || amount || table.min_buy_in;
           
           if (diamondBalance < requestedBuyIn) {
@@ -365,7 +147,6 @@ serve(async (req) => {
           } else {
             const buyIn = Math.min(Math.max(requestedBuyIn, table.min_buy_in), table.max_buy_in);
             
-            // Deduct diamonds from wallet
             await supabase
               .from('diamond_wallets')
               .update({ 
@@ -379,13 +160,9 @@ serve(async (req) => {
               .insert({ table_id: tableId, player_id: playerId, seat_number: availableSeat, stack: buyIn, status: 'active' });
 
             if (joinError?.message?.includes('unique')) {
-              // Refund diamonds on race condition
               await supabase
                 .from('diamond_wallets')
-                .update({ 
-                  balance: diamondBalance,
-                  total_spent: wallet?.total_spent || 0
-                })
+                .update({ balance: diamondBalance, total_spent: wallet?.total_spent || 0 })
                 .eq('player_id', playerId);
               
               const { data: existing } = await supabase
@@ -399,13 +176,9 @@ serve(async (req) => {
                 ? { success: true, seatNumber: existing.seat_number, stack: existing.stack, alreadySeated: true }
                 : { success: false, error: 'Seat taken, try again' };
             } else if (joinError) {
-              // Refund diamonds on error
               await supabase
                 .from('diamond_wallets')
-                .update({ 
-                  balance: diamondBalance,
-                  total_spent: wallet?.total_spent || 0
-                })
+                .update({ balance: diamondBalance, total_spent: wallet?.total_spent || 0 })
                 .eq('player_id', playerId);
               result = { success: false, error: joinError.message };
             } else {
@@ -418,7 +191,7 @@ serve(async (req) => {
     }
 
     // ==========================================
-    // ACTION: LEAVE / LEAVE_TABLE - Return remaining stack to diamond wallet
+    // ACTION: LEAVE / LEAVE_TABLE
     // ==========================================
     else if (action === 'leave' || action === 'leave_table') {
       const playerAtTable = tablePlayers?.find(p => p.player_id === playerId);
@@ -452,19 +225,16 @@ serve(async (req) => {
     // ACTION: START_HAND
     // ==========================================
     else if (action === 'start_hand') {
-      // Cleanup stuck hands
       const { data: cleanupResult } = await supabase.rpc('cleanup_stuck_poker_hands');
       if (cleanupResult && cleanupResult > 0) {
         console.log(`[Engine] Cleaned up ${cleanupResult} stuck hands`);
       }
 
-      // Clean up players with 0 chips
       const zeroChipPlayers = tablePlayers?.filter(p => p.status === 'active' && p.stack <= 0) || [];
       for (const p of zeroChipPlayers) {
         await supabase.from('poker_table_players').update({ status: 'sitting_out' }).eq('id', p.id);
       }
 
-      // Check current hand
       if (table.current_hand_id) {
         const { data: currentHand } = await supabase
           .from('poker_hands')
@@ -500,7 +270,6 @@ serve(async (req) => {
         }
       }
 
-      // Re-fetch players
       const { data: freshPlayers } = await supabase
         .from('poker_table_players')
         .select('*, players(name, avatar_url)')
@@ -511,10 +280,10 @@ serve(async (req) => {
       if (activePlayers.length < 2) {
         result = { success: false, error: 'Need at least 2 players' };
       } else {
+        // Use core engine to create deck
         const deck = createDeck();
         const sortedPlayers = [...activePlayers].sort((a, b) => a.seat_number - b.seat_number);
         
-        // Determine dealer (rotate from previous)
         let dealerIndex = 0;
         if (table.current_dealer_seat) {
           const prevDealerIdx = sortedPlayers.findIndex(p => p.seat_number === table.current_dealer_seat);
@@ -522,8 +291,6 @@ serve(async (req) => {
         }
         
         const dealerSeat = sortedPlayers[dealerIndex].seat_number;
-        
-        // Heads-up special case: dealer is SB
         const isHeadsUp = sortedPlayers.length === 2;
         const sbIndex = isHeadsUp ? dealerIndex : (dealerIndex + 1) % sortedPlayers.length;
         const bbIndex = isHeadsUp ? (dealerIndex + 1) % sortedPlayers.length : (dealerIndex + 2) % sortedPlayers.length;
@@ -534,7 +301,6 @@ serve(async (req) => {
         const sbAmount = Math.min(table.small_blind, sbPlayer.stack);
         const bbAmount = Math.min(table.big_blind, bbPlayer.stack);
 
-        // Create hand
         const { data: hand, error: handError } = await supabase
           .from('poker_hands')
           .insert({
@@ -554,7 +320,6 @@ serve(async (req) => {
         if (handError) {
           result = { success: false, error: handError.message };
         } else {
-          // Deal cards and create hand players
           const handPlayers = [];
           let deckIndex = 0;
 
@@ -576,12 +341,9 @@ serve(async (req) => {
           }
 
           await supabase.from('poker_hand_players').insert(handPlayers);
-
-          // Update stacks for blinds
           await supabase.from('poker_table_players').update({ stack: sbPlayer.stack - sbAmount }).eq('id', sbPlayer.id);
           await supabase.from('poker_table_players').update({ stack: bbPlayer.stack - bbAmount }).eq('id', bbPlayer.id);
 
-          // First to act preflop: player after BB (or SB in heads-up)
           const firstToActIndex = isHeadsUp ? sbIndex : (bbIndex + 1) % sortedPlayers.length;
           const firstToActSeat = sortedPlayers[firstToActIndex].seat_number;
 
@@ -720,54 +482,30 @@ serve(async (req) => {
           } else if (hp.is_folded) {
             result = { success: false, error: 'Already folded' };
           } else {
-            let actionAmount = 0;
-            let newBet = hp.bet_amount;
-            let newStack = tp.stack;
-            let isFolded = false;
-            let isAllIn = hp.is_all_in;
-            let actionValid = true;
+            // Use core engine validation
+            const gamePlayer: GamePlayer = {
+              id: playerId,
+              seatNumber: tp.seat_number,
+              stack: tp.stack,
+              betAmount: hp.bet_amount,
+              holeCards: hp.hole_cards || [],
+              isFolded: hp.is_folded,
+              isAllIn: hp.is_all_in,
+              isSittingOut: false
+            };
+            
+            const bettingResult = validateAndProcessAction(
+              { type: action as any, amount },
+              gamePlayer,
+              hand.current_bet,
+              table.big_blind
+            );
 
-            if (action === 'fold') {
-              isFolded = true;
-            } else if (action === 'check') {
-              if (hand.current_bet > hp.bet_amount) {
-                result = { success: false, error: 'Cannot check, must call or raise' };
-                actionValid = false;
-              }
-            } else if (action === 'call') {
-              const toCall = hand.current_bet - hp.bet_amount;
-              actionAmount = Math.min(toCall, tp.stack);
-              newBet = hp.bet_amount + actionAmount;
-              newStack = tp.stack - actionAmount;
-              if (newStack === 0) isAllIn = true;
-            } else if (action === 'raise') {
-              const totalRaise = amount || (hand.current_bet * 2);
-              const minRaise = hand.current_bet + table.big_blind;
+            if (!bettingResult.valid) {
+              result = { success: false, error: bettingResult.error };
+            } else {
+              const { newBet, newStack, actionAmount, isFolded, isAllIn } = bettingResult;
               
-              // Calculate how much more to add
-              actionAmount = totalRaise - hp.bet_amount;
-              
-              if (actionAmount > tp.stack) {
-                // All-in if not enough chips
-                actionAmount = tp.stack;
-                isAllIn = true;
-              } else if (totalRaise < minRaise && tp.stack > minRaise - hp.bet_amount) {
-                // Must raise at least min raise amount
-                actionAmount = minRaise - hp.bet_amount;
-              }
-              
-              newBet = hp.bet_amount + actionAmount;
-              newStack = tp.stack - actionAmount;
-              if (newStack === 0) isAllIn = true;
-            } else if (action === 'all_in') {
-              actionAmount = tp.stack;
-              newBet = hp.bet_amount + actionAmount;
-              newStack = 0;
-              isAllIn = true;
-            }
-
-            if (actionValid) {
-              // Update player state
               await supabase.from('poker_hand_players').update({ 
                 bet_amount: newBet, 
                 is_folded: isFolded, 
@@ -776,7 +514,6 @@ serve(async (req) => {
               
               await supabase.from('poker_table_players').update({ stack: newStack }).eq('id', tp.id);
 
-              // Record action
               const { count } = await supabase.from('poker_actions').select('*', { count: 'exact' }).eq('hand_id', hand.id);
               await supabase.from('poker_actions').insert({
                 hand_id: hand.id,
@@ -791,7 +528,6 @@ serve(async (req) => {
               const newPot = hand.pot + actionAmount;
               const newCurrentBet = Math.max(hand.current_bet, newBet);
 
-              // Get updated hand players
               const { data: allHp } = await supabase.from('poker_hand_players').select('*').eq('hand_id', hand.id);
               const remaining = allHp?.filter(p => !p.is_folded) || [];
               const active = remaining.filter(p => !p.is_all_in);
@@ -818,32 +554,22 @@ serve(async (req) => {
 
                 result = { success: true, action, amount: actionAmount, handComplete: true, winner: winner.player_id, winAmount: newPot };
               } else {
-                // Determine if betting round is complete
-                // Round is complete when:
-                // 1. All active players have had a chance to act
-                // 2. All bets are equal (or players are all-in with less)
-                // 3. For preflop, BB must have option if no raise
-                
+                // Check round completion
                 let roundComplete = true;
                 
-                // Check if all remaining players have matched the bet or are all-in
                 for (const p of remaining) {
-                  if (p.is_all_in) continue; // All-in players don't need to match
-                  
-                  // Refresh bet amount for current player
+                  if (p.is_all_in) continue;
                   const currentBet = p.player_id === playerId ? newBet : p.bet_amount;
-                  
                   if (currentBet < newCurrentBet) {
                     roundComplete = false;
                     break;
                   }
                 }
                 
-                // Preflop: BB gets option if limped to them (no raise beyond BB)
+                // Preflop BB option
                 if (roundComplete && hand.phase === 'preflop') {
                   const bbPlayer = remaining.find(p => p.seat_number === hand.big_blind_seat);
                   if (bbPlayer && !bbPlayer.is_all_in && bbPlayer.player_id !== playerId) {
-                    // Check if there was any raise beyond BB
                     const { data: preflopActions } = await supabase
                       .from('poker_actions')
                       .select('action_type, amount')
@@ -854,7 +580,6 @@ serve(async (req) => {
                       a.action_type === 'raise' || a.action_type === 'all_in'
                     );
                     
-                    // BB hasn't acted yet and no raise = BB option
                     const bbHasActed = preflopActions?.some(a => 
                       allHp?.find(hp => hp.player_id === bbPlayer.player_id)?.seat_number === hand.big_blind_seat &&
                       ['check', 'raise', 'call', 'fold'].includes(a.action_type)
@@ -866,37 +591,25 @@ serve(async (req) => {
                   }
                 }
                 
-                // If only all-in players remain, go to showdown
                 if (active.length === 0 && remaining.length > 1) {
                   roundComplete = true;
                 }
                 
-                // Find next player to act
                 let nextPlayer = findNextActivePlayer(allHp || [], tp.seat_number, playerId);
                 
-                // After raise, action continues from next player
                 if ((action === 'raise' || action === 'all_in') && newBet > hand.current_bet) {
-                  // Mark that a raise happened - need to give others chance to respond
                   roundComplete = false;
                   nextPlayer = findNextActivePlayer(allHp || [], tp.seat_number, playerId);
                 }
 
                 console.log(`[Engine] Round complete: ${roundComplete}, next: ${nextPlayer?.seat_number}, phase: ${hand.phase}`);
 
-                let newPhase = hand.phase;
+                let newPhase = hand.phase as GamePhase;
                 let newCommunityCards = hand.community_cards || [];
                 const deck: string[] = JSON.parse(hand.deck_state || '[]');
                 const playerCount = allHp?.length || 0;
-                
-                // Cards are dealt after hole cards: 
-                // deck[0..2*playerCount-1] = hole cards
-                // deck[2*playerCount] = burn, deck[2*playerCount+1,2,3] = flop
-                // deck[2*playerCount+4] = burn, deck[2*playerCount+5] = turn
-                // deck[2*playerCount+6] = burn, deck[2*playerCount+7] = river
                 const deckStart = playerCount * 2;
 
-                // Determine if we should move to next phase
-                // River + roundComplete = SHOWDOWN (not next phase)
                 const shouldAdvancePhase = roundComplete && hand.phase !== 'river';
                 const shouldShowdown = roundComplete && (hand.phase === 'river' || active.length === 0);
                 
@@ -905,46 +618,32 @@ serve(async (req) => {
                   
                   console.log(`[Engine] Phase transition: ${hand.phase} -> ${newPhase}`);
                   
-                  // Deal community cards with proper burn cards
                   if (newPhase === 'flop') {
-                    // Burn 1, deal 3
                     newCommunityCards = [deck[deckStart + 1], deck[deckStart + 2], deck[deckStart + 3]];
                   } else if (newPhase === 'turn') {
-                    // Burn 1, deal 1
                     newCommunityCards = [...(hand.community_cards || []), deck[deckStart + 5]];
                   } else if (newPhase === 'river') {
-                    // Burn 1, deal 1
                     newCommunityCards = [...(hand.community_cards || []), deck[deckStart + 7]];
                   }
 
-                  // Reset bets for new street
                   for (const p of (allHp || [])) {
                     if (!p.is_folded) {
                       await supabase.from('poker_hand_players').update({ bet_amount: 0 }).eq('id', p.id);
                     }
                   }
 
-                  // First to act postflop: first active player after dealer
                   const sortedRemaining = [...remaining].filter(p => !p.is_all_in).sort((a, b) => a.seat_number - b.seat_number);
                   nextPlayer = sortedRemaining.find(p => p.seat_number > hand.dealer_seat) || sortedRemaining[0];
                   
                   console.log(`[Engine] New street, first to act: seat ${nextPlayer?.seat_number}`);
                 }
 
-                // SHOWDOWN - after river is complete OR all players all-in
+                // SHOWDOWN
                 if (shouldShowdown || newPhase === 'showdown') {
-                  // Deal remaining cards if needed
-                  while (newCommunityCards.length < 5) {
-                    if (newCommunityCards.length === 0) {
-                      newCommunityCards = [deck[deckStart + 1], deck[deckStart + 2], deck[deckStart + 3]];
-                    } else if (newCommunityCards.length === 3) {
-                      newCommunityCards.push(deck[deckStart + 5]);
-                    } else if (newCommunityCards.length === 4) {
-                      newCommunityCards.push(deck[deckStart + 7]);
-                    }
-                  }
+                  // Deal remaining cards using core engine
+                  newCommunityCards = dealRemainingCards(deck, playerCount, newCommunityCards);
 
-                  // Calculate contributions for side pots
+                  // Calculate contributions using core engine
                   const contributions: PlayerContribution[] = (allHp || []).map(p => {
                     const playerTp = tablePlayers?.find(t => t.player_id === p.player_id);
                     const originalStack = p.stack_start;
@@ -959,87 +658,35 @@ serve(async (req) => {
                   
                   const potResult = calculateSidePots(contributions);
 
-                  // Get all actions to determine showdown order
+                  // Get actions for showdown order
                   const { data: allActions } = await supabase
                     .from('poker_actions')
                     .select('*')
                     .eq('hand_id', hand.id)
                     .order('action_order', { ascending: true });
 
-                  // Determine showdown order per poker rules:
-                  // 1. All-in players show first (earliest all-in first)
-                  // 2. Last aggressor (bet/raise) shows next
-                  // 3. Others in clockwise order from dealer
+                  // Determine showdown order using core engine
+                  const gamePlayers: GamePlayer[] = remaining.map(p => ({
+                    id: p.player_id,
+                    seatNumber: p.seat_number,
+                    stack: 0,
+                    betAmount: p.bet_amount,
+                    holeCards: p.hole_cards || [],
+                    isFolded: p.is_folded,
+                    isAllIn: p.is_all_in,
+                    isSittingOut: false
+                  }));
                   
-                  interface ShowdownPlayer {
-                    playerId: string;
-                    seatNumber: number;
-                    allInPhase: number; // 0=preflop, 1=flop, 2=turn, 3=river, 99=not all-in
-                    allInOrder: number;
-                    isLastAggressor: boolean;
-                  }
+                  const actions = (allActions || []).map(a => ({
+                    playerId: a.player_id,
+                    type: a.action_type,
+                    phase: a.phase
+                  }));
                   
-                  const phaseOrder: Record<string, number> = { 'preflop': 0, 'flop': 1, 'turn': 2, 'river': 3 };
-                  
-                  // Find all-in actions per player
-                  const playerAllIns = new Map<string, { phase: number; order: number }>();
-                  allActions?.forEach((a, idx) => {
-                    if (a.action_type === 'all_in' && !playerAllIns.has(a.player_id)) {
-                      playerAllIns.set(a.player_id, { 
-                        phase: phaseOrder[a.phase] ?? 99, 
-                        order: idx 
-                      });
-                    }
-                  });
-                  
-                  // Find last aggressor (last bet/raise on river, or last street with aggression)
-                  let lastAggressor: string | null = null;
-                  const phases = ['river', 'turn', 'flop', 'preflop'];
-                  for (const phase of phases) {
-                    const phaseActions = allActions?.filter(a => a.phase === phase) || [];
-                    const aggressiveActions = phaseActions.filter(a => 
-                      a.action_type === 'raise' || a.action_type === 'bet' || a.action_type === 'all_in'
-                    );
-                    if (aggressiveActions.length > 0) {
-                      lastAggressor = aggressiveActions[aggressiveActions.length - 1].player_id;
-                      break;
-                    }
-                  }
-                  
-                  // Build showdown order
-                  const showdownPlayers: ShowdownPlayer[] = remaining.map(p => {
-                    const allInInfo = playerAllIns.get(p.player_id);
-                    return {
-                      playerId: p.player_id,
-                      seatNumber: p.seat_number,
-                      allInPhase: allInInfo?.phase ?? 99,
-                      allInOrder: allInInfo?.order ?? 999,
-                      isLastAggressor: p.player_id === lastAggressor
-                    };
-                  });
-                  
-                  // Sort: all-in (earliest first) -> last aggressor -> clockwise from dealer
-                  showdownPlayers.sort((a, b) => {
-                    // All-in players first (earlier phase/order wins)
-                    if (a.allInPhase !== b.allInPhase) return a.allInPhase - b.allInPhase;
-                    if (a.allInPhase < 99 && a.allInOrder !== b.allInOrder) return a.allInOrder - b.allInOrder;
-                    
-                    // Last aggressor next
-                    if (a.isLastAggressor && !b.isLastAggressor) return -1;
-                    if (!a.isLastAggressor && b.isLastAggressor) return 1;
-                    
-                    // Clockwise from dealer (seats after dealer first)
-                    const aAfterDealer = a.seatNumber > hand.dealer_seat ? 0 : 1;
-                    const bAfterDealer = b.seatNumber > hand.dealer_seat ? 0 : 1;
-                    if (aAfterDealer !== bAfterDealer) return aAfterDealer - bAfterDealer;
-                    
-                    return a.seatNumber - b.seatNumber;
-                  });
-                  
-                  const showdownOrder = showdownPlayers.map(sp => sp.playerId);
+                  const showdownOrder = determineShowdownOrder(gamePlayers, actions, hand.dealer_seat);
                   console.log(`[Engine] Showdown order: ${showdownOrder.map(id => id.slice(0,8)).join(' -> ')}`);
 
-                  // Evaluate hands in showdown order
+                  // Evaluate hands using core engine
                   const handResults: HandResult[] = [];
                   for (const pid of showdownOrder) {
                     const p = remaining.find(r => r.player_id === pid)!;
@@ -1105,7 +752,7 @@ serve(async (req) => {
                   result = {
                     success: true, action, amount: actionAmount, handComplete: true,
                     winners: winnersInfo, communityCards: newCommunityCards, sidePots: allPots,
-                    showdownOrder, // Order in which cards are revealed
+                    showdownOrder,
                     handResults: handResults.map(hr => ({ playerId: hr.playerId, handName: hr.handName, bestCards: hr.bestCards }))
                   };
                 } else {
