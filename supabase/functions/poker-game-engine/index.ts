@@ -200,20 +200,21 @@ serve(async (req) => {
       if (remainingStack > 0) {
         const { data: wallet } = await supabase
           .from('diamond_wallets')
-          .select('balance, total_won')
+          .select('balance')
           .eq('player_id', playerId)
           .single();
         
         if (wallet) {
+          // Return remaining stack to wallet (not as winnings, just return)
           await supabase
             .from('diamond_wallets')
             .update({ 
-              balance: wallet.balance + remainingStack,
-              total_won: wallet.total_won + remainingStack
+              balance: wallet.balance + remainingStack
+              // Don't update total_won - this is a return, not winnings
             })
             .eq('player_id', playerId);
           
-          console.log(`[Engine] Returned ${remainingStack} diamonds to player wallet`);
+          console.log(`[Engine] Returned ${remainingStack} diamonds to player wallet (balance: ${wallet.balance} + ${remainingStack} = ${wallet.balance + remainingStack})`);
         }
       }
       
