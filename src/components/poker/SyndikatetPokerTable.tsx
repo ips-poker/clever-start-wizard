@@ -262,6 +262,13 @@ const PlayerSeat = memo(function PlayerSeat({
 
   // Empty seat - PPPoker Premium style (clickable for joining)
   if (!player) {
+    const handleEmptySeatClick = () => {
+      console.log('[PlayerSeat] Empty seat clicked:', seatNumber, 'canJoin:', canJoin);
+      if (canJoin && onSeatClick) {
+        onSeatClick(seatNumber);
+      }
+    };
+    
     return (
       <div
         className="absolute -translate-x-1/2 -translate-y-1/2"
@@ -270,7 +277,7 @@ const PlayerSeat = memo(function PlayerSeat({
         <motion.div 
           whileHover={{ scale: 1.08, borderColor: 'rgba(34,197,94,0.8)' }}
           whileTap={{ scale: 0.95 }}
-          onClick={() => canJoin && onSeatClick?.(seatNumber)}
+          onClick={handleEmptySeatClick}
           className={cn(
             "rounded-full flex items-center justify-center relative overflow-hidden transition-all",
             isMobile ? "w-11 h-11" : "w-14 h-14",
@@ -1519,8 +1526,10 @@ export function SyndikatetPokerTable({
   
   // Check if player can join (not yet seated)
   const canJoinTable = useMemo(() => {
-    return isConnected && !myPlayer;
-  }, [isConnected, myPlayer]);
+    const canJoin = isConnected && !myPlayer && mySeat === null;
+    console.log('[Poker] canJoinTable:', { canJoin, isConnected, hasMyPlayer: !!myPlayer, mySeat });
+    return canJoin;
+  }, [isConnected, myPlayer, mySeat]);
 
   const hasConnectedRef = useRef(false);
 
@@ -1593,11 +1602,14 @@ export function SyndikatetPokerTable({
   
   // Handle seat click to join table
   const handleSeatClick = useCallback((seatNumber: number) => {
-    if (canJoinTable) {
+    console.log('[Poker] Seat click attempt:', { seatNumber, canJoinTable, isConnected, myPlayer: !!myPlayer });
+    if (isConnected) {
       console.log('[Poker] Joining table at seat', seatNumber);
       joinTable(seatNumber);
+    } else {
+      console.warn('[Poker] Cannot join - not connected');
     }
-  }, [canJoinTable, joinTable]);
+  }, [isConnected, joinTable, myPlayer]);
 
   const handleSettingsSave = useCallback((settings: Partial<TableSettings>) => {
     // Settings will be handled via WebSocket in future update
