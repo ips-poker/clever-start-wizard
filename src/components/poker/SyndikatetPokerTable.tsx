@@ -1111,26 +1111,39 @@ export function SyndikatetPokerTable({
   // Reconnection manager
   const reconnectManager = useReconnectManager({
     maxRetries: 5,
-    baseDelay: 1000,
+    baseDelay: 2000,
     maxDelay: 30000,
     onReconnect: connect,
     onMaxRetriesReached: () => console.log('[SyndikatetTable] Max retries reached')
   });
 
-  // Connect on mount
+  // Single connection effect with cleanup
+  const hasConnectedRef = React.useRef(false);
+  
   useEffect(() => {
-    connect();
-    reconnectManager.markConnected();
+    // Prevent double connection in StrictMode
+    if (hasConnectedRef.current) return;
+    hasConnectedRef.current = true;
+    
+    const timeoutId = setTimeout(() => {
+      connect();
+    }, 100); // Small delay to prevent race conditions
+    
     return () => {
+      clearTimeout(timeoutId);
+      hasConnectedRef.current = false;
       disconnect();
       reconnectManager.reset();
     };
-  }, []);
+  }, [tableId, playerId]);
 
   // Track connection status
   useEffect(() => {
-    if (isConnected) reconnectManager.markConnected();
-    else if (!isConnecting && error) reconnectManager.markDisconnected(error);
+    if (isConnected) {
+      reconnectManager.markConnected();
+    } else if (!isConnecting && error) {
+      reconnectManager.markDisconnected(error);
+    }
   }, [isConnected, isConnecting, error]);
 
   // Sound effects
