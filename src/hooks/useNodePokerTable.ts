@@ -75,8 +75,8 @@ interface UseNodePokerTableOptions {
 
 type ConnectionStatus = 'connecting' | 'connected' | 'disconnected' | 'reconnecting';
 
-// WebSocket URL - Supabase Edge Function (hardcoded to avoid env variable issues)
-const WS_URL = 'wss://mokhssmnorrhohrowxvu.supabase.co/functions/v1/poker-table-ws';
+// WebSocket URL - Node.js Server
+const WS_URL = 'wss://poker.syndicate-poker.ru/ws/poker';
 const RECONNECT_DELAYS = [1000, 2000, 5000, 10000, 30000];
 const PING_INTERVAL = 25000;
 const CONNECTION_TIMEOUT = 10000; // 10 seconds to establish connection
@@ -435,14 +435,14 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
     });
   }, [tableId, playerId, sendMessage]);
 
-  // Game actions - use data.action format for Edge Function compatibility
+  // Game actions - use actionType format for Node.js server
   const fold = useCallback(() => {
     if (!tableId || !playerId) return;
     sendMessage({
       type: 'action',
       tableId,
       playerId,
-      data: { action: 'fold' }
+      actionType: 'fold'
     });
   }, [tableId, playerId, sendMessage]);
 
@@ -452,7 +452,7 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
       type: 'action',
       tableId,
       playerId,
-      data: { action: 'check' }
+      actionType: 'check'
     });
   }, [tableId, playerId, sendMessage]);
 
@@ -462,7 +462,7 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
       type: 'action',
       tableId,
       playerId,
-      data: { action: 'call' }
+      actionType: 'call'
     });
   }, [tableId, playerId, sendMessage]);
 
@@ -472,7 +472,8 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
       type: 'action',
       tableId,
       playerId,
-      data: { action: 'bet', amount }
+      actionType: 'bet',
+      amount
     });
   }, [tableId, playerId, sendMessage]);
 
@@ -482,7 +483,8 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
       type: 'action',
       tableId,
       playerId,
-      data: { action: 'raise', amount }
+      actionType: 'raise',
+      amount
     });
   }, [tableId, playerId, sendMessage]);
 
@@ -492,7 +494,7 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
       type: 'action',
       tableId,
       playerId,
-      data: { action: 'allin' }
+      actionType: 'allin'
     });
   }, [tableId, playerId, sendMessage]);
 
