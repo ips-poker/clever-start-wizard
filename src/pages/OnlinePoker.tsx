@@ -124,14 +124,10 @@ export default function OnlinePoker() {
 
       const result = data as any;
       if (result.success) {
-        const newPlayerId = result.player.id;
-        setPlayerId(newPlayerId);
+        const createdPlayerId = result.player.id;
+        setPlayerId(createdPlayerId);
         setPlayerAvatar(result.player.avatar_url);
-        localStorage.setItem('poker_player_id', newPlayerId);
-        
-        // Create initial balance
-        await supabase.rpc('ensure_player_balance', { p_player_id: newPlayerId });
-        
+        localStorage.setItem('poker_player_id', createdPlayerId);
         toast.success('Профиль создан!');
       } else {
         // Player exists, use existing
