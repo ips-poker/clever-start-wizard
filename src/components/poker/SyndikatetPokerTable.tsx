@@ -25,23 +25,24 @@ import syndikateLogo from '@/assets/syndikate-logo-main.png';
 
 // ============= CONSTANTS =============
 // PPPoker style 6-max positions - optimized for octagonal table
-// Hero always at bottom center (position 0), opponents arranged around
+// Hero always at bottom center (position 0), opponents arranged around table edge
+// Positions are tuned so players visually overlap the table rail like in PPPoker
 const SEAT_POSITIONS_6MAX_MOBILE = [
-  { x: 50, y: 82 },  // Seat 0 - Hero (bottom center, below table)
-  { x: 5, y: 60 },   // Seat 1 - Left bottom
-  { x: 5, y: 28 },   // Seat 2 - Left top  
-  { x: 50, y: 8 },   // Seat 3 - Top center
-  { x: 95, y: 28 },  // Seat 4 - Right top
-  { x: 95, y: 60 },  // Seat 5 - Right bottom
+  { x: 50, y: 85 },  // Seat 0 - Hero (bottom center, partial overlap with table)
+  { x: 3, y: 56 },   // Seat 1 - Left middle (on table edge)
+  { x: 3, y: 22 },   // Seat 2 - Left top (on table edge)
+  { x: 50, y: 4 },   // Seat 3 - Top center
+  { x: 97, y: 22 },  // Seat 4 - Right top (on table edge)
+  { x: 97, y: 56 },  // Seat 5 - Right middle (on table edge)
 ];
 
 const SEAT_POSITIONS_6MAX_DESKTOP = [
-  { x: 50, y: 80 },  // Seat 0 - Hero (bottom center)
-  { x: 8, y: 58 },   // Seat 1 - Left bottom
-  { x: 8, y: 25 },   // Seat 2 - Left top
-  { x: 50, y: 6 },   // Seat 3 - Top center
-  { x: 92, y: 25 },  // Seat 4 - Right top
-  { x: 92, y: 58 },  // Seat 5 - Right bottom
+  { x: 50, y: 82 },  // Seat 0 - Hero (bottom center)
+  { x: 5, y: 55 },   // Seat 1 - Left middle
+  { x: 5, y: 20 },   // Seat 2 - Left top
+  { x: 50, y: 3 },   // Seat 3 - Top center
+  { x: 95, y: 20 },  // Seat 4 - Right top
+  { x: 95, y: 55 },  // Seat 5 - Right middle
 ];
 
 const SUIT_COLORS: Record<string, string> = {
@@ -254,7 +255,7 @@ const PlayerSeat = memo(function PlayerSeat({
     return 'right';
   }, [position.x, position.y, isHero]);
 
-  // Empty seat - PPPoker style
+  // Empty seat - PPPoker Premium style
   if (!player) {
     return (
       <div
@@ -262,18 +263,23 @@ const PlayerSeat = memo(function PlayerSeat({
         style={{ left: `${position.x}%`, top: `${position.y}%` }}
       >
         <motion.div 
-          whileHover={{ scale: 1.05 }}
+          whileHover={{ scale: 1.08 }}
           whileTap={{ scale: 0.95 }}
           className={cn(
-            "rounded-full cursor-pointer flex items-center justify-center",
-            isMobile ? "w-10 h-10" : "w-12 h-12"
+            "rounded-full cursor-pointer flex items-center justify-center relative overflow-hidden",
+            isMobile ? "w-11 h-11" : "w-14 h-14"
           )}
           style={{
-            background: 'linear-gradient(145deg, rgba(40,40,40,0.8), rgba(25,25,25,0.9))',
-            border: '2px dashed rgba(100,100,100,0.5)',
+            background: 'radial-gradient(ellipse at 30% 30%, rgba(60,60,60,0.6), rgba(20,20,20,0.9))',
+            border: '2px dashed rgba(100,100,100,0.4)',
+            boxShadow: 'inset 0 2px 10px rgba(0,0,0,0.5)'
           }}
         >
-          <span className={cn("font-medium opacity-50 text-gray-400", isMobile ? "text-[10px]" : "text-xs")}>Empty</span>
+          <span className={cn("font-semibold text-gray-500/70", isMobile ? "text-[9px]" : "text-[10px]")}>Empty</span>
+          {/* Subtle glow on hover */}
+          <div className="absolute inset-0 opacity-0 hover:opacity-100 transition-opacity rounded-full"
+            style={{ background: 'radial-gradient(circle, rgba(34,197,94,0.1) 0%, transparent 70%)' }}
+          />
         </motion.div>
       </div>
     );
@@ -324,26 +330,35 @@ const PlayerSeat = memo(function PlayerSeat({
         <TimerRing remaining={turnTimeRemaining} total={turnDuration} size={avatarSize + 10}/>
       )}
       
-      {/* Timer display with icon - PPPoker style (shown for active player) */}
-      {isHero && turnTimeRemaining !== undefined && turnTimeRemaining > 0 && (
-        <div 
-          className={cn("absolute z-30 flex items-center gap-1 rounded-full px-2 py-0.5",
-            isMobile ? "-left-14" : "-left-16"
+      {/* Timer display - PPPoker style with green background (for hero only) */}
+      {isHero && isCurrentTurn && turnTimeRemaining !== undefined && turnTimeRemaining > 0 && (
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.8, x: -10 }}
+          animate={{ opacity: 1, scale: 1, x: 0 }}
+          className={cn("absolute z-30 flex items-center gap-1.5 rounded-full",
+            isMobile ? "-left-16 px-2 py-1" : "-left-20 px-2.5 py-1"
           )}
           style={{ 
             top: '50%', 
             transform: 'translateY(-50%)',
-            background: 'rgba(0,0,0,0.85)',
-            border: '1px solid rgba(34,197,94,0.4)'
+            background: turnTimeRemaining <= 5 
+              ? 'linear-gradient(135deg, #dc2626, #b91c1c)'
+              : turnTimeRemaining <= 10 
+                ? 'linear-gradient(135deg, #f59e0b, #d97706)'
+                : 'linear-gradient(135deg, #22c55e, #16a34a)',
+            boxShadow: turnTimeRemaining <= 5 
+              ? '0 0 15px rgba(220,38,38,0.5)'
+              : turnTimeRemaining <= 10
+                ? '0 0 15px rgba(245,158,11,0.5)'
+                : '0 0 15px rgba(34,197,94,0.5)',
+            border: '1px solid rgba(255,255,255,0.2)'
           }}
         >
-          <div className={cn("text-emerald-400", isMobile ? "text-[10px]" : "text-xs")}>🕐</div>
-          <span className={cn("font-bold tabular-nums", isMobile ? "text-[10px]" : "text-xs",
-            turnTimeRemaining <= 5 ? "text-red-400" : turnTimeRemaining <= 10 ? "text-amber-400" : "text-emerald-400"
-          )}>
+          <span className={cn("text-white", isMobile ? "text-sm" : "text-base")}>⏱️</span>
+          <span className={cn("font-bold tabular-nums text-white", isMobile ? "text-[11px]" : "text-sm")}>
             {Math.floor(turnTimeRemaining / 60).toString().padStart(2, '0')}:{(turnTimeRemaining % 60).toString().padStart(2, '0')}
           </span>
-        </div>
+        </motion.div>
       )}
 
       {/* Avatar container */}
@@ -423,35 +438,56 @@ const PlayerSeat = memo(function PlayerSeat({
         </motion.div>
       )}
 
-      {/* Player name plate - PPPoker style with green accent */}
-      <div className="absolute top-full mt-1 left-1/2 -translate-x-1/2 z-10">
+      {/* Player name plate - PPPoker Premium Style */}
+      <div className={cn("absolute z-10", 
+        isHero ? "top-full mt-0.5 left-1/2 -translate-x-1/2" : "top-full mt-0.5 left-1/2 -translate-x-1/2"
+      )}>
         <motion.div 
-          initial={{ opacity: 0, y: -2 }}
+          initial={{ opacity: 0, y: -5 }}
           animate={{ opacity: 1, y: 0 }}
-          className={cn("flex flex-col items-center rounded-md overflow-hidden",
-            isMobile ? "min-w-[52px]" : "min-w-[64px]"
-          )}
-          style={{
-            background: 'linear-gradient(180deg, rgba(15,15,15,0.98) 0%, rgba(8,8,8,0.98) 100%)',
-            boxShadow: '0 3px 10px rgba(0,0,0,0.6)',
-            border: '1px solid rgba(34,197,94,0.3)'
-          }}
+          className="flex flex-col items-center"
         >
-          <div className={cn("w-full text-center px-1.5 py-0.5 truncate bg-black/40",
-            isMobile ? "text-[8px]" : "text-[10px]"
-          )}>
-            <span className="text-white font-medium">
-              {isHero ? 'Вы' : (player.name?.slice(0, 8) || 'Игрок')}
-            </span>
-          </div>
+          {/* Name row with flag (like PPPoker) */}
           <div 
-            className={cn("w-full text-center px-1.5 py-0.5 font-bold", isMobile ? "text-[10px]" : "text-xs")}
-            style={{ 
-              color: player.isAllIn ? '#fff' : '#22c55e',
-              background: player.isAllIn ? 'linear-gradient(90deg, #dc2626, #ef4444)' : 'transparent'
+            className={cn("flex items-center gap-1 rounded-t-md px-2 py-0.5",
+              isMobile ? "min-w-[56px]" : "min-w-[68px]"
+            )}
+            style={{
+              background: 'linear-gradient(180deg, rgba(20,25,30,0.95) 0%, rgba(10,12,15,0.98) 100%)',
+              borderTop: '1px solid rgba(255,255,255,0.1)',
+              borderLeft: '1px solid rgba(255,255,255,0.05)',
+              borderRight: '1px solid rgba(255,255,255,0.05)'
             }}
           >
-            {player.isAllIn ? 'ALL-IN' : `${(player.stack / 20).toFixed(1)} BB`}
+            <span className={cn("text-white font-medium truncate max-w-[50px]", 
+              isMobile ? "text-[9px]" : "text-[11px]"
+            )}>
+              {isHero ? 'Вы' : (player.name?.slice(0, 7) || 'Игрок')}
+            </span>
+            {/* Country flag placeholder - PPPoker style */}
+            <span className="text-[8px]">🇷🇺</span>
+          </div>
+          
+          {/* Stack row - PPPoker green/red style */}
+          <div 
+            className={cn("flex items-center justify-center rounded-b-md px-2 py-0.5 w-full",
+              isMobile ? "min-w-[56px]" : "min-w-[68px]"
+            )}
+            style={{ 
+              background: player.isAllIn 
+                ? 'linear-gradient(180deg, #dc2626 0%, #b91c1c 100%)'
+                : 'linear-gradient(180deg, rgba(5,8,10,0.98) 0%, rgba(0,0,0,0.98) 100%)',
+              borderBottom: `2px solid ${player.isAllIn ? '#ef4444' : '#22c55e'}`,
+              borderLeft: '1px solid rgba(255,255,255,0.03)',
+              borderRight: '1px solid rgba(255,255,255,0.03)'
+            }}
+          >
+            <span className={cn("font-bold tabular-nums",
+              isMobile ? "text-[10px]" : "text-xs",
+              player.isAllIn ? "text-white" : "text-emerald-400"
+            )}>
+              {player.isAllIn ? 'ALL-IN' : `${(player.stack / 20).toFixed(1)} BB`}
+            </span>
           </div>
         </motion.div>
       </div>
@@ -576,95 +612,100 @@ const PlayerSeat = memo(function PlayerSeat({
 });
 
 // ============= TABLE FELT - PPPoker Premium Octagon Style =============
-const PPPokerTableFelt = memo(function PPPokerTableFelt() {
-  // PPPoker-style octagonal table shape
-  const octagonPath = "polygon(15% 0%, 85% 0%, 100% 15%, 100% 85%, 85% 100%, 15% 100%, 0% 85%, 0% 15%)";
+const PPPokerTableFelt = memo(function PPPokerTableFelt({ isMobile = false }: { isMobile?: boolean }) {
+  // PPPoker-style octagonal table shape - more pronounced octagon
+  const octagonPath = "polygon(20% 0%, 80% 0%, 100% 20%, 100% 80%, 80% 100%, 20% 100%, 0% 80%, 0% 20%)";
   
   return (
     <div className="absolute inset-0 overflow-hidden">
-      {/* Dark outer background - space themed */}
+      {/* Dark outer background - space/cyber themed like PPPoker */}
       <div className="absolute inset-0" style={{ 
-        background: 'radial-gradient(ellipse at 50% 30%, #1a2433 0%, #0f1419 40%, #0a0d12 100%)'
+        background: 'radial-gradient(ellipse at 50% 20%, #1a2940 0%, #0f1825 30%, #080c12 60%, #050709 100%)'
       }}/>
       
-      {/* Subtle space glow effects */}
-      <div className="absolute top-0 left-1/4 w-40 h-40 rounded-full opacity-20" 
-        style={{ background: 'radial-gradient(circle, #22c55e 0%, transparent 70%)', filter: 'blur(40px)' }}/>
-      <div className="absolute bottom-1/4 right-1/4 w-32 h-32 rounded-full opacity-15" 
-        style={{ background: 'radial-gradient(circle, #3b82f6 0%, transparent 70%)', filter: 'blur(35px)' }}/>
+      {/* Ambient glow effects - subtle cyan/green like PPPoker */}
+      <div className="absolute top-0 left-0 w-full h-32 opacity-30" 
+        style={{ background: 'linear-gradient(180deg, rgba(34,197,94,0.15) 0%, transparent 100%)' }}/>
+      <div className="absolute top-10 left-1/2 -translate-x-1/2 w-60 h-20 rounded-full opacity-20" 
+        style={{ background: 'radial-gradient(ellipse, rgba(59,130,246,0.4) 0%, transparent 70%)', filter: 'blur(30px)' }}/>
       
-      {/* Metallic outer rail - octagonal */}
+      {/* Metallic outer rail - PPPoker dark chrome style */}
       <div 
         className="absolute"
         style={{
-          top: '8%',
-          left: '3%',
-          right: '3%',
-          bottom: '25%',
+          top: isMobile ? '6%' : '5%',
+          left: isMobile ? '2%' : '3%',
+          right: isMobile ? '2%' : '3%',
+          bottom: isMobile ? '28%' : '25%',
           clipPath: octagonPath,
-          background: 'linear-gradient(180deg, #4a5568 0%, #2d3748 30%, #1a202c 70%, #2d3748 100%)',
-          boxShadow: 'inset 0 2px 10px rgba(255,255,255,0.1), 0 10px 40px rgba(0,0,0,0.8)'
+          background: 'linear-gradient(180deg, #3a4552 0%, #252d38 20%, #1a2028 50%, #252d38 80%, #3a4552 100%)',
+          boxShadow: 'inset 0 2px 15px rgba(255,255,255,0.08), 0 15px 50px rgba(0,0,0,0.9)'
         }}
       />
       
-      {/* Inner rail highlight */}
+      {/* Inner chrome ring */}
       <div 
         className="absolute"
         style={{
-          top: '9%',
-          left: '4%',
-          right: '4%',
-          bottom: '26%',
+          top: isMobile ? '7%' : '6%',
+          left: isMobile ? '3%' : '4%',
+          right: isMobile ? '3%' : '4%',
+          bottom: isMobile ? '29%' : '26%',
           clipPath: octagonPath,
-          background: 'linear-gradient(180deg, #3a4049 0%, #252a31 50%, #1a1f26 100%)',
-          boxShadow: 'inset 0 0 15px rgba(0,0,0,0.5)'
+          background: 'linear-gradient(180deg, #2d3540 0%, #1e252d 50%, #161b22 100%)',
+          boxShadow: 'inset 0 0 20px rgba(0,0,0,0.6)'
         }}
       />
       
-      {/* Premium green felt - PPPoker signature octagon */}
+      {/* Premium green felt - PPPoker signature */}
       <div 
         className="absolute"
         style={{
-          top: '10%',
-          left: '5%',
-          right: '5%',
-          bottom: '27%',
+          top: isMobile ? '8%' : '7%',
+          left: isMobile ? '4%' : '5%',
+          right: isMobile ? '4%' : '5%',
+          bottom: isMobile ? '30%' : '27%',
           clipPath: octagonPath,
-          background: 'radial-gradient(ellipse at 50% 40%, #1a6b3c 0%, #156b35 25%, #0f5a2a 50%, #0a4a22 75%, #083d1c 100%)',
-          boxShadow: 'inset 0 0 60px rgba(0,0,0,0.4), inset 0 -20px 60px rgba(0,0,0,0.3)'
+          background: 'radial-gradient(ellipse at 50% 35%, #1e7a45 0%, #187a3d 20%, #127035 40%, #0c6030 60%, #085028 80%, #054020 100%)',
+          boxShadow: 'inset 0 0 80px rgba(0,0,0,0.35), inset 0 -30px 80px rgba(0,0,0,0.25)'
         }}
       >
-        {/* Subtle felt texture */}
-        <div className="absolute inset-0 opacity-[0.08]"
+        {/* Felt texture overlay */}
+        <div className="absolute inset-0 opacity-[0.06]"
           style={{ 
-            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
+            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
             clipPath: octagonPath
           }}
         />
         
-        {/* Inner border line */}
+        {/* Subtle inner border glow */}
         <div 
           className="absolute"
           style={{
-            top: '4%',
-            left: '4%',
-            right: '4%',
-            bottom: '4%',
+            top: '3%',
+            left: '3%',
+            right: '3%',
+            bottom: '3%',
             clipPath: octagonPath,
-            border: '1px solid rgba(255,255,255,0.05)'
+            border: '1px solid rgba(255,255,255,0.04)',
+            boxShadow: 'inset 0 0 30px rgba(0,0,0,0.2)'
           }}
         />
         
-        {/* Center watermark - NLH text like PPPoker */}
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="text-white/[0.04] font-black text-6xl tracking-widest select-none">
-            NLH
+        {/* Center NLH watermark like PPPoker */}
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <div className="relative">
+            <div className="text-white/[0.025] font-black tracking-[0.3em] select-none"
+              style={{ fontSize: isMobile ? '2.5rem' : '4rem' }}
+            >
+              NLH
+            </div>
           </div>
         </div>
         
-        {/* Center Syndikate logo */}
-        <div className="absolute inset-[30%] flex items-center justify-center pointer-events-none">
-          <img src={syndikateLogo} alt="" className="w-full h-auto opacity-[0.08]"/>
+        {/* Center Syndikate logo - very subtle */}
+        <div className="absolute inset-[25%] flex items-center justify-center pointer-events-none">
+          <img src={syndikateLogo} alt="" className="w-full h-auto opacity-[0.05]"/>
         </div>
       </div>
     </div>
@@ -1667,7 +1708,7 @@ export function SyndikatetPokerTable({
             marginTop: isMobile ? '48px' : '56px'
           }}
         >
-          <PPPokerTableFelt/>
+          <PPPokerTableFelt isMobile={isMobile}/>
 
           {/* Pot */}
           {tableState && (
@@ -1683,11 +1724,20 @@ export function SyndikatetPokerTable({
             </div>
           )}
 
-          {/* Blinds info - PPPoker style */}
+          {/* Blinds info - PPPoker Premium style */}
           {tableState && (
-            <div className={cn("absolute left-1/2 -translate-x-1/2 z-10", isMobile ? "top-[46%]" : "top-[50%]")}>
-              <div className="text-white/50 text-[9px] font-medium tracking-wide">
-                Блайнды: {smallBlind.toLocaleString()}/{bigBlind.toLocaleString()} {tableState.anteAmount ? `анте: ${tableState.anteAmount.toLocaleString()}` : ''}
+            <div className={cn("absolute left-1/2 -translate-x-1/2 z-10", isMobile ? "top-[48%]" : "top-[52%]")}>
+              <div 
+                className={cn("rounded-full px-3 py-1", isMobile ? "text-[8px]" : "text-[10px]")}
+                style={{
+                  background: 'rgba(0,0,0,0.6)',
+                  border: '1px solid rgba(255,255,255,0.1)'
+                }}
+              >
+                <span className="text-white/60 font-medium tracking-wide">
+                  Блайнды: {smallBlind.toLocaleString()}/{bigBlind.toLocaleString()}
+                  {tableState.anteAmount ? ` анте: ${tableState.anteAmount.toLocaleString()}` : ''}
+                </span>
               </div>
             </div>
           )}
