@@ -9,7 +9,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import {
   CreditCard,
@@ -33,11 +32,12 @@ import {
   History,
   AlertTriangle,
   CheckCircle,
-  XCircle,
   Activity,
-  Send,
   UserX,
-  Coins
+  Coins,
+  Download,
+  UserPlus,
+  FileSpreadsheet
 } from 'lucide-react';
 import {
   Dialog,
@@ -65,6 +65,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { PlayerBanList } from './admin/PlayerBanList';
+import { CreditTransactions, addTransaction } from './admin/CreditTransactions';
+import { HandDetailsViewer } from './admin/HandDetailsViewer';
+import { CreatePlayerWithBalance } from './admin/CreatePlayerWithBalance';
+import { StatsExport } from './admin/StatsExport';
 
 interface PlayerBalance {
   id: string;
@@ -680,26 +685,34 @@ export function OnlinePokerManagement() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-5">
-          <TabsTrigger value="monitor" className="gap-2">
+        <TabsList className="grid w-full grid-cols-7">
+          <TabsTrigger value="monitor" className="gap-1">
             <Eye className="h-4 w-4" />
-            <span className="hidden sm:inline">Мониторинг</span>
+            <span className="hidden lg:inline">Мониторинг</span>
           </TabsTrigger>
-          <TabsTrigger value="credits" className="gap-2">
+          <TabsTrigger value="credits" className="gap-1">
             <CreditCard className="h-4 w-4" />
-            <span className="hidden sm:inline">Кредиты</span>
+            <span className="hidden lg:inline">Кредиты</span>
           </TabsTrigger>
-          <TabsTrigger value="tables" className="gap-2">
+          <TabsTrigger value="tables" className="gap-1">
             <Table2 className="h-4 w-4" />
-            <span className="hidden sm:inline">Столы</span>
+            <span className="hidden lg:inline">Столы</span>
           </TabsTrigger>
-          <TabsTrigger value="history" className="gap-2">
+          <TabsTrigger value="history" className="gap-1">
             <History className="h-4 w-4" />
-            <span className="hidden sm:inline">История</span>
+            <span className="hidden lg:inline">История</span>
           </TabsTrigger>
-          <TabsTrigger value="tools" className="gap-2">
+          <TabsTrigger value="bans" className="gap-1">
+            <Ban className="h-4 w-4" />
+            <span className="hidden lg:inline">Баны</span>
+          </TabsTrigger>
+          <TabsTrigger value="export" className="gap-1">
+            <Download className="h-4 w-4" />
+            <span className="hidden lg:inline">Экспорт</span>
+          </TabsTrigger>
+          <TabsTrigger value="tools" className="gap-1">
             <Settings className="h-4 w-4" />
-            <span className="hidden sm:inline">Инструменты</span>
+            <span className="hidden lg:inline">Инструменты</span>
           </TabsTrigger>
         </TabsList>
 
@@ -1079,8 +1092,20 @@ export function OnlinePokerManagement() {
           </Card>
         </TabsContent>
 
+        {/* Bans Tab */}
+        <TabsContent value="bans" className="space-y-4">
+          <PlayerBanList />
+        </TabsContent>
+
+        {/* Export Tab */}
+        <TabsContent value="export" className="space-y-4">
+          <StatsExport />
+          <CreditTransactions />
+        </TabsContent>
+
         {/* Tools Tab */}
         <TabsContent value="tools" className="space-y-4">
+          <CreatePlayerWithBalance />
           <div className="grid gap-4 md:grid-cols-2">
             {/* Quick Actions */}
             <Card>
