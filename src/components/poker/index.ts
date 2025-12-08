@@ -1,5 +1,8 @@
-// Optimized poker components for stable UI without flickering
-export { OptimizedPokerTable } from './OptimizedPokerTable';
+// Main poker table components
+export { PPPokerProfessionalTable } from './PPPokerProfessionalTable';
+export { OnlinePokerTable } from './OnlinePokerTable';
+
+// Optimized sub-components
 export { OptimizedPlayerSeat, type PlayerData } from './OptimizedPlayerSeat';
 export { OptimizedCommunityCards, HeroCards } from './OptimizedCommunityCards';
 export { OptimizedPotDisplay, PlayerBetDisplay } from './OptimizedPotDisplay';
@@ -20,5 +23,13 @@ export {
   CardDealAnimation
 } from './PPPokerTableAnimations';
 
-// Complete PPPoker-style table
-export { PPPokerTableComplete } from './PPPokerTableComplete';
+// Stable components
+export { StablePokerCard, StablePlayerSeat, StableChipStack, StableActionPanel } from './stable';
+
+// Lobby and management
+export { PokerTableLobby } from './PokerTableLobby';
+export { OnlinePokerManagement } from './OnlinePokerManagement';
+
+// Error boundary
+export { PokerErrorBoundary } from './PokerErrorBoundary';
+export { ConnectionStatusBanner } from './ConnectionStatusBanner';

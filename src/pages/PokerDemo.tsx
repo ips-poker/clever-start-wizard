@@ -2,7 +2,7 @@ import React, { useState, useCallback } from 'react';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { PokerEngineDemo } from '@/components/poker/PokerEngineDemo';
-import { StablePokerTable } from '@/components/poker/StablePokerTable';
+import { PPPokerProfessionalTable } from '@/components/poker/PPPokerProfessionalTable';
 import { ArrowLeft, Globe, Users, Sparkles, Play } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -19,10 +19,10 @@ export default function PokerDemo() {
   // Show fullscreen poker table when active
   if (showPokerTable) {
     return (
-      <StablePokerTable
+      <PPPokerProfessionalTable
+        tableId="demo-table"
         playerId="demo-player-1"
-        playerName="You"
-        playerStack={10000}
+        buyIn={10000}
         onLeave={handleLeaveTable}
       />
     );
