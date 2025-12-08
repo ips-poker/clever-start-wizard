@@ -46,6 +46,7 @@ import { MafiaHierarchy } from './MafiaHierarchy';
 import { getRankProfileStyle } from './RankProfileStyles';
 import { GlitchAvatarFrame } from '@/components/ui/glitch-avatar-frame';
 import { TelegramClanPanel } from './TelegramClanPanel';
+import { DiamondWallet } from '@/components/profile/DiamondWallet';
 
 interface Player {
   id: string;
@@ -731,6 +732,9 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate, onUnre
           />
         );
       })()}
+
+      {/* Diamond Wallet Section */}
+      <DiamondWallet playerId={player.id} playerName={player.name} />
 
       {/* Advanced Statistics */}
       <div className="grid grid-cols-2 gap-3">
