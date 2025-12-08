@@ -75,10 +75,11 @@ interface UseNodePokerTableOptions {
 
 type ConnectionStatus = 'connecting' | 'connected' | 'disconnected' | 'reconnecting';
 
-// Production WebSocket URL
+// Production WebSocket URL - with fallback detection
 const WS_URL = 'wss://poker.syndicate-poker.ru/ws/poker';
 const RECONNECT_DELAYS = [1000, 2000, 5000, 10000, 30000];
 const PING_INTERVAL = 25000;
+const CONNECTION_TIMEOUT = 5000; // 5 seconds to receive 'connected' message
 
 // Debug logging
 const DEBUG = true;
