@@ -75,16 +75,8 @@ interface UseNodePokerTableOptions {
 
 type ConnectionStatus = 'connecting' | 'connected' | 'disconnected' | 'reconnecting';
 
-// WebSocket URLs - try Supabase Edge Function first, then external server
-const getWebSocketUrl = () => {
-  // Use Supabase Edge Function for WebSocket
-  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://jfswxblvhxlpwfgjavse.supabase.co';
-  // Convert HTTPS URL to WSS for Edge Function
-  const wsUrl = supabaseUrl.replace('https://', 'wss://').replace('http://', 'ws://');
-  return `${wsUrl}/functions/v1/poker-table-ws`;
-};
-
-const WS_URL = getWebSocketUrl();
+// WebSocket URL - Supabase Edge Function (hardcoded to avoid env variable issues)
+const WS_URL = 'wss://mokhssmnorrhohrowxvu.supabase.co/functions/v1/poker-table-ws';
 const RECONNECT_DELAYS = [1000, 2000, 5000, 10000, 30000];
 const PING_INTERVAL = 25000;
 const CONNECTION_TIMEOUT = 10000; // 10 seconds to establish connection
