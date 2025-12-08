@@ -1,8 +1,6 @@
-// Re-export the PPPoker-style professional table
-// This file wraps PPPokerProfessionalTable for backward compatibility
-
+// Syndikate Poker Table - Clean wrapper
 import React from 'react';
-import { PPPokerProfessionalTable } from './PPPokerProfessionalTable';
+import { SyndikatetPokerTable } from './SyndikatetPokerTable';
 
 interface OnlinePokerTableProps {
   tableId: string;
@@ -24,7 +22,7 @@ export function OnlinePokerTable({
   onLeave 
 }: OnlinePokerTableProps) {
   return (
-    <PPPokerProfessionalTable
+    <SyndikatetPokerTable
       tableId={tableId}
       playerId={playerId}
       buyIn={buyIn}
