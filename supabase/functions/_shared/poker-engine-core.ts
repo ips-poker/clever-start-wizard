@@ -1693,3 +1693,516 @@ export function formatCard(card: string): string {
 export function formatCards(cards: string[]): string {
   return cards.map(formatCard).join(' ');
 }
+
+// ==========================================
+// PINEAPPLE POKER ENGINE
+// ==========================================
+export type PineappleVariant = 'pineapple' | 'crazy_pineapple' | 'lazy_pineapple';
+
+export interface PineappleGameState {
+  variant: PineappleVariant;
+  phase: GamePhase | 'discard';
+  players: PineapplePlayerState[];
+  communityCards: string[];
+  pot: number;
+  currentBet: number;
+  dealerSeat: number;
+  discardPhase: boolean; // true when waiting for discards
+}
+
+export interface PineapplePlayerState {
+  playerId: string;
+  seatNumber: number;
+  holeCards: string[]; // 3 cards before discard, 2 after
+  discardedCard?: string;
+  hasDiscarded: boolean;
+  stack: number;
+  currentBet: number;
+  isFolded: boolean;
+  isAllIn: boolean;
+}
+
+/**
+ * Pineapple Poker Rules:
+ * - Pineapple: Discard 1 card BEFORE preflop betting
+ * - Crazy Pineapple: Discard 1 card AFTER flop betting round
+ * - Lazy Pineapple: Keep all 3 cards, use best 2 at showdown
+ */
+export function createPineappleGame(
+  variant: PineappleVariant,
+  playerIds: string[],
+  startingStack: number,
+  dealerSeat: number
+): PineappleGameState {
+  const deck = createDeck();
+  const secureShuffled = multiPassSecureShuffle(deck);
+  const cutDeck = secureDeckCut(secureShuffled);
+  
+  let cardIndex = 0;
+  const players: PineapplePlayerState[] = playerIds.map((playerId, i) => ({
+    playerId,
+    seatNumber: i,
+    holeCards: [
+      cutDeck[cardIndex++],
+      cutDeck[cardIndex++],
+      cutDeck[cardIndex++]
+    ].map(c => c.id),
+    hasDiscarded: false,
+    stack: startingStack,
+    currentBet: 0,
+    isFolded: false,
+    isAllIn: false
+  }));
+
+  return {
+    variant,
+    phase: variant === 'pineapple' ? 'discard' : 'preflop',
+    players,
+    communityCards: [],
+    pot: 0,
+    currentBet: 0,
+    dealerSeat,
+    discardPhase: variant === 'pineapple'
+  };
+}
+
+export function pineappleDiscard(
+  state: PineappleGameState,
+  playerId: string,
+  cardToDiscard: string
+): { success: boolean; error?: string; newState?: PineappleGameState } {
+  const player = state.players.find(p => p.playerId === playerId);
+  if (!player) return { success: false, error: 'Player not found' };
+  
+  if (player.hasDiscarded) {
+    return { success: false, error: 'Already discarded' };
+  }
+  
+  if (!player.holeCards.includes(cardToDiscard)) {
+    return { success: false, error: 'Card not in hand' };
+  }
+  
+  // Check if it's the right phase for discard
+  if (state.variant === 'pineapple' && state.phase !== 'discard') {
+    return { success: false, error: 'Not discard phase' };
+  }
+  if (state.variant === 'crazy_pineapple' && state.phase !== 'flop') {
+    return { success: false, error: 'Crazy Pineapple discards after flop' };
+  }
+  
+  const newPlayer = {
+    ...player,
+    holeCards: player.holeCards.filter(c => c !== cardToDiscard),
+    discardedCard: cardToDiscard,
+    hasDiscarded: true
+  };
+  
+  const newPlayers = state.players.map(p => 
+    p.playerId === playerId ? newPlayer : p
+  );
+  
+  // Check if all players have discarded
+  const allDiscarded = newPlayers.every(p => p.hasDiscarded || p.isFolded);
+  
+  return {
+    success: true,
+    newState: {
+      ...state,
+      players: newPlayers,
+      phase: allDiscarded ? (state.phase === 'discard' ? 'preflop' : state.phase) : state.phase,
+      discardPhase: !allDiscarded
+    }
+  };
+}
+
+export function evaluatePineappleHand(
+  holeCards: string[],
+  communityCards: string[],
+  variant: PineappleVariant
+): HandEvaluation {
+  if (variant === 'lazy_pineapple') {
+    // Lazy Pineapple: evaluate all combinations of 2 hole cards
+    const combinations: string[][] = [];
+    for (let i = 0; i < holeCards.length; i++) {
+      for (let j = i + 1; j < holeCards.length; j++) {
+        combinations.push([holeCards[i], holeCards[j]]);
+      }
+    }
+    
+    let bestHand: HandEvaluation | null = null;
+    for (const combo of combinations) {
+      const eval_ = evaluateHand(combo, communityCards);
+      if (!bestHand || compareHands(eval_, bestHand) > 0) {
+        bestHand = eval_;
+      }
+    }
+    return bestHand!;
+  }
+  
+  // Regular Pineapple / Crazy Pineapple: 2 hole cards after discard
+  return evaluateHand(holeCards, communityCards);
+}
+
+// ==========================================
+// OPEN-FACE CHINESE POKER (OFC) ENGINE
+// ==========================================
+export type OFCVariant = 'classic' | 'pineapple' | 'turbo';
+
+export interface OFCHand {
+  top: string[]; // 3 cards
+  middle: string[]; // 5 cards
+  bottom: string[]; // 5 cards
+}
+
+export interface OFCPlayerState {
+  playerId: string;
+  hand: OFCHand;
+  cardsToPlace: string[]; // Cards waiting to be placed
+  fantasyland: boolean;
+  fantasylandCards: number; // 14-17 cards for fantasyland
+  isComplete: boolean;
+  score: number;
+}
+
+export interface OFCGameState {
+  variant: OFCVariant;
+  players: OFCPlayerState[];
+  deck: string[];
+  round: number; // 1-5 for classic, 1-3 for pineapple
+  currentPlayerIndex: number;
+  isFantasylandRound: boolean;
+}
+
+// OFC Royalty Points
+const OFC_TOP_ROYALTIES: Record<string, number> = {
+  '66': 1, '77': 2, '88': 3, '99': 4, 'TT': 5, 'JJ': 6, 'QQ': 7, 'KK': 8, 'AA': 9,
+  '222': 10, '333': 11, '444': 12, '555': 13, '666': 14, '777': 15, '888': 16, 
+  '999': 17, 'TTT': 18, 'JJJ': 19, 'QQQ': 20, 'KKK': 21, 'AAA': 22
+};
+
+const OFC_MIDDLE_ROYALTIES: Record<number, number> = {
+  4: 2,  // Three of a kind
+  5: 4,  // Straight
+  6: 8,  // Flush
+  7: 12, // Full House
+  8: 20, // Four of a kind
+  9: 30, // Straight Flush
+  10: 50 // Royal Flush
+};
+
+const OFC_BOTTOM_ROYALTIES: Record<number, number> = {
+  5: 2,  // Straight
+  6: 4,  // Flush
+  7: 6,  // Full House
+  8: 10, // Four of a kind
+  9: 15, // Straight Flush
+  10: 25 // Royal Flush
+};
+
+export function createOFCGame(
+  variant: OFCVariant,
+  playerIds: string[]
+): OFCGameState {
+  const deck = createDeck();
+  const shuffled = multiPassSecureShuffle(deck);
+  const cutDeck = secureDeckCut(shuffled);
+  
+  let cardIndex = 0;
+  const initialCards = variant === 'pineapple' ? 5 : 5; // First deal
+  
+  const players: OFCPlayerState[] = playerIds.map(playerId => ({
+    playerId,
+    hand: { top: [], middle: [], bottom: [] },
+    cardsToPlace: cutDeck.slice(cardIndex, cardIndex += initialCards).map(c => c.id),
+    fantasyland: false,
+    fantasylandCards: 0,
+    isComplete: false,
+    score: 0
+  }));
+
+  return {
+    variant,
+    players,
+    deck: cutDeck.slice(cardIndex).map(c => c.id),
+    round: 1,
+    currentPlayerIndex: 0,
+    isFantasylandRound: false
+  };
+}
+
+export function ofcPlaceCard(
+  state: OFCGameState,
+  playerId: string,
+  cardId: string,
+  row: 'top' | 'middle' | 'bottom'
+): { success: boolean; error?: string; newState?: OFCGameState } {
+  const playerIndex = state.players.findIndex(p => p.playerId === playerId);
+  if (playerIndex === -1) return { success: false, error: 'Player not found' };
+  
+  const player = state.players[playerIndex];
+  
+  if (!player.cardsToPlace.includes(cardId)) {
+    return { success: false, error: 'Card not available to place' };
+  }
+  
+  // Check row capacity
+  const maxCards = row === 'top' ? 3 : 5;
+  if (player.hand[row].length >= maxCards) {
+    return { success: false, error: `${row} row is full` };
+  }
+  
+  const newHand = {
+    ...player.hand,
+    [row]: [...player.hand[row], cardId]
+  };
+  
+  const newCardsToPlace = player.cardsToPlace.filter(c => c !== cardId);
+  const isComplete = 
+    newHand.top.length === 3 && 
+    newHand.middle.length === 5 && 
+    newHand.bottom.length === 5;
+  
+  const newPlayer: OFCPlayerState = {
+    ...player,
+    hand: newHand,
+    cardsToPlace: newCardsToPlace,
+    isComplete
+  };
+  
+  const newPlayers = [...state.players];
+  newPlayers[playerIndex] = newPlayer;
+  
+  return {
+    success: true,
+    newState: {
+      ...state,
+      players: newPlayers
+    }
+  };
+}
+
+export function ofcDealNextCards(state: OFCGameState): OFCGameState {
+  let deckIndex = 0;
+  const cardsPerPlayer = state.variant === 'pineapple' ? 3 : 1;
+  
+  const newPlayers = state.players.map(player => {
+    if (player.isComplete) return player;
+    
+    const newCards = state.deck.slice(deckIndex, deckIndex + cardsPerPlayer);
+    deckIndex += cardsPerPlayer;
+    
+    return {
+      ...player,
+      cardsToPlace: [...player.cardsToPlace, ...newCards]
+    };
+  });
+  
+  return {
+    ...state,
+    players: newPlayers,
+    deck: state.deck.slice(deckIndex),
+    round: state.round + 1
+  };
+}
+
+export function evaluateOFCHand(hand: OFCHand): {
+  top: HandEvaluation;
+  middle: HandEvaluation;
+  bottom: HandEvaluation;
+  isFoul: boolean;
+  royalties: { top: number; middle: number; bottom: number };
+  qualifiesForFantasyland: boolean;
+  fantasylandCards: number;
+} {
+  const topEval = evaluateHand(hand.top, []);
+  const middleEval = evaluateHand(hand.middle, []);
+  const bottomEval = evaluateHand(hand.bottom, []);
+  
+  // Check for foul: bottom >= middle >= top
+  const isFoul = 
+    compareHands(bottomEval, middleEval) < 0 ||
+    compareHands(middleEval, topEval) < 0;
+  
+  // Calculate royalties
+  let topRoyalty = 0;
+  if (topEval.rank === 2) { // Pair
+    const pairRank = topEval.bestCards[0][0];
+    const key = pairRank + pairRank;
+    topRoyalty = OFC_TOP_ROYALTIES[key] || 0;
+  } else if (topEval.rank === 4) { // Trips
+    const tripRank = topEval.bestCards[0][0];
+    const key = tripRank + tripRank + tripRank;
+    topRoyalty = OFC_TOP_ROYALTIES[key] || 0;
+  }
+  
+  const middleRoyalty = OFC_MIDDLE_ROYALTIES[middleEval.rank] || 0;
+  const bottomRoyalty = OFC_BOTTOM_ROYALTIES[bottomEval.rank] || 0;
+  
+  // Fantasyland qualification: QQ+ on top without fouling
+  let qualifiesForFantasyland = false;
+  let fantasylandCards = 0;
+  
+  if (!isFoul && topEval.rank === 2) {
+    const pairRank = topEval.bestCards[0][0];
+    const rankValue = RANK_VALUES[pairRank];
+    if (rankValue >= 12) { // Q or higher
+      qualifiesForFantasyland = true;
+      if (rankValue === 12) fantasylandCards = 14; // QQ
+      else if (rankValue === 13) fantasylandCards = 15; // KK
+      else if (rankValue === 14) fantasylandCards = 16; // AA
+    }
+  }
+  if (!isFoul && topEval.rank === 4) { // Trips on top
+    qualifiesForFantasyland = true;
+    fantasylandCards = 17;
+  }
+  
+  return {
+    top: topEval,
+    middle: middleEval,
+    bottom: bottomEval,
+    isFoul,
+    royalties: {
+      top: isFoul ? 0 : topRoyalty,
+      middle: isFoul ? 0 : middleRoyalty,
+      bottom: isFoul ? 0 : bottomRoyalty
+    },
+    qualifiesForFantasyland,
+    fantasylandCards
+  };
+}
+
+export function calculateOFCScore(
+  player1Hand: OFCHand,
+  player2Hand: OFCHand
+): { player1Score: number; player2Score: number } {
+  const eval1 = evaluateOFCHand(player1Hand);
+  const eval2 = evaluateOFCHand(player2Hand);
+  
+  let p1Score = 0;
+  let p2Score = 0;
+  
+  // If one fouls, other gets 6 points + their royalties
+  if (eval1.isFoul && !eval2.isFoul) {
+    p2Score = 6 + eval2.royalties.top + eval2.royalties.middle + eval2.royalties.bottom;
+    return { player1Score: -p2Score, player2Score: p2Score };
+  }
+  if (eval2.isFoul && !eval1.isFoul) {
+    p1Score = 6 + eval1.royalties.top + eval1.royalties.middle + eval1.royalties.bottom;
+    return { player1Score: p1Score, player2Score: -p1Score };
+  }
+  if (eval1.isFoul && eval2.isFoul) {
+    return { player1Score: 0, player2Score: 0 };
+  }
+  
+  // Compare each row
+  let p1Wins = 0;
+  let p2Wins = 0;
+  
+  // Top row
+  const topComp = compareHands(eval1.top, eval2.top);
+  if (topComp > 0) p1Wins++;
+  else if (topComp < 0) p2Wins++;
+  
+  // Middle row
+  const midComp = compareHands(eval1.middle, eval2.middle);
+  if (midComp > 0) p1Wins++;
+  else if (midComp < 0) p2Wins++;
+  
+  // Bottom row
+  const botComp = compareHands(eval1.bottom, eval2.bottom);
+  if (botComp > 0) p1Wins++;
+  else if (botComp < 0) p2Wins++;
+  
+  // Points for winning rows
+  p1Score = p1Wins - p2Wins;
+  p2Score = p2Wins - p1Wins;
+  
+  // Scoop bonus (winning all 3 rows = +3)
+  if (p1Wins === 3) p1Score += 3;
+  if (p2Wins === 3) p2Score += 3;
+  
+  // Add royalties
+  p1Score += eval1.royalties.top + eval1.royalties.middle + eval1.royalties.bottom;
+  p2Score += eval2.royalties.top + eval2.royalties.middle + eval2.royalties.bottom;
+  
+  // Net difference
+  const netDiff = p1Score - p2Score;
+  
+  return {
+    player1Score: netDiff > 0 ? netDiff : -Math.abs(netDiff),
+    player2Score: netDiff < 0 ? Math.abs(netDiff) : -netDiff
+  };
+}
+
+// Pineapple OFC discard (discard 1 of 3 cards)
+export function ofcPineappleDiscard(
+  state: OFCGameState,
+  playerId: string,
+  cardToDiscard: string
+): { success: boolean; error?: string; newState?: OFCGameState } {
+  if (state.variant !== 'pineapple') {
+    return { success: false, error: 'Not pineapple variant' };
+  }
+  
+  const playerIndex = state.players.findIndex(p => p.playerId === playerId);
+  if (playerIndex === -1) return { success: false, error: 'Player not found' };
+  
+  const player = state.players[playerIndex];
+  
+  if (!player.cardsToPlace.includes(cardToDiscard)) {
+    return { success: false, error: 'Card not available' };
+  }
+  
+  if (player.cardsToPlace.length !== 3) {
+    return { success: false, error: 'Must have 3 cards to discard' };
+  }
+  
+  const newCardsToPlace = player.cardsToPlace.filter(c => c !== cardToDiscard);
+  
+  const newPlayer = {
+    ...player,
+    cardsToPlace: newCardsToPlace
+  };
+  
+  const newPlayers = [...state.players];
+  newPlayers[playerIndex] = newPlayer;
+  
+  return {
+    success: true,
+    newState: {
+      ...state,
+      players: newPlayers
+    }
+  };
+}
+
+// ==========================================
+// GAME TYPE ENUM
+// ==========================================
+export type PokerGameType = 
+  | 'texas_holdem'
+  | 'omaha'
+  | 'omaha_hilo'
+  | 'short_deck'
+  | 'pineapple'
+  | 'crazy_pineapple'
+  | 'lazy_pineapple'
+  | 'ofc_classic'
+  | 'ofc_pineapple'
+  | 'ofc_turbo';
+
+export function getSupportedGameTypes(): { type: PokerGameType; name: string; description: string }[] {
+  return [
+    { type: 'texas_holdem', name: 'Texas Hold\'em', description: '2 hole cards, 5 community cards' },
+    { type: 'omaha', name: 'Omaha', description: '4 hole cards, must use exactly 2' },
+    { type: 'omaha_hilo', name: 'Omaha Hi-Lo', description: 'Split pot between high and low hands' },
+    { type: 'short_deck', name: 'Short Deck (6+)', description: 'No 2-5 cards, flush beats full house' },
+    { type: 'pineapple', name: 'Pineapple', description: '3 hole cards, discard 1 before betting' },
+    { type: 'crazy_pineapple', name: 'Crazy Pineapple', description: '3 hole cards, discard 1 after flop' },
+    { type: 'lazy_pineapple', name: 'Lazy Pineapple (Tahoe)', description: '3 hole cards, use best 2 at showdown' },
+    { type: 'ofc_classic', name: 'Open-Face Chinese Poker', description: '13 cards in 3 rows' },
+    { type: 'ofc_pineapple', name: 'OFC Pineapple', description: 'Deal 3, place 2, discard 1' },
+    { type: 'ofc_turbo', name: 'OFC Turbo', description: 'Faster variant with fewer rounds' }
+  ];
+}
