@@ -12,8 +12,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
-import { usePokerTable, PokerPlayer, TableState } from '@/hooks/usePokerTable';
-import { useReconnectManager } from '@/hooks/useReconnectManager';
+import { useNodePokerTable, PokerPlayer, TableState } from '@/hooks/useNodePokerTable';
 import { usePokerSounds } from '@/hooks/usePokerSounds';
 import { PokerErrorBoundary } from './PokerErrorBoundary';
 import { ConnectionStatusBanner } from './ConnectionStatusBanner';
@@ -1490,32 +1489,15 @@ export function SyndikatetPokerTable({
   const sounds = usePokerSounds();
   const SEAT_POSITIONS = isMobile ? SEAT_POSITIONS_6MAX_MOBILE : SEAT_POSITIONS_6MAX_DESKTOP;
 
-  const pokerTable = usePokerTable({ tableId, playerId, buyIn });
+  // Use Node.js WebSocket server
+  const pokerTable = useNodePokerTable({ tableId, playerId, buyIn });
   
   const {
     isConnected, isConnecting, error, tableState, myCards, mySeat, myPlayer, isMyTurn, canCheck, callAmount, lastAction, showdownResult,
-    connect, disconnect, fold, check, call, raise, allIn, clearShowdown, configureTable, checkTimeout
+    connect, disconnect, fold, check, call, raise, allIn
   } = pokerTable;
 
-  const reconnectManager = useReconnectManager({
-    maxRetries: 5, baseDelay: 2000, maxDelay: 30000,
-    onReconnect: connect,
-    onMaxRetriesReached: () => console.log('[SyndikatetTable] Max retries')
-  });
-
   const hasConnectedRef = useRef(false);
-  
-  useEffect(() => {
-    if (hasConnectedRef.current) return;
-    hasConnectedRef.current = true;
-    const timeoutId = setTimeout(() => connect(), 100);
-    return () => { clearTimeout(timeoutId); hasConnectedRef.current = false; disconnect(); reconnectManager.reset(); };
-  }, [tableId, playerId]);
-
-  useEffect(() => {
-    if (isConnected) reconnectManager.markConnected();
-    else if (!isConnecting && error) reconnectManager.markDisconnected(error);
-  }, [isConnected, isConnecting, error]);
 
   useEffect(() => { sounds.setEnabled(soundEnabled); }, [soundEnabled]);
 
@@ -1548,10 +1530,6 @@ export function SyndikatetPokerTable({
           if (isMyTurn) {
             console.log('⏰ Time expired, auto-folding...');
             fold();
-          } else {
-            // Check if opponent timed out (any client can trigger this)
-            console.log('⏰ Opponent time expired, checking timeout...');
-            checkTimeout();
           }
         }
         
@@ -1560,7 +1538,7 @@ export function SyndikatetPokerTable({
     }, 1000);
     
     return () => clearInterval(interval);
-  }, [isMyTurn, tableState?.currentPlayerSeat, tableState?.timeRemaining, tableState?.actionTimer, fold, checkTimeout, sounds]);
+  }, [isMyTurn, tableState?.currentPlayerSeat, tableState?.timeRemaining, tableState?.actionTimer, fold, sounds]);
 
   useEffect(() => {
     if (lastAction?.playerId) {
@@ -1589,18 +1567,10 @@ export function SyndikatetPokerTable({
   const handleLeave = useCallback(() => { disconnect(); onLeave(); }, [disconnect, onLeave]);
 
   const handleSettingsSave = useCallback((settings: Partial<TableSettings>) => {
-    configureTable({
-      smallBlindAmount: settings.smallBlind,
-      bigBlindAmount: settings.bigBlind,
-      anteAmount: settings.ante,
-      actionTimer: settings.actionTimeSeconds,
-      straddleEnabled: settings.straddleEnabled,
-      runItTwiceEnabled: settings.runItTwiceEnabled,
-      rakePercent: settings.rakePercent,
-      rakeCap: settings.rakeCap,
-    });
+    // Settings will be handled via WebSocket in future update
+    console.log('Settings saved:', settings);
     setShowSettings(false);
-  }, [configureTable]);
+  }, []);
 
   // Rotate seats so Hero (mySeat) is always at position 0 (bottom center)
   // This matches PPPoker where you always see yourself at the bottom
@@ -1662,7 +1632,17 @@ export function SyndikatetPokerTable({
           background: 'radial-gradient(ellipse at 50% 30%, #1a2433 0%, #0f1419 50%, #0a0d12 100%)'
         }}
       >
-        <ConnectionStatusBanner status={reconnectManager.status} retryCount={reconnectManager.retryCount} nextRetryIn={reconnectManager.nextRetryIn} onReconnectNow={reconnectManager.reconnectNow} onCancel={reconnectManager.cancelReconnect}/>
+        {/* Connection status - simplified */}
+        {!isConnected && !isConnecting && (
+          <div className="absolute top-0 left-0 right-0 z-50 bg-red-500/90 text-white text-center py-2 text-sm">
+            Соединение потеряно. <button onClick={connect} className="underline">Переподключиться</button>
+          </div>
+        )}
+        {isConnecting && (
+          <div className="absolute top-0 left-0 right-0 z-50 bg-yellow-500/90 text-black text-center py-2 text-sm">
+            Подключение...
+          </div>
+        )}
 
         {/* Top bar - PPPoker style */}
         <div className={cn(
@@ -1771,7 +1751,7 @@ export function SyndikatetPokerTable({
           {/* Winner overlay */}
           <AnimatePresence>
             {showdownResult && showdownResult.winners.length > 0 && (
-              <WinnerOverlay winners={showdownResult.winners.map(w => ({ name: w.name, amount: w.amount, handRank: w.handRank }))} onClose={clearShowdown}/>
+              <WinnerOverlay winners={showdownResult.winners.map(w => ({ name: w.name, amount: w.amount, handRank: w.handRank }))} onClose={() => {}}/>
             )}
           </AnimatePresence>
         </div>
