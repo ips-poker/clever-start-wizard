@@ -75,9 +75,14 @@ interface UseNodePokerTableOptions {
 
 type ConnectionStatus = 'connecting' | 'connected' | 'disconnected' | 'reconnecting';
 
+// Production WebSocket URL
 const WS_URL = 'wss://poker.syndicate-poker.ru/ws/poker';
 const RECONNECT_DELAYS = [1000, 2000, 5000, 10000, 30000];
 const PING_INTERVAL = 25000;
+
+// Debug logging
+const DEBUG = true;
+const log = (...args: unknown[]) => DEBUG && console.log('[NodePoker]', ...args);
 
 export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
   const { tableId, playerId, playerName = 'Player', buyIn = 10000, seatNumber } = options || {};
@@ -115,31 +120,72 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
   const sendMessage = useCallback((message: object) => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
       wsRef.current.send(JSON.stringify(message));
-      console.log('📤 WS Send:', message);
+      log('📤 Send:', message);
       return true;
     }
-    console.warn('⚠️ WebSocket not connected');
+    log('⚠️ WebSocket not connected, readyState:', wsRef.current?.readyState);
     return false;
+  }, []);
+
+  // Transform server state to client format
+  const transformServerState = useCallback((serverState: unknown, tblId: string): TableState => {
+    const state = serverState as Record<string, unknown>;
+    const playersArr = (state.players || []) as Record<string, unknown>[];
+    
+    const players: PokerPlayer[] = playersArr.map((p) => ({
+      playerId: (p.playerId || p.id) as string,
+      name: (p.name || p.playerName || 'Player') as string,
+      avatarUrl: p.avatarUrl as string | undefined,
+      seatNumber: (p.seatNumber || p.seat || 0) as number,
+      stack: (p.stack || p.chips || 0) as number,
+      betAmount: (p.betAmount || p.bet || 0) as number,
+      totalBetInHand: (p.totalBetInHand || p.betAmount || 0) as number,
+      holeCards: (p.holeCards || p.cards || []) as string[],
+      isFolded: (p.isFolded || p.folded || false) as boolean,
+      isAllIn: (p.isAllIn || p.allIn || false) as boolean,
+      isActive: p.isActive !== false,
+      isDisconnected: (p.isDisconnected || false) as boolean,
+      timeBankRemaining: (p.timeBankRemaining || 60) as number
+    }));
+
+    return {
+      tableId: tblId,
+      phase: (state.phase || 'waiting') as TableState['phase'],
+      pot: (state.pot || 0) as number,
+      currentBet: (state.currentBet || 0) as number,
+      currentPlayerSeat: (state.currentPlayerSeat ?? state.activePlayerSeat ?? null) as number | null,
+      communityCards: (state.communityCards || state.board || []) as string[],
+      dealerSeat: (state.dealerSeat || state.buttonSeat || 1) as number,
+      smallBlindSeat: (state.smallBlindSeat || 1) as number,
+      bigBlindSeat: (state.bigBlindSeat || 2) as number,
+      players,
+      minRaise: (state.minRaise || state.currentBet || 20) as number,
+      smallBlindAmount: (state.smallBlind || 10) as number,
+      bigBlindAmount: (state.bigBlind || 20) as number,
+      anteAmount: (state.ante || 0) as number,
+      actionTimer: (state.actionTimer || 30) as number,
+      timeRemaining: state.timeRemaining as number | null | undefined,
+      playersNeeded: players.filter(p => p.isActive).length < 2 ? 2 - players.filter(p => p.isActive).length : 0
+    };
   }, []);
 
   // Handle incoming messages
   const handleMessage = useCallback((event: MessageEvent) => {
     try {
-      const data = JSON.parse(event.data);
-      console.log('📥 WS Recv:', data.type, data);
+      const data = JSON.parse(event.data) as Record<string, unknown>;
+      log('📥 Recv:', data.type, data);
 
       switch (data.type) {
         case 'connected':
-          console.log('✅ Server connected');
+          log('✅ Server connected, timestamp:', data.timestamp);
           break;
 
         case 'subscribed':
         case 'joined_table':
         case 'state':
-          if (data.state) {
+          if (data.state && tableId) {
             setTableState(prev => {
-              const newState = transformServerState(data.state, tableId!);
-              // Fast comparison to avoid unnecessary re-renders
+              const newState = transformServerState(data.state, tableId);
               if (prev && JSON.stringify(prev) === JSON.stringify(newState)) {
                 return prev;
               }
@@ -147,134 +193,104 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
             });
 
             // Extract my cards
-            if (data.state.players && playerId) {
-              const myPlayer = data.state.players.find((p: any) => p.playerId === playerId || p.id === playerId);
-              if (myPlayer?.holeCards) {
-                setMyCards(myPlayer.holeCards);
-                setMySeat(myPlayer.seatNumber);
+            const stateData = data.state as Record<string, unknown>;
+            const playersData = stateData.players as Record<string, unknown>[] | undefined;
+            if (playersData && playerId) {
+              const myPlayer = playersData.find((p) => p.playerId === playerId || p.id === playerId);
+              if (myPlayer) {
+                const cards = myPlayer.holeCards as string[] | undefined;
+                if (cards) {
+                  setMyCards(cards);
+                  setMySeat(myPlayer.seatNumber as number);
+                }
               }
             }
           }
           if (data.type === 'joined_table') {
-            console.log('✅ Joined table:', tableId);
+            log('✅ Joined table:', tableId);
+          }
+          if (data.type === 'subscribed') {
+            log('✅ Subscribed to table:', tableId);
           }
           break;
 
         case 'action_accepted':
-          console.log('✅ Action accepted:', data.actionType, data.amount);
+          log('✅ Action accepted:', data.actionType, data.amount);
           break;
 
         case 'player_action':
           setLastAction({
-            playerId: data.playerId,
-            action: data.actionType,
-            amount: data.amount
+            playerId: data.playerId as string,
+            action: data.actionType as string,
+            amount: data.amount as number | undefined
           });
-          // Clear after animation
           setTimeout(() => setLastAction(null), 2000);
           break;
 
         case 'showdown':
-          setShowdownResult(data.result);
+          setShowdownResult(data.result as ShowdownResult);
           break;
 
         case 'hand_complete':
         case 'hand_end':
-          // Hand finished, showdown data might be in winners
           if (data.winners) {
             setShowdownResult({
-              winners: data.winners,
-              pot: data.pot || 0
+              winners: data.winners as ShowdownResult['winners'],
+              pot: (data.pot || 0) as number
             });
           }
-          // Clear after delay
           setTimeout(() => setShowdownResult(null), 5000);
           break;
 
         case 'chat':
           setChatMessages(prev => [...prev.slice(-49), {
             id: crypto.randomUUID(),
-            playerId: data.playerId,
-            playerName: data.playerName,
-            text: data.message,
+            playerId: data.playerId as string,
+            playerName: data.playerName as string | undefined,
+            text: data.message as string | undefined,
             timestamp: Date.now(),
             type: 'chat'
           }]);
           break;
 
         case 'left_table':
-          console.log('👋 Left table:', data.tableId);
+          log('👋 Left table:', data.tableId);
           setTableState(null);
           setMyCards([]);
           setMySeat(null);
           break;
 
         case 'error':
-          console.error('❌ Server error:', data.error);
-          setError(data.error);
+          log('❌ Server error:', data.error);
+          setError(data.error as string);
           setTimeout(() => setError(null), 5000);
           break;
 
         case 'pong':
-          // Server responded to ping
           break;
 
         default:
-          console.log('📨 Unknown message type:', data.type);
+          log('📨 Unknown message type:', data.type, data);
       }
     } catch (err) {
-      console.error('Failed to parse message:', err);
+      log('❌ Failed to parse message:', err, event.data);
     }
-  }, [tableId, playerId]);
-
-  // Transform server state to client format
-  const transformServerState = (serverState: any, tableId: string): TableState => {
-    const players: PokerPlayer[] = (serverState.players || []).map((p: any) => ({
-      playerId: p.playerId || p.id,
-      name: p.name || p.playerName || 'Player',
-      avatarUrl: p.avatarUrl,
-      seatNumber: p.seatNumber || p.seat,
-      stack: p.stack || p.chips || 0,
-      betAmount: p.betAmount || p.bet || 0,
-      totalBetInHand: p.totalBetInHand || p.betAmount || 0,
-      holeCards: p.holeCards || p.cards || [],
-      isFolded: p.isFolded || p.folded || false,
-      isAllIn: p.isAllIn || p.allIn || false,
-      isActive: p.isActive !== false,
-      isDisconnected: p.isDisconnected || false,
-      timeBankRemaining: p.timeBankRemaining || 60
-    }));
-
-    return {
-      tableId,
-      phase: serverState.phase || 'waiting',
-      pot: serverState.pot || 0,
-      currentBet: serverState.currentBet || 0,
-      currentPlayerSeat: serverState.currentPlayerSeat ?? serverState.activePlayerSeat ?? null,
-      communityCards: serverState.communityCards || serverState.board || [],
-      dealerSeat: serverState.dealerSeat || serverState.buttonSeat || 1,
-      smallBlindSeat: serverState.smallBlindSeat || 1,
-      bigBlindSeat: serverState.bigBlindSeat || 2,
-      players,
-      minRaise: serverState.minRaise || serverState.currentBet || 20,
-      smallBlindAmount: serverState.smallBlind || 10,
-      bigBlindAmount: serverState.bigBlind || 20,
-      anteAmount: serverState.ante || 0,
-      actionTimer: serverState.actionTimer || 30,
-      timeRemaining: serverState.timeRemaining,
-      playersNeeded: players.filter(p => p.isActive).length < 2 ? 2 - players.filter(p => p.isActive).length : 0
-    };
-  };
+  }, [tableId, playerId, transformServerState]);
 
   // Connect to WebSocket
   const connect = useCallback(() => {
     if (!tableId || !playerId) {
-      console.log('❌ Cannot connect: missing tableId or playerId');
+      log('❌ Cannot connect: missing tableId or playerId', { tableId, playerId });
       return;
     }
 
     if (wsRef.current?.readyState === WebSocket.OPEN) {
-      console.log('⚠️ Already connected');
+      log('⚠️ Already connected');
+      return;
+    }
+
+    if (wsRef.current?.readyState === WebSocket.CONNECTING) {
+      log('⚠️ Already connecting...');
       return;
     }
 
@@ -282,14 +298,14 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
     setConnectionStatus('connecting');
 
     const url = `${WS_URL}?tableId=${tableId}&playerId=${playerId}`;
-    console.log('🔌 Connecting to:', url);
+    log('🔌 Connecting to:', url);
 
     const ws = new WebSocket(url);
     wsRef.current = ws;
 
     ws.onopen = () => {
       if (!mountedRef.current) return;
-      console.log('✅ WebSocket connected');
+      log('✅ WebSocket connected to', url);
       setConnectionStatus('connected');
       setError(null);
       reconnectAttemptRef.current = 0;
@@ -311,14 +327,14 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
 
     ws.onclose = (event) => {
       if (!mountedRef.current) return;
-      console.log('🔴 WebSocket closed:', event.code, event.reason);
+      log('🔴 WebSocket closed:', event.code, event.reason, 'wasClean:', event.wasClean);
       clearTimers();
       setConnectionStatus('disconnected');
 
       // Reconnect if not intentional close
       if (event.code !== 1000 && event.code !== 1001) {
         const delay = RECONNECT_DELAYS[Math.min(reconnectAttemptRef.current, RECONNECT_DELAYS.length - 1)];
-        console.log(`🔄 Reconnecting in ${delay}ms (attempt ${reconnectAttemptRef.current + 1})`);
+        log(`🔄 Reconnecting in ${delay}ms (attempt ${reconnectAttemptRef.current + 1})`);
         setConnectionStatus('reconnecting');
         reconnectTimeoutRef.current = setTimeout(() => {
           reconnectAttemptRef.current++;
@@ -327,8 +343,8 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
       }
     };
 
-    ws.onerror = (error) => {
-      console.error('❌ WebSocket error:', error);
+    ws.onerror = (wsError) => {
+      log('❌ WebSocket error:', wsError);
       setError('Connection error');
     };
   }, [tableId, playerId, clearTimers, sendMessage, handleMessage]);
@@ -477,12 +493,20 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
     mountedRef.current = true;
 
     if (tableId && playerId) {
-      connect();
+      // Small delay to ensure component is mounted
+      const timeoutId = setTimeout(() => {
+        connect();
+      }, 100);
+      
+      return () => {
+        clearTimeout(timeoutId);
+        mountedRef.current = false;
+        disconnect();
+      };
     }
-
+    
     return () => {
       mountedRef.current = false;
-      disconnect();
     };
   }, [tableId, playerId]);
 
