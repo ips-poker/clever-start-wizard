@@ -1,11 +1,15 @@
 // ============================================
-// SYNDIKATE POKER TABLE - Clean, Stable, Premium
+// SYNDIKATE POKER TABLE - Premium Design
 // ============================================
-// Built from scratch for maximum stability and Syndikate branding
+// PPPoker-inspired layout with Syndikate branding
 
 import React, { useState, useEffect, useCallback, useMemo, memo } from 'react';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Volume2, VolumeX, MessageSquare, Users, Loader2, Settings2, Wifi, WifiOff } from 'lucide-react';
+import { 
+  ArrowLeft, Volume2, VolumeX, MessageSquare, Users, Loader2, 
+  Settings2, Wifi, WifiOff, Eye, EyeOff, History, Gift,
+  ChevronUp, ChevronDown, Menu, X, Send, Info, Trophy
+} from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { usePokerTable, PokerPlayer, TableState } from '@/hooks/usePokerTable';
@@ -13,6 +17,7 @@ import { useReconnectManager } from '@/hooks/useReconnectManager';
 import { usePokerSounds } from '@/hooks/usePokerSounds';
 import { PokerErrorBoundary } from './PokerErrorBoundary';
 import { ConnectionStatusBanner } from './ConnectionStatusBanner';
+import { TableSettingsPanel, TableSettings } from './TableSettingsPanel';
 import { resolveAvatarUrl } from '@/utils/avatarResolver';
 
 // Syndikate branding
@@ -514,6 +519,276 @@ const PotDisplay = memo(function PotDisplay({ pot }: { pot: number }) {
   );
 });
 
+// ============= HERO CARDS =============
+const HeroCards = memo(function HeroCards({ 
+  cards, 
+  isWinning = false 
+}: { 
+  cards: string[];
+  isWinning?: boolean;
+}) {
+  if (!cards || cards.length === 0) return null;
+
+  return (
+    <motion.div 
+      className="flex items-center gap-1"
+      initial={{ y: 30, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+    >
+      {cards.map((card, idx) => (
+        <SyndikatetCard key={`hero-${card}-${idx}`} card={card} size="lg" delay={idx} isWinning={isWinning}/>
+      ))}
+    </motion.div>
+  );
+});
+
+// ============= TABLE HEADER =============
+const TableHeader = memo(function TableHeader({
+  onLeave,
+  isConnected,
+  blinds,
+  tableName,
+  playersCount,
+  onMenuClick,
+  onSettingsClick
+}: {
+  onLeave: () => void;
+  isConnected: boolean;
+  blinds: string;
+  tableName?: string;
+  playersCount: number;
+  onMenuClick: () => void;
+  onSettingsClick: () => void;
+}) {
+  return (
+    <div className="absolute top-0 left-0 right-0 z-30 flex items-center justify-between px-2 py-2 safe-area-inset-top">
+      {/* Left: Back button */}
+      <Button 
+        variant="ghost" 
+        size="icon" 
+        onClick={onLeave} 
+        className="h-10 w-10 rounded-xl bg-black/40 backdrop-blur-sm text-white hover:bg-black/60"
+      >
+        <ArrowLeft className="h-5 w-5"/>
+      </Button>
+      
+      {/* Center: Table info */}
+      <div className="flex flex-col items-center">
+        <div className="flex items-center gap-2">
+          <span className={cn("w-2 h-2 rounded-full", isConnected ? "bg-green-500" : "bg-red-500 animate-pulse")}/>
+          <span className="text-white font-bold text-sm">{blinds}</span>
+        </div>
+        {tableName && (
+          <span className="text-white/60 text-[10px]">{tableName}</span>
+        )}
+      </div>
+      
+      {/* Right: Menu & Settings */}
+      <div className="flex items-center gap-1">
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          onClick={onSettingsClick}
+          className="h-10 w-10 rounded-xl bg-black/40 backdrop-blur-sm text-white hover:bg-black/60"
+        >
+          <Settings2 className="h-5 w-5"/>
+        </Button>
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          onClick={onMenuClick}
+          className="h-10 w-10 rounded-xl bg-black/40 backdrop-blur-sm text-white hover:bg-black/60"
+        >
+          <Menu className="h-5 w-5"/>
+        </Button>
+      </div>
+    </div>
+  );
+});
+
+// ============= QUICK MENU =============
+const QuickMenu = memo(function QuickMenu({
+  isOpen,
+  onClose,
+  soundEnabled,
+  onSoundToggle,
+  showCards,
+  onShowCardsToggle,
+  onHistoryClick,
+  onLeaderboardClick
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  soundEnabled: boolean;
+  onSoundToggle: () => void;
+  showCards: boolean;
+  onShowCardsToggle: () => void;
+  onHistoryClick: () => void;
+  onLeaderboardClick: () => void;
+}) {
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <>
+          {/* Backdrop */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40"
+            onClick={onClose}
+          />
+          
+          {/* Menu panel */}
+          <motion.div
+            initial={{ x: '100%' }}
+            animate={{ x: 0 }}
+            exit={{ x: '100%' }}
+            transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+            className="fixed right-0 top-0 bottom-0 w-72 z-50 bg-gradient-to-b from-background via-background/98 to-card border-l border-primary/20"
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between p-4 border-b border-white/10">
+              <h3 className="text-white font-bold">Меню</h3>
+              <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8">
+                <X className="h-4 w-4"/>
+              </Button>
+            </div>
+            
+            {/* Menu items */}
+            <div className="p-2 space-y-1">
+              <MenuButton 
+                icon={soundEnabled ? Volume2 : VolumeX} 
+                label={soundEnabled ? 'Выключить звук' : 'Включить звук'} 
+                onClick={onSoundToggle}
+              />
+              <MenuButton 
+                icon={showCards ? EyeOff : Eye} 
+                label={showCards ? 'Скрыть карты' : 'Показать карты'} 
+                onClick={onShowCardsToggle}
+              />
+              <MenuButton icon={History} label="История раздач" onClick={onHistoryClick}/>
+              <MenuButton icon={Trophy} label="Лидерборд" onClick={onLeaderboardClick}/>
+              <MenuButton icon={Gift} label="Бонусы" onClick={() => {}}/>
+              <MenuButton icon={Info} label="Правила" onClick={() => {}}/>
+            </div>
+          </motion.div>
+        </>
+      )}
+    </AnimatePresence>
+  );
+});
+
+const MenuButton = memo(function MenuButton({
+  icon: Icon,
+  label,
+  onClick,
+  danger = false
+}: {
+  icon: React.ElementType;
+  label: string;
+  onClick: () => void;
+  danger?: boolean;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={cn(
+        "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors",
+        danger 
+          ? "text-red-400 hover:bg-red-500/10" 
+          : "text-white/80 hover:bg-white/5"
+      )}
+    >
+      <Icon className="h-5 w-5"/>
+      <span className="font-medium">{label}</span>
+    </button>
+  );
+});
+
+// ============= CHAT BUBBLE =============
+const ChatBubble = memo(function ChatBubble({
+  isOpen,
+  onToggle,
+  messages,
+  onSendMessage
+}: {
+  isOpen: boolean;
+  onToggle: () => void;
+  messages: Array<{ id: string; name: string; text: string }>;
+  onSendMessage: (text: string) => void;
+}) {
+  const [inputValue, setInputValue] = useState('');
+  
+  const handleSend = () => {
+    if (inputValue.trim()) {
+      onSendMessage(inputValue.trim());
+      setInputValue('');
+    }
+  };
+
+  return (
+    <div className="absolute left-3 bottom-36 z-25">
+      {/* Toggle button */}
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={onToggle}
+        className="h-12 w-12 rounded-full bg-black/60 backdrop-blur-sm text-white hover:bg-black/80 shadow-lg"
+      >
+        <MessageSquare className="h-5 w-5"/>
+        {messages.length > 0 && (
+          <span className="absolute -top-1 -right-1 w-5 h-5 bg-primary rounded-full text-[10px] font-bold flex items-center justify-center">
+            {messages.length > 9 ? '9+' : messages.length}
+          </span>
+        )}
+      </Button>
+      
+      {/* Chat panel */}
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: 20, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.9 }}
+            className="absolute bottom-14 left-0 w-64 bg-black/90 backdrop-blur-md rounded-xl overflow-hidden shadow-xl border border-white/10"
+          >
+            {/* Messages */}
+            <div className="h-40 overflow-y-auto p-3 space-y-2">
+              {messages.length === 0 ? (
+                <p className="text-white/40 text-xs text-center">Нет сообщений</p>
+              ) : (
+                messages.map(msg => (
+                  <div key={msg.id} className="text-xs">
+                    <span className="text-primary font-medium">{msg.name}: </span>
+                    <span className="text-white/80">{msg.text}</span>
+                  </div>
+                ))
+              )}
+            </div>
+            
+            {/* Input */}
+            <div className="flex items-center gap-2 p-2 border-t border-white/10">
+              <input
+                type="text"
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+                placeholder="Сообщение..."
+                className="flex-1 bg-white/10 rounded-lg px-3 py-2 text-xs text-white placeholder:text-white/40 focus:outline-none focus:ring-1 focus:ring-primary"
+              />
+              <Button size="icon" onClick={handleSend} className="h-8 w-8 bg-primary hover:bg-primary/80">
+                <Send className="h-3 w-3"/>
+              </Button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+});
+
 // ============= ACTION PANEL =============
 const ActionPanel = memo(function ActionPanel({
   isVisible,
@@ -533,6 +808,7 @@ const ActionPanel = memo(function ActionPanel({
   onAction: (action: 'fold' | 'check' | 'call' | 'raise' | 'allin', amount?: number) => void;
 }) {
   const [raiseAmount, setRaiseAmount] = useState(minRaise);
+  const [showSlider, setShowSlider] = useState(false);
 
   useEffect(() => {
     setRaiseAmount(Math.max(minRaise, callAmount * 2));
@@ -541,9 +817,10 @@ const ActionPanel = memo(function ActionPanel({
   if (!isVisible) return null;
 
   const presets = [
-    { label: '½ Pot', amount: Math.floor(pot / 2) },
-    { label: 'Pot', amount: pot },
-    { label: '2x', amount: callAmount * 2 },
+    { label: '½', amount: Math.floor(pot / 2), desc: 'Pot' },
+    { label: '¾', amount: Math.floor(pot * 0.75), desc: 'Pot' },
+    { label: 'Pot', amount: pot, desc: '' },
+    { label: '2x', amount: callAmount * 2, desc: '' },
   ].filter(p => p.amount >= minRaise && p.amount <= maxBet);
 
   return (
@@ -552,76 +829,169 @@ const ActionPanel = memo(function ActionPanel({
       animate={{ y: 0, opacity: 1 }}
       exit={{ y: 100, opacity: 0 }}
       transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-      className="fixed bottom-0 left-0 right-0 z-50 p-4"
-      style={{ background: 'linear-gradient(to top, hsl(var(--background)) 0%, hsl(var(--background) / 0.95) 70%, transparent 100%)' }}
+      className="fixed bottom-0 left-0 right-0 z-50 pb-safe"
     >
-      {/* Presets */}
-      <div className="flex justify-center gap-1.5 mb-3">
-        {presets.map((preset) => (
-          <Button
-            key={preset.label}
-            variant="outline"
-            size="sm"
-            onClick={() => setRaiseAmount(preset.amount)}
-            className={cn(
-              "h-7 text-[10px] px-2 border-border/50 bg-secondary/30 text-muted-foreground hover:bg-secondary/50",
-              raiseAmount === preset.amount && "bg-primary/30 border-primary text-primary"
-            )}
-          >
-            {preset.label}
-          </Button>
-        ))}
-      </div>
+      {/* Background gradient */}
+      <div className="absolute inset-0 bg-gradient-to-t from-background via-background/95 to-transparent pointer-events-none"/>
+      
+      <div className="relative p-3 space-y-2">
+        {/* Slider toggle & presets */}
+        <AnimatePresence>
+          {showSlider && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              className="overflow-hidden"
+            >
+              {/* Presets */}
+              <div className="flex justify-center gap-2 mb-2">
+                {presets.map((preset, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setRaiseAmount(preset.amount)}
+                    className={cn(
+                      "flex flex-col items-center px-3 py-1.5 rounded-lg text-xs transition-all",
+                      raiseAmount === preset.amount 
+                        ? "bg-primary text-white" 
+                        : "bg-white/10 text-white/70 hover:bg-white/20"
+                    )}
+                  >
+                    <span className="font-bold">{preset.label}</span>
+                    {preset.desc && <span className="text-[9px] opacity-70">{preset.desc}</span>}
+                  </button>
+                ))}
+              </div>
 
-      {/* Slider */}
-      <div className="mx-auto max-w-[280px] mb-3">
-        <input
-          type="range"
-          min={minRaise}
-          max={maxBet}
-          value={raiseAmount}
-          onChange={(e) => setRaiseAmount(Number(e.target.value))}
-          className="w-full h-2 rounded-full appearance-none bg-secondary/50 cursor-pointer
-                     [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 
-                     [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:rounded-full 
-                     [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:shadow-lg"
-        />
-        <div className="text-center text-primary font-bold text-lg mt-1">
-          {raiseAmount.toLocaleString()}
+              {/* Slider */}
+              <div className="mx-auto max-w-[300px] px-4">
+                <input
+                  type="range"
+                  min={minRaise}
+                  max={maxBet}
+                  value={raiseAmount}
+                  onChange={(e) => setRaiseAmount(Number(e.target.value))}
+                  className="w-full h-2 rounded-full appearance-none bg-white/20 cursor-pointer
+                             [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-6 
+                             [&::-webkit-slider-thumb]:h-6 [&::-webkit-slider-thumb]:rounded-full 
+                             [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:shadow-lg
+                             [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-white"
+                />
+                <div className="flex justify-between text-[10px] text-white/50 mt-1">
+                  <span>{minRaise.toLocaleString()}</span>
+                  <span className="text-primary font-bold text-sm">{raiseAmount.toLocaleString()}</span>
+                  <span>{maxBet.toLocaleString()}</span>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Action buttons - PPPoker style */}
+        <div className="flex justify-center items-center gap-2">
+          {/* Fold */}
+          <ActionButton 
+            onClick={() => onAction('fold')} 
+            color="red"
+            label="ФОЛД"
+          />
+
+          {/* Check/Call */}
+          {canCheck ? (
+            <ActionButton 
+              onClick={() => onAction('check')} 
+              color="blue"
+              label="ЧЕК"
+            />
+          ) : (
+            <ActionButton 
+              onClick={() => onAction('call')} 
+              color="green"
+              label="КОЛЛ"
+              amount={callAmount}
+            />
+          )}
+
+          {/* Raise toggle */}
+          <ActionButton 
+            onClick={() => setShowSlider(!showSlider)} 
+            color="yellow"
+            label="РЕЙЗ"
+            amount={showSlider ? raiseAmount : undefined}
+            icon={showSlider ? ChevronDown : ChevronUp}
+          />
+
+          {/* Raise confirm (when slider is open) */}
+          {showSlider && (
+            <ActionButton 
+              onClick={() => onAction('raise', raiseAmount)} 
+              color="yellow"
+              label="ОК"
+              filled
+            />
+          )}
+
+          {/* All-in */}
+          <ActionButton 
+            onClick={() => onAction('allin')} 
+            color="purple"
+            label="ALL-IN"
+          />
         </div>
       </div>
-
-      {/* Action buttons - Syndikate style */}
-      <div className="flex justify-center gap-2">
-        <Button onClick={() => onAction('fold')} className="flex-1 max-w-[72px] h-12 bg-gradient-to-b from-red-600 to-red-700 hover:from-red-500 text-white font-bold text-xs rounded-xl shadow-lg active:scale-95">
-          Фолд
-        </Button>
-
-        {canCheck ? (
-          <Button onClick={() => onAction('check')} className="flex-1 max-w-[72px] h-12 bg-gradient-to-b from-blue-600 to-blue-700 hover:from-blue-500 text-white font-bold text-xs rounded-xl shadow-lg active:scale-95">
-            Чек
-          </Button>
-        ) : (
-          <Button onClick={() => onAction('call')} className="flex-1 max-w-[90px] h-12 bg-gradient-to-b from-green-600 to-green-700 hover:from-green-500 text-white font-bold text-xs rounded-xl shadow-lg active:scale-95">
-            <div className="flex flex-col items-center leading-tight">
-              <span>Колл</span>
-              <span className="text-[9px] opacity-80">{callAmount.toLocaleString()}</span>
-            </div>
-          </Button>
-        )}
-
-        <Button onClick={() => onAction('raise', raiseAmount)} className="flex-1 max-w-[90px] h-12 bg-gradient-to-b from-amber-600 to-amber-700 hover:from-amber-500 text-white font-bold text-xs rounded-xl shadow-lg active:scale-95">
-          <div className="flex flex-col items-center leading-tight">
-            <span>Рейз</span>
-            <span className="text-[9px] opacity-80">{raiseAmount.toLocaleString()}</span>
-          </div>
-        </Button>
-
-        <Button onClick={() => onAction('allin')} className="flex-1 max-w-[72px] h-12 bg-gradient-to-b from-purple-600 to-purple-700 hover:from-purple-500 text-white font-bold text-xs rounded-xl shadow-lg active:scale-95">
-          All-in
-        </Button>
-      </div>
     </motion.div>
+  );
+});
+
+const ActionButton = memo(function ActionButton({
+  onClick,
+  color,
+  label,
+  amount,
+  icon: Icon,
+  filled = false
+}: {
+  onClick: () => void;
+  color: 'red' | 'green' | 'blue' | 'yellow' | 'purple';
+  label: string;
+  amount?: number;
+  icon?: React.ElementType;
+  filled?: boolean;
+}) {
+  const colorStyles = {
+    red: filled 
+      ? 'bg-gradient-to-b from-red-500 to-red-600 text-white border-red-400' 
+      : 'bg-red-500/20 text-red-400 border-red-500/50',
+    green: filled 
+      ? 'bg-gradient-to-b from-green-500 to-green-600 text-white border-green-400' 
+      : 'bg-green-500/20 text-green-400 border-green-500/50',
+    blue: filled 
+      ? 'bg-gradient-to-b from-blue-500 to-blue-600 text-white border-blue-400' 
+      : 'bg-blue-500/20 text-blue-400 border-blue-500/50',
+    yellow: filled 
+      ? 'bg-gradient-to-b from-amber-500 to-amber-600 text-white border-amber-400' 
+      : 'bg-amber-500/20 text-amber-400 border-amber-500/50',
+    purple: filled 
+      ? 'bg-gradient-to-b from-purple-500 to-purple-600 text-white border-purple-400' 
+      : 'bg-purple-500/20 text-purple-400 border-purple-500/50',
+  };
+
+  return (
+    <motion.button
+      onClick={onClick}
+      whileTap={{ scale: 0.95 }}
+      className={cn(
+        "flex flex-col items-center justify-center min-w-[60px] h-14 px-3 rounded-xl border-2 transition-all",
+        "backdrop-blur-sm shadow-lg",
+        colorStyles[color]
+      )}
+    >
+      {Icon && <Icon className="h-3 w-3 mb-0.5"/>}
+      <span className="text-[10px] font-bold tracking-wide">{label}</span>
+      {amount !== undefined && (
+        <span className="text-[9px] opacity-80">{amount.toLocaleString()}</span>
+      )}
+    </motion.button>
   );
 });
 
@@ -650,24 +1020,27 @@ const WinnerOverlay = memo(function WinnerOverlay({
       <motion.div
         initial={{ scale: 0, rotate: -10 }}
         animate={{ scale: 1, rotate: 0 }}
-        className="rounded-xl p-6 shadow-2xl text-center"
+        className="rounded-2xl p-6 shadow-2xl text-center max-w-[280px]"
         style={{
           background: 'linear-gradient(180deg, hsl(var(--card)) 0%, hsl(var(--background)) 100%)',
           border: '2px solid hsl(var(--primary) / 0.6)',
           boxShadow: '0 0 40px hsl(var(--primary) / 0.3), 0 20px 60px rgba(0,0,0,0.8)'
         }}
       >
-        <div className="text-4xl mb-3 font-black text-primary" style={{ textShadow: '0 0 20px hsl(var(--primary) / 0.5)' }}>
-          🏆 ПОБЕДА
+        <div className="text-4xl mb-3">🏆</div>
+        <div className="text-2xl font-black text-primary mb-2" style={{ textShadow: '0 0 20px hsl(var(--primary) / 0.5)' }}>
+          ПОБЕДА
         </div>
         <div className="text-foreground font-bold text-lg mb-1">{winners[0].name || 'Игрок'}</div>
-        <div className="text-2xl font-black text-primary mb-2">+{winners[0].amount.toLocaleString()}</div>
+        <div className="text-3xl font-black text-primary mb-2">+{winners[0].amount.toLocaleString()}</div>
         {winners[0].handRank && (
-          <div className="text-muted-foreground text-sm mb-3 uppercase tracking-wider">{winners[0].handRank}</div>
+          <div className="inline-block px-3 py-1 rounded-full bg-white/10 text-muted-foreground text-sm mb-3 uppercase tracking-wider">
+            {winners[0].handRank}
+          </div>
         )}
         <div className="mt-4 pt-3 border-t border-border">
-          <div className="text-muted-foreground text-xs uppercase tracking-wider">Следующая раздача через</div>
-          <motion.div key={countdown} initial={{ scale: 1.3, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="text-2xl font-bold mt-1 text-primary">
+          <div className="text-muted-foreground text-xs uppercase tracking-wider">Следующая раздача</div>
+          <motion.div key={countdown} initial={{ scale: 1.3, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="text-3xl font-bold mt-1 text-primary">
             {countdown}
           </motion.div>
         </div>
@@ -699,9 +1072,14 @@ export function SyndikatetPokerTable({
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [turnTimeRemaining, setTurnTimeRemaining] = useState<number | null>(null);
   const [playerActions, setPlayerActions] = useState<Record<string, { action: string; amount?: number }>>({});
+  const [showMenu, setShowMenu] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [showChat, setShowChat] = useState(false);
+  const [showMyCards, setShowMyCards] = useState(true);
+  const [chatMessages, setChatMessages] = useState<Array<{ id: string; name: string; text: string }>>([]);
 
   const sounds = usePokerSounds();
-  const SEAT_POSITIONS = SEAT_POSITIONS_6MAX; // For now only 6-max
+  const SEAT_POSITIONS = SEAT_POSITIONS_6MAX;
 
   // Poker table hook
   const pokerTable = usePokerTable({ tableId, playerId, buyIn });
@@ -726,7 +1104,8 @@ export function SyndikatetPokerTable({
     call,
     raise,
     allIn,
-    clearShowdown
+    clearShowdown,
+    configureTable
   } = pokerTable;
 
   // Reconnection manager
@@ -802,6 +1181,28 @@ export function SyndikatetPokerTable({
 
   const handleLeave = useCallback(() => { disconnect(); onLeave(); }, [disconnect, onLeave]);
 
+  const handleSettingsSave = useCallback((settings: Partial<TableSettings>) => {
+    configureTable({
+      smallBlindAmount: settings.smallBlind,
+      bigBlindAmount: settings.bigBlind,
+      anteAmount: settings.ante,
+      actionTimeSeconds: settings.actionTimeSeconds,
+      timeBankSeconds: settings.timeBankSeconds,
+      straddleEnabled: settings.straddleEnabled,
+      chatEnabled: settings.chatEnabled,
+      runItTwiceEnabled: settings.runItTwiceEnabled,
+      bombPotEnabled: settings.bombPotEnabled,
+      bombPotMultiplier: settings.bombPotMultiplier,
+      rakePercent: settings.rakePercent,
+      rakeCap: settings.rakeCap,
+    });
+    setShowSettings(false);
+  }, [configureTable]);
+
+  const handleSendMessage = useCallback((text: string) => {
+    setChatMessages(prev => [...prev, { id: Date.now().toString(), name: 'Вы', text }]);
+  }, []);
+
   // Memoized players
   const players = useMemo(() => {
     if (!tableState) return [];
@@ -812,12 +1213,14 @@ export function SyndikatetPokerTable({
     });
   }, [tableState?.players, SEAT_POSITIONS]);
 
+  const blindsText = tableState ? `${tableState.smallBlindAmount}/${tableState.bigBlindAmount}` : '-/-';
+
   // Loading state
   if (isConnecting) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[400px] bg-background rounded-2xl">
-        <Loader2 className="h-10 w-10 text-primary animate-spin"/>
-        <p className="text-muted-foreground mt-4">Подключение к столу...</p>
+      <div className="flex flex-col items-center justify-center min-h-[500px] bg-background rounded-2xl">
+        <Loader2 className="h-12 w-12 text-primary animate-spin"/>
+        <p className="text-muted-foreground mt-4 text-sm">Подключение к столу...</p>
       </div>
     );
   }
@@ -825,10 +1228,11 @@ export function SyndikatetPokerTable({
   // Error state
   if (error && !isConnected) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[400px] bg-background rounded-2xl p-6">
-        <p className="text-destructive mb-4">{error}</p>
+      <div className="flex flex-col items-center justify-center min-h-[500px] bg-background rounded-2xl p-6">
+        <div className="text-6xl mb-4">😔</div>
+        <p className="text-destructive mb-4 text-center">{error}</p>
         <div className="flex gap-2">
-          <Button onClick={connect}>Переподключиться</Button>
+          <Button onClick={connect} className="bg-primary hover:bg-primary/80">Переподключиться</Button>
           <Button variant="outline" onClick={onLeave}>Выйти</Button>
         </div>
       </div>
@@ -837,7 +1241,7 @@ export function SyndikatetPokerTable({
 
   return (
     <PokerErrorBoundary onReset={connect} onGoHome={handleLeave}>
-      <div className="relative w-full min-h-[500px] bg-background rounded-2xl overflow-hidden">
+      <div className="relative w-full min-h-[100dvh] bg-background overflow-hidden">
         {/* Connection status */}
         <ConnectionStatusBanner
           status={reconnectManager.status}
@@ -848,40 +1252,23 @@ export function SyndikatetPokerTable({
         />
 
         {/* Header */}
-        <div className="absolute top-0 left-0 right-0 z-20 flex items-center justify-between px-3 py-2">
-          <Button variant="ghost" size="sm" onClick={handleLeave} className="h-8 text-muted-foreground hover:text-foreground hover:bg-secondary/50">
-            <ArrowLeft className="h-4 w-4 mr-1"/>Выйти
-          </Button>
-          
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <span className={cn("w-2 h-2 rounded-full", isConnected ? "bg-green-500" : "bg-red-500")}/>
-            {tableState?.smallBlindAmount}/{tableState?.bigBlindAmount}
-          </div>
-          
-          <div className="flex items-center gap-1">
-            <Button variant="ghost" size="icon" onClick={() => setSoundEnabled(!soundEnabled)} className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary/50">
-              {soundEnabled ? <Volume2 className="h-4 w-4"/> : <VolumeX className="h-4 w-4"/>}
-            </Button>
-          </div>
-        </div>
+        <TableHeader
+          onLeave={handleLeave}
+          isConnected={isConnected}
+          blinds={blindsText}
+          playersCount={tableState?.players.length || 0}
+          onMenuClick={() => setShowMenu(true)}
+          onSettingsClick={() => setShowSettings(true)}
+        />
 
         {/* Table area */}
-        <div className="relative w-full aspect-[4/3] max-h-[65vh]">
+        <div className="relative w-full h-[60vh] mt-14">
           <SyndikatetTableFelt/>
 
           {/* Pot */}
           {tableState && (
             <div className="absolute left-1/2 top-[30%] -translate-x-1/2 -translate-y-1/2 z-10">
               <PotDisplay pot={tableState.pot}/>
-            </div>
-          )}
-
-          {/* Blinds info */}
-          {tableState && tableState.phase !== 'waiting' && (
-            <div className="absolute left-1/2 top-[58%] -translate-x-1/2 z-10">
-              <div className="text-muted-foreground text-[10px]">
-                Блайнды: {tableState.smallBlindAmount}/{tableState.bigBlindAmount}
-              </div>
             </div>
           )}
 
@@ -913,58 +1300,93 @@ export function SyndikatetPokerTable({
 
           {/* Phase indicator */}
           {tableState && tableState.phase !== 'waiting' && (
-            <div className="absolute top-14 left-1/2 -translate-x-1/2 z-10">
-              <span className="px-3 py-1 rounded-full bg-black/50 text-muted-foreground text-[10px] uppercase tracking-wider">
-                {tableState.phase}
-              </span>
-            </div>
-          )}
-
-          {/* Waiting for players */}
-          {tableState?.playersNeeded && tableState.playersNeeded > 0 && (
-            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-20">
-              <div className="rounded-xl px-6 py-4 text-center bg-card border border-primary/30" style={{ boxShadow: '0 0 30px rgba(0,0,0,0.8)' }}>
-                <Users className="h-8 w-8 mx-auto mb-2 text-primary"/>
-                <p className="text-foreground text-sm font-medium">Ожидание игроков</p>
-                <p className="text-muted-foreground text-xs mt-1">Нужно ещё {tableState.playersNeeded} игрок(а)</p>
+            <div className="absolute top-16 left-1/2 -translate-x-1/2 z-10">
+              <div 
+                className="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider"
+                style={{ 
+                  background: 'rgba(0,0,0,0.6)', 
+                  color: 'hsl(var(--primary))',
+                  border: '1px solid hsl(var(--primary) / 0.3)'
+                }}
+              >
+                {tableState.phase === 'preflop' ? 'Префлоп' : 
+                 tableState.phase === 'flop' ? 'Флоп' :
+                 tableState.phase === 'turn' ? 'Тёрн' :
+                 tableState.phase === 'river' ? 'Ривер' :
+                 tableState.phase === 'showdown' ? 'Вскрытие' : tableState.phase}
               </div>
             </div>
           )}
 
-          {/* Hero cards at bottom */}
-          {myPlayer && myPlayer.holeCards && myPlayer.holeCards.length > 0 && !myPlayer.isFolded && (
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-30 flex gap-2">
-              {myPlayer.holeCards.map((card, idx) => (
-                <SyndikatetCard key={`hero-${idx}-${card}`} card={card} size="lg" delay={idx}/>
-              ))}
-            </div>
-          )}
+          {/* Winner overlay */}
+          <AnimatePresence>
+            {showdownResult && showdownResult.winners.length > 0 && (
+              <WinnerOverlay
+                winners={showdownResult.winners.map(w => ({
+                  name: w.name,
+                  amount: w.amount,
+                  handRank: w.handRank
+                }))}
+                onClose={clearShowdown}
+              />
+            )}
+          </AnimatePresence>
         </div>
+
+        {/* Hero cards section */}
+        {myCards && myCards.length > 0 && showMyCards && (
+          <div className="absolute bottom-32 left-1/2 -translate-x-1/2 z-20">
+            <HeroCards cards={myCards} isWinning={tableState?.phase === 'showdown'}/>
+          </div>
+        )}
+
+        {/* Chat bubble */}
+        <ChatBubble
+          isOpen={showChat}
+          onToggle={() => setShowChat(!showChat)}
+          messages={chatMessages}
+          onSendMessage={handleSendMessage}
+        />
 
         {/* Action panel */}
         <AnimatePresence>
-          {isMyTurn && tableState && tableState.phase !== 'waiting' && myPlayer && (
+          {isMyTurn && tableState && (
             <ActionPanel
               isVisible={true}
               canCheck={canCheck}
               callAmount={callAmount}
-              minRaise={tableState.minRaise || tableState.bigBlindAmount || 40}
-              maxBet={myPlayer.stack}
+              minRaise={tableState.currentBet * 2}
+              maxBet={myPlayer?.stack || 0}
               pot={tableState.pot}
               onAction={handleAction}
             />
           )}
         </AnimatePresence>
 
-        {/* Winner overlay */}
-        <AnimatePresence>
-          {showdownResult && showdownResult.winners.length > 0 && (
-            <WinnerOverlay
-              winners={showdownResult.winners.map(w => ({ name: w.name, amount: w.amount, handRank: w.handRank }))}
-              onClose={clearShowdown}
-            />
-          )}
-        </AnimatePresence>
+        {/* Quick menu */}
+        <QuickMenu
+          isOpen={showMenu}
+          onClose={() => setShowMenu(false)}
+          soundEnabled={soundEnabled}
+          onSoundToggle={() => setSoundEnabled(!soundEnabled)}
+          showCards={showMyCards}
+          onShowCardsToggle={() => setShowMyCards(!showMyCards)}
+          onHistoryClick={() => { setShowMenu(false); }}
+          onLeaderboardClick={() => { setShowMenu(false); }}
+        />
+
+        {/* Settings panel */}
+        <TableSettingsPanel
+          isOpen={showSettings}
+          settings={{
+            smallBlind: tableState?.smallBlindAmount || 10,
+            bigBlind: tableState?.bigBlindAmount || 20,
+            actionTimeSeconds: tableState?.actionTimer || 15,
+          }}
+          onSave={handleSettingsSave}
+          onClose={() => setShowSettings(false)}
+          isHost={true}
+        />
       </div>
     </PokerErrorBoundary>
   );
