@@ -25,23 +25,23 @@ import syndikateLogo from '@/assets/syndikate-logo-main.png';
 
 // ============= CONSTANTS =============
 // PPPoker style 6-max positions - optimized for octagonal table
-// Positions are relative to table area (not full screen)
+// Hero always at bottom center, opponents arranged around
 const SEAT_POSITIONS_6MAX_MOBILE = [
-  { x: 50, y: 95 },  // Seat 1 - Hero (bottom center, below table)
-  { x: 5, y: 65 },   // Seat 2 - Left bottom
-  { x: 5, y: 25 },   // Seat 3 - Left top
+  { x: 50, y: 78 },  // Seat 1 - Hero (bottom center, inside table)
+  { x: 8, y: 55 },   // Seat 2 - Left bottom
+  { x: 8, y: 22 },   // Seat 3 - Left top  
   { x: 50, y: 5 },   // Seat 4 - Top center
-  { x: 95, y: 25 },  // Seat 5 - Right top
-  { x: 95, y: 65 },  // Seat 6 - Right bottom
+  { x: 92, y: 22 },  // Seat 5 - Right top
+  { x: 92, y: 55 },  // Seat 6 - Right bottom
 ];
 
 const SEAT_POSITIONS_6MAX_DESKTOP = [
-  { x: 50, y: 90 },  // Seat 1 - Hero
-  { x: 8, y: 60 },   // Seat 2
-  { x: 8, y: 25 },   // Seat 3
-  { x: 50, y: 5 },   // Seat 4
-  { x: 92, y: 25 },  // Seat 5
-  { x: 92, y: 60 },  // Seat 6
+  { x: 50, y: 75 },  // Seat 1 - Hero (inside table)
+  { x: 10, y: 55 },  // Seat 2 - Left bottom
+  { x: 10, y: 22 },  // Seat 3 - Left top
+  { x: 50, y: 5 },   // Seat 4 - Top center
+  { x: 90, y: 22 },  // Seat 5 - Right top
+  { x: 90, y: 55 },  // Seat 6 - Right bottom
 ];
 
 const SUIT_COLORS: Record<string, string> = {
@@ -186,7 +186,8 @@ const PlayerSeat = memo(function PlayerSeat({
   lastAction,
   isMobile = false,
   onPlayerClick,
-  gamePhase = 'waiting'
+  gamePhase = 'waiting',
+  heroCards
 }: {
   player: PokerPlayer | null;
   position: { x: number; y: number };
@@ -203,31 +204,32 @@ const PlayerSeat = memo(function PlayerSeat({
   isMobile?: boolean;
   onPlayerClick?: (player: PokerPlayer) => void;
   gamePhase?: 'waiting' | 'preflop' | 'flop' | 'turn' | 'river' | 'showdown';
+  heroCards?: string[];
 }) {
-  const avatarSize = isMobile ? (isHero ? 48 : 42) : (isHero ? 56 : 48);
+  const avatarSize = isMobile ? (isHero ? 52 : 40) : (isHero ? 58 : 46);
   const showTurnTimer = isCurrentTurn && !player?.isFolded && !player?.isAllIn;
   
-  // Calculate bet position towards center
+  // Calculate bet position towards center of table
   const betOffset = useMemo(() => {
-    const cx = 50, cy = 45;
+    const cx = 50, cy = 40;
     const dx = cx - position.x, dy = cy - position.y;
     const dist = Math.sqrt(dx*dx + dy*dy);
-    const multiplier = isMobile ? 14 : 20;
+    const multiplier = isMobile ? 18 : 25;
     return { x: (dx/dist) * multiplier, y: (dy/dist) * multiplier };
   }, [position.x, position.y, isMobile]);
 
-  // Cards position based on seat - PPPoker style: cards near avatar
-  // For side players - cards towards center, for top players - below avatar
+  // Cards position based on seat - PPPoker style: cards RIGHT of avatar for hero
   const cardsPosition = useMemo(() => {
-    // Left side players (x < 25) - cards to the right
+    // Hero (bottom) - cards to the right of avatar
+    if (isHero) return 'right';
+    // Left side players - cards to the right
     if (position.x < 25) return 'right';
-    // Right side players (x > 75) - cards to the left
+    // Right side players - cards to the left
     if (position.x > 75) return 'left';
-    // Top center player (y < 30) - cards below
-    if (position.y < 30) return 'below';
-    // Bottom (hero position) - cards are shown separately
-    return 'above';
-  }, [position.x, position.y]);
+    // Top center player - cards below
+    if (position.y < 15) return 'below';
+    return 'right';
+  }, [position.x, position.y, isHero]);
 
   // Empty seat - PPPoker style
   if (!player) {
@@ -294,9 +296,31 @@ const PlayerSeat = memo(function PlayerSeat({
         )}
       </AnimatePresence>
 
-      {/* Timer ring around avatar */}
+      {/* Timer ring around avatar - PPPoker style */}
       {showTurnTimer && turnTimeRemaining !== undefined && (
-        <TimerRing remaining={turnTimeRemaining} total={turnDuration} size={avatarSize + 8}/>
+        <TimerRing remaining={turnTimeRemaining} total={turnDuration} size={avatarSize + 10}/>
+      )}
+      
+      {/* Timer display with icon - PPPoker style (shown for active player) */}
+      {isHero && turnTimeRemaining !== undefined && turnTimeRemaining > 0 && (
+        <div 
+          className={cn("absolute z-30 flex items-center gap-1 rounded-full px-2 py-0.5",
+            isMobile ? "-left-14" : "-left-16"
+          )}
+          style={{ 
+            top: '50%', 
+            transform: 'translateY(-50%)',
+            background: 'rgba(0,0,0,0.85)',
+            border: '1px solid rgba(34,197,94,0.4)'
+          }}
+        >
+          <div className={cn("text-emerald-400", isMobile ? "text-[10px]" : "text-xs")}>🕐</div>
+          <span className={cn("font-bold tabular-nums", isMobile ? "text-[10px]" : "text-xs",
+            turnTimeRemaining <= 5 ? "text-red-400" : turnTimeRemaining <= 10 ? "text-amber-400" : "text-emerald-400"
+          )}>
+            {Math.floor(turnTimeRemaining / 60).toString().padStart(2, '0')}:{(turnTimeRemaining % 60).toString().padStart(2, '0')}
+          </span>
+        </div>
       )}
 
       {/* Avatar container */}
@@ -371,50 +395,73 @@ const PlayerSeat = memo(function PlayerSeat({
         </motion.div>
       )}
 
-      {/* Player name plate - PPPoker style */}
-      <div className="absolute top-full mt-0.5 left-1/2 -translate-x-1/2 z-10">
+      {/* Player name plate - PPPoker style with green accent */}
+      <div className="absolute top-full mt-1 left-1/2 -translate-x-1/2 z-10">
         <motion.div 
           initial={{ opacity: 0, y: -2 }}
           animate={{ opacity: 1, y: 0 }}
-          className={cn("flex flex-col items-center rounded px-1.5 py-0.5",
-            isMobile ? "min-w-[48px]" : "min-w-[60px]"
+          className={cn("flex flex-col items-center rounded-md overflow-hidden",
+            isMobile ? "min-w-[52px]" : "min-w-[64px]"
           )}
           style={{
-            background: 'linear-gradient(180deg, rgba(20,20,20,0.95) 0%, rgba(10,10,10,0.98) 100%)',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.5)',
-            border: '1px solid rgba(255,255,255,0.1)'
+            background: 'linear-gradient(180deg, rgba(15,15,15,0.98) 0%, rgba(8,8,8,0.98) 100%)',
+            boxShadow: '0 3px 10px rgba(0,0,0,0.6)',
+            border: '1px solid rgba(34,197,94,0.3)'
           }}
         >
-          <div className={cn("text-white font-medium truncate",
-            isMobile ? "text-[7px] max-w-[46px]" : "text-[9px] max-w-[58px]"
+          <div className={cn("w-full text-center px-1.5 py-0.5 truncate bg-black/40",
+            isMobile ? "text-[8px]" : "text-[10px]"
           )}>
-            {isHero ? 'Вы' : (player.name?.slice(0, 7) || 'Игрок')}
-            {!isMobile && player.name && player.name.length > 7 && '...'}
+            <span className="text-white font-medium">
+              {isHero ? 'Вы' : (player.name?.slice(0, 8) || 'Игрок')}
+            </span>
           </div>
           <div 
-            className={cn("font-bold", isMobile ? "text-[9px]" : "text-[11px]")}
-            style={{ color: player.isAllIn ? '#ef4444' : '#22c55e' }}
+            className={cn("w-full text-center px-1.5 py-0.5 font-bold", isMobile ? "text-[10px]" : "text-xs")}
+            style={{ 
+              color: player.isAllIn ? '#fff' : '#22c55e',
+              background: player.isAllIn ? 'linear-gradient(90deg, #dc2626, #ef4444)' : 'transparent'
+            }}
           >
-            {player.isAllIn ? 'ALL-IN' : `${(player.stack / (20)).toFixed(1)} BB`}
+            {player.isAllIn ? 'ALL-IN' : `${(player.stack / 20).toFixed(1)} BB`}
           </div>
         </motion.div>
       </div>
 
-      {/* Cards beside avatar - opponents show card backs during active game phases */}
+      {/* Cards beside avatar - PPPoker style positioning */}
+      {/* Hero cards - shown to the right of avatar */}
+      {isHero && heroCards && heroCards.length > 0 && !player.isFolded && (
+        <div className={cn("absolute flex z-15",
+          "left-full ml-2 top-1/2 -translate-y-1/2"
+        )}>
+          {heroCards.map((card, idx) => (
+            <div key={`hero-card-${idx}`} style={{ marginLeft: idx > 0 ? '-8px' : 0 }}>
+              <PPPokerCard 
+                card={card} 
+                faceDown={false} 
+                size={isMobile ? "sm" : "md"} 
+                delay={idx} 
+                isWinning={gamePhase === 'showdown'}
+              />
+            </div>
+          ))}
+        </div>
+      )}
+      
+      {/* Opponent cards - show card backs during active game */}
       {!isHero && !player.isFolded && gamePhase !== 'waiting' && (
-        <div className={cn("absolute flex gap-0.5 z-5",
-          cardsPosition === 'right' && "left-full ml-2 top-1/2 -translate-y-1/2",
-          cardsPosition === 'left' && "right-full mr-2 top-1/2 -translate-y-1/2",
-          cardsPosition === 'above' && "-top-14 left-1/2 -translate-x-1/2",
-          cardsPosition === 'below' && "top-full mt-12 left-1/2 -translate-x-1/2"
+        <div className={cn("absolute flex z-5",
+          cardsPosition === 'right' && "left-full ml-1 top-1/2 -translate-y-1/2",
+          cardsPosition === 'left' && "right-full mr-1 top-1/2 -translate-y-1/2",
+          cardsPosition === 'below' && "top-full mt-8 left-1/2 -translate-x-1/2"
         )}>
           {/* Always show 2 cards for active opponents - faceDown unless showdown */}
-          {['1', '2'].map((_, idx) => (
-            <div key={`card-${idx}`} style={{ marginLeft: idx > 0 ? '-6px' : 0 }}>
+          {[0, 1].map((idx) => (
+            <div key={`opp-card-${idx}`} style={{ marginLeft: idx > 0 ? '-10px' : 0 }}>
               <PPPokerCard 
                 card={showCards && player.holeCards?.[idx] ? player.holeCards[idx] : 'XX'} 
                 faceDown={!showCards} 
-                size={isMobile ? "xs" : "sm"} 
+                size="xs"
                 delay={idx} 
                 isWinning={showCards}
               />
@@ -423,24 +470,34 @@ const PlayerSeat = memo(function PlayerSeat({
         </div>
       )}
 
-      {/* Bet chip + amount - PPPoker style */}
+      {/* Bet chip + amount - PPPoker style with chip stack icon */}
       {player.betAmount > 0 && (
         <motion.div
           className="absolute z-15"
-          style={{ left: `${betOffset.x}px`, top: `${betOffset.y}px` }}
+          style={{ 
+            left: `calc(50% + ${betOffset.x}px)`, 
+            top: `calc(50% + ${betOffset.y}px)`,
+            transform: 'translate(-50%, -50%)'
+          }}
           initial={{ scale: 0, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
         >
-          <div className={cn("flex items-center rounded-full",
-            isMobile ? "gap-0.5 px-1 py-0.5" : "gap-1 px-2 py-0.5"
+          <div className={cn("flex items-center gap-1 rounded-full",
+            isMobile ? "px-1.5 py-0.5" : "px-2 py-0.5"
           )}
           style={{
-            background: 'rgba(0,0,0,0.8)',
-            border: '1px solid rgba(255,200,0,0.4)'
+            background: 'rgba(0,0,0,0.85)',
+            border: '1px solid rgba(255,200,0,0.5)',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.4)'
           }}>
-            <div className={cn("rounded-full", isMobile ? "w-2 h-2" : "w-3 h-3")} 
-              style={{ background: 'linear-gradient(135deg, #fcd34d, #f59e0b)' }}/>
-            <span className={cn("font-bold text-amber-400", isMobile ? "text-[8px]" : "text-[10px]")}>
+            {/* Chip stack icon - PPPoker style */}
+            <div className="relative flex">
+              <div className={cn("rounded-full", isMobile ? "w-2.5 h-2.5" : "w-3.5 h-3.5")} 
+                style={{ background: 'linear-gradient(135deg, #ef4444, #dc2626)', border: '1px solid rgba(255,255,255,0.3)' }}/>
+              <div className={cn("rounded-full absolute", isMobile ? "w-2.5 h-2.5 -left-1" : "w-3.5 h-3.5 -left-1.5")} 
+                style={{ background: 'linear-gradient(135deg, #22c55e, #16a34a)', border: '1px solid rgba(255,255,255,0.3)', top: '-2px' }}/>
+            </div>
+            <span className={cn("font-bold text-amber-400", isMobile ? "text-[9px]" : "text-[11px]")}>
               {(player.betAmount / 20).toFixed(1)} BB
             </span>
           </div>
@@ -461,6 +518,7 @@ const PlayerSeat = memo(function PlayerSeat({
   if (prev.lastAction?.action !== next.lastAction?.action) return false;
   if (prev.gamePhase !== next.gamePhase) return false;
   if (prev.isHero !== next.isHero) return false;
+  if (JSON.stringify(prev.heroCards) !== JSON.stringify(next.heroCards)) return false;
   return true;
 });
 
@@ -1296,26 +1354,30 @@ export function SyndikatetPokerTable({
           )}
 
           {/* Player seats */}
-          {players.map(({ position, seatNumber, player }, idx) => (
-            <PlayerSeat
-              key={seatNumber}
-              player={player || null}
-              position={position}
-              seatIndex={idx}
-              isHero={player?.playerId === playerId}
-              showCards={tableState?.phase === 'showdown'}
-              isDealer={tableState?.dealerSeat === seatNumber}
-              isSB={tableState?.smallBlindSeat === seatNumber}
-              isBB={tableState?.bigBlindSeat === seatNumber}
-              isCurrentTurn={tableState?.currentPlayerSeat === seatNumber}
-              turnTimeRemaining={tableState?.currentPlayerSeat === seatNumber ? turnTimeRemaining || undefined : undefined}
-              turnDuration={tableState?.actionTimer || 30}
-              lastAction={player ? playerActions[player.playerId] : null}
-              isMobile={isMobile}
-              onPlayerClick={setSelectedPlayer}
-              gamePhase={tableState?.phase}
-            />
-          ))}
+          {players.map(({ position, seatNumber, player }, idx) => {
+            const isHeroSeat = player?.playerId === playerId;
+            return (
+              <PlayerSeat
+                key={seatNumber}
+                player={player || null}
+                position={position}
+                seatIndex={idx}
+                isHero={isHeroSeat}
+                showCards={tableState?.phase === 'showdown'}
+                isDealer={tableState?.dealerSeat === seatNumber}
+                isSB={tableState?.smallBlindSeat === seatNumber}
+                isBB={tableState?.bigBlindSeat === seatNumber}
+                isCurrentTurn={tableState?.currentPlayerSeat === seatNumber}
+                turnTimeRemaining={tableState?.currentPlayerSeat === seatNumber ? turnTimeRemaining || undefined : undefined}
+                turnDuration={tableState?.actionTimer || 30}
+                lastAction={player ? playerActions[player.playerId] : null}
+                isMobile={isMobile}
+                onPlayerClick={setSelectedPlayer}
+                gamePhase={tableState?.phase}
+                heroCards={isHeroSeat ? myCards : undefined}
+              />
+            );
+          })}
 
           {/* Winner overlay */}
           <AnimatePresence>
@@ -1325,15 +1387,7 @@ export function SyndikatetPokerTable({
           </AnimatePresence>
         </div>
 
-        {/* Hero cards - positioned above action panel */}
-        {myCards && myCards.length > 0 && showMyCards && (
-          <div 
-            className="absolute left-1/2 -translate-x-1/2 z-20"
-            style={{ bottom: isMobile ? '100px' : '120px' }}
-          >
-            <HeroCards cards={myCards} isWinning={tableState?.phase === 'showdown'} isMobile={isMobile}/>
-          </div>
-        )}
+        {/* NOTE: Hero cards now shown next to avatar in PlayerSeat component - PPPoker style */}
 
         {/* Side buttons - PPPoker style */}
         <div className="absolute left-3 z-25 flex flex-col gap-2" style={{ bottom: isMobile ? '100px' : '120px' }}>
