@@ -6,7 +6,7 @@ import { Footer } from "@/components/Footer";
 import { AuthGuard } from "@/components/auth/AuthGuard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { TrendingUp, Calendar, Users, Star, Sparkles, Crown } from "lucide-react";
+import { TrendingUp, Calendar, Users, Star, Sparkles, Crown, Gem } from "lucide-react";
 import { toast } from "sonner";
 import { PlayerStats } from "@/components/PlayerStats";
 import { AvatarSelector } from "@/components/AvatarSelector";
@@ -16,6 +16,7 @@ import { ProfileHero } from "@/components/profile/ProfileHero";
 import { MafiaAchievements } from "@/components/profile/MafiaAchievements";
 import { ProfileStatsDashboard } from "@/components/profile/ProfileStatsDashboard";
 import { ProfileGameHistory } from "@/components/profile/ProfileGameHistory";
+import { DiamondWallet } from "@/components/profile/DiamondWallet";
 import { ClanManagementPanel } from "@/components/clan/ClanManagementPanel";
 import { ClanInvitationsPanel } from "@/components/clan/ClanInvitationsPanel";
 import { ProfileClanBadge } from "@/components/clan/ProfileClanBadge";
@@ -335,7 +336,7 @@ export default function Profile() {
             transition={{ duration: 0.5, delay: 0.2 }}
           >
             <Tabs defaultValue="statistics" className="space-y-6">
-              <TabsList className="grid w-full grid-cols-5 bg-card border border-border h-auto p-1.5 gap-1">
+              <TabsList className="grid w-full grid-cols-6 bg-card border border-border h-auto p-1.5 gap-1">
                 <TabsTrigger 
                   value="statistics" 
                   className="flex items-center gap-2 text-sm py-3 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-none transition-all"
@@ -343,6 +344,14 @@ export default function Profile() {
                   <TrendingUp className="h-4 w-4" />
                   <span className="hidden sm:inline">Статистика</span>
                   <span className="sm:hidden">Статс</span>
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="wallet" 
+                  className="flex items-center gap-2 text-sm py-3 data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-500 data-[state=active]:to-blue-600 data-[state=active]:text-white rounded-none transition-all"
+                >
+                  <Gem className="h-4 w-4" />
+                  <span className="hidden sm:inline">Алмазы</span>
+                  <span className="sm:hidden">💎</span>
                 </TabsTrigger>
                 <TabsTrigger 
                   value="clan" 
@@ -395,6 +404,10 @@ export default function Profile() {
                   rating={player?.elo_rating || 100}
                   gameResults={gameResults}
                 />
+              </TabsContent>
+
+              <TabsContent value="wallet" className="mt-6">
+                {player && <DiamondWallet playerId={player.id} playerName={player.name} />}
               </TabsContent>
 
               <TabsContent value="clan" className="mt-6">

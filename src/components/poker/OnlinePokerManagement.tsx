@@ -70,6 +70,8 @@ import { CreditTransactions, addTransaction } from './admin/CreditTransactions';
 import { HandDetailsViewer } from './admin/HandDetailsViewer';
 import { CreatePlayerWithBalance } from './admin/CreatePlayerWithBalance';
 import { StatsExport } from './admin/StatsExport';
+import { DiamondManagement } from './admin/DiamondManagement';
+import { Gem } from 'lucide-react';
 
 interface PlayerBalance {
   id: string;
@@ -685,10 +687,14 @@ export function OnlinePokerManagement() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-7">
+        <TabsList className="grid w-full grid-cols-8">
           <TabsTrigger value="monitor" className="gap-1">
             <Eye className="h-4 w-4" />
             <span className="hidden lg:inline">Мониторинг</span>
+          </TabsTrigger>
+          <TabsTrigger value="diamonds" className="gap-1 data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-500 data-[state=active]:to-blue-600">
+            <Gem className="h-4 w-4" />
+            <span className="hidden lg:inline">Алмазы</span>
           </TabsTrigger>
           <TabsTrigger value="credits" className="gap-1">
             <CreditCard className="h-4 w-4" />
@@ -715,6 +721,11 @@ export function OnlinePokerManagement() {
             <span className="hidden lg:inline">Инструменты</span>
           </TabsTrigger>
         </TabsList>
+
+        {/* Diamonds Tab */}
+        <TabsContent value="diamonds">
+          <DiamondManagement />
+        </TabsContent>
 
         {/* Monitor Tab - Live View */}
         <TabsContent value="monitor" className="space-y-4">

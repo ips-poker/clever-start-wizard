@@ -3,3 +3,4 @@ export { CreditTransactions, addTransaction } from './CreditTransactions';
 export { HandDetailsViewer } from './HandDetailsViewer';
 export { CreatePlayerWithBalance } from './CreatePlayerWithBalance';
 export { StatsExport } from './StatsExport';
+export { DiamondManagement } from './DiamondManagement';
