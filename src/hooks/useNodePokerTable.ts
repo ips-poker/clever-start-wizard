@@ -75,11 +75,19 @@ interface UseNodePokerTableOptions {
 
 type ConnectionStatus = 'connecting' | 'connected' | 'disconnected' | 'reconnecting';
 
-// Production WebSocket URL - with fallback detection
-const WS_URL = 'wss://poker.syndicate-poker.ru/ws/poker';
+// WebSocket URLs - try Supabase Edge Function first, then external server
+const getWebSocketUrl = () => {
+  // Use Supabase Edge Function for WebSocket
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://jfswxblvhxlpwfgjavse.supabase.co';
+  // Convert HTTPS URL to WSS for Edge Function
+  const wsUrl = supabaseUrl.replace('https://', 'wss://').replace('http://', 'ws://');
+  return `${wsUrl}/functions/v1/poker-table-ws`;
+};
+
+const WS_URL = getWebSocketUrl();
 const RECONNECT_DELAYS = [1000, 2000, 5000, 10000, 30000];
 const PING_INTERVAL = 25000;
-const CONNECTION_TIMEOUT = 5000; // 5 seconds to receive 'connected' message
+const CONNECTION_TIMEOUT = 10000; // 10 seconds to establish connection
 
 // Debug logging
 const DEBUG = true;
@@ -184,6 +192,7 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
         case 'subscribed':
         case 'joined_table':
         case 'state':
+        case 'table_state': // Edge Function uses this type
           if (data.state && tableId) {
             setTableState(prev => {
               const newState = transformServerState(data.state, tableId);
@@ -434,14 +443,14 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
     });
   }, [tableId, playerId, sendMessage]);
 
-  // Game actions
+  // Game actions - use data.action format for Edge Function compatibility
   const fold = useCallback(() => {
     if (!tableId || !playerId) return;
     sendMessage({
       type: 'action',
       tableId,
       playerId,
-      actionType: 'fold'
+      data: { action: 'fold' }
     });
   }, [tableId, playerId, sendMessage]);
 
@@ -451,7 +460,7 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
       type: 'action',
       tableId,
       playerId,
-      actionType: 'check'
+      data: { action: 'check' }
     });
   }, [tableId, playerId, sendMessage]);
 
@@ -461,7 +470,7 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
       type: 'action',
       tableId,
       playerId,
-      actionType: 'call'
+      data: { action: 'call' }
     });
   }, [tableId, playerId, sendMessage]);
 
@@ -471,8 +480,7 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
       type: 'action',
       tableId,
       playerId,
-      actionType: 'bet',
-      amount
+      data: { action: 'bet', amount }
     });
   }, [tableId, playerId, sendMessage]);
 
@@ -482,8 +490,7 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
       type: 'action',
       tableId,
       playerId,
-      actionType: 'raise',
-      amount
+      data: { action: 'raise', amount }
     });
   }, [tableId, playerId, sendMessage]);
 
@@ -493,7 +500,7 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
       type: 'action',
       tableId,
       playerId,
-      actionType: 'allin'
+      data: { action: 'allin' }
     });
   }, [tableId, playerId, sendMessage]);
 
