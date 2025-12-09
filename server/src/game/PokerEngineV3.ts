@@ -189,6 +189,10 @@ export interface ActionResult {
   showdownOrder?: string[];
   handResults?: HandResult[];
   minRaise?: number;
+  phaseAdvanced?: boolean;
+  isAllIn?: boolean;
+  isFolded?: boolean;
+  newHandState?: object;
 }
 
 // ==========================================
@@ -1541,6 +1545,449 @@ export function getRNGAuditLog(): RNGAuditEntry[] {
 
 export function clearRNGAuditLog(): void {
   rngAuditLog.length = 0;
+}
+
+// ==========================================
+// GAME TYPE ENUM
+// ==========================================
+export enum GameType {
+  TEXAS_HOLDEM = 'texas_holdem',
+  OMAHA = 'omaha',
+  OMAHA_HI_LO = 'omaha_hilo',
+  SHORT_DECK = 'short_deck',
+  PINEAPPLE = 'pineapple',
+  CHINESE_POKER = 'ofc_classic'
+}
+
+// ==========================================
+// GAME CONFIG INTERFACE
+// ==========================================
+export interface GameConfig {
+  smallBlind: number;
+  bigBlind: number;
+  ante: number;
+  maxPlayers: number;
+  minBuyIn: number;
+  maxBuyIn: number;
+  actionTimeSeconds: number;
+  timeBankSeconds: number;
+  runItTwiceEnabled: boolean;
+  bombPotEnabled: boolean;
+  straddleEnabled: boolean;
+}
+
+// ==========================================
+// POKER ENGINE V3 CLASS
+// Stateful wrapper for the poker engine functions
+// ==========================================
+export class PokerEngineV3 {
+  private gameType: GameType;
+  private config: GameConfig;
+  private state: GameState | null = null;
+  private actions: { playerId: string; type: string; phase: string; amount: number }[] = [];
+  
+  constructor(gameType: GameType, config: GameConfig) {
+    this.gameType = gameType;
+    this.config = config;
+  }
+  
+  /**
+   * Start a new hand
+   */
+  startNewHand(
+    players: { id: string; name: string; seatNumber: number; stack: number; status: string; isDealer: boolean }[],
+    dealerSeat: number
+  ): {
+    handId: string;
+    phase: string;
+    pot: number;
+    communityCards: string[];
+    currentBet: number;
+    dealerSeat: number;
+    smallBlindSeat: number;
+    bigBlindSeat: number;
+    currentPlayerSeat: number | null;
+    minRaise: number;
+    players: { id: string; seatNumber: number; holeCards: string[]; currentBet: number }[];
+  } {
+    // Prepare deck
+    const isShortDeck = this.gameType === GameType.SHORT_DECK;
+    const deck = prepareDeck(isShortDeck);
+    
+    // Convert players to GamePlayer format
+    const gamePlayers: GamePlayer[] = players.map(p => ({
+      id: p.id,
+      seatNumber: p.seatNumber,
+      stack: p.stack,
+      betAmount: 0,
+      holeCards: [],
+      isFolded: p.status !== 'active',
+      isAllIn: false,
+      isSittingOut: p.status !== 'active',
+      isDisconnected: false,
+      timeBank: this.config.timeBankSeconds,
+      lastActionTime: null
+    }));
+    
+    // Calculate positions
+    const positions = calculatePositions(gamePlayers, dealerSeat > 0 ? dealerSeat - 1 : null);
+    
+    // Post blinds
+    const blindsResult = postBlinds(
+      gamePlayers,
+      positions.sbSeat,
+      positions.bbSeat,
+      this.config.smallBlind,
+      this.config.bigBlind
+    );
+    
+    // Collect antes if configured
+    let pot = blindsResult.pot;
+    let playersAfterBlinds = blindsResult.updatedPlayers;
+    
+    if (this.config.ante > 0) {
+      const antesResult = collectAntes(playersAfterBlinds, this.config.ante);
+      pot += antesResult.pot;
+      playersAfterBlinds = antesResult.updatedPlayers;
+    }
+    
+    // Deal hole cards
+    const cardsPerPlayer = this.getCardsPerPlayer();
+    let deckIndex = 0;
+    const playersWithCards = playersAfterBlinds.map(p => {
+      if (!p.isFolded && !p.isSittingOut) {
+        const cards = deck.slice(deckIndex, deckIndex + cardsPerPlayer);
+        deckIndex += cardsPerPlayer;
+        return { ...p, holeCards: cards };
+      }
+      return p;
+    });
+    
+    // Generate hand ID
+    const handId = crypto.randomUUID();
+    
+    // Create initial state
+    this.state = {
+      tableId: '',
+      handId,
+      handNumber: 1,
+      phase: 'preflop',
+      pot,
+      currentBet: blindsResult.currentBet,
+      communityCards: [],
+      dealerSeat: positions.dealerSeat,
+      smallBlindSeat: positions.sbSeat,
+      bigBlindSeat: positions.bbSeat,
+      currentPlayerSeat: positions.firstToActSeat,
+      players: playersWithCards,
+      deck: deck.slice(deckIndex),
+      smallBlind: this.config.smallBlind,
+      bigBlind: this.config.bigBlind,
+      ante: this.config.ante,
+      sidePots: [],
+      winners: [],
+      isComplete: false,
+      lastAggressor: null,
+      minRaise: this.config.bigBlind,
+      actionCount: 0,
+      gameType: this.gameType as unknown as PokerGameType
+    };
+    
+    this.actions = [];
+    
+    return {
+      handId,
+      phase: 'preflop',
+      pot,
+      communityCards: [],
+      currentBet: blindsResult.currentBet,
+      dealerSeat: positions.dealerSeat,
+      smallBlindSeat: positions.sbSeat,
+      bigBlindSeat: positions.bbSeat,
+      currentPlayerSeat: positions.firstToActSeat,
+      minRaise: this.config.bigBlind,
+      players: playersWithCards.map(p => ({
+        id: p.id,
+        seatNumber: p.seatNumber,
+        holeCards: p.holeCards,
+        currentBet: p.betAmount
+      }))
+    };
+  }
+  
+  /**
+   * Process a player action
+   */
+  processAction(
+    playerId: string,
+    actionType: string,
+    amount?: number
+  ): ActionResult {
+    if (!this.state) {
+      return { success: false, error: 'No active hand' };
+    }
+    
+    const player = this.state.players.find(p => p.id === playerId);
+    if (!player) {
+      return { success: false, error: 'Player not found' };
+    }
+    
+    if (player.seatNumber !== this.state.currentPlayerSeat) {
+      return { success: false, error: 'Not your turn' };
+    }
+    
+    // Map action type
+    const actionMap: Record<string, BettingAction['type']> = {
+      'fold': 'fold',
+      'check': 'check',
+      'call': 'call',
+      'bet': 'bet',
+      'raise': 'raise',
+      'allin': 'all_in',
+      'all_in': 'all_in'
+    };
+    
+    const mappedAction = actionMap[actionType.toLowerCase()];
+    if (!mappedAction) {
+      return { success: false, error: `Invalid action: ${actionType}` };
+    }
+    
+    // Validate and process action
+    const result = validateAndProcessAction(
+      { type: mappedAction, amount },
+      player,
+      this.state.currentBet,
+      this.state.minRaise,
+      this.config.bigBlind
+    );
+    
+    if (!result.valid) {
+      return { success: false, error: result.error };
+    }
+    
+    // Update player state
+    player.betAmount = result.newBet;
+    player.stack = result.newStack;
+    player.isFolded = result.isFolded;
+    player.isAllIn = result.isAllIn;
+    
+    // Update hand state
+    this.state.pot += result.actionAmount;
+    this.state.currentBet = result.newCurrentBet;
+    this.state.minRaise = result.newMinRaise;
+    this.state.actionCount++;
+    
+    // Record action
+    this.actions.push({
+      playerId,
+      type: mappedAction,
+      phase: this.state.phase,
+      amount: result.actionAmount
+    });
+    
+    // Check if betting round is complete
+    const roundComplete = isBettingRoundComplete(
+      this.state.players,
+      this.state.currentBet,
+      this.state.phase,
+      this.state.bigBlindSeat,
+      this.actions,
+      this.state.lastAggressor || undefined
+    );
+    
+    let phaseAdvanced = false;
+    let handComplete = false;
+    let winners: { playerId: string; amount: number; handName: string }[] | undefined;
+    
+    // Check for hand completion (all but one folded)
+    const activePlayers = this.state.players.filter(p => !p.isFolded);
+    if (activePlayers.length === 1) {
+      // Award pot to last player
+      winners = [{ playerId: activePlayers[0].id, amount: this.state.pot, handName: 'Last Standing' }];
+      handComplete = true;
+      this.state.isComplete = true;
+    } else if (roundComplete) {
+      // Advance phase
+      phaseAdvanced = true;
+      this.advancePhase();
+      
+      if (this.state.phase === 'showdown' || this.state.isComplete) {
+        handComplete = true;
+        winners = this.determineWinners();
+      }
+    } else {
+      // Find next player
+      this.state.currentPlayerSeat = this.findNextPlayer();
+    }
+    
+    return {
+      success: true,
+      action: mappedAction,
+      amount: result.actionAmount,
+      pot: this.state.pot,
+      currentBet: this.state.currentBet,
+      nextPlayerSeat: this.state.currentPlayerSeat,
+      phase: this.state.phase,
+      communityCards: this.state.communityCards,
+      handComplete,
+      winners,
+      sidePots: this.state.sidePots,
+      minRaise: this.state.minRaise,
+      phaseAdvanced
+    };
+  }
+  
+  /**
+   * Get current state
+   */
+  getState(): GameState | null {
+    return this.state;
+  }
+  
+  /**
+   * Get cards per player based on game type
+   */
+  private getCardsPerPlayer(): number {
+    switch (this.gameType) {
+      case GameType.OMAHA:
+      case GameType.OMAHA_HI_LO:
+        return 4;
+      case GameType.PINEAPPLE:
+        return 3;
+      default:
+        return 2;
+    }
+  }
+  
+  /**
+   * Advance to next phase
+   */
+  private advancePhase(): void {
+    if (!this.state) return;
+    
+    const phaseOrder: GamePhase[] = ['preflop', 'flop', 'turn', 'river', 'showdown'];
+    const currentIndex = phaseOrder.indexOf(this.state.phase);
+    
+    if (currentIndex < phaseOrder.length - 1) {
+      const nextPhase = phaseOrder[currentIndex + 1];
+      this.state.phase = nextPhase;
+      
+      // Deal community cards
+      if (nextPhase === 'flop') {
+        this.state.communityCards = this.state.deck.slice(0, 3);
+        this.state.deck = this.state.deck.slice(3);
+      } else if (nextPhase === 'turn' || nextPhase === 'river') {
+        this.state.communityCards.push(this.state.deck[0]);
+        this.state.deck = this.state.deck.slice(1);
+      }
+      
+      // Reset betting for new round
+      this.state.currentBet = 0;
+      for (const p of this.state.players) {
+        p.betAmount = 0;
+      }
+      
+      // Find first to act post-flop (first active player after dealer)
+      if (nextPhase !== 'showdown') {
+        this.state.currentPlayerSeat = this.findFirstPostFlopActor();
+      }
+    }
+  }
+  
+  /**
+   * Find next active player
+   */
+  private findNextPlayer(): number | null {
+    if (!this.state) return null;
+    
+    const activePlayers = this.state.players
+      .filter(p => !p.isFolded && !p.isAllIn && p.stack > 0)
+      .sort((a, b) => a.seatNumber - b.seatNumber);
+    
+    if (activePlayers.length === 0) return null;
+    
+    const currentSeat = this.state.currentPlayerSeat || 0;
+    
+    // Find next player after current seat
+    for (const p of activePlayers) {
+      if (p.seatNumber > currentSeat) {
+        return p.seatNumber;
+      }
+    }
+    
+    // Wrap around
+    return activePlayers[0].seatNumber;
+  }
+  
+  /**
+   * Find first to act post-flop
+   */
+  private findFirstPostFlopActor(): number | null {
+    if (!this.state) return null;
+    
+    const activePlayers = this.state.players
+      .filter(p => !p.isFolded && !p.isAllIn && p.stack > 0)
+      .sort((a, b) => a.seatNumber - b.seatNumber);
+    
+    if (activePlayers.length === 0) return null;
+    
+    const dealerSeat = this.state.dealerSeat;
+    
+    // Find first active player after dealer
+    for (const p of activePlayers) {
+      if (p.seatNumber > dealerSeat) {
+        return p.seatNumber;
+      }
+    }
+    
+    return activePlayers[0].seatNumber;
+  }
+  
+  /**
+   * Determine winners at showdown
+   */
+  private determineWinners(): { playerId: string; amount: number; handName: string }[] {
+    if (!this.state) return [];
+    
+    const activePlayers = this.state.players.filter(p => !p.isFolded);
+    
+    if (activePlayers.length === 1) {
+      return [{ playerId: activePlayers[0].id, amount: this.state.pot, handName: 'Last Standing' }];
+    }
+    
+    const isShortDeck = this.gameType === GameType.SHORT_DECK;
+    const isOmaha = this.gameType === GameType.OMAHA || this.gameType === GameType.OMAHA_HI_LO;
+    
+    // Calculate contributions for side pots
+    const contributions: PlayerContribution[] = this.state.players.map(p => ({
+      playerId: p.id,
+      totalBet: p.betAmount,
+      isFolded: p.isFolded,
+      isAllIn: p.isAllIn
+    }));
+    
+    const potResult = calculateSidePots(contributions);
+    this.state.sidePots = [potResult.mainPot, ...potResult.sidePots];
+    
+    // Evaluate hands
+    const handResults: HandResult[] = activePlayers.map(p => {
+      const result = isOmaha
+        ? evaluateOmahaHand(p.holeCards, this.state!.communityCards)
+        : evaluateHand(p.holeCards, this.state!.communityCards, isShortDeck);
+      return { ...result, playerId: p.id };
+    });
+    
+    // Determine showdown result
+    const showdownResult = determineShowdownWinners(
+      handResults,
+      [potResult.mainPot, ...potResult.sidePots],
+      activePlayers.map(p => p.id)
+    );
+    
+    this.state.isComplete = true;
+    
+    return showdownResult.winners;
+  }
 }
 
 // ==========================================
