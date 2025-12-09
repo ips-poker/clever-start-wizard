@@ -170,7 +170,7 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
       return {
         playerId: (p.playerId || p.id) as string,
         name: (p.name || 'Player') as string,
-        avatarUrl: (p.avatar || p.avatarUrl) as string | undefined,
+        avatarUrl: (p.avatarUrl || p.avatar) as string | undefined, // avatarUrl first, then avatar fallback
         seatNumber: (p.seatNumber ?? p.seat_number ?? 0) as number,
         stack: (p.stack || 0) as number,
         betAmount,
@@ -411,15 +411,18 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
           break;
 
         case 'state_update':
-          // State update after action - contains latest bets
-          log('📊 State update received');
-          if (data.state && tableId) {
-            const stateData = data.state as Record<string, unknown>;
-            setTableState(transformServerState(data.state, tableId));
-            
-            // Update my cards if present
-            if (stateData.myCards) {
-              setMyCards(stateData.myCards as string[]);
+          // State update after action - contains latest bets and player states
+          log('📊 State update received:', data);
+          {
+            // The server broadcasts with full state attached
+            const stateData = (data.state || data.data || data) as Record<string, unknown>;
+            if (tableId && (stateData.players || stateData.phase)) {
+              setTableState(transformServerState(stateData, tableId));
+              
+              // Update my cards if present
+              if (stateData.myCards) {
+                setMyCards(stateData.myCards as string[]);
+              }
             }
           }
           break;

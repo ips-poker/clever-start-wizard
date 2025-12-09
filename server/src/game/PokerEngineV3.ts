@@ -1914,7 +1914,9 @@ export class PokerEngineV3 {
       winners: [],
       isComplete: false,
       lastAggressor: null,
+      lastAggressorSeat: null,
       minRaise: this.config.bigBlind,
+      lastRaiseAmount: this.config.bigBlind,
       actionCount: 0,
       gameType: this.gameType as unknown as PokerGameType
     };
@@ -1984,6 +1986,7 @@ export class PokerEngineV3 {
       player,
       this.state.currentBet,
       this.state.minRaise,
+      this.state.lastRaiseAmount || this.config.bigBlind,
       this.config.bigBlind
     );
     
@@ -2196,27 +2199,65 @@ export class PokerEngineV3 {
     const remaining = this.state.players.filter(p => !p.isFolded);
     
     // Only one player left - hand is over (everyone else folded)
-    if (remaining.length <= 1) return true;
+    if (remaining.length <= 1) {
+      console.log('[Engine] Round complete: only one player remaining');
+      return true;
+    }
     
     // Players who can still act (not folded, not all-in, have chips)
     const playersWhoCanAct = remaining.filter(p => !p.isAllIn && p.stack > 0);
     
     // All players are all-in - round complete
-    if (playersWhoCanAct.length === 0) return true;
+    if (playersWhoCanAct.length === 0) {
+      console.log('[Engine] Round complete: all players all-in');
+      return true;
+    }
+    
+    // Log player states for debugging
+    console.log('[Engine] Checking round completion:', {
+      phase: this.state.phase,
+      currentBet: this.state.currentBet,
+      bigBlindSeat: this.state.bigBlindSeat,
+      playersWhoCanAct: playersWhoCanAct.map(p => ({
+        id: p.id.substring(0, 8),
+        seat: p.seatNumber,
+        bet: p.betAmount,
+        hasActed: p.hasActedThisRound,
+        stack: p.stack
+      }))
+    });
+    
+    // CRITICAL: On preflop, BB gets option if no one raised above the BB
+    if (this.state.phase === 'preflop') {
+      const bbPlayer = playersWhoCanAct.find(p => p.seatNumber === this.state!.bigBlindSeat);
+      if (bbPlayer && !bbPlayer.hasActedThisRound) {
+        // BB hasn't acted yet - check if there was a raise
+        const wasRaised = this.state.currentBet > this.config.bigBlind;
+        if (!wasRaised) {
+          // BB gets option to check or raise, round not complete
+          console.log('[Engine] Round NOT complete: BB has option (no raise)');
+          return false;
+        }
+      }
+    }
     
     // If only one player can act and they've already acted - round complete
     if (playersWhoCanAct.length === 1) {
       const thePlayer = playersWhoCanAct[0];
       // If everyone is all-in except this player, they need to act once
       if (thePlayer.hasActedThisRound && thePlayer.betAmount >= this.state.currentBet) {
+        console.log('[Engine] Round complete: single player already acted and matched bet');
         return true;
       }
     }
     
     // All active players must have acted AND matched current bet
-    return playersWhoCanAct.every(p => 
+    const allActedAndMatched = playersWhoCanAct.every(p => 
       p.hasActedThisRound && p.betAmount >= this.state!.currentBet
     );
+    
+    console.log('[Engine] Round complete check result:', allActedAndMatched);
+    return allActedAndMatched;
   }
   
   /**
