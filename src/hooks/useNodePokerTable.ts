@@ -663,15 +663,23 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
     return tableState.players.find(p => p.playerId === playerId);
   }, [tableState, playerId]);
 
-  // Calculate call amount
+  // Calculate call amount - how much more we need to put in to match current bet
   const callAmount = useMemo(() => {
     if (!tableState || !myPlayer) return 0;
-    return Math.max(0, tableState.currentBet - myPlayer.betAmount);
+    const amountToCall = tableState.currentBet - myPlayer.betAmount;
+    console.log('[NodePoker] callAmount calculation:', {
+      currentBet: tableState.currentBet,
+      myBetAmount: myPlayer.betAmount,
+      callAmount: Math.max(0, amountToCall)
+    });
+    return Math.max(0, amountToCall);
   }, [tableState, myPlayer]);
 
-  // Can check?
+  // Can check? Only if we've already matched the current bet
   const canCheck = useMemo(() => {
-    return callAmount === 0;
+    const result = callAmount === 0;
+    console.log('[NodePoker] canCheck:', result, 'callAmount:', callAmount);
+    return result;
   }, [callAmount]);
 
   // Effect: Connect on mount
