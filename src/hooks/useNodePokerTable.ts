@@ -133,17 +133,23 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
   const transformServerState = useCallback((serverState: unknown, tblId: string): TableState => {
     const state = serverState as Record<string, unknown>;
     
-    // Debug log the full state structure
-    log('🔄 Transforming state:', {
-      keys: Object.keys(state),
-      phase: state.phase,
-      currentPlayerSeat: state.currentPlayerSeat,
-      myCards: state.myCards,
-      hasPlayers: !!state.players
-    });
-    
     // Handle nested config if present (old server format)
     const config = state.config as Record<string, unknown> | undefined;
+    
+    // Detect which format we're receiving
+    const isOldFormat = !!config;
+    
+    // Debug log the full state structure
+    log('🔄 Transforming state:', {
+      format: isOldFormat ? 'OLD (nested config)' : 'NEW (flat)',
+      keys: Object.keys(state),
+      phase: isOldFormat ? 'N/A (old format)' : state.phase,
+      currentPlayerSeat: isOldFormat ? 'N/A (old format)' : state.currentPlayerSeat,
+      myCards: state.myCards,
+      mySeat: state.mySeat,
+      isMyTurn: state.isMyTurn,
+      hasPlayers: !!state.players
+    });
     
     // Get players from root
     const playersRaw = (state.players || []) as Record<string, unknown>[];
@@ -323,23 +329,44 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
           if (data.state && tableId) {
             const stateData = data.state as Record<string, unknown>;
             
-            // Log important state details
-            log(`📊 State update:`, {
+            // Log all state keys and values for debugging
+            log(`📊 Full state dump:`, JSON.stringify(stateData).substring(0, 800));
+            
+            // Log specific fields
+            log(`📊 State fields:`, {
               phase: stateData.phase,
               currentPlayerSeat: stateData.currentPlayerSeat,
               myCards: stateData.myCards,
               mySeat: stateData.mySeat,
               isMyTurn: stateData.isMyTurn,
-              pot: stateData.pot
+              pot: stateData.pot,
+              hasConfig: !!stateData.config
             });
             
             setTableState(transformServerState(data.state, tableId));
             
+            // Extract myCards from state - server sends at root level
             if (stateData.myCards) {
               const cards = stateData.myCards as string[];
-              log('🃏 Setting my cards:', cards);
+              log('🃏 Setting my cards from myCards:', cards);
               setMyCards(cards);
+            } else {
+              // Fallback: try to find my cards in players array
+              const playersData = stateData.players as Array<Record<string, unknown>> | undefined;
+              if (playersData && playerId) {
+                const myPlayer = playersData.find(p => 
+                  (p.playerId === playerId || p.id === playerId) && 
+                  Array.isArray(p.holeCards) && 
+                  (p.holeCards as string[]).length > 0
+                );
+                if (myPlayer) {
+                  const cards = myPlayer.holeCards as string[];
+                  log('🃏 Setting my cards from player holeCards:', cards);
+                  setMyCards(cards);
+                }
+              }
             }
+            
             if (stateData.mySeat !== undefined && stateData.mySeat !== null) {
               setMySeat(stateData.mySeat as number);
             }
