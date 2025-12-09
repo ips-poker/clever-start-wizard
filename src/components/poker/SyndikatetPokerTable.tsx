@@ -21,7 +21,7 @@ import { resolveAvatarUrl } from '@/utils/avatarResolver';
 
 // PPPoker-style components
 import { PPPokerTimerRing, PPPokerTimerBadge } from './PPPokerTimerRing';
-import { PPPokerChips3D, PPPokerBetDisplay } from './PPPokerChips3D';
+import { PPPokerChips3D, PPPokerBetDisplay, PPPokerPotDisplay } from './PPPokerChips3D';
 import { PPPokerDealerButton, PPPokerBlindButton } from './PPPokerDealerButton';
 
 // Syndikate branding
@@ -494,8 +494,7 @@ const PlayerSeat = memo(function PlayerSeat({
         </div>
       )}
 
-      {/* Bet chip + amount - PPPoker Premium Style with animated chip stack */}
-      {/* ALWAYS show bet if player has bet anything this hand */}
+      {/* Bet chip + amount - PPPoker Premium 3D Chips */}
       {player.betAmount > 0 && (
         <motion.div
           className="absolute z-15"
@@ -508,51 +507,13 @@ const PlayerSeat = memo(function PlayerSeat({
           animate={{ scale: 1, opacity: 1, y: 0 }}
           transition={{ type: 'spring', stiffness: 400, damping: 25 }}
         >
-          <div className={cn("flex items-center gap-1.5 rounded-full",
-            isMobile ? "px-2.5 py-1.5" : "px-3 py-1.5"
-          )}
-          style={{
-            background: 'linear-gradient(135deg, rgba(0,0,0,0.95) 0%, rgba(30,30,30,0.95) 100%)',
-            border: '2px solid rgba(251,191,36,0.7)',
-            boxShadow: '0 4px 15px rgba(0,0,0,0.6), 0 0 15px rgba(251,191,36,0.3)'
-          }}>
-            {/* Animated chip stack - PPPoker style */}
-            <div className="relative flex items-end" style={{ height: isMobile ? 16 : 20 }}>
-              {[0, 1, 2].map((i) => (
-                <motion.div 
-                  key={i}
-                  initial={{ y: 10, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  transition={{ delay: i * 0.05 }}
-                  className="absolute rounded-full"
-                  style={{ 
-                    width: isMobile ? 12 : 16,
-                    height: isMobile ? 12 : 16,
-                    background: i === 0 
-                      ? 'linear-gradient(135deg, #ef4444, #dc2626)' 
-                      : i === 1 
-                        ? 'linear-gradient(135deg, #22c55e, #16a34a)'
-                        : 'linear-gradient(135deg, #3b82f6, #2563eb)',
-                    border: '2px solid rgba(255,255,255,0.5)',
-                    left: i * (isMobile ? 5 : 6),
-                    bottom: i * (isMobile ? 3 : 4),
-                    boxShadow: '0 2px 6px rgba(0,0,0,0.4)'
-                  }}
-                />
-              ))}
-            </div>
-            {/* Show actual bet amount - ALWAYS visible */}
-            <span className={cn("font-black ml-3 tabular-nums", isMobile ? "text-sm" : "text-base")}
-              style={{
-                background: 'linear-gradient(135deg, #fbbf24, #f59e0b)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                textShadow: '0 0 20px rgba(251,191,36,0.5)'
-              }}
-            >
-              {player.betAmount.toLocaleString()}
-            </span>
-          </div>
+          <PPPokerChips3D 
+            amount={player.betAmount} 
+            size={isMobile ? 'xs' : 'sm'} 
+            showLabel={true}
+            animated={true}
+            maxChips={4}
+          />
         </motion.div>
       )}
     </motion.div>
@@ -783,7 +744,7 @@ const CommunityCards = memo(function CommunityCards({
   );
 });
 
-// ============= POT DISPLAY - PPPoker Style with chip icon =============
+// ============= POT DISPLAY - Using PPPoker Premium 3D Chips =============
 const PotDisplay = memo(function PotDisplay({ 
   pot, 
   bigBlind, 
@@ -794,60 +755,13 @@ const PotDisplay = memo(function PotDisplay({
   isMobile?: boolean;
 }) {
   if (pot <= 0) return null;
-  const potBB = (pot / bigBlind).toFixed(1);
 
   return (
-    <motion.div 
-      initial={{ scale: 0, opacity: 0 }} 
-      animate={{ scale: 1, opacity: 1 }} 
-      className="flex flex-col items-center gap-1"
-    >
-      {/* Main pot with PPPoker red chip stack */}
-      <div className="flex items-center gap-1.5">
-        {/* Stacked chips icon */}
-        <div className="relative" style={{ width: isMobile ? 18 : 22, height: isMobile ? 14 : 18 }}>
-          <div 
-            className="absolute rounded-full"
-            style={{ 
-              width: isMobile ? 12 : 16, 
-              height: isMobile ? 12 : 16,
-              background: 'linear-gradient(135deg, #ef4444, #b91c1c)',
-              border: '1.5px solid rgba(255,255,255,0.4)',
-              bottom: 0,
-              left: 0
-            }}
-          />
-          <div 
-            className="absolute rounded-full"
-            style={{ 
-              width: isMobile ? 12 : 16, 
-              height: isMobile ? 12 : 16,
-              background: 'linear-gradient(135deg, #f87171, #dc2626)',
-              border: '1.5px solid rgba(255,255,255,0.4)',
-              bottom: isMobile ? 3 : 4,
-              left: isMobile ? 3 : 4
-            }}
-          />
-        </div>
-        
-        <span className={cn("font-bold text-white", isMobile ? "text-xs" : "text-sm")}>
-          {potBB} BB
-        </span>
-      </div>
-      
-      {/* "Банк:" label like PPPoker */}
-      <div 
-        className={cn("rounded-full", isMobile ? "px-2 py-0.5" : "px-3 py-1")}
-        style={{ 
-          background: 'rgba(0,0,0,0.7)', 
-          border: '1px solid rgba(255,255,255,0.1)' 
-        }}
-      >
-        <span className={cn("font-medium text-white/70", isMobile ? "text-[9px]" : "text-[10px]")}>
-          Банк: {potBB} BB
-        </span>
-      </div>
-    </motion.div>
+    <PPPokerPotDisplay 
+      amount={pot} 
+      isMobile={isMobile}
+      animated={true}
+    />
   );
 });
 
