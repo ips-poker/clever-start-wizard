@@ -68,7 +68,7 @@ export class PokerEngine {
   }
   
   /**
-   * Deal cards from deck
+   * Deal cards from deck (public method)
    */
   dealCards(deck: string[], count: number): string[] {
     return deck.splice(0, count);
@@ -180,8 +180,6 @@ export class PokerEngine {
     if (!player) {
       return { success: false, error: 'Player not found' };
     }
-    
-    const activePlayers = players.filter(p => !p.isFolded && !p.isAllIn);
     
     switch (actionType.toLowerCase()) {
       case 'fold':
@@ -341,7 +339,7 @@ export class PokerEngine {
     handState.lastAggressor = null;
     
     const phases = ['preflop', 'flop', 'turn', 'river', 'showdown'] as const;
-    const currentIdx = phases.indexOf(handState.phase as any);
+    const currentIdx = phases.indexOf(handState.phase as typeof phases[number]);
     
     // If only one player can act or fewer, run out the board
     if (canAct.length <= 1) {
@@ -505,20 +503,22 @@ export class PokerEngine {
   private checkStraight(ranks: string[]): boolean {
     const values = ranks.map(r => RANK_VALUES[r]).sort((a, b) => a - b);
     
-    // Check wheel (A-2-3-4-5)
+    // Check for wheel (A-2-3-4-5)
     if (values.includes(14) && values.includes(2) && values.includes(3) && values.includes(4) && values.includes(5)) {
       return true;
     }
     
-    // Check consecutive
     for (let i = 1; i < values.length; i++) {
-      if (values[i] - values[i-1] !== 1) return false;
+      if (values[i] !== values[i - 1] + 1) {
+        return false;
+      }
     }
     return true;
   }
   
   private getHighCard(ranks: string[]): number {
-    return Math.max(...ranks.map(r => RANK_VALUES[r]));
+    const values = ranks.map(r => RANK_VALUES[r]);
+    return Math.max(...values);
   }
   
   private getFlushValue(ranks: string[]): number {
@@ -526,47 +526,77 @@ export class PokerEngine {
     return values[0] * 10000 + values[1] * 1000 + values[2] * 100 + values[3] * 10 + values[4];
   }
   
-  private getQuadsValue(counts: Record<string, number>): number {
-    const quads = Object.entries(counts).find(([_, c]) => c === 4)![0];
-    const kicker = Object.entries(counts).find(([_, c]) => c === 1)![0];
-    return RANK_VALUES[quads] * 100 + RANK_VALUES[kicker];
-  }
-  
-  private getFullHouseValue(counts: Record<string, number>): number {
-    const trips = Object.entries(counts).find(([_, c]) => c === 3)![0];
-    const pair = Object.entries(counts).find(([_, c]) => c === 2)![0];
-    return RANK_VALUES[trips] * 100 + RANK_VALUES[pair];
-  }
-  
-  private getTripsValue(counts: Record<string, number>): number {
-    const trips = Object.entries(counts).find(([_, c]) => c === 3)![0];
-    const kickers = Object.entries(counts).filter(([_, c]) => c === 1).map(([r]) => RANK_VALUES[r]).sort((a, b) => b - a);
-    return RANK_VALUES[trips] * 10000 + kickers[0] * 100 + kickers[1];
-  }
-  
-  private getTwoPairValue(counts: Record<string, number>): number {
-    const pairs = Object.entries(counts).filter(([_, c]) => c === 2).map(([r]) => RANK_VALUES[r]).sort((a, b) => b - a);
-    const kicker = Object.entries(counts).find(([_, c]) => c === 1)![0];
-    return pairs[0] * 10000 + pairs[1] * 100 + RANK_VALUES[kicker];
-  }
-  
-  private getPairValue(counts: Record<string, number>): number {
-    const pair = Object.entries(counts).find(([_, c]) => c === 2)![0];
-    const kickers = Object.entries(counts).filter(([_, c]) => c === 1).map(([r]) => RANK_VALUES[r]).sort((a, b) => b - a);
-    return RANK_VALUES[pair] * 1000000 + kickers[0] * 10000 + kickers[1] * 100 + kickers[2];
-  }
-  
-  private getCombinations<T>(arr: T[], size: number): T[][] {
-    if (size === 1) return arr.map(x => [x]);
-    
-    const result: T[][] = [];
-    for (let i = 0; i <= arr.length - size; i++) {
-      const head = arr[i];
-      const tailCombos = this.getCombinations(arr.slice(i + 1), size - 1);
-      for (const tail of tailCombos) {
-        result.push([head, ...tail]);
-      }
+  private getQuadsValue(rankCounts: Record<string, number>): number {
+    let quads = 0, kicker = 0;
+    for (const [rank, count] of Object.entries(rankCounts)) {
+      if (count === 4) quads = RANK_VALUES[rank];
+      else kicker = RANK_VALUES[rank];
     }
+    return quads * 100 + kicker;
+  }
+  
+  private getFullHouseValue(rankCounts: Record<string, number>): number {
+    let trips = 0, pair = 0;
+    for (const [rank, count] of Object.entries(rankCounts)) {
+      if (count === 3) trips = RANK_VALUES[rank];
+      if (count === 2) pair = RANK_VALUES[rank];
+    }
+    return trips * 100 + pair;
+  }
+  
+  private getTripsValue(rankCounts: Record<string, number>): number {
+    let trips = 0;
+    const kickers: number[] = [];
+    for (const [rank, count] of Object.entries(rankCounts)) {
+      if (count === 3) trips = RANK_VALUES[rank];
+      else kickers.push(RANK_VALUES[rank]);
+    }
+    kickers.sort((a, b) => b - a);
+    return trips * 10000 + kickers[0] * 100 + kickers[1];
+  }
+  
+  private getTwoPairValue(rankCounts: Record<string, number>): number {
+    const pairs: number[] = [];
+    let kicker = 0;
+    for (const [rank, count] of Object.entries(rankCounts)) {
+      if (count === 2) pairs.push(RANK_VALUES[rank]);
+      else kicker = RANK_VALUES[rank];
+    }
+    pairs.sort((a, b) => b - a);
+    return pairs[0] * 10000 + pairs[1] * 100 + kicker;
+  }
+  
+  private getPairValue(rankCounts: Record<string, number>): number {
+    let pair = 0;
+    const kickers: number[] = [];
+    for (const [rank, count] of Object.entries(rankCounts)) {
+      if (count === 2) pair = RANK_VALUES[rank];
+      else kickers.push(RANK_VALUES[rank]);
+    }
+    kickers.sort((a, b) => b - a);
+    return pair * 1000000 + kickers[0] * 10000 + kickers[1] * 100 + kickers[2];
+  }
+  
+  /**
+   * Get all combinations of k elements from array
+   */
+  private getCombinations<T>(arr: T[], k: number): T[][] {
+    const result: T[][] = [];
+    
+    const combine = (start: number, combo: T[]) => {
+      if (combo.length === k) {
+        result.push([...combo]);
+        return;
+      }
+      
+      for (let i = start; i < arr.length; i++) {
+        combo.push(arr[i]);
+        combine(i + 1, combo);
+        combo.pop();
+      }
+    };
+    
+    combine(0, []);
     return result;
   }
 }

@@ -130,9 +130,9 @@ process.on('SIGINT', gracefulShutdown);
 
 // Start server
 server.listen(config.port, () => {
-  logger.info(`🚀 Poker Server running on port ${config.port}`);
-  logger.info(`📡 WebSocket endpoint: ws://localhost:${config.port}/ws/poker`);
-  logger.info(`🔒 Environment: ${config.nodeEnv}`);
+  logger.info(`Poker server running on port ${config.port}`);
+  logger.info(`WebSocket endpoint: ws://localhost:${config.port}/ws/poker`);
+  logger.info(`Environment: ${config.nodeEnv}`);
 });
 
 export { app, server, wss };

@@ -4,7 +4,7 @@
 
 import { SupabaseClient } from '@supabase/supabase-js';
 import { TableConfig } from './PokerGameManager.js';
-import { PokerEngine } from './PokerEngine.js';
+import { PokerEngine, ActionResult } from './PokerEngine.js';
 import { logger } from '../utils/logger.js';
 
 export interface Player {
@@ -249,7 +249,7 @@ export class PokerTable {
     this.clearActionTimer();
     
     // Process action
-    const result = this.engine.processAction(
+    const result: ActionResult = this.engine.processAction(
       this.currentHand,
       Array.from(this.players.values()),
       playerId,
@@ -262,22 +262,24 @@ export class PokerTable {
     }
     
     // Update state
-    this.currentHand = result.newHandState!;
+    if (result.newHandState) {
+      this.currentHand = result.newHandState;
+    }
     this.updatePlayerFromAction(player, result);
     
     // Emit action event
     this.emit('action', {
       playerId,
       actionType,
-      amount: result.amount,
-      pot: this.currentHand.pot,
-      phase: this.currentHand.phase
+      amount: result.amount || 0,
+      pot: this.currentHand?.pot || 0,
+      phase: this.currentHand?.phase || 'preflop'
     });
     
     // Check if hand is complete
-    if (result.handComplete) {
-      await this.completeHand(result.winners!);
-    } else if (result.phaseAdvanced) {
+    if (result.handComplete && result.winners) {
+      await this.completeHand(result.winners);
+    } else if (result.phaseAdvanced && this.currentHand) {
       this.emit('phase_change', {
         phase: this.currentHand.phase,
         communityCards: this.currentHand.communityCards,
@@ -286,7 +288,7 @@ export class PokerTable {
     }
     
     // Start timer for next player
-    if (!result.handComplete && this.currentHand.currentPlayerSeat !== null) {
+    if (!result.handComplete && this.currentHand?.currentPlayerSeat !== null) {
       this.startActionTimer();
     }
     
@@ -296,12 +298,7 @@ export class PokerTable {
   /**
    * Update player after action
    */
-  private updatePlayerFromAction(player: Player, result: {
-    success: boolean;
-    amount?: number;
-    isAllIn?: boolean;
-    isFolded?: boolean;
-  }): void {
+  private updatePlayerFromAction(player: Player, result: ActionResult): void {
     if (result.amount) {
       player.currentBet += result.amount;
       player.stack -= result.amount;
@@ -315,7 +312,9 @@ export class PokerTable {
    * Start action timer
    */
   private startActionTimer(): void {
-    this.currentHand!.actionStartTime = Date.now();
+    if (this.currentHand) {
+      this.currentHand.actionStartTime = Date.now();
+    }
     
     this.actionTimer = setTimeout(() => {
       this.handleTimeout();
@@ -343,6 +342,8 @@ export class PokerTable {
     
     const player = this.players.get(playerId);
     if (!player) return;
+    
+    logger.info('Player timed out', { playerId });
     
     // Use time bank if available
     if (player.timeBank > 0) {
@@ -411,7 +412,7 @@ export class PokerTable {
     const activePlayers = Array.from(this.players.values())
       .filter(p => !p.isFolded);
     
-    this.currentHand = this.engine.initializeHand(
+    const handState = this.engine.initializeHand(
       this.id,
       this.handNumber,
       activePlayers,
@@ -421,6 +422,8 @@ export class PokerTable {
       this.config.ante
     );
     
+    this.currentHand = handState;
+    
     // Deal hole cards
     for (const player of activePlayers) {
       const numCards = this.config.gameType === 'omaha' ? 4 : 
@@ -429,6 +432,7 @@ export class PokerTable {
     }
     
     this.emit('hand_started', {
+      handId: this.currentHand.id,
       handNumber: this.handNumber,
       dealerSeat: this.dealerSeat,
       smallBlindSeat: this.currentHand.smallBlindSeat,
@@ -444,7 +448,7 @@ export class PokerTable {
     // Start action timer
     this.startActionTimer();
     
-    logger.info(`Hand started`, { tableId: this.id, handNumber: this.handNumber });
+    logger.info(`Hand started`, { tableId: this.id, handNumber: this.handNumber, players: activePlayers.length });
   }
   
   /**
@@ -465,6 +469,8 @@ export class PokerTable {
       showdown: this.currentHand?.phase === 'showdown',
       communityCards: this.currentHand?.communityCards
     });
+    
+    logger.info('Hand complete', { tableId: this.id, handNumber: this.handNumber, winners });
     
     // Save hand history
     await this.saveHandHistory();
@@ -557,10 +563,10 @@ export class PokerTable {
       pot: this.currentHand?.pot || 0,
       communityCards: this.currentHand?.communityCards || [],
       currentBet: this.currentHand?.currentBet || 0,
-      dealerSeat: this.currentHand?.dealerSeat || this.dealerSeat || 1,
-      smallBlindSeat: this.currentHand?.smallBlindSeat || 1,
-      bigBlindSeat: this.currentHand?.bigBlindSeat || 2,
-      currentPlayerSeat: this.currentHand?.currentPlayerSeat || null,
+      dealerSeat: this.currentHand?.dealerSeat ?? this.dealerSeat ?? 0,
+      smallBlindSeat: this.currentHand?.smallBlindSeat ?? 0,
+      bigBlindSeat: this.currentHand?.bigBlindSeat ?? 1,
+      currentPlayerSeat: this.currentHand?.currentPlayerSeat ?? null,
       minRaise: this.currentHand?.minRaise || this.config.bigBlind,
       handNumber: this.currentHand?.handNumber || 0,
       // Countdown info
