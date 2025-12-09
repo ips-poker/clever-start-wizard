@@ -34,40 +34,60 @@ const SEAT_POSITIONS_9MAX = [
   { x: 85, y: 75 },   // Seat 8 - Bottom right
 ];
 
+// Позиции для уникальной формы стола - вытянутого вниз
 const SEAT_POSITIONS_6MAX = [
-  { x: 50, y: 88 },   // Seat 0 - Hero (bottom center)
-  { x: 5, y: 55 },    // Seat 1 - Left middle
-  { x: 15, y: 15 },   // Seat 2 - Top left
-  { x: 50, y: 5 },    // Seat 3 - Top center
-  { x: 85, y: 15 },   // Seat 4 - Top right
-  { x: 95, y: 55 },   // Seat 5 - Right middle
+  { x: 50, y: 85 },   // Seat 0 - Hero (bottom center)
+  { x: 8, y: 58 },    // Seat 1 - Left lower
+  { x: 8, y: 28 },    // Seat 2 - Left upper
+  { x: 50, y: 8 },    // Seat 3 - Top center
+  { x: 92, y: 28 },   // Seat 4 - Right upper
+  { x: 92, y: 58 },   // Seat 5 - Right lower
 ];
 
-// ============= PREMIUM POKER CARD =============
-const PremiumCard = memo(function PremiumCard({
-  card,
-  faceDown = false,
-  size = 'md',
-  delay = 0,
-  isWinning = false
-}: {
+// ============= PREMIUM POKER CARD with personalization =============
+interface PremiumCardProps {
   card: string;
   faceDown?: boolean;
   size?: 'xs' | 'sm' | 'md' | 'lg';
   delay?: number;
   isWinning?: boolean;
-}) {
+  cardBackColors?: { primary: string; secondary: string };
+  cardStyle?: 'classic' | 'modern' | 'fourcolor' | 'jumbo';
+}
+
+const PremiumCard = memo(function PremiumCard({
+  card,
+  faceDown = false,
+  size = 'md',
+  delay = 0,
+  isWinning = false,
+  cardBackColors,
+  cardStyle = 'classic'
+}: PremiumCardProps) {
   const sizeConfig = {
     xs: { w: 32, h: 44, rank: 'text-[11px]', suit: 'text-[9px]', center: 'text-base' },
     sm: { w: 40, h: 56, rank: 'text-sm', suit: 'text-xs', center: 'text-lg' },
     md: { w: 52, h: 72, rank: 'text-base', suit: 'text-sm', center: 'text-2xl' },
-    lg: { w: 64, h: 88, rank: 'text-lg', suit: 'text-base', center: 'text-3xl' },
+    lg: { w: 64, h: 88, rank: cardStyle === 'jumbo' ? 'text-2xl' : 'text-lg', suit: cardStyle === 'jumbo' ? 'text-lg' : 'text-base', center: 'text-3xl' },
   };
   
   const cfg = sizeConfig[size];
   const rank = card?.[0] === 'T' ? '10' : card?.[0] || '?';
-  const suit = (card?.[1]?.toLowerCase() || 's') as keyof typeof SUITS;
-  const suitInfo = SUITS[suit] || SUITS.s;
+  const suitChar = (card?.[1]?.toLowerCase() || 's') as keyof typeof SUITS;
+  
+  // Four-color deck support
+  const FOUR_COLOR_SUITS = {
+    h: { symbol: '♥', color: '#ef4444', name: 'hearts' },   // Red
+    d: { symbol: '♦', color: '#3b82f6', name: 'diamonds' }, // Blue
+    c: { symbol: '♣', color: '#22c55e', name: 'clubs' },    // Green
+    s: { symbol: '♠', color: '#1e293b', name: 'spades' }    // Black
+  };
+  
+  const suitInfo = cardStyle === 'fourcolor' ? FOUR_COLOR_SUITS[suitChar] : SUITS[suitChar] || SUITS.s;
+  
+  // Card back colors from preferences
+  const backPrimary = cardBackColors?.primary || '#3b82f6';
+  const backSecondary = cardBackColors?.secondary || '#1d4ed8';
 
   if (faceDown) {
     return (
@@ -79,23 +99,26 @@ const PremiumCard = memo(function PremiumCard({
         style={{
           width: cfg.w,
           height: cfg.h,
-          background: 'linear-gradient(145deg, #1e40af 0%, #1e3a8a 50%, #172554 100%)',
-          border: '2px solid #3b82f6',
-          boxShadow: '0 8px 24px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.2)'
+          background: `linear-gradient(145deg, ${backPrimary} 0%, ${backSecondary} 50%, ${backPrimary}cc 100%)`,
+          border: `2px solid ${backPrimary}`,
+          boxShadow: `0 8px 24px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.2), 0 0 20px ${backPrimary}40`
         }}
       >
-        {/* Diamond pattern */}
-        <svg className="absolute inset-0 w-full h-full opacity-20" viewBox="0 0 40 40">
+        {/* Decorative pattern */}
+        <svg className="absolute inset-0 w-full h-full opacity-25" viewBox="0 0 40 40">
           <defs>
-            <pattern id="cardPatternBack" x="0" y="0" width="8" height="8" patternUnits="userSpaceOnUse">
-              <circle cx="4" cy="4" r="1" fill="white" opacity="0.5"/>
+            <pattern id={`cardBack-${backPrimary.replace('#','')}`} x="0" y="0" width="10" height="10" patternUnits="userSpaceOnUse">
+              <path d="M5 0 L10 5 L5 10 L0 5 Z" fill="white" opacity="0.3"/>
             </pattern>
           </defs>
-          <rect width="100%" height="100%" fill="url(#cardPatternBack)"/>
+          <rect width="100%" height="100%" fill={`url(#cardBack-${backPrimary.replace('#','')})`}/>
         </svg>
         {/* Center emblem */}
         <div className="absolute inset-0 flex items-center justify-center">
-          <div className="w-1/2 h-1/2 rounded-full border border-white/20"/>
+          <div 
+            className="w-1/2 h-1/2 rounded-full border-2"
+            style={{ borderColor: 'rgba(255,255,255,0.3)' }}
+          />
         </div>
       </motion.div>
     );
@@ -183,7 +206,7 @@ const TimerRing = memo(function TimerRing({
   );
 });
 
-// ============= PLAYER SEAT =============
+// ============= PLAYER SEAT with personalized cards =============
 interface PlayerSeatProps {
   player: PokerPlayer | null;
   position: { x: number; y: number };
@@ -199,6 +222,61 @@ interface PlayerSeatProps {
   canJoin?: boolean;
   onSeatClick?: (seatNumber: number) => void;
 }
+
+// Helper component that uses the preferences hook
+const HeroCards = memo(function HeroCards({ 
+  cards, 
+  gamePhase 
+}: { 
+  cards: string[]; 
+  gamePhase: string;
+}) {
+  const { currentCardBack, preferences } = usePokerPreferences();
+  
+  return (
+    <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 flex">
+      {cards.map((card, idx) => (
+        <div key={idx} style={{ marginLeft: idx > 0 ? '-12px' : 0 }}>
+          <PremiumCard 
+            card={card} 
+            size="md" 
+            delay={idx} 
+            isWinning={gamePhase === 'showdown'}
+            cardBackColors={{ primary: currentCardBack.primaryColor, secondary: currentCardBack.secondaryColor }}
+            cardStyle={preferences.cardStyle}
+          />
+        </div>
+      ))}
+    </div>
+  );
+});
+
+const OpponentCards = memo(function OpponentCards({ 
+  position 
+}: { 
+  position: { x: number };
+}) {
+  const { currentCardBack } = usePokerPreferences();
+  
+  return (
+    <div className={cn("absolute flex",
+      position.x < 30 ? "left-full ml-2" : position.x > 70 ? "right-full mr-2" : "top-full mt-2",
+      "top-1/2 -translate-y-1/2"
+    )}>
+      {[0, 1].map((idx) => (
+        <div key={idx} style={{ marginLeft: idx > 0 ? '-10px' : 0 }}>
+          <PremiumCard 
+            card="XX" 
+            faceDown 
+            size="xs" 
+            delay={idx}
+            cardBackColors={{ primary: currentCardBack.primaryColor, secondary: currentCardBack.secondaryColor }}
+          />
+        </div>
+      ))}
+    </div>
+  );
+});
 
 const PlayerSeat = memo(function PlayerSeat({
   player,
@@ -356,27 +434,12 @@ const PlayerSeat = memo(function PlayerSeat({
       
       {/* Player cards */}
       {isHero && heroCards && heroCards.length > 0 && !player.isFolded && (
-        <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 flex">
-          {heroCards.map((card, idx) => (
-            <div key={idx} style={{ marginLeft: idx > 0 ? '-12px' : 0 }}>
-              <PremiumCard card={card} size="md" delay={idx} isWinning={gamePhase === 'showdown'}/>
-            </div>
-          ))}
-        </div>
+        <HeroCards cards={heroCards} gamePhase={gamePhase} />
       )}
       
       {/* Opponent cards (face down) */}
       {!isHero && !player.isFolded && gamePhase !== 'waiting' && (
-        <div className={cn("absolute flex",
-          position.x < 30 ? "left-full ml-2" : position.x > 70 ? "right-full mr-2" : "top-full mt-2",
-          "top-1/2 -translate-y-1/2"
-        )}>
-          {[0, 1].map((idx) => (
-            <div key={idx} style={{ marginLeft: idx > 0 ? '-10px' : 0 }}>
-              <PremiumCard card="XX" faceDown size="xs" delay={idx}/>
-            </div>
-          ))}
-        </div>
+        <OpponentCards position={position} />
       )}
       
       {/* Bet amount */}
@@ -425,80 +488,151 @@ const PlayerSeat = memo(function PlayerSeat({
   );
 });
 
-// ============= OVAL TABLE FELT =============
-const OvalTableFelt = memo(function OvalTableFelt() {
+// ============= SYNDIKATE TABLE FELT - Unique hexagonal stadium shape =============
+interface SyndikateTableFeltProps {
+  themeColor?: string;
+  themeGradient?: string;
+}
+
+const SyndikateTableFelt = memo(function SyndikateTableFelt({ 
+  themeColor = '#0d5c2e',
+  themeGradient
+}: SyndikateTableFeltProps) {
+  // Generate felt gradient from theme color
+  const feltGradient = themeGradient || `radial-gradient(ellipse at 50% 40%, ${themeColor} 0%, ${themeColor}dd 25%, ${themeColor}bb 45%, ${themeColor}99 65%, ${themeColor}77 85%, ${themeColor}55 100%)`;
+  
   return (
     <div className="absolute inset-0 overflow-hidden">
-      {/* Dark space background */}
+      {/* Dark ambient background */}
       <div className="absolute inset-0"
         style={{
-          background: 'radial-gradient(ellipse at 50% 30%, #1a2d4a 0%, #0f1a2a 25%, #080d15 50%, #030508 100%)'
+          background: 'radial-gradient(ellipse at 50% 40%, #1a2d4a 0%, #0c1420 40%, #050a10 100%)'
         }}
       />
       
-      {/* Outer metallic rail */}
+      {/* Glowing ambient effect behind table */}
+      <div 
+        className="absolute"
+        style={{
+          top: '5%',
+          left: '3%',
+          right: '3%',
+          bottom: '15%',
+          borderRadius: '30% 30% 35% 35% / 20% 20% 25% 25%',
+          background: `radial-gradient(ellipse at 50% 50%, ${themeColor}40 0%, transparent 70%)`,
+          filter: 'blur(40px)'
+        }}
+      />
+      
+      {/* Outer metallic rail - hexagonal stadium shape */}
+      <div 
+        className="absolute"
+        style={{
+          top: '8%',
+          left: '4%',
+          right: '4%',
+          bottom: '18%',
+          borderRadius: '28% 28% 32% 32% / 18% 18% 22% 22%',
+          background: 'linear-gradient(180deg, #5a6a7a 0%, #3d4a5a 20%, #2a3440 50%, #3d4a5a 80%, #5a6a7a 100%)',
+          boxShadow: '0 10px 60px rgba(0,0,0,0.9), 0 0 100px rgba(0,0,0,0.5), inset 0 2px 30px rgba(255,255,255,0.15)',
+          border: '1px solid rgba(255,255,255,0.08)'
+        }}
+      />
+      
+      {/* Leather padding rail */}
+      <div 
+        className="absolute"
+        style={{
+          top: '10%',
+          left: '5%',
+          right: '5%',
+          bottom: '20%',
+          borderRadius: '26% 26% 30% 30% / 17% 17% 21% 21%',
+          background: 'linear-gradient(180deg, #3a2820 0%, #2a1a14 30%, #1a0f0a 60%, #2a1a14 85%, #3a2820 100%)',
+          boxShadow: 'inset 0 5px 30px rgba(0,0,0,0.8), inset 0 -5px 20px rgba(0,0,0,0.4)'
+        }}
+      />
+      
+      {/* Inner metal trim */}
       <div 
         className="absolute"
         style={{
           top: '12%',
-          left: '5%',
-          right: '5%',
-          bottom: '25%',
-          borderRadius: '50%',
-          background: 'linear-gradient(180deg, #4a5568 0%, #2d3748 30%, #1a202c 60%, #2d3748 80%, #4a5568 100%)',
-          boxShadow: '0 0 60px rgba(0,0,0,0.8), inset 0 2px 20px rgba(255,255,255,0.1)'
-        }}
-      />
-      
-      {/* Inner rail */}
-      <div 
-        className="absolute"
-        style={{
-          top: '14%',
           left: '6%',
           right: '6%',
-          bottom: '27%',
-          borderRadius: '50%',
-          background: 'linear-gradient(180deg, #2d3748 0%, #1a202c 50%, #0f141c 100%)',
-          boxShadow: 'inset 0 0 30px rgba(0,0,0,0.6)'
+          bottom: '22%',
+          borderRadius: '24% 24% 28% 28% / 16% 16% 20% 20%',
+          background: 'linear-gradient(180deg, #4a5568 0%, #2d3748 50%, #1a202c 100%)',
+          boxShadow: 'inset 0 0 20px rgba(0,0,0,0.5)',
+          border: '1px solid rgba(212,175,55,0.2)'
         }}
       />
       
-      {/* Green felt */}
+      {/* Main felt surface */}
       <div 
         className="absolute"
         style={{
-          top: '16%',
+          top: '13%',
           left: '7%',
           right: '7%',
-          bottom: '29%',
-          borderRadius: '50%',
-          background: 'radial-gradient(ellipse at 50% 40%, #22803a 0%, #1a7035 25%, #156530 45%, #105828 65%, #0a4a20 85%, #053515 100%)',
-          boxShadow: 'inset 0 0 80px rgba(0,0,0,0.3), inset 0 -40px 80px rgba(0,0,0,0.2)'
+          bottom: '23%',
+          borderRadius: '23% 23% 27% 27% / 15% 15% 19% 19%',
+          background: feltGradient,
+          boxShadow: 'inset 0 0 100px rgba(0,0,0,0.35), inset 0 -60px 100px rgba(0,0,0,0.2), inset 0 40px 60px rgba(255,255,255,0.02)'
         }}
       >
-        {/* Felt texture */}
-        <div className="absolute inset-0 opacity-[0.04] rounded-full"
+        {/* Subtle felt texture */}
+        <div className="absolute inset-0 opacity-[0.03]"
           style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`
+            borderRadius: 'inherit',
+            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.2' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`
           }}
         />
         
-        {/* Center logo */}
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <img src={syndikateLogo} alt="" className="w-28 h-auto opacity-[0.06]"/>
+        {/* Center logo - larger and more visible */}
+        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none gap-2">
+          <img src={syndikateLogo} alt="" className="w-36 h-auto opacity-[0.08] drop-shadow-lg"/>
+          <span className="text-white/[0.04] font-black text-2xl tracking-[0.5em] uppercase">
+            Poker
+          </span>
         </div>
         
-        {/* NLH watermark */}
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <span className="text-white/[0.02] font-black text-5xl tracking-[0.4em]">NLH</span>
-        </div>
+        {/* Decorative center line */}
+        <div className="absolute left-1/2 -translate-x-1/2 top-[35%] bottom-[35%] w-px bg-gradient-to-b from-transparent via-white/[0.03] to-transparent"/>
+        
+        {/* Corner decorations */}
+        {[
+          { top: '15%', left: '15%' },
+          { top: '15%', right: '15%' },
+          { bottom: '15%', left: '15%' },
+          { bottom: '15%', right: '15%' }
+        ].map((pos, i) => (
+          <div 
+            key={i}
+            className="absolute w-8 h-8 opacity-[0.04]"
+            style={{ 
+              ...pos,
+              border: '1px solid white',
+              borderRadius: '50%'
+            }}
+          />
+        ))}
       </div>
+      
+      {/* Ambient glow from pot area */}
+      <div 
+        className="absolute left-1/2 -translate-x-1/2 w-40 h-20 pointer-events-none"
+        style={{
+          top: '35%',
+          background: 'radial-gradient(ellipse, rgba(251,191,36,0.1) 0%, transparent 70%)',
+          filter: 'blur(20px)'
+        }}
+      />
     </div>
   );
 });
 
-// ============= COMMUNITY CARDS =============
+// ============= COMMUNITY CARDS with personalization =============
 const CommunityCards = memo(function CommunityCards({ 
   cards, 
   phase 
@@ -506,6 +640,7 @@ const CommunityCards = memo(function CommunityCards({
   cards: string[]; 
   phase: string;
 }) {
+  const { currentCardBack, preferences } = usePokerPreferences();
   const visibleCount = phase === 'flop' ? 3 : phase === 'turn' ? 4 : (phase === 'river' || phase === 'showdown') ? 5 : 0;
 
   return (
@@ -521,9 +656,21 @@ const CommunityCards = memo(function CommunityCards({
                 initial={{ y: -80, opacity: 0, rotateX: 90 }}
                 animate={{ y: 0, opacity: 1, rotateX: 0 }}
                 exit={{ y: 20, opacity: 0 }}
-                transition={{ delay: idx * 0.15, type: 'spring', stiffness: 200, damping: 20 }}
+                transition={{ 
+                  delay: idx * (preferences.fastAnimations ? 0.08 : 0.15), 
+                  type: 'spring', 
+                  stiffness: preferences.fastAnimations ? 300 : 200, 
+                  damping: 20 
+                }}
               >
-                <PremiumCard card={card} size="lg" delay={0} isWinning={phase === 'showdown'}/>
+                <PremiumCard 
+                  card={card} 
+                  size="lg" 
+                  delay={0} 
+                  isWinning={phase === 'showdown'}
+                  cardBackColors={{ primary: currentCardBack.primaryColor, secondary: currentCardBack.secondaryColor }}
+                  cardStyle={preferences.cardStyle}
+                />
               </motion.div>
             ) : (
               <div 
@@ -624,28 +771,32 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
   const maxPlayers = 6;
   const positions = SEAT_POSITIONS_6MAX;
   
-  // Build players array positioned relative to hero
+  // Get personalization preferences
+  const { preferences, currentTableTheme, currentCardBack } = usePokerPreferences();
+  
+  // Build players array positioned relative to hero with rotation preference
   const positionedPlayers = useMemo(() => {
     const result: (PokerPlayer | null)[] = new Array(maxPlayers).fill(null);
+    const rotationOffset = preferences.preferredSeatRotation;
     
     players.forEach(player => {
       let visualPosition: number;
       if (heroSeat !== null) {
-        // Rotate so hero is always at position 0
-        visualPosition = (player.seatNumber - heroSeat + maxPlayers) % maxPlayers;
+        // Rotate so hero is always at position 0, then apply preference rotation
+        visualPosition = (player.seatNumber - heroSeat + rotationOffset + maxPlayers) % maxPlayers;
       } else {
-        visualPosition = player.seatNumber;
+        visualPosition = (player.seatNumber + rotationOffset) % maxPlayers;
       }
       result[visualPosition] = player;
     });
     
     return result;
-  }, [players, heroSeat, maxPlayers]);
+  }, [players, heroSeat, maxPlayers, preferences.preferredSeatRotation]);
 
   return (
     <div className="relative w-full h-full">
-      {/* Table background */}
-      <OvalTableFelt />
+      {/* Table background with theme */}
+      <SyndikateTableFelt themeColor={currentTableTheme.color} />
       
       {/* Center area - pot and community cards */}
       <div className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center gap-4 z-10"
