@@ -34,14 +34,15 @@ const SEAT_POSITIONS_9MAX = [
   { x: 85, y: 75 },   // Seat 8 - Bottom right
 ];
 
-// Позиции для уникальной формы стола - вытянутого вниз
+// Горизонтальные позиции для 6-max стола (ландшафтная ориентация)
+// Стол вытянут по горизонтали как классический покерный стол
 const SEAT_POSITIONS_6MAX = [
-  { x: 50, y: 85 },   // Seat 0 - Hero (bottom center)
-  { x: 8, y: 58 },    // Seat 1 - Left lower
-  { x: 8, y: 28 },    // Seat 2 - Left upper
+  { x: 50, y: 82 },   // Seat 0 - Hero (bottom center)
+  { x: 8, y: 50 },    // Seat 1 - Left middle
+  { x: 18, y: 15 },   // Seat 2 - Top left
   { x: 50, y: 8 },    // Seat 3 - Top center
-  { x: 92, y: 28 },   // Seat 4 - Right upper
-  { x: 92, y: 58 },   // Seat 5 - Right lower
+  { x: 82, y: 15 },   // Seat 4 - Top right
+  { x: 92, y: 50 },   // Seat 5 - Right middle
 ];
 
 // ============= PREMIUM POKER CARD with personalization =============
@@ -506,33 +507,33 @@ const SyndikateTableFelt = memo(function SyndikateTableFelt({
       {/* Dark ambient background */}
       <div className="absolute inset-0"
         style={{
-          background: 'radial-gradient(ellipse at 50% 40%, #1a2d4a 0%, #0c1420 40%, #050a10 100%)'
+          background: 'radial-gradient(ellipse at 50% 50%, #1a2d4a 0%, #0c1420 40%, #050a10 100%)'
         }}
       />
       
-      {/* Glowing ambient effect behind table */}
+      {/* Glowing ambient effect behind table - horizontal ellipse */}
       <div 
         className="absolute"
         style={{
-          top: '5%',
-          left: '3%',
-          right: '3%',
-          bottom: '15%',
-          borderRadius: '30% 30% 35% 35% / 20% 20% 25% 25%',
+          top: '12%',
+          left: '5%',
+          right: '5%',
+          bottom: '20%',
+          borderRadius: '50%',
           background: `radial-gradient(ellipse at 50% 50%, ${themeColor}40 0%, transparent 70%)`,
           filter: 'blur(40px)'
         }}
       />
       
-      {/* Outer metallic rail - hexagonal stadium shape */}
+      {/* Outer metallic rail - horizontal oval shape */}
       <div 
         className="absolute"
         style={{
-          top: '8%',
-          left: '4%',
-          right: '4%',
-          bottom: '18%',
-          borderRadius: '28% 28% 32% 32% / 18% 18% 22% 22%',
+          top: '15%',
+          left: '6%',
+          right: '6%',
+          bottom: '22%',
+          borderRadius: '50%',
           background: 'linear-gradient(180deg, #5a6a7a 0%, #3d4a5a 20%, #2a3440 50%, #3d4a5a 80%, #5a6a7a 100%)',
           boxShadow: '0 10px 60px rgba(0,0,0,0.9), 0 0 100px rgba(0,0,0,0.5), inset 0 2px 30px rgba(255,255,255,0.15)',
           border: '1px solid rgba(255,255,255,0.08)'
@@ -543,11 +544,11 @@ const SyndikateTableFelt = memo(function SyndikateTableFelt({
       <div 
         className="absolute"
         style={{
-          top: '10%',
-          left: '5%',
-          right: '5%',
-          bottom: '20%',
-          borderRadius: '26% 26% 30% 30% / 17% 17% 21% 21%',
+          top: '17%',
+          left: '7%',
+          right: '7%',
+          bottom: '24%',
+          borderRadius: '50%',
           background: 'linear-gradient(180deg, #3a2820 0%, #2a1a14 30%, #1a0f0a 60%, #2a1a14 85%, #3a2820 100%)',
           boxShadow: 'inset 0 5px 30px rgba(0,0,0,0.8), inset 0 -5px 20px rgba(0,0,0,0.4)'
         }}
@@ -557,26 +558,26 @@ const SyndikateTableFelt = memo(function SyndikateTableFelt({
       <div 
         className="absolute"
         style={{
-          top: '12%',
-          left: '6%',
-          right: '6%',
-          bottom: '22%',
-          borderRadius: '24% 24% 28% 28% / 16% 16% 20% 20%',
+          top: '19%',
+          left: '8%',
+          right: '8%',
+          bottom: '26%',
+          borderRadius: '50%',
           background: 'linear-gradient(180deg, #4a5568 0%, #2d3748 50%, #1a202c 100%)',
           boxShadow: 'inset 0 0 20px rgba(0,0,0,0.5)',
           border: '1px solid rgba(212,175,55,0.2)'
         }}
       />
       
-      {/* Main felt surface */}
+      {/* Main felt surface - horizontal oval */}
       <div 
         className="absolute"
         style={{
-          top: '13%',
-          left: '7%',
-          right: '7%',
-          bottom: '23%',
-          borderRadius: '23% 23% 27% 27% / 15% 15% 19% 19%',
+          top: '20%',
+          left: '9%',
+          right: '9%',
+          bottom: '27%',
+          borderRadius: '50%',
           background: feltGradient,
           boxShadow: 'inset 0 0 100px rgba(0,0,0,0.35), inset 0 -60px 100px rgba(0,0,0,0.2), inset 0 40px 60px rgba(255,255,255,0.02)'
         }}
