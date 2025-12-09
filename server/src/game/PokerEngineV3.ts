@@ -1409,11 +1409,17 @@ export function distributeWinnings(
 
 /**
  * Determine showdown winners from hand results and pots
+ * Professional TDA-compliant implementation:
+ * - Odd chips go to first player clockwise from button
+ * - Proper split pot handling
+ * - Side pot priority
  */
 export function determineShowdownWinners(
   handResults: HandResult[],
   pots: SidePot[],
-  activePlayerIds: string[]
+  activePlayerIds: string[],
+  dealerSeat?: number,
+  playerSeats?: Map<string, number>
 ): { winners: { playerId: string; amount: number; handName: string }[] } {
   const winnersInfo: { playerId: string; amount: number; handName: string }[] = [];
   
@@ -1437,16 +1443,28 @@ export function determineShowdownWinners(
     const best = eligible[0];
     
     // Find all players with same hand strength (ties)
-    const winners = eligible.filter(hr => 
+    let winners = eligible.filter(hr => 
       hr.handRank === best.handRank && compareKickers(hr.kickers, best.kickers) === 0
     );
     
-    // Split pot among winners
+    // TDA Rule: Sort winners by position (first clockwise from button gets odd chip)
+    if (winners.length > 1 && dealerSeat !== undefined && playerSeats) {
+      winners = winners.sort((a, b) => {
+        const seatA = playerSeats.get(a.playerId) ?? 0;
+        const seatB = playerSeats.get(b.playerId) ?? 0;
+        // Calculate clockwise distance from dealer
+        const distA = seatA > dealerSeat ? seatA - dealerSeat : seatA + 10 - dealerSeat;
+        const distB = seatB > dealerSeat ? seatB - dealerSeat : seatB + 10 - dealerSeat;
+        return distA - distB;
+      });
+    }
+    
+    // Split pot among winners (odd chip to first winner clockwise from button)
     const share = Math.floor(pot.amount / winners.length);
     const remainder = pot.amount % winners.length;
     
     winners.forEach((w, i) => {
-      const amt = share + (i === 0 ? remainder : 0);
+      const amt = share + (i < remainder ? 1 : 0); // Distribute odd chips one by one
       winnersInfo.push({ playerId: w.playerId, amount: amt, handName: w.handName });
     });
   }
@@ -1659,7 +1677,9 @@ export function postBlinds(
         ...p,
         stack: p.stack - sb,
         betAmount: sb,
-        isAllIn: p.stack === sb
+        totalBetThisHand: sb, // CRITICAL: Track total for side pots
+        isAllIn: p.stack === sb,
+        hasActedThisRound: false // SB hasn't acted yet, just posted blind
       };
     }
     if (p.seatNumber === bbSeat) {
@@ -1670,7 +1690,9 @@ export function postBlinds(
         ...p,
         stack: p.stack - bb,
         betAmount: bb,
-        isAllIn: p.stack === bb
+        totalBetThisHand: bb, // CRITICAL: Track total for side pots
+        isAllIn: p.stack === bb,
+        hasActedThisRound: false // BB hasn't acted yet (has option)
       };
     }
     return p;
@@ -2096,6 +2118,7 @@ export class PokerEngineV3 {
   
   /**
    * Advance to next phase
+   * Professional implementation: handles all-in runouts and proper pot tracking
    */
   private advancePhase(): void {
     if (!this.state) return;
@@ -2104,94 +2127,138 @@ export class PokerEngineV3 {
     const currentIndex = phaseOrder.indexOf(this.state.phase);
     
     if (currentIndex < phaseOrder.length - 1) {
+      // CRITICAL: First accumulate all bets to pot BEFORE resetting
+      let roundBets = 0;
+      for (const p of this.state.players) {
+        // Track total contribution for side pot calculation
+        p.totalBetThisHand = (p.totalBetThisHand || 0) + p.betAmount;
+        roundBets += p.betAmount;
+      }
+      
+      // Pot should already be updated, but verify
+      console.log('[Engine] Phase advancing - round bets collected:', roundBets);
+      
       const nextPhase = phaseOrder[currentIndex + 1];
       this.state.phase = nextPhase;
       
-      // Deal community cards
+      // Deal community cards with burn card (professional standard)
       if (nextPhase === 'flop') {
-        this.state.communityCards = this.state.deck.slice(0, 3);
-        this.state.deck = this.state.deck.slice(3);
-      } else if (nextPhase === 'turn' || nextPhase === 'river') {
-        this.state.communityCards.push(this.state.deck[0]);
-        this.state.deck = this.state.deck.slice(1);
+        // Burn 1, deal 3
+        this.state.communityCards = this.state.deck.slice(1, 4);
+        this.state.deck = this.state.deck.slice(4);
+      } else if (nextPhase === 'turn') {
+        // Burn 1, deal 1
+        this.state.communityCards.push(this.state.deck[1]);
+        this.state.deck = this.state.deck.slice(2);
+      } else if (nextPhase === 'river') {
+        // Burn 1, deal 1
+        this.state.communityCards.push(this.state.deck[1]);
+        this.state.deck = this.state.deck.slice(2);
       }
       
-      // Reset betting for new round - CRITICAL: reset hasActedThisRound
+      // Reset betting state for new round
       this.state.currentBet = 0;
       this.state.minRaise = this.config.bigBlind;
       this.state.lastRaiseAmount = this.config.bigBlind;
       this.state.lastAggressor = null;
       this.state.lastAggressorSeat = null;
       
+      // Reset player round state
       for (const p of this.state.players) {
-        // Accumulate total bet for side pot calculation
-        p.totalBetThisHand = (p.totalBetThisHand || 0) + p.betAmount;
         p.betAmount = 0;
-        // Reset acted flag for new betting round
         p.hasActedThisRound = false;
       }
       
-      // Find first to act post-flop (first active player after dealer)
+      // Check if we need to run to showdown (all but one all-in)
+      const activePlayers = this.state.players.filter(p => !p.isFolded);
+      const playersWhoCanAct = activePlayers.filter(p => !p.isAllIn && p.stack > 0);
+      
+      if (playersWhoCanAct.length <= 1 && activePlayers.length > 1) {
+        // All-in runout scenario - deal remaining cards automatically
+        console.log('[Engine] All-in detected, running to showdown');
+        if (nextPhase !== 'showdown') {
+          // Continue to next phase automatically
+          this.advancePhase();
+          return;
+        }
+      }
+      
+      // Find first to act post-flop (first active player after dealer clockwise)
       if (nextPhase !== 'showdown') {
         this.state.currentPlayerSeat = this.findFirstPostFlopActor();
+        
+        // If no one can act (everyone all-in), advance to showdown
+        if (this.state.currentPlayerSeat === null) {
+          console.log('[Engine] No players can act, advancing to showdown');
+          this.advancePhase();
+        }
       }
     }
   }
   
   /**
-   * Find next active player
+   * Find next active player clockwise from current seat
+   * Properly handles wrap-around and skips folded/all-in players
    */
   private findNextPlayer(): number | null {
     if (!this.state) return null;
     
+    // Get all players who can still act
     const activePlayers = this.state.players
-      .filter(p => !p.isFolded && !p.isAllIn && p.stack > 0)
-      .sort((a, b) => a.seatNumber - b.seatNumber);
+      .filter(p => !p.isFolded && !p.isAllIn && p.stack > 0);
     
     if (activePlayers.length === 0) return null;
     
-    const currentSeat = this.state.currentPlayerSeat || 0;
+    const currentSeat = this.state.currentPlayerSeat ?? -1;
+    const maxSeats = Math.max(...this.state.players.map(p => p.seatNumber)) + 1;
     
-    // Find next player after current seat
-    for (const p of activePlayers) {
-      if (p.seatNumber > currentSeat) {
-        return p.seatNumber;
+    // Search clockwise from current seat
+    for (let offset = 1; offset <= maxSeats; offset++) {
+      const checkSeat = (currentSeat + offset) % maxSeats;
+      const player = activePlayers.find(p => p.seatNumber === checkSeat);
+      if (player && player.seatNumber !== currentSeat) {
+        return player.seatNumber;
       }
     }
     
-    // Wrap around
-    return activePlayers[0].seatNumber;
+    // If only one active player and it's current, return null (round complete)
+    return null;
   }
   
   /**
-   * Find first to act post-flop
+   * Find first to act post-flop - first active player clockwise from dealer
+   * Professional poker: SB acts first if still in hand, otherwise next clockwise
    */
   private findFirstPostFlopActor(): number | null {
     if (!this.state) return null;
     
     const activePlayers = this.state.players
-      .filter(p => !p.isFolded && !p.isAllIn && p.stack > 0)
-      .sort((a, b) => a.seatNumber - b.seatNumber);
+      .filter(p => !p.isFolded && !p.isAllIn && p.stack > 0);
     
     if (activePlayers.length === 0) return null;
     
     const dealerSeat = this.state.dealerSeat;
+    const maxSeats = Math.max(...this.state.players.map(p => p.seatNumber)) + 1;
     
-    // Find first active player after dealer
-    for (const p of activePlayers) {
-      if (p.seatNumber > dealerSeat) {
-        return p.seatNumber;
+    // Find first active player clockwise from dealer (not including dealer unless heads-up)
+    for (let offset = 1; offset <= maxSeats; offset++) {
+      const checkSeat = (dealerSeat + offset) % maxSeats;
+      const player = activePlayers.find(p => p.seatNumber === checkSeat);
+      if (player) {
+        return player.seatNumber;
       }
     }
     
-    return activePlayers[0].seatNumber;
+    // Fallback - return first active player
+    return activePlayers[0]?.seatNumber ?? null;
   }
   
   /**
    * Check if betting round is complete using hasActedThisRound flag
-   * This is the correct logic for poker:
+   * Professional poker logic (PokerStars/GGPoker/PPPoker compliant):
    * - All non-folded, non-all-in players must have acted
    * - All those players must have matched the current bet
+   * - BB gets option on preflop if no raise occurred
    */
   private isBettingRoundCompleteV2(): boolean {
     if (!this.state) return true;
@@ -2207,10 +2274,26 @@ export class PokerEngineV3 {
     // Players who can still act (not folded, not all-in, have chips)
     const playersWhoCanAct = remaining.filter(p => !p.isAllIn && p.stack > 0);
     
-    // All players are all-in - round complete
+    // All players are all-in except possibly one - need to check if that one matched
     if (playersWhoCanAct.length === 0) {
-      console.log('[Engine] Round complete: all players all-in');
+      console.log('[Engine] Round complete: all remaining players are all-in');
       return true;
+    }
+    
+    // If only one player can act (everyone else folded or all-in)
+    if (playersWhoCanAct.length === 1) {
+      const solePlayer = playersWhoCanAct[0];
+      // Player must act at least once to close the round
+      if (solePlayer.hasActedThisRound) {
+        // If their bet matches or exceeds current bet, round complete
+        if (solePlayer.betAmount >= this.state.currentBet) {
+          console.log('[Engine] Round complete: single active player matched bet');
+          return true;
+        }
+      }
+      // Player hasn't acted yet or hasn't matched - not complete
+      console.log('[Engine] Round NOT complete: single player needs to act or match');
+      return false;
     }
     
     // Log player states for debugging
@@ -2218,6 +2301,7 @@ export class PokerEngineV3 {
       phase: this.state.phase,
       currentBet: this.state.currentBet,
       bigBlindSeat: this.state.bigBlindSeat,
+      lastAggressorSeat: this.state.lastAggressorSeat,
       playersWhoCanAct: playersWhoCanAct.map(p => ({
         id: p.id.substring(0, 8),
         seat: p.seatNumber,
@@ -2231,45 +2315,50 @@ export class PokerEngineV3 {
     if (this.state.phase === 'preflop') {
       const bbPlayer = playersWhoCanAct.find(p => p.seatNumber === this.state!.bigBlindSeat);
       if (bbPlayer && !bbPlayer.hasActedThisRound) {
-        // BB hasn't acted yet - check if there was a raise
-        const wasRaised = this.state.currentBet > this.config.bigBlind;
-        if (!wasRaised) {
-          // BB gets option to check or raise, round not complete
-          console.log('[Engine] Round NOT complete: BB has option (no raise)');
-          return false;
-        }
+        // BB hasn't acted yet - must get option regardless of raise
+        console.log('[Engine] Round NOT complete: BB has not acted (option)');
+        return false;
       }
     }
     
-    // If only one player can act and they've already acted - round complete
-    if (playersWhoCanAct.length === 1) {
-      const thePlayer = playersWhoCanAct[0];
-      // If everyone is all-in except this player, they need to act once
-      if (thePlayer.hasActedThisRound && thePlayer.betAmount >= this.state.currentBet) {
-        console.log('[Engine] Round complete: single player already acted and matched bet');
-        return true;
+    // CRITICAL: Check if all players matched current bet AND acted
+    // A player who bet/raised last doesn't need to act again unless someone re-raised
+    for (const p of playersWhoCanAct) {
+      // Player must have acted at least once this round
+      if (!p.hasActedThisRound) {
+        console.log(`[Engine] Round NOT complete: player ${p.id.substring(0, 8)} hasn't acted`);
+        return false;
+      }
+      
+      // Player must match current bet (or be the one who set it)
+      if (p.betAmount < this.state.currentBet) {
+        console.log(`[Engine] Round NOT complete: player ${p.id.substring(0, 8)} bet ${p.betAmount} < ${this.state.currentBet}`);
+        return false;
       }
     }
     
-    // All active players must have acted AND matched current bet
-    const allActedAndMatched = playersWhoCanAct.every(p => 
-      p.hasActedThisRound && p.betAmount >= this.state!.currentBet
-    );
-    
-    console.log('[Engine] Round complete check result:', allActedAndMatched);
-    return allActedAndMatched;
+    console.log('[Engine] Round complete: all active players acted and matched');
+    return true;
   }
   
   /**
    * Determine winners at showdown
+   * Professional implementation with proper side pot handling and odd chip distribution
    */
   private determineWinners(): { playerId: string; amount: number; handName: string }[] {
     if (!this.state) return [];
     
     const activePlayers = this.state.players.filter(p => !p.isFolded);
     
+    // Single player remaining - they win entire pot
     if (activePlayers.length === 1) {
+      console.log('[Engine] Single winner (everyone folded):', activePlayers[0].id);
       return [{ playerId: activePlayers[0].id, amount: this.state.pot, handName: 'Last Standing' }];
+    }
+    
+    // Verify we have community cards for showdown
+    if (this.state.communityCards.length < 5) {
+      console.error('[Engine] Showdown called with incomplete board:', this.state.communityCards);
     }
     
     const isShortDeck = this.gameType === GameType.SHORT_DECK;
@@ -2284,8 +2373,21 @@ export class PokerEngineV3 {
       isAllIn: p.isAllIn
     }));
     
+    console.log('[Engine] Side pot contributions:', contributions.map(c => ({
+      id: c.playerId.substring(0, 8),
+      total: c.totalBet,
+      folded: c.isFolded,
+      allIn: c.isAllIn
+    })));
+    
     const potResult = calculateSidePots(contributions);
     this.state.sidePots = [potResult.mainPot, ...potResult.sidePots];
+    
+    console.log('[Engine] Pot structure:', {
+      mainPot: potResult.mainPot.amount,
+      sidePots: potResult.sidePots.map(p => p.amount),
+      total: potResult.totalPot
+    });
     
     // Evaluate hands
     const handResults: HandResult[] = activePlayers.map(p => {
@@ -2295,12 +2397,29 @@ export class PokerEngineV3 {
       return { ...result, playerId: p.id };
     });
     
-    // Determine showdown result
+    console.log('[Engine] Hand evaluations:', handResults.map(h => ({
+      id: h.playerId.substring(0, 8),
+      hand: h.handName,
+      rank: h.handRank,
+      kickers: h.kickers
+    })));
+    
+    // Build player seat map for TDA-compliant odd chip distribution
+    const playerSeats = new Map<string, number>();
+    for (const p of this.state.players) {
+      playerSeats.set(p.id, p.seatNumber);
+    }
+    
+    // Determine showdown result using our professional function
     const showdownResult = determineShowdownWinners(
       handResults,
       [potResult.mainPot, ...potResult.sidePots],
-      activePlayers.map(p => p.id)
+      activePlayers.map(p => p.id),
+      this.state.dealerSeat,
+      playerSeats
     );
+    
+    console.log('[Engine] Winners:', showdownResult.winners);
     
     this.state.isComplete = true;
     
