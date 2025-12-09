@@ -34,15 +34,15 @@ const SEAT_POSITIONS_9MAX = [
   { x: 85, y: 75 },   // Seat 8 - Bottom right
 ];
 
-// Горизонтальные позиции для 6-max стола (ландшафтная ориентация)
-// Стол вытянут по горизонтали как классический покерный стол
+// Вертикальные позиции для 6-max стола (портретная ориентация)
+// Стол вытянут по вертикали как скругленный шестиугольник
 const SEAT_POSITIONS_6MAX = [
-  { x: 50, y: 82 },   // Seat 0 - Hero (bottom center)
-  { x: 8, y: 50 },    // Seat 1 - Left middle
-  { x: 18, y: 15 },   // Seat 2 - Top left
+  { x: 50, y: 92 },   // Seat 0 - Hero (bottom center)
+  { x: 10, y: 65 },   // Seat 1 - Left bottom
+  { x: 10, y: 35 },   // Seat 2 - Left top
   { x: 50, y: 8 },    // Seat 3 - Top center
-  { x: 82, y: 15 },   // Seat 4 - Top right
-  { x: 92, y: 50 },   // Seat 5 - Right middle
+  { x: 90, y: 35 },   // Seat 4 - Right top
+  { x: 90, y: 65 },   // Seat 5 - Right bottom
 ];
 
 // ============= PREMIUM POKER CARD with personalization =============
@@ -525,15 +525,15 @@ const SyndikateTableFelt = memo(function SyndikateTableFelt({
         }}
       />
       
-      {/* Outer metallic rail - horizontal oval shape */}
+      {/* Outer metallic rail - vertical hexagonal shape */}
       <div 
         className="absolute"
         style={{
-          top: '15%',
-          left: '6%',
-          right: '6%',
-          bottom: '22%',
-          borderRadius: '50%',
+          top: '5%',
+          left: '12%',
+          right: '12%',
+          bottom: '5%',
+          borderRadius: '45% 45% 45% 45% / 20% 20% 20% 20%',
           background: 'linear-gradient(180deg, #5a6a7a 0%, #3d4a5a 20%, #2a3440 50%, #3d4a5a 80%, #5a6a7a 100%)',
           boxShadow: '0 10px 60px rgba(0,0,0,0.9), 0 0 100px rgba(0,0,0,0.5), inset 0 2px 30px rgba(255,255,255,0.15)',
           border: '1px solid rgba(255,255,255,0.08)'
@@ -544,11 +544,11 @@ const SyndikateTableFelt = memo(function SyndikateTableFelt({
       <div 
         className="absolute"
         style={{
-          top: '17%',
-          left: '7%',
-          right: '7%',
-          bottom: '24%',
-          borderRadius: '50%',
+          top: '6%',
+          left: '13%',
+          right: '13%',
+          bottom: '6%',
+          borderRadius: '44% 44% 44% 44% / 19% 19% 19% 19%',
           background: 'linear-gradient(180deg, #3a2820 0%, #2a1a14 30%, #1a0f0a 60%, #2a1a14 85%, #3a2820 100%)',
           boxShadow: 'inset 0 5px 30px rgba(0,0,0,0.8), inset 0 -5px 20px rgba(0,0,0,0.4)'
         }}
@@ -558,26 +558,26 @@ const SyndikateTableFelt = memo(function SyndikateTableFelt({
       <div 
         className="absolute"
         style={{
-          top: '19%',
-          left: '8%',
-          right: '8%',
-          bottom: '26%',
-          borderRadius: '50%',
+          top: '8%',
+          left: '15%',
+          right: '15%',
+          bottom: '8%',
+          borderRadius: '42% 42% 42% 42% / 17% 17% 17% 17%',
           background: 'linear-gradient(180deg, #4a5568 0%, #2d3748 50%, #1a202c 100%)',
           boxShadow: 'inset 0 0 20px rgba(0,0,0,0.5)',
           border: '1px solid rgba(212,175,55,0.2)'
         }}
       />
       
-      {/* Main felt surface - horizontal oval */}
+      {/* Main felt surface - vertical hexagonal shape */}
       <div 
         className="absolute"
         style={{
-          top: '20%',
-          left: '9%',
-          right: '9%',
-          bottom: '27%',
-          borderRadius: '50%',
+          top: '9%',
+          left: '16%',
+          right: '16%',
+          bottom: '9%',
+          borderRadius: '40% 40% 40% 40% / 15% 15% 15% 15%',
           background: feltGradient,
           boxShadow: 'inset 0 0 100px rgba(0,0,0,0.35), inset 0 -60px 100px rgba(0,0,0,0.2), inset 0 40px 60px rgba(255,255,255,0.02)'
         }}
@@ -590,27 +590,27 @@ const SyndikateTableFelt = memo(function SyndikateTableFelt({
           }}
         />
         
-        {/* Center logo - larger and more visible */}
+        {/* Center logo */}
         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none gap-2">
-          <img src={syndikateLogo} alt="" className="w-36 h-auto opacity-[0.08] drop-shadow-lg"/>
-          <span className="text-white/[0.04] font-black text-2xl tracking-[0.5em] uppercase">
+          <img src={syndikateLogo} alt="" className="w-28 h-auto opacity-[0.08] drop-shadow-lg"/>
+          <span className="text-white/[0.04] font-black text-xl tracking-[0.4em] uppercase">
             Poker
           </span>
         </div>
         
-        {/* Decorative center line */}
-        <div className="absolute left-1/2 -translate-x-1/2 top-[35%] bottom-[35%] w-px bg-gradient-to-b from-transparent via-white/[0.03] to-transparent"/>
+        {/* Decorative horizontal line */}
+        <div className="absolute top-1/2 -translate-y-1/2 left-[20%] right-[20%] h-px bg-gradient-to-r from-transparent via-white/[0.03] to-transparent"/>
         
         {/* Corner decorations */}
         {[
-          { top: '15%', left: '15%' },
-          { top: '15%', right: '15%' },
-          { bottom: '15%', left: '15%' },
-          { bottom: '15%', right: '15%' }
+          { top: '18%', left: '18%' },
+          { top: '18%', right: '18%' },
+          { bottom: '18%', left: '18%' },
+          { bottom: '18%', right: '18%' }
         ].map((pos, i) => (
           <div 
             key={i}
-            className="absolute w-8 h-8 opacity-[0.04]"
+            className="absolute w-6 h-6 opacity-[0.04]"
             style={{ 
               ...pos,
               border: '1px solid white',
@@ -622,9 +622,9 @@ const SyndikateTableFelt = memo(function SyndikateTableFelt({
       
       {/* Ambient glow from pot area */}
       <div 
-        className="absolute left-1/2 -translate-x-1/2 w-40 h-20 pointer-events-none"
+        className="absolute left-1/2 -translate-x-1/2 w-32 h-24 pointer-events-none"
         style={{
-          top: '35%',
+          top: '40%',
           background: 'radial-gradient(ellipse, rgba(251,191,36,0.1) 0%, transparent 70%)',
           filter: 'blur(20px)'
         }}
