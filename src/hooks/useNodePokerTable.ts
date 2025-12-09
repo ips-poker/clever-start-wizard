@@ -129,16 +129,24 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
   }, []);
 
   // Transform server state to client format
-  // Server may send different formats - handle both Node.js server and edge function formats
+  // Server sends flat structure with phase, pot, currentPlayerSeat, myCards at root level
   const transformServerState = useCallback((serverState: unknown, tblId: string): TableState => {
     const state = serverState as Record<string, unknown>;
     
-    // Handle nested config structure from Node.js server: { config: { ... }, players: [...] }
-    const config = state.config as Record<string, unknown> | undefined;
-    const hand = state.hand as Record<string, unknown> | undefined;
+    // Debug log the full state structure
+    log('🔄 Transforming state:', {
+      keys: Object.keys(state),
+      phase: state.phase,
+      currentPlayerSeat: state.currentPlayerSeat,
+      myCards: state.myCards,
+      hasPlayers: !!state.players
+    });
     
-    // Get players from root or hand
-    const playersRaw = (state.players || hand?.players || []) as Record<string, unknown>[];
+    // Handle nested config if present (old server format)
+    const config = state.config as Record<string, unknown> | undefined;
+    
+    // Get players from root
+    const playersRaw = (state.players || []) as Record<string, unknown>[];
     
     const mappedPlayers: PokerPlayer[] = playersRaw.map((p) => ({
       playerId: (p.playerId || p.id) as string,
@@ -156,17 +164,18 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
       timeBankRemaining: (p.timeBank || 60) as number
     }));
 
-    // Extract values from flat state, config, or hand
-    const phase = (state.phase || hand?.phase || 'waiting') as TableState['phase'];
-    const pot = (state.pot || hand?.pot || 0) as number;
-    const currentBet = (state.currentBet || hand?.currentBet || hand?.current_bet || 0) as number;
-    const currentPlayerSeat = (state.currentPlayerSeat ?? hand?.currentPlayerSeat ?? hand?.current_player_seat ?? null) as number | null;
-    const communityCards = (state.communityCards || hand?.communityCards || hand?.community_cards || []) as string[];
-    const dealerSeat = (state.dealerSeat ?? hand?.dealerSeat ?? hand?.dealer_seat ?? 0) as number;
-    const smallBlindSeat = (state.smallBlindSeat ?? hand?.smallBlindSeat ?? hand?.small_blind_seat ?? 1) as number;
-    const bigBlindSeat = (state.bigBlindSeat ?? hand?.bigBlindSeat ?? hand?.big_blind_seat ?? 2) as number;
+    // Server sends phase at root level after rebuilding
+    // Also check config for old format fallback
+    const phase = (state.phase || config?.phase || 'waiting') as TableState['phase'];
+    const pot = (state.pot ?? 0) as number;
+    const currentBet = (state.currentBet ?? 0) as number;
+    const currentPlayerSeat = (state.currentPlayerSeat ?? null) as number | null;
+    const communityCards = (state.communityCards || []) as string[];
+    const dealerSeat = (state.dealerSeat ?? 0) as number;
+    const smallBlindSeat = (state.smallBlindSeat ?? 1) as number;
+    const bigBlindSeat = (state.bigBlindSeat ?? 2) as number;
     
-    // Blinds from config or flat state
+    // Blinds from root state or nested config
     const smallBlind = (state.smallBlind || config?.smallBlind || 10) as number;
     const bigBlind = (state.bigBlind || config?.bigBlind || 20) as number;
     const ante = (state.ante || config?.ante || 0) as number;
