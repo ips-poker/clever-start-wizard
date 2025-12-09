@@ -1314,42 +1314,106 @@ export function distributeWinnings(
 // ==========================================
 // BETTING ROUND COMPLETION CHECK
 // ==========================================
+/**
+ * Professional betting round completion check
+ * Implements TDA (Tournament Directors Association) rules correctly
+ * 
+ * A betting round is complete when:
+ * 1. All remaining players have matched the current bet (or are all-in)
+ * 2. All players have had at least one chance to act
+ * 3. No player has a pending option (like BB option on unraised pot)
+ * 4. The last aggressive action has been called by all players
+ */
 export function isBettingRoundComplete(
   players: GamePlayer[],
   currentBet: number,
   phase: GamePhase,
   bigBlindSeat: number,
-  actions: { playerId: string; type: string; phase: string }[]
+  actions: { playerId: string; type: string; phase: string }[],
+  lastRaiserPlayerId?: string
 ): boolean {
   const remaining = players.filter(p => !p.isFolded);
   const active = remaining.filter(p => !p.isAllIn && !p.isSittingOut);
   
+  // Only 1 player left - they win
   if (remaining.length <= 1) return true;
+  
+  // Everyone is all-in or folded - go to showdown
   if (active.length === 0) return true;
   
-  for (const p of active) {
-    if (p.betAmount < currentBet) return false;
+  // Only 1 active player but others all-in - active player can still bet
+  // Round complete only when this player has acted and others matched
+  if (active.length === 1) {
+    const theActivePlayer = active[0];
+    const phaseActions = actions.filter(a => a.phase === phase);
+    const hasActed = phaseActions.some(a => a.playerId === theActivePlayer.id);
+    // If they haven't acted yet, not complete
+    if (!hasActed) return false;
+    // If they've acted and bet is matched or they're the only one betting, complete
+    return true;
   }
   
-  if (phase === 'preflop') {
-    const bbPlayer = remaining.find(p => p.seatNumber === bigBlindSeat);
-    if (bbPlayer && !bbPlayer.isAllIn && !bbPlayer.isSittingOut) {
-      const phaseActions = actions.filter(a => a.phase === 'preflop');
-      const hasRaise = phaseActions.some(a => a.type === 'raise' || a.type === 'all_in');
-      const bbHasActed = phaseActions.some(a => {
-        const player = players.find(p => p.id === a.playerId);
-        return player?.seatNumber === bigBlindSeat && 
-          ['check', 'raise', 'call', 'fold'].includes(a.type);
-      });
-      
-      if (!hasRaise && !bbHasActed) return false;
+  // Check if all active players have matched the current bet
+  for (const p of active) {
+    if (p.betAmount < currentBet) {
+      return false;
     }
   }
   
   const phaseActions = actions.filter(a => a.phase === phase);
+  
+  // Preflop special case: BB option
+  if (phase === 'preflop') {
+    const bbPlayer = remaining.find(p => p.seatNumber === bigBlindSeat);
+    if (bbPlayer && !bbPlayer.isAllIn && !bbPlayer.isSittingOut) {
+      // Check if there was any raise in preflop
+      const hasRaise = phaseActions.some(a => 
+        a.type === 'raise' || 
+        (a.type === 'all_in' && players.find(p => p.id === a.playerId)?.betAmount > currentBet)
+      );
+      
+      // BB needs to act on unraised pot (BB option to check or raise)
+      const bbActed = phaseActions.some(a => {
+        const player = players.find(p => p.id === a.playerId);
+        return player?.seatNumber === bigBlindSeat && 
+          ['check', 'raise', 'call', 'fold', 'all_in'].includes(a.type);
+      });
+      
+      // If no raise and BB hasn't acted, they still have their option
+      if (!hasRaise && !bbActed) {
+        return false;
+      }
+    }
+  }
+  
+  // Check that all active players have acted this round
   for (const p of active) {
     const playerActed = phaseActions.some(a => a.playerId === p.id);
-    if (!playerActed) return false;
+    if (!playerActed) {
+      return false;
+    }
+  }
+  
+  // If there was a raise, make sure everyone after the raiser has acted
+  if (lastRaiserPlayerId) {
+    const raiseActionIndex = phaseActions.findIndex(a => 
+      a.playerId === lastRaiserPlayerId && (a.type === 'raise' || a.type === 'all_in')
+    );
+    
+    if (raiseActionIndex >= 0) {
+      // Everyone except raiser must have acted AFTER the raise
+      for (const p of active) {
+        if (p.id === lastRaiserPlayerId) continue;
+        
+        const actedAfterRaise = phaseActions.slice(raiseActionIndex + 1).some(a => 
+          a.playerId === p.id && ['call', 'fold', 'raise', 'all_in'].includes(a.type)
+        );
+        
+        if (!actedAfterRaise) {
+          return false;
+        }
+      }
+    }
   }
   
   return true;

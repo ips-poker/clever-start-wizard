@@ -52,26 +52,59 @@ function toGamePlayer(dbPlayer: any, handPlayer?: any): GamePlayer {
   };
 }
 
-// Find next active player
+/**
+ * Find the next active player who can act
+ * Returns the player who should act next in clockwise order
+ * Properly handles wrap-around (from seat 6 back to seat 1)
+ */
 function findNextActivePlayer(players: any[], currentSeat: number, excludePlayerId?: string): any {
-  const sorted = [...players].sort((a, b) => a.seat_number - b.seat_number);
-  
-  let next = sorted.find(p => 
-    p.seat_number > currentSeat && 
+  // Filter to only players who can act
+  const activePlayers = players.filter(p => 
     !p.is_folded && 
     !p.is_all_in && 
     p.player_id !== excludePlayerId
   );
   
+  if (activePlayers.length === 0) return null;
+  
+  // Sort by seat number
+  const sorted = [...activePlayers].sort((a, b) => a.seat_number - b.seat_number);
+  
+  // Find the next player AFTER current seat (clockwise)
+  let next = sorted.find(p => p.seat_number > currentSeat);
+  
+  // If no one found after current seat, wrap around to first player
   if (!next) {
-    next = sorted.find(p => 
-      !p.is_folded && 
-      !p.is_all_in && 
-      p.player_id !== excludePlayerId
-    );
+    next = sorted[0];
   }
   
   return next;
+}
+
+/**
+ * Find the first player to act on a new street (after preflop)
+ * This should be the first active player after the dealer button (SB or next active)
+ */
+function findFirstToActPostflop(players: any[], dealerSeat: number): any {
+  const activePlayers = players.filter(p => 
+    !p.is_folded && 
+    !p.is_all_in
+  );
+  
+  if (activePlayers.length === 0) return null;
+  
+  // Sort by seat number
+  const sorted = [...activePlayers].sort((a, b) => a.seat_number - b.seat_number);
+  
+  // Find first player after dealer
+  let first = sorted.find(p => p.seat_number > dealerSeat);
+  
+  // Wrap around if needed
+  if (!first) {
+    first = sorted[0];
+  }
+  
+  return first;
 }
 
 serve(async (req) => {
@@ -603,23 +636,33 @@ serve(async (req) => {
                   phase: a.phase
                 }));
                 
+                // Determine last raiser for proper round completion
+                const lastRaiserAction = actionsList.filter(a => 
+                  a.phase === hand.phase && (a.type === 'raise' || a.type === 'all_in')
+                ).pop();
+                const lastRaiserPlayerId = lastRaiserAction?.playerId;
+                
                 // Use core engine function for proper round completion check
                 let roundComplete = isBettingRoundComplete(
                   gamePlayers,
                   newCurrentBet,
                   hand.phase as GamePhase,
                   hand.big_blind_seat,
-                  actionsList
+                  actionsList,
+                  lastRaiserPlayerId
                 );
                 
-                // If raise or all-in with higher bet, round is not complete
+                // CRITICAL: If this was a raise or all-in that increased the bet, 
+                // the round is definitely NOT complete - other players need to respond
                 if ((action === 'raise' || action === 'all_in') && newBet > hand.current_bet) {
                   roundComplete = false;
+                  console.log(`[Engine] Player raised to ${newBet}, round NOT complete - others must respond`);
                 }
                 
+                // Find next player to act
                 let nextPlayer = findNextActivePlayer(allHp || [], tp.seat_number, playerId);
 
-                console.log(`[Engine] Round complete: ${roundComplete}, next: ${nextPlayer?.seat_number}, phase: ${hand.phase}`);
+                console.log(`[Engine] After ${action}: round complete=${roundComplete}, next player=seat ${nextPlayer?.seat_number}, phase=${hand.phase}, currentBet=${newCurrentBet}`);
 
                 let newPhase = hand.phase as GamePhase;
                 let newCommunityCards = hand.community_cards || [];
@@ -627,32 +670,45 @@ serve(async (req) => {
                 const playerCount = allHp?.length || 0;
                 const deckStart = playerCount * 2;
 
-                const shouldAdvancePhase = roundComplete && hand.phase !== 'river';
-                const shouldShowdown = roundComplete && (hand.phase === 'river' || active.length === 0);
+                // Determine if we should advance to next phase or showdown
+                const allPlayersActed = active.every(p => 
+                  actionsList.some(a => a.playerId === p.id && a.phase === hand.phase)
+                );
+                
+                // Only advance phase if betting is truly complete
+                const shouldAdvancePhase = roundComplete && allPlayersActed && hand.phase !== 'river' && hand.phase !== 'showdown';
+                
+                // Showdown when river betting complete or everyone all-in
+                const shouldShowdown = roundComplete && allPlayersActed && (hand.phase === 'river' || active.length === 0);
                 
                 if (shouldAdvancePhase && !shouldShowdown) {
                   newPhase = getNextPhase(hand.phase);
                   
                   console.log(`[Engine] Phase transition: ${hand.phase} -> ${newPhase}`);
                   
+                  // Deal community cards with proper burn cards
                   if (newPhase === 'flop') {
+                    // Burn 1, deal 3
                     newCommunityCards = [deck[deckStart + 1], deck[deckStart + 2], deck[deckStart + 3]];
                   } else if (newPhase === 'turn') {
+                    // Burn 1, deal 1 (card at index 4 is burn, 5 is turn)
                     newCommunityCards = [...(hand.community_cards || []), deck[deckStart + 5]];
                   } else if (newPhase === 'river') {
+                    // Burn 1, deal 1 (card at index 6 is burn, 7 is river)
                     newCommunityCards = [...(hand.community_cards || []), deck[deckStart + 7]];
                   }
 
+                  // Reset bet amounts for new betting round
                   for (const p of (allHp || [])) {
                     if (!p.is_folded) {
                       await supabase.from('poker_hand_players').update({ bet_amount: 0 }).eq('id', p.id);
                     }
                   }
 
-                  const sortedRemaining = [...remaining].filter(p => !p.is_all_in).sort((a, b) => a.seat_number - b.seat_number);
-                  nextPlayer = sortedRemaining.find(p => p.seat_number > hand.dealer_seat) || sortedRemaining[0];
+                  // Find first to act postflop (first active player after dealer)
+                  nextPlayer = findFirstToActPostflop(remaining, hand.dealer_seat);
                   
-                  console.log(`[Engine] New street, first to act: seat ${nextPlayer?.seat_number}`);
+                  console.log(`[Engine] New street ${newPhase}, first to act: seat ${nextPlayer?.seat_number}`);
                 }
 
                 // SHOWDOWN
