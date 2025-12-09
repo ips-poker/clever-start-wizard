@@ -265,7 +265,7 @@ export default function OnlinePoker() {
                   left: '50%',
                   x: '-50%',
                   y: '-50%',
-                  background: 'linear-gradient(180deg, #0a0a0a 0%, #1a0a0a 15%, #0d1a0d 50%, #0a0a0a 85%, #0a0505 100%)',
+                  background: 'transparent',
                   border: '1px solid rgba(251,191,36,0.2)',
                   boxShadow: '0 25px 80px rgba(0,0,0,0.8), 0 0 40px rgba(0,0,0,0.5)'
                 }}
