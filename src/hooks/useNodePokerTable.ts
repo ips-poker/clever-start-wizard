@@ -282,21 +282,38 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
         case 'hand_started':
         case 'phase_change':
           // These events include updated tableState - process it
+          log(`📡 ${data.type} event received:`, {
+            hasState: !!data.state,
+            stateKeys: data.state ? Object.keys(data.state as object) : []
+          });
+          
           if (data.state && tableId) {
+            const stateData = data.state as Record<string, unknown>;
+            
+            // Log important state details
+            log(`📊 State update:`, {
+              phase: stateData.phase,
+              currentPlayerSeat: stateData.currentPlayerSeat,
+              myCards: stateData.myCards,
+              mySeat: stateData.mySeat,
+              isMyTurn: stateData.isMyTurn,
+              pot: stateData.pot
+            });
+            
             setTableState(transformServerState(data.state, tableId));
             
-            const stateData = data.state as Record<string, unknown>;
             if (stateData.myCards) {
-              setMyCards(stateData.myCards as string[]);
+              const cards = stateData.myCards as string[];
+              log('🃏 Setting my cards:', cards);
+              setMyCards(cards);
             }
             if (stateData.mySeat !== undefined && stateData.mySeat !== null) {
               setMySeat(stateData.mySeat as number);
             }
           }
           
-          {
-            const evtData = data.data as Record<string, unknown> | undefined;
-            log(`📡 ${data.type}:`, evtData?.playerId ?? (data as Record<string, unknown>).playerId);
+          if (data.type === 'hand_started') {
+            log('🎴 Hand started event:', JSON.stringify(data).substring(0, 500));
           }
           break;
 
