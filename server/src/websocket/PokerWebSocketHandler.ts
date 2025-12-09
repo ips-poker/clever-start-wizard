@@ -50,6 +50,7 @@ interface ClientConnection {
 export class PokerWebSocketHandler {
   private clients: Map<WebSocket, ClientConnection> = new Map();
   private tableSubscribers: Map<string, Set<WebSocket>> = new Map();
+  private tablesWithListeners: Set<string> = new Set();  // Track which tables have listeners
   private gameManager: PokerGameManager;
   private supabase: SupabaseClient;
   private pingInterval: NodeJS.Timeout;
@@ -61,7 +62,7 @@ export class PokerWebSocketHandler {
     // Start ping interval
     this.pingInterval = setInterval(() => this.pingClients(), 30000);
     
-    // Setup table event listeners
+    // Setup table event listeners for existing tables
     for (const table of gameManager.getAllTables()) {
       this.setupTableListeners(table);
     }
@@ -410,10 +411,19 @@ export class PokerWebSocketHandler {
   }
   
   /**
-   * Setup table event listeners
+   * Setup table event listeners (only once per table)
    */
   private setupTableListeners(table: PokerTable): void {
+    // Avoid adding duplicate listeners
+    if (this.tablesWithListeners.has(table.id)) {
+      return;
+    }
+    this.tablesWithListeners.add(table.id);
+    
+    logger.info('Setting up event listener for table', { tableId: table.id });
+    
     table.addEventListener((event: TableEvent) => {
+      logger.info('Table event received', { tableId: event.tableId, eventType: event.type });
       this.broadcastToTable(event.tableId, event);
     });
   }
@@ -470,14 +480,18 @@ export class PokerWebSocketHandler {
         const playerState = table.getPlayerState(connection.playerId);
         stateType = 'player-specific';
         
-        // Log what we're sending
-        const stateKeys = Object.keys(playerState as object);
+        // Log what we're sending - detailed state info
+        const stateObj = playerState as Record<string, unknown>;
         logger.info('Broadcasting player state', { 
           playerId: connection.playerId,
           eventType: event.type,
-          stateKeys: stateKeys.slice(0, 10),
-          hasMyCards: 'myCards' in (playerState as object),
-          hasPhase: 'phase' in (playerState as object)
+          stateKeys: Object.keys(stateObj).slice(0, 15),
+          hasMyCards: 'myCards' in stateObj,
+          myCards: stateObj.myCards,
+          hasPhase: 'phase' in stateObj,
+          phase: stateObj.phase,
+          mySeat: stateObj.mySeat,
+          currentPlayerSeat: stateObj.currentPlayerSeat
         });
         
         message = {
