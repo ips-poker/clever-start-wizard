@@ -159,6 +159,10 @@ export function FullscreenPokerTableWrapper({
     <PokerErrorBoundary>
       <div 
         className="absolute inset-0 overflow-hidden"
+        style={{
+          paddingTop: 'calc(env(safe-area-inset-top, 0px) + var(--tg-safe-area-inset-top, 0px))',
+          paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + var(--tg-safe-area-inset-bottom, 0px))'
+        }}
       >
         {/* Connection status */}
         <ConnectionStatusBanner 
@@ -168,7 +172,7 @@ export function FullscreenPokerTableWrapper({
         />
 
         {/* Header */}
-        <div className="absolute top-0 left-0 right-0 z-30 flex items-center justify-between p-3 bg-gradient-to-b from-black/60 to-transparent">
+        <div className="absolute top-0 left-0 right-0 z-30 flex items-center justify-between p-3 pt-4 bg-gradient-to-b from-black/60 to-transparent">
           <div className="flex items-center gap-3">
             <Button
               variant="ghost"
@@ -213,7 +217,7 @@ export function FullscreenPokerTableWrapper({
         </div>
 
         {/* Main poker table */}
-        <div className="absolute inset-0 pt-16 pb-32">
+        <div className="absolute inset-0 pt-20 pb-36">
           <FullscreenPokerTable
             tableState={tableState}
             players={formattedPlayers}
