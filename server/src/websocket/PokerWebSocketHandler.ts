@@ -213,8 +213,9 @@ export class PokerWebSocketHandler {
     }
     logger.info('Table OK', { tableId });
     
-    // Verify player exists and get avatar
+    // Verify player exists and get name + avatar from DB
     logger.info('Checking player in DB...');
+    let dbName: string = playerName; // Default to client-provided name
     let avatarUrl: string | undefined;
     try {
       const { data: player, error: playerError } = await this.supabase
@@ -235,14 +236,16 @@ export class PokerWebSocketHandler {
         return;
       }
       
+      // Use name and avatar from database (personal cabinet)
+      dbName = player.name || playerName;
       avatarUrl = player.avatar_url || undefined;
-      logger.info('Player OK', { playerId, name: player.name, avatarUrl });
+      logger.info('Player OK - using DB data', { playerId, dbName, avatarUrl });
     } catch (err) {
       logger.error('Player verification error', { error: String(err) });
     }
     
-    logger.info('Calling table.joinTable...');
-    const joinResult = await table.joinTable(playerId, playerName, seatNumber, buyIn, avatarUrl);
+    logger.info('Calling table.joinTable with DB name...');
+    const joinResult = await table.joinTable(playerId, dbName, seatNumber, buyIn, avatarUrl);
     logger.info('joinTable result', { success: joinResult.success, error: joinResult.error });
     
     if (!joinResult.success) {
