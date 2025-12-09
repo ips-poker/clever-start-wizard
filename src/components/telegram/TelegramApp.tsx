@@ -1741,7 +1741,7 @@ export const TelegramApp = () => {
       )}
 
       {activeTab === 'poker' && (
-        <div className={isAtPokerTable ? "min-h-screen relative z-10" : "pb-28 pt-20 min-h-screen relative z-10"}>
+        <div className={isAtPokerTable ? "min-h-screen relative z-10" : "pb-28 pt-24 px-4 min-h-screen relative z-10"}>
           {/* Syndikate luxury background for poker table */}
           {isAtPokerTable && (
             <>
