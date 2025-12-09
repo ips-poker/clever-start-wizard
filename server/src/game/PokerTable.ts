@@ -96,6 +96,13 @@ export class PokerTable {
       timestamp: Date.now()
     };
     
+    const listenerCount = this.eventListeners.size;
+    logger.info('Emitting event', { type, tableId: this.id, listenerCount });
+    
+    if (listenerCount === 0) {
+      logger.warn('No event listeners registered for table', { tableId: this.id, eventType: type });
+    }
+    
     for (const listener of this.eventListeners) {
       try {
         listener(event);
