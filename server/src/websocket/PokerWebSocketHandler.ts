@@ -464,16 +464,38 @@ export class PokerWebSocketHandler {
       
       // Send player-specific state if they're a player
       let message: object;
+      let stateType = 'unknown';
+      
       if (connection?.playerId && table) {
+        const playerState = table.getPlayerState(connection.playerId);
+        stateType = 'player-specific';
+        
+        // Log what we're sending
+        const stateKeys = Object.keys(playerState as object);
+        logger.info('Broadcasting player state', { 
+          playerId: connection.playerId,
+          eventType: event.type,
+          stateKeys: stateKeys.slice(0, 10),
+          hasMyCards: 'myCards' in (playerState as object),
+          hasPhase: 'phase' in (playerState as object)
+        });
+        
         message = {
           ...event,
-          state: table.getPlayerState(connection.playerId)
+          state: playerState
         };
       } else {
+        stateType = connection?.playerId ? 'public-no-table' : 'public-no-player';
         message = {
           ...event,
           state: table?.getPublicState()
         };
+        logger.info('Broadcasting public state', { 
+          stateType,
+          hasConnection: !!connection,
+          hasPlayerId: !!connection?.playerId,
+          hasTable: !!table
+        });
       }
       
       this.send(ws, message);

@@ -129,45 +129,65 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
   }, []);
 
   // Transform server state to client format
-  // Server sends flat state from PokerTable.getPlayerState()
+  // Server may send different formats - handle both Node.js server and edge function formats
   const transformServerState = useCallback((serverState: unknown, tblId: string): TableState => {
     const state = serverState as Record<string, unknown>;
     
-    // Server sends flat format from PokerTable.getPlayerState()
-    const players = (state.players || []) as Record<string, unknown>[];
+    // Handle nested config structure from Node.js server: { config: { ... }, players: [...] }
+    const config = state.config as Record<string, unknown> | undefined;
+    const hand = state.hand as Record<string, unknown> | undefined;
     
-    const mappedPlayers: PokerPlayer[] = players.map((p) => ({
+    // Get players from root or hand
+    const playersRaw = (state.players || hand?.players || []) as Record<string, unknown>[];
+    
+    const mappedPlayers: PokerPlayer[] = playersRaw.map((p) => ({
       playerId: (p.playerId || p.id) as string,
       name: (p.name || 'Player') as string,
       avatarUrl: (p.avatar || p.avatarUrl) as string | undefined,
-      seatNumber: (p.seatNumber || 0) as number,
+      seatNumber: (p.seatNumber ?? p.seat_number ?? 0) as number,
       stack: (p.stack || 0) as number,
-      betAmount: (p.betAmount || p.currentBet || 0) as number,
-      totalBetInHand: (p.betAmount || p.currentBet || 0) as number,
-      holeCards: (p.holeCards || []) as string[],
-      isFolded: (p.isFolded || false) as boolean,
-      isAllIn: (p.isAllIn || false) as boolean,
-      isActive: (p.isActive !== false && p.status !== 'disconnected') as boolean,
+      betAmount: (p.betAmount || p.currentBet || p.bet_amount || 0) as number,
+      totalBetInHand: (p.betAmount || p.currentBet || p.bet_amount || 0) as number,
+      holeCards: (p.holeCards || p.cards || []) as string[],
+      isFolded: (p.isFolded || p.is_folded || false) as boolean,
+      isAllIn: (p.isAllIn || p.is_all_in || false) as boolean,
+      isActive: (p.isActive !== false && p.status !== 'disconnected' && p.status !== 'folded') as boolean,
       isDisconnected: (p.status === 'disconnected') as boolean,
       timeBankRemaining: (p.timeBank || 60) as number
     }));
 
+    // Extract values from flat state, config, or hand
+    const phase = (state.phase || hand?.phase || 'waiting') as TableState['phase'];
+    const pot = (state.pot || hand?.pot || 0) as number;
+    const currentBet = (state.currentBet || hand?.currentBet || hand?.current_bet || 0) as number;
+    const currentPlayerSeat = (state.currentPlayerSeat ?? hand?.currentPlayerSeat ?? hand?.current_player_seat ?? null) as number | null;
+    const communityCards = (state.communityCards || hand?.communityCards || hand?.community_cards || []) as string[];
+    const dealerSeat = (state.dealerSeat ?? hand?.dealerSeat ?? hand?.dealer_seat ?? 0) as number;
+    const smallBlindSeat = (state.smallBlindSeat ?? hand?.smallBlindSeat ?? hand?.small_blind_seat ?? 1) as number;
+    const bigBlindSeat = (state.bigBlindSeat ?? hand?.bigBlindSeat ?? hand?.big_blind_seat ?? 2) as number;
+    
+    // Blinds from config or flat state
+    const smallBlind = (state.smallBlind || config?.smallBlind || 10) as number;
+    const bigBlind = (state.bigBlind || config?.bigBlind || 20) as number;
+    const ante = (state.ante || config?.ante || 0) as number;
+    const actionTimer = (state.actionTimer || config?.actionTimeSeconds || 30) as number;
+
     return {
       tableId: tblId,
-      phase: (state.phase || 'waiting') as TableState['phase'],
-      pot: (state.pot || 0) as number,
-      currentBet: (state.currentBet || 0) as number,
-      currentPlayerSeat: (state.currentPlayerSeat || null) as number | null,
-      communityCards: (state.communityCards || []) as string[],
-      dealerSeat: (state.dealerSeat || 1) as number,
-      smallBlindSeat: (state.smallBlindSeat || 1) as number,
-      bigBlindSeat: (state.bigBlindSeat || 2) as number,
+      phase,
+      pot,
+      currentBet,
+      currentPlayerSeat,
+      communityCards,
+      dealerSeat,
+      smallBlindSeat,
+      bigBlindSeat,
       players: mappedPlayers,
-      minRaise: (state.minRaise || state.bigBlind || 20) as number,
-      smallBlindAmount: (state.smallBlind || 10) as number,
-      bigBlindAmount: (state.bigBlind || 20) as number,
-      anteAmount: (state.ante || 0) as number,
-      actionTimer: (state.actionTimer || 30) as number,
+      minRaise: (state.minRaise || bigBlind * 2) as number,
+      smallBlindAmount: smallBlind,
+      bigBlindAmount: bigBlind,
+      anteAmount: ante,
+      actionTimer,
       timeRemaining: state.timeRemaining as number | null | undefined,
       playersNeeded: (state.playersNeeded || 0) as number
     };
