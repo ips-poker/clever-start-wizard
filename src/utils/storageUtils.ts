@@ -1,7 +1,9 @@
 /**
- * Утилиты для работы с Supabase Storage URLs
+ * Утилиты для работы с Supabase Storage URLs и аватарками
  * Исправляет старые URL и обеспечивает правильный routing через Cloudflare Tunnel
  */
+
+import { resolveAvatarUrl } from './avatarResolver';
 
 // Используем кастомный домен api.syndicate-poker.ru для Storage
 const STORAGE_API_URL = 'https://api.syndicate-poker.ru';
@@ -9,40 +11,51 @@ const STORAGE_API_URL = 'https://api.syndicate-poker.ru';
 /**
  * Исправляет URL изображения из Supabase Storage
  * Заменяет старые домены на актуальный API URL
+ * Также обрабатывает аватарки с устаревшими Vite-хешами
  * 
  * @param url - Исходный URL изображения
+ * @param fallbackId - ID игрока для генерации фолбэк-аватарки
  * @returns Исправленный URL с правильным доменом
  */
-export const fixStorageUrl = (url: string | null | undefined): string => {
-  if (!url) return '';
+export const fixStorageUrl = (url: string | null | undefined, fallbackId?: string): string => {
+  if (!url) {
+    // Если URL пустой, возвращаем дефолтную аватарку
+    return fallbackId ? resolveAvatarUrl(null, fallbackId) : '';
+  }
   
-  // Если это не URL из Supabase Storage, возвращаем как есть
-  if (!url.includes('/storage/v1/object/public/')) {
+  // Если это Telegram аватарка - использовать как есть
+  if (url.startsWith('https://t.me/')) {
     return url;
   }
   
-  // Извлекаем путь после домена (начиная с /storage/...)
-  const storagePathMatch = url.match(/\/storage\/v1\/object\/public\/.+/);
-  if (!storagePathMatch) {
+  // Если это внешний URL (не Vite-хешированный путь) - проверяем storage
+  if (url.startsWith('http://') || url.startsWith('https://')) {
+    // Если это URL из Supabase Storage - исправляем домен
+    if (url.includes('/storage/v1/object/public/')) {
+      const storagePathMatch = url.match(/\/storage\/v1\/object\/public\/.+/);
+      if (storagePathMatch) {
+        const storagePath = storagePathMatch[0];
+        
+        // Удаляем дублированные параметры ?t= (cache busting)
+        let cleanPath = storagePath;
+        const tMatches = storagePath.match(/\?t=\d+/g);
+        if (tMatches && tMatches.length > 1) {
+          cleanPath = storagePath.split('?t=')[0] + tMatches[tMatches.length - 1];
+        }
+        
+        return `${STORAGE_API_URL}${cleanPath}`;
+      }
+    }
+    // Любой другой внешний URL - использовать как есть
     return url;
   }
   
-  const storagePath = storagePathMatch[0];
-  
-  // Удаляем дублированные параметры ?t= (cache busting)
-  let cleanPath = storagePath;
-  const tMatches = storagePath.match(/\?t=\d+/g);
-  if (tMatches && tMatches.length > 1) {
-    // Оставляем только последний параметр ?t=
-    cleanPath = storagePath.split('?t=')[0] + tMatches[tMatches.length - 1];
-  }
-  
-  // Формируем правильный URL с нашим кастомным доменом
-  const fixedUrl = `${STORAGE_API_URL}${cleanPath}`;
-  
-  console.log('🖼️ Fixed storage URL:', { original: url, fixed: fixedUrl });
-  
-  return fixedUrl;
+  // Если это локальный путь (Vite-хешированный или poker-avatar) - используем resolveAvatarUrl
+  // Это обрабатывает:
+  // - /assets/poker-avatar-10-C9wYQiw9.png (устаревшие Vite-хеши)
+  // - poker-avatar-10.png
+  // - /src/assets/avatars/poker-avatar-10.png
+  return resolveAvatarUrl(url, fallbackId);
 };
 
 /**

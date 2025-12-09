@@ -30,6 +30,7 @@ import registration from '@/assets/gallery/registration.jpg';
 import pokerChips from '@/assets/gallery/poker-chips.jpg';
 import { calculateTotalRPSPool, formatRPSPoints } from '@/utils/rpsCalculations';
 import { getEffectiveMafiaRank, getRarityInfo } from '@/utils/mafiaRanks';
+import { fixStorageUrl } from '@/utils/storageUtils';
 import { GlitchAvatarFrame } from '@/components/ui/glitch-avatar-frame';
 import { useClanRealtimeNotifications } from '@/hooks/useClanRealtimeNotifications';
 import { useClanSystem } from '@/hooks/useClanSystem';
@@ -987,7 +988,7 @@ export const TelegramApp = () => {
                 <div className="relative">
                   <GlitchAvatarFrame rank={userRank} size="sm">
                     <Avatar className="w-full h-full">
-                      <AvatarImage src={userStats.avatar_url || telegramUser?.photoUrl} alt="Avatar" />
+                      <AvatarImage src={fixStorageUrl(userStats.avatar_url, userStats.id) || telegramUser?.photoUrl} alt="Avatar" />
                       <AvatarFallback className={`bg-gradient-to-br ${userRank.bgGradient} text-lg font-display text-white`}>
                         {(telegramUser?.firstName || 'П').charAt(0)}
                       </AvatarFallback>
@@ -1760,7 +1761,7 @@ export const TelegramApp = () => {
           <TelegramPokerLobby 
             playerId={userStats?.id}
             playerName={userStats?.name || telegramUser?.firstName || 'Гость'}
-            playerAvatar={userStats?.avatar_url || telegramUser?.photoUrl}
+            playerAvatar={fixStorageUrl(userStats?.avatar_url, userStats?.id) || telegramUser?.photoUrl}
             playerBalance={playerBalance}
             onTableStateChange={setIsAtPokerTable}
           />

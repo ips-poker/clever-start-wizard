@@ -10,6 +10,7 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
+import { fixStorageUrl } from '@/utils/storageUtils';
 import { 
   createDeck, 
   shuffleDeckSecure, 
@@ -240,7 +241,7 @@ export function TelegramMobileTable({
         `}>
           {player ? (
             <Avatar className="w-full h-full">
-              <AvatarImage src={player.player?.avatar_url} />
+              <AvatarImage src={fixStorageUrl(player.player?.avatar_url, player.player?.id)} />
               <AvatarFallback className="bg-syndikate-metal text-xs">
                 {player.player?.name?.charAt(0) || '?'}
               </AvatarFallback>
