@@ -158,10 +158,7 @@ export function FullscreenPokerTableWrapper({
   return (
     <PokerErrorBoundary>
       <div 
-        className={cn(
-          "fixed inset-0 overflow-hidden",
-          `bg-gradient-to-b ${currentTableTheme.gradient}`
-        )}
+        className="absolute inset-0 overflow-hidden"
       >
         {/* Connection status */}
         <ConnectionStatusBanner 
