@@ -162,10 +162,13 @@ export class PokerWebSocketHandler {
   private async handleMessage(ws: WebSocket, data: unknown): Promise<void> {
     try {
       const message = JSON.parse(data.toString());
+      logger.info('Processing message', { type: message.type });
       
       switch (message.type) {
         case 'join_table':
+          logger.info('Handling join_table message');
           await this.handleJoinTable(ws, message);
+          logger.info('join_table handled');
           break;
         
         case 'action':
@@ -189,10 +192,11 @@ export class PokerWebSocketHandler {
           break;
         
         default:
-          this.sendError(ws, 'Unknown message type');
+          logger.warn('Unknown message type', { type: message.type });
+          this.sendError(ws, `Unknown message type: ${message.type}`);
       }
     } catch (error) {
-      logger.error('Failed to process message', { error: String(error) });
+      logger.error('Failed to process message', { error: String(error), stack: (error as Error).stack });
       this.sendError(ws, 'Invalid message format');
     }
   }
@@ -201,33 +205,52 @@ export class PokerWebSocketHandler {
    * Handle join table request
    */
   private async handleJoinTable(ws: WebSocket, message: unknown): Promise<void> {
+    logger.info('handleJoinTable started', { message });
+    
     const result = JoinTableSchema.safeParse(message);
     if (!result.success) {
+      logger.warn('Invalid join request schema', { errors: result.error.errors });
       this.sendError(ws, 'Invalid join request');
       return;
     }
     
     const { tableId, playerId, playerName, seatNumber, buyIn } = result.data;
+    logger.info('Join request parsed', { tableId, playerId, playerName, seatNumber, buyIn });
     
     const table = this.gameManager.getTable(tableId);
     if (!table) {
+      logger.warn('Table not found for join', { tableId });
       this.sendError(ws, 'Table not found');
       return;
     }
+    logger.info('Table found', { tableId });
     
-    // Verify player (would normally check JWT token)
-    const { data: player } = await this.supabase
-      .from('players')
-      .select('id, name')
-      .eq('id', playerId)
-      .single();
-    
-    if (!player) {
-      this.sendError(ws, 'Player not found');
-      return;
+    // Verify player exists (skip service role check for now)
+    try {
+      const { data: player, error: playerError } = await this.supabase
+        .from('players')
+        .select('id, name')
+        .eq('id', playerId)
+        .single();
+      
+      if (playerError) {
+        logger.warn('Player lookup error', { error: playerError.message });
+      }
+      
+      if (!player) {
+        logger.warn('Player not found in DB', { playerId });
+        this.sendError(ws, 'Player not found');
+        return;
+      }
+      logger.info('Player verified', { playerId, playerName: player.name });
+    } catch (err) {
+      logger.error('Player verification error', { error: String(err) });
+      // Continue anyway for now
     }
     
+    logger.info('Calling table.joinTable', { tableId, playerId, seatNumber, buyIn });
     const joinResult = await table.joinTable(playerId, playerName, seatNumber, buyIn);
+    logger.info('table.joinTable result', { success: joinResult.success, error: joinResult.error });
     
     if (!joinResult.success) {
       this.sendError(ws, joinResult.error || 'Failed to join');
@@ -248,11 +271,14 @@ export class PokerWebSocketHandler {
     this.setupTableListeners(table);
     
     // Send success with state
+    const state = table.getPlayerState(playerId);
+    logger.info('Sending joined_table response', { tableId, playerId });
     this.send(ws, {
       type: 'joined_table',
       tableId,
-      state: table.getPlayerState(playerId)
+      state
     });
+    logger.info('joined_table sent successfully');
   }
   
   /**

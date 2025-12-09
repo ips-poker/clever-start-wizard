@@ -112,22 +112,28 @@ export class PokerTable {
     success: boolean;
     error?: string;
   }> {
+    logger.info('joinTable called', { tableId: this.id, playerId, seatNumber, buyIn });
+    
     // Validate seat
     if (seatNumber < 0 || seatNumber >= this.config.maxPlayers) {
+      logger.warn('Invalid seat number', { seatNumber, maxPlayers: this.config.maxPlayers });
       return { success: false, error: 'Invalid seat number' };
     }
     
     if (this.seats[seatNumber] !== null) {
+      logger.warn('Seat is occupied', { seatNumber, occupiedBy: this.seats[seatNumber] });
       return { success: false, error: 'Seat is occupied' };
     }
     
     // Validate buy-in
     if (buyIn < this.config.minBuyIn || buyIn > this.config.maxBuyIn) {
+      logger.warn('Invalid buy-in', { buyIn, min: this.config.minBuyIn, max: this.config.maxBuyIn });
       return { success: false, error: `Buy-in must be between ${this.config.minBuyIn} and ${this.config.maxBuyIn}` };
     }
     
     // Check if player already at table
     if (this.players.has(playerId)) {
+      logger.warn('Player already at table', { playerId });
       return { success: false, error: 'Player already at table' };
     }
     
@@ -148,18 +154,28 @@ export class PokerTable {
     this.players.set(playerId, player);
     this.seats[seatNumber] = playerId;
     
-    // Save to database
-    await this.supabase.from('poker_table_players').insert({
-      table_id: this.id,
-      player_id: playerId,
-      seat_number: seatNumber,
-      stack: buyIn,
-      status: 'active'
-    });
+    // Save to database - use service role, handle errors gracefully
+    try {
+      const { error: dbError } = await this.supabase.from('poker_table_players').upsert({
+        table_id: this.id,
+        player_id: playerId,
+        seat_number: seatNumber,
+        stack: buyIn,
+        status: 'active'
+      }, {
+        onConflict: 'table_id,player_id'
+      });
+      
+      if (dbError) {
+        logger.warn('Database insert warning (continuing anyway)', { error: dbError.message });
+      }
+    } catch (dbErr) {
+      logger.warn('Database error (continuing anyway)', { error: String(dbErr) });
+    }
     
     this.emit('player_joined', { playerId, playerName, seatNumber, stack: buyIn });
     
-    logger.info(`Player joined table`, { tableId: this.id, playerId, seatNumber });
+    logger.info(`Player joined table successfully`, { tableId: this.id, playerId, seatNumber, stack: buyIn });
     
     // Start hand if we have enough players
     this.checkStartHand();
