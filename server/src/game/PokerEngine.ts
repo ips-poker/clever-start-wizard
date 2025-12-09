@@ -160,6 +160,7 @@ export class PokerEngine {
       currentPlayerSeat: utgSeat,
       lastAggressor: null,
       minRaise: bigBlind,
+      bigBlind, // Store BB for postflop min bet
       sidePots: [],
       deck,
       actionStartTime: null
@@ -236,10 +237,25 @@ export class PokerEngine {
   }
   
   private processBetRaise(handState: HandState, player: Player, players: Player[], amount: number): ActionResult {
-    const minRaise = handState.currentBet + handState.minRaise;
+    // Determine if this is a bet (first aggression) or raise (re-aggression)
+    const isBet = handState.currentBet === 0;
     
-    if (amount < minRaise && amount !== player.stack) {
-      return { success: false, error: `Minimum raise is ${minRaise}` };
+    let minAmount: number;
+    if (isBet) {
+      // BET: minimum is big blind (minRaise stores BB value at start of each street)
+      minAmount = handState.minRaise;
+    } else {
+      // RAISE: minimum is current bet + last raise size
+      minAmount = handState.currentBet + handState.minRaise;
+    }
+    
+    // Allow all-in for less than minimum
+    if (amount < minAmount && amount !== player.stack + player.currentBet) {
+      if (isBet) {
+        return { success: false, error: `Minimum bet is ${minAmount}` };
+      } else {
+        return { success: false, error: `Minimum raise is ${minAmount}` };
+      }
     }
     
     const raiseAmount = amount - player.currentBet;
@@ -249,10 +265,10 @@ export class PokerEngine {
     player.stack -= actualAmount;
     handState.pot += actualAmount;
     
-    // Update min raise
-    const newRaise = player.currentBet - handState.currentBet;
-    if (newRaise > handState.minRaise) {
-      handState.minRaise = newRaise;
+    // Update min raise size for next raise
+    const newRaiseSize = player.currentBet - handState.currentBet;
+    if (newRaiseSize > handState.minRaise) {
+      handState.minRaise = newRaiseSize;
     }
     handState.currentBet = player.currentBet;
     handState.lastAggressor = player.id;
@@ -337,6 +353,8 @@ export class PokerEngine {
     }
     handState.currentBet = 0;
     handState.lastAggressor = null;
+    // Reset minRaise to BB for new street (min bet = BB)
+    handState.minRaise = handState.bigBlind;
     
     const phases = ['preflop', 'flop', 'turn', 'river', 'showdown'] as const;
     const currentIdx = phases.indexOf(handState.phase as typeof phases[number]);

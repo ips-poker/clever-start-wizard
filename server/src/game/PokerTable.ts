@@ -34,6 +34,7 @@ export interface HandState {
   currentPlayerSeat: number | null;
   lastAggressor: string | null;
   minRaise: number;
+  bigBlind: number; // Store BB for min bet calculations
   sidePots: { amount: number; eligiblePlayers: string[] }[];
   deck: string[];
   actionStartTime: number | null;
