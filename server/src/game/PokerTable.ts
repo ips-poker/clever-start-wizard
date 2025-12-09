@@ -356,13 +356,30 @@ export class PokerTable {
    * Check if hand should start
    */
   private checkStartHand(): void {
-    if (this.currentHand) return;
+    logger.info('checkStartHand called', { 
+      tableId: this.id, 
+      hasCurrentHand: !!this.currentHand,
+      totalPlayers: this.players.size
+    });
     
-    const activePlayers = Array.from(this.players.values())
-      .filter(p => p.status === 'active' && p.stack > 0);
+    if (this.currentHand) {
+      logger.info('checkStartHand: hand already in progress');
+      return;
+    }
+    
+    const allPlayers = Array.from(this.players.values());
+    const activePlayers = allPlayers.filter(p => p.status === 'active' && p.stack > 0);
+    
+    logger.info('checkStartHand: player status check', {
+      allPlayers: allPlayers.map(p => ({ id: p.id, status: p.status, stack: p.stack })),
+      activeCount: activePlayers.length
+    });
     
     if (activePlayers.length >= 2) {
+      logger.info('checkStartHand: starting hand in 3 seconds...');
       setTimeout(() => this.startHand(), 3000);
+    } else {
+      logger.info('checkStartHand: not enough players', { need: 2, have: activePlayers.length });
     }
   }
   
