@@ -1,10 +1,11 @@
 /**
  * Poker Table - Single table game logic
+ * Uses Professional Poker Engine v3.0
  */
 
 import { SupabaseClient } from '@supabase/supabase-js';
 import { TableConfig } from './PokerGameManager.js';
-import { PokerEngine, ActionResult } from './PokerEngine.js';
+import { PokerEngineV3, ActionResult, GameType, GameConfig } from './PokerEngineV3.js';
 import { logger } from '../utils/logger.js';
 
 export interface Player {
@@ -55,7 +56,7 @@ export class PokerTable {
   public readonly id: string;
   private config: TableConfig;
   private supabase: SupabaseClient;
-  private engine: PokerEngine;
+  private engine: PokerEngineV3;
   
   private players: Map<string, Player> = new Map();
   private seats: (string | null)[] = [];
@@ -70,8 +71,47 @@ export class PokerTable {
     this.id = config.id;
     this.config = config;
     this.supabase = supabase;
-    this.engine = new PokerEngine();
+    
+    // Initialize Professional Poker Engine v3.0
+    const gameType = this.mapGameType(config.gameType);
+    const engineConfig: GameConfig = {
+      smallBlind: config.smallBlind,
+      bigBlind: config.bigBlind,
+      ante: config.ante || 0,
+      maxPlayers: config.maxPlayers,
+      minBuyIn: config.minBuyIn,
+      maxBuyIn: config.maxBuyIn,
+      actionTimeSeconds: config.actionTimeSeconds,
+      timeBankSeconds: config.timeBankSeconds,
+      runItTwiceEnabled: false,
+      bombPotEnabled: false,
+      straddleEnabled: false
+    };
+    
+    this.engine = new PokerEngineV3(gameType, engineConfig);
     this.seats = new Array(config.maxPlayers).fill(null);
+    
+    logger.info('PokerTable initialized with Engine v3.0', {
+      tableId: this.id,
+      gameType,
+      config: engineConfig
+    });
+  }
+  
+  /**
+   * Map config game type to engine GameType
+   */
+  private mapGameType(configType: string): GameType {
+    const typeMap: Record<string, GameType> = {
+      'texas_holdem': GameType.TEXAS_HOLDEM,
+      'holdem': GameType.TEXAS_HOLDEM,
+      'omaha': GameType.OMAHA,
+      'omaha_hi_lo': GameType.OMAHA_HI_LO,
+      'short_deck': GameType.SHORT_DECK,
+      'pineapple': GameType.PINEAPPLE,
+      'chinese': GameType.CHINESE_POKER
+    };
+    return typeMap[configType] || GameType.TEXAS_HOLDEM;
   }
   
   /**
@@ -246,7 +286,7 @@ export class PokerTable {
   }
   
   /**
-   * Perform action
+   * Perform action using Engine v3.0
    */
   async action(playerId: string, actionType: string, amount?: number): Promise<{
     success: boolean;
@@ -271,24 +311,32 @@ export class PokerTable {
     // Clear action timer
     this.clearActionTimer();
     
-    // Process action
+    // Process action with Engine v3.0
     const result: ActionResult = this.engine.processAction(
-      this.currentHand,
-      Array.from(this.players.values()),
       playerId,
       actionType,
       amount
     );
     
     if (!result.success) {
+      this.startActionTimer();
       return { success: false, error: result.error };
     }
     
-    // Update state
-    if (result.newHandState) {
-      this.currentHand = result.newHandState;
-    }
+    // Update player from action result
     this.updatePlayerFromAction(player, result);
+    
+    // Sync hand state from engine
+    const engineState = this.engine.getState();
+    if (engineState) {
+      this.currentHand.phase = this.mapPhase(engineState.phase);
+      this.currentHand.pot = engineState.pot;
+      this.currentHand.communityCards = engineState.communityCards;
+      this.currentHand.currentBet = engineState.currentBet;
+      this.currentHand.currentPlayerSeat = engineState.currentPlayerSeat;
+      this.currentHand.minRaise = engineState.minRaise;
+      this.currentHand.sidePots = engineState.sidePots || [];
+    }
     
     // Emit action event
     this.emit('action', {
@@ -415,7 +463,7 @@ export class PokerTable {
   }
   
   /**
-   * Start a new hand
+   * Start a new hand using Engine v3.0
    */
   async startHand(): Promise<void> {
     this.handNumber++;
@@ -431,27 +479,51 @@ export class PokerTable {
       player.isAllIn = false;
     }
     
-    // Initialize hand state
+    // Get active players for engine v3
     const activePlayers = Array.from(this.players.values())
       .filter(p => !p.isFolded);
     
-    const handState = this.engine.initializeHand(
-      this.id,
-      this.handNumber,
-      activePlayers,
-      this.dealerSeat,
-      this.config.smallBlind,
-      this.config.bigBlind,
-      this.config.ante
-    );
+    // Convert to engine player format
+    const enginePlayers = activePlayers.map(p => ({
+      id: p.id,
+      name: p.name,
+      seatNumber: p.seatNumber,
+      stack: p.stack,
+      status: p.status as 'active' | 'sitting_out' | 'disconnected',
+      isDealer: p.seatNumber === this.dealerSeat
+    }));
     
-    this.currentHand = handState;
+    // Start new hand with engine v3
+    const engineState = this.engine.startNewHand(enginePlayers, this.dealerSeat);
     
-    // Deal hole cards
+    // Map engine state to our HandState
+    this.currentHand = {
+      id: engineState.handId,
+      handNumber: this.handNumber,
+      phase: this.mapPhase(engineState.phase),
+      pot: engineState.pot,
+      communityCards: engineState.communityCards,
+      currentBet: engineState.currentBet,
+      dealerSeat: engineState.dealerSeat,
+      smallBlindSeat: engineState.smallBlindSeat,
+      bigBlindSeat: engineState.bigBlindSeat,
+      currentPlayerSeat: engineState.currentPlayerSeat,
+      lastAggressor: null,
+      minRaise: engineState.minRaise,
+      bigBlind: this.config.bigBlind,
+      sidePots: [],
+      deck: [], // Deck is managed internally by engine v3
+      actionStartTime: Date.now(),
+      playersActedThisRound: new Set()
+    };
+    
+    // Get dealt hole cards from engine state
     for (const player of activePlayers) {
-      const numCards = this.config.gameType === 'omaha' ? 4 : 
-                       this.config.gameType === 'pineapple' ? 3 : 2;
-      player.holeCards = this.engine.dealCards(this.currentHand.deck, numCards);
+      const enginePlayer = engineState.players.find(ep => ep.id === player.id);
+      if (enginePlayer) {
+        player.holeCards = enginePlayer.holeCards || [];
+        player.currentBet = enginePlayer.currentBet || 0;
+      }
     }
     
     this.emit('hand_started', {
@@ -471,7 +543,26 @@ export class PokerTable {
     // Start action timer
     this.startActionTimer();
     
-    logger.info(`Hand started`, { tableId: this.id, handNumber: this.handNumber, players: activePlayers.length });
+    logger.info(`Hand started with Engine v3.0`, { 
+      tableId: this.id, 
+      handNumber: this.handNumber, 
+      players: activePlayers.length,
+      engineVersion: '3.0'
+    });
+  }
+  
+  /**
+   * Map engine phase to our phase type
+   */
+  private mapPhase(enginePhase: string): 'preflop' | 'flop' | 'turn' | 'river' | 'showdown' {
+    const phaseMap: Record<string, 'preflop' | 'flop' | 'turn' | 'river' | 'showdown'> = {
+      'preflop': 'preflop',
+      'flop': 'flop',
+      'turn': 'turn',
+      'river': 'river',
+      'showdown': 'showdown'
+    };
+    return phaseMap[enginePhase] || 'preflop';
   }
   
   /**
