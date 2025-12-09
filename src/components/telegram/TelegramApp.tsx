@@ -36,6 +36,7 @@ import { useClanSystem } from '@/hooks/useClanSystem';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { CLAN_EMBLEMS } from '@/utils/clanEmblems';
 import { TelegramPokerLobby } from './TelegramPokerLobby';
+import syndikateBg from '@/assets/syndikate-poker-bg.jpg';
 
 interface Tournament {
   id: string;
@@ -1740,6 +1741,22 @@ export const TelegramApp = () => {
 
       {activeTab === 'poker' && (
         <div className={isAtPokerTable ? "min-h-screen relative z-10" : "pb-28 pt-20 min-h-screen relative z-10"}>
+          {/* Syndikate luxury background for poker table */}
+          {isAtPokerTable && (
+            <>
+              <div 
+                className="fixed inset-0 z-0"
+                style={{
+                  backgroundImage: `url(${syndikateBg})`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center'
+                }}
+              />
+              <div className="fixed inset-0 z-0" style={{
+                background: 'radial-gradient(ellipse at center, transparent 20%, rgba(0,0,0,0.6) 100%)'
+              }} />
+            </>
+          )}
           <TelegramPokerLobby 
             playerId={userStats?.id}
             playerName={userStats?.name || telegramUser?.firstName || 'Гость'}
