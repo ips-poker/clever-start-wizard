@@ -1,10 +1,10 @@
 /**
- * Hook for connecting to Supabase Poker WebSocket Server
+ * Hook for connecting to Node.js Poker WebSocket Server
  * Production-ready with reconnection, ping/pong, and state management
- * Uses Supabase Edge Function WebSocket with cross-instance broadcast
+ * Connects to external poker.syndicate-poker.ru server
  */
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+
 export interface PokerPlayer {
   playerId: string;
   name?: string;
@@ -80,7 +80,6 @@ type ConnectionStatus = 'connecting' | 'connected' | 'disconnected' | 'reconnect
 const WS_URL = 'wss://poker.syndicate-poker.ru/ws/poker';
 const RECONNECT_DELAYS = [1000, 2000, 5000, 10000, 30000];
 const PING_INTERVAL = 25000;
-const CONNECTION_TIMEOUT = 10000; // 10 seconds to establish connection
 
 // Debug logging
 const DEBUG = true;
@@ -130,70 +129,47 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
   }, []);
 
   // Transform server state to client format
+  // Server sends flat state from PokerTable.getPlayerState()
   const transformServerState = useCallback((serverState: unknown, tblId: string): TableState => {
     const state = serverState as Record<string, unknown>;
     
-    // Handle Edge Function format: { table: {...}, players: [...], hand: {...} }
-    const tableData = state.table as Record<string, unknown> | undefined;
-    const handData = state.hand as Record<string, unknown> | undefined;
+    // Server sends flat format from PokerTable.getPlayerState()
+    const players = (state.players || []) as Record<string, unknown>[];
     
-    // Players can be at root or inside state
-    const playersArr = (state.players || []) as Record<string, unknown>[];
-    
-    // Extract values from nested structure if present
-    const phase = handData?.phase || state.phase || 'waiting';
-    const pot = handData?.pot || state.pot || 0;
-    const currentBet = handData?.currentBet || state.currentBet || 0;
-    const communityCards = handData?.communityCards || state.communityCards || state.board || [];
-    const dealerSeat = handData?.dealerSeat || tableData?.currentDealerSeat || state.dealerSeat || state.buttonSeat || 1;
-    const smallBlindSeat = handData?.smallBlindSeat || state.smallBlindSeat || 1;
-    const bigBlindSeat = handData?.bigBlindSeat || state.bigBlindSeat || 2;
-    const currentPlayerSeat = handData?.currentPlayerSeat || state.currentPlayerSeat || state.activePlayerSeat || null;
-    const smallBlind = tableData?.smallBlind || state.smallBlind || 10;
-    const bigBlind = tableData?.bigBlind || state.bigBlind || 20;
-    
-    // Map hand players data to regular players if available
-    const handPlayers = handData?.players as Record<string, unknown>[] | undefined;
-    
-    const players: PokerPlayer[] = playersArr.map((p) => {
-      // Find hand data for this player if exists
-      const handPlayer = handPlayers?.find(hp => hp.playerId === (p.id || p.playerId));
-      
-      return {
-        playerId: (p.id || p.playerId) as string,
-        name: (p.name || p.playerName || 'Player') as string,
-        avatarUrl: (p.avatar || p.avatarUrl) as string | undefined,
-        seatNumber: (p.seatNumber || p.seat || 0) as number,
-        stack: (p.stack || p.chips || 0) as number,
-        betAmount: (handPlayer?.betAmount || p.betAmount || p.bet || 0) as number,
-        totalBetInHand: (handPlayer?.betAmount || p.totalBetInHand || p.betAmount || 0) as number,
-        holeCards: (handPlayer?.cards || p.holeCards || p.cards || []) as string[],
-        isFolded: (handPlayer?.isFolded || p.isFolded || p.folded || false) as boolean,
-        isAllIn: (handPlayer?.isAllIn || p.isAllIn || p.allIn || false) as boolean,
-        isActive: p.status !== 'disconnected' && p.isActive !== false,
-        isDisconnected: (p.status === 'disconnected' || p.isDisconnected || false) as boolean,
-        timeBankRemaining: (p.timeBankRemaining || 60) as number
-      };
-    });
+    const mappedPlayers: PokerPlayer[] = players.map((p) => ({
+      playerId: (p.playerId || p.id) as string,
+      name: (p.name || 'Player') as string,
+      avatarUrl: (p.avatar || p.avatarUrl) as string | undefined,
+      seatNumber: (p.seatNumber || 0) as number,
+      stack: (p.stack || 0) as number,
+      betAmount: (p.betAmount || p.currentBet || 0) as number,
+      totalBetInHand: (p.betAmount || p.currentBet || 0) as number,
+      holeCards: (p.holeCards || []) as string[],
+      isFolded: (p.isFolded || false) as boolean,
+      isAllIn: (p.isAllIn || false) as boolean,
+      isActive: (p.isActive !== false && p.status !== 'disconnected') as boolean,
+      isDisconnected: (p.status === 'disconnected') as boolean,
+      timeBankRemaining: (p.timeBank || 60) as number
+    }));
 
     return {
       tableId: tblId,
-      phase: phase as TableState['phase'],
-      pot: pot as number,
-      currentBet: currentBet as number,
-      currentPlayerSeat: currentPlayerSeat as number | null,
-      communityCards: communityCards as string[],
-      dealerSeat: dealerSeat as number,
-      smallBlindSeat: smallBlindSeat as number,
-      bigBlindSeat: bigBlindSeat as number,
-      players,
-      minRaise: (state.minRaise || currentBet || bigBlind) as number,
-      smallBlindAmount: smallBlind as number,
-      bigBlindAmount: bigBlind as number,
+      phase: (state.phase || 'waiting') as TableState['phase'],
+      pot: (state.pot || 0) as number,
+      currentBet: (state.currentBet || 0) as number,
+      currentPlayerSeat: (state.currentPlayerSeat || null) as number | null,
+      communityCards: (state.communityCards || []) as string[],
+      dealerSeat: (state.dealerSeat || 1) as number,
+      smallBlindSeat: (state.smallBlindSeat || 1) as number,
+      bigBlindSeat: (state.bigBlindSeat || 2) as number,
+      players: mappedPlayers,
+      minRaise: (state.minRaise || state.bigBlind || 20) as number,
+      smallBlindAmount: (state.smallBlind || 10) as number,
+      bigBlindAmount: (state.bigBlind || 20) as number,
       anteAmount: (state.ante || 0) as number,
-      actionTimer: (tableData?.actionTimeSeconds || state.actionTimer || 30) as number,
+      actionTimer: (state.actionTimer || 30) as number,
       timeRemaining: state.timeRemaining as number | null | undefined,
-      playersNeeded: players.filter(p => p.isActive).length < 2 ? 2 - players.filter(p => p.isActive).length : 0
+      playersNeeded: (state.playersNeeded || 0) as number
     };
   }, []);
 
@@ -206,12 +182,12 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
       switch (data.type) {
         case 'connected':
           log('✅ Server connected, timestamp:', data.timestamp);
+          // Server may auto-subscribe based on URL params
           break;
 
         case 'subscribed':
-        case 'joined_table':
         case 'state':
-        case 'table_state': // Edge Function uses this type
+        case 'table_state':
           if (data.state && tableId) {
             setTableState(prev => {
               const newState = transformServerState(data.state, tableId);
@@ -221,15 +197,14 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
               return newState;
             });
 
-            // Extract my cards and seat from server state
+            // Extract my cards and seat from server state (from getPlayerState)
             const stateData = data.state as Record<string, unknown>;
-            
-            // Check for myCards and mySeat in root state (from getPlayerState)
             if (stateData.myCards) {
               setMyCards(stateData.myCards as string[]);
             }
             if (stateData.mySeat !== undefined && stateData.mySeat !== null) {
               setMySeat(stateData.mySeat as number);
+              log('🎯 My seat set from state:', stateData.mySeat);
             }
             
             // Also check players array
@@ -243,48 +218,68 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
                 }
                 if (myPlayerData.seatNumber !== undefined) {
                   setMySeat(myPlayerData.seatNumber as number);
+                  log('🎯 My seat set from player data:', myPlayerData.seatNumber);
                 }
               }
             }
-          }
-          if (data.type === 'joined_table') {
-            log('✅ Joined table:', tableId);
           }
           if (data.type === 'subscribed') {
             log('✅ Subscribed to table:', tableId);
           }
           break;
 
-        case 'player_joined':
-        case 'player_left':
-        case 'player_disconnected':
-        case 'hand_started':
-        case 'phase_change':
-          // These events include updated tableState - process it
-          if (data.tableState && tableId) {
-            setTableState(prev => {
-              const newState = transformServerState(data.tableState, tableId);
-              return newState;
-            });
-            
-            // Update my cards if included
-            const stateData = data.tableState as Record<string, unknown>;
-            if (stateData.myCards) {
-              setMyCards(stateData.myCards as string[]);
-            }
-          } else if (data.state && tableId) {
-            setTableState(prev => {
-              const newState = transformServerState(data.state, tableId);
-              return newState;
-            });
+        case 'joined_table':
+          log('✅ Joined table:', tableId, data);
+          // Extract seat and state from join response
+          if (data.state && tableId) {
+            setTableState(transformServerState(data.state, tableId));
             
             const stateData = data.state as Record<string, unknown>;
             if (stateData.myCards) {
               setMyCards(stateData.myCards as string[]);
             }
+            if (stateData.mySeat !== undefined && stateData.mySeat !== null) {
+              setMySeat(stateData.mySeat as number);
+              log('🎯 My seat set after join:', stateData.mySeat);
+            }
+          }
+          break;
+
+        case 'player_joined':
+          // Check if this is us joining
+          {
+            const eventData = data.data as Record<string, unknown> | undefined;
+            const eventPlayerId = eventData?.playerId ?? (data as Record<string, unknown>).playerId;
+            if (eventPlayerId === playerId) {
+              const seatNum = eventData?.seatNumber ?? (data as Record<string, unknown>).seatNumber;
+              if (seatNum !== undefined) {
+                setMySeat(seatNum as number);
+                log('🎯 I joined at seat:', seatNum);
+              }
+            }
+          }
+          // Fall through to update state
+        case 'player_left':
+        case 'player_disconnected':
+        case 'hand_started':
+        case 'phase_change':
+          // These events include updated tableState - process it
+          if (data.state && tableId) {
+            setTableState(transformServerState(data.state, tableId));
+            
+            const stateData = data.state as Record<string, unknown>;
+            if (stateData.myCards) {
+              setMyCards(stateData.myCards as string[]);
+            }
+            if (stateData.mySeat !== undefined && stateData.mySeat !== null) {
+              setMySeat(stateData.mySeat as number);
+            }
           }
           
-          log(`📡 ${data.type}:`, data.playerId);
+          {
+            const evtData = data.data as Record<string, unknown> | undefined;
+            log(`📡 ${data.type}:`, evtData?.playerId ?? (data as Record<string, unknown>).playerId);
+          }
           break;
 
         case 'action_accepted':
@@ -387,55 +382,16 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
     const ws = new WebSocket(url);
     wsRef.current = ws;
 
-    ws.onopen = async () => {
+    ws.onopen = () => {
       if (!mountedRef.current) return;
       log('✅ WebSocket connected to', url);
       setConnectionStatus('connected');
       setError(null);
       reconnectAttemptRef.current = 0;
 
-      // Load initial players from database
-      const { data: players } = await supabase
-        .from('poker_table_players')
-        .select('*, players(name, avatar_url)')
-        .eq('table_id', tableId)
-        .eq('status', 'active');
-      
-      if (players && players.length > 0) {
-        log('📥 Loaded initial players:', players.length);
-        setTableState(prev => ({
-          tableId,
-          phase: prev?.phase || 'waiting',
-          pot: prev?.pot || 0,
-          currentBet: prev?.currentBet || 0,
-          currentPlayerSeat: prev?.currentPlayerSeat || null,
-          communityCards: prev?.communityCards || [],
-          dealerSeat: prev?.dealerSeat || 1,
-          smallBlindSeat: prev?.smallBlindSeat || 1,
-          bigBlindSeat: prev?.bigBlindSeat || 2,
-          players: players.map(p => ({
-            playerId: p.player_id,
-            name: p.players?.name || 'Player',
-            avatarUrl: p.players?.avatar_url,
-            seatNumber: p.seat_number,
-            stack: p.stack,
-            betAmount: 0,
-            holeCards: [],
-            isFolded: false,
-            isAllIn: false,
-            isActive: p.status === 'active',
-            isDisconnected: false
-          })),
-          playersNeeded: players.length < 2 ? 2 - players.length : 0
-        }));
-      }
-
-      // Subscribe to table
-      sendMessage({
-        type: 'subscribe',
-        tableId,
-        playerId
-      });
+      // Server auto-subscribes based on URL params, but we can explicitly subscribe
+      // State will be sent by server in 'connected' or 'state' message
+      log('📡 Waiting for server state...');
 
       // Start ping interval
       pingIntervalRef.current = setInterval(() => {
