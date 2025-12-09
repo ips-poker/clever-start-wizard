@@ -19,6 +19,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
+import syndikateBg from '@/assets/syndikate-poker-bg.jpg';
 
 export default function OnlinePoker() {
   const { user, userProfile, isAuthenticated, loading: authLoading } = useAuth();
@@ -276,48 +277,19 @@ export default function OnlinePoker() {
                 </div>
                 
                 <div className="relative w-full h-full overflow-hidden">
-                  {/* Mafia syndicate atmospheric background */}
-                  <div className="absolute inset-0 pointer-events-none">
-                    {/* Dark vignette edges */}
-                    <div className="absolute inset-0" style={{
-                      background: 'radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,0.8) 100%)'
-                    }} />
-                    
-                    {/* Subtle smoke/fog effect */}
-                    <div className="absolute inset-0 opacity-20" style={{
-                      backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='smoke'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.01' numOctaves='3' result='noise'/%3E%3CfeDisplacementMap in='SourceGraphic' in2='noise' scale='50'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23smoke)' fill='%23334433'/%3E%3C/svg%3E")`,
-                    }} />
-                    
-                    {/* Golden accent lights */}
-                    <div className="absolute top-0 left-1/4 w-40 h-40 opacity-15" style={{
-                      background: 'radial-gradient(circle, rgba(251,191,36,0.4) 0%, transparent 70%)',
-                      filter: 'blur(30px)'
-                    }} />
-                    <div className="absolute bottom-0 right-1/4 w-40 h-40 opacity-15" style={{
-                      background: 'radial-gradient(circle, rgba(251,191,36,0.3) 0%, transparent 70%)',
-                      filter: 'blur(30px)'
-                    }} />
-                    
-                    {/* Art deco corner decorations */}
-                    <svg className="absolute top-8 left-3 w-10 h-10 opacity-15" viewBox="0 0 100 100">
-                      <path d="M0 0 L100 0 L100 20 L20 20 L20 100 L0 100 Z" fill="rgba(251,191,36,0.5)" />
-                    </svg>
-                    <svg className="absolute top-8 right-3 w-10 h-10 opacity-15 rotate-90" viewBox="0 0 100 100">
-                      <path d="M0 0 L100 0 L100 20 L20 20 L20 100 L0 100 Z" fill="rgba(251,191,36,0.5)" />
-                    </svg>
-                    <svg className="absolute bottom-3 left-3 w-10 h-10 opacity-15 -rotate-90" viewBox="0 0 100 100">
-                      <path d="M0 0 L100 0 L100 20 L20 20 L20 100 L0 100 Z" fill="rgba(251,191,36,0.5)" />
-                    </svg>
-                    <svg className="absolute bottom-3 right-3 w-10 h-10 opacity-15 rotate-180" viewBox="0 0 100 100">
-                      <path d="M0 0 L100 0 L100 20 L20 20 L20 100 L0 100 Z" fill="rgba(251,191,36,0.5)" />
-                    </svg>
-                    
-                    {/* Subtle pattern overlay */}
-                    <div className="absolute inset-0 opacity-[0.02]" style={{
-                      backgroundImage: `url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M20 0 L40 20 L20 40 L0 20 Z' fill='none' stroke='%23fbbf24' stroke-width='0.5'/%3E%3C/svg%3E")`,
-                      backgroundSize: '20px 20px'
-                    }} />
-                  </div>
+                  {/* Syndikate luxury background image */}
+                  <div 
+                    className="absolute inset-0"
+                    style={{
+                      backgroundImage: `url(${syndikateBg})`,
+                      backgroundSize: 'cover',
+                      backgroundPosition: 'center'
+                    }}
+                  />
+                  {/* Dark vignette overlay */}
+                  <div className="absolute inset-0" style={{
+                    background: 'radial-gradient(ellipse at center, transparent 20%, rgba(0,0,0,0.6) 100%)'
+                  }} />
                   
                   {/* Close button */}
                   <Button
