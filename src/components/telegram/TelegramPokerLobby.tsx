@@ -198,8 +198,10 @@ const [activeTableId, setActiveTableId] = useState<string | null>(null);
       if (existingPlayer) {
         console.log('Player already at table, opening table');
         setActiveTableId(table.id);
-        setActiveBuyIn(existingPlayer.stack);
-        onJoinTable?.(table.id, existingPlayer.stack);
+        // Use player's current stack, but ensure it's at least the table minimum for display
+        const effectiveBuyIn = Math.max(existingPlayer.stack, table.min_buy_in);
+        setActiveBuyIn(effectiveBuyIn);
+        onJoinTable?.(table.id, effectiveBuyIn);
         return;
       }
 
