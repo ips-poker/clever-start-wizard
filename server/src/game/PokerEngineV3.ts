@@ -1407,6 +1407,53 @@ export function distributeWinnings(
   };
 }
 
+/**
+ * Determine showdown winners from hand results and pots
+ */
+export function determineShowdownWinners(
+  handResults: HandResult[],
+  pots: SidePot[],
+  activePlayerIds: string[]
+): { winners: { playerId: string; amount: number; handName: string }[] } {
+  const winnersInfo: { playerId: string; amount: number; handName: string }[] = [];
+  
+  if (handResults.length === 0 || pots.length === 0) {
+    return { winners: winnersInfo };
+  }
+  
+  for (const pot of pots) {
+    if (pot.amount === 0) continue;
+    
+    // Only consider players eligible for this pot and still active
+    const eligible = handResults.filter(hr => 
+      pot.eligiblePlayers.includes(hr.playerId) && 
+      activePlayerIds.includes(hr.playerId)
+    );
+    
+    if (eligible.length === 0) continue;
+    
+    // Sort by hand strength (highest first)
+    eligible.sort((a, b) => compareHands(b, a));
+    const best = eligible[0];
+    
+    // Find all players with same hand strength (ties)
+    const winners = eligible.filter(hr => 
+      hr.handRank === best.handRank && compareKickers(hr.kickers, best.kickers) === 0
+    );
+    
+    // Split pot among winners
+    const share = Math.floor(pot.amount / winners.length);
+    const remainder = pot.amount % winners.length;
+    
+    winners.forEach((w, i) => {
+      const amt = share + (i === 0 ? remainder : 0);
+      winnersInfo.push({ playerId: w.playerId, amount: amt, handName: w.handName });
+    });
+  }
+  
+  return { winners: winnersInfo };
+}
+
 // ==========================================
 // BETTING ROUND COMPLETION CHECK
 // ==========================================
@@ -1797,11 +1844,13 @@ export class PokerEngineV3 {
       seatNumber: p.seatNumber,
       stack: p.stack,
       betAmount: 0,
+      totalBetThisHand: 0,  // Initialize total bet tracking for side pots
       holeCards: [],
       isFolded: p.status !== 'active',
       isAllIn: false,
       isSittingOut: p.status !== 'active',
       isDisconnected: false,
+      hasActedThisRound: false,  // Initialize acted flag
       timeBank: this.config.timeBankSeconds,
       lastActionTime: null
     }));
@@ -1947,12 +1996,25 @@ export class PokerEngineV3 {
     player.stack = result.newStack;
     player.isFolded = result.isFolded;
     player.isAllIn = result.isAllIn;
+    player.hasActedThisRound = true; // CRITICAL: Mark player has acted
     
     // Update hand state
     this.state.pot += result.actionAmount;
     this.state.currentBet = result.newCurrentBet;
     this.state.minRaise = result.newMinRaise;
+    this.state.lastRaiseAmount = result.lastRaiseAmount;
     this.state.actionCount++;
+    
+    // If this action reopens betting, reset hasActed for all OTHER players
+    if (result.reopensAction) {
+      this.state.lastAggressor = playerId;
+      this.state.lastAggressorSeat = player.seatNumber;
+      for (const p of this.state.players) {
+        if (p.id !== playerId && !p.isFolded && !p.isAllIn) {
+          p.hasActedThisRound = false;
+        }
+      }
+    }
     
     // Record action
     this.actions.push({
@@ -1962,15 +2024,8 @@ export class PokerEngineV3 {
       amount: result.actionAmount
     });
     
-    // Check if betting round is complete
-    const roundComplete = isBettingRoundComplete(
-      this.state.players,
-      this.state.currentBet,
-      this.state.phase,
-      this.state.bigBlindSeat,
-      this.actions,
-      this.state.lastAggressor || undefined
-    );
+    // Check if betting round is complete using hasActedThisRound
+    const roundComplete = this.isBettingRoundCompleteV2();
     
     let phaseAdvanced = false;
     let handComplete = false;
@@ -2058,10 +2113,19 @@ export class PokerEngineV3 {
         this.state.deck = this.state.deck.slice(1);
       }
       
-      // Reset betting for new round
+      // Reset betting for new round - CRITICAL: reset hasActedThisRound
       this.state.currentBet = 0;
+      this.state.minRaise = this.config.bigBlind;
+      this.state.lastRaiseAmount = this.config.bigBlind;
+      this.state.lastAggressor = null;
+      this.state.lastAggressorSeat = null;
+      
       for (const p of this.state.players) {
+        // Accumulate total bet for side pot calculation
+        p.totalBetThisHand = (p.totalBetThisHand || 0) + p.betAmount;
         p.betAmount = 0;
+        // Reset acted flag for new betting round
+        p.hasActedThisRound = false;
       }
       
       // Find first to act post-flop (first active player after dealer)
@@ -2121,6 +2185,41 @@ export class PokerEngineV3 {
   }
   
   /**
+   * Check if betting round is complete using hasActedThisRound flag
+   * This is the correct logic for poker:
+   * - All non-folded, non-all-in players must have acted
+   * - All those players must have matched the current bet
+   */
+  private isBettingRoundCompleteV2(): boolean {
+    if (!this.state) return true;
+    
+    const remaining = this.state.players.filter(p => !p.isFolded);
+    
+    // Only one player left - hand is over (everyone else folded)
+    if (remaining.length <= 1) return true;
+    
+    // Players who can still act (not folded, not all-in, have chips)
+    const playersWhoCanAct = remaining.filter(p => !p.isAllIn && p.stack > 0);
+    
+    // All players are all-in - round complete
+    if (playersWhoCanAct.length === 0) return true;
+    
+    // If only one player can act and they've already acted - round complete
+    if (playersWhoCanAct.length === 1) {
+      const thePlayer = playersWhoCanAct[0];
+      // If everyone is all-in except this player, they need to act once
+      if (thePlayer.hasActedThisRound && thePlayer.betAmount >= this.state.currentBet) {
+        return true;
+      }
+    }
+    
+    // All active players must have acted AND matched current bet
+    return playersWhoCanAct.every(p => 
+      p.hasActedThisRound && p.betAmount >= this.state!.currentBet
+    );
+  }
+  
+  /**
    * Determine winners at showdown
    */
   private determineWinners(): { playerId: string; amount: number; handName: string }[] {
@@ -2135,10 +2234,11 @@ export class PokerEngineV3 {
     const isShortDeck = this.gameType === GameType.SHORT_DECK;
     const isOmaha = this.gameType === GameType.OMAHA || this.gameType === GameType.OMAHA_HI_LO;
     
-    // Calculate contributions for side pots
+    // Calculate contributions for side pots using totalBetThisHand
+    // Add current betAmount to totalBetThisHand for final calculation
     const contributions: PlayerContribution[] = this.state.players.map(p => ({
       playerId: p.id,
-      totalBet: p.betAmount,
+      totalBet: (p.totalBetThisHand || 0) + p.betAmount,
       isFolded: p.isFolded,
       isAllIn: p.isAllIn
     }));
