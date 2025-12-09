@@ -223,6 +223,12 @@ export class PokerEngine {
     // Mark player as having acted this round
     handState.playersActedThisRound.add(player.id);
     
+    console.log('[PokerEngine] processCheck:', {
+      playerId: player.id,
+      seatNumber: player.seatNumber,
+      playersActed: Array.from(handState.playersActedThisRound)
+    });
+    
     const result = this.advanceAction(handState, players, player);
     return { success: true, ...result };
   }
@@ -241,6 +247,14 @@ export class PokerEngine {
     
     // Mark player as having acted
     handState.playersActedThisRound.add(player.id);
+    
+    console.log('[PokerEngine] processCall:', {
+      playerId: player.id,
+      seatNumber: player.seatNumber,
+      callAmount: actualAmount,
+      newBet: player.currentBet,
+      playersActed: Array.from(handState.playersActedThisRound)
+    });
     
     const result = this.advanceAction(handState, players, player);
     return { success: true, amount: actualAmount, isAllIn: player.isAllIn, ...result };
@@ -283,9 +297,17 @@ export class PokerEngine {
     handState.currentBet = player.currentBet;
     handState.lastAggressor = player.id;
     
-    // Clear acted set since everyone needs to respond to the raise (except aggressor)
+    // IMPORTANT: Clear playersActedThisRound for everyone, then add the raiser
+    // Everyone else needs to respond to the raise
     handState.playersActedThisRound.clear();
     handState.playersActedThisRound.add(player.id);
+    
+    console.log('[PokerEngine] processBetRaise:', {
+      playerId: player.id,
+      amount: actualAmount,
+      newCurrentBet: handState.currentBet,
+      playersActed: Array.from(handState.playersActedThisRound)
+    });
     
     if (player.stack === 0) {
       player.isAllIn = true;
@@ -339,40 +361,74 @@ export class PokerEngine {
     // Players who can still act (not folded, not all-in)
     const canActPlayers = activePlayers.filter(p => !p.isAllIn);
     
-    // Determine who still needs to act:
-    // 1. Players who haven't matched the current bet
-    // 2. OR if no aggression (currentBet = 0), players who haven't acted this round
+    // Simple logic: Find players who need to act
+    // A player needs to act if:
+    // 1. Their bet is less than the current bet (must call/fold/raise)
+    // 2. OR they haven't acted this round yet (for checks when currentBet = 0)
     const playersToAct = canActPlayers.filter(p => {
-      // Must call if behind on bet
+      // If player's bet is less than current bet, they MUST act
       if (p.currentBet < handState.currentBet) {
         return true;
       }
-      // If there was a raise, everyone needs to respond except the last aggressor
-      if (handState.lastAggressor !== null && p.id !== handState.lastAggressor) {
-        return !handState.playersActedThisRound.has(p.id);
-      }
-      // No aggression (all checks) - hasn't acted yet this round
-      if (handState.currentBet === 0 && !handState.playersActedThisRound.has(p.id)) {
+      
+      // If bets are equal, player only needs to act if they haven't acted this round
+      // This handles the check-around scenario
+      if (!handState.playersActedThisRound.has(p.id)) {
         return true;
       }
+      
       return false;
+    });
+    
+    console.log('[PokerEngine] advanceAction:', {
+      currentPlayer: currentPlayer.id,
+      currentPlayerSeat: currentPlayer.seatNumber,
+      currentBet: handState.currentBet,
+      playersActed: Array.from(handState.playersActedThisRound),
+      playersToAct: playersToAct.map(p => ({ id: p.id, seat: p.seatNumber, bet: p.currentBet })),
+      canActPlayers: canActPlayers.map(p => ({ id: p.id, seat: p.seatNumber, bet: p.currentBet }))
     });
     
     if (playersToAct.length === 0) {
       // Round complete, advance phase
+      console.log('[PokerEngine] All players acted, advancing phase');
       return this.advancePhase(handState, players);
     }
     
-    // Find next player in order after current player
-    const sortedToAct = playersToAct.sort((a, b) => {
-      // Wrap around table positions
-      const aPos = a.seatNumber > currentPlayer.seatNumber ? a.seatNumber : a.seatNumber + 100;
-      const bPos = b.seatNumber > currentPlayer.seatNumber ? b.seatNumber : b.seatNumber + 100;
-      return aPos - bPos;
-    });
+    // Find next player in seat order after current player
+    const sortedSeats = canActPlayers
+      .map(p => p.seatNumber)
+      .sort((a, b) => a - b);
     
-    const nextPlayer = sortedToAct[0];
-    handState.currentPlayerSeat = nextPlayer.seatNumber;
+    // Find next seat that needs to act
+    let nextSeat: number | null = null;
+    
+    // First, look for seats after current player
+    for (const seat of sortedSeats) {
+      if (seat > currentPlayer.seatNumber) {
+        const player = playersToAct.find(p => p.seatNumber === seat);
+        if (player) {
+          nextSeat = seat;
+          break;
+        }
+      }
+    }
+    
+    // If not found, wrap around to beginning
+    if (nextSeat === null) {
+      for (const seat of sortedSeats) {
+        const player = playersToAct.find(p => p.seatNumber === seat);
+        if (player) {
+          nextSeat = seat;
+          break;
+        }
+      }
+    }
+    
+    if (nextSeat !== null) {
+      handState.currentPlayerSeat = nextSeat;
+      console.log('[PokerEngine] Next player seat:', nextSeat);
+    }
     
     return { newHandState: handState };
   }
