@@ -251,20 +251,78 @@ export default function OnlinePoker() {
             {/* Table Modal - opens table as overlay for multi-tabling */}
             <Dialog open={!!activeTable} onOpenChange={(open) => !open && handleLeaveTable()}>
               <DialogContent 
-                className="max-w-[95vw] w-[1400px] h-[85vh] p-0 bg-transparent border-none overflow-hidden"
-                style={{ maxHeight: '85vh' }}
+                className="max-w-[95vw] w-[900px] h-[90vh] p-0 border-none overflow-hidden"
+                style={{ 
+                  maxHeight: '90vh',
+                  background: 'linear-gradient(180deg, #0a0a0a 0%, #1a0a0a 15%, #0d1a0d 50%, #0a0a0a 85%, #0a0505 100%)',
+                }}
               >
                 {activeTable && playerId && (
-                  <div className="relative w-full h-full">
+                  <div className="relative w-full h-full overflow-hidden">
+                    {/* Mafia syndicate atmospheric background */}
+                    <div className="absolute inset-0 pointer-events-none">
+                      {/* Dark vignette edges */}
+                      <div className="absolute inset-0" style={{
+                        background: 'radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,0.8) 100%)'
+                      }} />
+                      
+                      {/* Subtle smoke/fog effect */}
+                      <div className="absolute inset-0 opacity-20" style={{
+                        backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='smoke'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.01' numOctaves='3' result='noise'/%3E%3CfeDisplacementMap in='SourceGraphic' in2='noise' scale='50'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23smoke)' fill='%23334433'/%3E%3C/svg%3E")`,
+                        animation: 'pulse 8s ease-in-out infinite'
+                      }} />
+                      
+                      {/* Golden accent lights */}
+                      <div className="absolute top-0 left-1/4 w-64 h-64 opacity-10" style={{
+                        background: 'radial-gradient(circle, rgba(251,191,36,0.4) 0%, transparent 70%)',
+                        filter: 'blur(40px)'
+                      }} />
+                      <div className="absolute bottom-0 right-1/4 w-64 h-64 opacity-10" style={{
+                        background: 'radial-gradient(circle, rgba(251,191,36,0.3) 0%, transparent 70%)',
+                        filter: 'blur(40px)'
+                      }} />
+                      
+                      {/* Subtle red accent for mafia vibe */}
+                      <div className="absolute top-1/3 right-0 w-48 h-96 opacity-5" style={{
+                        background: 'radial-gradient(ellipse, rgba(220,38,38,0.5) 0%, transparent 70%)',
+                        filter: 'blur(60px)'
+                      }} />
+                      
+                      {/* Art deco corner decorations */}
+                      <svg className="absolute top-4 left-4 w-16 h-16 opacity-10" viewBox="0 0 100 100">
+                        <path d="M0 0 L100 0 L100 20 L20 20 L20 100 L0 100 Z" fill="rgba(251,191,36,0.5)" />
+                        <path d="M30 30 L70 30 L70 35 L35 35 L35 70 L30 70 Z" fill="rgba(251,191,36,0.3)" />
+                      </svg>
+                      <svg className="absolute top-4 right-4 w-16 h-16 opacity-10 rotate-90" viewBox="0 0 100 100">
+                        <path d="M0 0 L100 0 L100 20 L20 20 L20 100 L0 100 Z" fill="rgba(251,191,36,0.5)" />
+                        <path d="M30 30 L70 30 L70 35 L35 35 L35 70 L30 70 Z" fill="rgba(251,191,36,0.3)" />
+                      </svg>
+                      <svg className="absolute bottom-4 left-4 w-16 h-16 opacity-10 -rotate-90" viewBox="0 0 100 100">
+                        <path d="M0 0 L100 0 L100 20 L20 20 L20 100 L0 100 Z" fill="rgba(251,191,36,0.5)" />
+                        <path d="M30 30 L70 30 L70 35 L35 35 L35 70 L30 70 Z" fill="rgba(251,191,36,0.3)" />
+                      </svg>
+                      <svg className="absolute bottom-4 right-4 w-16 h-16 opacity-10 rotate-180" viewBox="0 0 100 100">
+                        <path d="M0 0 L100 0 L100 20 L20 20 L20 100 L0 100 Z" fill="rgba(251,191,36,0.5)" />
+                        <path d="M30 30 L70 30 L70 35 L35 35 L35 70 L30 70 Z" fill="rgba(251,191,36,0.3)" />
+                      </svg>
+                      
+                      {/* Subtle pattern overlay */}
+                      <div className="absolute inset-0 opacity-[0.02]" style={{
+                        backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 0 L60 30 L30 60 L0 30 Z' fill='none' stroke='%23fbbf24' stroke-width='0.5'/%3E%3C/svg%3E")`,
+                        backgroundSize: '30px 30px'
+                      }} />
+                    </div>
+                    
                     {/* Close button */}
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="absolute top-2 right-2 z-50 bg-black/50 hover:bg-black/70 text-white rounded-full"
+                      className="absolute top-3 right-3 z-50 bg-black/60 hover:bg-black/80 text-white/80 hover:text-white rounded-full border border-amber-900/30"
                       onClick={handleLeaveTable}
                     >
                       <X className="h-5 w-5" />
                     </Button>
+                    
                     <OnlinePokerTable
                       tableId={activeTable.id}
                       playerId={playerId}

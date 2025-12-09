@@ -275,21 +275,71 @@ export function TelegramMobileTable({
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background via-background to-green-950/20 flex flex-col">
+    <div 
+      className="min-h-screen flex flex-col relative overflow-hidden"
+      style={{
+        background: 'linear-gradient(180deg, #0a0a0a 0%, #1a0a0a 15%, #0d1a0d 50%, #0a0a0a 85%, #0a0505 100%)',
+      }}
+    >
+      {/* Mafia syndicate atmospheric background */}
+      <div className="absolute inset-0 pointer-events-none">
+        {/* Dark vignette edges */}
+        <div className="absolute inset-0" style={{
+          background: 'radial-gradient(ellipse at center, transparent 20%, rgba(0,0,0,0.7) 100%)'
+        }} />
+        
+        {/* Subtle smoke effect */}
+        <div className="absolute inset-0 opacity-15" style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='smoke'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.015' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23smoke)' fill='%23223322'/%3E%3C/svg%3E")`
+        }} />
+        
+        {/* Golden accent glow */}
+        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-80 h-80 opacity-10" style={{
+          background: 'radial-gradient(circle, rgba(251,191,36,0.5) 0%, transparent 70%)',
+          filter: 'blur(50px)'
+        }} />
+        
+        {/* Red mafia accent */}
+        <div className="absolute bottom-0 left-0 w-40 h-40 opacity-10" style={{
+          background: 'radial-gradient(circle, rgba(220,38,38,0.6) 0%, transparent 70%)',
+          filter: 'blur(40px)'
+        }} />
+        
+        {/* Art deco corners */}
+        <svg className="absolute top-2 left-2 w-10 h-10 opacity-15" viewBox="0 0 100 100">
+          <path d="M0 0 L100 0 L100 15 L15 15 L15 100 L0 100 Z" fill="rgba(251,191,36,0.6)" />
+        </svg>
+        <svg className="absolute top-2 right-2 w-10 h-10 opacity-15 rotate-90" viewBox="0 0 100 100">
+          <path d="M0 0 L100 0 L100 15 L15 15 L15 100 L0 100 Z" fill="rgba(251,191,36,0.6)" />
+        </svg>
+        <svg className="absolute bottom-2 left-2 w-10 h-10 opacity-15 -rotate-90" viewBox="0 0 100 100">
+          <path d="M0 0 L100 0 L100 15 L15 15 L15 100 L0 100 Z" fill="rgba(251,191,36,0.6)" />
+        </svg>
+        <svg className="absolute bottom-2 right-2 w-10 h-10 opacity-15 rotate-180" viewBox="0 0 100 100">
+          <path d="M0 0 L100 0 L100 15 L15 15 L15 100 L0 100 Z" fill="rgba(251,191,36,0.6)" />
+        </svg>
+        
+        {/* Diamond pattern overlay */}
+        <div className="absolute inset-0 opacity-[0.02]" style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M20 0 L40 20 L20 40 L0 20 Z' fill='none' stroke='%23fbbf24' stroke-width='0.5'/%3E%3C/svg%3E")`,
+          backgroundSize: '20px 20px'
+        }} />
+      </div>
+
       {/* Header */}
-      <div className="flex items-center justify-between p-3 bg-syndikate-metal/50 backdrop-blur-sm border-b border-border/50">
+      <div className="relative z-10 flex items-center justify-between p-3 bg-black/40 backdrop-blur-sm border-b border-amber-900/20">
         <Button
           variant="ghost"
           size="icon"
           onClick={handleLeaveTable}
-          className="h-8 w-8"
+          className="h-8 w-8 text-white/70 hover:text-white hover:bg-white/10"
         >
           <ArrowLeft className="h-4 w-4" />
         </Button>
         
         <div className="text-center flex-1">
-          <h1 className="text-sm font-semibold truncate">{table?.name || 'Покерный стол'}</h1>
-          <div className="flex items-center justify-center gap-2 text-[10px] text-muted-foreground">
+          <h1 className="text-sm font-semibold text-white/90 truncate">{table?.name || 'Покерный стол'}</h1>
+          <div className="flex items-center justify-center gap-2 text-[10px] text-amber-500/80">
             <span>{table?.small_blind}/{table?.big_blind}</span>
             <span>•</span>
             <span>{players.length}/{table?.max_players} игроков</span>
@@ -301,7 +351,7 @@ export function TelegramMobileTable({
             variant="ghost"
             size="icon"
             onClick={() => setSoundEnabled(!soundEnabled)}
-            className="h-8 w-8"
+            className="h-8 w-8 text-white/70 hover:text-white hover:bg-white/10"
           >
             {soundEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
           </Button>
@@ -309,32 +359,63 @@ export function TelegramMobileTable({
       </div>
 
       {/* Table Area */}
-      <div className="flex-1 relative p-4">
-        {/* Poker Table */}
-        <div className="relative w-full aspect-[4/3] max-w-md mx-auto">
-          {/* Table felt */}
-          <div className="absolute inset-0 bg-gradient-to-br from-green-800 via-green-700 to-green-800 rounded-[40%] border-8 border-amber-900 shadow-2xl">
-            {/* Table inner shadow */}
-            <div className="absolute inset-2 bg-gradient-to-br from-green-700/50 via-transparent to-green-900/50 rounded-[40%]" />
-            
-            {/* Pot */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center">
-              {pot > 0 && (
-                <motion.div
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  className="bg-black/40 rounded-lg px-3 py-1 backdrop-blur-sm"
-                >
-                  <div className="flex items-center gap-1 text-yellow-400">
-                    <Coins className="h-4 w-4" />
-                    <span className="font-bold">{pot.toLocaleString()}</span>
-                  </div>
-                </motion.div>
-              )}
-            </div>
+      <div className="flex-1 relative p-4 z-10">
+        {/* Poker Table - Vertical orientation */}
+        <div className="relative w-full max-w-xs mx-auto" style={{ aspectRatio: '3/4' }}>
+          {/* Table outer frame */}
+          <div 
+            className="absolute inset-0"
+            style={{
+              borderRadius: '45% 45% 45% 45% / 20% 20% 20% 20%',
+              background: 'linear-gradient(180deg, #5a6a7a 0%, #3d4a5a 20%, #2a3440 50%, #3d4a5a 80%, #5a6a7a 100%)',
+              boxShadow: '0 10px 60px rgba(0,0,0,0.9), 0 0 100px rgba(0,0,0,0.5), inset 0 2px 30px rgba(255,255,255,0.15)',
+              border: '1px solid rgba(255,255,255,0.08)'
+            }}
+          />
+          
+          {/* Leather rail */}
+          <div 
+            className="absolute"
+            style={{
+              top: '2%',
+              left: '3%',
+              right: '3%',
+              bottom: '2%',
+              borderRadius: '44% 44% 44% 44% / 19% 19% 19% 19%',
+              background: 'linear-gradient(180deg, #3a2820 0%, #2a1a14 30%, #1a0f0a 60%, #2a1a14 85%, #3a2820 100%)',
+              boxShadow: 'inset 0 5px 30px rgba(0,0,0,0.8)'
+            }}
+          />
+          
+          {/* Felt surface */}
+          <div 
+            className="absolute"
+            style={{
+              top: '4%',
+              left: '6%',
+              right: '6%',
+              bottom: '4%',
+              borderRadius: '40% 40% 40% 40% / 17% 17% 17% 17%',
+              background: 'radial-gradient(ellipse at 50% 30%, #2d5a3d 0%, #1a4a2e 30%, #0d3320 60%, #0a2818 100%)',
+              boxShadow: 'inset 0 0 80px rgba(0,0,0,0.4)'
+            }}
+          >
+            {/* Pot in center */}
+            {pot > 0 && (
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-black/50 rounded-lg px-4 py-2 backdrop-blur-sm border border-amber-500/30"
+              >
+                <div className="flex items-center gap-1.5 text-amber-400">
+                  <Coins className="h-4 w-4" />
+                  <span className="font-bold text-lg">{pot.toLocaleString()}</span>
+                </div>
+              </motion.div>
+            )}
 
             {/* Community Cards */}
-            <div className="absolute top-1/3 left-1/2 -translate-x-1/2 flex gap-1">
+            <div className="absolute top-[35%] left-1/2 -translate-x-1/2 flex gap-1">
               <AnimatePresence>
                 {communityCards.map((card, i) => (
                   <motion.div
@@ -350,13 +431,13 @@ export function TelegramMobileTable({
             </div>
           </div>
 
-          {/* Player Seats */}
-          {renderPlayerSeat(1, 'bottom-0 left-1/2 -translate-x-1/2 translate-y-8')}
-          {renderPlayerSeat(2, 'bottom-1/4 left-0 -translate-x-4')}
-          {renderPlayerSeat(3, 'top-1/4 left-0 -translate-x-4')}
-          {renderPlayerSeat(4, 'top-0 left-1/2 -translate-x-1/2 -translate-y-8')}
-          {renderPlayerSeat(5, 'top-1/4 right-0 translate-x-4')}
-          {renderPlayerSeat(6, 'bottom-1/4 right-0 translate-x-4')}
+          {/* Player Seats for vertical table */}
+          {renderPlayerSeat(1, 'bottom-0 left-1/2 -translate-x-1/2 translate-y-10')}
+          {renderPlayerSeat(2, 'bottom-[30%] left-0 -translate-x-6')}
+          {renderPlayerSeat(3, 'top-[30%] left-0 -translate-x-6')}
+          {renderPlayerSeat(4, 'top-0 left-1/2 -translate-x-1/2 -translate-y-10')}
+          {renderPlayerSeat(5, 'top-[30%] right-0 translate-x-6')}
+          {renderPlayerSeat(6, 'bottom-[30%] right-0 translate-x-6')}
         </div>
 
         {/* My Cards */}
@@ -373,7 +454,7 @@ export function TelegramMobileTable({
             animate={{ opacity: 1, y: 0 }}
             className="absolute bottom-24 left-1/2 -translate-x-1/2"
           >
-            <Badge className="bg-syndikate-orange text-white px-3 py-1">
+            <Badge className="bg-amber-600 text-white px-3 py-1 border border-amber-400/50">
               {myHandEvaluation.name}
             </Badge>
           </motion.div>
@@ -381,12 +462,12 @@ export function TelegramMobileTable({
       </div>
 
       {/* Actions */}
-      <div className="p-4 bg-syndikate-metal/80 backdrop-blur-lg border-t border-border">
+      <div className="relative z-10 p-4 bg-black/60 backdrop-blur-lg border-t border-amber-900/30">
         {gamePhase === 'waiting' ? (
           <div className="flex gap-2">
             <Button
               onClick={startDemoHand}
-              className="flex-1 bg-syndikate-orange hover:bg-syndikate-orange-glow"
+              className="flex-1 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white border border-amber-500/30"
             >
               <Zap className="h-4 w-4 mr-2" />
               Начать раздачу
@@ -394,7 +475,7 @@ export function TelegramMobileTable({
             <Button
               onClick={handleLeaveTable}
               variant="outline"
-              className="flex-1"
+              className="flex-1 border-white/20 text-white/80 hover:bg-white/10"
             >
               <X className="h-4 w-4 mr-2" />
               Покинуть стол
