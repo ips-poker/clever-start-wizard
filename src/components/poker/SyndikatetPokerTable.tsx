@@ -19,6 +19,11 @@ import { ConnectionStatusBanner } from './ConnectionStatusBanner';
 import { TableSettingsPanel, TableSettings } from './TableSettingsPanel';
 import { resolveAvatarUrl } from '@/utils/avatarResolver';
 
+// PPPoker-style components
+import { PPPokerTimerRing, PPPokerTimerBadge } from './PPPokerTimerRing';
+import { PPPokerChips3D, PPPokerBetDisplay } from './PPPokerChips3D';
+import { PPPokerDealerButton, PPPokerBlindButton } from './PPPokerDealerButton';
+
 // Syndikate branding
 import syndikateLogo from '@/assets/syndikate-logo-main.png';
 
@@ -143,55 +148,8 @@ const PPPokerCard = memo(function PPPokerCard({
   );
 });
 
-// ============= TIMER RING - PPPoker Style (Green circular timer) =============
-const TimerRing = memo(function TimerRing({ 
-  remaining, 
-  total,
-  size = 64
-}: { 
-  remaining: number; 
-  total: number;
-  size?: number;
-}) {
-  const progress = Math.max(0, Math.min(1, remaining / total));
-  const radius = size / 2 - 3;
-  const circumference = 2 * Math.PI * radius;
-  const strokeDashoffset = circumference * (1 - progress);
-  const isWarning = progress < 0.3;
-  const isCritical = progress < 0.15;
-  
-  // PPPoker uses thick bright green ring
-  const strokeColor = isCritical ? "#ef4444" : isWarning ? "#f59e0b" : "#22c55e";
-
-  return (
-    <svg 
-      className="absolute pointer-events-none"
-      width={size}
-      height={size}
-      style={{ left: '50%', top: '50%', transform: 'translate(-50%, -50%) rotate(-90deg)' }}
-    >
-      {/* Background ring */}
-      <circle 
-        cx={size/2} cy={size/2} r={radius} 
-        fill="none" 
-        stroke="rgba(0,0,0,0.4)" 
-        strokeWidth="4"
-      />
-      {/* Progress ring */}
-      <circle
-        cx={size/2} cy={size/2} r={radius}
-        fill="none"
-        stroke={strokeColor}
-        strokeWidth="4"
-        strokeLinecap="round"
-        strokeDasharray={circumference}
-        strokeDashoffset={strokeDashoffset}
-        className={cn("transition-all duration-200", isCritical && "animate-pulse")}
-        style={{ filter: `drop-shadow(0 0 6px ${strokeColor})` }}
-      />
-    </svg>
-  );
-});
+// ============= TIMER RING - Using PPPoker Premium Component =============
+// Replaced with imported PPPokerTimerRing from ./PPPokerTimerRing.tsx
 
 // ============= PLAYER SEAT - PPPoker Premium Style =============
 const PlayerSeat = memo(function PlayerSeat({
@@ -351,40 +309,25 @@ const PlayerSeat = memo(function PlayerSeat({
         )}
       </AnimatePresence>
 
-      {/* Timer ring around avatar - PPPoker style */}
+      {/* Timer ring around avatar - PPPoker Premium style with smooth animation */}
       {showTurnTimer && turnTimeRemaining !== undefined && (
-        <TimerRing remaining={turnTimeRemaining} total={turnDuration} size={avatarSize + 10}/>
+        <PPPokerTimerRing 
+          remaining={turnTimeRemaining} 
+          total={turnDuration} 
+          size={avatarSize + 16}
+          enableGlow={true}
+          strokeWidth={5}
+        />
       )}
       
-      {/* Timer display - PPPoker style with green background (for hero only) */}
+      {/* Timer badge - PPPoker Premium style with digital display (for hero only) */}
       {isHero && isCurrentTurn && turnTimeRemaining !== undefined && turnTimeRemaining > 0 && (
-        <motion.div 
-          initial={{ opacity: 0, scale: 0.8, x: -10 }}
-          animate={{ opacity: 1, scale: 1, x: 0 }}
-          className={cn("absolute z-30 flex items-center gap-1.5 rounded-full",
-            isMobile ? "-left-16 px-2 py-1" : "-left-20 px-2.5 py-1"
-          )}
-          style={{ 
-            top: '50%', 
-            transform: 'translateY(-50%)',
-            background: turnTimeRemaining <= 5 
-              ? 'linear-gradient(135deg, #dc2626, #b91c1c)'
-              : turnTimeRemaining <= 10 
-                ? 'linear-gradient(135deg, #f59e0b, #d97706)'
-                : 'linear-gradient(135deg, #22c55e, #16a34a)',
-            boxShadow: turnTimeRemaining <= 5 
-              ? '0 0 15px rgba(220,38,38,0.5)'
-              : turnTimeRemaining <= 10
-                ? '0 0 15px rgba(245,158,11,0.5)'
-                : '0 0 15px rgba(34,197,94,0.5)',
-            border: '1px solid rgba(255,255,255,0.2)'
-          }}
-        >
-          <span className={cn("text-white", isMobile ? "text-sm" : "text-base")}>⏱️</span>
-          <span className={cn("font-bold tabular-nums text-white", isMobile ? "text-[11px]" : "text-sm")}>
-            {Math.floor(turnTimeRemaining / 60).toString().padStart(2, '0')}:{(turnTimeRemaining % 60).toString().padStart(2, '0')}
-          </span>
-        </motion.div>
+        <PPPokerTimerBadge 
+          remaining={turnTimeRemaining}
+          total={turnDuration}
+          position="left"
+          isMobile={isMobile}
+        />
       )}
 
       {/* Avatar container with enhanced turn indicator */}
@@ -433,46 +376,26 @@ const PlayerSeat = memo(function PlayerSeat({
         )}
       </div>
 
-      {/* Dealer button - PPPoker Premium Style */}
+      {/* Dealer button - PPPoker Premium 3D Style */}
       {isDealer && (
-        <motion.div 
-          initial={{ scale: 0, rotate: -180 }}
-          animate={{ scale: 1, rotate: 0 }}
-          transition={{ type: 'spring', stiffness: 400, damping: 20 }}
-          className={cn("absolute rounded-full flex items-center justify-center z-20",
-            isMobile ? "-right-2 -top-2 w-6 h-6" : "-right-2 -top-1 w-7 h-7"
-          )}
-          style={{
-            background: 'linear-gradient(145deg, #fef3c7 0%, #fbbf24 30%, #f59e0b 70%, #d97706 100%)',
-            boxShadow: '0 2px 8px rgba(245,158,11,0.5), 0 4px 12px rgba(0,0,0,0.3), inset 0 1px 2px rgba(255,255,255,0.6)',
-            border: '2px solid #92400e'
-          }}
-        >
-          <span className={cn("font-black text-amber-900", isMobile ? "text-[9px]" : "text-[11px]")}>D</span>
-          {/* Shine effect */}
-          <div className="absolute inset-[2px] rounded-full overflow-hidden pointer-events-none">
-            <div className="absolute -top-1/2 -left-1/2 w-full h-full bg-gradient-to-br from-white/40 to-transparent rotate-45"/>
-          </div>
-        </motion.div>
+        <PPPokerDealerButton 
+          size={isMobile ? 'sm' : 'md'} 
+          position="top-right" 
+          animated={true}
+        />
       )}
 
-      {/* SB/BB indicator */}
+      {/* SB/BB indicator - PPPoker Premium Style */}
       {(isSB || isBB) && (
-        <motion.div 
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          className={cn("absolute rounded-full text-white font-bold flex items-center justify-center z-20",
-            isMobile ? "-left-1 -bottom-1 w-4 h-4 text-[6px]" : "-left-1 bottom-0 w-5 h-5 text-[8px]"
-          )}
-          style={{
-            background: isBB 
-              ? 'linear-gradient(135deg, #f59e0b, #d97706)' 
-              : 'linear-gradient(135deg, #3b82f6, #2563eb)',
-            boxShadow: '0 2px 6px rgba(0,0,0,0.4)'
-          }}
-        >
-          {isBB ? 'BB' : 'SB'}
-        </motion.div>
+        <div className={cn("absolute z-20", 
+          isMobile ? "-left-1 -bottom-1" : "-left-1 bottom-0"
+        )}>
+          <PPPokerBlindButton 
+            type={isBB ? 'BB' : 'SB'} 
+            size={isMobile ? 'sm' : 'md'} 
+            animated={true}
+          />
+        </div>
       )}
 
       {/* Player name plate - PPPoker Premium Style */}
