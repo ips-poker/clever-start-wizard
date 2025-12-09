@@ -575,53 +575,49 @@ serve(async (req) => {
 
                 result = { success: true, action, amount: actionAmount, handComplete: true, winner: winner.player_id, winAmount: newPot };
               } else {
-                // Check round completion
-                let roundComplete = true;
+                // Get all actions for proper round completion check
+                const { data: allActions } = await supabase
+                  .from('poker_actions')
+                  .select('player_id, action_type, phase')
+                  .eq('hand_id', hand.id);
                 
-                for (const p of remaining) {
-                  if (p.is_all_in) continue;
-                  const currentBet = p.player_id === playerId ? newBet : p.bet_amount;
-                  if (currentBet < newCurrentBet) {
-                    roundComplete = false;
-                    break;
-                  }
-                }
+                // Convert to GamePlayer format for core engine
+                const gamePlayers: GamePlayer[] = (allHp || []).map(p => {
+                  const ptp = tablePlayers?.find(t => t.player_id === p.player_id);
+                  return {
+                    id: p.player_id,
+                    seatNumber: p.seat_number,
+                    stack: p.player_id === playerId ? newStack : (ptp?.stack || 0),
+                    betAmount: p.player_id === playerId ? newBet : p.bet_amount,
+                    holeCards: p.hole_cards || [],
+                    isFolded: p.is_folded || (p.player_id === playerId && isFolded),
+                    isAllIn: p.is_all_in || (p.player_id === playerId && isAllIn),
+                    isSittingOut: false
+                  };
+                });
                 
-                // Preflop BB option
-                if (roundComplete && hand.phase === 'preflop') {
-                  const bbPlayer = remaining.find(p => p.seat_number === hand.big_blind_seat);
-                  if (bbPlayer && !bbPlayer.is_all_in && bbPlayer.player_id !== playerId) {
-                    const { data: preflopActions } = await supabase
-                      .from('poker_actions')
-                      .select('action_type, amount')
-                      .eq('hand_id', hand.id)
-                      .eq('phase', 'preflop');
-                    
-                    const hasRaise = preflopActions?.some(a => 
-                      a.action_type === 'raise' || a.action_type === 'all_in'
-                    );
-                    
-                    const bbHasActed = preflopActions?.some(a => 
-                      allHp?.find(hp => hp.player_id === bbPlayer.player_id)?.seat_number === hand.big_blind_seat &&
-                      ['check', 'raise', 'call', 'fold'].includes(a.action_type)
-                    );
-                    
-                    if (!hasRaise && !bbHasActed && newCurrentBet === table.big_blind) {
-                      roundComplete = false;
-                    }
-                  }
-                }
+                // Convert actions for core engine
+                const actionsList = (allActions || []).map(a => ({
+                  playerId: a.player_id,
+                  type: a.action_type,
+                  phase: a.phase
+                }));
                 
-                if (active.length === 0 && remaining.length > 1) {
-                  roundComplete = true;
+                // Use core engine function for proper round completion check
+                let roundComplete = isBettingRoundComplete(
+                  gamePlayers,
+                  newCurrentBet,
+                  hand.phase as GamePhase,
+                  hand.big_blind_seat,
+                  actionsList
+                );
+                
+                // If raise or all-in with higher bet, round is not complete
+                if ((action === 'raise' || action === 'all_in') && newBet > hand.current_bet) {
+                  roundComplete = false;
                 }
                 
                 let nextPlayer = findNextActivePlayer(allHp || [], tp.seat_number, playerId);
-                
-                if ((action === 'raise' || action === 'all_in') && newBet > hand.current_bet) {
-                  roundComplete = false;
-                  nextPlayer = findNextActivePlayer(allHp || [], tp.seat_number, playerId);
-                }
 
                 console.log(`[Engine] Round complete: ${roundComplete}, next: ${nextPlayer?.seat_number}, phase: ${hand.phase}`);
 
