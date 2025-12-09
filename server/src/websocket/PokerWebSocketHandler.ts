@@ -99,7 +99,8 @@ export class PokerWebSocketHandler {
       timestamp: Date.now(),
       tableId,
       playerId,
-      serverVersion: '1.0.0'
+      serverVersion: '3.0.0',
+      engine: 'Professional Poker Engine v3.0'
     });
     
     // Auto-subscribe to table if provided in URL

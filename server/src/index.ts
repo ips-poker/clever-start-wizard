@@ -1,6 +1,9 @@
 /**
- * Syndikatet Poker Server v1.0
- * Production-ready Node.js server with WebSocket support
+ * Syndikatet Poker Server v3.0
+ * Professional Poker Engine with tournament-grade security
+ * 
+ * Supported games: Texas Hold'em, Omaha, Short Deck, Pineapple, Chinese Poker
+ * Features: CSPRNG with audit logs, side pots, Run It Twice, Tournament Manager
  */
 
 import express from 'express';
@@ -59,7 +62,9 @@ app.get('/health', (req, res) => {
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
     memory: process.memoryUsage(),
-    version: '1.0.0'
+    version: '3.0.0',
+    engine: 'Professional Poker Engine v3.0',
+    features: ['texas_holdem', 'omaha', 'short_deck', 'pineapple', 'chinese_poker', 'csprng', 'side_pots', 'run_it_twice', 'tournaments']
   });
 });
 
