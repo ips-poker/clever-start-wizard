@@ -175,9 +175,9 @@ export const TelegramApp = () => {
     if (!userStats) return;
     
     try {
-      // First try to get existing balance
+      // Get balance from diamond_wallets (used for online poker)
       const { data, error } = await supabase
-        .from('player_balances')
+        .from('diamond_wallets')
         .select('balance')
         .eq('player_id', userStats.id)
         .maybeSingle();
@@ -185,16 +185,9 @@ export const TelegramApp = () => {
       if (data) {
         setPlayerBalance(data.balance);
       } else if (!error || error.code === 'PGRST116') {
-        // No balance exists - use RPC function to create it (bypasses RLS)
-        const { data: newBalance, error: rpcError } = await supabase
-          .rpc('ensure_player_balance', { p_player_id: userStats.id });
-        
-        if (!rpcError && newBalance !== null) {
-          setPlayerBalance(newBalance);
-        } else {
-          // Fallback: set default balance in UI
-          setPlayerBalance(10000);
-        }
+        // No wallet exists - it will be created when player joins a table
+        // Show default balance in UI
+        setPlayerBalance(10000);
       }
     } catch (error) {
       console.error('Error fetching player balance:', error);
