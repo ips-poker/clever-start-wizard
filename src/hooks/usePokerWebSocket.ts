@@ -91,14 +91,14 @@ export function usePokerWebSocket({
     }
   });
 
-  // Build WebSocket URL - Production Node.js server on VPS
+  // Build WebSocket URL - Production Node.js server on VPS cv5500219
   const wsUrl = useMemo(() => {
-    // VPS Server: 89.111.155.224
+    // VPS Server: 89.104.74.121 (cv5500219) - poker-server running on /var/www/poker-server
     // Use ws:// for HTTP, wss:// for HTTPS
     const isLocalhost = window.location.hostname === 'localhost';
     const base = isLocalhost 
-      ? 'ws://89.111.155.224:3001'  // Direct connection for local dev
-      : 'wss://89.111.155.224';      // Via Nginx with SSL for production
+      ? 'ws://89.104.74.121:3001'  // Direct connection for local dev
+      : 'wss://89.104.74.121';      // Via Nginx with SSL for production
     return `${base}/ws/poker?tableId=${tableId}&playerId=${playerId}`;
   }, [tableId, playerId]);
 
