@@ -91,9 +91,14 @@ export function usePokerWebSocket({
     }
   });
 
-  // Build WebSocket URL - Production Node.js server
+  // Build WebSocket URL - Production Node.js server on VPS
   const wsUrl = useMemo(() => {
-    const base = 'wss://poker.syndicate-poker.ru';
+    // VPS Server: 89.111.155.224
+    // Use ws:// for HTTP, wss:// for HTTPS
+    const isLocalhost = window.location.hostname === 'localhost';
+    const base = isLocalhost 
+      ? 'ws://89.111.155.224:3001'  // Direct connection for local dev
+      : 'wss://89.111.155.224';      // Via Nginx with SSL for production
     return `${base}/ws/poker?tableId=${tableId}&playerId=${playerId}`;
   }, [tableId, playerId]);
 
