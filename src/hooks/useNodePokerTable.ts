@@ -552,9 +552,17 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
     setConnectionStatus('disconnected');
   }, [tableId, playerId, clearTimers, sendMessage]);
 
-  // Join table
+  // Join table - ensure buyIn is at least the table minimum
   const joinTable = useCallback((seat: number) => {
     if (!tableId || !playerId) return;
+
+    // Get table min buy-in from state, default to 200 if not available
+    // Server will also validate, but we should send a valid amount
+    const tableBigBlind = tableState?.bigBlindAmount || 20;
+    const estimatedMinBuyIn = tableBigBlind * 10; // Typical min is 10x BB
+    const effectiveBuyIn = Math.max(buyIn, estimatedMinBuyIn, 200);
+    
+    log('🎰 Joining table with buyIn:', { original: buyIn, effective: effectiveBuyIn, tableBB: tableBigBlind });
 
     sendMessage({
       type: 'join_table',
@@ -562,9 +570,9 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
       playerId,
       playerName,
       seatNumber: seat,
-      buyIn
+      buyIn: effectiveBuyIn
     });
-  }, [tableId, playerId, playerName, buyIn, sendMessage]);
+  }, [tableId, playerId, playerName, buyIn, tableState?.bigBlindAmount, sendMessage]);
 
   // Leave table
   const leaveTable = useCallback(() => {
