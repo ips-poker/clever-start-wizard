@@ -21,12 +21,13 @@ interface PPPokerCardProps {
   className?: string;
 }
 
+// INCREASED SIZES for better visibility - PPPoker Premium
 const SIZE_CONFIG = {
-  xs: { w: 28, h: 40, rank: 10, suit: 12, corner: 0.5 },
-  sm: { w: 36, h: 50, rank: 13, suit: 15, corner: 0.55 },
-  md: { w: 48, h: 68, rank: 16, suit: 20, corner: 0.6 },
-  lg: { w: 60, h: 84, rank: 20, suit: 26, corner: 0.6 },
-  xl: { w: 72, h: 100, rank: 24, suit: 32, corner: 0.6 }
+  xs: { w: 34, h: 48, rank: 12, suit: 14, corner: 0.5 },
+  sm: { w: 44, h: 62, rank: 15, suit: 18, corner: 0.55 },
+  md: { w: 56, h: 78, rank: 18, suit: 24, corner: 0.6 },
+  lg: { w: 68, h: 94, rank: 22, suit: 30, corner: 0.6 },
+  xl: { w: 84, h: 116, rank: 28, suit: 38, corner: 0.6 }
 };
 
 // Card back pattern SVG
