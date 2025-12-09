@@ -329,6 +329,7 @@ export class PokerTable {
     // Sync hand state from engine
     const engineState = this.engine.getState();
     if (engineState) {
+      const prevPhase = this.currentHand.phase;
       this.currentHand.phase = this.mapPhase(engineState.phase);
       this.currentHand.pot = engineState.pot;
       this.currentHand.communityCards = engineState.communityCards;
@@ -336,14 +337,37 @@ export class PokerTable {
       this.currentHand.currentPlayerSeat = engineState.currentPlayerSeat;
       this.currentHand.minRaise = engineState.minRaise;
       this.currentHand.sidePots = engineState.sidePots || [];
+      
+      // CRITICAL: Sync player bets from engine state (especially after phase change)
+      // When phase advances, engine resets player betAmount to 0
+      if (result.phaseAdvanced || prevPhase !== this.currentHand.phase) {
+        for (const enginePlayer of engineState.players) {
+          const tablePlayer = this.players.get(enginePlayer.id);
+          if (tablePlayer) {
+            tablePlayer.currentBet = enginePlayer.betAmount;
+            tablePlayer.stack = enginePlayer.stack;
+            tablePlayer.isFolded = enginePlayer.isFolded;
+            tablePlayer.isAllIn = enginePlayer.isAllIn;
+          }
+        }
+      }
     }
     
-    // Emit action event
+    // Emit action event with player bet info
     this.emit('action', {
       playerId,
       actionType,
       amount: result.amount || 0,
       pot: this.currentHand?.pot || 0,
+      phase: this.currentHand?.phase || 'preflop',
+      playerBet: player.currentBet  // Include updated player bet
+    });
+    
+    // CRITICAL: Always emit state update so all clients see updated bets
+    this.emit('state_update', {
+      pot: this.currentHand?.pot || 0,
+      currentBet: this.currentHand?.currentBet || 0,
+      currentPlayerSeat: this.currentHand?.currentPlayerSeat,
       phase: this.currentHand?.phase || 'preflop'
     });
     
