@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { PokerTableLobby } from '@/components/poker/PokerTableLobby';
@@ -13,12 +13,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
-import { ArrowLeft, User, LogOut, Trophy, Table2, History, BarChart3, X } from 'lucide-react';
+import { ArrowLeft, User, LogOut, Trophy, Table2, History, BarChart3, X, GripHorizontal } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
+import { motion } from 'framer-motion';
 
 export default function OnlinePoker() {
   const { user, userProfile, isAuthenticated, loading: authLoading } = useAuth();
@@ -246,95 +246,100 @@ export default function OnlinePoker() {
             </Card>
           </div>
         ) : (
-          // Lobby with Cash Games and Tournaments tabs + Table Modal
+          // Lobby with Cash Games and Tournaments tabs + Draggable Table Window
           <>
-            {/* Table Modal - opens table as overlay for multi-tabling */}
-            <Dialog open={!!activeTable} onOpenChange={(open) => !open && handleLeaveTable()}>
-              <DialogContent 
-                className="max-w-[95vw] w-[900px] h-[90vh] p-0 border-none overflow-hidden"
+            {/* Draggable Table Window */}
+            {activeTable && playerId && (
+              <motion.div
+                drag
+                dragMomentum={false}
+                dragElastic={0}
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                className="fixed z-50 rounded-xl overflow-hidden shadow-2xl"
                 style={{ 
-                  maxHeight: '90vh',
+                  width: '420px',
+                  height: '680px',
+                  top: '50%',
+                  left: '50%',
+                  x: '-50%',
+                  y: '-50%',
                   background: 'linear-gradient(180deg, #0a0a0a 0%, #1a0a0a 15%, #0d1a0d 50%, #0a0a0a 85%, #0a0505 100%)',
+                  border: '1px solid rgba(251,191,36,0.2)',
+                  boxShadow: '0 25px 80px rgba(0,0,0,0.8), 0 0 40px rgba(0,0,0,0.5)'
                 }}
               >
-                {activeTable && playerId && (
-                  <div className="relative w-full h-full overflow-hidden">
-                    {/* Mafia syndicate atmospheric background */}
-                    <div className="absolute inset-0 pointer-events-none">
-                      {/* Dark vignette edges */}
-                      <div className="absolute inset-0" style={{
-                        background: 'radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,0.8) 100%)'
-                      }} />
-                      
-                      {/* Subtle smoke/fog effect */}
-                      <div className="absolute inset-0 opacity-20" style={{
-                        backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='smoke'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.01' numOctaves='3' result='noise'/%3E%3CfeDisplacementMap in='SourceGraphic' in2='noise' scale='50'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23smoke)' fill='%23334433'/%3E%3C/svg%3E")`,
-                        animation: 'pulse 8s ease-in-out infinite'
-                      }} />
-                      
-                      {/* Golden accent lights */}
-                      <div className="absolute top-0 left-1/4 w-64 h-64 opacity-10" style={{
-                        background: 'radial-gradient(circle, rgba(251,191,36,0.4) 0%, transparent 70%)',
-                        filter: 'blur(40px)'
-                      }} />
-                      <div className="absolute bottom-0 right-1/4 w-64 h-64 opacity-10" style={{
-                        background: 'radial-gradient(circle, rgba(251,191,36,0.3) 0%, transparent 70%)',
-                        filter: 'blur(40px)'
-                      }} />
-                      
-                      {/* Subtle red accent for mafia vibe */}
-                      <div className="absolute top-1/3 right-0 w-48 h-96 opacity-5" style={{
-                        background: 'radial-gradient(ellipse, rgba(220,38,38,0.5) 0%, transparent 70%)',
-                        filter: 'blur(60px)'
-                      }} />
-                      
-                      {/* Art deco corner decorations */}
-                      <svg className="absolute top-4 left-4 w-16 h-16 opacity-10" viewBox="0 0 100 100">
-                        <path d="M0 0 L100 0 L100 20 L20 20 L20 100 L0 100 Z" fill="rgba(251,191,36,0.5)" />
-                        <path d="M30 30 L70 30 L70 35 L35 35 L35 70 L30 70 Z" fill="rgba(251,191,36,0.3)" />
-                      </svg>
-                      <svg className="absolute top-4 right-4 w-16 h-16 opacity-10 rotate-90" viewBox="0 0 100 100">
-                        <path d="M0 0 L100 0 L100 20 L20 20 L20 100 L0 100 Z" fill="rgba(251,191,36,0.5)" />
-                        <path d="M30 30 L70 30 L70 35 L35 35 L35 70 L30 70 Z" fill="rgba(251,191,36,0.3)" />
-                      </svg>
-                      <svg className="absolute bottom-4 left-4 w-16 h-16 opacity-10 -rotate-90" viewBox="0 0 100 100">
-                        <path d="M0 0 L100 0 L100 20 L20 20 L20 100 L0 100 Z" fill="rgba(251,191,36,0.5)" />
-                        <path d="M30 30 L70 30 L70 35 L35 35 L35 70 L30 70 Z" fill="rgba(251,191,36,0.3)" />
-                      </svg>
-                      <svg className="absolute bottom-4 right-4 w-16 h-16 opacity-10 rotate-180" viewBox="0 0 100 100">
-                        <path d="M0 0 L100 0 L100 20 L20 20 L20 100 L0 100 Z" fill="rgba(251,191,36,0.5)" />
-                        <path d="M30 30 L70 30 L70 35 L35 35 L35 70 L30 70 Z" fill="rgba(251,191,36,0.3)" />
-                      </svg>
-                      
-                      {/* Subtle pattern overlay */}
-                      <div className="absolute inset-0 opacity-[0.02]" style={{
-                        backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 0 L60 30 L30 60 L0 30 Z' fill='none' stroke='%23fbbf24' stroke-width='0.5'/%3E%3C/svg%3E")`,
-                        backgroundSize: '30px 30px'
-                      }} />
-                    </div>
+                {/* Drag handle */}
+                <div className="absolute top-0 left-0 right-0 h-8 cursor-move z-50 flex items-center justify-center bg-gradient-to-b from-black/80 to-transparent">
+                  <GripHorizontal className="h-4 w-4 text-amber-500/50" />
+                </div>
+                
+                <div className="relative w-full h-full overflow-hidden">
+                  {/* Mafia syndicate atmospheric background */}
+                  <div className="absolute inset-0 pointer-events-none">
+                    {/* Dark vignette edges */}
+                    <div className="absolute inset-0" style={{
+                      background: 'radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,0.8) 100%)'
+                    }} />
                     
-                    {/* Close button */}
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="absolute top-3 right-3 z-50 bg-black/60 hover:bg-black/80 text-white/80 hover:text-white rounded-full border border-amber-900/30"
-                      onClick={handleLeaveTable}
-                    >
-                      <X className="h-5 w-5" />
-                    </Button>
+                    {/* Subtle smoke/fog effect */}
+                    <div className="absolute inset-0 opacity-20" style={{
+                      backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='smoke'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.01' numOctaves='3' result='noise'/%3E%3CfeDisplacementMap in='SourceGraphic' in2='noise' scale='50'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23smoke)' fill='%23334433'/%3E%3C/svg%3E")`,
+                    }} />
                     
-                    <OnlinePokerTable
-                      tableId={activeTable.id}
-                      playerId={playerId}
-                      buyIn={activeTable.buyIn}
-                      isTournament={activeTable.isTournament}
-                      tournamentId={activeTable.isTournament ? activeTable.id : undefined}
-                      onLeave={handleLeaveTable}
-                    />
+                    {/* Golden accent lights */}
+                    <div className="absolute top-0 left-1/4 w-40 h-40 opacity-15" style={{
+                      background: 'radial-gradient(circle, rgba(251,191,36,0.4) 0%, transparent 70%)',
+                      filter: 'blur(30px)'
+                    }} />
+                    <div className="absolute bottom-0 right-1/4 w-40 h-40 opacity-15" style={{
+                      background: 'radial-gradient(circle, rgba(251,191,36,0.3) 0%, transparent 70%)',
+                      filter: 'blur(30px)'
+                    }} />
+                    
+                    {/* Art deco corner decorations */}
+                    <svg className="absolute top-8 left-3 w-10 h-10 opacity-15" viewBox="0 0 100 100">
+                      <path d="M0 0 L100 0 L100 20 L20 20 L20 100 L0 100 Z" fill="rgba(251,191,36,0.5)" />
+                    </svg>
+                    <svg className="absolute top-8 right-3 w-10 h-10 opacity-15 rotate-90" viewBox="0 0 100 100">
+                      <path d="M0 0 L100 0 L100 20 L20 20 L20 100 L0 100 Z" fill="rgba(251,191,36,0.5)" />
+                    </svg>
+                    <svg className="absolute bottom-3 left-3 w-10 h-10 opacity-15 -rotate-90" viewBox="0 0 100 100">
+                      <path d="M0 0 L100 0 L100 20 L20 20 L20 100 L0 100 Z" fill="rgba(251,191,36,0.5)" />
+                    </svg>
+                    <svg className="absolute bottom-3 right-3 w-10 h-10 opacity-15 rotate-180" viewBox="0 0 100 100">
+                      <path d="M0 0 L100 0 L100 20 L20 20 L20 100 L0 100 Z" fill="rgba(251,191,36,0.5)" />
+                    </svg>
+                    
+                    {/* Subtle pattern overlay */}
+                    <div className="absolute inset-0 opacity-[0.02]" style={{
+                      backgroundImage: `url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M20 0 L40 20 L20 40 L0 20 Z' fill='none' stroke='%23fbbf24' stroke-width='0.5'/%3E%3C/svg%3E")`,
+                      backgroundSize: '20px 20px'
+                    }} />
                   </div>
-                )}
-              </DialogContent>
-            </Dialog>
+                  
+                  {/* Close button */}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="absolute top-1 right-1 z-50 bg-black/60 hover:bg-black/80 text-white/80 hover:text-white rounded-full border border-amber-900/30 h-7 w-7"
+                    onClick={handleLeaveTable}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                  
+                  <OnlinePokerTable
+                    tableId={activeTable.id}
+                    playerId={playerId}
+                    buyIn={activeTable.buyIn}
+                    isTournament={activeTable.isTournament}
+                    tournamentId={activeTable.isTournament ? activeTable.id : undefined}
+                    onLeave={handleLeaveTable}
+                  />
+                </div>
+              </motion.div>
+            )}
             
             <div className="max-w-4xl mx-auto space-y-6">
               <PlayerBalanceCard 
