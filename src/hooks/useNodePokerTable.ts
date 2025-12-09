@@ -229,19 +229,37 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
           break;
 
         case 'joined_table':
-          log('✅ Joined table:', tableId, data);
+          log('✅ Joined table:', tableId, 'Full data:', JSON.stringify(data));
           // Extract seat and state from join response
+          // Server sends: { type: 'joined_table', tableId, state: { mySeat, myCards, players, ... } }
           if (data.state && tableId) {
+            const stateData = data.state as Record<string, unknown>;
+            log('🎯 State received:', JSON.stringify(stateData).substring(0, 500));
+            
             setTableState(transformServerState(data.state, tableId));
             
-            const stateData = data.state as Record<string, unknown>;
             if (stateData.myCards) {
               setMyCards(stateData.myCards as string[]);
+              log('🃏 My cards set:', stateData.myCards);
             }
             if (stateData.mySeat !== undefined && stateData.mySeat !== null) {
-              setMySeat(stateData.mySeat as number);
-              log('🎯 My seat set after join:', stateData.mySeat);
+              const seatNum = stateData.mySeat as number;
+              setMySeat(seatNum);
+              log('🎯 My seat set after join:', seatNum);
+            } else {
+              log('⚠️ mySeat not in state, checking players...');
+              // Fallback: find myself in players array
+              const playersData = stateData.players as Array<Record<string, unknown>> | undefined;
+              if (playersData && playerId) {
+                const myPlayer = playersData.find(p => p.playerId === playerId || p.id === playerId);
+                if (myPlayer && myPlayer.seatNumber !== undefined) {
+                  setMySeat(myPlayer.seatNumber as number);
+                  log('🎯 My seat found in players:', myPlayer.seatNumber);
+                }
+              }
             }
+          } else {
+            log('⚠️ No state in joined_table response, data keys:', Object.keys(data as object));
           }
           break;
 
