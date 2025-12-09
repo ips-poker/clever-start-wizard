@@ -163,7 +163,8 @@ export class PokerEngine {
       bigBlind, // Store BB for postflop min bet
       sidePots: [],
       deck,
-      actionStartTime: null
+      actionStartTime: null,
+      playersActedThisRound: new Set<string>() // Track actions per round
     };
   }
   
@@ -207,6 +208,9 @@ export class PokerEngine {
   private processFold(handState: HandState, player: Player, players: Player[]): ActionResult {
     player.isFolded = true;
     
+    // Mark player as having acted (folded players don't need to act again)
+    handState.playersActedThisRound.add(player.id);
+    
     const result = this.advanceAction(handState, players, player);
     return { success: true, isFolded: true, ...result };
   }
@@ -215,6 +219,9 @@ export class PokerEngine {
     if (player.currentBet < handState.currentBet) {
       return { success: false, error: 'Cannot check, must call or fold' };
     }
+    
+    // Mark player as having acted this round
+    handState.playersActedThisRound.add(player.id);
     
     const result = this.advanceAction(handState, players, player);
     return { success: true, ...result };
@@ -231,6 +238,9 @@ export class PokerEngine {
     if (player.stack === 0) {
       player.isAllIn = true;
     }
+    
+    // Mark player as having acted
+    handState.playersActedThisRound.add(player.id);
     
     const result = this.advanceAction(handState, players, player);
     return { success: true, amount: actualAmount, isAllIn: player.isAllIn, ...result };
@@ -273,6 +283,10 @@ export class PokerEngine {
     handState.currentBet = player.currentBet;
     handState.lastAggressor = player.id;
     
+    // Clear acted set since everyone needs to respond to the raise (except aggressor)
+    handState.playersActedThisRound.clear();
+    handState.playersActedThisRound.add(player.id);
+    
     if (player.stack === 0) {
       player.isAllIn = true;
     }
@@ -296,7 +310,12 @@ export class PokerEngine {
       }
       handState.currentBet = player.currentBet;
       handState.lastAggressor = player.id;
+      // Clear acted set since this is a raise
+      handState.playersActedThisRound.clear();
     }
+    
+    // Mark player as having acted
+    handState.playersActedThisRound.add(player.id);
     
     const result = this.advanceAction(handState, players, player);
     return { success: true, amount: allInAmount, isAllIn: true, ...result };
@@ -317,24 +336,42 @@ export class PokerEngine {
       };
     }
     
-    // Find next player to act
-    const playersToAct = activePlayers.filter(p => 
-      !p.isAllIn && 
-      (p.currentBet < handState.currentBet || (handState.lastAggressor === null && p.seatNumber > currentPlayer.seatNumber))
-    );
+    // Players who can still act (not folded, not all-in)
+    const canActPlayers = activePlayers.filter(p => !p.isAllIn);
+    
+    // Determine who still needs to act:
+    // 1. Players who haven't matched the current bet
+    // 2. OR if no aggression (currentBet = 0), players who haven't acted this round
+    const playersToAct = canActPlayers.filter(p => {
+      // Must call if behind on bet
+      if (p.currentBet < handState.currentBet) {
+        return true;
+      }
+      // If there was a raise, everyone needs to respond except the last aggressor
+      if (handState.lastAggressor !== null && p.id !== handState.lastAggressor) {
+        return !handState.playersActedThisRound.has(p.id);
+      }
+      // No aggression (all checks) - hasn't acted yet this round
+      if (handState.currentBet === 0 && !handState.playersActedThisRound.has(p.id)) {
+        return true;
+      }
+      return false;
+    });
     
     if (playersToAct.length === 0) {
       // Round complete, advance phase
       return this.advancePhase(handState, players);
     }
     
-    // Find next player
-    const nextPlayer = playersToAct.sort((a, b) => {
+    // Find next player in order after current player
+    const sortedToAct = playersToAct.sort((a, b) => {
+      // Wrap around table positions
       const aPos = a.seatNumber > currentPlayer.seatNumber ? a.seatNumber : a.seatNumber + 100;
       const bPos = b.seatNumber > currentPlayer.seatNumber ? b.seatNumber : b.seatNumber + 100;
       return aPos - bPos;
-    })[0];
+    });
     
+    const nextPlayer = sortedToAct[0];
     handState.currentPlayerSeat = nextPlayer.seatNumber;
     
     return { newHandState: handState };
@@ -355,6 +392,8 @@ export class PokerEngine {
     handState.lastAggressor = null;
     // Reset minRaise to BB for new street (min bet = BB)
     handState.minRaise = handState.bigBlind;
+    // Clear players acted for new betting round
+    handState.playersActedThisRound.clear();
     
     const phases = ['preflop', 'flop', 'turn', 'river', 'showdown'] as const;
     const currentIdx = phases.indexOf(handState.phase as typeof phases[number]);

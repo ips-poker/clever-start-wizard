@@ -38,6 +38,7 @@ export interface HandState {
   sidePots: { amount: number; eligiblePlayers: string[] }[];
   deck: string[];
   actionStartTime: number | null;
+  playersActedThisRound: Set<string>; // Track who has acted in current betting round
 }
 
 type TableEventCallback = (event: TableEvent) => void;
