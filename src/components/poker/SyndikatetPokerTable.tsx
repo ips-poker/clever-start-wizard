@@ -23,6 +23,7 @@ import { resolveAvatarUrl } from '@/utils/avatarResolver';
 import { PPPokerTimerRing, PPPokerTimerBadge } from './PPPokerTimerRing';
 import { PPPokerChips3D, PPPokerBetDisplay, PPPokerPotDisplay } from './PPPokerChips3D';
 import { PPPokerDealerButton, PPPokerBlindButton } from './PPPokerDealerButton';
+import { PPPokerTournamentInfo } from './PPPokerTournamentInfo';
 
 // Syndikate branding
 import syndikateLogo from '@/assets/syndikate-logo-main.png';
@@ -1676,21 +1677,41 @@ export function SyndikatetPokerTable({
             </div>
           )}
 
-          {/* Blinds info - PPPoker Premium style */}
+          {/* Tournament info OR Blinds info */}
           {tableState && (
-            <div className={cn("absolute left-1/2 -translate-x-1/2 z-10", isMobile ? "top-[48%]" : "top-[52%]")}>
-              <div 
-                className={cn("rounded-full px-3 py-1", isMobile ? "text-[8px]" : "text-[10px]")}
-                style={{
-                  background: 'rgba(0,0,0,0.6)',
-                  border: '1px solid rgba(255,255,255,0.1)'
-                }}
-              >
-                <span className="text-white/60 font-medium tracking-wide">
-                  Блайнды: {smallBlind.toLocaleString()}/{bigBlind.toLocaleString()}
-                  {tableState.anteAmount ? ` анте: ${tableState.anteAmount.toLocaleString()}` : ''}
-                </span>
-              </div>
+            <div className={cn("absolute left-1/2 -translate-x-1/2 z-20", isMobile ? "top-[48%]" : "top-[52%]")}>
+              {isTournament ? (
+                <PPPokerTournamentInfo
+                  name="Tournament"
+                  status="running"
+                  currentLevel={1}
+                  smallBlind={smallBlind}
+                  bigBlind={bigBlind}
+                  ante={tableState.anteAmount}
+                  nextSmallBlind={smallBlind * 2}
+                  nextBigBlind={bigBlind * 2}
+                  timeToNextLevel={tableState.timeRemaining || 600}
+                  totalPlayers={tableState.players.length}
+                  remainingPlayers={tableState.players.filter(p => !p.isFolded && p.stack > 0).length}
+                  averageStack={Math.round(tableState.players.reduce((sum, p) => sum + p.stack, 0) / Math.max(1, tableState.players.length))}
+                  prizePool={tableState.pot || 0}
+                  buyIn={buyIn || 0}
+                  isMobile={isMobile}
+                />
+              ) : (
+                <div 
+                  className={cn("rounded-full px-3 py-1", isMobile ? "text-[8px]" : "text-[10px]")}
+                  style={{
+                    background: 'rgba(0,0,0,0.6)',
+                    border: '1px solid rgba(255,255,255,0.1)'
+                  }}
+                >
+                  <span className="text-white/60 font-medium tracking-wide">
+                    Блайнды: {smallBlind.toLocaleString()}/{bigBlind.toLocaleString()}
+                    {tableState.anteAmount ? ` анте: ${tableState.anteAmount.toLocaleString()}` : ''}
+                  </span>
+                </div>
+              )}
             </div>
           )}
 
