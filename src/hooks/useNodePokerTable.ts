@@ -278,9 +278,13 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
           }
           // Fall through to update state
         case 'player_left':
+        case 'playerLeft':
         case 'player_disconnected':
+        case 'playerDisconnected':
         case 'hand_started':
+        case 'handStarted':  // Server sends camelCase
         case 'phase_change':
+        case 'phaseChange':
           // These events include updated tableState - process it
           log(`📡 ${data.type} event received:`, {
             hasState: !!data.state,
@@ -312,7 +316,7 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
             }
           }
           
-          if (data.type === 'hand_started') {
+          if (data.type === 'hand_started' || data.type === 'handStarted') {
             log('🎴 Hand started event:', JSON.stringify(data).substring(0, 500));
           }
           break;
@@ -341,18 +345,33 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
           break;
 
         case 'hand_complete':
+        case 'handComplete':  // Server sends camelCase
         case 'hand_end':
-          if (data.winners) {
+        case 'handEnd':
+          log('🏆 Hand complete event:', data.type);
+          
+          // Extract winners from data.data or data.winners
+          const eventData = (data.data || data) as Record<string, unknown>;
+          const winners = eventData.winners as ShowdownResult['winners'] | undefined;
+          
+          if (winners && winners.length > 0) {
+            log('🏆 Winners:', winners);
             setShowdownResult({
-              winners: data.winners as ShowdownResult['winners'],
-              pot: (data.pot || 0) as number
+              winners: winners,
+              pot: (eventData.pot || data.pot || 0) as number
             });
           }
           setTimeout(() => setShowdownResult(null), 5000);
           
           // Update state
           if (data.state && tableId) {
+            const stateData = data.state as Record<string, unknown>;
             setTableState(transformServerState(data.state, tableId));
+            
+            // Also update cards from state
+            if (stateData.myCards) {
+              setMyCards(stateData.myCards as string[]);
+            }
           }
           break;
 
