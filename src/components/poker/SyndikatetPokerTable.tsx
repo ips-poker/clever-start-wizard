@@ -1619,19 +1619,28 @@ export function SyndikatetPokerTable({
 
   // Rotate seats so Hero (mySeat) is always at position 0 (bottom center)
   // This matches PPPoker where you always see yourself at the bottom
+  // Server uses 0-based seat numbering (0-5), positions array also 0-based
   const players = useMemo(() => {
     if (!tableState) return [];
     
     const totalSeats = 6;
-    const heroSeat = mySeat || 1; // Default to seat 1 if not set
+    // IMPORTANT: mySeat can be 0 which is valid! Use null check instead of falsy check
+    const heroSeat = mySeat !== null && mySeat !== undefined ? mySeat : 0;
     
-    // Create array of seat numbers rotated so hero is at index 0
+    console.log('[Poker] Building players array:', { mySeat, heroSeat, playersCount: tableState.players.length });
+    
+    // Create array of seat numbers rotated so hero is at visual position 0 (bottom)
     const rotatedSeats: { position: { x: number; y: number }; seatNumber: number; player: PokerPlayer | undefined }[] = [];
     
     for (let i = 0; i < totalSeats; i++) {
-      // Calculate actual seat number by rotating
-      const actualSeatNumber = ((heroSeat - 1 + i) % totalSeats) + 1;
+      // Calculate actual seat number by rotating (0-based)
+      const actualSeatNumber = (heroSeat + i) % totalSeats;
       const player = tableState.players.find(p => p.seatNumber === actualSeatNumber);
+      
+      if (player) {
+        console.log('[Poker] Player at seat', actualSeatNumber, '→ position', i, player.name);
+      }
+      
       rotatedSeats.push({
         position: SEAT_POSITIONS[i],
         seatNumber: actualSeatNumber,
