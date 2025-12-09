@@ -3,14 +3,16 @@
 // ============================================
 import React, { useState, useEffect, useCallback, useMemo, useRef, memo } from 'react';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Volume2, VolumeX, Settings2, Menu, X, LogOut } from 'lucide-react';
+import { ArrowLeft, Volume2, VolumeX, Settings2, Menu, X, LogOut, Palette } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { useNodePokerTable, PokerPlayer, TableState } from '@/hooks/useNodePokerTable';
 import { usePokerSounds } from '@/hooks/usePokerSounds';
+import { usePokerPreferences } from '@/hooks/usePokerPreferences';
 import { PokerErrorBoundary } from './PokerErrorBoundary';
 import { ConnectionStatusBanner } from './ConnectionStatusBanner';
 import { TableSettingsPanel } from './TableSettingsPanel';
+import { PersonalSettingsPanel } from './PersonalSettingsPanel';
 import { FullscreenPokerTable } from './FullscreenPokerTable';
 import { PPPokerActionButtons } from './PPPokerActionButtons';
 
@@ -40,6 +42,9 @@ export function FullscreenPokerTableWrapper({
   const [turnTimeRemaining, setTurnTimeRemaining] = useState<number | null>(null);
   const [showMenu, setShowMenu] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showPersonalSettings, setShowPersonalSettings] = useState(false);
+  
+  const { preferences, currentTableTheme, updatePreference } = usePokerPreferences();
   
   const sounds = usePokerSounds();
   const hasConnectedRef = useRef(false);
@@ -145,9 +150,19 @@ export function FullscreenPokerTableWrapper({
   // Connection status for banner
   const connectionStatus = isConnecting ? 'connecting' : (isConnected ? 'connected' : 'disconnected');
 
+  // Apply preferences to sound
+  useEffect(() => {
+    setSoundEnabled(preferences.soundEnabled);
+  }, [preferences.soundEnabled]);
+
   return (
     <PokerErrorBoundary>
-      <div className="fixed inset-0 bg-gradient-to-b from-[#0a1628] via-[#0d1e36] to-[#0a1628] overflow-hidden">
+      <div 
+        className={cn(
+          "fixed inset-0 overflow-hidden",
+          `bg-gradient-to-b ${currentTableTheme.gradient}`
+        )}
+      >
         {/* Connection status */}
         <ConnectionStatusBanner 
           status={connectionStatus as any}
@@ -178,6 +193,15 @@ export function FullscreenPokerTableWrapper({
               onClick={() => setSoundEnabled(!soundEnabled)}
             >
               {soundEnabled ? <Volume2 className="h-5 w-5" /> : <VolumeX className="h-5 w-5" />}
+            </Button>
+            
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-10 w-10 rounded-full bg-black/40 backdrop-blur-sm text-amber-400 hover:bg-black/60"
+              onClick={() => setShowPersonalSettings(true)}
+            >
+              <Palette className="h-5 w-5" />
             </Button>
             
             <Button
@@ -257,11 +281,20 @@ export function FullscreenPokerTableWrapper({
                 
                 <Button
                   variant="ghost"
+                  className="w-full justify-start gap-3 text-amber-400 hover:text-amber-300 hover:bg-amber-500/10"
+                  onClick={() => { setShowMenu(false); setShowPersonalSettings(true); }}
+                >
+                  <Palette className="h-5 w-5" />
+                  Персонализация
+                </Button>
+                
+                <Button
+                  variant="ghost"
                   className="w-full justify-start gap-3 text-white/80 hover:text-white hover:bg-white/10"
                   onClick={() => { setShowMenu(false); setShowSettings(true); }}
                 >
                   <Settings2 className="h-5 w-5" />
-                  Настройки
+                  Настройки стола
                 </Button>
                 
                 <div className="h-px bg-white/10 my-4" />
@@ -290,6 +323,13 @@ export function FullscreenPokerTableWrapper({
           onSave={handleSettingsSave}
           onClose={() => setShowSettings(false)}
           isHost={true}
+        />
+
+        {/* Personal settings panel */}
+        <PersonalSettingsPanel
+          isOpen={showPersonalSettings}
+          onClose={() => setShowPersonalSettings(false)}
+          maxSeats={maxSeats}
         />
       </div>
     </PokerErrorBoundary>
