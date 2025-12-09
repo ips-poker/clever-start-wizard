@@ -166,11 +166,42 @@ serve(async (req) => {
         if (!availableSeat) {
           result = { success: false, error: 'No available seats' };
         } else {
-          const { data: wallet } = await supabase
+          // Try to get existing wallet or create one with initial balance
+          let { data: wallet } = await supabase
             .from('diamond_wallets')
             .select('balance, total_spent')
             .eq('player_id', playerId)
             .single();
+
+          // If wallet doesn't exist, create one with initial balance
+          if (!wallet) {
+            const INITIAL_BALANCE = 10000;
+            const { data: newWallet, error: createError } = await supabase
+              .from('diamond_wallets')
+              .insert({ 
+                player_id: playerId, 
+                balance: INITIAL_BALANCE,
+                total_purchased: 0,
+                total_spent: 0,
+                total_won: 0
+              })
+              .select('balance, total_spent')
+              .single();
+            
+            if (createError) {
+              console.log(`[Engine] Error creating wallet: ${createError.message}`);
+              // Try to fetch again in case of race condition
+              const { data: existingWallet } = await supabase
+                .from('diamond_wallets')
+                .select('balance, total_spent')
+                .eq('player_id', playerId)
+                .single();
+              wallet = existingWallet;
+            } else {
+              wallet = newWallet;
+              console.log(`[Engine] Created new wallet for player with ${INITIAL_BALANCE} diamonds`);
+            }
+          }
 
           const diamondBalance = wallet?.balance || 0;
           const requestedBuyIn = requestBuyIn || amount || table.min_buy_in;
