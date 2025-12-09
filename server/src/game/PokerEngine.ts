@@ -436,11 +436,26 @@ export class PokerEngine {
         return this.determineWinners(handState, players);
     }
     
-    // Set first player to act (first after dealer)
-    const dealerSeat = handState.dealerSeat;
-    const sortedActive = canAct.map(p => p.seatNumber).sort((a, b) => a - b);
-    const firstAfterDealer = sortedActive.find(s => s > dealerSeat) || sortedActive[0];
-    handState.currentPlayerSeat = firstAfterDealer;
+    // Set first player to act post-flop
+    // In heads-up: Big Blind (out of position) acts FIRST post-flop
+    // In multi-way: First active player after dealer acts first
+    const headsUp = canAct.length === 2;
+    let firstToAct: number;
+    
+    if (headsUp) {
+      // In heads-up, BB acts first post-flop (BB is NOT the dealer)
+      // Dealer = SB, so first to act is the OTHER player (BB)
+      const dealerSeat = handState.dealerSeat;
+      const otherPlayer = canAct.find(p => p.seatNumber !== dealerSeat);
+      firstToAct = otherPlayer ? otherPlayer.seatNumber : canAct[0].seatNumber;
+    } else {
+      // Multi-way: first active player after dealer
+      const dealerSeat = handState.dealerSeat;
+      const sortedActive = canAct.map(p => p.seatNumber).sort((a, b) => a - b);
+      firstToAct = sortedActive.find(s => s > dealerSeat) || sortedActive[0];
+    }
+    
+    handState.currentPlayerSeat = firstToAct;
     
     return { phaseAdvanced: true, newHandState: handState };
   }
