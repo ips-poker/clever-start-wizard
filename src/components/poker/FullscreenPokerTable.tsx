@@ -504,12 +504,7 @@ const SyndikateTableFelt = memo(function SyndikateTableFelt({
   
   return (
     <div className="absolute inset-0 overflow-hidden">
-      {/* Dark ambient background */}
-      <div className="absolute inset-0"
-        style={{
-          background: 'radial-gradient(ellipse at 50% 50%, #1a2d4a 0%, #0c1420 40%, #050a10 100%)'
-        }}
-      />
+      {/* Transparent background - uses parent's mafia theme */}
       
       {/* Glowing ambient effect behind table - horizontal ellipse */}
       <div 
