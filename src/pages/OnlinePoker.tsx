@@ -13,7 +13,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { ArrowLeft, User, LogOut, Trophy, Table2, History, BarChart3 } from 'lucide-react';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { ArrowLeft, User, LogOut, Trophy, Table2, History, BarChart3, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -244,27 +245,46 @@ export default function OnlinePoker() {
               </CardContent>
             </Card>
           </div>
-        ) : activeTable ? (
-          // Active poker table or tournament
-          <div className="max-w-4xl mx-auto">
-            <OnlinePokerTable
-              tableId={activeTable.id}
-              playerId={playerId}
-              buyIn={activeTable.buyIn}
-              isTournament={activeTable.isTournament}
-              tournamentId={activeTable.isTournament ? activeTable.id : undefined}
-              onLeave={handleLeaveTable}
-            />
-          </div>
         ) : (
-          // Lobby with Cash Games and Tournaments tabs
-          <div className="max-w-4xl mx-auto space-y-6">
-            <PlayerBalanceCard 
-              playerId={playerId} 
-              onBalanceUpdate={setPlayerBalance}
-            />
+          // Lobby with Cash Games and Tournaments tabs + Table Modal
+          <>
+            {/* Table Modal - opens table as overlay for multi-tabling */}
+            <Dialog open={!!activeTable} onOpenChange={(open) => !open && handleLeaveTable()}>
+              <DialogContent 
+                className="max-w-[95vw] w-[1400px] h-[85vh] p-0 bg-transparent border-none overflow-hidden"
+                style={{ maxHeight: '85vh' }}
+              >
+                {activeTable && playerId && (
+                  <div className="relative w-full h-full">
+                    {/* Close button */}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="absolute top-2 right-2 z-50 bg-black/50 hover:bg-black/70 text-white rounded-full"
+                      onClick={handleLeaveTable}
+                    >
+                      <X className="h-5 w-5" />
+                    </Button>
+                    <OnlinePokerTable
+                      tableId={activeTable.id}
+                      playerId={playerId}
+                      buyIn={activeTable.buyIn}
+                      isTournament={activeTable.isTournament}
+                      tournamentId={activeTable.isTournament ? activeTable.id : undefined}
+                      onLeave={handleLeaveTable}
+                    />
+                  </div>
+                )}
+              </DialogContent>
+            </Dialog>
             
-            <Tabs value={lobbyTab} onValueChange={setLobbyTab}>
+            <div className="max-w-4xl mx-auto space-y-6">
+              <PlayerBalanceCard 
+                playerId={playerId} 
+                onBalanceUpdate={setPlayerBalance}
+              />
+              
+              <Tabs value={lobbyTab} onValueChange={setLobbyTab}>
               <TabsList className="grid grid-cols-4 w-full max-w-xl mx-auto">
                 <TabsTrigger value="cash" className="gap-2">
                   <Table2 className="h-4 w-4" />
@@ -313,8 +333,9 @@ export default function OnlinePoker() {
               <TabsContent value="history" className="mt-6">
                 <FullHandHistory playerId={playerId} />
               </TabsContent>
-            </Tabs>
-          </div>
+              </Tabs>
+            </div>
+          </>
         )}
       </main>
       

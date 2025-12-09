@@ -10,6 +10,7 @@ import { logger } from '../utils/logger.js';
 export interface Player {
   id: string;
   name: string;
+  avatarUrl?: string; // Player avatar from profile
   seatNumber: number;
   stack: number;
   status: 'active' | 'sitting_out' | 'disconnected';
@@ -117,11 +118,11 @@ export class PokerTable {
   /**
    * Join table
    */
-  async joinTable(playerId: string, playerName: string, seatNumber: number, buyIn: number): Promise<{
+  async joinTable(playerId: string, playerName: string, seatNumber: number, buyIn: number, avatarUrl?: string): Promise<{
     success: boolean;
     error?: string;
   }> {
-    logger.info('joinTable called', { tableId: this.id, playerId, seatNumber, buyIn });
+    logger.info('joinTable called', { tableId: this.id, playerId, seatNumber, buyIn, avatarUrl });
     
     // Validate seat
     if (seatNumber < 0 || seatNumber >= this.config.maxPlayers) {
@@ -146,9 +147,29 @@ export class PokerTable {
       return { success: false, error: 'Player already at table' };
     }
     
+    // Try to fetch avatar from database if not provided
+    let resolvedAvatarUrl = avatarUrl;
+    if (!resolvedAvatarUrl) {
+      try {
+        const { data: playerData } = await this.supabase
+          .from('players')
+          .select('avatar_url')
+          .eq('id', playerId)
+          .single();
+        
+        if (playerData?.avatar_url) {
+          resolvedAvatarUrl = playerData.avatar_url;
+          logger.info('Fetched avatar from DB', { playerId, avatarUrl: resolvedAvatarUrl });
+        }
+      } catch (err) {
+        logger.warn('Failed to fetch avatar', { playerId, error: String(err) });
+      }
+    }
+    
     const player: Player = {
       id: playerId,
       name: playerName,
+      avatarUrl: resolvedAvatarUrl,
       seatNumber,
       stack: buyIn,
       status: 'active',
@@ -182,9 +203,9 @@ export class PokerTable {
       logger.warn('Database error (continuing anyway)', { error: String(dbErr) });
     }
     
-    this.emit('player_joined', { playerId, playerName, seatNumber, stack: buyIn });
+    this.emit('player_joined', { playerId, playerName, seatNumber, stack: buyIn, avatarUrl: resolvedAvatarUrl });
     
-    logger.info(`Player joined table successfully`, { tableId: this.id, playerId, seatNumber, stack: buyIn });
+    logger.info(`Player joined table successfully`, { tableId: this.id, playerId, seatNumber, stack: buyIn, avatarUrl: resolvedAvatarUrl });
     
     // Start hand if we have enough players
     this.checkStartHand();
@@ -537,6 +558,7 @@ export class PokerTable {
       playerId: p.id,
       id: p.id,
       name: p.name,
+      avatarUrl: (p as any).avatarUrl || null, // Include avatar URL
       seatNumber: p.seatNumber,
       stack: p.stack,
       status: p.status,
