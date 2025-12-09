@@ -24,6 +24,12 @@ import { PPPokerTimerRing, PPPokerTimerBadge } from './PPPokerTimerRing';
 import { PPPokerChips3D, PPPokerBetDisplay, PPPokerPotDisplay } from './PPPokerChips3D';
 import { PPPokerDealerButton, PPPokerBlindButton } from './PPPokerDealerButton';
 import { PPPokerTournamentInfo } from './PPPokerTournamentInfo';
+import { 
+  WinnerGlow, 
+  Confetti, 
+  TablePulse, 
+  CountdownPulse 
+} from './PPPokerAnimations';
 
 // Syndikate branding
 import syndikateLogo from '@/assets/syndikate-logo-main.png';
@@ -1415,6 +1421,8 @@ export function SyndikatetPokerTable({
   const [showEmoji, setShowEmoji] = useState(false);
   const [showMyCards, setShowMyCards] = useState(true);
   const [selectedPlayer, setSelectedPlayer] = useState<PokerPlayer | null>(null);
+  const [showConfetti, setShowConfetti] = useState(false);
+  const [previousPhase, setPreviousPhase] = useState<string | null>(null);
   
   const [isMobile, setIsMobile] = useState(false);
   
@@ -1493,19 +1501,90 @@ export function SyndikatetPokerTable({
     return () => clearInterval(interval);
   }, [isMyTurn, tableState?.currentPlayerSeat, tableState?.timeRemaining, tableState?.actionTimer, fold, sounds]);
 
+  // Sound effects for actions with enhanced sounds
   useEffect(() => {
     if (lastAction?.playerId) {
       setPlayerActions(prev => ({ ...prev, [lastAction.playerId]: { action: lastAction.action, amount: lastAction.amount }}));
       setTimeout(() => setPlayerActions(prev => { const next = { ...prev }; delete next[lastAction.playerId]; return next; }), 2000);
+      
+      // Play appropriate sound with chip sounds for bets
       switch (lastAction.action) {
-        case 'fold': sounds.playFold(); break;
-        case 'check': sounds.playCheck(); break;
-        case 'call': sounds.playCall(); break;
-        case 'raise': case 'bet': sounds.playRaise(); break;
-        case 'allin': sounds.playAllIn(); break;
+        case 'fold': 
+          sounds.playFold(); 
+          break;
+        case 'check': 
+          sounds.playCheck(); 
+          break;
+        case 'call': 
+          sounds.playCall();
+          if (lastAction.amount && lastAction.amount > 0) {
+            setTimeout(() => sounds.playChipStack(), 100);
+          }
+          break;
+        case 'bet':
+          sounds.playBet();
+          setTimeout(() => sounds.playChipStack(), 100);
+          break;
+        case 'raise': 
+          sounds.playRaise();
+          setTimeout(() => sounds.playChipStack(), 100);
+          break;
+        case 'allin': 
+          sounds.playAllIn();
+          setTimeout(() => sounds.playChipStack(), 150);
+          break;
       }
     }
-  }, [lastAction]);
+  }, [lastAction, sounds]);
+  
+  // Timer warning sounds
+  useEffect(() => {
+    if (isMyTurn && turnTimeRemaining !== null) {
+      if (turnTimeRemaining === 10) {
+        sounds.playTimerWarning();
+      } else if (turnTimeRemaining <= 5 && turnTimeRemaining > 0) {
+        sounds.playTimerCritical();
+      } else if (turnTimeRemaining === 0) {
+        sounds.playTimerExpired();
+      }
+    }
+  }, [turnTimeRemaining, isMyTurn, sounds]);
+  
+  // Phase change sounds and effects
+  useEffect(() => {
+    const phase = tableState?.phase;
+    if (phase && phase !== previousPhase) {
+      setPreviousPhase(phase);
+      
+      // Play sounds based on phase transitions
+      if (phase === 'preflop' && previousPhase !== 'preflop') {
+        // Cards being dealt
+        sounds.playShuffle();
+        setTimeout(() => sounds.playDeal(), 300);
+        setTimeout(() => sounds.playDeal(), 450);
+      } else if (['flop', 'turn', 'river'].includes(phase)) {
+        // Community cards
+        sounds.playCardFlip();
+      } else if (phase === 'showdown') {
+        sounds.playShowdown();
+      }
+    }
+  }, [tableState?.phase, previousPhase, sounds]);
+  
+  // Winner effects
+  useEffect(() => {
+    if (showdownResult && showdownResult.winners.length > 0) {
+      sounds.playWin();
+      sounds.playPotWin();
+      
+      // Check if hero won
+      const heroWon = showdownResult.winners.some(w => w.playerId === playerId);
+      if (heroWon) {
+        setShowConfetti(true);
+        setTimeout(() => setShowConfetti(false), 4000);
+      }
+    }
+  }, [showdownResult, playerId, sounds]);
 
   const handleAction = useCallback((action: 'fold' | 'check' | 'call' | 'raise' | 'allin', amount?: number) => {
     switch (action) {
@@ -1750,6 +1829,12 @@ export function SyndikatetPokerTable({
               <WinnerOverlay winners={showdownResult.winners.map(w => ({ name: w.name, amount: w.amount, handRank: w.handRank }))} onClose={() => {}}/>
             )}
           </AnimatePresence>
+          
+          {/* Confetti for big wins */}
+          <Confetti isActive={showConfetti} duration={4000} />
+          
+          {/* Table pulse during active game */}
+          <TablePulse isActive={tableState?.phase !== 'waiting' && tableState?.phase !== 'showdown'} />
         </div>
 
         {/* NOTE: Hero cards now shown next to avatar in PlayerSeat component - PPPoker style */}
