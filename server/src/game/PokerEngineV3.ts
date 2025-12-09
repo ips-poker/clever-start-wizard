@@ -129,11 +129,13 @@ export interface GamePlayer {
   seatNumber: number;
   stack: number;
   betAmount: number;
+  totalBetThisHand: number;  // Cumulative bet for side pot calculation
   holeCards: string[];
   isFolded: boolean;
   isAllIn: boolean;
   isSittingOut: boolean;
   isDisconnected: boolean;
+  hasActedThisRound: boolean; // Critical for round completion detection
   timeBank: number;
   lastActionTime: number | null;
 }
@@ -168,7 +170,9 @@ export interface GameState {
   winners: { playerId: string; amount: number; handName: string }[];
   isComplete: boolean;
   lastAggressor: string | null;
+  lastAggressorSeat: number | null;  // Seat of last aggressive action
   minRaise: number;
+  lastRaiseAmount: number;           // Size of the last raise increment
   actionCount: number;
   gameType: PokerGameType;
 }
@@ -952,7 +956,8 @@ export function calculatePositions(
 }
 
 // ==========================================
-// BETTING LOGIC
+// BETTING LOGIC (Professional Implementation)
+// Handles all edge cases: short all-in, re-raise caps, hasActed tracking
 // ==========================================
 export interface BettingAction {
   type: 'fold' | 'check' | 'call' | 'bet' | 'raise' | 'all_in';
@@ -969,6 +974,89 @@ export interface BettingResult {
   isAllIn: boolean;
   newCurrentBet: number;
   newMinRaise: number;
+  lastRaiseAmount: number;
+  reopensAction: boolean;  // True if this action allows others to re-raise
+}
+
+export interface AllowedActions {
+  canCheck: boolean;
+  canCall: boolean;
+  canBet: boolean;
+  canRaise: boolean;
+  canAllIn: boolean;
+  canFold: boolean;
+  callAmount: number;
+  minBet: number;
+  minRaise: number;
+  maxBet: number;
+}
+
+/**
+ * Calculate what actions are available for a player
+ */
+export function getAllowedActions(
+  player: GamePlayer,
+  currentBet: number,
+  minRaise: number,
+  lastRaiseAmount: number,
+  bigBlind: number
+): AllowedActions {
+  const result: AllowedActions = {
+    canCheck: false,
+    canCall: false,
+    canBet: false,
+    canRaise: false,
+    canAllIn: false,
+    canFold: true, // Can always fold (even if irrational)
+    callAmount: 0,
+    minBet: bigBlind,
+    minRaise: 0,
+    maxBet: 0
+  };
+
+  if (player.isFolded || player.isAllIn || player.stack <= 0) {
+    result.canFold = false;
+    return result;
+  }
+
+  const toCall = currentBet - player.betAmount;
+  result.callAmount = Math.min(toCall, player.stack);
+  result.maxBet = player.stack + player.betAmount;
+
+  if (toCall <= 0) {
+    // No bet to match - can check or open betting
+    result.canCheck = true;
+    
+    if (player.stack > 0) {
+      result.canBet = true;
+      result.canAllIn = true;
+      result.minBet = Math.min(bigBlind, player.stack);
+    }
+  } else {
+    // Must match a bet
+    if (player.stack >= toCall) {
+      result.canCall = true;
+    }
+    
+    // Always can all-in (even if short)
+    if (player.stack > 0) {
+      result.canAllIn = true;
+    }
+
+    // Can raise if have enough chips after calling
+    const afterCall = player.stack - toCall;
+    const minRaiseIncrement = Math.max(minRaise, lastRaiseAmount, bigBlind);
+    
+    if (afterCall >= minRaiseIncrement) {
+      result.canRaise = true;
+      result.minRaise = currentBet + minRaiseIncrement;
+    } else if (afterCall > 0) {
+      // Can only all-in (short raise)
+      result.canAllIn = true;
+    }
+  }
+
+  return result;
 }
 
 export function validateAndProcessAction(
@@ -976,6 +1064,7 @@ export function validateAndProcessAction(
   player: GamePlayer,
   currentBet: number,
   minRaise: number,
+  lastRaiseAmount: number,
   bigBlind: number
 ): BettingResult {
   let actionAmount = 0;
@@ -985,26 +1074,53 @@ export function validateAndProcessAction(
   let isAllIn = player.isAllIn;
   let newCurrentBet = currentBet;
   let newMinRaise = minRaise;
+  let newLastRaiseAmount = lastRaiseAmount;
+  let reopensAction = false;
   
   const toCall = currentBet - player.betAmount;
+  const allowed = getAllowedActions(player, currentBet, minRaise, lastRaiseAmount, bigBlind);
   
   switch (action.type) {
     case 'fold':
+      if (!allowed.canFold) {
+        return { 
+          valid: false, 
+          error: 'Cannot fold', 
+          newBet, newStack, actionAmount, isFolded, isAllIn,
+          newCurrentBet, newMinRaise, lastRaiseAmount: newLastRaiseAmount, reopensAction
+        };
+      }
       isFolded = true;
       break;
       
     case 'check':
-      if (toCall > 0) {
+      if (!allowed.canCheck) {
         return { 
           valid: false, 
-          error: 'Cannot check, must call or raise', 
+          error: `Cannot check, must call ${toCall} or raise`, 
           newBet, newStack, actionAmount, isFolded, isAllIn,
-          newCurrentBet, newMinRaise
+          newCurrentBet, newMinRaise, lastRaiseAmount: newLastRaiseAmount, reopensAction
         };
       }
       break;
       
     case 'call':
+      if (!allowed.canCall) {
+        if (player.stack < toCall && player.stack > 0) {
+          // Short all-in call
+          actionAmount = player.stack;
+          newBet = player.betAmount + actionAmount;
+          newStack = 0;
+          isAllIn = true;
+          break;
+        }
+        return { 
+          valid: false, 
+          error: 'Cannot call', 
+          newBet, newStack, actionAmount, isFolded, isAllIn,
+          newCurrentBet, newMinRaise, lastRaiseAmount: newLastRaiseAmount, reopensAction
+        };
+      }
       actionAmount = Math.min(toCall, player.stack);
       newBet = player.betAmount + actionAmount;
       newStack = player.stack - actionAmount;
@@ -1012,12 +1128,12 @@ export function validateAndProcessAction(
       break;
       
     case 'bet':
-      if (currentBet > 0) {
+      if (!allowed.canBet) {
         return { 
           valid: false, 
-          error: 'Cannot bet, there is already a bet. Use raise.', 
+          error: currentBet > 0 ? 'Cannot bet, there is already a bet. Use raise.' : 'Cannot bet', 
           newBet, newStack, actionAmount, isFolded, isAllIn,
-          newCurrentBet, newMinRaise
+          newCurrentBet, newMinRaise, lastRaiseAmount: newLastRaiseAmount, reopensAction
         };
       }
       
@@ -1027,7 +1143,7 @@ export function validateAndProcessAction(
           valid: false, 
           error: `Minimum bet is ${bigBlind}`, 
           newBet, newStack, actionAmount, isFolded, isAllIn,
-          newCurrentBet, newMinRaise
+          newCurrentBet, newMinRaise, lastRaiseAmount: newLastRaiseAmount, reopensAction
         };
       }
       
@@ -1035,20 +1151,31 @@ export function validateAndProcessAction(
       newBet = player.betAmount + actionAmount;
       newStack = player.stack - actionAmount;
       newCurrentBet = newBet;
-      newMinRaise = actionAmount;
+      newMinRaise = actionAmount; // Min raise is the bet size
+      newLastRaiseAmount = actionAmount;
+      reopensAction = true; // Others can now respond
       if (newStack === 0) isAllIn = true;
       break;
       
     case 'raise':
-      const totalRaise = action.amount || (currentBet + minRaise);
-      const minTotalRaise = currentBet + minRaise;
+      if (!allowed.canRaise) {
+        return { 
+          valid: false, 
+          error: `Cannot raise. Min raise to ${allowed.minRaise}`, 
+          newBet, newStack, actionAmount, isFolded, isAllIn,
+          newCurrentBet, newMinRaise, lastRaiseAmount: newLastRaiseAmount, reopensAction
+        };
+      }
+      
+      const totalRaise = action.amount || allowed.minRaise;
+      const minTotalRaise = currentBet + Math.max(minRaise, lastRaiseAmount, bigBlind);
       
       if (totalRaise < minTotalRaise && player.stack > totalRaise - player.betAmount) {
         return { 
           valid: false, 
           error: `Minimum raise to ${minTotalRaise}`, 
           newBet, newStack, actionAmount, isFolded, isAllIn,
-          newCurrentBet, newMinRaise
+          newCurrentBet, newMinRaise, lastRaiseAmount: newLastRaiseAmount, reopensAction
         };
       }
       
@@ -1057,8 +1184,10 @@ export function validateAndProcessAction(
       newStack = player.stack - actionAmount;
       
       const raiseSize = newBet - currentBet;
-      if (raiseSize >= minRaise) {
+      if (raiseSize >= Math.max(minRaise, lastRaiseAmount, bigBlind)) {
         newMinRaise = raiseSize;
+        newLastRaiseAmount = raiseSize;
+        reopensAction = true; // Full raise reopens action
       }
       newCurrentBet = newBet;
       
@@ -1066,15 +1195,28 @@ export function validateAndProcessAction(
       break;
       
     case 'all_in':
+      if (!allowed.canAllIn) {
+        return { 
+          valid: false, 
+          error: 'Cannot go all-in', 
+          newBet, newStack, actionAmount, isFolded, isAllIn,
+          newCurrentBet, newMinRaise, lastRaiseAmount: newLastRaiseAmount, reopensAction
+        };
+      }
+      
       actionAmount = player.stack;
       newBet = player.betAmount + actionAmount;
       newStack = 0;
       isAllIn = true;
       
+      // If this all-in is a raise, update raise tracking
       if (newBet > currentBet) {
-        const raiseSize = newBet - currentBet;
-        if (raiseSize >= minRaise) {
-          newMinRaise = raiseSize;
+        const allInRaiseSize = newBet - currentBet;
+        // Only update minRaise and reopen action if this was a full raise
+        if (allInRaiseSize >= Math.max(minRaise, lastRaiseAmount, bigBlind)) {
+          newMinRaise = allInRaiseSize;
+          newLastRaiseAmount = allInRaiseSize;
+          reopensAction = true;
         }
         newCurrentBet = newBet;
       }
@@ -1089,8 +1231,43 @@ export function validateAndProcessAction(
     isFolded, 
     isAllIn,
     newCurrentBet,
-    newMinRaise
+    newMinRaise,
+    lastRaiseAmount: newLastRaiseAmount,
+    reopensAction
   };
+}
+
+/**
+ * Check if the current betting round is complete
+ */
+export function isBettingRoundComplete(
+  players: GamePlayer[],
+  currentBet: number
+): boolean {
+  const activePlayers = players.filter(p => !p.isFolded && !p.isSittingOut);
+  
+  // Only one player left - hand over
+  if (activePlayers.length <= 1) return true;
+  
+  // All active non-allin players must have acted AND matched the current bet
+  const playersWhoCanAct = activePlayers.filter(p => !p.isAllIn && p.stack > 0);
+  
+  if (playersWhoCanAct.length === 0) return true; // Everyone all-in
+  
+  return playersWhoCanAct.every(p => 
+    p.hasActedThisRound && p.betAmount === currentBet
+  );
+}
+
+/**
+ * Reset player states for a new betting round
+ */
+export function startNewBettingRound(players: GamePlayer[]): GamePlayer[] {
+  return players.map(p => ({
+    ...p,
+    betAmount: 0,
+    hasActedThisRound: false
+  }));
 }
 
 // ==========================================
