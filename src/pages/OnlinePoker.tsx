@@ -259,8 +259,8 @@ export default function OnlinePoker() {
                 exit={{ opacity: 0, scale: 0.9 }}
                 className="fixed z-50 rounded-xl overflow-hidden shadow-2xl"
                 style={{ 
-                  width: '420px',
-                  height: '680px',
+                  width: '546px',
+                  height: '884px',
                   top: '50%',
                   left: '50%',
                   x: '-50%',
