@@ -1,6 +1,7 @@
 import React, { memo, useState, useCallback, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
+import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
 import { ChevronUp, ChevronDown, Zap, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -16,6 +17,7 @@ interface PPPokerActionButtonsProps {
   currentBet: number;
   pot: number;
   myStack: number;
+  myCurrentBet?: number;
   timeRemaining?: number | null;
   onFold: () => void;
   onCheck: () => void;
@@ -32,6 +34,9 @@ const BET_PRESETS = [
   { label: 'POT', multiplier: 1 },
 ];
 
+// Pre-action types
+type PreAction = 'fold' | 'check' | 'call' | 'callAny' | null;
+
 export const PPPokerActionButtons = memo(function PPPokerActionButtons({
   isMyTurn,
   canCheck,
@@ -41,6 +46,7 @@ export const PPPokerActionButtons = memo(function PPPokerActionButtons({
   currentBet,
   pot,
   myStack,
+  myCurrentBet = 0,
   timeRemaining,
   onFold,
   onCheck,
@@ -51,6 +57,7 @@ export const PPPokerActionButtons = memo(function PPPokerActionButtons({
 }: PPPokerActionButtonsProps) {
   const [betAmount, setBetAmount] = useState(minRaise);
   const [showSlider, setShowSlider] = useState(false);
+  const [preAction, setPreAction] = useState<PreAction>(null);
 
   useEffect(() => {
     setBetAmount(Math.max(minRaise, Math.min(betAmount, maxRaise)));
@@ -59,6 +66,41 @@ export const PPPokerActionButtons = memo(function PPPokerActionButtons({
   useEffect(() => {
     if (!isMyTurn) setShowSlider(false);
   }, [isMyTurn]);
+
+  // Execute pre-action when turn comes
+  useEffect(() => {
+    if (isMyTurn && preAction && !disabled) {
+      const timeout = setTimeout(() => {
+        switch (preAction) {
+          case 'fold':
+            onFold();
+            break;
+          case 'check':
+            if (canCheck) onCheck();
+            break;
+          case 'call':
+            if (!canCheck && callAmount <= myStack) onCall();
+            break;
+          case 'callAny':
+            if (canCheck) {
+              onCheck();
+            } else if (callAmount <= myStack) {
+              onCall();
+            }
+            break;
+        }
+        setPreAction(null);
+      }, 300); // Small delay for visual feedback
+      return () => clearTimeout(timeout);
+    }
+  }, [isMyTurn, preAction, canCheck, callAmount, myStack, disabled, onFold, onCheck, onCall]);
+
+  // Reset pre-action when situation changes significantly
+  useEffect(() => {
+    if (preAction === 'call' && canCheck) {
+      setPreAction(null);
+    }
+  }, [canCheck, preAction]);
 
   const handlePreset = useCallback((multiplier: number) => {
     const potBet = Math.floor(pot * multiplier);
@@ -75,14 +117,96 @@ export const PPPokerActionButtons = memo(function PPPokerActionButtons({
     setShowSlider(false);
   }, [betAmount, onRaise]);
 
+  const togglePreAction = useCallback((action: PreAction) => {
+    setPreAction(prev => prev === action ? null : action);
+  }, []);
+
+  // Pre-action checkboxes when not my turn
   if (!isMyTurn) {
     return (
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="flex items-center justify-center gap-3 p-4 bg-black/70 backdrop-blur-sm rounded-t-2xl"
+        className="flex flex-col gap-2 p-3 bg-black/70 backdrop-blur-sm rounded-t-2xl"
       >
-        <span className="text-white/50 text-sm font-medium">Ожидание хода...</span>
+        <span className="text-white/50 text-xs font-medium text-center">Ожидание хода...</span>
+        
+        {/* Pre-action checkboxes */}
+        <div className="flex items-center justify-center gap-4 flex-wrap">
+          {/* Fold checkbox */}
+          <label className="flex items-center gap-2 cursor-pointer group">
+            <Checkbox 
+              checked={preAction === 'fold'}
+              onCheckedChange={() => togglePreAction('fold')}
+              className={cn(
+                "border-red-400/50 data-[state=checked]:bg-red-500 data-[state=checked]:border-red-500",
+                "transition-all"
+              )}
+            />
+            <span className={cn(
+              "text-sm transition-colors",
+              preAction === 'fold' ? "text-red-400 font-medium" : "text-white/60 group-hover:text-white/80"
+            )}>
+              Fold
+            </span>
+          </label>
+
+          {/* Check/Fold checkbox */}
+          <label className="flex items-center gap-2 cursor-pointer group">
+            <Checkbox 
+              checked={preAction === 'check'}
+              onCheckedChange={() => togglePreAction('check')}
+              className={cn(
+                "border-blue-400/50 data-[state=checked]:bg-blue-500 data-[state=checked]:border-blue-500",
+                "transition-all"
+              )}
+            />
+            <span className={cn(
+              "text-sm transition-colors",
+              preAction === 'check' ? "text-blue-400 font-medium" : "text-white/60 group-hover:text-white/80"
+            )}>
+              Check/Fold
+            </span>
+          </label>
+
+          {/* Call checkbox */}
+          {callAmount > 0 && callAmount <= myStack && (
+            <label className="flex items-center gap-2 cursor-pointer group">
+              <Checkbox 
+                checked={preAction === 'call'}
+                onCheckedChange={() => togglePreAction('call')}
+                className={cn(
+                  "border-green-400/50 data-[state=checked]:bg-green-500 data-[state=checked]:border-green-500",
+                  "transition-all"
+                )}
+              />
+              <span className={cn(
+                "text-sm transition-colors",
+                preAction === 'call' ? "text-green-400 font-medium" : "text-white/60 group-hover:text-white/80"
+              )}>
+                Call {formatChipAmount(callAmount)}
+              </span>
+            </label>
+          )}
+
+          {/* Call Any checkbox */}
+          <label className="flex items-center gap-2 cursor-pointer group">
+            <Checkbox 
+              checked={preAction === 'callAny'}
+              onCheckedChange={() => togglePreAction('callAny')}
+              className={cn(
+                "border-amber-400/50 data-[state=checked]:bg-amber-500 data-[state=checked]:border-amber-500",
+                "transition-all"
+              )}
+            />
+            <span className={cn(
+              "text-sm transition-colors",
+              preAction === 'callAny' ? "text-amber-400 font-medium" : "text-white/60 group-hover:text-white/80"
+            )}>
+              Call Any
+            </span>
+          </label>
+        </div>
       </motion.div>
     );
   }
