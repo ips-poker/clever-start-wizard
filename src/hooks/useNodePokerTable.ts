@@ -154,21 +154,35 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
     // Get players from root
     const playersRaw = (state.players || []) as Record<string, unknown>[];
     
-    const mappedPlayers: PokerPlayer[] = playersRaw.map((p) => ({
-      playerId: (p.playerId || p.id) as string,
-      name: (p.name || 'Player') as string,
-      avatarUrl: (p.avatar || p.avatarUrl) as string | undefined,
-      seatNumber: (p.seatNumber ?? p.seat_number ?? 0) as number,
-      stack: (p.stack || 0) as number,
-      betAmount: (p.betAmount || p.currentBet || p.bet_amount || 0) as number,
-      totalBetInHand: (p.betAmount || p.currentBet || p.bet_amount || 0) as number,
-      holeCards: (p.holeCards || p.cards || []) as string[],
-      isFolded: (p.isFolded || p.is_folded || false) as boolean,
-      isAllIn: (p.isAllIn || p.is_all_in || false) as boolean,
-      isActive: (p.isActive !== false && p.status !== 'disconnected' && p.status !== 'folded') as boolean,
-      isDisconnected: (p.status === 'disconnected') as boolean,
-      timeBankRemaining: (p.timeBank || 60) as number
-    }));
+    const mappedPlayers: PokerPlayer[] = playersRaw.map((p) => {
+      const betAmount = (p.betAmount || p.currentBet || p.bet_amount || 0) as number;
+      
+      // Debug: log player bets
+      if (betAmount > 0) {
+        log('💰 Player bet:', { 
+          name: p.name, 
+          betAmount, 
+          stack: p.stack,
+          isFolded: p.isFolded
+        });
+      }
+      
+      return {
+        playerId: (p.playerId || p.id) as string,
+        name: (p.name || 'Player') as string,
+        avatarUrl: (p.avatar || p.avatarUrl) as string | undefined,
+        seatNumber: (p.seatNumber ?? p.seat_number ?? 0) as number,
+        stack: (p.stack || 0) as number,
+        betAmount,
+        totalBetInHand: (p.totalBetInHand || betAmount || 0) as number,
+        holeCards: (p.holeCards || p.cards || []) as string[],
+        isFolded: (p.isFolded || p.is_folded || false) as boolean,
+        isAllIn: (p.isAllIn || p.is_all_in || false) as boolean,
+        isActive: (p.isActive !== false && p.status !== 'disconnected' && p.status !== 'folded') as boolean,
+        isDisconnected: (p.status === 'disconnected') as boolean,
+        timeBankRemaining: (p.timeBank || 60) as number
+      };
+    });
 
     // Server sends phase at root level after rebuilding
     // Also check config for old format fallback
@@ -393,6 +407,20 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
           // Update state if included
           if (data.state && tableId) {
             setTableState(transformServerState(data.state, tableId));
+          }
+          break;
+
+        case 'state_update':
+          // State update after action - contains latest bets
+          log('📊 State update received');
+          if (data.state && tableId) {
+            const stateData = data.state as Record<string, unknown>;
+            setTableState(transformServerState(data.state, tableId));
+            
+            // Update my cards if present
+            if (stateData.myCards) {
+              setMyCards(stateData.myCards as string[]);
+            }
           }
           break;
 
