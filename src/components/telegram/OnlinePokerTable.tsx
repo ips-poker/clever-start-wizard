@@ -1,6 +1,6 @@
-// Telegram Online Poker Table - Uses main Syndikate table
+// Telegram Online Poker Table - Uses Fullscreen table
 import React from 'react';
-import { SyndikatetPokerTable } from '@/components/poker/SyndikatetPokerTable';
+import { FullscreenPokerTableWrapper } from '@/components/poker/FullscreenPokerTableWrapper';
 
 interface OnlinePokerTableProps {
   tableId: string;
@@ -28,7 +28,7 @@ export function OnlinePokerTable({
   }
 
   return (
-    <SyndikatetPokerTable
+    <FullscreenPokerTableWrapper
       tableId={tableId}
       playerId={playerId}
       buyIn={buyIn}

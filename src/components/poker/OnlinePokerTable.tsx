@@ -1,6 +1,6 @@
 // Syndikate Poker Table - Clean wrapper
 import React from 'react';
-import { SyndikatetPokerTable } from './SyndikatetPokerTable';
+import { FullscreenPokerTableWrapper } from './FullscreenPokerTableWrapper';
 
 interface OnlinePokerTableProps {
   tableId: string;
@@ -22,7 +22,7 @@ export function OnlinePokerTable({
   onLeave 
 }: OnlinePokerTableProps) {
   return (
-    <SyndikatetPokerTable
+    <FullscreenPokerTableWrapper
       tableId={tableId}
       playerId={playerId}
       buyIn={buyIn}
