@@ -305,11 +305,27 @@ export class PokerTable {
     // Validate it's player's turn
     const currentPlayerSeat = this.currentHand.currentPlayerSeat;
     if (player.seatNumber !== currentPlayerSeat) {
+      logger.warn('Action rejected - not player turn', {
+        playerId,
+        playerSeat: player.seatNumber,
+        currentPlayerSeat,
+        phase: this.currentHand.phase
+      });
       return { success: false, error: 'Not your turn' };
     }
     
     // Clear action timer
     this.clearActionTimer();
+    
+    logger.info('Processing action', {
+      playerId,
+      actionType,
+      amount,
+      phase: this.currentHand.phase,
+      currentBet: this.currentHand.currentBet,
+      playerBet: player.currentBet,
+      playerStack: player.stack
+    });
     
     // Process action with Engine v3.0
     const result: ActionResult = this.engine.processAction(
@@ -317,6 +333,15 @@ export class PokerTable {
       actionType,
       amount
     );
+    
+    logger.info('Action result from engine', {
+      success: result.success,
+      error: result.error,
+      phaseAdvanced: result.phaseAdvanced,
+      handComplete: result.handComplete,
+      nextPlayerSeat: result.nextPlayerSeat,
+      newPhase: result.phase
+    });
     
     if (!result.success) {
       this.startActionTimer();
