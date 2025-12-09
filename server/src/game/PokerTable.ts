@@ -673,7 +673,7 @@ export class PokerTable {
       playerId: p.id,
       id: p.id,
       name: p.name,
-      avatarUrl: (p as any).avatarUrl || null, // Include avatar URL
+      avatarUrl: p.avatarUrl || null, // Include avatar URL from DB
       seatNumber: p.seatNumber,
       stack: p.stack,
       status: p.status,

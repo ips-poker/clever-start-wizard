@@ -9,6 +9,7 @@ interface Player {
   id: string;
   name: string;
   avatar?: string;
+  avatarUrl?: string; // Support both avatar and avatarUrl
   stack: number;
   cards?: string[];
   isDealer?: boolean;
@@ -250,7 +251,7 @@ export const StablePlayerSeat = memo(function StablePlayerSeat({
   const ringSize = isHero ? 72 : 62;
 
   // Resolve avatar URL - handles Vite hashed paths
-  const resolvedAvatar = resolveAvatarUrl(player.avatar, player.id);
+  const resolvedAvatar = resolveAvatarUrl(player.avatarUrl || player.avatar, player.id);
 
   // Syndikate themed avatar backgrounds (fallback only)
   const avatarBg = useMemo(() => {

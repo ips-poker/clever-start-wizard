@@ -8,11 +8,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { StablePokerCard } from './StablePokerCard';
 import { StableChipStack } from './StableChipStack';
+import { resolveAvatarUrl } from '@/utils/avatarResolver';
 
 interface Player {
   id: string;
   name: string;
   avatar?: string;
+  avatarUrl?: string; // Support both avatar and avatarUrl
   stack: number;
   cards?: string[];
   isDealer?: boolean;
@@ -287,7 +289,10 @@ export const OptimizedPlayerSeat = memo(function OptimizedPlayerSeat({
   const avatarSize = isHero ? 'w-16 h-16' : 'w-13 h-13';
   const ringSize = isHero ? 72 : 60;
 
-  // Stable avatar background
+  // Resolve avatar URL - handles DB URLs and Vite hashed paths
+  const resolvedAvatar = resolveAvatarUrl(player.avatarUrl || player.avatar, player.id);
+  
+  // Stable avatar background (fallback only)
   const avatarBg = useMemo(() => {
     const hue = (seatIndex * 50) % 360;
     return `linear-gradient(135deg, hsl(${hue}, 55%, 45%), hsl(${hue + 30}, 55%, 35%))`;
@@ -327,14 +332,14 @@ export const OptimizedPlayerSeat = memo(function OptimizedPlayerSeat({
             isTurn ? 'border-amber-400 shadow-lg shadow-amber-500/40' : 'border-white/30'
           )}
           style={{
-            background: player.avatar 
-              ? `url(${player.avatar}) center/cover` 
+            background: resolvedAvatar 
+              ? `url(${resolvedAvatar}) center/cover` 
               : avatarBg,
             width: isHero ? '64px' : '52px',
             height: isHero ? '64px' : '52px'
           }}
         >
-          {!player.avatar && (
+          {!resolvedAvatar && (
             <div className="absolute inset-0 flex items-center justify-center text-white font-bold text-lg drop-shadow-md">
               {player.name.charAt(0).toUpperCase()}
             </div>

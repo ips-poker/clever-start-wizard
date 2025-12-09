@@ -213,12 +213,13 @@ export class PokerWebSocketHandler {
     }
     logger.info('Table OK', { tableId });
     
-    // Verify player exists
+    // Verify player exists and get avatar
     logger.info('Checking player in DB...');
+    let avatarUrl: string | undefined;
     try {
       const { data: player, error: playerError } = await this.supabase
         .from('players')
-        .select('id, name')
+        .select('id, name, avatar_url')
         .eq('id', playerId)
         .single();
       
@@ -233,13 +234,15 @@ export class PokerWebSocketHandler {
         this.sendError(ws, 'Player not found');
         return;
       }
-      logger.info('Player OK', { playerId, name: player.name });
+      
+      avatarUrl = player.avatar_url || undefined;
+      logger.info('Player OK', { playerId, name: player.name, avatarUrl });
     } catch (err) {
       logger.error('Player verification error', { error: String(err) });
     }
     
     logger.info('Calling table.joinTable...');
-    const joinResult = await table.joinTable(playerId, playerName, seatNumber, buyIn);
+    const joinResult = await table.joinTable(playerId, playerName, seatNumber, buyIn, avatarUrl);
     logger.info('joinTable result', { success: joinResult.success, error: joinResult.error });
     
     if (!joinResult.success) {

@@ -4,6 +4,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Crown, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { MemoizedPokerCard } from './MemoizedPokerCard';
+import { resolveAvatarUrl } from '@/utils/avatarResolver';
 
 // Seat positions for 6-max table (PPPoker style)
 const SEAT_POSITIONS_6MAX = [
@@ -19,6 +20,7 @@ export interface PlayerData {
   id: string;
   name: string;
   avatar?: string;
+  avatarUrl?: string; // Support both avatar and avatarUrl
   stack: number;
   seatNumber: number;
   cards?: string[];
@@ -189,7 +191,7 @@ export const OptimizedPlayerSeat = memo(function OptimizedPlayerSeat({
         isHero ? "border-blue-500" : "border-gray-500"
       )}>
         <Avatar className="w-full h-full">
-          <AvatarImage src={player.avatar} />
+          <AvatarImage src={resolveAvatarUrl(player.avatarUrl || player.avatar, player.id)} />
           <AvatarFallback className="bg-gradient-to-br from-gray-700 to-gray-900 text-white text-sm">
             {player.name.charAt(0).toUpperCase()}
           </AvatarFallback>
