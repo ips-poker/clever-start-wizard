@@ -387,23 +387,24 @@ const PlayerSeat = memo(function PlayerSeat({
         </motion.div>
       )}
 
-      {/* Avatar container */}
+      {/* Avatar container with enhanced turn indicator */}
       <div 
         className={cn("relative rounded-full overflow-hidden cursor-pointer transition-all duration-200", player.isFolded && "opacity-40 grayscale")}
         style={{
           width: avatarSize,
           height: avatarSize,
           border: isCurrentTurn && !player.isFolded
-            ? '3px solid #22c55e'
+            ? '4px solid #22c55e'
             : player.isAllIn
               ? '3px solid #ef4444'
               : '2px solid rgba(100,100,100,0.8)',
           boxShadow: isCurrentTurn && !player.isFolded
-            ? '0 0 20px rgba(34,197,94,0.6), 0 0 40px rgba(34,197,94,0.3)'
+            ? '0 0 25px rgba(34,197,94,0.8), 0 0 50px rgba(34,197,94,0.4), inset 0 0 15px rgba(34,197,94,0.3)'
             : player.isAllIn
-              ? '0 0 15px rgba(239,68,68,0.5)'
+              ? '0 0 20px rgba(239,68,68,0.6)'
               : '0 4px 15px rgba(0,0,0,0.5)',
-          background: '#2a2a2a'
+          background: '#2a2a2a',
+          animation: isCurrentTurn && !player.isFolded ? 'pulse-glow 1.5s ease-in-out infinite' : undefined
         }}
         onClick={() => player && onPlayerClick?.(player)}
       >
@@ -419,6 +420,16 @@ const PlayerSeat = memo(function PlayerSeat({
           <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
             <span className={cn("text-white/90 font-bold", isMobile ? "text-[7px]" : "text-[9px]")}>Фолд</span>
           </div>
+        )}
+        
+        {/* Current turn pulsing indicator overlay */}
+        {isCurrentTurn && !player.isFolded && (
+          <div className="absolute inset-0 rounded-full pointer-events-none animate-pulse"
+            style={{ 
+              border: '3px solid rgba(34,197,94,0.6)',
+              boxShadow: 'inset 0 0 20px rgba(34,197,94,0.4)'
+            }}
+          />
         )}
       </div>
 
@@ -561,6 +572,7 @@ const PlayerSeat = memo(function PlayerSeat({
       )}
 
       {/* Bet chip + amount - PPPoker Premium Style with animated chip stack */}
+      {/* ALWAYS show bet if player has bet anything this hand */}
       {player.betAmount > 0 && (
         <motion.div
           className="absolute z-15"
@@ -574,15 +586,15 @@ const PlayerSeat = memo(function PlayerSeat({
           transition={{ type: 'spring', stiffness: 400, damping: 25 }}
         >
           <div className={cn("flex items-center gap-1.5 rounded-full",
-            isMobile ? "px-2 py-1" : "px-3 py-1.5"
+            isMobile ? "px-2.5 py-1.5" : "px-3 py-1.5"
           )}
           style={{
-            background: 'linear-gradient(135deg, rgba(0,0,0,0.9) 0%, rgba(30,30,30,0.9) 100%)',
-            border: '1.5px solid rgba(251,191,36,0.6)',
-            boxShadow: '0 4px 15px rgba(0,0,0,0.5), 0 0 10px rgba(251,191,36,0.2)'
+            background: 'linear-gradient(135deg, rgba(0,0,0,0.95) 0%, rgba(30,30,30,0.95) 100%)',
+            border: '2px solid rgba(251,191,36,0.7)',
+            boxShadow: '0 4px 15px rgba(0,0,0,0.6), 0 0 15px rgba(251,191,36,0.3)'
           }}>
             {/* Animated chip stack - PPPoker style */}
-            <div className="relative flex items-end" style={{ height: isMobile ? 14 : 18 }}>
+            <div className="relative flex items-end" style={{ height: isMobile ? 16 : 20 }}>
               {[0, 1, 2].map((i) => (
                 <motion.div 
                   key={i}
@@ -591,29 +603,31 @@ const PlayerSeat = memo(function PlayerSeat({
                   transition={{ delay: i * 0.05 }}
                   className="absolute rounded-full"
                   style={{ 
-                    width: isMobile ? 10 : 14,
-                    height: isMobile ? 10 : 14,
+                    width: isMobile ? 12 : 16,
+                    height: isMobile ? 12 : 16,
                     background: i === 0 
                       ? 'linear-gradient(135deg, #ef4444, #dc2626)' 
                       : i === 1 
                         ? 'linear-gradient(135deg, #22c55e, #16a34a)'
                         : 'linear-gradient(135deg, #3b82f6, #2563eb)',
-                    border: '1.5px solid rgba(255,255,255,0.4)',
-                    left: i * (isMobile ? 4 : 5),
-                    bottom: i * (isMobile ? 2 : 3),
-                    boxShadow: '0 2px 4px rgba(0,0,0,0.3)'
+                    border: '2px solid rgba(255,255,255,0.5)',
+                    left: i * (isMobile ? 5 : 6),
+                    bottom: i * (isMobile ? 3 : 4),
+                    boxShadow: '0 2px 6px rgba(0,0,0,0.4)'
                   }}
                 />
               ))}
             </div>
-            <span className={cn("font-bold ml-2", isMobile ? "text-[10px]" : "text-xs")}
+            {/* Show actual bet amount - ALWAYS visible */}
+            <span className={cn("font-black ml-3 tabular-nums", isMobile ? "text-sm" : "text-base")}
               style={{
                 background: 'linear-gradient(135deg, #fbbf24, #f59e0b)',
                 WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent'
+                WebkitTextFillColor: 'transparent',
+                textShadow: '0 0 20px rgba(251,191,36,0.5)'
               }}
             >
-              {(player.betAmount / 20).toFixed(1)} BB
+              {player.betAmount.toLocaleString()}
             </span>
           </div>
         </motion.div>
@@ -1125,7 +1139,7 @@ const PlayerProfileModal = memo(function PlayerProfileModal({
   );
 });
 
-// ============= ACTION PANEL - PPPoker 3-Button Style =============
+// ============= ACTION PANEL - PPPoker 3-Button Style with Enhanced UX =============
 const ActionPanel = memo(function ActionPanel({
   isVisible,
   canCheck,
@@ -1134,6 +1148,8 @@ const ActionPanel = memo(function ActionPanel({
   maxBet,
   pot,
   bigBlind,
+  currentBet,
+  myBetAmount,
   onAction
 }: {
   isVisible: boolean;
@@ -1143,19 +1159,28 @@ const ActionPanel = memo(function ActionPanel({
   maxBet: number;
   pot: number;
   bigBlind: number;
+  currentBet?: number;
+  myBetAmount?: number;
   onAction: (action: 'fold' | 'check' | 'call' | 'raise' | 'allin', amount?: number) => void;
 }) {
   const [raiseAmount, setRaiseAmount] = useState(minRaise);
   const [showRaisePanel, setShowRaisePanel] = useState(false);
 
   useEffect(() => {
-    setRaiseAmount(Math.max(minRaise, callAmount * 2 || bigBlind * 2));
-  }, [minRaise, callAmount, bigBlind]);
+    // Set default raise to 2x current bet or 2.5x BB
+    const defaultRaise = Math.max(
+      minRaise, 
+      (currentBet || 0) + (currentBet || bigBlind), // min raise over current bet
+      bigBlind * 2.5
+    );
+    setRaiseAmount(Math.min(defaultRaise, maxBet));
+  }, [minRaise, currentBet, bigBlind, maxBet]);
 
   if (!isVisible) return null;
 
-  const callAmountBB = (callAmount / bigBlind).toFixed(1);
-  const raiseAmountBB = (raiseAmount / bigBlind).toFixed(1);
+  // Show actual amounts for clarity
+  const callAmountDisplay = callAmount.toLocaleString();
+  const raiseAmountDisplay = raiseAmount.toLocaleString();
 
   return (
     <motion.div
@@ -1164,6 +1189,21 @@ const ActionPanel = memo(function ActionPanel({
       exit={{ y: 100, opacity: 0 }}
       className="fixed bottom-0 left-0 right-0 z-50"
     >
+      {/* Current bet indicator - shows what you need to match */}
+      {currentBet && currentBet > 0 && (
+        <div className="mx-3 mb-2 flex justify-center">
+          <div className="px-4 py-1.5 rounded-full text-sm font-medium"
+            style={{ 
+              background: 'rgba(0,0,0,0.8)', 
+              border: '1px solid rgba(251,191,36,0.5)',
+              color: '#fbbf24'
+            }}
+          >
+            Ставка: {currentBet.toLocaleString()} {myBetAmount ? `(вы: ${myBetAmount.toLocaleString()})` : ''}
+          </div>
+        </div>
+      )}
+      
       {/* Raise panel */}
       <AnimatePresence>
         {showRaisePanel && (
@@ -1171,27 +1211,29 @@ const ActionPanel = memo(function ActionPanel({
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 20 }}
-            className="mx-3 mb-2 p-3 rounded-xl"
-            style={{ background: 'rgba(20,25,32,0.98)', border: '1px solid rgba(34,197,94,0.3)' }}
+            className="mx-3 mb-2 p-4 rounded-xl"
+            style={{ background: 'rgba(20,25,32,0.98)', border: '1px solid rgba(34,197,94,0.4)' }}
           >
             {/* Quick presets - PPPoker style */}
-            <div className="flex justify-center gap-2 mb-3">
+            <div className="flex justify-center gap-2 mb-4">
               {[
                 { label: '2×', mult: 2 },
                 { label: '2.5×', mult: 2.5 },
                 { label: '3×', mult: 3 },
-                { label: '4×', mult: 4 },
+                { label: 'Пот', mult: -1 }, // Special: pot-sized bet
               ].map((preset, i) => {
-                const amount = Math.min(Math.max((callAmount || bigBlind) * preset.mult, minRaise), maxBet);
+                const amount = preset.mult === -1 
+                  ? Math.min(pot + callAmount, maxBet)
+                  : Math.min(Math.max((currentBet || bigBlind) * preset.mult, minRaise), maxBet);
                 const isActive = Math.abs(raiseAmount - amount) < bigBlind / 2;
                 return (
                   <button
                     key={i}
                     onClick={() => setRaiseAmount(Math.floor(amount))}
                     className={cn(
-                      "px-4 py-2 rounded-full text-xs font-bold transition-all border",
+                      "px-4 py-2.5 rounded-full text-sm font-bold transition-all border",
                       isActive 
-                        ? "bg-emerald-500 text-white border-emerald-400" 
+                        ? "bg-emerald-500 text-white border-emerald-400 shadow-lg shadow-emerald-500/30" 
                         : "bg-transparent text-emerald-400 border-emerald-500/50 hover:bg-emerald-500/20"
                     )}
                   >
@@ -1201,59 +1243,98 @@ const ActionPanel = memo(function ActionPanel({
               })}
             </div>
             
-            {/* Slider with green accent */}
-            <div className="flex items-center gap-3 mb-3">
+            {/* All-in button */}
+            <button
+              onClick={() => { onAction('allin'); setShowRaisePanel(false); }}
+              className="w-full mb-4 py-3 rounded-xl font-bold text-white text-base"
+              style={{
+                background: 'linear-gradient(135deg, #dc2626, #b91c1c)',
+                boxShadow: '0 4px 15px rgba(220,38,38,0.4)'
+              }}
+            >
+              ВА-БАНК ({maxBet.toLocaleString()})
+            </button>
+            
+            {/* Slider with value display */}
+            <div className="flex items-center gap-3 mb-4">
+              <span className="text-emerald-400/60 text-sm font-medium">{minRaise.toLocaleString()}</span>
               <input
                 type="range"
                 min={minRaise}
                 max={maxBet}
                 value={raiseAmount}
                 onChange={(e) => setRaiseAmount(Number(e.target.value))}
-                className="flex-1 h-2 rounded-full appearance-none cursor-pointer"
+                className="flex-1 h-3 rounded-full appearance-none cursor-pointer"
                 style={{ 
-                  background: `linear-gradient(to right, #22c55e 0%, #22c55e ${((raiseAmount - minRaise) / (maxBet - minRaise)) * 100}%, rgba(255,255,255,0.2) ${((raiseAmount - minRaise) / (maxBet - minRaise)) * 100}%, rgba(255,255,255,0.2) 100%)`
+                  background: `linear-gradient(to right, #22c55e 0%, #22c55e ${((raiseAmount - minRaise) / (maxBet - minRaise)) * 100}%, rgba(255,255,255,0.15) ${((raiseAmount - minRaise) / (maxBet - minRaise)) * 100}%, rgba(255,255,255,0.15) 100%)`
                 }}
               />
-              <div className="text-emerald-400 font-bold text-lg min-w-[70px] text-right">
-                {raiseAmountBB} BB
-              </div>
+              <span className="text-emerald-400/60 text-sm font-medium">{maxBet.toLocaleString()}</span>
             </div>
             
-            {/* Confirm raise */}
+            {/* Confirm raise - shows exact amount */}
             <button
               onClick={() => { onAction('raise', raiseAmount); setShowRaisePanel(false); }}
-              className="w-full mt-3 py-3 bg-gradient-to-b from-amber-500 to-amber-600 text-white font-bold rounded-xl"
+              className="w-full py-4 font-bold rounded-xl text-white text-lg"
+              style={{
+                background: 'linear-gradient(135deg, #f59e0b, #d97706)',
+                boxShadow: '0 4px 15px rgba(245,158,11,0.4)'
+              }}
             >
-              Рейз {(raiseAmount / bigBlind).toFixed(1)} BB
+              РЕЙЗ {raiseAmountDisplay}
             </button>
           </motion.div>
         )}
       </AnimatePresence>
       
-      {/* Main action buttons - PPPoker 3-button style */}
-      <div className="flex gap-2 px-3 pb-safe pt-2" style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 16px)', background: 'linear-gradient(to top, rgba(0,0,0,0.98), rgba(0,0,0,0.7), transparent)' }}>
+      {/* Main action buttons - PPPoker 3-button style with CLEAR labels */}
+      <div className="flex gap-2 px-3 pb-safe pt-3" style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 20px)', background: 'linear-gradient(to top, rgba(0,0,0,0.98), rgba(0,0,0,0.8), transparent)' }}>
         {/* Fold */}
         <button
           onClick={() => onAction('fold')}
-          className="flex-1 py-3.5 rounded-xl font-bold text-sm bg-gradient-to-b from-red-600 to-red-700 text-white shadow-lg active:scale-95 transition-transform"
+          className="flex-1 py-4 rounded-xl font-bold text-base shadow-lg active:scale-95 transition-transform"
+          style={{
+            background: 'linear-gradient(135deg, #dc2626, #991b1b)',
+            color: 'white',
+            boxShadow: '0 4px 15px rgba(220,38,38,0.3)'
+          }}
         >
-          Фолд
+          ФОЛД
         </button>
         
-        {/* Call / Check */}
+        {/* Call / Check - CLEAR indication of action */}
         <button
           onClick={() => canCheck ? onAction('check') : onAction('call')}
-          className="flex-1 py-3.5 rounded-xl font-bold text-sm bg-gradient-to-b from-amber-500 to-amber-600 text-white shadow-lg active:scale-95 transition-transform"
+          className="flex-1 py-4 rounded-xl font-bold text-base shadow-lg active:scale-95 transition-transform flex flex-col items-center justify-center"
+          style={{
+            background: canCheck 
+              ? 'linear-gradient(135deg, #3b82f6, #2563eb)' 
+              : 'linear-gradient(135deg, #f59e0b, #d97706)',
+            color: 'white',
+            boxShadow: canCheck 
+              ? '0 4px 15px rgba(59,130,246,0.3)'
+              : '0 4px 15px rgba(245,158,11,0.3)'
+          }}
         >
-          {canCheck ? 'Чек' : `Колл ${callAmountBB} BB`}
+          <span>{canCheck ? 'ЧЕК' : 'КОЛЛ'}</span>
+          {!canCheck && callAmount > 0 && (
+            <span className="text-xs opacity-90">{callAmountDisplay}</span>
+          )}
         </button>
         
         {/* Raise */}
         <button
           onClick={() => setShowRaisePanel(!showRaisePanel)}
-          className="flex-1 py-3.5 rounded-xl font-bold text-sm bg-gradient-to-b from-emerald-500 to-emerald-600 text-white shadow-lg active:scale-95 transition-transform"
+          className="flex-1 py-4 rounded-xl font-bold text-base shadow-lg active:scale-95 transition-transform"
+          style={{
+            background: showRaisePanel 
+              ? 'linear-gradient(135deg, #16a34a, #15803d)' 
+              : 'linear-gradient(135deg, #22c55e, #16a34a)',
+            color: 'white',
+            boxShadow: '0 4px 15px rgba(34,197,94,0.3)'
+          }}
         >
-          Рейз
+          РЕЙЗ
         </button>
       </div>
     </motion.div>
@@ -1838,10 +1919,12 @@ export function SyndikatetPokerTable({
               isVisible={true}
               canCheck={canCheck}
               callAmount={callAmount}
-              minRaise={tableState.currentBet * 2}
+              minRaise={Math.max(tableState.currentBet * 2, bigBlind * 2)}
               maxBet={myPlayer?.stack || 0}
               pot={tableState.pot}
               bigBlind={bigBlind}
+              currentBet={tableState.currentBet}
+              myBetAmount={myPlayer?.betAmount || 0}
               onAction={handleAction}
             />
           )}
