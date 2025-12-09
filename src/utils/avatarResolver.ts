@@ -68,25 +68,34 @@ export function resolveAvatarUrl(avatarUrl: string | null | undefined, fallbackP
   }
   
   // If it's a full external URL (Supabase storage, Telegram, etc.), use it directly
+  // This handles:
+  // - https://api.syndicate-poker.ru/storage/... (Supabase storage)
+  // - https://t.me/i/userpic/... (Telegram avatars)
+  // - Any other absolute URLs
   if (avatarUrl.startsWith('http://') || avatarUrl.startsWith('https://')) {
     return avatarUrl;
   }
   
-  // If it's a Telegram SVG URL
-  if (avatarUrl.startsWith('https://t.me/')) {
-    return avatarUrl;
-  }
-  
+  // Handle relative paths that might be Vite-hashed or dev paths
   // Extract avatar number from paths like:
-  // - /assets/poker-avatar-10-C9wYQiw9.png (Vite hashed)
+  // - /assets/poker-avatar-10-C9wYQiw9.png (Vite production hashed)
+  // - /assets/poker-avatar-10-BoSv_lEh.png (Vite production hashed)
   // - /src/assets/avatars/poker-avatar-10.png (dev path)
-  // - poker-avatar-10.png
-  const match = avatarUrl.match(/poker-avatar-(\d+)/);
+  // - poker-avatar-10.png (just filename)
+  // - avatars/poker-avatar-10.png (relative path)
+  const match = avatarUrl.match(/poker-avatar-(\d+)/i);
   if (match) {
     const avatarNumber = parseInt(match[1], 10);
     if (avatarNumber >= 1 && avatarNumber <= 24 && AVATAR_MAP[avatarNumber]) {
       return AVATAR_MAP[avatarNumber];
     }
+  }
+  
+  // If it starts with / and looks like a Vite-hashed asset, try to get a default
+  // because the hash might be outdated from a previous build
+  if (avatarUrl.startsWith('/assets/') && avatarUrl.includes('-') && avatarUrl.includes('.png')) {
+    console.warn('[AvatarResolver] Detected potentially stale Vite-hashed avatar URL:', avatarUrl);
+    return getDefaultAvatar(fallbackPlayerId);
   }
   
   // Fallback - return the original URL (might work for other cases)
