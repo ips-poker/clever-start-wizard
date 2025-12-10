@@ -649,19 +649,29 @@ export class PokerTable {
    * CRITICAL: Ensures stacks never go negative and properly awards pot
    */
   private async completeHand(winners: { playerId: string; amount: number; handName: string }[]): Promise<void> {
-    logger.info('=== HAND COMPLETION ===', {
+    logger.info('=== HAND COMPLETION START ===', {
       tableId: this.id,
       handNumber: this.handNumber,
       pot: this.currentHand?.pot,
-      winnersCount: winners.length
+      winnersCount: winners.length,
+      winners: winners.map(w => ({
+        id: w.playerId.substring(0, 8),
+        amount: w.amount,
+        hand: w.handName
+      }))
     });
+    
+    // Calculate total winnings to verify pot distribution
+    const totalWinnings = winners.reduce((sum, w) => sum + w.amount, 0);
+    logger.info('Total winnings to distribute:', { totalWinnings, pot: this.currentHand?.pot });
     
     // Log player states before distribution
     for (const [pid, p] of this.players) {
-      logger.info('Player state before payout', {
-        playerId: pid,
+      logger.info('Player state BEFORE payout', {
+        playerId: pid.substring(0, 8),
         name: p.name,
         stack: p.stack,
+        currentBet: p.currentBet,
         isFolded: p.isFolded,
         isAllIn: p.isAllIn
       });
@@ -678,6 +688,7 @@ export class PokerTable {
         if (player.stack < 0) {
           logger.error('CRITICAL: Negative stack detected after payout! Resetting to winning amount', {
             playerId: player.id,
+            name: player.name,
             oldStack,
             winAmount: winner.amount,
             newStack: player.stack
@@ -685,8 +696,8 @@ export class PokerTable {
           player.stack = winner.amount;
         }
         
-        logger.info('Winner payout', {
-          playerId: player.id,
+        logger.info('Winner payout SUCCESS', {
+          playerId: player.id.substring(0, 8),
           name: player.name,
           handName: winner.handName,
           amount: winner.amount,
@@ -694,14 +705,17 @@ export class PokerTable {
           newStack: player.stack
         });
       } else {
-        logger.error('Winner not found in players map!', { winnerId: winner.playerId });
+        logger.error('CRITICAL: Winner not found in players map!', { 
+          winnerId: winner.playerId,
+          winAmount: winner.amount 
+        });
       }
     }
     
     // Log final player states
     for (const [pid, p] of this.players) {
-      logger.info('Player state after payout', {
-        playerId: pid,
+      logger.info('Player state AFTER payout', {
+        playerId: pid.substring(0, 8),
         name: p.name,
         stack: p.stack
       });
@@ -714,7 +728,11 @@ export class PokerTable {
       communityCards: this.currentHand?.communityCards
     });
     
-    logger.info('=== HAND COMPLETE ===', { tableId: this.id, handNumber: this.handNumber, winners });
+    logger.info('=== HAND COMPLETION END ===', { 
+      tableId: this.id, 
+      handNumber: this.handNumber,
+      winnersInfo: winners.map(w => `${w.playerId.substring(0,8)}:${w.amount}`)
+    });
     
     // Save hand history
     await this.saveHandHistory();

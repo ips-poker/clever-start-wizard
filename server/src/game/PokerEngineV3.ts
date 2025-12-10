@@ -1350,12 +1350,21 @@ export function distributeWinnings(
 ): ShowdownResult {
   const remaining = players.filter(p => !p.isFolded);
   
+  // CRITICAL FIX: Use totalBetThisHand + current betAmount for accurate side pot calculation
+  // betAmount alone is reset each phase and causes incorrect pot distribution
   const contributions: PlayerContribution[] = players.map(p => ({
     playerId: p.id,
-    totalBet: p.betAmount,
+    totalBet: (p.totalBetThisHand || 0) + (p.betAmount || 0), // FIXED: was only p.betAmount
     isFolded: p.isFolded,
     isAllIn: p.isAllIn
   }));
+  
+  console.log('[distributeWinnings] Contributions:', contributions.map(c => ({
+    id: c.playerId.substring(0, 8),
+    total: c.totalBet,
+    folded: c.isFolded,
+    allIn: c.isAllIn
+  })));
   
   const potResult = calculateSidePots(contributions);
   
@@ -2016,12 +2025,27 @@ export class PokerEngineV3 {
       return { success: false, error: result.error };
     }
     
+    // CRITICAL: Track bet amount difference for totalBetThisHand
+    const previousBet = player.betAmount;
+    const betDifference = result.newBet - previousBet;
+    
     // Update player state
     player.betAmount = result.newBet;
     player.stack = result.newStack;
     player.isFolded = result.isFolded;
     player.isAllIn = result.isAllIn;
     player.hasActedThisRound = true; // CRITICAL: Mark player has acted
+    
+    // CRITICAL FIX: Update totalBetThisHand immediately on each action
+    // This ensures accurate side pot calculation even if hand ends mid-round
+    if (betDifference > 0) {
+      player.totalBetThisHand = (player.totalBetThisHand || 0) + betDifference;
+      console.log('[Engine] Updated totalBetThisHand:', {
+        playerId: playerId.substring(0, 8),
+        betDifference,
+        totalBetThisHand: player.totalBetThisHand
+      });
+    }
     
     // SAFETY: Ensure stack is never negative
     if (player.stack < 0) {
@@ -2138,11 +2162,12 @@ export class PokerEngineV3 {
     const currentIndex = phaseOrder.indexOf(this.state.phase);
     
     if (currentIndex < phaseOrder.length - 1) {
-      // CRITICAL: First accumulate all bets to pot BEFORE resetting
+      // NOTE: totalBetThisHand is now updated in processAction, not here
+      // This prevents bugs when hand ends mid-round before phase change
       let roundBets = 0;
       for (const p of this.state.players) {
-        // Track total contribution for side pot calculation
-        p.totalBetThisHand = (p.totalBetThisHand || 0) + p.betAmount;
+        // totalBetThisHand already updated in processAction
+        // Just calculate roundBets for logging
         roundBets += p.betAmount;
       }
       
@@ -2376,10 +2401,10 @@ export class PokerEngineV3 {
     const isOmaha = this.gameType === GameType.OMAHA || this.gameType === GameType.OMAHA_HI_LO;
     
     // Calculate contributions for side pots using totalBetThisHand
-    // Add current betAmount to totalBetThisHand for final calculation
+    // totalBetThisHand now includes ALL bets from entire hand (updated in processAction)
     const contributions: PlayerContribution[] = this.state.players.map(p => ({
       playerId: p.id,
-      totalBet: (p.totalBetThisHand || 0) + p.betAmount,
+      totalBet: p.totalBetThisHand || 0, // Already includes all bets
       isFolded: p.isFolded,
       isAllIn: p.isAllIn
     }));
