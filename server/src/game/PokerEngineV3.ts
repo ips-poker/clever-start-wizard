@@ -1668,6 +1668,10 @@ export function collectAntes(
   return { pot, updatedPlayers };
 }
 
+/**
+ * Post blinds with professional validation
+ * CRITICAL: Handles dead button, short stacks, and all-in blinds correctly
+ */
 export function postBlinds(
   players: GamePlayer[],
   sbSeat: number,
@@ -1677,34 +1681,53 @@ export function postBlinds(
 ): { pot: number; currentBet: number; updatedPlayers: GamePlayer[] } {
   let pot = 0;
   let currentBet = bigBlind;
+  let sbPosted = false;
+  let bbPosted = false;
   
   const updatedPlayers = players.map(p => {
-    if (p.seatNumber === sbSeat) {
+    if (p.seatNumber === sbSeat && !p.isFolded && !p.isSittingOut) {
       const sb = Math.min(smallBlind, p.stack);
-      pot += sb;
-      return {
-        ...p,
-        stack: p.stack - sb,
-        betAmount: sb,
-        totalBetThisHand: sb, // CRITICAL: Track total for side pots
-        isAllIn: p.stack === sb,
-        hasActedThisRound: false // SB hasn't acted yet, just posted blind
-      };
+      if (sb > 0) {
+        pot += sb;
+        sbPosted = true;
+        const newStack = p.stack - sb;
+        return {
+          ...p,
+          stack: newStack,
+          betAmount: sb,
+          totalBetThisHand: sb,
+          isAllIn: newStack === 0,
+          hasActedThisRound: false
+        };
+      }
     }
-    if (p.seatNumber === bbSeat) {
+    if (p.seatNumber === bbSeat && !p.isFolded && !p.isSittingOut) {
       const bb = Math.min(bigBlind, p.stack);
-      pot += bb;
-      currentBet = Math.max(currentBet, bb);
-      return {
-        ...p,
-        stack: p.stack - bb,
-        betAmount: bb,
-        totalBetThisHand: bb, // CRITICAL: Track total for side pots
-        isAllIn: p.stack === bb,
-        hasActedThisRound: false // BB hasn't acted yet (has option)
-      };
+      if (bb > 0) {
+        pot += bb;
+        bbPosted = true;
+        currentBet = Math.max(currentBet, bb);
+        const newStack = p.stack - bb;
+        return {
+          ...p,
+          stack: newStack,
+          betAmount: bb,
+          totalBetThisHand: bb,
+          isAllIn: newStack === 0,
+          hasActedThisRound: false
+        };
+      }
     }
     return p;
+  });
+  
+  console.log('[Engine] postBlinds result:', {
+    pot,
+    currentBet,
+    sbPosted,
+    bbPosted,
+    sbSeat,
+    bbSeat
   });
   
   return { pot, currentBet, updatedPlayers };
@@ -1898,22 +1921,34 @@ export class PokerEngineV3 {
       stack: p.stack
     })));
     
-    // Convert players to GamePlayer format
-    const gamePlayers: GamePlayer[] = eligiblePlayers.map(p => ({
-      id: p.id,
-      seatNumber: p.seatNumber,
-      stack: p.stack,
-      betAmount: 0,
-      totalBetThisHand: 0,  // Initialize total bet tracking for side pots
-      holeCards: [],
-      isFolded: false,  // Eligible players start active
-      isAllIn: false,
-      isSittingOut: false,
-      isDisconnected: false,
-      hasActedThisRound: false,  // Initialize acted flag
-      timeBank: this.config.timeBankSeconds,
-      lastActionTime: null
-    }));
+    // Convert players to GamePlayer format with validation
+    const gamePlayers: GamePlayer[] = eligiblePlayers.map(p => {
+      // PROFESSIONAL: Validate and sanitize stack values
+      let sanitizedStack = p.stack;
+      if (sanitizedStack < 0) {
+        console.error('[Engine] CRITICAL: Negative stack in startNewHand input!', {
+          playerId: p.id.substring(0, 8),
+          stack: p.stack
+        });
+        sanitizedStack = 0;
+      }
+      
+      return {
+        id: p.id,
+        seatNumber: p.seatNumber,
+        stack: sanitizedStack,
+        betAmount: 0,
+        totalBetThisHand: 0,  // Initialize total bet tracking for side pots
+        holeCards: [],
+        isFolded: sanitizedStack === 0,  // Zero stack = auto-fold
+        isAllIn: false,
+        isSittingOut: p.status === 'sitting_out',
+        isDisconnected: p.status === 'disconnected',
+        hasActedThisRound: false,  // Initialize acted flag
+        timeBank: this.config.timeBankSeconds,
+        lastActionTime: null
+      };
+    });
     
     // Calculate positions
     const positions = calculatePositions(gamePlayers, dealerSeat > 0 ? dealerSeat - 1 : null);
@@ -2410,16 +2445,6 @@ export class PokerEngineV3 {
     }
     
     // Wrap around - first player in sorted order
-    return activePlayers[0]?.seatNumber ?? null;
-  }
-      const checkSeat = (dealerSeat + offset) % maxSeats;
-      const player = activePlayers.find(p => p.seatNumber === checkSeat);
-      if (player) {
-        return player.seatNumber;
-      }
-    }
-    
-    // Fallback - return first active player
     return activePlayers[0]?.seatNumber ?? null;
   }
   
