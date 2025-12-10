@@ -2495,6 +2495,23 @@ export class PokerEngineV3 {
     // Players who can still act (not folded, not all-in, have chips)
     const playersWhoCanAct = remaining.filter(p => !p.isAllIn && p.stack > 0);
     
+    // CRITICAL DEBUG: Log all player states for diagnosis
+    console.log('[Engine] isBettingRoundCompleteV2 check:', {
+      phase: this.state.phase,
+      currentBet: this.state.currentBet,
+      remainingCount: remaining.length,
+      canActCount: playersWhoCanAct.length,
+      players: this.state.players.map(p => ({
+        id: p.id.substring(0, 8),
+        seat: p.seatNumber,
+        bet: p.betAmount,
+        hasActed: p.hasActedThisRound,
+        folded: p.isFolded,
+        allIn: p.isAllIn,
+        stack: p.stack
+      }))
+    });
+    
     // All players are all-in except possibly one - need to check if that one matched
     if (playersWhoCanAct.length === 0) {
       console.log('[Engine] Round complete: all remaining players are all-in');
