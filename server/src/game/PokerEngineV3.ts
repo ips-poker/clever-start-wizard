@@ -2023,6 +2023,17 @@ export class PokerEngineV3 {
     player.isAllIn = result.isAllIn;
     player.hasActedThisRound = true; // CRITICAL: Mark player has acted
     
+    // SAFETY: Ensure stack is never negative
+    if (player.stack < 0) {
+      console.error('[Engine] CRITICAL: Negative stack detected!', {
+        playerId,
+        stack: player.stack,
+        action: actionType,
+        amount: result.actionAmount
+      });
+      player.stack = 0;
+    }
+    
     // Update hand state
     this.state.pot += result.actionAmount;
     this.state.currentBet = result.newCurrentBet;
