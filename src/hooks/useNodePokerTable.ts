@@ -489,6 +489,19 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
         case 'pong':
           break;
 
+        case 'time_bank_used':
+          // Time bank notification - update state if included
+          log('⏱️ Time bank used:', data.data);
+          if (data.state && tableId) {
+            setTableState(transformServerState(data.state, tableId));
+          }
+          break;
+
+        case 'timeout_warning':
+          // Timeout warning - player is running low on time
+          log('⚠️ Timeout warning');
+          break;
+
         default:
           log('📨 Unknown message type:', data.type, data);
       }

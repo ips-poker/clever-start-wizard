@@ -1047,9 +1047,11 @@ export function getAllowedActions(
     const afterCall = player.stack - toCall;
     const minRaiseIncrement = Math.max(minRaise, lastRaiseAmount, bigBlind);
     
+    // CRITICAL: Always calculate minRaise for error messages
+    result.minRaise = currentBet + minRaiseIncrement;
+    
     if (afterCall >= minRaiseIncrement) {
       result.canRaise = true;
-      result.minRaise = currentBet + minRaiseIncrement;
     } else if (afterCall > 0) {
       // Can only all-in (short raise)
       result.canAllIn = true;
@@ -1871,7 +1873,25 @@ export class PokerEngineV3 {
   
   constructor(gameType: GameType, config: GameConfig) {
     this.gameType = gameType;
+    
+    // CRITICAL: Validate config - ensure blinds are positive
+    if (config.bigBlind <= 0) {
+      console.error('[Engine] CRITICAL: bigBlind is 0 or negative!', config);
+      config.bigBlind = 2; // Default fallback
+    }
+    if (config.smallBlind <= 0) {
+      console.error('[Engine] CRITICAL: smallBlind is 0 or negative!', config);
+      config.smallBlind = 1; // Default fallback
+    }
+    
     this.config = config;
+    
+    console.log('[Engine] PokerEngineV3 initialized with config:', {
+      gameType,
+      smallBlind: config.smallBlind,
+      bigBlind: config.bigBlind,
+      ante: config.ante
+    });
   }
   
   /**
@@ -2090,10 +2110,35 @@ export class PokerEngineV3 {
       'all_in': 'all_in'
     };
     
-    const mappedAction = actionMap[actionType.toLowerCase()];
+    let mappedAction = actionMap[actionType.toLowerCase()];
     if (!mappedAction) {
       return { success: false, error: `Invalid action: ${actionType}` };
     }
+    
+    // PROFESSIONAL: Auto-convert raise<->bet based on game state
+    // This is standard on PokerStars/GGPoker - they accept either action
+    if (mappedAction === 'raise' && this.state.currentBet === 0) {
+      // No bet to raise - convert to bet
+      console.log('[Engine] Auto-converting raise to bet (no current bet)');
+      mappedAction = 'bet';
+    } else if (mappedAction === 'bet' && this.state.currentBet > 0) {
+      // There's already a bet - convert to raise
+      console.log('[Engine] Auto-converting bet to raise (current bet exists)');
+      mappedAction = 'raise';
+    }
+    
+    // CRITICAL: Log state before validation for debugging
+    console.log('[Engine] processAction input:', {
+      playerId: playerId.substring(0, 8),
+      action: actionType,
+      requestedAmount: amount,
+      currentBet: this.state.currentBet,
+      minRaise: this.state.minRaise,
+      lastRaiseAmount: this.state.lastRaiseAmount,
+      bigBlind: this.config.bigBlind,
+      playerBet: player.betAmount,
+      playerStack: player.stack
+    });
     
     // Validate and process action
     const result = validateAndProcessAction(
@@ -2106,6 +2151,10 @@ export class PokerEngineV3 {
     );
     
     if (!result.valid) {
+      console.log('[Engine] Action validation failed:', {
+        error: result.error,
+        allowedMinRaise: result.newMinRaise
+      });
       return { success: false, error: result.error };
     }
     
