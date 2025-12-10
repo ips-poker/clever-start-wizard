@@ -348,10 +348,8 @@ export class PokerTable {
       return { success: false, error: result.error };
     }
     
-    // Update player from action result
-    this.updatePlayerFromAction(player, result);
-    
-    // Sync hand state from engine
+    // CRITICAL: Sync ALL player state from engine (engine is source of truth)
+    // Do NOT call updatePlayerFromAction - it causes double subtraction!
     const engineState = this.engine.getState();
     if (engineState) {
       const prevPhase = this.currentHand.phase;
@@ -363,17 +361,24 @@ export class PokerTable {
       this.currentHand.minRaise = engineState.minRaise;
       this.currentHand.sidePots = engineState.sidePots || [];
       
-      // CRITICAL: Sync player bets from engine state (especially after phase change)
-      // When phase advances, engine resets player betAmount to 0
-      if (result.phaseAdvanced || prevPhase !== this.currentHand.phase) {
-        for (const enginePlayer of engineState.players) {
-          const tablePlayer = this.players.get(enginePlayer.id);
-          if (tablePlayer) {
-            tablePlayer.currentBet = enginePlayer.betAmount;
-            tablePlayer.stack = enginePlayer.stack;
-            tablePlayer.isFolded = enginePlayer.isFolded;
-            tablePlayer.isAllIn = enginePlayer.isAllIn;
-          }
+      // CRITICAL: ALWAYS sync player state from engine - not just on phase change
+      // Engine is authoritative for all player data (stack, bet, fold, all-in)
+      for (const enginePlayer of engineState.players) {
+        const tablePlayer = this.players.get(enginePlayer.id);
+        if (tablePlayer) {
+          tablePlayer.currentBet = enginePlayer.betAmount;
+          tablePlayer.stack = enginePlayer.stack;
+          tablePlayer.isFolded = enginePlayer.isFolded;
+          tablePlayer.isAllIn = enginePlayer.isAllIn;
+          
+          // Log for debugging
+          logger.info('Synced player from engine', {
+            playerId: enginePlayer.id,
+            stack: enginePlayer.stack,
+            betAmount: enginePlayer.betAmount,
+            isAllIn: enginePlayer.isAllIn,
+            isFolded: enginePlayer.isFolded
+          });
         }
       }
     }
@@ -385,7 +390,7 @@ export class PokerTable {
       amount: result.amount || 0,
       pot: this.currentHand?.pot || 0,
       phase: this.currentHand?.phase || 'preflop',
-      playerBet: player.currentBet  // Include updated player bet
+      playerBet: player.currentBet
     });
     
     // CRITICAL: Always emit state update so all clients see updated bets
@@ -398,6 +403,10 @@ export class PokerTable {
     
     // Check if hand is complete
     if (result.handComplete && result.winners) {
+      logger.info('Hand complete - distributing winnings', { 
+        winners: result.winners,
+        pot: this.currentHand?.pot
+      });
       await this.completeHand(result.winners);
     } else if (result.phaseAdvanced && this.currentHand) {
       this.emit('phase_change', {
@@ -416,16 +425,26 @@ export class PokerTable {
   }
   
   /**
-   * Update player after action
+   * Update player after action - DEPRECATED
+   * Engine state is now authoritative - do not use this method
+   * Left for reference only
    */
   private updatePlayerFromAction(player: Player, result: ActionResult): void {
-    if (result.amount) {
-      player.currentBet += result.amount;
-      player.stack -= result.amount;
-    }
-    if (result.isAllIn) player.isAllIn = true;
-    if (result.isFolded) player.isFolded = true;
+    // REMOVED: Double subtraction bug - engine already updates player stack
+    // The engine is now the source of truth for all player state
+    // We sync from engine state instead of manually updating here
+    
+    // Only update timestamp
     player.lastActionTime = Date.now();
+    
+    // Log for debugging - don't modify values
+    logger.info('updatePlayerFromAction called (deprecated)', {
+      playerId: player.id,
+      actionAmount: result.amount,
+      engineStack: player.stack, // Already synced from engine
+      isAllIn: result.isAllIn,
+      isFolded: result.isFolded
+    });
   }
   
   /**
@@ -520,12 +539,23 @@ export class PokerTable {
     // Move dealer button
     this.dealerSeat = this.getNextActiveSeat(this.dealerSeat);
     
-    // Reset players
+    // Reset players and VALIDATE stacks
     for (const player of this.players.values()) {
       player.holeCards = [];
       player.currentBet = 0;
-      player.isFolded = player.status !== 'active' || player.stack <= 0;
       player.isAllIn = false;
+      
+      // CRITICAL: Ensure no negative stacks (safety net)
+      if (player.stack < 0) {
+        logger.error('CRITICAL: Negative stack detected at hand start! Resetting to 0', {
+          playerId: player.id,
+          name: player.name,
+          negativeStack: player.stack
+        });
+        player.stack = 0;
+      }
+      
+      player.isFolded = player.status !== 'active' || player.stack <= 0;
     }
     
     // Get active players for engine v3
@@ -616,14 +646,65 @@ export class PokerTable {
   
   /**
    * Complete hand and distribute winnings
+   * CRITICAL: Ensures stacks never go negative and properly awards pot
    */
   private async completeHand(winners: { playerId: string; amount: number; handName: string }[]): Promise<void> {
+    logger.info('=== HAND COMPLETION ===', {
+      tableId: this.id,
+      handNumber: this.handNumber,
+      pot: this.currentHand?.pot,
+      winnersCount: winners.length
+    });
+    
+    // Log player states before distribution
+    for (const [pid, p] of this.players) {
+      logger.info('Player state before payout', {
+        playerId: pid,
+        name: p.name,
+        stack: p.stack,
+        isFolded: p.isFolded,
+        isAllIn: p.isAllIn
+      });
+    }
+    
     // Distribute winnings
     for (const winner of winners) {
       const player = this.players.get(winner.playerId);
       if (player) {
+        const oldStack = player.stack;
         player.stack += winner.amount;
+        
+        // SAFETY: Ensure stack is never negative (should never happen, but safety check)
+        if (player.stack < 0) {
+          logger.error('CRITICAL: Negative stack detected after payout! Resetting to winning amount', {
+            playerId: player.id,
+            oldStack,
+            winAmount: winner.amount,
+            newStack: player.stack
+          });
+          player.stack = winner.amount;
+        }
+        
+        logger.info('Winner payout', {
+          playerId: player.id,
+          name: player.name,
+          handName: winner.handName,
+          amount: winner.amount,
+          oldStack,
+          newStack: player.stack
+        });
+      } else {
+        logger.error('Winner not found in players map!', { winnerId: winner.playerId });
       }
+    }
+    
+    // Log final player states
+    for (const [pid, p] of this.players) {
+      logger.info('Player state after payout', {
+        playerId: pid,
+        name: p.name,
+        stack: p.stack
+      });
     }
     
     this.emit('hand_complete', {
@@ -633,7 +714,7 @@ export class PokerTable {
       communityCards: this.currentHand?.communityCards
     });
     
-    logger.info('Hand complete', { tableId: this.id, handNumber: this.handNumber, winners });
+    logger.info('=== HAND COMPLETE ===', { tableId: this.id, handNumber: this.handNumber, winners });
     
     // Save hand history
     await this.saveHandHistory();
