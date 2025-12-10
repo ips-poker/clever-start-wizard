@@ -18,6 +18,7 @@ import { PokerErrorBoundary } from './PokerErrorBoundary';
 import { ConnectionStatusBanner } from './ConnectionStatusBanner';
 import { TableSettingsPanel, TableSettings } from './TableSettingsPanel';
 import { resolveAvatarUrl } from '@/utils/avatarResolver';
+import { getHandStrengthName } from '@/utils/handEvaluator';
 
 // PPPoker-style components - Enhanced versions
 import { PPPokerEnhancedTimer, PPPokerTimerDisplay } from './PPPokerEnhancedTimer';
@@ -31,6 +32,7 @@ import {
   TablePulse, 
   CountdownPulse 
 } from './PPPokerAnimations';
+import { PPPokerEnhancedCard, HandStrengthBadge } from './PPPokerEnhancedCard';
 
 // Syndikate branding
 import syndikateLogo from '@/assets/syndikate-logo-main.png';
@@ -71,7 +73,8 @@ const SUIT_SYMBOLS: Record<string, string> = {
 // PPPoker style emojis
 const POKER_EMOJIS = ['😀', '😂', '😎', '🤔', '😡', '😭', '👍', '👎', '🔥', '💪', '🙏', '💰'];
 
-// ============= CARD COMPONENT - PPPoker Style =============
+// ============= CARD COMPONENT - Using Enhanced PPPoker Card =============
+// Wrapper for backward compatibility
 const PPPokerCard = memo(function PPPokerCard({
   card,
   faceDown = false,
@@ -85,74 +88,15 @@ const PPPokerCard = memo(function PPPokerCard({
   delay?: number;
   isWinning?: boolean;
 }) {
-  const sizeConfig = {
-    xs: { w: 28, h: 40, rank: 'text-[10px]', suit: 'text-[8px]', center: 'text-sm' },
-    sm: { w: 36, h: 50, rank: 'text-xs', suit: 'text-[10px]', center: 'text-base' },
-    md: { w: 44, h: 62, rank: 'text-sm', suit: 'text-xs', center: 'text-lg' },
-    lg: { w: 56, h: 78, rank: 'text-lg', suit: 'text-sm', center: 'text-2xl' },
-  };
-  
-  const cfg = sizeConfig[size];
-  const rank = card[0] === 'T' ? '10' : card[0];
-  const suit = card[1];
-  const color = SUIT_COLORS[suit] || '#1f2937';
-  const symbol = SUIT_SYMBOLS[suit] || '';
-
-  // PPPoker-style card back - blue with diamond pattern
-  if (faceDown) {
-    return (
-      <motion.div
-        initial={{ rotateY: 180, scale: 0.5, opacity: 0 }}
-        animate={{ rotateY: 0, scale: 1, opacity: 1 }}
-        transition={{ delay: delay * 0.08, type: 'spring', stiffness: 200, damping: 20 }}
-        className="rounded-md shadow-lg relative overflow-hidden"
-        style={{
-          width: cfg.w,
-          height: cfg.h,
-          background: 'linear-gradient(145deg, #3b82f6 0%, #1d4ed8 50%, #1e40af 100%)',
-          border: '2px solid #60a5fa',
-          boxShadow: '0 4px 12px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.2)'
-        }}
-      >
-        {/* Diamond pattern like PPPoker */}
-        <svg className="absolute inset-0 w-full h-full opacity-30" viewBox="0 0 20 20">
-          <defs>
-            <pattern id="ppCardPattern" x="0" y="0" width="6" height="6" patternUnits="userSpaceOnUse">
-              <rect x="2" y="2" width="2" height="2" fill="white" opacity="0.5"/>
-            </pattern>
-          </defs>
-          <rect width="100%" height="100%" fill="url(#ppCardPattern)"/>
-        </svg>
-        {/* Center glow */}
-        <div className="absolute inset-[15%] rounded-full" style={{ 
-          background: 'radial-gradient(ellipse, rgba(255,255,255,0.15) 0%, transparent 70%)'
-        }}/>
-      </motion.div>
-    );
-  }
-
   return (
-    <motion.div
-      initial={{ rotateY: 180, scale: 0.5, opacity: 0 }}
-      animate={{ rotateY: 0, scale: 1, opacity: 1 }}
-      transition={{ delay: delay * 0.08, type: 'spring', stiffness: 200, damping: 20 }}
-      className="rounded-md shadow-lg relative flex flex-col p-0.5"
-      style={{
-        width: cfg.w,
-        height: cfg.h,
-        background: 'linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%)',
-        border: isWinning ? '2px solid #22c55e' : '1.5px solid #d1d5db',
-        boxShadow: isWinning ? '0 0 20px rgba(34,197,94,0.6)' : '0 4px 12px rgba(0,0,0,0.25)'
-      }}
-    >
-      <div className="flex flex-col items-center leading-none ml-0.5 mt-0.5">
-        <span className={cn(cfg.rank, 'font-bold')} style={{ color }}>{rank}</span>
-        <span className={cfg.suit} style={{ color }}>{symbol}</span>
-      </div>
-      <div className="absolute inset-0 flex items-center justify-center">
-        <span className={cfg.center} style={{ color, opacity: 0.2 }}>{symbol}</span>
-      </div>
-    </motion.div>
+    <PPPokerEnhancedCard
+      card={card}
+      faceDown={faceDown}
+      size={size}
+      delay={delay}
+      isWinning={isWinning}
+      animate={true}
+    />
   );
 });
 
@@ -179,7 +123,9 @@ const PlayerSeat = memo(function PlayerSeat({
   onSeatClick,
   gamePhase = 'waiting',
   heroCards,
-  canJoin = false
+  canJoin = false,
+  handStrength,
+  communityCards = []
 }: {
   player: PokerPlayer | null;
   position: { x: number; y: number };
@@ -200,6 +146,8 @@ const PlayerSeat = memo(function PlayerSeat({
   gamePhase?: 'waiting' | 'preflop' | 'flop' | 'turn' | 'river' | 'showdown';
   heroCards?: string[];
   canJoin?: boolean;
+  handStrength?: string;
+  communityCards?: string[];
 }) {
   const avatarSize = isMobile ? (isHero ? 52 : 40) : (isHero ? 58 : 46);
   const showTurnTimer = isCurrentTurn && !player?.isFolded && !player?.isAllIn;
@@ -460,22 +408,30 @@ const PlayerSeat = memo(function PlayerSeat({
       </div>
 
       {/* Cards beside avatar - PPPoker style positioning */}
-      {/* Hero cards - shown to the right of avatar */}
+      {/* Hero cards - shown to the right of avatar with hand strength */}
       {isHero && heroCards && heroCards.length > 0 && !player.isFolded && (
-        <div className={cn("absolute flex z-15",
+        <div className={cn("absolute flex flex-col items-start z-15",
           "left-full ml-2 top-1/2 -translate-y-1/2"
         )}>
-          {heroCards.map((card, idx) => (
-            <div key={`hero-card-${idx}`} style={{ marginLeft: idx > 0 ? '-8px' : 0 }}>
-              <PPPokerCard 
-                card={card} 
-                faceDown={false} 
-                size={isMobile ? "sm" : "md"} 
-                delay={idx} 
-                isWinning={gamePhase === 'showdown'}
-              />
+          <div className="flex">
+            {heroCards.map((card, idx) => (
+              <div key={`hero-card-${idx}`} style={{ marginLeft: idx > 0 ? '-8px' : 0 }}>
+                <PPPokerCard 
+                  card={card} 
+                  faceDown={false} 
+                  size={isMobile ? "sm" : "md"} 
+                  delay={idx} 
+                  isWinning={gamePhase === 'showdown'}
+                />
+              </div>
+            ))}
+          </div>
+          {/* Hand strength indicator - shown when community cards are on board */}
+          {handStrength && communityCards.length >= 3 && (
+            <div className="mt-1">
+              <HandStrengthBadge handName={handStrength} isMobile={isMobile} />
             </div>
-          ))}
+          )}
         </div>
       )}
       
@@ -1825,6 +1781,9 @@ export function SyndikatetPokerTable({
           {/* Player seats */}
           {players.map(({ position, seatNumber, player }, idx) => {
             const isHeroSeat = player?.playerId === playerId;
+            const heroHandStrength = isHeroSeat && myCards && tableState?.communityCards 
+              ? getHandStrengthName(myCards, tableState.communityCards) 
+              : undefined;
             return (
               <PlayerSeat
                 key={seatNumber}
@@ -1847,6 +1806,8 @@ export function SyndikatetPokerTable({
                 gamePhase={tableState?.phase}
                 heroCards={isHeroSeat ? myCards : undefined}
                 canJoin={canJoinTable && !player}
+                handStrength={heroHandStrength}
+                communityCards={tableState?.communityCards || []}
               />
             );
           })}
