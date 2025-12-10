@@ -387,23 +387,38 @@ export class PokerTable {
       this.currentHand.sidePots = engineState.sidePots || [];
       
       // CRITICAL: ALWAYS sync player state from engine - not just on phase change
-      // Engine is authoritative for all player data (stack, bet, fold, all-in)
+      // Engine is authoritative for all player data (stack, bet, fold, all-in, totalBetThisHand)
       for (const enginePlayer of engineState.players) {
         const tablePlayer = this.players.get(enginePlayer.id);
         if (tablePlayer) {
+          const prevStack = tablePlayer.stack;
+          
           tablePlayer.currentBet = enginePlayer.betAmount;
           tablePlayer.stack = enginePlayer.stack;
           tablePlayer.isFolded = enginePlayer.isFolded;
           tablePlayer.isAllIn = enginePlayer.isAllIn;
           
-          // Log for debugging
-          logger.info('Synced player from engine', {
-            playerId: enginePlayer.id,
-            stack: enginePlayer.stack,
-            betAmount: enginePlayer.betAmount,
-            isAllIn: enginePlayer.isAllIn,
-            isFolded: enginePlayer.isFolded
-          });
+          // PROFESSIONAL: Safety check - log any negative stacks
+          if (tablePlayer.stack < 0) {
+            logger.error('CRITICAL: Negative stack synced from engine!', {
+              playerId: enginePlayer.id.substring(0, 8),
+              engineStack: enginePlayer.stack,
+              prevStack
+            });
+            tablePlayer.stack = 0;
+          }
+          
+          // Log significant changes for debugging
+          if (prevStack !== tablePlayer.stack) {
+            logger.info('Player stack updated from engine', {
+              playerId: enginePlayer.id.substring(0, 8),
+              prevStack,
+              newStack: tablePlayer.stack,
+              bet: enginePlayer.betAmount,
+              totalBetThisHand: enginePlayer.totalBetThisHand,
+              isAllIn: enginePlayer.isAllIn
+            });
+          }
         }
       }
     }
@@ -517,11 +532,19 @@ export class PokerTable {
       return;
     }
     
-    // Auto fold/check
+    // Auto fold/check - PROFESSIONAL: prefer check when possible
     const canCheck = player.currentBet >= this.currentHand.currentBet;
-    await this.action(playerId, canCheck ? 'check' : 'fold');
+    const autoAction = canCheck ? 'check' : 'fold';
     
-    this.emit('timeout', { playerId, action: canCheck ? 'check' : 'fold' });
+    logger.warn('Player auto-action due to timeout', { 
+      playerId: playerId.substring(0, 8), 
+      action: autoAction,
+      timeBankRemaining: player.timeBank
+    });
+    
+    await this.action(playerId, autoAction);
+    
+    this.emit('timeout', { playerId, action: autoAction });
   }
   
   /**
