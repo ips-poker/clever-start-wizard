@@ -1,0 +1,208 @@
+/**
+ * Poker Cashout Edge Function
+ * Returns diamonds to player wallet when leaving table
+ */
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
+Deno.serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders });
+  }
+
+  try {
+    const { playerId, tableId, amount, action } = await req.json();
+
+    if (!playerId) {
+      return new Response(
+        JSON.stringify({ error: 'Missing playerId' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
+
+    // Handle different actions
+    if (action === 'buy_in') {
+      // Deduct diamonds when joining table
+      if (!amount || amount <= 0) {
+        return new Response(
+          JSON.stringify({ error: 'Invalid buy-in amount' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // Get current wallet balance
+      const { data: wallet, error: walletError } = await supabase
+        .from('diamond_wallets')
+        .select('id, balance')
+        .eq('player_id', playerId)
+        .single();
+
+      if (walletError || !wallet) {
+        return new Response(
+          JSON.stringify({ error: 'Wallet not found' }),
+          { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      if (wallet.balance < amount) {
+        return new Response(
+          JSON.stringify({ error: 'Insufficient balance', balance: wallet.balance }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // Deduct from wallet
+      const newBalance = wallet.balance - amount;
+      const { error: updateError } = await supabase
+        .from('diamond_wallets')
+        .update({ 
+          balance: newBalance,
+          total_spent: supabase.rpc ? undefined : wallet.balance, // Will be handled by trigger
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', wallet.id);
+
+      if (updateError) {
+        console.error('Error deducting diamonds:', updateError);
+        return new Response(
+          JSON.stringify({ error: 'Failed to deduct diamonds' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // Record transaction
+      await supabase.from('diamond_transactions').insert({
+        player_id: playerId,
+        wallet_id: wallet.id,
+        transaction_type: 'poker_buy_in',
+        amount: -amount,
+        balance_before: wallet.balance,
+        balance_after: newBalance,
+        description: `Buy-in за покерный стол ${tableId}`,
+        reference_id: tableId
+      });
+
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          action: 'buy_in',
+          amount,
+          newBalance 
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (action === 'cashout') {
+      // Return diamonds when leaving table
+      if (!amount || amount <= 0) {
+        // Nothing to return
+        return new Response(
+          JSON.stringify({ success: true, action: 'cashout', amount: 0 }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // Get current wallet
+      const { data: wallet, error: walletError } = await supabase
+        .from('diamond_wallets')
+        .select('id, balance, total_won')
+        .eq('player_id', playerId)
+        .single();
+
+      if (walletError || !wallet) {
+        // Create wallet if not exists
+        const { data: newWallet, error: createError } = await supabase
+          .from('diamond_wallets')
+          .insert({
+            player_id: playerId,
+            balance: amount,
+            total_won: 0,
+            total_spent: 0,
+            total_purchased: 0
+          })
+          .select()
+          .single();
+
+        if (createError) {
+          console.error('Error creating wallet:', createError);
+          return new Response(
+            JSON.stringify({ error: 'Failed to create wallet' }),
+            { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+
+        return new Response(
+          JSON.stringify({ 
+            success: true, 
+            action: 'cashout',
+            amount,
+            newBalance: amount 
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // Add to wallet
+      const newBalance = wallet.balance + amount;
+      const { error: updateError } = await supabase
+        .from('diamond_wallets')
+        .update({ 
+          balance: newBalance,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', wallet.id);
+
+      if (updateError) {
+        console.error('Error adding diamonds:', updateError);
+        return new Response(
+          JSON.stringify({ error: 'Failed to return diamonds' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // Record transaction
+      await supabase.from('diamond_transactions').insert({
+        player_id: playerId,
+        wallet_id: wallet.id,
+        transaction_type: 'poker_cashout',
+        amount: amount,
+        balance_before: wallet.balance,
+        balance_after: newBalance,
+        description: `Выход из покерного стола ${tableId || 'unknown'}`,
+        reference_id: tableId
+      });
+
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          action: 'cashout',
+          amount,
+          newBalance 
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    return new Response(
+      JSON.stringify({ error: 'Invalid action' }),
+      { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+
+  } catch (error) {
+    console.error('Poker cashout error:', error);
+    return new Response(
+      JSON.stringify({ error: 'Internal server error' }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+});

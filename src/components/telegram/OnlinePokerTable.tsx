@@ -8,7 +8,11 @@ interface OnlinePokerTableProps {
   playerName?: string;
   playerAvatar?: string;
   buyIn?: number;
+  minBuyIn?: number;
+  maxBuyIn?: number;
+  playerBalance?: number;
   onLeave: () => void;
+  onBalanceUpdate?: () => void;
 }
 
 export function OnlinePokerTable({
@@ -17,7 +21,11 @@ export function OnlinePokerTable({
   playerName = 'Player',
   playerAvatar,
   buyIn = 10000,
-  onLeave
+  minBuyIn = 200,
+  maxBuyIn = 2000,
+  playerBalance = 10000,
+  onLeave,
+  onBalanceUpdate
 }: OnlinePokerTableProps) {
   if (!playerId) {
     return (
@@ -32,7 +40,11 @@ export function OnlinePokerTable({
       tableId={tableId}
       playerId={playerId}
       buyIn={buyIn}
+      minBuyIn={minBuyIn}
+      maxBuyIn={maxBuyIn}
+      playerBalance={playerBalance}
       onLeave={onLeave}
+      onBalanceUpdate={onBalanceUpdate}
       maxSeats={6}
     />
   );
