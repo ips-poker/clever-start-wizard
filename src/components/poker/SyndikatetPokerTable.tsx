@@ -19,12 +19,13 @@ import { ConnectionStatusBanner } from './ConnectionStatusBanner';
 import { TableSettingsPanel, TableSettings } from './TableSettingsPanel';
 import { resolveAvatarUrl } from '@/utils/avatarResolver';
 
-// PPPoker-style components
-import { PPPokerTimerRing, PPPokerTimerBadge } from './PPPokerTimerRing';
-import { PPPokerChips3D, PPPokerBetDisplay, PPPokerPotDisplay } from './PPPokerChips3D';
+// PPPoker-style components - Enhanced versions
+import { PPPokerEnhancedTimer, PPPokerTimerDisplay } from './PPPokerEnhancedTimer';
+import { PPPokerEnhancedChips, PPPokerBetChips, PPPokerMainPot } from './PPPokerEnhancedChips';
 import { PPPokerDealerButton, PPPokerBlindButton } from './PPPokerDealerButton';
 import { PPPokerTournamentInfo } from './PPPokerTournamentInfo';
-import { 
+import { PPPokerPlayerStats } from './PPPokerPlayerStats';
+import {
   WinnerGlow, 
   Confetti, 
   TablePulse, 
@@ -316,20 +317,19 @@ const PlayerSeat = memo(function PlayerSeat({
         )}
       </AnimatePresence>
 
-      {/* Timer ring around avatar - PPPoker Premium style with smooth animation */}
+      {/* Timer ring around avatar - Enhanced 60fps smooth animation */}
       {showTurnTimer && turnTimeRemaining !== undefined && (
-        <PPPokerTimerRing 
+        <PPPokerEnhancedTimer 
           remaining={turnTimeRemaining} 
           total={turnDuration} 
-          size={avatarSize + 16}
-          enableGlow={true}
+          size={avatarSize + 18}
           strokeWidth={5}
         />
       )}
       
-      {/* Timer badge - PPPoker Premium style with digital display (for hero only) */}
+      {/* Timer badge - Digital display for hero */}
       {isHero && isCurrentTurn && turnTimeRemaining !== undefined && turnTimeRemaining > 0 && (
-        <PPPokerTimerBadge 
+        <PPPokerTimerDisplay 
           remaining={turnTimeRemaining}
           total={turnDuration}
           position="left"
@@ -501,7 +501,7 @@ const PlayerSeat = memo(function PlayerSeat({
         </div>
       )}
 
-      {/* Bet chip + amount - PPPoker Premium 3D Chips */}
+      {/* Bet chip + amount - Enhanced 3D Chips */}
       {player.betAmount > 0 && (
         <motion.div
           className="absolute z-15"
@@ -514,12 +514,11 @@ const PlayerSeat = memo(function PlayerSeat({
           animate={{ scale: 1, opacity: 1, y: 0 }}
           transition={{ type: 'spring', stiffness: 400, damping: 25 }}
         >
-          <PPPokerChips3D 
+          <PPPokerEnhancedChips 
             amount={player.betAmount} 
             size={isMobile ? 'xs' : 'sm'} 
             showLabel={true}
             animated={true}
-            maxChips={4}
           />
         </motion.div>
       )}
@@ -751,7 +750,7 @@ const CommunityCards = memo(function CommunityCards({
   );
 });
 
-// ============= POT DISPLAY - Using PPPoker Premium 3D Chips =============
+// ============= POT DISPLAY - Enhanced PPPoker 3D Chips =============
 const PotDisplay = memo(function PotDisplay({ 
   pot, 
   bigBlind, 
@@ -764,7 +763,7 @@ const PotDisplay = memo(function PotDisplay({
   if (pot <= 0) return null;
 
   return (
-    <PPPokerPotDisplay 
+    <PPPokerMainPot 
       amount={pot} 
       isMobile={isMobile}
       animated={true}
@@ -1923,12 +1922,13 @@ export function SyndikatetPokerTable({
           onRulesClick={() => setShowMenu(false)}
         />
 
-        {/* Player profile modal */}
-        <AnimatePresence>
-          {selectedPlayer && (
-            <PlayerProfileModal player={selectedPlayer} onClose={() => setSelectedPlayer(null)}/>
-          )}
-        </AnimatePresence>
+        {/* Player profile modal - Enhanced with real stats */}
+        <PPPokerPlayerStats 
+          player={selectedPlayer || { playerId: '', name: '' }}
+          isOpen={!!selectedPlayer}
+          onClose={() => setSelectedPlayer(null)}
+          isMobile={isMobile}
+        />
 
         {/* Settings panel */}
         <TableSettingsPanel
