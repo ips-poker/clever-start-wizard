@@ -3,9 +3,11 @@
 // ============================================
 import React, { useState, useEffect, useCallback, useMemo, useRef, memo } from 'react';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Volume2, VolumeX, Settings2, Menu, X, LogOut, Palette } from 'lucide-react';
+import { ArrowLeft, Volume2, VolumeX, Settings2, Menu, X, LogOut, Palette, RotateCcw, RotateCw, Eye } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 import { useNodePokerTable, PokerPlayer, TableState } from '@/hooks/useNodePokerTable';
 import { usePokerSounds } from '@/hooks/usePokerSounds';
 import { usePokerPreferences } from '@/hooks/usePokerPreferences';
@@ -15,6 +17,8 @@ import { TableSettingsPanel } from './TableSettingsPanel';
 import { PersonalSettingsPanel } from './PersonalSettingsPanel';
 import { FullscreenPokerTable } from './FullscreenPokerTable';
 import { PPPokerActionButtons } from './PPPokerActionButtons';
+import { BuyInDialog } from './BuyInDialog';
+import { SeatRotationControl, getVisualPosition } from './SeatRotationControl';
 
 // Syndikate branding
 import syndikateLogo from '@/assets/syndikate-logo-main.png';
@@ -23,9 +27,13 @@ interface FullscreenPokerTableWrapperProps {
   tableId: string;
   playerId: string;
   buyIn: number;
+  minBuyIn?: number;
+  maxBuyIn?: number;
+  playerBalance?: number;
   isTournament?: boolean;
   tournamentId?: string;
   onLeave?: () => void;
+  onBalanceUpdate?: () => void;
   maxSeats?: number;
 }
 
@@ -33,9 +41,13 @@ export function FullscreenPokerTableWrapper({
   tableId,
   playerId,
   buyIn,
+  minBuyIn = 200,
+  maxBuyIn = 2000,
+  playerBalance = 10000,
   isTournament = false,
   tournamentId,
   onLeave,
+  onBalanceUpdate,
   maxSeats = 6
 }: FullscreenPokerTableWrapperProps) {
   const [soundEnabled, setSoundEnabled] = useState(true);
@@ -43,6 +55,10 @@ export function FullscreenPokerTableWrapper({
   const [showMenu, setShowMenu] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showPersonalSettings, setShowPersonalSettings] = useState(false);
+  const [showBuyInDialog, setShowBuyInDialog] = useState(false);
+  const [selectedSeatForJoin, setSelectedSeatForJoin] = useState<number | null>(null);
+  const [isProcessingCashout, setIsProcessingCashout] = useState(false);
+  const [actualBuyIn, setActualBuyIn] = useState<number>(buyIn);
   
   const { preferences, currentTableTheme, updatePreference } = usePokerPreferences();
   
@@ -50,7 +66,7 @@ export function FullscreenPokerTableWrapper({
   const hasConnectedRef = useRef(false);
 
   // Use Node.js WebSocket server
-  const pokerTable = useNodePokerTable({ tableId, playerId, buyIn });
+  const pokerTable = useNodePokerTable({ tableId, playerId, buyIn: actualBuyIn });
   
   const {
     isConnected, isConnecting, error, tableState, myCards, mySeat, myPlayer, isMyTurn, canCheck, callAmount, lastAction, showdownResult,
@@ -61,6 +77,11 @@ export function FullscreenPokerTableWrapper({
   const canJoinTable = useMemo(() => {
     return isConnected && !myPlayer && mySeat === null;
   }, [isConnected, myPlayer, mySeat]);
+  
+  // Get occupied seats
+  const occupiedSeats = useMemo(() => {
+    return tableState?.players.map(p => p.seatNumber) || [];
+  }, [tableState?.players]);
 
   useEffect(() => { sounds.setEnabled(soundEnabled); }, [soundEnabled]);
 
@@ -92,7 +113,9 @@ export function FullscreenPokerTableWrapper({
       hasConnectedRef.current = true;
       connect();
     }
-    return () => { disconnect(); };
+    return () => { 
+      // Don't disconnect here - let handleLeave handle it
+    };
   }, []);
 
   // Play sounds
@@ -113,21 +136,97 @@ export function FullscreenPokerTableWrapper({
     if (showdownResult) { sounds.playWin(); }
   }, [showdownResult]);
 
-  const handleLeave = useCallback(() => {
+  // Cashout - return diamonds when leaving table
+  const performCashout = useCallback(async () => {
+    if (!myPlayer || isProcessingCashout) return;
+    
+    setIsProcessingCashout(true);
+    try {
+      const stackToReturn = myPlayer.stack;
+      
+      if (stackToReturn > 0) {
+        const { data, error: cashoutError } = await supabase.functions.invoke('poker-cashout', {
+          body: {
+            playerId,
+            tableId,
+            amount: stackToReturn,
+            action: 'cashout'
+          }
+        });
+
+        if (cashoutError) {
+          console.error('Cashout error:', cashoutError);
+          toast.error('Ошибка возврата алмазов');
+        } else {
+          toast.success(`Возвращено ${stackToReturn.toLocaleString()} 💎`);
+          onBalanceUpdate?.();
+        }
+      }
+    } catch (err) {
+      console.error('Cashout failed:', err);
+    } finally {
+      setIsProcessingCashout(false);
+    }
+  }, [myPlayer, playerId, tableId, isProcessingCashout, onBalanceUpdate]);
+
+  const handleLeave = useCallback(async () => {
+    // Return diamonds first
+    await performCashout();
+    
     disconnect();
     onLeave?.();
-  }, [disconnect, onLeave]);
+  }, [disconnect, onLeave, performCashout]);
 
+  // Handle seat click - show buy-in dialog for seat selection
   const handleSeatClick = useCallback((seatNumber: number) => {
     if (canJoinTable) {
-      joinTable(seatNumber);
+      setSelectedSeatForJoin(seatNumber);
+      setShowBuyInDialog(true);
     }
-  }, [canJoinTable, joinTable]);
+  }, [canJoinTable]);
+  
+  // Handle buy-in confirmation
+  const handleBuyInConfirm = useCallback(async (seatNumber: number, buyInAmount: number) => {
+    setShowBuyInDialog(false);
+    
+    // Deduct diamonds from wallet
+    try {
+      const { data, error: buyInError } = await supabase.functions.invoke('poker-cashout', {
+        body: {
+          playerId,
+          tableId,
+          amount: buyInAmount,
+          action: 'buy_in'
+        }
+      });
+
+      if (buyInError || data?.error) {
+        toast.error(data?.error || 'Ошибка списания алмазов');
+        return;
+      }
+      
+      // Update actual buy-in for WebSocket
+      setActualBuyIn(buyInAmount);
+      
+      // Join table with selected seat
+      joinTable(seatNumber);
+      toast.success(`Вход за ${buyInAmount.toLocaleString()} 💎`);
+      onBalanceUpdate?.();
+    } catch (err) {
+      console.error('Buy-in failed:', err);
+      toast.error('Ошибка входа за стол');
+    }
+  }, [playerId, tableId, joinTable, onBalanceUpdate]);
 
   const handleSettingsSave = useCallback((settings: any) => {
     console.log('Saving settings:', settings);
     setShowSettings(false);
   }, []);
+  
+  // Handle seat rotation change
+  const handleRotationChange = useCallback((rotation: number) => {
+    updatePreference('preferredSeatRotation', rotation);
+  }, [updatePreference]);
 
   // Convert players for FullscreenPokerTable format
   const formattedPlayers: PokerPlayer[] = useMemo(() => {
@@ -141,8 +240,8 @@ export function FullscreenPokerTableWrapper({
   const currentPlayerSeat = tableState?.currentPlayerSeat ?? null;
 
   // Betting info
-  const minRaise = tableState?.minRaise || tableState?.bigBlindAmount || 20;
-  const maxRaise = myPlayer?.stack || 10000;
+  const minRaiseAmount = tableState?.minRaise || tableState?.bigBlindAmount || 20;
+  const maxRaiseAmount = myPlayer?.stack || 10000;
   const currentBetValue = tableState?.currentBet || 0;
   const potValue = tableState?.pot || 0;
   const myBet = (myPlayer as any)?.currentBet || 0;
@@ -238,6 +337,17 @@ export function FullscreenPokerTableWrapper({
           />
         </div>
 
+        {/* Seat rotation control - when not playing */}
+        {!myPlayer && (
+          <div className="absolute top-20 left-1/2 -translate-x-1/2 z-20">
+            <SeatRotationControl
+              currentRotation={preferences.preferredSeatRotation}
+              maxSeats={maxSeats}
+              onChange={handleRotationChange}
+            />
+          </div>
+        )}
+
         {/* Action buttons */}
         {isMyTurn && myPlayer && (
           <div className="absolute bottom-0 left-0 right-0 z-20">
@@ -245,8 +355,8 @@ export function FullscreenPokerTableWrapper({
               isMyTurn={isMyTurn}
               canCheck={canCheck}
               callAmount={callAmount}
-              minRaise={minRaise}
-              maxRaise={maxRaise}
+              minRaise={minRaiseAmount}
+              maxRaise={maxRaiseAmount}
               currentBet={currentBetValue}
               pot={potValue}
               myStack={myPlayer.stack}
@@ -260,6 +370,20 @@ export function FullscreenPokerTableWrapper({
             />
           </div>
         )}
+        
+        {/* Buy-in Dialog */}
+        <BuyInDialog
+          isOpen={showBuyInDialog}
+          onClose={() => setShowBuyInDialog(false)}
+          onConfirm={handleBuyInConfirm}
+          selectedSeat={selectedSeatForJoin}
+          minBuyIn={minBuyIn}
+          maxBuyIn={maxBuyIn}
+          playerBalance={playerBalance}
+          bigBlind={tableState?.bigBlindAmount || 20}
+          occupiedSeats={occupiedSeats}
+          maxSeats={maxSeats}
+        />
 
         {/* Side menu */}
         <AnimatePresence>

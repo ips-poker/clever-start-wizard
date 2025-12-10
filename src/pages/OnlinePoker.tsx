@@ -305,9 +305,13 @@ export default function OnlinePoker() {
                     tableId={activeTable.id}
                     playerId={playerId}
                     buyIn={activeTable.buyIn}
+                    playerBalance={playerBalance}
                     isTournament={activeTable.isTournament}
                     tournamentId={activeTable.isTournament ? activeTable.id : undefined}
                     onLeave={handleLeaveTable}
+                    onBalanceUpdate={() => {
+                      // Refresh balance from PlayerBalanceCard
+                    }}
                   />
                 </div>
               </motion.div>
