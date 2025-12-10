@@ -359,8 +359,6 @@ export function FullscreenPokerTableWrapper({
             currentBet={currentBetValue}
             pot={potValue}
             myStack={myPlayer.stack}
-            timeRemaining={turnTimeRemaining || undefined}
-            timeTotal={tableState?.actionTimer || 30}
             onFold={fold}
             onCheck={check}
             onCall={call}
