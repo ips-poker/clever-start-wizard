@@ -1869,17 +1869,46 @@ export class PokerEngineV3 {
     const isShortDeck = this.gameType === GameType.SHORT_DECK;
     const deck = prepareDeck(isShortDeck);
     
+    // PROFESSIONAL: Filter out players with insufficient stack (need at least 1 chip)
+    const eligiblePlayers = players.filter(p => {
+      if (p.stack <= 0) {
+        console.log('[Engine] Excluding player with zero/negative stack:', {
+          id: p.id.substring(0, 8),
+          stack: p.stack
+        });
+        return false;
+      }
+      if (p.status !== 'active') {
+        console.log('[Engine] Excluding inactive player:', {
+          id: p.id.substring(0, 8),
+          status: p.status
+        });
+        return false;
+      }
+      return true;
+    });
+    
+    if (eligiblePlayers.length < 2) {
+      throw new Error('Need at least 2 eligible players to start hand');
+    }
+    
+    console.log('[Engine] Starting new hand with players:', eligiblePlayers.map(p => ({
+      id: p.id.substring(0, 8),
+      seat: p.seatNumber,
+      stack: p.stack
+    })));
+    
     // Convert players to GamePlayer format
-    const gamePlayers: GamePlayer[] = players.map(p => ({
+    const gamePlayers: GamePlayer[] = eligiblePlayers.map(p => ({
       id: p.id,
       seatNumber: p.seatNumber,
       stack: p.stack,
       betAmount: 0,
       totalBetThisHand: 0,  // Initialize total bet tracking for side pots
       holeCards: [],
-      isFolded: p.status !== 'active',
+      isFolded: false,  // Eligible players start active
       isAllIn: false,
-      isSittingOut: p.status !== 'active',
+      isSittingOut: false,
       isDisconnected: false,
       hasActedThisRound: false,  // Initialize acted flag
       timeBank: this.config.timeBankSeconds,
@@ -1888,6 +1917,13 @@ export class PokerEngineV3 {
     
     // Calculate positions
     const positions = calculatePositions(gamePlayers, dealerSeat > 0 ? dealerSeat - 1 : null);
+    
+    console.log('[Engine] Calculated positions:', {
+      dealer: positions.dealerSeat,
+      sb: positions.sbSeat,
+      bb: positions.bbSeat,
+      firstToAct: positions.firstToActSeat
+    });
     
     // Post blinds
     const blindsResult = postBlinds(
@@ -1898,6 +1934,11 @@ export class PokerEngineV3 {
       this.config.bigBlind
     );
     
+    console.log('[Engine] Blinds posted:', {
+      pot: blindsResult.pot,
+      currentBet: blindsResult.currentBet
+    });
+    
     // Collect antes if configured
     let pot = blindsResult.pot;
     let playersAfterBlinds = blindsResult.updatedPlayers;
@@ -1906,6 +1947,7 @@ export class PokerEngineV3 {
       const antesResult = collectAntes(playersAfterBlinds, this.config.ante);
       pot += antesResult.pot;
       playersAfterBlinds = antesResult.updatedPlayers;
+      console.log('[Engine] Antes collected:', antesResult.pot);
     }
     
     // Deal hole cards
@@ -1919,6 +1961,8 @@ export class PokerEngineV3 {
       }
       return p;
     });
+    
+    console.log('[Engine] Hole cards dealt to', playersWithCards.filter(p => p.holeCards.length > 0).length, 'players');
     
     // Generate hand ID
     const handId = crypto.randomUUID();
@@ -2137,6 +2181,71 @@ export class PokerEngineV3 {
   }
   
   /**
+   * PROFESSIONAL: Validate game state integrity
+   * Returns list of issues found (empty = valid)
+   */
+  validateState(): string[] {
+    const issues: string[] = [];
+    
+    if (!this.state) {
+      issues.push('No active game state');
+      return issues;
+    }
+    
+    // Check pot consistency
+    let calculatedPot = 0;
+    for (const p of this.state.players) {
+      if (p.totalBetThisHand < 0) {
+        issues.push(`Player ${p.id.substring(0, 8)} has negative totalBetThisHand: ${p.totalBetThisHand}`);
+      }
+      if (p.stack < 0) {
+        issues.push(`Player ${p.id.substring(0, 8)} has negative stack: ${p.stack}`);
+      }
+      if (p.betAmount < 0) {
+        issues.push(`Player ${p.id.substring(0, 8)} has negative betAmount: ${p.betAmount}`);
+      }
+      calculatedPot += p.totalBetThisHand || 0;
+    }
+    
+    // Check active player count
+    const activePlayers = this.state.players.filter(p => !p.isFolded);
+    if (activePlayers.length === 0 && !this.state.isComplete) {
+      issues.push('No active players but hand not complete');
+    }
+    
+    // Check current player validity
+    if (this.state.currentPlayerSeat !== null) {
+      const currentPlayer = this.state.players.find(p => p.seatNumber === this.state!.currentPlayerSeat);
+      if (!currentPlayer) {
+        issues.push(`Current player seat ${this.state.currentPlayerSeat} has no player`);
+      } else if (currentPlayer.isFolded) {
+        issues.push(`Current player ${currentPlayer.id.substring(0, 8)} is folded`);
+      } else if (currentPlayer.isAllIn) {
+        issues.push(`Current player ${currentPlayer.id.substring(0, 8)} is all-in`);
+      }
+    }
+    
+    // Check community cards for phase
+    const expectedCards: Record<string, number> = {
+      'preflop': 0,
+      'flop': 3,
+      'turn': 4,
+      'river': 5,
+      'showdown': 5
+    };
+    const expected = expectedCards[this.state.phase] || 0;
+    if (this.state.communityCards.length !== expected) {
+      issues.push(`Phase ${this.state.phase} should have ${expected} community cards, has ${this.state.communityCards.length}`);
+    }
+    
+    if (issues.length > 0) {
+      console.error('[Engine] State validation issues:', issues);
+    }
+    
+    return issues;
+  }
+  
+  /**
    * Get cards per player based on game type
    */
   private getCardsPerPlayer(): number {
@@ -2182,14 +2291,21 @@ export class PokerEngineV3 {
         // Burn 1, deal 3
         this.state.communityCards = this.state.deck.slice(1, 4);
         this.state.deck = this.state.deck.slice(4);
+        console.log('[Engine] FLOP dealt:', this.state.communityCards.join(', '));
       } else if (nextPhase === 'turn') {
         // Burn 1, deal 1
-        this.state.communityCards.push(this.state.deck[1]);
+        const turnCard = this.state.deck[1];
+        this.state.communityCards.push(turnCard);
         this.state.deck = this.state.deck.slice(2);
+        console.log('[Engine] TURN dealt:', turnCard, '| Board:', this.state.communityCards.join(', '));
       } else if (nextPhase === 'river') {
         // Burn 1, deal 1
-        this.state.communityCards.push(this.state.deck[1]);
+        const riverCard = this.state.deck[1];
+        this.state.communityCards.push(riverCard);
         this.state.deck = this.state.deck.slice(2);
+        console.log('[Engine] RIVER dealt:', riverCard, '| Board:', this.state.communityCards.join(', '));
+      } else if (nextPhase === 'showdown') {
+        console.log('[Engine] SHOWDOWN - Final board:', this.state.communityCards.join(', '));
       }
       
       // Reset betting state for new round
@@ -2234,50 +2350,68 @@ export class PokerEngineV3 {
   
   /**
    * Find next active player clockwise from current seat
-   * Properly handles wrap-around and skips folded/all-in players
+   * PROFESSIONAL: Handles non-contiguous seats correctly
    */
   private findNextPlayer(): number | null {
     if (!this.state) return null;
     
-    // Get all players who can still act
-    const activePlayers = this.state.players
-      .filter(p => !p.isFolded && !p.isAllIn && p.stack > 0);
+    // Get all players who can still act (not folded, not all-in, have chips)
+    const playersWhoCanAct = this.state.players
+      .filter(p => !p.isFolded && !p.isAllIn && p.stack > 0)
+      .sort((a, b) => a.seatNumber - b.seatNumber);
     
-    if (activePlayers.length === 0) return null;
-    
-    const currentSeat = this.state.currentPlayerSeat ?? -1;
-    const maxSeats = Math.max(...this.state.players.map(p => p.seatNumber)) + 1;
-    
-    // Search clockwise from current seat
-    for (let offset = 1; offset <= maxSeats; offset++) {
-      const checkSeat = (currentSeat + offset) % maxSeats;
-      const player = activePlayers.find(p => p.seatNumber === checkSeat);
-      if (player && player.seatNumber !== currentSeat) {
-        return player.seatNumber;
+    if (playersWhoCanAct.length === 0) return null;
+    if (playersWhoCanAct.length === 1) {
+      // Only one player can act - check if they need to
+      const solePlayer = playersWhoCanAct[0];
+      if (solePlayer.hasActedThisRound && solePlayer.betAmount >= this.state.currentBet) {
+        return null; // Round complete
       }
+      return solePlayer.seatNumber;
     }
     
-    // If only one active player and it's current, return null (round complete)
+    const currentSeat = this.state.currentPlayerSeat ?? -1;
+    
+    // Find next player clockwise by iterating through sorted players
+    // First, find players with higher seat numbers
+    const nextHigher = playersWhoCanAct.find(p => p.seatNumber > currentSeat);
+    if (nextHigher) {
+      return nextHigher.seatNumber;
+    }
+    
+    // Wrap around to beginning
+    const firstPlayer = playersWhoCanAct[0];
+    if (firstPlayer && firstPlayer.seatNumber !== currentSeat) {
+      return firstPlayer.seatNumber;
+    }
+    
     return null;
   }
   
   /**
    * Find first to act post-flop - first active player clockwise from dealer
-   * Professional poker: SB acts first if still in hand, otherwise next clockwise
+   * PROFESSIONAL TDA: First active seat left of dealer button
    */
   private findFirstPostFlopActor(): number | null {
     if (!this.state) return null;
     
     const activePlayers = this.state.players
-      .filter(p => !p.isFolded && !p.isAllIn && p.stack > 0);
+      .filter(p => !p.isFolded && !p.isAllIn && p.stack > 0)
+      .sort((a, b) => a.seatNumber - b.seatNumber);
     
     if (activePlayers.length === 0) return null;
     
     const dealerSeat = this.state.dealerSeat;
-    const maxSeats = Math.max(...this.state.players.map(p => p.seatNumber)) + 1;
     
-    // Find first active player clockwise from dealer (not including dealer unless heads-up)
-    for (let offset = 1; offset <= maxSeats; offset++) {
+    // Find first active player clockwise from dealer
+    const afterDealer = activePlayers.find(p => p.seatNumber > dealerSeat);
+    if (afterDealer) {
+      return afterDealer.seatNumber;
+    }
+    
+    // Wrap around - first player in sorted order
+    return activePlayers[0]?.seatNumber ?? null;
+  }
       const checkSeat = (dealerSeat + offset) % maxSeats;
       const player = activePlayers.find(p => p.seatNumber === checkSeat);
       if (player) {

@@ -287,26 +287,48 @@ export class PokerTable {
   
   /**
    * Perform action using Engine v3.0
+   * PROFESSIONAL: Full validation with race condition protection
    */
   async action(playerId: string, actionType: string, amount?: number): Promise<{
     success: boolean;
     error?: string;
     nextState?: object;
   }> {
+    // Validation 1: Check active hand
     if (!this.currentHand) {
+      logger.warn('Action rejected - no active hand', { playerId, actionType });
       return { success: false, error: 'No active hand' };
     }
     
+    // Validation 2: Check player exists
     const player = this.players.get(playerId);
     if (!player) {
+      logger.warn('Action rejected - player not at table', { playerId });
       return { success: false, error: 'Player not at table' };
     }
     
-    // Validate it's player's turn
+    // Validation 3: Check player is not folded or all-in
+    if (player.isFolded) {
+      logger.warn('Action rejected - player already folded', { playerId });
+      return { success: false, error: 'You have already folded' };
+    }
+    
+    if (player.isAllIn) {
+      logger.warn('Action rejected - player already all-in', { playerId });
+      return { success: false, error: 'You are already all-in' };
+    }
+    
+    // Validation 4: Check player has chips (unless folding)
+    if (player.stack <= 0 && actionType.toLowerCase() !== 'fold') {
+      logger.warn('Action rejected - no chips', { playerId, stack: player.stack });
+      return { success: false, error: 'No chips to bet' };
+    }
+    
+    // Validation 5: Check it's player's turn (critical for race conditions)
     const currentPlayerSeat = this.currentHand.currentPlayerSeat;
     if (player.seatNumber !== currentPlayerSeat) {
       logger.warn('Action rejected - not player turn', {
-        playerId,
+        playerId: playerId.substring(0, 8),
         playerSeat: player.seatNumber,
         currentPlayerSeat,
         phase: this.currentHand.phase
@@ -314,11 +336,12 @@ export class PokerTable {
       return { success: false, error: 'Not your turn' };
     }
     
-    // Clear action timer
+    // Clear action timer before processing
     this.clearActionTimer();
     
-    logger.info('Processing action', {
-      playerId,
+    logger.info('=== ACTION PROCESSING ===', {
+      playerId: playerId.substring(0, 8),
+      playerName: player.name,
       actionType,
       amount,
       phase: this.currentHand.phase,
@@ -334,16 +357,18 @@ export class PokerTable {
       amount
     );
     
-    logger.info('Action result from engine', {
+    logger.info('Engine result', {
       success: result.success,
       error: result.error,
       phaseAdvanced: result.phaseAdvanced,
       handComplete: result.handComplete,
       nextPlayerSeat: result.nextPlayerSeat,
-      newPhase: result.phase
+      newPhase: result.phase,
+      pot: result.pot
     });
     
     if (!result.success) {
+      // Restart timer for retry
       this.startActionTimer();
       return { success: false, error: result.error };
     }
@@ -532,102 +557,140 @@ export class PokerTable {
   
   /**
    * Start a new hand using Engine v3.0
+   * PROFESSIONAL: Full error handling with graceful recovery
    */
   async startHand(): Promise<void> {
-    this.handNumber++;
-    
-    // Move dealer button
-    this.dealerSeat = this.getNextActiveSeat(this.dealerSeat);
-    
-    // Reset players and VALIDATE stacks
-    for (const player of this.players.values()) {
-      player.holeCards = [];
-      player.currentBet = 0;
-      player.isAllIn = false;
+    try {
+      this.handNumber++;
       
-      // CRITICAL: Ensure no negative stacks (safety net)
-      if (player.stack < 0) {
-        logger.error('CRITICAL: Negative stack detected at hand start! Resetting to 0', {
-          playerId: player.id,
-          name: player.name,
-          negativeStack: player.stack
+      // Move dealer button
+      this.dealerSeat = this.getNextActiveSeat(this.dealerSeat);
+      
+      // Reset players and VALIDATE stacks
+      for (const player of this.players.values()) {
+        player.holeCards = [];
+        player.currentBet = 0;
+        player.isAllIn = false;
+        
+        // CRITICAL: Ensure no negative stacks (safety net)
+        if (player.stack < 0) {
+          logger.error('CRITICAL: Negative stack detected at hand start! Resetting to 0', {
+            playerId: player.id.substring(0, 8),
+            name: player.name,
+            negativeStack: player.stack
+          });
+          player.stack = 0;
+        }
+        
+        player.isFolded = player.status !== 'active' || player.stack <= 0;
+      }
+      
+      // Get active players for engine v3
+      const activePlayers = Array.from(this.players.values())
+        .filter(p => !p.isFolded && p.stack > 0);
+      
+      // Verify we have enough players
+      if (activePlayers.length < 2) {
+        logger.warn('Not enough active players to start hand', { 
+          count: activePlayers.length,
+          required: 2
         });
-        player.stack = 0;
+        return;
       }
       
-      player.isFolded = player.status !== 'active' || player.stack <= 0;
-    }
-    
-    // Get active players for engine v3
-    const activePlayers = Array.from(this.players.values())
-      .filter(p => !p.isFolded);
-    
-    // Convert to engine player format
-    const enginePlayers = activePlayers.map(p => ({
-      id: p.id,
-      name: p.name,
-      seatNumber: p.seatNumber,
-      stack: p.stack,
-      status: p.status as 'active' | 'sitting_out' | 'disconnected',
-      isDealer: p.seatNumber === this.dealerSeat
-    }));
-    
-    // Start new hand with engine v3
-    const engineState = this.engine.startNewHand(enginePlayers, this.dealerSeat);
-    
-    // Map engine state to our HandState
-    this.currentHand = {
-      id: engineState.handId,
-      handNumber: this.handNumber,
-      phase: this.mapPhase(engineState.phase),
-      pot: engineState.pot,
-      communityCards: engineState.communityCards,
-      currentBet: engineState.currentBet,
-      dealerSeat: engineState.dealerSeat,
-      smallBlindSeat: engineState.smallBlindSeat,
-      bigBlindSeat: engineState.bigBlindSeat,
-      currentPlayerSeat: engineState.currentPlayerSeat,
-      lastAggressor: null,
-      minRaise: engineState.minRaise,
-      bigBlind: this.config.bigBlind,
-      sidePots: [],
-      deck: [], // Deck is managed internally by engine v3
-      actionStartTime: Date.now(),
-      playersActedThisRound: new Set()
-    };
-    
-    // Get dealt hole cards from engine state
-    for (const player of activePlayers) {
-      const enginePlayer = engineState.players.find(ep => ep.id === player.id);
-      if (enginePlayer) {
-        player.holeCards = enginePlayer.holeCards || [];
-        player.currentBet = enginePlayer.currentBet || 0;
-      }
-    }
-    
-    this.emit('hand_started', {
-      handId: this.currentHand.id,
-      handNumber: this.handNumber,
-      dealerSeat: this.dealerSeat,
-      smallBlindSeat: this.currentHand.smallBlindSeat,
-      bigBlindSeat: this.currentHand.bigBlindSeat,
-      players: activePlayers.map(p => ({
+      logger.info('=== STARTING NEW HAND ===', {
+        tableId: this.id,
+        handNumber: this.handNumber,
+        dealerSeat: this.dealerSeat,
+        activePlayers: activePlayers.map(p => ({
+          id: p.id.substring(0, 8),
+          name: p.name,
+          seat: p.seatNumber,
+          stack: p.stack
+        }))
+      });
+      
+      // Convert to engine player format
+      const enginePlayers = activePlayers.map(p => ({
         id: p.id,
         name: p.name,
         seatNumber: p.seatNumber,
-        stack: p.stack
-      }))
-    });
-    
-    // Start action timer
-    this.startActionTimer();
-    
-    logger.info(`Hand started with Engine v3.0`, { 
-      tableId: this.id, 
-      handNumber: this.handNumber, 
-      players: activePlayers.length,
-      engineVersion: '3.0'
-    });
+        stack: p.stack,
+        status: p.status as 'active' | 'sitting_out' | 'disconnected',
+        isDealer: p.seatNumber === this.dealerSeat
+      }));
+      
+      // Start new hand with engine v3 (may throw if validation fails)
+      const engineState = this.engine.startNewHand(enginePlayers, this.dealerSeat);
+      
+      // Map engine state to our HandState
+      this.currentHand = {
+        id: engineState.handId,
+        handNumber: this.handNumber,
+        phase: this.mapPhase(engineState.phase),
+        pot: engineState.pot,
+        communityCards: engineState.communityCards,
+        currentBet: engineState.currentBet,
+        dealerSeat: engineState.dealerSeat,
+        smallBlindSeat: engineState.smallBlindSeat,
+        bigBlindSeat: engineState.bigBlindSeat,
+        currentPlayerSeat: engineState.currentPlayerSeat,
+        lastAggressor: null,
+        minRaise: engineState.minRaise,
+        bigBlind: this.config.bigBlind,
+        sidePots: [],
+        deck: [], // Deck is managed internally by engine v3
+        actionStartTime: Date.now(),
+        playersActedThisRound: new Set()
+      };
+      
+      // Get dealt hole cards from engine state
+      for (const player of activePlayers) {
+        const enginePlayer = engineState.players.find(ep => ep.id === player.id);
+        if (enginePlayer) {
+          player.holeCards = enginePlayer.holeCards || [];
+          player.currentBet = enginePlayer.currentBet || 0;
+        }
+      }
+      
+      this.emit('hand_started', {
+        handId: this.currentHand.id,
+        handNumber: this.handNumber,
+        dealerSeat: this.dealerSeat,
+        smallBlindSeat: this.currentHand.smallBlindSeat,
+        bigBlindSeat: this.currentHand.bigBlindSeat,
+        players: activePlayers.map(p => ({
+          id: p.id,
+          name: p.name,
+          seatNumber: p.seatNumber,
+          stack: p.stack
+        }))
+      });
+      
+      // Start action timer
+      this.startActionTimer();
+      
+      logger.info('Hand started successfully', { 
+        tableId: this.id, 
+        handNumber: this.handNumber, 
+        players: activePlayers.length,
+        pot: this.currentHand.pot,
+        currentBet: this.currentHand.currentBet,
+        firstToAct: this.currentHand.currentPlayerSeat
+      });
+      
+    } catch (error) {
+      logger.error('Failed to start hand', { 
+        tableId: this.id, 
+        error: String(error) 
+      });
+      
+      // Reset hand state on error
+      this.currentHand = null;
+      
+      // Try again later with fewer players
+      setTimeout(() => this.checkStartHand(), 10000);
+    }
   }
   
   /**
