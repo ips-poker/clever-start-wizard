@@ -16,7 +16,7 @@ import { ConnectionStatusBanner } from './ConnectionStatusBanner';
 import { TableSettingsPanel } from './TableSettingsPanel';
 import { PersonalSettingsPanel } from './PersonalSettingsPanel';
 import { FullscreenPokerTable } from './FullscreenPokerTable';
-import { PPPokerActionButtons } from './PPPokerActionButtons';
+import { ProActionPanel } from './ProActionPanel';
 import { BuyInDialog } from './BuyInDialog';
 import { SeatRotationControl, getVisualPosition } from './SeatRotationControl';
 
@@ -316,7 +316,7 @@ export function FullscreenPokerTableWrapper({
         </div>
 
         {/* Main poker table */}
-        <div className="absolute inset-0 pt-20 pb-36">
+        <div className="absolute inset-0 pt-20 pb-28">
           <FullscreenPokerTable
             tableState={tableState}
             players={formattedPlayers}
@@ -348,27 +348,25 @@ export function FullscreenPokerTableWrapper({
           </div>
         )}
 
-        {/* Action buttons */}
-        {isMyTurn && myPlayer && (
-          <div className="absolute bottom-0 left-0 right-0 z-20">
-            <PPPokerActionButtons
-              isMyTurn={isMyTurn}
-              canCheck={canCheck}
-              callAmount={callAmount}
-              minRaise={minRaiseAmount}
-              maxRaise={maxRaiseAmount}
-              currentBet={currentBetValue}
-              pot={potValue}
-              myStack={myPlayer.stack}
-              myCurrentBet={myBet}
-              timeRemaining={turnTimeRemaining}
-              onFold={fold}
-              onCheck={check}
-              onCall={call}
-              onRaise={raise}
-              onAllIn={allIn}
-            />
-          </div>
+        {/* Action buttons - Professional Panel */}
+        {myPlayer && (
+          <ProActionPanel
+            isMyTurn={isMyTurn}
+            canCheck={canCheck}
+            callAmount={callAmount}
+            minRaise={minRaiseAmount}
+            maxRaise={maxRaiseAmount}
+            currentBet={currentBetValue}
+            pot={potValue}
+            myStack={myPlayer.stack}
+            timeRemaining={turnTimeRemaining || undefined}
+            timeTotal={tableState?.actionTimer || 30}
+            onFold={fold}
+            onCheck={check}
+            onCall={call}
+            onRaise={raise}
+            onAllIn={allIn}
+          />
         )}
         
         {/* Buy-in Dialog */}

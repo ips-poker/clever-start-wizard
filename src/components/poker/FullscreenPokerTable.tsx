@@ -10,6 +10,8 @@ import { PokerPlayer } from '@/hooks/useNodePokerTable';
 import { resolveAvatarUrl } from '@/utils/avatarResolver';
 import { usePokerPreferences, TABLE_THEMES, CARD_BACKS } from '@/hooks/usePokerPreferences';
 import syndikateLogo from '@/assets/syndikate-logo-main.png';
+import { SmoothAvatarTimer } from './SmoothAvatarTimer';
+import { EnhancedPlayerBet } from './EnhancedPlayerBet';
 
 // ============= SUIT CONFIGURATION =============
 const SUITS = {
@@ -166,46 +168,8 @@ const PremiumCard = memo(function PremiumCard({
   );
 });
 
-// ============= TIMER RING =============
-const TimerRing = memo(function TimerRing({ 
-  remaining, 
-  total,
-  size = 72
-}: { 
-  remaining: number; 
-  total: number;
-  size?: number;
-}) {
-  const progress = Math.max(0, Math.min(1, remaining / total));
-  const radius = size / 2 - 4;
-  const circumference = 2 * Math.PI * radius;
-  const strokeDashoffset = circumference * (1 - progress);
-  const isWarning = progress < 0.3;
-  const isCritical = progress < 0.15;
-  const strokeColor = isCritical ? "#ef4444" : isWarning ? "#f59e0b" : "#22c55e";
-
-  return (
-    <svg 
-      className="absolute pointer-events-none"
-      width={size}
-      height={size}
-      style={{ left: '50%', top: '50%', transform: 'translate(-50%, -50%) rotate(-90deg)' }}
-    >
-      <circle cx={size/2} cy={size/2} r={radius} fill="none" stroke="rgba(0,0,0,0.4)" strokeWidth="4"/>
-      <circle
-        cx={size/2} cy={size/2} r={radius}
-        fill="none"
-        stroke={strokeColor}
-        strokeWidth="4"
-        strokeLinecap="round"
-        strokeDasharray={circumference}
-        strokeDashoffset={strokeDashoffset}
-        className={cn("transition-all duration-200", isCritical && "animate-pulse")}
-        style={{ filter: `drop-shadow(0 0 8px ${strokeColor})` }}
-      />
-    </svg>
-  );
-});
+// ============= TIMER RING (now uses SmoothAvatarTimer) =============
+// Timer ring is now imported from SmoothAvatarTimer component for 60fps smooth animation
 
 // ============= PLAYER SEAT with personalized cards =============
 interface PlayerSeatProps {
@@ -338,9 +302,14 @@ const PlayerSeat = memo(function PlayerSeat({
       initial={{ scale: 0, opacity: 0 }}
       animate={{ scale: 1, opacity: 1 }}
     >
-      {/* Timer ring */}
+      {/* Timer ring - smooth 60fps animation around avatar */}
       {isCurrentTurn && turnTimeRemaining !== undefined && !player.isFolded && (
-        <TimerRing remaining={turnTimeRemaining} total={30} size={avatarSize + 16}/>
+        <SmoothAvatarTimer 
+          remaining={turnTimeRemaining} 
+          total={30} 
+          size={avatarSize + 20}
+          strokeWidth={4}
+        />
       )}
       
       {/* Avatar with status border */}
@@ -443,47 +412,13 @@ const PlayerSeat = memo(function PlayerSeat({
         <OpponentCards position={position} />
       )}
       
-      {/* Bet amount */}
+      {/* Bet amount - Enhanced with realistic chips */}
       {player.betAmount > 0 && (
-        <motion.div
-          initial={{ scale: 0, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          className="absolute left-1/2 -translate-x-1/2"
-          style={{ top: isHero ? '-40px' : '100%', marginTop: isHero ? 0 : '8px' }}
-        >
-          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full"
-            style={{
-              background: 'linear-gradient(135deg, rgba(0,0,0,0.9) 0%, rgba(30,30,30,0.9) 100%)',
-              border: '1.5px solid rgba(251,191,36,0.6)',
-              boxShadow: '0 4px 15px rgba(0,0,0,0.4)'
-            }}
-          >
-            {/* Chip stack */}
-            <div className="relative flex items-end h-4">
-              {[0, 1, 2].map((i) => (
-                <div 
-                  key={i}
-                  className="absolute rounded-full w-3 h-3"
-                  style={{ 
-                    background: i === 0 ? '#ef4444' : i === 1 ? '#22c55e' : '#3b82f6',
-                    border: '1px solid rgba(255,255,255,0.3)',
-                    left: i * 4,
-                    bottom: i * 2
-                  }}
-                />
-              ))}
-            </div>
-            <span className="font-bold text-xs ml-2"
-              style={{
-                background: 'linear-gradient(135deg, #fbbf24, #f59e0b)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent'
-              }}
-            >
-              {player.betAmount}
-            </span>
-          </div>
-        </motion.div>
+        <EnhancedPlayerBet
+          amount={player.betAmount}
+          position={isHero ? 'top' : position.y < 50 ? 'bottom' : 'top'}
+          isHero={isHero}
+        />
       )}
     </motion.div>
   );
