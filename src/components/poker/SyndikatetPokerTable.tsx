@@ -1185,22 +1185,57 @@ const ActionPanel = memo(function ActionPanel({
   );
 });
 
-// ============= WINNER OVERLAY - PPPoker Premium Style =============
+// ============= WINNER OVERLAY - PPPoker Premium Style with Showdown Cards =============
 const WinnerOverlay = memo(function WinnerOverlay({
-  winners, onClose
-}: { winners: Array<{ name?: string; amount: number; handRank?: string; avatarUrl?: string; playerId?: string }>; onClose: () => void; }) {
-  const [countdown, setCountdown] = useState(4);
+  winners, 
+  showdownPlayers,
+  onClose
+}: { 
+  winners: Array<{ name?: string; amount: number; handRank?: string; avatarUrl?: string; playerId?: string; cards?: string[] }>; 
+  showdownPlayers?: Array<{ playerId: string; name: string; seatNumber: number; holeCards: string[]; isFolded: boolean; handName?: string; bestCards?: string[] }>;
+  onClose: () => void; 
+}) {
+  const [countdown, setCountdown] = useState(6);
   const [showChipsAnimation, setShowChipsAnimation] = useState(true);
 
   useEffect(() => {
     const interval = setInterval(() => setCountdown(prev => prev <= 1 ? 0 : prev - 1), 1000);
-    const timer = setTimeout(onClose, 4000);
+    const timer = setTimeout(onClose, 6000);
     const chipsTimer = setTimeout(() => setShowChipsAnimation(false), 1500);
     return () => { clearInterval(interval); clearTimeout(timer); clearTimeout(chipsTimer); };
   }, [onClose]);
 
   if (!winners.length) return null;
   const winner = winners[0];
+  const winnerIds = new Set(winners.map(w => w.playerId));
+
+  // Card display helper
+  const renderCard = (card: string, index: number, isWinningCard: boolean = false) => {
+    const suit = card[1]?.toLowerCase();
+    const rank = card[0]?.toUpperCase();
+    const suitSymbol = { h: '♥', d: '♦', c: '♣', s: '♠' }[suit] || suit;
+    const isRed = suit === 'h' || suit === 'd';
+    
+    return (
+      <motion.div
+        key={`${card}-${index}`}
+        initial={{ scale: 0, rotateY: 180 }}
+        animate={{ scale: 1, rotateY: 0 }}
+        transition={{ delay: 0.5 + index * 0.1, type: 'spring' }}
+        className={cn(
+          "w-10 h-14 rounded-md flex flex-col items-center justify-center text-sm font-bold shadow-lg",
+          isWinningCard && "ring-2 ring-yellow-400 ring-offset-1 ring-offset-transparent"
+        )}
+        style={{
+          background: 'linear-gradient(145deg, #ffffff 0%, #f0f0f0 100%)',
+          border: isWinningCard ? '2px solid #fbbf24' : '1px solid rgba(0,0,0,0.2)'
+        }}
+      >
+        <span className={isRed ? 'text-red-500' : 'text-gray-900'}>{rank}</span>
+        <span className={cn("text-lg -mt-1", isRed ? 'text-red-500' : 'text-gray-900')}>{suitSymbol}</span>
+      </motion.div>
+    );
+  };
 
   return (
     <motion.div 
@@ -1209,19 +1244,14 @@ const WinnerOverlay = memo(function WinnerOverlay({
       exit={{ opacity: 0 }} 
       className="absolute inset-0 z-40 flex items-center justify-center pointer-events-none"
     >
-      {/* Flying chips animation - PPPoker style */}
+      {/* Flying chips animation */}
       <AnimatePresence>
         {showChipsAnimation && (
           <>
             {[...Array(12)].map((_, i) => (
               <motion.div
                 key={`chip-${i}`}
-                initial={{ 
-                  x: 0, 
-                  y: 0, 
-                  scale: 0,
-                  rotate: Math.random() * 360
-                }}
+                initial={{ x: 0, y: 0, scale: 0, rotate: Math.random() * 360 }}
                 animate={{ 
                   x: (Math.random() - 0.5) * 200,
                   y: (Math.random() - 0.5) * 150 - 50,
@@ -1229,18 +1259,9 @@ const WinnerOverlay = memo(function WinnerOverlay({
                   rotate: Math.random() * 720
                 }}
                 exit={{ scale: 0, opacity: 0 }}
-                transition={{ 
-                  duration: 1, 
-                  delay: i * 0.05,
-                  ease: [0.25, 0.46, 0.45, 0.94]
-                }}
+                transition={{ duration: 1, delay: i * 0.05, ease: [0.25, 0.46, 0.45, 0.94] }}
                 className="absolute z-50"
-                style={{ 
-                  left: '50%', 
-                  top: '50%',
-                  width: 24,
-                  height: 24
-                }}
+                style={{ left: '50%', top: '50%', width: 24, height: 24 }}
               >
                 <div 
                   className="w-full h-full rounded-full shadow-lg"
@@ -1259,54 +1280,26 @@ const WinnerOverlay = memo(function WinnerOverlay({
         )}
       </AnimatePresence>
 
-      {/* Winner card - PPPoker premium style */}
+      {/* Winner card with showdown info */}
       <motion.div
         initial={{ scale: 0.5, opacity: 0, y: 50 }}
         animate={{ scale: 1, opacity: 1, y: 0 }}
         exit={{ scale: 0.8, opacity: 0, y: -30 }}
         transition={{ type: 'spring', stiffness: 300, damping: 25, delay: 0.3 }}
-        className="relative rounded-2xl overflow-hidden text-center max-w-[320px] w-[90%] pointer-events-auto"
+        className="relative rounded-2xl overflow-hidden text-center max-w-[400px] w-[95%] pointer-events-auto"
         style={{
           background: 'linear-gradient(180deg, #1e2530 0%, #12171f 100%)',
           border: '2px solid rgba(34,197,94,0.6)',
           boxShadow: '0 0 60px rgba(34,197,94,0.4), 0 20px 60px rgba(0,0,0,0.5)'
         }}
       >
-        {/* Confetti effect */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          {[...Array(20)].map((_, i) => (
-            <motion.div
-              key={`conf-${i}`}
-              initial={{ y: -20, opacity: 0 }}
-              animate={{ 
-                y: [0, 200],
-                opacity: [0, 1, 1, 0],
-                x: [0, (Math.random() - 0.5) * 100]
-              }}
-              transition={{ 
-                duration: 3, 
-                delay: 0.5 + i * 0.1,
-                repeat: Infinity,
-                repeatDelay: Math.random() * 2
-              }}
-              className="absolute w-2 h-2"
-              style={{
-                left: `${Math.random() * 100}%`,
-                background: ['#ef4444', '#22c55e', '#3b82f6', '#f59e0b', '#8b5cf6'][i % 5],
-                borderRadius: Math.random() > 0.5 ? '50%' : '2px',
-                transform: `rotate(${Math.random() * 360}deg)`
-              }}
-            />
-          ))}
-        </div>
-
-        {/* Winner header with glow */}
-        <div className="relative pt-5 pb-3">
+        {/* Winner header */}
+        <div className="relative pt-4 pb-2">
           <motion.div 
             initial={{ scale: 0 }}
             animate={{ scale: [0, 1.3, 1] }}
             transition={{ delay: 0.4, duration: 0.5 }}
-            className="text-5xl mb-2"
+            className="text-4xl mb-1"
           >
             🏆
           </motion.div>
@@ -1314,12 +1307,11 @@ const WinnerOverlay = memo(function WinnerOverlay({
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5 }}
-            className="text-3xl font-black tracking-wider"
+            className="text-2xl font-black tracking-wider"
             style={{ 
               background: 'linear-gradient(135deg, #22c55e 0%, #4ade80 50%, #22c55e 100%)',
               WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              textShadow: '0 0 30px rgba(34,197,94,0.5)'
+              WebkitTextFillColor: 'transparent'
             }}
           >
             ПОБЕДА!
@@ -1327,30 +1319,17 @@ const WinnerOverlay = memo(function WinnerOverlay({
         </div>
 
         {/* Winner info */}
-        <div className="px-6 pb-4">
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.6 }}
-            className="text-white font-bold text-xl mb-1"
-          >
-            {winner.name || 'Игрок'}
-          </motion.div>
+        <div className="px-4 pb-3">
+          <div className="text-white font-bold text-lg mb-1">{winner.name || 'Игрок'}</div>
           
-          {/* Winning amount with animation */}
+          {/* Winning amount */}
           <motion.div 
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ delay: 0.7, type: 'spring', stiffness: 400 }}
-            className="flex items-center justify-center gap-2 mb-3"
+            className="flex items-center justify-center gap-2 mb-2"
           >
-            <div className="flex">
-              <div className="w-5 h-5 rounded-full" style={{ background: 'linear-gradient(135deg, #22c55e, #16a34a)', border: '1.5px solid rgba(255,255,255,0.4)' }}/>
-              <div className="w-5 h-5 rounded-full -ml-2" style={{ background: 'linear-gradient(135deg, #4ade80, #22c55e)', border: '1.5px solid rgba(255,255,255,0.4)' }}/>
-            </div>
-            <span className="text-4xl font-black text-emerald-400">
-              +{winner.amount.toLocaleString()}
-            </span>
+            <span className="text-3xl font-black text-emerald-400">+{winner.amount.toLocaleString()}</span>
           </motion.div>
           
           {/* Hand rank badge */}
@@ -1359,7 +1338,7 @@ const WinnerOverlay = memo(function WinnerOverlay({
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.8 }}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-3"
+              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full mb-2"
               style={{
                 background: 'linear-gradient(135deg, rgba(59,130,246,0.3), rgba(139,92,246,0.3))',
                 border: '1px solid rgba(139,92,246,0.5)'
@@ -1370,12 +1349,62 @@ const WinnerOverlay = memo(function WinnerOverlay({
           )}
         </div>
 
+        {/* SHOWDOWN PLAYERS CARDS */}
+        {showdownPlayers && showdownPlayers.length > 0 && (
+          <motion.div 
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            transition={{ delay: 0.9 }}
+            className="px-4 py-3 border-t border-white/10"
+            style={{ background: 'rgba(0,0,0,0.2)' }}
+          >
+            <div className="text-white/70 text-xs uppercase tracking-wider mb-3">Вскрытие карт</div>
+            <div className="space-y-3">
+              {showdownPlayers.map((player) => {
+                const isWinner = winnerIds.has(player.playerId);
+                return (
+                  <motion.div
+                    key={player.playerId}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    className={cn(
+                      "flex items-center gap-3 p-2 rounded-lg",
+                      isWinner 
+                        ? "bg-gradient-to-r from-emerald-500/20 to-transparent border border-emerald-500/30" 
+                        : "bg-white/5"
+                    )}
+                  >
+                    {/* Player name */}
+                    <div className="flex-1 min-w-0">
+                      <div className={cn(
+                        "font-semibold text-sm truncate",
+                        isWinner ? "text-emerald-400" : "text-white/80"
+                      )}>
+                        {isWinner && <span className="mr-1">👑</span>}
+                        {player.name}
+                      </div>
+                      {player.handName && (
+                        <div className="text-xs text-white/50">{player.handName}</div>
+                      )}
+                    </div>
+                    
+                    {/* Player cards */}
+                    <div className="flex gap-1">
+                      {player.holeCards.map((card, idx) => renderCard(card, idx, isWinner && player.bestCards?.includes(card)))}
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </div>
+          </motion.div>
+        )}
+
         {/* Countdown footer */}
         <motion.div 
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.9 }}
-          className="px-6 py-4 border-t border-white/10"
+          transition={{ delay: 1 }}
+          className="px-4 py-3 border-t border-white/10"
           style={{ background: 'rgba(0,0,0,0.3)' }}
         >
           <div className="text-white/50 text-xs mb-1">Следующая раздача через</div>
@@ -1383,7 +1412,7 @@ const WinnerOverlay = memo(function WinnerOverlay({
             key={countdown} 
             initial={{ scale: 1.5, opacity: 0 }} 
             animate={{ scale: 1, opacity: 1 }} 
-            className="text-3xl font-black text-emerald-400"
+            className="text-2xl font-black text-emerald-400"
           >
             {countdown}
           </motion.div>
@@ -1826,7 +1855,16 @@ export function SyndikatetPokerTable({
           {/* Winner overlay */}
           <AnimatePresence>
             {showdownResult && showdownResult.winners.length > 0 && (
-              <WinnerOverlay winners={showdownResult.winners.map(w => ({ name: w.name, amount: w.amount, handRank: w.handRank }))} onClose={() => {}}/>
+              <WinnerOverlay 
+                winners={showdownResult.winners.map(w => ({ 
+                  name: w.name, 
+                  amount: w.amount, 
+                  handRank: w.handName || w.handRank,
+                  cards: w.bestCards || w.cards
+                }))} 
+                showdownPlayers={showdownResult.showdownPlayers}
+                onClose={() => {}}
+              />
             )}
           </AnimatePresence>
           

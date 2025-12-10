@@ -807,17 +807,58 @@ export class PokerTable {
       });
     }
     
+    // Get showdown data including all players' cards
+    const isShowdown = this.currentHand?.phase === 'showdown' || 
+                       (winners.length > 0 && winners[0].handName !== 'Last Standing');
+    
+    // Build showdown players with hole cards revealed
+    const showdownPlayers: Array<{
+      playerId: string;
+      name: string;
+      seatNumber: number;
+      holeCards: string[];
+      isFolded: boolean;
+      handName?: string;
+      bestCards?: string[];
+    }> = [];
+    
+    const engineState = this.engine.getState();
+    
+    if (isShowdown && engineState) {
+      for (const ep of engineState.players) {
+        if (!ep.isFolded) {
+          const tablePlayer = this.players.get(ep.id);
+          const winnerInfo = winners.find(w => w.playerId === ep.id);
+          
+          showdownPlayers.push({
+            playerId: ep.id,
+            name: tablePlayer?.name || 'Unknown',
+            seatNumber: ep.seatNumber,
+            holeCards: ep.holeCards, // CRITICAL: Reveal hole cards at showdown
+            isFolded: ep.isFolded,
+            handName: winnerInfo?.handName,
+            bestCards: ep.bestFiveCards || [] // If available from engine
+          });
+        }
+      }
+    }
+    
     this.emit('hand_complete', {
       handNumber: this.handNumber,
       winners,
-      showdown: this.currentHand?.phase === 'showdown',
-      communityCards: this.currentHand?.communityCards
+      showdown: isShowdown,
+      communityCards: this.currentHand?.communityCards,
+      // NEW: Include showdown data with all players' cards
+      showdownPlayers,
+      pot: this.currentHand?.pot
     });
     
     logger.info('=== HAND COMPLETION END ===', { 
       tableId: this.id, 
       handNumber: this.handNumber,
-      winnersInfo: winners.map(w => `${w.playerId.substring(0,8)}:${w.amount}`)
+      isShowdown,
+      showdownPlayersCount: showdownPlayers.length,
+      winnersInfo: winners.map(w => `${w.playerId.substring(0,8)}:${w.amount}:${w.handName}`)
     });
     
     // Save hand history

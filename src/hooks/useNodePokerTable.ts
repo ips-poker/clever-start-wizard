@@ -19,6 +19,10 @@ export interface PokerPlayer {
   isActive: boolean;
   isDisconnected?: boolean;
   timeBankRemaining?: number;
+  // Showdown fields
+  handName?: string;
+  bestCards?: string[];
+  isWinner?: boolean;
 }
 
 export interface TableState {
@@ -48,12 +52,25 @@ export interface ShowdownResult {
   winners: Array<{
     playerId: string;
     name?: string;
-    seatNumber: number;
+    seatNumber?: number;
     amount: number;
+    handName?: string;
     handRank?: string;
     cards?: string[];
+    bestCards?: string[];
   }>;
   pot: number;
+  // NEW: All players' cards at showdown
+  showdownPlayers?: Array<{
+    playerId: string;
+    name: string;
+    seatNumber: number;
+    holeCards: string[];
+    isFolded: boolean;
+    handName?: string;
+    bestCards?: string[];
+  }>;
+  communityCards?: string[];
 }
 
 export interface ChatMessage {
@@ -437,18 +454,30 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
         case 'handEnd':
           log('🏆 Hand complete event:', data.type);
           
-          // Extract winners from data.data or data.winners
+          // Extract event data
           const eventData = (data.data || data) as Record<string, unknown>;
           const winners = eventData.winners as ShowdownResult['winners'] | undefined;
+          const showdownPlayers = eventData.showdownPlayers as ShowdownResult['showdownPlayers'];
+          const communityCards = eventData.communityCards as string[] | undefined;
+          const isShowdown = eventData.showdown as boolean;
           
           if (winners && winners.length > 0) {
             log('🏆 Winners:', winners);
+            log('🃏 Showdown players:', showdownPlayers);
+            
             setShowdownResult({
-              winners: winners,
-              pot: (eventData.pot || data.pot || 0) as number
+              winners: winners.map(w => ({
+                ...w,
+                handName: w.handName || (w as Record<string, unknown>).handRank as string
+              })),
+              pot: (eventData.pot || data.pot || 0) as number,
+              showdownPlayers: showdownPlayers,
+              communityCards: communityCards
             });
           }
-          setTimeout(() => setShowdownResult(null), 5000);
+          
+          // Keep showdown result visible for longer
+          setTimeout(() => setShowdownResult(null), 7000);
           
           // Update state
           if (data.state && tableId) {
@@ -459,6 +488,27 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
             if (stateData.myCards) {
               setMyCards(stateData.myCards as string[]);
             }
+          }
+          
+          // Update table state with showdown players' cards
+          if (isShowdown && showdownPlayers && tableId) {
+            setTableState(prev => {
+              if (!prev) return prev;
+              return {
+                ...prev,
+                players: prev.players.map(p => {
+                  const showdownPlayer = showdownPlayers.find(sp => sp.playerId === p.playerId);
+                  if (showdownPlayer && !showdownPlayer.isFolded) {
+                    return {
+                      ...p,
+                      holeCards: showdownPlayer.holeCards,
+                      handName: showdownPlayer.handName
+                    };
+                  }
+                  return p;
+                })
+              };
+            });
           }
           break;
 
