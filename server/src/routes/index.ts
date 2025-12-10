@@ -70,7 +70,7 @@ export function setupRoutes(app: Express, gameManager: PokerGameManager, supabas
         return res.status(400).json({ 
           success: false, 
           error: 'Invalid request',
-          details: result.error.errors 
+          details: result.error.issues 
         });
       }
       
