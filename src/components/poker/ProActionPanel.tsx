@@ -418,22 +418,26 @@ export const ProActionPanel = memo(function ProActionPanel({
           />
         )}
 
-        {/* Raise button - always sends the raise, toggle slider with long press */}
-        <ActionButton
-          label={currentBet > 0 ? "Raise" : "Bet"}
-          subLabel={showSlider ? formatAmount(raiseAmount) : undefined}
-          variant="raise"
-          onClick={() => {
-            if (showSlider) {
-              handleRaiseConfirm();
-            } else {
-              // First click - show slider and send min raise after short delay
-              setShowSlider(true);
-            }
-          }}
-          disabled={disabled || minRaise > myStack}
-          isActive={showSlider}
-        />
+        {/* Raise/Bet button - show slider on first click, confirm on second */}
+        {showSlider ? (
+          // When slider is open, show CONFIRM button
+          <ActionButton
+            label="Confirm"
+            subLabel={formatAmount(raiseAmount)}
+            variant="raise"
+            onClick={handleRaiseConfirm}
+            disabled={disabled || minRaise > myStack}
+            isActive={true}
+          />
+        ) : (
+          // When slider is closed, show Raise/Bet button
+          <ActionButton
+            label={currentBet > 0 ? "Raise" : "Bet"}
+            variant="raise"
+            onClick={() => setShowSlider(true)}
+            disabled={disabled || minRaise > myStack}
+          />
+        )}
 
         <ActionButton
           label="All-In"
