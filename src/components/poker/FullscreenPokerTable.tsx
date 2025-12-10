@@ -217,28 +217,74 @@ const HeroCards = memo(function HeroCards({
 });
 
 const OpponentCards = memo(function OpponentCards({ 
-  position 
+  position,
+  holeCards,
+  isShowdown,
+  handName,
+  isWinner
 }: { 
   position: { x: number };
+  holeCards?: string[];
+  isShowdown?: boolean;
+  handName?: string;
+  isWinner?: boolean;
 }) {
-  const { currentCardBack } = usePokerPreferences();
+  const { currentCardBack, preferences } = usePokerPreferences();
+  
+  // Show actual cards at showdown if available
+  const showFaceUp = isShowdown && holeCards && holeCards.length >= 2;
   
   return (
-    <div className={cn("absolute flex",
+    <div className={cn("absolute flex flex-col items-center gap-1",
       position.x < 30 ? "left-full ml-2" : position.x > 70 ? "right-full mr-2" : "top-full mt-2",
       "top-1/2 -translate-y-1/2"
     )}>
-      {[0, 1].map((idx) => (
-        <div key={idx} style={{ marginLeft: idx > 0 ? '-10px' : 0 }}>
-          <PremiumCard 
-            card="XX" 
-            faceDown 
-            size="xs" 
-            delay={idx}
-            cardBackColors={{ primary: currentCardBack.primaryColor, secondary: currentCardBack.secondaryColor }}
-          />
-        </div>
-      ))}
+      <div className="flex">
+        {showFaceUp ? (
+          // Show actual hole cards at showdown
+          holeCards.map((card, idx) => (
+            <div key={idx} style={{ marginLeft: idx > 0 ? '-10px' : 0 }}>
+              <PremiumCard 
+                card={card} 
+                size="sm" 
+                delay={idx}
+                isWinning={isWinner}
+                cardBackColors={{ primary: currentCardBack.primaryColor, secondary: currentCardBack.secondaryColor }}
+                cardStyle={preferences.cardStyle}
+              />
+            </div>
+          ))
+        ) : (
+          // Show card backs
+          [0, 1].map((idx) => (
+            <div key={idx} style={{ marginLeft: idx > 0 ? '-10px' : 0 }}>
+              <PremiumCard 
+                card="XX" 
+                faceDown 
+                size="xs" 
+                delay={idx}
+                cardBackColors={{ primary: currentCardBack.primaryColor, secondary: currentCardBack.secondaryColor }}
+              />
+            </div>
+          ))
+        )}
+      </div>
+      
+      {/* Show hand name at showdown */}
+      {isShowdown && handName && (
+        <motion.div
+          initial={{ opacity: 0, y: 5 }}
+          animate={{ opacity: 1, y: 0 }}
+          className={cn(
+            "px-2 py-0.5 rounded text-[9px] font-bold whitespace-nowrap",
+            isWinner 
+              ? "bg-amber-500 text-black" 
+              : "bg-black/70 text-white/80"
+          )}
+        >
+          {handName}
+        </motion.div>
+      )}
     </div>
   );
 });
@@ -407,9 +453,15 @@ const PlayerSeat = memo(function PlayerSeat({
         <HeroCards cards={heroCards} gamePhase={gamePhase} />
       )}
       
-      {/* Opponent cards (face down) */}
+      {/* Opponent cards - show face up at showdown */}
       {!isHero && !player.isFolded && gamePhase !== 'waiting' && (
-        <OpponentCards position={position} />
+        <OpponentCards 
+          position={position} 
+          holeCards={player.holeCards}
+          isShowdown={gamePhase === 'showdown'}
+          handName={(player as any).handName}
+          isWinner={(player as any).isWinner}
+        />
       )}
       
       {/* Bet amount - Enhanced with realistic chips */}
