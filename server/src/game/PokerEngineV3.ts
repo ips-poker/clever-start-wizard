@@ -1184,10 +1184,15 @@ export function validateAndProcessAction(
       newStack = player.stack - actionAmount;
       
       const raiseSize = newBet - currentBet;
+      
+      // CRITICAL FIX: Any raise ALWAYS reopens action for other players
+      // The "full raise" rule only affects minRaise tracking, not reopening
+      reopensAction = true;
+      
+      // Update minRaise only for full raises (affects next raise sizing)
       if (raiseSize >= Math.max(minRaise, lastRaiseAmount, bigBlind)) {
         newMinRaise = raiseSize;
         newLastRaiseAmount = raiseSize;
-        reopensAction = true; // Full raise reopens action
       }
       newCurrentBet = newBet;
       
@@ -2148,11 +2153,14 @@ export class PokerEngineV3 {
     if (result.reopensAction) {
       this.state.lastAggressor = playerId;
       this.state.lastAggressorSeat = player.seatNumber;
+      console.log('[Engine] REOPENING ACTION - resetting hasActedThisRound for others');
       for (const p of this.state.players) {
         if (p.id !== playerId && !p.isFolded && !p.isAllIn) {
+          console.log(`[Engine] Reset hasActedThisRound for player ${p.id.substring(0, 8)}`);
           p.hasActedThisRound = false;
         }
       }
+    }
     }
     
     // Record action
@@ -2165,6 +2173,24 @@ export class PokerEngineV3 {
     
     // Check if betting round is complete using hasActedThisRound
     const roundComplete = this.isBettingRoundCompleteV2();
+    
+    console.log('[Engine] After action:', {
+      playerId: playerId.substring(0, 8),
+      action: mappedAction,
+      amount: result.actionAmount,
+      reopensAction: result.reopensAction,
+      roundComplete,
+      currentBet: this.state.currentBet,
+      pot: this.state.pot,
+      playersState: this.state.players.map(p => ({
+        id: p.id.substring(0, 8),
+        seat: p.seatNumber,
+        bet: p.betAmount,
+        hasActed: p.hasActedThisRound,
+        folded: p.isFolded,
+        allIn: p.isAllIn
+      }))
+    });
     
     let phaseAdvanced = false;
     let handComplete = false;
