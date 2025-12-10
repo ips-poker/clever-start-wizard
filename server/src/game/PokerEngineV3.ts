@@ -1238,9 +1238,9 @@ export function validateAndProcessAction(
 }
 
 /**
- * Check if the current betting round is complete
+ * Simple check if betting round is complete (legacy, use isBettingRoundCompleteAdvanced for full check)
  */
-export function isBettingRoundComplete(
+function isBettingRoundCompleteSimple(
   players: GamePlayer[],
   currentBet: number
 ): boolean {
@@ -1508,9 +1508,9 @@ export function isBettingRoundComplete(
   if (phase === 'preflop') {
     const bbPlayer = remaining.find(p => p.seatNumber === bigBlindSeat);
     if (bbPlayer && !bbPlayer.isAllIn && !bbPlayer.isSittingOut) {
-      const hasRaise = phaseActions.some(a => 
+    const hasRaise = phaseActions.some(a => 
         a.type === 'raise' || 
-        (a.type === 'all_in' && players.find(p => p.id === a.playerId)?.betAmount > currentBet)
+        (a.type === 'all_in' && (players.find(p => p.id === a.playerId)?.betAmount ?? 0) > currentBet)
       );
       
       const bbActed = phaseActions.some(a => {
