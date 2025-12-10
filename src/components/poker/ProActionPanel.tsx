@@ -1,5 +1,5 @@
 // Professional Poker Action Panel - PPPoker/GGPoker Style
-import React, { memo, useState, useCallback, useEffect, useRef } from 'react';
+import React, { memo, useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { Zap, Minus, Plus, Check, X } from 'lucide-react';
@@ -13,8 +13,6 @@ interface ProActionPanelProps {
   currentBet: number;
   pot: number;
   myStack: number;
-  timeRemaining?: number;
-  timeTotal?: number;
   onFold: () => void;
   onCheck: () => void;
   onCall: () => void;
@@ -30,97 +28,7 @@ const formatAmount = (amount: number): string => {
   return amount.toLocaleString();
 };
 
-// Smooth 60fps Timer Ring
-const SmoothTimerRing = memo(function SmoothTimerRing({
-  remaining,
-  total,
-  size = 48
-}: {
-  remaining: number;
-  total: number;
-  size?: number;
-}) {
-  const [displayProgress, setDisplayProgress] = useState(remaining / total);
-  const animationRef = useRef<number>();
-  const startTimeRef = useRef<number>(Date.now());
-  const startProgressRef = useRef<number>(remaining / total);
-
-  useEffect(() => {
-    startTimeRef.current = Date.now();
-    startProgressRef.current = remaining / total;
-
-    const animate = () => {
-      const elapsed = (Date.now() - startTimeRef.current) / 1000;
-      const newProgress = Math.max(0, startProgressRef.current - (elapsed / total));
-      setDisplayProgress(newProgress);
-      
-      if (newProgress > 0) {
-        animationRef.current = requestAnimationFrame(animate);
-      }
-    };
-
-    animationRef.current = requestAnimationFrame(animate);
-    return () => {
-      if (animationRef.current) cancelAnimationFrame(animationRef.current);
-    };
-  }, [remaining, total]);
-
-  const radius = (size / 2) - 3;
-  const circumference = 2 * Math.PI * radius;
-  const strokeDashoffset = circumference * (1 - displayProgress);
-  
-  const isCritical = displayProgress < 0.2;
-  const isWarning = displayProgress < 0.4;
-  const strokeColor = isCritical ? '#ef4444' : isWarning ? '#f59e0b' : '#22c55e';
-
-  return (
-    <svg width={size} height={size} className="absolute -inset-1">
-      {/* Background ring */}
-      <circle
-        cx={size / 2}
-        cy={size / 2}
-        r={radius}
-        fill="none"
-        stroke="rgba(255,255,255,0.1)"
-        strokeWidth="3"
-      />
-      {/* Progress ring */}
-      <circle
-        cx={size / 2}
-        cy={size / 2}
-        r={radius}
-        fill="none"
-        stroke={strokeColor}
-        strokeWidth="3"
-        strokeLinecap="round"
-        strokeDasharray={circumference}
-        strokeDashoffset={strokeDashoffset}
-        transform={`rotate(-90 ${size / 2} ${size / 2})`}
-        style={{
-          filter: `drop-shadow(0 0 6px ${strokeColor})`,
-          transition: 'stroke 0.3s ease'
-        }}
-      />
-      {/* Glow effect for critical */}
-      {isCritical && (
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
-          fill="none"
-          stroke={strokeColor}
-          strokeWidth="5"
-          strokeLinecap="round"
-          strokeDasharray={circumference}
-          strokeDashoffset={strokeDashoffset}
-          transform={`rotate(-90 ${size / 2} ${size / 2})`}
-          opacity={0.3}
-          className="animate-pulse"
-        />
-      )}
-    </svg>
-  );
-});
+// (Timer ring removed - using SmoothAvatarTimer around the avatar instead)
 
 // Action Button Component
 const ActionButton = memo(function ActionButton({
@@ -291,8 +199,6 @@ export const ProActionPanel = memo(function ProActionPanel({
   currentBet,
   pot,
   myStack,
-  timeRemaining = 30,
-  timeTotal = 30,
   onFold,
   onCheck,
   onCall,
@@ -402,23 +308,6 @@ export const ProActionPanel = memo(function ProActionPanel({
         background: 'linear-gradient(to top, rgba(0,0,0,0.98) 0%, rgba(20,20,20,0.95) 60%, transparent 100%)'
       }}
     >
-      {/* Timer indicator */}
-      {timeRemaining !== undefined && (
-        <div className="flex justify-center mb-3">
-          <div className="relative">
-            <SmoothTimerRing remaining={timeRemaining} total={timeTotal} size={44} />
-            <div className="w-10 h-10 rounded-full bg-black/60 flex items-center justify-center">
-              <span className={cn(
-                "text-sm font-bold",
-                timeRemaining < timeTotal * 0.2 ? "text-red-400" : 
-                timeRemaining < timeTotal * 0.4 ? "text-amber-400" : "text-white"
-              )}>
-                {Math.ceil(timeRemaining)}
-              </span>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Raise slider panel */}
       <AnimatePresence>
@@ -529,23 +418,22 @@ export const ProActionPanel = memo(function ProActionPanel({
           />
         )}
 
-        {showSlider ? (
-          <ActionButton
-            label={currentBet > 0 ? "Raise" : "Bet"}
-            subLabel={formatAmount(raiseAmount)}
-            variant="raise"
-            onClick={handleRaiseConfirm}
-            disabled={disabled || raiseAmount > myStack}
-            isActive
-          />
-        ) : (
-          <ActionButton
-            label={currentBet > 0 ? "Raise" : "Bet"}
-            variant="raise"
-            onClick={() => setShowSlider(true)}
-            disabled={disabled || minRaise > myStack}
-          />
-        )}
+        {/* Raise button - always sends the raise, toggle slider with long press */}
+        <ActionButton
+          label={currentBet > 0 ? "Raise" : "Bet"}
+          subLabel={showSlider ? formatAmount(raiseAmount) : undefined}
+          variant="raise"
+          onClick={() => {
+            if (showSlider) {
+              handleRaiseConfirm();
+            } else {
+              // First click - show slider and send min raise after short delay
+              setShowSlider(true);
+            }
+          }}
+          disabled={disabled || minRaise > myStack}
+          isActive={showSlider}
+        />
 
         <ActionButton
           label="All-In"
