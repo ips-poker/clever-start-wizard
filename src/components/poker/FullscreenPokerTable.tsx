@@ -12,6 +12,7 @@ import { usePokerPreferences, TABLE_THEMES, CARD_BACKS } from '@/hooks/usePokerP
 import syndikateLogo from '@/assets/syndikate-logo-main.png';
 import { SmoothAvatarTimer } from './SmoothAvatarTimer';
 import { EnhancedPlayerBet } from './EnhancedPlayerBet';
+import { getHandStrengthName } from '@/utils/handEvaluator';
 
 // ============= SUIT CONFIGURATION =============
 const SUITS = {
@@ -183,6 +184,7 @@ interface PlayerSeatProps {
   isCurrentTurn: boolean;
   turnTimeRemaining?: number;
   heroCards?: string[];
+  communityCards?: string[];
   gamePhase?: string;
   canJoin?: boolean;
   onSeatClick?: (seatNumber: number) => void;
@@ -191,27 +193,57 @@ interface PlayerSeatProps {
 // Helper component that uses the preferences hook
 const HeroCards = memo(function HeroCards({ 
   cards, 
-  gamePhase 
+  gamePhase,
+  communityCards = [],
+  isWinner = false
 }: { 
   cards: string[]; 
   gamePhase: string;
+  communityCards?: string[];
+  isWinner?: boolean;
 }) {
   const { currentCardBack, preferences } = usePokerPreferences();
   
+  // Calculate hand strength for hero
+  const handName = useMemo(() => {
+    if (cards.length >= 2 && communityCards.length >= 3) {
+      return getHandStrengthName(cards, communityCards);
+    }
+    return undefined;
+  }, [cards, communityCards]);
+  
   return (
-    <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 flex">
-      {cards.map((card, idx) => (
-        <div key={idx} style={{ marginLeft: idx > 0 ? '-12px' : 0 }}>
-          <PremiumCard 
-            card={card} 
-            size="md" 
-            delay={idx} 
-            isWinning={gamePhase === 'showdown'}
-            cardBackColors={{ primary: currentCardBack.primaryColor, secondary: currentCardBack.secondaryColor }}
-            cardStyle={preferences.cardStyle}
-          />
-        </div>
-      ))}
+    <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 flex flex-col items-center gap-1">
+      <div className="flex">
+        {cards.map((card, idx) => (
+          <div key={idx} style={{ marginLeft: idx > 0 ? '-12px' : 0 }}>
+            <PremiumCard 
+              card={card} 
+              size="md" 
+              delay={idx} 
+              isWinning={gamePhase === 'showdown' && isWinner}
+              cardBackColors={{ primary: currentCardBack.primaryColor, secondary: currentCardBack.secondaryColor }}
+              cardStyle={preferences.cardStyle}
+            />
+          </div>
+        ))}
+      </div>
+      
+      {/* Show hand name when we have community cards */}
+      {handName && (
+        <motion.div
+          initial={{ opacity: 0, y: 5 }}
+          animate={{ opacity: 1, y: 0 }}
+          className={cn(
+            "px-2 py-0.5 rounded text-[10px] font-bold whitespace-nowrap mt-1",
+            isWinner 
+              ? "bg-gradient-to-r from-amber-500 to-yellow-400 text-black shadow-lg shadow-amber-500/30" 
+              : "bg-gradient-to-r from-emerald-600 to-emerald-500 text-white"
+          )}
+        >
+          {handName}
+        </motion.div>
+      )}
     </div>
   );
 });
@@ -300,6 +332,7 @@ const PlayerSeat = memo(function PlayerSeat({
   isCurrentTurn,
   turnTimeRemaining,
   heroCards,
+  communityCards = [],
   gamePhase = 'waiting',
   canJoin = false,
   onSeatClick
@@ -450,7 +483,12 @@ const PlayerSeat = memo(function PlayerSeat({
       
       {/* Player cards */}
       {isHero && heroCards && heroCards.length > 0 && !player.isFolded && (
-        <HeroCards cards={heroCards} gamePhase={gamePhase} />
+        <HeroCards 
+          cards={heroCards} 
+          gamePhase={gamePhase} 
+          communityCards={communityCards}
+          isWinner={(player as any).isWinner}
+        />
       )}
       
       {/* Opponent cards - show face up at showdown */}
@@ -809,6 +847,7 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
             isCurrentTurn={player?.seatNumber === currentPlayerSeat}
             turnTimeRemaining={player?.seatNumber === currentPlayerSeat ? turnTimeRemaining : undefined}
             heroCards={idx === 0 ? heroCards : undefined}
+            communityCards={communityCards}
             gamePhase={phase}
             canJoin={canJoinTable && !player}
             onSeatClick={onSeatClick}

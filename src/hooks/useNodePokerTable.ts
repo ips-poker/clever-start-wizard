@@ -461,6 +461,8 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
           const communityCards = eventData.communityCards as string[] | undefined;
           const isShowdown = eventData.showdown as boolean;
           
+          log('🏆 Event data:', { winners, showdownPlayers, isShowdown, communityCards });
+          
           if (winners && winners.length > 0) {
             log('🏆 Winners:', winners);
             log('🃏 Showdown players:', showdownPlayers);
@@ -479,32 +481,65 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
           // Keep showdown result visible for longer
           setTimeout(() => setShowdownResult(null), 7000);
           
-          // Update state
+          // Update state - force phase to 'showdown' if we have winners
           if (data.state && tableId) {
             const stateData = data.state as Record<string, unknown>;
-            setTableState(transformServerState(data.state, tableId));
+            const transformedState = transformServerState(data.state, tableId);
+            
+            // If this is a showdown with multiple non-folded players, force phase
+            if ((isShowdown || showdownPlayers) && winners) {
+              transformedState.phase = 'showdown';
+            }
+            
+            setTableState(transformedState);
             
             // Also update cards from state
             if (stateData.myCards) {
               setMyCards(stateData.myCards as string[]);
             }
-          }
-          
-          // Update table state with showdown players' cards
-          if (isShowdown && showdownPlayers && tableId) {
+          } else if ((isShowdown || showdownPlayers) && tableId) {
+            // Even without state, update phase to showdown
             setTableState(prev => {
               if (!prev) return prev;
+              return { ...prev, phase: 'showdown' };
+            });
+          }
+          
+          // Update table state with showdown players' cards and winner info
+          if ((isShowdown || showdownPlayers || winners) && tableId) {
+            setTableState(prev => {
+              if (!prev) return prev;
+              
+              // Create a set of winner player IDs
+              const winnerIds = new Set(winners?.map(w => w.playerId) || []);
+              
               return {
                 ...prev,
+                phase: 'showdown', // Force showdown phase
                 players: prev.players.map(p => {
-                  const showdownPlayer = showdownPlayers.find(sp => sp.playerId === p.playerId);
+                  // Check if this player is a winner
+                  const winner = winners?.find(w => w.playerId === p.playerId);
+                  const showdownPlayer = showdownPlayers?.find(sp => sp.playerId === p.playerId);
+                  
                   if (showdownPlayer && !showdownPlayer.isFolded) {
                     return {
                       ...p,
                       holeCards: showdownPlayer.holeCards,
-                      handName: showdownPlayer.handName
+                      handName: showdownPlayer.handName || winner?.handName,
+                      isWinner: winnerIds.has(p.playerId),
+                      bestCards: showdownPlayer.bestCards || winner?.bestCards
                     };
                   }
+                  
+                  // Also update winner status for players not in showdownPlayers
+                  if (winnerIds.has(p.playerId)) {
+                    return {
+                      ...p,
+                      isWinner: true,
+                      handName: winner?.handName
+                    };
+                  }
+                  
                   return p;
                 })
               };

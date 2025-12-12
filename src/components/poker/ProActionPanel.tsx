@@ -425,8 +425,11 @@ export const ProActionPanel = memo(function ProActionPanel({
             label="Confirm"
             subLabel={formatAmount(raiseAmount)}
             variant="raise"
-            onClick={handleRaiseConfirm}
-            disabled={disabled || minRaise > myStack}
+            onClick={() => {
+              console.log('[ProActionPanel] Confirm clicked, raiseAmount:', raiseAmount, 'minRaise:', minRaise, 'maxRaise:', maxRaise);
+              handleRaiseConfirm();
+            }}
+            disabled={disabled}
             isActive={true}
           />
         ) : (
@@ -434,7 +437,10 @@ export const ProActionPanel = memo(function ProActionPanel({
           <ActionButton
             label={currentBet > 0 ? "Raise" : "Bet"}
             variant="raise"
-            onClick={() => setShowSlider(true)}
+            onClick={() => {
+              console.log('[ProActionPanel] Raise/Bet clicked, opening slider. minRaise:', minRaise, 'maxRaise:', maxRaise, 'myStack:', myStack);
+              setShowSlider(true);
+            }}
             disabled={disabled || minRaise > myStack}
           />
         )}
