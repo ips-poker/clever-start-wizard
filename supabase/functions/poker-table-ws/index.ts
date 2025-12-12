@@ -520,7 +520,6 @@ async function fetchTableState(supabase: any, tableId: string, playerId: string)
             : null
         }))
       };
-      };
     }
   }
 
