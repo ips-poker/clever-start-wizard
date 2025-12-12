@@ -247,9 +247,12 @@ export const ProActionPanel = memo(function ProActionPanel({
 
   // Handle raise confirm
   const handleRaiseConfirm = useCallback(() => {
-    onRaise(raiseAmount);
+    // Ensure raiseAmount is at least minRaise
+    const finalAmount = Math.max(raiseAmount, minRaise);
+    console.log('[ProActionPanel] handleRaiseConfirm - finalAmount:', finalAmount, 'minRaise:', minRaise, 'maxRaise:', maxRaise);
+    onRaise(finalAmount);
     setShowSlider(false);
-  }, [raiseAmount, onRaise]);
+  }, [raiseAmount, minRaise, maxRaise, onRaise]);
 
   // Step for slider
   const step = Math.max(1, Math.floor(minRaise / 2));
