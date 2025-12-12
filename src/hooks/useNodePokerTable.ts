@@ -244,6 +244,11 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
     try {
       const data = JSON.parse(event.data) as Record<string, unknown>;
       log('📥 Recv:', data.type, data);
+      
+      // Enhanced logging for debugging showdown
+      if (data.type?.toString().includes('hand') || data.type?.toString().includes('showdown') || data.type?.toString().includes('winner')) {
+        console.log('[SHOWDOWN DEBUG] Event received:', data.type, JSON.stringify(data, null, 2));
+      }
 
       switch (data.type) {
         case 'connected':
