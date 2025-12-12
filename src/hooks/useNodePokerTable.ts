@@ -756,6 +756,7 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
 
   const bet = useCallback((amount: number) => {
     if (!tableId || !playerId) return;
+    console.log('[NodePoker] 💰 Bet action:', { tableId, playerId, amount });
     sendMessage({
       type: 'action',
       tableId,
@@ -767,14 +768,18 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
 
   const raise = useCallback((amount: number) => {
     if (!tableId || !playerId) return;
+    // Use 'bet' when there's no bet in current round, otherwise 'raise'
+    const currentBetAmount = tableState?.currentBet || 0;
+    const actionType = currentBetAmount === 0 ? 'bet' : 'raise';
+    console.log('[NodePoker] 💰 Raise/Bet action:', { tableId, playerId, amount, actionType, currentBet: currentBetAmount });
     sendMessage({
       type: 'action',
       tableId,
       playerId,
-      actionType: 'raise',
+      actionType,
       amount
     });
-  }, [tableId, playerId, sendMessage]);
+  }, [tableId, playerId, tableState?.currentBet, sendMessage]);
 
   const allIn = useCallback(() => {
     if (!tableId || !playerId) return;
