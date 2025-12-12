@@ -187,7 +187,7 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
       return {
         playerId: (p.playerId || p.id) as string,
         name: (p.name || 'Player') as string,
-        avatarUrl: (p.avatarUrl || p.avatar) as string | undefined, // avatarUrl first, then avatar fallback
+        avatarUrl: (p.avatarUrl || p.avatar) as string | undefined,
         seatNumber: (p.seatNumber ?? p.seat_number ?? 0) as number,
         stack: (p.stack || 0) as number,
         betAmount,
@@ -197,7 +197,11 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
         isAllIn: (p.isAllIn || p.is_all_in || false) as boolean,
         isActive: (p.isActive !== false && p.status !== 'disconnected' && p.status !== 'folded') as boolean,
         isDisconnected: (p.status === 'disconnected') as boolean,
-        timeBankRemaining: (p.timeBank || 60) as number
+        timeBankRemaining: (p.timeBank || 60) as number,
+        // Showdown fields
+        handName: (p.handName || p.handRank || p.hand_rank) as string | undefined,
+        isWinner: Boolean(p.isWinner || (p.wonAmount as number) > 0 || (p.won_amount as number) > 0),
+        bestCards: (p.bestCards || []) as string[]
       };
     });
 

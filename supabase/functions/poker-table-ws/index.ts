@@ -340,6 +340,24 @@ serve(async (req) => {
             result: actionResult
           });
 
+          // If hand complete (showdown), broadcast special event with all cards
+          if (actionResult?.handComplete) {
+            console.log(`🏆 Hand complete, broadcasting showdown to table ${tableId}`);
+            
+            // Fetch showdown data from database
+            const showdownData = await fetchShowdownData(supabase, tableId, actionResult);
+            
+            await broadcastToAllInstances(tableId, {
+              type: 'hand_complete',
+              showdown: true,
+              winners: actionResult.winners,
+              communityCards: actionResult.communityCards,
+              showdownPlayers: showdownData.players,
+              handResults: actionResult.handResults,
+              pot: showdownData.pot
+            });
+          }
+
           // Broadcast updated state
           await broadcastTableStateToAll(supabase, tableId);
           break;
@@ -494,11 +512,14 @@ async function fetchTableState(supabase: any, tableId: string, playerId: string)
           betAmount: hp.bet_amount,
           isFolded: hp.is_folded,
           isAllIn: hp.is_all_in,
-          // Only show cards if showdown or own cards
-          cards: hp.player_id === playerId || hand.phase === 'showdown' 
+          handRank: hp.hand_rank,
+          wonAmount: hp.won_amount,
+          // Show cards at showdown for all non-folded players
+          holeCards: hp.player_id === playerId || (hand.phase === 'showdown' && !hp.is_folded)
             ? hp.hole_cards 
             : null
         }))
+      };
       };
     }
   }
@@ -573,4 +594,53 @@ async function broadcastTableStateToAll(supabase: any, tableId: string) {
       }
     }
   }
+}
+
+// Fetch showdown data with all players' cards
+async function fetchShowdownData(supabase: any, tableId: string, actionResult: any) {
+  // Get the latest completed hand
+  const { data: table } = await supabase
+    .from('poker_tables')
+    .select('current_dealer_seat')
+    .eq('id', tableId)
+    .single();
+    
+  // Find the most recent completed hand for this table
+  const { data: hand } = await supabase
+    .from('poker_hands')
+    .select('*')
+    .eq('table_id', tableId)
+    .not('completed_at', 'is', null)
+    .order('completed_at', { ascending: false })
+    .limit(1)
+    .single();
+    
+  if (!hand) {
+    return { players: [], pot: actionResult?.pot || 0 };
+  }
+  
+  // Get all hand players with their cards
+  const { data: handPlayers } = await supabase
+    .from('poker_hand_players')
+    .select('*, players(name, avatar_url)')
+    .eq('hand_id', hand.id);
+    
+  const showdownPlayers = (handPlayers || []).map((hp: any) => ({
+    playerId: hp.player_id,
+    name: hp.players?.name || 'Player',
+    seatNumber: hp.seat_number,
+    holeCards: hp.hole_cards || [],
+    isFolded: hp.is_folded,
+    handName: hp.hand_rank,
+    wonAmount: hp.won_amount,
+    isWinner: hp.won_amount > 0
+  }));
+  
+  console.log(`📊 Showdown data: ${showdownPlayers.length} players, winners: ${showdownPlayers.filter((p: any) => p.isWinner).map((p: any) => p.name).join(', ')}`);
+  
+  return {
+    players: showdownPlayers,
+    pot: hand.pot,
+    communityCards: hand.community_cards
+  };
 }
