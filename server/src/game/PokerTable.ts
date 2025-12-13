@@ -979,10 +979,15 @@ export class PokerTable {
   
   /**
    * Get player-specific state (includes hole cards)
+   * CRITICAL: At showdown, reveal all non-folded players' cards
    */
   getPlayerState(playerId: string): object {
     const publicState = this.getPublicState() as Record<string, unknown>;
     const player = this.players.get(playerId);
+    const isShowdown = this.currentHand?.phase === 'showdown';
+    
+    // Get engine state for hole cards at showdown
+    const engineState = this.engine.getState();
     
     if (!player) {
       return {
@@ -995,11 +1000,24 @@ export class PokerTable {
       };
     }
     
-    // Update players array with hero's cards visible
+    // Update players array with cards visible
     const players = (publicState.players as Array<Record<string, unknown>>).map(p => {
-      if (p.playerId === playerId) {
-        return { ...p, holeCards: player.holeCards };
+      const pid = p.playerId as string;
+      
+      // Always show hero's cards
+      if (pid === playerId) {
+        const tablePlayer = this.players.get(pid);
+        return { ...p, holeCards: tablePlayer?.holeCards || [] };
       }
+      
+      // At showdown, show all non-folded players' cards
+      if (isShowdown && engineState) {
+        const enginePlayer = engineState.players.find(ep => ep.id === pid);
+        if (enginePlayer && !enginePlayer.isFolded && enginePlayer.holeCards?.length >= 2) {
+          return { ...p, holeCards: enginePlayer.holeCards };
+        }
+      }
+      
       return p;
     });
     
