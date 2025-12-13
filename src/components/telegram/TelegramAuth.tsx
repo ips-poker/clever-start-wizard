@@ -63,7 +63,13 @@ export const TelegramAuth: React.FC<TelegramAuthProps> = ({ onAuthComplete }) =>
         cachedInitDataRaw = (launchParams.initDataRaw as string) || null;
         console.log('Launch params retrieved, initDataRaw:', cachedInitDataRaw ? '[PRESENT]' : '[MISSING]');
       } catch (e) {
-        console.log('Could not retrieve launch params:', e);
+        console.log('Could not retrieve launch params via SDK, trying window.Telegram.WebApp.initData:', e);
+      }
+
+      // Дополнительный резервный способ получения initDataRaw напрямую из Telegram WebApp
+      if (!cachedInitDataRaw && (window as any).Telegram?.WebApp?.initData) {
+        cachedInitDataRaw = (window as any).Telegram.WebApp.initData as string;
+        console.log('Fallback initDataRaw from window.Telegram.WebApp.initData:', cachedInitDataRaw ? '[PRESENT]' : '[MISSING]');
       }
       
       await initData.restore();
