@@ -554,11 +554,11 @@ const PlayerSeat = memo(function PlayerSeat({
         />
       )}
       
-      {/* Bet amount - Enhanced with realistic chips */}
+      {/* Bet amount - positioned towards center of table */}
       {player.betAmount > 0 && (
         <EnhancedPlayerBet
           amount={player.betAmount}
-          position={isHero ? 'top' : position.y < 50 ? 'bottom' : 'top'}
+          seatPosition={position}
           isHero={isHero}
         />
       )}
