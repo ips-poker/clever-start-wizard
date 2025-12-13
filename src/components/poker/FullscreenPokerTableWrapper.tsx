@@ -270,8 +270,13 @@ export function FullscreenPokerTableWrapper({
           onReconnectNow={() => connect()}
         />
 
-        {/* Header */}
-        <div className="absolute top-0 left-0 right-0 z-30 flex items-center justify-between p-3 pt-4 bg-gradient-to-b from-black/60 to-transparent">
+        {/* Header - with safe area inset for Telegram fullscreen */}
+        <div 
+          className="absolute top-0 left-0 right-0 z-30 flex items-center justify-between p-3 bg-gradient-to-b from-black/60 to-transparent"
+          style={{
+            paddingTop: 'calc(env(safe-area-inset-top, 0px) + var(--tg-safe-area-inset-top, 0px) + 12px)'
+          }}
+        >
           <div className="flex items-center gap-3">
             <Button
               variant="ghost"
@@ -316,8 +321,13 @@ export function FullscreenPokerTableWrapper({
         </div>
 
         {/* Main poker table - optimized spacing for all UI elements */}
-        {/* pt-14: space for header, pb-40: space for action panel + hero cards */}
-        <div className="absolute inset-0 pt-14 pb-40">
+        {/* Dynamic top padding for header + safe area, pb-40: space for action panel + hero cards */}
+        <div 
+          className="absolute inset-0 pb-40"
+          style={{
+            paddingTop: 'calc(env(safe-area-inset-top, 0px) + var(--tg-safe-area-inset-top, 0px) + 56px)'
+          }}
+        >
           <FullscreenPokerTable
             tableState={tableState}
             players={formattedPlayers}
