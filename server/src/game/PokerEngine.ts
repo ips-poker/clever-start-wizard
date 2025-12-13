@@ -523,12 +523,25 @@ export class PokerEngine {
     const activePlayers = players.filter(p => !p.isFolded);
     
     // Evaluate hands
-    const evaluations = activePlayers.map(player => ({
-      playerId: player.id,
-      ...this.evaluateHand([...player.holeCards, ...handState.communityCards])
-    }));
+    const evaluations = activePlayers.map(player => {
+      const allCards = [...player.holeCards, ...handState.communityCards];
+      const evaluation = this.evaluateHand(allCards);
+      return {
+        playerId: player.id,
+        holeCards: player.holeCards,
+        ...evaluation
+      };
+    });
     
-    // Sort by hand strength
+    // Log evaluations for debugging
+    console.log('[Engine] Hand evaluations:', evaluations.map(e => ({
+      id: e.playerId.substring(0, 8),
+      hand: e.name,
+      value: e.value,
+      holeCards: e.holeCards
+    })));
+    
+    // Sort by hand strength (higher value = better hand)
     evaluations.sort((a, b) => b.value - a.value);
     
     // Find winners (handle ties)
@@ -536,6 +549,13 @@ export class PokerEngine {
     const winners = evaluations.filter(e => e.value === bestValue);
     
     const prizePerWinner = Math.floor(handState.pot / winners.length);
+    
+    console.log('[Engine] Winners determined:', winners.map(w => ({
+      id: w.playerId.substring(0, 8),
+      hand: w.name,
+      value: w.value,
+      amount: prizePerWinner
+    })));
     
     handState.phase = 'showdown';
     
@@ -688,9 +708,10 @@ export class PokerEngine {
     let kicker = 0;
     for (const [rank, count] of Object.entries(rankCounts)) {
       if (count === 2) pairs.push(RANK_VALUES[rank]);
-      else kicker = RANK_VALUES[rank];
+      else kicker = Math.max(kicker, RANK_VALUES[rank]); // Take highest kicker
     }
     pairs.sort((a, b) => b - a);
+    // High pair * 10000 + Low pair * 100 + kicker
     return pairs[0] * 10000 + pairs[1] * 100 + kicker;
   }
   
@@ -727,5 +748,64 @@ export class PokerEngine {
     
     combine(0, []);
     return result;
+  }
+  
+  /**
+   * Validate hand ranking logic - call this to test the engine
+   */
+  validateHandRanking(): { passed: boolean; errors: string[] } {
+    const errors: string[] = [];
+    
+    // Test cases: [hand1, hand2, expectedWinner (1 or 2 or 0 for tie)]
+    const testCases: [string[], string[], number, string][] = [
+      // Two Pair vs One Pair - Two Pair should win
+      [['Ts', '4s', 'Tc', '4c', 'Kh'], ['4h', '6d', 'Kc', '4d', 'Qh'], 1, 'Two Pair beats One Pair'],
+      
+      // Higher Pair vs Lower Pair
+      [['As', 'Ad', '2c', '3h', '4s'], ['Ks', 'Kd', '2d', '3c', '4h'], 1, 'Pair of Aces beats Pair of Kings'],
+      [['2s', '2d', 'Ac', 'Kh', 'Qs'], ['3s', '3d', 'Ad', 'Kc', 'Qh'], 2, 'Pair of 3s beats Pair of 2s'],
+      
+      // Straight vs Three of a Kind
+      [['5s', '6d', '7c', '8h', '9s'], ['Ks', 'Kd', 'Kc', '2h', '3s'], 1, 'Straight beats Three of a Kind'],
+      
+      // Flush vs Straight
+      [['2h', '5h', '7h', '9h', 'Kh'], ['5s', '6d', '7c', '8h', '9s'], 1, 'Flush beats Straight'],
+      
+      // Full House vs Flush
+      [['Ks', 'Kd', 'Kc', '2h', '2s'], ['2h', '5h', '7h', '9h', 'Kh'], 1, 'Full House beats Flush'],
+      
+      // Four of a Kind vs Full House
+      [['Ks', 'Kd', 'Kc', 'Kh', '2s'], ['As', 'Ad', 'Ac', '2h', '2d'], 1, 'Four of a Kind beats Full House'],
+      
+      // Kicker tests - same pair, different kickers
+      [['As', 'Kd', 'Ac', '2h', '3s'], ['As', 'Qd', 'Ad', '2c', '3h'], 1, 'Pair of Aces with K kicker beats Pair of Aces with Q kicker'],
+      
+      // Two Pair kickers
+      [['Ks', 'Kd', 'Qs', 'Qd', 'Ah'], ['Ks', 'Kd', 'Qs', 'Qc', '2h'], 1, 'Two Pair KK-QQ with A kicker beats with 2 kicker'],
+      
+      // Higher two pair
+      [['As', 'Ad', 'Ks', 'Kd', '2h'], ['Qs', 'Qd', 'Js', 'Jd', 'Ah'], 1, 'AA-KK beats QQ-JJ'],
+      
+      // Three of a Kind kickers
+      [['Ks', 'Kd', 'Kc', 'Ah', '2s'], ['Ks', 'Kd', 'Kc', 'Qh', 'Js'], 1, 'Trip Kings with A-2 beats Trip Kings with Q-J'],
+    ];
+    
+    for (const [hand1, hand2, expectedWinner, description] of testCases) {
+      const eval1 = this.evaluateFiveCards(hand1);
+      const eval2 = this.evaluateFiveCards(hand2);
+      
+      let actualWinner = 0;
+      if (eval1.value > eval2.value) actualWinner = 1;
+      else if (eval2.value > eval1.value) actualWinner = 2;
+      
+      if (actualWinner !== expectedWinner) {
+        errors.push(`FAIL: ${description} - Expected winner ${expectedWinner}, got ${actualWinner}. ` +
+          `Hand1: ${eval1.name} (${eval1.value}), Hand2: ${eval2.name} (${eval2.value})`);
+      } else {
+        console.log(`PASS: ${description} - Hand1: ${eval1.name} (${eval1.value}), Hand2: ${eval2.name} (${eval2.value})`);
+      }
+    }
+    
+    return { passed: errors.length === 0, errors };
   }
 }

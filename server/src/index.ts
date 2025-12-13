@@ -14,6 +14,7 @@ import { WebSocketServer } from 'ws';
 import { config } from './config.js';
 import { PokerWebSocketHandler } from './websocket/PokerWebSocketHandler.js';
 import { PokerGameManager } from './game/PokerGameManager.js';
+import { PokerEngine } from './game/PokerEngine.js';
 import { createSupabaseClient } from './db/supabase.js';
 import { setupRoutes } from './routes/index.js';
 import { RateLimiterMemory } from 'rate-limiter-flexible';
@@ -132,6 +133,17 @@ const gracefulShutdown = async () => {
 
 process.on('SIGTERM', gracefulShutdown);
 process.on('SIGINT', gracefulShutdown);
+
+// Validate poker engine on startup
+const engine = new PokerEngine();
+const validation = engine.validateHandRanking();
+if (!validation.passed) {
+  logger.error('CRITICAL: Poker engine validation failed!');
+  validation.errors.forEach(e => logger.error(e));
+  process.exit(1);
+} else {
+  logger.info('✅ Poker engine validation passed - all hand rankings correct');
+}
 
 // Start server
 server.listen(config.port, () => {
