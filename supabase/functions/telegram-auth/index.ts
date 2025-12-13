@@ -1,5 +1,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { corsHeaders } from '../_shared/cors.ts'
+import { crypto } from 'https://deno.land/std@0.177.0/crypto/mod.ts'
+import { encode as hexEncode } from 'https://deno.land/std@0.177.0/encoding/hex.ts'
 
 interface TelegramAuthData {
   id: number;
@@ -11,26 +13,86 @@ interface TelegramAuthData {
   hash: string;
 }
 
-// Функция для проверки подлинности данных Telegram
-// В продакшене здесь должна быть реальная проверка HMAC-SHA256
-function verifyTelegramAuth(authData: TelegramAuthData, botToken: string): boolean {
+// Генерация HMAC-SHA256
+async function hmacSha256(key: Uint8Array, data: string): Promise<Uint8Array> {
+  const cryptoKey = await crypto.subtle.importKey(
+    'raw',
+    key,
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign']
+  );
+  const signature = await crypto.subtle.sign('HMAC', cryptoKey, new TextEncoder().encode(data));
+  return new Uint8Array(signature);
+}
+
+// SHA256 для создания секретного ключа
+async function sha256(data: string): Promise<Uint8Array> {
+  const hash = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(data));
+  return new Uint8Array(hash);
+}
+
+// Верификация данных Telegram согласно официальной документации
+// https://core.telegram.org/bots/webapps#validating-data-received-via-the-web-app
+async function verifyTelegramAuth(authData: TelegramAuthData, botToken: string, internalSecret: string): Promise<boolean> {
   // Проверяем наличие обязательных полей
-  if (!authData.id || !authData.auth_date) {
+  if (!authData.id || !authData.auth_date || !authData.hash) {
     console.log('Missing required fields in auth data');
     return false;
   }
-  
-  // Для бота авторизации через webhook используем упрощенную проверку
-  // hash = 'telegram_bot_auth' означает что запрос пришел от нашего webhook
-  if (authData.hash === 'telegram_bot_auth') {
-    console.log('Auth via telegram webhook - trusted source');
+
+  // Проверка для внутреннего вызова от telegram-webhook
+  // Используем секретный токен вместо публичного 'telegram_bot_auth'
+  if (authData.hash === internalSecret) {
+    console.log('Auth via internal webhook call - verified with secret');
     return true;
   }
-  
-  // Для прямой авторизации через Telegram Widget - возвращаем true
-  // В продакшене здесь должна быть проверка HMAC-SHA256
-  console.log('Auth via direct Telegram login');
-  return true;
+
+  // Проверка актуальности данных (не старше 1 часа для widget auth)
+  const currentTime = Math.floor(Date.now() / 1000);
+  if (currentTime - authData.auth_date > 3600) {
+    console.log('Auth data too old (>1 hour)');
+    return false;
+  }
+
+  try {
+    // Формируем строку проверки согласно документации Telegram
+    // Сортируем все поля кроме hash в алфавитном порядке
+    const checkFields: Record<string, string> = {};
+    if (authData.id) checkFields['id'] = authData.id.toString();
+    if (authData.first_name) checkFields['first_name'] = authData.first_name;
+    if (authData.last_name) checkFields['last_name'] = authData.last_name;
+    if (authData.username) checkFields['username'] = authData.username;
+    if (authData.photo_url) checkFields['photo_url'] = authData.photo_url;
+    if (authData.auth_date) checkFields['auth_date'] = authData.auth_date.toString();
+
+    const checkString = Object.keys(checkFields)
+      .sort()
+      .map(key => `${key}=${checkFields[key]}`)
+      .join('\n');
+
+    // Создаем секретный ключ: SHA256(bot_token)
+    const secretKey = await sha256(botToken);
+    
+    // Вычисляем HMAC-SHA256 от check_string
+    const calculatedHashBytes = await hmacSha256(secretKey, checkString);
+    const calculatedHash = new TextDecoder().decode(hexEncode(calculatedHashBytes));
+
+    const isValid = calculatedHash === authData.hash;
+    
+    if (!isValid) {
+      console.log('HMAC verification failed');
+      console.log('Expected hash:', authData.hash);
+      console.log('Calculated hash:', calculatedHash);
+    } else {
+      console.log('HMAC verification successful');
+    }
+
+    return isValid;
+  } catch (error) {
+    console.error('Error during HMAC verification:', error);
+    return false;
+  }
 }
 
 Deno.serve(async (req) => {
@@ -43,6 +105,8 @@ Deno.serve(async (req) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const telegramBotToken = Deno.env.get('TELEGRAM_BOT_TOKEN')!;
+    // Секретный токен для внутренних вызовов между edge functions
+    const internalAuthSecret = Deno.env.get('INTERNAL_AUTH_SECRET') || 'fallback_' + telegramBotToken.substring(0, 20);
 
     if (!supabaseUrl || !supabaseServiceKey || !telegramBotToken) {
       console.error('Missing required environment variables');
@@ -69,14 +133,17 @@ Deno.serve(async (req) => {
 
     const authData: TelegramAuthData = await req.json();
     console.log('Received Telegram auth data:', { 
-      ...authData, 
-      hash: '[HIDDEN]',
-      photo_url: authData.photo_url || 'NOT PROVIDED',
-      hasPhoto: !!authData.photo_url
+      id: authData.id,
+      auth_date: authData.auth_date,
+      username: authData.username || 'NOT PROVIDED',
+      hash: authData.hash ? '[PRESENT]' : '[MISSING]',
+      photo_url: authData.photo_url ? '[PRESENT]' : 'NOT PROVIDED'
     });
 
-    // Проверяем подлинность данных (в продакшене должна быть реальная проверка)
-    if (!verifyTelegramAuth(authData, telegramBotToken)) {
+    // Проверяем подлинность данных
+    const isValid = await verifyTelegramAuth(authData, telegramBotToken, internalAuthSecret);
+    if (!isValid) {
+      console.log('Authentication verification failed');
       return new Response(
         JSON.stringify({ error: 'Invalid authentication data' }),
         { 
@@ -86,7 +153,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Проверяем актуальность данных (не старше 86400 секунд = 24 часа)
+    // Проверяем актуальность данных (не старше 86400 секунд = 24 часа для session)
     const currentTime = Math.floor(Date.now() / 1000);
     if (currentTime - authData.auth_date > 86400) {
       return new Response(
