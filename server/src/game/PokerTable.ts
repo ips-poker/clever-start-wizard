@@ -5,7 +5,7 @@
 
 import { SupabaseClient } from '@supabase/supabase-js';
 import { TableConfig } from './PokerGameManager.js';
-import { PokerEngineV3, ActionResult, GameType, GameConfig } from './PokerEngineV3.js';
+import { PokerEngineV3, ActionResult, GameType, GameConfig, evaluateHand } from './PokerEngineV3.js';
 import { logger } from '../utils/logger.js';
 
 export interface Player {
@@ -825,10 +825,23 @@ export class PokerTable {
     const engineState = this.engine.getState();
     
     if (isShowdown && engineState) {
+      // Evaluate hands for ALL non-folded players to show handName
       for (const ep of engineState.players) {
-        if (!ep.isFolded) {
+        if (!ep.isFolded && ep.holeCards && ep.holeCards.length >= 2) {
           const tablePlayer = this.players.get(ep.id);
           const winnerInfo = winners.find(w => w.playerId === ep.id);
+          
+          // Evaluate hand for non-winners too
+          let handName = winnerInfo?.handName;
+          if (!handName && this.currentHand?.communityCards && this.currentHand.communityCards.length >= 3) {
+            try {
+              // Use evaluateHand with hole cards and community cards separately
+              const result = evaluateHand(ep.holeCards, this.currentHand.communityCards);
+              handName = result.handName;
+            } catch (e) {
+              handName = undefined;
+            }
+          }
           
           showdownPlayers.push({
             playerId: ep.id,
@@ -836,7 +849,7 @@ export class PokerTable {
             seatNumber: ep.seatNumber,
             holeCards: ep.holeCards, // CRITICAL: Reveal hole cards at showdown
             isFolded: ep.isFolded,
-            handName: winnerInfo?.handName,
+            handName: handName,
             bestCards: ep.bestFiveCards || [] // If available from engine
           });
         }
