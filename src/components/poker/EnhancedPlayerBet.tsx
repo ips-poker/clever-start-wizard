@@ -1,11 +1,12 @@
-// Enhanced Player Bet Display with Realistic Chips
+// Enhanced Player Bet Display with Realistic Chips - PPPoker Style
+// Bets positioned towards center of table with chip animation
 import React, { memo, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
 interface EnhancedPlayerBetProps {
   amount: number;
-  position: 'top' | 'bottom' | 'left' | 'right';
+  seatPosition: { x: number; y: number };
   isHero?: boolean;
   animated?: boolean;
 }
@@ -31,37 +32,6 @@ const getChipColor = (amount: number) => {
   return chip;
 };
 
-// Calculate chip stacks for display
-const calculateChipStacks = (amount: number): { color: string; border: string; count: number }[] => {
-  const stacks: { color: string; border: string; count: number }[] = [];
-  let remaining = amount;
-
-  // Work backwards from highest denomination
-  const denoms = [...CHIP_COLORS].reverse();
-  
-  for (const denom of denoms) {
-    if (denom.min === 0) continue;
-    const count = Math.floor(remaining / denom.min);
-    if (count > 0) {
-      stacks.push({
-        color: denom.color,
-        border: denom.border,
-        count: Math.min(count, 5) // Max 5 chips per stack visually
-      });
-      remaining -= count * denom.min;
-      if (stacks.length >= 3) break; // Max 3 stacks
-    }
-  }
-
-  // Add at least one chip if we have remaining or amount > 0
-  if (stacks.length === 0 && amount > 0) {
-    const chip = getChipColor(amount);
-    stacks.push({ color: chip.color, border: chip.border, count: 1 });
-  }
-
-  return stacks;
-};
-
 // Format amount for display
 const formatAmount = (amount: number): string => {
   if (amount >= 1000000) return `${(amount / 1000000).toFixed(1)}M`;
@@ -69,42 +39,24 @@ const formatAmount = (amount: number): string => {
   return amount.toLocaleString();
 };
 
-// Single Chip Component
-const Chip = memo(function Chip({
-  color,
-  border,
-  index,
-  size = 20
-}: {
-  color: string;
-  border: string;
-  index: number;
-  size?: number;
-}) {
+// Single Chip Component with stacking effect
+const ChipIcon = memo(function ChipIcon({ color, border }: { color: string; border: string }) {
   return (
-    <motion.div
-      initial={{ y: -20, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      transition={{ delay: index * 0.03 }}
-      className="absolute rounded-full"
+    <div 
+      className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 relative"
       style={{
-        width: size,
-        height: size,
-        bottom: index * 3,
-        background: `
-          radial-gradient(circle at 30% 30%, ${color} 0%, ${color}cc 60%, ${border} 100%)
-        `,
+        background: `radial-gradient(circle at 30% 30%, ${color} 0%, ${color}cc 60%, ${border} 100%)`,
         border: `2px solid ${border}`,
         boxShadow: `
           inset 0 2px 4px rgba(255,255,255,0.3),
           inset 0 -2px 4px rgba(0,0,0,0.2),
-          0 ${index + 1}px ${2 + index}px rgba(0,0,0,0.3)
+          0 2px 4px rgba(0,0,0,0.4)
         `
       }}
     >
       {/* Chip pattern */}
       <div 
-        className="absolute inset-0 rounded-full opacity-40"
+        className="absolute inset-0 rounded-full opacity-30"
         style={{
           background: `repeating-conic-gradient(
             from 0deg,
@@ -121,78 +73,64 @@ const Chip = memo(function Chip({
           border: `1px solid ${border}`
         }}
       />
-    </motion.div>
-  );
-});
-
-// Chip Stack Component
-const ChipStack = memo(function ChipStack({
-  color,
-  border,
-  count,
-  offsetX = 0
-}: {
-  color: string;
-  border: string;
-  count: number;
-  offsetX?: number;
-}) {
-  return (
-    <div 
-      className="relative"
-      style={{ 
-        marginLeft: offsetX,
-        width: 20,
-        height: 20 + count * 3
-      }}
-    >
-      {Array.from({ length: count }).map((_, idx) => (
-        <Chip 
-          key={idx} 
-          color={color} 
-          border={border} 
-          index={idx} 
-        />
-      ))}
     </div>
   );
 });
 
+// Calculate bet position offset towards center based on seat position
+const getBetOffset = (seatPosition: { x: number; y: number }) => {
+  const centerX = 50;
+  const centerY = 50;
+  
+  // Calculate direction towards center
+  const dx = centerX - seatPosition.x;
+  const dy = centerY - seatPosition.y;
+  
+  // Normalize and scale - move bet 40-60px towards center
+  const distance = Math.sqrt(dx * dx + dy * dy);
+  const scale = 45 / distance;
+  
+  return {
+    x: dx * scale,
+    y: dy * scale
+  };
+};
+
 export const EnhancedPlayerBet = memo(function EnhancedPlayerBet({
   amount,
-  position,
+  seatPosition,
   isHero = false,
   animated = true
 }: EnhancedPlayerBetProps) {
-  const chipStacks = useMemo(() => calculateChipStacks(amount), [amount]);
+  const chipColor = useMemo(() => getChipColor(amount), [amount]);
+  const betOffset = useMemo(() => getBetOffset(seatPosition), [seatPosition]);
 
   if (amount <= 0) return null;
 
-  // Position styles - optimized for mobile Telegram layout
-  const positionStyles = {
-    top: 'bottom-full mb-1 left-1/2 -translate-x-1/2',
-    bottom: 'top-full mt-1 left-1/2 -translate-x-1/2',
-    left: 'right-full mr-2 top-1/2 -translate-y-1/2',
-    right: 'left-full ml-2 top-1/2 -translate-y-1/2'
-  };
-
   return (
     <motion.div
-      initial={animated ? { scale: 0, opacity: 0 } : false}
-      animate={{ scale: 1, opacity: 1 }}
-      className={cn("absolute flex items-center gap-0.5 z-30", positionStyles[position])}
+      initial={animated ? { 
+        scale: 0, 
+        opacity: 0,
+        x: 0,
+        y: 0
+      } : false}
+      animate={{ 
+        scale: 1, 
+        opacity: 1,
+        x: betOffset.x,
+        y: betOffset.y
+      }}
+      transition={{
+        type: 'spring',
+        stiffness: 200,
+        damping: 20,
+        delay: 0.1
+      }}
+      className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center gap-1 z-25"
     >
-      {/* Chip icon - simplified for mobile */}
-      <div 
-        className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0"
-        style={{
-          background: 'linear-gradient(145deg, #fbbf24, #f59e0b)',
-          border: '2px solid #92400e',
-          boxShadow: '0 2px 4px rgba(0,0,0,0.4)'
-        }}
-      >
-        <span className="text-amber-900 text-[8px] font-black">$</span>
-      </div>
+      {/* Chip icon with correct color */}
+      <ChipIcon color={chipColor.color} border={chipColor.border} />
 
       {/* Amount label - compact */}
       <div 
