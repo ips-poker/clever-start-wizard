@@ -114,38 +114,105 @@ export const ShowdownOverlay = memo(function ShowdownOverlay({
       {/* Dark overlay */}
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
       
-      {/* Flying chips animation */}
+      {/* Flying chips to winner animation */}
       <AnimatePresence>
         {showChipsAnimation && (
           <>
-            {[...Array(12)].map((_, i) => (
-              <motion.div
-                key={`chip-${i}`}
-                initial={{ x: 0, y: 0, scale: 0, rotate: Math.random() * 360 }}
-                animate={{ 
-                  x: (Math.random() - 0.5) * 200,
-                  y: (Math.random() - 0.5) * 150 - 50,
-                  scale: [0, 1.2, 0.8],
-                  rotate: Math.random() * 720
-                }}
-                exit={{ scale: 0, opacity: 0 }}
-                transition={{ duration: 1, delay: i * 0.05, ease: [0.25, 0.46, 0.45, 0.94] }}
-                className="absolute z-50"
-                style={{ left: '50%', top: '50%', width: 24, height: 24 }}
-              >
-                <div 
-                  className="w-full h-full rounded-full shadow-lg"
-                  style={{
-                    background: i % 3 === 0 
-                      ? 'linear-gradient(135deg, #ef4444, #dc2626)' 
-                      : i % 3 === 1
-                        ? 'linear-gradient(135deg, #22c55e, #16a34a)'
-                        : 'linear-gradient(135deg, #3b82f6, #2563eb)',
-                    border: '2px solid rgba(255,255,255,0.5)'
+            {[...Array(15)].map((_, i) => {
+              const startAngle = (i / 15) * Math.PI * 2;
+              const startRadius = 120 + Math.random() * 60;
+              const startX = Math.cos(startAngle) * startRadius;
+              const startY = Math.sin(startAngle) * startRadius + 80;
+              
+              const chipColors = [
+                { bg: 'linear-gradient(135deg, #fbbf24, #d97706)', border: '#fbbf24' }, // gold
+                { bg: 'linear-gradient(135deg, #22c55e, #15803d)', border: '#22c55e' }, // green
+                { bg: 'linear-gradient(135deg, #ef4444, #b91c1c)', border: '#ef4444' }, // red
+                { bg: 'linear-gradient(135deg, #3b82f6, #1d4ed8)', border: '#3b82f6' }, // blue
+                { bg: 'linear-gradient(135deg, #1e1e1e, #404040)', border: '#666' }, // black
+              ];
+              const chipColor = chipColors[i % chipColors.length];
+              
+              return (
+                <motion.div
+                  key={`chip-${i}`}
+                  initial={{ 
+                    x: startX, 
+                    y: startY, 
+                    scale: 1, 
+                    opacity: 1,
+                    rotate: 0
                   }}
-                />
-              </motion.div>
-            ))}
+                  animate={{ 
+                    x: 0,
+                    y: -20,
+                    scale: [1, 1.1, 0.6],
+                    opacity: [1, 1, 0],
+                    rotate: 360 + Math.random() * 180
+                  }}
+                  transition={{ 
+                    duration: 0.8 + Math.random() * 0.3, 
+                    delay: i * 0.04,
+                    ease: [0.4, 0, 0.2, 1]
+                  }}
+                  className="absolute z-40 pointer-events-none"
+                  style={{ left: '50%', top: '50%' }}
+                >
+                  {/* Chip stack (3 chips) */}
+                  {[0, 1, 2].map((stackIdx) => (
+                    <div
+                      key={stackIdx}
+                      className="absolute rounded-full"
+                      style={{
+                        width: 22,
+                        height: 22,
+                        bottom: stackIdx * 2,
+                        left: '50%',
+                        transform: 'translateX(-50%)',
+                        background: chipColor.bg,
+                        border: `2px solid ${chipColor.border}`,
+                        boxShadow: `
+                          inset 0 2px 4px rgba(255,255,255,0.3),
+                          inset 0 -2px 4px rgba(0,0,0,0.2),
+                          0 ${stackIdx + 1}px ${2 + stackIdx}px rgba(0,0,0,0.4)
+                        `
+                      }}
+                    >
+                      {/* Chip edge pattern */}
+                      <div 
+                        className="absolute inset-0 rounded-full opacity-40"
+                        style={{
+                          background: `repeating-conic-gradient(
+                            from 0deg,
+                            rgba(255,255,255,0.3) 0deg 15deg,
+                            transparent 15deg 30deg
+                          )`
+                        }}
+                      />
+                    </div>
+                  ))}
+                </motion.div>
+              );
+            })}
+            
+            {/* Central glow pulse when chips arrive */}
+            <motion.div
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{ 
+                scale: [0, 2, 2.5],
+                opacity: [0, 0.6, 0]
+              }}
+              transition={{ duration: 1, delay: 0.3 }}
+              className="absolute z-30 rounded-full pointer-events-none"
+              style={{
+                left: '50%',
+                top: 'calc(50% - 20px)',
+                transform: 'translate(-50%, -50%)',
+                width: 80,
+                height: 80,
+                background: 'radial-gradient(circle, rgba(251,191,36,0.8) 0%, transparent 70%)'
+              }}
+            />
           </>
         )}
       </AnimatePresence>
