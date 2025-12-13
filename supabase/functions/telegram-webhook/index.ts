@@ -100,6 +100,10 @@ Deno.serve(async (req) => {
       // Обрабатываем авторизацию через веб
       if (callbackData && callbackData.startsWith('web_auth_')) {
         try {
+          // Секретный токен для безопасной внутренней авторизации
+          // Используем комбинацию TELEGRAM_BOT_TOKEN как fallback для обратной совместимости
+          const internalAuthSecret = Deno.env.get('INTERNAL_AUTH_SECRET') || 'fallback_' + TELEGRAM_BOT_TOKEN.substring(0, 20);
+          
           // Формируем данные пользователя для авторизации
           const telegramAuthData = {
             id: userId,
@@ -107,7 +111,7 @@ Deno.serve(async (req) => {
             last_name: callbackQuery.from.last_name,
             username: callbackQuery.from.username,
             auth_date: Math.floor(Date.now() / 1000),
-            hash: 'telegram_bot_auth' // Упрощенная хеш для бота
+            hash: internalAuthSecret // Используем секретный токен вместо публичного значения
           };
 
           console.log('Calling telegram-auth function with data:', telegramAuthData);
