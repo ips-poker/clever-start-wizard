@@ -1010,7 +1010,7 @@ export function getAllowedActions(
     canFold: true, // Can always fold (even if irrational)
     callAmount: 0,
     minBet: bigBlind,
-    minRaise: 0,
+    minRaise: bigBlind, // Default minRaise is at least bigBlind
     maxBet: 0
   };
 
@@ -1031,6 +1031,8 @@ export function getAllowedActions(
       result.canBet = true;
       result.canAllIn = true;
       result.minBet = Math.min(bigBlind, player.stack);
+      // Min raise (for bet) is just the big blind
+      result.minRaise = bigBlind;
     }
   } else {
     // Must match a bet
@@ -1047,7 +1049,7 @@ export function getAllowedActions(
     const afterCall = player.stack - toCall;
     const minRaiseIncrement = Math.max(minRaise, lastRaiseAmount, bigBlind);
     
-    // CRITICAL: Always calculate minRaise for error messages
+    // CRITICAL: Always calculate minRaise for error messages and validation
     result.minRaise = currentBet + minRaiseIncrement;
     
     if (afterCall >= minRaiseIncrement) {
