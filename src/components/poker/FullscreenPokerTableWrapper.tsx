@@ -315,8 +315,8 @@ export function FullscreenPokerTableWrapper({
           </div>
         </div>
 
-        {/* Main poker table */}
-        <div className="absolute inset-0 pt-20 pb-28">
+        {/* Main poker table - more space at bottom for action panel */}
+        <div className="absolute inset-0 pt-16 pb-32">
           <FullscreenPokerTable
             tableState={tableState}
             players={formattedPlayers}
