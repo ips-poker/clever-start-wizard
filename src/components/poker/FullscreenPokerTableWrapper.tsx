@@ -315,8 +315,9 @@ export function FullscreenPokerTableWrapper({
           </div>
         </div>
 
-        {/* Main poker table - more space at bottom for action panel */}
-        <div className="absolute inset-0 pt-16 pb-32">
+        {/* Main poker table - optimized spacing for all UI elements */}
+        {/* pt-14: space for header, pb-40: space for action panel + hero cards */}
+        <div className="absolute inset-0 pt-14 pb-40">
           <FullscreenPokerTable
             tableState={tableState}
             players={formattedPlayers}
