@@ -37,15 +37,16 @@ const SEAT_POSITIONS_9MAX = [
   { x: 85, y: 75 },   // Seat 8 - Bottom right
 ];
 
-// Вертикальные позиции для 6-max стола (портретная ориентация)
-// Стол вытянут по вертикали как скругленный шестиугольник
+// Вертикальные позиции для 6-max стола (портретная ориентация - Telegram Mini App)
+// Оптимизировано для мобильного экрана с учетом обрезки по краям
+// Игроки расположены ближе к центру для лучшей видимости
 const SEAT_POSITIONS_6MAX = [
-  { x: 50, y: 92 },   // Seat 0 - Hero (bottom center)
-  { x: 10, y: 65 },   // Seat 1 - Left bottom
-  { x: 10, y: 35 },   // Seat 2 - Left top
-  { x: 50, y: 8 },    // Seat 3 - Top center
-  { x: 90, y: 35 },   // Seat 4 - Right top
-  { x: 90, y: 65 },   // Seat 5 - Right bottom
+  { x: 50, y: 78 },   // Seat 0 - Hero (bottom center) - выше для места под карты
+  { x: 12, y: 58 },   // Seat 1 - Left bottom - сдвинуто от края
+  { x: 12, y: 32 },   // Seat 2 - Left top
+  { x: 50, y: 12 },   // Seat 3 - Top center
+  { x: 88, y: 32 },   // Seat 4 - Right top - сдвинуто от края
+  { x: 88, y: 58 },   // Seat 5 - Right bottom
 ];
 
 // ============= PREMIUM POKER CARD with personalization =============
@@ -212,14 +213,15 @@ const HeroCards = memo(function HeroCards({
     return undefined;
   }, [cards, communityCards]);
   
+  // Hero cards positioned to the right of avatar (PPPoker style)
   return (
-    <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 flex flex-col items-center gap-1">
-      <div className="flex">
+    <div className="absolute left-full ml-2 top-1/2 -translate-y-1/2 flex flex-col items-center gap-1 z-30">
+      <div className="flex gap-0.5">
         {cards.map((card, idx) => (
-          <div key={idx} style={{ marginLeft: idx > 0 ? '-12px' : 0 }}>
+          <div key={idx} style={{ marginLeft: idx > 0 ? '-8px' : 0 }}>
             <PremiumCard 
               card={card} 
-              size="md" 
+              size="lg" 
               delay={idx} 
               isWinning={gamePhase === 'showdown' && isWinner}
               cardBackColors={{ primary: currentCardBack.primaryColor, secondary: currentCardBack.secondaryColor }}
@@ -235,7 +237,7 @@ const HeroCards = memo(function HeroCards({
           initial={{ opacity: 0, y: 5 }}
           animate={{ opacity: 1, y: 0 }}
           className={cn(
-            "px-2 py-0.5 rounded text-[10px] font-bold whitespace-nowrap mt-1",
+            "px-2 py-0.5 rounded text-[10px] font-bold whitespace-nowrap",
             isWinner 
               ? "bg-gradient-to-r from-amber-500 to-yellow-400 text-black shadow-lg shadow-amber-500/30" 
               : "bg-gradient-to-r from-emerald-600 to-emerald-500 text-white"
@@ -266,16 +268,24 @@ const OpponentCards = memo(function OpponentCards({
   // Show actual cards at showdown if available
   const showFaceUp = isShowdown && holeCards && holeCards.length >= 2;
   
+  // Position cards based on seat position - left seats show cards on right, right seats on left
+  const isLeftSide = position.x < 30;
+  const isRightSide = position.x > 70;
+  
   return (
-    <div className={cn("absolute flex flex-col items-center gap-1",
-      position.x < 30 ? "left-full ml-2" : position.x > 70 ? "right-full mr-2" : "top-full mt-2",
-      "top-1/2 -translate-y-1/2"
+    <div className={cn(
+      "absolute flex flex-col items-center gap-1 z-20",
+      isLeftSide 
+        ? "left-full ml-1 top-1/2 -translate-y-1/2" 
+        : isRightSide 
+          ? "right-full mr-1 top-1/2 -translate-y-1/2" 
+          : "left-1/2 -translate-x-1/2 -top-2 -translate-y-full"
     )}>
       <div className="flex">
         {showFaceUp ? (
           // Show actual hole cards at showdown
           holeCards.map((card, idx) => (
-            <div key={idx} style={{ marginLeft: idx > 0 ? '-10px' : 0 }}>
+            <div key={idx} style={{ marginLeft: idx > 0 ? '-8px' : 0 }}>
               <PremiumCard 
                 card={card} 
                 size="sm" 
@@ -287,9 +297,9 @@ const OpponentCards = memo(function OpponentCards({
             </div>
           ))
         ) : (
-          // Show card backs
+          // Show card backs - smaller for opponents
           [0, 1].map((idx) => (
-            <div key={idx} style={{ marginLeft: idx > 0 ? '-10px' : 0 }}>
+            <div key={idx} style={{ marginLeft: idx > 0 ? '-8px' : 0 }}>
               <PremiumCard 
                 card="XX" 
                 faceDown 
@@ -337,7 +347,8 @@ const PlayerSeat = memo(function PlayerSeat({
   canJoin = false,
   onSeatClick
 }: PlayerSeatProps) {
-  const avatarSize = isHero ? 64 : 52;
+  // Smaller avatars for better fit on mobile
+  const avatarSize = isHero ? 56 : 44;
   
   // Empty seat
   if (!player) {
@@ -460,9 +471,9 @@ const PlayerSeat = memo(function PlayerSeat({
         )}
       </div>
       
-      {/* Name and stack panel */}
+      {/* Name and stack panel - compact for mobile */}
       <div 
-        className="mt-1 px-3 py-1 rounded-lg text-center min-w-[70px]"
+        className="mt-0.5 px-2 py-0.5 rounded-md text-center min-w-[60px]"
         style={{
           background: player.isAllIn 
             ? 'linear-gradient(180deg, #dc2626 0%, #b91c1c 100%)'
@@ -470,11 +481,11 @@ const PlayerSeat = memo(function PlayerSeat({
           borderBottom: `2px solid ${player.isAllIn ? '#ef4444' : '#22c55e'}`
         }}
       >
-        <p className="text-[10px] text-white/80 font-medium truncate max-w-[80px]">
+        <p className="text-[9px] text-white/80 font-medium truncate max-w-[60px]">
           {player.name}
         </p>
         <p className={cn(
-          "text-xs font-bold",
+          "text-[11px] font-bold",
           player.isAllIn ? "text-white" : "text-emerald-400"
         )}>
           {player.isAllIn ? 'ALL-IN' : player.stack.toLocaleString()}
@@ -665,7 +676,7 @@ const CommunityCards = memo(function CommunityCards({
   const visibleCount = phase === 'flop' ? 3 : phase === 'turn' ? 4 : (phase === 'river' || phase === 'showdown') ? 5 : 0;
 
   return (
-    <div className="flex items-center justify-center gap-2">
+    <div className="flex items-center justify-center gap-1">
       {[0, 1, 2, 3, 4].map((idx) => {
         const isVisible = idx < visibleCount;
         const card = cards[idx];
@@ -686,7 +697,7 @@ const CommunityCards = memo(function CommunityCards({
               >
                 <PremiumCard 
                   card={card} 
-                  size="lg" 
+                  size="md" 
                   delay={0} 
                   isWinning={phase === 'showdown'}
                   cardBackColors={{ primary: currentCardBack.primaryColor, secondary: currentCardBack.secondaryColor }}
@@ -696,8 +707,8 @@ const CommunityCards = memo(function CommunityCards({
             ) : (
               <div 
                 key={`empty-${idx}`}
-                className="rounded-lg border-2 border-dashed border-white/10"
-                style={{ width: 64, height: 88 }}
+                className="rounded-md border border-dashed border-white/10"
+                style={{ width: 48, height: 66 }}
               />
             )}
           </AnimatePresence>
@@ -819,9 +830,9 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
       {/* Table background with theme */}
       <SyndikateTableFelt themeColor={currentTableTheme.color} />
       
-      {/* Center area - pot and community cards */}
-      <div className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center gap-4 z-10"
-        style={{ top: '38%' }}
+      {/* Center area - pot and community cards - positioned higher for mobile */}
+      <div className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 z-10"
+        style={{ top: '35%' }}
       >
         <PotDisplay pot={pot} blinds={`${smallBlind}/${bigBlind}`} />
         <CommunityCards cards={communityCards} phase={phase} />

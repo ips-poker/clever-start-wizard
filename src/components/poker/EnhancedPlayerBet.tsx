@@ -168,44 +168,43 @@ export const EnhancedPlayerBet = memo(function EnhancedPlayerBet({
 
   if (amount <= 0) return null;
 
-  // Position styles
+  // Position styles - optimized for mobile Telegram layout
   const positionStyles = {
-    top: 'bottom-full mb-2 left-1/2 -translate-x-1/2',
-    bottom: 'top-full mt-2 left-1/2 -translate-x-1/2',
-    left: 'right-full mr-3 top-1/2 -translate-y-1/2',
-    right: 'left-full ml-3 top-1/2 -translate-y-1/2'
+    top: 'bottom-full mb-1 left-1/2 -translate-x-1/2',
+    bottom: 'top-full mt-1 left-1/2 -translate-x-1/2',
+    left: 'right-full mr-2 top-1/2 -translate-y-1/2',
+    right: 'left-full ml-2 top-1/2 -translate-y-1/2'
   };
 
   return (
     <motion.div
       initial={animated ? { scale: 0, opacity: 0 } : false}
       animate={{ scale: 1, opacity: 1 }}
-      className={cn("absolute flex items-end gap-0.5 z-10", positionStyles[position])}
+      className={cn("absolute flex items-center gap-0.5 z-30", positionStyles[position])}
     >
-      {/* Chip stacks */}
-      <div className="flex items-end">
-        {chipStacks.map((stack, idx) => (
-          <ChipStack
-            key={idx}
-            color={stack.color}
-            border={stack.border}
-            count={stack.count}
-            offsetX={idx > 0 ? -6 : 0}
-          />
-        ))}
+      {/* Chip icon - simplified for mobile */}
+      <div 
+        className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0"
+        style={{
+          background: 'linear-gradient(145deg, #fbbf24, #f59e0b)',
+          border: '2px solid #92400e',
+          boxShadow: '0 2px 4px rgba(0,0,0,0.4)'
+        }}
+      >
+        <span className="text-amber-900 text-[8px] font-black">$</span>
       </div>
 
-      {/* Amount label */}
+      {/* Amount label - compact */}
       <div 
-        className="ml-1 px-2 py-0.5 rounded-md"
+        className="px-1.5 py-0.5 rounded-md"
         style={{
           background: 'linear-gradient(135deg, rgba(0,0,0,0.9) 0%, rgba(30,30,30,0.9) 100%)',
-          border: '1px solid rgba(251,191,36,0.5)',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.4)'
+          border: '1px solid rgba(251,191,36,0.4)',
+          boxShadow: '0 2px 6px rgba(0,0,0,0.4)'
         }}
       >
         <span 
-          className="font-bold text-xs"
+          className="font-bold text-[11px]"
           style={{
             background: 'linear-gradient(135deg, #fbbf24, #f59e0b)',
             WebkitBackgroundClip: 'text',
