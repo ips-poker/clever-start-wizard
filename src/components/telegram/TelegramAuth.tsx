@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { initData, retrieveLaunchParams } from '@telegram-apps/sdk-react';
+import { initData } from '@telegram-apps/sdk-react';
+import { retrieveLaunchParams } from '@telegram-apps/sdk';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
