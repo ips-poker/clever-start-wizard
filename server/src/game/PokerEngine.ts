@@ -702,7 +702,8 @@ export class PokerEngine {
       else kickers.push(RANK_VALUES[rank]);
     }
     kickers.sort((a, b) => b - a);
-    return pair * 1000000 + kickers[0] * 10000 + kickers[1] * 100 + kickers[2];
+    // Fixed: Use smaller multipliers to stay within the 2000000-2999999 range
+    return pair * 10000 + kickers[0] * 100 + kickers[1] * 10 + kickers[2];
   }
   
   /**
