@@ -39,13 +39,14 @@ const SEAT_POSITIONS_9MAX = [
 
 // Вертикальные позиции для 6-max стола (портретная ориентация - Telegram Mini App)
 // Позиции вдоль рельсы стола - Герой снизу по центру у рельсы
+// IMPORTANT: Hero at y:72% to leave space for cards ABOVE action buttons
 const SEAT_POSITIONS_6MAX = [
-  { x: 50, y: 85 },   // Seat 0 - Hero (bottom center) - у нижнего края стола
-  { x: 15, y: 65 },   // Seat 1 - Left bottom - вдоль левого края
-  { x: 15, y: 35 },   // Seat 2 - Left top - вдоль левого края
-  { x: 50, y: 15 },   // Seat 3 - Top center - у верхнего края
-  { x: 85, y: 35 },   // Seat 4 - Right top - вдоль правого края
-  { x: 85, y: 65 },   // Seat 5 - Right bottom - вдоль правого края
+  { x: 50, y: 72 },   // Seat 0 - Hero (bottom center) - moved up to avoid overlap
+  { x: 12, y: 58 },   // Seat 1 - Left bottom - вдоль левого края
+  { x: 12, y: 32 },   // Seat 2 - Left top - вдоль левого края
+  { x: 50, y: 18 },   // Seat 3 - Top center - у верхнего края
+  { x: 88, y: 32 },   // Seat 4 - Right top - вдоль правого края
+  { x: 88, y: 58 },   // Seat 5 - Right bottom - вдоль правого края
 ];
 
 // ============= PREMIUM POKER CARD with personalization =============
@@ -212,15 +213,15 @@ const HeroCards = memo(function HeroCards({
     return undefined;
   }, [cards, communityCards]);
   
-  // Hero cards positioned BELOW avatar (for bottom-center seat)
+  // Hero cards positioned to the RIGHT of avatar to avoid overlap with action buttons
   return (
-    <div className="absolute left-1/2 -translate-x-1/2 top-full mt-1 flex flex-col items-center gap-1 z-30">
+    <div className="absolute left-full ml-2 top-1/2 -translate-y-1/2 flex items-center gap-1 z-30">
       <div className="flex gap-0.5">
         {cards.map((card, idx) => (
-          <div key={idx} style={{ marginLeft: idx > 0 ? '-8px' : 0 }}>
+          <div key={idx} style={{ marginLeft: idx > 0 ? '-10px' : 0 }}>
             <PremiumCard 
               card={card} 
-              size="md" 
+              size="lg" 
               delay={idx} 
               isWinning={gamePhase === 'showdown' && isWinner}
               cardBackColors={{ primary: currentCardBack.primaryColor, secondary: currentCardBack.secondaryColor }}
@@ -233,10 +234,10 @@ const HeroCards = memo(function HeroCards({
       {/* Show hand name when we have community cards */}
       {handName && (
         <motion.div
-          initial={{ opacity: 0, y: 5 }}
-          animate={{ opacity: 1, y: 0 }}
+          initial={{ opacity: 0, x: 5 }}
+          animate={{ opacity: 1, x: 0 }}
           className={cn(
-            "px-2 py-0.5 rounded text-[10px] font-bold whitespace-nowrap",
+            "ml-1 px-2 py-1 rounded text-[10px] font-bold whitespace-nowrap",
             isWinner 
               ? "bg-gradient-to-r from-amber-500 to-yellow-400 text-black shadow-lg shadow-amber-500/30" 
               : "bg-gradient-to-r from-emerald-600 to-emerald-500 text-white"
@@ -831,7 +832,7 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
       
       {/* Center area - pot and community cards - centered in table */}
       <div className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 z-10"
-        style={{ top: '38%' }}
+        style={{ top: '35%' }}
       >
         <PotDisplay pot={pot} blinds={`${smallBlind}/${bigBlind}`} />
         <CommunityCards cards={communityCards} phase={phase} />
