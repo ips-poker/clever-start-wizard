@@ -487,8 +487,27 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
             });
           }
           
-          // Keep showdown result visible for longer
-          setTimeout(() => setShowdownResult(null), 7000);
+          // Keep showdown result visible for a while, then clear
+          setTimeout(() => {
+            setShowdownResult(null);
+            // Reset player states after showdown display
+            setTableState(prev => {
+              if (!prev || prev.phase !== 'showdown') return prev;
+              return {
+                ...prev,
+                phase: 'waiting', // Reset to waiting for next hand
+                players: prev.players.map(p => ({
+                  ...p,
+                  isWinner: false,
+                  handName: undefined,
+                  holeCards: undefined,
+                  betAmount: 0,
+                  currentBet: 0,
+                  isFolded: false
+                }))
+              };
+            });
+          }, 5000);
           
           // Update state - force phase to 'showdown' if we have winners
           if (data.state && tableId) {
