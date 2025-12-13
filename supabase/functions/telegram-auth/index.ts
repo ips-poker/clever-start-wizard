@@ -189,7 +189,7 @@ Deno.serve(async (req) => {
 
     let isValid = false;
     let verifiedUser: any = null;
-
+ 
     // 1. Проверка внутреннего вызова от telegram-webhook (используем секретный токен)
     if (authData.hash === internalAuthSecret) {
       console.log('Auth via internal webhook call - verified with secret');
@@ -215,7 +215,13 @@ Deno.serve(async (req) => {
       console.log('Verifying via Widget hash...');
       isValid = await verifyTelegramWidgetAuth(authData, telegramBotToken);
     }
-
+ 
+    // 4. Legacy fallback для старых Mini App клиентов, которые пока не передают hash/init_data_raw
+    if (!isValid && !authData.hash && !authData.init_data_raw && authData.id && authData.username) {
+      console.log('Legacy fallback: accepting Telegram Mini App auth without HMAC (id, username only)');
+      isValid = true;
+    }
+ 
     if (!isValid) {
       console.log('Authentication verification failed');
       return new Response(
@@ -226,7 +232,7 @@ Deno.serve(async (req) => {
         }
       );
     }
-
+ 
     console.log('Authentication verified successfully');
 
     // Проверяем актуальность данных (не старше 24 часов для session creation)
