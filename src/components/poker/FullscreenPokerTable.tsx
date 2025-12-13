@@ -38,16 +38,15 @@ const SEAT_POSITIONS_9MAX = [
 ];
 
 // Вертикальные позиции для 6-max стола (портретная ориентация - Telegram Mini App)
-// Профессиональное расположение как в PPPoker/GGPoker
-// Герой внизу по центру, противники симметрично вокруг овала
-// Позиции оптимизированы для видимости всех элементов на мобильных устройствах
+// PPPoker-style: компактный стол, игроки вокруг рейла
+// Hero внизу по центру, карты справа от аватара
 const SEAT_POSITIONS_6MAX = [
-  { x: 50, y: 78 },   // Seat 0 - Hero (bottom center) - нижний центр, выше панели действий
-  { x: 10, y: 55 },   // Seat 1 - Left bottom - левый нижний
-  { x: 10, y: 28 },   // Seat 2 - Left top - левый верхний  
-  { x: 50, y: 12 },   // Seat 3 - Top center - верхний центр
-  { x: 90, y: 28 },   // Seat 4 - Right top - правый верхний
-  { x: 90, y: 55 },   // Seat 5 - Right bottom - правый нижний
+  { x: 50, y: 82 },   // Seat 0 - Hero (bottom center) - карты справа
+  { x: 8, y: 60 },    // Seat 1 - Left bottom
+  { x: 8, y: 32 },    // Seat 2 - Left top  
+  { x: 50, y: 10 },   // Seat 3 - Top center
+  { x: 92, y: 32 },   // Seat 4 - Right top
+  { x: 92, y: 60 },   // Seat 5 - Right bottom
 ];
 
 // ============= PREMIUM POKER CARD with personalization =============
@@ -190,9 +189,11 @@ interface PlayerSeatProps {
   gamePhase?: string;
   canJoin?: boolean;
   onSeatClick?: (seatNumber: number) => void;
+  lastAction?: string;
 }
 
 // Helper component that uses the preferences hook
+// PPPoker style: cards to the RIGHT of hero avatar
 const HeroCards = memo(function HeroCards({ 
   cards, 
   gamePhase,
@@ -214,14 +215,13 @@ const HeroCards = memo(function HeroCards({
     return undefined;
   }, [cards, communityCards]);
   
-  // Hero cards positioned ABOVE avatar (clear of action panel)
-  // This ensures cards are always visible and don't overlap with buttons
+  // PPPoker style: Cards positioned to the RIGHT of avatar
   return (
-    <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 flex flex-col items-center gap-1 z-30">
-      {/* Cards row */}
-      <div className="flex gap-0.5">
+    <div className="absolute left-full ml-2 top-1/2 -translate-y-1/2 flex items-center gap-1 z-30">
+      {/* Cards - slightly overlapped */}
+      <div className="flex">
         {cards.map((card, idx) => (
-          <div key={idx} style={{ marginLeft: idx > 0 ? '-12px' : 0 }}>
+          <div key={idx} style={{ marginLeft: idx > 0 ? '-10px' : 0 }}>
             <PremiumCard 
               card={card} 
               size="lg" 
@@ -234,22 +234,59 @@ const HeroCards = memo(function HeroCards({
         ))}
       </div>
       
-      {/* Show hand name when we have community cards */}
+      {/* Hand name badge - below cards */}
       {handName && (
         <motion.div
-          initial={{ opacity: 0, y: -5 }}
-          animate={{ opacity: 1, y: 0 }}
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
           className={cn(
-            "px-3 py-1 rounded-full text-[11px] font-bold whitespace-nowrap shadow-lg",
+            "absolute -bottom-6 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded text-[10px] font-bold whitespace-nowrap",
             isWinner 
-              ? "bg-gradient-to-r from-amber-500 to-yellow-400 text-black shadow-amber-500/40" 
-              : "bg-gradient-to-r from-emerald-600 to-emerald-500 text-white shadow-emerald-500/30"
+              ? "bg-gradient-to-r from-amber-500 to-yellow-400 text-black" 
+              : "bg-black/80 text-emerald-400 border border-emerald-500/30"
           )}
         >
           {handName}
         </motion.div>
       )}
     </div>
+  );
+});
+
+// ============= ACTION BADGE - PPPoker style status above player =============
+const ActionBadge = memo(function ActionBadge({ 
+  action, 
+  amount 
+}: { 
+  action: string | null | undefined; 
+  amount?: number;
+}) {
+  if (!action) return null;
+  
+  const actionConfig: Record<string, { label: string; bg: string; text: string }> = {
+    fold: { label: 'Фолд', bg: 'bg-gray-600', text: 'text-white' },
+    check: { label: 'Чек', bg: 'bg-blue-500', text: 'text-white' },
+    call: { label: 'Колл', bg: 'bg-emerald-500', text: 'text-white' },
+    bet: { label: 'Бет', bg: 'bg-amber-500', text: 'text-black' },
+    raise: { label: 'Рейз', bg: 'bg-amber-500', text: 'text-black' },
+    allin: { label: 'ОЛЛ-ИН', bg: 'bg-red-500', text: 'text-white' },
+  };
+  
+  const config = actionConfig[action.toLowerCase()] || { label: action, bg: 'bg-gray-500', text: 'text-white' };
+  
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 5, scale: 0.8 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, y: -5, scale: 0.8 }}
+      className={cn(
+        "absolute -top-7 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded text-[10px] font-bold whitespace-nowrap shadow-lg z-30",
+        config.bg, config.text
+      )}
+    >
+      {config.label}
+      {amount && amount > 0 && ` ${amount.toLocaleString()}`}
+    </motion.div>
   );
 });
 
@@ -348,8 +385,9 @@ const PlayerSeat = memo(function PlayerSeat({
   communityCards = [],
   gamePhase = 'waiting',
   canJoin = false,
-  onSeatClick
-}: PlayerSeatProps) {
+  onSeatClick,
+  lastAction
+}: PlayerSeatProps & { lastAction?: string }) {
   // Avatar sizes - larger for hero, standard for opponents
   const avatarSize = isHero ? 60 : 48;
   
@@ -524,6 +562,13 @@ const PlayerSeat = memo(function PlayerSeat({
           isHero={isHero}
         />
       )}
+      
+      {/* Action badge - PPPoker style status above player */}
+      <AnimatePresence>
+        {lastAction && !player.isFolded && (
+          <ActionBadge action={lastAction} amount={player.betAmount} />
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 });
@@ -545,31 +590,31 @@ const SyndikateTableFelt = memo(function SyndikateTableFelt({
     <div className="absolute inset-0 overflow-hidden">
       {/* Transparent background - uses parent's mafia theme */}
       
-      {/* Glowing ambient effect behind table - horizontal ellipse */}
+      {/* Glowing ambient effect behind table - compact horizontal ellipse */}
       <div 
         className="absolute"
         style={{
-          top: '8%',
-          left: '5%',
-          right: '5%',
-          bottom: '8%',
+          top: '15%',
+          left: '8%',
+          right: '8%',
+          bottom: '15%',
           borderRadius: '50%',
           background: `radial-gradient(ellipse at 50% 50%, ${themeColor}50 0%, transparent 70%)`,
-          filter: 'blur(50px)'
+          filter: 'blur(40px)'
         }}
       />
       
-      {/* Outer metallic rail - full-height table for better use of screen */}
+      {/* Outer metallic rail - COMPACT table like PPPoker */}
       <div 
         className="absolute"
         style={{
-          top: '5%',
-          left: '4%',
-          right: '4%',
-          bottom: '5%',
-          borderRadius: '50% / 30%',
+          top: '12%',
+          left: '6%',
+          right: '6%',
+          bottom: '12%',
+          borderRadius: '50% / 35%',
           background: 'linear-gradient(180deg, #5a6a7a 0%, #3d4a5a 20%, #2a3440 50%, #3d4a5a 80%, #5a6a7a 100%)',
-          boxShadow: '0 10px 60px rgba(0,0,0,0.9), 0 0 100px rgba(0,0,0,0.5), inset 0 2px 30px rgba(255,255,255,0.15)',
+          boxShadow: '0 10px 60px rgba(0,0,0,0.9), 0 0 80px rgba(0,0,0,0.4), inset 0 2px 20px rgba(255,255,255,0.15)',
           border: '1px solid rgba(255,255,255,0.08)'
         }}
       />
@@ -578,11 +623,11 @@ const SyndikateTableFelt = memo(function SyndikateTableFelt({
       <div 
         className="absolute"
         style={{
-          top: '6%',
-          left: '5%',
-          right: '5%',
-          bottom: '6%',
-          borderRadius: '50% / 29%',
+          top: '13%',
+          left: '7%',
+          right: '7%',
+          bottom: '13%',
+          borderRadius: '50% / 34%',
           background: 'linear-gradient(180deg, #3a2820 0%, #2a1a14 30%, #1a0f0a 60%, #2a1a14 85%, #3a2820 100%)',
           boxShadow: 'inset 0 5px 30px rgba(0,0,0,0.8), inset 0 -5px 20px rgba(0,0,0,0.4)'
         }}
@@ -592,28 +637,28 @@ const SyndikateTableFelt = memo(function SyndikateTableFelt({
       <div 
         className="absolute"
         style={{
-          top: '8%',
-          left: '7%',
-          right: '7%',
-          bottom: '8%',
-          borderRadius: '50% / 27%',
+          top: '15%',
+          left: '9%',
+          right: '9%',
+          bottom: '15%',
+          borderRadius: '50% / 32%',
           background: 'linear-gradient(180deg, #4a5568 0%, #2d3748 50%, #1a202c 100%)',
           boxShadow: 'inset 0 0 20px rgba(0,0,0,0.5)',
           border: '1px solid rgba(212,175,55,0.2)'
         }}
       />
       
-      {/* Main felt surface - full oval */}
+      {/* Main felt surface - compact oval */}
       <div 
         className="absolute"
         style={{
-          top: '9%',
-          left: '8%',
-          right: '8%',
-          bottom: '9%',
-          borderRadius: '50% / 25%',
+          top: '16%',
+          left: '10%',
+          right: '10%',
+          bottom: '16%',
+          borderRadius: '50% / 30%',
           background: feltGradient,
-          boxShadow: 'inset 0 0 100px rgba(0,0,0,0.35), inset 0 -60px 100px rgba(0,0,0,0.2), inset 0 40px 60px rgba(255,255,255,0.02)'
+          boxShadow: 'inset 0 0 80px rgba(0,0,0,0.35), inset 0 -40px 80px rgba(0,0,0,0.2), inset 0 30px 50px rgba(255,255,255,0.02)'
         }}
       >
         {/* Subtle felt texture */}
@@ -863,6 +908,7 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
             gamePhase={phase}
             canJoin={canJoinTable && !player}
             onSeatClick={onSeatClick}
+            lastAction={(player as any)?.lastAction}
           />
         );
       })}
