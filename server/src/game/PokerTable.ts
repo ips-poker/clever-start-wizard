@@ -1007,18 +1007,29 @@ export class PokerTable {
     // Update players array with cards visible
     const players = (publicState.players as Array<Record<string, unknown>>).map(p => {
       const pid = p.playerId as string;
+      const tablePlayer = this.players.get(pid);
       
       // Always show hero's cards
       if (pid === playerId) {
-        const tablePlayer = this.players.get(pid);
         return { ...p, holeCards: tablePlayer?.holeCards || [] };
       }
       
       // At showdown, show all non-folded players' cards
-      if (isShowdown && engineState) {
-        const enginePlayer = engineState.players.find(ep => ep.id === pid);
-        if (enginePlayer && !enginePlayer.isFolded && enginePlayer.holeCards?.length >= 2) {
-          return { ...p, holeCards: enginePlayer.holeCards };
+      if (isShowdown) {
+        // Try engine state first, fallback to tablePlayer
+        const enginePlayer = engineState?.players.find(ep => ep.id === pid);
+        const isFolded = enginePlayer?.isFolded ?? tablePlayer?.isFolded ?? false;
+        
+        if (!isFolded) {
+          // Get cards from engine or tablePlayer (both should have them)
+          const holeCards = (enginePlayer?.holeCards?.length >= 2) 
+            ? enginePlayer.holeCards 
+            : (tablePlayer?.holeCards?.length >= 2 ? tablePlayer.holeCards : []);
+          
+          if (holeCards.length >= 2) {
+            logger.debug('Showdown reveal cards', { pid: pid.substring(0,8), holeCards });
+            return { ...p, holeCards };
+          }
         }
       }
       
