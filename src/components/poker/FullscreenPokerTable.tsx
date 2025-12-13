@@ -3,7 +3,7 @@
 // ============================================
 // Полноэкранный овальный стол как в PPPoker
 
-import React, { memo, useMemo } from 'react';
+import React, { memo, useMemo, useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { PokerPlayer } from '@/hooks/useNodePokerTable';
@@ -12,6 +12,7 @@ import { usePokerPreferences, TABLE_THEMES, CARD_BACKS } from '@/hooks/usePokerP
 import syndikateLogo from '@/assets/syndikate-logo-main.png';
 import { SmoothAvatarTimer } from './SmoothAvatarTimer';
 import { EnhancedPlayerBet } from './EnhancedPlayerBet';
+import { PotCollectionAnimation } from './PotCollectionAnimation';
 import { getHandStrengthName } from '@/utils/handEvaluator';
 
 // ============= SUIT CONFIGURATION =============
@@ -854,6 +855,46 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
   // Get personalization preferences
   const { preferences, currentTableTheme, currentCardBack } = usePokerPreferences();
   
+  // Track phase changes for pot collection animation
+  const prevPhaseRef = useRef(phase);
+  const [isCollectingBets, setIsCollectingBets] = useState(false);
+  const [collectionBets, setCollectionBets] = useState<Array<{ seatPosition: { x: number; y: number }; amount: number }>>([]);
+  
+  // Detect phase change and trigger collection animation
+  useEffect(() => {
+    const prevPhase = prevPhaseRef.current;
+    const phasesOrder = ['preflop', 'flop', 'turn', 'river', 'showdown'];
+    const prevIndex = phasesOrder.indexOf(prevPhase);
+    const currIndex = phasesOrder.indexOf(phase);
+    
+    // Phase advanced (not reset) - collect bets
+    if (currIndex > prevIndex && prevIndex >= 0) {
+      // Gather all player bets for animation
+      const betsToCollect = players
+        .filter(p => p.betAmount > 0)
+        .map(p => {
+          // Find visual position for this player
+          let visualPos = 0;
+          if (heroSeat !== null) {
+            visualPos = (p.seatNumber - heroSeat + preferences.preferredSeatRotation + maxPlayers) % maxPlayers;
+          } else {
+            visualPos = (p.seatNumber + preferences.preferredSeatRotation) % maxPlayers;
+          }
+          return {
+            seatPosition: positions[visualPos],
+            amount: p.betAmount
+          };
+        });
+      
+      if (betsToCollect.length > 0) {
+        setCollectionBets(betsToCollect);
+        setIsCollectingBets(true);
+      }
+    }
+    
+    prevPhaseRef.current = phase;
+  }, [phase, players, heroSeat, preferences.preferredSeatRotation, positions, maxPlayers]);
+  
   // Build players array positioned relative to hero with rotation preference
   const positionedPlayers = useMemo(() => {
     const result: (PokerPlayer | null)[] = new Array(maxPlayers).fill(null);
@@ -877,6 +918,16 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
     <div className="relative w-full h-full">
       {/* Table background with theme */}
       <SyndikateTableFelt themeColor={currentTableTheme.color} />
+      
+      {/* Pot collection animation */}
+      <PotCollectionAnimation
+        isCollecting={isCollectingBets}
+        bets={collectionBets}
+        onComplete={() => {
+          setIsCollectingBets(false);
+          setCollectionBets([]);
+        }}
+      />
       
       {/* Center area - pot and community cards - vertically centered in table */}
       <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center gap-3 z-10">
