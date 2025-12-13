@@ -335,6 +335,7 @@ export function FullscreenPokerTableWrapper({
             bigBlind={tableState?.bigBlindAmount || 20}
             canJoinTable={canJoinTable}
             onSeatClick={handleSeatClick}
+            onPotCollect={sounds.playChipSlide}
           />
         </div>
 
