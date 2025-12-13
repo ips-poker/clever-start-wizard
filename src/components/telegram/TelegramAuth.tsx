@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { initData } from '@telegram-apps/sdk-react';
+import { initData, retrieveLaunchParams } from '@telegram-apps/sdk-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,6 +7,9 @@ import { PrivacyConsent } from '@/components/PrivacyConsent';
 import { User, LogIn, Loader2 } from 'lucide-react';
 import syndikateLogo from '@/assets/syndikate-logo-main.png';
 import { GlitchText } from '@/components/ui/glitch-text';
+
+// Храним initDataRaw для отправки на сервер
+let cachedInitDataRaw: string | null = null;
 
 interface TelegramUser {
   id: number;
@@ -54,6 +57,15 @@ export const TelegramAuth: React.FC<TelegramAuthProps> = ({ onAuthComplete }) =>
       }
       
       // Обычная авторизация через Telegram только если НЕ режим разработки
+      // Получаем initDataRaw для безопасной верификации на сервере
+      try {
+        const launchParams = retrieveLaunchParams();
+        cachedInitDataRaw = (launchParams.initDataRaw as string) || null;
+        console.log('Launch params retrieved, initDataRaw:', cachedInitDataRaw ? '[PRESENT]' : '[MISSING]');
+      } catch (e) {
+        console.log('Could not retrieve launch params:', e);
+      }
+      
       await initData.restore();
       const user = initData.user();
       
@@ -64,7 +76,8 @@ export const TelegramAuth: React.FC<TelegramAuthProps> = ({ onAuthComplete }) =>
           lastName: user.last_name,
           username: user.username,
           photoUrl: user.photo_url,
-          hasPhoto: !!user.photo_url
+          hasPhoto: !!user.photo_url,
+          hasInitDataRaw: !!cachedInitDataRaw
         });
         
         const telegramUserData: TelegramUser = {
@@ -103,6 +116,7 @@ export const TelegramAuth: React.FC<TelegramAuthProps> = ({ onAuthComplete }) =>
       }
       
       // Подготавливаем данные для Telegram авторизации через edge function
+      // Используем initDataRaw для безопасной верификации на сервере
       const telegramAuthData = {
         id: telegramUserData.id,
         first_name: telegramUserData.firstName,
@@ -110,7 +124,8 @@ export const TelegramAuth: React.FC<TelegramAuthProps> = ({ onAuthComplete }) =>
         username: telegramUserData.username,
         photo_url: telegramUserData.photoUrl,
         auth_date: Math.floor(Date.now() / 1000),
-        hash: 'mock-hash-for-development' // В продакшене должен быть настоящий hash
+        // Отправляем initDataRaw для HMAC верификации на сервере
+        init_data_raw: cachedInitDataRaw || undefined
       };
 
       console.log('Authenticating with Telegram data:', telegramAuthData);

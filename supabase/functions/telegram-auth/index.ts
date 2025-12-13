@@ -10,7 +10,9 @@ interface TelegramAuthData {
   username?: string;
   photo_url?: string;
   auth_date: number;
-  hash: string;
+  hash?: string;
+  // initDataRaw от Telegram WebApp SDK
+  init_data_raw?: string;
 }
 
 // Генерация HMAC-SHA256
@@ -32,32 +34,86 @@ async function sha256(data: string): Promise<Uint8Array> {
   return new Uint8Array(hash);
 }
 
-// Верификация данных Telegram согласно официальной документации
-// https://core.telegram.org/bots/webapps#validating-data-received-via-the-web-app
-async function verifyTelegramAuth(authData: TelegramAuthData, botToken: string, internalSecret: string): Promise<boolean> {
-  // Проверяем наличие обязательных полей
-  if (!authData.id || !authData.auth_date || !authData.hash) {
-    console.log('Missing required fields in auth data');
-    return false;
-  }
+// Верификация initDataRaw от Telegram WebApp
+// https://core.telegram.org/bots/webapps#validating-data-received-via-the-mini-app
+async function verifyInitDataRaw(initDataRaw: string, botToken: string): Promise<{ valid: boolean; user?: any }> {
+  try {
+    // Парсим initDataRaw как URL query string
+    const params = new URLSearchParams(initDataRaw);
+    const hash = params.get('hash');
+    
+    if (!hash) {
+      console.log('No hash in initDataRaw');
+      return { valid: false };
+    }
 
-  // Проверка для внутреннего вызова от telegram-webhook
-  // Используем секретный токен вместо публичного 'telegram_bot_auth'
-  if (authData.hash === internalSecret) {
-    console.log('Auth via internal webhook call - verified with secret');
-    return true;
-  }
+    // Удаляем hash из параметров для проверки
+    params.delete('hash');
+    
+    // Сортируем параметры в алфавитном порядке и создаем строку проверки
+    const dataCheckString = Array.from(params.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([key, value]) => `${key}=${value}`)
+      .join('\n');
 
-  // Проверка актуальности данных (не старше 1 часа для widget auth)
-  const currentTime = Math.floor(Date.now() / 1000);
-  if (currentTime - authData.auth_date > 3600) {
-    console.log('Auth data too old (>1 hour)');
+    // Создаем секретный ключ: HMAC_SHA256(bot_token, "WebAppData")
+    const secretKey = await hmacSha256(
+      new TextEncoder().encode('WebAppData'),
+      botToken
+    );
+    
+    // Вычисляем HMAC-SHA256 от data_check_string
+    const calculatedHashBytes = await hmacSha256(secretKey, dataCheckString);
+    const calculatedHash = new TextDecoder().decode(hexEncode(calculatedHashBytes));
+
+    const isValid = calculatedHash === hash;
+    
+    if (!isValid) {
+      console.log('WebApp HMAC verification failed');
+      console.log('Expected hash:', hash);
+      console.log('Calculated hash:', calculatedHash);
+      return { valid: false };
+    }
+
+    console.log('WebApp HMAC verification successful');
+
+    // Парсим user из параметров
+    const userParam = params.get('user');
+    let user = null;
+    if (userParam) {
+      try {
+        user = JSON.parse(userParam);
+      } catch (e) {
+        console.log('Failed to parse user param:', e);
+      }
+    }
+
+    // Проверяем auth_date (не старше 1 часа)
+    const authDate = params.get('auth_date');
+    if (authDate) {
+      const currentTime = Math.floor(Date.now() / 1000);
+      if (currentTime - parseInt(authDate) > 3600) {
+        console.log('WebApp auth data too old (>1 hour)');
+        return { valid: false };
+      }
+    }
+
+    return { valid: true, user };
+  } catch (error) {
+    console.error('Error verifying initDataRaw:', error);
+    return { valid: false };
+  }
+}
+
+// Верификация данных Telegram Widget (старый метод)
+// https://core.telegram.org/widgets/login#checking-authorization
+async function verifyTelegramWidgetAuth(authData: TelegramAuthData, botToken: string): Promise<boolean> {
+  if (!authData.hash) {
     return false;
   }
 
   try {
-    // Формируем строку проверки согласно документации Telegram
-    // Сортируем все поля кроме hash в алфавитном порядке
+    // Формируем строку проверки согласно документации Telegram Widget
     const checkFields: Record<string, string> = {};
     if (authData.id) checkFields['id'] = authData.id.toString();
     if (authData.first_name) checkFields['first_name'] = authData.first_name;
@@ -71,26 +127,16 @@ async function verifyTelegramAuth(authData: TelegramAuthData, botToken: string, 
       .map(key => `${key}=${checkFields[key]}`)
       .join('\n');
 
-    // Создаем секретный ключ: SHA256(bot_token)
+    // Для Widget: секретный ключ = SHA256(bot_token)
     const secretKey = await sha256(botToken);
     
     // Вычисляем HMAC-SHA256 от check_string
     const calculatedHashBytes = await hmacSha256(secretKey, checkString);
     const calculatedHash = new TextDecoder().decode(hexEncode(calculatedHashBytes));
 
-    const isValid = calculatedHash === authData.hash;
-    
-    if (!isValid) {
-      console.log('HMAC verification failed');
-      console.log('Expected hash:', authData.hash);
-      console.log('Calculated hash:', calculatedHash);
-    } else {
-      console.log('HMAC verification successful');
-    }
-
-    return isValid;
+    return calculatedHash === authData.hash;
   } catch (error) {
-    console.error('Error during HMAC verification:', error);
+    console.error('Error during Widget HMAC verification:', error);
     return false;
   }
 }
@@ -105,7 +151,7 @@ Deno.serve(async (req) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const telegramBotToken = Deno.env.get('TELEGRAM_BOT_TOKEN')!;
-    // Секретный токен для внутренних вызовов между edge functions
+    // Секретный токен для внутренних вызовов между edge functions (telegram-webhook)
     const internalAuthSecret = Deno.env.get('INTERNAL_AUTH_SECRET') || 'fallback_' + telegramBotToken.substring(0, 20);
 
     if (!supabaseUrl || !supabaseServiceKey || !telegramBotToken) {
@@ -137,11 +183,39 @@ Deno.serve(async (req) => {
       auth_date: authData.auth_date,
       username: authData.username || 'NOT PROVIDED',
       hash: authData.hash ? '[PRESENT]' : '[MISSING]',
-      photo_url: authData.photo_url ? '[PRESENT]' : 'NOT PROVIDED'
+      photo_url: authData.photo_url ? '[PRESENT]' : 'NOT PROVIDED',
+      init_data_raw: authData.init_data_raw ? '[PRESENT]' : '[MISSING]'
     });
 
-    // Проверяем подлинность данных
-    const isValid = await verifyTelegramAuth(authData, telegramBotToken, internalAuthSecret);
+    let isValid = false;
+    let verifiedUser: any = null;
+
+    // 1. Проверка внутреннего вызова от telegram-webhook (используем секретный токен)
+    if (authData.hash === internalAuthSecret) {
+      console.log('Auth via internal webhook call - verified with secret');
+      isValid = true;
+    }
+    // 2. Проверка initDataRaw от Telegram WebApp SDK (основной метод)
+    else if (authData.init_data_raw) {
+      console.log('Verifying via initDataRaw (WebApp SDK)...');
+      const result = await verifyInitDataRaw(authData.init_data_raw, telegramBotToken);
+      isValid = result.valid;
+      if (result.user) {
+        verifiedUser = result.user;
+        // Обновляем authData данными из верифицированного пользователя
+        if (verifiedUser.id) authData.id = verifiedUser.id;
+        if (verifiedUser.first_name) authData.first_name = verifiedUser.first_name;
+        if (verifiedUser.last_name) authData.last_name = verifiedUser.last_name;
+        if (verifiedUser.username) authData.username = verifiedUser.username;
+        if (verifiedUser.photo_url) authData.photo_url = verifiedUser.photo_url;
+      }
+    }
+    // 3. Проверка Telegram Widget (для веб-авторизации)
+    else if (authData.hash) {
+      console.log('Verifying via Widget hash...');
+      isValid = await verifyTelegramWidgetAuth(authData, telegramBotToken);
+    }
+
     if (!isValid) {
       console.log('Authentication verification failed');
       return new Response(
@@ -153,7 +227,9 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Проверяем актуальность данных (не старше 86400 секунд = 24 часа для session)
+    console.log('Authentication verified successfully');
+
+    // Проверяем актуальность данных (не старше 24 часов для session creation)
     const currentTime = Math.floor(Date.now() / 1000);
     if (currentTime - authData.auth_date > 86400) {
       return new Response(
@@ -301,7 +377,6 @@ Deno.serve(async (req) => {
     }
 
     // Создаем сессию для пользователя
-    // Используем основной домен для редиректа
     const redirectUrl = 'https://syndicate-poker.ru/';
     
     console.log('Redirect URL will be:', redirectUrl);
