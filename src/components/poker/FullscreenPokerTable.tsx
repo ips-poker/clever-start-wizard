@@ -13,6 +13,7 @@ import syndikateLogo from '@/assets/syndikate-logo-main.png';
 import { SmoothAvatarTimer } from './SmoothAvatarTimer';
 import { EnhancedPlayerBet } from './EnhancedPlayerBet';
 import { PotCollectionAnimation } from './PotCollectionAnimation';
+import { CardDealAnimation } from './CardDealAnimation';
 import { getHandStrengthName } from '@/utils/handEvaluator';
 
 // ============= SUIT CONFIGURATION =============
@@ -970,6 +971,10 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
   const [isCollectingBets, setIsCollectingBets] = useState(false);
   const [collectionBets, setCollectionBets] = useState<Array<{ seatPosition: { x: number; y: number }; amount: number }>>([]);
   
+  // Track dealing animation
+  const [isDealing, setIsDealing] = useState(false);
+  const prevPlayersWithCards = useRef<number>(0);
+  
   // Detect phase change and trigger collection animation
   useEffect(() => {
     const prevPhase = prevPhaseRef.current;
@@ -1006,6 +1011,18 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
     prevPhaseRef.current = phase;
   }, [phase, players, heroSeat, preferences.preferredSeatRotation, positions, maxPlayers]);
   
+  // Detect new hand deal (transition to preflop with players having cards)
+  useEffect(() => {
+    const playersWithCards = players.filter(p => (p as any).hasCards || heroCards.length > 0).length;
+    
+    // New hand started - players got cards
+    if (phase === 'preflop' && playersWithCards > 0 && prevPlayersWithCards.current === 0) {
+      setIsDealing(true);
+    }
+    
+    prevPlayersWithCards.current = playersWithCards;
+  }, [phase, players, heroCards]);
+  
   // Build players array positioned relative to hero with rotation preference
   const positionedPlayers = useMemo(() => {
     const result: (PokerPlayer | null)[] = new Array(maxPlayers).fill(null);
@@ -1024,11 +1041,48 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
     
     return result;
   }, [players, heroSeat, maxPlayers, preferences.preferredSeatRotation]);
+  
+  // Calculate dealer position for card dealing animation
+  const dealerVisualPosition = useMemo(() => {
+    if (dealerSeat === undefined || dealerSeat === null) return { x: 50, y: 50 };
+    
+    let visualPos = 0;
+    if (heroSeat !== null) {
+      visualPos = (dealerSeat - heroSeat + preferences.preferredSeatRotation + maxPlayers) % maxPlayers;
+    } else {
+      visualPos = (dealerSeat + preferences.preferredSeatRotation) % maxPlayers;
+    }
+    return positions[visualPos] || { x: 50, y: 50 };
+  }, [dealerSeat, heroSeat, preferences.preferredSeatRotation, maxPlayers, positions]);
+  
+  // Calculate player positions for card dealing
+  const playerDealPositions = useMemo(() => {
+    return players.map(p => {
+      let visualPos = 0;
+      if (heroSeat !== null) {
+        visualPos = (p.seatNumber - heroSeat + preferences.preferredSeatRotation + maxPlayers) % maxPlayers;
+      } else {
+        visualPos = (p.seatNumber + preferences.preferredSeatRotation) % maxPlayers;
+      }
+      return {
+        ...positions[visualPos],
+        seatNumber: p.seatNumber
+      };
+    });
+  }, [players, heroSeat, preferences.preferredSeatRotation, maxPlayers, positions]);
 
   return (
     <div className="relative w-full h-full">
       {/* Table background with theme */}
       <SyndikateTableFelt themeColor={currentTableTheme.color} />
+      
+      {/* Card dealing animation */}
+      <CardDealAnimation
+        isDealing={isDealing}
+        dealerPosition={dealerVisualPosition}
+        playerPositions={playerDealPositions}
+        onComplete={() => setIsDealing(false)}
+      />
       
       {/* Pot collection animation */}
       <PotCollectionAnimation
