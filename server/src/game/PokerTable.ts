@@ -833,13 +833,17 @@ export class PokerTable {
           
           // Evaluate hand for non-winners too
           let handName = winnerInfo?.handName;
-          if (!handName && this.currentHand?.communityCards && this.currentHand.communityCards.length >= 3) {
+          let bestCards: string[] = [];
+          
+          if (this.currentHand?.communityCards && this.currentHand.communityCards.length >= 3) {
             try {
               // Use evaluateHand with hole cards and community cards separately
               const result = evaluateHand(ep.holeCards, this.currentHand.communityCards);
-              handName = result.handName;
+              handName = handName || result.handName;
+              bestCards = result.bestCards || [];
             } catch (e) {
-              handName = undefined;
+              handName = handName || undefined;
+              bestCards = [];
             }
           }
           
@@ -850,7 +854,7 @@ export class PokerTable {
             holeCards: ep.holeCards, // CRITICAL: Reveal hole cards at showdown
             isFolded: ep.isFolded,
             handName: handName,
-            bestCards: ep.bestFiveCards || [] // If available from engine
+            bestCards: bestCards
           });
         }
       }

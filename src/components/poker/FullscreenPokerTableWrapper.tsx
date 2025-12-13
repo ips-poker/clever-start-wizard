@@ -19,6 +19,7 @@ import { FullscreenPokerTable } from './FullscreenPokerTable';
 import { ProActionPanel } from './ProActionPanel';
 import { BuyInDialog } from './BuyInDialog';
 import { SeatRotationControl, getVisualPosition } from './SeatRotationControl';
+import { ShowdownOverlay } from './ShowdownOverlay';
 
 // Syndikate branding
 import syndikateLogo from '@/assets/syndikate-logo-main.png';
@@ -464,6 +465,24 @@ export function FullscreenPokerTableWrapper({
           onClose={() => setShowPersonalSettings(false)}
           maxSeats={maxSeats}
         />
+
+        {/* Showdown Overlay - Winner display with card highlighting */}
+        <AnimatePresence>
+          {showdownResult && showdownResult.winners && showdownResult.winners.length > 0 && (
+            <ShowdownOverlay
+              winners={showdownResult.winners.map(w => ({
+                playerId: w.playerId,
+                name: w.name,
+                amount: w.amount,
+                handName: w.handName || w.handRank,
+                bestCards: w.bestCards || w.cards
+              }))}
+              showdownPlayers={showdownResult.showdownPlayers}
+              communityCards={showdownResult.communityCards || tableState?.communityCards}
+              onClose={() => {}}
+            />
+          )}
+        </AnimatePresence>
       </div>
     </PokerErrorBoundary>
   );
