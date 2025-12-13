@@ -830,6 +830,7 @@ export interface FullscreenPokerTableProps {
   bigBlind: number;
   canJoinTable: boolean;
   onSeatClick: (seatNumber: number) => void;
+  onPotCollect?: () => void;
 }
 
 export const FullscreenPokerTable = memo(function FullscreenPokerTable({
@@ -847,7 +848,8 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
   smallBlind,
   bigBlind,
   canJoinTable,
-  onSeatClick
+  onSeatClick,
+  onPotCollect
 }: FullscreenPokerTableProps) {
   const maxPlayers = 6;
   const positions = SEAT_POSITIONS_6MAX;
@@ -889,6 +891,7 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
       if (betsToCollect.length > 0) {
         setCollectionBets(betsToCollect);
         setIsCollectingBets(true);
+        onPotCollect?.();
       }
     }
     
