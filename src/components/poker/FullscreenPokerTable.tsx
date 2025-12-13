@@ -812,6 +812,95 @@ const PotDisplay = memo(function PotDisplay({ pot, blinds }: { pot: number; blin
   );
 });
 
+// ============= TOURNAMENT INFO BAR (compact PPPoker style) =============
+interface TournamentInfoBarProps {
+  currentLevel?: number;
+  smallBlind: number;
+  bigBlind: number;
+  ante?: number;
+  timeToNextLevel?: number;
+  remainingPlayers?: number;
+  totalPlayers?: number;
+  tournamentName?: string;
+}
+
+const TournamentInfoBar = memo(function TournamentInfoBar({
+  currentLevel = 1,
+  smallBlind,
+  bigBlind,
+  ante,
+  timeToNextLevel = 0,
+  remainingPlayers = 0,
+  totalPlayers = 0,
+  tournamentName
+}: TournamentInfoBarProps) {
+  const isLowTime = timeToNextLevel > 0 && timeToNextLevel <= 60;
+  
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+  
+  return (
+    <motion.div
+      initial={{ y: 10, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      className="flex items-center justify-center gap-3 px-4 py-2 rounded-full"
+      style={{
+        background: 'linear-gradient(180deg, rgba(15,20,25,0.9) 0%, rgba(5,10,15,0.95) 100%)',
+        border: '1px solid rgba(34,197,94,0.25)',
+        boxShadow: '0 4px 16px rgba(0,0,0,0.5)'
+      }}
+    >
+      {/* Level badge */}
+      <div className="flex items-center gap-1.5">
+        <div 
+          className="w-6 h-6 rounded-full flex items-center justify-center font-bold text-white text-[10px]"
+          style={{ background: 'linear-gradient(135deg, #22c55e, #16a34a)' }}
+        >
+          {currentLevel}
+        </div>
+        <div className="flex flex-col leading-none">
+          <span className="text-emerald-400 font-bold text-xs">
+            {smallBlind.toLocaleString()}/{bigBlind.toLocaleString()}
+          </span>
+          {ante && ante > 0 && (
+            <span className="text-white/50 text-[8px]">
+              ante {ante}
+            </span>
+          )}
+        </div>
+      </div>
+      
+      {/* Divider */}
+      <div className="w-px h-5 bg-white/10" />
+      
+      {/* Timer */}
+      {timeToNextLevel > 0 && (
+        <>
+          <div className={cn(
+            "flex items-center gap-1 font-mono font-bold text-xs",
+            isLowTime ? "text-red-400" : "text-white"
+          )}>
+            <div className={cn("w-1.5 h-1.5 rounded-full", isLowTime ? "bg-red-400 animate-pulse" : "bg-emerald-400")} />
+            {formatTime(timeToNextLevel)}
+          </div>
+          <div className="w-px h-5 bg-white/10" />
+        </>
+      )}
+      
+      {/* Players */}
+      {totalPlayers > 0 && (
+        <div className="flex items-center gap-1 text-white text-xs">
+          <span className="text-blue-400">👤</span>
+          <span>{remainingPlayers}/{totalPlayers}</span>
+        </div>
+      )}
+    </motion.div>
+  );
+});
+
 // ============= MAIN TABLE COMPONENT =============
 export interface FullscreenPokerTableProps {
   tableState: any;
@@ -831,6 +920,17 @@ export interface FullscreenPokerTableProps {
   canJoinTable: boolean;
   onSeatClick: (seatNumber: number) => void;
   onPotCollect?: () => void;
+  // Tournament info
+  tournamentId?: string;
+  tournamentName?: string;
+  currentLevel?: number;
+  levelTimeRemaining?: number;
+  nextSmallBlind?: number;
+  nextBigBlind?: number;
+  remainingPlayers?: number;
+  totalPlayers?: number;
+  prizePool?: number;
+  ante?: number;
 }
 
 export const FullscreenPokerTable = memo(function FullscreenPokerTable({
@@ -849,7 +949,15 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
   bigBlind,
   canJoinTable,
   onSeatClick,
-  onPotCollect
+  onPotCollect,
+  // Tournament props
+  tournamentId,
+  tournamentName,
+  currentLevel,
+  levelTimeRemaining,
+  remainingPlayers,
+  totalPlayers,
+  ante
 }: FullscreenPokerTableProps) {
   const maxPlayers = 6;
   const positions = SEAT_POSITIONS_6MAX;
@@ -936,6 +1044,20 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
       <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center gap-3 z-10">
         <PotDisplay pot={pot} blinds={`${smallBlind}/${bigBlind}`} />
         <CommunityCards cards={communityCards} phase={phase} />
+        
+        {/* Tournament info bar - shown when tournament mode */}
+        {(currentLevel || totalPlayers) && (
+          <TournamentInfoBar
+            currentLevel={currentLevel}
+            smallBlind={smallBlind}
+            bigBlind={bigBlind}
+            ante={ante}
+            timeToNextLevel={levelTimeRemaining}
+            remainingPlayers={remainingPlayers}
+            totalPlayers={totalPlayers}
+            tournamentName={tournamentName}
+          />
+        )}
       </div>
       
       {/* Player seats */}
