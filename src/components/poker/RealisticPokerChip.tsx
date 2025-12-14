@@ -329,43 +329,83 @@ export const PPPokerChip = memo(function PPPokerChip({
           strokeWidth="0.5"
         />
         
-        {/* Spade symbol in center with 3D effect */}
+        {/* Detailed Spade symbol in center - SVG path for high detail */}
         {showSymbol && (
-          <g>
+          <g transform="translate(50, 50)">
             {/* Symbol shadow */}
-            <text
-              x="50.5"
-              y="58"
-              textAnchor="middle"
-              fontSize="24"
-              fontWeight="bold"
-              fill="rgba(0,0,0,0.4)"
-            >
-              ♠
-            </text>
-            {/* Symbol */}
-            <text
-              x="50"
-              y="57"
-              textAnchor="middle"
-              fontSize="24"
-              fontWeight="bold"
+            <g transform="translate(1, 1.5)">
+              <path
+                d="M 0 -16 
+                   C -4 -12, -14 -6, -14 2 
+                   C -14 8, -9 12, -4 12 
+                   C -2 12, 0 11, 0 9 
+                   C 0 11, 2 12, 4 12 
+                   C 9 12, 14 8, 14 2 
+                   C 14 -6, 4 -12, 0 -16 
+                   Z"
+                fill="rgba(0,0,0,0.4)"
+              />
+              <path
+                d="M 0 9 L -3 18 L 3 18 Z"
+                fill="rgba(0,0,0,0.4)"
+              />
+            </g>
+            
+            {/* Main spade body */}
+            <path
+              d="M 0 -16 
+                 C -4 -12, -14 -6, -14 2 
+                 C -14 8, -9 12, -4 12 
+                 C -2 12, 0 11, 0 9 
+                 C 0 11, 2 12, 4 12 
+                 C 9 12, 14 8, 14 2 
+                 C 14 -6, 4 -12, 0 -16 
+                 Z"
               fill={colors.symbol}
-            >
-              ♠
-            </text>
-            {/* Symbol highlight */}
-            <text
-              x="49.5"
-              y="56"
-              textAnchor="middle"
-              fontSize="24"
-              fontWeight="bold"
+            />
+            
+            {/* Spade stem */}
+            <path
+              d="M 0 9 L -3.5 18 L 3.5 18 Z"
+              fill={colors.symbol}
+            />
+            
+            {/* Inner highlight on spade - left lobe */}
+            <ellipse
+              cx="-7"
+              cy="3"
+              rx="4"
+              ry="5"
+              fill="rgba(255,255,255,0.15)"
+            />
+            
+            {/* Inner highlight on spade - right lobe */}
+            <ellipse
+              cx="7"
+              cy="3"
+              rx="4"
+              ry="5"
+              fill="rgba(255,255,255,0.1)"
+            />
+            
+            {/* Top point highlight */}
+            <ellipse
+              cx="0"
+              cy="-10"
+              rx="3"
+              ry="4"
               fill="rgba(255,255,255,0.2)"
-              style={{ clipPath: 'inset(0 0 50% 0)' }}
-            >
-              ♠
-            </text>
+            />
+            
+            {/* Edge definition - inner dark line */}
+            <path
+              d="M 0 -14 
+                 C -3 -11, -12 -5, -12 2 
+                 C -12 7, -8 10, -4 10"
+              fill="none"
+              stroke="rgba(0,0,0,0.15)"
+              strokeWidth="0.5"
+            />
           </g>
         )}
         
