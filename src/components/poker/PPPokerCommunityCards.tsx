@@ -71,8 +71,8 @@ const CommunityCard = memo(function CommunityCard({
       }}
       className="relative rounded-lg overflow-hidden"
       style={{
-        width: 52,
-        height: 72,
+        width: 56,
+        height: 78,
         background: bgStyle,
         border: borderStyle,
         boxShadow: isWinning 
@@ -83,10 +83,10 @@ const CommunityCard = memo(function CommunityCard({
         opacity: isDimmed ? 0.85 : 1
       }}
     >
-      {/* Top-left corner */}
+      {/* Top-left corner - Rank above Suit (PPPoker style) */}
       <div className="absolute top-1 left-1.5 flex flex-col items-center leading-none">
         <span 
-          className="text-lg font-black" 
+          className="text-xl font-black leading-none" 
           style={{ 
             color: suitColor,
             textShadow: isDimmed ? 'none' : '0 1px 2px rgba(0,0,0,0.1)'
@@ -95,20 +95,20 @@ const CommunityCard = memo(function CommunityCard({
           {rank}
         </span>
         <span 
-          className="text-base -mt-0.5" 
+          className="text-lg leading-none" 
           style={{ color: suitColor }}
         >
           {suitInfo.symbol}
         </span>
       </div>
       
-      {/* Center large suit */}
+      {/* Center large suit - PPPoker style */}
       <div className="absolute inset-0 flex items-center justify-center">
         <span 
           className="text-4xl"
           style={{ 
             color: suitColor, 
-            opacity: isDimmed ? 0.6 : 0.9,
+            opacity: isDimmed ? 0.5 : 0.9,
             filter: isDimmed ? 'none' : 'drop-shadow(0 2px 4px rgba(0,0,0,0.15))'
           }}
         >
@@ -116,10 +116,10 @@ const CommunityCard = memo(function CommunityCard({
         </span>
       </div>
       
-      {/* Bottom-right corner (rotated) */}
+      {/* Bottom-right corner (rotated) - PPPoker style */}
       <div className="absolute bottom-1 right-1.5 flex flex-col items-center leading-none rotate-180">
         <span 
-          className="text-lg font-black" 
+          className="text-xl font-black leading-none" 
           style={{ 
             color: suitColor,
             textShadow: isDimmed ? 'none' : '0 1px 2px rgba(0,0,0,0.1)'
@@ -128,7 +128,7 @@ const CommunityCard = memo(function CommunityCard({
           {rank}
         </span>
         <span 
-          className="text-base -mt-0.5" 
+          className="text-lg leading-none" 
           style={{ color: suitColor }}
         >
           {suitInfo.symbol}
@@ -210,8 +210,8 @@ export const PPPokerCommunityCards = memo(function PPPokerCommunityCards({
                 key={`empty-${idx}`}
                 className="rounded-lg border-2 border-dashed"
                 style={{ 
-                  width: 52, 
-                  height: 72,
+                  width: 56, 
+                  height: 78,
                   borderColor: 'rgba(255,255,255,0.08)',
                   background: 'rgba(0,0,0,0.1)'
                 }}
