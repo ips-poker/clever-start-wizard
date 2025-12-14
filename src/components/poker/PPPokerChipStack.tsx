@@ -59,7 +59,7 @@ export const PPPokerChipStack = memo(function PPPokerChipStack({
     const length = Math.sqrt(dx * dx + dy * dy);
     if (length === 0) return { x: 0, y: -45 };
     
-    const distance = 45; // Distance from player avatar towards center
+    const distance = 58; // Distance from player avatar towards center (increased by 30%)
     const offsetX = (dx / length) * distance;
     const offsetY = (dy / length) * distance;
     
