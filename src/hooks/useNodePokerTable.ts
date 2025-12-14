@@ -4,6 +4,7 @@
  * Connects to external poker.syndicate-poker.ru server
  */
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { evaluateShowdown } from '@/utils/showdownEvaluator';
 
 export interface PokerPlayer {
   playerId: string;
@@ -23,6 +24,8 @@ export interface PokerPlayer {
   handName?: string;
   bestCards?: string[];
   isWinner?: boolean;
+  winningCardIndices?: number[];      // Indices of hole cards used in winning combo
+  communityCardIndices?: number[];    // Indices of community cards used in winning combo
 }
 
 export interface TableState {
@@ -541,6 +544,12 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
               // Create a set of winner player IDs
               const winnerIds = new Set(winners?.map(w => w.playerId) || []);
               
+              // Get community cards for evaluation
+              const commCards = communityCards || prev.communityCards || [];
+              
+              // Determine if this is Omaha (4 hole cards)
+              const isOmaha = showdownPlayers?.some(sp => sp.holeCards?.length === 4) || false;
+              
               return {
                 ...prev,
                 phase: 'showdown', // Force showdown phase
@@ -550,12 +559,34 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
                   const showdownPlayer = showdownPlayers?.find(sp => sp.playerId === p.playerId);
                   
                   if (showdownPlayer && !showdownPlayer.isFolded) {
+                    // Calculate winning card indices using showdownEvaluator
+                    let winningCardIndices: number[] = [];
+                    let communityCardIndices: number[] = [];
+                    
+                    if (showdownPlayer.holeCards && commCards.length >= 3) {
+                      try {
+                        const showdownResult = evaluateShowdown(
+                          showdownPlayer.holeCards,
+                          commCards,
+                          isOmaha
+                        );
+                        if (showdownResult) {
+                          winningCardIndices = showdownResult.winningCardIndices;
+                          communityCardIndices = showdownResult.communityCardIndices;
+                        }
+                      } catch (err) {
+                        console.warn('Failed to evaluate showdown:', err);
+                      }
+                    }
+                    
                     return {
                       ...p,
                       holeCards: showdownPlayer.holeCards,
                       handName: showdownPlayer.handName || winner?.handName,
                       isWinner: winnerIds.has(p.playerId),
-                      bestCards: showdownPlayer.bestCards || winner?.bestCards
+                      bestCards: showdownPlayer.bestCards || winner?.bestCards,
+                      winningCardIndices,
+                      communityCardIndices
                     };
                   }
                   
