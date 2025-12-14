@@ -253,16 +253,32 @@ const ExternalTimer = () => {
   // Syndikate Industrial Theme
   if (isSyndikateTeme) {
     return (
-      <div className="min-h-screen flex flex-col bg-[hsl(0,0%,8%)] text-[hsl(0,0%,95%)] relative overflow-hidden">
-        {/* Industrial texture overlay */}
-        <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{
-          backgroundImage: `repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255,255,255,0.05) 10px, rgba(255,255,255,0.05) 20px)`
-        }} />
+      <div className="min-h-screen flex flex-col bg-background text-foreground relative overflow-hidden">
+        {/* Industrial Background Texture - same as loading screen */}
+        <div className="absolute inset-0 industrial-texture opacity-50" />
         
-        {/* Metal grid pattern */}
-        <div className="absolute inset-0 opacity-[0.02] pointer-events-none" style={{
-          backgroundImage: `repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(255,255,255,0.1) 2px, rgba(255,255,255,0.1) 4px)`
-        }} />
+        {/* Metal Grid - same as loading screen */}
+        <div 
+          className="absolute inset-0 opacity-10"
+          style={{
+            backgroundImage: `
+              repeating-linear-gradient(0deg, transparent, transparent 50px, rgba(255, 255, 255, 0.05) 50px, rgba(255, 255, 255, 0.05) 51px),
+              repeating-linear-gradient(90deg, transparent, transparent 50px, rgba(255, 255, 255, 0.05) 50px, rgba(255, 255, 255, 0.05) 51px)
+            `
+          }}
+        />
+
+        {/* Neon Glow Spots - ambient lighting */}
+        <div className="absolute top-1/4 left-1/4 w-[600px] h-[600px] bg-primary/10 rounded-full blur-[150px]" />
+        <div className="absolute bottom-1/4 right-1/4 w-[500px] h-[500px] bg-accent/10 rounded-full blur-[120px]" />
+
+        {/* Scanlines Effect - same as loading screen */}
+        <div 
+          className="absolute inset-0 pointer-events-none opacity-5"
+          style={{
+            backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255, 255, 255, 0.03) 2px, rgba(255, 255, 255, 0.03) 4px)'
+          }}
+        />
 
         {/* Header */}
         <div className="flex justify-between items-center p-6 border-b-2 border-[hsl(0,0%,20%)] bg-[hsl(0,0%,12%)] relative z-10"
