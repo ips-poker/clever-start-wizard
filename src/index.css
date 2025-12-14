@@ -440,3 +440,45 @@
     opacity: 0;
   }
 }
+
+/* Glitch animation for SYNDIKATE text */
+@keyframes glitch {
+  0%, 90%, 100% {
+    transform: translate(0);
+    text-shadow: 
+      0 0 20px hsla(24,100%,50%,0.8),
+      0 0 40px hsla(24,100%,50%,0.4);
+  }
+  92% {
+    transform: translate(-2px, 1px);
+    text-shadow: 
+      -2px 0 #ff0000,
+      2px 0 #00ffff,
+      0 0 20px hsla(24,100%,50%,0.8);
+  }
+  94% {
+    transform: translate(2px, -1px);
+    text-shadow: 
+      2px 0 #ff0000,
+      -2px 0 #00ffff,
+      0 0 20px hsla(24,100%,50%,0.8);
+  }
+  96% {
+    transform: translate(-1px, 2px);
+    text-shadow: 
+      -1px 0 #ff0000,
+      1px 0 #00ffff,
+      0 0 20px hsla(24,100%,50%,0.8);
+  }
+  98% {
+    transform: translate(1px, -2px);
+    text-shadow: 
+      1px 0 #ff0000,
+      -1px 0 #00ffff,
+      0 0 20px hsla(24,100%,50%,0.8);
+  }
+}
+
+.animate-glitch {
+  animation: glitch 4s ease-in-out infinite;
+}
