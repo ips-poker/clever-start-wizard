@@ -130,7 +130,7 @@ export const PotDisplay = memo(function PotDisplay({
               transition={{ delay: i * 0.08 }}
               className="flex items-center gap-1.5 bg-black/50 rounded-full px-2.5 py-1"
             >
-              <PPPokerChip size={16} color="purple" animated delay={0.1 + i * 0.05} />
+              <PPPokerChip size={16} color="purple" />
               <span className="text-purple-300 font-medium text-xs">
                 {formatChipAmount(pot)}
               </span>
