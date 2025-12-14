@@ -358,7 +358,7 @@ const PlayerSeat = memo(function PlayerSeat({
     >
       {/* Avatar with status border and opponent cards */}
       <div className="relative">
-        {/* Timer ring - INSIDE avatar container, centered on avatar */}
+        {/* Timer ring - fits tight around avatar like the old active border */}
         {isCurrentTurn && turnTimeRemaining !== undefined && !player.isFolded && (
           <div 
             className="absolute z-30 pointer-events-none"
@@ -366,15 +366,15 @@ const PlayerSeat = memo(function PlayerSeat({
               left: '50%',
               top: '50%',
               transform: 'translate(-50%, -50%)',
-              width: avatarSize + 16,
-              height: avatarSize + 16
+              width: avatarSize + 6,
+              height: avatarSize + 6
             }}
           >
             <SmoothAvatarTimer 
               remaining={turnTimeRemaining} 
               total={30} 
-              size={avatarSize + 16}
-              strokeWidth={4}
+              size={avatarSize + 6}
+              strokeWidth={3}
             />
           </div>
         )}
