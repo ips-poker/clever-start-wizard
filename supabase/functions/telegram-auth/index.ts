@@ -411,32 +411,56 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Создаем сессию для пользователя
-    const redirectUrl = 'https://syndicate-poker.ru/';
+    // Создаем сессию для пользователя напрямую (без magic link)
+    // Используем signInWithPassword с известным паролем, или генерируем токены напрямую
     
-    console.log('Redirect URL will be:', redirectUrl);
-    
+    // Для Telegram Mini App лучше использовать generateLink и затем верифицировать OTP
     const { data: sessionData, error: sessionError } = await supabase.auth.admin.generateLink({
       type: 'magiclink',
       email: telegramEmail,
       options: {
-        redirectTo: redirectUrl
+        redirectTo: 'https://syndicate-poker.ru/'
       }
     });
 
+    let loginUrl = null;
+    let sessionTokens = null;
+    
     if (sessionError || !sessionData) {
-      console.error('Error generating session:', sessionError);
-      return new Response(
-        JSON.stringify({ error: 'Failed to create session' }),
-        { 
-          status: 500, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      console.error('Error generating magic link:', sessionError);
+      // Продолжаем без сессии - приложение будет работать через player_id
+    } else {
+      loginUrl = sessionData.properties.action_link;
+      
+      // Извлекаем token из magic link для прямой верификации
+      try {
+        const url = new URL(loginUrl);
+        const token = url.searchParams.get('token');
+        const type = url.searchParams.get('type');
+        
+        if (token && type === 'magiclink') {
+          // Верифицируем OTP токен и получаем сессию
+          const { data: verifyData, error: verifyError } = await supabase.auth.verifyOtp({
+            token_hash: token,
+            type: 'magiclink'
+          });
+          
+          if (verifyError) {
+            console.log('Could not verify OTP directly:', verifyError.message);
+          } else if (verifyData?.session) {
+            console.log('✅ Session created via OTP verification');
+            sessionTokens = {
+              access_token: verifyData.session.access_token,
+              refresh_token: verifyData.session.refresh_token,
+              expires_in: verifyData.session.expires_in,
+              token_type: verifyData.session.token_type
+            };
+          }
         }
-      );
+      } catch (parseError) {
+        console.log('Could not parse magic link for direct verification:', parseError);
+      }
     }
-
-    // Используем стандартный Supabase URL
-    const loginUrl = sessionData.properties.action_link;
 
     // Используем функцию для объединения игроков
     const telegramId = authData.id.toString();
@@ -518,13 +542,14 @@ Deno.serve(async (req) => {
       }
     }
 
-    console.log('Successfully authenticated Telegram user:', authData.id);
+    console.log('Successfully authenticated Telegram user:', authData.id, 'Session tokens:', sessionTokens ? 'present' : 'not available');
 
     return new Response(
       JSON.stringify({ 
         success: true,
         user: existingUser.user,
         login_url: loginUrl,
+        session: sessionTokens, // Добавляем токены сессии для прямой установки в клиенте
         player: player
       }),
       { 

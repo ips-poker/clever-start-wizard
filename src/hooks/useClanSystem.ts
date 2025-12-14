@@ -49,7 +49,13 @@ export interface ClanInvitation {
   clan?: Clan;
 }
 
-export function useClanSystem() {
+interface UseClanSystemOptions {
+  // Для Telegram Mini App можно передать playerId напрямую
+  telegramPlayerId?: string | null;
+}
+
+export function useClanSystem(options: UseClanSystemOptions = {}) {
+  const { telegramPlayerId } = options;
   const { user } = useAuth();
   const [playerData, setPlayerData] = useState<any>(null);
   const [myClan, setMyClan] = useState<Clan | null>(null);
@@ -60,13 +66,41 @@ export function useClanSystem() {
 
   // Загрузить данные игрока
   const loadPlayerData = useCallback(async () => {
+    // Если передан telegramPlayerId, используем его
+    if (telegramPlayerId) {
+      console.log('📱 Loading player by telegramPlayerId:', telegramPlayerId);
+      const { data, error } = await supabase
+        .from('players')
+        .select('*')
+        .eq('id', telegramPlayerId)
+        .maybeSingle();
+
+      if (error) {
+        console.error('Error loading player by id:', error);
+        return null;
+      }
+
+      if (data) {
+        setPlayerData(data);
+        const { rank } = getEffectiveMafiaRank(
+          { gamesPlayed: data.games_played, wins: data.wins, rating: data.elo_rating },
+          data.manual_rank
+        );
+        const isDonRank = rank.id === 'don' || rank.id === 'patriarch';
+        setIsDon(isDonRank);
+        return data;
+      }
+      return null;
+    }
+
+    // Иначе используем user_id из Supabase auth
     if (!user?.id) return null;
 
     const { data, error } = await supabase
       .from('players')
       .select('*')
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle();
 
     if (error) {
       console.error('Error loading player:', error);
@@ -86,7 +120,7 @@ export function useClanSystem() {
     }
 
     return data;
-  }, [user?.id]);
+  }, [user?.id, telegramPlayerId]);
 
   // Загрузить клан игрока (если он Дон или член клана)
   const loadMyClan = useCallback(async () => {

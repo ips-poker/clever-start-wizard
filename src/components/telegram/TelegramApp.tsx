@@ -105,8 +105,8 @@ export const TelegramApp = () => {
   const [playerBalance, setPlayerBalance] = useState(10000);
   const [isAtPokerTable, setIsAtPokerTable] = useState(false);
   
-  // Clan notifications
-  const { pendingInvitations, acceptInvitation, declineInvitation, refresh: refreshClan } = useClanSystem();
+  // Clan notifications - передаём userStats?.id для работы в Telegram Mini App
+  const { pendingInvitations, acceptInvitation, declineInvitation, refresh: refreshClan, loading: clanLoading } = useClanSystem({ telegramPlayerId: userStats?.id || null });
   const { newInvitations, unreadCount, clearNotifications } = useClanRealtimeNotifications(userStats?.id || null);
   
   // Refs for parallax effects
