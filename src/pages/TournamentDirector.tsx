@@ -217,11 +217,10 @@ const TournamentDirector = () => {
 
   // Timer effect with voice announcements
   useEffect(() => {
-    if (timerActive && currentTime > 0) {
+    if (timerActive) {
       timerRef.current = setInterval(() => {
         setCurrentTime(prev => {
-          const newTime = prev - 1;
-          if (newTime <= 0) {
+          if (prev <= 1) {
             setTimerActive(false);
             // Сохранить завершенное состояние
             if (selectedTournament) {
@@ -239,8 +238,10 @@ const TournamentDirector = () => {
             return 0;
           }
           
-          // Сохранить текущее состояние каждые 10 секунд
-          if (newTime % 10 === 0 && selectedTournament) {
+          const newTime = prev - 1;
+          
+          // Сохранить текущее состояние каждые 30 секунд (реже чтобы не создавать конфликтов)
+          if (newTime % 30 === 0 && selectedTournament) {
             localStorage.setItem(`timer_${selectedTournament.id}`, JSON.stringify({
               currentTime: newTime,
               timerActive: true,
@@ -257,16 +258,6 @@ const TournamentDirector = () => {
         clearInterval(timerRef.current);
         timerRef.current = null;
       }
-      
-      // Сохранить состояние при остановке таймера
-      if (selectedTournament) {
-        localStorage.setItem(`timer_${selectedTournament.id}`, JSON.stringify({
-          currentTime,
-          timerActive: false,
-          lastUpdate: Date.now()
-        }));
-        updateTimerInDatabase(currentTime);
-      }
     }
 
     return () => {
@@ -275,7 +266,7 @@ const TournamentDirector = () => {
         timerRef.current = null;
       }
     };
-  }, [timerActive, currentTime, selectedTournament]);
+  }, [timerActive, selectedTournament?.id]);
 
   // Голосовые объявления на основе времени таймера
   useEffect(() => {
