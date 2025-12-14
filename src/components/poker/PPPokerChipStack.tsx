@@ -84,9 +84,9 @@ export const PPPokerChipStack = memo(function PPPokerChipStack({
         transform: 'translate(-50%, -50%)'
       }}
     >
-      {/* Realistic stacked poker chips - PPPoker style */}
+      {/* Premium 3D stacked poker chips */}
       <PPPokerChipStackVisual
-        size={24}
+        size={28}
         bbValue={bbNumeric}
         stackCount={getStackCount(bbNumeric)}
         animated={animated}
