@@ -290,7 +290,8 @@ const ExternalTimer = () => {
               <img 
                 src={syndikateLogo} 
                 alt="Syndikate Logo" 
-                className="w-24 h-24 object-contain drop-shadow-[0_0_20px_rgba(255,106,0,0.4)]"
+                className="w-24 h-24 object-contain animate-neon-pulse"
+                style={{ filter: 'drop-shadow(0 0 20px rgba(255,106,0,0.6)) drop-shadow(0 0 40px rgba(255,106,0,0.3))' }}
               />
             </div>
             <div className="flex flex-col">
@@ -361,45 +362,73 @@ const ExternalTimer = () => {
               )}
             </div>
             
-            {/* Timer Display */}
-            <div className={`text-[20rem] md:text-[24rem] font-mono font-bold leading-none tracking-tight ${
-              currentTime <= 60 
-                ? 'text-[hsl(0,84%,50%)] animate-pulse'
-                : currentTime <= 300 
-                  ? 'text-[hsl(24,100%,50%)]'
-                  : 'text-[hsl(0,0%,95%)]'
-            }`} style={{
-              textShadow: currentTime <= 60 
-                ? '0 0 60px hsla(0,84%,50%,0.8), 0 0 120px hsla(0,84%,50%,0.4)'
-                : currentTime <= 300
-                  ? '0 0 60px hsla(24,100%,50%,0.6), 0 0 100px hsla(24,100%,50%,0.3)'
-                  : '0 0 40px rgba(255,106,0,0.2)'
-            }}>
+            {/* Timer Display - with intense critical animation */}
+            <div 
+              className={`text-[20rem] md:text-[24rem] font-mono font-bold leading-none tracking-tight transition-all duration-300 ${
+                currentTime <= 30 
+                  ? 'text-[hsl(0,84%,55%)]'
+                  : currentTime <= 60 
+                    ? 'text-[hsl(0,84%,50%)]'
+                    : currentTime <= 300 
+                      ? 'text-[hsl(24,100%,50%)]'
+                      : 'text-[hsl(0,0%,95%)]'
+              }`} 
+              style={{
+                textShadow: currentTime <= 30 
+                  ? '0 0 80px hsla(0,84%,55%,1), 0 0 150px hsla(0,84%,55%,0.6), 0 0 200px hsla(0,84%,55%,0.3)'
+                  : currentTime <= 60 
+                    ? '0 0 60px hsla(0,84%,50%,0.8), 0 0 120px hsla(0,84%,50%,0.4)'
+                    : currentTime <= 300
+                      ? '0 0 60px hsla(24,100%,50%,0.6), 0 0 100px hsla(24,100%,50%,0.3)'
+                      : '0 0 40px rgba(255,106,0,0.2)',
+                animation: currentTime <= 30 ? 'critical-pulse 0.5s ease-in-out infinite' : 
+                           currentTime <= 60 ? 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite' : 'none'
+              }}
+            >
               {formatTime(currentTime)}
             </div>
             
-            {/* Progress Bar */}
+            {/* Progress Bar with shimmer effect */}
             <div className="w-[500px] max-w-full mt-8">
-              <div className="h-5 rounded overflow-hidden border-2 border-[hsl(0,0%,25%)] bg-[hsl(0,0%,12%)]"
+              <div className="h-5 rounded overflow-hidden border-2 border-[hsl(0,0%,25%)] bg-[hsl(0,0%,12%)] relative"
                 style={{ boxShadow: 'inset 0 2px 8px rgba(0,0,0,0.5)' }}>
                 <div
-                  className="h-full transition-all duration-1000 bg-gradient-to-r from-[hsl(24,100%,45%)] via-[hsl(24,100%,55%)] to-[hsl(0,84%,45%)]"
+                  className="h-full transition-all duration-1000 bg-gradient-to-r from-[hsl(24,100%,45%)] via-[hsl(24,100%,55%)] to-[hsl(0,84%,45%)] relative overflow-hidden"
                   style={{ 
                     width: `${timerProgress}%`,
                     boxShadow: '0 0 20px hsla(24,100%,50%,0.6)'
                   }}
-                />
+                >
+                  {/* Animated shimmer */}
+                  <div 
+                    className="absolute inset-0 w-full h-full"
+                    style={{
+                      background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent)',
+                      animation: 'shimmer 2s linear infinite'
+                    }}
+                  />
+                </div>
               </div>
             </div>
           </div>
 
           {/* Current and Next Blinds */}
           <div className="grid grid-cols-2 gap-8 max-w-4xl w-full">
-            {/* Current Blinds */}
-            <div className="text-center p-8 rounded border-2 border-[hsl(24,100%,50%)] bg-[hsl(0,0%,12%)]"
-              style={{ boxShadow: 'inset 0 2px 8px rgba(0,0,0,0.5), 0 0 30px rgba(255,106,0,0.3)' }}>
-              <p className="text-lg font-display tracking-wider mb-4 text-[hsl(24,100%,50%)]">
-                ТЕКУЩИЙ УРОВЕНЬ
+            {/* Current Blinds - with hover glow effect */}
+            <div 
+              className={`text-center p-8 rounded border-2 transition-all duration-300 hover:scale-[1.02] ${
+                isBreakLevel 
+                  ? 'border-[hsl(40,100%,50%)] bg-gradient-to-br from-[hsl(40,80%,15%)] to-[hsl(30,70%,10%)]' 
+                  : 'border-[hsl(24,100%,50%)] bg-[hsl(0,0%,12%)] hover:border-[hsl(24,100%,60%)]'
+              }`}
+              style={{ 
+                boxShadow: isBreakLevel 
+                  ? 'inset 0 2px 8px rgba(0,0,0,0.5), 0 0 40px rgba(255,180,0,0.4)' 
+                  : 'inset 0 2px 8px rgba(0,0,0,0.5), 0 0 30px rgba(255,106,0,0.3)' 
+              }}
+            >
+              <p className={`text-lg font-display tracking-wider mb-4 ${isBreakLevel ? 'text-[hsl(40,100%,60%)]' : 'text-[hsl(24,100%,50%)]'}`}>
+                {isBreakLevel ? '☕ ПЕРЕРЫВ' : 'ТЕКУЩИЙ УРОВЕНЬ'}
               </p>
               <div className={`grid gap-4 ${currentLevel?.ante > 0 ? 'grid-cols-3' : 'grid-cols-2'}`}>
                 <div className="space-y-2">
@@ -434,16 +463,18 @@ const ExternalTimer = () => {
               </div>
             </div>
 
-            {/* Next Blinds */}
-            <div className="text-center p-8 rounded border-2 border-[hsl(0,0%,25%)] bg-[hsl(0,0%,15%)]"
-              style={{ boxShadow: 'inset 0 2px 8px rgba(0,0,0,0.5)' }}>
+            {/* Next Blinds - with hover effect */}
+            <div 
+              className="text-center p-8 rounded border-2 border-[hsl(0,0%,25%)] bg-[hsl(0,0%,15%)] transition-all duration-300 hover:border-[hsl(0,0%,35%)] hover:scale-[1.02]"
+              style={{ boxShadow: 'inset 0 2px 8px rgba(0,0,0,0.5)' }}
+            >
               <p className="text-lg font-display tracking-wider mb-4 text-[hsl(0,0%,50%)]">
                 {isBreakLevel ? 'ПОСЛЕ ПЕРЕРЫВА' : (isNextBreakLevel ? 'ПЕРЕРЫВ' : 'СЛЕДУЮЩИЙ УРОВЕНЬ')}
               </p>
               {isNextBreakLevel ? (
                 <div className="flex items-center justify-center py-8">
-                  <Coffee className="w-16 h-16 mr-4 text-[hsl(24,100%,50%)]" />
-                  <span className="text-4xl font-display tracking-wider text-[hsl(0,0%,65%)]">
+                  <Coffee className="w-16 h-16 mr-4 text-[hsl(40,100%,55%)] animate-pulse" />
+                  <span className="text-4xl font-display tracking-wider text-[hsl(40,100%,60%)]">
                     ПЕРЕРЫВ
                   </span>
                 </div>
@@ -480,9 +511,11 @@ const ExternalTimer = () => {
             </div>
           </div>
 
-          {/* Statistics */}
-          <div className="rounded p-6 max-w-6xl w-full border-2 border-[hsl(0,0%,20%)] bg-[hsl(0,0%,12%)]"
-            style={{ boxShadow: 'inset 0 2px 8px rgba(0,0,0,0.5)' }}>
+          {/* Statistics - Glassmorphism */}
+          <div 
+            className="rounded p-6 max-w-6xl w-full border border-[hsl(0,0%,25%)] bg-[hsl(0,0%,12%)/80] backdrop-blur-md"
+            style={{ boxShadow: '0 8px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.05)' }}
+          >
             <div className="grid grid-cols-4 gap-8 text-center">
               <div>
                 <div className="flex items-center justify-center mb-2">
