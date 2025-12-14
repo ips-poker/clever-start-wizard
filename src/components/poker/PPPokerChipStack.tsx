@@ -175,44 +175,84 @@ export const PPPokerChipStack = memo(function PPPokerChipStack({
         damping: 24,
         delay: 0.03
       }}
-      className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-end gap-1 z-20"
+      className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center gap-1.5 z-20"
     >
-      {/* Chip stack icon */}
-      <div className="relative" style={{ width: 18, height: stackHeight }}>
-        {chips.slice(0, 2).map((chip, chipIdx) => {
-          const baseOffset = chips.slice(0, chipIdx).reduce((sum, c) => sum + c.count, 0);
-          return Array.from({ length: Math.min(chip.count, 3) }).map((_, i) => (
-            <Chip3D 
-              key={`${chipIdx}-${i}`}
-              color={chip.color}
-              border={chip.border}
-              stackIndex={baseOffset + i}
-              isTop={chipIdx === Math.min(chips.length - 1, 1) && i === Math.min(chip.count - 1, 2)}
-            />
-          ));
-        })}
-      </div>
-
-      {/* Amount badge - PPPoker style */}
+      {/* PPPoker-style chip icon - красная фишка с текстурой */}
       <div 
-        className="px-2 py-0.5 rounded-md flex items-center"
-        style={{
-          background: 'linear-gradient(180deg, rgba(0,0,0,0.9) 0%, rgba(15,15,15,0.95) 100%)',
-          border: '1px solid rgba(251,191,36,0.4)',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.5)'
-        }}
+        className="relative flex-shrink-0"
+        style={{ width: 22, height: 22 }}
       >
-        <span 
-          className="font-bold text-[11px] leading-none whitespace-nowrap"
+        {/* Main chip */}
+        <div 
+          className="absolute inset-0 rounded-full"
           style={{
-            background: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent'
+            background: 'linear-gradient(145deg, #ef4444 0%, #dc2626 50%, #b91c1c 100%)',
+            border: '2px solid #991b1b',
+            boxShadow: `
+              inset 0 2px 4px rgba(255,255,255,0.3),
+              inset 0 -2px 4px rgba(0,0,0,0.3),
+              0 3px 8px rgba(0,0,0,0.4)
+            `
           }}
         >
-          {showBBFormat && bbValue ? `${bbValue} BB` : formatAmount(amount)}
-        </span>
+          {/* Edge pattern - white dashes */}
+          <div 
+            className="absolute inset-[2px] rounded-full"
+            style={{
+              background: `repeating-conic-gradient(
+                from 0deg,
+                transparent 0deg 15deg,
+                rgba(255,255,255,0.4) 15deg 30deg
+              )`
+            }}
+          />
+          {/* Center circle */}
+          <div 
+            className="absolute inset-[5px] rounded-full"
+            style={{
+              background: 'linear-gradient(145deg, #ef4444, #dc2626)',
+              border: '1px solid rgba(255,255,255,0.2)'
+            }}
+          />
+        </div>
+        
+        {/* Stacked chips behind (3D effect) */}
+        {chips.length > 0 && chips[0].count > 1 && (
+          <>
+            <div 
+              className="absolute inset-0 rounded-full"
+              style={{
+                background: 'linear-gradient(145deg, #f87171, #ef4444)',
+                border: '2px solid #991b1b',
+                transform: 'translateY(3px)',
+                zIndex: -1
+              }}
+            />
+            {chips[0].count > 2 && (
+              <div 
+                className="absolute inset-0 rounded-full"
+                style={{
+                  background: 'linear-gradient(145deg, #fca5a5, #f87171)',
+                  border: '2px solid #991b1b',
+                  transform: 'translateY(6px)',
+                  zIndex: -2
+                }}
+              />
+            )}
+          </>
+        )}
       </div>
+
+      {/* Amount text - PPPoker golden style */}
+      <span 
+        className="font-bold text-[12px] leading-none whitespace-nowrap"
+        style={{
+          color: '#fbbf24',
+          textShadow: '0 1px 3px rgba(0,0,0,0.8), 0 0 8px rgba(251,191,36,0.3)'
+        }}
+      >
+        {showBBFormat && bbValue ? bbValue : formatAmount(amount)}
+      </span>
     </motion.div>
   );
 });

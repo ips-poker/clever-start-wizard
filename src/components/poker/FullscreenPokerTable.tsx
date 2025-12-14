@@ -17,6 +17,7 @@ import { PPPokerHeroCards } from './PPPokerHeroCards';
 import { PPPokerCommunityCards } from './PPPokerCommunityCards';
 import { PPPokerPotDisplay } from './PPPokerPotDisplay';
 import { PPPokerActionBadge } from './PPPokerActionBadge';
+import { PPPokerLevelBadge } from './PPPokerLevelBadge';
 import { PotCollectionAnimation } from './PotCollectionAnimation';
 import { CardDealAnimation } from './CardDealAnimation';
 import { getHandStrengthName } from '@/utils/handEvaluator';
@@ -312,6 +313,9 @@ const PlayerSeat = memo(function PlayerSeat({
       
       {/* Avatar with status border */}
       <div className="relative">
+        {/* Level badge - PPPoker style (5YR, VIP, etc.) */}
+        <PPPokerLevelBadge level={(player as any).level} isVIP={(player as any).isVIP} />
+        
         <div 
           className={cn(
             "rounded-full overflow-hidden transition-all",
@@ -347,35 +351,42 @@ const PlayerSeat = memo(function PlayerSeat({
           )}
         </div>
         
-        {/* Dealer button */}
+        {/* Dealer button - PPPoker style */}
         {isDealer && (
           <motion.div 
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            className="absolute -right-1 -top-1 w-7 h-7 rounded-full flex items-center justify-center z-20"
+            initial={{ scale: 0, rotate: -180 }}
+            animate={{ scale: 1, rotate: 0 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 20 }}
+            className="absolute -right-2 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full flex items-center justify-center z-25"
             style={{
               background: 'linear-gradient(145deg, #fef3c7 0%, #fbbf24 50%, #f59e0b 100%)',
               border: '2px solid #92400e',
-              boxShadow: '0 2px 8px rgba(251,191,36,0.5)'
+              boxShadow: '0 2px 8px rgba(251,191,36,0.5), inset 0 1px 2px rgba(255,255,255,0.4)'
             }}
           >
-            <span className="font-black text-[11px] text-amber-900">D</span>
+            <span className="font-black text-[10px] text-amber-900">D</span>
           </motion.div>
         )}
         
-        {/* SB/BB indicator */}
+        {/* SB/BB indicator - positioned on right side like dealer */}
         {(isSB || isBB) && !isDealer && (
-          <div 
-            className="absolute -left-1 -top-1 w-6 h-6 rounded-full flex items-center justify-center z-20"
+          <motion.div 
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            className="absolute -right-2 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full flex items-center justify-center z-20"
             style={{
               background: isBB 
-                ? 'linear-gradient(145deg, #3b82f6, #1d4ed8)'
-                : 'linear-gradient(145deg, #64748b, #475569)',
-              border: '1px solid rgba(255,255,255,0.3)'
+                ? 'linear-gradient(145deg, #fbbf24, #f59e0b)'
+                : 'linear-gradient(145deg, #94a3b8, #64748b)',
+              border: isBB ? '1.5px solid #92400e' : '1.5px solid #475569',
+              boxShadow: '0 2px 6px rgba(0,0,0,0.3)'
             }}
           >
-            <span className="font-bold text-[8px] text-white">{isBB ? 'BB' : 'SB'}</span>
-          </div>
+            <span className={cn(
+              "font-black text-[7px]",
+              isBB ? "text-amber-900" : "text-gray-800"
+            )}>{isBB ? 'BB' : 'SB'}</span>
+          </motion.div>
         )}
       </div>
       
