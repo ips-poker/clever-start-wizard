@@ -70,11 +70,9 @@ export const SmoothAvatarTimer = memo(function SmoothAvatarTimer({
     <svg
       width={size}
       height={size}
-      className={cn("absolute pointer-events-none", className)}
+      className={cn("pointer-events-none", className)}
       style={{
-        left: '50%',
-        top: '50%',
-        transform: 'translate(-50%, -50%) rotate(-90deg)',
+        transform: 'rotate(-90deg)',
         filter: `drop-shadow(0 0 8px ${glowColor})`
       }}
     >
