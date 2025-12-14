@@ -33,6 +33,9 @@ import {
   CountdownPulse 
 } from './PPPokerAnimations';
 import { PPPokerEnhancedCard, HandStrengthBadge } from './PPPokerEnhancedCard';
+import { PPPokerPlayerCards } from './PPPokerPlayerCards';
+import { PPPokerInlineWinner } from './PPPokerInlineWinner';
+import { PPPokerBetDisplay } from './PPPokerBetDisplay';
 
 // Syndikate branding
 import syndikateLogo from '@/assets/syndikate-logo-main.png';
@@ -407,76 +410,59 @@ const PlayerSeat = memo(function PlayerSeat({
         </motion.div>
       </div>
 
-      {/* Cards beside avatar - PPPoker style positioning */}
-      {/* Hero cards - shown to the right of avatar with hand strength */}
+      {/* Cards below avatar - PPPoker style: fanned cards under avatar */}
+      {/* Hero cards - shown next to avatar with hand strength */}
       {isHero && heroCards && heroCards.length > 0 && !player.isFolded && (
-        <div className={cn("absolute flex flex-col items-start z-15",
-          "left-full ml-2 top-1/2 -translate-y-1/2"
+        <div className={cn("absolute z-15",
+          "left-full ml-1 top-1/2 -translate-y-1/2"
         )}>
-          <div className="flex">
-            {heroCards.map((card, idx) => (
-              <div key={`hero-card-${idx}`} style={{ marginLeft: idx > 0 ? '-8px' : 0 }}>
-                <PPPokerCard 
-                  card={card} 
-                  faceDown={false} 
-                  size={isMobile ? "sm" : "md"} 
-                  delay={idx} 
-                  isWinning={gamePhase === 'showdown'}
-                />
-              </div>
-            ))}
-          </div>
-          {/* Hand strength indicator - shown when community cards are on board */}
-          {handStrength && communityCards.length >= 3 && (
-            <div className="mt-1">
-              <HandStrengthBadge handName={handStrength} isMobile={isMobile} />
-            </div>
-          )}
+          <PPPokerPlayerCards
+            cards={heroCards}
+            faceDown={false}
+            position="left"
+            size={isMobile ? "sm" : "md"}
+            isWinning={gamePhase === 'showdown'}
+            handName={handStrength}
+            showHandName={gamePhase !== 'waiting' && communityCards.length >= 3}
+            isMobile={isMobile}
+          />
         </div>
       )}
       
-      {/* Opponent cards - show card backs during active game */}
+      {/* Opponent cards - shown UNDER avatar at angle like PPPoker */}
       {!isHero && !player.isFolded && gamePhase !== 'waiting' && (
-        <div className={cn("absolute flex z-5",
-          cardsPosition === 'right' && "left-full ml-1 top-1/2 -translate-y-1/2",
-          cardsPosition === 'left' && "right-full mr-1 top-1/2 -translate-y-1/2",
-          cardsPosition === 'below' && "top-full mt-8 left-1/2 -translate-x-1/2"
+        <div className={cn("absolute z-5",
+          // Position based on seat location - cards go toward table center
+          seatIndex === 0 && "left-full ml-1 top-1/2 -translate-y-1/2",
+          seatIndex === 1 && "top-full mt-1 left-1/2 -translate-x-1/2",
+          seatIndex === 2 && "top-full mt-1 left-1/2 -translate-x-1/2",
+          seatIndex === 3 && "top-full mt-1 left-1/2 -translate-x-1/2",
+          seatIndex === 4 && "top-full mt-1 left-1/2 -translate-x-1/2",
+          seatIndex === 5 && "top-full mt-1 left-1/2 -translate-x-1/2"
         )}>
-          {/* Always show 2 cards for active opponents - faceDown unless showdown */}
-          {[0, 1].map((idx) => (
-            <div key={`opp-card-${idx}`} style={{ marginLeft: idx > 0 ? '-10px' : 0 }}>
-              <PPPokerCard 
-                card={showCards && player.holeCards?.[idx] ? player.holeCards[idx] : 'XX'} 
-                faceDown={!showCards} 
-                size="xs"
-                delay={idx} 
-                isWinning={showCards}
-              />
-            </div>
-          ))}
+          <PPPokerPlayerCards
+            cards={showCards && player.holeCards ? player.holeCards : ['XX', 'XX']}
+            faceDown={!showCards}
+            position="bottom"
+            size="xs"
+            isWinning={showCards}
+            handName={showCards ? player.handName : undefined}
+            showHandName={showCards}
+            isMobile={isMobile}
+          />
         </div>
       )}
 
-      {/* Bet chip + amount - Enhanced 3D Chips */}
+      {/* Bet display - PPPoker style with BB format */}
       {player.betAmount > 0 && (
-        <motion.div
-          className="absolute z-15"
-          style={{ 
-            left: `calc(50% + ${betOffset.x}px)`, 
-            top: `calc(50% + ${betOffset.y}px)`,
-            transform: 'translate(-50%, -50%)'
-          }}
-          initial={{ scale: 0, opacity: 0, y: 10 }}
-          animate={{ scale: 1, opacity: 1, y: 0 }}
-          transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-        >
-          <PPPokerEnhancedChips 
-            amount={player.betAmount} 
-            size={isMobile ? 'xs' : 'sm'} 
-            showLabel={true}
-            animated={true}
-          />
-        </motion.div>
+        <PPPokerBetDisplay
+          amount={player.betAmount}
+          bigBlind={20}
+          position={position}
+          seatIndex={seatIndex}
+          isMobile={isMobile}
+          animated={true}
+        />
       )}
     </motion.div>
   );
@@ -1812,18 +1798,22 @@ export function SyndikatetPokerTable({
             );
           })}
 
-          {/* Winner overlay */}
+          {/* Inline Winner Display - PPPoker style (no modal) */}
           <AnimatePresence>
             {showdownResult && showdownResult.winners.length > 0 && (
-              <WinnerOverlay 
+              <PPPokerInlineWinner 
                 winners={showdownResult.winners.map(w => ({ 
+                  playerId: w.playerId,
                   name: w.name, 
                   amount: w.amount, 
-                  handRank: w.handName || w.handRank,
-                  cards: w.bestCards || w.cards
-                }))} 
-                showdownPlayers={showdownResult.showdownPlayers}
-                onClose={() => {}}
+                  handName: w.handName || w.handRank,
+                  bestCards: w.bestCards || w.cards,
+                  seatNumber: w.seatNumber
+                }))}
+                autoHide={true}
+                autoHideDuration={4000}
+                onComplete={() => {}}
+                isMobile={isMobile}
               />
             )}
           </AnimatePresence>
