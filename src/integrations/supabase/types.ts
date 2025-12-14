@@ -1881,6 +1881,7 @@ export type Database = {
           additional_fee: number | null
           additional_level: number | null
           break_start_level: number | null
+          buy_in: number | null
           created_at: string | null
           current_big_blind: number | null
           current_level: number | null
@@ -1916,6 +1917,7 @@ export type Database = {
           additional_fee?: number | null
           additional_level?: number | null
           break_start_level?: number | null
+          buy_in?: number | null
           created_at?: string | null
           current_big_blind?: number | null
           current_level?: number | null
@@ -1951,6 +1953,7 @@ export type Database = {
           additional_fee?: number | null
           additional_level?: number | null
           break_start_level?: number | null
+          buy_in?: number | null
           created_at?: string | null
           current_big_blind?: number | null
           current_level?: number | null
