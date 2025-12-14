@@ -595,26 +595,32 @@ const SyndikateTableFelt = memo(function SyndikateTableFelt({
 // ============= COMMUNITY CARDS with personalization =============
 const CommunityCards = memo(function CommunityCards({ 
   cards, 
-  phase 
+  phase,
+  winningCardIndices = []
 }: { 
   cards: string[]; 
   phase: string;
+  winningCardIndices?: number[];
 }) {
   const { currentCardBack, preferences } = usePokerPreferences();
   const visibleCount = phase === 'flop' ? 3 : phase === 'turn' ? 4 : (phase === 'river' || phase === 'showdown') ? 5 : 0;
+  const isShowdown = phase === 'showdown';
+  const hasWinningInfo = winningCardIndices.length > 0;
 
   return (
     <div className="flex items-center justify-center gap-1">
       {[0, 1, 2, 3, 4].map((idx) => {
         const isVisible = idx < visibleCount;
         const card = cards[idx];
+        const isWinning = winningCardIndices.includes(idx);
+        const isDimmed = isShowdown && hasWinningInfo && !isWinning;
         
         return (
           <AnimatePresence key={idx}>
             {isVisible && card ? (
               <motion.div
                 initial={{ y: -80, opacity: 0, rotateX: 90 }}
-                animate={{ y: 0, opacity: 1, rotateX: 0 }}
+                animate={{ y: 0, opacity: isDimmed ? 0.6 : 1, rotateX: 0 }}
                 exit={{ y: 20, opacity: 0 }}
                 transition={{ 
                   delay: idx * (preferences.fastAnimations ? 0.08 : 0.15), 
@@ -627,7 +633,7 @@ const CommunityCards = memo(function CommunityCards({
                   card={card} 
                   size="md" 
                   delay={0} 
-                  isWinning={phase === 'showdown'}
+                  isWinning={isShowdown && isWinning}
                   cardBackColors={{ primary: currentCardBack.primaryColor, secondary: currentCardBack.secondaryColor }}
                   cardStyle={preferences.cardStyle}
                 />
@@ -973,24 +979,35 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
       />
       
       {/* Center area - pot and community cards - vertically centered in table */}
-      <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center gap-3 z-10">
-        <PotDisplay pot={pot} blinds={`${smallBlind}/${bigBlind}`} />
-        <CommunityCards cards={communityCards} phase={phase} />
+      {(() => {
+        const winnerPlayer = players.find(p => (p as any).isWinner);
+        const winningCommIndices = (winnerPlayer as any)?.communityCardIndices || [];
         
-        {/* Tournament info bar - shown when tournament mode */}
-        {(currentLevel || totalPlayers) && (
-          <TournamentInfoBar
-            currentLevel={currentLevel}
-            smallBlind={smallBlind}
-            bigBlind={bigBlind}
-            ante={ante}
-            timeToNextLevel={levelTimeRemaining}
-            remainingPlayers={remainingPlayers}
-            totalPlayers={totalPlayers}
-            tournamentName={tournamentName}
-          />
-        )}
-      </div>
+        return (
+          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center gap-3 z-10">
+            <PotDisplay pot={pot} blinds={`${smallBlind}/${bigBlind}`} />
+            <CommunityCards 
+              cards={communityCards} 
+              phase={phase} 
+              winningCardIndices={winningCommIndices}
+            />
+            
+            {/* Tournament info bar - shown when tournament mode */}
+            {(currentLevel || totalPlayers) && (
+              <TournamentInfoBar
+                currentLevel={currentLevel}
+                smallBlind={smallBlind}
+                bigBlind={bigBlind}
+                ante={ante}
+                timeToNextLevel={levelTimeRemaining}
+                remainingPlayers={remainingPlayers}
+                totalPlayers={totalPlayers}
+                tournamentName={tournamentName}
+              />
+            )}
+          </div>
+        );
+      })()}
       
       {/* Player seats */}
       {positions.map((pos, idx) => {

@@ -9,6 +9,7 @@ interface PPPokerCommunityCardsProps {
   cards: string[];
   phase: string;
   winningCards?: string[];
+  winningCardIndices?: number[];  // Indices of community cards that are part of winning hand
 }
 
 // 4-color deck suits
@@ -163,7 +164,8 @@ const CommunityCard = memo(function CommunityCard({
 export const PPPokerCommunityCards = memo(function PPPokerCommunityCards({ 
   cards, 
   phase,
-  winningCards = []
+  winningCards = [],
+  winningCardIndices = []
 }: PPPokerCommunityCardsProps) {
   const { preferences } = usePokerPreferences();
   const useFourColor = preferences.cardStyle === 'fourcolor' || true; // Default to 4-color
@@ -173,14 +175,25 @@ export const PPPokerCommunityCards = memo(function PPPokerCommunityCards({
   // Determine which cards are part of winning hand
   const isShowdown = phase === 'showdown';
   
+  // Check if a card is winning - by index OR by card string
+  const isCardWinning = (idx: number, card: string): boolean => {
+    if (winningCardIndices.length > 0) {
+      return winningCardIndices.includes(idx);
+    }
+    return winningCards.includes(card);
+  };
+  
+  // Determine if we have any winning info to show dimming
+  const hasWinningInfo = winningCardIndices.length > 0 || winningCards.length > 0;
+  
   return (
     <div className="flex items-center justify-center gap-1.5">
       {[0, 1, 2, 3, 4].map((idx) => {
         const isVisible = idx < visibleCount;
         const card = cards[idx];
-        const isWinning = winningCards.includes(card);
+        const isWinning = isCardWinning(idx, card);
         // At showdown, cards not in winning hand are dimmed
-        const isDimmed = isShowdown && winningCards.length > 0 && !isWinning;
+        const isDimmed = isShowdown && hasWinningInfo && !isWinning;
         
         return (
           <AnimatePresence key={idx} mode="wait">
