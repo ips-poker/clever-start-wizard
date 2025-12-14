@@ -1,0 +1,189 @@
+// PPPoker-style Community Cards - Large cards with 4-color deck support
+// Premium styling matching reference screenshots
+
+import React, { memo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { usePokerPreferences } from '@/hooks/usePokerPreferences';
+
+interface PPPokerCommunityCardsProps {
+  cards: string[];
+  phase: string;
+  winningCards?: string[];
+}
+
+// 4-color deck suits
+const SUITS_FOURCOLOR = {
+  h: { symbol: '♥', color: '#ef4444', bg: '#fef2f2' },   // Red hearts
+  d: { symbol: '♦', color: '#3b82f6', bg: '#eff6ff' },   // Blue diamonds  
+  c: { symbol: '♣', color: '#22c55e', bg: '#f0fdf4' },   // Green clubs
+  s: { symbol: '♠', color: '#1e293b', bg: '#f8fafc' }    // Black spades
+};
+
+// Classic 2-color suits
+const SUITS_CLASSIC = {
+  h: { symbol: '♥', color: '#ef4444', bg: '#fef2f2' },
+  d: { symbol: '♦', color: '#ef4444', bg: '#fef2f2' },
+  c: { symbol: '♣', color: '#1e293b', bg: '#f8fafc' },
+  s: { symbol: '♠', color: '#1e293b', bg: '#f8fafc' }
+};
+
+// Large community card component
+const CommunityCard = memo(function CommunityCard({
+  card,
+  delay = 0,
+  isWinning = false,
+  useFourColor = true
+}: {
+  card: string;
+  delay?: number;
+  isWinning?: boolean;
+  useFourColor?: boolean;
+}) {
+  const rank = card?.[0] === 'T' ? '10' : card?.[0] || '?';
+  const suitChar = (card?.[1]?.toLowerCase() || 's') as keyof typeof SUITS_FOURCOLOR;
+  const suitInfo = useFourColor ? SUITS_FOURCOLOR[suitChar] : SUITS_CLASSIC[suitChar];
+
+  return (
+    <motion.div
+      initial={{ y: -60, opacity: 0, rotateX: 90 }}
+      animate={{ y: 0, opacity: 1, rotateX: 0 }}
+      exit={{ y: 20, opacity: 0 }}
+      transition={{ 
+        delay: delay * 0.12, 
+        type: 'spring', 
+        stiffness: 250, 
+        damping: 20 
+      }}
+      className="relative rounded-lg overflow-hidden"
+      style={{
+        width: 52,
+        height: 72,
+        background: `linear-gradient(145deg, ${suitInfo.bg} 0%, #ffffff 50%, ${suitInfo.bg} 100%)`,
+        border: isWinning ? '3px solid #fbbf24' : '2px solid #d1d5db',
+        boxShadow: isWinning 
+          ? '0 0 20px rgba(251,191,36,0.5), 0 6px 16px rgba(0,0,0,0.3)'
+          : '0 4px 12px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.8)'
+      }}
+    >
+      {/* Top-left corner */}
+      <div className="absolute top-1 left-1.5 flex flex-col items-center leading-none">
+        <span 
+          className="text-lg font-black" 
+          style={{ 
+            color: suitInfo.color,
+            textShadow: '0 1px 2px rgba(0,0,0,0.1)'
+          }}
+        >
+          {rank}
+        </span>
+        <span 
+          className="text-base -mt-0.5" 
+          style={{ color: suitInfo.color }}
+        >
+          {suitInfo.symbol}
+        </span>
+      </div>
+      
+      {/* Center large suit */}
+      <div className="absolute inset-0 flex items-center justify-center">
+        <span 
+          className="text-4xl"
+          style={{ 
+            color: suitInfo.color, 
+            opacity: 0.9,
+            filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.15))'
+          }}
+        >
+          {suitInfo.symbol}
+        </span>
+      </div>
+      
+      {/* Bottom-right corner (rotated) */}
+      <div className="absolute bottom-1 right-1.5 flex flex-col items-center leading-none rotate-180">
+        <span 
+          className="text-lg font-black" 
+          style={{ 
+            color: suitInfo.color,
+            textShadow: '0 1px 2px rgba(0,0,0,0.1)'
+          }}
+        >
+          {rank}
+        </span>
+        <span 
+          className="text-base -mt-0.5" 
+          style={{ color: suitInfo.color }}
+        >
+          {suitInfo.symbol}
+        </span>
+      </div>
+      
+      {/* Glossy effect */}
+      <div 
+        className="absolute inset-0 pointer-events-none rounded-lg"
+        style={{ 
+          background: 'linear-gradient(135deg, rgba(255,255,255,0.6) 0%, transparent 40%, rgba(0,0,0,0.03) 100%)' 
+        }}
+      />
+      
+      {/* Winning glow */}
+      {isWinning && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: [0.3, 0.6, 0.3] }}
+          transition={{ duration: 1.5, repeat: Infinity }}
+          className="absolute inset-0 rounded-lg"
+          style={{
+            background: 'radial-gradient(circle, rgba(251,191,36,0.3) 0%, transparent 70%)'
+          }}
+        />
+      )}
+    </motion.div>
+  );
+});
+
+export const PPPokerCommunityCards = memo(function PPPokerCommunityCards({ 
+  cards, 
+  phase,
+  winningCards = []
+}: PPPokerCommunityCardsProps) {
+  const { preferences } = usePokerPreferences();
+  const useFourColor = preferences.cardStyle === 'fourcolor' || true; // Default to 4-color
+  
+  const visibleCount = phase === 'flop' ? 3 : phase === 'turn' ? 4 : (phase === 'river' || phase === 'showdown') ? 5 : 0;
+
+  return (
+    <div className="flex items-center justify-center gap-1.5">
+      {[0, 1, 2, 3, 4].map((idx) => {
+        const isVisible = idx < visibleCount;
+        const card = cards[idx];
+        const isWinning = winningCards.includes(card);
+        
+        return (
+          <AnimatePresence key={idx} mode="wait">
+            {isVisible && card ? (
+              <CommunityCard
+                card={card}
+                delay={idx}
+                isWinning={phase === 'showdown' && isWinning}
+                useFourColor={useFourColor}
+              />
+            ) : (
+              <div 
+                key={`empty-${idx}`}
+                className="rounded-lg border-2 border-dashed"
+                style={{ 
+                  width: 52, 
+                  height: 72,
+                  borderColor: 'rgba(255,255,255,0.08)',
+                  background: 'rgba(0,0,0,0.1)'
+                }}
+              />
+            )}
+          </AnimatePresence>
+        );
+      })}
+    </div>
+  );
+});
+
+export default PPPokerCommunityCards;

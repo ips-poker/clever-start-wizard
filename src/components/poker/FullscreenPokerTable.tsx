@@ -14,6 +14,9 @@ import { SmoothAvatarTimer } from './SmoothAvatarTimer';
 import { PPPokerChipStack } from './PPPokerChipStack';
 import { PPPokerCompactCards } from './PPPokerCompactCards';
 import { PPPokerHeroCards } from './PPPokerHeroCards';
+import { PPPokerCommunityCards } from './PPPokerCommunityCards';
+import { PPPokerPotDisplay } from './PPPokerPotDisplay';
+import { PPPokerActionBadge } from './PPPokerActionBadge';
 import { PotCollectionAnimation } from './PotCollectionAnimation';
 import { CardDealAnimation } from './CardDealAnimation';
 import { getHandStrengthName } from '@/utils/handEvaluator';
@@ -428,10 +431,10 @@ const PlayerSeat = memo(function PlayerSeat({
         />
       )}
       
-      {/* Action badge - PPPoker style status above player */}
+      {/* Action badge - PPPoker style */}
       <AnimatePresence>
         {lastAction && !player.isFolded && (
-          <ActionBadge action={lastAction} amount={player.betAmount} />
+          <PPPokerActionBadge action={lastAction} amount={player.betAmount} />
         )}
       </AnimatePresence>
     </motion.div>
