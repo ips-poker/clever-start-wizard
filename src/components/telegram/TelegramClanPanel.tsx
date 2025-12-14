@@ -66,7 +66,7 @@ export function TelegramClanPanel({ canCreateClan, playerId }: TelegramClanPanel
     removeMember,
     updateMemberRole,
     setMyClan
-  } = useClanSystem();
+  } = useClanSystem({ telegramPlayerId: playerId });
 
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [createStep, setCreateStep] = useState(1);
