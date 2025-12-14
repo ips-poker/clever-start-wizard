@@ -56,7 +56,7 @@ export function Header() {
             </div>
             <div>
               <span className="font-display text-2xl uppercase tracking-wider text-foreground">
-                SYNDIKATE
+                SYNDICATE
               </span>
               <div className="h-[1px] w-0 group-hover:w-full bg-syndikate-orange transition-all duration-300" />
             </div>
