@@ -358,10 +358,10 @@ const PlayerSeat = memo(function PlayerSeat({
     >
       {/* Avatar with status border and opponent cards */}
       <div className="relative">
-        {/* Timer ring - fits tight around avatar like the old active border */}
+        {/* Timer ring - UNDER cards and game elements, around avatar */}
         {isCurrentTurn && turnTimeRemaining !== undefined && !player.isFolded && (
           <div 
-            className="absolute z-30 pointer-events-none"
+            className="absolute z-0 pointer-events-none"
             style={{
               left: '50%',
               top: '50%',
