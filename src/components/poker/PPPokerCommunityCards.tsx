@@ -27,21 +27,35 @@ const SUITS_CLASSIC = {
   s: { symbol: '♠', color: '#1e293b', bg: '#f8fafc' }
 };
 
-// Large community card component
+// Large community card component with showdown highlighting
 const CommunityCard = memo(function CommunityCard({
   card,
   delay = 0,
   isWinning = false,
+  isDimmed = false,
   useFourColor = true
 }: {
   card: string;
   delay?: number;
   isWinning?: boolean;
+  isDimmed?: boolean;
   useFourColor?: boolean;
 }) {
   const rank = card?.[0] === 'T' ? '10' : card?.[0] || '?';
   const suitChar = (card?.[1]?.toLowerCase() || 's') as keyof typeof SUITS_FOURCOLOR;
   const suitInfo = useFourColor ? SUITS_FOURCOLOR[suitChar] : SUITS_CLASSIC[suitChar];
+
+  // Dimmed cards have gray background, bright cards have white/colored background
+  const bgStyle = isDimmed 
+    ? 'linear-gradient(145deg, #4b5563 0%, #374151 50%, #4b5563 100%)'
+    : `linear-gradient(145deg, ${suitInfo.bg} 0%, #ffffff 50%, ${suitInfo.bg} 100%)`;
+  
+  const suitColor = isDimmed ? '#9ca3af' : suitInfo.color;
+  const borderStyle = isWinning 
+    ? '3px solid #fbbf24' 
+    : isDimmed 
+      ? '2px solid #6b7280' 
+      : '2px solid #d1d5db';
 
   return (
     <motion.div
@@ -58,11 +72,14 @@ const CommunityCard = memo(function CommunityCard({
       style={{
         width: 52,
         height: 72,
-        background: `linear-gradient(145deg, ${suitInfo.bg} 0%, #ffffff 50%, ${suitInfo.bg} 100%)`,
-        border: isWinning ? '3px solid #fbbf24' : '2px solid #d1d5db',
+        background: bgStyle,
+        border: borderStyle,
         boxShadow: isWinning 
           ? '0 0 20px rgba(251,191,36,0.5), 0 6px 16px rgba(0,0,0,0.3)'
-          : '0 4px 12px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.8)'
+          : isDimmed
+            ? '0 2px 8px rgba(0,0,0,0.3)'
+            : '0 4px 12px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.8)',
+        opacity: isDimmed ? 0.85 : 1
       }}
     >
       {/* Top-left corner */}
@@ -70,15 +87,15 @@ const CommunityCard = memo(function CommunityCard({
         <span 
           className="text-lg font-black" 
           style={{ 
-            color: suitInfo.color,
-            textShadow: '0 1px 2px rgba(0,0,0,0.1)'
+            color: suitColor,
+            textShadow: isDimmed ? 'none' : '0 1px 2px rgba(0,0,0,0.1)'
           }}
         >
           {rank}
         </span>
         <span 
           className="text-base -mt-0.5" 
-          style={{ color: suitInfo.color }}
+          style={{ color: suitColor }}
         >
           {suitInfo.symbol}
         </span>
@@ -89,9 +106,9 @@ const CommunityCard = memo(function CommunityCard({
         <span 
           className="text-4xl"
           style={{ 
-            color: suitInfo.color, 
-            opacity: 0.9,
-            filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.15))'
+            color: suitColor, 
+            opacity: isDimmed ? 0.6 : 0.9,
+            filter: isDimmed ? 'none' : 'drop-shadow(0 2px 4px rgba(0,0,0,0.15))'
           }}
         >
           {suitInfo.symbol}
@@ -103,27 +120,29 @@ const CommunityCard = memo(function CommunityCard({
         <span 
           className="text-lg font-black" 
           style={{ 
-            color: suitInfo.color,
-            textShadow: '0 1px 2px rgba(0,0,0,0.1)'
+            color: suitColor,
+            textShadow: isDimmed ? 'none' : '0 1px 2px rgba(0,0,0,0.1)'
           }}
         >
           {rank}
         </span>
         <span 
           className="text-base -mt-0.5" 
-          style={{ color: suitInfo.color }}
+          style={{ color: suitColor }}
         >
           {suitInfo.symbol}
         </span>
       </div>
       
-      {/* Glossy effect */}
-      <div 
-        className="absolute inset-0 pointer-events-none rounded-lg"
-        style={{ 
-          background: 'linear-gradient(135deg, rgba(255,255,255,0.6) 0%, transparent 40%, rgba(0,0,0,0.03) 100%)' 
-        }}
-      />
+      {/* Glossy effect - only on bright cards */}
+      {!isDimmed && (
+        <div 
+          className="absolute inset-0 pointer-events-none rounded-lg"
+          style={{ 
+            background: 'linear-gradient(135deg, rgba(255,255,255,0.6) 0%, transparent 40%, rgba(0,0,0,0.03) 100%)' 
+          }}
+        />
+      )}
       
       {/* Winning glow */}
       {isWinning && (
@@ -151,12 +170,17 @@ export const PPPokerCommunityCards = memo(function PPPokerCommunityCards({
   
   const visibleCount = phase === 'flop' ? 3 : phase === 'turn' ? 4 : (phase === 'river' || phase === 'showdown') ? 5 : 0;
 
+  // Determine which cards are part of winning hand
+  const isShowdown = phase === 'showdown';
+  
   return (
     <div className="flex items-center justify-center gap-1.5">
       {[0, 1, 2, 3, 4].map((idx) => {
         const isVisible = idx < visibleCount;
         const card = cards[idx];
         const isWinning = winningCards.includes(card);
+        // At showdown, cards not in winning hand are dimmed
+        const isDimmed = isShowdown && winningCards.length > 0 && !isWinning;
         
         return (
           <AnimatePresence key={idx} mode="wait">
@@ -164,7 +188,8 @@ export const PPPokerCommunityCards = memo(function PPPokerCommunityCards({
               <CommunityCard
                 card={card}
                 delay={idx}
-                isWinning={phase === 'showdown' && isWinning}
+                isWinning={isShowdown && isWinning}
+                isDimmed={isDimmed}
                 useFourColor={useFourColor}
               />
             ) : (

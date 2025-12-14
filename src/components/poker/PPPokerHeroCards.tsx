@@ -12,6 +12,7 @@ interface PPPokerHeroCardsProps {
   communityCards?: string[];
   gamePhase: string;
   isWinner?: boolean;
+  winningCardIndices?: number[]; // Indices of hole cards that participate in winning hand
 }
 
 // 4-color suit configuration (PPPoker default)
@@ -29,17 +30,19 @@ const SUITS_CLASSIC = {
   s: { symbol: '♠', color: '#1e293b', bg: '#f8fafc' }
 };
 
-// Premium large card component for hero
+// Premium large card component for hero with dimming support
 const HeroCard = memo(function HeroCard({
   card,
   delay = 0,
   isWinning = false,
+  isDimmed = false,
   useFourColor = true,
   cardCount = 2
 }: {
   card: string;
   delay?: number;
   isWinning?: boolean;
+  isDimmed?: boolean;
   useFourColor?: boolean;
   cardCount?: number;
 }) {
@@ -54,20 +57,33 @@ const HeroCard = memo(function HeroCard({
   const suitSize = cardCount > 2 ? 'text-sm' : 'text-base';
   const centerSize = cardCount > 2 ? 'text-2xl' : 'text-3xl';
 
+  // Colors for dimmed vs bright cards
+  const cardBg = isDimmed 
+    ? 'linear-gradient(145deg, #4b5563 0%, #374151 50%, #4b5563 100%)'
+    : `linear-gradient(145deg, ${suitInfo.bg} 0%, #ffffff 50%, ${suitInfo.bg} 100%)`;
+  const suitColor = isDimmed ? '#9ca3af' : suitInfo.color;
+  const borderStyle = isWinning 
+    ? '3px solid #fbbf24' 
+    : isDimmed 
+      ? '2px solid #6b7280' 
+      : '2px solid #d1d5db';
+
   return (
     <motion.div
       initial={{ rotateY: 180, scale: 0.3, opacity: 0 }}
-      animate={{ rotateY: 0, scale: 1, opacity: 1 }}
+      animate={{ rotateY: 0, scale: 1, opacity: isDimmed ? 0.9 : 1 }}
       transition={{ delay: delay * 0.08, type: 'spring', stiffness: 250, damping: 22 }}
       className="rounded-lg shadow-xl relative flex flex-col"
       style={{
         width: cardWidth,
         height: cardHeight,
-        background: `linear-gradient(145deg, ${suitInfo.bg} 0%, #ffffff 50%, ${suitInfo.bg} 100%)`,
-        border: isWinning ? '3px solid #fbbf24' : '2px solid #d1d5db',
+        background: cardBg,
+        border: borderStyle,
         boxShadow: isWinning 
           ? '0 0 25px rgba(251,191,36,0.5), 0 6px 20px rgba(0,0,0,0.3)'
-          : '0 6px 20px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.8)'
+          : isDimmed
+            ? '0 3px 10px rgba(0,0,0,0.3)'
+            : '0 6px 20px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.8)'
       }}
     >
       {/* Top-left corner */}
@@ -75,15 +91,15 @@ const HeroCard = memo(function HeroCard({
         <span 
           className={cn(rankSize, 'font-black')} 
           style={{ 
-            color: suitInfo.color,
-            textShadow: '0 1px 2px rgba(0,0,0,0.1)'
+            color: suitColor,
+            textShadow: isDimmed ? 'none' : '0 1px 2px rgba(0,0,0,0.1)'
           }}
         >
           {rank}
         </span>
         <span 
           className={cn(suitSize, '-mt-0.5')} 
-          style={{ color: suitInfo.color }}
+          style={{ color: suitColor }}
         >
           {suitInfo.symbol}
         </span>
@@ -94,9 +110,9 @@ const HeroCard = memo(function HeroCard({
         <span 
           className={centerSize}
           style={{ 
-            color: suitInfo.color, 
-            opacity: 0.9,
-            filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.15))'
+            color: suitColor, 
+            opacity: isDimmed ? 0.5 : 0.9,
+            filter: isDimmed ? 'none' : 'drop-shadow(0 2px 4px rgba(0,0,0,0.15))'
           }}
         >
           {suitInfo.symbol}
@@ -108,27 +124,29 @@ const HeroCard = memo(function HeroCard({
         <span 
           className={cn(rankSize, 'font-black')} 
           style={{ 
-            color: suitInfo.color,
-            textShadow: '0 1px 2px rgba(0,0,0,0.1)'
+            color: suitColor,
+            textShadow: isDimmed ? 'none' : '0 1px 2px rgba(0,0,0,0.1)'
           }}
         >
           {rank}
         </span>
         <span 
           className={cn(suitSize, '-mt-0.5')} 
-          style={{ color: suitInfo.color }}
+          style={{ color: suitColor }}
         >
           {suitInfo.symbol}
         </span>
       </div>
       
-      {/* Glossy effect */}
-      <div 
-        className="absolute inset-0 pointer-events-none rounded-lg"
-        style={{ 
-          background: 'linear-gradient(135deg, rgba(255,255,255,0.5) 0%, transparent 40%, rgba(0,0,0,0.02) 100%)' 
-        }}
-      />
+      {/* Glossy effect - only on bright cards */}
+      {!isDimmed && (
+        <div 
+          className="absolute inset-0 pointer-events-none rounded-lg"
+          style={{ 
+            background: 'linear-gradient(135deg, rgba(255,255,255,0.5) 0%, transparent 40%, rgba(0,0,0,0.02) 100%)' 
+          }}
+        />
+      )}
       
       {/* Winning pulse */}
       {isWinning && (
@@ -150,7 +168,8 @@ export const PPPokerHeroCards = memo(function PPPokerHeroCards({
   cards,
   communityCards = [],
   gamePhase,
-  isWinner = false
+  isWinner = false,
+  winningCardIndices = []
 }: PPPokerHeroCardsProps) {
   const { preferences } = usePokerPreferences();
   const useFourColor = preferences.cardStyle === 'fourcolor' || true; // Default 4-color
@@ -167,46 +186,53 @@ export const PPPokerHeroCards = memo(function PPPokerHeroCards({
 
   const cardCount = cards.length;
   const cardOverlap = cardCount > 2 ? -8 : -10;
+  const isShowdown = gamePhase === 'showdown';
 
   return (
     <div className="absolute left-full ml-1.5 top-1/2 -translate-y-1/2 flex flex-col items-start gap-0.5 z-10">
       {/* Cards row with overlap */}
       <div className="flex">
-        {cards.map((card, idx) => (
-          <div 
-            key={idx} 
-            style={{ 
-              marginLeft: idx > 0 ? cardOverlap : 0,
-              zIndex: idx
-            }}
-          >
-            <HeroCard 
-              card={card} 
-              delay={idx} 
-              isWinning={gamePhase === 'showdown' && isWinner}
-              useFourColor={useFourColor}
-              cardCount={cardCount}
-            />
-          </div>
-        ))}
+        {cards.map((card, idx) => {
+          // Determine if this card is part of winning hand
+          const isCardWinning = winningCardIndices.includes(idx);
+          // At showdown with winning cards specified, dim non-winning cards
+          const isDimmed = isShowdown && winningCardIndices.length > 0 && !isCardWinning;
+          
+          return (
+            <div 
+              key={idx} 
+              style={{ 
+                marginLeft: idx > 0 ? cardOverlap : 0,
+                zIndex: idx
+              }}
+            >
+              <HeroCard 
+                card={card} 
+                delay={idx} 
+                isWinning={isShowdown && isCardWinning && isWinner}
+                isDimmed={isDimmed}
+                useFourColor={useFourColor}
+                cardCount={cardCount}
+              />
+            </div>
+          );
+        })}
       </div>
       
-      {/* Hand strength badge - PPPoker style */}
+      {/* Hand strength badge - PPPoker style (green text) */}
       {handName && (
         <motion.div
           initial={{ opacity: 0, y: 3 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.25 }}
-          className={cn(
-            "mt-0.5 px-2 py-0.5 rounded text-[10px] font-bold whitespace-nowrap",
-            isWinner 
-              ? "bg-gradient-to-r from-amber-500 to-yellow-400 text-black shadow-lg" 
-              : "bg-black/90 text-white border border-white/20"
-          )}
+          className="mt-0.5 px-2 py-0.5 rounded text-[10px] font-bold whitespace-nowrap"
           style={{
-            boxShadow: isWinner 
-              ? '0 0 12px rgba(251,191,36,0.5)' 
-              : '0 2px 8px rgba(0,0,0,0.4)'
+            background: isWinner 
+              ? 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)'
+              : 'transparent',
+            color: isWinner ? '#ffffff' : '#22c55e',
+            boxShadow: isWinner ? '0 0 12px rgba(34,197,94,0.4)' : 'none',
+            textShadow: '0 1px 3px rgba(0,0,0,0.5)'
           }}
         >
           {handName}
