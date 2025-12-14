@@ -11,7 +11,9 @@ import { resolveAvatarUrl } from '@/utils/avatarResolver';
 import { usePokerPreferences, TABLE_THEMES, CARD_BACKS } from '@/hooks/usePokerPreferences';
 import syndikateLogo from '@/assets/syndikate-logo-main.png';
 import { SmoothAvatarTimer } from './SmoothAvatarTimer';
-import { EnhancedPlayerBet } from './EnhancedPlayerBet';
+import { PPPokerChipStack } from './PPPokerChipStack';
+import { PPPokerCompactCards } from './PPPokerCompactCards';
+import { PPPokerHeroCards } from './PPPokerHeroCards';
 import { PotCollectionAnimation } from './PotCollectionAnimation';
 import { CardDealAnimation } from './CardDealAnimation';
 import { getHandStrengthName } from '@/utils/handEvaluator';
@@ -194,67 +196,6 @@ interface PlayerSeatProps {
   lastAction?: string;
 }
 
-// Helper component that uses the preferences hook
-// PPPoker style: cards to the RIGHT of hero avatar
-const HeroCards = memo(function HeroCards({ 
-  cards, 
-  gamePhase,
-  communityCards = [],
-  isWinner = false
-}: { 
-  cards: string[]; 
-  gamePhase: string;
-  communityCards?: string[];
-  isWinner?: boolean;
-}) {
-  const { currentCardBack, preferences } = usePokerPreferences();
-  
-  // Calculate hand strength for hero
-  const handName = useMemo(() => {
-    if (cards.length >= 2 && communityCards.length >= 3) {
-      return getHandStrengthName(cards, communityCards);
-    }
-    return undefined;
-  }, [cards, communityCards]);
-  
-  // PPPoker style: Cards positioned to the RIGHT of avatar, but always below bets
-  return (
-    <div className="absolute left-full ml-2 top-1/2 -translate-y-1/2 flex items-center gap-1 z-10">
-      {/* Cards - slightly overlapped */}
-      <div className="flex">
-        {cards.map((card, idx) => (
-          <div key={idx} style={{ marginLeft: idx > 0 ? '-10px' : 0 }}>
-            <PremiumCard 
-              card={card} 
-              size="lg" 
-              delay={idx} 
-              isWinning={gamePhase === 'showdown' && isWinner}
-              cardBackColors={{ primary: currentCardBack.primaryColor, secondary: currentCardBack.secondaryColor }}
-              cardStyle={preferences.cardStyle}
-            />
-          </div>
-        ))}
-      </div>
-      
-      {/* Hand name badge - below cards */}
-      {handName && (
-        <motion.div
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className={cn(
-            "absolute -bottom-6 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded text-[10px] font-bold whitespace-nowrap",
-            isWinner 
-              ? "bg-gradient-to-r from-amber-500 to-yellow-400 text-black" 
-              : "bg-black/80 text-emerald-400 border border-emerald-500/30"
-          )}
-        >
-          {handName}
-        </motion.div>
-      )}
-    </div>
-  );
-});
-
 // ============= ACTION BADGE - PPPoker style status above player =============
 const ActionBadge = memo(function ActionBadge({ 
   action, 
@@ -292,79 +233,7 @@ const ActionBadge = memo(function ActionBadge({
   );
 });
 
-const OpponentCards = memo(function OpponentCards({ 
-  position,
-  holeCards,
-  isShowdown,
-  handName,
-  isWinner
-}: { 
-  position: { x: number };
-  holeCards?: string[];
-  isShowdown?: boolean;
-  handName?: string;
-  isWinner?: boolean;
-}) {
-  const { currentCardBack, preferences } = usePokerPreferences();
-  
-  // Show actual cards at showdown if available
-  const showFaceUp = isShowdown && holeCards && holeCards.length >= 2;
-  
-  // Position cards based on seat position - left seats show cards on right, right seats on left
-  const isLeftSide = position.x < 30;
-  const isRightSide = position.x > 70;
-  
-  return (
-    <div className="absolute left-1/2 -translate-x-1/2 top-full mt-1 flex flex-col items-center gap-1 z-10">
-      <div className="flex">
-        {showFaceUp ? (
-          // Show actual hole cards at showdown
-          holeCards.map((card, idx) => (
-            <div key={idx} style={{ marginLeft: idx > 0 ? '-8px' : 0 }}>
-              <PremiumCard 
-                card={card} 
-                size="sm" 
-                delay={idx}
-                isWinning={isWinner}
-                cardBackColors={{ primary: currentCardBack.primaryColor, secondary: currentCardBack.secondaryColor }}
-                cardStyle={preferences.cardStyle}
-              />
-            </div>
-          ))
-        ) : (
-          // Show card backs - smaller for opponents
-          [0, 1].map((idx) => (
-            <div key={idx} style={{ marginLeft: idx > 0 ? '-8px' : 0 }}>
-              <PremiumCard 
-                card="XX" 
-                faceDown 
-                size="xs" 
-                delay={idx}
-                cardBackColors={{ primary: currentCardBack.primaryColor, secondary: currentCardBack.secondaryColor }}
-              />
-            </div>
-          ))
-        )}
-      </div>
-      
-      {/* Show hand name at showdown */}
-      {isShowdown && handName && (
-        <motion.div
-          initial={{ opacity: 0, y: 5 }}
-          animate={{ opacity: 1, y: 0 }}
-          className={cn(
-            "px-2 py-0.5 rounded text-[9px] font-bold whitespace-nowrap",
-            isWinner 
-              ? "bg-amber-500 text-black" 
-              : "bg-black/70 text-white/80"
-          )}
-        >
-          {handName}
-        </motion.div>
-      )}
-    </div>
-  );
-});
+// OpponentCards now uses PPPokerCompactCards component
 
 const PlayerSeat = memo(function PlayerSeat({
   player,
@@ -530,7 +399,7 @@ const PlayerSeat = memo(function PlayerSeat({
       
       {/* Player cards */}
       {isHero && heroCards && heroCards.length > 0 && !player.isFolded && (
-        <HeroCards 
+        <PPPokerHeroCards 
           cards={heroCards} 
           gamePhase={gamePhase} 
           communityCards={communityCards}
@@ -538,23 +407,24 @@ const PlayerSeat = memo(function PlayerSeat({
         />
       )}
       
-      {/* Opponent cards - show face up at showdown */}
+      {/* Opponent cards - PPPoker compact style below avatar */}
       {!isHero && !player.isFolded && gamePhase !== 'waiting' && (
-        <OpponentCards 
-          position={position} 
-          holeCards={player.holeCards}
+        <PPPokerCompactCards 
+          cards={player.holeCards}
+          faceDown={gamePhase !== 'showdown'}
           isShowdown={gamePhase === 'showdown'}
           handName={(player as any).handName}
           isWinner={(player as any).isWinner}
+          size="xs"
         />
       )}
       
-      {/* Bet amount - positioned towards center of table */}
+      {/* Bet amount - 3D chip stack positioned towards center */}
       {player.betAmount > 0 && (
-        <EnhancedPlayerBet
+        <PPPokerChipStack
           amount={player.betAmount}
           seatPosition={position}
-          isHero={isHero}
+          animated={true}
         />
       )}
       
