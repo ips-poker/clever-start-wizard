@@ -175,33 +175,42 @@ export const PPPokerCompactCards = memo(function PPPokerCompactCards({
 
   return (
     <>
-      {/* Cards positioned to the RIGHT of avatar, overlapping slightly - PPPoker style */}
+      {/* Cards positioned to the RIGHT of avatar, fanned - PPPoker style */}
       <div 
         className="absolute z-5"
         style={{
-          right: -cfg.w - 8,
+          right: -cfg.w * 1.2,
           top: '50%',
-          transform: 'translateY(-50%)'
+          transform: 'translateY(-60%)'
         }}
       >
-        {/* Cards container - fanned effect going right */}
-        <div className="relative" style={{ width: cfg.w * 1.5, height: cfg.h + 8 }}>
+        {/* Cards container - fanned effect going right with overlap */}
+        <div className="relative" style={{ width: cfg.w * 2.5, height: cfg.h + 12 }}>
           {displayCards.map((card, idx) => {
             // Determine if this card is part of winning hand
             const isCardWinning = winningCardIndices.includes(idx);
             // At showdown with winning cards specified, dim non-winning cards
             const isDimmed = isShowdown && winningCardIndices.length > 0 && !isCardWinning;
             
+            // Rotation and positioning for 4-card fan (PLO style)
+            const totalCards = displayCards.length;
+            const baseRotation = totalCards === 4 ? -12 : -8;
+            const rotationStep = totalCards === 4 ? 8 : 10;
+            const rotation = baseRotation + idx * rotationStep;
+            
+            // Horizontal offset for each card
+            const xOffset = idx * (cfg.w * 0.55);
+            
             return (
               <div 
                 key={idx} 
                 className="absolute"
                 style={{ 
-                  left: idx * 12 - 5,
-                  top: 4,
-                  transform: `rotate(${rotations[idx] || 0}deg)`,
-                  transformOrigin: 'bottom left',
-                  zIndex: displayCards.length - idx
+                  left: xOffset,
+                  top: 0,
+                  transform: `rotate(${rotation}deg)`,
+                  transformOrigin: 'bottom center',
+                  zIndex: idx + 1
                 }}
               >
                 <MiniCard 
@@ -221,22 +230,26 @@ export const PPPokerCompactCards = memo(function PPPokerCompactCards({
         </div>
       </div>
       
-      {/* Hand name badge at showdown - below player panel */}
+      {/* Hand name badge at showdown - positioned BELOW player panel, green text */}
       {isShowdown && handName && (
         <motion.div
-          initial={{ opacity: 0, scale: 0.8, y: -2 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          transition={{ delay: 0.15 }}
-          className="absolute left-1/2 -translate-x-1/2 -bottom-5 px-2 py-0.5 rounded text-[9px] font-bold whitespace-nowrap z-30"
+          initial={{ opacity: 0, y: -4 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="absolute left-1/2 -translate-x-1/2 whitespace-nowrap z-30"
           style={{
-            background: isWinner 
-              ? 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)'
-              : 'transparent',
-            color: isWinner ? '#ffffff' : '#22c55e',
-            textShadow: '0 1px 3px rgba(0,0,0,0.5)'
+            bottom: -22,
           }}
         >
-          {handName}
+          <span 
+            className="text-[11px] font-bold"
+            style={{
+              color: isWinner ? '#22c55e' : '#22c55e',
+              textShadow: '0 1px 4px rgba(0,0,0,0.8)'
+            }}
+          >
+            {handName}
+          </span>
         </motion.div>
       )}
     </>

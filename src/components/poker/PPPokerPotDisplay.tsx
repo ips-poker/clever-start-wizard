@@ -124,15 +124,6 @@ export const PPPokerPotDisplay = memo(function PPPokerPotDisplay({
   smallBlind,
   showBBFormat = true
 }: PPPokerPotDisplayProps) {
-  // Format pot in BB
-  const potInBB = useMemo(() => {
-    if (bigBlind <= 0) return pot.toLocaleString();
-    const bb = pot / bigBlind;
-    if (bb >= 100) return Math.round(bb).toLocaleString();
-    if (bb >= 10) return bb.toFixed(1);
-    return bb.toFixed(1);
-  }, [pot, bigBlind]);
-
   if (pot === 0) return null;
 
   return (
@@ -141,12 +132,12 @@ export const PPPokerPotDisplay = memo(function PPPokerPotDisplay({
       animate={{ scale: 1, opacity: 1 }}
       className="flex flex-col items-center gap-2"
     >
-      {/* Main pot display - PPPoker exact style */}
+      {/* Main pot display with chips */}
       <div className="flex items-center gap-2">
         <ChipStackIcon />
         
         <span 
-          className="font-bold text-[15px]"
+          className="font-bold text-[16px]"
           style={{
             color: '#fbbf24',
             textShadow: '0 1px 3px rgba(0,0,0,0.8), 0 0 10px rgba(251,191,36,0.3)'
@@ -156,14 +147,14 @@ export const PPPokerPotDisplay = memo(function PPPokerPotDisplay({
         </span>
       </div>
       
-      {/* "Банк:" label - matching PPPoker */}
+      {/* Blinds info - PPPoker style "Блайнды: X/Y" */}
       <span 
-        className="text-white/90 text-[13px] font-medium"
+        className="text-white/90 text-[12px] font-medium"
         style={{
           textShadow: '0 1px 3px rgba(0,0,0,0.8)'
         }}
       >
-        Банк: {pot.toLocaleString()}
+        Блайнды: {smallBlind.toLocaleString()}/{bigBlind.toLocaleString()}
       </span>
     </motion.div>
   );
