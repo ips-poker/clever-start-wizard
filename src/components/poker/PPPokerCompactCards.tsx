@@ -203,7 +203,7 @@ const MiniCard = memo(function MiniCard({
         transformOrigin: 'bottom center'
       }}
     >
-      {/* Top-left corner - Rank above Suit (PPPoker style) */}
+      {/* Top-left corner - Classic: Rank above, suit below */}
       <div className="absolute top-[2px] left-[3px] flex flex-col items-center leading-none">
         <span 
           className={cn(cfg.rank, 'font-black leading-none')} 
@@ -212,27 +212,27 @@ const MiniCard = memo(function MiniCard({
           {rank}
         </span>
         <span 
-          className={cn(cfg.suit, 'leading-none -mt-[1px]')} 
+          className={cn(cfg.suit, 'leading-none')} 
           style={{ color: suitColor }}
         >
           {suitInfo.symbol}
         </span>
       </div>
       
-      {/* Center suit - large (PPPoker style) */}
+      {/* Center suit - large (Classic style) */}
       <div className="absolute inset-0 flex items-center justify-center">
         <span 
           className={cfg.center}
           style={{ 
             color: suitColor,
-            opacity: isDimmed ? 0.5 : 0.85
+            opacity: isDimmed ? 0.5 : 0.8
           }}
         >
           {suitInfo.symbol}
         </span>
       </div>
       
-      {/* Bottom-right corner - Rotated (PPPoker style) */}
+      {/* Bottom-right corner - Rotated 180° (Classic style) */}
       <div className="absolute bottom-[2px] right-[3px] flex flex-col items-center leading-none rotate-180">
         <span 
           className={cn(cfg.rank, 'font-black leading-none')} 
@@ -241,7 +241,7 @@ const MiniCard = memo(function MiniCard({
           {rank}
         </span>
         <span 
-          className={cn(cfg.suit, 'leading-none -mt-[1px]')} 
+          className={cn(cfg.suit, 'leading-none')} 
           style={{ color: suitColor }}
         >
           {suitInfo.symbol}

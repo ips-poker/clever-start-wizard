@@ -86,7 +86,7 @@ const HeroCard = memo(function HeroCard({
             : '0 6px 20px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.8)'
       }}
     >
-      {/* Top-left corner - Rank above Suit (PPPoker style) */}
+      {/* Top-left corner - Classic style: Rank above, small suits below */}
       <div className="absolute top-1 left-1.5 flex flex-col items-center leading-none">
         <span 
           className={cn(rankSize, 'font-black leading-none')} 
@@ -98,20 +98,20 @@ const HeroCard = memo(function HeroCard({
           {rank}
         </span>
         <span 
-          className={cn(suitSize, 'leading-none')} 
+          className={cn(suitSize, 'leading-none mt-0.5')} 
           style={{ color: suitColor }}
         >
           {suitInfo.symbol}
         </span>
       </div>
       
-      {/* Center large suit - PPPoker style */}
+      {/* Center - Large suit (classic playing card style) */}
       <div className="absolute inset-0 flex items-center justify-center">
         <span 
           className={centerSize}
           style={{ 
             color: suitColor, 
-            opacity: isDimmed ? 0.4 : 0.9,
+            opacity: isDimmed ? 0.4 : 0.85,
             filter: isDimmed ? 'none' : 'drop-shadow(0 2px 4px rgba(0,0,0,0.15))'
           }}
         >
@@ -119,7 +119,7 @@ const HeroCard = memo(function HeroCard({
         </span>
       </div>
       
-      {/* Bottom-right corner (rotated) - PPPoker style */}
+      {/* Bottom-right corner (rotated 180°) - Classic style */}
       <div className="absolute bottom-1 right-1.5 flex flex-col items-center leading-none rotate-180">
         <span 
           className={cn(rankSize, 'font-black leading-none')} 
@@ -131,7 +131,7 @@ const HeroCard = memo(function HeroCard({
           {rank}
         </span>
         <span 
-          className={cn(suitSize, 'leading-none')} 
+          className={cn(suitSize, 'leading-none mt-0.5')} 
           style={{ color: suitColor }}
         >
           {suitInfo.symbol}
