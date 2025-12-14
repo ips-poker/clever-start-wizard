@@ -1,11 +1,14 @@
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Coffee, Clock, Users, Trophy } from "lucide-react";
+import { Coffee, Clock, Users, Trophy, Coins } from "lucide-react";
 import syndikateLogo from "@/assets/syndikate-logo-main.png";
 import telegramQrOriginal from "@/assets/telegram-qr-new.jpg";
 import { calculateTotalRPSPool } from "@/utils/rpsCalculations";
 import { extractAndConvertQR } from "@/utils/qrExtractor";
+import { AnimatedCounter } from "@/components/timer/AnimatedCounter";
+import { TrendIndicator } from "@/components/timer/TrendIndicator";
+import { BreakParticles } from "@/components/timer/BreakParticles";
 
 interface Tournament {
   id: string;
@@ -268,9 +271,16 @@ const ExternalTimer = () => {
           }}
         />
 
-        {/* Neon Glow Spots - ambient lighting */}
-        <div className="absolute top-1/4 left-1/4 w-[600px] h-[600px] bg-primary/10 rounded-full blur-[150px]" />
-        <div className="absolute bottom-1/4 right-1/4 w-[500px] h-[500px] bg-accent/10 rounded-full blur-[120px]" />
+        {/* Neon Glow Spots - ambient lighting (amber for break) */}
+        <div className={`absolute top-1/4 left-1/4 w-[600px] h-[600px] rounded-full blur-[150px] transition-colors duration-1000 ${
+          isBreakLevel ? 'bg-[hsl(40,100%,50%)]/15' : 'bg-primary/10'
+        }`} />
+        <div className={`absolute bottom-1/4 right-1/4 w-[500px] h-[500px] rounded-full blur-[120px] transition-colors duration-1000 ${
+          isBreakLevel ? 'bg-[hsl(35,100%,45%)]/15' : 'bg-accent/10'
+        }`} />
+
+        {/* Break Particles - coffee icons floating */}
+        {isBreakLevel && <BreakParticles />}
 
         {/* Scanlines Effect - same as loading screen */}
         <div 
@@ -511,12 +521,12 @@ const ExternalTimer = () => {
             </div>
           </div>
 
-          {/* Statistics - Glassmorphism */}
+          {/* Statistics - Glassmorphism with Animated Counters */}
           <div 
             className="rounded p-6 max-w-6xl w-full border border-[hsl(0,0%,25%)] bg-[hsl(0,0%,12%)/80] backdrop-blur-md"
             style={{ boxShadow: '0 8px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.05)' }}
           >
-            <div className="grid grid-cols-4 gap-8 text-center">
+            <div className="grid grid-cols-5 gap-6 text-center">
               <div>
                 <div className="flex items-center justify-center mb-2">
                   <Users className="w-6 h-6 mr-3 text-[hsl(24,100%,50%)]" />
@@ -524,9 +534,10 @@ const ExternalTimer = () => {
                     Игроки
                   </span>
                 </div>
-                <p className="text-3xl font-bold text-[hsl(0,0%,95%)]">
-                  {activePlayers.length}
-                </p>
+                <AnimatedCounter 
+                  value={activePlayers.length}
+                  className="text-3xl font-bold text-[hsl(0,0%,95%)]"
+                />
               </div>
               <div>
                 <div className="flex items-center justify-center mb-2">
@@ -535,29 +546,47 @@ const ExternalTimer = () => {
                     Призовой фонд RPS
                   </span>
                 </div>
-                <p className="text-3xl font-bold text-[hsl(24,100%,50%)]"
-                  style={{ textShadow: '0 0 20px rgba(255,106,0,0.5)' }}>
-                  {rpsPool.toLocaleString()} RPS
-                </p>
+                <AnimatedCounter 
+                  value={rpsPool}
+                  suffix=" RPS"
+                  className="text-3xl font-bold text-[hsl(24,100%,50%)]"
+                  duration={800}
+                />
               </div>
               <div>
                 <div className="flex items-center justify-center mb-2">
+                  <Coins className="w-6 h-6 mr-3 text-[hsl(24,100%,50%)]" />
+                  <span className="text-lg text-[hsl(0,0%,50%)]">
+                    Фишки в игре
+                  </span>
+                </div>
+                <AnimatedCounter 
+                  value={totalChips}
+                  className="text-3xl font-bold text-[hsl(0,0%,95%)]"
+                  duration={600}
+                />
+              </div>
+              <div>
+                <div className="flex items-center justify-center mb-2">
+                  <TrendIndicator currentValue={averageStack} className="mr-2" />
                   <span className="text-lg text-[hsl(0,0%,50%)]">
                     Средний стек
                   </span>
                 </div>
-                <p className="text-3xl font-bold text-[hsl(0,0%,95%)]">
-                  {averageStack.toLocaleString()}
-                </p>
+                <AnimatedCounter 
+                  value={averageStack}
+                  className="text-3xl font-bold text-[hsl(0,0%,95%)]"
+                  duration={600}
+                />
               </div>
               <div>
                 <div className="flex items-center justify-center mb-2">
                   <span className="text-lg text-[hsl(0,0%,50%)]">
-                    Re-entry / Доп. наборы
+                    Re-entry / Доп.
                   </span>
                 </div>
                 <p className="text-3xl font-bold text-[hsl(0,0%,95%)]">
-                  {totalReentries} / {totalAdditionalSets}
+                  <AnimatedCounter value={totalReentries} className="inline" /> / <AnimatedCounter value={totalAdditionalSets} className="inline" />
                 </p>
               </div>
             </div>

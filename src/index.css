@@ -408,3 +408,35 @@
 .animate-critical-pulse {
   animation: critical-pulse 0.5s ease-in-out infinite;
 }
+
+/* Break particles floating animation */
+@keyframes float-particle {
+  0%, 100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  25% {
+    transform: translateY(-20px) rotate(5deg);
+  }
+  50% {
+    transform: translateY(-10px) rotate(-3deg);
+  }
+  75% {
+    transform: translateY(-25px) rotate(3deg);
+  }
+}
+
+/* Steam rising animation */
+@keyframes steam-rise {
+  0% {
+    transform: translateY(0) scale(1);
+    opacity: 0.15;
+  }
+  50% {
+    transform: translateY(-60px) scale(1.5);
+    opacity: 0.25;
+  }
+  100% {
+    transform: translateY(-120px) scale(2);
+    opacity: 0;
+  }
+}
