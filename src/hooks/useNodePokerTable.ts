@@ -420,6 +420,38 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
           }
           break;
 
+        case 'cards_dealt':
+        case 'cardsDealt':
+        case 'deal':
+          // Handle cards being dealt - extract my cards
+          log('🃏 Cards dealt event received:', data);
+          {
+            const dealData = (data.data || data) as Record<string, unknown>;
+            
+            // Cards might be at root level or in cards/holeCards field
+            const cards = dealData.cards || dealData.holeCards || dealData.myCards;
+            if (Array.isArray(cards) && cards.length > 0) {
+              log('🃏 Setting my cards from deal event:', cards);
+              setMyCards(cards as string[]);
+            }
+            
+            // Also check for seat number
+            if (dealData.seatNumber !== undefined) {
+              setMySeat(dealData.seatNumber as number);
+            }
+            
+            // Update state if included
+            if (data.state && tableId) {
+              const stateData = data.state as Record<string, unknown>;
+              setTableState(transformServerState(data.state, tableId));
+              
+              if (stateData.myCards) {
+                setMyCards(stateData.myCards as string[]);
+              }
+            }
+          }
+          break;
+
         case 'action_accepted':
           log('✅ Action accepted:', data.actionType, data.amount);
           break;
