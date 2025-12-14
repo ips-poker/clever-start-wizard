@@ -178,13 +178,14 @@ Deno.serve(async (req) => {
     }
 
     const authData: TelegramAuthData = await req.json();
-    console.log('Received Telegram auth data:', { 
+    console.log('📥 Received Telegram auth data:', { 
       id: authData.id,
       auth_date: authData.auth_date,
       username: authData.username || 'NOT PROVIDED',
       hash: authData.hash ? '[PRESENT]' : '[MISSING]',
       photo_url: authData.photo_url ? '[PRESENT]' : 'NOT PROVIDED',
-      init_data_raw: authData.init_data_raw ? '[PRESENT]' : '[MISSING]'
+      init_data_raw: authData.init_data_raw ? `[PRESENT, length: ${authData.init_data_raw.length}]` : '[MISSING]',
+      init_data_raw_preview: authData.init_data_raw ? authData.init_data_raw.substring(0, 100) + '...' : 'N/A'
     });
 
     let isValid = false;

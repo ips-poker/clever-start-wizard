@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { initData } from '@telegram-apps/sdk-react';
-import { retrieveLaunchParams } from '@telegram-apps/sdk';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,6 +10,51 @@ import { GlitchText } from '@/components/ui/glitch-text';
 
 // Храним initDataRaw для отправки на сервер
 let cachedInitDataRaw: string | null = null;
+
+// Получаем initDataRaw напрямую из Telegram WebApp API (наиболее надёжный способ)
+const getInitDataRaw = (): string | null => {
+  try {
+    // Способ 1: Напрямую из window.Telegram.WebApp.initData (самый надёжный)
+    const webApp = (window as any).Telegram?.WebApp;
+    if (webApp?.initData && webApp.initData.length > 0) {
+      console.log('✅ initDataRaw получен из window.Telegram.WebApp.initData');
+      console.log('📦 initDataRaw length:', webApp.initData.length);
+      return webApp.initData;
+    }
+    
+    // Способ 2: Из URL hash (Telegram иногда передаёт данные через hash)
+    const hash = window.location.hash;
+    if (hash && hash.includes('tgWebAppData=')) {
+      const params = new URLSearchParams(hash.slice(1));
+      const tgData = params.get('tgWebAppData');
+      if (tgData) {
+        console.log('✅ initDataRaw получен из URL hash');
+        return decodeURIComponent(tgData);
+      }
+    }
+    
+    // Способ 3: Из URL search params
+    const searchParams = new URLSearchParams(window.location.search);
+    const tgWebAppData = searchParams.get('tgWebAppData');
+    if (tgWebAppData) {
+      console.log('✅ initDataRaw получен из URL search params');
+      return tgWebAppData;
+    }
+    
+    console.warn('⚠️ initDataRaw не найден ни одним способом');
+    console.log('🔍 Диагностика:');
+    console.log('  - window.Telegram:', typeof (window as any).Telegram);
+    console.log('  - window.Telegram.WebApp:', typeof webApp);
+    console.log('  - initData:', webApp?.initData ? `"${webApp.initData.substring(0, 50)}..."` : 'отсутствует');
+    console.log('  - URL hash:', hash || 'пусто');
+    console.log('  - URL search:', window.location.search || 'пусто');
+    
+    return null;
+  } catch (error) {
+    console.error('❌ Ошибка при получении initDataRaw:', error);
+    return null;
+  }
+};
 
 interface TelegramUser {
   id: number;
@@ -59,19 +103,7 @@ export const TelegramAuth: React.FC<TelegramAuthProps> = ({ onAuthComplete }) =>
       
       // Обычная авторизация через Telegram только если НЕ режим разработки
       // Получаем initDataRaw для безопасной верификации на сервере
-      try {
-        const launchParams = retrieveLaunchParams();
-        cachedInitDataRaw = (launchParams.initDataRaw as string) || null;
-        console.log('Launch params retrieved, initDataRaw:', cachedInitDataRaw ? '[PRESENT]' : '[MISSING]');
-      } catch (e) {
-        console.log('Could not retrieve launch params via SDK, trying window.Telegram.WebApp.initData:', e);
-      }
-
-      // Дополнительный резервный способ получения initDataRaw напрямую из Telegram WebApp
-      if (!cachedInitDataRaw && (window as any).Telegram?.WebApp?.initData) {
-        cachedInitDataRaw = (window as any).Telegram.WebApp.initData as string;
-        console.log('Fallback initDataRaw from window.Telegram.WebApp.initData:', cachedInitDataRaw ? '[PRESENT]' : '[MISSING]');
-      }
+      cachedInitDataRaw = getInitDataRaw();
       
       await initData.restore();
       const user = initData.user();
