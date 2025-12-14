@@ -12,6 +12,7 @@ import { usePokerPreferences, TABLE_THEMES, CARD_BACKS } from '@/hooks/usePokerP
 import syndikateLogo from '@/assets/syndikate-logo-main.png';
 import { SmoothAvatarTimer } from './SmoothAvatarTimer';
 import { PPPokerChipStack } from './PPPokerChipStack';
+import { SyndikateTableBackground } from './SyndikateTableBackground';
 import { PPPokerCompactCards } from './PPPokerCompactCards';
 import { PPPokerHeroCards } from './PPPokerHeroCards';
 import { PPPokerCommunityCards } from './PPPokerCommunityCards';
@@ -1006,7 +1007,10 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
 
   return (
     <div className="relative w-full h-full">
-      {/* Table background with theme */}
+      {/* Syndikate tech background */}
+      <SyndikateTableBackground themeColor={currentTableTheme.color} />
+      
+      {/* Table felt overlay */}
       <SyndikateTableFelt themeColor={currentTableTheme.color} />
       
       {/* Card dealing animation */}
