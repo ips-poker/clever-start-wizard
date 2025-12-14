@@ -488,8 +488,8 @@ const SyndikateTableFelt = memo(function SyndikateTableFelt({
         className="absolute"
         style={{
           top: '8%',
-          left: '12%',
-          right: '12%',
+          left: '22%',
+          right: '22%',
           bottom: '8%',
           borderRadius: '45% / 25%',
           background: `radial-gradient(ellipse at 50% 50%, ${themeColor}50 0%, transparent 70%)`,
@@ -502,8 +502,8 @@ const SyndikateTableFelt = memo(function SyndikateTableFelt({
         className="absolute"
         style={{
           top: '6%',
-          left: '10%',
-          right: '10%',
+          left: '20%',
+          right: '20%',
           bottom: '6%',
           borderRadius: '45% / 22%',
           background: 'linear-gradient(180deg, #5a6a7a 0%, #3d4a5a 20%, #2a3440 50%, #3d4a5a 80%, #5a6a7a 100%)',
@@ -517,8 +517,8 @@ const SyndikateTableFelt = memo(function SyndikateTableFelt({
         className="absolute"
         style={{
           top: '7%',
-          left: '11%',
-          right: '11%',
+          left: '21%',
+          right: '21%',
           bottom: '7%',
           borderRadius: '44% / 21%',
           background: 'linear-gradient(180deg, #3a2820 0%, #2a1a14 30%, #1a0f0a 60%, #2a1a14 85%, #3a2820 100%)',
@@ -531,8 +531,8 @@ const SyndikateTableFelt = memo(function SyndikateTableFelt({
         className="absolute"
         style={{
           top: '9%',
-          left: '13%',
-          right: '13%',
+          left: '23%',
+          right: '23%',
           bottom: '9%',
           borderRadius: '42% / 20%',
           background: 'linear-gradient(180deg, #4a5568 0%, #2d3748 50%, #1a202c 100%)',
@@ -546,8 +546,8 @@ const SyndikateTableFelt = memo(function SyndikateTableFelt({
         className="absolute"
         style={{
           top: '10%',
-          left: '14%',
-          right: '14%',
+          left: '24%',
+          right: '24%',
           bottom: '10%',
           borderRadius: '40% / 18%',
           background: feltGradient,
