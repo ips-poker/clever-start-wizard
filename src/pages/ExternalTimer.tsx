@@ -305,11 +305,11 @@ const ExternalTimer = () => {
               />
             </div>
             <div className="flex flex-col">
-              <span className="text-3xl font-display tracking-wider text-[hsl(24,100%,50%)]"
+              <span className="text-4xl font-display tracking-wider text-[hsl(24,100%,50%)] animate-glitch"
                 style={{ textShadow: '0 0 20px hsla(24,100%,50%,0.8), 0 0 40px hsla(24,100%,50%,0.4)' }}>
                 SYNDIKATE
               </span>
-              <span className="text-sm font-sans font-bold tracking-[0.3em] uppercase text-[hsl(0,0%,65%)]">
+              <span className="text-base font-sans font-bold tracking-[0.3em] uppercase text-[hsl(0,0%,65%)]">
                 POKER CLUB
               </span>
             </div>
