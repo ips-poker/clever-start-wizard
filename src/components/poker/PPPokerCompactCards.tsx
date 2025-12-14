@@ -63,7 +63,8 @@ const MiniCard = memo(function MiniCard({
   const cfg = SIZE_CONFIG[size];
   const rank = card?.[0] === 'T' ? '10' : card?.[0] || '?';
   const suitChar = (card?.[1]?.toLowerCase() || 's') as keyof typeof SUITS;
-  const suitInfo = useFourColor ? SUITS[suitChar] : SUITS_CLASSIC[suitChar];
+  const suitSource = useFourColor ? SUITS : SUITS_CLASSIC;
+  const suitInfo = suitSource[suitChar] || suitSource['s']; // Fallback to spades if invalid
   
   const backPrimary = cardBackColors?.primary || '#3b82f6';
   const backSecondary = cardBackColors?.secondary || '#1d4ed8';
