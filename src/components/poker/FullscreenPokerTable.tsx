@@ -31,32 +31,84 @@ const SUITS = {
   s: { symbol: '♠', color: '#1e293b', name: 'spades' }
 } as const;
 
-// ============= SEAT POSITIONS FOR OVAL TABLE =============
-// Позиции для 9-max стола вокруг овала (проценты от контейнера)
-// Hero всегда внизу по центру
+// ============= SEAT POSITIONS FOR VERTICAL OVAL TABLE =============
+// Позиции для разного количества игроков вокруг вертикального овала
+// Hero всегда внизу по центру, остальные симметрично вдоль борта
+
+// Динамические позиции для 2-8 игроков
+const SEAT_POSITIONS_BY_COUNT: Record<number, Array<{ x: number; y: number }>> = {
+  2: [
+    { x: 50, y: 85 },   // Seat 0 - Hero (bottom center)
+    { x: 50, y: 8 },    // Seat 1 - Top center (напротив)
+  ],
+  3: [
+    { x: 50, y: 85 },   // Seat 0 - Hero (bottom center)
+    { x: 18, y: 35 },   // Seat 1 - Left
+    { x: 82, y: 35 },   // Seat 2 - Right
+  ],
+  4: [
+    { x: 50, y: 85 },   // Seat 0 - Hero (bottom center)
+    { x: 18, y: 50 },   // Seat 1 - Left middle
+    { x: 50, y: 8 },    // Seat 2 - Top center
+    { x: 82, y: 50 },   // Seat 3 - Right middle
+  ],
+  5: [
+    { x: 50, y: 85 },   // Seat 0 - Hero (bottom center)
+    { x: 18, y: 60 },   // Seat 1 - Left bottom
+    { x: 18, y: 28 },   // Seat 2 - Left top
+    { x: 82, y: 28 },   // Seat 3 - Right top
+    { x: 82, y: 60 },   // Seat 4 - Right bottom
+  ],
+  6: [
+    { x: 50, y: 85 },   // Seat 0 - Hero (bottom center)
+    { x: 18, y: 62 },   // Seat 1 - Left bottom
+    { x: 18, y: 32 },   // Seat 2 - Left top
+    { x: 50, y: 8 },    // Seat 3 - Top center
+    { x: 82, y: 32 },   // Seat 4 - Right top
+    { x: 82, y: 62 },   // Seat 5 - Right bottom
+  ],
+  7: [
+    { x: 50, y: 85 },   // Seat 0 - Hero (bottom center)
+    { x: 18, y: 65 },   // Seat 1 - Left bottom
+    { x: 18, y: 42 },   // Seat 2 - Left middle
+    { x: 18, y: 20 },   // Seat 3 - Left top
+    { x: 82, y: 20 },   // Seat 4 - Right top
+    { x: 82, y: 42 },   // Seat 5 - Right middle
+    { x: 82, y: 65 },   // Seat 6 - Right bottom
+  ],
+  8: [
+    { x: 50, y: 85 },   // Seat 0 - Hero (bottom center)
+    { x: 18, y: 65 },   // Seat 1 - Left bottom
+    { x: 18, y: 42 },   // Seat 2 - Left middle
+    { x: 18, y: 20 },   // Seat 3 - Left top
+    { x: 50, y: 8 },    // Seat 4 - Top center
+    { x: 82, y: 20 },   // Seat 5 - Right top
+    { x: 82, y: 42 },   // Seat 6 - Right middle
+    { x: 82, y: 65 },   // Seat 7 - Right bottom
+  ],
+};
+
+// Fallback для 9-max (legacy)
 const SEAT_POSITIONS_9MAX = [
-  { x: 50, y: 88 },   // Seat 0 - Hero (bottom center)
-  { x: 15, y: 75 },   // Seat 1 - Bottom left
-  { x: 3, y: 50 },    // Seat 2 - Left middle
-  { x: 10, y: 25 },   // Seat 3 - Top left
-  { x: 35, y: 8 },    // Seat 4 - Top left-center
-  { x: 65, y: 8 },    // Seat 5 - Top right-center
-  { x: 90, y: 25 },   // Seat 6 - Top right
-  { x: 97, y: 50 },   // Seat 7 - Right middle
-  { x: 85, y: 75 },   // Seat 8 - Bottom right
+  { x: 50, y: 85 },   // Seat 0 - Hero (bottom center)
+  { x: 18, y: 68 },   // Seat 1 - Left bottom
+  { x: 18, y: 45 },   // Seat 2 - Left middle
+  { x: 18, y: 22 },   // Seat 3 - Left top
+  { x: 50, y: 8 },    // Seat 4 - Top center
+  { x: 82, y: 22 },   // Seat 5 - Right top
+  { x: 82, y: 45 },   // Seat 6 - Right middle
+  { x: 82, y: 68 },   // Seat 7 - Right bottom
 ];
 
-// Вертикальные позиции для 6-max стола (портретная ориентация - Telegram Mini App)
-// PPPoker-style: компактный стол, игроки вокруг рейла
-// Hero внизу по центру, карты справа от аватара
-const SEAT_POSITIONS_6MAX = [
-  { x: 50, y: 82 },   // Seat 0 - Hero (bottom center) - карты справа
-  { x: 8, y: 60 },    // Seat 1 - Left bottom
-  { x: 8, y: 32 },    // Seat 2 - Left top  
-  { x: 50, y: 10 },   // Seat 3 - Top center
-  { x: 92, y: 32 },   // Seat 4 - Right top
-  { x: 92, y: 60 },   // Seat 5 - Right bottom
-];
+// Legacy 6-max (используем новую систему)
+const SEAT_POSITIONS_6MAX = SEAT_POSITIONS_BY_COUNT[6];
+
+// Функция получения позиций по количеству игроков
+function getSeatPositions(playerCount: number): Array<{ x: number; y: number }> {
+  if (playerCount <= 2) return SEAT_POSITIONS_BY_COUNT[2];
+  if (playerCount >= 9) return SEAT_POSITIONS_9MAX;
+  return SEAT_POSITIONS_BY_COUNT[playerCount] || SEAT_POSITIONS_BY_COUNT[6];
+}
 
 // ============= PREMIUM POKER CARD with personalization =============
 interface PremiumCardProps {
@@ -866,6 +918,8 @@ export interface FullscreenPokerTableProps {
   totalPlayers?: number;
   prizePool?: number;
   ante?: number;
+  // Table configuration
+  maxSeats?: number;
 }
 
 export const FullscreenPokerTable = memo(function FullscreenPokerTable({
@@ -892,10 +946,13 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
   levelTimeRemaining,
   remainingPlayers,
   totalPlayers,
-  ante
+  ante,
+  // Table config
+  maxSeats = 6
 }: FullscreenPokerTableProps) {
-  const maxPlayers = 6;
-  const positions = SEAT_POSITIONS_6MAX;
+  // Use dynamic positions based on max seats
+  const maxPlayers = maxSeats;
+  const positions = getSeatPositions(maxPlayers);
   
   // Get personalization preferences
   const { preferences, currentTableTheme, currentCardBack } = usePokerPreferences();
