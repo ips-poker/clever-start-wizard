@@ -35,34 +35,34 @@ export const PPPokerChipStack = memo(function PPPokerChipStack({
 
   if (amount <= 0) return null;
 
-  // PPPoker exact style: bets are positioned BETWEEN player and table center
-  // CLOSER to the player, not far in the center
+  // PPPoker exact style: bets are positioned RIGHT NEXT TO player box, not far away
+  // Reference: chip + BB right beside the name panel
   const getBetPosition = () => {
-    // Hero (bottom center - y > 75): bet goes ABOVE avatar, CENTERED (not to the side!)
+    // Hero (bottom center - y > 75): bet goes ABOVE avatar, CENTERED
     if (isHero || seatPosition.y > 75) {
-      return { x: 0, y: -55 }; // Above avatar, centered
+      return { x: 0, y: -50 }; // Above avatar, centered
     }
     
-    // Left side of table (x < 30): bet to the right, slightly below name panel
+    // Left side of table (x < 30): bet to the right of name panel, very close
     if (seatPosition.x < 30) {
-      return { x: 70, y: 35 }; // Right of player, towards center
+      return { x: 55, y: 32 }; // Right of player panel, close
     }
     
-    // Right side of table (x > 70): bet to the left, slightly below name panel
+    // Right side of table (x > 70): bet to the left of name panel, very close  
     if (seatPosition.x > 70) {
-      return { x: -70, y: 35 }; // Left of player, towards center
+      return { x: -55, y: 32 }; // Left of player panel, close
     }
     
-    // Top seats (y < 35): bet goes below
+    // Top seats (y < 35): bet goes below, close to panel
     if (seatPosition.y < 35) {
-      return { x: 0, y: 50 }; // Below player, towards center
+      return { x: 0, y: 42 }; // Below player, close
     }
     
-    // Middle seats: bet towards center based on x position
+    // Middle seats: bet right next to box
     if (seatPosition.x < 50) {
-      return { x: 60, y: 30 };
+      return { x: 50, y: 30 };
     } else {
-      return { x: -60, y: 30 };
+      return { x: -50, y: 30 };
     }
   };
   

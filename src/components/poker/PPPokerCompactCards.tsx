@@ -32,10 +32,10 @@ const SUITS_CLASSIC = {
   s: { symbol: '♠', color: '#1e293b' }
 };
 
-// Size configuration
+// Size configuration - larger cards with more rotation
 const SIZE_CONFIG = {
-  xs: { w: 24, h: 32, rank: 'text-[8px]', suit: 'text-[7px]', overlap: -6 },
-  sm: { w: 32, h: 44, rank: 'text-[10px]', suit: 'text-[9px]', overlap: -10 }
+  xs: { w: 28, h: 38, rank: 'text-[9px]', suit: 'text-[8px]', overlap: -8 },
+  sm: { w: 36, h: 50, rank: 'text-[11px]', suit: 'text-[10px]', overlap: -12 }
 };
 
 // Single mini card component with dimming support for showdown
@@ -163,43 +163,45 @@ export const PPPokerCompactCards = memo(function PPPokerCompactCards({
   const cardCount = cards?.length || 2;
   const displayCards = showCards ? cards : Array(Math.min(cardCount, 4)).fill('XX');
 
-  // Calculate rotations for card fan - PPPoker style: cards fan out to the right/behind avatar
+  // Calculate rotations for card fan - PPPoker style: bigger angle spread like in reference
   const getRotations = (count: number) => {
-    if (count === 2) return [-5, 15];
-    if (count === 3) return [-10, 5, 20];
-    if (count === 4) return [-10, 0, 10, 20];
-    return [-5, 15];
+    if (count === 2) return [-12, 22]; // More spread
+    if (count === 3) return [-18, 8, 28];
+    if (count === 4) return [-20, -5, 12, 28];
+    return [-12, 22];
   };
   
   const rotations = getRotations(displayCards.length);
 
   return (
     <>
-      {/* Cards positioned to the RIGHT of avatar, fanned - PPPoker style */}
+      {/* Cards positioned to the RIGHT of avatar, fanned with bigger angle - PPPoker style */}
       <div 
-        className="absolute z-5"
+        className="absolute"
         style={{
-          right: -cfg.w * 1.2,
-          top: '50%',
-          transform: 'translateY(-60%)'
+          right: -(cfg.w * 0.6),
+          top: '15%',
+          zIndex: 5
         }}
       >
-        {/* Cards container - fanned effect going right with overlap */}
-        <div className="relative" style={{ width: cfg.w * 2.5, height: cfg.h + 12 }}>
+        {/* Cards container - fanned effect with more angle and shift like PPPoker */}
+        <div className="relative" style={{ width: cfg.w * 2.8, height: cfg.h + 20 }}>
           {displayCards.map((card, idx) => {
             // Determine if this card is part of winning hand
             const isCardWinning = winningCardIndices.includes(idx);
             // At showdown with winning cards specified, dim non-winning cards
             const isDimmed = isShowdown && winningCardIndices.length > 0 && !isCardWinning;
             
-            // Rotation and positioning for 4-card fan (PLO style)
+            // Rotation and positioning for PPPoker style fan - more angle
             const totalCards = displayCards.length;
-            const baseRotation = totalCards === 4 ? -12 : -8;
-            const rotationStep = totalCards === 4 ? 8 : 10;
+            const baseRotation = totalCards === 4 ? -18 : totalCards === 3 ? -15 : -12;
+            const rotationStep = totalCards === 4 ? 10 : totalCards === 3 ? 12 : 18;
             const rotation = baseRotation + idx * rotationStep;
             
-            // Horizontal offset for each card
-            const xOffset = idx * (cfg.w * 0.55);
+            // Horizontal offset for each card with more overlap
+            const xOffset = idx * (cfg.w * 0.5);
+            // Vertical stagger for depth effect
+            const yOffset = idx * 2;
             
             return (
               <div 
@@ -207,9 +209,9 @@ export const PPPokerCompactCards = memo(function PPPokerCompactCards({
                 className="absolute"
                 style={{ 
                   left: xOffset,
-                  top: 0,
+                  top: yOffset,
                   transform: `rotate(${rotation}deg)`,
-                  transformOrigin: 'bottom center',
+                  transformOrigin: 'bottom left',
                   zIndex: idx + 1
                 }}
               >
