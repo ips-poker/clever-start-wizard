@@ -560,19 +560,39 @@ export function useClanSystem() {
   };
 
   useEffect(() => {
+    let isMounted = true;
+    
     const init = async () => {
       setLoading(true);
       await loadPlayerData();
-      setLoading(false);
+      if (isMounted) {
+        setLoading(false);
+      }
     };
     init();
+    
+    return () => {
+      isMounted = false;
+    };
   }, [loadPlayerData]);
 
   useEffect(() => {
-    if (playerData) {
-      loadMyClan();
-      loadInvitations();
-    }
+    let isMounted = true;
+    
+    const loadData = async () => {
+      if (playerData && isMounted) {
+        await loadMyClan();
+        if (isMounted) {
+          await loadInvitations();
+        }
+      }
+    };
+    
+    loadData();
+    
+    return () => {
+      isMounted = false;
+    };
   }, [playerData, loadMyClan, loadInvitations]);
 
   return {

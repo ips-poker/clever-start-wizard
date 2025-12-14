@@ -26,6 +26,9 @@ export function useClanRealtimeNotifications(playerId: string | null) {
   useEffect(() => {
     if (!playerId) return;
 
+    let isMounted = true;
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+
     // Загружаем начальные приглашения
     const loadInitialInvitations = async () => {
       const { data } = await supabase
@@ -36,6 +39,8 @@ export function useClanRealtimeNotifications(playerId: string | null) {
         `)
         .eq('player_id', playerId)
         .eq('status', 'pending');
+
+      if (!isMounted) return;
 
       if (data && data.length > 0) {
         const formattedData = data.map(inv => ({
@@ -62,9 +67,9 @@ export function useClanRealtimeNotifications(playerId: string | null) {
 
     loadInitialInvitations();
 
-    // Подписываемся на realtime обновления
-    const channel = supabase
-      .channel('clan-invitations-realtime')
+    // Подписываемся на realtime обновления с уникальным именем канала
+    channel = supabase
+      .channel(`clan-invitations-${playerId}-${Date.now()}`)
       .on(
         'postgres_changes',
         {
@@ -74,6 +79,7 @@ export function useClanRealtimeNotifications(playerId: string | null) {
           filter: `player_id=eq.${playerId}`
         },
         async (payload) => {
+          if (!isMounted) return;
           console.log('🔔 Новое приглашение в клан:', payload);
           
           // Загружаем данные клана
@@ -82,6 +88,8 @@ export function useClanRealtimeNotifications(playerId: string | null) {
             .select('name, emblem_id')
             .eq('id', payload.new.clan_id)
             .single();
+
+          if (!isMounted) return;
 
           const newInvitation: ClanInvitation = {
             ...payload.new as ClanInvitation,
@@ -110,6 +118,7 @@ export function useClanRealtimeNotifications(playerId: string | null) {
           filter: `player_id=eq.${playerId}`
         },
         (payload) => {
+          if (!isMounted) return;
           console.log('🔄 Приглашение обновлено:', payload);
           
           // Удаляем приглашение из списка если оно принято/отклонено
@@ -130,6 +139,7 @@ export function useClanRealtimeNotifications(playerId: string | null) {
           filter: `player_id=eq.${playerId}`
         },
         (payload) => {
+          if (!isMounted) return;
           console.log('🗑️ Приглашение удалено:', payload);
           setNewInvitations(prev => 
             prev.filter(inv => inv.id !== payload.old.id)
@@ -142,7 +152,10 @@ export function useClanRealtimeNotifications(playerId: string | null) {
       });
 
     return () => {
-      supabase.removeChannel(channel);
+      isMounted = false;
+      if (channel) {
+        supabase.removeChannel(channel);
+      }
     };
   }, [playerId]);
 
