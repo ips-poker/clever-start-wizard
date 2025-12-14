@@ -3,9 +3,8 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { OnlinePokerTable } from '@/components/poker/OnlinePokerTable';
 import { supabase } from '@/integrations/supabase/client';
-import { X, Minimize2, Maximize2 } from 'lucide-react';
+import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import syndikateBg from '@/assets/syndikate-poker-bg.jpg';
 
 export default function PokerTable() {
   const { tableId } = useParams<{ tableId: string }>();
@@ -91,21 +90,7 @@ export default function PokerTable() {
   }
 
   return (
-    <div className="w-screen h-screen overflow-hidden relative">
-      {/* Syndikate luxury background */}
-      <div 
-        className="absolute inset-0"
-        style={{
-          backgroundImage: `url(${syndikateBg})`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center'
-        }}
-      />
-      
-      {/* Dark vignette overlay */}
-      <div className="absolute inset-0" style={{
-        background: 'radial-gradient(ellipse at center, transparent 20%, rgba(0,0,0,0.6) 100%)'
-      }} />
+    <div className="w-screen h-screen overflow-hidden relative bg-black">
       
       {/* Window controls - for popup window */}
       <div 
