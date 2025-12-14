@@ -12,6 +12,7 @@ interface PPPokerCompactCardsProps {
   isShowdown?: boolean;
   handName?: string;
   isWinner?: boolean;
+  winningCardIndices?: number[]; // Indices of cards that participate in winning hand
   size?: 'xs' | 'sm';
 }
 
@@ -37,13 +38,14 @@ const SIZE_CONFIG = {
   sm: { w: 32, h: 44, rank: 'text-[10px]', suit: 'text-[9px]', overlap: -10 }
 };
 
-// Single mini card component
+// Single mini card component with dimming support for showdown
 const MiniCard = memo(function MiniCard({
   card,
   faceDown = false,
   size = 'xs',
   delay = 0,
   isWinning = false,
+  isDimmed = false,
   rotation = 0,
   cardBackColors,
   useFourColor = false
@@ -53,6 +55,7 @@ const MiniCard = memo(function MiniCard({
   size?: 'xs' | 'sm';
   delay?: number;
   isWinning?: boolean;
+  isDimmed?: boolean;
   rotation?: number;
   cardBackColors?: { primary: string; secondary: string };
   useFourColor?: boolean;
@@ -64,6 +67,17 @@ const MiniCard = memo(function MiniCard({
   
   const backPrimary = cardBackColors?.primary || '#3b82f6';
   const backSecondary = cardBackColors?.secondary || '#1d4ed8';
+
+  // Colors for dimmed cards
+  const cardBg = isDimmed 
+    ? 'linear-gradient(145deg, #4b5563 0%, #374151 100%)'
+    : 'linear-gradient(145deg, #ffffff 0%, #f8fafc 100%)';
+  const suitColor = isDimmed ? '#9ca3af' : suitInfo.color;
+  const borderStyle = isWinning 
+    ? '2px solid #fbbf24' 
+    : isDimmed 
+      ? '1px solid #6b7280' 
+      : '1px solid #e2e8f0';
 
   if (faceDown) {
     return (
@@ -99,14 +113,14 @@ const MiniCard = memo(function MiniCard({
   return (
     <motion.div
       initial={{ scale: 0, opacity: 0 }}
-      animate={{ scale: 1, opacity: 1, rotate: rotation }}
+      animate={{ scale: 1, opacity: isDimmed ? 0.9 : 1, rotate: rotation }}
       transition={{ delay: delay * 0.05, type: 'spring', stiffness: 300, damping: 25 }}
       className="rounded-[3px] shadow-md relative flex flex-col"
       style={{
         width: cfg.w,
         height: cfg.h,
-        background: 'linear-gradient(145deg, #ffffff 0%, #f8fafc 100%)',
-        border: isWinning ? '2px solid #fbbf24' : '1px solid #e2e8f0',
+        background: cardBg,
+        border: borderStyle,
         boxShadow: isWinning 
           ? '0 0 12px rgba(251,191,36,0.6), 0 2px 6px rgba(0,0,0,0.3)' 
           : '0 2px 6px rgba(0,0,0,0.25)',
@@ -115,14 +129,16 @@ const MiniCard = memo(function MiniCard({
     >
       {/* Top-left corner */}
       <div className="absolute top-0.5 left-1 flex flex-col items-center leading-none">
-        <span className={cn(cfg.rank, 'font-bold')} style={{ color: suitInfo.color }}>{rank}</span>
-        <span className={cfg.suit} style={{ color: suitInfo.color }}>{suitInfo.symbol}</span>
+        <span className={cn(cfg.rank, 'font-bold')} style={{ color: suitColor }}>{rank}</span>
+        <span className={cfg.suit} style={{ color: suitColor }}>{suitInfo.symbol}</span>
       </div>
       
-      {/* Glossy effect */}
-      <div className="absolute inset-0 pointer-events-none rounded-[3px]"
-        style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.5) 0%, transparent 50%)' }}
-      />
+      {/* Glossy effect - only on bright cards */}
+      {!isDimmed && (
+        <div className="absolute inset-0 pointer-events-none rounded-[3px]"
+          style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.5) 0%, transparent 50%)' }}
+        />
+      )}
     </motion.div>
   );
 });
@@ -133,6 +149,7 @@ export const PPPokerCompactCards = memo(function PPPokerCompactCards({
   isShowdown = false,
   handName,
   isWinner = false,
+  winningCardIndices = [],
   size = 'xs'
 }: PPPokerCompactCardsProps) {
   const { currentCardBack, preferences } = usePokerPreferences();
@@ -140,75 +157,72 @@ export const PPPokerCompactCards = memo(function PPPokerCompactCards({
   const cfg = SIZE_CONFIG[size];
   const showCards = isShowdown && cards && cards.length >= 2;
   const useFourColor = preferences.cardStyle === 'fourcolor';
+  
+  // For PLO4, show all 4 cards
+  const cardCount = cards?.length || 2;
+  const displayCards = showCards ? cards : Array(Math.min(cardCount, 4)).fill('XX');
 
-  // Fan rotation angles for PPPoker style
-  const rotations = [-12, 12]; // Cards fanned at angles
+  // Calculate rotations for card fan based on count
+  const getRotations = (count: number) => {
+    if (count === 2) return [-10, 10];
+    if (count === 3) return [-15, 0, 15];
+    if (count === 4) return [-15, -5, 5, 15];
+    return [-10, 10];
+  };
+  
+  const rotations = getRotations(displayCards.length);
 
   return (
     <div className="absolute left-1/2 -translate-x-1/2 top-full mt-0.5 flex flex-col items-center z-5">
       {/* Cards container - fanned effect */}
       <div className="relative flex justify-center" style={{ height: cfg.h + 4 }}>
-        {showCards ? (
-          // Face-up cards at showdown
-          cards.slice(0, 2).map((card, idx) => (
+        {displayCards.map((card, idx) => {
+          // Determine if this card is part of winning hand
+          const isCardWinning = winningCardIndices.includes(idx);
+          // At showdown with winning cards specified, dim non-winning cards
+          const isDimmed = isShowdown && winningCardIndices.length > 0 && !isCardWinning;
+          
+          return (
             <div 
               key={idx} 
               className="absolute"
               style={{ 
-                left: `${idx * 14 - 7}px`,
-                transform: `rotate(${rotations[idx]}deg)`,
+                left: `${idx * 20 - ((displayCards.length - 1) * 10)}px`,
+                transform: `rotate(${rotations[idx] || 0}deg)`,
                 transformOrigin: 'bottom center',
                 zIndex: idx
               }}
             >
               <MiniCard 
-                card={card} 
+                card={showCards ? card : 'XX'} 
+                faceDown={!showCards}
                 size={size} 
                 delay={idx}
-                isWinning={isWinner}
+                isWinning={isShowdown && isCardWinning && isWinner}
+                isDimmed={isDimmed}
                 rotation={0}
                 cardBackColors={{ primary: currentCardBack.primaryColor, secondary: currentCardBack.secondaryColor }}
                 useFourColor={useFourColor}
               />
             </div>
-          ))
-        ) : (
-          // Face-down cards
-          [0, 1].map((idx) => (
-            <div 
-              key={idx} 
-              className="absolute"
-              style={{ 
-                left: `${idx * 10 - 5}px`,
-                transform: `rotate(${rotations[idx]}deg)`,
-                transformOrigin: 'bottom center',
-                zIndex: idx
-              }}
-            >
-              <MiniCard 
-                card="XX" 
-                faceDown 
-                size={size} 
-                delay={idx}
-                cardBackColors={{ primary: currentCardBack.primaryColor, secondary: currentCardBack.secondaryColor }}
-              />
-            </div>
-          ))
-        )}
+          );
+        })}
       </div>
       
-      {/* Hand name badge at showdown */}
+      {/* Hand name badge at showdown - PPPoker style */}
       {isShowdown && handName && (
         <motion.div
           initial={{ opacity: 0, scale: 0.8, y: -2 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           transition={{ delay: 0.15 }}
-          className={cn(
-            "mt-0.5 px-1.5 py-0.5 rounded text-[8px] font-bold whitespace-nowrap shadow-md",
-            isWinner 
-              ? "bg-gradient-to-r from-amber-500 to-yellow-400 text-black" 
-              : "bg-black/80 text-white/90 border border-white/10"
-          )}
+          className="mt-1 px-2 py-0.5 rounded text-[9px] font-bold whitespace-nowrap"
+          style={{
+            background: isWinner 
+              ? 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)'
+              : 'transparent',
+            color: isWinner ? '#ffffff' : '#22c55e',
+            textShadow: '0 1px 3px rgba(0,0,0,0.5)'
+          }}
         >
           {handName}
         </motion.div>

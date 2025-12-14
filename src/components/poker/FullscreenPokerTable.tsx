@@ -418,6 +418,7 @@ const PlayerSeat = memo(function PlayerSeat({
           gamePhase={gamePhase} 
           communityCards={communityCards}
           isWinner={(player as any).isWinner}
+          winningCardIndices={(player as any).winningCardIndices || []}
         />
       )}
       
@@ -429,6 +430,7 @@ const PlayerSeat = memo(function PlayerSeat({
           isShowdown={gamePhase === 'showdown'}
           handName={(player as any).handName}
           isWinner={(player as any).isWinner}
+          winningCardIndices={(player as any).winningCardIndices || []}
           size="xs"
         />
       )}
