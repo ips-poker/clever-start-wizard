@@ -12,6 +12,7 @@ import { usePokerPreferences, TABLE_THEMES, CARD_BACKS } from '@/hooks/usePokerP
 import syndikateLogo from '@/assets/syndikate-logo-main.png';
 import { SmoothAvatarTimer } from './SmoothAvatarTimer';
 import { PPPokerChipStack } from './PPPokerChipStack';
+import { PotChips } from './RealisticPokerChip';
 import { SyndikateTableBackground } from './SyndikateTableBackground';
 import { PPPokerCompactCards } from './PPPokerCompactCards';
 import { PPPokerHeroCards } from './PPPokerHeroCards';
@@ -716,9 +717,12 @@ const CommunityCards = memo(function CommunityCards({
   );
 });
 
-// ============= POT DISPLAY - PPPoker style with chip stack =============
+// ============= POT DISPLAY - PPPoker style with premium 3D chips =============
 const PotDisplay = memo(function PotDisplay({ pot, blinds }: { pot: number; blinds: string }) {
   if (pot === 0) return null;
+  
+  // Parse big blind from blinds string (e.g., "10/20" -> 20)
+  const bigBlind = parseInt(blinds.split('/')[1]) || 20;
   
   return (
     <motion.div
@@ -726,52 +730,15 @@ const PotDisplay = memo(function PotDisplay({ pot, blinds }: { pot: number; blin
       animate={{ scale: 1, opacity: 1 }}
       className="flex flex-col items-center gap-2"
     >
-      {/* Pot amount with 3D chip stack */}
-      <div className="flex items-center gap-2">
-        {/* 3D Chip stack icon - PPPoker style */}
-        <div className="relative" style={{ width: 28, height: 32 }}>
-          {/* Bottom chip - red */}
-          <div 
-            className="absolute rounded-full"
-            style={{
-              width: 22,
-              height: 22,
-              bottom: 0,
-              left: 0,
-              background: 'linear-gradient(145deg, #ef4444 0%, #dc2626 50%, #991b1b 100%)',
-              border: '2px solid #7f1d1d',
-              boxShadow: 'inset 0 2px 4px rgba(255,255,255,0.35)'
-            }}
-          />
-          
-          {/* Middle chip - blue */}
-          <div 
-            className="absolute rounded-full"
-            style={{
-              width: 22,
-              height: 22,
-              bottom: 4,
-              left: 2,
-              background: 'linear-gradient(145deg, #3b82f6 0%, #2563eb 50%, #1d4ed8 100%)',
-              border: '2px solid #1e40af',
-              boxShadow: 'inset 0 2px 4px rgba(255,255,255,0.35)'
-            }}
-          />
-          
-          {/* Top chip - gold */}
-          <div 
-            className="absolute rounded-full flex items-center justify-center"
-            style={{
-              width: 22,
-              height: 22,
-              bottom: 8,
-              left: 4,
-              background: 'linear-gradient(145deg, #fcd34d 0%, #fbbf24 30%, #f59e0b 70%, #d97706 100%)',
-              border: '2px solid #b45309',
-              boxShadow: 'inset 0 2px 5px rgba(255,255,255,0.5), 0 3px 10px rgba(0,0,0,0.4)'
-            }}
-          />
-        </div>
+      {/* Pot amount with premium 3D chip stack */}
+      <div className="flex items-center gap-3">
+        {/* Premium 3D Chip stack from RealisticPokerChip */}
+        <PotChips 
+          amount={pot} 
+          bigBlind={bigBlind} 
+          size={26} 
+          animated 
+        />
         
         {/* Pot amount - golden text */}
         <span 
@@ -797,7 +764,6 @@ const PotDisplay = memo(function PotDisplay({ pot, blinds }: { pot: number; blin
     </motion.div>
   );
 });
-
 // ============= TOURNAMENT INFO BAR (compact PPPoker style) =============
 interface TournamentInfoBarProps {
   currentLevel?: number;
