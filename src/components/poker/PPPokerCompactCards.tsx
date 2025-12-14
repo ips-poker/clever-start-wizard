@@ -33,11 +33,11 @@ const SUITS_CLASSIC = {
   s: { symbol: '♠', color: '#1e293b' }
 };
 
-// Size configuration - smaller cards like PPPoker reference
-// Suit sizes reduced by 30% for Telegram mini app
+// Size configuration - cards increased by 10% for Telegram mini app
+// Suit sizes reduced by 30%
 const SIZE_CONFIG = {
-  xs: { w: 18, h: 26, rank: 'text-[7px]', suit: 'text-[4px]', overlap: -5 },
-  sm: { w: 22, h: 30, rank: 'text-[8px]', suit: 'text-[5px]', overlap: -6 }
+  xs: { w: 20, h: 29, rank: 'text-[8px]', suit: 'text-[5px]', overlap: -5 },
+  sm: { w: 24, h: 33, rank: 'text-[9px]', suit: 'text-[6px]', overlap: -6 }
 };
 
 // Single mini card component with dimming support for showdown
@@ -88,27 +88,95 @@ const MiniCard = memo(function MiniCard({
         initial={{ scale: 0, opacity: 0 }}
         animate={{ scale: 1, opacity: 1, rotate: rotation }}
         transition={{ delay: delay * 0.05, type: 'spring', stiffness: 300, damping: 25 }}
-        className="rounded-[3px] shadow-md relative overflow-hidden"
+        className="rounded-[4px] shadow-lg relative overflow-hidden"
         style={{
           width: cfg.w,
           height: cfg.h,
-          background: `linear-gradient(145deg, ${backPrimary} 0%, ${backSecondary} 100%)`,
-          border: `1px solid ${backPrimary}`,
+          background: `linear-gradient(145deg, ${backPrimary} 0%, ${backSecondary} 50%, ${backPrimary}dd 100%)`,
+          border: `1.5px solid ${backSecondary}`,
           boxShadow: isWinning 
-            ? '0 0 12px rgba(251,191,36,0.6), 0 2px 6px rgba(0,0,0,0.4)' 
-            : '0 2px 6px rgba(0,0,0,0.4)',
+            ? '0 0 12px rgba(251,191,36,0.6), 0 3px 8px rgba(0,0,0,0.5)' 
+            : '0 3px 8px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.15)',
           transformOrigin: 'bottom center'
         }}
       >
-        {/* Diamond pattern */}
-        <svg className="absolute inset-0 w-full h-full opacity-20" viewBox="0 0 24 32">
+        {/* Outer border frame */}
+        <div 
+          className="absolute inset-[2px] rounded-[2px] pointer-events-none"
+          style={{
+            border: '0.5px solid rgba(255,255,255,0.2)'
+          }}
+        />
+        
+        {/* Inner decorative frame */}
+        <div 
+          className="absolute inset-[4px] rounded-[1px] pointer-events-none"
+          style={{
+            border: '0.5px solid rgba(255,255,255,0.1)',
+            background: 'linear-gradient(180deg, rgba(255,255,255,0.05) 0%, transparent 50%)'
+          }}
+        />
+        
+        {/* Central diamond pattern with more detail */}
+        <svg className="absolute inset-0 w-full h-full" viewBox="0 0 20 29" preserveAspectRatio="xMidYMid slice">
           <defs>
-            <pattern id={`mini-${backPrimary.replace('#','')}`} x="0" y="0" width="8" height="8" patternUnits="userSpaceOnUse">
-              <path d="M4 0 L8 4 L4 8 L0 4 Z" fill="white" opacity="0.4"/>
+            <pattern id={`cardback-pattern-${backPrimary.replace('#','')}`} x="0" y="0" width="5" height="5" patternUnits="userSpaceOnUse">
+              <path d="M2.5 0 L5 2.5 L2.5 5 L0 2.5 Z" fill="rgba(255,255,255,0.15)" />
             </pattern>
+            <linearGradient id={`cardback-shine-${backPrimary.replace('#','')}`} x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="rgba(255,255,255,0.25)" />
+              <stop offset="50%" stopColor="rgba(255,255,255,0)" />
+              <stop offset="100%" stopColor="rgba(255,255,255,0.15)" />
+            </linearGradient>
           </defs>
-          <rect width="100%" height="100%" fill={`url(#mini-${backPrimary.replace('#','')})`}/>
+          <rect width="100%" height="100%" fill={`url(#cardback-pattern-${backPrimary.replace('#','')})`} />
+          <rect width="100%" height="100%" fill={`url(#cardback-shine-${backPrimary.replace('#','')})`} />
         </svg>
+        
+        {/* Center emblem/logo area */}
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div 
+            className="w-3 h-3 rounded-full flex items-center justify-center"
+            style={{
+              background: `linear-gradient(145deg, ${backSecondary} 0%, ${backPrimary} 100%)`,
+              border: '0.5px solid rgba(255,255,255,0.3)',
+              boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.3), 0 1px 2px rgba(255,255,255,0.1)'
+            }}
+          >
+            <div 
+              className="w-1.5 h-1.5 rounded-full"
+              style={{
+                background: 'radial-gradient(circle at 30% 30%, rgba(255,255,255,0.4), transparent 60%)',
+              }}
+            />
+          </div>
+        </div>
+        
+        {/* Top corner decoration */}
+        <div 
+          className="absolute top-1 left-1 w-1 h-1"
+          style={{
+            background: 'rgba(255,255,255,0.2)',
+            clipPath: 'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)'
+          }}
+        />
+        
+        {/* Bottom corner decoration */}
+        <div 
+          className="absolute bottom-1 right-1 w-1 h-1"
+          style={{
+            background: 'rgba(255,255,255,0.2)',
+            clipPath: 'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)'
+          }}
+        />
+        
+        {/* Glossy overlay */}
+        <div 
+          className="absolute inset-0 pointer-events-none rounded-[3px]"
+          style={{
+            background: 'linear-gradient(135deg, rgba(255,255,255,0.25) 0%, transparent 40%, rgba(0,0,0,0.1) 100%)'
+          }}
+        />
       </motion.div>
     );
   }
