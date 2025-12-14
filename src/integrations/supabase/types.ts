@@ -135,6 +135,13 @@ export type Database = {
             referencedRelation: "players"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "clan_invitations_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players_public_safe"
+            referencedColumns: ["id"]
+          },
         ]
       }
       clan_members: {
@@ -172,6 +179,13 @@ export type Database = {
             columns: ["player_id"]
             isOneToOne: true
             referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clan_members_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: true
+            referencedRelation: "players_public_safe"
             referencedColumns: ["id"]
           },
         ]
@@ -216,6 +230,13 @@ export type Database = {
             columns: ["don_player_id"]
             isOneToOne: false
             referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clans_don_player_id_fkey"
+            columns: ["don_player_id"]
+            isOneToOne: false
+            referencedRelation: "players_public_safe"
             referencedColumns: ["id"]
           },
         ]
@@ -470,6 +491,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "diamond_transactions_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players_public_safe"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "diamond_transactions_wallet_id_fkey"
             columns: ["wallet_id"]
             isOneToOne: false
@@ -515,6 +543,13 @@ export type Database = {
             columns: ["player_id"]
             isOneToOne: true
             referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "diamond_wallets_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: true
+            referencedRelation: "players_public_safe"
             referencedColumns: ["id"]
           },
         ]
@@ -610,6 +645,13 @@ export type Database = {
             columns: ["player_id"]
             isOneToOne: false
             referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "game_results_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players_public_safe"
             referencedColumns: ["id"]
           },
           {
@@ -718,10 +760,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "online_poker_tournament_participants_eliminated_by_fkey"
+            columns: ["eliminated_by"]
+            isOneToOne: false
+            referencedRelation: "players_public_safe"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "online_poker_tournament_participants_player_id_fkey"
             columns: ["player_id"]
             isOneToOne: false
             referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "online_poker_tournament_participants_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players_public_safe"
             referencedColumns: ["id"]
           },
           {
@@ -767,6 +823,13 @@ export type Database = {
             columns: ["player_id"]
             isOneToOne: false
             referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "online_poker_tournament_payouts_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players_public_safe"
             referencedColumns: ["id"]
           },
           {
@@ -856,6 +919,13 @@ export type Database = {
             referencedRelation: "players"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "online_poker_tournaments_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "players_public_safe"
+            referencedColumns: ["id"]
+          },
         ]
       }
       player_balances: {
@@ -895,6 +965,13 @@ export type Database = {
             columns: ["player_id"]
             isOneToOne: true
             referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "player_balances_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: true
+            referencedRelation: "players_public_safe"
             referencedColumns: ["id"]
           },
         ]
@@ -999,6 +1076,13 @@ export type Database = {
             referencedRelation: "players"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "poker_actions_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players_public_safe"
+            referencedColumns: ["id"]
+          },
         ]
       }
       poker_hand_players: {
@@ -1060,6 +1144,13 @@ export type Database = {
             columns: ["player_id"]
             isOneToOne: false
             referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "poker_hand_players_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players_public_safe"
             referencedColumns: ["id"]
           },
         ]
@@ -1175,6 +1266,13 @@ export type Database = {
             columns: ["player_id"]
             isOneToOne: false
             referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "poker_table_players_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players_public_safe"
             referencedColumns: ["id"]
           },
           {
@@ -1307,6 +1405,13 @@ export type Database = {
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "poker_tables_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "players_public_safe"
             referencedColumns: ["id"]
           },
         ]
@@ -1459,6 +1564,13 @@ export type Database = {
             columns: ["player_id"]
             isOneToOne: false
             referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tournament_registrations_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players_public_safe"
             referencedColumns: ["id"]
           },
           {
@@ -1875,6 +1987,54 @@ export type Database = {
       }
     }
     Views: {
+      players_public_safe: {
+        Row: {
+          avatar_url: string | null
+          created_at: string | null
+          elo_rating: number | null
+          email: string | null
+          games_played: number | null
+          id: string | null
+          manual_rank: string | null
+          name: string | null
+          phone: string | null
+          telegram: string | null
+          updated_at: string | null
+          user_id: string | null
+          wins: number | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string | null
+          elo_rating?: number | null
+          email?: never
+          games_played?: number | null
+          id?: string | null
+          manual_rank?: string | null
+          name?: string | null
+          phone?: never
+          telegram?: never
+          updated_at?: string | null
+          user_id?: string | null
+          wins?: number | null
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string | null
+          elo_rating?: number | null
+          email?: never
+          games_played?: number | null
+          id?: string | null
+          manual_rank?: string | null
+          name?: string | null
+          phone?: never
+          telegram?: never
+          updated_at?: string | null
+          user_id?: string | null
+          wins?: number | null
+        }
+        Relationships: []
+      }
       tournaments_display: {
         Row: {
           additional_chips: number | null
