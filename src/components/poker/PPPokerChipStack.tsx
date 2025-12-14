@@ -1,8 +1,9 @@
 // PPPoker-style Chip + BB Display for bet display
-// Red poker chip with spade + "X.X BB" text - positioned BETWEEN player and center of table
+// Realistic 3D poker chip with edge pattern + "X.X BB" text
 
 import React, { memo, useMemo } from 'react';
 import { motion } from 'framer-motion';
+import { RealisticPokerChip } from './RealisticPokerChip';
 
 interface PPPokerChipStackProps {
   amount: number;
@@ -36,26 +37,25 @@ export const PPPokerChipStack = memo(function PPPokerChipStack({
   if (amount <= 0) return null;
 
   // PPPoker exact style: bets are positioned RIGHT NEXT TO player box, not far away
-  // Reference: chip + BB right beside the name panel
   const getBetPosition = () => {
     // Hero (bottom center - y > 75): bet goes ABOVE avatar, CENTERED
     if (isHero || seatPosition.y > 75) {
-      return { x: 0, y: -50 }; // Above avatar, centered
+      return { x: 0, y: -50 };
     }
     
     // Left side of table (x < 30): bet to the right of name panel, very close
     if (seatPosition.x < 30) {
-      return { x: 55, y: 32 }; // Right of player panel, close
+      return { x: 55, y: 32 };
     }
     
     // Right side of table (x > 70): bet to the left of name panel, very close  
     if (seatPosition.x > 70) {
-      return { x: -55, y: 32 }; // Left of player panel, close
+      return { x: -55, y: 32 };
     }
     
     // Top seats (y < 35): bet goes below, close to panel
     if (seatPosition.y < 35) {
-      return { x: 0, y: 42 }; // Below player, close
+      return { x: 0, y: 42 };
     }
     
     // Middle seats: bet right next to box
@@ -85,64 +85,13 @@ export const PPPokerChipStack = memo(function PPPokerChipStack({
         transform: 'translate(-50%, -50%)'
       }}
     >
-      {/* PPPoker red chip with white spade - EXACT style from screenshot */}
-      <div className="relative flex-shrink-0" style={{ width: 24, height: 24 }}>
-        {/* Stacked chip below for 3D effect */}
-        <div 
-          className="absolute rounded-full"
-          style={{
-            width: 22,
-            height: 22,
-            top: 2,
-            left: 1,
-            background: 'linear-gradient(145deg, #b91c1c 0%, #7f1d1d 100%)',
-            border: '2px solid #7f1d1d'
-          }}
-        />
-        
-        {/* Main red chip */}
-        <div 
-          className="absolute rounded-full flex items-center justify-center"
-          style={{
-            width: 22,
-            height: 22,
-            top: 0,
-            left: 0,
-            background: 'linear-gradient(145deg, #ef4444 0%, #dc2626 50%, #b91c1c 100%)',
-            border: '2px solid #991b1b',
-            boxShadow: `
-              inset 0 2px 4px rgba(255,255,255,0.4),
-              inset 0 -2px 4px rgba(0,0,0,0.3),
-              0 2px 6px rgba(0,0,0,0.5)
-            `
-          }}
-        >
-          {/* White edge pattern - dashes around edge */}
-          <div 
-            className="absolute inset-[2px] rounded-full"
-            style={{
-              background: `repeating-conic-gradient(
-                from 0deg,
-                transparent 0deg 12deg,
-                rgba(255,255,255,0.5) 12deg 24deg
-              )`
-            }}
-          />
-          
-          {/* Inner red circle with spade */}
-          <div 
-            className="absolute rounded-full flex items-center justify-center"
-            style={{
-              width: 12,
-              height: 12,
-              background: 'linear-gradient(145deg, #ef4444, #dc2626)',
-              border: '1px solid rgba(255,255,255,0.2)'
-            }}
-          >
-            <span className="text-white text-[8px] font-bold">♠</span>
-          </div>
-        </div>
-      </div>
+      {/* Realistic 3D poker chip */}
+      <RealisticPokerChip
+        size={24}
+        color="red"
+        animated={animated}
+        delay={0}
+      />
 
       {/* BB Amount text in rounded pill - PPPoker exact style */}
       <div 
