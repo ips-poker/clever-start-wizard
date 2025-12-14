@@ -1,5 +1,12 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
+import { 
+  checkRateLimit, 
+  getClientIdentifier, 
+  createRateLimitResponse,
+  RATE_LIMIT_PRESETS 
+} from '../_shared/rate-limiter.ts';
 
 // Import core engine (relative path for Deno)
 import {
@@ -29,14 +36,17 @@ const corsHeaders = {
 
 const ACTION_TIME_SECONDS = 30;
 
-interface ActionRequest {
-  action: 'join' | 'join_table' | 'leave' | 'leave_table' | 'start_hand' | 'fold' | 'check' | 'call' | 'raise' | 'all_in' | 'check_timeout';
-  tableId: string;
-  playerId: string;
-  amount?: number;
-  seatNumber?: number;
-  buyIn?: number;
-}
+// Zod schema for action request validation
+const ActionRequestSchema = z.object({
+  action: z.enum(['join', 'join_table', 'leave', 'leave_table', 'start_hand', 'fold', 'check', 'call', 'raise', 'all_in', 'check_timeout']),
+  tableId: z.string().uuid('Invalid table ID'),
+  playerId: z.string().uuid('Invalid player ID'),
+  amount: z.number().int().min(0).max(1000000000).optional(),
+  seatNumber: z.number().int().min(1).max(10).optional(),
+  buyIn: z.number().int().min(0).max(1000000000).optional(),
+});
+
+type ActionRequest = z.infer<typeof ActionRequestSchema>;
 
 // Helper to convert DB player to GamePlayer
 function toGamePlayer(dbPlayer: any, handPlayer?: any): GamePlayer {
@@ -112,21 +122,39 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // Rate limiting - 60 requests per minute for game actions
+  const clientId = getClientIdentifier(req, 'poker-engine');
+  const rateLimitResult = checkRateLimit(clientId, RATE_LIMIT_PRESETS.api);
+  
+  if (!rateLimitResult.allowed) {
+    console.warn(`⚠️ Rate limit exceeded for ${clientId}`);
+    return createRateLimitResponse(rateLimitResult, corsHeaders);
+  }
+
   const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
   const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
   const supabase = createClient(supabaseUrl, supabaseKey);
 
   try {
-    const request: ActionRequest = await req.json();
-    const { action, tableId, playerId, amount, seatNumber, buyIn: requestBuyIn } = request;
+    // Validate input with zod
+    const rawBody = await req.json();
+    const parseResult = ActionRequestSchema.safeParse(rawBody);
+    
+    if (!parseResult.success) {
+      console.error('❌ Input validation failed:', parseResult.error.errors);
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: 'Invalid input data', 
+          details: parseResult.error.errors.map(e => `${e.path.join('.')}: ${e.message}`)
+        }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    const { action, tableId, playerId, amount, seatNumber, buyIn: requestBuyIn } = parseResult.data;
     
     console.log(`[Engine] ${action} | table=${tableId?.slice(0,8)} | player=${playerId?.slice(0,8)} | amount=${amount || requestBuyIn}`);
-
-    if (!tableId || !playerId) {
-      return new Response(JSON.stringify({ success: false, error: 'Missing tableId or playerId' }), {
-        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
-    }
 
     const { data: table, error: tableError } = await supabase
       .from('poker_tables')

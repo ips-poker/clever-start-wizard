@@ -1,5 +1,12 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
+import { 
+  checkRateLimit, 
+  getClientIdentifier, 
+  createRateLimitResponse,
+  RATE_LIMIT_PRESETS 
+} from '../_shared/rate-limiter.ts';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -14,27 +21,40 @@ interface OrangeDataConfig {
   test_mode: boolean;
 }
 
-interface ReceiptItem {
-  name: string;
-  price: number;
-  quantity: number;
-  vat: 'vat0' | 'vat10' | 'vat20' | 'vat110' | 'vat120' | 'no_vat';
-}
+// Zod schema for receipt item validation
+const ReceiptItemSchema = z.object({
+  name: z.string().min(1).max(256),
+  price: z.number().positive().max(100000000),
+  quantity: z.number().positive().max(10000),
+  vat: z.enum(['vat0', 'vat10', 'vat20', 'vat110', 'vat120', 'no_vat']),
+});
 
-interface ReceiptData {
-  amount: number;
-  email: string;
-  tax_system: string;
-  test_mode: boolean;
-  items: ReceiptItem[];
-  phone?: string;
-  client_name?: string;
-  payment_type?: 'cash' | 'card' | 'prepaid' | 'credit' | 'other';
-}
+// Zod schema for receipt data validation
+const ReceiptDataSchema = z.object({
+  amount: z.number().positive().max(100000000),
+  email: z.string().email().max(256),
+  tax_system: z.string().max(64),
+  test_mode: z.boolean(),
+  items: z.array(ReceiptItemSchema).min(1).max(100),
+  phone: z.string().max(32).optional(),
+  client_name: z.string().max(256).optional(),
+  payment_type: z.enum(['cash', 'card', 'prepaid', 'credit', 'other']).optional(),
+});
+
+type ReceiptData = z.infer<typeof ReceiptDataSchema>;
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
+  }
+
+  // Rate limiting - 10 requests per minute for financial operations
+  const clientId = getClientIdentifier(req, 'orange-data');
+  const rateLimitResult = checkRateLimit(clientId, RATE_LIMIT_PRESETS.financial);
+  
+  if (!rateLimitResult.allowed) {
+    console.warn(`⚠️ Rate limit exceeded for ${clientId}`);
+    return createRateLimitResponse(rateLimitResult, corsHeaders);
   }
 
   try {
@@ -56,7 +76,22 @@ serve(async (req) => {
       throw new Error("Authentication failed");
     }
 
-    const receiptData: ReceiptData = await req.json();
+    // Validate input with zod
+    const rawBody = await req.json();
+    const parseResult = ReceiptDataSchema.safeParse(rawBody);
+    
+    if (!parseResult.success) {
+      console.error('❌ Receipt validation failed:', parseResult.error.errors);
+      return new Response(
+        JSON.stringify({ 
+          error: 'Invalid receipt data', 
+          details: parseResult.error.errors.map(e => `${e.path.join('.')}: ${e.message}`)
+        }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    const receiptData = parseResult.data;
 
     // Get Orange Data configuration
     const supabaseService = createClient(
