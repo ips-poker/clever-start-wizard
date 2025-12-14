@@ -156,7 +156,12 @@ export function useClanSystem() {
 
   // Загрузить приглашения
   const loadInvitations = useCallback(async () => {
-    if (!playerData?.id) return;
+    if (!playerData?.id) {
+      console.log('⚠️ loadInvitations: нет playerData.id');
+      return;
+    }
+
+    console.log('📨 Загружаем приглашения для игрока:', playerData.id, playerData.name);
 
     try {
       const { data, error } = await supabase
@@ -168,18 +173,21 @@ export function useClanSystem() {
         .eq('player_id', playerData.id)
         .eq('status', 'pending');
 
+      console.log('📨 Результат загрузки приглашений:', { data, error, playerId: playerData.id });
+
       if (error) {
-        console.error('Error loading invitations:', error);
+        console.error('❌ Error loading invitations:', error);
         return;
       }
 
       if (data) {
+        console.log('✅ Найдено приглашений:', data.length);
         setPendingInvitations(data as ClanInvitation[]);
       }
     } catch (error) {
-      console.error('Error in loadInvitations:', error);
+      console.error('❌ Error in loadInvitations:', error);
     }
-  }, [playerData?.id]);
+  }, [playerData?.id, playerData?.name]);
 
   // Создать клан
   const createClan = async (name: string, emblemId: number, sealId: number, description?: string) => {
