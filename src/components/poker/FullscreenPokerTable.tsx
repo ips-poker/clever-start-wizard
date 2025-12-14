@@ -38,29 +38,29 @@ const SUITS = {
 // Динамические позиции для 2-8 игроков
 const SEAT_POSITIONS_BY_COUNT: Record<number, Array<{ x: number; y: number }>> = {
   2: [
-    { x: 50, y: 85 },   // Seat 0 - Hero (bottom center)
+    { x: 50, y: 88 },   // Seat 0 - Hero (bottom center)
     { x: 50, y: 8 },    // Seat 1 - Top center (напротив)
   ],
   3: [
-    { x: 50, y: 85 },   // Seat 0 - Hero (bottom center)
+    { x: 50, y: 88 },   // Seat 0 - Hero (bottom center)
     { x: 18, y: 35 },   // Seat 1 - Left
     { x: 82, y: 35 },   // Seat 2 - Right
   ],
   4: [
-    { x: 50, y: 85 },   // Seat 0 - Hero (bottom center)
+    { x: 50, y: 88 },   // Seat 0 - Hero (bottom center)
     { x: 18, y: 50 },   // Seat 1 - Left middle
     { x: 50, y: 8 },    // Seat 2 - Top center
     { x: 82, y: 50 },   // Seat 3 - Right middle
   ],
   5: [
-    { x: 50, y: 85 },   // Seat 0 - Hero (bottom center)
+    { x: 50, y: 88 },   // Seat 0 - Hero (bottom center)
     { x: 18, y: 60 },   // Seat 1 - Left bottom
     { x: 18, y: 28 },   // Seat 2 - Left top
     { x: 82, y: 28 },   // Seat 3 - Right top
     { x: 82, y: 60 },   // Seat 4 - Right bottom
   ],
   6: [
-    { x: 50, y: 85 },   // Seat 0 - Hero (bottom center)
+    { x: 50, y: 88 },   // Seat 0 - Hero (bottom center)
     { x: 18, y: 62 },   // Seat 1 - Left bottom
     { x: 18, y: 32 },   // Seat 2 - Left top
     { x: 50, y: 8 },    // Seat 3 - Top center
@@ -68,7 +68,7 @@ const SEAT_POSITIONS_BY_COUNT: Record<number, Array<{ x: number; y: number }>> =
     { x: 82, y: 62 },   // Seat 5 - Right bottom
   ],
   7: [
-    { x: 50, y: 85 },   // Seat 0 - Hero (bottom center)
+    { x: 50, y: 88 },   // Seat 0 - Hero (bottom center)
     { x: 18, y: 65 },   // Seat 1 - Left bottom
     { x: 18, y: 42 },   // Seat 2 - Left middle
     { x: 18, y: 20 },   // Seat 3 - Left top
@@ -77,7 +77,7 @@ const SEAT_POSITIONS_BY_COUNT: Record<number, Array<{ x: number; y: number }>> =
     { x: 82, y: 65 },   // Seat 6 - Right bottom
   ],
   8: [
-    { x: 50, y: 85 },   // Seat 0 - Hero (bottom center)
+    { x: 50, y: 88 },   // Seat 0 - Hero (bottom center)
     { x: 18, y: 65 },   // Seat 1 - Left bottom
     { x: 18, y: 42 },   // Seat 2 - Left middle
     { x: 18, y: 20 },   // Seat 3 - Left top
@@ -90,7 +90,7 @@ const SEAT_POSITIONS_BY_COUNT: Record<number, Array<{ x: number; y: number }>> =
 
 // Fallback для 9-max (legacy)
 const SEAT_POSITIONS_9MAX = [
-  { x: 50, y: 85 },   // Seat 0 - Hero (bottom center)
+  { x: 50, y: 88 },   // Seat 0 - Hero (bottom center)
   { x: 18, y: 68 },   // Seat 1 - Left bottom
   { x: 18, y: 45 },   // Seat 2 - Left middle
   { x: 18, y: 22 },   // Seat 3 - Left top
