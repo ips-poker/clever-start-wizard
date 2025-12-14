@@ -3,11 +3,22 @@
  * Returns diamonds to player wallet when leaving table
  */
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+// Zod схема для валидации входных данных
+const CashoutSchema = z.object({
+  playerId: z.string().uuid('Invalid player ID format'),
+  tableId: z.string().uuid('Invalid table ID format').optional(),
+  amount: z.number().int().min(0).max(1000000000).optional(), // Max 1 billion diamonds
+  action: z.enum(['buy_in', 'cashout'], { 
+    errorMap: () => ({ message: 'Action must be "buy_in" or "cashout"' })
+  }),
+});
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -15,14 +26,22 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { playerId, tableId, amount, action } = await req.json();
-
-    if (!playerId) {
+    // Валидация входных данных
+    const rawBody = await req.json();
+    const parseResult = CashoutSchema.safeParse(rawBody);
+    
+    if (!parseResult.success) {
+      console.error('❌ Input validation failed:', parseResult.error.errors);
       return new Response(
-        JSON.stringify({ error: 'Missing playerId' }),
+        JSON.stringify({ 
+          error: 'Invalid input data', 
+          details: parseResult.error.errors.map(e => `${e.path.join('.')}: ${e.message}`)
+        }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+    
+    const { playerId, tableId, amount, action } = parseResult.data;
 
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',

@@ -2,18 +2,21 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { corsHeaders } from '../_shared/cors.ts'
 import { crypto } from 'https://deno.land/std@0.177.0/crypto/mod.ts'
 import { encode as hexEncode } from 'https://deno.land/std@0.177.0/encoding/hex.ts'
+import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts'
 
-interface TelegramAuthData {
-  id: number;
-  first_name?: string;
-  last_name?: string;
-  username?: string;
-  photo_url?: string;
-  auth_date: number;
-  hash?: string;
-  // initDataRaw от Telegram WebApp SDK
-  init_data_raw?: string;
-}
+// Zod схема для валидации входных данных
+const TelegramAuthSchema = z.object({
+  id: z.number().int().positive().max(9999999999999), // Telegram user IDs are up to 13 digits
+  first_name: z.string().max(256).optional(),
+  last_name: z.string().max(256).optional(),
+  username: z.string().max(32).regex(/^[a-zA-Z0-9_]*$/).optional(), // Telegram usernames: alphanumeric + underscore
+  photo_url: z.string().url().max(2048).optional().or(z.literal('')).transform(v => v || undefined),
+  auth_date: z.number().int().positive(),
+  hash: z.string().max(256).optional(),
+  init_data_raw: z.string().max(4096).optional(), // initDataRaw от Telegram WebApp SDK
+});
+
+type TelegramAuthData = z.infer<typeof TelegramAuthSchema>;
 
 // Генерация HMAC-SHA256
 async function hmacSha256(key: Uint8Array, data: string): Promise<Uint8Array> {
@@ -177,15 +180,29 @@ Deno.serve(async (req) => {
       );
     }
 
-    const authData: TelegramAuthData = await req.json();
-    console.log('📥 Received Telegram auth data:', { 
+    // Валидация входных данных с помощью zod
+    const rawBody = await req.json();
+    const parseResult = TelegramAuthSchema.safeParse(rawBody);
+    
+    if (!parseResult.success) {
+      console.error('❌ Input validation failed:', parseResult.error.errors);
+      return new Response(
+        JSON.stringify({ 
+          error: 'Invalid input data', 
+          details: parseResult.error.errors.map(e => `${e.path.join('.')}: ${e.message}`)
+        }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    const authData = parseResult.data;
+    console.log('📥 Received Telegram auth data (validated):', { 
       id: authData.id,
       auth_date: authData.auth_date,
       username: authData.username || 'NOT PROVIDED',
       hash: authData.hash ? '[PRESENT]' : '[MISSING]',
       photo_url: authData.photo_url ? '[PRESENT]' : 'NOT PROVIDED',
       init_data_raw: authData.init_data_raw ? `[PRESENT, length: ${authData.init_data_raw.length}]` : '[MISSING]',
-      init_data_raw_preview: authData.init_data_raw ? authData.init_data_raw.substring(0, 100) + '...' : 'N/A'
     });
 
     let isValid = false;

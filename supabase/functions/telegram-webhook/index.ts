@@ -1,41 +1,42 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-interface TelegramUpdate {
-  message?: {
-    message_id: number
-    from: {
-      id: number
-      first_name: string
-      last_name?: string
-      username?: string
-    }
-    chat: {
-      id: number
-      type: string
-    }
-    text?: string
-  }
-  callback_query?: {
-    id: string
-    from: {
-      id: number
-      first_name: string
-      last_name?: string
-      username?: string
-    }
-    message?: {
-      chat: {
-        id: number
-      }
-    }
-    data?: string
-  }
-}
+// Zod схема для валидации Telegram Update
+const TelegramUserSchema = z.object({
+  id: z.number().int().positive(),
+  first_name: z.string().max(256),
+  last_name: z.string().max(256).optional(),
+  username: z.string().max(32).optional(),
+});
+
+const TelegramUpdateSchema = z.object({
+  message: z.object({
+    message_id: z.number().int(),
+    from: TelegramUserSchema,
+    chat: z.object({
+      id: z.number().int(),
+      type: z.string().max(32),
+    }),
+    text: z.string().max(4096).optional(),
+  }).optional(),
+  callback_query: z.object({
+    id: z.string().max(64),
+    from: TelegramUserSchema,
+    message: z.object({
+      chat: z.object({
+        id: z.number().int(),
+      }),
+    }).optional(),
+    data: z.string().max(64).optional(),
+  }).optional(),
+});
+
+type TelegramUpdate = z.infer<typeof TelegramUpdateSchema>;
 
 interface TelegramMessage {
   chat_id: number
@@ -80,13 +81,24 @@ Deno.serve(async (req) => {
         console.log('Empty request body, returning OK')
         return new Response('OK', { status: 200, headers: corsHeaders })
       }
-      update = JSON.parse(text)
+      
+      const rawData = JSON.parse(text)
+      
+      // Валидация с помощью zod
+      const parseResult = TelegramUpdateSchema.safeParse(rawData)
+      if (!parseResult.success) {
+        console.error('❌ Telegram update validation failed:', parseResult.error.errors)
+        // Возвращаем OK чтобы Telegram не повторял запрос
+        return new Response('OK', { status: 200, headers: corsHeaders })
+      }
+      
+      update = parseResult.data
     } catch (parseError) {
       console.error('Failed to parse request body:', parseError)
       return new Response('OK', { status: 200, headers: corsHeaders })
     }
     
-    console.log('Received update:', JSON.stringify(update, null, 2))
+    console.log('Received validated update:', JSON.stringify(update, null, 2))
 
     // Обработка нажатий кнопок (callback_query)
     if (update.callback_query) {
