@@ -32,10 +32,10 @@ const SUITS_CLASSIC = {
   s: { symbol: '♠', color: '#1e293b' }
 };
 
-// Size configuration - larger cards with more rotation
+// Size configuration - smaller cards like PPPoker reference
 const SIZE_CONFIG = {
-  xs: { w: 28, h: 38, rank: 'text-[9px]', suit: 'text-[8px]', overlap: -8 },
-  sm: { w: 36, h: 50, rank: 'text-[11px]', suit: 'text-[10px]', overlap: -12 }
+  xs: { w: 18, h: 26, rank: 'text-[7px]', suit: 'text-[6px]', overlap: -5 },
+  sm: { w: 22, h: 30, rank: 'text-[8px]', suit: 'text-[7px]', overlap: -6 }
 };
 
 // Single mini card component with dimming support for showdown
@@ -175,33 +175,32 @@ export const PPPokerCompactCards = memo(function PPPokerCompactCards({
 
   return (
     <>
-      {/* Cards positioned to the RIGHT of avatar, fanned with bigger angle - PPPoker style */}
+      {/* Cards positioned to the RIGHT of avatar, fanned like PPPoker reference */}
       <div 
         className="absolute"
         style={{
-          right: -(cfg.w * 0.6),
-          top: '15%',
+          right: -(cfg.w * 2.5),
+          top: '5%',
           zIndex: 5
         }}
       >
-        {/* Cards container - fanned effect with more angle and shift like PPPoker */}
-        <div className="relative" style={{ width: cfg.w * 2.8, height: cfg.h + 20 }}>
+        {/* Cards container - tight fan effect like PPPoker */}
+        <div className="relative" style={{ width: cfg.w * 3, height: cfg.h + 10 }}>
           {displayCards.map((card, idx) => {
             // Determine if this card is part of winning hand
             const isCardWinning = winningCardIndices.includes(idx);
             // At showdown with winning cards specified, dim non-winning cards
             const isDimmed = isShowdown && winningCardIndices.length > 0 && !isCardWinning;
             
-            // Rotation and positioning for PPPoker style fan - more angle
+            // PPPoker style tight fan - cards fan out from left with small angles
             const totalCards = displayCards.length;
-            const baseRotation = totalCards === 4 ? -18 : totalCards === 3 ? -15 : -12;
-            const rotationStep = totalCards === 4 ? 10 : totalCards === 3 ? 12 : 18;
+            // Start rotation and step for tight fan
+            const baseRotation = -5;
+            const rotationStep = totalCards === 4 ? 8 : totalCards === 3 ? 10 : 12;
             const rotation = baseRotation + idx * rotationStep;
             
-            // Horizontal offset for each card with more overlap
-            const xOffset = idx * (cfg.w * 0.5);
-            // Vertical stagger for depth effect
-            const yOffset = idx * 2;
+            // Cards overlap significantly, small horizontal offset
+            const xOffset = idx * (cfg.w * 0.55);
             
             return (
               <div 
@@ -209,9 +208,9 @@ export const PPPokerCompactCards = memo(function PPPokerCompactCards({
                 className="absolute"
                 style={{ 
                   left: xOffset,
-                  top: yOffset,
+                  top: 0,
                   transform: `rotate(${rotation}deg)`,
-                  transformOrigin: 'bottom left',
+                  transformOrigin: 'bottom center',
                   zIndex: idx + 1
                 }}
               >
