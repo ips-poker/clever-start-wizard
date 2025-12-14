@@ -16,12 +16,16 @@ import {
   VolumeX,
   ChevronUp,
   Mic,
-  MicOff
+  MicOff,
+  Coins
 } from "lucide-react";
 import ipsLogo from "/lovable-uploads/3d3f89dd-02a1-4e23-845c-641c0ee0956b.png";
 import telegramQr from "@/assets/telegram-qr.png";
 import { useVoiceAnnouncements } from "@/hooks/useVoiceAnnouncements";
 import { calculateTotalRPSPool, formatRPSPoints } from "@/utils/rpsCalculations";
+import { GlitchText } from "@/components/ui/glitch-text";
+import { AnimatedCounter } from "@/components/timer/AnimatedCounter";
+import { TrendIndicator } from "@/components/timer/TrendIndicator";
 
 interface Tournament {
   id: string;
@@ -195,7 +199,8 @@ const FullscreenTimer = ({
       totalReentries,
       totalAdditionalSets,
       rpsPool,
-      averageStack
+      averageStack,
+      totalChips
     };
   }, [registrations, tournament.buy_in, tournament.starting_chips, tournament.participation_fee, tournament.reentry_fee, tournament.additional_fee]);
 
@@ -252,15 +257,27 @@ const FullscreenTimer = ({
       <div className="flex justify-between items-center p-4 border-b border-gray-200">
         {/* Left - Logo and Company */}
         <div className="flex items-center space-x-3">
-          <div className="w-20 h-20 flex items-center justify-center">
-            <img 
-              src={ipsLogo} 
-              alt="EPC Logo" 
-              className="w-16 h-16 object-contain"
-            />
+          {/* Logo Container with Frame */}
+          <div className="relative w-20 h-20">
+            {/* Corner Brackets */}
+            <div className="absolute -top-1 -left-1 w-5 h-5 border-l-2 border-t-2 border-amber-500 animate-pulse" />
+            <div className="absolute -top-1 -right-1 w-5 h-5 border-r-2 border-t-2 border-amber-500 animate-pulse" style={{ animationDelay: '0.5s' }} />
+            <div className="absolute -bottom-1 -left-1 w-5 h-5 border-l-2 border-b-2 border-amber-500 animate-pulse" style={{ animationDelay: '1s' }} />
+            <div className="absolute -bottom-1 -right-1 w-5 h-5 border-r-2 border-b-2 border-amber-500 animate-pulse" style={{ animationDelay: '1.5s' }} />
+            
+            {/* Main Logo Box */}
+            <div className="absolute inset-0 border border-gray-300 bg-white/80 backdrop-blur-sm flex items-center justify-center p-2">
+              <img 
+                src={ipsLogo} 
+                alt="EPC Logo" 
+                className="w-full h-full object-contain"
+              />
+            </div>
           </div>
           <div className="flex flex-col">
-            <span className="text-2xl font-sinkin text-poker-gold tracking-tight">EPC</span>
+            <span className="text-2xl font-sinkin text-poker-gold tracking-tight">
+              <GlitchText text="EPC" glitchIntensity="low" />
+            </span>
             <span className="text-sm text-gray-500 -mt-1 font-sinkin font-medium tracking-widest uppercase">EVENT POKER CLUB</span>
           </div>
         </div>
@@ -334,20 +351,29 @@ const FullscreenTimer = ({
             )}
           </div>
           
-          {/* Timer Display - увеличен в 2 раза */}
+          {/* Timer Display - с критической пульсацией */}
           <div className={`text-[12rem] md:text-[16rem] font-mono font-light transition-all duration-300 leading-none ${
+            currentTime <= 30 ? 'text-red-500 animate-critical-pulse' : 
             currentTime <= 60 ? 'text-red-500' : 
             currentTime <= 300 ? 'text-amber-500' : 
             'text-gray-800'
-          }`}>
+          }`}
+            style={currentTime <= 30 ? { 
+              textShadow: '0 0 30px rgba(239, 68, 68, 0.5), 0 0 60px rgba(239, 68, 68, 0.3)' 
+            } : undefined}
+          >
             {formatTime(currentTime)}
           </div>
           
-          {/* Progress Bar */}
-          <div className="w-80 max-w-full mt-4">
+          {/* Progress Bar с shimmer эффектом */}
+          <div className="w-80 max-w-full mt-4 relative overflow-hidden">
             <Progress 
               value={timerProgress} 
               className="h-2 bg-gray-200"
+            />
+            <div 
+              className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent animate-[shimmer_2s_infinite]"
+              style={{ transform: 'skewX(-20deg)' }}
             />
           </div>
         </div>
@@ -407,32 +433,56 @@ const FullscreenTimer = ({
           </div>
         </div>
 
-        {/* Statistics - расширенная статистика */}
-        <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 max-w-6xl w-full">
-          <div className="grid grid-cols-5 gap-6 text-center">
+        {/* Statistics - расширенная статистика с анимированными счётчиками */}
+        <div className="bg-gray-50/80 backdrop-blur-sm border border-gray-200 rounded-lg p-4 max-w-6xl w-full shadow-sm">
+          <div className="grid grid-cols-6 gap-4 text-center">
             <div>
               <div className="flex items-center justify-center mb-1">
                 <Users className="w-4 h-4 text-gray-600 mr-2" />
                 <span className="text-sm text-gray-600">Игроки</span>
               </div>
-              <p className="text-xl font-medium text-gray-800">{statisticsData.activePlayers.length}</p>
+              <AnimatedCounter 
+                value={statisticsData.activePlayers.length}
+                className="text-xl font-medium text-gray-800"
+              />
             </div>
             <div>
-              <div className="flex items-center justify-center mb-1">
-                <Trophy className="w-4 h-4 text-amber-600 mr-2" />
+              <div className="flex items-center justify-center mb-1 whitespace-nowrap">
+                <Trophy className="w-4 h-4 text-amber-600 mr-2 flex-shrink-0" />
                 <span className="text-sm text-gray-600">Призовой фонд RPS</span>
               </div>
-              <p className="text-xl font-medium text-gray-800">{statisticsData.rpsPool.toLocaleString()} RPS</p>
+              <AnimatedCounter 
+                value={statisticsData.rpsPool}
+                suffix=" RPS"
+                className="text-xl font-medium text-amber-600"
+                duration={800}
+              />
             </div>
             <div>
               <div className="flex items-center justify-center mb-1">
+                <Coins className="w-4 h-4 text-gray-600 mr-2" />
+                <span className="text-sm text-gray-600">Фишки в игре</span>
+              </div>
+              <AnimatedCounter 
+                value={statisticsData.totalChips}
+                className="text-xl font-medium text-gray-800"
+                duration={600}
+              />
+            </div>
+            <div>
+              <div className="flex items-center justify-center mb-1">
+                <TrendIndicator currentValue={statisticsData.averageStack} className="mr-1" />
                 <span className="text-sm text-gray-600">Средний стек</span>
               </div>
-              <p className="text-xl font-medium text-gray-800">{statisticsData.averageStack.toLocaleString()}</p>
+              <AnimatedCounter 
+                value={statisticsData.averageStack}
+                className="text-xl font-medium text-gray-800"
+                duration={600}
+              />
             </div>
             <div>
               <div className="flex items-center justify-center mb-1">
-                <span className="text-sm text-gray-600">Re-entry / Доп. наборы</span>
+                <span className="text-sm text-gray-600">Re-entry / Доп.</span>
               </div>
               <p className="text-xl font-medium text-gray-800">{statisticsData.totalReentries} / {statisticsData.totalAdditionalSets}</p>
             </div>
