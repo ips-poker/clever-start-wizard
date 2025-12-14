@@ -11,42 +11,106 @@ interface PPPokerPotDisplayProps {
   showBBFormat?: boolean;
 }
 
-// Realistic chip stack icon
+// PPPoker-style 3D chip stack icon - more realistic
 const ChipStackIcon = memo(function ChipStackIcon() {
   return (
-    <div className="relative w-6 h-6">
+    <div className="relative" style={{ width: 28, height: 28 }}>
+      {/* Bottom chip shadow */}
+      <div 
+        className="absolute rounded-full"
+        style={{
+          width: 22,
+          height: 22,
+          bottom: -2,
+          left: 2,
+          background: 'rgba(0,0,0,0.4)',
+          filter: 'blur(3px)'
+        }}
+      />
+      
       {/* Bottom chip - red */}
       <div 
-        className="absolute bottom-0 left-0 w-5 h-5 rounded-full"
+        className="absolute rounded-full"
         style={{
-          background: 'linear-gradient(145deg, #ef4444 0%, #dc2626 100%)',
-          border: '1.5px solid #b91c1c',
-          boxShadow: 'inset 0 2px 4px rgba(255,255,255,0.3), 0 1px 2px rgba(0,0,0,0.3)'
+          width: 22,
+          height: 22,
+          bottom: 0,
+          left: 0,
+          background: 'linear-gradient(145deg, #ef4444 0%, #dc2626 50%, #991b1b 100%)',
+          border: '2px solid #7f1d1d',
+          boxShadow: 'inset 0 2px 4px rgba(255,255,255,0.35), inset 0 -1px 3px rgba(0,0,0,0.3)'
         }}
-      />
-      {/* Middle chip - green */}
+      >
+        {/* Chip edge pattern */}
+        <div 
+          className="absolute inset-0 rounded-full opacity-50"
+          style={{
+            background: `repeating-conic-gradient(
+              from 0deg,
+              transparent 0deg 18deg,
+              rgba(255,255,255,0.3) 18deg 36deg
+            )`
+          }}
+        />
+      </div>
+      
+      {/* Middle chip - blue */}
       <div 
-        className="absolute bottom-1 left-0.5 w-5 h-5 rounded-full"
+        className="absolute rounded-full"
         style={{
-          background: 'linear-gradient(145deg, #22c55e 0%, #16a34a 100%)',
-          border: '1.5px solid #15803d',
-          boxShadow: 'inset 0 2px 4px rgba(255,255,255,0.3), 0 1px 2px rgba(0,0,0,0.3)'
-        }}
-      />
-      {/* Top chip - gold/yellow */}
-      <div 
-        className="absolute bottom-2 left-1 w-5 h-5 rounded-full flex items-center justify-center"
-        style={{
-          background: 'linear-gradient(145deg, #fbbf24 0%, #f59e0b 100%)',
-          border: '1.5px solid #d97706',
-          boxShadow: 'inset 0 2px 4px rgba(255,255,255,0.4), 0 2px 6px rgba(0,0,0,0.4)'
+          width: 22,
+          height: 22,
+          bottom: 4,
+          left: 2,
+          background: 'linear-gradient(145deg, #3b82f6 0%, #2563eb 50%, #1d4ed8 100%)',
+          border: '2px solid #1e40af',
+          boxShadow: 'inset 0 2px 4px rgba(255,255,255,0.35), inset 0 -1px 3px rgba(0,0,0,0.3)'
         }}
       >
         <div 
-          className="w-2.5 h-2.5 rounded-full"
+          className="absolute inset-0 rounded-full opacity-50"
           style={{
-            background: '#fef3c7',
-            border: '1px solid #d97706'
+            background: `repeating-conic-gradient(
+              from 15deg,
+              transparent 0deg 18deg,
+              rgba(255,255,255,0.3) 18deg 36deg
+            )`
+          }}
+        />
+      </div>
+      
+      {/* Top chip - gold */}
+      <div 
+        className="absolute rounded-full flex items-center justify-center"
+        style={{
+          width: 22,
+          height: 22,
+          bottom: 8,
+          left: 4,
+          background: 'linear-gradient(145deg, #fcd34d 0%, #fbbf24 30%, #f59e0b 70%, #d97706 100%)',
+          border: '2px solid #b45309',
+          boxShadow: 'inset 0 2px 5px rgba(255,255,255,0.5), inset 0 -2px 4px rgba(0,0,0,0.2), 0 3px 10px rgba(0,0,0,0.4)'
+        }}
+      >
+        {/* Center circle */}
+        <div 
+          className="rounded-full"
+          style={{
+            width: 10,
+            height: 10,
+            background: 'linear-gradient(145deg, #fef3c7, #fcd34d)',
+            border: '1px solid #b45309'
+          }}
+        />
+        {/* Chip edge pattern */}
+        <div 
+          className="absolute inset-0 rounded-full opacity-40"
+          style={{
+            background: `repeating-conic-gradient(
+              from 10deg,
+              transparent 0deg 18deg,
+              rgba(255,255,255,0.4) 18deg 36deg
+            )`
           }}
         />
       </div>
@@ -75,49 +139,31 @@ export const PPPokerPotDisplay = memo(function PPPokerPotDisplay({
     <motion.div
       initial={{ scale: 0, opacity: 0 }}
       animate={{ scale: 1, opacity: 1 }}
-      className="flex flex-col items-center gap-1.5"
+      className="flex flex-col items-center gap-2"
     >
-      {/* Pot amount with chip icon */}
-      <div 
-        className="flex items-center gap-2 px-3 py-1.5 rounded-full"
-        style={{
-          background: 'linear-gradient(180deg, rgba(0,0,0,0.85) 0%, rgba(15,15,15,0.9) 100%)',
-          border: '1px solid rgba(251,191,36,0.35)',
-          boxShadow: '0 4px 16px rgba(0,0,0,0.4)'
-        }}
-      >
+      {/* Main pot display - PPPoker exact style */}
+      <div className="flex items-center gap-2">
         <ChipStackIcon />
         
-        <div className="flex items-center gap-1.5">
-          <span 
-            className="font-bold text-base"
-            style={{
-              background: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent'
-            }}
-          >
-            {showBBFormat ? `${potInBB} BB` : pot.toLocaleString()}
-          </span>
-        </div>
-      </div>
-      
-      {/* "Банк:" label above - PPPoker style */}
-      <div 
-        className="flex items-center gap-2 px-3 py-1 rounded-full"
-        style={{
-          background: 'linear-gradient(180deg, rgba(0,0,0,0.75) 0%, rgba(15,15,15,0.85) 100%)',
-          border: '1px solid rgba(255,255,255,0.1)'
-        }}
-      >
-        <span className="text-white/90 text-xs font-medium">
-          Банк: {showBBFormat ? `${potInBB} BB` : pot.toLocaleString()}
+        <span 
+          className="font-bold text-[15px]"
+          style={{
+            color: '#fbbf24',
+            textShadow: '0 1px 3px rgba(0,0,0,0.8), 0 0 10px rgba(251,191,36,0.3)'
+          }}
+        >
+          {pot.toLocaleString()}
         </span>
       </div>
       
-      {/* Blinds info */}
-      <span className="text-white/50 text-[11px] font-medium">
-        Блайнды: {smallBlind.toLocaleString()}/{bigBlind.toLocaleString()}
+      {/* "Банк:" label - matching PPPoker */}
+      <span 
+        className="text-white/90 text-[13px] font-medium"
+        style={{
+          textShadow: '0 1px 3px rgba(0,0,0,0.8)'
+        }}
+      >
+        Банк: {pot.toLocaleString()}
       </span>
     </motion.div>
   );

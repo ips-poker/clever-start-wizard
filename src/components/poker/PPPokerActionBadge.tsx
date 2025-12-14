@@ -18,60 +18,77 @@ const ACTION_CONFIGS: Record<string, {
   bgGradient: string;
   textColor: string;
   borderColor: string;
+  arrowColor: string;
 }> = {
   fold: { 
     label: 'Фолд', 
     bgGradient: 'linear-gradient(135deg, #6b7280 0%, #4b5563 100%)',
     textColor: '#ffffff',
-    borderColor: 'rgba(255,255,255,0.2)'
+    borderColor: 'rgba(255,255,255,0.2)',
+    arrowColor: '#4b5563'
   },
   check: { 
     label: 'Чек', 
     bgGradient: 'linear-gradient(135deg, #06b6d4 0%, #0891b2 100%)',
     textColor: '#ffffff',
-    borderColor: 'rgba(255,255,255,0.3)'
+    borderColor: 'rgba(255,255,255,0.3)',
+    arrowColor: '#0891b2'
   },
   call: { 
     label: 'Колл', 
-    bgGradient: 'linear-gradient(135deg, #06b6d4 0%, #0891b2 100%)',
+    bgGradient: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
     textColor: '#ffffff',
-    borderColor: 'rgba(255,255,255,0.3)'
+    borderColor: 'rgba(255,255,255,0.3)',
+    arrowColor: '#059669'
   },
   bet: { 
     label: 'Бет', 
-    bgGradient: 'linear-gradient(135deg, #06b6d4 0%, #0891b2 100%)',
-    textColor: '#ffffff',
-    borderColor: 'rgba(255,255,255,0.3)'
+    bgGradient: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)',
+    textColor: '#000000',
+    borderColor: 'rgba(255,255,255,0.3)',
+    arrowColor: '#f59e0b'
   },
   raise: { 
     label: 'Рейз', 
     bgGradient: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
     textColor: '#000000',
-    borderColor: 'rgba(255,255,255,0.3)'
+    borderColor: 'rgba(255,255,255,0.3)',
+    arrowColor: '#d97706'
   },
   allin: { 
-    label: 'ALL-IN', 
+    label: 'ОЛЛ-ИН', 
     bgGradient: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
     textColor: '#ffffff',
-    borderColor: 'rgba(255,255,255,0.3)'
+    borderColor: 'rgba(255,255,255,0.3)',
+    arrowColor: '#dc2626'
+  },
+  sittingout: { 
+    label: 'Вне игры', 
+    bgGradient: 'linear-gradient(135deg, #374151 0%, #1f2937 100%)',
+    textColor: '#9ca3af',
+    borderColor: 'rgba(255,255,255,0.1)',
+    arrowColor: '#1f2937'
   },
   bank: { 
     label: 'Банк', 
     bgGradient: 'linear-gradient(135deg, #06b6d4 0%, #0891b2 100%)',
     textColor: '#ffffff',
-    borderColor: 'rgba(255,255,255,0.3)'
+    borderColor: 'rgba(255,255,255,0.3)',
+    arrowColor: '#0891b2'
   },
   sb: { 
     label: 'SB', 
     bgGradient: 'linear-gradient(135deg, #64748b 0%, #475569 100%)',
     textColor: '#ffffff',
-    borderColor: 'rgba(255,255,255,0.2)'
+    borderColor: 'rgba(255,255,255,0.2)',
+    arrowColor: '#475569'
   },
   bb: { 
     label: 'BB', 
     bgGradient: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
     textColor: '#ffffff',
-    borderColor: 'rgba(255,255,255,0.3)'
+    borderColor: 'rgba(255,255,255,0.3)',
+    arrowColor: '#2563eb'
   }
 };
 
@@ -87,7 +104,8 @@ export const PPPokerActionBadge = memo(function PPPokerActionBadge({
     label: action, 
     bgGradient: 'linear-gradient(135deg, #6b7280 0%, #4b5563 100%)',
     textColor: '#ffffff',
-    borderColor: 'rgba(255,255,255,0.2)'
+    borderColor: 'rgba(255,255,255,0.2)',
+    arrowColor: '#4b5563'
   };
   
   // Format amount
@@ -119,11 +137,11 @@ export const PPPokerActionBadge = memo(function PPPokerActionBadge({
       
       {/* Arrow pointing down */}
       <div 
-        className="absolute left-1/2 -translate-x-1/2 -bottom-1 w-0 h-0"
+        className="absolute left-1/2 -translate-x-1/2 -bottom-1.5 w-0 h-0"
         style={{
-          borderLeft: '5px solid transparent',
-          borderRight: '5px solid transparent',
-          borderTop: '5px solid #0891b2'
+          borderLeft: '6px solid transparent',
+          borderRight: '6px solid transparent',
+          borderTop: `6px solid ${config.arrowColor}`
         }}
       />
     </motion.div>
