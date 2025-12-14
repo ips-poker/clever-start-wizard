@@ -309,8 +309,8 @@ const PlayerSeat = memo(function PlayerSeat({
   onSeatClick,
   lastAction
 }: PlayerSeatProps & { lastAction?: string }) {
-  // Avatar sizes - larger for hero, standard for opponents
-  const avatarSize = isHero ? 60 : 48;
+  // Avatar sizes - same for all players
+  const avatarSize = 56;
   
   // Empty seat
   if (!player) {
@@ -328,6 +328,8 @@ const PlayerSeat = memo(function PlayerSeat({
             canJoin ? "cursor-pointer" : "cursor-default"
           )}
           style={{
+            width: avatarSize,
+            height: avatarSize,
             background: canJoin 
               ? 'radial-gradient(circle, rgba(34,197,94,0.15) 0%, rgba(0,0,0,0.6) 100%)'
               : 'rgba(0,0,0,0.3)',
