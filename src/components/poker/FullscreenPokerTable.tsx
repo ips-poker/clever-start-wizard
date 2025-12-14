@@ -390,16 +390,13 @@ const PlayerSeat = memo(function PlayerSeat({
           style={{
             width: avatarSize,
             height: avatarSize,
-            border: isCurrentTurn && !player.isFolded
-              ? '3px solid #22c55e'
-              : player.isAllIn
-                ? '3px solid #ef4444'
-                : '2px solid rgba(255,255,255,0.3)',
-            boxShadow: isCurrentTurn && !player.isFolded
-              ? '0 0 25px rgba(34,197,94,0.6)'
-              : player.isAllIn
-                ? '0 0 20px rgba(239,68,68,0.5)'
-                : '0 6px 20px rgba(0,0,0,0.5)'
+            // Timer ring replaces active border - no double ring
+            border: player.isAllIn
+              ? '3px solid #ef4444'
+              : '2px solid rgba(255,255,255,0.3)',
+            boxShadow: player.isAllIn
+              ? '0 0 20px rgba(239,68,68,0.5)'
+              : '0 6px 20px rgba(0,0,0,0.5)'
           }}
         >
           <img 
