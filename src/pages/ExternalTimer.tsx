@@ -540,11 +540,9 @@ const ExternalTimer = () => {
                 />
               </div>
               <div>
-                <div className="flex items-center justify-center mb-2">
-                  <Trophy className="w-6 h-6 mr-3 text-[hsl(24,100%,50%)]" />
-                  <span className="text-lg text-[hsl(0,0%,50%)]">
-                    Призовой фонд RPS
-                  </span>
+                <div className="flex items-center justify-center mb-2 whitespace-nowrap">
+                  <Trophy className="w-6 h-6 mr-2 text-[hsl(24,100%,50%)] flex-shrink-0" />
+                  <span className="text-lg text-[hsl(0,0%,50%)]">Призовой фонд RPS</span>
                 </div>
                 <AnimatedCounter 
                   value={rpsPool}
