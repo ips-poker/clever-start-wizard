@@ -34,9 +34,10 @@ const SUITS_CLASSIC = {
 };
 
 // Size configuration - smaller cards like PPPoker reference
+// Suit sizes reduced by 30% for Telegram mini app
 const SIZE_CONFIG = {
-  xs: { w: 18, h: 26, rank: 'text-[7px]', suit: 'text-[6px]', overlap: -5 },
-  sm: { w: 22, h: 30, rank: 'text-[8px]', suit: 'text-[7px]', overlap: -6 }
+  xs: { w: 18, h: 26, rank: 'text-[7px]', suit: 'text-[4px]', overlap: -5 },
+  sm: { w: 22, h: 30, rank: 'text-[8px]', suit: 'text-[5px]', overlap: -6 }
 };
 
 // Single mini card component with dimming support for showdown

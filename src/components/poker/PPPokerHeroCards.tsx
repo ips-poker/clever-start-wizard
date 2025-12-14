@@ -54,8 +54,9 @@ const HeroCard = memo(function HeroCard({
   const cardWidth = cardCount > 2 ? 44 : 52;
   const cardHeight = cardCount > 2 ? 62 : 72;
   const rankSize = cardCount > 2 ? 'text-base' : 'text-lg';
-  const suitSize = cardCount > 2 ? 'text-sm' : 'text-base';
-  const centerSize = cardCount > 2 ? 'text-2xl' : 'text-3xl';
+  // Suit sizes reduced by 30% for Telegram mini app
+  const suitSize = cardCount > 2 ? 'text-[9px]' : 'text-[11px]';
+  const centerSize = cardCount > 2 ? 'text-lg' : 'text-xl';
 
   // Colors for dimmed vs bright cards
   const cardBg = isDimmed 
