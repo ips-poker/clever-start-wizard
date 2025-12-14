@@ -113,7 +113,7 @@ interface PPPokerChipProps {
   className?: string;
 }
 
-// Premium 3D Poker Chip with edge inserts
+// Premium 3D Poker Chip - Casino style with rectangular inserts and dots
 export const PPPokerChip = memo(function PPPokerChip({
   size = 24,
   color,
@@ -125,180 +125,273 @@ export const PPPokerChip = memo(function PPPokerChip({
   const colors = CHIP_COLORS[chipColor];
   const id = `chip-${chipColor}-${Math.random().toString(36).slice(2, 8)}`;
   
-  // Calculate insert positions (8 inserts around the edge)
+  // 8 large rectangular edge inserts
   const inserts = Array.from({ length: 8 }).map((_, i) => {
-    const angle = (i * 45) * Math.PI / 180;
+    const angle = (i * 45 - 90) * Math.PI / 180;
     return {
-      x: 50 + Math.cos(angle) * 38,
-      y: 50 + Math.sin(angle) * 38,
+      x: 50 + Math.cos(angle) * 40,
+      y: 50 + Math.sin(angle) * 40,
       rotation: i * 45
     };
+  });
+
+  // Decorative dots between inserts (2 dots per gap)
+  const dots: { x: number; y: number }[] = [];
+  for (let i = 0; i < 8; i++) {
+    const baseAngle = (i * 45 + 22.5 - 90) * Math.PI / 180;
+    const radius = 40;
+    // 3 dots in triangle pattern between each insert
+    [-8, 0, 8].forEach((offset) => {
+      const angle = baseAngle + (offset * Math.PI / 180);
+      dots.push({
+        x: 50 + Math.cos(angle) * (radius - (offset === 0 ? 5 : 0)),
+        y: 50 + Math.sin(angle) * (radius - (offset === 0 ? 5 : 0))
+      });
+    });
+  }
+
+  // Inner ring segments (alternating pattern)
+  const ringSegments = Array.from({ length: 24 }).map((_, i) => {
+    const startAngle = i * 15;
+    const isLight = i % 2 === 0;
+    return { startAngle, isLight };
   });
 
   return (
     <div 
       className={cn("relative flex-shrink-0", className)}
-      style={{ 
-        width: size, 
-        height: size
-      }}
+      style={{ width: size, height: size }}
     >
       <svg 
         viewBox="0 0 100 100" 
         className="w-full h-full"
         style={{ 
-          filter: `drop-shadow(0 2px 3px rgba(0,0,0,0.4)) drop-shadow(0 1px 1px rgba(0,0,0,0.2))`
+          filter: `drop-shadow(0 3px 4px rgba(0,0,0,0.5)) drop-shadow(0 1px 2px rgba(0,0,0,0.3))`
         }}
       >
         <defs>
-          {/* Main chip surface gradient */}
-          <radialGradient id={`surface-${id}`} cx="35%" cy="30%" r="65%">
+          {/* Main surface gradient with glossy top */}
+          <radialGradient id={`surface-${id}`} cx="30%" cy="25%" r="70%">
             <stop offset="0%" stopColor={colors.light} />
-            <stop offset="50%" stopColor={colors.main} />
+            <stop offset="40%" stopColor={colors.main} />
             <stop offset="100%" stopColor={colors.dark} />
           </radialGradient>
           
-          {/* Edge/rim gradient for 3D depth */}
+          {/* Edge gradient */}
           <linearGradient id={`edge-${id}`} x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor={colors.main} />
+            <stop offset="0%" stopColor={colors.light} stopOpacity="0.5" />
             <stop offset="50%" stopColor={colors.edge} />
             <stop offset="100%" stopColor={colors.dark} />
           </linearGradient>
           
-          {/* Insert gradient for 3D raised effect */}
-          <radialGradient id={`insert-${id}`} cx="30%" cy="30%" r="70%">
+          {/* Insert gradient */}
+          <linearGradient id={`insert-${id}`} x1="0%" y1="0%" x2="0%" y2="100%">
             <stop offset="0%" stopColor={colors.insertLight} />
-            <stop offset="60%" stopColor={colors.insert} />
-            <stop offset="100%" stopColor={colors.insertLight} stopOpacity="0.6" />
-          </radialGradient>
+            <stop offset="50%" stopColor={colors.insert} />
+            <stop offset="100%" stopColor={colors.insertLight} stopOpacity="0.7" />
+          </linearGradient>
           
           {/* Inner circle gradient */}
-          <radialGradient id={`inner-${id}`} cx="40%" cy="35%" r="60%">
-            <stop offset="0%" stopColor={colors.light} stopOpacity="0.3" />
+          <radialGradient id={`inner-${id}`} cx="35%" cy="30%" r="65%">
+            <stop offset="0%" stopColor={colors.light} stopOpacity="0.5" />
             <stop offset="50%" stopColor={colors.main} />
             <stop offset="100%" stopColor={colors.dark} />
           </radialGradient>
           
           {/* Glossy highlight */}
           <linearGradient id={`gloss-${id}`} x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="white" stopOpacity="0.5" />
-            <stop offset="50%" stopColor="white" stopOpacity="0.1" />
+            <stop offset="0%" stopColor="white" stopOpacity="0.6" />
+            <stop offset="40%" stopColor="white" stopOpacity="0.15" />
             <stop offset="100%" stopColor="white" stopOpacity="0" />
           </linearGradient>
         </defs>
         
-        {/* Outer edge ring - creates 3D thickness */}
+        {/* Outer edge ring */}
         <circle 
           cx="50" 
           cy="50" 
-          r="48" 
+          r="49" 
           fill={`url(#edge-${id})`}
           stroke={colors.edge}
-          strokeWidth="1"
+          strokeWidth="0.5"
         />
         
         {/* Main chip surface */}
         <circle 
           cx="50" 
           cy="50" 
-          r="45" 
+          r="47" 
           fill={`url(#surface-${id})`}
         />
         
-        {/* 8 Edge inserts - raised 3D elements */}
+        {/* 8 Large rectangular edge inserts */}
         {inserts.map((insert, i) => (
-          <g key={i}>
+          <g key={i} transform={`rotate(${insert.rotation}, 50, 50)`}>
             {/* Insert shadow */}
-            <ellipse
-              cx={insert.x + 0.5}
-              cy={insert.y + 1}
-              rx="9"
-              ry="5"
+            <rect
+              x="42"
+              y="3"
+              width="16"
+              height="10"
+              rx="1.5"
               fill="rgba(0,0,0,0.3)"
-              transform={`rotate(${insert.rotation}, ${insert.x + 0.5}, ${insert.y + 1})`}
+              transform="translate(0.5, 0.5)"
             />
             {/* Insert body */}
-            <ellipse
-              cx={insert.x}
-              cy={insert.y}
-              rx="9"
-              ry="5"
+            <rect
+              x="42"
+              y="3"
+              width="16"
+              height="10"
+              rx="1.5"
               fill={`url(#insert-${id})`}
               stroke={colors.edge}
               strokeWidth="0.5"
-              transform={`rotate(${insert.rotation}, ${insert.x}, ${insert.y})`}
             />
             {/* Insert highlight */}
-            <ellipse
-              cx={insert.x - 1}
-              cy={insert.y - 1}
-              rx="4"
-              ry="2"
+            <rect
+              x="43"
+              y="4"
+              width="14"
+              height="3"
+              rx="1"
               fill="rgba(255,255,255,0.4)"
-              transform={`rotate(${insert.rotation}, ${insert.x - 1}, ${insert.y - 1})`}
             />
           </g>
         ))}
         
-        {/* Inner decorative ring */}
+        {/* Decorative dots between inserts */}
+        {dots.map((dot, i) => (
+          <circle
+            key={`dot-${i}`}
+            cx={dot.x}
+            cy={dot.y}
+            r="2"
+            fill={colors.insert}
+            stroke={colors.edge}
+            strokeWidth="0.3"
+          />
+        ))}
+        
+        {/* Inner decorative ring with alternating segments */}
         <circle 
           cx="50" 
           cy="50" 
           r="28" 
           fill="none"
           stroke={colors.edge}
-          strokeWidth="1.5"
-          opacity="0.6"
+          strokeWidth="0.8"
         />
         
-        {/* Center circle */}
-        <circle 
-          cx="50" 
-          cy="50" 
-          r="25" 
-          fill={`url(#inner-${id})`}
-        />
+        {/* Alternating ring pattern */}
+        {ringSegments.map((seg, i) => {
+          const startRad = (seg.startAngle - 90) * Math.PI / 180;
+          const endRad = (seg.startAngle + 15 - 90) * Math.PI / 180;
+          const innerR = 26;
+          const outerR = 30;
+          
+          const x1 = 50 + Math.cos(startRad) * innerR;
+          const y1 = 50 + Math.sin(startRad) * innerR;
+          const x2 = 50 + Math.cos(startRad) * outerR;
+          const y2 = 50 + Math.sin(startRad) * outerR;
+          const x3 = 50 + Math.cos(endRad) * outerR;
+          const y3 = 50 + Math.sin(endRad) * outerR;
+          const x4 = 50 + Math.cos(endRad) * innerR;
+          const y4 = 50 + Math.sin(endRad) * innerR;
+          
+          return (
+            <path
+              key={`ring-${i}`}
+              d={`M ${x1} ${y1} L ${x2} ${y2} A ${outerR} ${outerR} 0 0 1 ${x3} ${y3} L ${x4} ${y4} A ${innerR} ${innerR} 0 0 0 ${x1} ${y1}`}
+              fill={seg.isLight ? colors.insert : colors.dark}
+              opacity={seg.isLight ? 0.9 : 0.7}
+            />
+          );
+        })}
         
-        {/* Inner ring highlight */}
+        {/* Center circle background */}
         <circle 
           cx="50" 
           cy="50" 
           r="24" 
-          fill="none"
-          stroke="rgba(255,255,255,0.2)"
+          fill={`url(#inner-${id})`}
+          stroke={colors.edge}
           strokeWidth="0.5"
         />
         
-        {/* Spade symbol in center */}
+        {/* Center inner highlight ring */}
+        <circle 
+          cx="50" 
+          cy="50" 
+          r="22" 
+          fill="none"
+          stroke="rgba(255,255,255,0.15)"
+          strokeWidth="0.5"
+        />
+        
+        {/* Spade symbol in center with 3D effect */}
         {showSymbol && (
-          <text
-            x="50"
-            y="57"
-            textAnchor="middle"
-            fontSize="22"
-            fontWeight="bold"
-            fill={colors.symbol}
-            style={{ filter: 'drop-shadow(0 1px 1px rgba(0,0,0,0.3))' }}
-          >
-            ♠
-          </text>
+          <g>
+            {/* Symbol shadow */}
+            <text
+              x="50.5"
+              y="58"
+              textAnchor="middle"
+              fontSize="24"
+              fontWeight="bold"
+              fill="rgba(0,0,0,0.4)"
+            >
+              ♠
+            </text>
+            {/* Symbol */}
+            <text
+              x="50"
+              y="57"
+              textAnchor="middle"
+              fontSize="24"
+              fontWeight="bold"
+              fill={colors.symbol}
+            >
+              ♠
+            </text>
+            {/* Symbol highlight */}
+            <text
+              x="49.5"
+              y="56"
+              textAnchor="middle"
+              fontSize="24"
+              fontWeight="bold"
+              fill="rgba(255,255,255,0.2)"
+              style={{ clipPath: 'inset(0 0 50% 0)' }}
+            >
+              ♠
+            </text>
+          </g>
         )}
         
-        {/* Top glossy highlight */}
+        {/* Large glossy highlight arc */}
         <ellipse
-          cx="40"
-          cy="35"
-          rx="20"
-          ry="12"
+          cx="38"
+          cy="32"
+          rx="22"
+          ry="14"
           fill={`url(#gloss-${id})`}
         />
         
-        {/* Small shine dot */}
+        {/* Small bright highlight */}
         <circle
-          cx="35"
-          cy="32"
-          r="4"
+          cx="32"
+          cy="28"
+          r="5"
           fill="rgba(255,255,255,0.5)"
+        />
+        
+        {/* Secondary small highlight */}
+        <circle
+          cx="38"
+          cy="32"
+          r="2"
+          fill="rgba(255,255,255,0.3)"
         />
       </svg>
     </div>
