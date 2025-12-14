@@ -301,18 +301,29 @@ const PlayerSeat = memo(function PlayerSeat({
       initial={{ scale: 0, opacity: 0 }}
       animate={{ scale: 1, opacity: 1 }}
     >
-      {/* Timer ring - smooth 60fps animation around avatar */}
-      {isCurrentTurn && turnTimeRemaining !== undefined && !player.isFolded && (
-        <SmoothAvatarTimer 
-          remaining={turnTimeRemaining} 
-          total={30} 
-          size={avatarSize + 20}
-          strokeWidth={4}
-        />
-      )}
-      
       {/* Avatar with status border and opponent cards */}
       <div className="relative">
+        {/* Timer ring - INSIDE avatar container, centered on avatar */}
+        {isCurrentTurn && turnTimeRemaining !== undefined && !player.isFolded && (
+          <div 
+            className="absolute z-30 pointer-events-none"
+            style={{
+              left: '50%',
+              top: '50%',
+              transform: 'translate(-50%, -50%)',
+              width: avatarSize + 16,
+              height: avatarSize + 16
+            }}
+          >
+            <SmoothAvatarTimer 
+              remaining={turnTimeRemaining} 
+              total={30} 
+              size={avatarSize + 16}
+              strokeWidth={4}
+            />
+          </div>
+        )}
+        
         {/* Level badge - PPPoker style (5YR, VIP, etc.) */}
         <PPPokerLevelBadge level={(player as any).level} isVIP={(player as any).isVIP} />
         
