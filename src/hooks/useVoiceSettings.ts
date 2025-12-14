@@ -92,39 +92,52 @@ export const useVoiceSettings = () => {
   };
 
   useEffect(() => {
-    loadSettings();
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+    let isMounted = true;
 
-    // Подписка на realtime обновления настроек
-    const setupRealtimeSubscription = async () => {
+    const initialize = async () => {
+      await loadSettings();
+      
+      if (!isMounted) return;
+
+      // Подписка на realtime обновления настроек
       try {
         const authResponse = await supabase.auth.getUser();
         const user = authResponse?.data?.user;
         
-        if (user) {
-        const channel = supabase
-          .channel('voice_settings_changes')
-          .on(
-            'postgres_changes',
-            {
-              event: '*',
-              schema: 'public',
-              table: 'voice_settings',
-              filter: `user_id=eq.${user.id}`
-            },
-            (payload) => {
-              console.log('Voice settings changed via realtime:', payload);
-              loadSettings(); // Перезагружаем настройки при изменении
-            }
-          )
-          .subscribe();
-
+        if (user && isMounted) {
+          channel = supabase
+            .channel(`voice_settings_changes_${user.id}`)
+            .on(
+              'postgres_changes',
+              {
+                event: '*',
+                schema: 'public',
+                table: 'voice_settings',
+                filter: `user_id=eq.${user.id}`
+              },
+              (payload) => {
+                if (isMounted) {
+                  console.log('Voice settings changed via realtime:', payload);
+                  loadSettings();
+                }
+              }
+            )
+            .subscribe();
         }
       } catch (error) {
         console.error('Error setting up realtime subscription:', error);
       }
     };
 
-    setupRealtimeSubscription();
+    initialize();
+
+    return () => {
+      isMounted = false;
+      if (channel) {
+        supabase.removeChannel(channel);
+      }
+    };
   }, []);
 
   const updateSettings = async (newSettings: VoiceSettings) => {
