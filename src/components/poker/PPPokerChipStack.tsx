@@ -138,7 +138,7 @@ export const PPPokerChipStack = memo(function PPPokerChipStack({
   amount,
   seatPosition,
   bigBlind = 20,
-  showBBFormat = false,
+  showBBFormat = true, // Default to BB format like PPPoker
   animated = true
 }: PPPokerChipStackProps) {
   const chips = useMemo(() => calculateChips(amount), [amount]);
@@ -148,7 +148,8 @@ export const PPPokerChipStack = memo(function PPPokerChipStack({
   const bbValue = useMemo(() => {
     if (!showBBFormat || bigBlind <= 0) return null;
     const bb = amount / bigBlind;
-    if (bb >= 10) return Math.round(bb);
+    if (bb >= 100) return Math.round(bb).toLocaleString();
+    if (bb >= 10) return bb.toFixed(1);
     if (bb >= 1) return bb.toFixed(1);
     return bb.toFixed(2);
   }, [amount, bigBlind, showBBFormat]);
@@ -157,7 +158,7 @@ export const PPPokerChipStack = memo(function PPPokerChipStack({
 
   // Calculate total chip stack height
   const totalChips = chips.reduce((sum, c) => sum + c.count, 0);
-  const stackHeight = Math.min(totalChips, 8) * 3 + 20; // Max 8 chips visible
+  const stackHeight = Math.min(totalChips, 6) * 3 + 20; // Max 6 chips visible
 
   return (
     <motion.div
@@ -170,39 +171,39 @@ export const PPPokerChipStack = memo(function PPPokerChipStack({
       }}
       transition={{
         type: 'spring',
-        stiffness: 250,
-        damping: 22,
-        delay: 0.05
+        stiffness: 280,
+        damping: 24,
+        delay: 0.03
       }}
-      className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-end gap-1.5 z-20"
+      className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-end gap-1 z-20"
     >
-      {/* Chip stacks */}
-      <div className="relative" style={{ width: 20, height: stackHeight }}>
-        {chips.map((chip, chipIdx) => {
+      {/* Chip stack icon */}
+      <div className="relative" style={{ width: 18, height: stackHeight }}>
+        {chips.slice(0, 2).map((chip, chipIdx) => {
           const baseOffset = chips.slice(0, chipIdx).reduce((sum, c) => sum + c.count, 0);
-          return Array.from({ length: chip.count }).map((_, i) => (
+          return Array.from({ length: Math.min(chip.count, 3) }).map((_, i) => (
             <Chip3D 
               key={`${chipIdx}-${i}`}
               color={chip.color}
               border={chip.border}
               stackIndex={baseOffset + i}
-              isTop={chipIdx === chips.length - 1 && i === chip.count - 1}
+              isTop={chipIdx === Math.min(chips.length - 1, 1) && i === Math.min(chip.count - 1, 2)}
             />
           ));
         })}
       </div>
 
-      {/* Amount badge */}
+      {/* Amount badge - PPPoker style */}
       <div 
-        className="px-1.5 py-0.5 rounded-md flex items-center gap-1"
+        className="px-2 py-0.5 rounded-md flex items-center"
         style={{
-          background: 'linear-gradient(135deg, rgba(0,0,0,0.92) 0%, rgba(20,20,20,0.95) 100%)',
-          border: '1px solid rgba(251,191,36,0.5)',
+          background: 'linear-gradient(180deg, rgba(0,0,0,0.9) 0%, rgba(15,15,15,0.95) 100%)',
+          border: '1px solid rgba(251,191,36,0.4)',
           boxShadow: '0 2px 8px rgba(0,0,0,0.5)'
         }}
       >
         <span 
-          className="font-bold text-[11px] leading-none"
+          className="font-bold text-[11px] leading-none whitespace-nowrap"
           style={{
             background: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)',
             WebkitBackgroundClip: 'text',
