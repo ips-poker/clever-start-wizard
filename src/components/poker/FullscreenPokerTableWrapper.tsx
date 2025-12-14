@@ -347,6 +347,7 @@ export function FullscreenPokerTableWrapper({
             canJoinTable={canJoinTable}
             onSeatClick={handleSeatClick}
             onPotCollect={sounds.playChipSlide}
+            maxSeats={maxSeats}
           />
         </div>
 
