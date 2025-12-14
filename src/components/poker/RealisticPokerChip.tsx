@@ -113,7 +113,7 @@ interface PPPokerChipProps {
   className?: string;
 }
 
-// Premium 3D Poker Chip - Casino style with rectangular inserts and dots
+// Premium 3D Poker Chip - Ultra realistic casino style
 export const PPPokerChip = memo(function PPPokerChip({
   size = 24,
   color,
@@ -126,21 +126,15 @@ export const PPPokerChip = memo(function PPPokerChip({
   const id = `chip-${chipColor}-${Math.random().toString(36).slice(2, 8)}`;
   
   // 8 large rectangular edge inserts
-  const inserts = Array.from({ length: 8 }).map((_, i) => {
-    const angle = (i * 45 - 90) * Math.PI / 180;
-    return {
-      x: 50 + Math.cos(angle) * 40,
-      y: 50 + Math.sin(angle) * 40,
-      rotation: i * 45
-    };
-  });
+  const inserts = Array.from({ length: 8 }).map((_, i) => ({
+    rotation: i * 45
+  }));
 
-  // Decorative dots between inserts (2 dots per gap)
+  // Decorative dots between inserts
   const dots: { x: number; y: number }[] = [];
   for (let i = 0; i < 8; i++) {
     const baseAngle = (i * 45 + 22.5 - 90) * Math.PI / 180;
     const radius = 40;
-    // 3 dots in triangle pattern between each insert
     [-8, 0, 8].forEach((offset) => {
       const angle = baseAngle + (offset * Math.PI / 180);
       dots.push({
@@ -150,137 +144,212 @@ export const PPPokerChip = memo(function PPPokerChip({
     });
   }
 
-  // Inner ring segments (alternating pattern)
-  const ringSegments = Array.from({ length: 24 }).map((_, i) => {
-    const startAngle = i * 15;
-    const isLight = i % 2 === 0;
-    return { startAngle, isLight };
-  });
+  // Inner ring segments
+  const ringSegments = Array.from({ length: 24 }).map((_, i) => ({
+    startAngle: i * 15,
+    isLight: i % 2 === 0
+  }));
 
   return (
     <div 
       className={cn("relative flex-shrink-0", className)}
-      style={{ width: size, height: size }}
+      style={{ 
+        width: size, 
+        height: size,
+        transform: 'perspective(200px) rotateX(15deg)',
+        transformStyle: 'preserve-3d'
+      }}
     >
       <svg 
-        viewBox="0 0 100 100" 
+        viewBox="0 0 100 110" 
         className="w-full h-full"
         style={{ 
-          filter: `drop-shadow(0 3px 4px rgba(0,0,0,0.5)) drop-shadow(0 1px 2px rgba(0,0,0,0.3))`
+          filter: `drop-shadow(0 6px 8px rgba(0,0,0,0.6)) drop-shadow(0 2px 4px rgba(0,0,0,0.4))`
         }}
       >
         <defs>
-          {/* Main surface gradient with glossy top */}
-          <radialGradient id={`surface-${id}`} cx="30%" cy="25%" r="70%">
+          {/* Main surface gradient - metallic sheen */}
+          <radialGradient id={`surface-${id}`} cx="30%" cy="20%" r="75%">
             <stop offset="0%" stopColor={colors.light} />
+            <stop offset="35%" stopColor={colors.main} />
+            <stop offset="70%" stopColor={colors.dark} />
+            <stop offset="100%" stopColor={colors.edge} />
+          </radialGradient>
+          
+          {/* 3D Edge gradient - creates depth illusion */}
+          <linearGradient id={`edge3d-${id}`} x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor={colors.dark} />
+            <stop offset="30%" stopColor={colors.edge} />
+            <stop offset="70%" stopColor={colors.dark} stopOpacity="0.9" />
+            <stop offset="100%" stopColor="#000" stopOpacity="0.7" />
+          </linearGradient>
+          
+          {/* Insert gradient with 3D bevel */}
+          <linearGradient id={`insert-${id}`} x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor="#ffffff" />
+            <stop offset="15%" stopColor={colors.insertLight} />
+            <stop offset="50%" stopColor={colors.insert} />
+            <stop offset="85%" stopColor={colors.insertLight} stopOpacity="0.8" />
+            <stop offset="100%" stopColor="#ffffff" stopOpacity="0.5" />
+          </linearGradient>
+          
+          {/* Inner circle gradient */}
+          <radialGradient id={`inner-${id}`} cx="35%" cy="25%" r="65%">
+            <stop offset="0%" stopColor={colors.light} stopOpacity="0.7" />
             <stop offset="40%" stopColor={colors.main} />
             <stop offset="100%" stopColor={colors.dark} />
           </radialGradient>
           
-          {/* Edge gradient */}
-          <linearGradient id={`edge-${id}`} x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor={colors.light} stopOpacity="0.5" />
-            <stop offset="50%" stopColor={colors.edge} />
-            <stop offset="100%" stopColor={colors.dark} />
-          </linearGradient>
-          
-          {/* Insert gradient */}
-          <linearGradient id={`insert-${id}`} x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor={colors.insertLight} />
-            <stop offset="50%" stopColor={colors.insert} />
-            <stop offset="100%" stopColor={colors.insertLight} stopOpacity="0.7" />
-          </linearGradient>
-          
-          {/* Inner circle gradient */}
-          <radialGradient id={`inner-${id}`} cx="35%" cy="30%" r="65%">
-            <stop offset="0%" stopColor={colors.light} stopOpacity="0.5" />
-            <stop offset="50%" stopColor={colors.main} />
-            <stop offset="100%" stopColor={colors.dark} />
+          {/* Glossy highlight */}
+          <radialGradient id={`gloss-${id}`} cx="35%" cy="30%" r="50%">
+            <stop offset="0%" stopColor="white" stopOpacity="0.7" />
+            <stop offset="50%" stopColor="white" stopOpacity="0.2" />
+            <stop offset="100%" stopColor="white" stopOpacity="0" />
           </radialGradient>
           
-          {/* Glossy highlight */}
-          <linearGradient id={`gloss-${id}`} x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="white" stopOpacity="0.6" />
-            <stop offset="40%" stopColor="white" stopOpacity="0.15" />
-            <stop offset="100%" stopColor="white" stopOpacity="0" />
+          {/* Rim light effect */}
+          <linearGradient id={`rim-${id}`} x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="white" stopOpacity="0.4" />
+            <stop offset="50%" stopColor="white" stopOpacity="0" />
+            <stop offset="100%" stopColor="white" stopOpacity="0.2" />
           </linearGradient>
         </defs>
         
+        {/* ===== 3D CHIP EDGE (thickness) ===== */}
+        {/* Bottom edge shadow */}
+        <ellipse 
+          cx="50" 
+          cy="58" 
+          rx="47" 
+          ry="8"
+          fill="rgba(0,0,0,0.5)"
+        />
+        
+        {/* Chip edge/side - 3D thickness */}
+        <ellipse 
+          cx="50" 
+          cy="55" 
+          rx="48" 
+          ry="8"
+          fill={`url(#edge3d-${id})`}
+        />
+        
+        {/* Edge highlight stripe */}
+        <ellipse 
+          cx="50" 
+          cy="53" 
+          rx="47" 
+          ry="6"
+          fill="none"
+          stroke={colors.main}
+          strokeWidth="1"
+          opacity="0.5"
+        />
+        
+        {/* ===== MAIN CHIP FACE ===== */}
         {/* Outer edge ring */}
         <circle 
           cx="50" 
           cy="50" 
-          r="49" 
-          fill={`url(#edge-${id})`}
-          stroke={colors.edge}
-          strokeWidth="0.5"
+          r="48" 
+          fill={colors.edge}
         />
         
         {/* Main chip surface */}
         <circle 
           cx="50" 
           cy="50" 
-          r="47" 
+          r="46" 
           fill={`url(#surface-${id})`}
         />
         
-        {/* 8 Large rectangular edge inserts */}
+        {/* Outer rim highlight */}
+        <circle 
+          cx="50" 
+          cy="50" 
+          r="46" 
+          fill="none"
+          stroke={`url(#rim-${id})`}
+          strokeWidth="1.5"
+        />
+        
+        {/* 8 Large rectangular edge inserts with 3D effect */}
         {inserts.map((insert, i) => (
           <g key={i} transform={`rotate(${insert.rotation}, 50, 50)`}>
-            {/* Insert shadow */}
+            {/* Insert depression shadow */}
             <rect
-              x="42"
-              y="3"
-              width="16"
-              height="10"
-              rx="1.5"
-              fill="rgba(0,0,0,0.3)"
-              transform="translate(0.5, 0.5)"
+              x="41"
+              y="2.5"
+              width="18"
+              height="11"
+              rx="2"
+              fill="rgba(0,0,0,0.4)"
             />
             {/* Insert body */}
             <rect
-              x="42"
+              x="41"
               y="3"
-              width="16"
+              width="18"
               height="10"
-              rx="1.5"
+              rx="2"
               fill={`url(#insert-${id})`}
-              stroke={colors.edge}
-              strokeWidth="0.5"
             />
-            {/* Insert highlight */}
+            {/* Insert top bevel highlight */}
             <rect
-              x="43"
-              y="4"
-              width="14"
+              x="42"
+              y="3.5"
+              width="16"
               height="3"
+              rx="1.5"
+              fill="rgba(255,255,255,0.5)"
+            />
+            {/* Insert bottom edge */}
+            <rect
+              x="42"
+              y="10"
+              width="16"
+              height="2"
               rx="1"
-              fill="rgba(255,255,255,0.4)"
+              fill="rgba(0,0,0,0.15)"
             />
           </g>
         ))}
         
         {/* Decorative dots between inserts */}
         {dots.map((dot, i) => (
-          <circle
-            key={`dot-${i}`}
-            cx={dot.x}
-            cy={dot.y}
-            r="2"
-            fill={colors.insert}
-            stroke={colors.edge}
-            strokeWidth="0.3"
-          />
+          <g key={`dot-${i}`}>
+            {/* Dot shadow */}
+            <circle
+              cx={dot.x + 0.3}
+              cy={dot.y + 0.5}
+              r="2.2"
+              fill="rgba(0,0,0,0.3)"
+            />
+            {/* Dot body */}
+            <circle
+              cx={dot.x}
+              cy={dot.y}
+              r="2"
+              fill={colors.insert}
+            />
+            {/* Dot highlight */}
+            <circle
+              cx={dot.x - 0.5}
+              cy={dot.y - 0.5}
+              r="0.8"
+              fill="rgba(255,255,255,0.6)"
+            />
+          </g>
         ))}
         
-        {/* Inner decorative ring with alternating segments */}
+        {/* Inner decorative ring border */}
         <circle 
           cx="50" 
           cy="50" 
-          r="28" 
+          r="30" 
           fill="none"
           stroke={colors.edge}
-          strokeWidth="0.8"
+          strokeWidth="1"
         />
         
         {/* Alternating ring pattern */}
@@ -304,134 +373,118 @@ export const PPPokerChip = memo(function PPPokerChip({
               key={`ring-${i}`}
               d={`M ${x1} ${y1} L ${x2} ${y2} A ${outerR} ${outerR} 0 0 1 ${x3} ${y3} L ${x4} ${y4} A ${innerR} ${innerR} 0 0 0 ${x1} ${y1}`}
               fill={seg.isLight ? colors.insert : colors.dark}
-              opacity={seg.isLight ? 0.9 : 0.7}
+              opacity={seg.isLight ? 0.95 : 0.75}
             />
           );
         })}
         
-        {/* Center circle background */}
+        {/* Inner ring outer border */}
+        <circle 
+          cx="50" 
+          cy="50" 
+          r="26" 
+          fill="none"
+          stroke={colors.edge}
+          strokeWidth="0.5"
+        />
+        
+        {/* Center circle with inset effect */}
         <circle 
           cx="50" 
           cy="50" 
           r="24" 
           fill={`url(#inner-${id})`}
-          stroke={colors.edge}
-          strokeWidth="0.5"
         />
         
-        {/* Center inner highlight ring */}
+        {/* Center circle inset shadow */}
+        <circle 
+          cx="50" 
+          cy="50" 
+          r="23.5" 
+          fill="none"
+          stroke="rgba(0,0,0,0.2)"
+          strokeWidth="1"
+        />
+        
+        {/* Center circle highlight ring */}
         <circle 
           cx="50" 
           cy="50" 
           r="22" 
           fill="none"
-          stroke="rgba(255,255,255,0.15)"
+          stroke="rgba(255,255,255,0.2)"
           strokeWidth="0.5"
         />
         
-        {/* Detailed Spade symbol in center - SVG path for high detail */}
+        {/* ===== SPADE SYMBOL ===== */}
         {showSymbol && (
           <g transform="translate(50, 50)">
-            {/* Symbol shadow */}
-            <g transform="translate(1, 1.5)">
+            {/* Deep shadow */}
+            <g transform="translate(1.5, 2)">
               <path
-                d="M 0 -16 
-                   C -4 -12, -14 -6, -14 2 
-                   C -14 8, -9 12, -4 12 
-                   C -2 12, 0 11, 0 9 
-                   C 0 11, 2 12, 4 12 
-                   C 9 12, 14 8, 14 2 
-                   C 14 -6, 4 -12, 0 -16 
+                d="M 0 -15 
+                   C -4 -11, -13 -5, -13 2 
+                   C -13 7, -9 11, -4 11 
+                   C -2 11, 0 10, 0 8 
+                   C 0 10, 2 11, 4 11 
+                   C 9 11, 13 7, 13 2 
+                   C 13 -5, 4 -11, 0 -15 
                    Z"
-                fill="rgba(0,0,0,0.4)"
+                fill="rgba(0,0,0,0.5)"
               />
-              <path
-                d="M 0 9 L -3 18 L 3 18 Z"
-                fill="rgba(0,0,0,0.4)"
-              />
+              <path d="M 0 8 L -3 16 L 3 16 Z" fill="rgba(0,0,0,0.5)" />
             </g>
             
-            {/* Main spade body */}
+            {/* Main spade */}
             <path
-              d="M 0 -16 
-                 C -4 -12, -14 -6, -14 2 
-                 C -14 8, -9 12, -4 12 
-                 C -2 12, 0 11, 0 9 
-                 C 0 11, 2 12, 4 12 
-                 C 9 12, 14 8, 14 2 
-                 C 14 -6, 4 -12, 0 -16 
+              d="M 0 -15 
+                 C -4 -11, -13 -5, -13 2 
+                 C -13 7, -9 11, -4 11 
+                 C -2 11, 0 10, 0 8 
+                 C 0 10, 2 11, 4 11 
+                 C 9 11, 13 7, 13 2 
+                 C 13 -5, 4 -11, 0 -15 
                  Z"
               fill={colors.symbol}
             />
             
-            {/* Spade stem */}
-            <path
-              d="M 0 9 L -3.5 18 L 3.5 18 Z"
-              fill={colors.symbol}
-            />
+            {/* Stem */}
+            <path d="M 0 8 L -3 16 L 3 16 Z" fill={colors.symbol} />
             
-            {/* Inner highlight on spade - left lobe */}
-            <ellipse
-              cx="-7"
-              cy="3"
-              rx="4"
-              ry="5"
-              fill="rgba(255,255,255,0.15)"
-            />
+            {/* Left lobe highlight */}
+            <ellipse cx="-6" cy="2" rx="4" ry="5" fill="rgba(255,255,255,0.2)" />
             
-            {/* Inner highlight on spade - right lobe */}
-            <ellipse
-              cx="7"
-              cy="3"
-              rx="4"
-              ry="5"
-              fill="rgba(255,255,255,0.1)"
-            />
+            {/* Right lobe subtle highlight */}
+            <ellipse cx="6" cy="2" rx="3" ry="4" fill="rgba(255,255,255,0.1)" />
             
             {/* Top point highlight */}
-            <ellipse
-              cx="0"
-              cy="-10"
-              rx="3"
-              ry="4"
-              fill="rgba(255,255,255,0.2)"
-            />
-            
-            {/* Edge definition - inner dark line */}
-            <path
-              d="M 0 -14 
-                 C -3 -11, -12 -5, -12 2 
-                 C -12 7, -8 10, -4 10"
-              fill="none"
-              stroke="rgba(0,0,0,0.15)"
-              strokeWidth="0.5"
-            />
+            <ellipse cx="0" cy="-9" rx="2.5" ry="3.5" fill="rgba(255,255,255,0.25)" />
           </g>
         )}
         
-        {/* Large glossy highlight arc */}
+        {/* ===== GLOSSY REFLECTIONS ===== */}
+        {/* Main glossy highlight */}
         <ellipse
-          cx="38"
-          cy="32"
-          rx="22"
-          ry="14"
+          cx="35"
+          cy="35"
+          rx="20"
+          ry="15"
           fill={`url(#gloss-${id})`}
         />
         
-        {/* Small bright highlight */}
-        <circle
-          cx="32"
-          cy="28"
-          r="5"
-          fill="rgba(255,255,255,0.5)"
-        />
+        {/* Bright spot */}
+        <circle cx="30" cy="30" r="6" fill="rgba(255,255,255,0.5)" />
         
-        {/* Secondary small highlight */}
-        <circle
-          cx="38"
-          cy="32"
-          r="2"
-          fill="rgba(255,255,255,0.3)"
+        {/* Secondary bright spot */}
+        <circle cx="36" cy="34" r="2.5" fill="rgba(255,255,255,0.4)" />
+        
+        {/* Edge rim light - left */}
+        <path
+          d="M 10 50 A 40 40 0 0 1 30 20"
+          fill="none"
+          stroke="rgba(255,255,255,0.3)"
+          strokeWidth="2"
+          strokeLinecap="round"
         />
       </svg>
     </div>
