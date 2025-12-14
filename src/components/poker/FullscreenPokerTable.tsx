@@ -415,7 +415,7 @@ const PlayerSeat = memo(function PlayerSeat({
           )}
         </div>
         
-        {/* Opponent cards - PPPoker style: to the RIGHT of avatar, overlapping */}
+        {/* Opponent cards - PPPoker style: positioned TOWARDS center of table */}
         {!isHero && !player.isFolded && gamePhase !== 'waiting' && (
           <PPPokerCompactCards 
             cards={player.holeCards}
@@ -425,16 +425,20 @@ const PlayerSeat = memo(function PlayerSeat({
             isWinner={(player as any).isWinner}
             winningCardIndices={(player as any).winningCardIndices || []}
             size="xs"
+            position={position}
           />
         )}
         
-        {/* Dealer button - PPPoker style */}
+        {/* Dealer button - PPPoker style - positioned INSIDE table */}
         {isDealer && (
           <motion.div 
             initial={{ scale: 0, rotate: -180 }}
             animate={{ scale: 1, rotate: 0 }}
             transition={{ type: 'spring', stiffness: 400, damping: 20 }}
-            className="absolute -right-2 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full flex items-center justify-center z-25"
+            className={cn(
+              "absolute top-1/2 -translate-y-1/2 w-6 h-6 rounded-full flex items-center justify-center z-25",
+              position.x > 50 ? "-left-2" : "-right-2"
+            )}
             style={{
               background: 'linear-gradient(145deg, #fef3c7 0%, #fbbf24 50%, #f59e0b 100%)',
               border: '2px solid #92400e',
@@ -445,12 +449,15 @@ const PlayerSeat = memo(function PlayerSeat({
           </motion.div>
         )}
         
-        {/* SB/BB indicator - positioned on right side like dealer */}
+        {/* SB/BB indicator - positioned INSIDE table (opposite side from edge) */}
         {(isSB || isBB) && !isDealer && (
           <motion.div 
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
-            className="absolute -right-2 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full flex items-center justify-center z-20"
+            className={cn(
+              "absolute top-1/2 -translate-y-1/2 w-5 h-5 rounded-full flex items-center justify-center z-20",
+              position.x > 50 ? "-left-2" : "-right-2"
+            )}
             style={{
               background: isBB 
                 ? 'linear-gradient(145deg, #fbbf24, #f59e0b)'
