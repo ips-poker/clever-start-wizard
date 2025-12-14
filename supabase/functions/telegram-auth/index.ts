@@ -3,6 +3,12 @@ import { corsHeaders } from '../_shared/cors.ts'
 import { crypto } from 'https://deno.land/std@0.177.0/crypto/mod.ts'
 import { encode as hexEncode } from 'https://deno.land/std@0.177.0/encoding/hex.ts'
 import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts'
+import { 
+  checkRateLimit, 
+  getClientIdentifier, 
+  createRateLimitResponse,
+  RATE_LIMIT_PRESETS 
+} from '../_shared/rate-limiter.ts'
 
 // Zod схема для валидации входных данных
 const TelegramAuthSchema = z.object({
@@ -148,6 +154,15 @@ Deno.serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
+  }
+
+  // Rate limiting - 5 requests per minute per IP for auth
+  const clientId = getClientIdentifier(req, 'telegram-auth');
+  const rateLimitResult = checkRateLimit(clientId, RATE_LIMIT_PRESETS.auth);
+  
+  if (!rateLimitResult.allowed) {
+    console.warn(`⚠️ Rate limit exceeded for ${clientId}`);
+    return createRateLimitResponse(rateLimitResult, corsHeaders);
   }
 
   try {
