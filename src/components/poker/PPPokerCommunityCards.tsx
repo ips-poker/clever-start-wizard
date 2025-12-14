@@ -83,7 +83,7 @@ const CommunityCard = memo(function CommunityCard({
         opacity: isDimmed ? 0.85 : 1
       }}
     >
-      {/* Top-left corner - Classic: Rank above, suit below */}
+      {/* Top-left corner - Rank above Suit (PPPoker style) */}
       <div className="absolute top-1 left-1.5 flex flex-col items-center leading-none">
         <span 
           className="text-xl font-black leading-none" 
@@ -95,20 +95,20 @@ const CommunityCard = memo(function CommunityCard({
           {rank}
         </span>
         <span 
-          className="text-base leading-none mt-0.5" 
+          className="text-lg leading-none" 
           style={{ color: suitColor }}
         >
           {suitInfo.symbol}
         </span>
       </div>
       
-      {/* Center large suit - Classic playing card style */}
+      {/* Center large suit - PPPoker style */}
       <div className="absolute inset-0 flex items-center justify-center">
         <span 
           className="text-4xl"
           style={{ 
             color: suitColor, 
-            opacity: isDimmed ? 0.5 : 0.85,
+            opacity: isDimmed ? 0.5 : 0.9,
             filter: isDimmed ? 'none' : 'drop-shadow(0 2px 4px rgba(0,0,0,0.15))'
           }}
         >
@@ -116,7 +116,7 @@ const CommunityCard = memo(function CommunityCard({
         </span>
       </div>
       
-      {/* Bottom-right corner (rotated 180°) - Classic style */}
+      {/* Bottom-right corner (rotated) - PPPoker style */}
       <div className="absolute bottom-1 right-1.5 flex flex-col items-center leading-none rotate-180">
         <span 
           className="text-xl font-black leading-none" 
@@ -128,7 +128,7 @@ const CommunityCard = memo(function CommunityCard({
           {rank}
         </span>
         <span 
-          className="text-base leading-none mt-0.5" 
+          className="text-lg leading-none" 
           style={{ color: suitColor }}
         >
           {suitInfo.symbol}

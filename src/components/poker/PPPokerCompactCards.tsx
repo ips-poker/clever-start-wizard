@@ -203,7 +203,7 @@ const MiniCard = memo(function MiniCard({
         transformOrigin: 'bottom center'
       }}
     >
-      {/* Top-left corner - Classic: Rank above, suit below */}
+      {/* Top-left corner - Rank above Suit (PPPoker style) */}
       <div className="absolute top-[2px] left-[3px] flex flex-col items-center leading-none">
         <span 
           className={cn(cfg.rank, 'font-black leading-none')} 
@@ -212,27 +212,27 @@ const MiniCard = memo(function MiniCard({
           {rank}
         </span>
         <span 
-          className={cn(cfg.suit, 'leading-none')} 
+          className={cn(cfg.suit, 'leading-none -mt-[1px]')} 
           style={{ color: suitColor }}
         >
           {suitInfo.symbol}
         </span>
       </div>
       
-      {/* Center suit - large (Classic style) */}
+      {/* Center suit - large (PPPoker style) */}
       <div className="absolute inset-0 flex items-center justify-center">
         <span 
           className={cfg.center}
           style={{ 
             color: suitColor,
-            opacity: isDimmed ? 0.5 : 0.8
+            opacity: isDimmed ? 0.5 : 0.85
           }}
         >
           {suitInfo.symbol}
         </span>
       </div>
       
-      {/* Bottom-right corner - Rotated 180° (Classic style) */}
+      {/* Bottom-right corner - Rotated (PPPoker style) */}
       <div className="absolute bottom-[2px] right-[3px] flex flex-col items-center leading-none rotate-180">
         <span 
           className={cn(cfg.rank, 'font-black leading-none')} 
@@ -241,7 +241,7 @@ const MiniCard = memo(function MiniCard({
           {rank}
         </span>
         <span 
-          className={cn(cfg.suit, 'leading-none')} 
+          className={cn(cfg.suit, 'leading-none -mt-[1px]')} 
           style={{ color: suitColor }}
         >
           {suitInfo.symbol}
@@ -274,17 +274,12 @@ export const PPPokerCompactCards = memo(function PPPokerCompactCards({
   const { currentCardBack, preferences } = usePokerPreferences();
   
   const cfg = SIZE_CONFIG[size];
-  // Show actual cards when we have them and not face down
-  const hasCards = cards && cards.length >= 2;
-  const showCards = hasCards && !faceDown;
+  const showCards = isShowdown && cards && cards.length >= 2;
   const useFourColor = preferences.cardStyle === 'fourcolor';
   
-  // For PLO4, show all 4 cards - default to 2 cards if no cards provided
-  const cardCount = hasCards ? cards.length : 2;
+  // For PLO4, show all 4 cards
+  const cardCount = cards?.length || 2;
   const displayCards = showCards ? cards : Array(Math.min(cardCount, 4)).fill('XX');
-  
-  // Don't render anything if no cards and not in a game phase
-  if (!hasCards && !isShowdown) return null;
 
   // Calculate rotations for card fan - PPPoker style: bigger angle spread like in reference
   const getRotations = (count: number) => {
