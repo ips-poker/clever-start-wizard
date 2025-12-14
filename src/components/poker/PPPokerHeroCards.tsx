@@ -86,7 +86,7 @@ const HeroCard = memo(function HeroCard({
             : '0 6px 20px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.8)'
       }}
     >
-      {/* Top-left corner - Rank above Suit (PPPoker style) */}
+      {/* TOP-LEFT corner - Classic: Rank + Suit vertical */}
       <div className="absolute top-1 left-1.5 flex flex-col items-center leading-none">
         <span 
           className={cn(rankSize, 'font-black leading-none')} 
@@ -105,7 +105,7 @@ const HeroCard = memo(function HeroCard({
         </span>
       </div>
       
-      {/* Center large suit - PPPoker style */}
+      {/* CENTER - Large suit symbol */}
       <div className="absolute inset-0 flex items-center justify-center">
         <span 
           className={centerSize}
@@ -119,7 +119,7 @@ const HeroCard = memo(function HeroCard({
         </span>
       </div>
       
-      {/* Bottom-right corner (rotated) - PPPoker style */}
+      {/* BOTTOM-RIGHT corner - Classic: Rank + Suit rotated 180° */}
       <div className="absolute bottom-1 right-1.5 flex flex-col items-center leading-none rotate-180">
         <span 
           className={cn(rankSize, 'font-black leading-none')} 
