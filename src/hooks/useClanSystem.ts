@@ -205,7 +205,7 @@ export function useClanSystem(options: UseClanSystemOptions = {}) {
           clan:clans(*)
         `)
         .eq('player_id', playerData.id)
-        .eq('status', 'pending');
+        .in('status', ['pending', 'accepted']);
 
       console.log('📨 Результат загрузки приглашений:', { data, error, playerId: playerData.id });
 
@@ -363,25 +363,14 @@ export function useClanSystem(options: UseClanSystemOptions = {}) {
   const acceptInvitation = async (invitationId: string, clanId: string) => {
     if (!playerData?.id) return false;
 
-    // Получаем информацию о клане и Доне
+    // Получаем информацию о клане и Доне (для уведомления)
     const { data: clanData } = await supabase
       .from('clans')
       .select('name, don_player_id')
       .eq('id', clanId)
       .single();
 
-    // Обновляем статус приглашения
-    const { error: updateError } = await supabase
-      .from('clan_invitations')
-      .update({ status: 'accepted' })
-      .eq('id', invitationId);
-
-    if (updateError) {
-      toast.error('Ошибка обновления приглашения');
-      return false;
-    }
-
-    // Добавляем в члены клана
+    // Сначала пытаемся добавить игрока в члены клана
     const { error: memberError } = await supabase
       .from('clan_members')
       .insert({
@@ -391,8 +380,29 @@ export function useClanSystem(options: UseClanSystemOptions = {}) {
       });
 
     if (memberError) {
+      console.error('acceptInvitation: member insert error', memberError);
+
+      // Если игрок уже состоит в клане — считаем операцию успешной
+      if (memberError.code === '23505') {
+        toast.success('Вы уже состоите в этом клане');
+        await loadMyClan();
+        await loadInvitations();
+        return true;
+      }
+
       toast.error('Ошибка вступления в клан');
       return false;
+    }
+
+    // После успешного вступления помечаем приглашение как принято
+    const { error: updateError } = await supabase
+      .from('clan_invitations')
+      .update({ status: 'accepted' })
+      .eq('id', invitationId);
+
+    if (updateError) {
+      console.error('acceptInvitation: invitation update error', updateError);
+      // Не считаем это фатальной ошибкой для пользователя
     }
 
     // Отправляем уведомление Дону
