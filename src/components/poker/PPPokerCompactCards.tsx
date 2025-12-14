@@ -14,6 +14,7 @@ interface PPPokerCompactCardsProps {
   isWinner?: boolean;
   winningCardIndices?: number[]; // Indices of cards that participate in winning hand
   size?: 'xs' | 'sm';
+  position?: { x: number; y: number }; // Player position for determining card placement
 }
 
 // Four-color suit configuration
@@ -151,7 +152,8 @@ export const PPPokerCompactCards = memo(function PPPokerCompactCards({
   handName,
   isWinner = false,
   winningCardIndices = [],
-  size = 'xs'
+  size = 'xs',
+  position = { x: 50, y: 50 }
 }: PPPokerCompactCardsProps) {
   const { currentCardBack, preferences } = usePokerPreferences();
   
@@ -172,16 +174,21 @@ export const PPPokerCompactCards = memo(function PPPokerCompactCards({
   };
   
   const rotations = getRotations(displayCards.length);
+  
+  // Determine if cards should be on left or right based on player position
+  // Cards should point TOWARDS the center of the table
+  const isOnRightSide = position.x > 50;
 
   return (
     <>
-      {/* Cards positioned to the RIGHT of avatar, fanned like PPPoker reference */}
+      {/* Cards positioned TOWARDS CENTER - left for right-side players, right for left-side players */}
       <div 
         className="absolute"
         style={{
-          right: -(cfg.w * 2.5),
+          [isOnRightSide ? 'left' : 'right']: -(cfg.w * 2.5),
           top: '5%',
-          zIndex: 5
+          zIndex: 5,
+          transform: isOnRightSide ? 'scaleX(-1)' : 'none'
         }}
       >
         {/* Cards container - tight fan effect like PPPoker */}
