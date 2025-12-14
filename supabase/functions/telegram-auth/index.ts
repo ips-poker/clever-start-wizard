@@ -217,11 +217,7 @@ Deno.serve(async (req) => {
       isValid = await verifyTelegramWidgetAuth(authData, telegramBotToken);
     }
  
-    // 4. Legacy fallback для старых Mini App клиентов, которые пока не передают hash/init_data_raw
-    if (!isValid && !authData.hash && !authData.init_data_raw && authData.id && authData.username) {
-      console.log('Legacy fallback: accepting Telegram Mini App auth without HMAC (id, username only)');
-      isValid = true;
-    }
+    // Legacy fallback УДАЛЁН — теперь требуется HMAC-верификация через initDataRaw или Widget hash
  
     if (!isValid) {
       console.log('Authentication verification failed');
