@@ -45,25 +45,25 @@ export const PPPokerChipStack = memo(function PPPokerChipStack({
     return 2; // minimum 2 for visible depth
   };
 
-  // PPPoker exact style: bets are positioned RIGHT NEXT TO player box
+  // Position bets TOWARDS the center of the table (perpendicular to edge)
+  // Calculate direction from player position to center (50, 50)
   const getBetPosition = () => {
-    if (isHero || seatPosition.y > 75) {
-      return { x: 0, y: -50 };
-    }
-    if (seatPosition.x < 30) {
-      return { x: 55, y: 32 };
-    }
-    if (seatPosition.x > 70) {
-      return { x: -55, y: 32 };
-    }
-    if (seatPosition.y < 35) {
-      return { x: 0, y: 42 };
-    }
-    if (seatPosition.x < 50) {
-      return { x: 50, y: 30 };
-    } else {
-      return { x: -50, y: 30 };
-    }
+    const centerX = 50;
+    const centerY = 45; // Slightly above center for better visual
+    
+    // Vector from player to center
+    const dx = centerX - seatPosition.x;
+    const dy = centerY - seatPosition.y;
+    
+    // Normalize and scale - bets should be ~45px towards center
+    const length = Math.sqrt(dx * dx + dy * dy);
+    if (length === 0) return { x: 0, y: -45 };
+    
+    const distance = 45; // Distance from player avatar towards center
+    const offsetX = (dx / length) * distance;
+    const offsetY = (dy / length) * distance;
+    
+    return { x: offsetX, y: offsetY };
   };
   
   const betPos = getBetPosition();
