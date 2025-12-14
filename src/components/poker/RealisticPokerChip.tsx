@@ -1,304 +1,216 @@
 // =====================================================
-// REALISTIC 3D POKER CHIP COMPONENT
+// PPPOKER-STYLE PREMIUM POKER CHIPS
 // =====================================================
-// High-quality chip with edge pattern, metallic shine,
-// stacking effect and casino-grade visual design
+// High-quality chips with edge stripes, stacking effect,
+// and casino-grade visual design matching PPPoker reference
 
 import React, { memo } from 'react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
-// Chip denomination colors (casino standard)
+// Chip denomination colors (PPPoker casino standard)
 const CHIP_COLORS = {
   white: { 
-    primary: '#f5f5f5', 
-    secondary: '#e0e0e0', 
-    dark: '#bdbdbd', 
-    edge: '#9e9e9e',
-    accent: '#ffffff',
-    text: '#1a1a1a'
+    main: '#f5f5f5', 
+    dark: '#d4d4d4', 
+    edge: '#a3a3a3',
+    stripe: '#ffffff',
+    symbol: '#1a1a1a'
   },
   red: { 
-    primary: '#ef4444', 
-    secondary: '#dc2626', 
+    main: '#ef4444', 
     dark: '#b91c1c', 
-    edge: '#991b1b',
-    accent: '#fca5a5',
-    text: '#ffffff'
+    edge: '#7f1d1d',
+    stripe: '#ffffff',
+    symbol: '#ffffff'
   },
   green: { 
-    primary: '#22c55e', 
-    secondary: '#16a34a', 
+    main: '#22c55e', 
     dark: '#15803d', 
     edge: '#166534',
-    accent: '#86efac',
-    text: '#ffffff'
+    stripe: '#ffffff',
+    symbol: '#ffffff'
   },
   blue: { 
-    primary: '#3b82f6', 
-    secondary: '#2563eb', 
+    main: '#3b82f6', 
     dark: '#1d4ed8', 
     edge: '#1e40af',
-    accent: '#93c5fd',
-    text: '#ffffff'
+    stripe: '#ffffff',
+    symbol: '#ffffff'
   },
   black: { 
-    primary: '#374151', 
-    secondary: '#1f2937', 
-    dark: '#111827', 
-    edge: '#030712',
-    accent: '#6b7280',
-    text: '#ffffff'
+    main: '#374151', 
+    dark: '#1f2937', 
+    edge: '#111827',
+    stripe: '#9ca3af',
+    symbol: '#ffffff'
   },
   purple: { 
-    primary: '#a855f7', 
-    secondary: '#9333ea', 
+    main: '#a855f7', 
     dark: '#7e22ce', 
     edge: '#6b21a8',
-    accent: '#d8b4fe',
-    text: '#ffffff'
+    stripe: '#ffffff',
+    symbol: '#ffffff'
   },
   gold: { 
-    primary: '#fbbf24', 
-    secondary: '#f59e0b', 
+    main: '#fbbf24', 
     dark: '#d97706', 
     edge: '#b45309',
-    accent: '#fde68a',
-    text: '#1a1a1a'
+    stripe: '#ffffff',
+    symbol: '#1a1a1a'
   },
   pink: { 
-    primary: '#ec4899', 
-    secondary: '#db2777', 
+    main: '#ec4899', 
     dark: '#be185d', 
     edge: '#9d174d',
-    accent: '#f9a8d4',
-    text: '#ffffff'
+    stripe: '#ffffff',
+    symbol: '#ffffff'
   }
 };
 
 type ChipColor = keyof typeof CHIP_COLORS;
 
-// Get chip color based on value
-const getChipColorByValue = (value: number): ChipColor => {
-  if (value >= 100000) return 'gold';
-  if (value >= 25000) return 'purple';
-  if (value >= 10000) return 'black';
-  if (value >= 5000) return 'pink';
-  if (value >= 1000) return 'blue';
-  if (value >= 500) return 'green';
-  if (value >= 100) return 'red';
+// Get chip color based on BB value
+const getChipColorByBB = (bbValue: number): ChipColor => {
+  if (bbValue >= 100) return 'gold';
+  if (bbValue >= 50) return 'purple';
+  if (bbValue >= 20) return 'black';
+  if (bbValue >= 10) return 'blue';
+  if (bbValue >= 5) return 'green';
+  if (bbValue >= 1) return 'red';
   return 'white';
 };
 
-interface RealisticPokerChipProps {
+interface PPPokerChipProps {
   size?: number;
   color?: ChipColor;
-  value?: number;
-  showValue?: boolean;
-  stackPosition?: number; // 0 = bottom, increases upward
+  bbValue?: number; // BB value to auto-select color
+  showSymbol?: boolean;
   className?: string;
   animated?: boolean;
   delay?: number;
 }
 
-export const RealisticPokerChip = memo(function RealisticPokerChip({
-  size = 32,
+// Single PPPoker-style chip
+export const PPPokerChip = memo(function PPPokerChip({
+  size = 24,
   color,
-  value = 0,
-  showValue = false,
-  stackPosition = 0,
+  bbValue = 0,
+  showSymbol = true,
   className,
   animated = true,
   delay = 0
-}: RealisticPokerChipProps) {
-  const chipColor = color || getChipColorByValue(value);
+}: PPPokerChipProps) {
+  const chipColor = color || getChipColorByBB(bbValue);
   const colors = CHIP_COLORS[chipColor];
-  const chipId = `chip-${chipColor}-${Math.random().toString(36).substr(2, 9)}`;
   
-  // Stack offset for 3D effect
-  const stackOffset = stackPosition * 3;
-
   const chipContent = (
     <div 
-      className={cn("relative", className)}
-      style={{ 
-        width: size, 
-        height: size,
-        transform: `translateY(-${stackOffset}px)`
-      }}
+      className={cn("relative flex-shrink-0", className)}
+      style={{ width: size, height: size }}
     >
-      {/* Bottom edge shadow for 3D depth */}
-      <div 
-        className="absolute rounded-full"
-        style={{
-          width: size,
-          height: size,
-          top: 3,
-          left: 0,
-          background: `linear-gradient(180deg, ${colors.edge} 0%, rgba(0,0,0,0.8) 100%)`,
-          filter: 'blur(1px)'
-        }}
-      />
-      
-      {/* Chip edge (visible from side) */}
-      <div 
-        className="absolute rounded-full"
-        style={{
-          width: size,
-          height: size,
-          top: 2,
-          left: 0,
-          background: colors.dark
-        }}
-      />
-
-      {/* Main chip surface */}
-      <div 
-        className="absolute rounded-full overflow-hidden"
-        style={{
-          width: size,
-          height: size,
-          top: 0,
-          left: 0,
-          background: `
-            radial-gradient(ellipse 80% 50% at 30% 20%, ${colors.accent}40 0%, transparent 50%),
-            radial-gradient(ellipse 60% 40% at 70% 80%, rgba(0,0,0,0.3) 0%, transparent 50%),
-            linear-gradient(145deg, ${colors.primary} 0%, ${colors.secondary} 50%, ${colors.dark} 100%)
-          `,
-          border: `2px solid ${colors.edge}`,
-          boxShadow: `
-            inset 0 2px 6px rgba(255,255,255,0.4),
-            inset 0 -2px 6px rgba(0,0,0,0.4),
-            0 4px 12px rgba(0,0,0,0.5)
-          `
-        }}
+      {/* Chip SVG for perfect edge stripes */}
+      <svg 
+        viewBox="0 0 100 100" 
+        className="absolute inset-0 w-full h-full"
+        style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.4))' }}
       >
-        {/* SVG for edge pattern and center design */}
-        <svg 
-          viewBox="0 0 100 100" 
-          className="absolute inset-0 w-full h-full"
-        >
-          <defs>
-            {/* Edge dash pattern */}
-            <pattern 
-              id={`edge-${chipId}`} 
-              patternUnits="userSpaceOnUse" 
-              width="100" 
-              height="100"
-            >
-              {/* Edge segments - casino style rectangles */}
-              {Array.from({ length: 12 }).map((_, i) => {
-                const angle = (i * 30 - 90) * Math.PI / 180;
-                const x1 = 50 + Math.cos(angle) * 42;
-                const y1 = 50 + Math.sin(angle) * 42;
-                const x2 = 50 + Math.cos(angle) * 48;
-                const y2 = 50 + Math.sin(angle) * 48;
-                return (
-                  <line
-                    key={i}
-                    x1={x1}
-                    y1={y1}
-                    x2={x2}
-                    y2={y2}
-                    stroke="white"
-                    strokeWidth="6"
-                    strokeLinecap="round"
-                    opacity="0.9"
-                  />
-                );
-              })}
-            </pattern>
-          </defs>
+        <defs>
+          {/* Gradient for 3D effect */}
+          <radialGradient id={`chipGrad-${chipColor}`} cx="35%" cy="35%" r="60%">
+            <stop offset="0%" stopColor={colors.main} stopOpacity="1" />
+            <stop offset="70%" stopColor={colors.dark} stopOpacity="1" />
+            <stop offset="100%" stopColor={colors.edge} stopOpacity="1" />
+          </radialGradient>
           
-          {/* Edge pattern ring */}
-          <circle 
-            cx="50" 
-            cy="50" 
-            r="45" 
-            fill="none"
-            stroke={`url(#edge-${chipId})`}
-            strokeWidth="12"
-          />
-          
-          {/* Inner decorative ring */}
-          <circle 
-            cx="50" 
-            cy="50" 
-            r="35" 
-            fill="none"
-            stroke="rgba(255,255,255,0.2)"
-            strokeWidth="1"
-          />
-          
-          {/* Center circle background */}
-          <circle 
-            cx="50" 
-            cy="50" 
-            r="28" 
-            fill={colors.secondary}
-            stroke="rgba(255,255,255,0.15)"
-            strokeWidth="1"
-          />
-          
-          {/* Center highlight */}
-          <ellipse
-            cx="44"
-            cy="44"
-            rx="12"
-            ry="8"
-            fill="rgba(255,255,255,0.15)"
-          />
-          
-          {/* Spade symbol or value in center */}
-          {showValue && value > 0 ? (
-            <text
-              x="50"
-              y="56"
-              textAnchor="middle"
-              fontSize={size > 40 ? "24" : "18"}
-              fontWeight="bold"
-              fill={colors.text}
-              style={{ textShadow: '0 1px 2px rgba(0,0,0,0.5)' }}
-            >
-              {value >= 1000 ? `${value / 1000}K` : value}
-            </text>
-          ) : (
-            <text
-              x="50"
-              y="58"
-              textAnchor="middle"
-              fontSize="28"
-              fill={colors.text}
-              style={{ textShadow: '0 1px 2px rgba(0,0,0,0.3)' }}
-            >
-              ♠
-            </text>
-          )}
-        </svg>
+          {/* Inner circle gradient */}
+          <radialGradient id={`innerGrad-${chipColor}`} cx="40%" cy="40%" r="50%">
+            <stop offset="0%" stopColor={colors.main} stopOpacity="1" />
+            <stop offset="100%" stopColor={colors.dark} stopOpacity="1" />
+          </radialGradient>
+        </defs>
         
-        {/* Glossy highlight overlay */}
-        <div 
-          className="absolute inset-0 rounded-full pointer-events-none"
-          style={{
-            background: `
-              linear-gradient(
-                135deg,
-                rgba(255,255,255,0.35) 0%,
-                rgba(255,255,255,0.1) 30%,
-                transparent 50%
-              )
-            `
-          }}
+        {/* Main chip body */}
+        <circle 
+          cx="50" 
+          cy="50" 
+          r="46" 
+          fill={`url(#chipGrad-${chipColor})`}
+          stroke={colors.edge}
+          strokeWidth="2"
         />
-      </div>
+        
+        {/* Edge stripes - PPPoker style white rectangles */}
+        {Array.from({ length: 8 }).map((_, i) => {
+          const angle = (i * 45 - 90) * Math.PI / 180;
+          const x1 = 50 + Math.cos(angle) * 35;
+          const y1 = 50 + Math.sin(angle) * 35;
+          const x2 = 50 + Math.cos(angle) * 46;
+          const y2 = 50 + Math.sin(angle) * 46;
+          return (
+            <line
+              key={i}
+              x1={x1}
+              y1={y1}
+              x2={x2}
+              y2={y2}
+              stroke={colors.stripe}
+              strokeWidth="8"
+              strokeLinecap="round"
+              opacity="0.95"
+            />
+          );
+        })}
+        
+        {/* Inner circle border */}
+        <circle 
+          cx="50" 
+          cy="50" 
+          r="28" 
+          fill="none"
+          stroke="rgba(255,255,255,0.2)"
+          strokeWidth="1"
+        />
+        
+        {/* Inner circle with symbol */}
+        <circle 
+          cx="50" 
+          cy="50" 
+          r="26" 
+          fill={`url(#innerGrad-${chipColor})`}
+        />
+        
+        {/* Spade symbol */}
+        {showSymbol && (
+          <text
+            x="50"
+            y="58"
+            textAnchor="middle"
+            fontSize="28"
+            fill={colors.symbol}
+            style={{ textShadow: '0 1px 2px rgba(0,0,0,0.3)' }}
+          >
+            ♠
+          </text>
+        )}
+        
+        {/* Highlight reflection */}
+        <ellipse
+          cx="38"
+          cy="38"
+          rx="15"
+          ry="10"
+          fill="rgba(255,255,255,0.25)"
+        />
+      </svg>
     </div>
   );
 
   if (animated) {
     return (
       <motion.div
-        initial={{ scale: 0, opacity: 0, y: -10 }}
-        animate={{ scale: 1, opacity: 1, y: 0 }}
+        initial={{ scale: 0, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
         transition={{
           type: 'spring',
           stiffness: 400,
@@ -315,86 +227,146 @@ export const RealisticPokerChip = memo(function RealisticPokerChip({
 });
 
 // =====================================================
-// CHIP STACK - Multiple stacked chips
+// STACKED CHIPS - PPPoker style with 3D stacking
 // =====================================================
-interface RealisticChipStackProps {
-  amount: number;
-  maxChips?: number;
-  chipSize?: number;
-  showAmount?: boolean;
-  animated?: boolean;
+interface PPPokerChipStackProps {
+  size?: number;
+  color?: ChipColor;
+  bbValue?: number;
+  stackCount?: number; // Number of chips in stack (1-3)
   className?: string;
+  animated?: boolean;
 }
 
-export const RealisticChipStack = memo(function RealisticChipStack({
-  amount,
-  maxChips = 5,
-  chipSize = 28,
-  showAmount = true,
-  animated = true,
-  className
-}: RealisticChipStackProps) {
-  if (amount <= 0) return null;
-
-  // Determine chip count based on amount
-  const chipCount = Math.min(maxChips, Math.max(1, Math.ceil(Math.log10(amount + 1))));
+export const PPPokerChipStackVisual = memo(function PPPokerChipStackVisual({
+  size = 24,
+  color,
+  bbValue = 0,
+  stackCount = 2,
+  className,
+  animated = true
+}: PPPokerChipStackProps) {
+  const chipColor = color || getChipColorByBB(bbValue);
+  const colors = CHIP_COLORS[chipColor];
+  const count = Math.min(3, Math.max(1, stackCount));
   
-  // Get primary color based on amount
-  const primaryColor = getChipColorByValue(amount);
-
   return (
-    <motion.div 
-      className={cn("flex items-end gap-1.5", className)}
-      initial={animated ? { scale: 0, opacity: 0 } : false}
-      animate={{ scale: 1, opacity: 1 }}
+    <div 
+      className={cn("relative flex-shrink-0", className)}
+      style={{ 
+        width: size, 
+        height: size + (count - 1) * 3 
+      }}
     >
-      {/* Stacked chips */}
-      <div className="relative" style={{ width: chipSize, height: chipSize + (chipCount - 1) * 3 }}>
-        {Array.from({ length: chipCount }).map((_, i) => (
-          <div 
-            key={i} 
-            className="absolute"
-            style={{ 
-              bottom: i * 3,
-              left: 0,
-              zIndex: chipCount - i
-            }}
-          >
-            <RealisticPokerChip
-              size={chipSize}
-              color={primaryColor}
-              stackPosition={0}
-              animated={animated}
-              delay={i * 0.03}
-            />
-          </div>
-        ))}
-      </div>
-
-      {/* Amount display */}
-      {showAmount && (
-        <motion.span
-          className="font-bold text-white text-sm drop-shadow-lg"
-          initial={animated ? { opacity: 0, x: -5 } : false}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.1 }}
-          style={{
-            textShadow: '0 2px 4px rgba(0,0,0,0.8)'
+      {/* Stacked chips from bottom to top */}
+      {Array.from({ length: count }).map((_, i) => (
+        <motion.div
+          key={i}
+          className="absolute left-0"
+          style={{ 
+            bottom: i * 3,
+            zIndex: i
+          }}
+          initial={animated ? { scale: 0, opacity: 0, y: -10 } : false}
+          animate={{ scale: 1, opacity: 1, y: 0 }}
+          transition={{
+            type: 'spring',
+            stiffness: 400,
+            damping: 25,
+            delay: i * 0.03
           }}
         >
-          {formatAmount(amount)}
-        </motion.span>
-      )}
-    </motion.div>
+          {/* Shadow for depth */}
+          {i > 0 && (
+            <div 
+              className="absolute rounded-full"
+              style={{
+                width: size,
+                height: size,
+                top: 2,
+                background: 'rgba(0,0,0,0.3)',
+                filter: 'blur(1px)'
+              }}
+            />
+          )}
+          
+          <PPPokerChip
+            size={size}
+            color={chipColor}
+            showSymbol={i === count - 1} // Only show symbol on top chip
+            animated={false}
+          />
+        </motion.div>
+      ))}
+    </div>
   );
 });
 
-// Format amount helper
-const formatAmount = (amount: number): string => {
-  if (amount >= 1000000) return `${(amount / 1000000).toFixed(1)}M`;
-  if (amount >= 10000) return `${(amount / 1000).toFixed(0)}K`;
-  if (amount >= 1000) return `${(amount / 1000).toFixed(1)}K`;
-  return amount.toLocaleString();
-};
+// =====================================================
+// POT CHIPS - Multiple colored chips for pot display
+// =====================================================
+interface PotChipsProps {
+  amount: number;
+  bigBlind?: number;
+  size?: number;
+  className?: string;
+  animated?: boolean;
+}
 
-export default RealisticPokerChip;
+export const PotChips = memo(function PotChips({
+  amount,
+  bigBlind = 20,
+  size = 22,
+  className,
+  animated = true
+}: PotChipsProps) {
+  const bbValue = bigBlind > 0 ? amount / bigBlind : amount;
+  
+  // Calculate which denominations to show
+  const getChipBreakdown = (bb: number): { color: ChipColor; count: number }[] => {
+    const chips: { color: ChipColor; count: number }[] = [];
+    
+    if (bb >= 100) chips.push({ color: 'gold', count: Math.min(2, Math.floor(bb / 100)) });
+    if (bb >= 20) chips.push({ color: 'black', count: 1 });
+    if (bb >= 5) chips.push({ color: 'green', count: 1 });
+    if (bb >= 1) chips.push({ color: 'red', count: 1 });
+    
+    // Ensure at least one chip
+    if (chips.length === 0) chips.push({ color: 'white', count: 1 });
+    
+    return chips.slice(0, 3); // Max 3 different colors
+  };
+  
+  const chipBreakdown = getChipBreakdown(bbValue);
+
+  return (
+    <div className={cn("flex items-end -space-x-2", className)}>
+      {chipBreakdown.map((chip, i) => (
+        <motion.div
+          key={`${chip.color}-${i}`}
+          className="relative"
+          style={{ 
+            zIndex: chipBreakdown.length - i,
+            marginBottom: i * 2 // Slight vertical offset for 3D
+          }}
+          initial={animated ? { scale: 0, y: -10 } : false}
+          animate={{ scale: 1, y: 0 }}
+          transition={{ delay: i * 0.05 }}
+        >
+          <PPPokerChipStackVisual
+            size={size}
+            color={chip.color}
+            stackCount={chip.count}
+            animated={animated}
+          />
+        </motion.div>
+      ))}
+    </div>
+  );
+});
+
+// Legacy exports for compatibility
+export const RealisticPokerChip = PPPokerChip;
+export const RealisticChipStack = PPPokerChipStackVisual;
+
+export default PPPokerChip;
