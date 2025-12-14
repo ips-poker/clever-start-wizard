@@ -247,42 +247,34 @@ const FullscreenTimer = ({
   const currentAnte = currentLevel?.ante ?? 0;
 
   return (
-    <div className="fixed inset-0 bg-gradient-to-br from-[#0a0a0c] via-[#111115] to-[#0d0d10] text-foreground z-50 flex flex-col overflow-hidden">
-      {/* Subtle grid pattern overlay */}
-      <div className="absolute inset-0 opacity-[0.03] pointer-events-none" 
-           style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
-      
-      {/* Ambient glow effects */}
-      <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/5 rounded-full blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-0 right-1/4 w-80 h-80 bg-amber-500/5 rounded-full blur-[100px] pointer-events-none" />
-
+    <div className="fixed inset-0 bg-white text-gray-800 z-50 flex flex-col">
       {/* Header */}
-      <div className="relative flex justify-between items-center p-4 border-b border-white/10 bg-black/20 backdrop-blur-sm">
+      <div className="flex justify-between items-center p-4 border-b border-gray-200">
         {/* Left - Logo and Company */}
         <div className="flex items-center space-x-3">
           <div className="w-20 h-20 flex items-center justify-center">
             <img 
               src={ipsLogo} 
               alt="EPC Logo" 
-              className="w-16 h-16 object-contain drop-shadow-[0_0_8px_rgba(212,175,55,0.3)]"
+              className="w-16 h-16 object-contain"
             />
           </div>
           <div className="flex flex-col">
-            <span className="text-2xl font-sinkin text-poker-gold tracking-tight drop-shadow-[0_0_10px_rgba(212,175,55,0.4)]">EPC</span>
-            <span className="text-sm text-white/50 -mt-1 font-sinkin font-medium tracking-widest uppercase">EVENT POKER CLUB</span>
+            <span className="text-2xl font-sinkin text-poker-gold tracking-tight">EPC</span>
+            <span className="text-sm text-gray-500 -mt-1 font-sinkin font-medium tracking-widest uppercase">EVENT POKER CLUB</span>
           </div>
         </div>
 
         {/* Center - Tournament Name and Slogan */}
         <div className="text-center flex-1 mx-8">
-          <h1 className="text-xl font-bold text-white mb-1 drop-shadow-lg">{tournament.name}</h1>
+          <h1 className="text-xl font-bold text-gray-800 mb-1">{tournament.name}</h1>
           {editingSlogan ? (
             <div className="flex items-center justify-center space-x-2">
               <input 
                 type="text"
                 value={tempSlogan}
                 onChange={(e) => setTempSlogan(e.target.value)}
-                className="text-sm text-white/70 italic bg-transparent border-b border-white/30 text-center min-w-0 flex-1 max-w-xs focus:outline-none focus:border-primary"
+                className="text-sm text-gray-500 italic bg-transparent border-b border-gray-300 text-center min-w-0 flex-1 max-w-xs"
                 autoFocus
                 onKeyPress={(e) => {
                   if (e.key === 'Enter') {
@@ -298,7 +290,7 @@ const FullscreenTimer = ({
             </div>
           ) : (
             <p 
-              className="text-sm text-white/50 italic cursor-pointer hover:text-white/70 transition-colors"
+              className="text-sm text-gray-500 italic cursor-pointer hover:text-gray-700 transition-colors"
               onClick={() => onSloganChange && setEditingSlogan(true)}
             >
               {slogan}
@@ -308,18 +300,16 @@ const FullscreenTimer = ({
 
         {/* Right - QR Code and Close */}
         <div className="flex items-center space-x-3">
-          <div className="p-1 bg-white rounded-lg shadow-lg shadow-black/50">
-            <img 
-              src={telegramQr} 
-              alt="Telegram QR" 
-              className="w-22 h-22"
-            />
-          </div>
+          <img 
+            src={telegramQr} 
+            alt="Telegram QR" 
+            className="w-24 h-24 border border-gray-200 rounded"
+          />
           <Button 
             variant="ghost"
             size="sm" 
             onClick={onClose}
-            className="text-white/60 hover:text-white hover:bg-white/10"
+            className="text-gray-600 hover:bg-gray-100"
           >
             <X className="w-4 h-4" />
           </Button>
@@ -327,103 +317,89 @@ const FullscreenTimer = ({
       </div>
 
       {/* Main Timer Display */}
-      <div className="relative flex-1 flex flex-col justify-center items-center space-y-6 p-6">
-        {/* Current Level Badge */}
+      <div className="flex-1 flex flex-col justify-center items-center space-y-6 p-6">
+        {/* Current Level */}
         <div className="text-center">
-          <div className={`inline-flex items-center gap-2 rounded-xl px-5 py-2.5 mb-4 border ${
-            isBreakLevel 
-              ? 'bg-amber-500/10 border-amber-500/30 text-amber-400' 
-              : 'bg-white/5 border-white/10 text-white/80'
-          }`}>
+          <div className="inline-flex items-center gap-2 bg-gray-100 rounded-lg px-4 py-2 mb-4">
             {isBreakLevel ? (
               <>
-                <Coffee className="w-5 h-5 text-amber-400" />
-                <span className="text-lg font-semibold tracking-wide">ПЕРЕРЫВ</span>
+                <Coffee className="w-4 h-4 text-amber-600" />
+                <span className="text-lg font-medium text-gray-800">ПЕРЕРЫВ</span>
               </>
             ) : (
               <>
-                <Clock className="w-5 h-5 text-primary" />
-                <span className="text-lg font-semibold tracking-wide">Уровень {tournament.current_level}</span>
+                <Clock className="w-4 h-4 text-gray-600" />
+                <span className="text-lg font-medium text-gray-800">Уровень {tournament.current_level}</span>
               </>
             )}
           </div>
           
-          {/* Timer Display - Large glowing numbers */}
-          <div className={`text-[12rem] md:text-[16rem] font-mono font-light leading-none transition-all duration-500 ${
-            currentTime <= 60 
-              ? 'text-red-500 drop-shadow-[0_0_40px_rgba(239,68,68,0.5)] animate-pulse' 
-              : currentTime <= 300 
-                ? 'text-amber-400 drop-shadow-[0_0_30px_rgba(251,191,36,0.4)]' 
-                : 'text-white drop-shadow-[0_0_20px_rgba(255,255,255,0.15)]'
+          {/* Timer Display - увеличен в 2 раза */}
+          <div className={`text-[12rem] md:text-[16rem] font-mono font-light transition-all duration-300 leading-none ${
+            currentTime <= 60 ? 'text-red-500' : 
+            currentTime <= 300 ? 'text-amber-500' : 
+            'text-gray-800'
           }`}>
             {formatTime(currentTime)}
           </div>
           
           {/* Progress Bar */}
-          <div className="w-96 max-w-full mt-6">
-            <div className="h-2 bg-white/10 rounded-full overflow-hidden backdrop-blur-sm border border-white/5">
-              <div 
-                className={`h-full rounded-full transition-all duration-1000 ${
-                  currentTime <= 60 
-                    ? 'bg-gradient-to-r from-red-600 to-red-400 shadow-[0_0_20px_rgba(239,68,68,0.5)]' 
-                    : currentTime <= 300 
-                      ? 'bg-gradient-to-r from-amber-600 to-amber-400 shadow-[0_0_15px_rgba(251,191,36,0.4)]' 
-                      : 'bg-gradient-to-r from-primary to-primary/70 shadow-[0_0_10px_rgba(212,175,55,0.3)]'
-                }`}
-                style={{ width: `${timerProgress}%` }}
-              />
-            </div>
+          <div className="w-80 max-w-full mt-4">
+            <Progress 
+              value={timerProgress} 
+              className="h-2 bg-gray-200"
+            />
           </div>
         </div>
 
         {/* Current and Next Blinds */}
         <div className="grid grid-cols-2 gap-6 max-w-2xl w-full">
           {/* Current Blinds - Emphasized */}
-          <div className="text-center p-6 rounded-2xl bg-gradient-to-br from-white/10 to-white/5 border-2 border-primary/40 shadow-[0_0_30px_rgba(212,175,55,0.15)] backdrop-blur-sm">
-            <p className="text-sm text-primary font-bold mb-3 tracking-wider">ТЕКУЩИЙ УРОВЕНЬ</p>
-            <div className={`grid gap-4 ${currentAnte > 0 ? 'grid-cols-3' : 'grid-cols-2'}`}>
+          <div className="text-center p-6 border-2 border-gray-800 rounded-lg bg-white shadow-lg">
+            <p className="text-sm text-gray-800 font-bold mb-2">ТЕКУЩИЙ УРОВЕНЬ</p>
+            <div className={`grid gap-2 ${currentAnte > 0 ? 'grid-cols-3' : 'grid-cols-2'}`}>
               <div className="space-y-1">
-                <p className="text-4xl font-bold text-white drop-shadow-lg">{isBreakLevel ? '—' : currentSmallBlind}</p>
-                <p className="text-xs text-white/50 font-medium tracking-wide">МАЛЫЙ БЛАЙНД</p>
+                <p className="text-3xl font-bold text-gray-900">{isBreakLevel ? '—' : currentSmallBlind}</p>
+                <p className="text-xs text-gray-600">МАЛЫЙ БЛАЙНД</p>
               </div>
               <div className="space-y-1">
-                <p className="text-4xl font-bold text-white drop-shadow-lg">{isBreakLevel ? '—' : currentBigBlind}</p>
-                <p className="text-xs text-white/50 font-medium tracking-wide">БОЛЬШОЙ БЛАЙНД</p>
+                <p className="text-3xl font-bold text-gray-900">{isBreakLevel ? '—' : currentBigBlind}</p>
+                <p className="text-xs text-gray-600">БОЛЬШОЙ БЛАЙНД</p>
               </div>
               {currentAnte > 0 && (
                 <div className="space-y-1">
-                  <p className="text-4xl font-bold text-amber-400 drop-shadow-[0_0_10px_rgba(251,191,36,0.4)]">{isBreakLevel ? '—' : currentAnte}</p>
-                  <p className="text-xs text-white/50 font-medium tracking-wide">АНТЕ</p>
+                  <p className="text-3xl font-bold text-amber-600">{isBreakLevel ? '—' : currentAnte}</p>
+                  <p className="text-xs text-gray-600">АНТЕ</p>
                 </div>
               )}
             </div>
           </div>
 
           {/* Next Blinds - Subtle */}
-          <div className="text-center p-6 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-sm">
-            <p className="text-sm text-white/40 font-medium mb-3 flex items-center justify-center tracking-wider">
+          <div className="text-center p-6 border border-gray-300 rounded-lg bg-gray-50">
+            <p className="text-sm text-gray-500 font-medium mb-2 flex items-center justify-center">
               <ChevronUp className="w-4 h-4 mr-1" />
               {isBreakLevel ? 'ПОСЛЕ ПЕРЕРЫВА' : (isNextBreakLevel ? 'ПЕРЕРЫВ' : 'СЛЕДУЮЩИЙ УРОВЕНЬ')}
             </p>
             {isNextBreakLevel ? (
-              <div className="flex items-center justify-center py-3">
-                <Coffee className="w-7 h-7 text-amber-400 mr-2" />
-                <span className="text-2xl font-medium text-amber-400/80">ПЕРЕРЫВ</span>
+              <div className="flex items-center justify-center py-2">
+                <Coffee className="w-6 h-6 text-amber-600 mr-2" />
+                <span className="text-xl font-medium text-gray-700">ПЕРЕРЫВ</span>
               </div>
             ) : (
-              <div className={`grid gap-4 ${nextAnte > 0 ? 'grid-cols-3' : 'grid-cols-2'}`}>
+              <div className={`grid gap-2 ${nextAnte > 0 ? 'grid-cols-3' : 'grid-cols-2'}`}>
                 <div className="space-y-1">
-                  <p className="text-2xl font-medium text-white/70">{nextSmallBlind}</p>
-                  <p className="text-xs text-white/40 tracking-wide">МАЛЫЙ БЛАЙНД</p>
+                  <p className="text-xl font-medium text-gray-700">{nextSmallBlind}</p>
+                  <p className="text-xs text-gray-500">МАЛЫЙ БЛАЙНД</p>
                 </div>
                 <div className="space-y-1">
-                  <p className="text-2xl font-medium text-white/70">{nextBigBlind}</p>
-                  <p className="text-xs text-white/40 tracking-wide">БОЛЬШОЙ БЛАЙНД</p>
+                  <p className="text-xl font-medium text-gray-700">{nextBigBlind}</p>
+                  <p className="text-xs text-gray-500">БОЛЬШОЙ БЛАЙНД</p>
                 </div>
                 {nextAnte > 0 && (
                   <div className="space-y-1">
-                    <p className="text-2xl font-medium text-amber-400/70">{nextAnte}</p>
-                    <p className="text-xs text-white/40 tracking-wide">АНТЕ</p>
+                    <p className="text-xl font-medium text-amber-500">{nextAnte}</p>
+                    <p className="text-xs text-gray-500">АНТЕ</p>
                   </div>
                 )}
               </div>
@@ -431,56 +407,56 @@ const FullscreenTimer = ({
           </div>
         </div>
 
-        {/* Statistics */}
-        <div className="bg-white/5 border border-white/10 rounded-2xl p-5 max-w-6xl w-full backdrop-blur-sm">
+        {/* Statistics - расширенная статистика */}
+        <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 max-w-6xl w-full">
           <div className="grid grid-cols-5 gap-6 text-center">
-            <div className="space-y-1">
-              <div className="flex items-center justify-center mb-2">
-                <Users className="w-4 h-4 text-primary mr-2" />
-                <span className="text-sm text-white/50">Игроки</span>
+            <div>
+              <div className="flex items-center justify-center mb-1">
+                <Users className="w-4 h-4 text-gray-600 mr-2" />
+                <span className="text-sm text-gray-600">Игроки</span>
               </div>
-              <p className="text-2xl font-semibold text-white">{statisticsData.activePlayers.length}</p>
+              <p className="text-xl font-medium text-gray-800">{statisticsData.activePlayers.length}</p>
             </div>
-            <div className="space-y-1">
-              <div className="flex items-center justify-center mb-2">
-                <Trophy className="w-4 h-4 text-amber-400 mr-2" />
-                <span className="text-sm text-white/50">Призовой фонд RPS</span>
+            <div>
+              <div className="flex items-center justify-center mb-1">
+                <Trophy className="w-4 h-4 text-amber-600 mr-2" />
+                <span className="text-sm text-gray-600">Призовой фонд RPS</span>
               </div>
-              <p className="text-2xl font-semibold text-primary">{statisticsData.rpsPool.toLocaleString()} <span className="text-sm text-white/40">RPS</span></p>
+              <p className="text-xl font-medium text-gray-800">{statisticsData.rpsPool.toLocaleString()} RPS</p>
             </div>
-            <div className="space-y-1">
-              <div className="flex items-center justify-center mb-2">
-                <span className="text-sm text-white/50">Средний стек</span>
+            <div>
+              <div className="flex items-center justify-center mb-1">
+                <span className="text-sm text-gray-600">Средний стек</span>
               </div>
-              <p className="text-2xl font-semibold text-white">{statisticsData.averageStack.toLocaleString()}</p>
+              <p className="text-xl font-medium text-gray-800">{statisticsData.averageStack.toLocaleString()}</p>
             </div>
-            <div className="space-y-1">
-              <div className="flex items-center justify-center mb-2">
-                <span className="text-sm text-white/50">Re-entry / Доп.</span>
+            <div>
+              <div className="flex items-center justify-center mb-1">
+                <span className="text-sm text-gray-600">Re-entry / Доп. наборы</span>
               </div>
-              <p className="text-2xl font-semibold text-white">{statisticsData.totalReentries} <span className="text-white/30">/</span> {statisticsData.totalAdditionalSets}</p>
+              <p className="text-xl font-medium text-gray-800">{statisticsData.totalReentries} / {statisticsData.totalAdditionalSets}</p>
             </div>
-            <div className="space-y-1">
-              <div className="flex items-center justify-center mb-2">
-                <Coffee className="w-4 h-4 text-amber-400 mr-2" />
-                <span className="text-sm text-white/50">До перерыва</span>
+            <div>
+              <div className="flex items-center justify-center mb-1">
+                <Coffee className="w-4 h-4 text-amber-600 mr-2" />
+                <span className="text-sm text-gray-600">До перерыва</span>
               </div>
               {isBreakLevel ? (
-                <p className="text-2xl font-semibold text-amber-400">СЕЙЧАС</p>
+                <p className="text-xl font-medium text-amber-600">СЕЙЧАС</p>
               ) : timeToBreakData.timeToBreak ? (
                 <div>
-                  <p className="text-xl font-semibold text-white">{formatTime(timeToBreakData.timeToBreak)}</p>
-                  <p className="text-xs text-white/40">({timeToBreakData.levelsUntilBreak} ур.)</p>
+                  <p className="text-lg font-medium text-gray-800">{formatTime(timeToBreakData.timeToBreak)}</p>
+                  <p className="text-xs text-gray-500">({timeToBreakData.levelsUntilBreak} ур.)</p>
                 </div>
               ) : blindLevels.length === 0 ? (
                 <div>
-                  <p className="text-sm font-medium text-white/40">Загрузка...</p>
-                  <p className="text-xs text-white/30">структуры</p>
+                  <p className="text-sm font-medium text-gray-500">Загрузка...</p>
+                  <p className="text-xs text-gray-400">структуры блайндов</p>
                 </div>
               ) : (
                 <div>
-                  <p className="text-2xl font-semibold text-white/60">∞</p>
-                  <p className="text-xs text-white/30">нет перерывов</p>
+                  <p className="text-xl font-medium text-gray-800">∞</p>
+                  <p className="text-xs text-gray-500">нет перерывов</p>
                 </div>
               )}
             </div>
@@ -488,27 +464,24 @@ const FullscreenTimer = ({
         </div>
       </div>
 
-      {/* Control Panel */}
-      <div className="relative bg-black/40 border-t border-white/10 p-4 backdrop-blur-md">
+      {/* Control Panel - компактная единая панель */}
+      <div className="bg-gray-50 border-t border-gray-200 p-4">
         <div className="flex justify-center items-center gap-2">
           <Button
             variant="outline"
             size="sm"
             onClick={onPrevLevel}
-            className="h-10 px-4 bg-white/5 border-white/20 text-white/80 hover:bg-white/10 hover:text-white hover:border-white/30"
+            className="h-10 px-4"
           >
             <ChevronLeft className="w-4 h-4 mr-1" />
             Пред.
           </Button>
           
           <Button
+            variant={timerActive ? "destructive" : "default"}
             size="sm"
             onClick={onToggleTimer}
-            className={`h-10 px-6 font-medium transition-all ${
-              timerActive 
-                ? 'bg-red-600 hover:bg-red-700 text-white shadow-[0_0_20px_rgba(220,38,38,0.4)]' 
-                : 'bg-gradient-to-r from-green-600 to-green-500 hover:from-green-500 hover:to-green-400 text-white shadow-[0_0_20px_rgba(34,197,94,0.4)]'
-            }`}
+            className="h-10 px-6 font-medium"
           >
             {timerActive ? <Pause className="w-4 h-4 mr-1" /> : <Play className="w-4 h-4 mr-1" />}
             {timerActive ? 'Пауза' : 'Старт'}
@@ -518,19 +491,20 @@ const FullscreenTimer = ({
             variant="outline"
             size="sm"
             onClick={onNextLevel}
-            className="h-10 px-4 bg-white/5 border-white/20 text-white/80 hover:bg-white/10 hover:text-white hover:border-white/30"
+            className="h-10 px-4"
           >
             След.
             <ChevronRight className="w-4 h-4 ml-1" />
           </Button>
 
-          <div className="h-6 w-px bg-white/20 mx-2" />
+          <div className="h-6 w-px bg-gray-300 mx-2" />
 
+          {/* Timer adjustment controls */}
           <Button
             variant="outline"
             size="sm"
             onClick={() => onTimerAdjust(-60)}
-            className="h-10 px-3 text-xs bg-white/5 border-white/20 text-white/70 hover:bg-white/10 hover:text-white"
+            className="h-10 px-3 text-xs"
           >
             -1м
           </Button>
@@ -539,18 +513,18 @@ const FullscreenTimer = ({
             variant="outline"
             size="sm"
             onClick={() => onTimerAdjust(60)}
-            className="h-10 px-3 text-xs bg-white/5 border-white/20 text-white/70 hover:bg-white/10 hover:text-white"
+            className="h-10 px-3 text-xs"
           >
             +1м
           </Button>
 
-          <div className="h-6 w-px bg-white/20 mx-2" />
+          <div className="h-6 w-px bg-gray-300 mx-2" />
 
           <Button
             variant="outline"
             size="sm"
             onClick={onResetTimer}
-            className="h-10 px-4 bg-white/5 border-white/20 text-white/80 hover:bg-white/10 hover:text-white"
+            className="h-10 px-4"
           >
             <RotateCcw className="w-4 h-4 mr-1" />
             Сброс
@@ -560,11 +534,7 @@ const FullscreenTimer = ({
             variant="outline"
             size="sm"
             onClick={() => setSoundEnabled(!soundEnabled)}
-            className={`h-10 px-3 border transition-all ${
-              soundEnabled 
-                ? 'bg-blue-500/20 border-blue-500/40 text-blue-400 hover:bg-blue-500/30' 
-                : 'bg-white/5 border-white/20 text-white/40 hover:bg-white/10'
-            }`}
+            className={`h-10 px-3 ${soundEnabled ? 'bg-blue-50 text-blue-600' : 'text-gray-500'}`}
           >
             {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
           </Button>
@@ -578,11 +548,7 @@ const FullscreenTimer = ({
                 stopAnnouncement();
               }
             }}
-            className={`h-10 px-3 border transition-all ${
-              voiceAnnouncementsEnabled 
-                ? 'bg-green-500/20 border-green-500/40 text-green-400 hover:bg-green-500/30' 
-                : 'bg-white/5 border-white/20 text-white/40 hover:bg-white/10'
-            }`}
+            className={`h-10 px-3 ${voiceAnnouncementsEnabled ? 'bg-green-50 text-green-600' : 'text-gray-500'}`}
           >
             {voiceAnnouncementsEnabled ? <Mic className="w-4 h-4" /> : <MicOff className="w-4 h-4" />}
           </Button>
