@@ -92,51 +92,65 @@ export function useClanSystem() {
   const loadMyClan = useCallback(async () => {
     if (!playerData?.id) return;
 
-    // Проверяем, является ли игрок Доном клана
-    const { data: ownedClan } = await supabase
-      .from('clans')
-      .select('*')
-      .eq('don_player_id', playerData.id)
-      .single();
+    try {
+      // Проверяем, является ли игрок Доном клана
+      const { data: ownedClan, error: ownedError } = await supabase
+        .from('clans')
+        .select('*')
+        .eq('don_player_id', playerData.id)
+        .maybeSingle();
 
-    if (ownedClan) {
-      // Загружаем количество членов
-      const { count } = await supabase
-        .from('clan_members')
-        .select('*', { count: 'exact', head: true })
-        .eq('clan_id', ownedClan.id);
+      if (ownedError) {
+        console.error('Error loading owned clan:', ownedError);
+        return;
+      }
 
-      setMyClan({ ...ownedClan, members_count: count || 0 });
-      setMyMembership({
-        id: 'don',
-        clan_id: ownedClan.id,
-        player_id: playerData.id,
-        hierarchy_role: 'don',
-        joined_at: ownedClan.created_at
-      });
-      return;
-    }
-
-    // Проверяем, является ли игрок членом клана
-    const { data: membership } = await supabase
-      .from('clan_members')
-      .select(`
-        *,
-        clan:clans(*)
-      `)
-      .eq('player_id', playerData.id)
-      .single();
-
-    if (membership) {
-      setMyMembership(membership);
-      if (membership.clan) {
+      if (ownedClan) {
+        // Загружаем количество членов
         const { count } = await supabase
           .from('clan_members')
           .select('*', { count: 'exact', head: true })
-          .eq('clan_id', membership.clan.id);
-        
-        setMyClan({ ...(membership.clan as Clan), members_count: count || 0 });
+          .eq('clan_id', ownedClan.id);
+
+        setMyClan({ ...ownedClan, members_count: count || 0 });
+        setMyMembership({
+          id: 'don',
+          clan_id: ownedClan.id,
+          player_id: playerData.id,
+          hierarchy_role: 'don',
+          joined_at: ownedClan.created_at
+        });
+        return;
       }
+
+      // Проверяем, является ли игрок членом клана
+      const { data: membership, error: memberError } = await supabase
+        .from('clan_members')
+        .select(`
+          *,
+          clan:clans(*)
+        `)
+        .eq('player_id', playerData.id)
+        .maybeSingle();
+
+      if (memberError) {
+        console.error('Error loading membership:', memberError);
+        return;
+      }
+
+      if (membership) {
+        setMyMembership(membership);
+        if (membership.clan) {
+          const { count } = await supabase
+            .from('clan_members')
+            .select('*', { count: 'exact', head: true })
+            .eq('clan_id', membership.clan.id);
+          
+          setMyClan({ ...(membership.clan as Clan), members_count: count || 0 });
+        }
+      }
+    } catch (error) {
+      console.error('Error in loadMyClan:', error);
     }
   }, [playerData?.id]);
 
@@ -144,17 +158,26 @@ export function useClanSystem() {
   const loadInvitations = useCallback(async () => {
     if (!playerData?.id) return;
 
-    const { data } = await supabase
-      .from('clan_invitations')
-      .select(`
-        *,
-        clan:clans(*)
-      `)
-      .eq('player_id', playerData.id)
-      .eq('status', 'pending');
+    try {
+      const { data, error } = await supabase
+        .from('clan_invitations')
+        .select(`
+          *,
+          clan:clans(*)
+        `)
+        .eq('player_id', playerData.id)
+        .eq('status', 'pending');
 
-    if (data) {
-      setPendingInvitations(data as ClanInvitation[]);
+      if (error) {
+        console.error('Error loading invitations:', error);
+        return;
+      }
+
+      if (data) {
+        setPendingInvitations(data as ClanInvitation[]);
+      }
+    } catch (error) {
+      console.error('Error in loadInvitations:', error);
     }
   }, [playerData?.id]);
 

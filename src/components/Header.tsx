@@ -80,7 +80,7 @@ export function Header() {
           <div className="hidden md:flex items-center space-x-3">
             {isAuthenticated ? (
               <>
-                {/* Временно отключили колокольчик клановых уведомлений для стабилизации навигации */}
+                <ClanNotificationBell />
                 {isAdmin && (
                   <Link to="/admin">
                     <Button 
@@ -170,9 +170,9 @@ export function Header() {
             
             {isAuthenticated ? (
               <>
-                {/* Временно отключили колокольчик клановых уведомлений для стабилизации навигации */}
                 <div className="flex items-center justify-between px-4 py-2">
                   <span className="text-sm text-muted-foreground">Уведомления</span>
+                  <ClanNotificationBell />
                 </div>
                 {isAdmin && (
                   <Link to="/admin" onClick={() => setIsMenuOpen(false)}>

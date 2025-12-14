@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -6,30 +6,51 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
-import { useClanRealtimeNotifications } from '@/hooks/useClanRealtimeNotifications';
-import { useClanSystem } from '@/hooks/useClanSystem';
+import { useClanSystem, ClanInvitation } from '@/hooks/useClanSystem';
 import { CLAN_EMBLEMS } from '@/utils/clanEmblems';
-import { cn } from '@/lib/utils';
+import { useNavigate } from 'react-router-dom';
 
 export function ClanNotificationBell() {
-  const { playerData, acceptInvitation, declineInvitation, refresh } = useClanSystem();
-  const { newInvitations, unreadCount, clearNotifications } = useClanRealtimeNotifications(playerData?.id || null);
+  const { pendingInvitations, acceptInvitation, declineInvitation, refresh, playerData } = useClanSystem();
+  const [processingIds, setProcessingIds] = useState<Set<string>>(new Set());
+  const navigate = useNavigate();
 
-  const handleAccept = async (invitationId: string, clanId: string) => {
-    const success = await acceptInvitation(invitationId, clanId);
-    if (success) {
-      refresh();
+  const handleAccept = async (invitation: ClanInvitation) => {
+    setProcessingIds(prev => new Set(prev).add(invitation.id));
+    try {
+      const success = await acceptInvitation(invitation.id, invitation.clan_id);
+      if (success) {
+        refresh();
+      }
+    } finally {
+      setProcessingIds(prev => {
+        const next = new Set(prev);
+        next.delete(invitation.id);
+        return next;
+      });
     }
   };
 
-  const handleDecline = async (invitationId: string, clanId: string) => {
-    const success = await declineInvitation(invitationId, clanId);
-    if (success) {
-      refresh();
+  const handleDecline = async (invitation: ClanInvitation) => {
+    setProcessingIds(prev => new Set(prev).add(invitation.id));
+    try {
+      const success = await declineInvitation(invitation.id, invitation.clan_id);
+      if (success) {
+        refresh();
+      }
+    } finally {
+      setProcessingIds(prev => {
+        const next = new Set(prev);
+        next.delete(invitation.id);
+        return next;
+      });
     }
   };
 
+  // Не показываем если нет playerData (не авторизован или не загружен)
   if (!playerData) return null;
+
+  const unreadCount = pendingInvitations.length;
 
   return (
     <Popover>
@@ -48,14 +69,15 @@ export function ClanNotificationBell() {
           <h4 className="font-semibold text-sm">Приглашения в семью</h4>
         </div>
         <div className="max-h-[300px] overflow-y-auto">
-          {newInvitations.length === 0 ? (
+          {pendingInvitations.length === 0 ? (
             <div className="p-4 text-center text-muted-foreground text-sm">
               Нет новых приглашений
             </div>
           ) : (
             <div className="divide-y divide-border">
-              {newInvitations.map((invitation) => {
+              {pendingInvitations.map((invitation) => {
                 const emblem = CLAN_EMBLEMS.find(e => e.id === invitation.clan?.emblem_id);
+                const isProcessing = processingIds.has(invitation.id);
                 return (
                   <div key={invitation.id} className="p-3 hover:bg-muted/50 transition-colors">
                     <div className="flex items-center gap-3 mb-2">
@@ -75,17 +97,19 @@ export function ClanNotificationBell() {
                       <Button
                         size="sm"
                         className="flex-1"
-                        onClick={() => handleAccept(invitation.id, invitation.clan_id)}
+                        onClick={() => handleAccept(invitation)}
+                        disabled={isProcessing}
                       >
-                        Принять
+                        {isProcessing ? '...' : 'Принять'}
                       </Button>
                       <Button
                         size="sm"
                         variant="outline"
                         className="flex-1"
-                        onClick={() => handleDecline(invitation.id, invitation.clan_id)}
+                        onClick={() => handleDecline(invitation)}
+                        disabled={isProcessing}
                       >
-                        Отклонить
+                        {isProcessing ? '...' : 'Отклонить'}
                       </Button>
                     </div>
                   </div>
@@ -94,6 +118,18 @@ export function ClanNotificationBell() {
             </div>
           )}
         </div>
+        {pendingInvitations.length > 0 && (
+          <div className="p-2 border-t border-border">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="w-full text-xs"
+              onClick={() => navigate('/profile?tab=clan')}
+            >
+              Открыть в профиле
+            </Button>
+          </div>
+        )}
       </PopoverContent>
     </Popover>
   );
