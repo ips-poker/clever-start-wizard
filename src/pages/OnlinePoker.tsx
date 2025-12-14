@@ -159,9 +159,9 @@ export default function OnlinePoker() {
     const isDesktop = window.innerWidth > 768;
     
     if (isDesktop) {
-      // On desktop - open in popup window for multi-tabling
-      const width = 500;
-      const height = 850;
+      // On desktop - open in popup window for multi-tabling (vertical layout)
+      const width = 420;
+      const height = 900;
       const left = window.screenX + (window.outerWidth - width) / 2;
       const top = window.screenY + (window.outerHeight - height) / 2;
       
@@ -182,8 +182,9 @@ export default function OnlinePoker() {
     const isDesktop = window.innerWidth > 768;
     
     if (isDesktop) {
-      const width = 500;
-      const height = 850;
+      // Vertical layout for multi-tabling
+      const width = 420;
+      const height = 900;
       const left = window.screenX + (window.outerWidth - width) / 2;
       const top = window.screenY + (window.outerHeight - height) / 2;
       
