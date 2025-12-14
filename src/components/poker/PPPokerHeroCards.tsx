@@ -50,13 +50,12 @@ const HeroCard = memo(function HeroCard({
   const suitChar = (card?.[1]?.toLowerCase() || 's') as keyof typeof SUITS_FOURCOLOR;
   const suitInfo = useFourColor ? SUITS_FOURCOLOR[suitChar] : SUITS_CLASSIC[suitChar];
   
-  // Adjust card size based on number of cards (smaller for PLO4)
-  const cardWidth = cardCount > 2 ? 44 : 52;
-  const cardHeight = cardCount > 2 ? 62 : 72;
-  const rankSize = cardCount > 2 ? 'text-base' : 'text-lg';
-  // Suit sizes reduced by 30% for Telegram mini app
-  const suitSize = cardCount > 2 ? 'text-[9px]' : 'text-[11px]';
-  const centerSize = cardCount > 2 ? 'text-lg' : 'text-xl';
+  // Card sizes - PPPoker style proportions
+  const cardWidth = cardCount > 2 ? 48 : 56;
+  const cardHeight = cardCount > 2 ? 68 : 80;
+  const rankSize = cardCount > 2 ? 'text-lg' : 'text-xl';
+  const suitSize = cardCount > 2 ? 'text-sm' : 'text-base';
+  const centerSize = cardCount > 2 ? 'text-2xl' : 'text-3xl';
 
   // Colors for dimmed vs bright cards
   const cardBg = isDimmed 
@@ -87,10 +86,10 @@ const HeroCard = memo(function HeroCard({
             : '0 6px 20px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.8)'
       }}
     >
-      {/* Top-left corner */}
-      <div className="absolute top-0.5 left-1 flex flex-col items-center leading-none">
+      {/* Top-left corner - Rank above Suit (PPPoker style) */}
+      <div className="absolute top-1 left-1.5 flex flex-col items-center leading-none">
         <span 
-          className={cn(rankSize, 'font-black')} 
+          className={cn(rankSize, 'font-black leading-none')} 
           style={{ 
             color: suitColor,
             textShadow: isDimmed ? 'none' : '0 1px 2px rgba(0,0,0,0.1)'
@@ -99,20 +98,20 @@ const HeroCard = memo(function HeroCard({
           {rank}
         </span>
         <span 
-          className={cn(suitSize, '-mt-0.5')} 
+          className={cn(suitSize, 'leading-none')} 
           style={{ color: suitColor }}
         >
           {suitInfo.symbol}
         </span>
       </div>
       
-      {/* Center large suit */}
+      {/* Center large suit - PPPoker style */}
       <div className="absolute inset-0 flex items-center justify-center">
         <span 
           className={centerSize}
           style={{ 
             color: suitColor, 
-            opacity: isDimmed ? 0.5 : 0.9,
+            opacity: isDimmed ? 0.4 : 0.9,
             filter: isDimmed ? 'none' : 'drop-shadow(0 2px 4px rgba(0,0,0,0.15))'
           }}
         >
@@ -120,10 +119,10 @@ const HeroCard = memo(function HeroCard({
         </span>
       </div>
       
-      {/* Bottom-right corner (rotated) */}
-      <div className="absolute bottom-0.5 right-1 flex flex-col items-center leading-none rotate-180">
+      {/* Bottom-right corner (rotated) - PPPoker style */}
+      <div className="absolute bottom-1 right-1.5 flex flex-col items-center leading-none rotate-180">
         <span 
-          className={cn(rankSize, 'font-black')} 
+          className={cn(rankSize, 'font-black leading-none')} 
           style={{ 
             color: suitColor,
             textShadow: isDimmed ? 'none' : '0 1px 2px rgba(0,0,0,0.1)'
@@ -132,7 +131,7 @@ const HeroCard = memo(function HeroCard({
           {rank}
         </span>
         <span 
-          className={cn(suitSize, '-mt-0.5')} 
+          className={cn(suitSize, 'leading-none')} 
           style={{ color: suitColor }}
         >
           {suitInfo.symbol}

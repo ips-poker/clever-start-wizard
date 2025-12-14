@@ -33,11 +33,10 @@ const SUITS_CLASSIC = {
   s: { symbol: '♠', color: '#1e293b' }
 };
 
-// Size configuration - cards increased by 10% for Telegram mini app
-// Suit sizes reduced by 30%
+// Size configuration - PPPoker style cards
 const SIZE_CONFIG = {
-  xs: { w: 20, h: 29, rank: 'text-[8px]', suit: 'text-[5px]', overlap: -5 },
-  sm: { w: 24, h: 33, rank: 'text-[9px]', suit: 'text-[6px]', overlap: -6 }
+  xs: { w: 22, h: 32, rank: 'text-[9px]', suit: 'text-[8px]', center: 'text-[12px]', overlap: -6 },
+  sm: { w: 28, h: 40, rank: 'text-[11px]', suit: 'text-[10px]', center: 'text-[16px]', overlap: -8 }
 };
 
 // Single mini card component with dimming support for showdown
@@ -184,39 +183,78 @@ const MiniCard = memo(function MiniCard({
   return (
     <motion.div
       initial={{ scale: 0, opacity: 0 }}
-      animate={{ scale: 1, opacity: isDimmed ? 0.9 : 1, rotate: rotation }}
+      animate={{ scale: 1, opacity: isDimmed ? 0.85 : 1, rotate: rotation }}
       transition={{ delay: delay * 0.05, type: 'spring', stiffness: 300, damping: 25 }}
-      className="rounded-[3px] shadow-md relative flex flex-col"
+      className="rounded-[4px] shadow-lg relative"
       style={{
         width: cfg.w,
         height: cfg.h,
-        background: cardBg,
-        border: borderStyle,
+        background: isDimmed 
+          ? 'linear-gradient(145deg, #4b5563 0%, #374151 100%)'
+          : 'linear-gradient(145deg, #ffffff 0%, #fafafa 50%, #f5f5f5 100%)',
+        border: isWinning 
+          ? '2px solid #fbbf24' 
+          : isDimmed 
+            ? '1px solid #6b7280' 
+            : '1px solid #e5e5e5',
         boxShadow: isWinning 
-          ? '0 0 12px rgba(251,191,36,0.6), 0 2px 6px rgba(0,0,0,0.3)' 
-          : '0 2px 6px rgba(0,0,0,0.25)',
+          ? '0 0 14px rgba(251,191,36,0.6), 0 3px 8px rgba(0,0,0,0.3)' 
+          : '0 3px 8px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.8)',
         transformOrigin: 'bottom center'
       }}
     >
-      {/* Top-left corner - rank only */}
-      <div className="absolute top-0.5 left-0.5 leading-none">
-        <span className={cn(cfg.rank, 'font-bold')} style={{ color: suitColor }}>{rank}</span>
+      {/* Top-left corner - Rank above Suit (PPPoker style) */}
+      <div className="absolute top-[2px] left-[3px] flex flex-col items-center leading-none">
+        <span 
+          className={cn(cfg.rank, 'font-black leading-none')} 
+          style={{ color: suitColor }}
+        >
+          {rank}
+        </span>
+        <span 
+          className={cn(cfg.suit, 'leading-none -mt-[1px]')} 
+          style={{ color: suitColor }}
+        >
+          {suitInfo.symbol}
+        </span>
       </div>
       
-      {/* Top-right corner - suit */}
-      <div className="absolute top-0.5 right-0.5 leading-none">
-        <span className={cfg.suit} style={{ color: suitColor }}>{suitInfo.symbol}</span>
+      {/* Center suit - large (PPPoker style) */}
+      <div className="absolute inset-0 flex items-center justify-center">
+        <span 
+          className={cfg.center}
+          style={{ 
+            color: suitColor,
+            opacity: isDimmed ? 0.5 : 0.85
+          }}
+        >
+          {suitInfo.symbol}
+        </span>
       </div>
       
-      {/* Bottom-left center - suit */}
-      <div className="absolute bottom-0.5 left-1/2 -translate-x-1/2 leading-none">
-        <span className={cfg.suit} style={{ color: suitColor }}>{suitInfo.symbol}</span>
+      {/* Bottom-right corner - Rotated (PPPoker style) */}
+      <div className="absolute bottom-[2px] right-[3px] flex flex-col items-center leading-none rotate-180">
+        <span 
+          className={cn(cfg.rank, 'font-black leading-none')} 
+          style={{ color: suitColor }}
+        >
+          {rank}
+        </span>
+        <span 
+          className={cn(cfg.suit, 'leading-none -mt-[1px]')} 
+          style={{ color: suitColor }}
+        >
+          {suitInfo.symbol}
+        </span>
       </div>
       
       {/* Glossy effect - only on bright cards */}
       {!isDimmed && (
-        <div className="absolute inset-0 pointer-events-none rounded-[3px]"
-          style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.5) 0%, transparent 50%)' }}
+        <div 
+          className="absolute inset-0 pointer-events-none rounded-[3px]"
+          style={{ 
+            background: 'linear-gradient(135deg, rgba(255,255,255,0.6) 0%, transparent 35%, rgba(0,0,0,0.02) 100%)' 
+          }}
         />
       )}
     </motion.div>
