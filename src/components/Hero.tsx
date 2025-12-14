@@ -82,7 +82,7 @@ export function Hero() {
             <div className="space-y-4">
               <h1 className="font-display text-6xl md:text-7xl lg:text-8xl uppercase leading-none tracking-tight">
                 <span className="block text-foreground">
-                  <GlitchText text="SYNDICATE" glitchIntensity="medium" />
+                  <GlitchText text="SYNDIKATE" glitchIntensity="medium" />
                 </span>
                 <span className="block neon-orange animate-neon-pulse mt-2">
                   <TypewriterText text="POKER CLUB" speed={100} delay={1200} />
