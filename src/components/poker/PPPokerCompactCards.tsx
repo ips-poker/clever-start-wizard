@@ -274,12 +274,17 @@ export const PPPokerCompactCards = memo(function PPPokerCompactCards({
   const { currentCardBack, preferences } = usePokerPreferences();
   
   const cfg = SIZE_CONFIG[size];
-  const showCards = isShowdown && cards && cards.length >= 2;
+  // Show actual cards when we have them and not face down
+  const hasCards = cards && cards.length >= 2;
+  const showCards = hasCards && !faceDown;
   const useFourColor = preferences.cardStyle === 'fourcolor';
   
-  // For PLO4, show all 4 cards
-  const cardCount = cards?.length || 2;
+  // For PLO4, show all 4 cards - default to 2 cards if no cards provided
+  const cardCount = hasCards ? cards.length : 2;
   const displayCards = showCards ? cards : Array(Math.min(cardCount, 4)).fill('XX');
+  
+  // Don't render anything if no cards and not in a game phase
+  if (!hasCards && !isShowdown) return null;
 
   // Calculate rotations for card fan - PPPoker style: bigger angle spread like in reference
   const getRotations = (count: number) => {

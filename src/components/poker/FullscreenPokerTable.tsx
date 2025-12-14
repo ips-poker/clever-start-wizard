@@ -421,8 +421,8 @@ const PlayerSeat = memo(function PlayerSeat({
         {/* Opponent cards - PPPoker style: positioned TOWARDS center of table */}
         {!isHero && !player.isFolded && gamePhase !== 'waiting' && (
           <PPPokerCompactCards 
-            cards={player.holeCards}
-            faceDown={gamePhase !== 'showdown'}
+            cards={player.holeCards || []}
+            faceDown={gamePhase !== 'showdown' || !player.holeCards?.length}
             isShowdown={gamePhase === 'showdown'}
             handName={(player as any).handName}
             isWinner={(player as any).isWinner}
