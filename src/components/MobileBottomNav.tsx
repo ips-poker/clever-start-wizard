@@ -11,8 +11,8 @@ export function MobileBottomNav() {
   const [lastScrollY, setLastScrollY] = useState(0);
   const { isAuthenticated, isAdmin } = useAuth();
 
-  // Hide navigation in Telegram Mini App and on director/admin pages
-  if (currentPath.startsWith('/telegram') || currentPath === '/director' || currentPath === '/admin') {
+  // Hide navigation in Telegram Mini App, director/admin pages, and poker table
+  if (currentPath.startsWith('/telegram') || currentPath === '/director' || currentPath === '/admin' || currentPath.startsWith('/table')) {
     return null;
   }
 
