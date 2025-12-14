@@ -522,26 +522,31 @@ const PlayerSeat = memo(function PlayerSeat({
 interface SyndikateTableFeltProps {
   themeColor?: string;
   themeGradient?: string;
+  wideMode?: boolean; // For Telegram Mini App - wider table
 }
 
 const SyndikateTableFelt = memo(function SyndikateTableFelt({ 
   themeColor = '#0d5c2e',
-  themeGradient
+  themeGradient,
+  wideMode = false
 }: SyndikateTableFeltProps) {
   // Generate felt gradient from theme color
+  // Wide mode uses smaller left/right margins for Telegram Mini App
+  const sideMargin = wideMode ? { outer: '10%', leather: '11%', glow: '12%', inner: '13%', felt: '14%', corners: '12%' } 
+                               : { outer: '20%', leather: '21%', glow: '22%', inner: '23%', felt: '24%', corners: '22%' };
   const feltGradient = themeGradient || `radial-gradient(ellipse at 50% 40%, ${themeColor} 0%, ${themeColor}dd 25%, ${themeColor}bb 45%, ${themeColor}99 65%, ${themeColor}77 85%, ${themeColor}55 100%)`;
   
   return (
     <div className="absolute inset-0 overflow-hidden">
       {/* Transparent background - uses parent's tech theme */}
       
-      {/* Glowing ambient effect behind table - vertical stadium shape - wider for mini app */}
+      {/* Glowing ambient effect behind table - vertical stadium shape */}
       <div 
         className="absolute"
         style={{
           top: '8%',
-          left: '12%',
-          right: '12%',
+          left: sideMargin.glow,
+          right: sideMargin.glow,
           bottom: '8%',
           borderRadius: '45% / 25%',
           background: `radial-gradient(ellipse at 50% 50%, ${themeColor}50 0%, transparent 70%)`,
@@ -549,13 +554,13 @@ const SyndikateTableFelt = memo(function SyndikateTableFelt({
         }}
       />
       
-      {/* Outer metallic rail - VERTICAL stadium shape like hockey rink - wider */}
+      {/* Outer metallic rail - VERTICAL stadium shape like hockey rink */}
       <div 
         className="absolute"
         style={{
           top: '6%',
-          left: '10%',
-          right: '10%',
+          left: sideMargin.outer,
+          right: sideMargin.outer,
           bottom: '6%',
           borderRadius: '45% / 22%',
           background: 'linear-gradient(180deg, #5a6a7a 0%, #3d4a5a 20%, #2a3440 50%, #3d4a5a 80%, #5a6a7a 100%)',
@@ -569,8 +574,8 @@ const SyndikateTableFelt = memo(function SyndikateTableFelt({
         className="absolute"
         style={{
           top: '7%',
-          left: '11%',
-          right: '11%',
+          left: sideMargin.leather,
+          right: sideMargin.leather,
           bottom: '7%',
           borderRadius: '44% / 21%',
           background: 'linear-gradient(180deg, #3a2820 0%, #2a1a14 30%, #1a0f0a 60%, #2a1a14 85%, #3a2820 100%)',
@@ -583,8 +588,8 @@ const SyndikateTableFelt = memo(function SyndikateTableFelt({
         className="absolute"
         style={{
           top: '9%',
-          left: '13%',
-          right: '13%',
+          left: sideMargin.inner,
+          right: sideMargin.inner,
           bottom: '9%',
           borderRadius: '42% / 20%',
           background: 'linear-gradient(180deg, #4a5568 0%, #2d3748 50%, #1a202c 100%)',
@@ -593,13 +598,13 @@ const SyndikateTableFelt = memo(function SyndikateTableFelt({
         }}
       />
       
-      {/* Main felt surface - vertical stadium oval - wider for mini app */}
+      {/* Main felt surface - vertical stadium oval */}
       <div 
         className="absolute"
         style={{
           top: '10%',
-          left: '14%',
-          right: '14%',
+          left: sideMargin.felt,
+          right: sideMargin.felt,
           bottom: '10%',
           borderRadius: '40% / 18%',
           background: feltGradient,
@@ -627,10 +632,10 @@ const SyndikateTableFelt = memo(function SyndikateTableFelt({
         
         {/* Corner decorations - positioned for vertical shape */}
         {[
-          { top: '12%', left: '12%' },
-          { top: '12%', right: '12%' },
-          { bottom: '12%', left: '12%' },
-          { bottom: '12%', right: '12%' }
+          { top: '12%', left: sideMargin.corners },
+          { top: '12%', right: sideMargin.corners },
+          { bottom: '12%', left: sideMargin.corners },
+          { bottom: '12%', right: sideMargin.corners }
         ].map((pos, i) => (
           <div 
             key={i}
@@ -885,6 +890,7 @@ export interface FullscreenPokerTableProps {
   ante?: number;
   // Table configuration
   maxSeats?: number;
+  wideMode?: boolean; // For Telegram Mini App - wider table
 }
 
 export const FullscreenPokerTable = memo(function FullscreenPokerTable({
@@ -913,7 +919,8 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
   totalPlayers,
   ante,
   // Table config
-  maxSeats = 6
+  maxSeats = 6,
+  wideMode = false
 }: FullscreenPokerTableProps) {
   // Use dynamic positions based on max seats
   const maxPlayers = maxSeats;
@@ -1033,7 +1040,7 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
       <SyndikateTableBackground themeColor={currentTableTheme.color} />
       
       {/* Table felt overlay */}
-      <SyndikateTableFelt themeColor={currentTableTheme.color} />
+      <SyndikateTableFelt themeColor={currentTableTheme.color} wideMode={wideMode} />
       
       {/* Card dealing animation */}
       <CardDealAnimation

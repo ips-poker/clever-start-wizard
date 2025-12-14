@@ -36,6 +36,7 @@ interface FullscreenPokerTableWrapperProps {
   onLeave?: () => void;
   onBalanceUpdate?: () => void;
   maxSeats?: number;
+  wideMode?: boolean; // For Telegram Mini App - wider table
 }
 
 export function FullscreenPokerTableWrapper({
@@ -49,7 +50,8 @@ export function FullscreenPokerTableWrapper({
   tournamentId,
   onLeave,
   onBalanceUpdate,
-  maxSeats = 6
+  maxSeats = 6,
+  wideMode = false
 }: FullscreenPokerTableWrapperProps) {
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [turnTimeRemaining, setTurnTimeRemaining] = useState<number | null>(null);
@@ -348,6 +350,7 @@ export function FullscreenPokerTableWrapper({
             onSeatClick={handleSeatClick}
             onPotCollect={sounds.playChipSlide}
             maxSeats={maxSeats}
+            wideMode={wideMode}
           />
         </div>
 
