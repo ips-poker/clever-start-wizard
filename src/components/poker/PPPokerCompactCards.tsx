@@ -162,60 +162,71 @@ export const PPPokerCompactCards = memo(function PPPokerCompactCards({
   const cardCount = cards?.length || 2;
   const displayCards = showCards ? cards : Array(Math.min(cardCount, 4)).fill('XX');
 
-  // Calculate rotations for card fan based on count
+  // Calculate rotations for card fan - PPPoker style: cards fan out to the right/behind avatar
   const getRotations = (count: number) => {
-    if (count === 2) return [-10, 10];
-    if (count === 3) return [-15, 0, 15];
-    if (count === 4) return [-15, -5, 5, 15];
-    return [-10, 10];
+    if (count === 2) return [-5, 15];
+    if (count === 3) return [-10, 5, 20];
+    if (count === 4) return [-10, 0, 10, 20];
+    return [-5, 15];
   };
   
   const rotations = getRotations(displayCards.length);
 
   return (
-    <div className="absolute left-1/2 -translate-x-1/2 top-full mt-0.5 flex flex-col items-center z-5">
-      {/* Cards container - fanned effect */}
-      <div className="relative flex justify-center" style={{ height: cfg.h + 4 }}>
-        {displayCards.map((card, idx) => {
-          // Determine if this card is part of winning hand
-          const isCardWinning = winningCardIndices.includes(idx);
-          // At showdown with winning cards specified, dim non-winning cards
-          const isDimmed = isShowdown && winningCardIndices.length > 0 && !isCardWinning;
-          
-          return (
-            <div 
-              key={idx} 
-              className="absolute"
-              style={{ 
-                left: `${idx * 20 - ((displayCards.length - 1) * 10)}px`,
-                transform: `rotate(${rotations[idx] || 0}deg)`,
-                transformOrigin: 'bottom center',
-                zIndex: idx
-              }}
-            >
-              <MiniCard 
-                card={showCards ? card : 'XX'} 
-                faceDown={!showCards}
-                size={size} 
-                delay={idx}
-                isWinning={isShowdown && isCardWinning && isWinner}
-                isDimmed={isDimmed}
-                rotation={0}
-                cardBackColors={{ primary: currentCardBack.primaryColor, secondary: currentCardBack.secondaryColor }}
-                useFourColor={useFourColor}
-              />
-            </div>
-          );
-        })}
+    <>
+      {/* Cards positioned to the RIGHT of avatar, overlapping slightly - PPPoker style */}
+      <div 
+        className="absolute z-5"
+        style={{
+          right: -cfg.w - 8,
+          top: '50%',
+          transform: 'translateY(-50%)'
+        }}
+      >
+        {/* Cards container - fanned effect going right */}
+        <div className="relative" style={{ width: cfg.w * 1.5, height: cfg.h + 8 }}>
+          {displayCards.map((card, idx) => {
+            // Determine if this card is part of winning hand
+            const isCardWinning = winningCardIndices.includes(idx);
+            // At showdown with winning cards specified, dim non-winning cards
+            const isDimmed = isShowdown && winningCardIndices.length > 0 && !isCardWinning;
+            
+            return (
+              <div 
+                key={idx} 
+                className="absolute"
+                style={{ 
+                  left: idx * 12 - 5,
+                  top: 4,
+                  transform: `rotate(${rotations[idx] || 0}deg)`,
+                  transformOrigin: 'bottom left',
+                  zIndex: displayCards.length - idx
+                }}
+              >
+                <MiniCard 
+                  card={showCards ? card : 'XX'} 
+                  faceDown={!showCards}
+                  size={size} 
+                  delay={idx}
+                  isWinning={isShowdown && isCardWinning && isWinner}
+                  isDimmed={isDimmed}
+                  rotation={0}
+                  cardBackColors={{ primary: currentCardBack.primaryColor, secondary: currentCardBack.secondaryColor }}
+                  useFourColor={useFourColor}
+                />
+              </div>
+            );
+          })}
+        </div>
       </div>
       
-      {/* Hand name badge at showdown - PPPoker style */}
+      {/* Hand name badge at showdown - below player panel */}
       {isShowdown && handName && (
         <motion.div
           initial={{ opacity: 0, scale: 0.8, y: -2 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           transition={{ delay: 0.15 }}
-          className="mt-1 px-2 py-0.5 rounded text-[9px] font-bold whitespace-nowrap"
+          className="absolute left-1/2 -translate-x-1/2 -bottom-5 px-2 py-0.5 rounded text-[9px] font-bold whitespace-nowrap z-30"
           style={{
             background: isWinner 
               ? 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)'
@@ -227,7 +238,7 @@ export const PPPokerCompactCards = memo(function PPPokerCompactCards({
           {handName}
         </motion.div>
       )}
-    </div>
+    </>
   );
 });
 

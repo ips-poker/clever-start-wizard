@@ -311,7 +311,7 @@ const PlayerSeat = memo(function PlayerSeat({
         />
       )}
       
-      {/* Avatar with status border */}
+      {/* Avatar with status border and opponent cards */}
       <div className="relative">
         {/* Level badge - PPPoker style (5YR, VIP, etc.) */}
         <PPPokerLevelBadge level={(player as any).level} isVIP={(player as any).isVIP} />
@@ -350,6 +350,19 @@ const PlayerSeat = memo(function PlayerSeat({
             </div>
           )}
         </div>
+        
+        {/* Opponent cards - PPPoker style: to the RIGHT of avatar, overlapping */}
+        {!isHero && !player.isFolded && gamePhase !== 'waiting' && (
+          <PPPokerCompactCards 
+            cards={player.holeCards}
+            faceDown={gamePhase !== 'showdown'}
+            isShowdown={gamePhase === 'showdown'}
+            handName={(player as any).handName}
+            isWinner={(player as any).isWinner}
+            winningCardIndices={(player as any).winningCardIndices || []}
+            size="xs"
+          />
+        )}
         
         {/* Dealer button - PPPoker style */}
         {isDealer && (
@@ -411,7 +424,7 @@ const PlayerSeat = memo(function PlayerSeat({
         </p>
       </div>
       
-      {/* Player cards */}
+      {/* Hero cards - below player, not in avatar container */}
       {isHero && heroCards && heroCards.length > 0 && !player.isFolded && (
         <PPPokerHeroCards 
           cards={heroCards} 
@@ -421,20 +434,6 @@ const PlayerSeat = memo(function PlayerSeat({
           winningCardIndices={(player as any).winningCardIndices || []}
         />
       )}
-      
-      {/* Opponent cards - PPPoker compact style below avatar */}
-      {!isHero && !player.isFolded && gamePhase !== 'waiting' && (
-        <PPPokerCompactCards 
-          cards={player.holeCards}
-          faceDown={gamePhase !== 'showdown'}
-          isShowdown={gamePhase === 'showdown'}
-          handName={(player as any).handName}
-          isWinner={(player as any).isWinner}
-          winningCardIndices={(player as any).winningCardIndices || []}
-          size="xs"
-        />
-      )}
-      
       {/* Bet amount - 3D chip stack positioned towards center */}
       {player.betAmount > 0 && (
         <PPPokerChipStack

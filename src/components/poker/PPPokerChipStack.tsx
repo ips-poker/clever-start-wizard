@@ -160,14 +160,36 @@ export const PPPokerChipStack = memo(function PPPokerChipStack({
   const totalChips = chips.reduce((sum, c) => sum + c.count, 0);
   const stackHeight = Math.min(totalChips, 6) * 3 + 20; // Max 6 chips visible
 
+  // PPPoker style: bet is positioned HORIZONTALLY to the right of the player panel
+  // Calculate horizontal/vertical offset based on seat position
+  const getBetPosition = () => {
+    // Right side of table (x > 75): bet goes left
+    // Left side of table (x < 25): bet goes right  
+    // Top/bottom: bet goes towards center horizontally
+    
+    if (seatPosition.x > 75) {
+      // Right side seats - bet to the left
+      return { x: -80, y: 10 };
+    } else if (seatPosition.x < 25) {
+      // Left side seats - bet to the right
+      return { x: 80, y: 10 };
+    } else if (seatPosition.y < 30) {
+      // Top seats - bet below
+      return { x: 60, y: 35 };
+    } else {
+      // Bottom/hero seats - bet above-right
+      return { x: 70, y: -20 };
+    }
+  };
+  
+  const betPos = getBetPosition();
+
   return (
     <motion.div
       initial={animated ? { scale: 0, opacity: 0 } : false}
       animate={{ 
         scale: 1, 
-        opacity: 1,
-        x: betOffset.x,
-        y: betOffset.y
+        opacity: 1
       }}
       transition={{
         type: 'spring',
@@ -175,7 +197,12 @@ export const PPPokerChipStack = memo(function PPPokerChipStack({
         damping: 24,
         delay: 0.03
       }}
-      className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center gap-1.5 z-20"
+      className="absolute flex items-center gap-1.5 z-20"
+      style={{
+        left: `calc(50% + ${betPos.x}px)`,
+        top: `calc(50% + ${betPos.y}px)`,
+        transform: 'translate(-50%, -50%)'
+      }}
     >
       {/* PPPoker-style chip icon - красная фишка с текстурой */}
       <div 
