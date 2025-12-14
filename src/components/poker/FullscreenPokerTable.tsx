@@ -481,31 +481,31 @@ const SyndikateTableFelt = memo(function SyndikateTableFelt({
   
   return (
     <div className="absolute inset-0 overflow-hidden">
-      {/* Transparent background - uses parent's mafia theme */}
+      {/* Transparent background - uses parent's tech theme */}
       
-      {/* Glowing ambient effect behind table - compact horizontal ellipse */}
+      {/* Glowing ambient effect behind table - vertical stadium shape */}
       <div 
         className="absolute"
         style={{
-          top: '15%',
-          left: '8%',
-          right: '8%',
-          bottom: '15%',
-          borderRadius: '50%',
+          top: '8%',
+          left: '12%',
+          right: '12%',
+          bottom: '8%',
+          borderRadius: '45% / 25%',
           background: `radial-gradient(ellipse at 50% 50%, ${themeColor}50 0%, transparent 70%)`,
           filter: 'blur(40px)'
         }}
       />
       
-      {/* Outer metallic rail - COMPACT table like PPPoker */}
+      {/* Outer metallic rail - VERTICAL stadium shape like hockey rink */}
       <div 
         className="absolute"
         style={{
-          top: '12%',
-          left: '6%',
-          right: '6%',
-          bottom: '12%',
-          borderRadius: '50% / 35%',
+          top: '6%',
+          left: '10%',
+          right: '10%',
+          bottom: '6%',
+          borderRadius: '45% / 22%',
           background: 'linear-gradient(180deg, #5a6a7a 0%, #3d4a5a 20%, #2a3440 50%, #3d4a5a 80%, #5a6a7a 100%)',
           boxShadow: '0 10px 60px rgba(0,0,0,0.9), 0 0 80px rgba(0,0,0,0.4), inset 0 2px 20px rgba(255,255,255,0.15)',
           border: '1px solid rgba(255,255,255,0.08)'
@@ -516,11 +516,11 @@ const SyndikateTableFelt = memo(function SyndikateTableFelt({
       <div 
         className="absolute"
         style={{
-          top: '13%',
-          left: '7%',
-          right: '7%',
-          bottom: '13%',
-          borderRadius: '50% / 34%',
+          top: '7%',
+          left: '11%',
+          right: '11%',
+          bottom: '7%',
+          borderRadius: '44% / 21%',
           background: 'linear-gradient(180deg, #3a2820 0%, #2a1a14 30%, #1a0f0a 60%, #2a1a14 85%, #3a2820 100%)',
           boxShadow: 'inset 0 5px 30px rgba(0,0,0,0.8), inset 0 -5px 20px rgba(0,0,0,0.4)'
         }}
@@ -530,26 +530,26 @@ const SyndikateTableFelt = memo(function SyndikateTableFelt({
       <div 
         className="absolute"
         style={{
-          top: '15%',
-          left: '9%',
-          right: '9%',
-          bottom: '15%',
-          borderRadius: '50% / 32%',
+          top: '9%',
+          left: '13%',
+          right: '13%',
+          bottom: '9%',
+          borderRadius: '42% / 20%',
           background: 'linear-gradient(180deg, #4a5568 0%, #2d3748 50%, #1a202c 100%)',
           boxShadow: 'inset 0 0 20px rgba(0,0,0,0.5)',
           border: '1px solid rgba(212,175,55,0.2)'
         }}
       />
       
-      {/* Main felt surface - compact oval */}
+      {/* Main felt surface - vertical stadium oval */}
       <div 
         className="absolute"
         style={{
-          top: '16%',
-          left: '10%',
-          right: '10%',
-          bottom: '16%',
-          borderRadius: '50% / 30%',
+          top: '10%',
+          left: '14%',
+          right: '14%',
+          bottom: '10%',
+          borderRadius: '40% / 18%',
           background: feltGradient,
           boxShadow: 'inset 0 0 80px rgba(0,0,0,0.35), inset 0 -40px 80px rgba(0,0,0,0.2), inset 0 30px 50px rgba(255,255,255,0.02)'
         }}
@@ -571,14 +571,14 @@ const SyndikateTableFelt = memo(function SyndikateTableFelt({
         </div>
         
         {/* Decorative horizontal line */}
-        <div className="absolute top-1/2 -translate-y-1/2 left-[20%] right-[20%] h-px bg-gradient-to-r from-transparent via-white/[0.03] to-transparent"/>
+        <div className="absolute top-1/2 -translate-y-1/2 left-[15%] right-[15%] h-px bg-gradient-to-r from-transparent via-white/[0.03] to-transparent"/>
         
-        {/* Corner decorations */}
+        {/* Corner decorations - positioned for vertical shape */}
         {[
-          { top: '18%', left: '18%' },
-          { top: '18%', right: '18%' },
-          { bottom: '18%', left: '18%' },
-          { bottom: '18%', right: '18%' }
+          { top: '12%', left: '22%' },
+          { top: '12%', right: '22%' },
+          { bottom: '12%', left: '22%' },
+          { bottom: '12%', right: '22%' }
         ].map((pos, i) => (
           <div 
             key={i}
@@ -596,7 +596,7 @@ const SyndikateTableFelt = memo(function SyndikateTableFelt({
       <div 
         className="absolute left-1/2 -translate-x-1/2 w-32 h-24 pointer-events-none"
         style={{
-          top: '35%',
+          top: '40%',
           background: 'radial-gradient(ellipse, rgba(251,191,36,0.1) 0%, transparent 70%)',
           filter: 'blur(20px)'
         }}
