@@ -854,8 +854,18 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
 
   // Check if it's my turn
   const isMyTurn = useMemo(() => {
-    if (!tableState || mySeat === null) return false;
-    return tableState.currentPlayerSeat === mySeat;
+    if (!tableState || mySeat === null) {
+      log('⚠️ isMyTurn: false (no tableState or mySeat)', { tableState: !!tableState, mySeat });
+      return false;
+    }
+    const result = tableState.currentPlayerSeat === mySeat;
+    log('🎯 isMyTurn check:', { 
+      result, 
+      currentPlayerSeat: tableState.currentPlayerSeat, 
+      mySeat,
+      phase: tableState.phase
+    });
+    return result;
   }, [tableState, mySeat]);
 
   // Get my player data
