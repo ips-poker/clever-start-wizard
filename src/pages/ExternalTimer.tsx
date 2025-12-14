@@ -634,18 +634,28 @@ const ExternalTimer = () => {
       <div className="flex justify-between items-center p-6 border-b-2 border-gray-200 bg-white/90 backdrop-blur-sm shadow-sm relative z-10">
         {/* Left - Logo and Company */}
         <div className="flex items-center space-x-4">
-          <div className="w-24 h-24 flex items-center justify-center bg-gray-900 rounded-lg p-2 shadow-lg">
-            <img 
-              src={syndikateLogo} 
-              alt="Syndikate Logo" 
-              className="w-20 h-20 object-contain"
-            />
+          {/* Logo Container with Metal Frame */}
+          <div className="relative w-24 h-24">
+            {/* Corner Brackets */}
+            <div className="absolute -top-1 -left-1 w-6 h-6 border-l-2 border-t-2 border-amber-500 animate-pulse" />
+            <div className="absolute -top-1 -right-1 w-6 h-6 border-r-2 border-t-2 border-amber-500 animate-pulse" style={{ animationDelay: '0.5s' }} />
+            <div className="absolute -bottom-1 -left-1 w-6 h-6 border-l-2 border-b-2 border-amber-500 animate-pulse" style={{ animationDelay: '1s' }} />
+            <div className="absolute -bottom-1 -right-1 w-6 h-6 border-r-2 border-b-2 border-amber-500 animate-pulse" style={{ animationDelay: '1.5s' }} />
+
+            {/* Main Logo Box */}
+            <div className="absolute inset-0 border border-gray-300 bg-gray-900 rounded-lg flex items-center justify-center p-2 shadow-lg">
+              <img 
+                src={syndikateLogo} 
+                alt="Syndikate Logo" 
+                className="w-full h-full object-contain"
+              />
+            </div>
           </div>
           <div className="flex flex-col">
-            <span className="text-3xl font-display tracking-wider text-gray-900">
-              SYNDIKATE
+            <span className="text-4xl font-display tracking-wider text-gray-900">
+              <GlitchText text="SYNDICATE" glitchIntensity="medium" />
             </span>
-            <span className="text-sm font-sans font-bold tracking-[0.3em] uppercase text-gray-500">
+            <span className="text-base font-sans font-bold tracking-[0.3em] uppercase text-gray-500">
               POKER CLUB
             </span>
           </div>
@@ -704,19 +714,25 @@ const ExternalTimer = () => {
             )}
           </div>
           
-          {/* Timer Display */}
-          <div className={`text-[20rem] md:text-[24rem] font-mono font-bold leading-none tracking-tight ${
-            currentTime <= 60 
-              ? 'text-red-600 animate-pulse'
-              : currentTime <= 300 
-                ? 'text-amber-600'
-                : 'text-gray-900'
-          }`}>
+          {/* Timer Display с критической пульсацией */}
+          <div className={`text-[20rem] md:text-[24rem] font-mono font-bold leading-none tracking-tight transition-all duration-300 ${
+            currentTime <= 30 
+              ? 'text-red-600 animate-critical-pulse'
+              : currentTime <= 60 
+                ? 'text-red-600'
+                : currentTime <= 300 
+                  ? 'text-amber-600'
+                  : 'text-gray-900'
+          }`}
+            style={currentTime <= 30 ? { 
+              textShadow: '0 0 40px rgba(220, 38, 38, 0.4), 0 0 80px rgba(220, 38, 38, 0.2)' 
+            } : undefined}
+          >
             {formatTime(currentTime)}
           </div>
           
-          {/* Progress Bar */}
-          <div className="w-[500px] max-w-full mt-8">
+          {/* Progress Bar с shimmer эффектом */}
+          <div className="w-[500px] max-w-full mt-8 relative overflow-hidden">
             <div className="h-5 rounded-full overflow-hidden bg-gray-200 border-2 border-gray-300">
               <div
                 className={`h-full transition-all duration-1000 rounded-full ${
@@ -729,6 +745,10 @@ const ExternalTimer = () => {
                 style={{ width: `${timerProgress}%` }}
               />
             </div>
+            <div 
+              className="absolute inset-0 bg-gradient-to-r from-transparent via-white/50 to-transparent animate-[shimmer_2s_infinite]"
+              style={{ transform: 'skewX(-20deg)' }}
+            />
           </div>
         </div>
 
@@ -814,49 +834,59 @@ const ExternalTimer = () => {
           </div>
         </div>
 
-        {/* Statistics */}
-        <div className="rounded-xl p-6 max-w-6xl w-full bg-white border-2 border-gray-200 shadow-lg">
-          <div className="grid grid-cols-4 gap-8 text-center">
+        {/* Statistics - с AnimatedCounter и TrendIndicator */}
+        <div className="rounded-xl p-6 max-w-6xl w-full bg-white/80 backdrop-blur-sm border-2 border-gray-200 shadow-lg">
+          <div className="grid grid-cols-5 gap-6 text-center">
             <div>
               <div className="flex items-center justify-center mb-2">
-                <Users className="w-6 h-6 mr-3 text-gray-600" />
-                <span className="text-lg text-gray-600">
-                  Игроки
-                </span>
+                <Users className="w-6 h-6 mr-2 text-gray-600" />
+                <span className="text-lg text-gray-600">Игроки</span>
               </div>
-              <p className="text-3xl font-bold text-gray-800">
-                {activePlayers.length}
-              </p>
+              <AnimatedCounter 
+                value={activePlayers.length}
+                className="text-3xl font-bold text-gray-800"
+              />
+            </div>
+            <div>
+              <div className="flex items-center justify-center mb-2 whitespace-nowrap">
+                <Trophy className="w-6 h-6 mr-2 text-amber-600 flex-shrink-0" />
+                <span className="text-lg text-gray-600">Призовой фонд RPS</span>
+              </div>
+              <AnimatedCounter 
+                value={rpsPool}
+                suffix=" RPS"
+                className="text-3xl font-bold text-amber-600"
+                duration={800}
+              />
             </div>
             <div>
               <div className="flex items-center justify-center mb-2">
-                <Trophy className="w-6 h-6 mr-3 text-amber-600" />
-                <span className="text-lg text-gray-600">
-                  Призовой фонд RPS
-                </span>
+                <Coins className="w-6 h-6 mr-2 text-gray-600" />
+                <span className="text-lg text-gray-600">Фишки в игре</span>
               </div>
-              <p className="text-3xl font-bold text-amber-600">
-                {rpsPool.toLocaleString()} RPS
-              </p>
+              <AnimatedCounter 
+                value={totalChips}
+                className="text-3xl font-bold text-gray-800"
+                duration={600}
+              />
             </div>
             <div>
               <div className="flex items-center justify-center mb-2">
-                <span className="text-lg text-gray-600">
-                  Средний стек
-                </span>
+                <TrendIndicator currentValue={averageStack} className="mr-2" />
+                <span className="text-lg text-gray-600">Средний стек</span>
               </div>
-              <p className="text-3xl font-bold text-gray-800">
-                {averageStack.toLocaleString()}
-              </p>
+              <AnimatedCounter 
+                value={averageStack}
+                className="text-3xl font-bold text-gray-800"
+                duration={600}
+              />
             </div>
             <div>
               <div className="flex items-center justify-center mb-2">
-                <span className="text-lg text-gray-600">
-                  Re-entry / Доп. наборы
-                </span>
+                <span className="text-lg text-gray-600">Re-entry / Доп.</span>
               </div>
               <p className="text-3xl font-bold text-gray-800">
-                {totalReentries} / {totalAdditionalSets}
+                <AnimatedCounter value={totalReentries} className="inline" /> / <AnimatedCounter value={totalAdditionalSets} className="inline" />
               </p>
             </div>
           </div>
