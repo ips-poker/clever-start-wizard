@@ -676,17 +676,37 @@ export class PokerTable {
         }
       }
       
+      // CRITICAL: Emit hand_started with hole cards for each player
+      // Cards are sent player-specific via getPlayerState() in WebSocket handler
       this.emit('hand_started', {
         handId: this.currentHand.id,
         handNumber: this.handNumber,
         dealerSeat: this.dealerSeat,
         smallBlindSeat: this.currentHand.smallBlindSeat,
         bigBlindSeat: this.currentHand.bigBlindSeat,
+        pot: this.currentHand.pot,
+        currentBet: this.currentHand.currentBet,
+        currentPlayerSeat: this.currentHand.currentPlayerSeat,
+        phase: 'preflop',
         players: activePlayers.map(p => ({
           id: p.id,
           name: p.name,
           seatNumber: p.seatNumber,
-          stack: p.stack
+          stack: p.stack,
+          currentBet: p.currentBet,
+          // IMPORTANT: holeCards are sent via getPlayerState() - each player sees only their own
+          hasCards: p.holeCards.length > 0
+        }))
+      });
+      
+      // Also emit cards_dealt event with individual cards for each subscribed player
+      // This will be handled by WebSocket to send personalized card data
+      logger.info('Hand started - cards dealt', {
+        tableId: this.id,
+        handNumber: this.handNumber,
+        playersWithCards: activePlayers.filter(p => p.holeCards.length > 0).map(p => ({
+          id: p.id.substring(0, 8),
+          cardCount: p.holeCards.length
         }))
       });
       
@@ -993,7 +1013,18 @@ export class PokerTable {
     // Get engine state for hole cards at showdown
     const engineState = this.engine.getState();
     
+    // Debug: log player cards
+    if (player) {
+      logger.info('getPlayerState: returning cards', {
+        playerId: playerId.substring(0, 8),
+        holeCards: player.holeCards,
+        cardCount: player.holeCards?.length || 0,
+        phase: this.currentHand?.phase || 'no_hand'
+      });
+    }
+    
     if (!player) {
+      logger.warn('getPlayerState: player not found', { playerId: playerId.substring(0, 8) });
       return {
         ...publicState,
         myCards: [],
