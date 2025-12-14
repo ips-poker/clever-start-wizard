@@ -46,6 +46,7 @@ export function OnlinePokerTable({
       onLeave={onLeave}
       onBalanceUpdate={onBalanceUpdate}
       maxSeats={6}
+      wideMode={true} // Telegram Mini App uses wider table
     />
   );
 }
