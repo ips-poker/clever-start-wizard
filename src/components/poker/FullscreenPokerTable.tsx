@@ -37,71 +37,71 @@ const SUITS = {
 // Hero всегда внизу по центру, остальные симметрично вдоль борта
 
 // Динамические позиции для 2-8 игроков
-// Позиции точно по центру бортика стола (50% от края)
-// x=8 и x=92 - центр левого/правого бортика
-// y=5 и y=92 - центр верхнего/нижнего бортика
+// Позиции ТОЧНО ПО ЦЕНТРУ бортика овального стола
+// x=5 и x=95 - центр левого/правого бортика (ровно на краю овала)
+// y=3 и y=97 - центр верхнего/нижнего бортика (ровно на краю овала)
 const SEAT_POSITIONS_BY_COUNT: Record<number, Array<{ x: number; y: number }>> = {
   2: [
-    { x: 50, y: 92 },   // Seat 0 - Hero (bottom center)
-    { x: 50, y: 5 },    // Seat 1 - Top center (напротив)
+    { x: 50, y: 97 },   // Seat 0 - Hero (bottom center - на бортике)
+    { x: 50, y: 3 },    // Seat 1 - Top center (на бортике)
   ],
   3: [
-    { x: 50, y: 92 },   // Seat 0 - Hero (bottom center)
-    { x: 8, y: 50 },    // Seat 1 - Left center
-    { x: 92, y: 50 },   // Seat 2 - Right center
+    { x: 50, y: 97 },   // Seat 0 - Hero (bottom center)
+    { x: 5, y: 50 },    // Seat 1 - Left center (на бортике)
+    { x: 95, y: 50 },   // Seat 2 - Right center (на бортике)
   ],
   4: [
-    { x: 50, y: 92 },   // Seat 0 - Hero (bottom center)
-    { x: 8, y: 50 },    // Seat 1 - Left middle
-    { x: 50, y: 5 },    // Seat 2 - Top center
-    { x: 92, y: 50 },   // Seat 3 - Right middle
+    { x: 50, y: 97 },   // Seat 0 - Hero (bottom center)
+    { x: 5, y: 50 },    // Seat 1 - Left middle (на бортике)
+    { x: 50, y: 3 },    // Seat 2 - Top center (на бортике)
+    { x: 95, y: 50 },   // Seat 3 - Right middle (на бортике)
   ],
   5: [
-    { x: 50, y: 92 },   // Seat 0 - Hero (bottom center)
-    { x: 8, y: 65 },    // Seat 1 - Left bottom
-    { x: 8, y: 35 },    // Seat 2 - Left top
-    { x: 92, y: 35 },   // Seat 3 - Right top
-    { x: 92, y: 65 },   // Seat 4 - Right bottom
+    { x: 50, y: 97 },   // Seat 0 - Hero (bottom center)
+    { x: 5, y: 65 },    // Seat 1 - Left bottom (на бортике)
+    { x: 5, y: 35 },    // Seat 2 - Left top (на бортике)
+    { x: 95, y: 35 },   // Seat 3 - Right top (на бортике)
+    { x: 95, y: 65 },   // Seat 4 - Right bottom (на бортике)
   ],
   6: [
-    { x: 50, y: 92 },   // Seat 0 - Hero (bottom center)
-    { x: 8, y: 65 },    // Seat 1 - Left bottom
-    { x: 8, y: 35 },    // Seat 2 - Left top
-    { x: 50, y: 5 },    // Seat 3 - Top center
-    { x: 92, y: 35 },   // Seat 4 - Right top
-    { x: 92, y: 65 },   // Seat 5 - Right bottom
+    { x: 50, y: 97 },   // Seat 0 - Hero (bottom center)
+    { x: 5, y: 65 },    // Seat 1 - Left bottom (на бортике)
+    { x: 5, y: 35 },    // Seat 2 - Left top (на бортике)
+    { x: 50, y: 3 },    // Seat 3 - Top center (на бортике)
+    { x: 95, y: 35 },   // Seat 4 - Right top (на бортике)
+    { x: 95, y: 65 },   // Seat 5 - Right bottom (на бортике)
   ],
   7: [
-    { x: 50, y: 92 },   // Seat 0 - Hero (bottom center)
-    { x: 8, y: 68 },    // Seat 1 - Left bottom
-    { x: 8, y: 50 },    // Seat 2 - Left middle
-    { x: 8, y: 32 },    // Seat 3 - Left top
-    { x: 92, y: 32 },   // Seat 4 - Right top
-    { x: 92, y: 50 },   // Seat 5 - Right middle
-    { x: 92, y: 68 },   // Seat 6 - Right bottom
+    { x: 50, y: 97 },   // Seat 0 - Hero (bottom center)
+    { x: 5, y: 68 },    // Seat 1 - Left bottom (на бортике)
+    { x: 5, y: 50 },    // Seat 2 - Left middle (на бортике)
+    { x: 5, y: 32 },    // Seat 3 - Left top (на бортике)
+    { x: 95, y: 32 },   // Seat 4 - Right top (на бортике)
+    { x: 95, y: 50 },   // Seat 5 - Right middle (на бортике)
+    { x: 95, y: 68 },   // Seat 6 - Right bottom (на бортике)
   ],
   8: [
-    { x: 50, y: 92 },   // Seat 0 - Hero (bottom center)
-    { x: 8, y: 68 },    // Seat 1 - Left bottom
-    { x: 8, y: 50 },    // Seat 2 - Left middle
-    { x: 8, y: 32 },    // Seat 3 - Left top
-    { x: 50, y: 5 },    // Seat 4 - Top center
-    { x: 92, y: 32 },   // Seat 5 - Right top
-    { x: 92, y: 50 },   // Seat 6 - Right middle
-    { x: 92, y: 68 },   // Seat 7 - Right bottom
+    { x: 50, y: 97 },   // Seat 0 - Hero (bottom center)
+    { x: 5, y: 68 },    // Seat 1 - Left bottom (на бортике)
+    { x: 5, y: 50 },    // Seat 2 - Left middle (на бортике)
+    { x: 5, y: 32 },    // Seat 3 - Left top (на бортике)
+    { x: 50, y: 3 },    // Seat 4 - Top center (на бортике)
+    { x: 95, y: 32 },   // Seat 5 - Right top (на бортике)
+    { x: 95, y: 50 },   // Seat 6 - Right middle (на бортике)
+    { x: 95, y: 68 },   // Seat 7 - Right bottom (на бортике)
   ],
 };
 
 // Fallback для 9-max (legacy)
 const SEAT_POSITIONS_9MAX = [
-  { x: 50, y: 92 },   // Seat 0 - Hero (bottom center)
-  { x: 8, y: 70 },    // Seat 1 - Left bottom
-  { x: 8, y: 50 },    // Seat 2 - Left middle
-  { x: 8, y: 30 },    // Seat 3 - Left top
-  { x: 50, y: 5 },    // Seat 4 - Top center
-  { x: 92, y: 30 },   // Seat 5 - Right top
-  { x: 92, y: 50 },   // Seat 6 - Right middle
-  { x: 92, y: 70 },   // Seat 7 - Right bottom
+  { x: 50, y: 97 },   // Seat 0 - Hero (bottom center - на бортике)
+  { x: 5, y: 70 },    // Seat 1 - Left bottom (на бортике)
+  { x: 5, y: 50 },    // Seat 2 - Left middle (на бортике)
+  { x: 5, y: 30 },    // Seat 3 - Left top (на бортике)
+  { x: 50, y: 3 },    // Seat 4 - Top center (на бортике)
+  { x: 95, y: 30 },   // Seat 5 - Right top (на бортике)
+  { x: 95, y: 50 },   // Seat 6 - Right middle (на бортике)
+  { x: 95, y: 70 },   // Seat 7 - Right bottom (на бортике)
 ];
 
 // Legacy 6-max (используем новую систему)
