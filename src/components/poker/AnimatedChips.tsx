@@ -1,7 +1,7 @@
 import React, { memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
-import { RealisticPokerChip, RealisticChipStack } from './RealisticPokerChip';
+import { PPPokerChip, PPPokerChipStackVisual, PotChips } from './RealisticPokerChip';
 
 export function formatChipAmount(amount: number): string {
   if (amount >= 1000000) return `${(amount / 1000000).toFixed(1)}M`;
@@ -33,34 +33,52 @@ export const ChipStack = memo(function ChipStack({
     lg: 36
   };
 
+  const bbValue = amount / 20; // Assume 20 BB default
+
   return (
-    <RealisticChipStack
-      amount={amount}
-      chipSize={sizeMap[size]}
-      showAmount={showAmount}
-      animated={animated}
-      className={className}
-    />
+    <motion.div 
+      className={cn("flex items-end gap-1.5", className)}
+      initial={animated ? { scale: 0, opacity: 0 } : false}
+      animate={{ scale: 1, opacity: 1 }}
+    >
+      <PPPokerChipStackVisual
+        size={sizeMap[size]}
+        bbValue={bbValue}
+        stackCount={Math.min(3, Math.max(1, Math.ceil(Math.log10(amount + 1))))}
+        animated={animated}
+      />
+
+      {showAmount && (
+        <motion.span
+          className="font-bold text-white text-sm drop-shadow-lg"
+          initial={animated ? { opacity: 0, x: -5 } : false}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.1 }}
+          style={{ textShadow: '0 2px 4px rgba(0,0,0,0.8)' }}
+        >
+          {formatChipAmount(amount)}
+        </motion.span>
+      )}
+    </motion.div>
   );
 });
 
 interface PotDisplayProps {
   mainPot: number;
   sidePots?: number[];
+  bigBlind?: number;
   className?: string;
 }
 
 export const PotDisplay = memo(function PotDisplay({
   mainPot,
   sidePots = [],
+  bigBlind = 20,
   className
 }: PotDisplayProps) {
   const totalPot = mainPot + sidePots.reduce((a, b) => a + b, 0);
 
   if (totalPot <= 0) return null;
-
-  // Calculate chip stacks for visual representation
-  const getChipCount = (pot: number) => Math.min(6, Math.max(2, Math.ceil(Math.log10(pot + 1))));
 
   return (
     <motion.div 
@@ -79,23 +97,13 @@ export const PotDisplay = memo(function PotDisplay({
             boxShadow: '0 4px 20px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.1)'
           }}
         >
-          {/* Realistic stacked chips */}
-          <div className="flex items-end -space-x-2">
-            {/* Stack of different colored chips based on pot size */}
-            {mainPot >= 5000 && (
-              <div className="relative" style={{ marginBottom: 4 }}>
-                <RealisticPokerChip size={22} color="gold" animated delay={0.1} />
-              </div>
-            )}
-            {mainPot >= 1000 && (
-              <div className="relative" style={{ marginBottom: 2 }}>
-                <RealisticPokerChip size={22} color="blue" animated delay={0.05} />
-              </div>
-            )}
-            <div className="relative">
-              <RealisticPokerChip size={22} color="red" animated delay={0} />
-            </div>
-          </div>
+          {/* PPPoker style pot chips - multiple colors based on amount */}
+          <PotChips 
+            amount={mainPot} 
+            bigBlind={bigBlind} 
+            size={22} 
+            animated 
+          />
           
           <div className="flex flex-col items-start">
             {sidePots.length > 0 && (
@@ -122,7 +130,7 @@ export const PotDisplay = memo(function PotDisplay({
               transition={{ delay: i * 0.08 }}
               className="flex items-center gap-1.5 bg-black/50 rounded-full px-2.5 py-1"
             >
-              <RealisticPokerChip size={16} color="purple" animated delay={0.1 + i * 0.05} />
+              <PPPokerChip size={16} color="purple" animated delay={0.1 + i * 0.05} />
               <span className="text-purple-300 font-medium text-xs">
                 {formatChipAmount(pot)}
               </span>
@@ -148,16 +156,20 @@ export const PotDisplay = memo(function PotDisplay({
 // Player bet display with realistic chip
 interface PlayerBetProps {
   amount: number;
+  bigBlind?: number;
   position?: 'top' | 'bottom' | 'left' | 'right';
   className?: string;
 }
 
 export const PlayerBet = memo(function PlayerBet({
   amount,
+  bigBlind = 20,
   position = 'bottom',
   className
 }: PlayerBetProps) {
   if (amount <= 0) return null;
+
+  const bbValue = bigBlind > 0 ? amount / bigBlind : 1;
 
   return (
     <motion.div
@@ -170,7 +182,7 @@ export const PlayerBet = memo(function PlayerBet({
         className
       )}
     >
-      <RealisticPokerChip size={18} color="red" animated />
+      <PPPokerChipStackVisual size={18} bbValue={bbValue} stackCount={2} animated />
       <span 
         className="text-white font-bold text-xs"
         style={{ textShadow: '0 1px 3px rgba(0,0,0,0.5)' }}

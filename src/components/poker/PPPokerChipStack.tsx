@@ -1,9 +1,9 @@
 // PPPoker-style Chip + BB Display for bet display
-// Realistic 3D poker chip with edge pattern + "X.X BB" text
+// Realistic 3D poker chip stack with edge pattern + "X.X BB" text
 
 import React, { memo, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { RealisticPokerChip } from './RealisticPokerChip';
+import { PPPokerChipStackVisual } from './RealisticPokerChip';
 
 interface PPPokerChipStackProps {
   amount: number;
@@ -33,32 +33,31 @@ export const PPPokerChipStack = memo(function PPPokerChipStack({
 }: PPPokerChipStackProps) {
   
   const bbValue = useMemo(() => formatBB(amount, bigBlind), [amount, bigBlind]);
+  const bbNumeric = bigBlind > 0 ? amount / bigBlind : 1;
 
   if (amount <= 0) return null;
 
-  // PPPoker exact style: bets are positioned RIGHT NEXT TO player box, not far away
+  // Calculate stack count based on bet size
+  const getStackCount = (bb: number) => {
+    if (bb >= 10) return 3;
+    if (bb >= 3) return 2;
+    return 1;
+  };
+
+  // PPPoker exact style: bets are positioned RIGHT NEXT TO player box
   const getBetPosition = () => {
-    // Hero (bottom center - y > 75): bet goes ABOVE avatar, CENTERED
     if (isHero || seatPosition.y > 75) {
       return { x: 0, y: -50 };
     }
-    
-    // Left side of table (x < 30): bet to the right of name panel, very close
     if (seatPosition.x < 30) {
       return { x: 55, y: 32 };
     }
-    
-    // Right side of table (x > 70): bet to the left of name panel, very close  
     if (seatPosition.x > 70) {
       return { x: -55, y: 32 };
     }
-    
-    // Top seats (y < 35): bet goes below, close to panel
     if (seatPosition.y < 35) {
       return { x: 0, y: 42 };
     }
-    
-    // Middle seats: bet right next to box
     if (seatPosition.x < 50) {
       return { x: 50, y: 30 };
     } else {
@@ -85,12 +84,12 @@ export const PPPokerChipStack = memo(function PPPokerChipStack({
         transform: 'translate(-50%, -50%)'
       }}
     >
-      {/* Realistic 3D poker chip */}
-      <RealisticPokerChip
+      {/* Realistic stacked poker chips - PPPoker style */}
+      <PPPokerChipStackVisual
         size={24}
-        color="red"
+        bbValue={bbNumeric}
+        stackCount={getStackCount(bbNumeric)}
         animated={animated}
-        delay={0}
       />
 
       {/* BB Amount text in rounded pill - PPPoker exact style */}
