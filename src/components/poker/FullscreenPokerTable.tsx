@@ -434,12 +434,13 @@ const PlayerSeat = memo(function PlayerSeat({
           winningCardIndices={(player as any).winningCardIndices || []}
         />
       )}
-      {/* Bet amount - 3D chip stack positioned towards center */}
+      {/* Bet amount - positioned between player and center, closer to player */}
       {player.betAmount > 0 && (
         <PPPokerChipStack
           amount={player.betAmount}
           seatPosition={position}
           animated={true}
+          isHero={isHero}
         />
       )}
       
