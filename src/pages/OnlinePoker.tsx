@@ -155,13 +155,48 @@ export default function OnlinePoker() {
   };
 
   const handleJoinTable = (tableId: string, buyIn: number) => {
-    // Allow joining if balance check passed in PokerTableLobby
-    // The lobby already validates buy-in against player balance
-    setActiveTable({ id: tableId, buyIn, isTournament: false });
+    // Check if desktop (window width > 768px)
+    const isDesktop = window.innerWidth > 768;
+    
+    if (isDesktop) {
+      // On desktop - open in popup window for multi-tabling
+      const width = 500;
+      const height = 850;
+      const left = window.screenX + (window.outerWidth - width) / 2;
+      const top = window.screenY + (window.outerHeight - height) / 2;
+      
+      const tableUrl = `/table/${tableId}?playerId=${playerId}&buyIn=${buyIn}`;
+      
+      window.open(
+        tableUrl,
+        `poker_table_${tableId}`,
+        `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=no,toolbar=no,menubar=no,location=no,status=no`
+      );
+    } else {
+      // On mobile - use modal overlay
+      setActiveTable({ id: tableId, buyIn, isTournament: false });
+    }
   };
 
   const handleJoinTournament = (tournamentId: string) => {
-    setActiveTable({ id: tournamentId, buyIn: 0, isTournament: true });
+    const isDesktop = window.innerWidth > 768;
+    
+    if (isDesktop) {
+      const width = 500;
+      const height = 850;
+      const left = window.screenX + (window.outerWidth - width) / 2;
+      const top = window.screenY + (window.outerHeight - height) / 2;
+      
+      const tableUrl = `/table/${tournamentId}?playerId=${playerId}&buyIn=0&tournament=true`;
+      
+      window.open(
+        tableUrl,
+        `poker_tournament_${tournamentId}`,
+        `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=no,toolbar=no,menubar=no,location=no,status=no`
+      );
+    } else {
+      setActiveTable({ id: tournamentId, buyIn: 0, isTournament: true });
+    }
   };
 
   const handleLeaveTable = () => {
