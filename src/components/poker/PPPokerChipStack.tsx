@@ -37,11 +37,12 @@ export const PPPokerChipStack = memo(function PPPokerChipStack({
 
   if (amount <= 0) return null;
 
-  // Calculate stack count based on bet size
+  // Calculate stack count based on bet size - more stacks for better 3D effect
   const getStackCount = (bb: number) => {
+    if (bb >= 20) return 4;
     if (bb >= 10) return 3;
     if (bb >= 3) return 2;
-    return 1;
+    return 2; // minimum 2 for visible depth
   };
 
   // PPPoker exact style: bets are positioned RIGHT NEXT TO player box
@@ -84,9 +85,9 @@ export const PPPokerChipStack = memo(function PPPokerChipStack({
         transform: 'translate(-50%, -50%)'
       }}
     >
-      {/* Premium 3D stacked poker chips */}
+      {/* Premium 3D stacked poker chips - larger for visible 3D effect */}
       <PPPokerChipStackVisual
-        size={28}
+        size={32}
         bbValue={bbNumeric}
         stackCount={getStackCount(bbNumeric)}
         animated={animated}
