@@ -1,5 +1,11 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts'
+import { 
+  checkRateLimit, 
+  getClientIdentifier, 
+  createRateLimitResponse,
+  RATE_LIMIT_PRESETS 
+} from '../_shared/rate-limiter.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -56,6 +62,15 @@ Deno.serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
+  }
+
+  // Rate limiting - 100 requests per minute for webhooks (Telegram may send many updates)
+  const clientId = getClientIdentifier(req, 'telegram-webhook');
+  const rateLimitResult = checkRateLimit(clientId, RATE_LIMIT_PRESETS.webhook);
+  
+  if (!rateLimitResult.allowed) {
+    console.warn(`⚠️ Rate limit exceeded for ${clientId}`);
+    return createRateLimitResponse(rateLimitResult, corsHeaders);
   }
 
   try {

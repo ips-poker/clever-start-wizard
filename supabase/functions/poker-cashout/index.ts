@@ -4,6 +4,12 @@
  */
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
+import { 
+  checkRateLimit, 
+  getClientIdentifier, 
+  createRateLimitResponse,
+  RATE_LIMIT_PRESETS 
+} from '../_shared/rate-limiter.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -23,6 +29,15 @@ const CashoutSchema = z.object({
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
+  }
+
+  // Rate limiting - 10 requests per minute for financial operations
+  const clientId = getClientIdentifier(req, 'poker-cashout');
+  const rateLimitResult = checkRateLimit(clientId, RATE_LIMIT_PRESETS.financial);
+  
+  if (!rateLimitResult.allowed) {
+    console.warn(`⚠️ Rate limit exceeded for ${clientId}`);
+    return createRateLimitResponse(rateLimitResult, corsHeaders);
   }
 
   try {
