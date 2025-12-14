@@ -297,13 +297,23 @@ const ExternalTimer = () => {
           
           {/* Left - Logo and Company */}
           <div className="flex items-center space-x-4">
-            <div className="w-24 h-24 flex items-center justify-center">
-              <img 
-                src={syndikateLogo} 
-                alt="Syndikate Logo" 
-                className="w-24 h-24 object-contain animate-neon-pulse"
-                style={{ filter: 'drop-shadow(0 0 20px rgba(255,106,0,0.6)) drop-shadow(0 0 40px rgba(255,106,0,0.3))' }}
-              />
+            {/* Logo Container with Metal Frame */}
+            <div className="relative w-24 h-24">
+              {/* Corner Brackets */}
+              <div className="absolute -top-1 -left-1 w-6 h-6 border-l-2 border-t-2 border-[hsl(24,100%,50%)] animate-pulse" />
+              <div className="absolute -top-1 -right-1 w-6 h-6 border-r-2 border-t-2 border-[hsl(24,100%,50%)] animate-pulse" style={{ animationDelay: '0.5s' }} />
+              <div className="absolute -bottom-1 -left-1 w-6 h-6 border-l-2 border-b-2 border-[hsl(24,100%,50%)] animate-pulse" style={{ animationDelay: '1s' }} />
+              <div className="absolute -bottom-1 -right-1 w-6 h-6 border-r-2 border-b-2 border-[hsl(24,100%,50%)] animate-pulse" style={{ animationDelay: '1.5s' }} />
+
+              {/* Main Logo Box */}
+              <div className="absolute inset-0 border border-[hsl(0,0%,25%)] bg-[hsl(0,0%,10%)/50] backdrop-blur-sm flex items-center justify-center p-2">
+                <img 
+                  src={syndikateLogo} 
+                  alt="Syndikate Logo" 
+                  className="w-full h-full object-contain animate-neon-pulse"
+                  style={{ filter: 'drop-shadow(0 0 20px rgba(255,106,0,0.6)) drop-shadow(0 0 40px rgba(255,106,0,0.3))' }}
+                />
+              </div>
             </div>
             <div className="flex flex-col">
               <span className="text-4xl font-display tracking-wider text-[hsl(24,100%,50%)]"
