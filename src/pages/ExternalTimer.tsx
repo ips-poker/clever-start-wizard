@@ -9,6 +9,7 @@ import { extractAndConvertQR } from "@/utils/qrExtractor";
 import { AnimatedCounter } from "@/components/timer/AnimatedCounter";
 import { TrendIndicator } from "@/components/timer/TrendIndicator";
 import { BreakParticles } from "@/components/timer/BreakParticles";
+import { GlitchText } from "@/components/ui/glitch-text";
 
 interface Tournament {
   id: string;
@@ -305,9 +306,9 @@ const ExternalTimer = () => {
               />
             </div>
             <div className="flex flex-col">
-              <span className="text-4xl font-display tracking-wider text-[hsl(24,100%,50%)] animate-glitch"
+              <span className="text-4xl font-display tracking-wider text-[hsl(24,100%,50%)]"
                 style={{ textShadow: '0 0 20px hsla(24,100%,50%,0.8), 0 0 40px hsla(24,100%,50%,0.4)' }}>
-                SYNDIKATE
+                <GlitchText text="SYNDIKATE" glitchIntensity="medium" />
               </span>
               <span className="text-base font-sans font-bold tracking-[0.3em] uppercase text-[hsl(0,0%,65%)]">
                 POKER CLUB
