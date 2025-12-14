@@ -217,9 +217,9 @@ const HeroCards = memo(function HeroCards({
     return undefined;
   }, [cards, communityCards]);
   
-  // PPPoker style: Cards positioned to the RIGHT of avatar
+  // PPPoker style: Cards positioned to the RIGHT of avatar, but always below bets
   return (
-    <div className="absolute left-full ml-2 top-1/2 -translate-y-1/2 flex items-center gap-1 z-30">
+    <div className="absolute left-full ml-2 top-1/2 -translate-y-1/2 flex items-center gap-1 z-10">
       {/* Cards - slightly overlapped */}
       <div className="flex">
         {cards.map((card, idx) => (
@@ -315,14 +315,7 @@ const OpponentCards = memo(function OpponentCards({
   const isRightSide = position.x > 70;
   
   return (
-    <div className={cn(
-      "absolute flex flex-col items-center gap-1 z-20",
-      isLeftSide 
-        ? "left-full ml-1 top-1/2 -translate-y-1/2" 
-        : isRightSide 
-          ? "right-full mr-1 top-1/2 -translate-y-1/2" 
-          : "left-1/2 -translate-x-1/2 -top-2 -translate-y-full"
-    )}>
+    <div className="absolute left-1/2 -translate-x-1/2 top-full mt-1 flex flex-col items-center gap-1 z-10">
       <div className="flex">
         {showFaceUp ? (
           // Show actual hole cards at showdown
