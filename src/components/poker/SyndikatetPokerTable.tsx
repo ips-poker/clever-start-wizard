@@ -46,20 +46,20 @@ import syndikateLogo from '@/assets/syndikate-logo-main.png';
 // Positions are tuned so players visually overlap the table rail like in PPPoker
 const SEAT_POSITIONS_6MAX_MOBILE = [
   { x: 50, y: 85 },  // Seat 0 - Hero (bottom center, partial overlap with table)
-  { x: 3, y: 56 },   // Seat 1 - Left middle (on table edge)
-  { x: 3, y: 22 },   // Seat 2 - Left top (on table edge)
+  { x: 14, y: 56 },  // Seat 1 - Left middle (on table edge)
+  { x: 14, y: 22 },  // Seat 2 - Left top (on table edge)
   { x: 50, y: 4 },   // Seat 3 - Top center
-  { x: 97, y: 22 },  // Seat 4 - Right top (on table edge)
-  { x: 97, y: 56 },  // Seat 5 - Right middle (on table edge)
+  { x: 74, y: 22 },  // Seat 4 - Right top (on table edge)
+  { x: 74, y: 56 },  // Seat 5 - Right middle (on table edge)
 ];
 
 const SEAT_POSITIONS_6MAX_DESKTOP = [
   { x: 50, y: 82 },  // Seat 0 - Hero (bottom center)
-  { x: 5, y: 55 },   // Seat 1 - Left middle
-  { x: 5, y: 20 },   // Seat 2 - Left top
+  { x: 14, y: 55 },  // Seat 1 - Left middle
+  { x: 14, y: 20 },  // Seat 2 - Left top
   { x: 50, y: 3 },   // Seat 3 - Top center
-  { x: 95, y: 20 },  // Seat 4 - Right top
-  { x: 95, y: 55 },  // Seat 5 - Right middle
+  { x: 74, y: 20 },  // Seat 4 - Right top
+  { x: 74, y: 55 },  // Seat 5 - Right middle
 ];
 
 const SUIT_COLORS: Record<string, string> = {
