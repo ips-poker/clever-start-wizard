@@ -43,65 +43,65 @@ const SUITS = {
 const SEAT_POSITIONS_BY_COUNT: Record<number, Array<{ x: number; y: number }>> = {
   2: [
     { x: 48, y: 88 },   // Seat 0 - Hero (bottom center)
-    { x: 52, y: 12 },   // Seat 1 - Top center
+    { x: 48, y: 10 },   // Seat 1 - Top center (symmetric to hero)
   ],
   3: [
     { x: 48, y: 88 },   // Seat 0 - Hero (bottom center)
-    { x: 16, y: 50 },   // Seat 1 - Left center
-    { x: 84, y: 50 },   // Seat 2 - Right center
+    { x: 14, y: 50 },   // Seat 1 - Left center
+    { x: 86, y: 50 },   // Seat 2 - Right center
   ],
   4: [
     { x: 48, y: 88 },   // Seat 0 - Hero (bottom center)
-    { x: 16, y: 50 },   // Seat 1 - Left middle
-    { x: 52, y: 12 },   // Seat 2 - Top center
-    { x: 84, y: 50 },   // Seat 3 - Right middle
+    { x: 14, y: 50 },   // Seat 1 - Left middle
+    { x: 48, y: 10 },   // Seat 2 - Top center
+    { x: 86, y: 50 },   // Seat 3 - Right middle
   ],
   5: [
     { x: 48, y: 88 },   // Seat 0 - Hero (bottom center)
-    { x: 16, y: 65 },   // Seat 1 - Left bottom
-    { x: 16, y: 35 },   // Seat 2 - Left top
-    { x: 84, y: 35 },   // Seat 3 - Right top
-    { x: 84, y: 65 },   // Seat 4 - Right bottom
+    { x: 14, y: 65 },   // Seat 1 - Left bottom
+    { x: 14, y: 35 },   // Seat 2 - Left top
+    { x: 86, y: 35 },   // Seat 3 - Right top
+    { x: 86, y: 65 },   // Seat 4 - Right bottom
   ],
   6: [
     { x: 48, y: 88 },   // Seat 0 - Hero (bottom center)
-    { x: 16, y: 65 },   // Seat 1 - Left bottom
-    { x: 16, y: 35 },   // Seat 2 - Left top
-    { x: 52, y: 12 },   // Seat 3 - Top center
-    { x: 84, y: 35 },   // Seat 4 - Right top
-    { x: 84, y: 65 },   // Seat 5 - Right bottom
+    { x: 14, y: 65 },   // Seat 1 - Left bottom
+    { x: 14, y: 35 },   // Seat 2 - Left top
+    { x: 48, y: 10 },   // Seat 3 - Top center
+    { x: 86, y: 35 },   // Seat 4 - Right top
+    { x: 86, y: 65 },   // Seat 5 - Right bottom
   ],
   7: [
     { x: 48, y: 88 },   // Seat 0 - Hero (bottom center)
-    { x: 16, y: 68 },   // Seat 1 - Left bottom
-    { x: 16, y: 50 },   // Seat 2 - Left middle
-    { x: 16, y: 32 },   // Seat 3 - Left top
-    { x: 84, y: 32 },   // Seat 4 - Right top
-    { x: 84, y: 50 },   // Seat 5 - Right middle
-    { x: 84, y: 68 },   // Seat 6 - Right bottom
+    { x: 14, y: 68 },   // Seat 1 - Left bottom
+    { x: 14, y: 50 },   // Seat 2 - Left middle
+    { x: 14, y: 32 },   // Seat 3 - Left top
+    { x: 86, y: 32 },   // Seat 4 - Right top
+    { x: 86, y: 50 },   // Seat 5 - Right middle
+    { x: 86, y: 68 },   // Seat 6 - Right bottom
   ],
   8: [
     { x: 48, y: 88 },   // Seat 0 - Hero (bottom center)
-    { x: 16, y: 68 },   // Seat 1 - Left bottom
-    { x: 16, y: 50 },   // Seat 2 - Left middle
-    { x: 16, y: 32 },   // Seat 3 - Left top
-    { x: 52, y: 12 },   // Seat 4 - Top center
-    { x: 84, y: 32 },   // Seat 5 - Right top
-    { x: 84, y: 50 },   // Seat 6 - Right middle
-    { x: 84, y: 68 },   // Seat 7 - Right bottom
+    { x: 14, y: 68 },   // Seat 1 - Left bottom
+    { x: 14, y: 50 },   // Seat 2 - Left middle
+    { x: 14, y: 32 },   // Seat 3 - Left top
+    { x: 48, y: 10 },   // Seat 4 - Top center
+    { x: 86, y: 32 },   // Seat 5 - Right top
+    { x: 86, y: 50 },   // Seat 6 - Right middle
+    { x: 86, y: 68 },   // Seat 7 - Right bottom
   ],
 };
 
 // Fallback для 9-max (legacy)
 const SEAT_POSITIONS_9MAX = [
   { x: 48, y: 88 },   // Seat 0 - Hero (bottom center)
-  { x: 16, y: 70 },   // Seat 1 - Left bottom
-  { x: 16, y: 50 },   // Seat 2 - Left middle
-  { x: 16, y: 30 },   // Seat 3 - Left top
-  { x: 52, y: 12 },   // Seat 4 - Top center
-  { x: 84, y: 30 },   // Seat 5 - Right top
-  { x: 84, y: 50 },   // Seat 6 - Right middle
-  { x: 84, y: 70 },   // Seat 7 - Right bottom
+  { x: 14, y: 70 },   // Seat 1 - Left bottom
+  { x: 14, y: 50 },   // Seat 2 - Left middle
+  { x: 14, y: 30 },   // Seat 3 - Left top
+  { x: 48, y: 10 },   // Seat 4 - Top center
+  { x: 86, y: 30 },   // Seat 5 - Right top
+  { x: 86, y: 50 },   // Seat 6 - Right middle
+  { x: 86, y: 70 },   // Seat 7 - Right bottom
 ];
 
 // Legacy 6-max (используем новую систему)
