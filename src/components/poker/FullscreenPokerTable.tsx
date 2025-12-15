@@ -43,7 +43,7 @@ const SUITS = {
 const SEAT_POSITIONS_BY_COUNT: Record<number, Array<{ x: number; y: number }>> = {
   2: [
     { x: 48, y: 88 },   // Seat 0 - Hero (bottom center)
-    { x: 50, y: 8 },    // Seat 1 - Top center
+    { x: 52, y: 12 },   // Seat 1 - Top center
   ],
   3: [
     { x: 48, y: 88 },   // Seat 0 - Hero (bottom center)
@@ -53,7 +53,7 @@ const SEAT_POSITIONS_BY_COUNT: Record<number, Array<{ x: number; y: number }>> =
   4: [
     { x: 48, y: 88 },   // Seat 0 - Hero (bottom center)
     { x: 18, y: 50 },   // Seat 1 - Left middle
-    { x: 50, y: 8 },    // Seat 2 - Top center
+    { x: 52, y: 12 },   // Seat 2 - Top center
     { x: 82, y: 50 },   // Seat 3 - Right middle
   ],
   5: [
@@ -67,7 +67,7 @@ const SEAT_POSITIONS_BY_COUNT: Record<number, Array<{ x: number; y: number }>> =
     { x: 48, y: 88 },   // Seat 0 - Hero (bottom center)
     { x: 18, y: 65 },   // Seat 1 - Left bottom
     { x: 18, y: 35 },   // Seat 2 - Left top
-    { x: 50, y: 8 },    // Seat 3 - Top center
+    { x: 52, y: 12 },   // Seat 3 - Top center
     { x: 82, y: 35 },   // Seat 4 - Right top
     { x: 82, y: 65 },   // Seat 5 - Right bottom
   ],
@@ -85,7 +85,7 @@ const SEAT_POSITIONS_BY_COUNT: Record<number, Array<{ x: number; y: number }>> =
     { x: 18, y: 68 },   // Seat 1 - Left bottom
     { x: 18, y: 50 },   // Seat 2 - Left middle
     { x: 18, y: 32 },   // Seat 3 - Left top
-    { x: 50, y: 8 },    // Seat 4 - Top center
+    { x: 52, y: 12 },   // Seat 4 - Top center
     { x: 82, y: 32 },   // Seat 5 - Right top
     { x: 82, y: 50 },   // Seat 6 - Right middle
     { x: 82, y: 68 },   // Seat 7 - Right bottom
@@ -98,7 +98,7 @@ const SEAT_POSITIONS_9MAX = [
   { x: 18, y: 70 },   // Seat 1 - Left bottom
   { x: 18, y: 50 },   // Seat 2 - Left middle
   { x: 18, y: 30 },   // Seat 3 - Left top
-  { x: 50, y: 8 },    // Seat 4 - Top center
+  { x: 52, y: 12 },   // Seat 4 - Top center
   { x: 82, y: 30 },   // Seat 5 - Right top
   { x: 82, y: 50 },   // Seat 6 - Right middle
   { x: 82, y: 70 },   // Seat 7 - Right bottom
