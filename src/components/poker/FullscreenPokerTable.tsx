@@ -43,7 +43,7 @@ const SUITS = {
 const SEAT_POSITIONS_BY_COUNT: Record<number, Array<{ x: number; y: number }>> = {
   2: [
     { x: 48, y: 88 },   // Seat 0 - Hero (bottom center)
-    { x: 46, y: 6 },    // Seat 1 - Top center (symmetric to hero)
+    { x: 46, y: 4 },    // Seat 1 - Top center (symmetric to hero)
   ],
   3: [
     { x: 48, y: 88 },   // Seat 0 - Hero (bottom center)
@@ -53,7 +53,7 @@ const SEAT_POSITIONS_BY_COUNT: Record<number, Array<{ x: number; y: number }>> =
   4: [
     { x: 48, y: 88 },   // Seat 0 - Hero (bottom center)
     { x: 14, y: 50 },   // Seat 1 - Left middle
-    { x: 46, y: 6 },    // Seat 2 - Top center
+    { x: 46, y: 4 },    // Seat 2 - Top center
     { x: 86, y: 50 },   // Seat 3 - Right middle
   ],
   5: [
@@ -67,7 +67,7 @@ const SEAT_POSITIONS_BY_COUNT: Record<number, Array<{ x: number; y: number }>> =
     { x: 48, y: 88 },   // Seat 0 - Hero (bottom center)
     { x: 14, y: 65 },   // Seat 1 - Left bottom
     { x: 14, y: 35 },   // Seat 2 - Left top
-    { x: 46, y: 6 },    // Seat 3 - Top center
+    { x: 46, y: 4 },    // Seat 3 - Top center
     { x: 86, y: 35 },   // Seat 4 - Right top
     { x: 86, y: 65 },   // Seat 5 - Right bottom
   ],
@@ -85,7 +85,7 @@ const SEAT_POSITIONS_BY_COUNT: Record<number, Array<{ x: number; y: number }>> =
     { x: 14, y: 68 },   // Seat 1 - Left bottom
     { x: 14, y: 50 },   // Seat 2 - Left middle
     { x: 14, y: 32 },   // Seat 3 - Left top
-    { x: 46, y: 6 },    // Seat 4 - Top center
+    { x: 46, y: 4 },    // Seat 4 - Top center
     { x: 86, y: 32 },   // Seat 5 - Right top
     { x: 86, y: 50 },   // Seat 6 - Right middle
     { x: 86, y: 68 },   // Seat 7 - Right bottom
@@ -98,7 +98,7 @@ const SEAT_POSITIONS_9MAX = [
   { x: 14, y: 70 },   // Seat 1 - Left bottom
   { x: 14, y: 50 },   // Seat 2 - Left middle
   { x: 14, y: 30 },   // Seat 3 - Left top
-  { x: 46, y: 6 },    // Seat 4 - Top center
+  { x: 46, y: 4 },    // Seat 4 - Top center
   { x: 86, y: 30 },   // Seat 5 - Right top
   { x: 86, y: 50 },   // Seat 6 - Right middle
   { x: 86, y: 70 },   // Seat 7 - Right bottom
