@@ -555,8 +555,29 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
           // Extract event data (support multiple server formats: camelCase + snake_case + nested result)
           const eventData = (data.data || data) as Record<string, unknown>;
           const nestedResult = (eventData.result || eventData.showdownResult || eventData.handResult) as Record<string, unknown> | undefined;
+          const rootResult = ((data as any).result || (data as any).showdownResult || (data as any).handResult) as Record<string, unknown> | undefined;
 
-          const isRealCard = (c: unknown) => typeof c === 'string' && /^[2-9TJQKA][cdhs]$/i.test(c.trim());
+          // Normalize card format: support both "Tc" and "10c" (server may send either)
+          const normalizeCardString = (card: string): string => {
+            const c = (card || '').trim();
+            if (!c || c === '??' || c === 'XX' || c.includes('?')) return card;
+            const m10 = /^10([cdhs])$/i.exec(c);
+            if (m10) return `T${m10[1].toLowerCase()}`;
+            const m = /^([2-9TJQKA])([cdhs])$/i.exec(c);
+            if (m) return `${m[1].toUpperCase()}${m[2].toLowerCase()}`;
+            return c;
+          };
+
+          const normalizeCardStrings = (raw: unknown): string[] | undefined => {
+            if (!Array.isArray(raw)) return undefined;
+            const out = (raw as unknown[])
+              .filter((c): c is string => typeof c === 'string')
+              .map(normalizeCardString);
+            return out.length ? out : undefined;
+          };
+
+          const isRealCard = (c: unknown) =>
+            typeof c === 'string' && /^(10|[2-9TJQKA])[cdhs]$/i.test(c.trim());
 
           const normalizeWinners = (raw: unknown): ShowdownResult['winners'] => {
             if (!raw) return [];
@@ -573,8 +594,8 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
                   amount,
                   handName: (w?.handName || w?.hand_name || w?.handRank || w?.hand_rank) as string | undefined,
                   handRank: (w?.handRank || w?.hand_rank) as string | undefined,
-                  cards: (w?.cards || w?.holeCards || w?.hole_cards) as string[] | undefined,
-                  bestCards: (w?.bestCards || w?.best_cards) as string[] | undefined,
+                  cards: normalizeCardStrings(w?.cards || w?.holeCards || w?.hole_cards),
+                  bestCards: normalizeCardStrings(w?.bestCards || w?.best_cards),
                 };
               })
               .filter(Boolean) as ShowdownResult['winners'];
@@ -588,18 +609,21 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
               .map((sp: any) => {
                 const playerId = (sp?.playerId || sp?.player_id || sp?.id) as string | undefined;
                 const seatNumber = Number(sp?.seatNumber ?? sp?.seat_number ?? 0);
-                const holeCards = (sp?.holeCards || sp?.hole_cards || sp?.cards) as unknown;
+
+                const holeCardsRaw = (sp?.holeCards || sp?.hole_cards || sp?.cards) as unknown;
+                const holeCards = normalizeCardStrings(holeCardsRaw);
                 log('🃏 Processing showdown player:', { playerId, seatNumber, holeCards });
-                if (!playerId || !Array.isArray(holeCards) || holeCards.length < 2) return null;
+
+                if (!playerId || !holeCards || holeCards.length < 2) return null;
 
                 return {
                   playerId,
                   name: (sp?.name || sp?.playerName || sp?.player_name || 'Player') as string,
                   seatNumber,
-                  holeCards: holeCards as string[],
+                  holeCards,
                   isFolded: Boolean(sp?.isFolded || sp?.is_folded || false),
                   handName: (sp?.handName || sp?.hand_name || sp?.handRank || sp?.hand_rank) as string | undefined,
-                  bestCards: (sp?.bestCards || sp?.best_cards) as string[] | undefined,
+                  bestCards: normalizeCardStrings(sp?.bestCards || sp?.best_cards),
                 };
               })
               .filter(Boolean) as ShowdownResult['showdownPlayers'];
@@ -608,12 +632,13 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
             return normalized.length ? normalized : undefined;
           };
 
-          const winnersRaw = (eventData.winners || (eventData as any).winner || nestedResult?.winners || (nestedResult as any)?.winner) as unknown;
-          const showdownPlayersRaw = (eventData.showdownPlayers || (eventData as any).showdown_players || nestedResult?.showdownPlayers || (nestedResult as any)?.showdown_players) as unknown;
-          const communityCards = (eventData.communityCards || (eventData as any).community_cards || nestedResult?.communityCards || (nestedResult as any)?.community_cards) as string[] | undefined;
+          const winnersRaw = (eventData.winners || (eventData as any).winner || nestedResult?.winners || (nestedResult as any)?.winner || rootResult?.winners || (rootResult as any)?.winner || (data as any).winners || (data as any).winner) as unknown;
+          const showdownPlayersRaw = (eventData.showdownPlayers || (eventData as any).showdown_players || nestedResult?.showdownPlayers || (nestedResult as any)?.showdown_players || rootResult?.showdownPlayers || (rootResult as any)?.showdown_players || (data as any).showdownPlayers || (data as any).showdown_players) as unknown;
+          const communityCardsRaw = (eventData.communityCards || (eventData as any).community_cards || nestedResult?.communityCards || (nestedResult as any)?.community_cards || rootResult?.communityCards || (rootResult as any)?.community_cards || (data as any).communityCards || (data as any).community_cards) as unknown;
+          const communityCards = normalizeCardStrings(communityCardsRaw);
 
           log('🃏 showdownPlayersRaw:', showdownPlayersRaw);
-          
+
           const winners = normalizeWinners(winnersRaw);
           let showdownPlayers = normalizeShowdownPlayers(showdownPlayersRaw);
 
@@ -623,11 +648,13 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
               (eventData as any).is_showdown ??
               nestedResult?.showdown ??
               (nestedResult as any)?.is_showdown ??
+              rootResult?.showdown ??
+              (rootResult as any)?.is_showdown ??
               (eventData.phase === 'showdown' || statePhase === 'showdown')
           );
 
           const currentTableState = tableStateRef.current;
-          const currentMyCards = myCardsRef.current;
+          const currentMyCards = myCardsRef.current.map(normalizeCardString);
           const currentMySeat = mySeatRef.current;
 
           // Fallback 1: if showdownPlayers is missing but state contains revealed holeCards, build showdownPlayers from it
@@ -637,13 +664,13 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
             if (Array.isArray(playersData) && playersData.length > 0) {
               const revealed = playersData
                 .map((p: any) => {
-                  const holeCards = (p.holeCards || p.hole_cards || p.cards) as string[] | undefined;
+                  const holeCards = normalizeCardStrings(p.holeCards || p.hole_cards || p.cards);
                   const playerIdFromState = (p.playerId || p.player_id || p.id) as string | undefined;
                   const seatNum = Number(p.seatNumber ?? p.seat_number ?? 0);
                   const folded = Boolean(p.isFolded || p.is_folded || false);
                   const name = (p.name || 'Player') as string;
 
-                  if (!playerIdFromState || !Array.isArray(holeCards) || holeCards.length < 2) return null;
+                  if (!playerIdFromState || !holeCards || holeCards.length < 2) return null;
                   return { playerId: playerIdFromState, name, seatNumber: seatNum, holeCards, isFolded: folded };
                 })
                 .filter(Boolean) as ShowdownResult['showdownPlayers'];
@@ -667,7 +694,7 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
                   holeCards:
                     p.seatNumber === currentMySeat && currentMyCards.length >= 2
                       ? currentMyCards
-                      : (p.holeCards && p.holeCards.length >= 2 ? p.holeCards : ['??', '??']),
+                      : (p.holeCards && p.holeCards.length >= 2 ? p.holeCards.map(normalizeCardString) : ['??', '??']),
                   isFolded: false,
                   handName: undefined,
                 }));
@@ -713,7 +740,7 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
               if (!prev) return prev;
 
               const winnerIds = new Set(winners.map((w) => w.playerId));
-              const commCards = communityCards || prev.communityCards || [];
+              const commCards = (communityCards || prev.communityCards || []).map(normalizeCardString);
               const isOmaha = Boolean(showdownPlayers?.some((sp) => sp.holeCards?.length === 4));
 
               return {
@@ -730,6 +757,14 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
                     if (showdownPlayer.holeCards && commCards.length >= 3) {
                       try {
                         const showdownEval = evaluateShowdown(showdownPlayer.holeCards, commCards, isOmaha);
+                        log('🧮 evaluateShowdown inputs:', {
+                          playerId: showdownPlayer.playerId,
+                          holeCards: showdownPlayer.holeCards,
+                          communityCards: commCards,
+                          isOmaha,
+                        });
+                        log('🧮 evaluateShowdown result:', showdownEval);
+
                         if (showdownEval) {
                           winningCardIndices = showdownEval.winningCardIndices;
                           communityCardIndices = showdownEval.communityCardIndices;
@@ -764,6 +799,8 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
             });
           }
 
+          break;
+        }
           // Keep showdown visible for a while, then clear
           setTimeout(() => {
             setShowdownResult(null);
