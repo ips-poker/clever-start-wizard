@@ -87,10 +87,15 @@ const MiniCard = memo(function MiniCard({
   const cfg = SIZE_CONFIG[size] || SIZE_CONFIG['sm'];
   
   // Check if card is unknown/placeholder
-  const isUnknown = !card || card === '??' || card.includes('?') || card === 'XX' || !/^[2-9TJQKA][cdhs]$/i.test(card);
-  
-  const rank = isUnknown ? '?' : (card?.[0] === 'T' ? '10' : card?.[0] || '?');
-  const suitChar = isUnknown ? 's' : (card?.[1]?.toLowerCase() || 's') as keyof typeof SUITS;
+  const trimmed = (card || '').trim();
+  const isCardFormatOk = /^(10|[2-9TJQKA])[cdhs]$/i.test(trimmed);
+  const isUnknown = !trimmed || trimmed === '??' || trimmed.includes('?') || trimmed === 'XX' || !isCardFormatOk;
+
+  const rank = isUnknown
+    ? '?'
+    : (trimmed.toUpperCase().startsWith('10') ? '10' : (trimmed[0]?.toUpperCase() === 'T' ? '10' : trimmed[0]?.toUpperCase() || '?'));
+  const suitRaw = isUnknown ? 's' : (trimmed.toUpperCase().startsWith('10') ? trimmed[2] : trimmed[1]);
+  const suitChar = (suitRaw?.toLowerCase() || 's') as keyof typeof SUITS;
   const suitSource = useFourColor ? SUITS : SUITS_CLASSIC;
   const suitInfo = suitSource[suitChar] || suitSource['s'];
   
@@ -280,7 +285,7 @@ export const PPPokerCompactCards = memo(function PPPokerCompactCards({
   const cfg = SIZE_CONFIG[actualSize] || SIZE_CONFIG[size];
   
   // Cards must exist and look like real cards for showdown display
-  const isRealCard = (c: unknown) => typeof c === 'string' && /^[2-9TJQKA][cdhs]$/i.test(c.trim());
+  const isRealCard = (c: unknown) => typeof c === 'string' && /^(10|[2-9TJQKA])[cdhs]$/i.test(c.trim());
   const hasValidCards = Array.isArray(cards) && cards.length >= 2 && cards.every(isRealCard);
   const hasAnyCards = Array.isArray(cards) && cards.length >= 2;
   // At showdown, show cards if valid, otherwise show placeholder for unknown cards

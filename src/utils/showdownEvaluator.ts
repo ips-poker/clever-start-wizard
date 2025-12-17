@@ -40,11 +40,17 @@ const HAND_NAMES: Record<string, { en: string; ru: string }> = {
 };
 
 function parseCard(cardStr: string): Card | null {
-  if (!cardStr || cardStr.length < 2) return null;
-  const rank = RANK_VALUES[cardStr[0].toUpperCase()];
-  const suit = cardStr[1].toLowerCase();
+  const str = (cardStr || '').trim();
+  if (!str || str.length < 2) return null;
+
+  // Support both "Tc" and "10c"
+  const isTen = /^10[cdhs]$/i.test(str);
+  const rankChar = isTen ? 'T' : str[0].toUpperCase();
+  const suitChar = (isTen ? str[2] : str[1]).toLowerCase();
+
+  const rank = RANK_VALUES[rankChar];
   if (!rank) return null;
-  return { rank, suit };
+  return { rank, suit: suitChar };
 }
 
 function cardToString(card: Card): string {
