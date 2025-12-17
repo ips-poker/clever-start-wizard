@@ -85,8 +85,12 @@ const MiniCard = memo(function MiniCard({
   useFourColor?: boolean;
 }) {
   const cfg = SIZE_CONFIG[size] || SIZE_CONFIG['sm'];
-  const rank = card?.[0] === 'T' ? '10' : card?.[0] || '?';
-  const suitChar = (card?.[1]?.toLowerCase() || 's') as keyof typeof SUITS;
+  
+  // Check if card is unknown/placeholder
+  const isUnknown = !card || card === '??' || card.includes('?') || card === 'XX' || !/^[2-9TJQKA][cdhs]$/i.test(card);
+  
+  const rank = isUnknown ? '?' : (card?.[0] === 'T' ? '10' : card?.[0] || '?');
+  const suitChar = isUnknown ? 's' : (card?.[1]?.toLowerCase() || 's') as keyof typeof SUITS;
   const suitSource = useFourColor ? SUITS : SUITS_CLASSIC;
   const suitInfo = suitSource[suitChar] || suitSource['s'];
   
@@ -103,6 +107,33 @@ const MiniCard = memo(function MiniCard({
     : isDimmed 
       ? '1px solid #6b7280' 
       : '1px solid #e2e8f0';
+
+  // Unknown card at showdown - show special placeholder (not faceDown)
+  if (isUnknown && !faceDown) {
+    return (
+      <motion.div
+        initial={{ scale: 0, opacity: 0 }}
+        animate={{ scale: 1, opacity: 0.9, rotate: rotation }}
+        transition={{ delay: delay * 0.05, type: 'spring', stiffness: 300, damping: 25 }}
+        className="rounded-[4px] shadow-lg relative overflow-hidden flex items-center justify-center"
+        style={{
+          width: cfg.w,
+          height: cfg.h,
+          background: 'linear-gradient(145deg, #374151 0%, #1f2937 100%)',
+          border: '1px solid #4b5563',
+          boxShadow: '0 3px 8px rgba(0,0,0,0.3)',
+          transformOrigin: 'bottom center'
+        }}
+      >
+        <span 
+          className="font-bold text-gray-400"
+          style={{ fontSize: cfg.w > 24 ? '1rem' : '0.7rem' }}
+        >
+          ?
+        </span>
+      </motion.div>
+    );
+  }
 
   if (faceDown) {
     return (
@@ -251,7 +282,9 @@ export const PPPokerCompactCards = memo(function PPPokerCompactCards({
   // Cards must exist and look like real cards for showdown display
   const isRealCard = (c: unknown) => typeof c === 'string' && /^[2-9TJQKA][cdhs]$/i.test(c.trim());
   const hasValidCards = Array.isArray(cards) && cards.length >= 2 && cards.every(isRealCard);
-  const showCards = isShowdown && hasValidCards;
+  const hasAnyCards = Array.isArray(cards) && cards.length >= 2;
+  // At showdown, show cards if valid, otherwise show placeholder for unknown cards
+  const showCards = isShowdown && hasAnyCards;
   const useFourColor = preferences.cardStyle === 'fourcolor';
   
   // Debug: log what we're rendering
@@ -267,6 +300,7 @@ export const PPPokerCompactCards = memo(function PPPokerCompactCards({
   
   // For PLO4, show all 4 cards; for Hold'em show 2
   const cardCount = cards?.length || 2;
+  // At showdown, display actual cards (even if some are '??')
   const displayCards = showCards ? cards : Array(Math.min(cardCount, 4)).fill('XX');
   
   // Determine if cards should be on left or right based on player position

@@ -1149,8 +1149,30 @@ const WinnerOverlay = memo(function WinnerOverlay({
   const winner = winners[0];
   const winnerIds = new Set(winners.map(w => w.playerId));
 
-  // Card display helper
+  // Card display helper - handles unknown cards ('??')
   const renderCard = (card: string, index: number, isWinningCard: boolean = false) => {
+    // Check if card is unknown/hidden
+    const isUnknown = !card || card === '??' || card.includes('?') || card.length < 2;
+    
+    if (isUnknown) {
+      // Render card back for unknown cards
+      return (
+        <motion.div
+          key={`unknown-${index}`}
+          initial={{ scale: 0, rotateY: 180 }}
+          animate={{ scale: 1, rotateY: 0 }}
+          transition={{ delay: 0.5 + index * 0.1, type: 'spring' }}
+          className="w-10 h-14 rounded-md flex items-center justify-center shadow-lg"
+          style={{
+            background: 'linear-gradient(135deg, #1e40af 0%, #3730a3 100%)',
+            border: '2px solid rgba(255,255,255,0.3)'
+          }}
+        >
+          <div className="text-white/50 text-xs font-bold">?</div>
+        </motion.div>
+      );
+    }
+    
     const suit = card[1]?.toLowerCase();
     const rank = card[0]?.toUpperCase();
     const suitSymbol = { h: '♥', d: '♦', c: '♣', s: '♠' }[suit] || suit;
