@@ -172,7 +172,7 @@ export const PPPokerHeroCards = memo(function PPPokerHeroCards({
   winningCardIndices = []
 }: PPPokerHeroCardsProps) {
   const { preferences } = usePokerPreferences();
-  const useFourColor = preferences.cardStyle === 'fourcolor' || true; // Default 4-color
+  const useFourColor = preferences.cardStyle === 'fourcolor';
 
   // Calculate hand strength
   const handName = useMemo(() => {
