@@ -116,7 +116,7 @@ const CardFace = memo(function CardFace({
 
       {/* Top-left corner - Rank left, Suit right (horizontal) */}
       <div 
-        className="absolute flex items-center gap-0.5 leading-none"
+        className="absolute flex items-center gap-1 leading-none"
         style={{ 
           top: 2, 
           left: 3,
@@ -133,7 +133,7 @@ const CardFace = memo(function CardFace({
 
       {/* Bottom-right corner - Suit left, Rank right (horizontal, rotated 180°) */}
       <div 
-        className="absolute flex items-center gap-0.5 leading-none rotate-180"
+        className="absolute flex items-center gap-1 leading-none rotate-180"
         style={{ 
           bottom: 2, 
           right: 3,

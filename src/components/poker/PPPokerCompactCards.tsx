@@ -204,7 +204,7 @@ const MiniCard = memo(function MiniCard({
       }}
     >
       {/* TOP-LEFT corner - Rank left, Suit right (horizontal) */}
-      <div className="absolute top-[2px] left-[2px] flex items-center gap-[1px] leading-none">
+      <div className="absolute top-[2px] left-[2px] flex items-center gap-0.5 leading-none">
         <span 
           className={cn(cfg.rank, 'font-black leading-none')} 
           style={{ color: suitColor }}
@@ -233,9 +233,9 @@ const MiniCard = memo(function MiniCard({
       </div>
       
       {/* BOTTOM-RIGHT corner - Suit left, Rank right (horizontal, rotated 180°) */}
-      <div className="absolute bottom-[2px] right-[2px] flex items-center gap-[1px] leading-none rotate-180">
+      <div className="absolute bottom-[2px] right-[2px] flex items-center gap-0.5 leading-none rotate-180">
         <span 
-          className={cn(cfg.rank, 'font-black leading-none')} 
+          className={cn(cfg.rank, 'font-black leading-none')}
           style={{ color: suitColor }}
         >
           {rank}

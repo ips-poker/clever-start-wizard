@@ -139,7 +139,7 @@ const CardFace = memo(function CardFace({
 
       {/* Top-left corner - Rank left, Suit right (horizontal) */}
       <div 
-        className="absolute top-1 left-1.5 flex items-center gap-0.5 leading-none"
+        className="absolute top-1 left-1.5 flex items-center gap-1 leading-none"
         style={{ color: suitInfo.color }}
       >
         <span className="font-bold" style={{ fontSize: config.rank * 0.55 }}>
@@ -152,7 +152,7 @@ const CardFace = memo(function CardFace({
 
       {/* Bottom-right corner - Suit left, Rank right (horizontal, rotated 180°) */}
       <div 
-        className="absolute bottom-1 right-1.5 flex items-center gap-0.5 leading-none rotate-180"
+        className="absolute bottom-1 right-1.5 flex items-center gap-1 leading-none rotate-180"
         style={{ color: suitInfo.color }}
       >
         <span className="font-bold" style={{ fontSize: config.rank * 0.55 }}>

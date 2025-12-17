@@ -186,7 +186,7 @@ const CardFace = memo(function CardFace({
     >
       {/* Top-left rank and suit (horizontal) */}
       <div 
-        className="absolute flex items-center gap-0.5 leading-none"
+        className="absolute flex items-center gap-1 leading-none"
         style={{ top: 3, left: 4 }}
       >
         <span 
@@ -212,7 +212,7 @@ const CardFace = memo(function CardFace({
       
       {/* Bottom-right rank and suit (horizontal, rotated 180°) */}
       <div 
-        className="absolute flex items-center gap-0.5 leading-none"
+        className="absolute flex items-center gap-1 leading-none"
         style={{ bottom: 3, right: 4, transform: 'rotate(180deg)' }}
       >
         <span 
