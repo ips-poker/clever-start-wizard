@@ -934,6 +934,9 @@ export interface FullscreenPokerTableProps {
   canJoinTable: boolean;
   onSeatClick: (seatNumber: number) => void;
   onPotCollect?: () => void;
+  // Showdown data
+  showdownPlayers?: Array<{ playerId: string; seatNumber: number; holeCards: string[]; handName?: string; isFolded?: boolean }>;
+  winners?: Array<{ playerId: string; amount: number; handName?: string }>;
   // Tournament info
   tournamentId?: string;
   tournamentName?: string;
@@ -967,6 +970,9 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
   canJoinTable,
   onSeatClick,
   onPotCollect,
+  // Showdown props
+  showdownPlayers,
+  winners,
   // Tournament props
   tournamentId,
   tournamentName,
@@ -1124,6 +1130,7 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
             canJoin={canJoinTable && !player}
             onSeatClick={onSeatClick}
             lastAction={(player as any)?.lastAction}
+            showdownPlayers={showdownPlayers}
           />
         );
       })}
