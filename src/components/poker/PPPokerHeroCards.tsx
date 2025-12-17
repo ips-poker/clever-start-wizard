@@ -105,14 +105,14 @@ const HeroCard = memo(function HeroCard({
         </span>
       </div>
       
-      {/* CENTER - Large suit symbol */}
+      {/* CENTER - Large suit symbol (semi-transparent) */}
       <div className="absolute inset-0 flex items-center justify-center">
         <span 
           className={centerSize}
           style={{ 
             color: suitColor, 
-            opacity: isDimmed ? 0.4 : 0.9,
-            filter: isDimmed ? 'none' : 'drop-shadow(0 2px 4px rgba(0,0,0,0.15))'
+            opacity: isDimmed ? 0.2 : 0.25,
+            filter: isDimmed ? 'none' : 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))'
           }}
         >
           {suitInfo.symbol}
