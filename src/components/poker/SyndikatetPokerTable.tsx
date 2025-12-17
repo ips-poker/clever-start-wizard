@@ -34,6 +34,7 @@ import {
 } from './PPPokerAnimations';
 import { PPPokerEnhancedCard, HandStrengthBadge } from './PPPokerEnhancedCard';
 import { PPPokerPlayerCards } from './PPPokerPlayerCards';
+import { PPPokerCompactCards } from './PPPokerCompactCards';
 import { PPPokerBetDisplay } from './PPPokerBetDisplay';
 
 // Syndikate branding
@@ -428,26 +429,18 @@ const PlayerSeat = memo(function PlayerSeat({
         </div>
       )}
       
-      {/* Opponent cards - shown UNDER avatar at angle like PPPoker */}
+      {/* Opponent cards - shown to the SIDE of avatar */}
       {!isHero && !player.isFolded && gamePhase !== 'waiting' && (
         <div className={cn("absolute z-5",
-          // Position based on seat location - cards go toward table center
-          seatIndex === 0 && "left-full ml-1 top-1/2 -translate-y-1/2",
-          seatIndex === 1 && "top-full mt-1 left-1/2 -translate-x-1/2",
-          seatIndex === 2 && "top-full mt-1 left-1/2 -translate-x-1/2",
-          seatIndex === 3 && "top-full mt-1 left-1/2 -translate-x-1/2",
-          seatIndex === 4 && "top-full mt-1 left-1/2 -translate-x-1/2",
-          seatIndex === 5 && "top-full mt-1 left-1/2 -translate-x-1/2"
+          "left-full ml-1 top-1/2 -translate-y-1/2"
         )}>
-          <PPPokerPlayerCards
-            cards={showCards && player.holeCards ? player.holeCards : ['XX', 'XX']}
+          <PPPokerCompactCards
+            cards={showCards && player.holeCards ? player.holeCards : ['??', '??']}
             faceDown={!showCards}
-            position="bottom"
-            size="xs"
-            isWinning={showCards}
+            isShowdown={showCards}
             handName={showCards ? player.handName : undefined}
-            showHandName={showCards}
-            isMobile={isMobile}
+            isWinner={showCards}
+            size="xs"
           />
         </div>
       )}
