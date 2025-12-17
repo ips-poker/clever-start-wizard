@@ -498,12 +498,38 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
         case 'handEnd':
           log('🏆 Hand complete event:', data.type);
           
-          // Extract event data
+          // Extract event data (support multiple server formats: camelCase + snake_case + nested result)
           const eventData = (data.data || data) as Record<string, unknown>;
-          const winners = eventData.winners as ShowdownResult['winners'] | undefined;
-          const showdownPlayers = eventData.showdownPlayers as ShowdownResult['showdownPlayers'];
-          const communityCards = eventData.communityCards as string[] | undefined;
-          const isShowdown = eventData.showdown as boolean;
+          const nestedResult = (eventData.result || eventData.showdownResult || eventData.handResult) as Record<string, unknown> | undefined;
+
+          const winners = (eventData.winners || (eventData as any).winner || nestedResult?.winners) as ShowdownResult['winners'] | undefined;
+          let showdownPlayers = (eventData.showdownPlayers || (eventData as any).showdown_players || nestedResult?.showdownPlayers || (nestedResult as any)?.showdown_players) as ShowdownResult['showdownPlayers'] | undefined;
+          const communityCards = (eventData.communityCards || (eventData as any).community_cards || nestedResult?.communityCards || (nestedResult as any)?.community_cards) as string[] | undefined;
+          const isShowdown = Boolean(eventData.showdown ?? (eventData as any).is_showdown ?? nestedResult?.showdown ?? (nestedResult as any)?.is_showdown);
+
+          // Fallback: if showdownPlayers is missing but state contains revealed holeCards, build showdownPlayers from it
+          if (!showdownPlayers && data.state) {
+            const stateData = data.state as Record<string, unknown>;
+            const playersData = stateData.players as Array<Record<string, unknown>> | undefined;
+            if (Array.isArray(playersData) && playersData.length > 0) {
+              const revealed = playersData
+                .map((p) => {
+                  const holeCards = (p.holeCards || p.hole_cards || p.cards) as string[] | undefined;
+                  const playerIdFromState = (p.playerId || p.id) as string | undefined;
+                  const seatNum = (p.seatNumber ?? p.seat_number ?? 0) as number;
+                  const folded = (p.isFolded || p.is_folded || false) as boolean;
+                  const name = (p.name || 'Player') as string;
+
+                  if (!playerIdFromState || !Array.isArray(holeCards) || holeCards.length < 2) return null;
+                  return { playerId: playerIdFromState, name, seatNumber: seatNum, holeCards, isFolded: folded };
+                })
+                .filter(Boolean) as ShowdownResult['showdownPlayers'];
+
+              if (revealed.length > 0) {
+                showdownPlayers = revealed;
+              }
+            }
+          }
           
           log('🏆 Event data:', { winners, showdownPlayers, isShowdown, communityCards });
           

@@ -248,8 +248,9 @@ export const PPPokerCompactCards = memo(function PPPokerCompactCards({
   const actualSize = isShowdown ? 'showdown' : size;
   const cfg = SIZE_CONFIG[actualSize] || SIZE_CONFIG[size];
   
-  // Cards must exist and have valid values for showdown display
-  const hasValidCards = cards && cards.length >= 2 && cards.every(c => c && c !== 'XX' && c !== '??');
+  // Cards must exist and look like real cards for showdown display
+  const isRealCard = (c: unknown) => typeof c === 'string' && /^[2-9TJQKA][cdhs]$/i.test(c.trim());
+  const hasValidCards = Array.isArray(cards) && cards.length >= 2 && cards.every(isRealCard);
   const showCards = isShowdown && hasValidCards;
   const useFourColor = preferences.cardStyle === 'fourcolor';
   
