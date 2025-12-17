@@ -932,6 +932,20 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
           log('⚠️ Timeout warning');
           break;
 
+        case 'timeout':
+          // Player timed out - update state if included
+          log('⏱️ Player timeout:', data.data);
+          if (data.state && tableId) {
+            setTableState(transformServerState(data.state, tableId));
+            
+            // Extract my cards from state if present
+            const timeoutStateData = data.state as Record<string, unknown>;
+            if (timeoutStateData.myCards) {
+              setMyCards(timeoutStateData.myCards as string[]);
+            }
+          }
+          break;
+
         default:
           log('📨 Unknown message type:', data.type, data);
       }

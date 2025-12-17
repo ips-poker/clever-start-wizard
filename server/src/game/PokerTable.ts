@@ -63,6 +63,7 @@ export class PokerTable {
   private currentHand: HandState | null = null;
   private handNumber: number = 0;
   private dealerSeat: number = 0;
+  private pendingHandStart: boolean = false; // Prevent concurrent checkStartHand calls
   
   private actionTimer: NodeJS.Timeout | null = null;
   private eventListeners: Set<TableEventCallback> = new Set();
@@ -247,8 +248,16 @@ export class PokerTable {
     
     logger.info(`Player joined table successfully`, { tableId: this.id, playerId, seatNumber, stack: buyIn, avatarUrl: resolvedAvatarUrl });
     
-    // Start hand if we have enough players
-    this.checkStartHand();
+    // Start hand if we have enough players AND no hand is in progress
+    // CRITICAL: Only start new hand if table is idle
+    if (!this.currentHand) {
+      this.checkStartHand();
+    } else {
+      logger.info('Player joined during active hand - will wait for hand to complete', { 
+        playerId: playerId.substring(0, 8), 
+        handNumber: this.handNumber 
+      });
+    }
     
     return { success: true };
   }
@@ -549,16 +558,24 @@ export class PokerTable {
   
   /**
    * Check if hand should start
+   * CRITICAL: Uses pendingHandStart flag to prevent race conditions
    */
   private checkStartHand(): void {
     logger.info('checkStartHand called', { 
       tableId: this.id, 
       hasCurrentHand: !!this.currentHand,
+      pendingHandStart: this.pendingHandStart,
       totalPlayers: this.players.size
     });
     
+    // CRITICAL: Prevent concurrent hand starts
     if (this.currentHand) {
       logger.info('checkStartHand: hand already in progress');
+      return;
+    }
+    
+    if (this.pendingHandStart) {
+      logger.info('checkStartHand: hand start already pending, skipping');
       return;
     }
     
@@ -566,13 +583,17 @@ export class PokerTable {
     const activePlayers = allPlayers.filter(p => p.status === 'active' && p.stack > 0);
     
     logger.info('checkStartHand: player status check', {
-      allPlayers: allPlayers.map(p => ({ id: p.id, status: p.status, stack: p.stack })),
+      allPlayers: allPlayers.map(p => ({ id: p.id.substring(0, 8), status: p.status, stack: p.stack })),
       activeCount: activePlayers.length
     });
     
     if (activePlayers.length >= 2) {
       logger.info('checkStartHand: starting hand in 3 seconds...');
-      setTimeout(() => this.startHand(), 3000);
+      this.pendingHandStart = true;
+      setTimeout(() => {
+        this.pendingHandStart = false;
+        this.startHand();
+      }, 3000);
     } else {
       logger.info('checkStartHand: not enough players', { need: 2, have: activePlayers.length });
     }
@@ -583,6 +604,15 @@ export class PokerTable {
    * PROFESSIONAL: Full error handling with graceful recovery
    */
   async startHand(): Promise<void> {
+    // CRITICAL: Safety check - don't start if hand already in progress
+    if (this.currentHand) {
+      logger.warn('startHand called but hand already in progress - ignoring', {
+        handNumber: this.handNumber,
+        phase: this.currentHand.phase
+      });
+      return;
+    }
+    
     try {
       this.handNumber++;
       
@@ -965,8 +995,8 @@ export class PokerTable {
     
     this.currentHand = null;
     
-    // Check for next hand
-    setTimeout(() => this.checkStartHand(), 5000);
+    // Check for next hand after showdown display time (7 seconds to give clients time to show results)
+    setTimeout(() => this.checkStartHand(), 7000);
   }
   
   /**
