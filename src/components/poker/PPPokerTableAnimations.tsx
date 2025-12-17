@@ -355,13 +355,30 @@ export const CardDealAnimation = memo(function CardDealAnimation({
       }}
     >
       <div 
-        className="w-10 h-14 rounded-md"
+        className="w-10 h-14 rounded-md relative overflow-hidden"
         style={{
-          background: 'linear-gradient(135deg, hsl(221, 83%, 53%), hsl(224, 76%, 48%))',
-          border: '2px solid hsl(217, 91%, 60%)',
-          boxShadow: '0 4px 12px rgba(0,0,0,0.3)'
+          background: 'linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%)',
+          border: '1px solid #e5e7eb',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
         }}
-      />
+      >
+        {/* Grid pattern */}
+        <div 
+          className="absolute inset-0"
+          style={{
+            backgroundImage: `
+              repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(255,122,0,0.12) 3px, rgba(255,122,0,0.12) 4px),
+              repeating-linear-gradient(90deg, transparent, transparent 3px, rgba(255,122,0,0.12) 3px, rgba(255,122,0,0.12) 4px)
+            `
+          }}
+        />
+        {/* Border frame */}
+        <div className="absolute inset-0.5 rounded-sm border border-orange-400/30" />
+        {/* Center S logo */}
+        <div className="absolute inset-0 flex items-center justify-center">
+          <span className="font-display font-black text-xs" style={{ color: '#ff7a00', opacity: 0.5 }}>S</span>
+        </div>
+      </div>
     </motion.div>
   );
 });
