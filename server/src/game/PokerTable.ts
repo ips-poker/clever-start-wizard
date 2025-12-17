@@ -844,59 +844,111 @@ export class PokerTable {
     
     const engineState = this.engine.getState();
     
-    if (isShowdown && engineState) {
-      // Evaluate hands for ALL non-folded players to show handName
+    // DEBUG: Log engine state for showdown debugging
+    logger.info('=== SHOWDOWN DATA DEBUG ===', {
+      isShowdown,
+      engineStateExists: !!engineState,
+      enginePlayersCount: engineState?.players?.length || 0,
+      winnersHandName: winners[0]?.handName,
+      currentPhase: this.currentHand?.phase,
+      communityCardsCount: this.currentHand?.communityCards?.length || 0
+    });
+    
+    if (engineState) {
+      // Log all engine players for debugging
       for (const ep of engineState.players) {
-        if (!ep.isFolded && ep.holeCards && ep.holeCards.length >= 2) {
-          const tablePlayer = this.players.get(ep.id);
-          const winnerInfo = winners.find(w => w.playerId === ep.id);
-          
-          // Evaluate hand for non-winners too
-          let handName = winnerInfo?.handName;
-          let bestCards: string[] = [];
-          
-          if (this.currentHand?.communityCards && this.currentHand.communityCards.length >= 3) {
-            try {
-              // Use evaluateHand with hole cards and community cards separately
-              const result = evaluateHand(ep.holeCards, this.currentHand.communityCards);
-              handName = handName || result.handName;
-              bestCards = result.bestCards || [];
-            } catch (e) {
-              handName = handName || undefined;
-              bestCards = [];
+        logger.info('Engine player state:', {
+          playerId: ep.id.substring(0, 8),
+          seatNumber: ep.seatNumber,
+          isFolded: ep.isFolded,
+          holeCardsLength: ep.holeCards?.length || 0,
+          holeCards: ep.holeCards || []
+        });
+      }
+    }
+    
+    // Build showdownPlayers if we have actual showdown or multiple non-folded players
+    if (engineState) {
+      const nonFoldedPlayers = engineState.players.filter(p => !p.isFolded);
+      const hasMultiplePlayersAtEnd = nonFoldedPlayers.length > 1;
+      
+      logger.info('Showdown eligibility check:', {
+        isShowdown,
+        hasMultiplePlayersAtEnd,
+        nonFoldedCount: nonFoldedPlayers.length
+      });
+      
+      // Include players if it's a real showdown OR if there are multiple non-folded players
+      if (isShowdown || hasMultiplePlayersAtEnd) {
+        for (const ep of engineState.players) {
+          if (!ep.isFolded && ep.holeCards && ep.holeCards.length >= 2) {
+            const tablePlayer = this.players.get(ep.id);
+            const winnerInfo = winners.find(w => w.playerId === ep.id);
+            
+            // Evaluate hand for non-winners too
+            let handName = winnerInfo?.handName;
+            let bestCards: string[] = [];
+            
+            if (this.currentHand?.communityCards && this.currentHand.communityCards.length >= 3) {
+              try {
+                const result = evaluateHand(ep.holeCards, this.currentHand.communityCards);
+                handName = handName || result.handName;
+                bestCards = result.bestCards || [];
+              } catch (e) {
+                logger.warn('evaluateHand failed:', { playerId: ep.id.substring(0,8), error: String(e) });
+                handName = handName || undefined;
+                bestCards = [];
+              }
             }
+            
+            showdownPlayers.push({
+              playerId: ep.id,
+              name: tablePlayer?.name || 'Unknown',
+              seatNumber: ep.seatNumber,
+              holeCards: ep.holeCards,
+              isFolded: ep.isFolded,
+              handName: handName,
+              bestCards: bestCards
+            });
+            
+            logger.info('Added to showdownPlayers:', {
+              playerId: ep.id.substring(0, 8),
+              seatNumber: ep.seatNumber,
+              holeCards: ep.holeCards,
+              handName
+            });
           }
-          
-          showdownPlayers.push({
-            playerId: ep.id,
-            name: tablePlayer?.name || 'Unknown',
-            seatNumber: ep.seatNumber,
-            holeCards: ep.holeCards, // CRITICAL: Reveal hole cards at showdown
-            isFolded: ep.isFolded,
-            handName: handName,
-            bestCards: bestCards
-          });
         }
       }
     }
+    
+    // Log what we're about to send
+    logger.info('=== EMITTING hand_complete EVENT ===', {
+      tableId: this.id,
+      handNumber: this.handNumber,
+      isShowdown,
+      showdownPlayersCount: showdownPlayers.length,
+      showdownPlayers: showdownPlayers.map(sp => ({
+        playerId: sp.playerId.substring(0, 8),
+        seatNumber: sp.seatNumber,
+        holeCards: sp.holeCards,
+        handName: sp.handName
+      })),
+      winnersCount: winners.length,
+      pot: this.currentHand?.pot,
+      communityCards: this.currentHand?.communityCards
+    });
     
     this.emit('hand_complete', {
       handNumber: this.handNumber,
       winners,
       showdown: isShowdown,
       communityCards: this.currentHand?.communityCards,
-      // NEW: Include showdown data with all players' cards
       showdownPlayers,
       pot: this.currentHand?.pot
     });
     
-    logger.info('=== HAND COMPLETION END ===', { 
-      tableId: this.id, 
-      handNumber: this.handNumber,
-      isShowdown,
-      showdownPlayersCount: showdownPlayers.length,
-      winnersInfo: winners.map(w => `${w.playerId.substring(0,8)}:${w.amount}:${w.handName}`)
-    });
+    logger.info('=== HAND COMPLETION END ===');
     
     // Save hand history
     await this.saveHandHistory();
