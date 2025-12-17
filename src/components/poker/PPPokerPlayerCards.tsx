@@ -153,7 +153,7 @@ const MiniCard = memo(function MiniCard({
       
       {/* Corner pip - horizontal */}
       <div 
-        className="absolute top-0.5 left-0.5 flex items-center gap-[1px] leading-none"
+        className="absolute top-0.5 left-0.5 flex items-center gap-0.5 leading-none"
         style={{ color: suitInfo.color }}
       >
         <span style={{ fontSize: config.fontSize * 0.5, fontWeight: 600 }}>{rank}</span>

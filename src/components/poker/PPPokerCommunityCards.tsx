@@ -84,7 +84,7 @@ const CommunityCard = memo(function CommunityCard({
       }}
     >
       {/* TOP-LEFT corner - Rank left, Suit right (horizontal) */}
-      <div className="absolute top-1 left-1.5 flex items-center gap-0.5 leading-none">
+      <div className="absolute top-1 left-1.5 flex items-center gap-1 leading-none">
         <span 
           className="text-xl font-black leading-none" 
           style={{ 
@@ -117,7 +117,7 @@ const CommunityCard = memo(function CommunityCard({
       </div>
       
       {/* BOTTOM-RIGHT corner - Suit left, Rank right (horizontal, rotated 180°) */}
-      <div className="absolute bottom-1 right-1.5 flex items-center gap-0.5 leading-none rotate-180">
+      <div className="absolute bottom-1 right-1.5 flex items-center gap-1 leading-none rotate-180">
         <span 
           className="text-xl font-black leading-none" 
           style={{ 
