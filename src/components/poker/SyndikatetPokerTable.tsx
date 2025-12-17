@@ -45,19 +45,19 @@ import syndikateLogo from '@/assets/syndikate-logo-main.png';
 // Hero always at bottom center (position 0), opponents arranged around table edge
 // Positions are tuned so players visually overlap the table rail like in PPPoker
 const SEAT_POSITIONS_6MAX_MOBILE = [
-  { x: 50, y: 85 },  // Seat 0 - Hero (bottom center, partial overlap with table)
+  { x: 48, y: 85 },  // Seat 0 - Hero (bottom center, partial overlap with table)
   { x: 17, y: 56 },  // Seat 1 - Left middle (on table edge)
   { x: 17, y: 22 },  // Seat 2 - Left top (on table edge)
-  { x: 50, y: 4 },   // Seat 3 - Top center
+  { x: 48, y: 4 },   // Seat 3 - Top center
   { x: 74, y: 22 },  // Seat 4 - Right top (on table edge)
   { x: 74, y: 56 },  // Seat 5 - Right middle (on table edge)
 ];
 
 const SEAT_POSITIONS_6MAX_DESKTOP = [
-  { x: 50, y: 82 },  // Seat 0 - Hero (bottom center)
+  { x: 48, y: 82 },  // Seat 0 - Hero (bottom center)
   { x: 17, y: 55 },  // Seat 1 - Left middle
   { x: 17, y: 20 },  // Seat 2 - Left top
-  { x: 50, y: 3 },   // Seat 3 - Top center
+  { x: 48, y: 3 },   // Seat 3 - Top center
   { x: 74, y: 20 },  // Seat 4 - Right top
   { x: 74, y: 55 },  // Seat 5 - Right middle
 ];
