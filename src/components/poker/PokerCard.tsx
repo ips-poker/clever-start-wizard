@@ -62,20 +62,28 @@ export const PokerCard = memo(function PokerCard({
         className={cn(
           sizeClass.card,
           'rounded-lg shadow-xl select-none',
-          'bg-gradient-to-br from-blue-700 via-blue-800 to-blue-900',
-          'border-2 border-blue-500/50',
+          'bg-white',
+          'border border-gray-200',
           'flex items-center justify-center',
           'relative overflow-hidden',
           folded && 'opacity-40',
           className
         )}
       >
-        <div className="absolute inset-1 rounded border border-blue-400/30">
-          <div className="absolute inset-0 opacity-30" style={{
-            backgroundImage: `repeating-linear-gradient(45deg, transparent, transparent 4px, rgba(255,255,255,0.1) 4px, rgba(255,255,255,0.1) 8px)`
-          }} />
-        </div>
-        <span className="text-blue-400/40 text-lg">♠</span>
+        {/* Grid pattern */}
+        <div 
+          className="absolute inset-0"
+          style={{
+            backgroundImage: `
+              repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(255,122,0,0.12) 3px, rgba(255,122,0,0.12) 4px),
+              repeating-linear-gradient(90deg, transparent, transparent 3px, rgba(255,122,0,0.12) 3px, rgba(255,122,0,0.12) 4px)
+            `
+          }}
+        />
+        {/* Border frame */}
+        <div className="absolute inset-1 rounded border border-orange-400/30" />
+        {/* Center S logo */}
+        <span className="font-display font-black text-orange-500/50">S</span>
       </motion.div>
     );
   }
