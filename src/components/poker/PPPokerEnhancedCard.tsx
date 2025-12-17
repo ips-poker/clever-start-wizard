@@ -32,7 +32,7 @@ interface PPPokerEnhancedCardProps {
   animate?: boolean;
 }
 
-// Card back component - PPPoker blue pattern
+// Card back component - White with grid and S logo
 const CardBack = memo(function CardBack({ 
   width, 
   height, 
@@ -46,8 +46,6 @@ const CardBack = memo(function CardBack({
   delay: number;
   animate: boolean;
 }) {
-  const patternId = useMemo(() => `cardPattern-${Math.random().toString(36).substr(2, 9)}`, []);
-  
   return (
     <motion.div
       initial={animate ? { rotateY: 180, scale: 0.5, opacity: 0 } : false}
@@ -58,26 +56,47 @@ const CardBack = memo(function CardBack({
         width,
         height,
         borderRadius: radius,
-        background: 'linear-gradient(145deg, #3b82f6 0%, #1d4ed8 40%, #1e40af 100%)',
-        border: '2px solid #60a5fa',
+        background: 'linear-gradient(145deg, #ffffff 0%, #f8f9fa 50%, #ffffff 100%)',
+        border: '1px solid #e5e7eb',
         boxShadow: `
-          0 4px 12px rgba(0,0,0,0.4),
-          inset 0 1px 0 rgba(255,255,255,0.2),
-          inset 0 -1px 0 rgba(0,0,0,0.2)
+          0 4px 12px rgba(0,0,0,0.15),
+          inset 0 1px 0 rgba(255,255,255,0.8)
         `
       }}
     >
-      {/* Diamond grid pattern */}
-      <svg className="absolute inset-0 w-full h-full" preserveAspectRatio="none">
-        <defs>
-          <pattern id={patternId} x="0" y="0" width="8" height="8" patternUnits="userSpaceOnUse">
-            <rect x="3" y="3" width="2" height="2" fill="white" opacity="0.15" transform="rotate(45 4 4)"/>
-          </pattern>
-        </defs>
-        <rect width="100%" height="100%" fill={`url(#${patternId})`}/>
-      </svg>
+      {/* Grid pattern */}
+      <div 
+        className="absolute inset-0"
+        style={{
+          backgroundImage: `
+            repeating-linear-gradient(0deg, transparent, transparent 5px, rgba(255,122,0,0.12) 5px, rgba(255,122,0,0.12) 6px),
+            repeating-linear-gradient(90deg, transparent, transparent 5px, rgba(255,122,0,0.12) 5px, rgba(255,122,0,0.12) 6px)
+          `
+        }}
+      />
+      {/* Decorative border frame */}
+      <div className="absolute inset-1 border border-orange-400/30 rounded-sm" />
+      <div className="absolute inset-2 border border-orange-400/20 rounded-sm" />
+      {/* Center S logo */}
+      <div className="absolute inset-0 flex items-center justify-center">
+        <div 
+          className="font-display font-black"
+          style={{ 
+            fontSize: width > 50 ? '1.5rem' : '1rem',
+            color: 'rgba(255, 122, 0, 0.5)',
+            textShadow: '0 1px 2px rgba(255, 122, 0, 0.2)'
+          }}
+        >
+          S
+        </div>
+      </div>
+      {/* Corner ornaments */}
+      <div className="absolute top-0.5 left-0.5 w-1.5 h-1.5 border-l-2 border-t-2 border-orange-400/40" />
+      <div className="absolute top-0.5 right-0.5 w-1.5 h-1.5 border-r-2 border-t-2 border-orange-400/40" />
+      <div className="absolute bottom-0.5 left-0.5 w-1.5 h-1.5 border-l-2 border-b-2 border-orange-400/40" />
+      <div className="absolute bottom-0.5 right-0.5 w-1.5 h-1.5 border-r-2 border-b-2 border-orange-400/40" />
       
-      {/* Inner border */}
+      {/* Inner border (kept from original) */}
       <div 
         className="absolute"
         style={{

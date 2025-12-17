@@ -32,20 +32,43 @@ export const MemoizedPokerCard = memo(function MemoizedPokerCard({
   if (faceDown || !card || card === '??') {
     return (
       <div 
-        className="rounded-md shadow-lg flex items-center justify-center flex-shrink-0"
+        className="rounded-md shadow-lg flex-shrink-0 relative overflow-hidden"
         style={{
           width: s.width,
           height: s.height,
-          background: 'linear-gradient(135deg, #1e40af 0%, #1e3a8a 50%, #1e40af 100%)',
-          border: '2px solid #3b82f6',
+          background: 'linear-gradient(145deg, #ffffff 0%, #f8f9fa 50%, #ffffff 100%)',
+          border: '1px solid #e5e7eb',
         }}
       >
-        <div className="w-full h-full rounded-md opacity-50" 
+        {/* Grid pattern */}
+        <div 
+          className="absolute inset-0"
           style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20'%3E%3Ccircle cx='10' cy='10' r='2' fill='rgba(255,255,255,0.1)'/%3E%3C/svg%3E")`,
-            backgroundSize: '20px 20px'
+            backgroundImage: `
+              repeating-linear-gradient(0deg, transparent, transparent 4px, rgba(255,122,0,0.12) 4px, rgba(255,122,0,0.12) 5px),
+              repeating-linear-gradient(90deg, transparent, transparent 4px, rgba(255,122,0,0.12) 4px, rgba(255,122,0,0.12) 5px)
+            `
           }}
         />
+        {/* Border frame */}
+        <div className="absolute inset-0.5 border border-orange-400/30 rounded-sm" />
+        {/* Center S logo */}
+        <div className="absolute inset-0 flex items-center justify-center">
+          <span 
+            className="font-display font-black"
+            style={{ 
+              fontSize: s.fontSize * 0.9,
+              color: 'rgba(255, 122, 0, 0.5)'
+            }}
+          >
+            S
+          </span>
+        </div>
+        {/* Corner ornaments */}
+        <div className="absolute top-0.5 left-0.5 w-1 h-1 border-l border-t border-orange-400/40" />
+        <div className="absolute top-0.5 right-0.5 w-1 h-1 border-r border-t border-orange-400/40" />
+        <div className="absolute bottom-0.5 left-0.5 w-1 h-1 border-l border-b border-orange-400/40" />
+        <div className="absolute bottom-0.5 right-0.5 w-1 h-1 border-r border-b border-orange-400/40" />
       </div>
     );
   }
