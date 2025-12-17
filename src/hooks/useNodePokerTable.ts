@@ -125,6 +125,23 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
   const pingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const mountedRef = useRef(true);
 
+  // Keep latest snapshots for stable WebSocket handlers (avoid stale closures)
+  const tableStateRef = useRef<TableState | null>(null);
+  const myCardsRef = useRef<string[]>([]);
+  const mySeatRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    tableStateRef.current = tableState;
+  }, [tableState]);
+
+  useEffect(() => {
+    myCardsRef.current = myCards;
+  }, [myCards]);
+
+  useEffect(() => {
+    mySeatRef.current = mySeat;
+  }, [mySeat]);
+
   // Clear all timers
   const clearTimers = useCallback(() => {
     if (reconnectTimeoutRef.current) {
@@ -495,29 +512,94 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
         case 'hand_complete':
         case 'handComplete':  // Server sends camelCase
         case 'hand_end':
-        case 'handEnd':
+        case 'handEnd': {
           log('🏆 Hand complete event:', data.type);
-          
+
           // Extract event data (support multiple server formats: camelCase + snake_case + nested result)
           const eventData = (data.data || data) as Record<string, unknown>;
           const nestedResult = (eventData.result || eventData.showdownResult || eventData.handResult) as Record<string, unknown> | undefined;
 
-          const winners = (eventData.winners || (eventData as any).winner || nestedResult?.winners) as ShowdownResult['winners'] | undefined;
-          let showdownPlayers = (eventData.showdownPlayers || (eventData as any).showdown_players || nestedResult?.showdownPlayers || (nestedResult as any)?.showdown_players) as ShowdownResult['showdownPlayers'] | undefined;
-          const communityCards = (eventData.communityCards || (eventData as any).community_cards || nestedResult?.communityCards || (nestedResult as any)?.community_cards) as string[] | undefined;
-          const isShowdown = Boolean(eventData.showdown ?? (eventData as any).is_showdown ?? nestedResult?.showdown ?? (nestedResult as any)?.is_showdown);
+          const isRealCard = (c: unknown) => typeof c === 'string' && /^[2-9TJQKA][cdhs]$/i.test(c.trim());
 
-          // Fallback: if showdownPlayers is missing but state contains revealed holeCards, build showdownPlayers from it
+          const normalizeWinners = (raw: unknown): ShowdownResult['winners'] => {
+            if (!raw) return [];
+            const arr = Array.isArray(raw) ? raw : [raw];
+            return arr
+              .map((w: any) => {
+                const playerId = (w?.playerId || w?.player_id || w?.id) as string | undefined;
+                const amount = Number(w?.amount ?? w?.wonAmount ?? w?.won_amount ?? 0);
+                if (!playerId) return null;
+                return {
+                  playerId,
+                  name: (w?.name || w?.playerName || w?.player_name) as string | undefined,
+                  seatNumber: (w?.seatNumber ?? w?.seat_number) as number | undefined,
+                  amount,
+                  handName: (w?.handName || w?.hand_name || w?.handRank || w?.hand_rank) as string | undefined,
+                  handRank: (w?.handRank || w?.hand_rank) as string | undefined,
+                  cards: (w?.cards || w?.holeCards || w?.hole_cards) as string[] | undefined,
+                  bestCards: (w?.bestCards || w?.best_cards) as string[] | undefined,
+                };
+              })
+              .filter(Boolean) as ShowdownResult['winners'];
+          };
+
+          const normalizeShowdownPlayers = (raw: unknown): ShowdownResult['showdownPlayers'] | undefined => {
+            if (!raw) return undefined;
+            const arr = Array.isArray(raw) ? raw : [raw];
+            const normalized = arr
+              .map((sp: any) => {
+                const playerId = (sp?.playerId || sp?.player_id || sp?.id) as string | undefined;
+                const seatNumber = Number(sp?.seatNumber ?? sp?.seat_number ?? 0);
+                const holeCards = (sp?.holeCards || sp?.hole_cards || sp?.cards) as unknown;
+                if (!playerId || !Array.isArray(holeCards) || holeCards.length < 2) return null;
+
+                return {
+                  playerId,
+                  name: (sp?.name || sp?.playerName || sp?.player_name || 'Player') as string,
+                  seatNumber,
+                  holeCards: holeCards as string[],
+                  isFolded: Boolean(sp?.isFolded || sp?.is_folded || false),
+                  handName: (sp?.handName || sp?.hand_name || sp?.handRank || sp?.hand_rank) as string | undefined,
+                  bestCards: (sp?.bestCards || sp?.best_cards) as string[] | undefined,
+                };
+              })
+              .filter(Boolean) as ShowdownResult['showdownPlayers'];
+
+            return normalized.length ? normalized : undefined;
+          };
+
+          const winnersRaw = (eventData.winners || (eventData as any).winner || nestedResult?.winners || (nestedResult as any)?.winner) as unknown;
+          const showdownPlayersRaw = (eventData.showdownPlayers || (eventData as any).showdown_players || nestedResult?.showdownPlayers || (nestedResult as any)?.showdown_players) as unknown;
+          const communityCards = (eventData.communityCards || (eventData as any).community_cards || nestedResult?.communityCards || (nestedResult as any)?.community_cards) as string[] | undefined;
+
+          const winners = normalizeWinners(winnersRaw);
+          let showdownPlayers = normalizeShowdownPlayers(showdownPlayersRaw);
+
+          const statePhase = (data.state as any)?.phase as string | undefined;
+          const isShowdown = Boolean(
+            eventData.showdown ??
+              (eventData as any).is_showdown ??
+              nestedResult?.showdown ??
+              (nestedResult as any)?.is_showdown ??
+              eventData.phase === 'showdown' ??
+              statePhase === 'showdown'
+          );
+
+          const currentTableState = tableStateRef.current;
+          const currentMyCards = myCardsRef.current;
+          const currentMySeat = mySeatRef.current;
+
+          // Fallback 1: if showdownPlayers is missing but state contains revealed holeCards, build showdownPlayers from it
           if (!showdownPlayers && data.state) {
             const stateData = data.state as Record<string, unknown>;
             const playersData = stateData.players as Array<Record<string, unknown>> | undefined;
             if (Array.isArray(playersData) && playersData.length > 0) {
               const revealed = playersData
-                .map((p) => {
+                .map((p: any) => {
                   const holeCards = (p.holeCards || p.hole_cards || p.cards) as string[] | undefined;
-                  const playerIdFromState = (p.playerId || p.id) as string | undefined;
-                  const seatNum = (p.seatNumber ?? p.seat_number ?? 0) as number;
-                  const folded = (p.isFolded || p.is_folded || false) as boolean;
+                  const playerIdFromState = (p.playerId || p.player_id || p.id) as string | undefined;
+                  const seatNum = Number(p.seatNumber ?? p.seat_number ?? 0);
+                  const folded = Boolean(p.isFolded || p.is_folded || false);
                   const name = (p.name || 'Player') as string;
 
                   if (!playerIdFromState || !Array.isArray(holeCards) || holeCards.length < 2) return null;
@@ -525,152 +607,95 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
                 })
                 .filter(Boolean) as ShowdownResult['showdownPlayers'];
 
-              if (revealed.length > 0) {
-                showdownPlayers = revealed;
-              }
+              if (revealed.length > 0) showdownPlayers = revealed;
             }
           }
 
-          // Final fallback: build showdownPlayers from current tableState + myCards
-          // Show own cards revealed, others as hidden (empty cards)
+          // Fallback 2: build showdownPlayers from current tableState + myCards (at least reveal hero)
           if (!showdownPlayers || showdownPlayers.length === 0) {
-            const currentPlayers = tableState?.players || [];
-            const currentMyCards = myCards;
-            const currentMySeat = mySeat;
-            
+            const currentPlayers = currentTableState?.players || [];
+
             if (currentPlayers.length > 0) {
               log('🔄 Building showdownPlayers from current state (fallback)');
               showdownPlayers = currentPlayers
-                .filter(p => !p.isFolded)
-                .map(p => ({
+                .filter((p) => !p.isFolded)
+                .map((p) => ({
                   playerId: p.playerId,
                   name: p.name || 'Player',
                   seatNumber: p.seatNumber,
-                  holeCards: p.seatNumber === currentMySeat && currentMyCards.length >= 2 
-                    ? currentMyCards 
-                    : (p.holeCards && p.holeCards.length >= 2 ? p.holeCards : ['??', '??']),
+                  holeCards:
+                    p.seatNumber === currentMySeat && currentMyCards.length >= 2
+                      ? currentMyCards
+                      : (p.holeCards && p.holeCards.length >= 2 ? p.holeCards : ['??', '??']),
                   isFolded: false,
-                  handName: undefined
+                  handName: undefined,
                 }));
               log('🔄 Fallback showdownPlayers:', showdownPlayers);
             }
           }
-          
-          log('🏆 Event data:', { winners, showdownPlayers, isShowdown, communityCards });
-          
-          if (winners && winners.length > 0) {
-            log('🏆 Winners:', winners);
-            log('🃏 Showdown players:', showdownPlayers);
-            
+
+          const shouldForceShowdown =
+            isShowdown ||
+            winners.length > 0 ||
+            Boolean(showdownPlayers?.some((sp) => sp.holeCards?.some(isRealCard)));
+
+          log('🏆 Event data:', {
+            isShowdown,
+            shouldForceShowdown,
+            winnersCount: winners.length,
+            showdownPlayersCount: showdownPlayers?.length,
+            communityCardsCount: communityCards?.length,
+          });
+
+          if (winners.length > 0) {
             setShowdownResult({
-              winners: winners.map(w => ({
+              winners: winners.map((w) => ({
                 ...w,
-                handName: w.handName || (w as Record<string, unknown>).handRank as string
+                handName: w.handName || (w as any).handRank,
               })),
-              pot: (eventData.pot || data.pot || 0) as number,
-              showdownPlayers: showdownPlayers,
-              communityCards: communityCards
+              pot: Number(eventData.pot ?? (data as any).pot ?? 0),
+              showdownPlayers,
+              communityCards,
             });
           }
-          
-          // Keep showdown result visible for a while, then clear
-          setTimeout(() => {
-            setShowdownResult(null);
-            // Reset player states after showdown display
-            setTableState(prev => {
-              if (!prev || prev.phase !== 'showdown') return prev;
-              return {
-                ...prev,
-                phase: 'waiting', // Reset to waiting for next hand
-                players: prev.players.map(p => ({
-                  ...p,
-                  isWinner: false,
-                  handName: undefined,
-                  holeCards: undefined,
-                  betAmount: 0,
-                  currentBet: 0,
-                  isFolded: false
-                }))
-              };
-            });
-          }, 5000);
-          
-          // Update state - force phase to 'showdown' if we have winners
-          if (data.state && tableId) {
-            const stateData = data.state as Record<string, unknown>;
-            const transformedState = transformServerState(data.state, tableId);
-            
-            // If this is a showdown with multiple non-folded players, force phase
-            if ((isShowdown || showdownPlayers) && winners) {
-              transformedState.phase = 'showdown';
-            }
-            
-            setTableState(transformedState);
-            
-            // Also update cards from state
-            if (stateData.myCards) {
-              setMyCards(stateData.myCards as string[]);
-            }
-          } else if ((isShowdown || showdownPlayers) && tableId) {
-            // Even without state, update phase to showdown
-            setTableState(prev => {
-              if (!prev) return prev;
-              return { ...prev, phase: 'showdown' };
-            });
+
+          if (shouldForceShowdown) {
+            // Ensure the UI enters showdown mode so opponent cards can flip
+            setTableState((prev) => (prev ? { ...prev, phase: 'showdown' } : prev));
           }
-          
+
           // Update table state with showdown players' cards and winner info
-          if ((isShowdown || showdownPlayers || winners) && tableId) {
-            setTableState(prev => {
+          if (shouldForceShowdown && tableId) {
+            setTableState((prev) => {
               if (!prev) return prev;
-              
-              // Create a set of winner player IDs
-              const winnerIds = new Set(winners?.map(w => w.playerId) || []);
-              
-              // Get community cards for evaluation
+
+              const winnerIds = new Set(winners.map((w) => w.playerId));
               const commCards = communityCards || prev.communityCards || [];
-              
-              // Determine if this is Omaha (4 hole cards)
-              const isOmaha = showdownPlayers?.some(sp => sp.holeCards?.length === 4) || false;
-              
+              const isOmaha = Boolean(showdownPlayers?.some((sp) => sp.holeCards?.length === 4));
+
               return {
                 ...prev,
-                phase: 'showdown', // Force showdown phase
-                players: prev.players.map(p => {
-                  // Check if this player is a winner
-                  const winner = winners?.find(w => w.playerId === p.playerId);
-                  const showdownPlayer = showdownPlayers?.find(sp => sp.playerId === p.playerId);
-                  
+                phase: 'showdown',
+                players: prev.players.map((p) => {
+                  const winner = winners.find((w) => w.playerId === p.playerId);
+                  const showdownPlayer = showdownPlayers?.find((sp) => sp.playerId === p.playerId);
+
                   if (showdownPlayer && !showdownPlayer.isFolded) {
-                    // Calculate winning card indices using showdownEvaluator
                     let winningCardIndices: number[] = [];
                     let communityCardIndices: number[] = [];
-                    
+
                     if (showdownPlayer.holeCards && commCards.length >= 3) {
                       try {
-                        const showdownResult = evaluateShowdown(
-                          showdownPlayer.holeCards,
-                          commCards,
-                          isOmaha
-                        );
-                        if (showdownResult) {
-                          winningCardIndices = showdownResult.winningCardIndices;
-                          communityCardIndices = showdownResult.communityCardIndices;
+                        const showdownEval = evaluateShowdown(showdownPlayer.holeCards, commCards, isOmaha);
+                        if (showdownEval) {
+                          winningCardIndices = showdownEval.winningCardIndices;
+                          communityCardIndices = showdownEval.communityCardIndices;
                         }
                       } catch (err) {
                         console.warn('Failed to evaluate showdown:', err);
                       }
                     }
-                    
-                    log('🃏 Updating player for showdown:', {
-                      playerId: p.playerId,
-                      name: p.name,
-                      holeCards: showdownPlayer.holeCards,
-                      handName: showdownPlayer.handName || winner?.handName,
-                      isWinner: winnerIds.has(p.playerId),
-                      winningCardIndices
-                    });
-                    
+
                     return {
                       ...p,
                       holeCards: showdownPlayer.holeCards,
@@ -678,25 +703,57 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
                       isWinner: winnerIds.has(p.playerId),
                       bestCards: showdownPlayer.bestCards || winner?.bestCards,
                       winningCardIndices,
-                      communityCardIndices
+                      communityCardIndices,
                     };
                   }
-                  
-                  // Also update winner status for players not in showdownPlayers
+
                   if (winnerIds.has(p.playerId)) {
                     return {
                       ...p,
                       isWinner: true,
-                      handName: winner?.handName
+                      handName: winner?.handName,
                     };
                   }
-                  
+
                   return p;
-                })
+                }),
               };
             });
           }
+
+          // Keep showdown visible for a while, then clear
+          setTimeout(() => {
+            setShowdownResult(null);
+            setTableState((prev) => {
+              if (!prev || prev.phase !== 'showdown') return prev;
+              return {
+                ...prev,
+                phase: 'waiting',
+                players: prev.players.map((p) => ({
+                  ...p,
+                  isWinner: false,
+                  handName: undefined,
+                  holeCards: [],
+                  betAmount: 0,
+                  currentBet: 0,
+                  isFolded: false,
+                })),
+              };
+            });
+          }, 5000);
+
+          // If server also provides a final state snapshot, apply it (but keep showdown phase when relevant)
+          if (data.state && tableId) {
+            const transformedState = transformServerState(data.state, tableId);
+            if (shouldForceShowdown) transformedState.phase = 'showdown';
+            setTableState(transformedState);
+
+            const stateData = data.state as Record<string, unknown>;
+            if (stateData.myCards) setMyCards(stateData.myCards as string[]);
+          }
+
           break;
+        }
 
         case 'chat':
           setChatMessages(prev => [...prev.slice(-49), {
