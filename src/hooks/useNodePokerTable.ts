@@ -581,8 +581,7 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
               (eventData as any).is_showdown ??
               nestedResult?.showdown ??
               (nestedResult as any)?.is_showdown ??
-              eventData.phase === 'showdown' ??
-              statePhase === 'showdown'
+              (eventData.phase === 'showdown' || statePhase === 'showdown')
           );
 
           const currentTableState = tableStateRef.current;
