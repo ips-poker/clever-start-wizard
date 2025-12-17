@@ -446,7 +446,7 @@ const PlayerSeat = memo(function PlayerSeat({
           )}
         </div>
         
-        {/* Opponent cards - PPPoker style: positioned TOWARDS center of table */}
+        {/* Opponent cards - positioned at corner of avatar */}
         {!isHero && !player.isFolded && gamePhase !== 'waiting' && (() => {
           // Get cards from showdownPlayers if available (revealed at showdown)
           const showdownData = showdownPlayers?.find(sp => sp.playerId === player.playerId || sp.seatNumber === seatNumber);
@@ -463,16 +463,18 @@ const PlayerSeat = memo(function PlayerSeat({
           const shouldReveal = gamePhase === 'showdown' && (hasRevealedCards || playerHasCards);
           
           return (
-            <PPPokerCompactCards 
-              cards={displayCards}
-              faceDown={!shouldReveal}
-              isShowdown={shouldReveal}
-              handName={shouldReveal ? (showdownData?.handName || (player as any).handName) : undefined}
-              isWinner={(player as any).isWinner}
-              winningCardIndices={(player as any).winningCardIndices || []}
-              size="xs"
-              position={position}
-            />
+            <div className="absolute -bottom-2 -right-2 z-5">
+              <PPPokerCompactCards 
+                cards={displayCards}
+                faceDown={!shouldReveal}
+                isShowdown={shouldReveal}
+                handName={shouldReveal ? (showdownData?.handName || (player as any).handName) : undefined}
+                isWinner={(player as any).isWinner}
+                winningCardIndices={(player as any).winningCardIndices || []}
+                size="xs"
+                position={position}
+              />
+            </div>
           );
         })()}
         

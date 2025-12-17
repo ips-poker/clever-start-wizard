@@ -431,7 +431,7 @@ const PlayerSeat = memo(function PlayerSeat({
         </div>
       )}
       
-      {/* Opponent cards - shown to the SIDE of avatar */}
+      {/* Opponent cards - positioned at corner of avatar */}
       {!isHero && !player.isFolded && gamePhase !== 'waiting' && (() => {
         // Get cards from showdownPlayers if available (revealed at showdown)
         const showdownData = showdownPlayers?.find(sp => sp.playerId === player.playerId || sp.seatNumber === seatNumber);
@@ -449,7 +449,7 @@ const PlayerSeat = memo(function PlayerSeat({
         
         return (
           <div className={cn("absolute z-5",
-            "left-full ml-1 top-1/2 -translate-y-1/2"
+            isMobile ? "-bottom-1 -right-1" : "-bottom-2 -right-2"
           )}>
             <PPPokerCompactCards
               cards={displayCards}
