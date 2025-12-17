@@ -117,9 +117,9 @@ export const PokerCard = memo(function PokerCard({
           : '0 6px 20px rgba(0,0,0,0.3)'
       }}
     >
-      {/* Top left corner */}
+      {/* Top left corner - horizontal */}
       <div className={cn(
-        'absolute top-0.5 left-1 flex flex-col items-center leading-none',
+        'absolute top-0.5 left-1 flex items-center gap-0.5 leading-none',
         suitInfo.color
       )}>
         <span className={cn(sizeClass.rank, "font-bold")}>{rankDisplay}</span>
@@ -133,9 +133,9 @@ export const PokerCard = memo(function PokerCard({
         </span>
       </div>
 
-      {/* Bottom right corner (upside down) */}
+      {/* Bottom right corner - horizontal (rotated 180°) */}
       <div className={cn(
-        'absolute bottom-0.5 right-1 flex flex-col items-center leading-none rotate-180',
+        'absolute bottom-0.5 right-1 flex items-center gap-0.5 leading-none rotate-180',
         suitInfo.color
       )}>
         <span className={cn(sizeClass.rank, "font-bold")}>{rankDisplay}</span>

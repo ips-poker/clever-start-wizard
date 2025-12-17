@@ -151,13 +151,13 @@ const MiniCard = memo(function MiniCard({
         </span>
       </div>
       
-      {/* Corner pip */}
+      {/* Corner pip - horizontal */}
       <div 
-        className="absolute top-0.5 left-0.5 flex flex-col items-center leading-none"
+        className="absolute top-0.5 left-0.5 flex items-center gap-[1px] leading-none"
         style={{ color: suitInfo.color }}
       >
         <span style={{ fontSize: config.fontSize * 0.5, fontWeight: 600 }}>{rank}</span>
-        <span style={{ fontSize: config.suitSize * 0.4, marginTop: -1 }}>{suitInfo.symbol}</span>
+        <span style={{ fontSize: config.suitSize * 0.4 }}>{suitInfo.symbol}</span>
       </div>
 
       {/* Glossy effect */}

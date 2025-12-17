@@ -79,8 +79,8 @@ export const MemoizedPokerCard = memo(function MemoizedPokerCard({
           {suitInfo.symbol}
         </span>
       </div>
-      {/* Corner pip */}
-      <div className="absolute top-0.5 left-0.5 flex flex-col items-center leading-none" style={{ color: suitInfo.color }}>
+      {/* Corner pip - horizontal */}
+      <div className="absolute top-0.5 left-0.5 flex items-center gap-[1px] leading-none" style={{ color: suitInfo.color }}>
         <span style={{ fontSize: s.fontSize * 0.6, fontWeight: 600 }}>{rank}</span>
         <span style={{ fontSize: s.suitSize * 0.5 }}>{suitInfo.symbol}</span>
       </div>

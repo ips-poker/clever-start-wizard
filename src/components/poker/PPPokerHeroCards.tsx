@@ -86,8 +86,8 @@ const HeroCard = memo(function HeroCard({
             : '0 6px 20px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.8)'
       }}
     >
-      {/* TOP-LEFT corner - Classic: Rank + Suit vertical */}
-      <div className="absolute top-1 left-1.5 flex flex-col items-center leading-none">
+      {/* TOP-LEFT corner - Rank left, Suit right (horizontal) */}
+      <div className="absolute top-1 left-1.5 flex items-center gap-0.5 leading-none">
         <span 
           className={cn(rankSize, 'font-black leading-none')} 
           style={{ 
@@ -119,8 +119,8 @@ const HeroCard = memo(function HeroCard({
         </span>
       </div>
       
-      {/* BOTTOM-RIGHT corner - Classic: Rank + Suit rotated 180° */}
-      <div className="absolute bottom-1 right-1.5 flex flex-col items-center leading-none rotate-180">
+      {/* BOTTOM-RIGHT corner - Suit left, Rank right (horizontal, rotated 180°) */}
+      <div className="absolute bottom-1 right-1.5 flex items-center gap-0.5 leading-none rotate-180">
         <span 
           className={cn(rankSize, 'font-black leading-none')} 
           style={{ 

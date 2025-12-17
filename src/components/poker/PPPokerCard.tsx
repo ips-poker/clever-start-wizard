@@ -114,9 +114,9 @@ const CardFace = memo(function CardFace({
         </span>
       </div>
 
-      {/* Top-left corner */}
+      {/* Top-left corner - Rank left, Suit right (horizontal) */}
       <div 
-        className="absolute flex flex-col items-center leading-none"
+        className="absolute flex items-center gap-0.5 leading-none"
         style={{ 
           top: 2, 
           left: 3,
@@ -126,14 +126,14 @@ const CardFace = memo(function CardFace({
         <span style={{ fontSize: config.rank * config.corner, fontWeight: 600 }}>
           {displayRank}
         </span>
-        <span style={{ fontSize: config.suit * config.corner, marginTop: -1 }}>
+        <span style={{ fontSize: config.suit * config.corner }}>
           {suitInfo.symbol}
         </span>
       </div>
 
-      {/* Bottom-right corner (rotated) */}
+      {/* Bottom-right corner - Suit left, Rank right (horizontal, rotated 180°) */}
       <div 
-        className="absolute flex flex-col items-center leading-none rotate-180"
+        className="absolute flex items-center gap-0.5 leading-none rotate-180"
         style={{ 
           bottom: 2, 
           right: 3,
@@ -143,7 +143,7 @@ const CardFace = memo(function CardFace({
         <span style={{ fontSize: config.rank * config.corner, fontWeight: 600 }}>
           {displayRank}
         </span>
-        <span style={{ fontSize: config.suit * config.corner, marginTop: -1 }}>
+        <span style={{ fontSize: config.suit * config.corner }}>
           {suitInfo.symbol}
         </span>
       </div>
