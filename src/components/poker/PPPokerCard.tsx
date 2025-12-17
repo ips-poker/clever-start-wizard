@@ -34,35 +34,50 @@ const SIZE_CONFIG = {
 const CardBackPattern = memo(function CardBackPattern() {
   return (
     <div className="absolute inset-0 overflow-hidden rounded-md">
+      {/* White base */}
       <div 
         className="w-full h-full"
         style={{
-          background: `
-            linear-gradient(135deg, hsl(221, 83%, 53%) 0%, hsl(224, 76%, 48%) 50%, hsl(221, 83%, 53%) 100%)
-          `
+          background: 'linear-gradient(145deg, #ffffff 0%, #f8f9fa 50%, #ffffff 100%)'
         }}
       >
-        {/* Diamond pattern */}
-        <svg className="absolute inset-0 w-full h-full opacity-20" viewBox="0 0 40 40">
-          <defs>
-            <pattern id="cardPattern" x="0" y="0" width="10" height="10" patternUnits="userSpaceOnUse">
-              <circle cx="5" cy="5" r="1.5" fill="white" />
-            </pattern>
-          </defs>
-          <rect width="100%" height="100%" fill="url(#cardPattern)" />
-        </svg>
-        {/* Center emblem */}
+        {/* Grid pattern */}
+        <div 
+          className="absolute inset-0"
+          style={{
+            backgroundImage: `
+              repeating-linear-gradient(0deg, transparent, transparent 6px, rgba(255,122,0,0.12) 6px, rgba(255,122,0,0.12) 7px),
+              repeating-linear-gradient(90deg, transparent, transparent 6px, rgba(255,122,0,0.12) 6px, rgba(255,122,0,0.12) 7px)
+            `
+          }}
+        />
+        {/* Decorative border frame */}
+        <div className="absolute inset-1.5 border border-orange-400/30 rounded-sm" />
+        <div className="absolute inset-2.5 border border-orange-400/20 rounded-sm" />
+        {/* Center S logo */}
         <div className="absolute inset-0 flex items-center justify-center">
-          <div className="w-1/2 h-1/2 rounded-full border-2 border-white/20 flex items-center justify-center">
-            <div className="w-3/4 h-3/4 rounded-full border border-white/10" />
+          <div 
+            className="font-display font-black"
+            style={{ 
+              fontSize: '1.5rem',
+              color: 'rgba(255, 122, 0, 0.5)',
+              textShadow: '0 1px 2px rgba(255, 122, 0, 0.2)'
+            }}
+          >
+            S
           </div>
         </div>
+        {/* Corner ornaments */}
+        <div className="absolute top-1 left-1 w-2 h-2 border-l-2 border-t-2 border-orange-400/40" />
+        <div className="absolute top-1 right-1 w-2 h-2 border-r-2 border-t-2 border-orange-400/40" />
+        <div className="absolute bottom-1 left-1 w-2 h-2 border-l-2 border-b-2 border-orange-400/40" />
+        <div className="absolute bottom-1 right-1 w-2 h-2 border-r-2 border-b-2 border-orange-400/40" />
       </div>
-      {/* Glossy effect */}
+      {/* Subtle shadow for depth */}
       <div 
-        className="absolute inset-0 pointer-events-none"
+        className="absolute inset-0 pointer-events-none rounded-md"
         style={{
-          background: 'linear-gradient(135deg, rgba(255,255,255,0.15) 0%, transparent 50%)'
+          boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.05)'
         }}
       />
     </div>
