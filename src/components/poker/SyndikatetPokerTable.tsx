@@ -437,8 +437,15 @@ const PlayerSeat = memo(function PlayerSeat({
         const showdownData = showdownPlayers?.find(sp => sp.playerId === player.playerId || sp.seatNumber === seatNumber);
         const revealedCards = showdownData?.holeCards;
         const hasRevealedCards = revealedCards && revealedCards.length >= 2 && revealedCards[0] !== '??' && revealedCards[1] !== '??';
-        const displayCards = hasRevealedCards ? revealedCards : (player.holeCards && player.holeCards.length >= 2 ? player.holeCards : ['??', '??']);
-        const shouldReveal = showCards && hasRevealedCards;
+        
+        // Also check player.holeCards (updated by hook at showdown)
+        const playerHasCards = player.holeCards && player.holeCards.length >= 2 && player.holeCards[0] !== '??' && player.holeCards[1] !== '??';
+        
+        // Use revealed cards from showdownPlayers first, then player.holeCards
+        const displayCards = hasRevealedCards ? revealedCards : (playerHasCards ? player.holeCards : ['??', '??']);
+        
+        // Reveal if showCards is true AND we have real cards to show
+        const shouldReveal = showCards && (hasRevealedCards || playerHasCards);
         
         return (
           <div className={cn("absolute z-5",
