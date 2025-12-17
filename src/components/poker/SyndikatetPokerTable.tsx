@@ -34,7 +34,6 @@ import {
 } from './PPPokerAnimations';
 import { PPPokerEnhancedCard, HandStrengthBadge } from './PPPokerEnhancedCard';
 import { PPPokerPlayerCards } from './PPPokerPlayerCards';
-import { PPPokerInlineWinner } from './PPPokerInlineWinner';
 import { PPPokerBetDisplay } from './PPPokerBetDisplay';
 
 // Syndikate branding
@@ -1798,25 +1797,7 @@ export function SyndikatetPokerTable({
             );
           })}
 
-          {/* Inline Winner Display - PPPoker style (no modal) */}
-          <AnimatePresence>
-            {showdownResult && showdownResult.winners.length > 0 && (
-              <PPPokerInlineWinner 
-                winners={showdownResult.winners.map(w => ({ 
-                  playerId: w.playerId,
-                  name: w.name, 
-                  amount: w.amount, 
-                  handName: w.handName || w.handRank,
-                  bestCards: w.bestCards || w.cards,
-                  seatNumber: w.seatNumber
-                }))}
-                autoHide={true}
-                autoHideDuration={4000}
-                onComplete={() => {}}
-                isMobile={isMobile}
-              />
-            )}
-          </AnimatePresence>
+          {/* Winner shown on cards at showdown - no popup */}
           
           {/* Confetti for big wins */}
           <Confetti isActive={showConfetti} duration={4000} />
