@@ -477,10 +477,11 @@ const PlayerSeat = memo(function PlayerSeat({
         )}
       </div>
       
-      {/* Name and stack panel - compact for mobile */}
+      {/* Name and stack panel - anchored to avatar center (doesn't affect seat positioning) */}
       <div 
-        className="mt-0.5 px-2 py-0.5 rounded-md text-center min-w-[60px]"
+        className="absolute left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-md text-center min-w-[60px]"
         style={{
+          top: avatarSize + 6,
           background: player.isAllIn 
             ? 'linear-gradient(180deg, #dc2626 0%, #b91c1c 100%)'
             : 'linear-gradient(180deg, rgba(0,0,0,0.9) 0%, rgba(20,20,20,0.95) 100%)',
