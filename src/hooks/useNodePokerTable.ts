@@ -799,8 +799,6 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
             });
           }
 
-          break;
-        }
           // Keep showdown visible for a while, then clear
           setTimeout(() => {
             setShowdownResult(null);
