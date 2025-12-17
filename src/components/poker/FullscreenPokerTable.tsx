@@ -121,7 +121,7 @@ interface PremiumCardProps {
   size?: 'xs' | 'sm' | 'md' | 'lg';
   delay?: number;
   isWinning?: boolean;
-  cardBackColors?: { primary: string; secondary: string };
+  cardBackColors?: { accent: string; grid: string };
   cardStyle?: 'classic' | 'modern' | 'fourcolor' | 'jumbo';
 }
 
@@ -156,8 +156,8 @@ const PremiumCard = memo(function PremiumCard({
   const suitInfo = cardStyle === 'fourcolor' ? FOUR_COLOR_SUITS[suitChar] : SUITS[suitChar] || SUITS.s;
   
   // Card back colors from preferences
-  const backPrimary = cardBackColors?.primary || '#3b82f6';
-  const backSecondary = cardBackColors?.secondary || '#1d4ed8';
+  const accentColor = cardBackColors?.accent || '#ff7a00';
+  const gridColor = cardBackColors?.grid || 'rgba(255,122,0,0.12)';
 
   if (faceDown) {
     return (
@@ -169,27 +169,38 @@ const PremiumCard = memo(function PremiumCard({
         style={{
           width: cfg.w,
           height: cfg.h,
-          background: `linear-gradient(145deg, ${backPrimary} 0%, ${backSecondary} 50%, ${backPrimary}cc 100%)`,
-          border: `2px solid ${backPrimary}`,
-          boxShadow: `0 8px 24px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.2), 0 0 20px ${backPrimary}40`
+          background: 'linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%)',
+          border: '1px solid #e5e7eb',
+          boxShadow: '0 8px 24px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.8)'
         }}
       >
-        {/* Decorative pattern */}
-        <svg className="absolute inset-0 w-full h-full opacity-25" viewBox="0 0 40 40">
-          <defs>
-            <pattern id={`cardBack-${backPrimary.replace('#','')}`} x="0" y="0" width="10" height="10" patternUnits="userSpaceOnUse">
-              <path d="M5 0 L10 5 L5 10 L0 5 Z" fill="white" opacity="0.3"/>
-            </pattern>
-          </defs>
-          <rect width="100%" height="100%" fill={`url(#cardBack-${backPrimary.replace('#','')})`}/>
-        </svg>
-        {/* Center emblem */}
+        {/* Grid pattern */}
+        <div 
+          className="absolute inset-0"
+          style={{
+            backgroundImage: `
+              repeating-linear-gradient(0deg, transparent, transparent 5px, ${gridColor} 5px, ${gridColor} 6px),
+              repeating-linear-gradient(90deg, transparent, transparent 5px, ${gridColor} 5px, ${gridColor} 6px)
+            `
+          }}
+        />
+        {/* Border frame */}
+        <div className="absolute inset-1 border rounded-sm" style={{ borderColor: `${accentColor}30` }} />
+        <div className="absolute inset-2 border rounded-sm" style={{ borderColor: `${accentColor}20` }} />
+        {/* Center S logo */}
         <div className="absolute inset-0 flex items-center justify-center">
-          <div 
-            className="w-1/2 h-1/2 rounded-full border-2"
-            style={{ borderColor: 'rgba(255,255,255,0.3)' }}
-          />
+          <span 
+            className="font-display font-black text-xl"
+            style={{ color: accentColor, opacity: 0.5 }}
+          >
+            S
+          </span>
         </div>
+        {/* Corner ornaments */}
+        <div className="absolute top-1 left-1 w-2 h-2 border-l-2 border-t-2" style={{ borderColor: `${accentColor}40` }} />
+        <div className="absolute top-1 right-1 w-2 h-2 border-r-2 border-t-2" style={{ borderColor: `${accentColor}40` }} />
+        <div className="absolute bottom-1 left-1 w-2 h-2 border-l-2 border-b-2" style={{ borderColor: `${accentColor}40` }} />
+        <div className="absolute bottom-1 right-1 w-2 h-2 border-r-2 border-b-2" style={{ borderColor: `${accentColor}40` }} />
       </motion.div>
     );
   }
@@ -715,7 +726,7 @@ const CommunityCards = memo(function CommunityCards({
                   size="md" 
                   delay={0} 
                   isWinning={isShowdown && isWinning}
-                  cardBackColors={{ primary: currentCardBack.primaryColor, secondary: currentCardBack.secondaryColor }}
+                  cardBackColors={{ accent: currentCardBack.accentColor, grid: currentCardBack.gridColor }}
                   cardStyle={preferences.cardStyle}
                 />
               </motion.div>
