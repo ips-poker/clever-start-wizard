@@ -36,7 +36,9 @@ const SUITS_CLASSIC = {
 // Size configuration - PPPoker style cards
 const SIZE_CONFIG = {
   xs: { w: 22, h: 32, rank: 'text-[9px]', suit: 'text-[8px]', center: 'text-[12px]', overlap: -6 },
-  sm: { w: 28, h: 40, rank: 'text-[11px]', suit: 'text-[10px]', center: 'text-[16px]', overlap: -8 }
+  sm: { w: 28, h: 40, rank: 'text-[11px]', suit: 'text-[10px]', center: 'text-[16px]', overlap: -8 },
+  // Showdown size - larger cards like in reference
+  showdown: { w: 36, h: 52, rank: 'text-[13px]', suit: 'text-[12px]', center: 'text-[20px]', overlap: -4 }
 };
 
 // Helper function to generate pattern CSS
@@ -74,7 +76,7 @@ const MiniCard = memo(function MiniCard({
 }: {
   card: string;
   faceDown?: boolean;
-  size?: 'xs' | 'sm';
+  size?: 'xs' | 'sm' | 'showdown';
   delay?: number;
   isWinning?: boolean;
   isDimmed?: boolean;
@@ -82,7 +84,7 @@ const MiniCard = memo(function MiniCard({
   cardBackColors?: { accent: string; pattern: string };
   useFourColor?: boolean;
 }) {
-  const cfg = SIZE_CONFIG[size];
+  const cfg = SIZE_CONFIG[size] || SIZE_CONFIG['sm'];
   const rank = card?.[0] === 'T' ? '10' : card?.[0] || '?';
   const suitChar = (card?.[1]?.toLowerCase() || 's') as keyof typeof SUITS;
   const suitSource = useFourColor ? SUITS : SUITS_CLASSIC;
@@ -242,23 +244,15 @@ export const PPPokerCompactCards = memo(function PPPokerCompactCards({
 }: PPPokerCompactCardsProps) {
   const { currentCardBack, preferences } = usePokerPreferences();
   
-  const cfg = SIZE_CONFIG[size];
+  // Use showdown size for larger cards during showdown like in reference
+  const actualSize = isShowdown ? 'showdown' : size;
+  const cfg = SIZE_CONFIG[actualSize] || SIZE_CONFIG[size];
   const showCards = isShowdown && cards && cards.length >= 2;
   const useFourColor = preferences.cardStyle === 'fourcolor';
   
   // For PLO4, show all 4 cards
   const cardCount = cards?.length || 2;
   const displayCards = showCards ? cards : Array(Math.min(cardCount, 4)).fill('XX');
-
-  // Calculate rotations for card fan - PPPoker style: bigger angle spread like in reference
-  const getRotations = (count: number) => {
-    if (count === 2) return [-12, 22]; // More spread
-    if (count === 3) return [-18, 8, 28];
-    if (count === 4) return [-20, -5, 12, 28];
-    return [-12, 22];
-  };
-  
-  const rotations = getRotations(displayCards.length);
   
   // Determine if cards should be on left or right based on player position
   // Cards should point TOWARDS the center of the table
@@ -266,40 +260,41 @@ export const PPPokerCompactCards = memo(function PPPokerCompactCards({
 
   return (
     <>
-      {/* Cards positioned TOWARDS CENTER - left for right-side players, right for left-side players */}
+      {/* Cards positioned TOWARDS CENTER - larger horizontal layout at showdown */}
       <div 
         className="absolute"
         style={{
-          [isOnRightSide ? 'left' : 'right']: -(cfg.w * 2.5),
-          top: '5%',
-          zIndex: 5,
+          [isOnRightSide ? 'left' : 'right']: isShowdown ? -(cfg.w * displayCards.length + 8) : -(cfg.w * 2.5),
+          top: isShowdown ? '-20%' : '5%',
+          zIndex: 15,
           transform: isOnRightSide ? 'scaleX(-1)' : 'none'
         }}
       >
-        {/* Cards container - tight fan effect like PPPoker */}
-        <div className="relative" style={{ width: cfg.w * 3, height: cfg.h + 10 }}>
+        {/* Cards container - horizontal row at showdown, fanned otherwise */}
+        <div 
+          className="relative flex"
+          style={{ 
+            flexDirection: isShowdown ? 'row' : 'column',
+            gap: isShowdown ? 2 : 0
+          }}
+        >
           {displayCards.map((card, idx) => {
             // Determine if this card is part of winning hand
             const isCardWinning = winningCardIndices.includes(idx);
             // At showdown with winning cards specified, dim non-winning cards
             const isDimmed = isShowdown && winningCardIndices.length > 0 && !isCardWinning;
             
-            // PPPoker style tight fan - cards fan out from left with small angles
-            const totalCards = displayCards.length;
-            // Start rotation and step for tight fan
-            const baseRotation = -5;
-            const rotationStep = totalCards === 4 ? 8 : totalCards === 3 ? 10 : 12;
-            const rotation = baseRotation + idx * rotationStep;
-            
-            // Cards overlap significantly, small horizontal offset
-            const xOffset = idx * (cfg.w * 0.55);
+            // At showdown - horizontal row, no rotation. Otherwise - fanned
+            const rotation = isShowdown ? 0 : (-5 + idx * (displayCards.length === 4 ? 8 : displayCards.length === 3 ? 10 : 12));
             
             return (
               <div 
                 key={idx} 
-                className="absolute"
-                style={{ 
-                  left: xOffset,
+                className={isShowdown ? '' : 'absolute'}
+                style={isShowdown ? {
+                  transform: isOnRightSide ? 'scaleX(-1)' : 'none'
+                } : { 
+                  left: idx * (cfg.w * 0.55),
                   top: 0,
                   transform: `rotate(${rotation}deg)`,
                   transformOrigin: 'bottom center',
@@ -309,7 +304,7 @@ export const PPPokerCompactCards = memo(function PPPokerCompactCards({
                 <MiniCard 
                   card={showCards ? card : 'XX'} 
                   faceDown={!showCards}
-                  size={size} 
+                  size={actualSize as any} 
                   delay={idx}
                   isWinning={isShowdown && isCardWinning && isWinner}
                   isDimmed={isDimmed}

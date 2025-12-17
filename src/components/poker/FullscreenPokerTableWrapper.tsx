@@ -19,7 +19,7 @@ import { FullscreenPokerTable } from './FullscreenPokerTable';
 import { ProActionPanel } from './ProActionPanel';
 import { BuyInDialog } from './BuyInDialog';
 import { SeatRotationControl, getVisualPosition } from './SeatRotationControl';
-import { PPPokerInlineWinner } from './PPPokerInlineWinner';
+
 
 // Syndikate branding
 import syndikateLogo from '@/assets/syndikate-logo-main.png';
@@ -470,22 +470,7 @@ export function FullscreenPokerTableWrapper({
           maxSeats={maxSeats}
         />
 
-        {/* Showdown inline winner - no fullscreen overlay */}
-        <AnimatePresence>
-          {showdownResult && showdownResult.winners && showdownResult.winners.length > 0 && (
-            <PPPokerInlineWinner
-              winners={showdownResult.winners.map(w => ({
-                playerId: w.playerId,
-                name: w.name,
-                amount: w.amount,
-                handName: w.handName || w.handRank,
-                bestCards: w.bestCards || w.cards,
-                seatNumber: w.seatNumber,
-              }))}
-              isMobile={true}
-            />
-          )}
-        </AnimatePresence>
+        {/* Winner info shown directly on player cards during showdown - no popup */}
       </div>
     </PokerErrorBoundary>
   );
