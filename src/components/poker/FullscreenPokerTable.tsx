@@ -281,6 +281,7 @@ interface PlayerSeatProps {
   canJoin?: boolean;
   onSeatClick?: (seatNumber: number) => void;
   lastAction?: string;
+  showdownPlayers?: Array<{ playerId: string; seatNumber: number; holeCards: string[]; handName?: string }>;
 }
 
 // ============= ACTION BADGE - PPPoker style status above player =============
@@ -337,7 +338,8 @@ const PlayerSeat = memo(function PlayerSeat({
   gamePhase = 'waiting',
   canJoin = false,
   onSeatClick,
-  lastAction
+  lastAction,
+  showdownPlayers
 }: PlayerSeatProps & { lastAction?: string }) {
   // Avatar sizes - same for all players
   const avatarSize = 56;
@@ -445,18 +447,27 @@ const PlayerSeat = memo(function PlayerSeat({
         </div>
         
         {/* Opponent cards - PPPoker style: positioned TOWARDS center of table */}
-        {!isHero && !player.isFolded && gamePhase !== 'waiting' && (
-          <PPPokerCompactCards 
-            cards={player.holeCards}
-            faceDown={gamePhase !== 'showdown'}
-            isShowdown={gamePhase === 'showdown'}
-            handName={(player as any).handName}
-            isWinner={(player as any).isWinner}
-            winningCardIndices={(player as any).winningCardIndices || []}
-            size="xs"
-            position={position}
-          />
-        )}
+        {!isHero && !player.isFolded && gamePhase !== 'waiting' && (() => {
+          // Get cards from showdownPlayers if available (revealed at showdown)
+          const showdownData = showdownPlayers?.find(sp => sp.playerId === player.playerId || sp.seatNumber === seatNumber);
+          const revealedCards = showdownData?.holeCards;
+          const hasRevealedCards = revealedCards && revealedCards.length >= 2 && revealedCards[0] !== '??' && revealedCards[1] !== '??';
+          const displayCards = hasRevealedCards ? revealedCards : (player.holeCards || ['??', '??']);
+          const shouldReveal = gamePhase === 'showdown' && hasRevealedCards;
+          
+          return (
+            <PPPokerCompactCards 
+              cards={displayCards}
+              faceDown={!shouldReveal}
+              isShowdown={shouldReveal}
+              handName={shouldReveal ? (showdownData?.handName || (player as any).handName) : undefined}
+              isWinner={(player as any).isWinner}
+              winningCardIndices={(player as any).winningCardIndices || []}
+              size="xs"
+              position={position}
+            />
+          );
+        })()}
         
         {/* Dealer button - PPPoker style - positioned INSIDE table */}
         {isDealer && (

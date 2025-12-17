@@ -128,7 +128,8 @@ const PlayerSeat = memo(function PlayerSeat({
   heroCards,
   canJoin = false,
   handStrength,
-  communityCards = []
+  communityCards = [],
+  showdownPlayers
 }: {
   player: PokerPlayer | null;
   position: { x: number; y: number };
@@ -151,6 +152,7 @@ const PlayerSeat = memo(function PlayerSeat({
   canJoin?: boolean;
   handStrength?: string;
   communityCards?: string[];
+  showdownPlayers?: Array<{ playerId: string; seatNumber: number; holeCards: string[]; handName?: string }>;
 }) {
   const avatarSize = isMobile ? (isHero ? 52 : 40) : (isHero ? 58 : 46);
   const showTurnTimer = isCurrentTurn && !player?.isFolded && !player?.isAllIn;
@@ -430,22 +432,31 @@ const PlayerSeat = memo(function PlayerSeat({
       )}
       
       {/* Opponent cards - shown to the SIDE of avatar */}
-      {!isHero && !player.isFolded && gamePhase !== 'waiting' && (
-        <div className={cn("absolute z-5",
-          "left-full ml-1 top-1/2 -translate-y-1/2"
-        )}>
-          <PPPokerCompactCards
-            cards={showCards && player.holeCards && player.holeCards.length >= 2 ? player.holeCards : ['??', '??']}
-            faceDown={!showCards}
-            isShowdown={showCards}
-            handName={showCards ? player.handName : undefined}
-            isWinner={player.isWinner || false}
-            winningCardIndices={player.winningCardIndices || []}
-            size="xs"
-            position={position}
-          />
-        </div>
-      )}
+      {!isHero && !player.isFolded && gamePhase !== 'waiting' && (() => {
+        // Get cards from showdownPlayers if available (revealed at showdown)
+        const showdownData = showdownPlayers?.find(sp => sp.playerId === player.playerId || sp.seatNumber === seatNumber);
+        const revealedCards = showdownData?.holeCards;
+        const hasRevealedCards = revealedCards && revealedCards.length >= 2 && revealedCards[0] !== '??' && revealedCards[1] !== '??';
+        const displayCards = hasRevealedCards ? revealedCards : (player.holeCards && player.holeCards.length >= 2 ? player.holeCards : ['??', '??']);
+        const shouldReveal = showCards && hasRevealedCards;
+        
+        return (
+          <div className={cn("absolute z-5",
+            "left-full ml-1 top-1/2 -translate-y-1/2"
+          )}>
+            <PPPokerCompactCards
+              cards={displayCards}
+              faceDown={!shouldReveal}
+              isShowdown={shouldReveal}
+              handName={shouldReveal ? (showdownData?.handName || player.handName) : undefined}
+              isWinner={player.isWinner || false}
+              winningCardIndices={player.winningCardIndices || []}
+              size="xs"
+              position={position}
+            />
+          </div>
+        );
+      })()}
 
       {/* Bet display - PPPoker style with BB format */}
       {player.betAmount > 0 && (
@@ -474,6 +485,7 @@ const PlayerSeat = memo(function PlayerSeat({
   if (prev.gamePhase !== next.gamePhase) return false;
   if (prev.isHero !== next.isHero) return false;
   if (JSON.stringify(prev.heroCards) !== JSON.stringify(next.heroCards)) return false;
+  if (JSON.stringify(prev.showdownPlayers) !== JSON.stringify(next.showdownPlayers)) return false;
   return true;
 });
 
@@ -1810,6 +1822,7 @@ export function SyndikatetPokerTable({
                 canJoin={canJoinTable && !player}
                 handStrength={heroHandStrength}
                 communityCards={tableState?.communityCards || []}
+                showdownPlayers={showdownResult?.showdownPlayers}
               />
             );
           })}
