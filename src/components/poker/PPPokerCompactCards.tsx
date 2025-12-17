@@ -58,7 +58,7 @@ const MiniCard = memo(function MiniCard({
   isWinning?: boolean;
   isDimmed?: boolean;
   rotation?: number;
-  cardBackColors?: { primary: string; secondary: string };
+  cardBackColors?: { accent: string; grid: string };
   useFourColor?: boolean;
 }) {
   const cfg = SIZE_CONFIG[size];
@@ -67,8 +67,8 @@ const MiniCard = memo(function MiniCard({
   const suitSource = useFourColor ? SUITS : SUITS_CLASSIC;
   const suitInfo = suitSource[suitChar] || suitSource['s']; // Fallback to spades if invalid
   
-  const backPrimary = cardBackColors?.primary || '#3b82f6';
-  const backSecondary = cardBackColors?.secondary || '#1d4ed8';
+  const accentColor = cardBackColors?.accent || '#ff7a00';
+  const gridColor = cardBackColors?.grid || 'rgba(255,122,0,0.12)';
 
   // Colors for dimmed cards
   const cardBg = isDimmed 
@@ -91,91 +91,44 @@ const MiniCard = memo(function MiniCard({
         style={{
           width: cfg.w,
           height: cfg.h,
-          background: `linear-gradient(145deg, ${backPrimary} 0%, ${backSecondary} 50%, ${backPrimary}dd 100%)`,
-          border: `1.5px solid ${backSecondary}`,
+          background: 'linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%)',
+          border: '1px solid #e5e7eb',
           boxShadow: isWinning 
-            ? '0 0 12px rgba(251,191,36,0.6), 0 3px 8px rgba(0,0,0,0.5)' 
-            : '0 3px 8px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.15)',
+            ? '0 0 12px rgba(251,191,36,0.6), 0 3px 8px rgba(0,0,0,0.3)' 
+            : '0 3px 8px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.8)',
           transformOrigin: 'bottom center'
         }}
       >
-        {/* Outer border frame */}
+        {/* Grid pattern */}
         <div 
-          className="absolute inset-[2px] rounded-[2px] pointer-events-none"
+          className="absolute inset-0"
           style={{
-            border: '0.5px solid rgba(255,255,255,0.2)'
+            backgroundImage: `
+              repeating-linear-gradient(0deg, transparent, transparent 3px, ${gridColor} 3px, ${gridColor} 4px),
+              repeating-linear-gradient(90deg, transparent, transparent 3px, ${gridColor} 3px, ${gridColor} 4px)
+            `
           }}
         />
         
-        {/* Inner decorative frame */}
+        {/* Border frame */}
         <div 
-          className="absolute inset-[4px] rounded-[1px] pointer-events-none"
-          style={{
-            border: '0.5px solid rgba(255,255,255,0.1)',
-            background: 'linear-gradient(180deg, rgba(255,255,255,0.05) 0%, transparent 50%)'
-          }}
+          className="absolute inset-0.5 rounded-[2px] pointer-events-none"
+          style={{ border: `1px solid ${accentColor}30` }}
         />
         
-        {/* Central diamond pattern with more detail */}
-        <svg className="absolute inset-0 w-full h-full" viewBox="0 0 20 29" preserveAspectRatio="xMidYMid slice">
-          <defs>
-            <pattern id={`cardback-pattern-${backPrimary.replace('#','')}`} x="0" y="0" width="5" height="5" patternUnits="userSpaceOnUse">
-              <path d="M2.5 0 L5 2.5 L2.5 5 L0 2.5 Z" fill="rgba(255,255,255,0.15)" />
-            </pattern>
-            <linearGradient id={`cardback-shine-${backPrimary.replace('#','')}`} x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="rgba(255,255,255,0.25)" />
-              <stop offset="50%" stopColor="rgba(255,255,255,0)" />
-              <stop offset="100%" stopColor="rgba(255,255,255,0.15)" />
-            </linearGradient>
-          </defs>
-          <rect width="100%" height="100%" fill={`url(#cardback-pattern-${backPrimary.replace('#','')})`} />
-          <rect width="100%" height="100%" fill={`url(#cardback-shine-${backPrimary.replace('#','')})`} />
-        </svg>
-        
-        {/* Center emblem/logo area */}
+        {/* Center S logo */}
         <div className="absolute inset-0 flex items-center justify-center">
-          <div 
-            className="w-3 h-3 rounded-full flex items-center justify-center"
-            style={{
-              background: `linear-gradient(145deg, ${backSecondary} 0%, ${backPrimary} 100%)`,
-              border: '0.5px solid rgba(255,255,255,0.3)',
-              boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.3), 0 1px 2px rgba(255,255,255,0.1)'
+          <span 
+            className="font-display font-black"
+            style={{ 
+              fontSize: cfg.w > 24 ? '0.7rem' : '0.5rem',
+              color: accentColor,
+              opacity: 0.5
             }}
           >
-            <div 
-              className="w-1.5 h-1.5 rounded-full"
-              style={{
-                background: 'radial-gradient(circle at 30% 30%, rgba(255,255,255,0.4), transparent 60%)',
-              }}
-            />
-          </div>
+            S
+          </span>
         </div>
-        
-        {/* Top corner decoration */}
-        <div 
-          className="absolute top-1 left-1 w-1 h-1"
-          style={{
-            background: 'rgba(255,255,255,0.2)',
-            clipPath: 'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)'
-          }}
-        />
-        
-        {/* Bottom corner decoration */}
-        <div 
-          className="absolute bottom-1 right-1 w-1 h-1"
-          style={{
-            background: 'rgba(255,255,255,0.2)',
-            clipPath: 'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)'
-          }}
-        />
-        
-        {/* Glossy overlay */}
-        <div 
-          className="absolute inset-0 pointer-events-none rounded-[3px]"
-          style={{
-            background: 'linear-gradient(135deg, rgba(255,255,255,0.25) 0%, transparent 40%, rgba(0,0,0,0.1) 100%)'
-          }}
-        />
       </motion.div>
     );
   }
@@ -345,7 +298,7 @@ export const PPPokerCompactCards = memo(function PPPokerCompactCards({
                   isWinning={isShowdown && isCardWinning && isWinner}
                   isDimmed={isDimmed}
                   rotation={0}
-                  cardBackColors={{ primary: currentCardBack.primaryColor, secondary: currentCardBack.secondaryColor }}
+                  cardBackColors={{ accent: currentCardBack.accentColor, grid: currentCardBack.gridColor }}
                   useFourColor={useFourColor}
                 />
               </div>

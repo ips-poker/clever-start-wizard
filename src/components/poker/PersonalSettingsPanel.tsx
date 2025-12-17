@@ -155,13 +155,24 @@ const CardBackSelector = memo(function CardBackSelector({
           )}
         >
           <div 
-            className="w-full h-12 rounded-md mb-1 flex items-center justify-center"
+            className="w-full h-12 rounded-md mb-1 flex items-center justify-center relative overflow-hidden"
             style={{ 
-              background: `linear-gradient(135deg, ${back.primaryColor} 0%, ${back.secondaryColor} 100%)` 
+              background: 'linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%)',
+              border: '1px solid #e5e7eb'
             }}
           >
-            {/* Card pattern */}
-            <div className="w-4 h-4 border border-white/30 rotate-45" />
+            {/* Grid pattern */}
+            <div 
+              className="absolute inset-0"
+              style={{
+                backgroundImage: `
+                  repeating-linear-gradient(0deg, transparent, transparent 3px, ${back.gridColor} 3px, ${back.gridColor} 4px),
+                  repeating-linear-gradient(90deg, transparent, transparent 3px, ${back.gridColor} 3px, ${back.gridColor} 4px)
+                `
+              }}
+            />
+            {/* Center S logo */}
+            <span className="font-display font-black text-lg" style={{ color: back.accentColor, opacity: 0.6 }}>S</span>
           </div>
           <span className="text-[10px] text-white/70">{back.name}</span>
           {selected === back.id && (

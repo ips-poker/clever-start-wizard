@@ -10,14 +10,14 @@ export const TABLE_THEMES = [
   { id: 'gold', name: 'Золото', color: '#5c4a1a', gradient: 'from-[#5c4a1a] via-[#4a3c15] to-[#3d3011]' },
 ] as const;
 
-// Card back designs
+// Card back designs - white base with accent color grid/ornament
 export const CARD_BACKS = [
-  { id: 'blue-diamond', name: 'Синий алмаз', primaryColor: '#3b82f6', secondaryColor: '#1d4ed8' },
-  { id: 'red-classic', name: 'Красная классика', primaryColor: '#dc2626', secondaryColor: '#991b1b' },
-  { id: 'green-casino', name: 'Казино', primaryColor: '#16a34a', secondaryColor: '#166534' },
-  { id: 'purple-royal', name: 'Роял', primaryColor: '#9333ea', secondaryColor: '#6b21a8' },
-  { id: 'gold-vip', name: 'VIP', primaryColor: '#ca8a04', secondaryColor: '#a16207' },
-  { id: 'black-elite', name: 'Элит', primaryColor: '#374151', secondaryColor: '#1f2937' },
+  { id: 'syndikate-orange', name: 'Syndikate', accentColor: '#ff7a00', gridColor: 'rgba(255,122,0,0.12)' },
+  { id: 'blue-diamond', name: 'Синий алмаз', accentColor: '#3b82f6', gridColor: 'rgba(59,130,246,0.12)' },
+  { id: 'red-classic', name: 'Красная классика', accentColor: '#dc2626', gridColor: 'rgba(220,38,38,0.12)' },
+  { id: 'green-casino', name: 'Казино', accentColor: '#16a34a', gridColor: 'rgba(22,163,74,0.12)' },
+  { id: 'purple-royal', name: 'Роял', accentColor: '#9333ea', gridColor: 'rgba(147,51,234,0.12)' },
+  { id: 'gold-vip', name: 'VIP', accentColor: '#ca8a04', gridColor: 'rgba(202,138,4,0.12)' },
 ] as const;
 
 // Card face styles
@@ -59,7 +59,7 @@ export interface PokerPreferences {
 
 const DEFAULT_PREFERENCES: PokerPreferences = {
   tableTheme: 'midnight',
-  cardBack: 'blue-diamond',
+  cardBack: 'syndikate-orange',
   cardStyle: 'classic',
   preferredSeatRotation: 0,
   showBetAmounts: true,
