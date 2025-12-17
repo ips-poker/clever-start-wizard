@@ -828,7 +828,7 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
             }, 250);
           }
 
-          // Keep showdown visible for 8 seconds (server waits 7s before new hand), then clear
+          // Keep showdown visible for 4 seconds, then clear
           // Don't clear if a new hand has already started
           setTimeout(() => {
             setShowdownResult((prev) => {
@@ -853,7 +853,7 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
                 })),
               };
             });
-          }, 8000);
+          }, 4000);
 
           // If server also provides a final state snapshot, apply it (but keep showdown phase when relevant)
           if (data.state && tableId) {
