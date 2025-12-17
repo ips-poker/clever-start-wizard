@@ -719,10 +719,17 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
 
           if (shouldForceShowdown || winners.length > 0) {
             setShowdownResult({
-              winners: winners.map((w) => ({
-                ...w,
-                handName: w.handName || (w as any).handRank,
-              })),
+              winners: winners.map((w) => {
+                const winnerPlayer = showdownPlayers?.find((sp) => sp.playerId === w.playerId);
+                const computed = winnerPlayer && communityCards
+                  ? evaluateShowdown(winnerPlayer.holeCards, communityCards, false)
+                  : null;
+
+                return {
+                  ...w,
+                  handName: w.handName || (w as any).handRank || computed?.handName,
+                };
+              }),
               pot: potAmount,
               showdownPlayers,
               communityCards,
@@ -769,6 +776,16 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
                           winningCardIndices = showdownEval.winningCardIndices;
                           communityCardIndices = showdownEval.communityCardIndices;
                         }
+
+                        return {
+                          ...p,
+                          holeCards: showdownPlayer.holeCards,
+                          handName: showdownEval?.handName || showdownPlayer.handName || winner?.handName,
+                          isWinner: winnerIds.has(p.playerId),
+                          bestCards: showdownPlayer.bestCards || winner?.bestCards,
+                          winningCardIndices,
+                          communityCardIndices,
+                        };
                       } catch (err) {
                         console.warn('Failed to evaluate showdown:', err);
                       }
@@ -797,6 +814,13 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
                 }),
               };
             });
+          }
+
+          // Try to re-request state after showdown so server can send revealed holeCards (some servers only reveal after explicit state fetch)
+          if (isShowdown && tableId && playerId) {
+            setTimeout(() => {
+              sendMessage({ type: 'get_state', tableId, playerId });
+            }, 250);
           }
 
           // Keep showdown visible for a while, then clear
