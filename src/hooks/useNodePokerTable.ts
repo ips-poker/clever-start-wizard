@@ -550,6 +550,7 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
         case 'hand_end':
         case 'handEnd': {
           log('🏆 Hand complete event:', data.type);
+          log('🏆 RAW EVENT DATA:', JSON.stringify(data, null, 2));
 
           // Extract event data (support multiple server formats: camelCase + snake_case + nested result)
           const eventData = (data.data || data) as Record<string, unknown>;
@@ -580,6 +581,7 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
           };
 
           const normalizeShowdownPlayers = (raw: unknown): ShowdownResult['showdownPlayers'] | undefined => {
+            log('🃏 normalizeShowdownPlayers input:', raw);
             if (!raw) return undefined;
             const arr = Array.isArray(raw) ? raw : [raw];
             const normalized = arr
@@ -587,6 +589,7 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
                 const playerId = (sp?.playerId || sp?.player_id || sp?.id) as string | undefined;
                 const seatNumber = Number(sp?.seatNumber ?? sp?.seat_number ?? 0);
                 const holeCards = (sp?.holeCards || sp?.hole_cards || sp?.cards) as unknown;
+                log('🃏 Processing showdown player:', { playerId, seatNumber, holeCards });
                 if (!playerId || !Array.isArray(holeCards) || holeCards.length < 2) return null;
 
                 return {
@@ -601,6 +604,7 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
               })
               .filter(Boolean) as ShowdownResult['showdownPlayers'];
 
+            log('🃏 normalizeShowdownPlayers output:', normalized);
             return normalized.length ? normalized : undefined;
           };
 
@@ -608,6 +612,8 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
           const showdownPlayersRaw = (eventData.showdownPlayers || (eventData as any).showdown_players || nestedResult?.showdownPlayers || (nestedResult as any)?.showdown_players) as unknown;
           const communityCards = (eventData.communityCards || (eventData as any).community_cards || nestedResult?.communityCards || (nestedResult as any)?.community_cards) as string[] | undefined;
 
+          log('🃏 showdownPlayersRaw:', showdownPlayersRaw);
+          
           const winners = normalizeWinners(winnersRaw);
           let showdownPlayers = normalizeShowdownPlayers(showdownPlayersRaw);
 
