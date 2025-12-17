@@ -168,7 +168,7 @@ export const PPPokerCommunityCards = memo(function PPPokerCommunityCards({
   winningCardIndices = []
 }: PPPokerCommunityCardsProps) {
   const { preferences } = usePokerPreferences();
-  const useFourColor = preferences.cardStyle === 'fourcolor' || true; // Default to 4-color
+  const useFourColor = preferences.cardStyle === 'fourcolor';
   
   const visibleCount = phase === 'flop' ? 3 : phase === 'turn' ? 4 : (phase === 'river' || phase === 'showdown') ? 5 : 0;
 
