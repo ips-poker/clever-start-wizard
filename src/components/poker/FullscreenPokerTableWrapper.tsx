@@ -231,10 +231,42 @@ export function FullscreenPokerTableWrapper({
     updatePreference('preferredSeatRotation', rotation);
   }, [updatePreference]);
 
-  // Convert players for FullscreenPokerTable format
+  // Convert players for FullscreenPokerTable format - annotate winners
   const formattedPlayers: PokerPlayer[] = useMemo(() => {
-    return tableState?.players || [];
-  }, [tableState?.players]);
+    const players = tableState?.players || [];
+    
+    // If we have showdown result, annotate winners
+    if (showdownResult && showdownResult.winners.length > 0) {
+      return players.map((p: PokerPlayer) => {
+        const isWinner = showdownResult.winners.some(w => w.playerId === p.playerId);
+        const showdownData = showdownResult.showdownPlayers?.find(sp => sp.playerId === p.playerId);
+        return {
+          ...p,
+          isWinner,
+          handName: showdownData?.handName,
+          winningCardIndices: (showdownData as any)?.winningCardIndices || [],
+          communityCardIndices: (showdownData as any)?.communityCardIndices || [],
+        };
+      });
+    }
+    return players;
+  }, [tableState?.players, showdownResult]);
+
+  // Preserve community cards during showdown (don't reset them)
+  const displayCommunityCards = useMemo(() => {
+    if (showdownResult?.communityCards?.length) {
+      return showdownResult.communityCards;
+    }
+    return tableState?.communityCards || [];
+  }, [tableState?.communityCards, showdownResult?.communityCards]);
+
+  // Effective phase - keep showdown visible longer
+  const displayPhase = useMemo(() => {
+    if (showdownResult && showdownResult.winners.length > 0) {
+      return 'showdown';
+    }
+    return tableState?.phase || 'waiting';
+  }, [tableState?.phase, showdownResult]);
 
   // Find dealer/blind seats
   const dealerSeat = tableState?.dealerSeat ?? 0;
@@ -246,7 +278,7 @@ export function FullscreenPokerTableWrapper({
   const minRaiseAmount = tableState?.minRaise || tableState?.bigBlindAmount || 20;
   const maxRaiseAmount = myPlayer?.stack || 10000;
   const currentBetValue = tableState?.currentBet || 0;
-  const potValue = tableState?.pot || 0;
+  const potValue = tableState?.pot || showdownResult?.pot || 0;
   const myBet = (myPlayer as any)?.currentBet || 0;
 
   // Connection status for banner
@@ -336,9 +368,9 @@ export function FullscreenPokerTableWrapper({
             players={formattedPlayers}
             heroSeat={mySeat}
             heroCards={myCards}
-            communityCards={tableState?.communityCards || []}
-            pot={tableState?.pot || 0}
-            phase={tableState?.phase || 'waiting'}
+            communityCards={displayCommunityCards}
+            pot={potValue}
+            phase={displayPhase}
             dealerSeat={dealerSeat}
             smallBlindSeat={smallBlindSeat}
             bigBlindSeat={bigBlindSeat}
@@ -351,6 +383,8 @@ export function FullscreenPokerTableWrapper({
             onPotCollect={sounds.playChipSlide}
             maxSeats={maxSeats}
             wideMode={wideMode}
+            showdownPlayers={showdownResult?.showdownPlayers}
+            winners={showdownResult?.winners}
           />
         </div>
 

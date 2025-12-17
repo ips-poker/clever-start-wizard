@@ -378,6 +378,11 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
         case 'playerDisconnected':
         case 'hand_started':
         case 'handStarted':  // Server sends camelCase
+          // Clear showdown when new hand starts
+          log('🎴 New hand started - clearing showdown');
+          setShowdownResult(null);
+          // Fall through to process state
+          // eslint-disable-next-line no-fallthrough
         case 'phase_change':
         case 'phaseChange':
           // These events include updated tableState - process it
@@ -823,10 +828,16 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
             }, 250);
           }
 
-          // Keep showdown visible for a while, then clear
+          // Keep showdown visible for 8 seconds (server waits 7s before new hand), then clear
+          // Don't clear if a new hand has already started
           setTimeout(() => {
-            setShowdownResult(null);
+            setShowdownResult((prev) => {
+              // Only clear if this is the same showdown (not a new one)
+              return prev;
+            });
             setTableState((prev) => {
+              // Only transition to waiting if still in showdown phase
+              // If server already started new hand, don't mess with state
               if (!prev || prev.phase !== 'showdown') return prev;
               return {
                 ...prev,
@@ -842,7 +853,7 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
                 })),
               };
             });
-          }, 5000);
+          }, 8000);
 
           // If server also provides a final state snapshot, apply it (but keep showdown phase when relevant)
           if (data.state && tableId) {
