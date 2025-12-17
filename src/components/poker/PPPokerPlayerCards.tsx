@@ -66,29 +66,32 @@ const MiniCard = memo(function MiniCard({
           stiffness: 400, 
           damping: 25 
         }}
-        className="relative shadow-lg"
+        className="relative shadow-lg overflow-hidden"
         style={{
           width: config.w,
           height: config.h,
           borderRadius: 4,
-          background: 'linear-gradient(135deg, #1e40af 0%, #1e3a8a 50%, #1e40af 100%)',
-          border: '1.5px solid #3b82f6',
+          background: 'linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%)',
+          border: '1px solid #e5e7eb',
           transformOrigin: 'bottom center'
         }}
       >
-        {/* Pattern */}
+        {/* Grid pattern */}
         <div 
-          className="absolute inset-0.5 rounded-sm opacity-30"
+          className="absolute inset-0"
           style={{
-            backgroundImage: `repeating-linear-gradient(
-              45deg,
-              transparent,
-              transparent 3px,
-              rgba(255,255,255,0.1) 3px,
-              rgba(255,255,255,0.1) 6px
-            )`
+            backgroundImage: `
+              repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,122,0,0.12) 2px, rgba(255,122,0,0.12) 3px),
+              repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(255,122,0,0.12) 2px, rgba(255,122,0,0.12) 3px)
+            `
           }}
         />
+        {/* Border frame */}
+        <div className="absolute inset-0.5 rounded-sm border border-orange-400/30" />
+        {/* Center S logo */}
+        <div className="absolute inset-0 flex items-center justify-center">
+          <span className="font-display font-black text-[10px]" style={{ color: '#ff7a00', opacity: 0.5 }}>S</span>
+        </div>
       </motion.div>
     );
   }
