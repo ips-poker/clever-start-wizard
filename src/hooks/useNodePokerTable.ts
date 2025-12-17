@@ -611,6 +611,15 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
                       }
                     }
                     
+                    log('🃏 Updating player for showdown:', {
+                      playerId: p.playerId,
+                      name: p.name,
+                      holeCards: showdownPlayer.holeCards,
+                      handName: showdownPlayer.handName || winner?.handName,
+                      isWinner: winnerIds.has(p.playerId),
+                      winningCardIndices
+                    });
+                    
                     return {
                       ...p,
                       holeCards: showdownPlayer.holeCards,
