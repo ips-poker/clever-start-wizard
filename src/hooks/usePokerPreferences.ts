@@ -10,14 +10,14 @@ export const TABLE_THEMES = [
   { id: 'gold', name: 'Золото', color: '#5c4a1a', gradient: 'from-[#5c4a1a] via-[#4a3c15] to-[#3d3011]' },
 ] as const;
 
-// Card back designs - white base with accent color grid/ornament
+// Card back designs - white base with accent color and unique patterns
 export const CARD_BACKS = [
-  { id: 'syndikate-orange', name: 'Syndikate', accentColor: '#ff7a00', gridColor: 'rgba(255,122,0,0.12)' },
-  { id: 'blue-diamond', name: 'Синий алмаз', accentColor: '#3b82f6', gridColor: 'rgba(59,130,246,0.12)' },
-  { id: 'red-classic', name: 'Красная классика', accentColor: '#dc2626', gridColor: 'rgba(220,38,38,0.12)' },
-  { id: 'green-casino', name: 'Казино', accentColor: '#16a34a', gridColor: 'rgba(22,163,74,0.12)' },
-  { id: 'purple-royal', name: 'Роял', accentColor: '#9333ea', gridColor: 'rgba(147,51,234,0.12)' },
-  { id: 'gold-vip', name: 'VIP', accentColor: '#ca8a04', gridColor: 'rgba(202,138,4,0.12)' },
+  { id: 'syndikate-orange', name: 'Syndikate', accentColor: '#ff7a00', pattern: 'grid' },
+  { id: 'blue-diamond', name: 'Алмаз', accentColor: '#3b82f6', pattern: 'diamonds' },
+  { id: 'red-classic', name: 'Классика', accentColor: '#dc2626', pattern: 'dots' },
+  { id: 'green-casino', name: 'Казино', accentColor: '#16a34a', pattern: 'diagonal' },
+  { id: 'purple-royal', name: 'Роял', accentColor: '#9333ea', pattern: 'circles' },
+  { id: 'gold-vip', name: 'VIP', accentColor: '#ca8a04', pattern: 'waves' },
 ] as const;
 
 // Card face styles

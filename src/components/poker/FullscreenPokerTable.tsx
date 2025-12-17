@@ -115,13 +115,34 @@ function getSeatPositions(playerCount: number): Array<{ x: number; y: number }> 
 }
 
 // ============= PREMIUM POKER CARD with personalization =============
+// Helper function to generate pattern CSS
+const getCardBackPattern = (pattern: string, color: string): React.CSSProperties => {
+  const colorWithAlpha = color + '20';
+  switch (pattern) {
+    case 'grid':
+      return { backgroundImage: `repeating-linear-gradient(0deg, transparent, transparent 5px, ${colorWithAlpha} 5px, ${colorWithAlpha} 6px), repeating-linear-gradient(90deg, transparent, transparent 5px, ${colorWithAlpha} 5px, ${colorWithAlpha} 6px)` };
+    case 'diamonds':
+      return { backgroundImage: `repeating-linear-gradient(45deg, transparent, transparent 5px, ${colorWithAlpha} 5px, ${colorWithAlpha} 6px), repeating-linear-gradient(-45deg, transparent, transparent 5px, ${colorWithAlpha} 5px, ${colorWithAlpha} 6px)` };
+    case 'dots':
+      return { backgroundImage: `radial-gradient(circle, ${colorWithAlpha} 2px, transparent 2px)`, backgroundSize: '8px 8px' };
+    case 'diagonal':
+      return { backgroundImage: `repeating-linear-gradient(45deg, transparent, transparent 4px, ${colorWithAlpha} 4px, ${colorWithAlpha} 5px)` };
+    case 'circles':
+      return { backgroundImage: `radial-gradient(circle, transparent 4px, ${colorWithAlpha} 4px, ${colorWithAlpha} 5px, transparent 5px)`, backgroundSize: '12px 12px' };
+    case 'waves':
+      return { backgroundImage: `repeating-linear-gradient(0deg, transparent, transparent 3px, ${colorWithAlpha} 3px, ${colorWithAlpha} 4px), repeating-linear-gradient(60deg, transparent, transparent 5px, ${colorWithAlpha} 5px, ${colorWithAlpha} 6px)` };
+    default:
+      return { backgroundImage: `repeating-linear-gradient(0deg, transparent, transparent 5px, ${colorWithAlpha} 5px, ${colorWithAlpha} 6px), repeating-linear-gradient(90deg, transparent, transparent 5px, ${colorWithAlpha} 5px, ${colorWithAlpha} 6px)` };
+  }
+};
+
 interface PremiumCardProps {
   card: string;
   faceDown?: boolean;
   size?: 'xs' | 'sm' | 'md' | 'lg';
   delay?: number;
   isWinning?: boolean;
-  cardBackColors?: { accent: string; grid: string };
+  cardBackColors?: { accent: string; pattern: string };
   cardStyle?: 'classic' | 'modern' | 'fourcolor' | 'jumbo';
 }
 
@@ -157,7 +178,7 @@ const PremiumCard = memo(function PremiumCard({
   
   // Card back colors from preferences
   const accentColor = cardBackColors?.accent || '#ff7a00';
-  const gridColor = cardBackColors?.grid || 'rgba(255,122,0,0.12)';
+  const patternType = cardBackColors?.pattern || 'grid';
 
   if (faceDown) {
     return (
@@ -174,15 +195,10 @@ const PremiumCard = memo(function PremiumCard({
           boxShadow: '0 8px 24px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.8)'
         }}
       >
-        {/* Grid pattern */}
+        {/* Pattern */}
         <div 
           className="absolute inset-0"
-          style={{
-            backgroundImage: `
-              repeating-linear-gradient(0deg, transparent, transparent 5px, ${gridColor} 5px, ${gridColor} 6px),
-              repeating-linear-gradient(90deg, transparent, transparent 5px, ${gridColor} 5px, ${gridColor} 6px)
-            `
-          }}
+          style={getCardBackPattern(patternType, accentColor)}
         />
         {/* Border frame */}
         <div className="absolute inset-1 border rounded-sm" style={{ borderColor: `${accentColor}30` }} />
@@ -726,7 +742,7 @@ const CommunityCards = memo(function CommunityCards({
                   size="md" 
                   delay={0} 
                   isWinning={isShowdown && isWinning}
-                  cardBackColors={{ accent: currentCardBack.accentColor, grid: currentCardBack.gridColor }}
+                  cardBackColors={{ accent: currentCardBack.accentColor, pattern: currentCardBack.pattern }}
                   cardStyle={preferences.cardStyle}
                 />
               </motion.div>

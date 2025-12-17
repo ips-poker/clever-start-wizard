@@ -39,6 +39,27 @@ const SIZE_CONFIG = {
   sm: { w: 28, h: 40, rank: 'text-[11px]', suit: 'text-[10px]', center: 'text-[16px]', overlap: -8 }
 };
 
+// Helper function to generate pattern CSS
+const getCardBackPattern = (pattern: string, color: string): React.CSSProperties => {
+  const colorWithAlpha = color + '20';
+  switch (pattern) {
+    case 'grid':
+      return { backgroundImage: `repeating-linear-gradient(0deg, transparent, transparent 3px, ${colorWithAlpha} 3px, ${colorWithAlpha} 4px), repeating-linear-gradient(90deg, transparent, transparent 3px, ${colorWithAlpha} 3px, ${colorWithAlpha} 4px)` };
+    case 'diamonds':
+      return { backgroundImage: `repeating-linear-gradient(45deg, transparent, transparent 3px, ${colorWithAlpha} 3px, ${colorWithAlpha} 4px), repeating-linear-gradient(-45deg, transparent, transparent 3px, ${colorWithAlpha} 3px, ${colorWithAlpha} 4px)` };
+    case 'dots':
+      return { backgroundImage: `radial-gradient(circle, ${colorWithAlpha} 1px, transparent 1px)`, backgroundSize: '5px 5px' };
+    case 'diagonal':
+      return { backgroundImage: `repeating-linear-gradient(45deg, transparent, transparent 2px, ${colorWithAlpha} 2px, ${colorWithAlpha} 3px)` };
+    case 'circles':
+      return { backgroundImage: `radial-gradient(circle, transparent 2px, ${colorWithAlpha} 2px, ${colorWithAlpha} 3px, transparent 3px)`, backgroundSize: '8px 8px' };
+    case 'waves':
+      return { backgroundImage: `repeating-linear-gradient(0deg, transparent, transparent 2px, ${colorWithAlpha} 2px, ${colorWithAlpha} 3px), repeating-linear-gradient(60deg, transparent, transparent 3px, ${colorWithAlpha} 3px, ${colorWithAlpha} 4px)` };
+    default:
+      return { backgroundImage: `repeating-linear-gradient(0deg, transparent, transparent 3px, ${colorWithAlpha} 3px, ${colorWithAlpha} 4px), repeating-linear-gradient(90deg, transparent, transparent 3px, ${colorWithAlpha} 3px, ${colorWithAlpha} 4px)` };
+  }
+};
+
 // Single mini card component with dimming support for showdown
 const MiniCard = memo(function MiniCard({
   card,
@@ -58,17 +79,17 @@ const MiniCard = memo(function MiniCard({
   isWinning?: boolean;
   isDimmed?: boolean;
   rotation?: number;
-  cardBackColors?: { accent: string; grid: string };
+  cardBackColors?: { accent: string; pattern: string };
   useFourColor?: boolean;
 }) {
   const cfg = SIZE_CONFIG[size];
   const rank = card?.[0] === 'T' ? '10' : card?.[0] || '?';
   const suitChar = (card?.[1]?.toLowerCase() || 's') as keyof typeof SUITS;
   const suitSource = useFourColor ? SUITS : SUITS_CLASSIC;
-  const suitInfo = suitSource[suitChar] || suitSource['s']; // Fallback to spades if invalid
+  const suitInfo = suitSource[suitChar] || suitSource['s'];
   
   const accentColor = cardBackColors?.accent || '#ff7a00';
-  const gridColor = cardBackColors?.grid || 'rgba(255,122,0,0.12)';
+  const patternType = cardBackColors?.pattern || 'grid';
 
   // Colors for dimmed cards
   const cardBg = isDimmed 
@@ -99,15 +120,10 @@ const MiniCard = memo(function MiniCard({
           transformOrigin: 'bottom center'
         }}
       >
-        {/* Grid pattern */}
+        {/* Pattern */}
         <div 
           className="absolute inset-0"
-          style={{
-            backgroundImage: `
-              repeating-linear-gradient(0deg, transparent, transparent 3px, ${gridColor} 3px, ${gridColor} 4px),
-              repeating-linear-gradient(90deg, transparent, transparent 3px, ${gridColor} 3px, ${gridColor} 4px)
-            `
-          }}
+          style={getCardBackPattern(patternType, accentColor)}
         />
         
         {/* Border frame */}
@@ -298,7 +314,7 @@ export const PPPokerCompactCards = memo(function PPPokerCompactCards({
                   isWinning={isShowdown && isCardWinning && isWinner}
                   isDimmed={isDimmed}
                   rotation={0}
-                  cardBackColors={{ accent: currentCardBack.accentColor, grid: currentCardBack.gridColor }}
+                  cardBackColors={{ accent: currentCardBack.accentColor, pattern: currentCardBack.pattern }}
                   useFourColor={useFourColor}
                 />
               </div>
