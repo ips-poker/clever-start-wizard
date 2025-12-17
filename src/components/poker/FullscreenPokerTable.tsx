@@ -210,8 +210,8 @@ const PremiumCard = memo(function PremiumCard({
           : '0 8px 24px rgba(0,0,0,0.25)'
       }}
     >
-      {/* Top-left corner */}
-      <div className="absolute top-1 left-1.5 flex flex-col items-center leading-none">
+      {/* Top-left corner - Rank left, Suit right (horizontal) */}
+      <div className="absolute top-1 left-1.5 flex items-center gap-0.5 leading-none">
         <span className={cn(cfg.rank, 'font-bold')} style={{ color: suitInfo.color }}>{rank}</span>
         <span className={cfg.suit} style={{ color: suitInfo.color }}>{suitInfo.symbol}</span>
       </div>
@@ -221,8 +221,8 @@ const PremiumCard = memo(function PremiumCard({
         <span className={cfg.center} style={{ color: suitInfo.color, opacity: 0.15 }}>{suitInfo.symbol}</span>
       </div>
       
-      {/* Bottom-right corner (rotated) */}
-      <div className="absolute bottom-1 right-1.5 flex flex-col items-center leading-none rotate-180">
+      {/* Bottom-right corner - Suit left, Rank right (horizontal, rotated 180°) */}
+      <div className="absolute bottom-1 right-1.5 flex items-center gap-0.5 leading-none rotate-180">
         <span className={cn(cfg.rank, 'font-bold')} style={{ color: suitInfo.color }}>{rank}</span>
         <span className={cfg.suit} style={{ color: suitInfo.color }}>{suitInfo.symbol}</span>
       </div>

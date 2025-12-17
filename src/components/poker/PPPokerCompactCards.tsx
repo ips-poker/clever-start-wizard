@@ -203,8 +203,8 @@ const MiniCard = memo(function MiniCard({
         transformOrigin: 'bottom center'
       }}
     >
-      {/* TOP-LEFT corner - Classic: Rank + Suit vertical */}
-      <div className="absolute top-[2px] left-[2px] flex flex-col items-center leading-none">
+      {/* TOP-LEFT corner - Rank left, Suit right (horizontal) */}
+      <div className="absolute top-[2px] left-[2px] flex items-center gap-[1px] leading-none">
         <span 
           className={cn(cfg.rank, 'font-black leading-none')} 
           style={{ color: suitColor }}
@@ -232,8 +232,8 @@ const MiniCard = memo(function MiniCard({
         </span>
       </div>
       
-      {/* BOTTOM-RIGHT corner - Classic: Rank + Suit rotated 180° */}
-      <div className="absolute bottom-[2px] right-[2px] flex flex-col items-center leading-none rotate-180">
+      {/* BOTTOM-RIGHT corner - Suit left, Rank right (horizontal, rotated 180°) */}
+      <div className="absolute bottom-[2px] right-[2px] flex items-center gap-[1px] leading-none rotate-180">
         <span 
           className={cn(cfg.rank, 'font-black leading-none')} 
           style={{ color: suitColor }}

@@ -83,8 +83,8 @@ const CommunityCard = memo(function CommunityCard({
         opacity: isDimmed ? 0.85 : 1
       }}
     >
-      {/* TOP-LEFT corner - Classic: Rank + Suit vertical */}
-      <div className="absolute top-1 left-1.5 flex flex-col items-center leading-none">
+      {/* TOP-LEFT corner - Rank left, Suit right (horizontal) */}
+      <div className="absolute top-1 left-1.5 flex items-center gap-0.5 leading-none">
         <span 
           className="text-xl font-black leading-none" 
           style={{ 
@@ -116,8 +116,8 @@ const CommunityCard = memo(function CommunityCard({
         </span>
       </div>
       
-      {/* BOTTOM-RIGHT corner - Classic: Rank + Suit rotated 180° */}
-      <div className="absolute bottom-1 right-1.5 flex flex-col items-center leading-none rotate-180">
+      {/* BOTTOM-RIGHT corner - Suit left, Rank right (horizontal, rotated 180°) */}
+      <div className="absolute bottom-1 right-1.5 flex items-center gap-0.5 leading-none rotate-180">
         <span 
           className="text-xl font-black leading-none" 
           style={{ 
@@ -127,7 +127,7 @@ const CommunityCard = memo(function CommunityCard({
         >
           {rank}
         </span>
-        <span 
+        <span
           className="text-lg leading-none" 
           style={{ color: suitColor }}
         >
