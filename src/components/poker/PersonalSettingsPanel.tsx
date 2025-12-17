@@ -186,6 +186,99 @@ const CardBackSelector = memo(function CardBackSelector({
   );
 });
 
+// Card style preview component
+const CardStylePreview = memo(function CardStylePreview({ 
+  styleId 
+}: { 
+  styleId: string 
+}) {
+  // Define how each style looks
+  const styleConfig: Record<string, { 
+    hearts: string; 
+    diamonds: string; 
+    clubs: string; 
+    spades: string;
+    rankSize: string;
+    suitSize: string;
+  }> = {
+    classic: {
+      hearts: '#ef4444',
+      diamonds: '#ef4444',
+      clubs: '#1f2937',
+      spades: '#1f2937',
+      rankSize: 'text-[10px]',
+      suitSize: 'text-[8px]'
+    },
+    modern: {
+      hearts: '#dc2626',
+      diamonds: '#dc2626',
+      clubs: '#374151',
+      spades: '#374151',
+      rankSize: 'text-[9px]',
+      suitSize: 'text-[7px]'
+    },
+    fourcolor: {
+      hearts: '#ef4444',
+      diamonds: '#3b82f6',
+      clubs: '#22c55e',
+      spades: '#1f2937',
+      rankSize: 'text-[10px]',
+      suitSize: 'text-[8px]'
+    },
+    jumbo: {
+      hearts: '#ef4444',
+      diamonds: '#ef4444',
+      clubs: '#1f2937',
+      spades: '#1f2937',
+      rankSize: 'text-xs',
+      suitSize: 'text-[10px]'
+    }
+  };
+
+  const config = styleConfig[styleId] || styleConfig.classic;
+  
+  // Show 4 mini cards: A♥, K♦, Q♣, J♠
+  const cards = [
+    { rank: 'A', suit: '♥', color: config.hearts },
+    { rank: 'K', suit: '♦', color: config.diamonds },
+    { rank: 'Q', suit: '♣', color: config.clubs },
+    { rank: 'J', suit: '♠', color: config.spades },
+  ];
+
+  return (
+    <div className="flex gap-0.5">
+      {cards.map((card, idx) => (
+        <div
+          key={idx}
+          className="w-6 h-8 rounded-sm bg-white relative overflow-hidden flex-shrink-0"
+          style={{ 
+            boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+            border: '0.5px solid #e5e7eb'
+          }}
+        >
+          {/* Top-left corner */}
+          <div 
+            className={cn("absolute top-0.5 left-0.5 flex items-center gap-[1px] leading-none font-bold", config.rankSize)}
+            style={{ color: card.color }}
+          >
+            <span>{card.rank}</span>
+            <span className={config.suitSize}>{card.suit}</span>
+          </div>
+          {/* Center suit */}
+          <div className="absolute inset-0 flex items-center justify-center">
+            <span 
+              className="text-sm opacity-25"
+              style={{ color: card.color }}
+            >
+              {card.suit}
+            </span>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+});
+
 // Card style selector
 const CardStyleSelector = memo(function CardStyleSelector({ 
   selected, 
@@ -207,12 +300,7 @@ const CardStyleSelector = memo(function CardStyleSelector({
               : "border-white/10 hover:border-white/30 hover:bg-white/5"
           )}
         >
-          <div className={cn(
-            "w-8 h-10 rounded border-2 flex items-center justify-center text-xs font-bold",
-            style.id === 'fourcolor' ? "border-blue-500 text-blue-500" : "border-red-500 text-red-500"
-          )}>
-            A
-          </div>
+          <CardStylePreview styleId={style.id} />
           <div className="flex-1 text-left">
             <div className="text-xs text-white font-medium">{style.name}</div>
             <div className="text-[10px] text-white/50">{style.description}</div>
