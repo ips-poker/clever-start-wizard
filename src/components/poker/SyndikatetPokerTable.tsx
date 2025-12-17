@@ -435,12 +435,14 @@ const PlayerSeat = memo(function PlayerSeat({
           "left-full ml-1 top-1/2 -translate-y-1/2"
         )}>
           <PPPokerCompactCards
-            cards={showCards && player.holeCards ? player.holeCards : ['??', '??']}
+            cards={showCards && player.holeCards && player.holeCards.length >= 2 ? player.holeCards : ['??', '??']}
             faceDown={!showCards}
             isShowdown={showCards}
             handName={showCards ? player.handName : undefined}
-            isWinner={showCards}
+            isWinner={player.isWinner || false}
+            winningCardIndices={player.winningCardIndices || []}
             size="xs"
+            position={position}
           />
         </div>
       )}
