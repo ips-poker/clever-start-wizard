@@ -1115,9 +1115,11 @@ export class PokerTable {
         
         if (!isFolded) {
           // Get cards from engine or tablePlayer (both should have them)
-          const holeCards = (enginePlayer?.holeCards?.length >= 2) 
-            ? enginePlayer.holeCards 
-            : (tablePlayer?.holeCards?.length >= 2 ? tablePlayer.holeCards : []);
+          const engineCards = enginePlayer?.holeCards;
+          const tableCards = tablePlayer?.holeCards;
+          const holeCards = (engineCards && engineCards.length >= 2) 
+            ? engineCards 
+            : (tableCards && tableCards.length >= 2 ? tableCards : []);
           
           if (holeCards.length >= 2) {
             logger.debug('Showdown reveal cards', { pid: pid.substring(0,8), holeCards });
