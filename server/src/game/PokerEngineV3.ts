@@ -2212,7 +2212,6 @@ export class PokerEngineV3 {
         }
       }
     }
-    }
     
     // Record action
     this.actions.push({
