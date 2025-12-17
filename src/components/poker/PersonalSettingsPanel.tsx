@@ -133,6 +133,56 @@ const ThemeSelector = memo(function ThemeSelector({
   );
 });
 
+// Helper function to generate pattern CSS based on pattern type
+const getPatternStyle = (pattern: string, color: string): React.CSSProperties => {
+  const colorWithAlpha = color + '20'; // 12% opacity
+  
+  switch (pattern) {
+    case 'grid':
+      return {
+        backgroundImage: `
+          repeating-linear-gradient(0deg, transparent, transparent 3px, ${colorWithAlpha} 3px, ${colorWithAlpha} 4px),
+          repeating-linear-gradient(90deg, transparent, transparent 3px, ${colorWithAlpha} 3px, ${colorWithAlpha} 4px)
+        `
+      };
+    case 'diamonds':
+      return {
+        backgroundImage: `
+          repeating-linear-gradient(45deg, transparent, transparent 4px, ${colorWithAlpha} 4px, ${colorWithAlpha} 5px),
+          repeating-linear-gradient(-45deg, transparent, transparent 4px, ${colorWithAlpha} 4px, ${colorWithAlpha} 5px)
+        `
+      };
+    case 'dots':
+      return {
+        backgroundImage: `radial-gradient(circle, ${colorWithAlpha} 1.5px, transparent 1.5px)`,
+        backgroundSize: '6px 6px'
+      };
+    case 'diagonal':
+      return {
+        backgroundImage: `repeating-linear-gradient(45deg, transparent, transparent 3px, ${colorWithAlpha} 3px, ${colorWithAlpha} 4px)`
+      };
+    case 'circles':
+      return {
+        backgroundImage: `radial-gradient(circle, transparent 3px, ${colorWithAlpha} 3px, ${colorWithAlpha} 4px, transparent 4px)`,
+        backgroundSize: '10px 10px'
+      };
+    case 'waves':
+      return {
+        backgroundImage: `
+          repeating-linear-gradient(0deg, transparent, transparent 2px, ${colorWithAlpha} 2px, ${colorWithAlpha} 3px),
+          repeating-linear-gradient(60deg, transparent, transparent 4px, ${colorWithAlpha} 4px, ${colorWithAlpha} 5px)
+        `
+      };
+    default:
+      return {
+        backgroundImage: `
+          repeating-linear-gradient(0deg, transparent, transparent 3px, ${colorWithAlpha} 3px, ${colorWithAlpha} 4px),
+          repeating-linear-gradient(90deg, transparent, transparent 3px, ${colorWithAlpha} 3px, ${colorWithAlpha} 4px)
+        `
+      };
+  }
+};
+
 // Card back selector
 const CardBackSelector = memo(function CardBackSelector({ 
   selected, 
@@ -161,15 +211,10 @@ const CardBackSelector = memo(function CardBackSelector({
               border: '1px solid #e5e7eb'
             }}
           >
-            {/* Grid pattern */}
+            {/* Pattern */}
             <div 
               className="absolute inset-0"
-              style={{
-                backgroundImage: `
-                  repeating-linear-gradient(0deg, transparent, transparent 3px, ${back.gridColor} 3px, ${back.gridColor} 4px),
-                  repeating-linear-gradient(90deg, transparent, transparent 3px, ${back.gridColor} 3px, ${back.gridColor} 4px)
-                `
-              }}
+              style={getPatternStyle(back.pattern, back.accentColor)}
             />
             {/* Center S logo */}
             <span className="font-display font-black text-lg" style={{ color: back.accentColor, opacity: 0.6 }}>S</span>
