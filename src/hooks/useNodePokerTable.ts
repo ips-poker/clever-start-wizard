@@ -530,6 +530,31 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
               }
             }
           }
+
+          // Final fallback: build showdownPlayers from current tableState + myCards
+          // Show own cards revealed, others as hidden (empty cards)
+          if (!showdownPlayers || showdownPlayers.length === 0) {
+            const currentPlayers = tableState?.players || [];
+            const currentMyCards = myCards;
+            const currentMySeat = mySeat;
+            
+            if (currentPlayers.length > 0) {
+              log('🔄 Building showdownPlayers from current state (fallback)');
+              showdownPlayers = currentPlayers
+                .filter(p => !p.isFolded)
+                .map(p => ({
+                  playerId: p.playerId,
+                  name: p.name || 'Player',
+                  seatNumber: p.seatNumber,
+                  holeCards: p.seatNumber === currentMySeat && currentMyCards.length >= 2 
+                    ? currentMyCards 
+                    : (p.holeCards && p.holeCards.length >= 2 ? p.holeCards : ['??', '??']),
+                  isFolded: false,
+                  handName: undefined
+                }));
+              log('🔄 Fallback showdownPlayers:', showdownPlayers);
+            }
+          }
           
           log('🏆 Event data:', { winners, showdownPlayers, isShowdown, communityCards });
           
