@@ -247,10 +247,24 @@ export const PPPokerCompactCards = memo(function PPPokerCompactCards({
   // Use showdown size for larger cards during showdown like in reference
   const actualSize = isShowdown ? 'showdown' : size;
   const cfg = SIZE_CONFIG[actualSize] || SIZE_CONFIG[size];
-  const showCards = isShowdown && cards && cards.length >= 2;
+  
+  // Cards must exist and have valid values for showdown display
+  const hasValidCards = cards && cards.length >= 2 && cards.every(c => c && c !== 'XX' && c !== '??');
+  const showCards = isShowdown && hasValidCards;
   const useFourColor = preferences.cardStyle === 'fourcolor';
   
-  // For PLO4, show all 4 cards
+  // Debug: log what we're rendering
+  if (isShowdown) {
+    console.log('[PPPokerCompactCards] Showdown render:', { 
+      cards, 
+      hasValidCards, 
+      showCards, 
+      handName, 
+      isWinner 
+    });
+  }
+  
+  // For PLO4, show all 4 cards; for Hold'em show 2
   const cardCount = cards?.length || 2;
   const displayCards = showCards ? cards : Array(Math.min(cardCount, 4)).fill('XX');
   
