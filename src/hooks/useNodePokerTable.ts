@@ -495,8 +495,44 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
             // The server broadcasts with full state attached
             const stateData = (data.state || data.data || data) as Record<string, unknown>;
             if (tableId && (stateData.players || stateData.phase)) {
-              setTableState(transformServerState(stateData, tableId));
-              
+              const incomingState = transformServerState(stateData, tableId);
+              const keepShowdown = tableStateRef.current?.phase === 'showdown';
+
+              setTableState((prev) => {
+                if (!prev) return keepShowdown ? { ...incomingState, phase: 'showdown' } : incomingState;
+                if (!keepShowdown) return incomingState;
+
+                const prevById = new Map(prev.players.map((p) => [p.playerId, p] as const));
+
+                return {
+                  ...incomingState,
+                  phase: 'showdown',
+                  players: incomingState.players.map((p) => {
+                    const old = prevById.get(p.playerId);
+                    if (!old) return p;
+
+                    const oldHasCards = Array.isArray(old.holeCards) && old.holeCards.length >= 2;
+                    const newHasCards = Array.isArray(p.holeCards) && p.holeCards.length >= 2;
+
+                    return {
+                      ...p,
+                      holeCards: !newHasCards && oldHasCards ? old.holeCards : p.holeCards,
+                      handName: p.handName ?? old.handName,
+                      bestCards: (p.bestCards && p.bestCards.length > 0) ? p.bestCards : old.bestCards,
+                      isWinner: (p.isWinner ?? false) || (old.isWinner ?? false),
+                      winningCardIndices:
+                        (p.winningCardIndices && p.winningCardIndices.length > 0)
+                          ? p.winningCardIndices
+                          : old.winningCardIndices,
+                      communityCardIndices:
+                        (p.communityCardIndices && p.communityCardIndices.length > 0)
+                          ? p.communityCardIndices
+                          : old.communityCardIndices,
+                    };
+                  }),
+                };
+              });
+
               // Update my cards if present
               if (stateData.myCards) {
                 setMyCards(stateData.myCards as string[]);
@@ -646,13 +682,15 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
             communityCardsCount: communityCards?.length,
           });
 
-          if (winners.length > 0) {
+          const potAmount = Number(eventData.pot ?? (data as any).pot ?? 0);
+
+          if (shouldForceShowdown || winners.length > 0) {
             setShowdownResult({
               winners: winners.map((w) => ({
                 ...w,
                 handName: w.handName || (w as any).handRank,
               })),
-              pot: Number(eventData.pot ?? (data as any).pot ?? 0),
+              pot: potAmount,
               showdownPlayers,
               communityCards,
             });
@@ -744,8 +782,43 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
           // If server also provides a final state snapshot, apply it (but keep showdown phase when relevant)
           if (data.state && tableId) {
             const transformedState = transformServerState(data.state, tableId);
-            if (shouldForceShowdown) transformedState.phase = 'showdown';
-            setTableState(transformedState);
+
+            if (shouldForceShowdown) {
+              transformedState.phase = 'showdown';
+              setTableState((prev) => {
+                if (!prev) return transformedState;
+
+                const prevById = new Map(prev.players.map((p) => [p.playerId, p] as const));
+                return {
+                  ...transformedState,
+                  players: transformedState.players.map((p) => {
+                    const old = prevById.get(p.playerId);
+                    if (!old) return p;
+
+                    const oldHasCards = Array.isArray(old.holeCards) && old.holeCards.length >= 2;
+                    const newHasCards = Array.isArray(p.holeCards) && p.holeCards.length >= 2;
+
+                    return {
+                      ...p,
+                      holeCards: !newHasCards && oldHasCards ? old.holeCards : p.holeCards,
+                      handName: p.handName ?? old.handName,
+                      bestCards: (p.bestCards && p.bestCards.length > 0) ? p.bestCards : old.bestCards,
+                      isWinner: (p.isWinner ?? false) || (old.isWinner ?? false),
+                      winningCardIndices:
+                        (p.winningCardIndices && p.winningCardIndices.length > 0)
+                          ? p.winningCardIndices
+                          : old.winningCardIndices,
+                      communityCardIndices:
+                        (p.communityCardIndices && p.communityCardIndices.length > 0)
+                          ? p.communityCardIndices
+                          : old.communityCardIndices,
+                    };
+                  }),
+                };
+              });
+            } else {
+              setTableState(transformedState);
+            }
 
             const stateData = data.state as Record<string, unknown>;
             if (stateData.myCards) setMyCards(stateData.myCards as string[]);

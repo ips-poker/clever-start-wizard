@@ -1794,7 +1794,7 @@ export function SyndikatetPokerTable({
                 seatIndex={idx}
                 seatNumber={seatNumber}
                 isHero={isHeroSeat}
-                showCards={tableState?.phase === 'showdown'}
+                showCards={tableState?.phase === 'showdown' || Boolean(showdownResult)}
                 isDealer={tableState?.dealerSeat === seatNumber}
                 isSB={tableState?.smallBlindSeat === seatNumber}
                 isBB={tableState?.bigBlindSeat === seatNumber}
