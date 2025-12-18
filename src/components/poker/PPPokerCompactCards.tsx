@@ -227,28 +227,30 @@ const MiniCard = memo(function MiniCard({
     );
   }
 
-  // For winning cards - no animation, static display
-  // For other cards - use spring animation
-  const cardStyle = {
+  // PPPoker GOLD style for winning cards - static, no animation/pulse
+  const GOLD_BORDER = '#f59e0b';  // Amber-500 gold
+  const GOLD_GLOW = 'rgba(245,158,11,0.6)';
+  
+  const cardStyle: React.CSSProperties = {
     width: cfg.w,
     height: cfg.h,
     background: isDimmed 
       ? 'linear-gradient(145deg, #4b5563 0%, #374151 100%)'
       : 'linear-gradient(145deg, #ffffff 0%, #fafafa 50%, #f5f5f5 100%)',
     border: isWinning 
-      ? '3px solid #22c55e'  // Green border for winning cards
+      ? `3px solid ${GOLD_BORDER}`  // GOLD border for winning cards
       : isDimmed 
         ? '1px solid #6b7280' 
         : '1px solid #e5e5e5',
     boxShadow: isWinning 
-      ? '0 0 16px rgba(34,197,94,0.7), 0 0 32px rgba(34,197,94,0.4), 0 3px 8px rgba(0,0,0,0.3)' // Strong green glow
+      ? `0 0 12px ${GOLD_GLOW}, 0 0 24px rgba(245,158,11,0.35), 0 3px 8px rgba(0,0,0,0.3)` // Soft static gold glow
       : '0 3px 8px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.8)',
     transformOrigin: 'bottom center',
     transform: `rotate(${rotation}deg)`,
-    opacity: isDimmed ? 0.85 : 1
+    opacity: isDimmed ? 0.6 : 1  // Stronger dimming for non-winning cards
   };
 
-  // Winning cards - static, no animation
+  // Winning cards - STATIC gold display, no animation
   if (isWinning) {
     return (
       <div
@@ -276,6 +278,12 @@ const MiniCard = memo(function MiniCard({
         <div 
           className="absolute inset-0 pointer-events-none rounded-[3px]"
           style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.6) 0%, transparent 35%, rgba(0,0,0,0.02) 100%)' }}
+        />
+        
+        {/* Static gold inner glow */}
+        <div 
+          className="absolute inset-0 pointer-events-none rounded-[3px]"
+          style={{ background: 'radial-gradient(circle, rgba(245,158,11,0.15) 0%, transparent 70%)' }}
         />
       </div>
     );

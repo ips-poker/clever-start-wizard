@@ -127,6 +127,8 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
 
   // Showdown token to ensure timers don't clear a newer hand/showdown
   const showdownTokenRef = useRef(0);
+  // Timestamp when showdown started - used to ensure 4 sec minimum display
+  const showdownStartTimeRef = useRef<number>(0);
 
   // Keep latest snapshots for stable WebSocket handlers (avoid stale closures)
   const tableStateRef = useRef<TableState | null>(null);
@@ -292,7 +294,11 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
 
               // If we're currently in showdown, keep showdown annotations stable even if
               // server keeps sending "state" snapshots without winner indices.
-              if (prev?.phase === 'showdown') {
+              // IMPORTANT: Keep winning data for at least 4 seconds from showdown start
+              const showdownElapsed = Date.now() - showdownStartTimeRef.current;
+              const isWithinShowdownWindow = showdownElapsed < 4000;
+              
+              if (prev?.phase === 'showdown' && isWithinShowdownWindow) {
                 const prevById = new Map(prev.players.map((p) => [p.playerId, p] as const));
                 newState.phase = 'showdown';
                 newState.players = newState.players.map((p) => {
@@ -300,17 +306,16 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
                   if (!old) return p;
                   return {
                     ...p,
-                    holeCards: (p.holeCards?.length ?? 0) >= 2 ? p.holeCards : old.holeCards,
-                    handName: p.handName ?? old.handName,
-                    isWinner: (p.isWinner ?? false) || (old.isWinner ?? false),
-                    winningCardIndices:
-                      (p.winningCardIndices && p.winningCardIndices.length > 0)
-                        ? p.winningCardIndices
-                        : old.winningCardIndices,
-                    communityCardIndices:
-                      (p.communityCardIndices && p.communityCardIndices.length > 0)
-                        ? p.communityCardIndices
-                        : old.communityCardIndices,
+                    // Preserve showdown data from prev state (don't let server overwrite)
+                    holeCards: (old.holeCards?.length ?? 0) >= 2 ? old.holeCards : p.holeCards,
+                    handName: old.handName ?? p.handName,
+                    isWinner: old.isWinner ?? p.isWinner ?? false,
+                    winningCardIndices: (old.winningCardIndices && old.winningCardIndices.length > 0)
+                      ? old.winningCardIndices
+                      : p.winningCardIndices,
+                    communityCardIndices: (old.communityCardIndices && old.communityCardIndices.length > 0)
+                      ? old.communityCardIndices
+                      : p.communityCardIndices,
                   };
                 });
               }
@@ -410,6 +415,7 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
           // Clear showdown when new hand starts (and invalidate pending showdown timers)
           log('🎴 New hand started - clearing showdown');
           showdownTokenRef.current += 1;
+          showdownStartTimeRef.current = 0;  // Reset showdown timestamp
           setShowdownResult(null);
           // Fall through to process state
           // eslint-disable-next-line no-fallthrough
@@ -753,8 +759,9 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
           const potAmount = Number(eventData.pot ?? (data as any).pot ?? 0);
 
           if (shouldForceShowdown || winners.length > 0) {
-            // Start / refresh showdown token (used to keep highlight visible full duration)
+            // Start / refresh showdown token and timestamp (used to keep highlight visible full 4 seconds)
             showdownTokenRef.current += 1;
+            showdownStartTimeRef.current = Date.now();
             const thisShowdownToken = showdownTokenRef.current;
 
             setShowdownResult({
