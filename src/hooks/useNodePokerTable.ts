@@ -1111,16 +1111,35 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
     });
   }, [tableId, playerId, playerName, buyIn, tableState?.bigBlindAmount, sendMessage]);
 
-  // Leave table
+  // Leave table - fold first if we have cards
   const leaveTable = useCallback(() => {
     if (!tableId || !playerId) return;
-
-    sendMessage({
-      type: 'leave_table',
-      tableId,
-      playerId
-    });
-  }, [tableId, playerId, sendMessage]);
+    
+    // If player has cards and hand is active, fold first
+    if (myCards.length > 0 && tableState?.phase && tableState.phase !== 'waiting' && tableState.phase !== 'showdown') {
+      log('📤 Folding before leaving table');
+      sendMessage({
+        type: 'action',
+        tableId,
+        playerId,
+        actionType: 'fold'
+      });
+      // Small delay to let fold process before leaving
+      setTimeout(() => {
+        sendMessage({
+          type: 'leave_table',
+          tableId,
+          playerId
+        });
+      }, 100);
+    } else {
+      sendMessage({
+        type: 'leave_table',
+        tableId,
+        playerId
+      });
+    }
+  }, [tableId, playerId, myCards, tableState?.phase, sendMessage]);
 
   // Game actions - use actionType format for Node.js server
   const fold = useCallback(() => {
