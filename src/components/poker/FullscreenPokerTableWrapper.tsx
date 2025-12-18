@@ -66,7 +66,6 @@ export function FullscreenPokerTableWrapper({
   const { preferences, currentTableTheme, updatePreference } = usePokerPreferences();
   
   const sounds = usePokerSounds();
-  const hasConnectedRef = useRef(false);
 
   // Use Node.js WebSocket server
   const pokerTable = useNodePokerTable({ tableId, playerId, buyIn: actualBuyIn });
@@ -75,61 +74,11 @@ export function FullscreenPokerTableWrapper({
     isConnected, isConnecting, error, tableState, myCards, mySeat, myPlayer, isMyTurn, canCheck, callAmount, lastAction, showdownResult,
     connect, disconnect, joinTable, fold, check, call, raise, allIn, sitIn, sitOut
   } = pokerTable;
-  
+
   // Check if player can join (not yet seated)
   const canJoinTable = useMemo(() => {
     return isConnected && !myPlayer && mySeat === null;
   }, [isConnected, myPlayer, mySeat]);
-  
-  // Check if player is sitting out (needs to click "I'm Back")
-  const isSittingOut = useMemo(() => {
-    if (!myPlayer || !tableState) return false;
-    // Check raw player status from tableState
-    const rawPlayer = (tableState as any).players?.find(
-      (p: any) => p.playerId === playerId || p.id === playerId
-    );
-    return rawPlayer?.status === 'sitting_out';
-  }, [myPlayer, tableState, playerId]);
-  
-  // Get occupied seats
-  const occupiedSeats = useMemo(() => {
-    return tableState?.players.map(p => p.seatNumber) || [];
-  }, [tableState?.players]);
-
-  useEffect(() => { sounds.setEnabled(soundEnabled); }, [soundEnabled]);
-
-  // Timer effect
-  useEffect(() => {
-    const actionTimer = tableState?.actionTimer || 30;
-    
-    if (tableState?.timeRemaining !== null && tableState?.timeRemaining !== undefined) {
-      setTurnTimeRemaining(Math.ceil(tableState.timeRemaining));
-    } else if (tableState?.currentPlayerSeat !== null) {
-      setTurnTimeRemaining(actionTimer);
-    } else {
-      setTurnTimeRemaining(null);
-      return;
-    }
-
-    const interval = setInterval(() => {
-      setTurnTimeRemaining(prev => {
-        if (prev === null || prev <= 0) return 0;
-        return prev - 1;
-      });
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [tableState?.currentPlayerSeat, tableState?.actionTimer, tableState?.timeRemaining]);
-
-  // Auto-connect on mount
-  useEffect(() => {
-    if (!hasConnectedRef.current) {
-      hasConnectedRef.current = true;
-      connect();
-    }
-    return () => { 
-      // Don't disconnect here - let handleLeave handle it
-    };
-  }, []);
 
   // Play sounds
   useEffect(() => {

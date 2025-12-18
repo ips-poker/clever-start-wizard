@@ -124,6 +124,7 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const pingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const mountedRef = useRef(true);
+  const intentionalCloseRef = useRef(false);
 
   // Showdown token to ensure timers don't clear a newer hand/showdown
   const showdownTokenRef = useRef(0);
@@ -1010,6 +1011,9 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
       return;
     }
 
+    // Reset intentional close flag on explicit connect
+    intentionalCloseRef.current = false;
+
     if (wsRef.current?.readyState === WebSocket.OPEN) {
       log('⚠️ Already connected');
       return;
@@ -1054,6 +1058,13 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
       clearTimers();
       setConnectionStatus('disconnected');
 
+      // Never reconnect after a user-initiated disconnect (even if browser reports 1006)
+      if (intentionalCloseRef.current) {
+        log('🛑 Intentional close - skipping reconnect');
+        intentionalCloseRef.current = false;
+        return;
+      }
+
       // Reconnect if not intentional close
       if (event.code !== 1000 && event.code !== 1001) {
         const delay = RECONNECT_DELAYS[Math.min(reconnectAttemptRef.current, RECONNECT_DELAYS.length - 1)];
@@ -1072,21 +1083,55 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
     };
   }, [tableId, playerId, clearTimers, sendMessage, handleMessage]);
 
-  // Disconnect
+  // Disconnect (graceful: fold if needed, send leave_table, then close)
   const disconnect = useCallback(() => {
+    intentionalCloseRef.current = true;
     clearTimers();
-    if (wsRef.current) {
-      if (tableId && playerId) {
-        sendMessage({
-          type: 'leave_table',
-          tableId,
-          playerId
-        });
+
+    const ws = wsRef.current;
+
+    // Try to leave gracefully while socket is still open
+    if (ws && ws.readyState === WebSocket.OPEN && tableId && playerId) {
+      const state = tableStateRef.current;
+      const cards = myCardsRef.current;
+      const myP = state?.players?.find((p) => p.playerId === playerId);
+
+      const isInActiveHand = !!(state?.phase && state.phase !== 'waiting' && state.phase !== 'showdown');
+      const hasNotFolded = !!(myP && !myP.isFolded);
+      const hasCards = (cards?.length ?? 0) > 0 || Boolean((myP as any)?.hasCards);
+
+      if (isInActiveHand && hasCards && hasNotFolded) {
+        log('🚪 Disconnect: folding before leaving', { phase: state?.phase });
+        sendMessage({ type: 'action', tableId, playerId, actionType: 'fold' });
+        // Give server a moment to process the fold before leaving
+        setTimeout(() => {
+          sendMessage({ type: 'leave_table', tableId, playerId });
+          ws.close(1000, 'User disconnect');
+        }, 250);
+      } else {
+        sendMessage({ type: 'leave_table', tableId, playerId });
+        ws.close(1000, 'User disconnect');
       }
-      wsRef.current.close(1000, 'User disconnect');
+
+      wsRef.current = null;
+    } else if (ws) {
+      // Not open; just close and clean up
+      try {
+        ws.close(1000, 'User disconnect');
+      } catch {
+        // ignore
+      }
       wsRef.current = null;
     }
+
+    // Clear local state immediately so UI doesn't “freeze” on old hand/cards
     setConnectionStatus('disconnected');
+    setTableState(null);
+    setMyCards([]);
+    setMySeat(null);
+    setShowdownResult(null);
+    setChatMessages([]);
+    setLastAction(null);
   }, [tableId, playerId, clearTimers, sendMessage]);
 
   // Join table - ensure buyIn is at least the table minimum
