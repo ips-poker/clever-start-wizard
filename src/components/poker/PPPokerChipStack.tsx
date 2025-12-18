@@ -45,33 +45,32 @@ export const PPPokerChipStack = memo(function PPPokerChipStack({
     return 2; // minimum 2 for visible depth
   };
 
-  // Position bets FROM avatar center TOWARDS table center
-  // The component is inside player container, so we offset from local center (0,0)
-  const getBetPosition = () => {
+  // Position bets PERPENDICULAR from avatar center towards table center
+  // Equal distance for all players
+  const getBetOffset = useMemo(() => {
     const tableCenterX = 50;
     const tableCenterY = 45;
     
-    // Direction from player to table center
+    // Vector from player position to table center
     const dx = tableCenterX - seatPosition.x;
     const dy = tableCenterY - seatPosition.y;
     
-    // Normalize direction
+    // Get length for normalization
     const length = Math.sqrt(dx * dx + dy * dy);
     if (length === 0) return { x: 0, y: -66 };
     
-    const normalX = dx / length;
-    const normalY = dy / length;
+    // Normalized direction (unit vector pointing to center)
+    const dirX = dx / length;
+    const dirY = dy / length;
     
-    // Fixed distance from avatar center (66px = 60px + 10%)
-    const fixedDistance = 66;
+    // Fixed equal distance from avatar center for all players
+    const distance = 66;
     
     return { 
-      x: normalX * fixedDistance, 
-      y: normalY * fixedDistance 
+      x: dirX * distance, 
+      y: dirY * distance 
     };
-  };
-  
-  const betPos = getBetPosition();
+  }, [seatPosition.x, seatPosition.y]);
 
   return (
     <motion.div
@@ -85,9 +84,9 @@ export const PPPokerChipStack = memo(function PPPokerChipStack({
       }}
       className="absolute flex items-center gap-1.5 z-20 pointer-events-none"
       style={{
-        left: '50%',
-        top: '50%',
-        transform: `translate(calc(-50% + ${betPos.x}px), calc(-50% + ${betPos.y}px))`
+        left: `calc(50% + ${getBetOffset.x}px)`,
+        top: `calc(50% + ${getBetOffset.y}px)`,
+        transform: 'translate(-50%, -50%)'
       }}
     >
       {/* Premium 3D stacked poker chips */}
