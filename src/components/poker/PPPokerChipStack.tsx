@@ -45,25 +45,47 @@ export const PPPokerChipStack = memo(function PPPokerChipStack({
     return 2; // minimum 2 for visible depth
   };
 
-  // Position bets PERPENDICULAR from avatar center towards table (PPPoker style)
-  // Priority: LEFT/RIGHT rails first, then TOP/BOTTOM
-  // Fine-tuned offsets per position
+  // Position bets towards table center (50%, 50%)
+  // Calculate vector from seat position to center and offset accordingly
   const betOffset = useMemo(() => {
-    // Check LEFT/RIGHT rails FIRST (takes priority over top/bottom corners)
+    const centerX = 50;
+    const centerY = 50;
+    
+    // Calculate direction to center
+    const dx = centerX - seatPosition.x;
+    const dy = centerY - seatPosition.y;
+    
+    // Normalize and scale offsets based on position
     const isLeftRail = seatPosition.x <= 25;
-    const isRightRail = seatPosition.x >= 75;
+    const isRightRail = seatPosition.x >= 70;
+    const isTop = seatPosition.y <= 15;
+    const isBottom = seatPosition.y >= 80;
     
-    // Left positions: move right + slightly down
-    if (isLeftRail) return { x: 73, y: 8 };
-    // Right positions: mirror of left
-    if (isRightRail) return { x: -73, y: 8 };
+    // Left positions: move right towards center
+    if (isLeftRail) {
+      // Adjust vertical offset based on Y position
+      const yOffset = dy > 0 ? 15 : dy < 0 ? -15 : 0;
+      return { x: 70, y: yOffset };
+    }
     
-    // Top position: move down + slightly right (mirror of hero)
-    const isTop = seatPosition.y <= 20;
-    if (isTop) return { x: 12, y: 52 };
+    // Right positions: move left towards center (mirror)
+    if (isRightRail) {
+      const yOffset = dy > 0 ? 15 : dy < 0 ? -15 : 0;
+      return { x: -70, y: yOffset };
+    }
     
-    // Bottom/hero position: slightly right + slightly up
-    return { x: 12, y: -52 };
+    // Top center: move down towards center
+    if (isTop) {
+      return { x: 0, y: 55 };
+    }
+    
+    // Bottom/hero: move up towards center
+    if (isBottom) {
+      return { x: 0, y: -55 };
+    }
+    
+    // Fallback for any other positions
+    return { x: dx > 0 ? 50 : -50, y: dy > 0 ? 30 : -30 };
   }, [seatPosition.x, seatPosition.y]);
 
   return (
