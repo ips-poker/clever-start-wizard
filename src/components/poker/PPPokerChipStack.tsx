@@ -55,12 +55,12 @@ export const PPPokerChipStack = memo(function PPPokerChipStack({
     
     // Left positions: move right + slightly down
     if (isLeftRail) return { x: 73, y: 8 };
-    // Right positions: move left + slightly down
-    if (isRightRail) return { x: -66, y: 8 };
+    // Right positions: mirror of left
+    if (isRightRail) return { x: -73, y: 8 };
     
-    // Then check TOP/BOTTOM for center positions
+    // Top position: move down + slightly right (mirror of hero)
     const isTop = seatPosition.y <= 20;
-    if (isTop) return { x: 0, y: 55 }; // move down (towards table)
+    if (isTop) return { x: 12, y: 52 };
     
     // Bottom/hero position: slightly right + slightly up
     return { x: 12, y: -52 };
