@@ -486,13 +486,13 @@ const PlayerSeat = memo(function PlayerSeat({
           let cardStyle: React.CSSProperties = {};
           
           if (isOnTop) {
-            cardStyle = { bottom: '6px', right: '-8px' };
+            cardStyle = { bottom: '10px', right: '-10px' };
           } else if (isOnBottom) {
-            cardStyle = { top: '-8px', right: '-8px' };
+            cardStyle = { top: '-12px', right: '-10px' };
           } else if (isOnRightSide) {
-            cardStyle = { top: '-6px', left: '-8px' };
+            cardStyle = { top: '-10px', left: '-10px' };
           } else {
-            cardStyle = { top: '-6px', right: '-8px' };
+            cardStyle = { top: '-10px', right: '-10px' };
           }
           
           return (
