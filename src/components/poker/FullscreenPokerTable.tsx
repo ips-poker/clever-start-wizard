@@ -1049,7 +1049,8 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
           // Find visual position for this player
           let visualPos = 0;
           if (heroSeat !== null) {
-            visualPos = (p.seatNumber - heroSeat + preferences.preferredSeatRotation + maxPlayers) % maxPlayers;
+            // Hero always at position 0 - no rotation offset when hero is seated
+            visualPos = (p.seatNumber - heroSeat + maxPlayers) % maxPlayers;
           } else {
             visualPos = (p.seatNumber + preferences.preferredSeatRotation) % maxPlayers;
           }
@@ -1078,9 +1079,10 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
     players.forEach(player => {
       let visualPosition: number;
       if (heroSeat !== null) {
-        // Rotate so hero is always at position 0, then apply preference rotation
-        visualPosition = (player.seatNumber - heroSeat + rotationOffset + maxPlayers) % maxPlayers;
+        // Hero always at position 0 (bottom center) - no rotation offset when hero is seated
+        visualPosition = (player.seatNumber - heroSeat + maxPlayers) % maxPlayers;
       } else {
+        // No hero seated - apply rotation preference
         visualPosition = (player.seatNumber + rotationOffset) % maxPlayers;
       }
       result[visualPosition] = player;
