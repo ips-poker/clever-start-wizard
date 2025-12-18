@@ -49,17 +49,19 @@ export const PPPokerChipStack = memo(function PPPokerChipStack({
   // Priority: LEFT/RIGHT rails first, then TOP/BOTTOM
   // Fine-tuned offsets per position
   const betOffset = useMemo(() => {
-    // Check LEFT/RIGHT rails FIRST (takes priority over top/bottom corners)
     const isLeftRail = seatPosition.x <= 25;
     const isRightRail = seatPosition.x >= 75;
+    const isTop = seatPosition.y <= 20;
+    
+    // Top-right corner: specific coordinates
+    if (isRightRail && isTop) return { x: -68, y: 6 };
     
     // Left positions: move right + slightly down
     if (isLeftRail) return { x: 73, y: 8 };
     // Right positions: mirror of left
     if (isRightRail) return { x: -73, y: 8 };
     
-    // Top position: move down + slightly right (mirror of hero)
-    const isTop = seatPosition.y <= 20;
+    // Top position: move down + slightly right
     if (isTop) return { x: 12, y: 52 };
     
     // Bottom/hero position: slightly right + slightly up
