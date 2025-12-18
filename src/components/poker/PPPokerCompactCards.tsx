@@ -432,8 +432,8 @@ export const PPPokerCompactCards = memo(function PPPokerCompactCards({
     if (isShowdown) return 0;
     if (isOnTop) return 45;
     if (isOnBottom) return 5;
-    if (isOnRightSide) return -5;
-    return 55; // More clockwise for left side
+    if (isOnRightSide) return -55; // Mirror of left side (55) towards table
+    return 55;
   };
 
   return (
