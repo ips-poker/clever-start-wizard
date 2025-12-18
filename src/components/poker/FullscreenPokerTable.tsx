@@ -477,23 +477,22 @@ const PlayerSeat = memo(function PlayerSeat({
           }
           
           // Position cards ON the avatar corner, pointing towards table center
-          // Like bottom-left box: cards at top-right corner of avatar
-          const isOnLeftSide = position.x < 50;
-          const isOnRightSide = position.x >= 50;
-          const isOnTop = position.y < 25;
+          const isOnRightSide = position.x > 50;
+          const isOnBottom = position.y > 60;
+          const isOnTop = position.y < 40;
           
-          // Cards positioned towards table center (50%, 50%)
+          // Cards overlaid on avatar corner (towards center of table)
+          // Calculate corner position based on where table center is relative to player
           let cardStyle: React.CSSProperties = {};
           
           if (isOnTop) {
-            // Top positions: cards below avatar, towards center
-            cardStyle = { bottom: '-8px', left: '50%', transform: 'translateX(-50%)' };
-          } else if (isOnLeftSide) {
-            // Left positions: cards at top-right corner (like bottom-left ideal)
-            cardStyle = { top: '-10px', right: '-8px' };
+            cardStyle = { bottom: '10px', right: '-10px' };
+          } else if (isOnBottom) {
+            cardStyle = { top: '-12px', right: '-10px' };
           } else if (isOnRightSide) {
-            // Right positions: cards at top-left corner (mirror of left)
-            cardStyle = { top: '-10px', left: '-8px' };
+            cardStyle = { top: '-10px', left: '-10px' };
+          } else {
+            cardStyle = { top: '-10px', right: '-10px' };
           }
           
           return (

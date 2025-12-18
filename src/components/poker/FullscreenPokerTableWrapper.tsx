@@ -66,19 +66,60 @@ export function FullscreenPokerTableWrapper({
   const { preferences, currentTableTheme, updatePreference } = usePokerPreferences();
   
   const sounds = usePokerSounds();
+  const hasConnectedRef = useRef(false);
 
   // Use Node.js WebSocket server
   const pokerTable = useNodePokerTable({ tableId, playerId, buyIn: actualBuyIn });
   
   const {
     isConnected, isConnecting, error, tableState, myCards, mySeat, myPlayer, isMyTurn, canCheck, callAmount, lastAction, showdownResult,
-    connect, disconnect, joinTable, fold, check, call, raise, allIn, sitIn, sitOut
+    connect, disconnect, joinTable, fold, check, call, raise, allIn
   } = pokerTable;
-
+  
   // Check if player can join (not yet seated)
   const canJoinTable = useMemo(() => {
     return isConnected && !myPlayer && mySeat === null;
   }, [isConnected, myPlayer, mySeat]);
+  
+  // Get occupied seats
+  const occupiedSeats = useMemo(() => {
+    return tableState?.players.map(p => p.seatNumber) || [];
+  }, [tableState?.players]);
+
+  useEffect(() => { sounds.setEnabled(soundEnabled); }, [soundEnabled]);
+
+  // Timer effect
+  useEffect(() => {
+    const actionTimer = tableState?.actionTimer || 30;
+    
+    if (tableState?.timeRemaining !== null && tableState?.timeRemaining !== undefined) {
+      setTurnTimeRemaining(Math.ceil(tableState.timeRemaining));
+    } else if (tableState?.currentPlayerSeat !== null) {
+      setTurnTimeRemaining(actionTimer);
+    } else {
+      setTurnTimeRemaining(null);
+      return;
+    }
+
+    const interval = setInterval(() => {
+      setTurnTimeRemaining(prev => {
+        if (prev === null || prev <= 0) return 0;
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [tableState?.currentPlayerSeat, tableState?.actionTimer, tableState?.timeRemaining]);
+
+  // Auto-connect on mount
+  useEffect(() => {
+    if (!hasConnectedRef.current) {
+      hasConnectedRef.current = true;
+      connect();
+    }
+    return () => { 
+      // Don't disconnect here - let handleLeave handle it
+    };
+  }, []);
 
   // Play sounds
   useEffect(() => {
@@ -364,7 +405,7 @@ export function FullscreenPokerTableWrapper({
         )}
 
         {/* Action buttons - Professional Panel */}
-        {myPlayer && !isSittingOut && (
+        {myPlayer && (
           <ProActionPanel
             isMyTurn={isMyTurn}
             canCheck={canCheck}
@@ -380,25 +421,6 @@ export function FullscreenPokerTableWrapper({
             onRaise={raise}
             onAllIn={allIn}
           />
-        )}
-        
-        {/* Sitting Out - Return to game button */}
-        {myPlayer && isSittingOut && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="absolute bottom-8 left-1/2 -translate-x-1/2 z-30"
-          >
-            <Button
-              onClick={sitIn}
-              className="px-8 py-4 text-lg font-bold bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white rounded-xl shadow-lg shadow-emerald-500/30"
-            >
-              🎮 Вернуться в игру
-            </Button>
-            <p className="text-center text-white/60 text-sm mt-2">
-              Вы сидите вне игры
-            </p>
-          </motion.div>
         )}
         
         {/* Buy-in Dialog */}
