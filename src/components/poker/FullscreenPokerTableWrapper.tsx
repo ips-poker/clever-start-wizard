@@ -232,20 +232,25 @@ export function FullscreenPokerTableWrapper({
   }, [updatePreference]);
 
   // Convert players for FullscreenPokerTable format - annotate winners
+  // IMPORTANT: winningCardIndices is calculated in the hook and stored in tableState.players
+  // Do NOT try to read it from showdownResult.showdownPlayers (it won't be there)
   const formattedPlayers: PokerPlayer[] = useMemo(() => {
     const players = tableState?.players || [];
     
-    // If we have showdown result, annotate winners
+    // If we have showdown result, annotate with winner info
+    // Note: tableState.players already has winningCardIndices calculated by the hook
     if (showdownResult && showdownResult.winners.length > 0) {
       return players.map((p: PokerPlayer) => {
         const isWinner = showdownResult.winners.some(w => w.playerId === p.playerId);
         const showdownData = showdownResult.showdownPlayers?.find(sp => sp.playerId === p.playerId);
+        // Use winningCardIndices from player (already calculated by hook), not from showdownData
         return {
           ...p,
-          isWinner,
-          handName: showdownData?.handName,
-          winningCardIndices: (showdownData as any)?.winningCardIndices || [],
-          communityCardIndices: (showdownData as any)?.communityCardIndices || [],
+          isWinner: isWinner || (p as any).isWinner,
+          handName: (p as any).handName || showdownData?.handName,
+          // These are already calculated in tableState.players by the hook
+          winningCardIndices: (p as any).winningCardIndices || [],
+          communityCardIndices: (p as any).communityCardIndices || [],
         };
       });
     }
