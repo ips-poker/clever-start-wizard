@@ -1111,12 +1111,30 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
     });
   }, [tableId, playerId, playerName, buyIn, tableState?.bigBlindAmount, sendMessage]);
 
-  // Leave table - fold first if we have cards
+  // Leave table - fold first if we have cards and are in active hand
   const leaveTable = useCallback(() => {
     if (!tableId || !playerId) return;
     
-    // If player has cards and hand is active, fold first
-    if (myCards.length > 0 && tableState?.phase && tableState.phase !== 'waiting' && tableState.phase !== 'showdown') {
+    // Check if player has cards, is in an active hand, and hasn't folded yet
+    const isInActiveHand = tableState?.phase && 
+      tableState.phase !== 'waiting' && 
+      tableState.phase !== 'showdown';
+    
+    const myPlayerData = tableState?.players?.find(
+      (p: any) => p.playerId === playerId || p.id === playerId
+    ) as any;
+    const hasNotFolded = myPlayerData && !myPlayerData.isFolded;
+    const hasCards = myCards.length > 0 || (myPlayerData?.hasCards === true);
+    
+    log('🚪 Leaving table check:', { 
+      isInActiveHand, 
+      hasCards, 
+      hasNotFolded, 
+      phase: tableState?.phase,
+      myCardsLength: myCards.length 
+    });
+    
+    if (isInActiveHand && hasCards && hasNotFolded) {
       log('📤 Folding before leaving table');
       sendMessage({
         type: 'action',
@@ -1124,22 +1142,24 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
         playerId,
         actionType: 'fold'
       });
-      // Small delay to let fold process before leaving
+      // Wait for fold to be processed by server before leaving
       setTimeout(() => {
+        log('📤 Now sending leave_table after fold');
         sendMessage({
           type: 'leave_table',
           tableId,
           playerId
         });
-      }, 100);
+      }, 300); // Increased delay for server to process fold
     } else {
+      log('📤 Leaving table directly (no fold needed)');
       sendMessage({
         type: 'leave_table',
         tableId,
         playerId
       });
     }
-  }, [tableId, playerId, myCards, tableState?.phase, sendMessage]);
+  }, [tableId, playerId, myCards, tableState, sendMessage]);
 
   // Game actions - use actionType format for Node.js server
   const fold = useCallback(() => {
