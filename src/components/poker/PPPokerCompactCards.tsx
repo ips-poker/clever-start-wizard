@@ -422,7 +422,7 @@ export const PPPokerCompactCards = memo(function PPPokerCompactCards({
   // - Bottom players: fan up
   const getFanRotation = (idx: number, total: number) => {
     if (isShowdown) return 0;
-    const baseAngle = total === 4 ? 12 : total === 3 ? 15 : 18; // Even bigger fan
+    const baseAngle = total === 4 ? 8 : total === 3 ? 10 : 12; // Smaller fan
     const halfTotal = (total - 1) / 2;
     return (idx - halfTotal) * baseAngle;
   };
