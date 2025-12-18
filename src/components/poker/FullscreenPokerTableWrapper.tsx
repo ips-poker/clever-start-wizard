@@ -279,6 +279,13 @@ export function FullscreenPokerTableWrapper({
   const bigBlindSeat = tableState?.bigBlindSeat ?? 2;
   const currentPlayerSeat = tableState?.currentPlayerSeat ?? null;
 
+  // Robust hero seat detection (Telegram Mini App sometimes gets wrong mySeat)
+  const heroSeatForUI = useMemo(() => {
+    const pid = String(playerId);
+    const seatFromPlayers = tableState?.players?.find((p) => String(p.playerId) === pid)?.seatNumber;
+    return typeof seatFromPlayers === 'number' ? seatFromPlayers : mySeat;
+  }, [tableState?.players, playerId, mySeat]);
+
   // Betting info
   const minRaiseAmount = tableState?.minRaise || tableState?.bigBlindAmount || 20;
   const maxRaiseAmount = myPlayer?.stack || 10000;
@@ -371,7 +378,7 @@ export function FullscreenPokerTableWrapper({
           <FullscreenPokerTable
             tableState={tableState}
             players={formattedPlayers}
-            heroSeat={mySeat}
+            heroSeat={heroSeatForUI}
             heroCards={myCards}
             communityCards={displayCommunityCards}
             pot={potValue}
