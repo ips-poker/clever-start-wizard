@@ -62,8 +62,8 @@ export const PPPokerChipStack = memo(function PPPokerChipStack({
     const normalX = dx / length;
     const normalY = dy / length;
     
-    // FIXED distance from avatar - equal for all players (50px)
-    const fixedDistance = 50;
+    // FIXED distance from avatar - equal for all players (60px - 20% increase)
+    const fixedDistance = 60;
     
     return { 
       x: normalX * fixedDistance, 
