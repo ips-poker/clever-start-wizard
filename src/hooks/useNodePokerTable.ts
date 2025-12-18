@@ -125,6 +125,9 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
   const pingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const mountedRef = useRef(true);
 
+  // Showdown token to ensure timers don't clear a newer hand/showdown
+  const showdownTokenRef = useRef(0);
+
   // Keep latest snapshots for stable WebSocket handlers (avoid stale closures)
   const tableStateRef = useRef<TableState | null>(null);
   const myCardsRef = useRef<string[]>([]);
@@ -284,8 +287,34 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
         case 'state':
         case 'table_state':
           if (data.state && tableId) {
-            setTableState(prev => {
+            setTableState((prev) => {
               const newState = transformServerState(data.state, tableId);
+
+              // If we're currently in showdown, keep showdown annotations stable even if
+              // server keeps sending "state" snapshots without winner indices.
+              if (prev?.phase === 'showdown') {
+                const prevById = new Map(prev.players.map((p) => [p.playerId, p] as const));
+                newState.phase = 'showdown';
+                newState.players = newState.players.map((p) => {
+                  const old = prevById.get(p.playerId);
+                  if (!old) return p;
+                  return {
+                    ...p,
+                    holeCards: (p.holeCards?.length ?? 0) >= 2 ? p.holeCards : old.holeCards,
+                    handName: p.handName ?? old.handName,
+                    isWinner: (p.isWinner ?? false) || (old.isWinner ?? false),
+                    winningCardIndices:
+                      (p.winningCardIndices && p.winningCardIndices.length > 0)
+                        ? p.winningCardIndices
+                        : old.winningCardIndices,
+                    communityCardIndices:
+                      (p.communityCardIndices && p.communityCardIndices.length > 0)
+                        ? p.communityCardIndices
+                        : old.communityCardIndices,
+                  };
+                });
+              }
+
               if (prev && JSON.stringify(prev) === JSON.stringify(newState)) {
                 return prev;
               }
@@ -378,8 +407,9 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
         case 'playerDisconnected':
         case 'hand_started':
         case 'handStarted':  // Server sends camelCase
-          // Clear showdown when new hand starts
+          // Clear showdown when new hand starts (and invalidate pending showdown timers)
           log('🎴 New hand started - clearing showdown');
+          showdownTokenRef.current += 1;
           setShowdownResult(null);
           // Fall through to process state
           // eslint-disable-next-line no-fallthrough
@@ -723,6 +753,10 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
           const potAmount = Number(eventData.pot ?? (data as any).pot ?? 0);
 
           if (shouldForceShowdown || winners.length > 0) {
+            // Start / refresh showdown token (used to keep highlight visible full duration)
+            showdownTokenRef.current += 1;
+            const thisShowdownToken = showdownTokenRef.current;
+
             setShowdownResult({
               winners: winners.map((w) => {
                 const winnerPlayer = showdownPlayers?.find((sp) => sp.playerId === w.playerId);
@@ -739,6 +773,30 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
               showdownPlayers,
               communityCards,
             });
+
+            // Keep showdown highlight visible for 4 seconds, then clear IF still the same showdown
+            setTimeout(() => {
+              if (showdownTokenRef.current !== thisShowdownToken) return;
+              if (tableStateRef.current?.phase !== 'showdown') return;
+
+              setShowdownResult(null);
+              setTableState((prev) => {
+                if (!prev) return prev;
+                if (prev.phase !== 'showdown') return prev;
+
+                return {
+                  ...prev,
+                  players: prev.players.map((p) => ({
+                    ...p,
+                    isWinner: false,
+                    handName: undefined,
+                    winningCardIndices: [],
+                    communityCardIndices: [],
+                    holeCards: [],
+                  })),
+                };
+              });
+            }, 4000);
           }
 
           if (shouldForceShowdown) {
@@ -827,33 +885,6 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
               sendMessage({ type: 'get_state', tableId, playerId });
             }, 250);
           }
-
-          // Keep showdown visible for 4 seconds, then clear
-          // Don't clear if a new hand has already started
-          setTimeout(() => {
-            setShowdownResult((prev) => {
-              // Only clear if this is the same showdown (not a new one)
-              return prev;
-            });
-            setTableState((prev) => {
-              // Only transition to waiting if still in showdown phase
-              // If server already started new hand, don't mess with state
-              if (!prev || prev.phase !== 'showdown') return prev;
-              return {
-                ...prev,
-                phase: 'waiting',
-                players: prev.players.map((p) => ({
-                  ...p,
-                  isWinner: false,
-                  handName: undefined,
-                  holeCards: [],
-                  betAmount: 0,
-                  currentBet: 0,
-                  isFolded: false,
-                })),
-              };
-            });
-          }, 4000);
 
           // If server also provides a final state snapshot, apply it (but keep showdown phase when relevant)
           if (data.state && tableId) {
