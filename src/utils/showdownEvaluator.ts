@@ -342,7 +342,15 @@ export function evaluateShowdown(
   const parsedHole = holeCards.map(parseCard).filter((c): c is Card => c !== null);
   const parsedComm = communityCards.map(parseCard).filter((c): c is Card => c !== null);
   
+  console.log('[evaluateShowdown] Input:', { 
+    holeCards, 
+    communityCards,
+    parsedHole: parsedHole.map(cardToString),
+    parsedComm: parsedComm.map(cardToString)
+  });
+  
   if (parsedHole.length < 2 || parsedComm.length < 3) {
+    console.log('[evaluateShowdown] Not enough cards, returning null');
     return null;
   }
   
@@ -361,39 +369,68 @@ export function evaluateShowdown(
     const allCards = [...parsedHole, ...parsedComm];
     bestHand = findBestHand(allCards);
     
-    // Determine which cards were used
+    console.log('[evaluateShowdown] Best hand found:', {
+      handType: bestHand.handType,
+      rank: bestHand.rank,
+      cards: bestHand.cards.map(cardToString),
+      tiebreakers: bestHand.tiebreakers
+    });
+    
+    // Determine which cards were used - need to find each of the 5 best cards
+    // in either hole cards or community cards
     holeUsedIndices = [];
     commUsedIndices = [];
     
+    // Create working copies to track which cards we've already matched
+    const holeMatched = new Array(parsedHole.length).fill(false);
+    const commMatched = new Array(parsedComm.length).fill(false);
+    
     for (const usedCard of bestHand.cards) {
-      // Check if it's from hole cards
-      const holeIdx = parsedHole.findIndex((h, i) => 
-        h.rank === usedCard.rank && h.suit === usedCard.suit && !holeUsedIndices.includes(i)
-      );
+      let found = false;
       
-      if (holeIdx !== -1) {
-        holeUsedIndices.push(holeIdx);
-      } else {
-        // It's from community
-        const commIdx = parsedComm.findIndex((c, i) =>
-          c.rank === usedCard.rank && c.suit === usedCard.suit && !commUsedIndices.includes(i)
-        );
-        if (commIdx !== -1) {
-          commUsedIndices.push(commIdx);
+      // First try to find in hole cards (player's own cards take priority)
+      for (let i = 0; i < parsedHole.length; i++) {
+        if (!holeMatched[i] && parsedHole[i].rank === usedCard.rank && parsedHole[i].suit === usedCard.suit) {
+          holeUsedIndices.push(i);
+          holeMatched[i] = true;
+          found = true;
+          console.log(`[evaluateShowdown] Card ${cardToString(usedCard)} matched to HOLE index ${i}`);
+          break;
         }
+      }
+      
+      // If not found in hole, look in community
+      if (!found) {
+        for (let i = 0; i < parsedComm.length; i++) {
+          if (!commMatched[i] && parsedComm[i].rank === usedCard.rank && parsedComm[i].suit === usedCard.suit) {
+            commUsedIndices.push(i);
+            commMatched[i] = true;
+            found = true;
+            console.log(`[evaluateShowdown] Card ${cardToString(usedCard)} matched to COMM index ${i}`);
+            break;
+          }
+        }
+      }
+      
+      if (!found) {
+        console.warn(`[evaluateShowdown] Card ${cardToString(usedCard)} NOT FOUND in hole or community!`);
       }
     }
   }
   
   const handInfo = HAND_NAMES[bestHand.handType];
   
-  return {
+  const result = {
     handName: handInfo.en,
     handNameRu: handInfo.ru,
     winningCardIndices: holeUsedIndices.sort((a, b) => a - b),
     communityCardIndices: commUsedIndices.sort((a, b) => a - b),
     bestFiveCards: bestHand.cards.map(cardToString)
   };
+  
+  console.log('[evaluateShowdown] RESULT:', result);
+  
+  return result;
 }
 
 /**
