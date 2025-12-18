@@ -422,7 +422,7 @@ export const PPPokerCompactCards = memo(function PPPokerCompactCards({
   // - Bottom players: fan up
   const getFanRotation = (idx: number, total: number) => {
     if (isShowdown) return 0;
-    const baseAngle = total === 4 ? 10 : total === 3 ? 12 : 15; // Bigger fan spread
+    const baseAngle = total === 4 ? 12 : total === 3 ? 15 : 18; // Even bigger fan
     const halfTotal = (total - 1) / 2;
     return (idx - halfTotal) * baseAngle;
   };
@@ -430,11 +430,10 @@ export const PPPokerCompactCards = memo(function PPPokerCompactCards({
   // Calculate rotation to point cards towards table center (more clockwise)
   const getContainerRotation = () => {
     if (isShowdown) return 0;
-    // Fan cards towards center - rotate the whole container (more clockwise)
-    if (isOnTop) return 35; // Point down more
-    if (isOnBottom) return -5; // Point slightly up
-    if (isOnRightSide) return -15; // Point left towards center
-    return 45; // Point right towards center (more clockwise)
+    if (isOnTop) return 45;
+    if (isOnBottom) return 5;
+    if (isOnRightSide) return -5;
+    return 55; // More clockwise for left side
   };
 
   return (
