@@ -46,22 +46,22 @@ export const PPPokerChipStack = memo(function PPPokerChipStack({
   };
 
   // Position bets PERPENDICULAR from avatar center towards table (like PPPoker)
-  // Equal distance for all players (in pixels), direction depends on which rail the seat is on.
+  // Different distances: vertical (top/bottom) = 60px, horizontal (left/right) = 66px
   const betOffset = useMemo(() => {
-    const distance = 66;
+    const verticalDistance = 60;   // for top/bottom positions
+    const horizontalDistance = 66; // for left/right positions
 
     // Determine closest table side for a "perpendicular inward" direction.
-    // Our seat layout uses left/right rails and top/bottom rails.
     const isTop = seatPosition.y < 25;
     const isBottom = seatPosition.y > 75;
 
-    if (isTop) return { x: 0, y: distance }; // move down (towards table)
-    if (isBottom) return { x: 0, y: -distance }; // move up (towards table)
+    if (isTop) return { x: 0, y: verticalDistance }; // move down (towards table)
+    if (isBottom) return { x: 0, y: -verticalDistance }; // move up (towards table)
 
     const isLeft = seatPosition.x < 50;
     return isLeft
-      ? { x: distance, y: 0 } // move right (towards table)
-      : { x: -distance, y: 0 }; // move left (towards table)
+      ? { x: horizontalDistance, y: 0 } // move right (towards table)
+      : { x: -horizontalDistance, y: 0 }; // move left (towards table)
   }, [seatPosition.x, seatPosition.y]);
 
   return (
