@@ -1210,6 +1210,27 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
     });
   }, [tableId, playerId, sendMessage]);
 
+  // Sit out - step away from the table temporarily
+  const sitOut = useCallback(() => {
+    if (!tableId || !playerId) return;
+    sendMessage({
+      type: 'sit_out',
+      tableId,
+      playerId
+    });
+  }, [tableId, playerId, sendMessage]);
+
+  // Sit in - return to the game after sitting out
+  const sitIn = useCallback(() => {
+    if (!tableId || !playerId) return;
+    log('🎮 Sending sit_in to return to game');
+    sendMessage({
+      type: 'sit_in',
+      tableId,
+      playerId
+    });
+  }, [tableId, playerId, sendMessage]);
+
   // Send chat message
   const sendChatMessage = useCallback((text: string) => {
     if (!tableId || !playerId) return;
@@ -1316,6 +1337,8 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
     bet,
     raise,
     allIn,
+    sitOut,
+    sitIn,
     sendChatMessage
   };
 }
