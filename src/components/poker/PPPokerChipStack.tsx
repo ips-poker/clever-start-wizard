@@ -54,7 +54,7 @@ export const PPPokerChipStack = memo(function PPPokerChipStack({
     const isRightRail = seatPosition.x >= 75;
     
     // Left positions: move right + slightly down
-    if (isLeftRail) return { x: 70, y: 8 };
+    if (isLeftRail) return { x: 73, y: 8 };
     // Right positions: move left + slightly down
     if (isRightRail) return { x: -66, y: 8 };
     
