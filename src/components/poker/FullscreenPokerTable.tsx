@@ -462,6 +462,20 @@ const PlayerSeat = memo(function PlayerSeat({
           // Reveal if showdown AND we have real cards to show
           const shouldReveal = gamePhase === 'showdown' && (hasRevealedCards || playerHasCards);
           
+          // Get winning card indices - from player object (calculated by hook)
+          const playerWinningIndices = (player as any).winningCardIndices || [];
+          
+          // Debug: log showdown data
+          if (shouldReveal) {
+            console.log('[PlayerSeat] Showdown render:', {
+              playerName: player.name,
+              isWinner: (player as any).isWinner,
+              winningCardIndices: playerWinningIndices,
+              handName: (player as any).handName,
+              displayCards
+            });
+          }
+          
           return (
             <div className="absolute -bottom-2 -right-2 z-5">
               <PPPokerCompactCards 
@@ -470,7 +484,7 @@ const PlayerSeat = memo(function PlayerSeat({
                 isShowdown={shouldReveal}
                 handName={shouldReveal ? (showdownData?.handName || (player as any).handName) : undefined}
                 isWinner={(player as any).isWinner}
-                winningCardIndices={(player as any).winningCardIndices || []}
+                winningCardIndices={playerWinningIndices}
                 size="xs"
                 position={position}
               />
