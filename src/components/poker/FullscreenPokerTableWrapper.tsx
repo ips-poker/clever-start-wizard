@@ -73,13 +73,23 @@ export function FullscreenPokerTableWrapper({
   
   const {
     isConnected, isConnecting, error, tableState, myCards, mySeat, myPlayer, isMyTurn, canCheck, callAmount, lastAction, showdownResult,
-    connect, disconnect, joinTable, fold, check, call, raise, allIn
+    connect, disconnect, joinTable, fold, check, call, raise, allIn, sitIn, sitOut
   } = pokerTable;
   
   // Check if player can join (not yet seated)
   const canJoinTable = useMemo(() => {
     return isConnected && !myPlayer && mySeat === null;
   }, [isConnected, myPlayer, mySeat]);
+  
+  // Check if player is sitting out (needs to click "I'm Back")
+  const isSittingOut = useMemo(() => {
+    if (!myPlayer || !tableState) return false;
+    // Check raw player status from tableState
+    const rawPlayer = (tableState as any).players?.find(
+      (p: any) => p.playerId === playerId || p.id === playerId
+    );
+    return rawPlayer?.status === 'sitting_out';
+  }, [myPlayer, tableState, playerId]);
   
   // Get occupied seats
   const occupiedSeats = useMemo(() => {
@@ -405,7 +415,7 @@ export function FullscreenPokerTableWrapper({
         )}
 
         {/* Action buttons - Professional Panel */}
-        {myPlayer && (
+        {myPlayer && !isSittingOut && (
           <ProActionPanel
             isMyTurn={isMyTurn}
             canCheck={canCheck}
@@ -421,6 +431,25 @@ export function FullscreenPokerTableWrapper({
             onRaise={raise}
             onAllIn={allIn}
           />
+        )}
+        
+        {/* Sitting Out - Return to game button */}
+        {myPlayer && isSittingOut && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="absolute bottom-8 left-1/2 -translate-x-1/2 z-30"
+          >
+            <Button
+              onClick={sitIn}
+              className="px-8 py-4 text-lg font-bold bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white rounded-xl shadow-lg shadow-emerald-500/30"
+            >
+              🎮 Вернуться в игру
+            </Button>
+            <p className="text-center text-white/60 text-sm mt-2">
+              Вы сидите вне игры
+            </p>
+          </motion.div>
         )}
         
         {/* Buy-in Dialog */}
