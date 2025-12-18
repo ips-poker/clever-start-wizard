@@ -591,15 +591,6 @@ const PlayerSeat = memo(function PlayerSeat({
           winningCardIndices={(player as any).winningCardIndices || []}
         />
       )}
-      {/* Bet amount - positioned between player and center, closer to player */}
-      {player.betAmount > 0 && (
-        <PPPokerChipStack
-          amount={player.betAmount}
-          seatPosition={position}
-          animated={true}
-          isHero={isHero}
-        />
-      )}
       
       {/* Action badge - PPPoker style */}
       <AnimatePresence>
@@ -1147,27 +1138,40 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
         const actualSeatNumber = heroSeat !== null 
           ? (idx + heroSeat) % maxPlayers 
           : idx;
-        
+
+        const isHeroSeat = idx === 0 && heroSeat !== null;
+
         return (
-          <PlayerSeat
-            key={`seat-${idx}`}
-            player={player}
-            position={pos}
-            seatNumber={actualSeatNumber}
-            isHero={idx === 0 && heroSeat !== null}
-            isDealer={player?.seatNumber === dealerSeat}
-            isSB={player?.seatNumber === smallBlindSeat}
-            isBB={player?.seatNumber === bigBlindSeat}
-            isCurrentTurn={player?.seatNumber === currentPlayerSeat}
-            turnTimeRemaining={player?.seatNumber === currentPlayerSeat ? turnTimeRemaining : undefined}
-            heroCards={idx === 0 ? heroCards : undefined}
-            communityCards={communityCards}
-            gamePhase={phase}
-            canJoin={canJoinTable && !player}
-            onSeatClick={onSeatClick}
-            lastAction={(player as any)?.lastAction}
-            showdownPlayers={showdownPlayers}
-          />
+          <React.Fragment key={`seat-${idx}`}>
+            <PlayerSeat
+              player={player}
+              position={pos}
+              seatNumber={actualSeatNumber}
+              isHero={isHeroSeat}
+              isDealer={player?.seatNumber === dealerSeat}
+              isSB={player?.seatNumber === smallBlindSeat}
+              isBB={player?.seatNumber === bigBlindSeat}
+              isCurrentTurn={player?.seatNumber === currentPlayerSeat}
+              turnTimeRemaining={player?.seatNumber === currentPlayerSeat ? turnTimeRemaining : undefined}
+              heroCards={idx === 0 ? heroCards : undefined}
+              communityCards={communityCards}
+              gamePhase={phase}
+              canJoin={canJoinTable && !player}
+              onSeatClick={onSeatClick}
+              lastAction={(player as any)?.lastAction}
+              showdownPlayers={showdownPlayers}
+            />
+
+            {/* Bet amount - anchored to avatar center in table coordinates */}
+            {!!player?.betAmount && player.betAmount > 0 && (
+              <PPPokerChipStack
+                amount={player.betAmount}
+                seatPosition={pos}
+                animated={true}
+                isHero={isHeroSeat}
+              />
+            )}
+          </React.Fragment>
         );
       })}
     </div>

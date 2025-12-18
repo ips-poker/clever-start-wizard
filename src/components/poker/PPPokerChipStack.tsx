@@ -45,31 +45,23 @@ export const PPPokerChipStack = memo(function PPPokerChipStack({
     return 2; // minimum 2 for visible depth
   };
 
-  // Position bets PERPENDICULAR from avatar center towards table center
-  // Equal distance for all players
-  const getBetOffset = useMemo(() => {
-    const tableCenterX = 50;
-    const tableCenterY = 45;
-    
-    // Vector from player position to table center
-    const dx = tableCenterX - seatPosition.x;
-    const dy = tableCenterY - seatPosition.y;
-    
-    // Get length for normalization
-    const length = Math.sqrt(dx * dx + dy * dy);
-    if (length === 0) return { x: 0, y: -66 };
-    
-    // Normalized direction (unit vector pointing to center)
-    const dirX = dx / length;
-    const dirY = dy / length;
-    
-    // Fixed equal distance from avatar center for all players
+  // Position bets PERPENDICULAR from avatar center towards table (like PPPoker)
+  // Equal distance for all players (in pixels), direction depends on which rail the seat is on.
+  const betOffset = useMemo(() => {
     const distance = 66;
-    
-    return { 
-      x: dirX * distance, 
-      y: dirY * distance 
-    };
+
+    // Determine closest table side for a "perpendicular inward" direction.
+    // Our seat layout uses left/right rails and top/bottom rails.
+    const isTop = seatPosition.y < 25;
+    const isBottom = seatPosition.y > 75;
+
+    if (isTop) return { x: 0, y: distance }; // move down (towards table)
+    if (isBottom) return { x: 0, y: -distance }; // move up (towards table)
+
+    const isLeft = seatPosition.x < 50;
+    return isLeft
+      ? { x: distance, y: 0 } // move right (towards table)
+      : { x: -distance, y: 0 }; // move left (towards table)
   }, [seatPosition.x, seatPosition.y]);
 
   return (
@@ -84,8 +76,8 @@ export const PPPokerChipStack = memo(function PPPokerChipStack({
       }}
       className="absolute flex items-center gap-1.5 z-20 pointer-events-none"
       style={{
-        left: `calc(50% + ${getBetOffset.x}px)`,
-        top: `calc(50% + ${getBetOffset.y}px)`,
+        left: `calc(${seatPosition.x}% + ${betOffset.x}px)`,
+        top: `calc(${seatPosition.y}% + ${betOffset.y}px)`,
         transform: 'translate(-50%, -50%)'
       }}
     >
