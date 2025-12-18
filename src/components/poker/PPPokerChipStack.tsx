@@ -47,24 +47,23 @@ export const PPPokerChipStack = memo(function PPPokerChipStack({
 
   // Position bets PERPENDICULAR from avatar center towards table (PPPoker style)
   // Priority: LEFT/RIGHT rails first, then TOP/BOTTOM
-  // Distances: vertical (top/bottom) = 55px, horizontal (left/right) = 62px
+  // Fine-tuned offsets per position
   const betOffset = useMemo(() => {
-    const verticalDistance = 55;   // for top/bottom positions
-    const horizontalDistance = 62; // for left/right positions
-
     // Check LEFT/RIGHT rails FIRST (takes priority over top/bottom corners)
     const isLeftRail = seatPosition.x <= 25;
     const isRightRail = seatPosition.x >= 75;
     
-    if (isLeftRail) return { x: horizontalDistance, y: 0 }; // move right (towards table)
-    if (isRightRail) return { x: -horizontalDistance, y: 0 }; // move left (towards table)
+    // Left positions: move right + slightly down
+    if (isLeftRail) return { x: 66, y: 8 };
+    // Right positions: stay as is
+    if (isRightRail) return { x: -62, y: 0 };
     
     // Then check TOP/BOTTOM for center positions
     const isTop = seatPosition.y <= 20;
-    if (isTop) return { x: 0, y: verticalDistance }; // move down (towards table)
+    if (isTop) return { x: 0, y: 55 }; // move down (towards table)
     
-    // Default: bottom center position
-    return { x: 0, y: -verticalDistance }; // move up (towards table)
+    // Bottom/hero position: slightly down + slightly right
+    return { x: 8, y: -50 };
   }, [seatPosition.x, seatPosition.y]);
 
   return (
