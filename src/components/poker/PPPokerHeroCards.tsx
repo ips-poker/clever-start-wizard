@@ -59,13 +59,17 @@ const HeroCard = memo(function HeroCard({
   const suitSize = cardCount > 2 ? 'text-sm' : 'text-base';
   const centerSize = cardCount > 2 ? 'text-2xl' : 'text-3xl';
 
+  // PPPoker GOLD style constants
+  const GOLD_BORDER = '#f59e0b';  // Amber-500 gold
+  const GOLD_GLOW = 'rgba(245,158,11,0.5)';
+
   // Colors for dimmed vs bright cards
   const cardBg = isDimmed 
     ? 'linear-gradient(145deg, #4b5563 0%, #374151 50%, #4b5563 100%)'
     : `linear-gradient(145deg, ${suitInfo.bg} 0%, #ffffff 50%, ${suitInfo.bg} 100%)`;
   const suitColor = isDimmed ? '#9ca3af' : suitInfo.color;
   const borderStyle = isWinning 
-    ? '3px solid #fbbf24' 
+    ? `3px solid ${GOLD_BORDER}` 
     : isDimmed 
       ? '2px solid #6b7280' 
       : '2px solid #d1d5db';
@@ -76,11 +80,11 @@ const HeroCard = memo(function HeroCard({
     background: cardBg,
     border: borderStyle,
     boxShadow: isWinning 
-      ? '0 0 25px rgba(251,191,36,0.5), 0 6px 20px rgba(0,0,0,0.3)'
+      ? `0 0 16px ${GOLD_GLOW}, 0 0 28px rgba(245,158,11,0.3), 0 6px 20px rgba(0,0,0,0.3)`
       : isDimmed
         ? '0 3px 10px rgba(0,0,0,0.3)'
         : '0 6px 20px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.8)',
-    opacity: isDimmed ? 0.9 : 1,
+    opacity: isDimmed ? 0.6 : 1,  // Stronger dimming
   };
 
   const Inner = (
@@ -147,27 +151,14 @@ const HeroCard = memo(function HeroCard({
         />
       )}
       
-      {/* Winning glow (static at showdown to avoid flicker) */}
+      {/* Winning glow - ALWAYS STATIC, no animation/pulse */}
       {isWinning && (
-        animate ? (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: [0.2, 0.5, 0.2] }}
-            transition={{ duration: 1.2, repeat: Infinity }}
-            className="absolute inset-0 rounded-lg"
-            style={{
-              background: 'radial-gradient(circle, rgba(251,191,36,0.4) 0%, transparent 70%)'
-            }}
-          />
-        ) : (
-          <div
-            className="absolute inset-0 rounded-lg"
-            style={{
-              background: 'radial-gradient(circle, rgba(251,191,36,0.4) 0%, transparent 70%)',
-              opacity: 0.85,
-            }}
-          />
-        )
+        <div
+          className="absolute inset-0 rounded-lg"
+          style={{
+            background: 'radial-gradient(circle, rgba(245,158,11,0.2) 0%, transparent 70%)',
+          }}
+        />
       )}
     </>
   );

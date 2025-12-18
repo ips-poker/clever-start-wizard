@@ -48,6 +48,10 @@ const CommunityCard = memo(function CommunityCard({
   const suitChar = (card?.[1]?.toLowerCase() || 's') as keyof typeof SUITS_FOURCOLOR;
   const suitInfo = useFourColor ? SUITS_FOURCOLOR[suitChar] : SUITS_CLASSIC[suitChar];
 
+  // PPPoker GOLD style constants
+  const GOLD_BORDER = '#f59e0b';  // Amber-500 gold
+  const GOLD_GLOW = 'rgba(245,158,11,0.5)';
+
   // Dimmed cards have gray background, bright cards have white/colored background
   const bgStyle = isDimmed 
     ? 'linear-gradient(145deg, #4b5563 0%, #374151 50%, #4b5563 100%)'
@@ -55,7 +59,7 @@ const CommunityCard = memo(function CommunityCard({
   
   const suitColor = isDimmed ? '#9ca3af' : suitInfo.color;
   const borderStyle = isWinning 
-    ? '3px solid #fbbf24' 
+    ? `3px solid ${GOLD_BORDER}` 
     : isDimmed 
       ? '2px solid #6b7280' 
       : '2px solid #d1d5db';
@@ -66,11 +70,11 @@ const CommunityCard = memo(function CommunityCard({
     background: bgStyle,
     border: borderStyle,
     boxShadow: isWinning 
-      ? '0 0 20px rgba(251,191,36,0.5), 0 6px 16px rgba(0,0,0,0.3)'
+      ? `0 0 16px ${GOLD_GLOW}, 0 0 28px rgba(245,158,11,0.3), 0 6px 16px rgba(0,0,0,0.3)`
       : isDimmed
         ? '0 2px 8px rgba(0,0,0,0.3)'
         : '0 4px 12px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.8)',
-    opacity: isDimmed ? 0.85 : 1,
+    opacity: isDimmed ? 0.6 : 1,  // Stronger dimming
   };
 
   const Inner = (
@@ -137,27 +141,14 @@ const CommunityCard = memo(function CommunityCard({
         />
       )}
       
-      {/* Winning glow (static at showdown to avoid flicker) */}
+      {/* Winning glow - ALWAYS STATIC, no animation/pulse */}
       {isWinning && (
-        animate ? (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: [0.3, 0.6, 0.3] }}
-            transition={{ duration: 1.5, repeat: Infinity }}
-            className="absolute inset-0 rounded-lg"
-            style={{
-              background: 'radial-gradient(circle, rgba(251,191,36,0.3) 0%, transparent 70%)'
-            }}
-          />
-        ) : (
-          <div
-            className="absolute inset-0 rounded-lg"
-            style={{
-              background: 'radial-gradient(circle, rgba(251,191,36,0.35) 0%, transparent 70%)',
-              opacity: 0.85,
-            }}
-          />
-        )
+        <div
+          className="absolute inset-0 rounded-lg"
+          style={{
+            background: 'radial-gradient(circle, rgba(245,158,11,0.2) 0%, transparent 70%)',
+          }}
+        />
       )}
     </>
   );
