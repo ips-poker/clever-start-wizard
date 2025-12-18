@@ -486,17 +486,17 @@ const PlayerSeat = memo(function PlayerSeat({
           let cardStyle: React.CSSProperties = {};
           
           if (isOnTop) {
-            // Top players: cards on bottom-right corner
-            cardStyle = { bottom: '-2px', right: '-4px' };
+            // Top players: cards on bottom-right corner, higher
+            cardStyle = { bottom: '4px', right: '-6px' };
           } else if (isOnBottom) {
-            // Bottom players: cards on top-right corner  
-            cardStyle = { top: '-2px', right: '-4px' };
+            // Bottom players: cards on top-right corner, higher
+            cardStyle = { top: '-6px', right: '-6px' };
           } else if (isOnRightSide) {
-            // Right side players: cards on left side of avatar
-            cardStyle = { top: '50%', left: '-4px', transform: 'translateY(-50%)' };
+            // Right side players: cards on top-left of avatar
+            cardStyle = { top: '-4px', left: '-6px' };
           } else {
-            // Left side players: cards on right side of avatar
-            cardStyle = { top: '50%', right: '-4px', transform: 'translateY(-50%)' };
+            // Left side players: cards on top-right of avatar
+            cardStyle = { top: '-4px', right: '-6px' };
           }
           
           return (
