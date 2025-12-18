@@ -187,6 +187,60 @@ const MiniCard = memo(function MiniCard({
     );
   }
 
+  // For winning cards - no animation, static display
+  // For other cards - use spring animation
+  const cardStyle = {
+    width: cfg.w,
+    height: cfg.h,
+    background: isDimmed 
+      ? 'linear-gradient(145deg, #4b5563 0%, #374151 100%)'
+      : 'linear-gradient(145deg, #ffffff 0%, #fafafa 50%, #f5f5f5 100%)',
+    border: isWinning 
+      ? '3px solid #22c55e'  // Green border for winning cards
+      : isDimmed 
+        ? '1px solid #6b7280' 
+        : '1px solid #e5e5e5',
+    boxShadow: isWinning 
+      ? '0 0 16px rgba(34,197,94,0.7), 0 0 32px rgba(34,197,94,0.4), 0 3px 8px rgba(0,0,0,0.3)' // Strong green glow
+      : '0 3px 8px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.8)',
+    transformOrigin: 'bottom center',
+    transform: `rotate(${rotation}deg)`,
+    opacity: isDimmed ? 0.85 : 1
+  };
+
+  // Winning cards - static, no animation
+  if (isWinning) {
+    return (
+      <div
+        className="rounded-[4px] shadow-lg relative"
+        style={cardStyle}
+      >
+        {/* TOP-LEFT corner */}
+        <div className="absolute top-[2px] left-[2px] flex items-center gap-0.5 leading-none">
+          <span className={cn(cfg.rank, 'font-black leading-none')} style={{ color: suitColor }}>{rank}</span>
+          <span className={cn(cfg.suit, 'leading-none')} style={{ color: suitColor }}>{suitInfo.symbol}</span>
+        </div>
+        
+        {/* CENTER */}
+        <div className="absolute inset-0 flex items-center justify-center">
+          <span className={cfg.center} style={{ color: suitColor, opacity: 0.85 }}>{suitInfo.symbol}</span>
+        </div>
+        
+        {/* BOTTOM-RIGHT corner */}
+        <div className="absolute bottom-[2px] right-[2px] flex items-center gap-0.5 leading-none rotate-180">
+          <span className={cn(cfg.rank, 'font-black leading-none')} style={{ color: suitColor }}>{rank}</span>
+          <span className={cn(cfg.suit, 'leading-none')} style={{ color: suitColor }}>{suitInfo.symbol}</span>
+        </div>
+        
+        {/* Glossy effect */}
+        <div 
+          className="absolute inset-0 pointer-events-none rounded-[3px]"
+          style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.6) 0%, transparent 35%, rgba(0,0,0,0.02) 100%)' }}
+        />
+      </div>
+    );
+  }
+
   return (
     <motion.div
       initial={{ scale: 0, opacity: 0 }}
@@ -199,69 +253,33 @@ const MiniCard = memo(function MiniCard({
         background: isDimmed 
           ? 'linear-gradient(145deg, #4b5563 0%, #374151 100%)'
           : 'linear-gradient(145deg, #ffffff 0%, #fafafa 50%, #f5f5f5 100%)',
-        border: isWinning 
-          ? '2px solid #fbbf24' 
-          : isDimmed 
-            ? '1px solid #6b7280' 
-            : '1px solid #e5e5e5',
-        boxShadow: isWinning 
-          ? '0 0 14px rgba(251,191,36,0.6), 0 3px 8px rgba(0,0,0,0.3)' 
-          : '0 3px 8px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.8)',
+        border: isDimmed ? '1px solid #6b7280' : '1px solid #e5e5e5',
+        boxShadow: '0 3px 8px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.8)',
         transformOrigin: 'bottom center'
       }}
     >
-      {/* TOP-LEFT corner - Rank left, Suit right (horizontal) */}
+      {/* TOP-LEFT corner */}
       <div className="absolute top-[2px] left-[2px] flex items-center gap-0.5 leading-none">
-        <span 
-          className={cn(cfg.rank, 'font-black leading-none')} 
-          style={{ color: suitColor }}
-        >
-          {rank}
-        </span>
-        <span 
-          className={cn(cfg.suit, 'leading-none')} 
-          style={{ color: suitColor }}
-        >
-          {suitInfo.symbol}
-        </span>
+        <span className={cn(cfg.rank, 'font-black leading-none')} style={{ color: suitColor }}>{rank}</span>
+        <span className={cn(cfg.suit, 'leading-none')} style={{ color: suitColor }}>{suitInfo.symbol}</span>
       </div>
       
-      {/* CENTER - Large suit symbol */}
+      {/* CENTER */}
       <div className="absolute inset-0 flex items-center justify-center">
-        <span 
-          className={cfg.center}
-          style={{ 
-            color: suitColor,
-            opacity: isDimmed ? 0.5 : 0.85
-          }}
-        >
-          {suitInfo.symbol}
-        </span>
+        <span className={cfg.center} style={{ color: suitColor, opacity: isDimmed ? 0.5 : 0.85 }}>{suitInfo.symbol}</span>
       </div>
       
-      {/* BOTTOM-RIGHT corner - Suit left, Rank right (horizontal, rotated 180°) */}
+      {/* BOTTOM-RIGHT corner */}
       <div className="absolute bottom-[2px] right-[2px] flex items-center gap-0.5 leading-none rotate-180">
-        <span 
-          className={cn(cfg.rank, 'font-black leading-none')}
-          style={{ color: suitColor }}
-        >
-          {rank}
-        </span>
-        <span 
-          className={cn(cfg.suit, 'leading-none')} 
-          style={{ color: suitColor }}
-        >
-          {suitInfo.symbol}
-        </span>
+        <span className={cn(cfg.rank, 'font-black leading-none')} style={{ color: suitColor }}>{rank}</span>
+        <span className={cn(cfg.suit, 'leading-none')} style={{ color: suitColor }}>{suitInfo.symbol}</span>
       </div>
       
-      {/* Glossy effect - only on bright cards */}
+      {/* Glossy effect */}
       {!isDimmed && (
         <div 
           className="absolute inset-0 pointer-events-none rounded-[3px]"
-          style={{ 
-            background: 'linear-gradient(135deg, rgba(255,255,255,0.6) 0%, transparent 35%, rgba(0,0,0,0.02) 100%)' 
-          }}
+          style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.6) 0%, transparent 35%, rgba(0,0,0,0.02) 100%)' }}
         />
       )}
     </motion.div>
