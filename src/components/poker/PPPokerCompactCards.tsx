@@ -72,7 +72,8 @@ const MiniCard = memo(function MiniCard({
   isDimmed = false,
   rotation = 0,
   cardBackColors,
-  useFourColor = false
+  useFourColor = false,
+  animate = true
 }: {
   card: string;
   faceDown?: boolean;
@@ -83,6 +84,7 @@ const MiniCard = memo(function MiniCard({
   rotation?: number;
   cardBackColors?: { accent: string; pattern: string };
   useFourColor?: boolean;
+  animate?: boolean;
 }) {
   const cfg = SIZE_CONFIG[size] || SIZE_CONFIG['sm'];
   
@@ -115,49 +117,67 @@ const MiniCard = memo(function MiniCard({
 
   // Unknown card at showdown - show special placeholder (not faceDown)
   if (isUnknown && !faceDown) {
-    return (
-      <motion.div
-        initial={{ scale: 0, opacity: 0 }}
-        animate={{ scale: 1, opacity: 0.9, rotate: rotation }}
-        transition={{ delay: delay * 0.05, type: 'spring', stiffness: 300, damping: 25 }}
-        className="rounded-[4px] shadow-lg relative overflow-hidden flex items-center justify-center"
-        style={{
-          width: cfg.w,
-          height: cfg.h,
-          background: 'linear-gradient(145deg, #374151 0%, #1f2937 100%)',
-          border: '1px solid #4b5563',
-          boxShadow: '0 3px 8px rgba(0,0,0,0.3)',
-          transformOrigin: 'bottom center'
-        }}
-      >
+    const commonStyle: React.CSSProperties = {
+      width: cfg.w,
+      height: cfg.h,
+      background: 'linear-gradient(145deg, #374151 0%, #1f2937 100%)',
+      border: '1px solid #4b5563',
+      boxShadow: '0 3px 8px rgba(0,0,0,0.3)',
+      transformOrigin: 'bottom center',
+      transform: `rotate(${rotation}deg)`,
+      opacity: 0.9,
+    };
+
+    const Content = (
+      <>
         <span 
           className="font-bold text-gray-400"
           style={{ fontSize: cfg.w > 24 ? '1rem' : '0.7rem' }}
         >
           ?
         </span>
+      </>
+    );
+
+    if (!animate) {
+      return (
+        <div
+          className="rounded-[4px] shadow-lg relative overflow-hidden flex items-center justify-center"
+          style={commonStyle}
+        >
+          {Content}
+        </div>
+      );
+    }
+
+    return (
+      <motion.div
+        initial={{ scale: 0, opacity: 0 }}
+        animate={{ scale: 1, opacity: 0.9, rotate: rotation }}
+        transition={{ delay: delay * 0.05, type: 'spring', stiffness: 300, damping: 25 }}
+        className="rounded-[4px] shadow-lg relative overflow-hidden flex items-center justify-center"
+        style={commonStyle}
+      >
+        {Content}
       </motion.div>
     );
   }
 
   if (faceDown) {
-    return (
-      <motion.div
-        initial={{ scale: 0, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1, rotate: rotation }}
-        transition={{ delay: delay * 0.05, type: 'spring', stiffness: 300, damping: 25 }}
-        className="rounded-[4px] shadow-lg relative overflow-hidden"
-        style={{
-          width: cfg.w,
-          height: cfg.h,
-          background: 'linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%)',
-          border: '1px solid #e5e7eb',
-          boxShadow: isWinning 
-            ? '0 0 12px rgba(251,191,36,0.6), 0 3px 8px rgba(0,0,0,0.3)' 
-            : '0 3px 8px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.8)',
-          transformOrigin: 'bottom center'
-        }}
-      >
+    const commonStyle: React.CSSProperties = {
+      width: cfg.w,
+      height: cfg.h,
+      background: 'linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%)',
+      border: '1px solid #e5e7eb',
+      boxShadow: isWinning 
+        ? '0 0 12px rgba(251,191,36,0.6), 0 3px 8px rgba(0,0,0,0.3)' 
+        : '0 3px 8px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.8)',
+      transformOrigin: 'bottom center',
+      transform: `rotate(${rotation}deg)`,
+    };
+
+    const Inner = (
+      <>
         {/* Pattern */}
         <div 
           className="absolute inset-0"
@@ -183,6 +203,26 @@ const MiniCard = memo(function MiniCard({
             S
           </span>
         </div>
+      </>
+    );
+
+    if (!animate) {
+      return (
+        <div className="rounded-[4px] shadow-lg relative overflow-hidden" style={commonStyle}>
+          {Inner}
+        </div>
+      );
+    }
+
+    return (
+      <motion.div
+        initial={{ scale: 0, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1, rotate: rotation }}
+        transition={{ delay: delay * 0.05, type: 'spring', stiffness: 300, damping: 25 }}
+        className="rounded-[4px] shadow-lg relative overflow-hidden"
+        style={commonStyle}
+      >
+        {Inner}
       </motion.div>
     );
   }
@@ -237,6 +277,51 @@ const MiniCard = memo(function MiniCard({
           className="absolute inset-0 pointer-events-none rounded-[3px]"
           style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.6) 0%, transparent 35%, rgba(0,0,0,0.02) 100%)' }}
         />
+      </div>
+    );
+  }
+
+  if (!animate) {
+    return (
+      <div
+        className="rounded-[4px] shadow-lg relative"
+        style={{
+          width: cfg.w,
+          height: cfg.h,
+          background: isDimmed 
+            ? 'linear-gradient(145deg, #4b5563 0%, #374151 100%)'
+            : 'linear-gradient(145deg, #ffffff 0%, #fafafa 50%, #f5f5f5 100%)',
+          border: isDimmed ? '1px solid #6b7280' : '1px solid #e5e5e5',
+          boxShadow: '0 3px 8px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.8)',
+          transformOrigin: 'bottom center',
+          transform: `rotate(${rotation}deg)`,
+          opacity: isDimmed ? 0.85 : 1,
+        }}
+      >
+        {/* TOP-LEFT corner */}
+        <div className="absolute top-[2px] left-[2px] flex items-center gap-0.5 leading-none">
+          <span className={cn(cfg.rank, 'font-black leading-none')} style={{ color: suitColor }}>{rank}</span>
+          <span className={cn(cfg.suit, 'leading-none')} style={{ color: suitColor }}>{suitInfo.symbol}</span>
+        </div>
+        
+        {/* CENTER */}
+        <div className="absolute inset-0 flex items-center justify-center">
+          <span className={cfg.center} style={{ color: suitColor, opacity: isDimmed ? 0.5 : 0.85 }}>{suitInfo.symbol}</span>
+        </div>
+        
+        {/* BOTTOM-RIGHT corner */}
+        <div className="absolute bottom-[2px] right-[2px] flex items-center gap-0.5 leading-none rotate-180">
+          <span className={cn(cfg.rank, 'font-black leading-none')} style={{ color: suitColor }}>{rank}</span>
+          <span className={cn(cfg.suit, 'leading-none')} style={{ color: suitColor }}>{suitInfo.symbol}</span>
+        </div>
+        
+        {/* Glossy effect */}
+        {!isDimmed && (
+          <div 
+            className="absolute inset-0 pointer-events-none rounded-[3px]"
+            style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.6) 0%, transparent 35%, rgba(0,0,0,0.02) 100%)' }}
+          />
+        )}
       </div>
     );
   }
@@ -310,16 +395,7 @@ export const PPPokerCompactCards = memo(function PPPokerCompactCards({
   const showCards = isShowdown && hasAnyCards;
   const useFourColor = preferences.cardStyle === 'fourcolor';
   
-  // Debug: log what we're rendering
-  if (isShowdown) {
-    console.log('[PPPokerCompactCards] Showdown render:', { 
-      cards, 
-      hasValidCards, 
-      showCards, 
-      handName, 
-      isWinner 
-    });
-  }
+  // Note: avoid logging on showdown to prevent performance issues / flicker
   
   // For PLO4, show all 4 cards; for Hold'em show 2
   const cardCount = cards?.length || 2;
@@ -383,6 +459,7 @@ export const PPPokerCompactCards = memo(function PPPokerCompactCards({
                   rotation={0}
                   cardBackColors={{ accent: currentCardBack.accentColor, pattern: currentCardBack.pattern }}
                   useFourColor={useFourColor}
+                  animate={!isShowdown}
                 />
               </div>
             );
@@ -390,27 +467,22 @@ export const PPPokerCompactCards = memo(function PPPokerCompactCards({
         </div>
       </div>
       
-      {/* Hand name badge at showdown - positioned BELOW player panel, green text */}
+      {/* Hand name badge at showdown - positioned BELOW player panel */}
       {isShowdown && handName && (
-        <motion.div
-          initial={{ opacity: 0, y: -4 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
+        <div
           className="absolute left-1/2 -translate-x-1/2 whitespace-nowrap z-30"
-          style={{
-            bottom: -22,
-          }}
+          style={{ bottom: -22 }}
         >
           <span 
             className="text-[11px] font-bold"
             style={{
-              color: isWinner ? '#22c55e' : '#22c55e',
+              color: '#22c55e',
               textShadow: '0 1px 4px rgba(0,0,0,0.8)'
             }}
           >
             {handName}
           </span>
-        </motion.div>
+        </div>
       )}
     </>
   );
