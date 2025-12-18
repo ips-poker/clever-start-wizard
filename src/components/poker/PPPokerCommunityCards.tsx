@@ -34,13 +34,15 @@ const CommunityCard = memo(function CommunityCard({
   delay = 0,
   isWinning = false,
   isDimmed = false,
-  useFourColor = true
+  useFourColor = true,
+  animate = true,
 }: {
   card: string;
   delay?: number;
   isWinning?: boolean;
   isDimmed?: boolean;
   useFourColor?: boolean;
+  animate?: boolean;
 }) {
   const rank = card?.[0] === 'T' ? '10' : card?.[0] || '?';
   const suitChar = (card?.[1]?.toLowerCase() || 's') as keyof typeof SUITS_FOURCOLOR;
@@ -58,31 +60,21 @@ const CommunityCard = memo(function CommunityCard({
       ? '2px solid #6b7280' 
       : '2px solid #d1d5db';
 
-  return (
-    <motion.div
-      initial={{ y: -60, opacity: 0, rotateX: 90 }}
-      animate={{ y: 0, opacity: 1, rotateX: 0 }}
-      exit={{ y: 20, opacity: 0 }}
-      transition={{ 
-        delay: delay * 0.12, 
-        type: 'spring', 
-        stiffness: 250, 
-        damping: 20 
-      }}
-      className="relative rounded-lg overflow-hidden"
-      style={{
-        width: 56,
-        height: 78,
-        background: bgStyle,
-        border: borderStyle,
-        boxShadow: isWinning 
-          ? '0 0 20px rgba(251,191,36,0.5), 0 6px 16px rgba(0,0,0,0.3)'
-          : isDimmed
-            ? '0 2px 8px rgba(0,0,0,0.3)'
-            : '0 4px 12px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.8)',
-        opacity: isDimmed ? 0.85 : 1
-      }}
-    >
+  const commonStyle: React.CSSProperties = {
+    width: 56,
+    height: 78,
+    background: bgStyle,
+    border: borderStyle,
+    boxShadow: isWinning 
+      ? '0 0 20px rgba(251,191,36,0.5), 0 6px 16px rgba(0,0,0,0.3)'
+      : isDimmed
+        ? '0 2px 8px rgba(0,0,0,0.3)'
+        : '0 4px 12px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.8)',
+    opacity: isDimmed ? 0.85 : 1,
+  };
+
+  const Inner = (
+    <>
       {/* TOP-LEFT corner - Rank left, Suit right (horizontal) */}
       <div className="absolute top-1 left-1.5 flex items-center gap-1 leading-none">
         <span 
@@ -145,18 +137,54 @@ const CommunityCard = memo(function CommunityCard({
         />
       )}
       
-      {/* Winning glow */}
+      {/* Winning glow (static at showdown to avoid flicker) */}
       {isWinning && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: [0.3, 0.6, 0.3] }}
-          transition={{ duration: 1.5, repeat: Infinity }}
-          className="absolute inset-0 rounded-lg"
-          style={{
-            background: 'radial-gradient(circle, rgba(251,191,36,0.3) 0%, transparent 70%)'
-          }}
-        />
+        animate ? (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: [0.3, 0.6, 0.3] }}
+            transition={{ duration: 1.5, repeat: Infinity }}
+            className="absolute inset-0 rounded-lg"
+            style={{
+              background: 'radial-gradient(circle, rgba(251,191,36,0.3) 0%, transparent 70%)'
+            }}
+          />
+        ) : (
+          <div
+            className="absolute inset-0 rounded-lg"
+            style={{
+              background: 'radial-gradient(circle, rgba(251,191,36,0.35) 0%, transparent 70%)',
+              opacity: 0.85,
+            }}
+          />
+        )
       )}
+    </>
+  );
+
+  if (!animate) {
+    return (
+      <div className="relative rounded-lg overflow-hidden" style={commonStyle}>
+        {Inner}
+      </div>
+    );
+  }
+
+  return (
+    <motion.div
+      initial={{ y: -60, opacity: 0, rotateX: 90 }}
+      animate={{ y: 0, opacity: 1, rotateX: 0 }}
+      exit={{ y: 20, opacity: 0 }}
+      transition={{ 
+        delay: delay * 0.12, 
+        type: 'spring', 
+        stiffness: 250, 
+        damping: 20 
+      }}
+      className="relative rounded-lg overflow-hidden"
+      style={commonStyle}
+    >
+      {Inner}
     </motion.div>
   );
 });
@@ -194,16 +222,43 @@ export const PPPokerCommunityCards = memo(function PPPokerCommunityCards({
         const isWinning = isCardWinning(idx, card);
         // At showdown, cards not in winning hand are dimmed
         const isDimmed = isShowdown && hasWinningInfo && !isWinning;
-        
+
+        // IMPORTANT: at showdown we avoid AnimatePresence and animations to prevent flicker
+        if (isShowdown) {
+          return isVisible && card ? (
+            <CommunityCard
+              key={idx}
+              card={card}
+              delay={idx}
+              isWinning={isWinning}
+              isDimmed={isDimmed}
+              useFourColor={useFourColor}
+              animate={false}
+            />
+          ) : (
+            <div 
+              key={`empty-${idx}`}
+              className="rounded-lg border-2 border-dashed"
+              style={{ 
+                width: 56, 
+                height: 78,
+                borderColor: 'rgba(255,255,255,0.08)',
+                background: 'rgba(0,0,0,0.1)'
+              }}
+            />
+          );
+        }
+
         return (
           <AnimatePresence key={idx} mode="wait">
             {isVisible && card ? (
               <CommunityCard
                 card={card}
                 delay={idx}
-                isWinning={isShowdown && isWinning}
+                isWinning={isWinning}
                 isDimmed={isDimmed}
                 useFourColor={useFourColor}
+                animate={true}
               />
             ) : (
               <div 

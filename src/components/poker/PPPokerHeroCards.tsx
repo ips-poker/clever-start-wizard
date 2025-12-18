@@ -37,7 +37,8 @@ const HeroCard = memo(function HeroCard({
   isWinning = false,
   isDimmed = false,
   useFourColor = true,
-  cardCount = 2
+  cardCount = 2,
+  animate = true
 }: {
   card: string;
   delay?: number;
@@ -45,6 +46,7 @@ const HeroCard = memo(function HeroCard({
   isDimmed?: boolean;
   useFourColor?: boolean;
   cardCount?: number;
+  animate?: boolean;
 }) {
   const rank = card?.[0] === 'T' ? '10' : card?.[0] || '?';
   const suitChar = (card?.[1]?.toLowerCase() || 's') as keyof typeof SUITS_FOURCOLOR;
@@ -68,24 +70,21 @@ const HeroCard = memo(function HeroCard({
       ? '2px solid #6b7280' 
       : '2px solid #d1d5db';
 
-  return (
-    <motion.div
-      initial={{ rotateY: 180, scale: 0.3, opacity: 0 }}
-      animate={{ rotateY: 0, scale: 1, opacity: isDimmed ? 0.9 : 1 }}
-      transition={{ delay: delay * 0.08, type: 'spring', stiffness: 250, damping: 22 }}
-      className="rounded-lg shadow-xl relative flex flex-col"
-      style={{
-        width: cardWidth,
-        height: cardHeight,
-        background: cardBg,
-        border: borderStyle,
-        boxShadow: isWinning 
-          ? '0 0 25px rgba(251,191,36,0.5), 0 6px 20px rgba(0,0,0,0.3)'
-          : isDimmed
-            ? '0 3px 10px rgba(0,0,0,0.3)'
-            : '0 6px 20px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.8)'
-      }}
-    >
+  const commonStyle: React.CSSProperties = {
+    width: cardWidth,
+    height: cardHeight,
+    background: cardBg,
+    border: borderStyle,
+    boxShadow: isWinning 
+      ? '0 0 25px rgba(251,191,36,0.5), 0 6px 20px rgba(0,0,0,0.3)'
+      : isDimmed
+        ? '0 3px 10px rgba(0,0,0,0.3)'
+        : '0 6px 20px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.8)',
+    opacity: isDimmed ? 0.9 : 1,
+  };
+
+  const Inner = (
+    <>
       {/* TOP-LEFT corner - Rank left, Suit right (horizontal) */}
       <div className="absolute top-1 left-1.5 flex items-center gap-1 leading-none">
         <span 
@@ -148,18 +147,48 @@ const HeroCard = memo(function HeroCard({
         />
       )}
       
-      {/* Winning pulse */}
+      {/* Winning glow (static at showdown to avoid flicker) */}
       {isWinning && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: [0.2, 0.5, 0.2] }}
-          transition={{ duration: 1.2, repeat: Infinity }}
-          className="absolute inset-0 rounded-lg"
-          style={{
-            background: 'radial-gradient(circle, rgba(251,191,36,0.4) 0%, transparent 70%)'
-          }}
-        />
+        animate ? (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: [0.2, 0.5, 0.2] }}
+            transition={{ duration: 1.2, repeat: Infinity }}
+            className="absolute inset-0 rounded-lg"
+            style={{
+              background: 'radial-gradient(circle, rgba(251,191,36,0.4) 0%, transparent 70%)'
+            }}
+          />
+        ) : (
+          <div
+            className="absolute inset-0 rounded-lg"
+            style={{
+              background: 'radial-gradient(circle, rgba(251,191,36,0.4) 0%, transparent 70%)',
+              opacity: 0.85,
+            }}
+          />
+        )
       )}
+    </>
+  );
+
+  if (!animate) {
+    return (
+      <div className="rounded-lg shadow-xl relative flex flex-col" style={commonStyle}>
+        {Inner}
+      </div>
+    );
+  }
+
+  return (
+    <motion.div
+      initial={{ rotateY: 180, scale: 0.3, opacity: 0 }}
+      animate={{ rotateY: 0, scale: 1, opacity: isDimmed ? 0.9 : 1 }}
+      transition={{ delay: delay * 0.08, type: 'spring', stiffness: 250, damping: 22 }}
+      className="rounded-lg shadow-xl relative flex flex-col"
+      style={commonStyle}
+    >
+      {Inner}
     </motion.div>
   );
 });
@@ -213,30 +242,47 @@ export const PPPokerHeroCards = memo(function PPPokerHeroCards({
                 isDimmed={isDimmed}
                 useFourColor={useFourColor}
                 cardCount={cardCount}
+                animate={!isShowdown}
               />
             </div>
           );
         })}
       </div>
       
-      {/* Hand strength badge - PPPoker style (green text) */}
+      {/* Hand strength badge - PPPoker style */}
       {handName && (
-        <motion.div
-          initial={{ opacity: 0, y: 3 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.25 }}
-          className="mt-0.5 px-2 py-0.5 rounded text-[10px] font-bold whitespace-nowrap"
-          style={{
-            background: isWinner 
-              ? 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)'
-              : 'transparent',
-            color: isWinner ? '#ffffff' : '#22c55e',
-            boxShadow: isWinner ? '0 0 12px rgba(34,197,94,0.4)' : 'none',
-            textShadow: '0 1px 3px rgba(0,0,0,0.5)'
-          }}
-        >
-          {handName}
-        </motion.div>
+        isShowdown ? (
+          <div
+            className="mt-0.5 px-2 py-0.5 rounded text-[10px] font-bold whitespace-nowrap"
+            style={{
+              background: isWinner 
+                ? 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)'
+                : 'transparent',
+              color: isWinner ? '#ffffff' : '#22c55e',
+              boxShadow: isWinner ? '0 0 12px rgba(34,197,94,0.4)' : 'none',
+              textShadow: '0 1px 3px rgba(0,0,0,0.5)'
+            }}
+          >
+            {handName}
+          </div>
+        ) : (
+          <motion.div
+            initial={{ opacity: 0, y: 3 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.25 }}
+            className="mt-0.5 px-2 py-0.5 rounded text-[10px] font-bold whitespace-nowrap"
+            style={{
+              background: isWinner 
+                ? 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)'
+                : 'transparent',
+              color: isWinner ? '#ffffff' : '#22c55e',
+              boxShadow: isWinner ? '0 0 12px rgba(34,197,94,0.4)' : 'none',
+              textShadow: '0 1px 3px rgba(0,0,0,0.5)'
+            }}
+          >
+            {handName}
+          </motion.div>
+        )
       )}
     </div>
   );
