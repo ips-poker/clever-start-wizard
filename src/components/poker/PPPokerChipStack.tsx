@@ -45,25 +45,32 @@ export const PPPokerChipStack = memo(function PPPokerChipStack({
     return 2; // minimum 2 for visible depth
   };
 
-  // Position bets PERPENDICULAR from avatar center towards table (PPPoker style)
-  // Priority: LEFT/RIGHT rails first, then TOP/BOTTOM
-  // Fine-tuned offsets per position
+  // Position bets towards table center (PPPoker style)
+  // Each position has offset pointing to center (~48%, ~46%)
   const betOffset = useMemo(() => {
-    // Check LEFT/RIGHT rails FIRST (takes priority over top/bottom corners)
-    const isLeftRail = seatPosition.x <= 25;
-    const isRightRail = seatPosition.x >= 75;
+    const { x, y } = seatPosition;
     
-    // Left positions: move right + slightly down
-    if (isLeftRail) return { x: 73, y: 8 };
-    // Right positions: mirror of left
-    if (isRightRail) return { x: -73, y: 8 };
+    // Left rail positions (x < 25)
+    if (x <= 25) {
+      // Left bottom (y > 50): bet goes right and slightly up
+      if (y > 50) return { x: 73, y: -10 };
+      // Left top (y <= 50): bet goes right and down
+      return { x: 73, y: 25 };
+    }
     
-    // Top position: move down + slightly right (mirror of hero)
-    const isTop = seatPosition.y <= 20;
-    if (isTop) return { x: 12, y: 52 };
+    // Right rail positions (x > 70)
+    if (x >= 70) {
+      // Right bottom (y > 50): bet goes left and slightly up
+      if (y > 50) return { x: -73, y: -10 };
+      // Right top (y <= 50): bet goes left and down
+      return { x: -73, y: 25 };
+    }
     
-    // Bottom/hero position: slightly right + slightly up
-    return { x: 12, y: -52 };
+    // Top center position (y < 20): bet goes down
+    if (y <= 20) return { x: 0, y: 52 };
+    
+    // Bottom/hero position: bet goes up
+    return { x: 0, y: -52 };
   }, [seatPosition.x, seatPosition.y]);
 
   return (
