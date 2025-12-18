@@ -41,25 +41,25 @@ import { PPPokerBetDisplay } from './PPPokerBetDisplay';
 import syndikateLogo from '@/assets/syndikate-logo-main.png';
 
 // ============= CONSTANTS =============
-// PPPoker style 6-max positions - optimized for octagonal table
+// PPPoker style 6-max positions - synchronized with FullscreenPokerTable popup
 // Hero always at bottom center (position 0), opponents arranged around table edge
 // Positions are tuned so players visually overlap the table rail like in PPPoker
 const SEAT_POSITIONS_6MAX_MOBILE = [
-  { x: 48, y: 85 },  // Seat 0 - Hero (bottom center, partial overlap with table)
-  { x: 17, y: 56 },  // Seat 1 - Left middle (on table edge)
-  { x: 17, y: 22 },  // Seat 2 - Left top (on table edge)
+  { x: 48, y: 88 },  // Seat 0 - Hero (bottom center)
+  { x: 17, y: 65 },  // Seat 1 - Left bottom (on table edge)
+  { x: 17, y: 35 },  // Seat 2 - Left top (on table edge)
   { x: 48, y: 4 },   // Seat 3 - Top center
-  { x: 74, y: 22 },  // Seat 4 - Right top (on table edge)
-  { x: 74, y: 56 },  // Seat 5 - Right middle (on table edge)
+  { x: 74, y: 35 },  // Seat 4 - Right top (on table edge)
+  { x: 74, y: 65 },  // Seat 5 - Right bottom (on table edge)
 ];
 
 const SEAT_POSITIONS_6MAX_DESKTOP = [
-  { x: 48, y: 82 },  // Seat 0 - Hero (bottom center)
-  { x: 17, y: 55 },  // Seat 1 - Left middle
-  { x: 17, y: 20 },  // Seat 2 - Left top
-  { x: 48, y: 3 },   // Seat 3 - Top center
-  { x: 74, y: 20 },  // Seat 4 - Right top
-  { x: 74, y: 55 },  // Seat 5 - Right middle
+  { x: 48, y: 88 },  // Seat 0 - Hero (bottom center)
+  { x: 17, y: 65 },  // Seat 1 - Left bottom
+  { x: 17, y: 35 },  // Seat 2 - Left top
+  { x: 48, y: 4 },   // Seat 3 - Top center
+  { x: 74, y: 35 },  // Seat 4 - Right top
+  { x: 74, y: 65 },  // Seat 5 - Right bottom
 ];
 
 const SUIT_COLORS: Record<string, string> = {
@@ -1620,17 +1620,24 @@ export function SyndikatetPokerTable({
     setShowSettings(false);
   }, []);
 
-  // Rotate seats so Hero (mySeat) is always at position 0 (bottom center)
+  // Robust hero seat detection (Telegram Mini App sometimes gets wrong mySeat)
+  const heroSeatForUI = useMemo(() => {
+    const pid = String(playerId);
+    const seatFromPlayers = tableState?.players?.find((p) => String(p.playerId) === pid)?.seatNumber;
+    return typeof seatFromPlayers === 'number' ? seatFromPlayers : mySeat;
+  }, [tableState?.players, playerId, mySeat]);
+
+  // Rotate seats so Hero is always at position 0 (bottom center)
   // This matches PPPoker where you always see yourself at the bottom
   // Server uses 0-based seat numbering (0-5), positions array also 0-based
   const players = useMemo(() => {
     if (!tableState) return [];
     
     const totalSeats = 6;
-    // IMPORTANT: mySeat can be 0 which is valid! Use null check instead of falsy check
-    const heroSeat = mySeat !== null && mySeat !== undefined ? mySeat : 0;
+    // Use robust heroSeat detection - fallback to 0 if not found
+    const heroSeat = heroSeatForUI !== null && heroSeatForUI !== undefined ? heroSeatForUI : 0;
     
-    console.log('[Poker] Building players array:', { mySeat, heroSeat, playersCount: tableState.players.length });
+    console.log('[Poker] Building players array:', { mySeat, heroSeatForUI, heroSeat, playerId, playersCount: tableState.players.length });
     
     // Create array of seat numbers rotated so hero is at visual position 0 (bottom)
     const rotatedSeats: { position: { x: number; y: number }; seatNumber: number; player: PokerPlayer | undefined }[] = [];
@@ -1652,7 +1659,7 @@ export function SyndikatetPokerTable({
     }
     
     return rotatedSeats;
-  }, [tableState?.players, SEAT_POSITIONS, mySeat]);
+  }, [tableState?.players, SEAT_POSITIONS, heroSeatForUI, playerId]);
 
   const bigBlind = tableState?.bigBlindAmount || 20;
   const smallBlind = tableState?.smallBlindAmount || 10;
