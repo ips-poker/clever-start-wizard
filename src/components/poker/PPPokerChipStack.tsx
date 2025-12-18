@@ -45,25 +45,30 @@ export const PPPokerChipStack = memo(function PPPokerChipStack({
     return 2; // minimum 2 for visible depth
   };
 
-  // Position bets TOWARDS the center of the table (perpendicular to edge)
-  // Calculate direction from player position to center (50, 50)
+  // Position bets TOWARDS the center of the table (perpendicular from avatar)
+  // Fixed equal distance from avatar for all players
   const getBetPosition = () => {
     const centerX = 50;
-    const centerY = 45; // Slightly above center for better visual
+    const centerY = 45; // Table center
     
-    // Vector from player to center
+    // Vector from player to center (for direction only)
     const dx = centerX - seatPosition.x;
     const dy = centerY - seatPosition.y;
     
-    // Normalize and scale - bets should be ~45px towards center
+    // Normalize direction vector
     const length = Math.sqrt(dx * dx + dy * dy);
-    if (length === 0) return { x: 0, y: -45 };
+    if (length === 0) return { x: 0, y: -50 };
     
-    const distance = 75; // Distance from player avatar towards center (increased by 30%)
-    const offsetX = (dx / length) * distance;
-    const offsetY = (dy / length) * distance;
+    const normalX = dx / length;
+    const normalY = dy / length;
     
-    return { x: offsetX, y: offsetY };
+    // FIXED distance from avatar - equal for all players (50px)
+    const fixedDistance = 50;
+    
+    return { 
+      x: normalX * fixedDistance, 
+      y: normalY * fixedDistance 
+    };
   };
   
   const betPos = getBetPosition();
