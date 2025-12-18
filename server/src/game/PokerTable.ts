@@ -995,8 +995,8 @@ export class PokerTable {
     
     this.currentHand = null;
     
-    // Check for next hand after showdown display time (7 seconds to give clients time to show results)
-    setTimeout(() => this.checkStartHand(), 7000);
+    // Check for next hand after showdown display time (5 seconds to give clients time to show results)
+    setTimeout(() => this.checkStartHand(), 5000);
   }
   
   /**
