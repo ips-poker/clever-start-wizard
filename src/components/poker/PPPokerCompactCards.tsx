@@ -427,15 +427,25 @@ export const PPPokerCompactCards = memo(function PPPokerCompactCards({
     return (idx - halfTotal) * baseAngle;
   };
 
+  // Calculate rotation to point cards towards table center
+  const getContainerRotation = () => {
+    if (isShowdown) return 0;
+    // Fan cards towards center - rotate the whole container
+    if (isOnTop) return 15; // Point down-ish
+    if (isOnBottom) return -15; // Point up-ish
+    if (isOnRightSide) return -25; // Point left towards center
+    return 25; // Point right towards center
+  };
+
   return (
     <div className="relative flex items-center">
-      {/* Cards container - horizontal layout, slightly overlapping */}
+      {/* Cards container - fanned, rotated to point towards table */}
       <div 
         className="relative flex"
         style={{ 
           flexDirection: 'row',
-          // Transform to flip cards for right-side players so they point to center
-          transform: isOnRightSide ? 'scaleX(-1)' : 'none'
+          transform: `rotate(${getContainerRotation()}deg)`,
+          transformOrigin: 'center center'
         }}
       >
         {displayCards.map((card, idx) => {
@@ -453,7 +463,6 @@ export const PPPokerCompactCards = memo(function PPPokerCompactCards({
               className="relative"
               style={{
                 marginLeft: idx > 0 ? (isShowdown ? 2 : -cfg.w * 0.45) : 0,
-                transform: isOnRightSide ? 'scaleX(-1)' : 'none', // Un-flip individual cards
                 zIndex: idx + 1
               }}
             >

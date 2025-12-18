@@ -476,30 +476,34 @@ const PlayerSeat = memo(function PlayerSeat({
             });
           }
           
-          // Position cards based on player position relative to table center
-          // Cards should be on the side TOWARDS the center of the table
+          // Position cards ON the avatar corner, pointing towards table center
           const isOnRightSide = position.x > 50;
           const isOnBottom = position.y > 60;
           const isOnTop = position.y < 40;
           
-          // Cards positioning: towards center of table (like PPPoker reference)
-          // Left players: cards on RIGHT side of avatar
-          // Right players: cards on LEFT side of avatar
-          // Bottom players: cards above avatar
-          // Top players: cards below avatar
-          let cardPosition = '';
+          // Cards overlaid on avatar corner (towards center of table)
+          // Calculate corner position based on where table center is relative to player
+          let cardStyle: React.CSSProperties = {};
+          
           if (isOnTop) {
-            cardPosition = 'top-full left-1/2 -translate-x-1/2 mt-0.5';
+            // Top players: cards on bottom-right corner
+            cardStyle = { bottom: '-2px', right: '-4px' };
           } else if (isOnBottom) {
-            cardPosition = 'bottom-full left-1/2 -translate-x-1/2 mb-0.5';
+            // Bottom players: cards on top-right corner  
+            cardStyle = { top: '-2px', right: '-4px' };
           } else if (isOnRightSide) {
-            cardPosition = 'right-full top-1/2 -translate-y-1/2 mr-0.5';
+            // Right side players: cards on left side of avatar
+            cardStyle = { top: '50%', left: '-4px', transform: 'translateY(-50%)' };
           } else {
-            cardPosition = 'left-full top-1/2 -translate-y-1/2 ml-0.5';
+            // Left side players: cards on right side of avatar
+            cardStyle = { top: '50%', right: '-4px', transform: 'translateY(-50%)' };
           }
           
           return (
-            <div className={cn("absolute z-5", cardPosition)}>
+            <div 
+              className="absolute z-5"
+              style={cardStyle}
+            >
               <PPPokerCompactCards 
                 cards={displayCards}
                 faceDown={!shouldReveal}
