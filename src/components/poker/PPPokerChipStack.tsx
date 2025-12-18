@@ -45,25 +45,25 @@ export const PPPokerChipStack = memo(function PPPokerChipStack({
     return 2; // minimum 2 for visible depth
   };
 
-  // Position bets TOWARDS the center of the table (perpendicular from avatar)
-  // Fixed equal distance from avatar for all players
+  // Position bets FROM avatar center TOWARDS table center
+  // The component is inside player container, so we offset from local center (0,0)
   const getBetPosition = () => {
-    const centerX = 50;
-    const centerY = 45; // Table center
+    const tableCenterX = 50;
+    const tableCenterY = 45;
     
-    // Vector from player to center (for direction only)
-    const dx = centerX - seatPosition.x;
-    const dy = centerY - seatPosition.y;
+    // Direction from player to table center
+    const dx = tableCenterX - seatPosition.x;
+    const dy = tableCenterY - seatPosition.y;
     
-    // Normalize direction vector
+    // Normalize direction
     const length = Math.sqrt(dx * dx + dy * dy);
-    if (length === 0) return { x: 0, y: -50 };
+    if (length === 0) return { x: 0, y: -66 };
     
     const normalX = dx / length;
     const normalY = dy / length;
     
-    // FIXED distance from avatar - equal for all players (60px - 20% increase)
-    const fixedDistance = 60;
+    // Fixed distance from avatar center (66px = 60px + 10%)
+    const fixedDistance = 66;
     
     return { 
       x: normalX * fixedDistance, 
@@ -83,11 +83,11 @@ export const PPPokerChipStack = memo(function PPPokerChipStack({
         damping: 24,
         delay: 0.03
       }}
-      className="absolute flex items-center gap-1.5 z-20"
+      className="absolute flex items-center gap-1.5 z-20 pointer-events-none"
       style={{
-        left: `calc(50% + ${betPos.x}px)`,
-        top: `calc(50% + ${betPos.y}px)`,
-        transform: 'translate(-50%, -50%)'
+        left: '50%',
+        top: '50%',
+        transform: `translate(calc(-50% + ${betPos.x}px), calc(-50% + ${betPos.y}px))`
       }}
     >
       {/* Premium 3D stacked poker chips */}
