@@ -45,23 +45,26 @@ export const PPPokerChipStack = memo(function PPPokerChipStack({
     return 2; // minimum 2 for visible depth
   };
 
-  // Position bets PERPENDICULAR from avatar center towards table (like PPPoker)
-  // Different distances: vertical (top/bottom) = 60px, horizontal (left/right) = 66px
+  // Position bets PERPENDICULAR from avatar center towards table (PPPoker style)
+  // Priority: LEFT/RIGHT rails first, then TOP/BOTTOM
+  // Distances: vertical (top/bottom) = 55px, horizontal (left/right) = 62px
   const betOffset = useMemo(() => {
-    const verticalDistance = 60;   // for top/bottom positions
-    const horizontalDistance = 66; // for left/right positions
+    const verticalDistance = 55;   // for top/bottom positions
+    const horizontalDistance = 62; // for left/right positions
 
-    // Determine closest table side for a "perpendicular inward" direction.
-    const isTop = seatPosition.y < 25;
-    const isBottom = seatPosition.y > 75;
-
+    // Check LEFT/RIGHT rails FIRST (takes priority over top/bottom corners)
+    const isLeftRail = seatPosition.x <= 25;
+    const isRightRail = seatPosition.x >= 75;
+    
+    if (isLeftRail) return { x: horizontalDistance, y: 0 }; // move right (towards table)
+    if (isRightRail) return { x: -horizontalDistance, y: 0 }; // move left (towards table)
+    
+    // Then check TOP/BOTTOM for center positions
+    const isTop = seatPosition.y <= 20;
     if (isTop) return { x: 0, y: verticalDistance }; // move down (towards table)
-    if (isBottom) return { x: 0, y: -verticalDistance }; // move up (towards table)
-
-    const isLeft = seatPosition.x < 50;
-    return isLeft
-      ? { x: horizontalDistance, y: 0 } // move right (towards table)
-      : { x: -horizontalDistance, y: 0 }; // move left (towards table)
+    
+    // Default: bottom center position
+    return { x: 0, y: -verticalDistance }; // move up (towards table)
   }, [seatPosition.x, seatPosition.y]);
 
   return (
