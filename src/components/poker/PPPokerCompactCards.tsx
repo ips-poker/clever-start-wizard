@@ -410,76 +410,74 @@ export const PPPokerCompactCards = memo(function PPPokerCompactCards({
   // At showdown, display actual cards (even if some are '??')
   const displayCards = showCards ? cards : Array(Math.min(cardCount, 4)).fill('XX');
   
-  // Determine if cards should be on left or right based on player position
-  // Cards should point TOWARDS the center of the table
+  // Determine card orientation based on player position
   const isOnRightSide = position.x > 50;
+  const isOnTop = position.y < 40;
+  const isOnBottom = position.y > 60;
+
+  // Fan direction: cards fan TOWARDS center of table
+  // - Left side players: fan right
+  // - Right side players: fan left
+  // - Top players: fan down
+  // - Bottom players: fan up
+  const getFanRotation = (idx: number, total: number) => {
+    if (isShowdown) return 0;
+    const baseAngle = total === 4 ? 6 : total === 3 ? 8 : 10;
+    const halfTotal = (total - 1) / 2;
+    return (idx - halfTotal) * baseAngle;
+  };
 
   return (
-    <>
-      {/* Cards positioned TOWARDS CENTER - larger horizontal layout at showdown */}
+    <div className="relative flex items-center">
+      {/* Cards container - horizontal layout, slightly overlapping */}
       <div 
-        className="absolute"
-        style={{
-          [isOnRightSide ? 'left' : 'right']: isShowdown ? -(cfg.w * displayCards.length + 8) : -(cfg.w * 2.5),
-          top: isShowdown ? '-20%' : '5%',
-          zIndex: 15,
+        className="relative flex"
+        style={{ 
+          flexDirection: 'row',
+          // Transform to flip cards for right-side players so they point to center
           transform: isOnRightSide ? 'scaleX(-1)' : 'none'
         }}
       >
-        {/* Cards container - horizontal row at showdown, fanned otherwise */}
-        <div 
-          className="relative flex"
-          style={{ 
-            flexDirection: isShowdown ? 'row' : 'column',
-            gap: isShowdown ? 2 : 0
-          }}
-        >
-          {displayCards.map((card, idx) => {
-            // Determine if this card is part of winning hand
-            const isCardWinning = winningCardIndices.includes(idx);
-            // At showdown with winning cards specified, dim non-winning cards
-            const isDimmed = isShowdown && winningCardIndices.length > 0 && !isCardWinning;
-            
-            // At showdown - horizontal row, no rotation. Otherwise - fanned
-            const rotation = isShowdown ? 0 : (-5 + idx * (displayCards.length === 4 ? 8 : displayCards.length === 3 ? 10 : 12));
-            
-            return (
-              <div 
-                key={idx} 
-                className={isShowdown ? '' : 'absolute'}
-                style={isShowdown ? {
-                  transform: isOnRightSide ? 'scaleX(-1)' : 'none'
-                } : { 
-                  left: idx * (cfg.w * 0.55),
-                  top: 0,
-                  transform: `rotate(${rotation}deg)`,
-                  transformOrigin: 'bottom center',
-                  zIndex: idx + 1
-                }}
-              >
-                <MiniCard 
-                  card={showCards ? card : 'XX'} 
-                  faceDown={!showCards}
-                  size={actualSize as any} 
-                  delay={idx}
-                  isWinning={isShowdown && isCardWinning && isWinner}
-                  isDimmed={isDimmed}
-                  rotation={0}
-                  cardBackColors={{ accent: currentCardBack.accentColor, pattern: currentCardBack.pattern }}
-                  useFourColor={useFourColor}
-                  animate={!isShowdown}
-                />
-              </div>
-            );
-          })}
-        </div>
+        {displayCards.map((card, idx) => {
+          // Determine if this card is part of winning hand
+          const isCardWinning = winningCardIndices.includes(idx);
+          // At showdown with winning cards specified, dim non-winning cards
+          const isDimmed = isShowdown && winningCardIndices.length > 0 && !isCardWinning;
+          
+          // Fanned rotation when not showdown
+          const rotation = getFanRotation(idx, displayCards.length);
+          
+          return (
+            <div 
+              key={idx} 
+              className="relative"
+              style={{
+                marginLeft: idx > 0 ? (isShowdown ? 2 : -cfg.w * 0.45) : 0,
+                transform: isOnRightSide ? 'scaleX(-1)' : 'none', // Un-flip individual cards
+                zIndex: idx + 1
+              }}
+            >
+              <MiniCard 
+                card={showCards ? card : 'XX'} 
+                faceDown={!showCards}
+                size={actualSize as any} 
+                delay={idx}
+                isWinning={isShowdown && isCardWinning && isWinner}
+                isDimmed={isDimmed}
+                rotation={rotation}
+                cardBackColors={{ accent: currentCardBack.accentColor, pattern: currentCardBack.pattern }}
+                useFourColor={useFourColor}
+                animate={!isShowdown}
+              />
+            </div>
+          );
+        })}
       </div>
       
-      {/* Hand name badge at showdown - positioned BELOW player panel */}
+      {/* Hand name badge at showdown */}
       {isShowdown && handName && (
         <div
-          className="absolute left-1/2 -translate-x-1/2 whitespace-nowrap z-30"
-          style={{ bottom: -22 }}
+          className="absolute -bottom-5 left-1/2 -translate-x-1/2 whitespace-nowrap z-30"
         >
           <span 
             className="text-[11px] font-bold"
@@ -492,7 +490,7 @@ export const PPPokerCompactCards = memo(function PPPokerCompactCards({
           </span>
         </div>
       )}
-    </>
+    </div>
   );
 });
 

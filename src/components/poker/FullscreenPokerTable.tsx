@@ -476,8 +476,30 @@ const PlayerSeat = memo(function PlayerSeat({
             });
           }
           
+          // Position cards based on player position relative to table center
+          // Cards should be on the side TOWARDS the center of the table
+          const isOnRightSide = position.x > 50;
+          const isOnBottom = position.y > 60;
+          const isOnTop = position.y < 40;
+          
+          // Cards positioning: towards center of table (like PPPoker reference)
+          // Left players: cards on RIGHT side of avatar
+          // Right players: cards on LEFT side of avatar
+          // Bottom players: cards above avatar
+          // Top players: cards below avatar
+          let cardPosition = '';
+          if (isOnTop) {
+            cardPosition = 'top-full left-1/2 -translate-x-1/2 mt-0.5';
+          } else if (isOnBottom) {
+            cardPosition = 'bottom-full left-1/2 -translate-x-1/2 mb-0.5';
+          } else if (isOnRightSide) {
+            cardPosition = 'right-full top-1/2 -translate-y-1/2 mr-0.5';
+          } else {
+            cardPosition = 'left-full top-1/2 -translate-y-1/2 ml-0.5';
+          }
+          
           return (
-            <div className="absolute -bottom-2 -right-2 z-5">
+            <div className={cn("absolute z-5", cardPosition)}>
               <PPPokerCompactCards 
                 cards={displayCards}
                 faceDown={!shouldReveal}
