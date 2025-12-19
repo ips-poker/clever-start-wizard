@@ -1597,7 +1597,7 @@ export function SyndikatetPokerTable({
         if (betsToCollect.length > 0) {
           setCollectionBets(betsToCollect);
           setIsCollectingPot(true);
-          sounds.playChipSlide();
+          // No sound here - will play on showdown win
         }
       }
       
@@ -1624,7 +1624,7 @@ export function SyndikatetPokerTable({
         // River - 1 card
         sounds.playDeal();
       } else if (phase === 'showdown') {
-        sounds.playShowdown();
+        // Silent - win sound will play when pot is collected
       }
     }
   }, [tableState?.phase, tableState?.players, previousPhase, sounds, SEAT_POSITIONS]);
@@ -1643,7 +1643,7 @@ export function SyndikatetPokerTable({
           amount: winner.amount
         });
         
-        // Play chip slide sound (no victory sound)
+        // Play only one chip slide sound for win
         sounds.playChipSlide();
       }
       

@@ -172,39 +172,29 @@ export function FullscreenPokerTableWrapper({
         setTimeout(() => sounds.playDeal(), 700);
         setTimeout(() => sounds.playDeal(), 850);
       } else if (phase === 'flop') {
-        // Flop - 3 cards with chip slide for pot collection
-        sounds.playChipSlide();
+        // Flop - 3 cards
         setTimeout(() => sounds.playDeal(), 200);
         setTimeout(() => sounds.playDeal(), 350);
         setTimeout(() => sounds.playDeal(), 500);
       } else if (phase === 'turn') {
         // Turn - 1 card
-        sounds.playChipSlide();
         setTimeout(() => sounds.playDeal(), 200);
       } else if (phase === 'river') {
         // River - 1 card
-        sounds.playChipSlide();
         setTimeout(() => sounds.playDeal(), 200);
       } else if (phase === 'showdown') {
-        sounds.playShowdown();
+        // Silent showdown - win sound will play when pot is collected
       }
     }
   }, [tableState?.phase, sounds]);
 
-  // Winner sounds
+  // Winner sounds - only one chip slide sound
   useEffect(() => {
     if (showdownResult && showdownResult.winners.length > 0) { 
-      // Play chip sounds for pot being collected by winner
+      // Play only one chip slide sound when pot is collected
       sounds.playChipSlide();
-      setTimeout(() => sounds.playPotWin(), 300);
-      
-      // Check if hero won
-      const heroWon = showdownResult.winners.some(w => w.playerId === playerId);
-      if (heroWon) {
-        setTimeout(() => sounds.playWin(), 500);
-      }
     }
-  }, [showdownResult, sounds, playerId]);
+  }, [showdownResult, sounds]);
 
   // Timer warning sounds when it's my turn
   useEffect(() => {
@@ -479,7 +469,6 @@ export function FullscreenPokerTableWrapper({
             bigBlind={tableState?.bigBlindAmount || 20}
             canJoinTable={canJoinTable}
             onSeatClick={handleSeatClick}
-            onPotCollect={sounds.playChipSlide}
             maxSeats={maxSeats}
             wideMode={wideMode}
             showdownPlayers={showdownResult?.showdownPlayers}
