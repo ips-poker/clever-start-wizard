@@ -1180,12 +1180,13 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
     // Engine will auto-convert raise to bet if needed
     const actionType = currentBetAmount === 0 ? 'bet' : 'raise';
     
-    console.log('[NodePoker] 💰 Raise/Bet action:', { 
+    console.log('[NodePoker] 💰 Raise/Bet action (v2):', { 
       tableId, playerId, 
       totalAmount,
       actionType, 
       currentBet: currentBetAmount,
-      myCurrentBet 
+      myCurrentBet,
+      sendingAmount: totalAmount
     });
     
     sendMessage({
@@ -1193,7 +1194,7 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
       tableId,
       playerId,
       actionType,
-      amount: totalAmount  // Send TOTAL bet amount (engine expects total, not delta)
+      amount: totalAmount  // TOTAL bet amount - server expects total, not delta
     });
   }, [tableId, playerId, tableState?.currentBet, sendMessage]);
 
