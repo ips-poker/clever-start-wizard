@@ -7,13 +7,17 @@ import { useCallback, useRef, useEffect } from 'react';
 
 // Sound configurations with proper frequencies for casino feel
 const SOUNDS = {
-  // Action sounds
-  fold: { frequencies: [180, 120], duration: 180, type: 'sine' as OscillatorType, volume: 0.2 },
-  check: { frequencies: [800, 600], duration: 80, type: 'triangle' as OscillatorType, volume: 0.25 },
-  call: { frequencies: [600, 800, 600], duration: 150, type: 'sine' as OscillatorType, volume: 0.3 },
-  bet: { frequencies: [500, 700, 900], duration: 180, type: 'sine' as OscillatorType, volume: 0.3 },
-  raise: { frequencies: [600, 800, 1000, 1200], duration: 250, type: 'sine' as OscillatorType, volume: 0.35 },
-  allIn: { frequencies: [400, 600, 800, 1000, 1200], duration: 500, type: 'square' as OscillatorType, volume: 0.4 },
+  // Action sounds - realistic poker table sounds
+  fold: { frequencies: [150, 100], duration: 120, type: 'sine' as OscillatorType, volume: 0.15 },
+  // Check - will be handled specially as double tap
+  check: { frequencies: [120, 80], duration: 35, type: 'sine' as OscillatorType, volume: 0.35 },
+  // Call - pleasant chip toss sound
+  call: { frequencies: [2200, 2800, 2400], duration: 120, type: 'triangle' as OscillatorType, volume: 0.22 },
+  // Bet - chip placement
+  bet: { frequencies: [2400, 3000, 2600], duration: 100, type: 'triangle' as OscillatorType, volume: 0.2 },
+  // Raise - more emphatic chip sound
+  raise: { frequencies: [2600, 3200, 2800, 3400], duration: 150, type: 'triangle' as OscillatorType, volume: 0.25 },
+  allIn: { frequencies: [2000, 2600, 3200, 3800, 4200], duration: 400, type: 'triangle' as OscillatorType, volume: 0.35 },
   
   // Game events
   win: { frequencies: [523, 659, 784, 880, 1047], duration: 800, type: 'sine' as OscillatorType, volume: 0.45 },
@@ -151,28 +155,132 @@ export function usePokerSounds() {
     playTone(s.frequencies, s.duration, s.type, s.volume);
   }, [playTone]);
 
+  // Double tap on table for check - realistic poker knock
   const playCheck = useCallback(() => {
-    const s = SOUNDS.check;
-    playTone(s.frequencies, s.duration, s.type, s.volume);
-    playNoise(30, 0.05);
-  }, [playTone, playNoise]);
+    if (!enabledRef.current) return;
+    
+    try {
+      const ctx = getAudioContext();
+      const now = ctx.currentTime;
+      
+      // Create two muffled knocks like tapping on felt/wood table
+      [0, 0.12].forEach((delay) => {
+        // Low frequency thump
+        const osc = ctx.createOscillator();
+        const gainNode = ctx.createGain();
+        const filter = ctx.createBiquadFilter();
+        
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(100, now + delay);
+        osc.frequency.exponentialRampToValueAtTime(60, now + delay + 0.05);
+        
+        // Lowpass filter for muffled sound
+        filter.type = 'lowpass';
+        filter.frequency.value = 200;
+        filter.Q.value = 1;
+        
+        // Quick attack, fast decay for knock effect
+        gainNode.gain.setValueAtTime(0, now + delay);
+        gainNode.gain.linearRampToValueAtTime(0.4, now + delay + 0.005);
+        gainNode.gain.exponentialRampToValueAtTime(0.001, now + delay + 0.08);
+        
+        osc.connect(filter);
+        filter.connect(gainNode);
+        gainNode.connect(ctx.destination);
+        
+        osc.start(now + delay);
+        osc.stop(now + delay + 0.1);
+      });
+    } catch (e) {
+      console.warn('Audio not available:', e);
+    }
+  }, [getAudioContext]);
 
+  // Call - pleasant chip toss onto table
   const playCall = useCallback(() => {
-    const s = SOUNDS.call;
-    playTone(s.frequencies, s.duration, s.type, s.volume);
-  }, [playTone]);
+    if (!enabledRef.current) return;
+    
+    try {
+      const ctx = getAudioContext();
+      const now = ctx.currentTime;
+      
+      // Ceramic/clay chip sound - high frequency with quick decay
+      const osc = ctx.createOscillator();
+      const gainNode = ctx.createGain();
+      const filter = ctx.createBiquadFilter();
+      
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(2800, now);
+      osc.frequency.exponentialRampToValueAtTime(2200, now + 0.08);
+      
+      filter.type = 'bandpass';
+      filter.frequency.value = 2500;
+      filter.Q.value = 2;
+      
+      gainNode.gain.setValueAtTime(0, now);
+      gainNode.gain.linearRampToValueAtTime(0.25, now + 0.005);
+      gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+      
+      osc.connect(filter);
+      filter.connect(gainNode);
+      gainNode.connect(ctx.destination);
+      
+      osc.start(now);
+      osc.stop(now + 0.15);
+      
+      // Add subtle click
+      playNoise(25, 0.08);
+    } catch (e) {
+      console.warn('Audio not available:', e);
+    }
+  }, [getAudioContext, playNoise]);
 
   const playBet = useCallback(() => {
     const s = SOUNDS.bet;
     playTone(s.frequencies, s.duration, s.type, s.volume);
-    playNoise(50, 0.08);
+    playNoise(30, 0.06);
   }, [playTone, playNoise]);
 
+  // Raise - more emphatic chip stack sound
   const playRaise = useCallback(() => {
-    const s = SOUNDS.raise;
-    playTone(s.frequencies, s.duration, s.type, s.volume);
-    playNoise(80, 0.1);
-  }, [playTone, playNoise]);
+    if (!enabledRef.current) return;
+    
+    try {
+      const ctx = getAudioContext();
+      const now = ctx.currentTime;
+      
+      // Multiple chips stacking - cascading tones
+      [0, 0.04, 0.09].forEach((delay, i) => {
+        const osc = ctx.createOscillator();
+        const gainNode = ctx.createGain();
+        const filter = ctx.createBiquadFilter();
+        
+        osc.type = 'triangle';
+        const baseFreq = 2600 + i * 200;
+        osc.frequency.setValueAtTime(baseFreq, now + delay);
+        osc.frequency.exponentialRampToValueAtTime(baseFreq * 0.8, now + delay + 0.06);
+        
+        filter.type = 'bandpass';
+        filter.frequency.value = 2800;
+        filter.Q.value = 1.5;
+        
+        gainNode.gain.setValueAtTime(0, now + delay);
+        gainNode.gain.linearRampToValueAtTime(0.2, now + delay + 0.003);
+        gainNode.gain.exponentialRampToValueAtTime(0.001, now + delay + 0.1);
+        
+        osc.connect(filter);
+        filter.connect(gainNode);
+        gainNode.connect(ctx.destination);
+        
+        osc.start(now + delay);
+        osc.stop(now + delay + 0.12);
+      });
+      
+      playNoise(60, 0.08);
+    } catch (e) {
+      console.warn('Audio not available:', e);
+    }
+  }, [getAudioContext, playNoise]);
 
   const playAllIn = useCallback(() => {
     const s = SOUNDS.allIn;
@@ -217,36 +325,152 @@ export function usePokerSounds() {
     }
   }, [playTone, playNoise]);
 
-  // Chip sounds
+  // Chip sounds - pleasant ceramic/clay chip sounds
   const playChipSingle = useCallback(() => {
-    const s = SOUNDS.chipSingle;
-    playTone(s.frequencies, s.duration, s.type, s.volume);
-    playNoise(30, 0.1);
-  }, [playTone, playNoise]);
+    if (!enabledRef.current) return;
+    try {
+      const ctx = getAudioContext();
+      const now = ctx.currentTime;
+      
+      const osc = ctx.createOscillator();
+      const gainNode = ctx.createGain();
+      const filter = ctx.createBiquadFilter();
+      
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(3200, now);
+      osc.frequency.exponentialRampToValueAtTime(2400, now + 0.04);
+      
+      filter.type = 'bandpass';
+      filter.frequency.value = 2800;
+      filter.Q.value = 2;
+      
+      gainNode.gain.setValueAtTime(0, now);
+      gainNode.gain.linearRampToValueAtTime(0.18, now + 0.003);
+      gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+      
+      osc.connect(filter);
+      filter.connect(gainNode);
+      gainNode.connect(ctx.destination);
+      
+      osc.start(now);
+      osc.stop(now + 0.1);
+    } catch (e) {
+      console.warn('Audio not available:', e);
+    }
+  }, [getAudioContext]);
 
   const playChipStack = useCallback(() => {
-    const s = SOUNDS.chipStack;
-    playTone(s.frequencies, s.duration, s.type, s.volume);
-    // Cascading chip sounds
-    for (let i = 0; i < 4; i++) {
-      setTimeout(() => playNoise(30, 0.08), i * 40);
+    if (!enabledRef.current) return;
+    try {
+      const ctx = getAudioContext();
+      const now = ctx.currentTime;
+      
+      // Pleasant cascading chip sounds
+      [0, 0.03, 0.07, 0.1].forEach((delay, i) => {
+        const osc = ctx.createOscillator();
+        const gainNode = ctx.createGain();
+        const filter = ctx.createBiquadFilter();
+        
+        osc.type = 'triangle';
+        const freq = 2600 + (i % 2) * 400;
+        osc.frequency.setValueAtTime(freq, now + delay);
+        osc.frequency.exponentialRampToValueAtTime(freq * 0.75, now + delay + 0.05);
+        
+        filter.type = 'bandpass';
+        filter.frequency.value = 2700;
+        filter.Q.value = 1.5;
+        
+        gainNode.gain.setValueAtTime(0, now + delay);
+        gainNode.gain.linearRampToValueAtTime(0.15, now + delay + 0.002);
+        gainNode.gain.exponentialRampToValueAtTime(0.001, now + delay + 0.08);
+        
+        osc.connect(filter);
+        filter.connect(gainNode);
+        gainNode.connect(ctx.destination);
+        
+        osc.start(now + delay);
+        osc.stop(now + delay + 0.1);
+      });
+    } catch (e) {
+      console.warn('Audio not available:', e);
     }
-  }, [playTone, playNoise]);
+  }, [getAudioContext]);
 
   const playChipSlide = useCallback(() => {
-    const s = SOUNDS.chipSlide;
-    playTone(s.frequencies, s.duration, s.type, s.volume);
-    playNoise(100, 0.06);
-  }, [playTone, playNoise]);
+    if (!enabledRef.current) return;
+    try {
+      const ctx = getAudioContext();
+      const now = ctx.currentTime;
+      
+      // Smooth sliding chip sound
+      const osc = ctx.createOscillator();
+      const gainNode = ctx.createGain();
+      const filter = ctx.createBiquadFilter();
+      
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(2000, now);
+      osc.frequency.linearRampToValueAtTime(2800, now + 0.1);
+      osc.frequency.exponentialRampToValueAtTime(2200, now + 0.15);
+      
+      filter.type = 'bandpass';
+      filter.frequency.value = 2400;
+      filter.Q.value = 1;
+      
+      gainNode.gain.setValueAtTime(0, now);
+      gainNode.gain.linearRampToValueAtTime(0.12, now + 0.01);
+      gainNode.gain.linearRampToValueAtTime(0.08, now + 0.1);
+      gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+      
+      osc.connect(filter);
+      filter.connect(gainNode);
+      gainNode.connect(ctx.destination);
+      
+      osc.start(now);
+      osc.stop(now + 0.2);
+      
+      playNoise(80, 0.04);
+    } catch (e) {
+      console.warn('Audio not available:', e);
+    }
+  }, [getAudioContext, playNoise]);
 
   const playPotWin = useCallback(() => {
-    const s = SOUNDS.potWin;
-    playTone(s.frequencies, s.duration, s.type, s.volume);
-    // Chip cascade
-    for (let i = 0; i < 8; i++) {
-      setTimeout(() => playNoise(25, 0.1), i * 30);
+    if (!enabledRef.current) return;
+    try {
+      const ctx = getAudioContext();
+      const now = ctx.currentTime;
+      
+      // Satisfying chip cascade for winning pot
+      [0, 0.04, 0.08, 0.13, 0.18, 0.24].forEach((delay, i) => {
+        const osc = ctx.createOscillator();
+        const gainNode = ctx.createGain();
+        const filter = ctx.createBiquadFilter();
+        
+        osc.type = 'triangle';
+        const freq = 2400 + Math.random() * 800;
+        osc.frequency.setValueAtTime(freq, now + delay);
+        osc.frequency.exponentialRampToValueAtTime(freq * 0.7, now + delay + 0.06);
+        
+        filter.type = 'bandpass';
+        filter.frequency.value = 2600;
+        filter.Q.value = 1.2;
+        
+        const vol = 0.12 + (i * 0.02);
+        gainNode.gain.setValueAtTime(0, now + delay);
+        gainNode.gain.linearRampToValueAtTime(vol, now + delay + 0.003);
+        gainNode.gain.exponentialRampToValueAtTime(0.001, now + delay + 0.1);
+        
+        osc.connect(filter);
+        filter.connect(gainNode);
+        gainNode.connect(ctx.destination);
+        
+        osc.start(now + delay);
+        osc.stop(now + delay + 0.12);
+      });
+    } catch (e) {
+      console.warn('Audio not available:', e);
     }
-  }, [playTone, playNoise]);
+  }, [getAudioContext]);
 
   // Timer sounds
   const playTimerTick = useCallback(() => {
