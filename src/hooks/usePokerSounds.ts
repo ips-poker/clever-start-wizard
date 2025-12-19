@@ -1,22 +1,27 @@
 import { useCallback, useRef, useEffect } from 'react';
 
 // =====================================================
-// POKER SOUND SYSTEM - CARD DEAL ONLY
+// POKER SOUND SYSTEM - CARD DEAL + CHIP SOUNDS
 // =====================================================
 
 export function usePokerSounds() {
   const enabledRef = useRef(true);
   const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const dealSoundRef = useRef<HTMLAudioElement | null>(null);
+  const chipSoundRef = useRef<HTMLAudioElement | null>(null);
 
-  // Preload only card deal sound
+  // Preload sounds
   useEffect(() => {
     dealSoundRef.current = new Audio('/sounds/card-deal.mp3');
     dealSoundRef.current.volume = 0.35;
     dealSoundRef.current.preload = 'auto';
+    
+    chipSoundRef.current = new Audio('/sounds/chip-bet.mp3');
+    chipSoundRef.current.volume = 0.5;
+    chipSoundRef.current.preload = 'auto';
   }, []);
 
-  // Card deal - the only active sound
+  // Card deal sound
   const playDeal = useCallback(() => {
     if (!enabledRef.current) return;
     
@@ -32,12 +37,28 @@ export function usePokerSounds() {
     }
   }, []);
 
+  // Chip sound for call/raise/bet
+  const playChipSound = useCallback(() => {
+    if (!enabledRef.current) return;
+    
+    try {
+      if (chipSoundRef.current) {
+        const sound = chipSoundRef.current.cloneNode() as HTMLAudioElement;
+        sound.volume = 0.5;
+        sound.play().catch(() => {});
+      }
+    } catch (e) {
+      console.warn('Audio not available:', e);
+    }
+  }, []);
+
+  const playCall = useCallback(() => playChipSound(), [playChipSound]);
+  const playBet = useCallback(() => playChipSound(), [playChipSound]);
+  const playRaise = useCallback(() => playChipSound(), [playChipSound]);
+
   // All other sounds - silent
   const playFold = useCallback(() => {}, []);
   const playCheck = useCallback(() => {}, []);
-  const playCall = useCallback(() => {}, []);
-  const playBet = useCallback(() => {}, []);
-  const playRaise = useCallback(() => {}, []);
   const playAllIn = useCallback(() => {}, []);
   const playWin = useCallback(() => {}, []);
   const playLose = useCallback(() => {}, []);
