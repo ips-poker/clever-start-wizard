@@ -63,6 +63,7 @@ export function usePokerSounds() {
   const allInSoundRef = useRef<HTMLAudioElement | null>(null);
   const checkSoundRef = useRef<HTMLAudioElement | null>(null);
   const cardFlipSoundRef = useRef<HTMLAudioElement | null>(null);
+  const foldSoundRef = useRef<HTMLAudioElement | null>(null);
 
   // Preload sound MP3s
   useEffect(() => {
@@ -93,6 +94,10 @@ export function usePokerSounds() {
     cardFlipSoundRef.current = new Audio('/sounds/card-flip.mp3');
     cardFlipSoundRef.current.volume = 0.45;
     cardFlipSoundRef.current.preload = 'auto';
+    
+    foldSoundRef.current = new Audio('/sounds/fold.mp3');
+    foldSoundRef.current.volume = 0.25;
+    foldSoundRef.current.preload = 'auto';
   }, []);
 
   const getAudioContext = useCallback(() => {
@@ -187,13 +192,13 @@ export function usePokerSounds() {
     }
   }, [getAudioContext]);
 
-  // Action sounds - fold uses check sound (similar table tap)
+  // Action sounds - fold uses dedicated fold sound (muted)
   const playFold = useCallback(() => {
     if (!enabledRef.current) return;
     try {
-      if (checkSoundRef.current) {
-        const sound = checkSoundRef.current.cloneNode() as HTMLAudioElement;
-        sound.volume = 0.35;
+      if (foldSoundRef.current) {
+        const sound = foldSoundRef.current.cloneNode() as HTMLAudioElement;
+        sound.volume = 0.25; // Приглушённый звук
         sound.play().catch(() => {});
       }
     } catch (e) {
