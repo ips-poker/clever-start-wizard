@@ -2,6 +2,7 @@ import React, { memo, useState, useCallback, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { usePokerSounds } from '@/hooks/usePokerSounds';
 
 type ActionType = 'fold' | 'check' | 'call' | 'raise' | 'allin';
 
@@ -107,6 +108,7 @@ export const StableActionPanel = memo(function StableActionPanel({
   onAction
 }: StableActionPanelProps) {
   const [raiseAmount, setRaiseAmount] = useState(minRaise);
+  const sounds = usePokerSounds();
 
   // Reset raise amount when minRaise changes
   useEffect(() => {
@@ -124,12 +126,31 @@ export const StableActionPanel = memo(function StableActionPanel({
     ].filter(p => p.amount <= maxBet);
   }, [currentPot, callAmount, minRaise, maxBet]);
 
-  // Handlers
-  const handleFold = useCallback(() => onAction('fold'), [onAction]);
-  const handleCheck = useCallback(() => onAction('check'), [onAction]);
-  const handleCall = useCallback(() => onAction('call'), [onAction]);
-  const handleRaise = useCallback(() => onAction('raise', raiseAmount), [onAction, raiseAmount]);
-  const handleAllIn = useCallback(() => onAction('allin'), [onAction]);
+  // Handlers with sounds
+  const handleFold = useCallback(() => {
+    sounds.playFold();
+    onAction('fold');
+  }, [onAction, sounds]);
+  
+  const handleCheck = useCallback(() => {
+    sounds.playCheck();
+    onAction('check');
+  }, [onAction, sounds]);
+  
+  const handleCall = useCallback(() => {
+    sounds.playCall();
+    onAction('call');
+  }, [onAction, sounds]);
+  
+  const handleRaise = useCallback(() => {
+    sounds.playRaise();
+    onAction('raise', raiseAmount);
+  }, [onAction, raiseAmount, sounds]);
+  
+  const handleAllIn = useCallback(() => {
+    sounds.playAllIn();
+    onAction('allin');
+  }, [onAction, sounds]);
 
   const handleSliderChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     setRaiseAmount(Number(e.target.value));
