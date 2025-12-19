@@ -373,48 +373,27 @@ export function usePokerSounds() {
     }
   }, []);
 
-  // Timer sounds
+  // Timer sounds - disabled (no generated sounds)
   const playTimerTick = useCallback(() => {
-    const s = SOUNDS.timerTick;
-    playTone(s.frequencies, s.duration, s.type, s.volume);
-  }, [playTone]);
+    // Silent - no annoying beeps
+  }, []);
 
   const playTimerWarning = useCallback(() => {
-    const s = SOUNDS.timerWarning;
-    playTone(s.frequencies, s.duration, s.type, s.volume);
-  }, [playTone]);
+    // Silent - no annoying beeps
+  }, []);
 
   const playTimerCritical = useCallback(() => {
-    const s = SOUNDS.timerCritical;
-    playTone(s.frequencies, s.duration, s.type, s.volume);
-  }, [playTone]);
+    // Silent - no annoying beeps
+  }, []);
 
   const playTimerExpired = useCallback(() => {
-    const s = SOUNDS.timerExpired;
-    playTone(s.frequencies, s.duration, s.type, s.volume);
-  }, [playTone]);
+    // Silent - no annoying beeps
+  }, []);
 
-  // Start timer warning sequence
+  // Start timer warning sequence - disabled
   const startTimerWarning = useCallback((secondsRemaining: number) => {
-    if (timerIntervalRef.current) {
-      clearInterval(timerIntervalRef.current);
-    }
-    
-    let remaining = secondsRemaining;
-    timerIntervalRef.current = setInterval(() => {
-      remaining--;
-      if (remaining <= 0) {
-        playTimerExpired();
-        if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
-      } else if (remaining <= 3) {
-        playTimerCritical();
-      } else if (remaining <= 5) {
-        playTimerWarning();
-      } else if (remaining <= 10) {
-        playTimerTick();
-      }
-    }, 1000);
-  }, [playTimerTick, playTimerWarning, playTimerCritical, playTimerExpired]);
+    // Disabled - no timer sounds
+  }, []);
 
   const stopTimerWarning = useCallback(() => {
     if (timerIntervalRef.current) {
@@ -423,44 +402,55 @@ export function usePokerSounds() {
     }
   }, []);
 
-  // Turn sounds
+  // Turn sounds - silent
   const playTurn = useCallback(() => {
-    const s = SOUNDS.turn;
-    playTone(s.frequencies, s.duration, s.type, s.volume);
-  }, [playTone]);
+    // Silent
+  }, []);
 
   const playMyTurn = useCallback(() => {
-    const s = SOUNDS.myTurn;
-    playTone(s.frequencies, s.duration, s.type, s.volume);
-  }, [playTone]);
+    // Silent
+  }, []);
 
-  // UI sounds
+  // UI sounds - silent
   const playChat = useCallback(() => {
-    const s = SOUNDS.chat;
-    playTone(s.frequencies, s.duration, s.type, s.volume);
-  }, [playTone]);
+    // Silent
+  }, []);
 
   const playNotification = useCallback(() => {
-    const s = SOUNDS.notification;
-    playTone(s.frequencies, s.duration, s.type, s.volume);
-  }, [playTone]);
+    // Silent
+  }, []);
 
   const playButtonClick = useCallback(() => {
-    const s = SOUNDS.buttonClick;
-    playTone(s.frequencies, s.duration, s.type, s.volume);
-  }, [playTone]);
+    // Silent
+  }, []);
 
-  // Showdown sounds
+  // Showdown sounds - use chip win sound instead
   const playShowdown = useCallback(() => {
-    const s = SOUNDS.showdown;
-    playTone(s.frequencies, s.duration, s.type, s.volume);
-  }, [playTone]);
+    if (!enabledRef.current) return;
+    try {
+      if (chipWinSoundRef.current) {
+        const sound = chipWinSoundRef.current.cloneNode() as HTMLAudioElement;
+        sound.volume = 0.4;
+        sound.play().catch(() => {});
+      }
+    } catch (e) {
+      console.warn('Audio not available:', e);
+    }
+  }, []);
 
   const playReveal = useCallback(() => {
-    const s = SOUNDS.reveal;
-    playTone(s.frequencies, s.duration, s.type, s.volume);
-    playNoise(60, 0.1);
-  }, [playTone, playNoise]);
+    // Use card flip sound for reveal
+    if (!enabledRef.current) return;
+    try {
+      if (cardFlipSoundRef.current) {
+        const sound = cardFlipSoundRef.current.cloneNode() as HTMLAudioElement;
+        sound.volume = 0.4;
+        sound.play().catch(() => {});
+      }
+    } catch (e) {
+      console.warn('Audio not available:', e);
+    }
+  }, []);
 
   const setEnabled = useCallback((enabled: boolean) => {
     enabledRef.current = enabled;
