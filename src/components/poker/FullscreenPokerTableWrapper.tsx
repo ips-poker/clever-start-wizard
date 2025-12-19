@@ -121,27 +121,108 @@ export function FullscreenPokerTableWrapper({
     };
   }, []);
 
-  // Play sounds
+  // Track previous phase for phase change sounds
+  const previousPhaseRef = useRef<string | null>(null);
+  
+  // Play sounds for actions
   useEffect(() => {
     if (lastAction) {
       switch (lastAction.action) {
-        case 'check': sounds.playCheck(); break;
-        case 'call': sounds.playCall(); break;
-        case 'raise':
-        case 'bet': sounds.playRaise(); break;
-        case 'fold': sounds.playFold(); break;
-        case 'allin': sounds.playAllIn(); break;
+        case 'check': 
+          sounds.playCheck(); 
+          break;
+        case 'call': 
+          sounds.playCall();
+          if (lastAction.amount && lastAction.amount > 0) {
+            setTimeout(() => sounds.playChipStack(), 100);
+          }
+          break;
+        case 'bet':
+          sounds.playBet();
+          setTimeout(() => sounds.playChipStack(), 100);
+          break;
+        case 'raise': 
+          sounds.playRaise(); 
+          setTimeout(() => sounds.playChipStack(), 100);
+          break;
+        case 'fold': 
+          sounds.playFold(); 
+          break;
+        case 'allin': 
+          sounds.playAllIn(); 
+          setTimeout(() => sounds.playChipStack(), 150);
+          break;
       }
     }
-  }, [lastAction]);
+  }, [lastAction, sounds]);
 
+  // Phase change sounds (deal, flop, turn, river)
   useEffect(() => {
-    if (showdownResult) { 
-      // Play chip sounds instead of annoying win melody
+    const phase = tableState?.phase;
+    if (phase && phase !== previousPhaseRef.current) {
+      const prevPhase = previousPhaseRef.current;
+      previousPhaseRef.current = phase;
+      
+      // Play sounds based on phase transitions
+      if (phase === 'preflop' && prevPhase !== 'preflop') {
+        // New hand - shuffle and deal
+        sounds.playShuffle();
+        setTimeout(() => sounds.playDeal(), 300);
+        setTimeout(() => sounds.playDeal(), 450);
+      } else if (phase === 'flop') {
+        // Flop - 3 cards with chip slide for pot collection
+        sounds.playChipSlide();
+        setTimeout(() => sounds.playCardFlip(), 200);
+        setTimeout(() => sounds.playCardFlip(), 350);
+        setTimeout(() => sounds.playCardFlip(), 500);
+      } else if (phase === 'turn') {
+        // Turn - 1 card
+        sounds.playChipSlide();
+        setTimeout(() => sounds.playCardFlip(), 200);
+      } else if (phase === 'river') {
+        // River - 1 card
+        sounds.playChipSlide();
+        setTimeout(() => sounds.playCardFlip(), 200);
+      } else if (phase === 'showdown') {
+        sounds.playShowdown();
+      }
+    }
+  }, [tableState?.phase, sounds]);
+
+  // Winner sounds
+  useEffect(() => {
+    if (showdownResult && showdownResult.winners.length > 0) { 
+      // Play chip sounds for pot being collected by winner
       sounds.playChipSlide();
       setTimeout(() => sounds.playPotWin(), 300);
+      
+      // Check if hero won
+      const heroWon = showdownResult.winners.some(w => w.playerId === playerId);
+      if (heroWon) {
+        setTimeout(() => sounds.playWin(), 500);
+      }
     }
-  }, [showdownResult]);
+  }, [showdownResult, sounds, playerId]);
+
+  // Timer warning sounds when it's my turn
+  useEffect(() => {
+    if (isMyTurn && turnTimeRemaining !== null) {
+      if (turnTimeRemaining === 10) {
+        sounds.playTimerWarning();
+      } else if (turnTimeRemaining <= 5 && turnTimeRemaining > 0) {
+        sounds.playTimerCritical();
+      } else if (turnTimeRemaining === 0) {
+        sounds.playTimerExpired();
+      }
+    }
+  }, [turnTimeRemaining, isMyTurn, sounds]);
+  
+  // Play sound when it becomes my turn
+  useEffect(() => {
+    if (isMyTurn) {
+      sounds.playMyTurn();
+    }
+  }, [isMyTurn, sounds]);
 
   // Cashout - return diamonds when leaving table
   const performCashout = useCallback(async () => {
