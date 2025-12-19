@@ -59,6 +59,7 @@ export function usePokerSounds() {
   const chipSoundRef = useRef<HTMLAudioElement | null>(null);
   const shuffleSoundRef = useRef<HTMLAudioElement | null>(null);
   const dealSoundRef = useRef<HTMLAudioElement | null>(null);
+  const chipWinSoundRef = useRef<HTMLAudioElement | null>(null);
 
   // Preload sound MP3s
   useEffect(() => {
@@ -73,6 +74,10 @@ export function usePokerSounds() {
     dealSoundRef.current = new Audio('/sounds/card-deal.mp3');
     dealSoundRef.current.volume = 0.35;
     dealSoundRef.current.preload = 'auto';
+    
+    chipWinSoundRef.current = new Audio('/sounds/chip-win.mp3');
+    chipWinSoundRef.current.volume = 0.5;
+    chipWinSoundRef.current.preload = 'auto';
   }, []);
 
   const getAudioContext = useCallback(() => {
@@ -409,41 +414,17 @@ export function usePokerSounds() {
 
   const playChipSlide = useCallback(() => {
     if (!enabledRef.current) return;
+    
     try {
-      const ctx = getAudioContext();
-      const now = ctx.currentTime;
-      
-      // Smooth sliding chip sound
-      const osc = ctx.createOscillator();
-      const gainNode = ctx.createGain();
-      const filter = ctx.createBiquadFilter();
-      
-      osc.type = 'triangle';
-      osc.frequency.setValueAtTime(2000, now);
-      osc.frequency.linearRampToValueAtTime(2800, now + 0.1);
-      osc.frequency.exponentialRampToValueAtTime(2200, now + 0.15);
-      
-      filter.type = 'bandpass';
-      filter.frequency.value = 2400;
-      filter.Q.value = 1;
-      
-      gainNode.gain.setValueAtTime(0, now);
-      gainNode.gain.linearRampToValueAtTime(0.12, now + 0.01);
-      gainNode.gain.linearRampToValueAtTime(0.08, now + 0.1);
-      gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
-      
-      osc.connect(filter);
-      filter.connect(gainNode);
-      gainNode.connect(ctx.destination);
-      
-      osc.start(now);
-      osc.stop(now + 0.2);
-      
-      playNoise(80, 0.04);
+      if (chipWinSoundRef.current) {
+        const sound = chipWinSoundRef.current.cloneNode() as HTMLAudioElement;
+        sound.volume = 0.5;
+        sound.play().catch(() => {});
+      }
     } catch (e) {
       console.warn('Audio not available:', e);
     }
-  }, [getAudioContext, playNoise]);
+  }, []);
 
   const playPotWin = useCallback(() => {
     if (!enabledRef.current) return;
