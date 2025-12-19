@@ -9,6 +9,7 @@ export function usePokerSounds() {
   const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const dealSoundRef = useRef<HTMLAudioElement | null>(null);
   const chipSoundRef = useRef<HTMLAudioElement | null>(null);
+  const checkSoundRef = useRef<HTMLAudioElement | null>(null);
 
   // Preload sounds
   useEffect(() => {
@@ -19,6 +20,10 @@ export function usePokerSounds() {
     chipSoundRef.current = new Audio('/sounds/chip-bet.mp3');
     chipSoundRef.current.volume = 0.5;
     chipSoundRef.current.preload = 'auto';
+    
+    checkSoundRef.current = new Audio('/sounds/check.mp3');
+    checkSoundRef.current.volume = 0.5;
+    checkSoundRef.current.preload = 'auto';
   }, []);
 
   // Card deal sound
@@ -58,7 +63,19 @@ export function usePokerSounds() {
 
   // All other sounds - silent
   const playFold = useCallback(() => {}, []);
-  const playCheck = useCallback(() => {}, []);
+  const playCheck = useCallback(() => {
+    if (!enabledRef.current) return;
+    
+    try {
+      if (checkSoundRef.current) {
+        const sound = checkSoundRef.current.cloneNode() as HTMLAudioElement;
+        sound.volume = 0.5;
+        sound.play().catch(() => {});
+      }
+    } catch (e) {
+      console.warn('Audio not available:', e);
+    }
+  }, []);
   const playAllIn = useCallback(() => {}, []);
   const playWin = useCallback(() => {}, []);
   const playLose = useCallback(() => {}, []);
