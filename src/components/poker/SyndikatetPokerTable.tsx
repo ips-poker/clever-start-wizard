@@ -1545,21 +1545,15 @@ export function SyndikatetPokerTable({
           break;
         case 'call': 
           sounds.playCall();
-          if (lastAction.amount && lastAction.amount > 0) {
-            setTimeout(() => sounds.playChipStack(), 100);
-          }
           break;
         case 'bet':
           sounds.playBet();
-          setTimeout(() => sounds.playChipStack(), 100);
           break;
         case 'raise': 
           sounds.playRaise();
-          setTimeout(() => sounds.playChipStack(), 100);
           break;
         case 'allin': 
           sounds.playAllIn();
-          setTimeout(() => sounds.playChipStack(), 150);
           break;
       }
     }
