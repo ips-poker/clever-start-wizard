@@ -166,16 +166,16 @@ export function FullscreenPokerTableWrapper({
         setTimeout(() => sounds.playDeal(), 700);
         setTimeout(() => sounds.playDeal(), 850);
       } else if (phase === 'flop') {
-        // Flop - 3 cards
-        setTimeout(() => sounds.playDeal(), 200);
-        setTimeout(() => sounds.playDeal(), 350);
-        setTimeout(() => sounds.playDeal(), 500);
+        // Flop - 3 cards with synchronized sounds
+        sounds.playDeal();
+        setTimeout(() => sounds.playDeal(), 150);
+        setTimeout(() => sounds.playDeal(), 300);
       } else if (phase === 'turn') {
         // Turn - 1 card
-        setTimeout(() => sounds.playDeal(), 200);
+        sounds.playDeal();
       } else if (phase === 'river') {
         // River - 1 card
-        setTimeout(() => sounds.playDeal(), 200);
+        sounds.playDeal();
       } else if (phase === 'showdown') {
         // Silent showdown - win sound will play when pot is collected
       }
