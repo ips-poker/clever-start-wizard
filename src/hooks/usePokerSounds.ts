@@ -57,12 +57,17 @@ export function usePokerSounds() {
   const enabledRef = useRef(true);
   const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const chipSoundRef = useRef<HTMLAudioElement | null>(null);
+  const shuffleSoundRef = useRef<HTMLAudioElement | null>(null);
 
-  // Preload chip sound MP3
+  // Preload sound MP3s
   useEffect(() => {
     chipSoundRef.current = new Audio('/sounds/chip-bet.mp3');
     chipSoundRef.current.volume = 0.5;
     chipSoundRef.current.preload = 'auto';
+    
+    shuffleSoundRef.current = new Audio('/sounds/card-shuffle.mp3');
+    shuffleSoundRef.current.volume = 0.4;
+    shuffleSoundRef.current.preload = 'auto';
   }, []);
 
   const getAudioContext = useCallback(() => {
@@ -305,13 +310,18 @@ export function usePokerSounds() {
   }, [playTone, playNoise]);
 
   const playShuffle = useCallback(() => {
-    const s = SOUNDS.shuffle;
-    playTone(s.frequencies, s.duration, s.type, s.volume);
-    // Multiple noise bursts for shuffle effect
-    for (let i = 0; i < 5; i++) {
-      setTimeout(() => playNoise(40, 0.05), i * 50);
+    if (!enabledRef.current) return;
+    
+    try {
+      if (shuffleSoundRef.current) {
+        const sound = shuffleSoundRef.current.cloneNode() as HTMLAudioElement;
+        sound.volume = 0.4;
+        sound.play().catch(() => {});
+      }
+    } catch (e) {
+      console.warn('Audio not available:', e);
     }
-  }, [playTone, playNoise]);
+  }, []);
 
   // Chip sounds - pleasant ceramic/clay chip sounds
   const playChipSingle = useCallback(() => {
