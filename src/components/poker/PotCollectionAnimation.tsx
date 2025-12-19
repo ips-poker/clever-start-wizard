@@ -45,7 +45,7 @@ const FlyingChip = memo(function FlyingChip({
         opacity: 0 
       }}
       transition={{
-        duration: 0.5,
+        duration: 1.2,
         delay,
         ease: [0.4, 0, 0.2, 1]
       }}
@@ -90,7 +90,7 @@ const FlyingChip = memo(function FlyingChip({
       <motion.div
         initial={{ opacity: 1, y: -20 }}
         animate={{ opacity: 0, y: -30 }}
-        transition={{ duration: 0.3, delay: delay + 0.2 }}
+        transition={{ duration: 0.8, delay: delay + 0.6 }}
         className="absolute -top-8 left-1/2 -translate-x-1/2 whitespace-nowrap"
       >
         <span 

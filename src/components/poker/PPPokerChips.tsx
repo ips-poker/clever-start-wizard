@@ -213,8 +213,8 @@ export const FlyingChips = memo(function FlyingChips({
             }}
             exit={{ opacity: 0 }}
             transition={{
-              duration: 0.6,
-              delay: i * 0.03,
+              duration: 1.2,
+              delay: i * 0.05,
               ease: [0.25, 0.46, 0.45, 0.94]
             }}
           >
