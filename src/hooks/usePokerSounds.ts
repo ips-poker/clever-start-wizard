@@ -74,8 +74,13 @@ export function usePokerSounds() {
     try {
       if (checkSoundRef.current) {
         const sound = checkSoundRef.current.cloneNode() as HTMLAudioElement;
-        sound.volume = 0.5;
-        sound.play().catch(() => {});
+        sound.volume = 0.7; // Increased volume
+        sound.play().catch((e) => console.warn('Check sound failed:', e));
+      } else {
+        // Fallback: create new audio if ref not ready
+        const sound = new Audio('/sounds/check.mp3');
+        sound.volume = 0.7;
+        sound.play().catch((e) => console.warn('Check sound fallback failed:', e));
       }
     } catch (e) {
       console.warn('Audio not available:', e);
