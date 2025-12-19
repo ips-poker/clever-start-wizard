@@ -60,6 +60,7 @@ export function usePokerSounds() {
   const shuffleSoundRef = useRef<HTMLAudioElement | null>(null);
   const dealSoundRef = useRef<HTMLAudioElement | null>(null);
   const chipWinSoundRef = useRef<HTMLAudioElement | null>(null);
+  const allInSoundRef = useRef<HTMLAudioElement | null>(null);
 
   // Preload sound MP3s
   useEffect(() => {
@@ -78,6 +79,10 @@ export function usePokerSounds() {
     chipWinSoundRef.current = new Audio('/sounds/chip-win.mp3');
     chipWinSoundRef.current.volume = 0.5;
     chipWinSoundRef.current.preload = 'auto';
+    
+    allInSoundRef.current = new Audio('/sounds/chip-allin.mp3');
+    allInSoundRef.current.volume = 0.6;
+    allInSoundRef.current.preload = 'auto';
   }, []);
 
   const getAudioContext = useCallback(() => {
@@ -286,10 +291,18 @@ export function usePokerSounds() {
   }, [getAudioContext, playNoise]);
 
   const playAllIn = useCallback(() => {
-    const s = SOUNDS.allIn;
-    playTone(s.frequencies, s.duration, s.type, s.volume);
-    setTimeout(() => playNoise(200, 0.15), 100);
-  }, [playTone, playNoise]);
+    if (!enabledRef.current) return;
+    
+    try {
+      if (allInSoundRef.current) {
+        const sound = allInSoundRef.current.cloneNode() as HTMLAudioElement;
+        sound.volume = 0.6;
+        sound.play().catch(() => {});
+      }
+    } catch (e) {
+      console.warn('Audio not available:', e);
+    }
+  }, []);
 
   // Win/Lose
   const playWin = useCallback(() => {
