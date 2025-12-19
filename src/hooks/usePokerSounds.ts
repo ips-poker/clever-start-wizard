@@ -61,6 +61,7 @@ export function usePokerSounds() {
   const dealSoundRef = useRef<HTMLAudioElement | null>(null);
   const chipWinSoundRef = useRef<HTMLAudioElement | null>(null);
   const allInSoundRef = useRef<HTMLAudioElement | null>(null);
+  const checkSoundRef = useRef<HTMLAudioElement | null>(null);
 
   // Preload sound MP3s
   useEffect(() => {
@@ -83,6 +84,10 @@ export function usePokerSounds() {
     allInSoundRef.current = new Audio('/sounds/chip-allin.mp3');
     allInSoundRef.current.volume = 0.6;
     allInSoundRef.current.preload = 'auto';
+    
+    checkSoundRef.current = new Audio('/sounds/check.mp3');
+    checkSoundRef.current.volume = 0.5;
+    checkSoundRef.current.preload = 'auto';
   }, []);
 
   const getAudioContext = useCallback(() => {
@@ -183,46 +188,20 @@ export function usePokerSounds() {
     playTone(s.frequencies, s.duration, s.type, s.volume);
   }, [playTone]);
 
-  // Double tap on table for check - realistic poker knock
+  // Check - play preloaded MP3 sound
   const playCheck = useCallback(() => {
     if (!enabledRef.current) return;
     
     try {
-      const ctx = getAudioContext();
-      const now = ctx.currentTime;
-      
-      // Create two muffled knocks like tapping on felt/wood table
-      [0, 0.12].forEach((delay) => {
-        // Low frequency thump
-        const osc = ctx.createOscillator();
-        const gainNode = ctx.createGain();
-        const filter = ctx.createBiquadFilter();
-        
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(100, now + delay);
-        osc.frequency.exponentialRampToValueAtTime(60, now + delay + 0.05);
-        
-        // Lowpass filter for muffled sound
-        filter.type = 'lowpass';
-        filter.frequency.value = 200;
-        filter.Q.value = 1;
-        
-        // Quick attack, fast decay for knock effect
-        gainNode.gain.setValueAtTime(0, now + delay);
-        gainNode.gain.linearRampToValueAtTime(0.4, now + delay + 0.005);
-        gainNode.gain.exponentialRampToValueAtTime(0.001, now + delay + 0.08);
-        
-        osc.connect(filter);
-        filter.connect(gainNode);
-        gainNode.connect(ctx.destination);
-        
-        osc.start(now + delay);
-        osc.stop(now + delay + 0.1);
-      });
+      if (checkSoundRef.current) {
+        const sound = checkSoundRef.current.cloneNode() as HTMLAudioElement;
+        sound.volume = 0.5;
+        sound.play().catch(() => {});
+      }
     } catch (e) {
       console.warn('Audio not available:', e);
     }
-  }, [getAudioContext]);
+  }, []);
 
   // Call - pleasant chip toss onto table
   // Play chip sound from MP3
