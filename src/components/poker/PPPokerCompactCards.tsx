@@ -2,7 +2,7 @@
 // Smaller cards for opponents, positioned like in PPPoker reference images
 
 import React, { memo } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { usePokerPreferences } from '@/hooks/usePokerPreferences';
 
@@ -15,6 +15,8 @@ interface PPPokerCompactCardsProps {
   winningCardIndices?: number[]; // Indices of cards that participate in winning hand
   size?: 'xs' | 'sm';
   position?: { x: number; y: number }; // Player position for determining card placement
+  handId?: string; // Unique hand identifier for animation reset
+  dealDelay?: number; // Delay in ms before cards appear (for deal animation sync)
 }
 
 // Four-color suit configuration
@@ -387,9 +389,38 @@ export const PPPokerCompactCards = memo(function PPPokerCompactCards({
   isWinner = false,
   winningCardIndices = [],
   size = 'xs',
-  position = { x: 50, y: 50 }
+  position = { x: 50, y: 50 },
+  handId,
+  dealDelay = 0
 }: PPPokerCompactCardsProps) {
   const { currentCardBack, preferences } = usePokerPreferences();
+  const [isDealt, setIsDealt] = React.useState(false);
+  const lastHandIdRef = React.useRef(handId);
+  
+  // Reset deal state when handId changes (new hand started)
+  React.useEffect(() => {
+    if (handId && handId !== lastHandIdRef.current) {
+      lastHandIdRef.current = handId;
+      setIsDealt(false);
+      
+      // Delay card appearance to sync with deal sounds
+      const timer = setTimeout(() => {
+        setIsDealt(true);
+      }, dealDelay);
+      
+      return () => clearTimeout(timer);
+    } else if (!handId) {
+      // No handId tracking - show immediately
+      setIsDealt(true);
+    }
+  }, [handId, dealDelay]);
+  
+  // Initialize as dealt if no handId tracking
+  React.useEffect(() => {
+    if (!handId) {
+      setIsDealt(true);
+    }
+  }, [handId]);
   
   // Use showdown size for larger cards during showdown like in reference
   const actualSize = isShowdown ? 'showdown' : size;
@@ -436,69 +467,83 @@ export const PPPokerCompactCards = memo(function PPPokerCompactCards({
     return 55;
   };
 
+  // Don't render cards until dealt (for sync with deal sounds)
+  if (!isDealt && !isShowdown) {
+    return null;
+  }
+
   return (
-    <div className="relative flex items-center">
-      {/* Cards container - fanned, rotated to point towards table */}
-      <div 
-        className="relative flex"
-        style={{ 
-          flexDirection: 'row',
-          transform: `rotate(${getContainerRotation()}deg)`,
-          transformOrigin: 'center center'
-        }}
+    <AnimatePresence mode="wait">
+      <motion.div 
+        key={handId || 'cards'}
+        className="relative flex items-center"
+        initial={{ opacity: 0, scale: 0.8 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.8 }}
+        transition={{ duration: 0.2 }}
       >
-        {displayCards.map((card, idx) => {
-          // Determine if this card is part of winning hand
-          const isCardWinning = winningCardIndices.includes(idx);
-          // At showdown with winning cards specified, dim non-winning cards
-          const isDimmed = isShowdown && winningCardIndices.length > 0 && !isCardWinning;
-          
-          // Fanned rotation when not showdown
-          const rotation = getFanRotation(idx, displayCards.length);
-          
-          return (
-            <div 
-              key={idx} 
-              className="relative"
+        {/* Cards container - fanned, rotated to point towards table */}
+        <div 
+          className="relative flex"
+          style={{ 
+            flexDirection: 'row',
+            transform: `rotate(${getContainerRotation()}deg)`,
+            transformOrigin: 'center center'
+          }}
+        >
+          {displayCards.map((card, idx) => {
+            // Determine if this card is part of winning hand
+            const isCardWinning = winningCardIndices.includes(idx);
+            // At showdown with winning cards specified, dim non-winning cards
+            const isDimmed = isShowdown && winningCardIndices.length > 0 && !isCardWinning;
+            
+            // Fanned rotation when not showdown
+            const rotation = getFanRotation(idx, displayCards.length);
+            
+            return (
+              <div 
+                key={idx} 
+                className="relative"
+                style={{
+                  marginLeft: idx > 0 ? (isShowdown ? 2 : -cfg.w * 0.45) : 0,
+                  zIndex: idx + 1
+                }}
+              >
+                <MiniCard 
+                  card={showCards ? card : 'XX'} 
+                  faceDown={!showCards}
+                  size={actualSize as any} 
+                  delay={idx}
+                  isWinning={isShowdown && isCardWinning && isWinner}
+                  isDimmed={isDimmed}
+                  rotation={rotation}
+                  cardBackColors={{ accent: currentCardBack.accentColor, pattern: currentCardBack.pattern }}
+                  useFourColor={useFourColor}
+                  animate={!isShowdown}
+                />
+              </div>
+            );
+          })}
+        </div>
+        
+        {/* Hand name badge at showdown */}
+        {isShowdown && handName && (
+          <div
+            className="absolute -bottom-5 left-1/2 -translate-x-1/2 whitespace-nowrap z-30"
+          >
+            <span 
+              className="text-[11px] font-bold"
               style={{
-                marginLeft: idx > 0 ? (isShowdown ? 2 : -cfg.w * 0.45) : 0,
-                zIndex: idx + 1
+                color: '#22c55e',
+                textShadow: '0 1px 4px rgba(0,0,0,0.8)'
               }}
             >
-              <MiniCard 
-                card={showCards ? card : 'XX'} 
-                faceDown={!showCards}
-                size={actualSize as any} 
-                delay={idx}
-                isWinning={isShowdown && isCardWinning && isWinner}
-                isDimmed={isDimmed}
-                rotation={rotation}
-                cardBackColors={{ accent: currentCardBack.accentColor, pattern: currentCardBack.pattern }}
-                useFourColor={useFourColor}
-                animate={!isShowdown}
-              />
-            </div>
-          );
-        })}
-      </div>
-      
-      {/* Hand name badge at showdown */}
-      {isShowdown && handName && (
-        <div
-          className="absolute -bottom-5 left-1/2 -translate-x-1/2 whitespace-nowrap z-30"
-        >
-          <span 
-            className="text-[11px] font-bold"
-            style={{
-              color: '#22c55e',
-              textShadow: '0 1px 4px rgba(0,0,0,0.8)'
-            }}
-          >
-            {handName}
-          </span>
-        </div>
-      )}
-    </div>
+              {handName}
+            </span>
+          </div>
+        )}
+      </motion.div>
+    </AnimatePresence>
   );
 });
 

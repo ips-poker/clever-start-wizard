@@ -32,6 +32,7 @@ export interface PokerPlayer {
 
 export interface TableState {
   tableId: string;
+  handId?: string; // Unique hand identifier for animation keys
   phase: 'waiting' | 'preflop' | 'flop' | 'turn' | 'river' | 'showdown';
   pot: number;
   currentBet: number;
@@ -251,8 +252,12 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
     const ante = (state.ante || config?.ante || 0) as number;
     const actionTimer = (state.actionTimer || config?.actionTimeSeconds || 30) as number;
 
+    // Get handId from server state (may be handId, hand_id, currentHandId, etc.)
+    const handId = (state.handId || state.hand_id || state.currentHandId || state.current_hand_id) as string | undefined;
+
     return {
       tableId: tblId,
+      handId,
       phase,
       pot,
       currentBet,
