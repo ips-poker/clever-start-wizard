@@ -8,8 +8,12 @@ import { Button } from '@/components/ui/button';
 import { 
   ArrowLeft, Volume2, VolumeX, MessageSquare, Loader2, 
   Settings2, Menu, X, Send, Trophy, Eye, EyeOff, 
-  LogOut, Wallet, HelpCircle, Palette, Users, BarChart2
+  LogOut, Wallet, HelpCircle, Palette, Users, BarChart2, History
 } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { FullHandHistory } from './FullHandHistory';
+import { HandReplayer, HandReplay } from './HandReplayer';
+import { useHandHistory, HandHistoryRecord } from '@/hooks/useHandHistory';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { useNodePokerTable, PokerPlayer, TableState } from '@/hooks/useNodePokerTable';
@@ -752,7 +756,8 @@ const LeftMenu = memo(function LeftMenu({
   onSoundToggle,
   onSettingsClick,
   onViewClick,
-  onRulesClick
+  onRulesClick,
+  onHistoryClick
 }: {
   isOpen: boolean;
   onClose: () => void;
@@ -762,6 +767,7 @@ const LeftMenu = memo(function LeftMenu({
   onSettingsClick: () => void;
   onViewClick: () => void;
   onRulesClick: () => void;
+  onHistoryClick: () => void;
 }) {
   return (
     <AnimatePresence>
@@ -784,6 +790,7 @@ const LeftMenu = memo(function LeftMenu({
             <div className="py-4">
               <MenuItem icon={Eye} label="Встать" onClick={() => {}}/>
               <MenuItem icon={Wallet} label="Пополнить" onClick={() => {}}/>
+              <MenuItem icon={History} label="История рук" onClick={onHistoryClick}/>
               <MenuItem icon={Settings2} label="Настройки" onClick={onSettingsClick}/>
               <MenuItem icon={Palette} label="Вид" hasNotification onClick={onViewClick}/>
               <MenuItem icon={Users} label="Стол полон" onClick={() => {}}/>
@@ -1427,6 +1434,8 @@ export function SyndikatetPokerTable({
   const [showMyCards, setShowMyCards] = useState(true);
   const [selectedPlayer, setSelectedPlayer] = useState<PokerPlayer | null>(null);
   const [showConfetti, setShowConfetti] = useState(false);
+  const [showHandHistory, setShowHandHistory] = useState(false);
+  const [replayHand, setReplayHand] = useState<HandReplay | null>(null);
   const [previousPhase, setPreviousPhase] = useState<string | null>(null);
   
   const [isMobile, setIsMobile] = useState(false);
@@ -1929,6 +1938,7 @@ export function SyndikatetPokerTable({
           onSettingsClick={() => { setShowMenu(false); setShowSettings(true); }}
           onViewClick={() => setShowMenu(false)}
           onRulesClick={() => setShowMenu(false)}
+          onHistoryClick={() => { setShowMenu(false); setShowHandHistory(true); }}
         />
 
         {/* Player profile modal - Enhanced with real stats */}
@@ -1951,6 +1961,37 @@ export function SyndikatetPokerTable({
           onClose={() => setShowSettings(false)}
           isHost={true}
         />
+
+        {/* Hand History Dialog */}
+        <Dialog open={showHandHistory} onOpenChange={setShowHandHistory}>
+          <DialogContent className="max-w-2xl max-h-[85vh] overflow-hidden flex flex-col bg-slate-900 border-white/10">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-white">
+                <History className="h-5 w-5" />
+                История рук
+              </DialogTitle>
+            </DialogHeader>
+            <div className="flex-1 overflow-hidden">
+              <FullHandHistory 
+                tableId={tableId} 
+                playerId={playerId}
+                className="border-0 bg-transparent"
+              />
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Hand Replayer Dialog */}
+        <Dialog open={!!replayHand} onOpenChange={(open) => !open && setReplayHand(null)}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden p-0 bg-slate-900 border-white/10">
+            {replayHand && (
+              <HandReplayer
+                hand={replayHand}
+                onClose={() => setReplayHand(null)}
+              />
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </PokerErrorBoundary>
   );
