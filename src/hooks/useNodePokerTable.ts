@@ -19,6 +19,8 @@ export interface PokerPlayer {
   isAllIn: boolean;
   isActive: boolean;
   isDisconnected?: boolean;
+  isSittingOut?: boolean;  // Player is sitting out (auto-fold mode)
+  missedTurns?: number;    // Number of consecutive missed turns
   timeBankRemaining?: number;
   // Showdown fields
   handName?: string;
@@ -220,8 +222,10 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
         holeCards: (p.holeCards || p.cards || []) as string[],
         isFolded: (p.isFolded || p.is_folded || false) as boolean,
         isAllIn: (p.isAllIn || p.is_all_in || false) as boolean,
-        isActive: (p.isActive !== false && p.status !== 'disconnected' && p.status !== 'folded') as boolean,
+        isActive: (p.isActive !== false && p.status !== 'disconnected' && p.status !== 'folded' && p.status !== 'sitting_out') as boolean,
         isDisconnected: (p.status === 'disconnected') as boolean,
+        isSittingOut: (p.isSittingOut || p.is_sitting_out || p.status === 'sitting_out') as boolean,
+        missedTurns: (p.missedTurns || p.missed_turns || 0) as number,
         timeBankRemaining: (p.timeBank || 60) as number,
         // Showdown fields
         handName: (p.handName || p.handRank || p.hand_rank) as string | undefined,
@@ -1210,6 +1214,28 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
     });
   }, [tableId, playerId, sendMessage]);
 
+  // Sit out - player will auto-fold when it's their turn
+  const sitOut = useCallback(() => {
+    if (!tableId || !playerId) return;
+    log('💤 Sitting out');
+    sendMessage({
+      type: 'sit_out',
+      tableId,
+      playerId
+    });
+  }, [tableId, playerId, sendMessage]);
+
+  // Sit in - return to active play
+  const sitIn = useCallback(() => {
+    if (!tableId || !playerId) return;
+    log('🎮 Returning to game');
+    sendMessage({
+      type: 'sit_in',
+      tableId,
+      playerId
+    });
+  }, [tableId, playerId, sendMessage]);
+
   // Send chat message
   const sendChatMessage = useCallback((text: string) => {
     if (!tableId || !playerId) return;
@@ -1316,6 +1342,8 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
     bet,
     raise,
     allIn,
+    sitOut,
+    sitIn,
     sendChatMessage
   };
 }
