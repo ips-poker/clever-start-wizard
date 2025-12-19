@@ -55,7 +55,7 @@ import IntegratedTournamentRatingSettings from '@/components/IntegratedTournamen
 import { RecalculateRatings } from '@/components/RecalculateRatings';
 import { useVoiceAnnouncements } from "@/hooks/useVoiceAnnouncements";
 import { OnlinePokerManagement } from '@/components/poker/OnlinePokerManagement';
-
+import { SoundDemo } from '@/components/poker/SoundDemo';
 // Используем типы из базы данных
 type Tournament = {
   id: string;
@@ -1344,6 +1344,23 @@ const TournamentDirector = () => {
 
             <TabsContent value="online-poker" className="space-y-6 animate-fade-in">
               <OnlinePokerManagement />
+            </TabsContent>
+
+            <TabsContent value="sounds" className="space-y-6 animate-fade-in">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Volume2 className="h-5 w-5" />
+                    Демо звуков покера
+                  </CardTitle>
+                  <CardDescription>
+                    Прослушайте и настройте звуки для онлайн-покера
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <SoundDemo isOpen={true} onClose={() => {}} embedded={true} />
+                </CardContent>
+              </Card>
             </TabsContent>
           </Tabs>
 
