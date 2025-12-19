@@ -340,6 +340,12 @@ export function usePokerSounds() {
         const sound = shuffleSoundRef.current.cloneNode() as HTMLAudioElement;
         sound.volume = 0.4;
         sound.play().catch(() => {});
+        
+        // Stop shuffle sound after 2 seconds
+        setTimeout(() => {
+          sound.pause();
+          sound.currentTime = 0;
+        }, 2000);
       }
     } catch (e) {
       console.warn('Audio not available:', e);
