@@ -150,7 +150,11 @@ export function FullscreenPokerTableWrapper({
     }
   }, [lastAction, sounds]);
 
-  // Phase change sounds (deal, flop, turn, river)
+  // Phase change sounds - synchronized with card animations
+  // Animation delays from OptimizedCommunityCards.tsx and HeroCards:
+  // - Community cards (flop): delay = index * 0.15s (0ms, 150ms, 300ms)
+  // - Hero cards (preflop): delay = idx * 0.1s (0ms, 100ms) 
+  // - Spring animation duration ~200-300ms
   useEffect(() => {
     const phase = tableState?.phase;
     if (phase && phase !== previousPhaseRef.current) {
@@ -159,23 +163,24 @@ export function FullscreenPokerTableWrapper({
       
       // Play sounds based on phase transitions
       if (phase === 'preflop' && prevPhase !== 'preflop') {
-        // New hand - shuffle and deal cards
+        // New hand - shuffle first, then deal cards synced with animation
         sounds.playShuffle();
-        setTimeout(() => sounds.playDeal(), 400);
-        setTimeout(() => sounds.playDeal(), 550);
-        setTimeout(() => sounds.playDeal(), 700);
-        setTimeout(() => sounds.playDeal(), 850);
+        // Hero cards animate with 0.1s delay between them, spring takes ~200ms to reach midpoint
+        // Deal sounds at: card appears + ~100ms (when card is visually "landing")
+        setTimeout(() => sounds.playDeal(), 500);  // First hole card lands
+        setTimeout(() => sounds.playDeal(), 600);  // Second hole card lands
       } else if (phase === 'flop') {
-        // Flop - 3 cards with synchronized sounds
-        sounds.playDeal();
-        setTimeout(() => sounds.playDeal(), 150);
-        setTimeout(() => sounds.playDeal(), 300);
+        // Flop - 3 cards with animation delays: 0ms, 150ms, 300ms
+        // Add ~100ms for card to reach "landing" point in spring animation
+        setTimeout(() => sounds.playDeal(), 100);  // First flop card
+        setTimeout(() => sounds.playDeal(), 250);  // Second flop card  
+        setTimeout(() => sounds.playDeal(), 400);  // Third flop card
       } else if (phase === 'turn') {
-        // Turn - 1 card
-        sounds.playDeal();
+        // Turn - 1 card with 100ms animation delay
+        setTimeout(() => sounds.playDeal(), 200);
       } else if (phase === 'river') {
-        // River - 1 card
-        sounds.playDeal();
+        // River - 1 card with 100ms animation delay
+        setTimeout(() => sounds.playDeal(), 200);
       } else if (phase === 'showdown') {
         // Silent showdown - win sound will play when pot is collected
       }
