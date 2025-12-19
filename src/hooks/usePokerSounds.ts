@@ -292,6 +292,7 @@ export function usePokerSounds() {
       if (dealSoundRef.current) {
         const sound = dealSoundRef.current.cloneNode() as HTMLAudioElement;
         sound.volume = 0.35;
+        sound.playbackRate = 1.3; // Ускоренное воспроизведение
         sound.play().catch(() => {});
       }
     } catch (e) {
