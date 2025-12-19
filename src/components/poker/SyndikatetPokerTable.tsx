@@ -1632,9 +1632,8 @@ export function SyndikatetPokerTable({
           amount: winner.amount
         });
         
-        // Play chip sounds
+        // Play chip slide sound (no victory sound)
         sounds.playChipSlide();
-        setTimeout(() => sounds.playPotWin(), 300);
       }
       
       // Check if hero won
@@ -2015,10 +2014,15 @@ export function SyndikatetPokerTable({
           <button 
             className={cn("rounded-full bg-black/60 flex items-center justify-center text-white", isMobile ? "w-9 h-9" : "w-10 h-10")} 
             onClick={() => setSoundEnabled(!soundEnabled)}
-            onDoubleClick={() => setShowSoundDemo(true)}
-            title="Двойной клик - демо звуков"
           >
             {soundEnabled ? <Volume2 className="h-4 w-4"/> : <VolumeX className="h-4 w-4"/>}
+          </button>
+          <button 
+            className={cn("rounded-full bg-gradient-to-br from-emerald-600 to-green-700 flex items-center justify-center text-white shadow-lg", isMobile ? "w-9 h-9" : "w-10 h-10")} 
+            onClick={() => setShowSoundDemo(true)}
+            title="Демо звуков"
+          >
+            <span className="text-sm">🎵</span>
           </button>
         </div>
         
