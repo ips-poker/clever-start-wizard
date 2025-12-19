@@ -136,7 +136,11 @@ export function FullscreenPokerTableWrapper({
   }, [lastAction]);
 
   useEffect(() => {
-    if (showdownResult) { sounds.playWin(); }
+    if (showdownResult) { 
+      // Play chip sounds instead of annoying win melody
+      sounds.playChipSlide();
+      setTimeout(() => sounds.playPotWin(), 300);
+    }
   }, [showdownResult]);
 
   // Cashout - return diamonds when leaving table

@@ -36,6 +36,7 @@ import {
   TablePulse, 
   CountdownPulse 
 } from './PPPokerAnimations';
+import { PotCollectionAnimation } from './PotCollectionAnimation';
 import { PPPokerEnhancedCard, HandStrengthBadge } from './PPPokerEnhancedCard';
 import { PPPokerPlayerCards } from './PPPokerPlayerCards';
 import { PPPokerCompactCards } from './PPPokerCompactCards';
@@ -294,24 +295,32 @@ const PlayerSeat = memo(function PlayerSeat({
         />
       )}
 
-      {/* Avatar container with enhanced turn indicator */}
+      {/* Avatar container with enhanced turn indicator and winner glow */}
       <div 
         className={cn("relative rounded-full overflow-hidden cursor-pointer transition-all duration-200", player.isFolded && "opacity-40 grayscale")}
         style={{
           width: avatarSize,
           height: avatarSize,
-          border: isCurrentTurn && !player.isFolded
-            ? '4px solid #22c55e'
-            : player.isAllIn
-              ? '3px solid #ef4444'
-              : '2px solid rgba(100,100,100,0.8)',
-          boxShadow: isCurrentTurn && !player.isFolded
-            ? '0 0 25px rgba(34,197,94,0.8), 0 0 50px rgba(34,197,94,0.4), inset 0 0 15px rgba(34,197,94,0.3)'
-            : player.isAllIn
-              ? '0 0 20px rgba(239,68,68,0.6)'
-              : '0 4px 15px rgba(0,0,0,0.5)',
+          border: player.isWinner
+            ? '4px solid #fbbf24'
+            : isCurrentTurn && !player.isFolded
+              ? '4px solid #22c55e'
+              : player.isAllIn
+                ? '3px solid #ef4444'
+                : '2px solid rgba(100,100,100,0.8)',
+          boxShadow: player.isWinner
+            ? '0 0 30px rgba(251,191,36,0.9), 0 0 60px rgba(251,191,36,0.6), 0 0 90px rgba(251,191,36,0.3), inset 0 0 20px rgba(251,191,36,0.4)'
+            : isCurrentTurn && !player.isFolded
+              ? '0 0 25px rgba(34,197,94,0.8), 0 0 50px rgba(34,197,94,0.4), inset 0 0 15px rgba(34,197,94,0.3)'
+              : player.isAllIn
+                ? '0 0 20px rgba(239,68,68,0.6)'
+                : '0 4px 15px rgba(0,0,0,0.5)',
           background: '#2a2a2a',
-          animation: isCurrentTurn && !player.isFolded ? 'pulse-glow 1.5s ease-in-out infinite' : undefined
+          animation: player.isWinner 
+            ? 'winner-glow 1.5s ease-in-out infinite' 
+            : isCurrentTurn && !player.isFolded 
+              ? 'pulse-glow 1.5s ease-in-out infinite' 
+              : undefined
         }}
         onClick={() => player && onPlayerClick?.(player)}
       >
@@ -1437,6 +1446,8 @@ export function SyndikatetPokerTable({
   const [showHandHistory, setShowHandHistory] = useState(false);
   const [replayHand, setReplayHand] = useState<HandReplay | null>(null);
   const [previousPhase, setPreviousPhase] = useState<string | null>(null);
+  const [isCollectingPot, setIsCollectingPot] = useState(false);
+  const [collectionBets, setCollectionBets] = useState<Array<{ seatPosition: { x: number; y: number }; amount: number }>>([]);
   
   const [isMobile, setIsMobile] = useState(false);
   
@@ -1564,10 +1575,29 @@ export function SyndikatetPokerTable({
     }
   }, [turnTimeRemaining, isMyTurn, sounds]);
   
-  // Phase change sounds and effects
+  // Phase change sounds and effects with pot collection animation
   useEffect(() => {
     const phase = tableState?.phase;
     if (phase && phase !== previousPhase) {
+      // Trigger pot collection animation when moving to flop/turn/river
+      if (['flop', 'turn', 'river'].includes(phase) && tableState?.players) {
+        const betsToCollect = tableState.players
+          .filter(p => p.betAmount > 0)
+          .map(p => {
+            const seatPos = SEAT_POSITIONS[p.seatNumber % SEAT_POSITIONS.length];
+            return {
+              seatPosition: seatPos || { x: 50, y: 50 },
+              amount: p.betAmount
+            };
+          });
+        
+        if (betsToCollect.length > 0) {
+          setCollectionBets(betsToCollect);
+          setIsCollectingPot(true);
+          sounds.playChipSlide();
+        }
+      }
+      
       setPreviousPhase(phase);
       
       // Play sounds based on phase transitions
@@ -1583,13 +1613,15 @@ export function SyndikatetPokerTable({
         sounds.playShowdown();
       }
     }
-  }, [tableState?.phase, previousPhase, sounds]);
+  }, [tableState?.phase, tableState?.players, previousPhase, sounds, SEAT_POSITIONS]);
   
-  // Winner effects
+  // Winner effects - chip sounds only, no annoying win melody
   useEffect(() => {
     if (showdownResult && showdownResult.winners.length > 0) {
-      sounds.playWin();
-      sounds.playPotWin();
+      // Play chip sliding/stacking sounds instead of win melody
+      sounds.playChipSlide();
+      setTimeout(() => sounds.playChipStack(), 200);
+      setTimeout(() => sounds.playPotWin(), 400);
       
       // Check if hero won
       const heroWon = showdownResult.winners.some(w => w.playerId === playerId);
@@ -1851,6 +1883,17 @@ export function SyndikatetPokerTable({
           })}
 
           {/* Winner shown on cards at showdown - no popup */}
+          
+          {/* Pot collection animation - chips flying to pot */}
+          <PotCollectionAnimation 
+            isCollecting={isCollectingPot}
+            bets={collectionBets}
+            onComplete={() => {
+              setIsCollectingPot(false);
+              setCollectionBets([]);
+              sounds.playChipStack();
+            }}
+          />
           
           {/* Confetti for big wins */}
           <Confetti isActive={showConfetti} duration={4000} />
