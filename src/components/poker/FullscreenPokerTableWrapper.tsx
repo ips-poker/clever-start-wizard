@@ -165,24 +165,26 @@ export function FullscreenPokerTableWrapper({
       
       // Play sounds based on phase transitions
       if (phase === 'preflop' && prevPhase !== 'preflop') {
-        // New hand - shuffle and deal
+        // New hand - shuffle and deal cards
         sounds.playShuffle();
-        setTimeout(() => sounds.playDeal(), 300);
-        setTimeout(() => sounds.playDeal(), 450);
+        setTimeout(() => sounds.playDeal(), 400);
+        setTimeout(() => sounds.playDeal(), 550);
+        setTimeout(() => sounds.playDeal(), 700);
+        setTimeout(() => sounds.playDeal(), 850);
       } else if (phase === 'flop') {
         // Flop - 3 cards with chip slide for pot collection
         sounds.playChipSlide();
-        setTimeout(() => sounds.playCardFlip(), 200);
-        setTimeout(() => sounds.playCardFlip(), 350);
-        setTimeout(() => sounds.playCardFlip(), 500);
+        setTimeout(() => sounds.playDeal(), 200);
+        setTimeout(() => sounds.playDeal(), 350);
+        setTimeout(() => sounds.playDeal(), 500);
       } else if (phase === 'turn') {
         // Turn - 1 card
         sounds.playChipSlide();
-        setTimeout(() => sounds.playCardFlip(), 200);
+        setTimeout(() => sounds.playDeal(), 200);
       } else if (phase === 'river') {
         // River - 1 card
         sounds.playChipSlide();
-        setTimeout(() => sounds.playCardFlip(), 200);
+        setTimeout(() => sounds.playDeal(), 200);
       } else if (phase === 'showdown') {
         sounds.playShowdown();
       }

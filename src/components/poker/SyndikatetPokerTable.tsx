@@ -1605,21 +1605,24 @@ export function SyndikatetPokerTable({
       
       // Play sounds based on phase transitions
       if (phase === 'preflop' && previousPhase !== 'preflop') {
-        // Cards being dealt
+        // Cards being dealt - shuffle then deal sounds for each card
         sounds.playShuffle();
-        setTimeout(() => sounds.playDeal(), 300);
-        setTimeout(() => sounds.playDeal(), 450);
+        // Deal 2 cards to each player with delays
+        setTimeout(() => sounds.playDeal(), 400);
+        setTimeout(() => sounds.playDeal(), 550);
+        setTimeout(() => sounds.playDeal(), 700);
+        setTimeout(() => sounds.playDeal(), 850);
       } else if (phase === 'flop') {
-        // Flop - 3 cards with delays for each
-        sounds.playCardFlip();
-        setTimeout(() => sounds.playCardFlip(), 150);
-        setTimeout(() => sounds.playCardFlip(), 300);
+        // Flop - 3 cards with playDeal for each
+        sounds.playDeal();
+        setTimeout(() => sounds.playDeal(), 150);
+        setTimeout(() => sounds.playDeal(), 300);
       } else if (phase === 'turn') {
         // Turn - 1 card
-        sounds.playCardFlip();
+        sounds.playDeal();
       } else if (phase === 'river') {
         // River - 1 card
-        sounds.playCardFlip();
+        sounds.playDeal();
       } else if (phase === 'showdown') {
         sounds.playShowdown();
       }
